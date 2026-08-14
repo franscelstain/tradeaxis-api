@@ -9,6 +9,7 @@ use App\Infrastructure\Persistence\MarketData\EventRiskSourceRepository;
 use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 use App\Infrastructure\Persistence\MarketData\PriceScaleBreakRepository;
 use App\Infrastructure\Persistence\MarketData\SectorClassificationRepository;
+use App\Infrastructure\Persistence\MarketData\CorpusAdmissionRepository;
 use Carbon\Carbon;
 
 class EodIndicatorsComputeService
@@ -22,8 +23,10 @@ class EodIndicatorsComputeService
     private $calendar;
     private $priceScaleBreaks;
     private $analyticalIdentity;
+    private $factorSets;
+    private $corpusAdmissions;
 
-    public function __construct(EodArtifactRepository $artifacts, EodPublicationRepository $publications, IndicatorVectorService $vectors, BenchmarkIndicatorComputeService $benchmarkIndicators = null, SectorClassificationRepository $sectors = null, EventRiskSourceRepository $eventRisks = null, MarketCalendarRepository $calendar = null, PriceScaleBreakRepository $priceScaleBreaks = null, AnalyticalProductIdentityService $analyticalIdentity = null)
+    public function __construct(EodArtifactRepository $artifacts, EodPublicationRepository $publications, IndicatorVectorService $vectors, BenchmarkIndicatorComputeService $benchmarkIndicators = null, SectorClassificationRepository $sectors = null, EventRiskSourceRepository $eventRisks = null, MarketCalendarRepository $calendar = null, PriceScaleBreakRepository $priceScaleBreaks = null, AnalyticalProductIdentityService $analyticalIdentity = null, AdjustmentFactorSetService $factorSets = null, CorpusAdmissionRepository $corpusAdmissions = null)
     {
         $this->artifacts = $artifacts;
         $this->publications = $publications;
@@ -34,6 +37,8 @@ class EodIndicatorsComputeService
         $this->calendar = $calendar ?: new MarketCalendarRepository();
         $this->priceScaleBreaks = $priceScaleBreaks ?: new PriceScaleBreakRepository();
         $this->analyticalIdentity = $analyticalIdentity ?: new AnalyticalProductIdentityService();
+        $this->factorSets = $factorSets ?: app(AdjustmentFactorSetService::class);
+        $this->corpusAdmissions = $corpusAdmissions ?: new CorpusAdmissionRepository();
     }
 
     public function compute($run, $requestedDate, $correctionMode = false)
@@ -53,6 +58,10 @@ class EodIndicatorsComputeService
             );
         }
 
+        $knownAt = $run->started_at ?? $run->created_at ?? null;
+        $historyStartDate = $this->corpusAdmissions->historyStartDateFor($requestedDate, $knownAt)
+            ?: MarketDataScope::DATASET_START;
+
         $benchmarkResult = [
             'benchmark_indicators_rows_written' => 0,
             'invalid_benchmark_indicator_count' => 0,
@@ -60,7 +69,7 @@ class EodIndicatorsComputeService
         $benchmarkRoc20 = null;
 
         if ($this->benchmarkIndicators !== null) {
-            $benchmarkResult = $this->benchmarkIndicators->compute($requestedDate);
+            $benchmarkResult = $this->benchmarkIndicators->compute($requestedDate, $historyStartDate);
             $benchmarkRoc20 = $this->benchmarkIndicators->roc20('IHSG', $requestedDate);
         }
 
@@ -75,7 +84,12 @@ class EodIndicatorsComputeService
 
         $barLoadWindow = $windowDays + 5;
 
-        $barsByTicker = $this->artifacts->loadBarsWindow($requestedDate, $barLoadWindow, $useHistory ? $candidatePublication->publication_id : null);
+        $barsByTicker = $this->artifacts->loadBarsWindow(
+            $requestedDate,
+            $barLoadWindow,
+            $useHistory ? $candidatePublication->publication_id : null,
+            $historyStartDate
+        );
 
         /*
          * Wilder ATR is recursive, so it needs its own series anchored at the dataset boundary
@@ -84,7 +98,6 @@ class EodIndicatorsComputeService
          * and 72.9% at worst — enough to misstate the volatility input that position sizing and
          * stop placement are built on.
          */
-        $knownAt = $run->started_at ?? $run->created_at ?? null;
         $sectorContextsByTicker = $this->sectors !== null
             ? $this->sectors->resolveSectorContextForTickerIds(array_keys($barsByTicker), $requestedDate, null, $knownAt)
             : [];
@@ -94,23 +107,39 @@ class EodIndicatorsComputeService
         $eventRiskContextsByTicker = $this->eventRisks !== null
             ? $this->eventRisks->resolveEventRiskContextForTickerIds(array_keys($barsByTicker), $requestedDate, $knownAt)
             : [];
-        $tradingDatesWindow = $this->resolveContaminationTradingDates($requestedDate, $barLoadWindow);
+        $tradingDatesWindow = $this->resolveContaminationTradingDates($requestedDate, $barLoadWindow, $historyStartDate);
         $contaminationByTicker = $this->resolveCorporateActionContamination(array_keys($barsByTicker), $tradingDatesWindow, $knownAt);
         $priceScaleBreaksByTicker = $this->resolvePriceScaleBreakContamination(array_keys($barsByTicker), $tradingDatesWindow);
-        // ATR is recursive from the stable boundary, so its publication identity must cover every
-        // structural factor capable of changing that state, not only the sliding vector window.
-        $adjustmentFactorsByTicker = $this->resolveAdjustmentFactors(
-            array_keys($barsByTicker),
-            [MarketDataScope::DATASET_START, $requestedDate],
-            $knownAt
+        // Build and persist the exact revision decision set before any vector is written. This
+        // replaces the old resolver over mutable `market_data_corporate_actions`: only current
+        // AUTHORITATIVE_VERIFIED revisions can now reach an analytical publication.
+        $factorContext = $this->factorSets->ensureForPublication(
+            $run,
+            $candidatePublication->publication_id,
+            $requestedDate,
+            $barsByTicker
         );
+        $adjustmentFactorsByTicker = $factorContext['factors_by_ticker'];
+        foreach ($factorContext['held_events_by_ticker'] as $tickerId => $heldEvents) {
+            $heldEvents = array_values(array_filter(array_map(function (array $event) use ($tradingDatesWindow) {
+                $depth = $this->tradingDayDepth($tradingDatesWindow, (string) ($event['action_date'] ?? ''));
+                if ($depth === null) {
+                    return null;
+                }
+
+                $event['depth'] = $depth;
+
+                return $event;
+            }, $heldEvents)));
+            $contaminationByTicker[(int) $tickerId] = array_merge(
+                $contaminationByTicker[(int) $tickerId] ?? [],
+                $heldEvents
+            );
+        }
         $selectedPriceProductCode = $this->analyticalIdentity->selectedProductCode();
         $priceProductVersion = $this->analyticalIdentity->productVersion();
-        $factorSetHash = $this->analyticalIdentity->factorSetHash(
-            $adjustmentFactorsByTicker,
-            MarketDataScope::DATASET_START,
-            $requestedDate
-        );
+        $factorSetId = (int) $factorContext['factor_set_id'];
+        $factorSetHash = (string) $factorContext['factor_set_hash'];
 
         // Persist before iterating so a legitimate zero-row run still records the selected basis.
         $this->publications->bindCandidateAnalyticalProduct(
@@ -118,7 +147,8 @@ class EodIndicatorsComputeService
             $run->run_id,
             $selectedPriceProductCode,
             $priceProductVersion,
-            $factorSetHash
+            $factorSetHash,
+            $factorSetId
         );
         $sectorBenchmarkRoc20s = [];
 
@@ -152,7 +182,7 @@ class EodIndicatorsComputeService
                 ? $this->artifacts->loadAtrSeriesForTickerFromBoundary(
                     (int) $tickerId,
                     $requestedDate,
-                    MarketDataScope::DATASET_START,
+                    $historyStartDate,
                     $useHistory ? $candidatePublication->publication_id : null
                 )
                 : null;
@@ -177,7 +207,8 @@ class EodIndicatorsComputeService
                     $run->config_snapshot_id ?? null,
                     $selectedPriceProductCode,
                     $priceProductVersion,
-                    $factorSetHash
+                    $factorSetHash,
+                    $factorSetId
                 ),
                 $atrSeries
             );
@@ -243,11 +274,24 @@ class EodIndicatorsComputeService
      * requested date, so a calendar failure here cannot be new. Swallowing it would only
      * create a silent path that publishes contaminated indicators as clean.
      */
-    private function resolveContaminationTradingDates($requestedDate, $lookbackTradingDays)
+    private function resolveContaminationTradingDates($requestedDate, $lookbackTradingDays, $historyStartDate = null)
     {
         $windowStart = $this->calendar->tradingDateWindowStart($requestedDate, $lookbackTradingDays);
+        if ($historyStartDate !== null && $windowStart < $historyStartDate) {
+            $windowStart = $historyStartDate;
+        }
 
         return $this->calendar->tradingDatesBetween($windowStart, $requestedDate);
+    }
+
+    private function tradingDayDepth(array $tradingDates, string $actionDate): ?int
+    {
+        $index = array_search($actionDate, $tradingDates, true);
+        if ($index === false) {
+            return null;
+        }
+
+        return count($tradingDates) - 1 - (int) $index;
     }
 
     /**
@@ -255,21 +299,7 @@ class EodIndicatorsComputeService
      *
      * Owner contract: docs/market_data/registry/Price_Adjustment_Contract_LOCKED.md
      */
-    private function resolveAdjustmentFactors(array $tickerIds, array $tradingDates, $knownAt = null)
-    {
-        if ($this->eventRisks === null || empty($tickerIds) || empty($tradingDates)) {
-            return [];
-        }
-
-        return $this->eventRisks->resolveAdjustmentFactorsForTickerIds(
-            $tickerIds,
-            $tradingDates[0],
-            $tradingDates[count($tradingDates) - 1],
-            $knownAt
-        );
-    }
-
-    private function vectorConfig($benchmarkRoc20 = null, array $sectorContext = null, $sectorRoc20 = null, array $eventRiskContext = null, array $contamination = [], $atrContaminationHorizonDays = 0, array $priceScaleBreaks = [], array $adjustmentFactors = [], $listingId = null, $configSnapshotId = null, $selectedPriceProductCode = null, $priceProductVersion = null, $factorSetHash = null)
+    private function vectorConfig($benchmarkRoc20 = null, array $sectorContext = null, $sectorRoc20 = null, array $eventRiskContext = null, array $contamination = [], $atrContaminationHorizonDays = 0, array $priceScaleBreaks = [], array $adjustmentFactors = [], $listingId = null, $configSnapshotId = null, $selectedPriceProductCode = null, $priceProductVersion = null, $factorSetHash = null, $factorSetId = null)
     {
         return [
             'set_version' => config('market_data.indicators.set_version'),
@@ -278,6 +308,7 @@ class EodIndicatorsComputeService
             'config_snapshot_id' => $configSnapshotId,
             'selected_price_product_code' => $selectedPriceProductCode,
             'price_product_version' => $priceProductVersion,
+            'factor_set_id' => $factorSetId,
             'factor_set_hash' => $factorSetHash,
             'sector_code' => $sectorContext['sector_code'] ?? null,
             'sector_index_code' => $sectorContext['sector_index_code'] ?? null,

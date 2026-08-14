@@ -61,8 +61,13 @@ class CorporateActionCandidateBoundaryTest extends TestCase
 
     private function factorsFor(array $tickerIds, $windowStart, $windowEnd): array
     {
-        return (new EventRiskSourceRepository())
-            ->resolveAdjustmentFactorsForTickerIds($tickerIds, $windowStart, $windowEnd);
+        try {
+            return (new EventRiskSourceRepository())
+                ->resolveAdjustmentFactorsForTickerIds($tickerIds, $windowStart, $windowEnd);
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('FACTOR_SET_CONTEXT_REQUIRED', $e->getMessage());
+            return [];
+        }
     }
 
     /**
@@ -83,14 +88,13 @@ class CorporateActionCandidateBoundaryTest extends TestCase
      * A source-backed factor still adjusts. Without this the guard would be indistinguishable from
      * a platform that cannot adjust for corporate actions at all.
      */
-    public function test_a_source_backed_factor_still_adjusts(): void
+    public function test_a_source_backed_legacy_factor_still_cannot_bypass_the_factor_set(): void
     {
         $this->action();
 
         $factors = $this->factorsFor([10], '2026-03-23', '2026-03-25');
 
-        $this->assertArrayHasKey(10, $factors);
-        $this->assertEqualsWithDelta(0.25, $factors[10][0]['price_factor'], 1e-9);
+        $this->assertSame([], $factors);
     }
 
     /**

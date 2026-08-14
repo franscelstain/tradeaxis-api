@@ -122,7 +122,8 @@ trait SeedsConsumerReadModelFixture
         int $publicationId,
         float $close,
         int $volume = 100000,
-        ?float $adjustedClose = null
+        ?float $adjustedClose = null,
+        ?string $priceProductCode = 'RAW'
     ): void {
         DB::table('eod_bars')->insert([
             'trade_date' => $tradeDate,
@@ -136,6 +137,7 @@ trait SeedsConsumerReadModelFixture
             'source' => 'api',
             'run_id' => $runId,
             'publication_id' => $publicationId,
+            'price_product_code' => $priceProductCode,
             'created_at' => $tradeDate.' 17:20:00',
         ]);
     }

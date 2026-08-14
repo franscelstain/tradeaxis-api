@@ -40,6 +40,11 @@ Presence in this list means the command is registered, not approved. The two pro
 - `market-data:sector-indexes:import-bars`
 - `market-data:sectors:import-memberships`
 - `market-data:events:import-corporate-actions`
+- `market-data:events:record-authoritative-terms`
+- `market-data:market-structure:record-authoritative-rules`
+- `market-data:trading-status:record-authoritative-snapshot`
+- `market-data:corpus:admit-conformant-suffix`
+- `market-data:corpus:reconstruct-current`
 - `market-data:events:import-trading-status`
 - `market-data:replay:verify`
 - `market-data:replay:smoke`

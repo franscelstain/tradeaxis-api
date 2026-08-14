@@ -174,15 +174,30 @@ class CoverageDenominatorKnowledgeCutoffTest extends TestCase
         $cutoff = '2026-03-10 00:00:00';
         $before = $this->evaluateAt($cutoff);
 
-        DB::table('market_data_trading_status_events')->insert([
-            'ticker_id' => 901,
-            'ticker_code' => 'AAA1',
-            'trade_date' => self::TRADE_DATE,
-            'event_type_code' => 'SUSPENDED',
-            'source_name' => 'stage_1_cutoff_fixture',
-            'recorded_at' => '2026-03-20 00:00:00',
+        $sourceObservationId = DB::table('md_source_observations')->insertGetId([
+            'observation_uid' => hash('sha256', 'stage-1-cutoff-status-fixture'),
+            'attempt_uid' => hash('sha256', 'stage-1-cutoff-status-attempt'),
+            'requested_trade_date' => self::TRADE_DATE,
+            'source_mode' => 'authority_document',
+            'source_name' => 'IDX',
+            'provider' => 'IDX',
+            'sanitized_request_identity' => 'fixture://stage-1-cutoff-status',
+            'acquired_at' => '2026-03-20 00:00:00',
+            'adapter_version' => 'test-v2-status',
+            'outcome_state' => 'ACCEPTED',
+            'validation_state' => 'PASSED',
             'created_at' => '2026-03-20 00:00:00',
-            'updated_at' => '2026-03-20 00:00:00',
+        ]);
+        DB::table('md_trading_status_revisions')->insert([
+            'listing_id' => (int) DB::table('md_listings')->where('legacy_ticker_id', 901)->value('listing_id'),
+            'status_code' => 'SUSPENSION_OBSERVED',
+            'bar_expectation_state' => 'BAR_NOT_EXPECTED',
+            'authority_class' => 'EXCHANGE_AUTHORITATIVE',
+            'full_session_verified' => 1,
+            'effective_from' => self::TRADE_DATE.' 00:00:00',
+            'recorded_at' => '2026-03-20 00:00:00',
+            'source_observation_id' => $sourceObservationId,
+            'verification_state' => 'VERIFIED',
         ]);
 
         $sameCutoff = $this->evaluateAt($cutoff);

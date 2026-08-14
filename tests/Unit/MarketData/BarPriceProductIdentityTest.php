@@ -1,8 +1,8 @@
 <?php
 
 /**
- * F-026 — a bar must declare which price product it belongs to, and a bar that never did must say
- * so rather than be given one.
+ * F-026/F-038 — a bar must declare which price product it belongs to, and a publication carrying a
+ * bar that never did must be withheld rather than be given or served without one.
  *
  * All 756,329 rows in `eod_bars` carry a NULL `price_product_code`: the writer was added to the
  * ingest path after the corpus existed, so the immutable-RAW half of the stage-11 outcome cannot be
@@ -11,8 +11,8 @@
  * refused for the sector effective dates.
  *
  * So the properties worth pinning are the two that keep the gap from growing or going quiet: every
- * path that writes a bar carries the identity forward, and every path that reads one reports its
- * absence explicitly instead of defaulting.
+ * path that writes a bar carries the identity forward, and the common read gateway fails closed
+ * with an explicit reason instead of defaulting or leaking the price.
  */
 class BarPriceProductIdentityTest extends TestCase
 {
@@ -55,26 +55,20 @@ class BarPriceProductIdentityTest extends TestCase
         }
     }
 
-    /**
-     * The read side must not manufacture a scale for a row that never recorded one.
-     *
-     * A default of RAW here would be the cheapest possible fix and the wrong one: it would make
-     * 756,329 legacy rows claim an analytical product nobody chose for them, and the claim would be
-     * indistinguishable from a recorded one.
-     */
-    public function test_the_read_side_reports_an_unrecorded_product_instead_of_defaulting(): void
+    public function test_the_read_gateway_withholds_unrecorded_or_non_raw_canonical_bar_identity(): void
     {
-        $source = $this->read('app/Infrastructure/Persistence/MarketData/MarketDataPriceReadRepository.php');
+        $gateway = $this->read('app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php');
+        $priceRepository = $this->read('app/Infrastructure/Persistence/MarketData/MarketDataPriceReadRepository.php');
 
-        $this->assertStringContainsString(
-            'PRICE_PRODUCT_UNRECORDED',
-            $source,
-            'the absence must be reported, not silently absent'
-        );
+        $this->assertStringContainsString('canonicalBarPriceProductViolationReasons', $gateway);
+        $this->assertStringContainsString('PRICE_PRODUCT_UNRECORDED', $gateway);
+        $this->assertStringContainsString('CANONICAL_BAR_PRICE_PRODUCT_INVALID', $gateway);
         $this->assertFalse(
-            (bool) preg_match("/price_product_code\s*\?:\s*'RAW'/", $source),
+            (bool) preg_match("/price_product_code\s*\?:\s*'RAW'/", $priceRepository),
             'the read side must never default an unrecorded product to RAW'
         );
+        $this->assertStringNotContainsString('price_product_reason_code', $priceRepository);
+        $this->assertStringContainsString('HEX(bar.price_product_code) = HEX(?)', $priceRepository);
     }
 
     public function test_the_unrecorded_reason_code_is_registered(): void
@@ -84,5 +78,9 @@ class BarPriceProductIdentityTest extends TestCase
 
         $this->assertStringContainsString('`PRICE_PRODUCT_UNRECORDED`', $registry);
         $this->assertStringContainsString("('PRICE_PRODUCT_UNRECORDED', 'READ_SIDE'", $seed);
+        $this->assertStringContainsString('`CANONICAL_BAR_PRICE_PRODUCT_INVALID`', $registry);
+        $this->assertStringContainsString("('CANONICAL_BAR_PRICE_PRODUCT_INVALID', 'READ_SIDE'", $seed);
+        $this->assertStringContainsString("('PRICE_PRODUCT_UNRECORDED', 'READ_SIDE', 'A canonical bar", $seed);
+        $this->assertStringContainsString("lifecycle.', 'HARD', 1)", $seed);
     }
 }

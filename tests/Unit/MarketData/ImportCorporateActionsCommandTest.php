@@ -79,7 +79,7 @@ class ImportCorporateActionsCommandTest extends TestCase
      * DERIVED_FROM_PRICE_SERIES, the one source refused for adjustment. The platform could produce
      * exactly the factors it would not use, and an authoritative one could not be entered at all.
      */
-    public function test_an_attributed_factor_is_imported_and_becomes_adjustable(): void
+    public function test_an_attributed_legacy_factor_is_imported_but_cannot_bypass_the_factor_set(): void
     {
         $this->csvPath = $this->writeCsv(
             "ticker_code,action_date,action_type,ex_date,cum_date,ratio_from,ratio_to,price_adjustment_factor,volume_adjustment_factor,adjustment_source,source_ref\n"
@@ -96,12 +96,10 @@ class ImportCorporateActionsCommandTest extends TestCase
         $this->assertEqualsWithDelta(5.0, (float) $row->volume_adjustment_factor, 1e-9);
         $this->assertSame('EXCHANGE_ANNOUNCEMENT', $row->adjustment_source);
 
-        // The round trip is only worth anything if the stored row actually adjusts.
-        $factors = (new \App\Infrastructure\Persistence\MarketData\EventRiskSourceRepository())
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('FACTOR_SET_CONTEXT_REQUIRED');
+        (new \App\Infrastructure\Persistence\MarketData\EventRiskSourceRepository())
             ->resolveAdjustmentFactorsForTickerIds([1], '2026-05-01', '2026-05-31');
-
-        $this->assertArrayHasKey(1, $factors, 'an imported attributed factor must resolve for adjustment');
-        $this->assertEqualsWithDelta(0.2, $factors[1][0]['price_factor'], 1e-9);
     }
 
     /**

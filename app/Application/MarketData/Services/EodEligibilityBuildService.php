@@ -50,8 +50,9 @@ class EodEligibilityBuildService
          * per temporal listing with status persisted separately, which is the opposite of dropping
          * the row and keeping nothing.
          */
-        $universe = $this->tickers->getUniverseForTradeDate($requestedDate);
-        $suspendedTickerIds = $this->suspendedTickerIdSet($universe, $requestedDate);
+        $knownAt = $run->started_at ?? $run->created_at ?? null;
+        $universe = $this->tickers->getUniverseForTradeDate($requestedDate, $knownAt);
+        $tradingStatusContexts = $this->tradingStatusContexts($universe, $requestedDate, $knownAt);
 
         /*
          * Dormancy is recorded here rather than in the coverage denominator.
@@ -64,6 +65,11 @@ class EodEligibilityBuildService
          */
         $dormantTickerIds = $this->dormantTickerIdSet($universe, $requestedDate);
         $bars = $this->artifacts->loadBarsForTradeDate($requestedDate, $useHistory ? $candidatePublication->publication_id : null);
+        $deliveredTickerIds = array_fill_keys($this->artifacts->loadDeliveredObservationTickerIdsForTradeDate(
+            $requestedDate,
+            $run->run_id,
+            $candidatePublication->publication_id
+        ), true);
         $indicators = $this->artifacts->loadIndicatorsForTradeDate($requestedDate, $useHistory ? $candidatePublication->publication_id : null);
         $rows = [];
         $blockedCount = 0;
@@ -73,7 +79,9 @@ class EodEligibilityBuildService
             $tickerId = $ticker['ticker_id'];
             $bar = isset($bars[$tickerId]) ? $bars[$tickerId] : null;
             $indicator = isset($indicators[$tickerId]) ? $indicators[$tickerId] : null;
-            $isSuspended = isset($suspendedTickerIds[$tickerId]);
+            $statusContext = $tradingStatusContexts[$tickerId] ?? [];
+            $isSuspended = (int) ($statusContext['is_suspended'] ?? 0) === 1
+                && (string) ($statusContext['bar_expectation_state'] ?? '') === 'BAR_NOT_EXPECTED';
             $decision = $this->decisions->decide($bar, $indicator);
             $reasonCode = $decision['reason_code'];
             $eligible = $decision['eligible'];
@@ -107,12 +115,20 @@ class EodEligibilityBuildService
                 // A single scalar reason cannot carry an ordered set, and the first reason written
                 // would silently erase every later one.
                 'bar_expectation_state' => $isSuspended ? 'BAR_NOT_EXPECTED' : 'BAR_EXPECTATION_UNKNOWN',
-                'delivery_state' => $bar ? 'DELIVERED' : 'NOT_DELIVERED',
-                'canonical_quality_state' => $this->canonicalQualityState($bar),
+                'delivery_state' => isset($deliveredTickerIds[$tickerId]) ? 'DELIVERED' : 'NOT_DELIVERED',
+                'canonical_quality_state' => $this->canonicalQualityState($bar, isset($deliveredTickerIds[$tickerId])),
                 // An observation, never an input to the usability decision: W16 proved the
                 // decision consults no liquidity preference, and this must not become one.
                 'liquidity_state' => isset($dormantTickerIds[$tickerId]) ? 'DORMANT' : 'ACTIVE',
-                'temporal_status_state' => $isSuspended ? 'SUSPENSION' : 'UNKNOWN',
+                'temporal_status_state' => $isSuspended
+                    ? (string) ($statusContext['trading_status_code'] ?? 'SUSPENSION_OBSERVED')
+                    : 'UNKNOWN',
+                'trading_status_revision_id' => $isSuspended
+                    ? (int) $statusContext['trading_status_revision_id']
+                    : null,
+                'trading_status_source_observation_id' => $isSuspended
+                    ? (int) $statusContext['trading_status_source_observation_id']
+                    : null,
                 // A factual projection of the indicator flag only. EligibilityDecisionService
                 // remains independent of event preference as required by the W16 owner contract.
                 'event_risk_state' => $this->eventRiskState($indicator),
@@ -139,10 +155,10 @@ class EodEligibilityBuildService
         ];
     }
 
-    private function canonicalQualityState($bar): string
+    private function canonicalQualityState($bar, $delivered = false): string
     {
         if ($bar === null) {
-            return 'UNAVAILABLE';
+            return $delivered ? 'INVALID_OR_REJECTED' : 'UNAVAILABLE';
         }
 
         $qualityState = $bar['quality_state'] ?? null;
@@ -206,7 +222,7 @@ class EodEligibilityBuildService
      * filter. The distinction is the whole point: the set is used to annotate rows, never to
      * remove them.
      */
-    private function suspendedTickerIdSet(array $universeRows, $tradeDate, $knownAt = null): array
+    private function tradingStatusContexts(array $universeRows, $tradeDate, $knownAt = null): array
     {
         if (! $this->eventRiskSources instanceof EventRiskSourceRepository || $universeRows === []) {
             return [];
@@ -220,6 +236,6 @@ class EodEligibilityBuildService
             return [];
         }
 
-        return array_fill_keys($this->eventRiskSources->suspendedTickerIdsAsOf($tickerIds, $tradeDate, $knownAt), true);
+        return $this->eventRiskSources->resolveEventRiskContextForTickerIds($tickerIds, $tradeDate, $knownAt);
     }
 }

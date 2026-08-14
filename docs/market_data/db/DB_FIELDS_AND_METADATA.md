@@ -123,6 +123,83 @@ Every indicator-producing run and sealed publication must persist one coherent a
 
 Every `eod_indicators` and `eod_indicators_history` row must mirror those three values. Sector-relative rows additionally bind `sector_membership_id` so their point-in-time classification fact is auditable. A cumulative factor of one does not change the product to `RAW`, and provider `adj_close` is source evidence rather than an analytical fallback.
 
+## Required exchange-market-structure metadata
+
+Authority recording uses three non-output tables:
+
+- `md_exchange_market_structure_revisions`: `market_structure_revision_id`, `rule_uid`,
+  `revision_number`, `rule_type`, `exchange_code`, `market_segment`, `instrument_scope_code`,
+  `coverage_scope_json`, `effective_from`, `effective_to`, `minimum_price_idr`,
+  `verification_state`, `source_uid`, `source_observation_id`, `source_reference`, `content_hash`,
+  `recorded_at`, and `supersedes_revision_id`;
+- `md_exchange_price_band_tiers`: revision identity, ordered price bounds with explicit
+  inclusivity, and separate `upper_limit_percent` / `lower_limit_percent`;
+- `md_exchange_tick_size_tiers`: revision identity, ordered price bounds with explicit
+  inclusivity, `tick_size_idr`, and `maximum_price_step_idr`.
+
+The locked Stage 7 scope is standard equity on the IDX Main, Development, and New Economy boards
+in the Regular Market. Acceleration and Special Monitoring are explicitly excluded because their
+rules differ. Missing or unrecognized board identity is `FAIL_CLOSED`; the authority tables must
+not be applied to output until the separately governed reconstruction stage supplies an unambiguous
+point-in-time board mapping and binds the selected revision.
+
+For Stage 7 authority, the accepted `source_observation_id` is admissible only when its capture pair
+stores the verified response status, content type, exact document SHA-256/ref/byte length, schema
+fingerprint, and bounded sample. A legacy observation containing manifest metadata alone cannot be
+reused. Its correction appends a new revision and observation pair with both supersession links;
+the old rows remain immutable history.
+
+## Required Stage 8 reconstruction metadata
+
+The one-time current-corpus reconstruction persists its decisions separately from legacy facts:
+
+- `md_source_scale_assessments` records the immutable per-provider/listing/corporate-action
+  classification (`AS_TRADED`, `PROVIDER_BACK_ADJUSTED`, or `UNKNOWN`), evidence-set hash,
+  effective boundary, recorded time, revision number, and supersession identity;
+- `md_adjustment_factor_decisions` records, for every authoritative event considered by a factor
+  set, whether its factor was applied or held and binds the exact source-scale assessment;
+- `md_publication_market_structure_bindings` records one point-in-time board/tier resolution per
+  publication/listing, including explicit fail-closed states and the selected band, floor, and tick
+  revision IDs only when resolution succeeded;
+- `md_stage8_reconstruction_campaigns` freezes the date scope, pre-campaign maximum publication,
+  baseline target-set hash, lifecycle state, result, and timestamps;
+- `md_stage8_reconstruction_targets` freezes each date's baseline publication/run/version, sealed
+  artifact hashes and independent snapshot hashes, then records correction and replacement
+  identities without changing the baseline rows.
+
+New bar rows bind `source_scale_state` and `source_scale_assessment_id`. Eligibility rows bind the
+market-structure resolution state and selected revision IDs. Publication plus
+`md_publication_lineage_bindings` carry the same three SHA-256 set identities:
+`source_scale_assessment_set_hash`, `market_structure_revision_set_hash`, and
+`factor_decision_set_hash`. Legacy rows remain nullable; a new Stage 8 publication may seal only
+when its own bindings are complete.
+
+A blocked campaign and an unsealed failed candidate are immutable execution evidence, not a current
+publication. They must have a terminal correction/run reason, and normal reads continue to follow
+the unchanged current pointer until a readable sealed replacement succeeds.
+
+### Stage 8 conformant-corpus admission boundary
+
+`md_corpus_admission_decisions` separates the intentional dataset start from the earliest measured
+consumer-readable suffix. Each immutable decision stores market/product scope,
+`intentional_dataset_start`, `admitted_from`, `measured_through`, the locked threshold/source mode,
+the exact status snapshot and transition-search observations, the measurement campaign, input and
+status-set hashes, algorithm version, complete measurement JSON, state/reason, supersession, and
+recorded time.
+
+An active decision binds `md_stage8_reconstruction_campaigns.admission_decision_id`,
+`eod_runs.corpus_admission_decision_id`, `eod_publications.corpus_admission_decision_id`, and
+`md_publication_lineage_bindings.corpus_admission_decision_id`. The same ID is required end to end
+for every admitted current publication. `eod_eligibility` and `eod_eligibility_history` additionally
+bind `trading_status_revision_id` and `trading_status_source_observation_id` whenever verified
+full-session status changes bar expectation.
+
+Admission never relabels history or moves `intentional_dataset_start`. Dates before `admitted_from`
+remain immutable but are not consumer-readable and cannot seed indicator warm-up. A blocked
+full-range measurement campaign may be marked `SUPERSEDED` only by an explicit hashed admission
+decision; its attempts remain untouched. Stage 8 campaign supersession is recorded through
+`supersedes_campaign_id`/`superseded_at`, not deletion.
+
 ---
 
 ## 2026-04-26 — DB Schema Sync Metadata Addendum

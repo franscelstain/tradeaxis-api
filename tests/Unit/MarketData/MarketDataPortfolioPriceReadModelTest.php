@@ -22,7 +22,7 @@ class MarketDataPortfolioPriceReadModelTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_portfolio_price_read_model_returns_official_prices_from_current_readable_publication(): void
+    public function test_portfolio_price_read_model_returns_canonical_prices_from_current_readable_publication(): void
     {
         $this->seedTicker(1, 'BBCA');
         $this->seedTicker(2, 'BBRI');
@@ -47,6 +47,7 @@ class MarketDataPortfolioPriceReadModelTest extends TestCase
         $bbca = $result['prices'][0];
         $this->assertSame('BBCA', $bbca['ticker_code']);
         $this->assertSame(9000.0, $bbca['raw_close']);
+        $this->assertSame('RAW', $bbca['price_product_code']);
         $this->assertSame(9000.0, $bbca['provider_adjusted_close_evidence']);
         $this->assertSame(8900.0, $bbca['previous_raw_close']);
         $this->assertSame(100.0, $bbca['change_amount']);
@@ -64,6 +65,21 @@ class MarketDataPortfolioPriceReadModelTest extends TestCase
         $this->assertTrue($result['is_ready']);
         $this->assertSame(['BBRI'], $result['missing_tickers']);
         $this->assertCount(1, $result['prices']);
+    }
+
+    public function test_portfolio_price_read_model_withholds_a_publication_with_an_unrecorded_bar_product(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedReadablePublication('2026-05-19', 3, 2);
+        $this->seedBar('2026-05-19', 1, 3, 2, 9000, 123456, null, null);
+
+        $result = (new MarketDataPriceReadService())->getPriceFacts('2026-05-19', ['BBCA']);
+
+        $this->assertFalse($result['is_ready']);
+        $this->assertSame('PRICE_PRODUCT_UNRECORDED', $result['reason_code']);
+        $this->assertSame('NOT_RESOLVED_READABLE_CURRENT', $result['pointer_resolve_status']);
+        $this->assertSame([], $result['prices']);
+        $this->assertSame(['BBCA'], $result['missing_tickers']);
     }
 
     public function test_portfolio_price_read_model_does_not_fallback_to_latest_other_date(): void

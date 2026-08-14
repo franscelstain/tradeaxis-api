@@ -25,7 +25,8 @@ class MarketDataReadProductRepository
                 $join->on('bar.trade_date', '=', 'elig.trade_date')
                     ->on('bar.ticker_id', '=', 'elig.ticker_id')
                     ->on('bar.publication_id', '=', 'elig.publication_id')
-                    ->on('bar.run_id', '=', 'elig.run_id');
+                    ->on('bar.run_id', '=', 'elig.run_id')
+                    ->whereRaw('HEX(bar.price_product_code) = HEX(?)', [(string) config('market_data.scope.raw_product_code', 'RAW')]);
             })
             ->leftJoin('eod_indicators as ind', function ($join) {
                 $join->on('ind.trade_date', '=', 'elig.trade_date')
@@ -47,6 +48,7 @@ class MarketDataReadProductRepository
                 'elig.trade_date', 'elig.eligible', 'elig.reason_code as data_usability_reason_code',
                 'elig.universe_membership_state', 'elig.bar_expectation_state', 'elig.delivery_state',
                 'elig.canonical_quality_state', 'elig.liquidity_state', 'elig.temporal_status_state',
+                'elig.trading_status_revision_id', 'elig.trading_status_source_observation_id',
                 'elig.event_risk_state', 'elig.eligibility_reasons_json',
                 'tick.'.$tickerId.' as ticker_id', 'tick.'.$tickerCode.' as ticker_code',
                 'tick.company_name as ticker_name', 'bar.close as close_price', 'bar.volume', 'bar.source',

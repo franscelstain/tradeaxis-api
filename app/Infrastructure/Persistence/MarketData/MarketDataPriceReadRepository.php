@@ -27,6 +27,7 @@ class MarketDataPriceReadRepository
             ->join($tickerTable.' as tick', 'tick.'.$tickerId, '=', 'bar.ticker_id')
             ->where('bar.trade_date', $publication->trade_date)
             ->where('bar.publication_id', $publication->publication_id)
+            ->whereRaw('HEX(bar.price_product_code) = HEX(?)', [(string) config('market_data.scope.raw_product_code', 'RAW')])
             ->whereIn('tick.'.$tickerCode, $requested)
             ->select('tick.'.$tickerCode.' as ticker_code', 'bar.trade_date', 'bar.close', 'bar.adj_close', 'bar.price_product_code', 'bar.source')
             ->orderBy('tick.'.$tickerCode)
@@ -46,11 +47,7 @@ class MarketDataPriceReadRepository
                 'ticker_code' => $code,
                 'raw_close' => $rawClose,
                 'provider_adjusted_close_evidence' => $row->adj_close === null ? null : (float) $row->adj_close,
-                // A row that never recorded its product code does not become RAW by being read.
-                // Defaulting here asserted a product for all 756,329 legacy rows that carry NULL,
-                // which is a claim about scale the row itself never made.
-                'price_product_code' => $row->price_product_code ?: null,
-                'price_product_reason_code' => $row->price_product_code ? null : 'PRICE_PRODUCT_UNRECORDED',
+                'price_product_code' => (string) $row->price_product_code,
                 'previous_raw_close' => $previousClose,
                 'previous_close_reason_code' => $previousClose === null ? 'NO_READABLE_PUBLICATION' : null,
                 'change_amount' => $change,
@@ -76,6 +73,7 @@ class MarketDataPriceReadRepository
             ->join($tickerTable.' as tick', 'tick.'.$tickerId, '=', 'bar.ticker_id')
             ->where('bar.trade_date', $previousDate)
             ->where('bar.publication_id', $publication->publication_id)
+            ->whereRaw('HEX(bar.price_product_code) = HEX(?)', [(string) config('market_data.scope.raw_product_code', 'RAW')])
             ->whereIn('tick.'.$tickerCode, $tickerCodes)
             ->pluck('bar.close', 'tick.'.$tickerCode)
             ->map(function ($value) { return (float) $value; })

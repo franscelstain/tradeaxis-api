@@ -429,6 +429,7 @@ trait UsesMarketDataSqlite
             $table->string('config_hash')->nullable();
             $table->string('config_snapshot_ref')->nullable();
             $table->integer('config_snapshot_id')->nullable();
+            $table->integer('corpus_admission_decision_id')->nullable();
             $table->string('observation_manifest_hash', 64)->nullable();
             $table->string('price_product_code', 32)->nullable();
             $table->string('price_product_version', 64)->nullable();
@@ -557,6 +558,10 @@ trait UsesMarketDataSqlite
             $table->string('price_product_version', 64)->nullable();
             $table->string('read_model_version', 64)->nullable();
             $table->string('readiness_state', 32)->nullable();
+            $table->string('source_scale_assessment_set_hash', 64)->nullable();
+            $table->string('market_structure_revision_set_hash', 64)->nullable();
+            $table->string('factor_decision_set_hash', 64)->nullable();
+            $table->integer('corpus_admission_decision_id')->nullable();
             $table->dateTime('sealed_at')->nullable();
             $table->dateTime('created_at');
             $table->dateTime('updated_at')->nullable();
@@ -611,6 +616,8 @@ trait UsesMarketDataSqlite
             $table->string('price_product_code', 32)->nullable();
             $table->string('quality_state', 32)->nullable();
             $table->integer('config_snapshot_id')->nullable();
+            $table->string('source_scale_state', 32)->nullable();
+            $table->integer('source_scale_assessment_id')->nullable();
             $table->dateTime('created_at');
 
             $table->primary(['trade_date', 'ticker_id']);
@@ -624,6 +631,8 @@ trait UsesMarketDataSqlite
             $table->increments('invalid_bar_id');
             $table->date('trade_date')->nullable();
             $table->integer('ticker_id')->nullable();
+            $table->integer('listing_id')->nullable();
+            $table->integer('source_observation_id')->nullable();
             $table->integer('run_id');
             $table->string('source', 32);
             $table->string('source_row_ref')->nullable();
@@ -724,8 +733,14 @@ trait UsesMarketDataSqlite
             $table->string('canonical_quality_state', 32)->nullable();
             $table->string('liquidity_state', 32)->nullable();
             $table->string('temporal_status_state', 32)->nullable();
+            $table->integer('trading_status_revision_id')->nullable();
+            $table->integer('trading_status_source_observation_id')->nullable();
             $table->string('event_risk_state', 32)->nullable();
             $table->text('eligibility_reasons_json')->nullable();
+            $table->string('market_structure_resolution_state', 48)->nullable();
+            $table->integer('price_band_revision_id')->nullable();
+            $table->integer('minimum_price_revision_id')->nullable();
+            $table->integer('tick_size_revision_id')->nullable();
             $table->integer('config_snapshot_id')->nullable();
 
             $table->primary(['trade_date', 'ticker_id']);
@@ -930,6 +945,8 @@ trait UsesMarketDataSqlite
             $table->string('price_product_code', 32)->nullable();
             $table->string('quality_state', 32)->nullable();
             $table->integer('config_snapshot_id')->nullable();
+            $table->string('source_scale_state', 32)->nullable();
+            $table->integer('source_scale_assessment_id')->nullable();
             $table->dateTime('created_at');
 
             $table->primary(['publication_id', 'trade_date', 'ticker_id']);
@@ -1014,8 +1031,14 @@ trait UsesMarketDataSqlite
             $table->string('canonical_quality_state', 32)->nullable();
             $table->string('liquidity_state', 32)->nullable();
             $table->string('temporal_status_state', 32)->nullable();
+            $table->integer('trading_status_revision_id')->nullable();
+            $table->integer('trading_status_source_observation_id')->nullable();
             $table->string('event_risk_state', 32)->nullable();
             $table->text('eligibility_reasons_json')->nullable();
+            $table->string('market_structure_resolution_state', 48)->nullable();
+            $table->integer('price_band_revision_id')->nullable();
+            $table->integer('minimum_price_revision_id')->nullable();
+            $table->integer('tick_size_revision_id')->nullable();
             $table->integer('config_snapshot_id')->nullable();
 
             $table->primary(['publication_id', 'trade_date', 'ticker_id']);
@@ -1232,6 +1255,66 @@ trait UsesMarketDataSqlite
             $table->index(['verification_state', 'lifecycle_state'], 'idx_md_action_verification_lifecycle');
         });
 
+        $schema->create('md_exchange_market_structure_revisions', function (Blueprint $table) {
+            $table->bigIncrements('market_structure_revision_id');
+            $table->string('rule_uid', 64);
+            $table->integer('revision_number');
+            $table->string('rule_type', 32);
+            $table->string('exchange_code', 16);
+            $table->string('market_segment', 32);
+            $table->string('instrument_scope_code', 64);
+            $table->text('coverage_scope_json');
+            $table->date('effective_from');
+            $table->date('effective_to')->nullable();
+            $table->decimal('minimum_price_idr', 20, 4)->nullable();
+            $table->string('verification_state', 32);
+            $table->string('source_uid', 64);
+            $table->integer('source_observation_id');
+            $table->string('source_reference', 128);
+            $table->string('content_hash', 64);
+            $table->dateTime('recorded_at');
+            $table->integer('supersedes_revision_id')->nullable();
+            $table->unique(['rule_uid', 'revision_number'], 'uq_md_market_structure_rule_revision');
+            $table->index(
+                ['exchange_code', 'market_segment', 'rule_type', 'effective_from', 'effective_to'],
+                'idx_md_market_structure_effective'
+            );
+            $table->index(
+                ['instrument_scope_code', 'verification_state'],
+                'idx_md_market_structure_scope_verification'
+            );
+            $table->index(['source_observation_id'], 'idx_md_market_structure_source');
+            $table->index(['source_uid'], 'idx_md_market_structure_source_uid');
+        });
+
+        $schema->create('md_exchange_price_band_tiers', function (Blueprint $table) {
+            $table->bigIncrements('price_band_tier_id');
+            $table->integer('market_structure_revision_id');
+            $table->integer('tier_sequence');
+            $table->decimal('reference_price_min_idr', 20, 4)->nullable();
+            $table->boolean('reference_price_min_inclusive')->default(false);
+            $table->decimal('reference_price_max_idr', 20, 4)->nullable();
+            $table->boolean('reference_price_max_inclusive')->default(false);
+            $table->decimal('upper_limit_percent', 9, 6);
+            $table->decimal('lower_limit_percent', 9, 6);
+            $table->unique(['market_structure_revision_id', 'tier_sequence'], 'uq_md_price_band_revision_tier');
+            $table->index(['reference_price_min_idr', 'reference_price_max_idr'], 'idx_md_price_band_range');
+        });
+
+        $schema->create('md_exchange_tick_size_tiers', function (Blueprint $table) {
+            $table->bigIncrements('tick_size_tier_id');
+            $table->integer('market_structure_revision_id');
+            $table->integer('tier_sequence');
+            $table->decimal('price_min_idr', 20, 4)->nullable();
+            $table->boolean('price_min_inclusive')->default(false);
+            $table->decimal('price_max_idr', 20, 4)->nullable();
+            $table->boolean('price_max_inclusive')->default(false);
+            $table->decimal('tick_size_idr', 20, 4);
+            $table->decimal('maximum_price_step_idr', 20, 4);
+            $table->unique(['market_structure_revision_id', 'tier_sequence'], 'uq_md_tick_size_revision_tier');
+            $table->index(['price_min_idr', 'price_max_idr'], 'idx_md_tick_size_range');
+        });
+
         $schema->create('md_adjustment_factor_sets', function (Blueprint $table) {
             $table->bigIncrements('factor_set_id');
             $table->string('factor_set_uid', 64)->unique();
@@ -1262,6 +1345,7 @@ trait UsesMarketDataSqlite
         $schema->create('md_publication_lineage_bindings', function (Blueprint $table) {
             $table->bigIncrements('publication_lineage_id');
             $table->integer('publication_id')->unique();
+            $table->integer('corpus_admission_decision_id')->nullable();
             $table->integer('config_snapshot_id');
             $table->integer('factor_set_id')->nullable();
             $table->string('observation_manifest_hash', 64);
@@ -1269,10 +1353,127 @@ trait UsesMarketDataSqlite
             $table->string('calendar_revision_set_hash', 64);
             $table->string('status_revision_set_hash', 64);
             $table->string('event_revision_set_hash', 64);
+            $table->string('source_scale_assessment_set_hash', 64)->nullable();
+            $table->string('market_structure_revision_set_hash', 64)->nullable();
+            $table->string('factor_decision_set_hash', 64)->nullable();
             $table->string('formula_version', 64);
             $table->string('build_id', 128);
             $table->string('read_model_version', 64);
             $table->dateTime('created_at');
+        });
+
+        $schema->create('md_source_scale_assessments', function (Blueprint $table) {
+            $table->bigIncrements('source_scale_assessment_id');
+            $table->string('assessment_uid', 64)->unique();
+            $table->integer('revision_number');
+            $table->string('provider', 64);
+            $table->integer('listing_id');
+            $table->integer('corporate_action_revision_id');
+            $table->string('source_scale_state', 32);
+            $table->date('scale_effective_from')->nullable();
+            $table->string('assessment_version', 64);
+            $table->string('evidence_observation_set_hash', 64);
+            $table->text('evidence_json');
+            $table->dateTime('recorded_at');
+            $table->integer('supersedes_assessment_id')->nullable();
+            $table->dateTime('created_at');
+        });
+
+        $schema->create('md_adjustment_factor_decisions', function (Blueprint $table) {
+            $table->bigIncrements('factor_decision_id');
+            $table->integer('factor_set_id');
+            $table->integer('listing_id');
+            $table->integer('corporate_action_revision_id');
+            $table->integer('source_scale_assessment_id')->nullable();
+            $table->string('decision_state', 48);
+            $table->decimal('candidate_price_factor', 24, 12)->nullable();
+            $table->decimal('candidate_volume_factor', 24, 12)->nullable();
+            $table->string('reason_code', 64);
+            $table->dateTime('created_at');
+            $table->unique(['factor_set_id', 'corporate_action_revision_id'], 'uq_md_factor_set_event_decision');
+        });
+
+        $schema->create('md_publication_market_structure_bindings', function (Blueprint $table) {
+            $table->bigIncrements('market_structure_binding_id');
+            $table->integer('publication_id');
+            $table->integer('listing_id');
+            $table->string('resolution_state', 48);
+            $table->string('normalized_board_code', 32)->nullable();
+            $table->dateTime('board_identity_recorded_at')->nullable();
+            $table->integer('price_band_revision_id')->nullable();
+            $table->integer('minimum_price_revision_id')->nullable();
+            $table->integer('tick_size_revision_id')->nullable();
+            $table->string('reason_code', 64)->nullable();
+            $table->dateTime('created_at');
+            $table->unique(['publication_id', 'listing_id'], 'uq_md_pub_market_structure_listing');
+        });
+
+        $schema->create('md_stage8_reconstruction_campaigns', function (Blueprint $table) {
+            $table->bigIncrements('campaign_id');
+            $table->string('campaign_uid', 64)->unique();
+            $table->date('scope_start');
+            $table->date('scope_end');
+            $table->integer('target_date_count');
+            $table->integer('baseline_max_publication_id');
+            $table->string('state', 32);
+            $table->integer('admission_decision_id')->nullable();
+            $table->integer('supersedes_campaign_id')->nullable();
+            $table->dateTime('superseded_at')->nullable();
+            $table->string('baseline_target_set_hash', 64);
+            $table->dateTime('started_at');
+            $table->dateTime('completed_at')->nullable();
+            $table->text('result_json')->nullable();
+            $table->dateTime('created_at');
+            $table->dateTime('updated_at');
+        });
+
+        $schema->create('md_corpus_admission_decisions', function (Blueprint $table) {
+            $table->bigIncrements('admission_decision_id');
+            $table->string('decision_uid', 64)->unique();
+            $table->string('market_code', 16);
+            $table->string('market_segment', 32);
+            $table->string('canonical_price_product', 32);
+            $table->date('intentional_dataset_start');
+            $table->date('admitted_from');
+            $table->date('measured_through');
+            $table->decimal('coverage_threshold', 8, 6);
+            $table->string('source_mode', 32);
+            $table->integer('status_snapshot_observation_id');
+            $table->integer('transition_search_observation_id');
+            $table->integer('measurement_campaign_id');
+            $table->string('measurement_input_hash', 64);
+            $table->string('status_revision_set_hash', 64);
+            $table->string('algorithm_version', 64);
+            $table->text('measurement_json');
+            $table->string('state', 32);
+            $table->string('reason_code', 64);
+            $table->integer('supersedes_decision_id')->nullable();
+            $table->dateTime('recorded_at');
+            $table->dateTime('created_at');
+        });
+
+        $schema->create('md_stage8_reconstruction_targets', function (Blueprint $table) {
+            $table->bigIncrements('campaign_target_id');
+            $table->integer('campaign_id');
+            $table->date('trade_date');
+            $table->integer('baseline_publication_id');
+            $table->integer('baseline_run_id');
+            $table->integer('baseline_publication_version');
+            $table->string('baseline_bars_batch_hash', 64);
+            $table->string('baseline_indicators_batch_hash', 64);
+            $table->string('baseline_eligibility_batch_hash', 64);
+            $table->string('baseline_bars_snapshot_hash', 64);
+            $table->string('baseline_indicators_snapshot_hash', 64);
+            $table->string('baseline_eligibility_snapshot_hash', 64);
+            $table->integer('correction_id')->nullable();
+            $table->integer('replacement_publication_id')->nullable();
+            $table->integer('replacement_run_id')->nullable();
+            $table->string('state', 32)->default('PENDING');
+            $table->string('reason_code', 64)->nullable();
+            $table->dateTime('completed_at')->nullable();
+            $table->dateTime('created_at');
+            $table->dateTime('updated_at');
+            $table->unique(['campaign_id', 'trade_date'], 'uq_md_stage8_campaign_date');
         });
     }
 

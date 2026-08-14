@@ -107,6 +107,22 @@ class MarketDataWatchlistReadModelTest extends TestCase
         $this->assertSame([], $result['rows']);
     }
 
+    public function test_watchlist_read_model_withholds_a_publication_with_an_unrecorded_bar_product(): void
+    {
+        $this->seedTicker(1, 'BBCA', 'Bank Central Asia');
+        $this->seedReadablePublication('2026-05-19', 3, 2);
+        $this->seedBar('2026-05-19', 1, 3, 2, 9000, 123456, null, null);
+        $this->seedIndicator('2026-05-19', 1, 3, 2);
+        $this->seedEligibility('2026-05-19', 1, 3, 2, 1);
+
+        $result = (new MarketDataReadProductService())->getReadProductForTradeDate('2026-05-19');
+
+        $this->assertFalse($result['is_ready']);
+        $this->assertSame('PRICE_PRODUCT_UNRECORDED', $result['reason_code']);
+        $this->assertSame('NOT_RESOLVED_READABLE_CURRENT', $result['pointer_resolve_status']);
+        $this->assertSame([], $result['rows']);
+    }
+
     public function test_watchlist_read_model_does_not_leak_non_current_publication_rows(): void
     {
         $this->seedTicker(1, 'BBCA', 'Bank Central Asia');

@@ -130,7 +130,65 @@ Session snapshots are supplemental publication-bound context and cannot determin
 
 ### Supporting source/context imports
 
-`market-data:sector-indexes:ingest-api`, `market-data:sector-indexes:import-bars`, `market-data:sectors:import-memberships`, `market-data:events:import-corporate-actions`, and `market-data:events:import-trading-status` create source/revision context only. They do not directly rewrite a readable publication.
+`market-data:sector-indexes:ingest-api`, `market-data:sector-indexes:import-bars`, `market-data:sectors:import-memberships`, `market-data:events:import-corporate-actions`, `market-data:events:record-authoritative-terms`, `market-data:market-structure:record-authoritative-rules`, `market-data:trading-status:record-authoritative-snapshot`, and `market-data:events:import-trading-status` create source/revision context only. They do not directly rewrite a readable publication.
+
+For `market-data:events:record-authoritative-terms`, run the default dry-run first and inspect the
+declared `scope_id`, entry count, KSEI document reference/hash/byte metadata, official lifecycle
+dates, and quantitative terms. Before a new insert, `--apply` fetches the exact KSEI HTTPS PDF and
+requires HTTP 200, PDF content type, byte length, and SHA-256 to match. `--apply` may append only
+`md_corporate_action_revisions` and paired
+immutable `md_source_observations`; a repeated identical manifest must report zero inserts. Stop on
+any authority/listing/date/terms/revision conflict. This command does not activate a factor, alter
+legacy rows, recompute output, or prove corporate-action completeness outside its declared scope.
+
+For `market-data:market-structure:record-authoritative-rules`, run the default dry-run first and
+inspect the frozen dataset boundary, six rule revisions, five evidence sources, standard-board
+coverage, explicit exclusions, and `FAIL_CLOSED` policy for unknown board identity. A new `--apply`
+verifies the pinned HTTPS response status, content type, length/SHA-256, schema signature, and a
+self-consistent bounded response sample before its transaction and may append only
+`md_exchange_market_structure_revisions`, `md_exchange_price_band_tiers`,
+`md_exchange_tick_size_tiers`, and paired immutable `md_source_observations`. It must report zero
+series/publication writes. An identical re-apply is a network-independent no-op; a changed byte,
+scope, range, tier, or revision identity is blocked. This Stage 7 command records authority only:
+it does not resolve a listing's board, classify a price gap, apply a factor, rebuild a series,
+publish, finalize, seal, or switch a current pointer.
+
+If an existing semantic revision is bound to legacy observation metadata rather than the verified
+response identity, `--apply` must append an evidence-correction revision and observation pair with
+explicit supersession lineage. It must never update or delete the old revision/evidence. After the
+correction, a repeated apply must again report six unchanged revisions and zero inserts.
+
+### Stage 8 current-corpus reconstruction
+
+Before reconstruction, run `market-data:trading-status:record-authoritative-snapshot --dry-run`,
+then its explicit `--apply`. Apply verifies the exact official IDX long-suspension snapshot as of
+2026-06-30 and the bounded transition search through 2026-07-28 before appending source
+observations and status revisions. The older suspension dates carried by the page are evidence
+attributes only; they are never back-projected as effective status dates. An exact re-apply is a
+network-independent no-op and reports zero inserts.
+
+Then run `market-data:corpus:admit-conformant-suffix --dry-run`. It measures the completed frozen
+Yahoo cache against the already-established temporal projection, verified status exclusions, the
+locked 0.98 threshold, and zero invalid OHLCV. It selects the earliest continuous passing suffix;
+planning is strictly read-only. Explicit `--apply` appends only the immutable admission decision.
+This decision does not change the intentional dataset start of 2023-01-02: earlier publications
+remain immutable historical material but are outside the consumer-readable conformant corpus.
+The command never reconstructs data and reports `stage_9_replay=NOT_EXECUTED`.
+
+`market-data:corpus:reconstruct-current` is the one-time governed reconstruction surface. Run it
+without flags or with `--dry-run` first. The plan must report the exact current-pointer scope,
+target dates, union ticker count, one bounded Yahoo window, request estimate, and
+`stage_9_replay=FORBIDDEN_NOT_EXECUTED`; planning must not write identity projections, observations,
+runs, publications, campaign rows, or pointers.
+
+Only `--apply` may freeze a campaign and acquire Yahoo observations. It processes every frozen date
+through correction request/approval, import, indicators, eligibility, hash, seal, finalize, and
+current-pointer switch. It retains baseline artifact snapshot hashes and audits them after the
+campaign, so unchanged history is proven from row content rather than publication metadata alone.
+On failure, stop at the first target and inspect its registered reason code. Resume only with
+`--apply --resume`; the cached acquisition and completed checkpoints are reused. A completed
+campaign is never silently recreated and is re-audited on access. Do not run fixture generation or
+replay as part of this command; those remain Stage 9.
 
 ### Manual DB action policy
 
@@ -180,6 +238,11 @@ Logs distinguish `scheduler_status=SUCCESS` and `scheduler_status=FAILURE`; a fa
 - `market-data:sector-indexes:import-bars`
 - `market-data:sectors:import-memberships`
 - `market-data:events:import-corporate-actions`
+- `market-data:events:record-authoritative-terms`
+- `market-data:market-structure:record-authoritative-rules`
+- `market-data:trading-status:record-authoritative-snapshot`
+- `market-data:corpus:admit-conformant-suffix`
+- `market-data:corpus:reconstruct-current`
 - `market-data:events:import-trading-status`
 - `market-data:replay:verify`
 - `market-data:replay:smoke`

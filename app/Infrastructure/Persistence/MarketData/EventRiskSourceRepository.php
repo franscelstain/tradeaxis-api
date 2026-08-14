@@ -162,7 +162,11 @@ class EventRiskSourceRepository
                 continue;
             }
 
-            if ((int) ($context['is_suspended'] ?? 0) === 1) {
+            if ((int) ($context['is_suspended'] ?? 0) === 1
+                && (string) ($context['bar_expectation_state'] ?? '') === 'BAR_NOT_EXPECTED'
+                && (string) ($context['trading_status_authority_class'] ?? '') === 'EXCHANGE_AUTHORITATIVE'
+                && (int) ($context['trading_status_revision_id'] ?? 0) > 0
+                && (int) ($context['trading_status_source_observation_id'] ?? 0) > 0) {
                 $suspended[(int) $tickerId] = true;
             }
         }
@@ -181,11 +185,14 @@ class EventRiskSourceRepository
      */
     public function expectationUnknownTickerIdsAsOf(array $tickerIds, $tradeDate, $knownAt = null): array
     {
-        $unknown = [];
+        $unknown = array_fill_keys(array_values(array_unique(array_map('intval', $tickerIds))), true);
 
         foreach ($this->resolveEventRiskContextForTickerIds($tickerIds, $tradeDate, $knownAt) as $tickerId => $context) {
-            if ((int) ($context['expectation_unknown'] ?? 0) === 1) {
-                $unknown[(int) $tickerId] = true;
+            if ((int) ($context['expectation_unknown'] ?? 1) !== 1
+                && in_array((string) ($context['bar_expectation_state'] ?? ''), ['BAR_EXPECTED', 'BAR_NOT_EXPECTED'], true)
+                && (int) ($context['trading_status_revision_id'] ?? 0) > 0
+                && (int) ($context['trading_status_source_observation_id'] ?? 0) > 0) {
+                unset($unknown[(int) $tickerId]);
             }
         }
 
@@ -206,6 +213,12 @@ class EventRiskSourceRepository
         }
 
         $contexts = [];
+
+        // V2 source-backed revisions are the only status facts allowed to establish bar
+        // expectation. The legacy event projection remains useful as event-risk context, but it
+        // cannot shrink coverage because it has no immutable observation/revision binding.
+        $verifiedStatusContexts = $this->verifiedStatusContextsForTickerIds($tickerIds, $tradeDate, $knownAt);
+        $verifiedStatusTickerIds = array_keys($verifiedStatusContexts);
 
         $corporateActions = $this->applyKnowledgeCutoff(
             DB::table($this->corporateActionsTable())
@@ -237,6 +250,9 @@ class EventRiskSourceRepository
             DB::table($this->tradingStatusesTable())
                 ->select(['ticker_id', 'trade_date', 'event_type_code'])
                 ->whereIn('ticker_id', $tickerIds)
+                ->when($verifiedStatusTickerIds !== [], function ($query) use ($verifiedStatusTickerIds) {
+                    $query->whereNotIn('ticker_id', $verifiedStatusTickerIds);
+                })
                 ->where('trade_date', '<=', $tradeDate),
             $knownAt
         )
@@ -295,6 +311,20 @@ class EventRiskSourceRepository
             if (! empty($context['_trading_status_codes']) || $context['is_suspended'] !== null || $context['is_uma'] !== null) {
                 $contexts[$tickerId] = $context;
             }
+        }
+
+        foreach ($verifiedStatusContexts as $tickerId => $statusContext) {
+            $context = $contexts[$tickerId] ?? $this->emptyContext();
+            foreach ($statusContext as $field => $value) {
+                $context[$field] = $value;
+            }
+            if ((int) ($statusContext['is_suspended'] ?? 0) === 1) {
+                $context['_trading_status_codes']['SUSPENSION_OBSERVED'] = true;
+                $context['_event_risk_reasons']['TRADING_STATUS:SUSPENSION_OBSERVED'] = true;
+                $context['_event_risk_reasons']['SUSPENDED'] = true;
+                $context['event_risk_flag'] = 1;
+            }
+            $contexts[$tickerId] = $context;
         }
 
         foreach ($contexts as $tickerId => $context) {
@@ -446,80 +476,9 @@ class EventRiskSourceRepository
      */
     public function resolveAdjustmentFactorsForTickerIds(array $tickerIds, $windowStart, $windowEnd, $knownAt = null): array
     {
-        $tickerIds = array_values(array_unique(array_map('intval', $tickerIds)));
-        $tickerIds = array_values(array_filter($tickerIds, function ($tickerId) {
-            return $tickerId > 0;
-        }));
-
-        if (empty($tickerIds)) {
-            return [];
-        }
-
-        $rows = $this->applyKnowledgeCutoff(
-            DB::table($this->corporateActionsTable().' as action')
-                ->leftJoin('md_listings as listing', 'listing.legacy_ticker_id', '=', 'action.ticker_id'),
-            $knownAt,
-            'action.recorded_at'
-        )
-            ->select([
-                'action.corporate_action_id', 'action.ticker_id', 'listing.listing_id',
-                'action.ex_date', 'action.action_date', 'action.price_adjustment_factor',
-                'action.volume_adjustment_factor', 'action.adjustment_source', 'action.updated_at',
-            ])
-            ->whereIn('action.ticker_id', $tickerIds)
-            ->whereNotNull('action.price_adjustment_factor')
-            ->where('action.price_adjustment_factor', '>', 0)
-            ->where('action.price_adjustment_factor', '<>', 1)
-            // Only an attributed factor may adjust published output. This is the same positive
-            // allowlist isAdjustable() applies, stated once in both places so the query cannot
-            // admit a row the guard would refuse. A factor the platform inferred from the price
-            // series, and a factor with no declared source at all, are both excluded: the row
-            // stays quarantined instead of being silently smoothed.
-            ->whereIn('action.adjustment_source', self::AUTHORITATIVE_ADJUSTMENT_SOURCES)
-            ->orderBy('action.ticker_id')
-            ->get();
-
-        $factors = [];
-
-        foreach ($rows as $row) {
-            // ex_date is authoritative; action_date is only a fallback for rows recorded
-            // before the quantitative payload existed.
-            $effectiveDate = $row->ex_date ?: $row->action_date;
-
-            if ($effectiveDate === null) {
-                continue;
-            }
-
-            $effectiveDate = (string) $effectiveDate;
-
-            if ($effectiveDate <= (string) $windowStart || $effectiveDate > (string) $windowEnd) {
-                continue;
-            }
-
-            $priceFactor = (float) $row->price_adjustment_factor;
-            $volumeFactor = $row->volume_adjustment_factor !== null
-                ? (float) $row->volume_adjustment_factor
-                : 1.0;
-
-            $factors[(int) $row->ticker_id][] = [
-                'listing_id' => $row->listing_id === null ? null : (int) $row->listing_id,
-                'factor_revision_ref' => 'legacy-corporate-action:'.(int) $row->corporate_action_id.':'.(string) $row->updated_at,
-                'ex_date' => $effectiveDate,
-                'price_factor' => $priceFactor,
-                'volume_factor' => $volumeFactor > 0 ? $volumeFactor : 1.0,
-            ];
-        }
-
-        foreach ($factors as $tickerId => $list) {
-            usort($list, function ($a, $b) {
-                return strcmp($a['ex_date'], $b['ex_date']);
-            });
-            $factors[$tickerId] = $list;
-        }
-
-        ksort($factors);
-
-        return $factors;
+        throw new \RuntimeException(
+            'FACTOR_SET_CONTEXT_REQUIRED: adjustment factors may only be resolved from the factor_set_id bound to a candidate publication.'
+        );
     }
 
     /**
@@ -789,6 +748,10 @@ class EventRiskSourceRepository
             'corporate_action_flag' => null,
             'corporate_action_types' => null,
             'trading_status_code' => null,
+            'bar_expectation_state' => null,
+            'trading_status_revision_id' => null,
+            'trading_status_source_observation_id' => null,
+            'trading_status_authority_class' => null,
             'is_suspended' => null,
             'is_uma' => null,
             // Coverage_Universe_Definition_LOCKED.md:19 — expectation evidence that is incomplete
@@ -896,7 +859,103 @@ class EventRiskSourceRepository
             }
         }
 
+        // Compatibility status events remain non-authoritative. Their expected-bar policy is
+        // retained for diagnostics but deliberately does not populate the V2 expectation binding.
+
         return $context;
+    }
+
+    /**
+     * Resolve active, non-superseded V2 status revisions to the legacy ticker key used by the
+     * existing coverage and eligibility services. This is a projection only; listing_id remains
+     * the stable identity stored on the revision and eligibility row.
+     */
+    private function verifiedStatusContextsForTickerIds(array $tickerIds, $tradeDate, $knownAt = null): array
+    {
+        $query = DB::table('md_trading_status_revisions as revision')
+            ->join('md_listings as listing', 'listing.listing_id', '=', 'revision.listing_id')
+            ->leftJoin('md_trading_status_revisions as newer', function ($join) use ($knownAt) {
+                $join->on('newer.supersedes_revision_id', '=', 'revision.status_revision_id')
+                    ->whereNull('newer.retracted_at');
+                if ($knownAt !== null && $knownAt !== '') {
+                    $join->where('newer.recorded_at', '<=', $knownAt);
+                }
+            })
+            ->whereIn('listing.legacy_ticker_id', $tickerIds)
+            ->whereNull('newer.status_revision_id')
+            ->whereNull('revision.retracted_at')
+            ->where('revision.verification_state', 'VERIFIED')
+            ->where('revision.effective_from', '<=', $tradeDate.' 23:59:59')
+            ->where(function ($where) use ($tradeDate) {
+                $where->whereNull('revision.effective_to')
+                    ->orWhere('revision.effective_to', '>', $tradeDate.' 00:00:00');
+            });
+        if ($knownAt !== null && $knownAt !== '') {
+            $query->where('revision.recorded_at', '<=', $knownAt);
+        }
+
+        $rows = $query->orderBy('listing.legacy_ticker_id')
+            ->orderByDesc('revision.recorded_at')
+            ->orderByDesc('revision.status_revision_id')
+            ->get([
+                'listing.legacy_ticker_id as ticker_id', 'revision.status_revision_id',
+                'revision.status_code', 'revision.bar_expectation_state',
+                'revision.full_session_verified', 'revision.authority_class',
+                'revision.source_observation_id',
+            ])
+            ->groupBy('ticker_id');
+
+        $contexts = [];
+        foreach ($rows as $tickerId => $revisions) {
+            $states = $revisions->map(function ($row) {
+                return implode('|', [
+                    (string) $row->status_code,
+                    (string) $row->bar_expectation_state,
+                    (int) $row->full_session_verified,
+                    (string) $row->authority_class,
+                ]);
+            })->unique()->values();
+
+            if ($states->count() !== 1) {
+                $contexts[(int) $tickerId] = [
+                    'trading_status_code' => 'CONFLICTING',
+                    'bar_expectation_state' => 'BAR_EXPECTATION_UNKNOWN',
+                    'trading_status_revision_id' => null,
+                    'trading_status_source_observation_id' => null,
+                    'trading_status_authority_class' => null,
+                    'is_suspended' => null,
+                    'expectation_unknown' => 1,
+                ];
+                continue;
+            }
+
+            $row = $revisions->first();
+            $expectation = (string) $row->bar_expectation_state;
+            $isVerifiedNotExpected = $expectation === 'BAR_NOT_EXPECTED'
+                && (int) $row->full_session_verified === 1
+                && (string) $row->authority_class === 'EXCHANGE_AUTHORITATIVE'
+                && (int) $row->source_observation_id > 0;
+            if ($expectation === 'BAR_NOT_EXPECTED' && ! $isVerifiedNotExpected) {
+                $expectation = 'BAR_EXPECTATION_UNKNOWN';
+            }
+            $knownExpectation = in_array($expectation, ['BAR_EXPECTED', 'BAR_NOT_EXPECTED'], true)
+                && (int) $row->source_observation_id > 0;
+            $statusCode = strtoupper(trim((string) $row->status_code));
+
+            $contexts[(int) $tickerId] = [
+                'trading_status_code' => $statusCode,
+                'bar_expectation_state' => $expectation,
+                'trading_status_revision_id' => $knownExpectation ? (int) $row->status_revision_id : null,
+                'trading_status_source_observation_id' => $knownExpectation ? (int) $row->source_observation_id : null,
+                'trading_status_authority_class' => $knownExpectation ? (string) $row->authority_class : null,
+                'is_suspended' => $isVerifiedNotExpected && strpos($statusCode, 'SUSPENS') !== false ? 1 : 0,
+                'expectation_unknown' => $knownExpectation ? 0 : 1,
+            ];
+        }
+
+        ksort($contexts);
+
+        return $contexts;
     }
 
     private function applyCarryForwardTransition(array $state, $row, string $eventTypeCode, array $eventType): array

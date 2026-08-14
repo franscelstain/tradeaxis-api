@@ -363,8 +363,10 @@ class PublicationRepositoryIntegrationTest extends TestCase
             $run->run_id,
             'STRUCTURAL_ADJUSTED',
             'structural_adjusted_v1',
-            hash('sha256', 'publication-repository-new')
+            hash('sha256', 'publication-repository-new'),
+            1
         );
+        $this->bindStageEightGovernance($candidate->publication_id, hash('sha256', 'publication-repository-new'));
 
         $sealed = $repo->sealCandidatePublication($run, 'system');
         $this->assertSame('SEALED', $sealed->seal_state);
@@ -414,8 +416,10 @@ class PublicationRepositoryIntegrationTest extends TestCase
             $run->run_id,
             'STRUCTURAL_ADJUSTED',
             'structural_adjusted_v1',
-            hash('sha256', 'publication-repository-new')
+            hash('sha256', 'publication-repository-new'),
+            1
         );
+        $this->bindStageEightGovernance($candidate->publication_id, hash('sha256', 'publication-repository-new'));
 
         $repo->sealCandidatePublication($run, 'system');
 
@@ -445,8 +449,10 @@ class PublicationRepositoryIntegrationTest extends TestCase
             $run->run_id,
             'STRUCTURAL_ADJUSTED',
             'structural_adjusted_v1',
-            hash('sha256', 'publication-repository-new')
+            hash('sha256', 'publication-repository-new'),
+            1
         );
+        $this->bindStageEightGovernance($candidate->publication_id, hash('sha256', 'publication-repository-new'));
 
         $repo->sealCandidatePublication($run, 'system');
 
@@ -572,8 +578,10 @@ class PublicationRepositoryIntegrationTest extends TestCase
             $run->run_id,
             'STRUCTURAL_ADJUSTED',
             'structural_adjusted_v1',
-            hash('sha256', 'publication-repository-new')
+            hash('sha256', 'publication-repository-new'),
+            1
         );
+        $this->bindStageEightGovernance($candidate->publication_id, hash('sha256', 'publication-repository-new'));
         $repo->sealCandidatePublication($run, 'system', 'test seal');
 
         $this->expectException(RuntimeException::class);
@@ -704,4 +712,48 @@ class PublicationRepositoryIntegrationTest extends TestCase
     }
 
 
+    private function bindStageEightGovernance($publicationId, $factorHash): void
+    {
+        DB::table('md_adjustment_factor_sets')->updateOrInsert(
+            ['factor_set_id' => 1],
+            [
+                'factor_set_uid' => $factorHash,
+                'price_product_code' => 'STRUCTURAL_ADJUSTED',
+                'factor_formula_version' => 'structural_factor_product_v1',
+                'config_snapshot_id' => 0,
+                'state' => 'BOUND',
+                'content_hash' => $factorHash,
+                'recorded_at' => '2026-03-20 17:10:00',
+                'created_at' => '2026-03-20 17:10:00',
+            ]
+        );
+
+        $sourceScaleHash = hash('sha256', 'test-source-scale');
+        $marketStructureHash = hash('sha256', 'test-market-structure');
+        $factorDecisionHash = hash('sha256', 'test-factor-decisions');
+        DB::table('eod_publications')->where('publication_id', $publicationId)->update([
+            'source_scale_assessment_set_hash' => $sourceScaleHash,
+            'market_structure_revision_set_hash' => $marketStructureHash,
+            'factor_decision_set_hash' => $factorDecisionHash,
+        ]);
+        DB::table('md_publication_lineage_bindings')->updateOrInsert(
+            ['publication_id' => $publicationId],
+            [
+                'config_snapshot_id' => 0,
+                'factor_set_id' => 1,
+                'observation_manifest_hash' => '',
+                'identity_revision_set_hash' => hash('sha256', 'test-identity'),
+                'calendar_revision_set_hash' => hash('sha256', 'test-calendar'),
+                'status_revision_set_hash' => hash('sha256', 'test-status'),
+                'event_revision_set_hash' => hash('sha256', 'test-event'),
+                'source_scale_assessment_set_hash' => $sourceScaleHash,
+                'market_structure_revision_set_hash' => $marketStructureHash,
+                'factor_decision_set_hash' => $factorDecisionHash,
+                'formula_version' => 'eod_indicators_v1',
+                'build_id' => 'test-build',
+                'read_model_version' => 'market_data_read_product_v1',
+                'created_at' => '2026-03-20 17:10:00',
+            ]
+        );
+    }
 }

@@ -26,6 +26,7 @@ class MarketDataStageInput
         'full_publish',
         'correction',
         'repair_candidate',
+        'corpus_reconstruction',
         'replay_verify',
         'evidence_export',
     ];

@@ -1,6 +1,7 @@
 <?php
 
 use App\Infrastructure\Persistence\MarketData\EventRiskSourceRepository;
+use App\Infrastructure\Persistence\MarketData\CorpusAdmissionRepository;
 use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 use App\Infrastructure\Persistence\MarketData\MarketDataConfigSnapshotRepository;
 use App\Infrastructure\Persistence\MarketData\SectorClassificationRepository;
@@ -110,10 +111,11 @@ class AsKnownReplayBoundaryTest extends TestCase
     }
 
     /**
-     * The adjustment-factor root honours the same cutoff. A factor learned later must not silently
-     * rescale a window the platform replayed as of an earlier date.
+     * The pre-Stage-8 mutable factor table is no longer an admissible analytical root. Keeping the
+     * method fail-closed preserves a loud boundary for callers that have not migrated to the
+     * publication-bound immutable factor decision set.
      */
-    public function test_an_adjustment_factor_recorded_after_the_cutoff_is_invisible(): void
+    public function test_legacy_adjustment_factor_resolution_is_fail_closed(): void
     {
         DB::table('market_data_corporate_actions')->insert([
             'ticker_id' => 8,
@@ -131,11 +133,10 @@ class AsKnownReplayBoundaryTest extends TestCase
 
         $repository = new EventRiskSourceRepository();
 
-        $asKnown = $repository->resolveAdjustmentFactorsForTickerIds([8], '2026-01-01', '2026-12-31', self::CUTOFF);
-        $today = $repository->resolveAdjustmentFactorsForTickerIds([8], '2026-01-01', '2026-12-31');
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('FACTOR_SET_CONTEXT_REQUIRED');
 
-        $this->assertSame([], $asKnown, 'a factor recorded in June cannot adjust an April replay');
-        $this->assertNotSame([], $today, 'and it resolves without a cutoff, so the fixture is real');
+        $repository->resolveAdjustmentFactorsForTickerIds([8], '2026-01-01', '2026-12-31', self::CUTOFF);
     }
 
     /**
@@ -313,6 +314,7 @@ class AsKnownReplayBoundaryTest extends TestCase
         return [
             [MarketDataConfigSnapshotRepository::class, 'resolveForRun', 1],
             [TemporalIdentityRepository::class, 'universeAsOf', 1],
+            [TemporalIdentityRepository::class, 'readProjectedUniverseAsOf', 1],
             [TemporalIdentityRepository::class, 'resolveProviderContext', 3],
             [TemporalIdentityRepository::class, 'resolveByTickerCodes', 2],
             [TemporalTradingStatusRepository::class, 'resolveForListing', 2],
@@ -320,6 +322,7 @@ class AsKnownReplayBoundaryTest extends TestCase
             [MarketCalendarRepository::class, 'assertCompletedRegularSession', 1],
             [TickerMasterRepository::class, 'resolveTemporalContextsByCodes', 2],
             [TickerMasterRepository::class, 'getUniverseForTradeDate', 1],
+            [TickerMasterRepository::class, 'getProjectedUniverseForTradeDate', 1],
             [SectorClassificationRepository::class, 'resolveSectorCodesForTickerIds', 3],
             [SectorClassificationRepository::class, 'resolveSectorContextForTickerIds', 3],
             [EventRiskSourceRepository::class, 'resolveEventRiskContextForTickerIds', 2],
@@ -327,6 +330,7 @@ class AsKnownReplayBoundaryTest extends TestCase
             [EventRiskSourceRepository::class, 'resolveAdjustmentFactorsForTickerIds', 3],
             [EventRiskSourceRepository::class, 'suspendedTickerIdsAsOf', 2],
             [EventRiskSourceRepository::class, 'expectationUnknownTickerIdsAsOf', 2],
+            [CorpusAdmissionRepository::class, 'historyStartDateFor', 1],
         ];
     }
 

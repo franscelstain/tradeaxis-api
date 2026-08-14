@@ -84,6 +84,7 @@ class MarketDataPipelineServiceTest extends TestCase
         $run->coverage_gate_state = $coverageRatio !== null ? 'PASS' : null;
         $run->coverage_min_threshold = $coverageRatio !== null ? '0.9800' : null;
         $run->coverage_universe_count = $coverageRatio !== null ? 100 : null;
+        $run->coverage_expected_count = $coverageRatio !== null ? 100 : null;
         $run->coverage_available_count = $coverageRatio !== null ? (int) round(((float) $coverageRatio) * 100) : null;
         $run->coverage_missing_count = $coverageRatio !== null ? 100 - (int) round(((float) $coverageRatio) * 100) : null;
         $run->coverage_universe_basis = $coverageRatio !== null ? 'ACTIVE_TICKER_MASTER_FOR_TRADE_DATE' : null;
@@ -733,10 +734,13 @@ class MarketDataPipelineServiceTest extends TestCase
 
         $coverageGateEvaluator->shouldReceive('evaluate')
             ->once()
-            ->with('2026-04-03', 15, '2026-04-03 18:05:00')
+            ->with('2026-04-03', 15, '2026-04-03 18:05:00', 77)
             ->andReturn([
                 'coverage_universe_count' => 950,
                 'expected_universe_count' => 900,
+                'delivered_observation_count' => 890,
+                'coverage_bar_not_expected_count' => 10,
+                'coverage_expectation_unknown_count' => 40,
                 'available_eod_count' => 890,
                 'missing_eod_count' => 10,
                 'coverage_ratio' => 0.9888889,

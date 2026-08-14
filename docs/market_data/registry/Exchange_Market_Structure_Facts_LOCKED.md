@@ -29,7 +29,18 @@ Requirements:
 - each row carries source reference and verification state under the same rules as other governed reference data;
 - resolution for trade date `T` uses rows valid on `T`; a current band must never be projected backward.
 
-**Current implementation state — unsourced.** `CorporateActionDerivationService::MAX_EXCHANGE_SESSION_MOVE = 0.35` is presently a single hardcoded scalar with no tier table, no effective dating, and no source reference. It is recorded here as a placeholder that requires sourcing, not as a verified fact. Until sourced and effective-dated, no output may describe a band-based verdict as exchange-verified.
+**Current implementation state — authority recorded, application deferred.** Stage 7 records four
+contiguous standard-board price-band regimes covering the dataset, with separate upper/lower tiers,
+immutable authority evidence, effective intervals, and revision identity. The old audit statement
+that `CorporateActionDerivationService::MAX_EXCHANGE_SESSION_MOVE = 0.35` is present is superseded:
+that scalar is no longer in the runtime service. No Stage 7 writer resolves these rows into a price
+decision or publication; that application remains a separate lifecycle stage.
+
+The current authority set is revision 2 for all six rules. These revisions are append-only evidence
+corrections that supersede revision 1 without changing its market-structure values. Their accepted
+source observations bind the verified HTTP response status, content type, exact document hash and
+byte length, schema fingerprint, and a bounded capture sample. Revision 1 and its observations remain
+immutable historical records and are not current authority.
 
 ### Minimum Regular-Market price
 
@@ -42,6 +53,23 @@ Requirements: stored value, effective dating, and source reference, under the sa
 Order prices move in exchange-defined increments that vary by price level. Market-data uses the ladder only to bound how small a *meaningful* proportional move can be at a given price.
 
 Requirements: stored as a tiered, effective-dated table with source reference.
+
+## Recorded authority scope and unresolved legacy inputs
+
+The recorded authority set is `IDX_REGULAR_STANDARD_EQUITY`: Main, Development, and New Economy
+boards in the Regular Market. Acceleration and Special Monitoring are explicit exclusions because
+their exchange bands differ. A listing with missing or unrecognized point-in-time board identity is
+`FAIL_CLOSED`; a consumer may not silently inherit the standard-board tiers.
+
+The sourced floor and tick ladder are effective from `2016-05-02`; the four band intervals are
+`2021-12-01..2023-06-04`, `2023-06-05..2023-09-03`,
+`2023-09-04..2025-04-07`, and `2025-04-08..open`. The platform dataset boundary remains
+`2023-01-02`, so these intervals provide continuous authority coverage from its first date.
+
+`market_data.price_scale_break.min_price_idr` remains a legacy detector sensitivity input until the
+separate application/reconstruction stage adopts a resolved revision. Numeric equality with the
+sourced floor does not make that config key exchange-verified, and Stage 7 does not alter detector
+or output behavior.
 
 ## Consumers
 
@@ -70,7 +98,10 @@ A consumer may cite these facts. A consumer may not own them, hardcode them, or 
 - **That an event occurred.** A band is a bound on what one session can produce, not an observation of what happened. Exceeding it says an ordinary move cannot explain the gap — it identifies no action, type, terms, or factor.
 - **That a move inside the band was ordinary.** Most corporate actions produce effects well inside the band. Containment is the weaker inference of the two and carries no evidential weight, which is why `GAP_AMBIGUOUS` exists as a distinct verdict rather than a clean result.
 - **That the recorded band applied on that date.** These are effective-dated rows. A tier boundary recorded with the wrong effective date silently reclassifies every move measured against it, in both directions.
-- **That an unsourced value is a fact.** Until the band, floor, and tick tables carry source references and reconciliation dates, they are placeholders. The current in-code single scalar is recorded above as exactly that.
+- **That an unsourced value is a fact.** The Stage 7 authority rows carry source references,
+  immutable response identities, effective dates, and `recorded_at`. Any other value that lacks
+  those bindings—including a numerically identical legacy detector setting—remains
+  non-authoritative and cannot inherit the recorded rows' verification state.
 
 Consequently an exceedance result may be cited as evidence that **an ordinary session move is insufficient explanation**, never as evidence that **a corporate action occurred**.
 

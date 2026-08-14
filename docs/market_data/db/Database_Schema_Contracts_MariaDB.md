@@ -36,6 +36,58 @@ Immutable event revisions store lifecycle, verification state, ex/cum/record/pay
 
 Price-scale breaks are diagnostic candidates only. Schema must not provide or honor fields/commands that record in-place repairs of canonical or history rows. Legacy corporate-action tables are transitional projections, not factor authority.
 
+### Exchange market structure
+
+`md_exchange_market_structure_revisions` stores append-only, effective-dated and known-time rule
+revisions for the governed IDX Regular-Market scope. Each row binds rule type, explicit board and
+instrument coverage, authority verification, immutable source observation, human source reference,
+content hash, and supersession lineage. `md_exchange_price_band_tiers` stores separate upper/lower
+limits for each reference-price tier; `md_exchange_tick_size_tiers` stores the effective price
+fraction and maximum step tiers. The minimum Regular-Market price is a sourced scalar on its own
+`MINIMUM_PRICE` revision.
+
+For external Stage 7 documents, the linked capture/accepted observation pair must preserve the
+verified response status, response content type, exact payload hash/ref/byte length, schema
+fingerprint, and bounded capture sample. Manifest metadata is not a substitute for response
+identity. A correction is append-only: a new revision and observation pair supersede the old rows.
+
+Recording these tables does not authorize resolution or application. A consumer must resolve one
+non-ambiguous verified revision for its trade date and board scope, and must fail closed for an
+unknown/excluded board. No current rule may be projected backward, and no unsourced configuration
+constant becomes exchange-verified merely because it has the same numeric value.
+
+### One-time current-corpus reconstruction
+
+Stage 8 uses explicit campaign and target tables to freeze every pre-campaign current publication,
+its owning run/version, sealed batch hashes, and independent artifact snapshot hashes before any
+replacement is attempted. A target may point to a replacement only after the normal correction,
+publication, seal, readability, and current-pointer lifecycle succeeds. Resume appends a new
+correction after a failed attempt; it never reopens or overwrites the failed evidence.
+
+Source-scale assessments, per-event factor decisions, and per-listing market-structure bindings are
+immutable publication governance facts. Their deterministic set hashes must agree between the
+publication and publication-lineage binding. Legacy nullable rows are not backfilled in place.
+
+Campaign failure is fail-safe: the target/campaign becomes `FAILED`/`BLOCKED`, the correction and
+run are terminal, an unsealed candidate may remain as immutable failure evidence, and the prior
+current pointer remains authoritative. Corpus reconstruction must not trigger ordinary downstream
+impact fan-out for each date because the bounded campaign itself owns chronological rebuilding of
+the entire frozen range.
+
+`md_corpus_admission_decisions` is the separate immutable authority for a measured conformant
+suffix. It preserves `intentional_dataset_start` while recording `admitted_from` and
+`measured_through`, threshold/source scope, exact status observations, measurement campaign and
+algorithm, canonical input/status hashes, complete measurement JSON, lifecycle/reason, and
+supersession. The active decision ID must agree on the Stage 8 campaign, owning run, sealed
+publication, and publication-lineage binding. Verified full-session exclusions additionally bind
+the exact trading-status revision and source observation on eligibility rows.
+
+The active admission is a read boundary, not a history rewrite: pre-admission publications remain
+stored and immutable but are not normal-readable and cannot serve analytical warm-up. A measured
+blocked campaign may become `SUPERSEDED` only through the explicit admission identity; its failed
+attempts and candidates remain evidence. No current status or current tier may be projected
+backward to manufacture an earlier admitted date.
+
 ### Indicators and eligibility
 
 Indicator snapshots bind listing, publication, config, factor set, coherent price product, formula/registry version, recursive ATR state, explicit actual/proxy liquidity fields, null reasons, and context revisions.

@@ -126,6 +126,7 @@ class EodBarsIngestService
             $row['ticker_id'] = $tickerId;
             $identity = $identityContexts[$tickerCode] ?? null;
             $row['listing_id'] = $row['listing_id'] ?? ($identity['listing_id'] ?? null);
+            $row['resolved_board_code'] = $identity['board_code'] ?? null;
 
             if ($tickerId === null) {
                 $invalidRows[] = $this->makeInvalidRow(
@@ -200,13 +201,18 @@ class EodBarsIngestService
                     'previous_close' => null,
                     'traded_value_idr_actual' => null,
                     'trade_count_actual' => null,
-                    'board_code' => $identity['board_code'] ?? null,
+                    'board_code' => $row['resolved_board_code'] ?? null,
                     'session_code' => 'REGULAR',
                     'source_timestamp' => $row['source_timestamp'] ?? null,
                     'acquired_at' => $row['captured_at'] ?? $now,
                     'canonicalization_version' => (string) config('market_data.source.canonicalization_version'),
                     'price_product_code' => (string) config('market_data.scope.raw_product_code', 'RAW'),
                     'quality_state' => 'VALIDATED',
+                    // Yahoo quote OHLCV remains canonical RAW; whether its historical scale was
+                    // already rewritten by the provider is a separate, explicit fact. UNKNOWN is
+                    // the honest ingest default until a factor/event assessment binds otherwise.
+                    'source_scale_state' => 'UNKNOWN',
+                    'source_scale_assessment_id' => null,
                     // Null here is the CONFIG_UNBOUND state, not a missing obligation at this
                     // layer; it is sealing and readability that the config gate governs.
                     'config_snapshot_id' => $configSnapshotId,
@@ -274,7 +280,7 @@ class EodBarsIngestService
         // The manifest hash describes which observations produced this candidate, so it is bound
         // whether or not a config snapshot exists. Withholding it alongside the config binding was
         // the same conflation: it left the candidate unable to state its own acquisition set.
-        $manifestHash = $this->observations->manifestHashForRun($run->run_id);
+        $manifestHash = $this->observations->manifestHashForObservationIds(array_column($sourceRows, 'source_observation_id'));
         $this->publications->bindCandidateAcquisitionProvenance(
             $candidatePublication->publication_id,
             $run->run_id,
@@ -788,6 +794,8 @@ class EodBarsIngestService
         return [
             'trade_date' => $row['trade_date'] ?? null,
             'ticker_id' => $row['ticker_id'] ?? null,
+            'listing_id' => $row['listing_id'] ?? null,
+            'source_observation_id' => $row['source_observation_id'] ?? null,
             'run_id' => $runId,
             'source' => $this->canonicalSourceForRow($row),
             'source_row_ref' => (string) ($row['source_row_ref'] ?? ''),

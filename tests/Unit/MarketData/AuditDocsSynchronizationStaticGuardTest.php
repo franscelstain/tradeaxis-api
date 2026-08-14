@@ -216,7 +216,13 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             '| 3 | Bekukan populasi cacat — **SELESAI 2026-08-13** | `F-007a` `F-026a` `F-017a` `F-018a` |',
             $ledger
         );
-        $this->assertMatchesRegularExpression('/next permitted implementation action: \*\*Tahap 4\b/', $ledger);
+        $matched = preg_match(
+            '/next permitted implementation action: \*\*Tahap (?<stage>\d+)\b/',
+            $ledger,
+            $nextStageMatch
+        );
+        $this->assertSame(1, $matched, 'The controller next stage could not be inspected.');
+        $this->assertGreaterThan(3, (int) $nextStageMatch['stage'], 'The controller must not point back to Stage 3.');
 
         $matched = preg_match(
             '/^## Tahap 3 — Bekukan populasi cacat — SELESAI 2026-08-13\R(?<stage>.*?)(?=^## |\z)/ms',
@@ -312,7 +318,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $sequence = $sequenceMatch['sequence'];
 
         $this->assertStringContainsString(
-            'next permitted implementation action: **Tahap 4 — keputusan pemilik tentang makna `RAW`',
+            'next permitted implementation action: **Tahap 9 — author fixture replay independen.',
             $ledger
         );
         $this->assertStringContainsString('`F-021` tetap terbuka tetapi berstatus **`PRE_ACTIVATION_DEFERRED`**', $ledger);
@@ -329,10 +335,10 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         $this->assertSame(['4', '5', '6', '7', '8', '9', '10', '11'], $stageMatches['stage']);
 
         foreach ([
-            '4' => ['F-039a', 'Keputusan makna `RAW`'],
-            '5' => ['F-038', 'Keputusan batas baca bar tak beridentitas'],
-            '6' => ['F-010a', 'F-027a'],
-            '7' => ['F-011a', 'tier struktur pasar IDX'],
+            '4' => ['F-039a', 'Keputusan makna `RAW`', 'SELESAI 2026-08-13'],
+            '5' => ['F-038', 'Keputusan batas baca bar tak beridentitas', 'SELESAI 2026-08-13'],
+            '6' => ['F-010a', 'F-027a', 'SELESAI 2026-08-13', 'immutable KSEI evidence'],
+            '7' => ['F-011a', 'tier struktur pasar IDX', 'SELESAI 2026-08-13'],
             '8' => ['F-007b', 'F-026b', 'F-017b', 'F-018b', 'current-authoritative'],
             '9' => ['F-030a', 'replay target belum dijalankan'],
             '10' => ['F-030b', 'F-020', 'F-024', "bukan `'v1'`"],
@@ -343,7 +349,15 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             foreach ($needles as $needle) {
                 $this->assertStringContainsString($needle, $rowMatch['row'], 'Stage '.$stageNumber.' is missing '.$needle.'.');
             }
-            $this->assertStringContainsString('**BELUM DIMULAI**', $rowMatch['row']);
+            if (in_array((string) $stageNumber, ['4', '5', '6', '7', '8'], true)) {
+                $this->assertStringNotContainsString('**BELUM DIMULAI**', $rowMatch['row']);
+            } else {
+                $this->assertStringContainsString('**BELUM DIMULAI**', $rowMatch['row']);
+            }
+            if ((string) $stageNumber === '8') {
+                $this->assertStringContainsString('**SELESAI 2026-08-14**', $rowMatch['row']);
+                $this->assertStringContainsString('15/15 current pointer', $rowMatch['row']);
+            }
         }
 
         $this->assertStringNotContainsString('F-021', $buildTable, 'Operational activation must not block the build sequence.');
@@ -354,7 +368,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
 
         foreach ([
             '`F-039a` keputusan pada Tahap 4; `F-039b` penerapan pada Tahap 8',
-            '`F-038` | keputusan dan, bila diperlukan, enforcement pada Tahap 5',
+            '`F-038` | keputusan dan enforcement fail-closed diselesaikan pada Tahap 5',
             '`a` perekaman authority pada Tahap 6; `b` penerapan pada Tahap 8',
             '`F-011a` perekaman tier pada Tahap 7; `F-011b` penerapan pada Tahap 8',
             '`F-030a` authoring fixture pada Tahap 9; `F-030b` eksekusi pada Tahap 10',
@@ -383,12 +397,370 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
         );
 
         $this->assertStringContainsString(
-            'Tahap berikut yang diizinkan adalah **Tahap 4 — keputusan makna `RAW` (`F-039a`)**.',
+            'Tahap berikut yang diizinkan adalah **Tahap 9 — author fixture replay independen**.',
             $sequence
         );
-        $this->assertStringContainsString(
-            'perubahan kode/data apa pun belum boleh dikerjakan bersamaan dengannya.',
+        $this->assertMatchesRegularExpression(
+            '/Tahap 8 selesai\s+dan tidak menjalankan replay\./',
             $sequence
+        );
+    }
+
+    public function test_stage_four_records_only_the_owner_raw_decision_and_keeps_implementation_open(): void
+    {
+        $ledger = $this->read('docs/market_data/audit/MARKET_DATA_IMPLEMENTATION_LEDGER.md');
+
+        $matched = preg_match(
+            '/^## Tahap 4 — Keputusan makna `RAW` — SELESAI 2026-08-13\R(?<stage>.*?)(?=^## Tahap 5 )/ms',
+            $ledger,
+            $stageMatch
+        );
+        $this->assertSame(1, $matched, 'The authoritative Stage 4 decision section could not be inspected.');
+        $stage = $stageMatch['stage'];
+
+        foreach ([
+            '`api_free/yahoo_finance` **tetap bootstrap primary EOD source**',
+            'field `indicators.quote.0`',
+            'tidak di-adjust, diperbaiki,',
+            '/bukan klaim\s+bahwa Yahoo adalah source resmi IDX/',
+            '`AS_TRADED`, `PROVIDER_BACK_ADJUSTED`, dan `UNKNOWN`',
+            'Provider `adj_close` tetap diagnostic observation metadata',
+            '`PROVIDER_BACK_ADJUSTED` tidak boleh di-adjust ulang',
+            '/`UNKNOWN`\s+harus fail-safe sebagai held\/quarantined/',
+            'provider berbayar **tidak diwajibkan pada fase sekarang**',
+        ] as $decisionPart) {
+            if (str_starts_with($decisionPart, '/')) {
+                $this->assertMatchesRegularExpression($decisionPart, $stage, 'Stage 4 is missing owner decision part: '.$decisionPart);
+
+                continue;
+            }
+
+            $this->assertStringContainsString($decisionPart, $stage, 'Stage 4 is missing owner decision part: '.$decisionPart);
+        }
+
+        $this->assertStringContainsString('`F-039a` **CLOSED**', $stage);
+        $this->assertStringContainsString('`F-039b` di Tahap 8', $stage);
+        $this->assertStringContainsString('`F-039` karena itu tetap **OPEN/PARTIAL**', $stage);
+        $this->assertStringContainsString('Tahap berikut yang diizinkan adalah Tahap 5', $stage);
+        $this->assertStringContainsString(
+            '### HISTORICAL, SUPERSEDED — Evidence penyesuaian urutan sebelum Tahap 4 — 2026-08-13',
+            $ledger
+        );
+        $this->assertStringNotContainsString(
+            'Tahap 4 tetap **BELUM DIMULAI**',
+            $ledger,
+            'A superseded pre-execution status must not remain readable as the current Stage 4 state.'
+        );
+
+        foreach ([
+            'Tidak ada kode produksi',
+            'migration',
+            'database row',
+            'terms IDX',
+            'fixture replay',
+            'activation marker',
+            '/Tahap 5\s+dan seterusnya belum dikerjakan/',
+        ] as $scopeBoundary) {
+            if (str_starts_with($scopeBoundary, '/')) {
+                $this->assertMatchesRegularExpression($scopeBoundary, $stage, 'Stage 4 scope boundary is missing '.$scopeBoundary.'.');
+
+                continue;
+            }
+
+            $this->assertStringContainsString($scopeBoundary, $stage, 'Stage 4 scope boundary is missing '.$scopeBoundary.'.');
+        }
+
+        $this->assertStringContainsString(
+            '| `F-039` | `W12` | P0 | CLOSED 2026-08-14:',
+            $ledger
+        );
+        $this->assertStringContainsString(
+            '| 4 | Keputusan makna `RAW` — **SELESAI 2026-08-13** | `F-039a` |',
+            $ledger
+        );
+    }
+
+    public function test_stage_five_is_fail_closed_complete_and_cannot_be_reopened_by_history(): void
+    {
+        $ledger = $this->read('docs/market_data/audit/MARKET_DATA_IMPLEMENTATION_LEDGER.md');
+
+        $matched = preg_match(
+            '/^## Tahap 5 — Keputusan batas baca bar tak beridentitas — SELESAI 2026-08-13\R(?<stage>.*?)(?=^## Tahap 6 )/ms',
+            $ledger,
+            $stageMatch
+        );
+        $this->assertSame(1, $matched, 'The authoritative Stage 5 section could not be inspected.');
+        $stage = $stageMatch['stage'];
+
+        foreach ([
+            'tafsir historis “bar mentah bukan analytical row',
+            '`NULL`, string kosong, whitespace, perbedaan case,',
+            '`EodPublicationRepository` sekarang menjadi sumber keputusan tunggal',
+            '`eod_bars` serta `eod_bars_history`',
+            '`PRICE_PRODUCT_UNRECORDED`',
+            '`CANONICAL_BAR_PRICE_PRODUCT_INVALID`',
+            'Pencocokan memakai `HEX(...)`',
+            'lowercase `raw`, dan padded ` RAW `',
+            'seluruh 844 publication tersebut ditahan',
+            'Korpus legacy tidak diberi label `RAW` dan tidak disentuh.',
+            'registry runtime dari 392 menjadi 363 baris',
+            'Dua puluh sembilan kode di luar scope',
+            '`F-038` **CLOSED**',
+            'Tahap berikut yang diizinkan adalah Tahap 6',
+            'Tahap 6 belum dimulai.',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $stage, 'Stage 5 closure is missing '.$needle.'.');
+        }
+
+        $matched = preg_match(
+            '/^- open findings recorded by command protocol: \*\*(?<count>\d+) terbuka\*\* \((?<ids>[^\r\n)]*)\)\./m',
+            $ledger,
+            $openFindingMatch
+        );
+        $this->assertSame(1, $matched, 'The current open-finding roster could not be inspected.');
+        $this->assertSame('7', $openFindingMatch['count']);
+        preg_match_all('/`(?<id>F-\d+)`/', $openFindingMatch['ids'], $openIdMatches);
+        $this->assertCount(7, $openIdMatches['id']);
+        $this->assertNotContains('F-038', $openIdMatches['id']);
+
+        $matched = preg_match('/^## Active findings\R(?<table>.*?)(?=^## )/ms', $ledger, $activeFindingMatch);
+        $this->assertSame(1, $matched, 'The active-finding table could not be inspected.');
+        $this->assertStringNotContainsString('| `F-038` |', $activeFindingMatch['table']);
+
+        $this->assertStringContainsString(
+            '## HISTORICAL, SUPERSEDED — W12 remediation `F-026` — 2026-08-11',
+            $ledger
+        );
+        $this->assertStringContainsString(
+            '| 5 | Keputusan batas baca bar tak beridentitas — **SELESAI 2026-08-13** | `F-038` |',
+            $ledger
+        );
+        $this->assertStringContainsString(
+            'next permitted implementation action: **Tahap 9 — author fixture replay independen.',
+            $ledger
+        );
+    }
+
+    public function test_stage_six_records_only_declared_authoritative_terms_and_leaves_application_open(): void
+    {
+        $ledger = $this->read('docs/market_data/audit/MARKET_DATA_IMPLEMENTATION_LEDGER.md');
+
+        $matched = preg_match(
+            '/^## Tahap 6 — Rekam terms corporate action otoritatif — SELESAI 2026-08-13\R(?<stage>.*?)(?=^## Tahap 7 )/ms',
+            $ledger,
+            $stageMatch
+        );
+        $this->assertSame(1, $matched, 'The authoritative Stage 6 closure section could not be inspected.');
+        $stage = $stageMatch['stage'];
+
+        foreach ([
+            'MLPT, RAJA, dan RMKE',
+            'Scope ini sengaja kecil dan terukur',
+            'bukan klaim bahwa 533 aksi legacy',
+            '`record_only=true`',
+            '`md_corporate_action_revisions`',
+            '`md_source_observations`',
+            '`verification_state=AUTHORITATIVE_VERIFIED`',
+            '`announcement_at=NULL`',
+            'URL non-HTTPS',
+            'overwrite dilarang',
+            '`inserted_revision_count=0`',
+            '`source_observation_insert_count=0`',
+            '`md_adjustment_factor_sets` | 0 | 0',
+            '`md_adjustment_factors` | 0 | 0',
+            '`eod_runs` | 72.777 | 72.777',
+            '`eod_publications` | 64.951 | 64.951',
+            '`eod_bars` | 756.329 | 756.329',
+            '`eod_indicators` | 756.328 | 756.328',
+            '`eod_eligibility` | 779.402 | 779.402',
+            '`ba8c24bc787876481807679c130d5662472c4d14e005436c59967e89d4690b61`',
+            '363→393',
+            'Exact 29 kode di luar scope',
+            '**364 = 360 baseline + 1 Tahap 1 + 2 Tahap 5 + 1 Tahap 6**',
+            '`F-010a` dan `F-027a` **CLOSED untuk scope yang dideklarasikan**',
+            'Parent `F-010` dan',
+            '`F-027` tetap **OPEN/PARTIAL**',
+            'Tahap berikut yang diizinkan adalah Tahap 7',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $stage, 'Stage 6 closure is missing '.$needle.'.');
+        }
+
+        foreach ([
+            'stage_6_ksei_stock_split_terms_v1.json',
+            'AuthoritativeCorporateActionTermsService',
+            'verifier runtime HTTP 200/application-PDF',
+            'market-data:events:record-authoritative-terms',
+            'AUTHORITATIVE_TERMS_VALIDATED',
+        ] as $ownedArtifact) {
+            $this->assertStringContainsString($ownedArtifact, $stage, 'Stage 6 is missing owned artifact '.$ownedArtifact.'.');
+        }
+
+        $this->assertStringContainsString(
+            '| 6 | Rekam terms corporate action otoritatif — **SELESAI 2026-08-13** | `F-010a` `F-027a` |',
+            $ledger
+        );
+        $this->assertStringNotContainsString(
+            '| 6 | Rekam terms corporate action otoritatif — **BELUM DIMULAI** |',
+            $ledger
+        );
+        $this->assertStringContainsString(
+            '| `F-010` | `W11` | P1 | PARTIAL — `F-010a` CLOSED pada Tahap 6',
+            $ledger
+        );
+        $this->assertStringContainsString(
+            '| `F-027` | `W12` | P0 | CLOSED 2026-08-14',
+            $ledger
+        );
+        $this->assertStringContainsString(
+            '## HISTORICAL, SUPERSEDED — W12 remediation `F-027` — 2026-08-11',
+            $ledger
+        );
+        $this->assertMatchesRegularExpression(
+            '/HISTORICAL, SUPERSEDED — W12 remediation `F-027` — 2026-08-11\R\R> \*\*STATUS HISTORIS — BUKAN AUTHORITY EVENT AKTIF\.\*\*/',
+            $ledger
+        );
+
+        foreach (['tier/band/floor/tick Tahap 7', 'Tahap 8', 'fixture/replay Tahap 9–10', 'gate Tahap 11', 'activation marker'] as $deferred) {
+            $this->assertStringContainsString($deferred, $stage, 'Stage 6 must explicitly defer '.$deferred.'.');
+        }
+    }
+
+    public function test_stage_seven_closure_is_record_only_source_backed_and_history_clean(): void
+    {
+        $ledger = $this->read('docs/market_data/audit/MARKET_DATA_IMPLEMENTATION_LEDGER.md');
+        preg_match(
+            '/^## Tahap 7 — Rekam tier struktur pasar IDX — SELESAI 2026-08-13\R(?<stage>.*)\z/ms',
+            $ledger,
+            $stageMatch
+        );
+        $this->assertArrayHasKey('stage', $stageMatch, 'Stage 7 closure block must exist.');
+        $stage = $stageMatch['stage'];
+
+        foreach ([
+            '`IDX_REGULAR_STANDARD_EQUITY`',
+            '`2023-01-02`',
+            'Papan Utama, Pengembangan, dan Ekonomi Baru',
+            'Papan Akselerasi dan Pemantauan Khusus dikecualikan',
+            '`FAIL_CLOSED`',
+            '`record_only=true`',
+            'stage_7_idx_regular_market_structure_v1.json',
+            '`md_exchange_market_structure_revisions`',
+            '`md_exchange_price_band_tiers`',
+            '`md_exchange_tick_size_tiers`',
+            '`AUTHORITATIVE_VERIFIED`',
+            '`AUTHORITATIVE_MARKET_STRUCTURE_VALIDATED`',
+            '`inserted_revision_count=0`',
+            '`unchanged_revision_count=6`',
+            '`evidence_correction_revision_count=6`',
+            '`source_observation_insert_count=0`',
+            '`eod_runs` | 72.777 | 72.777',
+            '`eod_publications` | 64.951 | 64.951',
+            '`eod_bars` | 756.329 | 756.329',
+            '`eod_bars_history` | 56.908.318 | 56.908.318',
+            '`md_adjustment_factor_sets` | 0 | 0',
+            '`md_adjustment_factors` | 0 | 0',
+            '**364→365**',
+            '`F-011a` **CLOSED**',
+            'Parent `F-011` tetap',
+            '**OPEN/PARTIAL**',
+            'Tahap berikut yang diizinkan adalah Tahap 8',
+            'pekerjaan itu belum dimulai di sini',
+            'identity metadata manifest, bukan identity response yang benar-benar diterima',
+            'enam revision nomor 2 dengan `supersedes_revision_id`',
+            'observation baru dengan `supersedes_observation_id` ke evidence lama',
+            '**0 evidence violation**',
+            '`md_exchange_market_structure_revisions` | 12 | 6 revision nomor 2',
+            '`md_source_observations` | 26 | 10 observation / 5 pasangan evidence aktif',
+            'Tidak ada row lama yang diedit atau dihapus oleh koreksi.',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $stage, 'Stage 7 closure is missing '.$needle.'.');
+        }
+
+        foreach ([
+            'AuthoritativeExchangeMarketStructureService',
+            'market-data:market-structure:record-authoritative-rules',
+            '5/5 HTTP 200',
+            '6 revision, 12 band tier, 5 tick tier, 10 observations',
+            '5/5 evidence aktif membawa exact response identity',
+            'production evidence correction: append-only 6 revision + 12 band tier + 5 tick tier + 10',
+        ] as $ownedArtifact) {
+            $this->assertStringContainsString($ownedArtifact, $stage, 'Stage 7 is missing owned proof '.$ownedArtifact.'.');
+        }
+
+        $this->assertStringContainsString(
+            '| 7 | Rekam tier struktur pasar IDX — **SELESAI 2026-08-13** | `F-011a` |',
+            $ledger
+        );
+        $this->assertStringNotContainsString(
+            '| 7 | Rekam tier struktur pasar IDX — **BELUM DIMULAI** |',
+            $ledger
+        );
+        $this->assertStringContainsString(
+            '| `F-011` | `W11` | P1 | CLOSED 2026-08-14:',
+            $ledger
+        );
+        $auditReport = $this->read('docs/market_data/audit/reports/AUDIT_FINAL_STATE.md');
+        $this->assertStringContainsString(
+            '| P1-30/F-011 band, floor, dan tick otoritatif | `CLOSED — F-011a/F-011b` |',
+            $auditReport
+        );
+        $this->assertStringContainsString(
+            'Tahap 7 merekam authority: enam revision current',
+            $auditReport
+        );
+        $this->assertStringContainsString(
+            '1.446 publication/listing binding `RESOLVED_STANDARD_BOARD`',
+            $auditReport
+        );
+        $this->assertStringNotContainsString(
+            '| P1-30 band, floor, dan tick belum bersumber dan belum effective-dated | `OPEN` |',
+            $auditReport
+        );
+        $this->assertStringContainsString(
+            '### HISTORICAL, SUPERSEDED — `F-011` — band, floor, dan tick masih konstanta',
+            $ledger
+        );
+        $marketStructureOwner = $this->read(
+            'docs/market_data/registry/Exchange_Market_Structure_Facts_LOCKED.md'
+        );
+        $this->assertStringNotContainsString(
+            'The current in-code single scalar is recorded above as exactly that.',
+            $marketStructureOwner
+        );
+        $this->assertStringContainsString(
+            'The Stage 7 authority rows carry source references,',
+            $marketStructureOwner
+        );
+        $this->assertStringContainsString(
+            'non-authoritative and cannot inherit the recorded rows\' verification state.',
+            $marketStructureOwner
+        );
+        $this->assertStringContainsString(
+            'The current authority set is revision 2 for all six rules.',
+            $marketStructureOwner
+        );
+        $runbook = $this->read('docs/market_data/ops/OPERATIONAL_RUNBOOK.md');
+        $this->assertStringContainsString(
+            'must append an evidence-correction revision and observation pair with',
+            $runbook
+        );
+        $this->assertStringContainsString(
+            'It must never update or delete the old revision/evidence.',
+            $runbook
+        );
+        $safetyInventory = $this->read('docs/market_data/ops/COMMAND_SURFACE_SAFETY_INVENTORY.md');
+        $this->assertStringContainsString(
+            'legacy evidence mismatch appends a superseding correction revision/observation pair',
+            $safetyInventory
+        );
+        $fieldDictionary = $this->read('docs/market_data/db/DB_FIELDS_AND_METADATA.md');
+        $this->assertStringContainsString(
+            'A legacy observation containing manifest metadata alone cannot be',
+            $fieldDictionary
+        );
+        $this->assertStringContainsString(
+            'next permitted implementation action: **Tahap 9 — author fixture replay independen.**',
+            $ledger
         );
     }
 

@@ -196,6 +196,27 @@ Atomic normal-read authority. One pointer per product/date scope is the target m
 
 Audited request/approval/candidate/reseal/pointer lifecycle. Legacy `REPAIR_*` values must not authorize mutation and require cleanup/enforcement migration. Original and replacement publication IDs remain distinct.
 
+### `md_corpus_admission_decisions`
+
+Immutable Stage 8 decision that distinguishes the intentional historical start from the first
+measured conformant/readable suffix. It records market/product scope, `intentional_dataset_start`,
+`admitted_from`, `measured_through`, coverage threshold/source mode, accepted status snapshot and
+transition-search observations, measurement campaign, canonical measurement/status hashes,
+algorithm version, complete measurement JSON, state/reason, supersession, and recorded time.
+
+Its ID binds the reconstruction campaign, owning run, sealed publication, and publication lineage.
+Eligibility rows bind the exact status revision/source observation used for verified
+`BAR_NOT_EXPECTED` decisions. Dates before the active boundary remain immutable/non-readable and
+cannot be indicator warm-up; admission is never a relabel or movement of dataset start.
+
+### `md_stage8_reconstruction_campaigns` and `md_stage8_reconstruction_targets`
+
+Campaigns freeze exact scope, baseline maximum publication, target-set hash, admission and campaign
+supersession identities, state/result, and lifecycle times. Targets preserve per-date baseline
+publication/run/version plus three sealed hashes and three provenance snapshot hashes, then append
+correction/replacement identities and terminal checkpoint state. A superseded or failed attempt is
+retained; only the normal correction/seal/finalize lifecycle can replace a current pointer.
+
 ## Replay and evidence tables
 
 `md_replay_daily_metrics`, `md_replay_reason_code_counts`, session snapshots, and evidence artifacts retain explicit replay mode, fixture/knowledge context, frozen identities/config/revisions, expected/actual states, hashes, reasons, and admission result. Existing replay tables are transitional until they bind all V2 inputs.

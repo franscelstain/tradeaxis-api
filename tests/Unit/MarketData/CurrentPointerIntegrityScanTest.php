@@ -112,6 +112,24 @@ class CurrentPointerIntegrityScanTest extends TestCase
         return new EodPublicationRepository();
     }
 
+    private function seedCanonicalBar(string $table, ?string $priceProductCode): void
+    {
+        DB::table($table)->insert([
+            'publication_id' => 10,
+            'trade_date' => self::TRADE_DATE,
+            'ticker_id' => 1,
+            'open' => 9000,
+            'high' => 9025,
+            'low' => 8975,
+            'close' => 9000,
+            'volume' => 123456,
+            'source' => 'manual_file',
+            'run_id' => 25,
+            'price_product_code' => $priceProductCode,
+            'created_at' => '2026-03-20 17:20:00',
+        ]);
+    }
+
     private function applyBreakage(array $case): void
     {
         $query = DB::table($case['table']);
@@ -178,6 +196,33 @@ class CurrentPointerIntegrityScanTest extends TestCase
             'ANALYTICAL_ROW_IDENTITY_MISMATCH',
             $this->reportedReasons($this->runRepairCommandDryRun())
         );
+    }
+
+    /**
+     * @dataProvider canonicalBarIdentityFaults
+     */
+    public function test_a_canonical_bar_without_the_explicit_raw_identity_invalidates_the_publication(
+        string $table,
+        ?string $priceProductCode,
+        string $expectedReason
+    ): void {
+        $this->seedCanonicalBar($table, $priceProductCode);
+
+        $this->assertNull($this->repository()->resolveCurrentReadablePublicationForTradeDate(self::TRADE_DATE));
+        $this->assertCount(1, $this->repository()->findInvalidCurrentPublicationStates(self::TRADE_DATE));
+        $this->assertContains($expectedReason, $this->reportedReasons($this->runRepairCommandDryRun()));
+    }
+
+    public function canonicalBarIdentityFaults(): array
+    {
+        return [
+            'current bar identity unrecorded' => ['eod_bars', null, 'PRICE_PRODUCT_UNRECORDED'],
+            'history bar identity unrecorded' => ['eod_bars_history', null, 'PRICE_PRODUCT_UNRECORDED'],
+            'current canonical bar declares analytical product' => ['eod_bars', 'STRUCTURAL_ADJUSTED', 'CANONICAL_BAR_PRICE_PRODUCT_INVALID'],
+            'history canonical bar declares analytical product' => ['eod_bars_history', 'STRUCTURAL_ADJUSTED', 'CANONICAL_BAR_PRICE_PRODUCT_INVALID'],
+            'current canonical bar uses the wrong case' => ['eod_bars', 'raw', 'CANONICAL_BAR_PRICE_PRODUCT_INVALID'],
+            'history canonical bar carries padded identity' => ['eod_bars_history', ' RAW ', 'CANONICAL_BAR_PRICE_PRODUCT_INVALID'],
+        ];
     }
 
     /**

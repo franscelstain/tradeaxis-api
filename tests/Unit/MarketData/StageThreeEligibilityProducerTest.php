@@ -32,6 +32,7 @@ class StageThreeEligibilityProducerTest extends TestCase
         $artifacts->shouldReceive('loadBarsForTradeDate')->once()->andReturn([
             1 => ['quality_state' => 'VALIDATED'],
         ]);
+        $artifacts->shouldReceive('loadDeliveredObservationTickerIdsForTradeDate')->once()->andReturn([1]);
         $artifacts->shouldReceive('loadIndicatorsForTradeDate')->once()->andReturn([
             1 => ['event_risk_flag' => 0],
         ]);

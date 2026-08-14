@@ -35,6 +35,19 @@ class TemporalIdentityRepository
     {
         $tradeDate = MarketDataScope::fromConfig()->assertRequestedDate($tradeDate);
         $this->ensureLegacyProjection();
+
+        return $this->readProjectedUniverseAsOf($tradeDate, $knownAt);
+    }
+
+    /**
+     * Read the already-established temporal projection without creating missing identity rows.
+     * Planning and admission measurement use this fail-closed surface so a read-only operation
+     * cannot silently turn legacy master rows into V2 identity facts.
+     */
+    public function readProjectedUniverseAsOf($tradeDate, $knownAt = null)
+    {
+        $tradeDate = MarketDataScope::fromConfig()->assertRequestedDate($tradeDate);
+        $this->assertFoundationAvailable();
         $query = $this->baseIdentityQuery($tradeDate, $knownAt);
 
         return $query

@@ -6,6 +6,9 @@ Define the canonical reason-code vocabulary used by Market Data Platform across:
 - `eod_indicators.invalid_reason_code`
 - `eod_eligibility.reason_code`
 - `eod_run_events.reason_code`
+- `md_adjustment_factor_decisions.reason_code`
+- `md_publication_market_structure_bindings.reason_code`
+- `md_stage8_reconstruction_targets.reason_code`
 
 This registry is intentionally upstream-only. It does not encode watchlist scores, groups, picks, or strategy actions.
 
@@ -77,6 +80,50 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `MARKET_SESSION_NOT_COMPLETED` | CALENDAR | HARD | EOD acquisition was blocked because the Regular-Market session is not completed. |
 | `TRADING_STATUS_NO_EVIDENCE` | TRADING_STATUS | WARN | No verified point-in-time trading-status evidence exists, so status remains unknown. |
 | `TRADING_STATUS_CONFLICT` | TRADING_STATUS | HARD | Conflicting verified status revisions prevent a deterministic status decision. |
+| `AUTHORITATIVE_TERMS_VALIDATED` | CORPORATE_ACTION | INFO | A corporate-action revision and its complete terms were validated against an immutable authoritative exchange/CSD document observation. |
+| `AUTHORITATIVE_MARKET_STRUCTURE_VALIDATED` | MARKET_STRUCTURE | INFO | An effective-dated IDX price-band, minimum-price, or tick-ladder revision was validated against immutable authoritative evidence without applying it to a series. |
+| `STAGE8_CURRENT_CORPUS_RECONSTRUCTION` | CORRECTION | INFO | A frozen current EOD publication is being replaced through the complete correction lifecycle using a fresh Yahoo observation set while retaining the immutable baseline. |
+| `STAGE8_RECONSTRUCTION_FAILED` | CORRECTION | HARD | A Stage 8 reconstruction target failed without a more specific registered reason and remained incomplete. |
+| `STAGE8_BASELINE_POINTER_DRIFT` | CORRECTION | HARD | A current publication pointer no longer matches the baseline frozen by the Stage 8 campaign, so reconstruction stopped. |
+| `STAGE8_DATE_NOT_READABLE` | CORRECTION | HARD | A reconstructed trade date did not end in a successful readable publication and its current pointer was not accepted. |
+| `STAGE8_POINTER_SWITCH_NOT_PROVEN` | CORRECTION | HARD | A reconstructed trade date could not prove that its current pointer switched to the new sealed publication. |
+| `STAGE8_ACQUISITION_CACHE_WRITE_FAILED` | SOURCE | HARD | The resumable Stage 8 Yahoo acquisition cache could not be written durably. |
+| `STAGE8_ACQUISITION_CACHE_CLEANUP_FAILED` | SOURCE | HARD | The temporary Stage 8 date-row cache could not be removed after a successful oracle. |
+| `STAGE8_ACQUISITION_CACHE_CLEANUP_REFUSED` | SOURCE | HARD | Stage 8 refused cache cleanup because the bounded rows directory contained an unexpected entry. |
+| `STAGE8_ACQUISITION_CACHE_DATE_INVALID` | SOURCE | HARD | A Stage 8 per-date acquisition cache contained an invalid batch record. |
+| `STAGE8_ACQUISITION_CACHE_DATE_MISSING` | SOURCE | HARD | A Stage 8 target had no per-date acquisition cache after acquisition completed. |
+| `STAGE8_ACQUISITION_CACHE_DATE_UNREADABLE` | SOURCE | HARD | A Stage 8 per-date acquisition cache could not be opened. |
+| `STAGE8_ACQUISITION_CACHE_IDENTITY_MISMATCH` | SOURCE | HARD | A resumable Stage 8 acquisition cache did not match the frozen campaign/date/ticker identity. |
+| `STAGE8_ACQUISITION_CACHE_MANIFEST_INVALID` | SOURCE | HARD | The resumable Stage 8 acquisition manifest was not valid structured JSON. |
+| `STAGE8_BASELINE_HASH_MISSING` | CORRECTION | HARD | A frozen current baseline lacked a mandatory artifact hash and was ineligible for reconstruction. |
+| `STAGE8_BASELINE_NOT_SEALED` | CORRECTION | HARD | A current baseline was not a sealed successful publication and was ineligible for reconstruction. |
+| `STAGE8_CAMPAIGN_NOT_FOUND` | CORRECTION | HARD | The requested Stage 8 reconstruction campaign does not exist. |
+| `STAGE8_CAMPAIGN_RESUME_REQUIRED` | CORRECTION | HARD | An unfinished Stage 8 campaign already exists and must be explicitly resumed. |
+| `STAGE8_COMPLETED_CAMPAIGN_ORACLE_DRIFT` | CORRECTION | HARD | A completed Stage 8 campaign no longer satisfies its frozen completion oracle. |
+| `STAGE8_CURRENT_CORPUS_ORACLE_FAILED` | CORRECTION | HARD | The final Stage 8 current-corpus oracle found one or more violations. |
+| `STAGE8_FROZEN_SCOPE_EMPTY` | CORRECTION | HARD | Stage 8 could not freeze a reconstruction scope because no current publication pointers exist. |
+| `STAGE8_FROZEN_SCOPE_POINTER_CALENDAR_MISMATCH` | CORRECTION | HARD | The frozen current-pointer dates did not exactly match the authoritative trading-calendar dates. |
+| `STAGE8_OUTPUT_DIRECTORY_CREATE_FAILED` | CORRECTION | HARD | The Stage 8 resumable campaign output directory could not be created. |
+| `STAGE8_SOURCE_ACQUISITION_FAILED` | SOURCE | HARD | The bounded Stage 8 Yahoo range acquisition failed systemically. |
+| `AUTHORITATIVE_TRADING_STATUS_VALIDATED` | STATUS | INFO | An official IDX long-suspension snapshot was captured and validated against its declared as-of scope. |
+| `AUTHORITATIVE_TRADING_STATUS_TRANSITIONS_VALIDATED` | STATUS | INFO | The official IDX suspension-transition search was captured and validated through the measured frontier. |
+| `STAGE8_CONFORMANT_SUFFIX_ADMITTED` | GOVERNANCE | INFO | A measured continuous suffix met the locked coverage threshold and quality requirements under verified status evidence. |
+| `STAGE8_PRE_ADMISSION_READ_BLOCKED` | READINESS | HARD | A requested date precedes the active conformant-corpus admission boundary and is not consumer-readable. |
+| `STAGE8_ADMISSION_EVIDENCE_INVALID` | GOVERNANCE | HARD | Stage 8 admission evidence was absent, inconsistent, or not hash-verifiable. |
+| `STAGE8_ADMISSION_SUFFIX_NOT_FOUND` | COVERAGE | HARD | No continuous suffix met the locked coverage and quality requirements. |
+| `STAGE8_BLOCKED_CAMPAIGN_SUPERSEDED` | GOVERNANCE | INFO | A blocked full-range Stage 8 campaign was superseded by an explicit measured admission decision without changing its immutable attempts. |
+| `TRADING_STATUS_REVISION_BINDING_MISSING` | STATUS | HARD | A BAR_NOT_EXPECTED eligibility fact lacks its verified trading-status revision and source-observation binding. |
+| `TEMPORAL_IDENTITY_PROJECTION_INCOMPLETE` | IDENTITY | HARD | Stage 8 found legacy ticker identities not projected into the temporal identity model and stopped without mutating them. |
+| `COMMAND_RESUME_REQUIRES_APPLY` | COMMAND | HARD | A reconstruction resume was requested without the explicit apply flag, so no campaign work was executed. |
+| `FACTOR_APPLIED_SOURCE_AS_TRADED` | CORPORATE_ACTION | INFO | An authoritative structural factor was applied because the bound Yahoo source-scale assessment classified the source series as as-traded. |
+| `FACTOR_HELD_PROVIDER_BACK_ADJUSTED` | CORPORATE_ACTION | WARN | An authoritative structural factor was held because the bound Yahoo source-scale assessment classified the source series as provider-back-adjusted. |
+| `FACTOR_HELD_SOURCE_SCALE_UNKNOWN` | CORPORATE_ACTION | WARN | An authoritative structural factor was held because the bound Yahoo source-scale assessment remained unknown. |
+| `SOURCE_SCALE_MARKET_STRUCTURE_UNRESOLVED` | CORPORATE_ACTION | HARD | Yahoo source scale remained unknown because admissible point-in-time market-structure context was insufficient; factor activation was prohibited. |
+| `MARKET_STRUCTURE_BOARD_UNKNOWN` | MARKET_STRUCTURE | HARD | Market-structure resolution failed closed because no listing-board value was available. |
+| `MARKET_STRUCTURE_BOARD_NOT_POINT_IN_TIME` | MARKET_STRUCTURE | HARD | Market-structure resolution failed closed because the listing-board value was recorded after the evaluated trade date. |
+| `MARKET_STRUCTURE_SCOPE_EXCLUDED` | MARKET_STRUCTURE | HARD | Market-structure resolution failed closed because the listing board is outside the standard-equity scope. |
+| `MARKET_STRUCTURE_BOARD_UNRECOGNIZED` | MARKET_STRUCTURE | HARD | Market-structure resolution failed closed because the listing-board value was not recognized by the locked scope. |
+| `MARKET_STRUCTURE_REVISION_MISSING` | MARKET_STRUCTURE | HARD | Market-structure resolution failed closed because one or more authoritative effective-dated rule revisions were unavailable. |
 | `CORPORATE_ACTION_AUTHORITATIVE_EVIDENCE_REQUIRED` | CORPORATE_ACTION | HARD | Price geometry cannot synthesize event identity, terms, date, or factors. |
 | `IMMUTABLE_HISTORY_CORRECTION_REQUIRED` | CORRECTION | HARD | An anomaly requires authoritative evidence and a new correction publication; in-place history mutation is prohibited. |
 | `SECTOR_INDEX_API_PARTIAL_RESPONSE` | SOURCE | HARD | Sector index API returned fewer index codes than requested and partial acceptance was not enabled, so the ingest is blocked rather than storing an incomplete index set. |
@@ -185,7 +232,8 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `SNAP_SOURCE_ERROR` | INTRADAY | WARN | The session-snapshot source failed for an operational reason that does not block EOD. |
 | `READABLE_PUBLICATION_RESOLVED` | READ_SIDE | INFO | A read-side consumer resolved a current sealed readable publication through the authoritative pointer. |
 | `NO_READABLE_PUBLICATION` | READ_SIDE | HARD | A read-side consumer could not resolve a current readable publication through the authoritative pointer and must return no data. |
-| `PRICE_PRODUCT_UNRECORDED` | READ_SIDE | WARN | The bar carries no `price_product_code`, so the read side reports the price without asserting which analytical product it belongs to. The row is served rather than withheld because the values are real; what is missing is the scale claim, and defaulting it to `RAW` would assert something the row never recorded. Applies to the entire legacy bar corpus, which predates the writer added on the ingest path. |
+| `PRICE_PRODUCT_UNRECORDED` | READ_SIDE | HARD | A canonical bar in the resolved publication carries no `price_product_code`. The publication is withheld because a missing scale identity cannot be inferred as `RAW`; legacy rows remain unchanged until reconstructed through governed lifecycle. |
+| `CANONICAL_BAR_PRICE_PRODUCT_INVALID` | READ_SIDE | HARD | A canonical bar in the resolved publication declares a price product other than the configured canonical `RAW` identity. The publication is withheld because canonical bars cannot expose an analytical or unknown scale as `RAW`. |
 | `COMMAND_MISSING_REQUIRED_INPUT` | COMMAND | HARD | Operator command input is missing or empty for a required argument or option. |
 | `COMMAND_INVALID_DATE_FORMAT` | COMMAND | HARD | Operator command date input does not use the locked `YYYY-MM-DD` format. |
 | `COMMAND_INVALID_DATE_RANGE` | COMMAND | HARD | Operator command date range is invalid because `start_date` is after `end_date`. |

@@ -29,18 +29,18 @@ Hanya satu work order boleh `IN_PROGRESS`. Successor tidak boleh dimulai sampai 
 ## Current controller state
 
 - documentation strategy: `DOCUMENTATION_STRATEGY_READY`; documentation synchronization: **`PASS` (`22/22`, strict revalidation 2026-08-08)**
-- implementation conformance: **`NOT_GRANTED`** — `P0-04` reopened on 2026-08-08 plus the still-open P1 backlog; historical W22 2026-08-06 counts are retained only as dated evidence
+- implementation conformance: **`NOT_GRANTED`** — Tahap 8 menutup runtime gap `P0-04` pada korpus admitted, tetapi replay proof independen (`F-024`/Tahap 10), fixture (`F-030`), stage-21 gate, dan backlog non-Tahap-8 tetap terbuka; historical W22 2026-08-06 counts are retained only as dated evidence
 - operational validation: **`NOT_GRANTED`** — nol sesi teraktivasi (`W22`, 2026-08-06); ini adalah keadaan pembangunan/pre-activation yang sah, bukan blocker burn-down implementasi
 - final claim level: **`IMPLEMENTATION_READY`**, bukan `runtime-proven`
-- open findings recorded by command protocol: **15 terbuka** (`F-007`, `F-010`, `F-011`, `F-017`, `F-018`, `F-019`, `F-020`, `F-021`, `F-023`, `F-024`, `F-026`, `F-027`, `F-030`, `F-038`, `F-039`). `F-021` tetap terbuka tetapi berstatus **`PRE_ACTIVATION_DEFERRED`** dan tidak menjadi blocker pembangunan. `F-030` tetap terbuka: lubang aturannya ditutup, fixture independennya belum ada. `F-024` menyempit menjadi butir replay proof saja; `F-026` dan `F-027` dibuka oleh `MD-REAUDIT W12` karena audit ulang memeriksa seluruh scope stage 11.
-- recently closed findings relevant to sequencing: `F-045` ditutup pada Tahap 2 tanggal 2026-08-12; subtemuan guard `F-007a`, `F-026a`, `F-017a`, dan `F-018a` ditutup pada Tahap 3 tanggal 2026-08-13. Finding induk tetap terbuka karena subtemuan backfill `b` belum dikerjakan. Detail temuan awal hanya berada pada blok bertanda `HISTORICAL, SUPERSEDED`. Finding tertutup lain tetap ditelusuri melalui work-order evidence masing-masing.
-- known implementation backlog carried by the audit report: **P0-04 reopened on 2026-08-08 strict documentation re-audit** because W21 removed provider `adj_close` fallback but did not prove the selected run-wide `STRUCTURAL_ADJUSTED` product. `P0-01`, `P0-02`, and `P0-03` remain closed by their recorded proof; P1 states remain governed by the canonical audit report. Baris ini sebelumnya membaca 40 dari 44 dan basi sejak penutupan P0 pada W21; dikoreksi pada `MD-STATUS` 2026-08-06
+- open findings recorded by command protocol: **7 terbuka** (`F-010`, `F-019`, `F-020`, `F-021`, `F-023`, `F-024`, `F-030`). `F-021` tetap terbuka tetapi berstatus **`PRE_ACTIVATION_DEFERRED`** dan tidak menjadi blocker pembangunan. `F-030` tetap terbuka: lubang aturannya ditutup, fixture independennya belum ada. `F-024` menyempit menjadi butir replay proof saja. Tahap 8 menutup `F-007`, `F-011`, `F-017`, `F-018`, `F-026`, `F-027`, dan `F-039` pada korpus conformant yang diakui; `F-010` tetap parsial karena tiga event KSEI dalam scope beku bukan rekonsiliasi corporate-action full-range.
+- recently closed findings relevant to sequencing: `F-045` ditutup pada Tahap 2 tanggal 2026-08-12; subtemuan guard `F-007a`, `F-026a`, `F-017a`, dan `F-018a` ditutup pada Tahap 3 tanggal 2026-08-13; keputusan pemilik `F-039a` ditutup pada Tahap 4 tanggal 2026-08-13; `F-038` ditutup pada Tahap 5 tanggal 2026-08-13; subtemuan perekaman authority `F-010a` dan `F-027a` ditutup untuk scope yang dideklarasikan pada Tahap 6 tanggal 2026-08-13; `F-011a` ditutup pada Tahap 7 tanggal 2026-08-13 untuk scope standard-equity yang dikunci. Finding induk tetap terbuka bila rekonsiliasi penuh atau subtemuan penerapannya belum dikerjakan. Detail temuan awal hanya berada pada blok bertanda `HISTORICAL, SUPERSEDED`. Finding tertutup lain tetap ditelusuri melalui work-order evidence masing-masing.
+- known implementation backlog carried by the audit report: strict re-audit 2026-08-08 pernah membuka kembali `P0-04`; Tahap 8 menutupnya pada 2026-08-14 dengan 15/15 publication admitted membawa satu selected `STRUCTURAL_ADJUSTED` product/version/factor identity. `F-024` tetap terbuka khusus replay proof independen dan tidak dilebur ke closure produk. `P0-01`, `P0-02`, dan `P0-03` tetap closed; P1 states lain tetap governed oleh laporan audit kanonik
 - known data-authority state: **sector IDX-IC authority work diterapkan 2026-08-10** atas instruksi terpisah — 721 baris `EXCHANGE_AUTHORITATIVE` untuk 697 listing, 971 baris legacy diturunkan ke `DERIVED_REFERENCE`, 12 interval temporal ditutup pertama kalinya. Menurunkan `P1-27` ke `PARTIAL` dan membuka `P1-41`/`P1-42`/`P1-43`. **Tidak mengubah status W05/W14/W16**; lihat bagian bertanggal di bawah
 - operasi produksi selesai: **recompute atas 843 tanggal (2023-01-02 … 2026-07-27) selesai 2026-08-11 01:56 dengan `success_count=843`, `failed_count=0`, `skipped_count=0`**, log `outputs/idxic-apply-20260810/recompute_full_range.log`. Karena dijalankan dengan `--continue-on-error`, angka itu dihitung dari 843 baris `terminal_status=SUCCESS` pada log per-tanggal dan bukan dari exit code. Menutup `P1-32`, `P1-33`, `P1-34` dengan bukti terukur, dan memberi `P1-27` angka sisa yang tepat — lihat bagian bertanggal di bawah
 - execution mode: `STAGE_BY_STAGE`
-- active work order: `NONE`
+- active work order: `TAHAP_8_COMPLETE`; Tahap 9 belum dimulai
 - **peringatan operasional DICABUT 2026-08-11**: gerbang integritas yang terbangun sempat menghentikan seal seluruh promote run; `F-033` menutupnya dengan menyepadankan tuntutan gerbang pada apa yang run itu benar-benar lakukan, dan pipeline seal berjalan kembali (publikasi 73586 tersegel `ANALYTICAL_ONLY`). Penolakan bersifat fail-closed dan tidak merusak apa pun — 844 publikasi current tetap 844 — tetapi pipeline recompute berhenti sampai keputusan diambil. Jangan melonggarkan gerbangnya sebagai jalan pintas
-- next permitted implementation action: **Tahap 4 — keputusan pemilik tentang makna `RAW` dan perlakuan korpus provider-back-adjusted (`F-039a`), tanpa kode atau mutasi data.** Tahap 3 ditutup 2026-08-13 setelah guard per-field dan seluruh jalur lifecycle lulus tanpa menyentuh korpus. Aktivasi `F-021` dipindahkan ke gate operasional pascapembangunan; urutan Tahap 4–11 yang berlaku berada pada bagian `CURRENT AUTHORITATIVE SEQUENCE` di akhir ledger. Riwayat audit tetap berada pada blok bertanda `HISTORICAL` dan tidak menentukan current state.
+- next permitted implementation action: **Tahap 9 — author fixture replay independen.** Tahap 8 selesai melalui jalur admission terukur: intentional dataset start tetap `2023-01-02`, tetapi hanya suffix `2026-07-08` sampai `2026-07-28` yang diakui sebagai korpus conformant/readable. History sebelum admission tidak direlabel, tidak dipakai sebagai warm-up, dan tetap immutable/non-readable. Tahap 9 belum dijalankan. Aktivasi `F-021` tetap berada pada gate operasional pascapembangunan; urutan Tahap 4–11 yang berlaku berada pada bagian `CURRENT AUTHORITATIVE SEQUENCE` di akhir ledger. Riwayat audit tetap berada pada blok bertanda `HISTORICAL` dan tidak menentukan current state.
 
 ## Documentation / implementation revalidation note — 2026-08-08
 
@@ -389,7 +389,13 @@ Dikerjakan dengan disiplin yang diminta pemilik dan dimulai dari langkahnya: **m
 
 Dua guard permanen: `EventRiskSourceRepositoryTest::test_an_omitted_column_preserves_a_stored_factor_while_an_explicit_null_clears_it` pada tingkat repository, dan `ImportCorporateActionsCommandTest::test_reimporting_a_minimal_csv_preserves_the_stored_factor` pada tingkat perintah. Keduanya menguji sisi mempertahankan **dan** sisi menghapus, karena perbaikan yang hanya mempertahankan akan menghilangkan kemampuan mengoreksi faktor yang keliru.
 
-## W12 remediation `F-027` — 2026-08-11
+## HISTORICAL, SUPERSEDED — W12 remediation `F-027` — 2026-08-11
+
+> **STATUS HISTORIS — BUKAN AUTHORITY EVENT AKTIF.** Recompute dan perubahan output di bawah memang
+> terjadi, tetapi kesimpulan bahwa ketiga row legacy sudah otoritatif serta pemilihan `2026-07-15`
+> sebagai ex-date telah dicabut oleh Tahap 6. Source ref legacy adalah domain pihak ketiga dan anchor
+> tersebut berasal dari deret Yahoo; current authority adalah tiga revision KSEI append-only pada
+> bagian Tahap 6. Blok ini tidak boleh mengaktifkan factor atau mengalahkan ex-date resmi.
 
 Target remediasi `F-027` berbunyi: *"peroleh faktor korporasi dari sumber otoritatif sehingga minimal satu run produksi benar-benar menerapkan faktor, lalu buktikan skala sebelum/sesudah pada baris nyata."* Terpenuhi untuk tiga peristiwa, dan **hanya tiga**.
 
@@ -437,13 +443,13 @@ Dry-run atas CSV uji berisi satu baris sah dan tiga yang harus ditolak menghasil
 
 **Dua fixture test lama diperbarui**, dan itu perlu dinyatakan supaya tidak terbaca sebagai melonggarkan kontrak agar kode lulus. `CorporateActionCandidateBoundaryTest::action()` menyetel `adjustment_source => null` sementara test yang memakainya bernama `test_a_source_backed_factor_still_adjusts`; fixture itu selalu bermaksud faktor bersumber tetapi tidak dapat menyatakannya sebelum kosakatanya ada. Hal yang sama pada `PriceAdjustmentTest`. Ditambahkan pula `test_an_unattributed_factor_does_not_adjust` yang menguji dua kasus yang dulu lolos: sumber NULL dan sumber tak dikenal.
 
-## W12 remediation `F-026` — 2026-08-11
+## HISTORICAL, SUPERSEDED — W12 remediation `F-026` — 2026-08-11
 
 Temuan ini tidak dapat ditutup dengan backfill, dan itu bagian dari jawabannya. Menulis `RAW` ke 756.329 baris legacy akan menyatakan skala yang tidak pernah dicatat baris itu sendiri — fabrikasi yang sama yang audit ini tolak untuk tanggal efektif sektor. Yang bisa dikerjakan adalah menjaga celahnya tidak melebar dan tidak menjadi senyap.
 
 **Yang diperiksa dan ternyata sudah benar**, dicatat supaya audit berikutnya tidak mengulanginya: jalur restore `EodArtifactRepository:662` membangun ulang `eod_bars` dari `eod_bars_history` dan **membawa** `price_product_code` lewat `barLineage()`, yang memuatnya di daftar field; `eod_bars_history` juga menyimpannya. Dugaan awal bahwa restore menjatuhkan identitas itu keliru.
 
-**Yang benar-benar cacat.** `MarketDataPriceReadRepository:53` memancarkan `PRICE_PRODUCT_UNRECORDED` dan kode itu **tidak terdaftar** di registry maupun seed. `EmittedReasonCodeRegistrationTest` tidak menangkapnya karena keterbatasan yang didokumentasikan sendiri pada `:65` — argumen string posisional dan nilai array tidak dipindai. Kode itu kini terdaftar pada kategori `READ_SIDE` dengan severity `WARN`, bersebelahan dengan `NO_READABLE_PUBLICATION` yang dipancarkan di metode yang sama.
+**Keadaan snapshot saat itu.** `MarketDataPriceReadRepository:53` memancarkan `PRICE_PRODUCT_UNRECORDED` dan kode itu **tidak terdaftar** di registry maupun seed. `EmittedReasonCodeRegistrationTest` tidak menangkapnya karena keterbatasan yang didokumentasikan sendiri pada `:65` — argumen string posisional dan nilai array tidak dipindai. Snapshot 2026-08-11 memperlakukannya sebagai keadaan non-blocking dan tetap menyajikan baris; keputusan itu **dicabut oleh Tahap 5** karena bertentangan dengan kontrak canonical bar yang lebih spesifik. State aktif sekarang menahan seluruh publikasi tersebut dengan severity `HARD`.
 
 `BarPriceProductIdentityTest` mengunci empat properti: jalur ingest menulis identitas dari scope `raw_product_code` dan bukan literal; `barLineage` membawanya melewati restore; sisi baca melaporkan ketiadaannya alih-alih mendefaultkan ke `RAW`; dan kodenya terdaftar. Properti ketiga yang paling menahan — default ke `RAW` adalah perbaikan termurah yang tersedia dan justru yang salah, karena membuat 756.329 baris legacy mengklaim produk analitis yang tak seorang pun pilih untuk mereka, dan klaim itu tidak dapat dibedakan dari yang benar-benar tercatat.
 
@@ -972,7 +978,7 @@ Diremediasi dengan `assertHistorySnapshotMutable()` pada ketiga jalur artifact d
 | tepat satu publication terlihat | satu current per tanggal; tabel pointer menolak baris kedua secara struktural |
 | no in-place rewrite | sealed ditolak pada discard dan pada artifact writer; candidate tetap dapat ditulis ulang |
 
-## W11 record — corporate-action event dan factor lifecycle stage 10, ditutup 2026-08-06
+## HISTORICAL EXECUTION RECORD — W11 corporate-action event dan factor lifecycle stage 10, ditutup 2026-08-06
 
 Exit gate: *price jump/proximity/provider adjusted field tidak dapat membuat verified action/factor atau mengubah history. Tidak ada keputusan yang mencapai published output memakai band/floor/tick tanpa sumber dan effective date.*
 
@@ -1005,11 +1011,11 @@ Diskriminatornya sengaja `adjustment_source`, bukan `source_name`, dan produksi 
 
 Dicatat sebagai `P1-31`. Penutupannya menuntut terms aksi korporasi otoritatif dari IDX; tidak ada kode yang dapat menutupnya.
 
-### `F-011` — band, floor, dan tick masih konstanta
+### HISTORICAL, SUPERSEDED — `F-011` — band, floor, dan tick masih konstanta
 
 `Exchange_Market_Structure_Facts_LOCKED.md:79` melarang konstanta tak bersumber dipakai untuk keputusan apa pun yang mencapai published output. Nyatanya tidak ada tabel tier sama sekali: `min_price_idr` konstanta config `50`, dan dokumen registry sendiri mencatat band sebagai skalar hardcoded `0.35` berstatus placeholder. Lima aksi berstatus `GAP_BEYOND_EXCHANGE_BAND` diputuskan memakai band itu.
 
-Dampaknya terhadap published output berkurang drastis setelah `F-010` ditutup, karena verdict band-based tidak lagi menghasilkan faktor yang terpakai. Yang tersisa adalah larangan menyebutnya exchange-verified. Dicatat sebagai `P1-30`; penutupannya menuntut tabel tier bersumber dan ber-effective-date dari IDX — rekonsiliasi eksternal, bukan pekerjaan kode.
+Dampaknya terhadap published output berkurang drastis setelah `F-010` ditutup, karena verdict band-based tidak lagi menghasilkan faktor yang terpakai. Yang tersisa saat snapshot W11 ini dibuat adalah larangan menyebutnya exchange-verified. Snapshot tersebut disupersede oleh penutupan `F-011a` pada Tahap 7 tanggal 2026-08-13; current state berada pada register temuan dan blok Tahap 7 di akhir ledger.
 
 ### Koreksi terhadap perubahan saya sendiri
 
@@ -1041,9 +1047,9 @@ Konsekuensinya bukan sekadar dokumentasi yang kurang. Baris berbasis `RAW` dan b
 
 Diremediasi: `applyPriceAdjustment()` kini melaporkan produk yang benar-benar dihasilkannya, dan `buildRow()` menuliskannya ke vektor. Labelnya menggambarkan **output, bukan input** — faktor yang ada tetapi tidak mengubah satu bar pun tetap menghasilkan `RAW`, karena melaporkan `STRUCTURAL_ADJUSTED` hanya karena sebuah faktor ada di suatu tempat akan membuat label berbohong tentang apa yang terjadi.
 
-### `F-014` — fallback yang mengarang kode produk
+### HISTORICAL, SUPERSEDED — `F-014` — fallback yang mengarang kode produk
 
-`MarketDataPriceReadRepository` memakai `$row->price_product_code ?: 'RAW'`. Baris yang tidak pernah mencatat produknya tidak menjadi `RAW` karena dibaca. Karena seluruh 756.329 baris lama membawa `NULL`, fallback itu menegaskan klaim skala yang barisnya sendiri tidak pernah buat — bentuk yang sama dengan `PROJECTED` menjadi `EXPECTED` pada W06. Diganti `null` disertai `price_product_reason_code => PRICE_PRODUCT_UNRECORDED`.
+Jalur baca lama pernah mengganti identitas kosong menjadi `RAW`. Baris yang tidak pernah mencatat produknya tidak menjadi `RAW` karena dibaca; karena seluruh 756.329 baris lama membawa `NULL`, fallback itu menegaskan klaim skala yang barisnya sendiri tidak pernah buat — bentuk yang sama dengan `PROJECTED` menjadi `EXPECTED` pada W06. Remediasi snapshot W12 pertama-tama menggantinya dengan penanda per-row. Tahap 5 kemudian **mencabut kompromi kedua itu juga**: state aktif sekarang menahan publication pada common gateway dan tidak lagi menyajikan harga atau field reason per-row.
 
 ### Koreksi terhadap perubahan saya sendiri
 
@@ -1435,7 +1441,7 @@ Exit gate menuntut **setiap** invariant P0/P1 berstatus `PROVEN`. Keadaan nyata:
 
 Saya tidak menandai W21 `CONFORMANT`. Menyatakan gate ini lulus dengan 27 invariant terbuka akan mengulang persis bentuk kegagalan yang dikoreksi work order ini pada W15, dan bentuk yang sama yang membuat 20.635 hasil replay tampak sehat sementara tidak menguji apa pun.
 
-Perlu dicatat mengapa sisanya tidak dapat ditutup dengan kode. Mayoritas menuntut salah satu dari dua hal yang berada di luar jangkauan implementasi: **rekonsiliasi eksternal** — terms aksi korporasi otoritatif dari IDX (`P1-31`), tabel tier band/floor/tick bersumber (`P1-30`) — atau **recompute korpus berbukti** — lineage canonical (`P1-29`), label produk indikator (`P1-32`), ATR ber-seed boundary (`P1-34`), bukti coverage (`P1-35`), snapshot eligibility (`P1-36`). Keduanya keputusan lingkup, bukan pekerjaan yang dapat diselesaikan diam-diam di dalam perintah ini.
+Perlu dicatat mengapa sisanya tidak dapat ditutup dengan kode pada snapshot 2026-08-06 ini. Mayoritas ketika itu menuntut salah satu dari dua hal yang berada di luar jangkauan implementasi: **rekonsiliasi eksternal** — terms aksi korporasi otoritatif dari IDX (`P1-31`), tabel tier band/floor/tick bersumber (`P1-30`) — atau **recompute korpus berbukti** — lineage canonical (`P1-29`), label produk indikator (`P1-32`), ATR ber-seed boundary (`P1-34`), bukti coverage (`P1-35`), snapshot eligibility (`P1-36`). State masing-masing sesudah tanggal itu ditentukan oleh current register; khusus `P1-30`, sisi perekaman diselesaikan oleh Tahap 7 pada 2026-08-13 dan sisi penerapan tetap menunggu Tahap 8.
 
 ### Batas kapabilitas
 
@@ -1560,7 +1566,7 @@ Diganti dengan bentuk yang dapat diatribusikan: filter produksi direplikasi pers
 
 Oracle ini bergantung lingkungan. Bila database terdeploy tidak terjangkau, ia `markTestSkipped` — dan **test yang di-skip tidak membuktikan apa pun**. Bukti production-path ini sah untuk mesin tempat ia dijalankan, dengan korpus pada tanggal ia dijalankan, bukan sebagai properti repositori yang dapat dibawa ke mana saja.
 
-## Active findings
+## HISTORICAL finding register — superseded by the current table below
 
 | Finding ID | Work order | Severity | Status | Owner contract | Evidence | Required remediation |
 |---|---|---|---|---|---|---|
@@ -1574,32 +1580,48 @@ Oracle ini bergantung lingkungan. Bila database terdeploy tidak terjangkau, ia `
 | `F-032` | `W18` | P0 | CLOSED sebagai binding (diremediasi 2026-08-11: `createPromoteRunFromSeed` mengikat snapshot; run 72910 ber-`config_snapshot_id=1`, `md_config_snapshots` 0→1 baris). Klaim replay-tidak-lagi-`REPLAY_CONFIG_UNBOUND` **belum dapat dibuktikan** karena tertahan `F-030` dan `F-033` | `Replay_Verification_Contract_LOCKED.md` (frozen config identity) | **Identitas config tidak pernah dibekukan.** `md_config_snapshots` **kosong (0 baris)**, dan `config_snapshot_id` NULL pada **72.764 dari 72.764** `eod_runs` serta **64.938 dari 64.938** `eod_publications`. Klausa "config revisions" pada exit gate stage 18 dan required outcome "frozen revision/config/factor/formula/product/read-model identity" keduanya tidak terpenuhi. Konsekuensi kedua yang lebih tajam: `ReplayVerificationService::replayAdmissibility()` memblokir setiap replay tanpa config snapshot sebagai `REPLAY_CONFIG_UNBOUND`, sehingga `F-030` **tidak dapat ditutup bahkan dengan fixture independen** selama tidak ada run yang terikat snapshot | tulis config snapshot per run dan ikat `config_snapshot_id`, lalu buktikan replay tidak lagi diblokir `REPLAY_CONFIG_UNBOUND` |
 | `F-030` | `W18` | P1 | OPEN — lubang aturan ditutup 2026-08-11 (`fixture_source` kini diperiksa, bukan hanya label family), tetapi **fixture ber-ekspektasi independen tetap belum ada**, sehingga gate exact-replay masih belum dapat disertifikasi | `Replay_Verification_Contract_LOCKED.md` | Gate exact-replay ("matches values/nulls/reasons/lineage/hashes") **tidak dapat disertifikasi**: seluruh 20.635 baris `MATCH`/`PASS` pada `md_replay_daily_metrics` ber-`replay_suite = 'runtime_generated_valid_case'` dan `fixture_source LIKE 'generated_from_run_%'` — 20.635 dari 20.635 tidak admissible menurut aturan W18 sendiri. Baru terlihat setelah `F-025` membuat verdict dapat disimpan. `PASS` historis W18 sebagian bersandar pada korpus ini | susun fixture yang ekspektasinya independen dari run yang diuji; bergandengan dengan `F-024` |
 | `F-029` | `W18` | P1 | CLOSED (diremediasi 2026-08-11: 13 akar terdaftar di 6 repository, plus sapuan refleksi yang menggagalkan akar tak terdaftar) | `Replay_Verification_Contract_LOCKED.md` | `AsKnownReplayBoundaryTest::test_every_temporal_root_accepts_a_knowledge_cutoff` menyebut **3 akar** (identity, status, calendar), sedangkan **9 metode repository** sudah menerima `knownAt` dan exit gate menamai **5 jenis revisi** (identity/status/event/config/factor). Yang tidak terjaga termasuk `SectorClassificationRepository::resolveSectorContextForTickerIds`, akar temporal yang baru lahir pada 2026-08-10 saat sector membership menjadi ber-interval; guard-nya tidak ikut diperluas | daftarkan setiap akar temporal pada guard, dan jadikan penambahan akar baru gagal secara default alih-alih lolos diam |
-| `F-027` | `W12` | P0 | PARTIAL — tiga faktor otoritatif diterapkan 2026-08-11 (MLPT 1:25, RAJA/RMKE 1:5) dan terbukti mencapai output terbit (`roc20` MLPT −95,7% → +7,0%); **174 dari 177 aksi masih tanpa faktor**, dan 32 split terkunci di belakang `F-039` | `Price_Adjustment_Contract_LOCKED.md` | **Nol faktor penyesuaian yang sah pernah dipakai di produksi.** Dari 530 aksi korporasi, 515 tanpa faktor dan 15 membawa faktor — tetapi ke-15 itu persis yang ber-`adjustment_source = 'DERIVED_FROM_PRICE_SERIES'` dan ditolak `EventRiskSourceRepository::isAdjustable()`. Query pembuktinya mengembalikan `faktor_sah_dan_bukan_derived = 0`. Akibatnya `STRUCTURAL_ADJUSTED` identik nilainya dengan `RAW` pada seluruh 756.328 baris, dan exit gate "satu vector tidak boleh mencampur skala RAW/adjusted" lulus secara hampa: tidak ada yang pernah disesuaikan. Jalur penyesuaian terbukti hanya oleh unit test, tidak pernah oleh data produksi — Gate 12: diamnya mekanisme berbatas bukan bukti | peroleh faktor korporasi dari sumber otoritatif sehingga minimal satu run produksi benar-benar menerapkan faktor, lalu buktikan skala sebelum/sesudah pada baris nyata |
-| `F-026` | `W12` | P1 | PARTIAL — mekanisme ditutup 2026-08-11 (`PRICE_PRODUCT_UNRECORDED` didaftarkan; `BarPriceProductIdentityTest` mengunci penulisan, lineage, dan larangan default ke `RAW`); **korpus legacy tetap tanpa identitas produk dan tidak akan di-backfill**, sehingga separuh `RAW` stage 11 tetap tak terverifikasi untuk baris historis | `Price_Adjustment_Contract_LOCKED.md` (immutable `RAW`) | **756.329 dari 756.329 baris `eod_bars` ber-`price_product_code` NULL** — nol bar menyatakan produknya, sehingga separuh `RAW` dari required outcome stage 11 tidak dapat diverifikasi setelah run berakhir. `EodBarsIngestService.php:208` menulis kode produk untuk ingestion baru; korpus legacy mendahuluinya. `MarketDataPriceReadRepository` menanganinya jujur dengan `PRICE_PRODUCT_UNRECORDED` alih-alih mengarang `RAW`, sehingga ini gap yang tersurat, bukan senyap. Sejalan dengan `P1-21` | catat identitas produk pada bar tanpa mengarang skala untuk baris legacy; backfill `RAW` retroaktif justru klaim yang barisnya sendiri tidak pernah buat |
+| `F-027` | `W12` | P0 | CLOSED 2026-08-14 untuk scope MLPT/RAJA/RMKE: `F-027a` merekam tiga event revision `AUTHORITATIVE_VERIFIED`; `F-027b` membentuk keputusan factor per publication pada korpus admitted dan menahan seluruh event ketika source scale tetap `UNKNOWN` | `Price_Adjustment_Contract_LOCKED.md` | Klaim legacy 2026-08-11 bukan authority yang sah. Tahap 6 tidak menimpa history itu. Tahap 8 juga tidak mengarang source scale: 23 keputusan event/publication tersimpan sebagai `HELD_SOURCE_SCALE_UNKNOWN`, nol factor tidak-admissible diterapkan, dan oracle decision/application bernilai nol | Tidak ada sisa untuk tiga event bernama ini. Rekonsiliasi corporate-action full-range tetap `F-010`, bukan alasan membuka kembali `F-027` |
+| `F-026` | `W12` | P1 | CLOSED 2026-08-14 untuk korpus conformant admitted | `Price_Adjustment_Contract_LOCKED.md` (immutable `RAW`) | Publikasi replacement `2026-07-08`…`2026-07-28` dibentuk lewat lifecycle normal dan seluruh bar aktif menyatakan exact `RAW`; history legacy sebelum admission tetap tanpa relabel dan common resolver menolaknya | Memperluas admission ke tanggal lebih awal menuntut kampanye/evidence baru dan tidak mengubah closure suffix saat ini |
 | `F-025` | `W18` | P1 | CLOSED (diremediasi 2026-08-11; enum diperluas, verdict tersimpan dan terbaca, `error_count` 1→0) | `Replay_Determinism_Contract` | `ReplayVerificationService.php:55` menulis `comparison_result = 'NOT_ADMISSIBLE'`, tetapi kolomnya `enum('MATCH','MISMATCH','EXPECTED_DEGRADE','UNEXPECTED')` dari migrasi `2026_05_19_000002` dan tidak pernah diperluas; setiap replay tidak-admissible gagal disimpan dengan `Warning: 1265 Data truncated` alih-alih tercatat. Ditemukan saat menjalankan replay proof `F-024` | perluas enum agar memuat `NOT_ADMISSIBLE`, lalu buktikan verdict tidak-admissible benar-benar tersimpan dan terbaca |
 | `F-024` | `W12` | P0 | OPEN — 3 dari 4 tuntutan ditutup pada remediasi 2026-08-11; tersisa **replay proof**, terblokir oleh `F-025` dan oleh ketiadaan fixture yang tidak self-generated (`P0-04`, reopened 2026-08-08) | `Price_Adjustment_Contract` + `Indicator_Registry_Baseline` | provider `adj_close` fallback sudah hilang, tetapi selected `STRUCTURAL_ADJUSTED` belum dibind run-wide; vector tanpa applied factor masih dapat dilabeli `RAW`; legacy config masih memakai `price_basis_default=close` | implement selected product/factor/config binding run-wide; factor=1 tetap `STRUCTURAL_ADJUSTED`; fresh recompute + replay proof. **Sisa per 2026-08-11: hanya replay proof.** Binding run-wide terbukti (844/844 run terikat), `factor=1` terbukti, `price_basis_default` dicabut; replay proof menuntut fixture ber-ekspektasi independen yang belum ada |
 | `F-023` | `W21` | P0 | OPEN (dipersempit dua kali) | `Test_Coverage_Closure_Contract` | Historical W21 snapshot had 4 P0 closed; strict 2026-08-08 re-audit reopened P0-04/F-024. Nine invariants had real-market production-path evidence; activated consecutive-session evidence remains absent and P1 corpus gaps remain | after F-024 remediation, re-evaluate stage-21 proof plus activated operational evidence |
 | `F-021` | `W19` | P1 | OPEN / `PRE_ACTIVATION_DEFERRED` (`P1-39`) | `Release_Gates` | pengukuran ulang 2026-08-13: `operational_start_date` kosong dan `NULL` pada 72.777 dari 72.777 run; `MARKET_DATA_DAILY_ENABLED=false`; seluruh keluaran berstatus `DEVELOPMENT`, sesuai fase pembangunan | keputusan aktivasi adalah keputusan operator setelah activation checklist terbukti; bukan pekerjaan kode dan bukan blocker burn-down pembangunan |
 | `F-020` | `W18` | P1 | OPEN (`P1-38`) | `Replay_Verification_Contract` | 20.635 hasil replay seluruhnya `PASS` dari fixture yang dihasilkan dari run yang diverifikasi; `config_identity` konstanta `'v1'` | korpus lama tidak admissible; menuntut fixture ber-author independen |
 | `F-019` | `W17` | P1 | OPEN (`P1-37`) | `Read_Side_Enforcement_Anti_Bypass_Contract` | nol route market-data dan nol domain hilir; larangan bypass tidak dapat dilanggar sekaligus tidak dapat diamati | menuntut konsumen nyata sebelum kepatuhan read-side dapat dibuktikan |
-| `F-018` | `W16` | P1 | OPEN (`P1-36`) | `EOD_Eligibility_Snapshot_Contract` | listing tersuspensi tidak memperoleh baris snapshot; 7 kolom dimensi dan reasons JSON nol terisi dari 749.685 | korpus lama menuntut pembangunan ulang snapshot |
+| `F-018` | `W16` | P1 | CLOSED 2026-08-14 untuk korpus conformant admitted (`P1-36`) | `EOD_Eligibility_Snapshot_Contract` | 15 publikasi replacement membawa satu snapshot per temporal listing beserta delapan dimensi/reasons; status penuh-sesi yang dikecualikan mengikat revision dan source observation IDX | History legacy tidak diisi ulang dan tetap non-readable sebelum admission |
 | `F-043` | `W15` | P1 | CLOSED (diremediasi 2026-08-11: hash kanonik terukur `aa7357061a66c757…`, terbukti berubah saat universe berubah dan tetap saat tidak) | `Coverage_Universe_Definition_LOCKED.md:52` | **Universe coverage tidak punya version maupun hash.** Yang tersimpan hanya `coverage_universe_count` dan `coverage_universe_basis`; satu-satunya `universe_hash` di seluruh database milik `watchlist_bt_eval`, subsistem backtest yang berbeda. Dua run untuk tanggal yang sama karena itu dapat meresolusi universe berbeda tanpa satu pun catatan universe mana yang dipakai. Bertetangga dengan `F-006` tetapi bukan hal yang sama: hash membuat pergeseran denominator **terdeteksi**, bukan **tidak terjadi** | catat hash kanonik atas himpunan listing yang membentuk universe beserta basisnya, mengikuti konvensi `factorSetHash`; buktikan hash berubah ketika himpunannya berubah dan tetap ketika tidak |
 | `F-044` | `W15` | P1 | CLOSED (diremediasi 2026-08-11: 25 identitas dikecualikan tercatat dari 81, dibatasi batas sampel yang sama) | `Coverage_Universe_Definition_LOCKED.md:52` | **Sampel listing yang dikecualikan tidak pernah disimpan.** `coverage_missing_sample_json` menamai listing yang hilang — 11 pada 2026-07-27 — tetapi 81 yang dikecualikan sebagai `NOT_EXPECTED` hanya dihitung. Pembaca evidence dapat melihat berapa yang keluar dari penyebut, tidak siapa, sehingga pengecualian tidak dapat diperiksa ulang terhadap sumbernya | simpan sampel terbatas berisi identitas listing yang dikecualikan, mengikuti mekanisme dan batas sampel missing yang sudah ada |
-| `F-017` | `W15` | P1 | PARTIAL — 2026-08-11: tuduhan aritmetika **ditarik** (evidence konsisten; `962-81=881` diverifikasi langsung dari evaluator, rumus terdokumentasi berlaku 856/856). Cacat nyata yang tersisa diperbaiki: `coverage_expectation_unknown_count` tidak pernah diproduksi evaluator dan ditulis `?? 0`; kini NULL bila tidak dihitung, dengan guard pada ketiadaan kuncinya (`P1-35`) | `Coverage_Gate_Enforcement_Contract` | `coverage_expected_count`, `delivered`, `delivered_valid`, `expectation_unknown` seluruhnya 0 dari 71.917; jumlah pengecualian suspensi tidak pernah tersimpan | korpus lama tidak dapat diaudit terhadap exit gate; menuntut derivasi ulang |
+| `F-017` | `W15` | P1 | CLOSED 2026-08-14 untuk korpus conformant admitted (`P1-35`) | `Coverage_Gate_Enforcement_Contract` | Seluruh 15 owning run menyimpan raw universe, expected, delivered, canonical-valid, unknown, not-expected, hash, sample, ratio, threshold, dan contract identity; minimum ratio `0,980022` terhadap threshold `0,980000` | Run legacy sebelum admission tidak diubah dan tidak dipakai sebagai bukti current |
 | `F-016` | `W14` | P1 | CLOSED (basi; ditutup 2026-08-11 atas pengukuran ulang korpus sekarang: 32.008 titik ATR dibandingkan oracle ber-seed boundary menurut spec LOCKED, maks 0,009392%, nol titik >=0,01%. Kembar `P1-34` yang ditutup hari yang sama) (`P1-34`) | `Indicator_Registry_Baseline` | ATR tersimpan di-seed pada jendela geser; p90 `1,62%`, maks `72,9%` terhadap nilai ber-seed boundary | recompute berbukti atas korpus indikator |
 | `F-015` | `W13` | P1 | CLOSED (basi; ditutup 2026-08-11 atas pengukuran ulang korpus sekarang: 32.559 titik dv20 dibandingkan oracle deret mentah, divergensi maks 0,000000%. Kembar `P1-33` yang ditutup hari yang sama) (`P1-33`) | `Volume_and_Turnover_Normalization` | 735.719 baris `dv20_idr` dihitung pada bar yang disesuaikan; aksi harga-saja menghasilkan adjusted price x raw volume | recompute berbukti; besaran dampak pada korpus lama belum diukur |
 | `F-042` | `W12` | P0 | CLOSED (diremediasi 2026-08-11: `created_at` dan `recorded_at` dipertahankan pada kedua upsert; baris baru tetap terisi; penyebutan eksplisit dihormati) | `Replay_Verification_Contract_LOCKED.md`; `F-028` | **Impor ulang menggeser koordinat as-known.** `recorded_at` tetap berada di blok yang selalu ditulis pada kedua upsert, sehingga impor ulang tanpa menyebutkannya menimpanya dengan waktu sekarang. Dibuktikan pada baris MLPT produksi di transaksi yang di-rollback: `recorded_at` bergeser 15:08:07 → 16:12:27. Dampaknya membalik perlindungan yang `F-028` bangun: peristiwa yang benar-benar diketahui bulan Juni, bila diimpor ulang pada Agustus, menjadi **tak terlihat** oleh setiap cutoff sebelum Agustus. Arahnya berlawanan dengan kebocoran semula — ia menyembunyikan pengetahuan masa lalu alih-alih membocorkan masa depan — dan sama salahnya bagi replay. Ini sisi ketiga dari perbaikan `F-040`/`F-041`, yang memindahkan field opsional ke blok yang mempertahankan tetapi meninggalkan `recorded_at` di blok yang menimpa | `recorded_at` harus dipertahankan saat baris sudah ada dan pemanggil tidak menyebutnya, tetapi tetap terisi saat baris baru; `updateOrInsert` tidak membedakan keduanya sehingga keberadaan baris perlu diperiksa lebih dulu |
 | `F-041` | `W12` | P0 | CLOSED (diremediasi 2026-08-11: aturan bersumber tunggal dipakai kedua upsert; sapuan membuktikan kelasnya hanya dua anggota; guard menutup kelas atas 9 situs) | `Price_Adjustment_Contract_LOCKED.md`; jalur event-risk | **Cacat `F-040` yang sama, di metode saudara yang tidak ikut diperbaiki.** `upsertTradingStatusEvent` masih menulis `source_ref` dan `notes` sebagai `$row[...] ?? null`, sehingga impor ulang tanpa kolom itu menghapusnya diam-diam. Dibuktikan pada baris ARCI produksi di dalam transaksi yang di-rollback: `source_ref` sebuah URL pengumuman IDX dan `notes` teks UMA-nya, keduanya menjadi NULL tanpa error. Paparannya total — **3.700 dari 3.700 baris** membawa keduanya. `F-040` memperbaiki `upsertCorporateAction` dan meninggalkan saudaranya, yang persis pola kesalahan yang dicatat pada sesi ini: satu sisi dari sesuatu yang bersisi dua | terapkan aturan yang sama — kunci tidak hadir mempertahankan, null eksplisit menghapus — dan periksa apakah masih ada metode upsert lain berbentuk serupa |
-| `F-040` | `W12` | P0 | CLOSED (diremediasi 2026-08-11: ketiadaan kolom mempertahankan nilai, null eksplisit menghapus; diperbaiki di repository dan importer sekaligus) | `Price_Adjustment_Contract_LOCKED.md` | **Impor ulang menghapus faktor otoritatif tanpa suara.** `upsertCorporateAction` kini menulis kolom kuantitatif dengan `$row[...] ?? null`, sehingga `updateOrInsert` atas kunci (ticker, action_date, action_type, source_name) yang sama **menimpa faktor yang sudah ada dengan NULL** bila CSV berikutnya tidak memuat kolom itu. Diuji di transaksi yang di-rollback pada baris MLPT produksi: `price_adjustment_factor` 0,04 → NULL dan `adjustment_source` `EXCHANGE_ANNOUNCEMENT` → NULL, tanpa error maupun peringatan. Jalur pemicunya justru bentuk CSV minimal tiga kolom yang importer dokumentasikan sebagai sah. Akibatnya indikator akan kembali ke `roc20` −95,7% pada recompute berikutnya. Cacat ini **dibuat oleh remediasi hari ini** dan bersifat aktif: setiap impor berikutnya dapat memicunya | pertahankan nilai tersimpan ketika kolom tidak hadir di CSV, bukan menimpanya dengan NULL; penghapusan faktor otoritatif harus menjadi tindakan eksplisit, bukan efek samping kolom yang tidak diisi |
-| `F-039` | `W12` | P0 | OPEN (dibuka 2026-08-11 saat menyiapkan impor faktor split) | `Price_Adjustment_Contract_LOCKED.md` (immutable `RAW`) | **Korpus `eod_bars` sudah disesuaikan provider dan karena itu bukan `RAW`.** Dari 35 stock split dengan rasio terverifikasi IDX, hanya 5 memperlihatkan patahan harga di seri; 30 sisanya tidak memperlihatkan patahan sama sekali, termasuk BMRI 1:2 pada 2023-04-04 yang harga sekitarnya bergerak mulus 5262,5 -> 5200 -> 5225. Bukti langsungnya aritmetis: **13.800 bar (1,82%) pada 89 ticker memiliki `close` pecahan** sementara IDX memperdagangkan saham dalam rupiah bulat — nilai seperti 5112,5 adalah sisa pembagian oleh 2. Provider (`yahoo_finance`) mengembalikan histori yang sudah di-back-adjust untuk split lama, sedangkan split sangat baru (MLPT/RAJA/RMKE, Juli 2026) belum sempat disesuaikan dan masih memperlihatkan patahan. Korpusnya karena itu **campuran**: sebagian skala teradjust, sebagian mentah, di dalam satu kolom yang sama — persis pencampuran yang exit gate stage 11 larang, dan tak terlihat sampai faktor otoritatif pertama hendak diterapkan. Konsekuensi langsung: menerapkan faktor pada baris yang sudah disesuaikan akan **menyesuaikan ganda** | tetapkan status penyesuaian per instrumen/peristiwa sebelum menerapkan faktor apa pun; impor hanya peristiwa yang terbukti belum disesuaikan, dan putuskan apakah `RAW` perlu diakuisisi ulang dari sumber yang benar-benar as-traded |
-| `F-038` | `W12` | P2 | OPEN (dibuka 2026-08-11 oleh `MD-REAUDIT W12`) | `Corporate_Action_and_Adjustment_Policy_Selected_Defaults_LOCKED.md` | **Remediasi `F-026` bersandar pada tafsir yang tidak pernah dinyatakan.** Dokumen itu berbunyi: *"An analytical row whose price-product identity is `NULL` is not weakly identified; it is **unidentified** and must not be readable."* Remediasi `F-026` justru memilih **menyajikan** bar tak berlabel disertai penanda `PRICE_PRODUCT_UNRECORDED`, dengan alasan nilainya nyata dan yang hilang hanyalah klaim skala. Pilihan itu bersandar pada tafsir bahwa bar mentah bukan "analytical row" — `eod_indicators` yang analytical dan patuh penuh, sedangkan `eod_bars` adalah artefak RAW. Menurut bunyi harfiahnya tafsir itu berdiri, tetapi ia dibuat di dalam remediasi tanpa dinyatakan, sehingga tidak pernah dapat ditolak pemilik. Bila tafsirnya salah, 756.329 bar seharusnya **tidak dapat dibaca** sampai berlabel, dan itu keputusan yang jauh lebih besar daripada yang saya ambil sendiri | pemilik menegaskan atau menolak tafsir "bar mentah bukan analytical row"; bila ditolak, sisi baca harus menahan bar tak berlabel, bukan menyajikannya dengan penanda |
+| `F-040` | `W12` | P0 | CLOSED (diremediasi 2026-08-11: ketiadaan kolom mempertahankan nilai, null eksplisit menghapus; diperbaiki di repository dan importer sekaligus) | `Price_Adjustment_Contract_LOCKED.md` | **Impor ulang menghapus faktor legacy yang mengklaim `EXCHANGE_ANNOUNCEMENT` tanpa suara.** `upsertCorporateAction` kini menulis kolom kuantitatif dengan `$row[...] ?? null`, sehingga `updateOrInsert` atas kunci (ticker, action_date, action_type, source_name) yang sama **menimpa faktor yang sudah ada dengan NULL** bila CSV berikutnya tidak memuat kolom itu. Diuji di transaksi yang di-rollback pada baris MLPT produksi: `price_adjustment_factor` 0,04 → NULL dan `adjustment_source` `EXCHANGE_ANNOUNCEMENT` → NULL, tanpa error maupun peringatan. Tahap 6 kemudian membuktikan source ref row itu bukan authority KSEI; fakta tersebut tidak mengubah tujuan guard preservasi ini. | pertahankan nilai tersimpan ketika kolom tidak hadir di CSV, bukan menimpanya dengan NULL; koreksi terms/provenance harus append-only pada revision authority, bukan efek samping kolom yang tidak diisi |
+| `F-039` | `W12` | P0 | CLOSED 2026-08-14: `F-039a` keputusan pemilik; `F-039b` penerapan fail-closed pada korpus admitted | `Price_Adjustment_Contract_LOCKED.md` (immutable `RAW`) + `Yahoo_Finance_Bootstrap_Source_Strategy.md` | Yahoo tetap bootstrap primary EOD source dan bar canonical menyatakan `RAW`. Seluruh 13.860 bar replacement mencatat source-scale state terpisah sebagai `UNKNOWN`; 23 keputusan faktor terkait event ditahan, bukan diterapkan dua kali atau diasumsikan aman | History sebelum admission tidak direlabel. `UNKNOWN` yang jujur adalah outcome kontrak, bukan residu yang boleh diubah menjadi `AS_TRADED` tanpa evidence |
 | `F-013` | `W12` | P1 | CLOSED (basi; ditutup 2026-08-11 oleh `MD-REAUDIT W12` atas bukti yang sama dengan `P1-32`: `eod_indicators` 756.328 baris, **nol** tanpa `price_product_code`) | `Price_Adjustment_Contract` | 756.328 baris indikator tanpa `price_product_code`; baris RAW dan STRUCTURAL_ADJUSTED tidak dapat dibedakan | recompute berbukti; pengisian retroaktif dilarang karena label yang benar belum tentu dapat direkonstruksi |
-| `F-010` | `W11` | P1 | OPEN (`P1-31`) | `Corporate_Action_and_Adjustment_Policy` | nol adjustment factor bersumber tersisa setelah faktor turunan diblokir; 126 aksi ber-impact `SCALED` dari IDX tanpa terms | terms aksi korporasi otoritatif dari IDX; rekonsiliasi eksternal, tidak dapat ditutup oleh kode |
-| `F-011` | `W11` | P1 | OPEN (`P1-30`) | `Exchange_Market_Structure_Facts` | tidak ada tabel tier band/floor/tick; `min_price_idr` konstanta `50`, band skalar `0.35`, keduanya tanpa sumber dan effective date | tabel tier bersumber dan ber-effective-date dari IDX; rekonsiliasi eksternal |
-| `F-007` | `W09` | P1 | OPEN (`P1-29`) | `Canonicalization_Contract_EOD_Bars` | 756.329 baris canonical, nol membawa `source_observation_id`, `listing_id`, `canonicalization_version`, `price_product_code`, maupun `quality_state` | korpus lama menuntut re-ingest berbukti; pengisian retroaktif dilarang karena akan melekatkan observation yang bukan penghasilnya |
+| `F-010` | `W11` | P1 | PARTIAL — `F-010a` CLOSED pada Tahap 6 untuk scope tiga stock split KSEI; parent tetap terbuka karena scope itu bukan klaim event-complete/full-range dan 123 dari 126 aksi legacy ber-impact `SCALED` masih belum memiliki revision terms otoritatif | `Corporate_Action_and_Adjustment_Policy` | Tiga event revision menyimpan listing identity, event/revision identity, lifecycle/verification state, cum/ex/record/distribution/effective dates, ratio, nominal lama/baru, ISIN, nomor/URL/hash/ukuran dokumen KSEI, dan `recorded_at`; announcement time yang tidak diketahui tetap `NULL` | lanjutkan rekonsiliasi eksternal corporate action dari intentional dataset start sebelum parent atau korpus disebut action-complete; penerapan scope tercatat tetap milik Tahap 8 |
+| `F-011` | `W11` | P1 | CLOSED 2026-08-14: `F-011a` authority tercatat; `F-011b` resolver/binding diterapkan pada korpus admitted | `Exchange_Market_Structure_Facts` | 1.446 publication/listing binding berhasil `RESOLVED_STANDARD_BOARD`; 12.981 binding lain tersimpan dalam state fail-closed (`BOARD_UNKNOWN`, `BOARD_NOT_POINT_IN_TIME`, atau `NON_STANDARD_BOARD`). Oracle revision/cardinality/lineage bernilai nol | Tier tidak diproyeksikan ke history atau board yang tidak terbukti. Fail-closed adalah penerapan aturan, bukan tier yang hilang diam-diam |
+| `F-007` | `W09` | P1 | CLOSED 2026-08-14 untuk korpus conformant admitted (`P1-29`) | `Canonicalization_Contract_EOD_Bars` | 13.860 bar replacement lahir dari observation Yahoo baru dan seluruhnya membawa listing, source observation, canonicalization version, exact `RAW`, quality, dan source-scale state | 756.329 bar legacy tetap history apa adanya; tidak direlabel dan tidak consumer-readable sebelum admission |
 | `F-006` | `W08` | P1 | CLOSED (diremediasi 2026-08-12: run memperoleh kolom koordinat pengetahuan sendiri `eod_runs.knowledge_cutoff_at`, distempel sekali setelah proyeksi; penyebut terbukti deterministik pada korpus produksi — 3 evaluasi identik pada tiap cutoff, dan berubah 913→881 saat cutoff bergeser melewati 64 listing yang terekam belakangan) | `Coverage_Gate_Contract` | `2026-06-02` menghasilkan denominator 950 → 949 → 950 pada tiga run di hari eksekusi yang sama (`2026-06-07`), basis `ACTIVE_LISTED_EQUITY_AS_OF_DATE` | denominator as-of harus deterministik untuk tanggal tetap; diserahkan ke `W15` (temporal coverage gate) yang memiliki kontrak ini |
 
-Closed findings are removed from this current-state table after their closure evidence is linked from the work-order row. Historical finding details belong in the admitted audit/evidence artifact, not an accumulating ledger history.
+Blok di atas mempertahankan register audit sebelum penutupan bertahap. Status pada setiap row adalah
+snapshot/override yang tercatat ketika row terakhir disentuh; blok ini bukan roster current dan
+tidak boleh dipakai untuk menghitung finding terbuka.
+
+## Active findings
+
+| Finding ID | Work order | Severity | Status | Owner contract | Current evidence | Required remediation |
+|---|---|---|---|---|---|---|
+| `F-030` | `W18` | P1 | OPEN | `Replay_Verification_Contract_LOCKED.md` | Lubang aturan self-generated sudah ditutup, tetapi fixture dengan expected values ber-author independen belum ada | Tahap 9 meng-author fixture tanpa mengambil expected output dari run target |
+| `F-024` | `W12` | P0 | OPEN — replay proof only | `Price_Adjustment_Contract` + `Indicator_Registry_Baseline` | Tahap 8 sudah membuktikan selected product/factor/config binding dan fresh admitted reconstruction; proof replay independen belum dijalankan | Tahap 10 mengeksekusi fixture Tahap 9 dan menyimpan verdict admissible |
+| `F-023` | `W21` | P0 | OPEN | `Test_Coverage_Closure_Contract` | Gate implementasi dan bukti consecutive activated sessions masih dipisah | Tahap 11 menilai `F-023a`; `F-023b` tetap gate operasi `O3` |
+| `F-021` | `W19` | P1 | OPEN / `PRE_ACTIVATION_DEFERRED` | `Release_Gates` | Project masih pembangunan; activation date dan sesi operasional belum ada | `O1`/`O2` hanya setelah activation prerequisites terbukti |
+| `F-020` | `W18` | P1 | OPEN | `Replay_Verification_Contract` | Replay lama self-generated/non-admissible; Tahap 8 tidak menjalankan replay | Tahap 9–10 menghasilkan fixture dan proof independen |
+| `F-019` | `W17` | P1 | OPEN | `Read_Side_Enforcement_Anti_Bypass_Contract` | Belum ada konsumen domain nyata | Buktikan consumer nyata melalui gateway; tidak termasuk Tahap 8 |
+| `F-010` | `W11` | P1 | PARTIAL / OPEN | `Corporate_Action_and_Adjustment_Policy` | Tiga event KSEI dalam scope Tahap 6/8 selesai, tetapi itu bukan authority event-complete/full-range | Rekonsiliasi external corporate action full-range sebelum klaim action-complete |
+
+Hanya tujuh row di atas yang membentuk roster current. Detail finding tertutup tetap berada pada
+register historis dan evidence tahapnya, bukan sebagai row aktif.
 
 ## Ledger update transaction (LOCKED)
 
@@ -1629,8 +1651,8 @@ If an update would produce two active work orders, successor before predecessor,
 ## Current next command
 
 ```text
-MD-REMEDIATE W21 findings F-023.
-Tutup F-023 pada work order W21: exit gate stage 21 menuntut setiap invariant P0/P1 berstatus PROVEN, sedangkan 3 P0 dan 24 P1 masih terbuka. Sebagian besar menuntut rekonsiliasi eksternal atau recompute korpus, bukan pekerjaan kode, sehingga penutupannya adalah keputusan lingkup yang harus diambil eksplisit. Setelah itu jalankan MD-REAUDIT W21 dan hanya tandai CONFORMANT bila kedua exit gate stage 20 dan 21 terpenuhi. Jangan melanjutkan ke W22 sebelum W21 CONFORMANT.
+TAHAP 9 — author fixture replay independen.
+Susun fixture, expected values/nulls/reasons/lineage/hashes, author provenance, dan package hash tanpa mengambil expected output dari run target. Jalankan hanya admission independensi fixture; jangan mengeksekusi replay target atau menyimpan replay proof Tahap 10. Tahap 9 belum dimulai oleh penutupan Tahap 8 ini.
 ```
 
 ## 2026-08-12 — Konsolidasi akar penyebab atas 17 temuan terbuka — HISTORICAL SNAPSHOT
@@ -2102,7 +2124,7 @@ oleh keluaran tahap sesudahnya.
 | Finding | Potongan | Aturan closure |
 | --- | --- | --- |
 | `F-039` | `F-039a` keputusan pada Tahap 4; `F-039b` penerapan pada Tahap 8 | parent tetap `OPEN` setelah Tahap 4 dan baru dapat ditutup setelah cabang keputusan terbukti pada korpus aktif |
-| `F-038` | keputusan dan, bila diperlukan, enforcement pada Tahap 5 | tidak boleh meninggalkan implementasi cabang penolakan untuk tahap berikutnya |
+| `F-038` | keputusan dan enforcement fail-closed diselesaikan pada Tahap 5 | `CLOSED`; implementasi cabang penolakan dan negative oracle selesai pada tahap yang sama |
 | `F-010` + `F-027` | `a` perekaman authority pada Tahap 6; `b` penerapan pada Tahap 8 | parent tetap `OPEN/PARTIAL` setelah Tahap 6; bukti tersimpan tidak sama dengan bukti mencapai output |
 | `F-011` | `F-011a` perekaman tier pada Tahap 7; `F-011b` penerapan pada Tahap 8 | parent tetap `OPEN/PARTIAL` setelah Tahap 7 |
 | `F-007` `F-026` `F-017` `F-018` | `a` guard selesai pada Tahap 3; `b` rekonstruksi pada Tahap 8 | parent tetap `OPEN` sampai current-authoritative population lulus |
@@ -2131,11 +2153,11 @@ oleh keluaran tahap sesudahnya.
 
 | # | Tahap | Menutup | Dinyatakan selesai bila |
 | --- | --- | --- | --- |
-| 4 | Keputusan makna `RAW` — **BELUM DIMULAI** | `F-039a` | pemilik menetapkan perlakuan korpus provider-back-adjusted, identitas produk yang sah, dan apakah akuisisi ulang as-traded diperlukan; keputusan dan alasannya tercatat, tanpa kode atau mutasi data |
-| 5 | Keputusan batas baca bar tak beridentitas — **BELUM DIMULAI** | `F-038` | pemilik menegaskan apakah canonical bar termasuk “analytical row”; bila menerima tafsir sekarang, keputusan menutup gap tafsir tanpa kode, dan bila menolak, read boundary beserta negative oracle diselesaikan pada tahap ini |
-| 6 | Rekam terms corporate action otoritatif — **BELUM DIMULAI** | `F-010a` `F-027a` | event revision, source evidence, ex/effective date, quantitative terms, dan verification state terekam untuk scope yang dideklarasikan; unknown tetap `NULL/UNKNOWN`; belum ada penerapan ke seri |
-| 7 | Rekam tier struktur pasar IDX — **BELUM DIMULAI** | `F-011a` | tier band/floor/tick bersumber, ber-effective-date, ber-revisi, dan coverage scope-nya terekam; konstanta lama belum boleh disebut exchange-verified dan belum ada penerapan ke output |
-| 8 | Rekonstruksi korpus aktif satu kali melalui lifecycle normal — **BELUM DIMULAI** | `F-007b` `F-026b` `F-017b` `F-018b` `F-039b` `F-010b` `F-027b` `F-011b` | untuk setiap tanggal dalam scope beku, current pointer menunjuk publikasi baru yang tersegel; owning run dan artefak aktif membawa lineage bar, evidence coverage, fakta eligibility, satu identitas produk, factor revision, dan tier revision yang lengkap; hitungan pelanggaran pada populasi **current-authoritative** menuju nol; history lama tidak diubah |
+| 4 | Keputusan makna `RAW` — **SELESAI 2026-08-13** | `F-039a` | pemilik mempertahankan Yahoo sebagai bootstrap primary EOD source; `RAW` ditetapkan sebagai quote OHLCV tervalidasi yang tidak ditransformasi secara ekonomi oleh platform, dengan keadaan skala source sebagai fakta terpisah; tidak ada kode atau mutasi data |
+| 5 | Keputusan batas baca bar tak beridentitas — **SELESAI 2026-08-13** | `F-038` | owner contract canonical bar yang lebih spesifik menolak tafsir lama: setiap canonical bar wajib menyatakan `RAW` secara eksplisit; common read boundary menahan publikasi bila bar current/history beridentitas kosong atau bukan exact `RAW`, dan negative oracle lulus |
+| 6 | Rekam terms corporate action otoritatif — **SELESAI 2026-08-13** | `F-010a` `F-027a` | tiga event revision dalam scope beku terikat ke immutable KSEI evidence, ex/effective date, quantitative terms, dan `AUTHORITATIVE_VERIFIED`; announcement time yang tidak diketahui tetap `NULL`; belum ada penerapan ke seri |
+| 7 | Rekam tier struktur pasar IDX — **SELESAI 2026-08-13** | `F-011a` | 4 rezim band + floor + tick ladder standard-equity bersumber, ber-effective-date, ber-revisi, terikat immutable evidence, dan coverage scope-nya terekam; config detector lama tetap bukan exchange-verified dan tidak ada penerapan ke output |
+| 8 | Rekonstruksi korpus aktif satu kali melalui lifecycle normal — **SELESAI 2026-08-14** | `F-007b` `F-026b` `F-017b` `F-018b` `F-039b` `F-010b` `F-027b` `F-011b` | admission terukur mengunci suffix conformant `2026-07-08`…`2026-07-28`; 15/15 current pointer menunjuk publikasi replacement tersegel/readable; owning run dan artefak membawa lineage bar, evidence coverage, fakta eligibility/status, identitas produk, keputusan factor, tier binding, dan admission identity; seluruh oracle current-authoritative nol; history lama tidak diubah dan tidak dibaca sebelum boundary |
 | 9 | Author fixture replay independen — **BELUM DIMULAI** | `F-030a` | fixture, expected values/nulls/reasons/lineage/hashes, author provenance, dan hash paket dibuat tanpa mengambil expected output dari run target; admission independensi lulus; replay target belum dijalankan |
 | 10 | Eksekusi replay independen dan simpan proof — **BELUM DIMULAI** | `F-030b` `F-020` `F-024` | fixture Tahap 9 dieksekusi terhadap run hasil rekonstruksi; verdict admissible tersimpan, seluruh perbandingan wajib cocok, dan `config_identity` tersimpan bukan `'v1'`; hasil self-generated lama tetap historical/non-admissible dan tidak diubah |
 | 11 | Gate stage-21 implementasi — **BELUM DIMULAI** | `F-023a` | gate benar-benar dijalankan atas current-authoritative corpus dan melaporkan setiap invariant sebagai `PASS`, `FAIL`, `BLOCKED`, atau `PRE_ACTIVATION_DEFERRED` sesuai bukti; verdict jujur adalah exit tahap ini dan tidak mengklaim `F-023b` |
@@ -2173,14 +2195,14 @@ yang mahal tetap satu kali.
 
 ### Current next action
 
-Tahap berikut yang diizinkan adalah **Tahap 4 — keputusan makna `RAW` (`F-039a`)**. Tahap ini hanya
-merekam keputusan pemilik dan alasannya. Tahap 5, authority acquisition, rekonstruksi korpus, replay,
-activation, serta perubahan kode/data apa pun belum boleh dikerjakan bersamaan dengannya.
+Tahap berikut yang diizinkan adalah **Tahap 9 — author fixture replay independen**. Tahap 8 selesai
+dan tidak menjalankan replay. Tahap 9, gate stage-21, dan activation tetap belum dikerjakan.
 
-### Evidence penyesuaian urutan — 2026-08-13
+### HISTORICAL, SUPERSEDED — Evidence penyesuaian urutan sebelum Tahap 4 — 2026-08-13
 
-Penyesuaian strategi ini **PASS**, tetapi Tahap 4 tetap **BELUM DIMULAI**. Perubahannya terbatas pada
-ledger dan guard sinkronisasi dokumentasi. Tidak ada kode produksi, `.env`, migration, schema,
+Penyesuaian strategi ini **PASS** sebagai snapshot prapelaksanaan. Status prapelaksanaan itu bukan
+current state dan telah **SUPERSEDED** oleh penutupan Tahap 4 di bawah. Perubahannya saat itu terbatas
+pada ledger dan guard sinkronisasi dokumentasi. Tidak ada kode produksi, `.env`, migration, schema,
 `operational_start_date`, run, publication, artifact, fixture replay, terms IDX, maupun korpus yang
 diubah.
 
@@ -2193,3 +2215,645 @@ Guard mengunci controller Tahap 4, urutan tepat Tahap 4–11, pemecahan parent/s
 `O1`–`O3`, populasi current-authoritative, larangan mengubah history lama, serta scope tanpa perubahan
 kode/data. Dengan demikian blok 2026-08-12 tetap dapat dibaca sebagai sejarah tetapi tidak dapat
 kembali menjadi urutan aktif secara diam-diam.
+
+## Tahap 4 — Keputusan makna `RAW` — SELESAI 2026-08-13
+
+### Input keputusan yang dibaca
+
+Tahap ini membaca kembali catatan pembukaan `F-039`, owner kontrak canonicalization dan price product,
+serta seluruh `Yahoo_Finance_Bootstrap_Source_Strategy.md`. Koreksi penting terhadap usulan pertama:
+Tahap 4 tidak boleh mengubah kekurangan provider berbayar menjadi defect atau backlog. Strategi aktif
+secara eksplisit memilih `api_free/yahoo_finance` untuk membuktikan manfaat Weekly Swing dan melarang
+migrasi provider dibuat sebagai kewajiban fase sekarang.
+
+Pengukuran ulang read-only sebelum keputusan:
+
+- `eod_bars`: 756.329 baris, rentang 2023-01-02 sampai 2026-07-28;
+- `price_product_code IS NULL`: 756.329; non-`NULL`: 0;
+- close pecahan: 13.800 baris pada 89 ticker;
+- current publication pointer: 844.
+
+Angka ini adalah evidence keputusan, bukan target mutasi Tahap 4.
+
+### Deklarasi pemilik
+
+Pemilik menyetujui keputusan berikut pada 2026-08-13:
+
+1. `api_free/yahoo_finance` **tetap bootstrap primary EOD source** untuk fase pembangunan saat ini.
+   Tidak ada keputusan membeli, memilih, atau bermigrasi ke provider lain.
+2. `RAW` adalah canonical, validated Regular-Market EOD OHLCV yang nilai ekonominya berasal dari
+   field `indicators.quote.0` pada immutable source observation dan **tidak di-adjust, diperbaiki,
+   dibulatkan secara destruktif, atau diubah skalanya oleh platform**.
+3. `RAW` bukan sinonim provider payload: schema/date/identity validation, canonical mapping,
+   provenance, quality, coverage, publication, dan readability gate tetap wajib. Ia juga bukan klaim
+   bahwa Yahoo adalah source resmi IDX, bahwa nilainya official as-traded, atau bahwa provider tidak
+   pernah merestatement skala historisnya.
+4. Keadaan skala source adalah fakta yang terpisah dari `price_product_code`. Minimum state untuk
+   penerapan keputusan ini adalah `AS_TRADED`, `PROVIDER_BACK_ADJUSTED`, dan `UNKNOWN`. State tersebut
+   harus ditentukan per instrumen/peristiwa dari evidence yang dapat diaudit; nama state ini belum
+   membuat kolom atau data pada Tahap 4.
+5. Provider `adj_close` tetap diagnostic observation metadata. Ia bukan canonical `RAW`, bukan
+   `STRUCTURAL_ADJUSTED`, dan tidak boleh menjadi fallback.
+6. Verified corporate-action factor hanya boleh diterapkan ketika evidence menunjukkan faktor itu
+   belum tertanam pada skala source. `PROVIDER_BACK_ADJUSTED` tidak boleh di-adjust ulang; `UNKNOWN`
+   harus fail-safe sebagai held/quarantined, bukan dipaksa menjadi salah satu state.
+7. Re-fetch Yahoo tetap menghasilkan observation baru dan correction/publication lineage sesuai
+   source contract. Snapshot tersegel dan korpus lama tidak direlabel atau ditulis ulang in-place.
+8. Akuisisi ulang dari source as-traded atau provider berbayar **tidak diwajibkan pada fase sekarang**.
+   Evaluasi provider masa depan hanya mengikuti trigger yang sudah dimiliki strategi Yahoo.
+
+Keputusan ini memilih cabang “terima Yahoo sebagai source aktif dan cegah double adjustment”, bukan
+cabang “ganti Yahoo”. Ia mempertahankan tujuan strategi bootstrap sekaligus tidak mengubah provider
+menjadi domain authority.
+
+### Konsekuensi yang sengaja ditunda
+
+Tahap 4 hanya menutup keputusan `F-039a`. Penerapan berikut tetap dilarang pada tahap ini dan menjadi
+`F-039b` di Tahap 8:
+
+- persistensi state skala source dan binding-nya ke observation/bar/publication;
+- perbaikan ingest yang saat ini selalu memilih `RAW` walau adapter menyatakan kandidat
+  `RAW`/`SPLIT_ADJUSTED`;
+- klasifikasi per instrumen/peristiwa;
+- rekonstruksi current-authoritative corpus;
+- penerapan atau penahanan factor revisions;
+- perubahan indicator, eligibility, publication, atau consumer output.
+
+`F-039` karena itu tetap **OPEN/PARTIAL**. Menutup parent finding hanya dari deklarasi akan mengubah
+keputusan menjadi bukti implementasi palsu.
+
+### Kemurnian scope dan histori
+
+Tidak ada kode produksi, `.env`, config runtime, migration, schema, database row, source observation,
+bar, run, publication, factor, terms IDX, fixture replay, atau activation marker yang diubah. Tahap 5
+dan seterusnya belum dikerjakan. Histori `F-039` tetap disimpan sebagai asal keputusan; current-state
+table dan controller sekarang menyatakan `F-039a` CLOSED serta `F-039b` OPEN sehingga histori lama
+tidak dapat menghidupkan kembali cabang “ganti Yahoo” secara diam-diam.
+
+### Verdict
+
+Exit criterion Tahap 4 terpenuhi: perlakuan korpus provider-back-adjusted, identitas `RAW`, status
+Yahoo, kebutuhan akuisisi ulang, dan konsekuensi cabangnya tercatat beserta alasan tanpa kode atau
+mutasi data. `F-039a` **CLOSED**. Tahap 4 **SELESAI**. Tahap berikut yang diizinkan adalah Tahap 5 —
+keputusan batas baca canonical bar tak beridentitas (`F-038`).
+
+### Evidence penutupan Tahap 4
+
+- `AuditDocsSynchronizationStaticGuardTest`: 8 test, 413 assertion — PASS;
+- `AuditCrossReferenceIntegrityTest`: 6 test, 24 assertion — PASS;
+- `LifecycleProofIsNotMockedTest`: 5 test, 8 assertion — PASS;
+- full MarketData suite: 1.445 test, 10.192 assertion — PASS;
+- `git diff --check` dengan `cr-at-eol`: PASS; line ending ledger tetap CRLF dan test tetap LF;
+- `git status --short`: hanya ledger ini dan guard sinkronisasi dokumentasinya yang berubah.
+
+## Tahap 5 — Keputusan batas baca bar tak beridentitas — SELESAI 2026-08-13
+
+### Keputusan dari authority yang sudah berlaku
+
+Tahap ini tidak menambahkan tafsir baru. Pembacaan ulang owner contract menemukan aturan yang lebih
+spesifik daripada kalimat umum yang membuka `F-038`:
+
+- `Canonicalization_Contract_EOD_Bars.md` menetapkan produk canonical `RAW` dan menahan identity yang
+  unknown;
+- `EOD_Bars_Contract.md` mewajibkan `price_basis=RAW` serta referensi non-null untuk konten readable;
+- `CONSUMER_READ_CONTRACT_LOCKED.md`, `Consumer_Readability_Decision_Table_LOCKED.md`,
+  `Read_Side_Enforcement_Anti_Bypass_Contract_LOCKED.md`, dan
+  `Downstream_Data_Readiness_Guarantee_LOCKED.md` mewajibkan gateway tunggal yang fail-closed.
+
+Karena itu tafsir historis “bar mentah bukan analytical row sehingga bar tanpa produk boleh tetap
+disajikan dengan warning” **ditolak**. Canonical bar adalah bagian wajib dari data product terbit dan
+harus menyatakan identitas `RAW` secara eksplisit. `NULL`, string kosong, whitespace, perbedaan case,
+atau produk lain tidak boleh dibaca sebagai `RAW`.
+
+### Enforcement yang diselesaikan pada tahap yang sama
+
+`EodPublicationRepository` sekarang menjadi sumber keputusan tunggal untuk keadaan ini:
+
+1. resolver strict dan current-integrity scan memeriksa `eod_bars` serta `eod_bars_history` milik
+   publication yang sama;
+2. `NULL`/blank menghasilkan `PRICE_PRODUCT_UNRECORDED`;
+3. nilai nonblank yang bukan exact-byte configured `RAW` menghasilkan
+   `CANONICAL_BAR_PRICE_PRODUCT_INVALID`;
+4. kedua keadaan membuat resolver mengembalikan `null`, sehingga seluruh publication ditahan sebelum
+   bar, indicator, eligibility, watchlist, atau portfolio price keluar;
+5. price/read-product repository mengulang filter exact `RAW` sebagai defense in depth, bukan sebagai
+   pengganti common gateway.
+
+Pencocokan memakai `HEX(...)` agar collation MariaDB yang case-insensitive tidak menganggap `raw`
+sebagai `RAW`. Tidak ada fallback, default, trimming menjadi valid, atau reason per-row yang tetap
+menyajikan harga.
+
+### Negative oracle dan dampak korpus
+
+Oracle integrasi menolak enam bentuk bypass pada bar current/history: `NULL`,
+`STRUCTURAL_ADJUSTED`, lowercase `raw`, dan padded ` RAW `. Watchlist serta portfolio price juga
+membuktikan payload kosong dengan reason `PRICE_PRODUCT_UNRECORDED`; kontrol positif memakai bar
+beridentitas `RAW` dan tetap readable.
+
+Pengukuran read-only sebelum enforcement mencatat 844 current pointer dan 756.328 bar
+current-authoritative; seluruh 756.328 ber-`price_product_code=NULL`. Akibat yang benar dan disengaja
+adalah seluruh 844 publication tersebut ditahan sampai Tahap 8 membentuk publikasi pengganti melalui
+lifecycle normal. Ini bukan backfill Tahap 5 dan bukan kegagalan enforcement: menyajikannya akan
+melanggar keputusan fail-closed yang baru dibuktikan.
+
+### Kemurnian scope, registry, dan pemulihan residu
+
+Tidak ada bar, history row, run, publication, pointer, indicator, eligibility, source observation,
+factor, terms, tier, fixture replay, schema, migration, config, `.env`, atau activation marker yang
+diubah. Tahap 5 hanya mengubah batas baca, kamus dua reason code, fixture/test terkait, ledger, dan
+guard auditnya. Korpus legacy tidak diberi label `RAW` dan tidak disentuh.
+
+Saat sinkronisasi runtime, full canonical seeder sempat memasukkan 31 kode yang sebelumnya belum ada.
+Efek samping itu tidak disembunyikan atau dibiarkan: baseline direkonstruksi dari dump 2026-07-30,
+seed Git 2026-08-03, dan bukti sesi Tahap 1 yang mencatat exact missing set. Pemulihan transaksional
+mengubah registry runtime dari 392 menjadi 363 baris: 360 baseline, satu kode Tahap 1
+`RUN_KNOWLEDGE_CUTOFF_MISSING`, serta tepat dua kode Tahap 5. Dua puluh sembilan kode di luar scope
+dikembalikan ke keadaan belum-terpasang. Pembacaan ulang membuktikan kedua kode Tahap 5 exact
+`READ_SIDE/HARD`, aktif, dan tidak ada kode di luar scope yang tertinggal akibat seeder tersebut.
+
+### Verdict
+
+Keputusan, enforcement, negative oracle, runtime reason registry, dan pembersihan residu berada pada
+tahap yang sama. `F-038` **CLOSED**. Tahap 5 **SELESAI**. Tahap berikut yang diizinkan adalah Tahap 6 —
+rekam terms corporate action otoritatif (`F-010a`, `F-027a`). Tahap 6 belum dimulai.
+
+### Evidence penutupan Tahap 5
+
+- focused Stage 5 + audit guard: 110 test, 697 assertion — PASS;
+- full MarketData suite: 1.454 test, 10.255 assertion — PASS;
+- PHP syntax pada seluruh berkas PHP yang diubah: PASS;
+- production read-only oracle: 844 current pointer; 756.328 bar current-authoritative, seluruhnya
+  tanpa identitas; 844 publication terdeteksi invalid; resolver 2026-07-28 menghasilkan `WITHHELD`;
+- runtime reason registry: 363 baris = 360 baseline + 1 Tahap 1 + 2 Tahap 5;
+- korpus: nol mutasi; 844 publication current ditahan jujur sampai rekonstruksi Tahap 8.
+
+## Tahap 6 — Rekam terms corporate action otoritatif — SELESAI 2026-08-13
+
+### Authority, scope, dan batas klaim
+
+Tahap ini mengikuti `Corporate_Action_and_Adjustment_Policy.md`,
+`Corporate_Action_Type_Registry_LOCKED.md`, dan `Price_Adjustment_Contract_LOCKED.md`. Scope dibekukan
+sebelum penulisan sebagai **tiga stock split 2026 yang proyeksi legacy-nya telah mengklaim faktor**:
+MLPT, RAJA, dan RMKE. Scope ini sengaja kecil dan terukur; ia bukan klaim bahwa 533 aksi legacy,
+126 aksi ber-impact `SCALED`, atau periode sejak intentional dataset start telah direkonsiliasi penuh.
+
+Authority yang dipakai adalah KSEI dalam peran CSD. Tiga PDF resmi diunduh ulang sebelum apply dan
+hash serta ukuran byte-nya cocok persis:
+
+| Ticker | Dokumen KSEI | SHA-256 | Byte |
+|---|---|---|---:|
+| MLPT | `KSEI-18691/JKU/0726` | `3d98ae958b06fa191ed21e5e2bc89ad4695631aaaad345e2c814d60252c25b11` | 38.882 |
+| RAJA | `KSEI-18423/JKU/0726` | `0d2766536492aa68bb530f79e07013c800da4763cdcd8985c74f2e5c311078eb` | 38.882 |
+| RMKE | `KSEI-18420/JKU/0726` | `15dc12b800ea8957de87d4ba72239296255d76b2635389586b38c3cc54705a1e` | 38.872 |
+
+Manifest yang menjadi scope declaration adalah
+`evidence/corporate_actions/stage_6_ksei_stock_split_terms_v1.json`. Ia membawa `record_only=true`
+dan schema exact-key; field tambahan seperti `price_factor` ditolak. Faktor sengaja tidak direkam
+sebagai aktif pada tahap ini karena penerapan menunggu source-scale state dan lifecycle Tahap 8.
+Pada insert baru, verifier HTTPS mengunduh byte dokumen dari exact host/path KSEI tanpa redirect,
+memerlukan HTTP 200 dan `application/pdf`, lalu mencocokkan panjang serta SHA-256 sebelum transaksi
+boleh dimulai/menulis revision, sehingga tidak ada lock database yang ditahan selama network I/O.
+Dry-run tetap tanpa jaringan; re-apply immutable yang sudah tersimpan juga
+tidak bergantung pada availability situs KSEI.
+
+### Revisi dan terms yang terekam
+
+`market-data:events:record-authoritative-terms` default ke dry-run dan hanya menulis saat `--apply`
+eksplisit. Satu transaksi menambah tiga `md_corporate_action_revisions` dan enam
+`md_source_observations` immutable (capture + accepted), dengan hasil berikut:
+
+| Ticker / listing | Cum | Ex/effective | Record | Distribution | Ratio | Nominal IDR |
+|---|---|---|---|---|---|---|
+| MLPT / 564 | 2026-07-20 | 2026-07-21 | 2026-07-22 | 2026-07-23 | 1:25 | 100 → 4 |
+| RAJA / 706 | 2026-07-15 | 2026-07-16 | 2026-07-17 | 2026-07-20 | 1:5 | 25 → 5 |
+| RMKE / 721 | 2026-07-16 | 2026-07-17 | 2026-07-20 | 2026-07-21 | 1:5 | 100 → 20 |
+
+Ketiganya `action_type_code=STOCK_SPLIT`, `lifecycle_state=EFFECTIVE`, dan
+`verification_state=AUTHORITATIVE_VERIFIED`. Event UID content-addressed atas KSEI, ISIN, dan nomor
+dokumen; revision pertama tidak mengarang supersession. Waktu pengumuman yang tidak tersedia dari
+surat tetap `announcement_at=NULL`; tanggal dokumen disimpan terpisah dan tidak disalin menjadi
+announcement time. `recorded_at=2026-08-13 14:25:21` adalah saat platform mengetahui revisi, bukan
+klaim saat bursa mengumumkannya.
+
+Tanggal legacy yang sebelumnya berasal dari anchor deret provider tidak dipakai sebagai authority.
+Secara khusus, ex-date KSEI RAJA adalah 2026-07-16, RMKE 2026-07-17, dan MLPT 2026-07-21. Baris
+legacy tidak ditimpa agar history tetap jujur; current authority untuk scope ini berada pada revision
+append-only yang terikat bukti KSEI.
+
+### Guard append-only, anti-bypass, dan idempotensi
+
+`AuthoritativeCorporateActionTermsService` menolak secara atomik:
+
+- URL non-HTTPS, host selain exact `web.ksei.co.id`, atau path bukan announcement file KSEI;
+- authority selain `KSEI/CSD`, verification selain `AUTHORITATIVE_VERIFIED`, type di luar
+  `STOCK_SPLIT`, listing yang tidak tunggal pada ex-date, atau semantics registry yang konflik;
+- date order yang salah, effective date yang bukan ex-date, ratio/nominal yang tidak konsisten,
+  unknown yang difabrikasi, hash/byte/content type yang tidak valid, dan schema drift;
+- duplicate revision yang isinya berbeda. Koreksi harus menjadi revisi baru; overwrite dilarang.
+- response authority yang gagal diambil, redirect/non-200, bukan PDF, berbeda panjang, atau berbeda
+  SHA-256 sebelum insert baru.
+
+Re-apply manifest yang sama menghasilkan `inserted_revision_count=0`,
+`unchanged_revision_count=3`, dan `source_observation_insert_count=0`; `recorded_at` serta source
+observation lama tidak bergeser. Oracle statik juga memastikan writer baru tidak memiliki surface
+ke `market_data_corporate_actions`, factor tables, run, publication, bar/history, indicator,
+eligibility, atau lineage binding.
+
+### Kemurnian scope, korpus, dan pembersihan residu
+
+Snapshot pra/post menunjukkan hanya dua tabel milik Tahap 6 yang bertambah:
+
+| Tabel/fakta | Sebelum | Sesudah |
+|---|---:|---:|
+| `md_corporate_action_revisions` | 0 | 3 |
+| `md_source_observations` | 0 | 6 |
+| `market_data_corporate_actions` | 533 | 533 |
+| `md_adjustment_factor_sets` | 0 | 0 |
+| `md_adjustment_factors` | 0 | 0 |
+| `eod_runs` | 72.777 | 72.777 |
+| `eod_publications` | 64.951 | 64.951 |
+| `eod_bars` | 756.329 | 756.329 |
+| `eod_indicators` | 756.328 | 756.328 |
+| `eod_eligibility` | 779.402 | 779.402 |
+
+Hash canonical tiga row legacy tetap
+`ba8c24bc787876481807679c130d5662472c4d14e005436c59967e89d4690b61`. Production evidence scan
+atas revision → accepted observation → capture mengembalikan tiga revision dan nol pelanggaran:
+outcome `ACCEPTED/PASSED`, source `KSEI/authority_document`, capture/accepted payload hash identik,
+unknown tetap `NULL`, dan payload tidak memuat factor aktif.
+
+Reason code info `AUTHORITATIVE_TERMS_VALIDATED` ditambahkan sinkron ke registry/seed. Saat memasang
+baris itu, full seeder sempat mengulang efek samping yang telah dicatat Tahap 5 dan menaikkan runtime
+registry 363→393. Efek itu tidak disembunyikan atau dibiarkan. Exact 29 kode di luar scope yang sama
+dengan daftar pemulihan Tahap 5 divalidasi lebih dulu lalu dihapus transaksional; state final adalah
+**364 = 360 baseline + 1 Tahap 1 + 2 Tahap 5 + 1 Tahap 6**. Empat kode wajib dibaca kembali exact:
+`RUN_KNOWLEDGE_CUTOFF_MISSING`, `PRICE_PRODUCT_UNRECORDED`,
+`CANONICAL_BAR_PRICE_PRODUCT_INVALID`, dan `AUTHORITATIVE_TERMS_VALIDATED`.
+
+Tidak ada tier/band/floor/tick Tahap 7, source-scale classification/factor application/republication
+Tahap 8, fixture/replay Tahap 9–10, gate Tahap 11, atau activation marker yang dibuat.
+
+### Verdict
+
+Exit criterion Tahap 6 terpenuhi untuk scope yang dideklarasikan: event revision, immutable source
+evidence, ex/effective dan lifecycle dates, quantitative terms, verification state, as-known
+coordinate, unknown preservation, append-only conflict behavior, dan nol penerapan ke seri semuanya
+terbukti. `F-010a` dan `F-027a` **CLOSED untuk scope yang dideklarasikan**. Parent `F-010` dan
+`F-027` tetap **OPEN/PARTIAL** karena perekaman tiga event bukan rekonsiliasi full-range dan bukan
+bukti terms mencapai output. Tahap 6 **SELESAI**. Tahap berikut yang diizinkan adalah Tahap 7 —
+rekam tier struktur pasar IDX (`F-011a`).
+
+### Evidence penutupan Tahap 6
+
+- focused command/repository/schema/reason-code/audit/ops suite: 88 test, 1.602 assertion — PASS;
+- full MarketData suite: 1.463 test, 10.422 assertion — PASS;
+- PHP syntax pada seluruh berkas PHP Tahap 6: PASS;
+- tiga PDF KSEI: verifier runtime HTTP 200/application-PDF dan hash/byte length 3/3 cocok;
+- production apply: 3 revision, 6 observations; re-apply true no-op;
+- production residue oracle: hanya revision/observation bertambah; korpus, history, factor, run,
+  publication, pointer-dependent artifacts, dan output tidak berubah.
+
+## Tahap 7 — Rekam tier struktur pasar IDX — SELESAI 2026-08-13
+
+### Authority, scope, dan batas klaim
+
+Tahap ini mengikuti `Exchange_Market_Structure_Facts_LOCKED.md`. Scope dibekukan sebelum penulisan
+sebagai `IDX_REGULAR_STANDARD_EQUITY`: saham Papan Utama, Pengembangan, dan Ekonomi Baru di Pasar
+Reguler, dengan batas dataset `2023-01-02`. Papan Akselerasi dan Pemantauan Khusus dikecualikan
+secara eksplisit karena aturan exchange-nya berbeda; listing dengan board point-in-time yang kosong
+atau tidak dikenal wajib `FAIL_CLOSED`, bukan mewarisi tier standar secara diam-diam.
+
+Manifest `evidence/market_structure/stage_7_idx_regular_market_structure_v1.json` adalah deklarasi
+scope exact-key dan membawa `record_only=true`. Ia merekam lima transport evidence yang byte-nya
+diverifikasi sebelum transaksi:
+
+| Authority / dokumen | Peran | SHA-256 byte yang diverifikasi | Byte |
+|---|---|---|---:|
+| OJK `29/SEOJK.04/2021` | origin regulator; rezim ARB 7% | `6251db009403322782d26b3585bd478e769f5d1939831f434243d8bb36364809` | 109.505 |
+| IDX `PR-043/BEI.SPR/05-2023` | origin exchange; rezim ARB 15% | `5b67ec6ad53545d31466689ccd0361534736cc4cddcf36b7eabfb58a3de12a90` | 4.648 |
+| IDX `S-07234/BEI.POP/08-2023` | dokumen exchange pada mirror terpin; rezim simetris | `6f210eaad92746cab54da39fe5d7cb1b1a1e48041225bdee96bf0da5102879b8` | 167.032 |
+| IDX `Kep-00003/BEI/04-2025` | origin exchange; rezim current 15% | `309d8c8ad96b82008ea8a4327037fc1e0cee115fce82724024f8cb7756731aad` | 346.533 |
+| IDX `S-02774/BEI.PPG/04-2016` | dokumen exchange pada redirect mirror terpin; floor/tick | `a9e14d67f8d927c0bf797ed9bb717e8e0babc3a2be2e09a67669a2ab99e1a9d6` | 368.940 |
+
+Mirror hanya berfungsi sebagai transport byte dokumen beridentitas IDX, bukan sebagai authority
+baru. Verifier membatasi HTTPS host/transport role, status 200, content type yang diizinkan,
+redirect Dropbox tetap di transport Dropbox HTTPS, panjang, dan SHA-256. Dry-run tidak memakai
+jaringan. Re-apply atas revision/evidence yang sudah tersimpan juga tidak bergantung pada situs.
+
+### Revisi efektif dan tier yang terekam
+
+Apply awal menambah enam `md_exchange_market_structure_revisions`, dua belas
+`md_exchange_price_band_tiers`, lima `md_exchange_tick_size_tiers`, dan sepuluh
+`md_source_observations` immutable (5 capture + 5 accepted):
+
+| Rule | Effective interval | Tier/value |
+|---|---|---|
+| `PRICE_BAND` | 2021-12-01 … 2023-06-04 | upper 35/25/20%; lower 7/7/7% |
+| `PRICE_BAND` | 2023-06-05 … 2023-09-03 | upper 35/25/20%; lower 15/15/15% |
+| `PRICE_BAND` | 2023-09-04 … 2025-04-07 | symmetric 35/25/20% |
+| `PRICE_BAND` | 2025-04-08 … open | upper 35/25/20%; lower 15/15/15% |
+| `MINIMUM_PRICE` | 2016-05-02 … open | IDR 50 |
+| `TICK_SIZE` | 2016-05-02 … open | `<200`:1/10; `200..<500`:2/20; `500..<2000`:5/50; `2000..<5000`:10/100; `>=5000`:25/250 (tick/max step, IDR) |
+
+Band memakai batas tier `50..200`, `>200..5000`, dan `>5000`. Semua revision berstatus
+`AUTHORITATIVE_VERIFIED`, memiliki content-addressed rule/source UID, `content_hash`, source
+observation accepted, effective interval, `recorded_at=2026-08-13 15:51:26`, dan
+`supersedes_revision_id=NULL` untuk revision pertama. Oracle coverage menunjukkan interval band
+kontinu dari tanggal pertama dataset, floor/tick sudah berlaku sebelum boundary itu, satu exact
+coverage-scope JSON, dan nol orphan revision.
+
+### Koreksi append-only atas identity response — selesai 2026-08-13
+
+Audit residu atas apply awal menemukan satu blind spot: verifier telah membuktikan response aktual,
+tetapi hasil `HTTP status`, content type, document SHA-256, byte length, schema fingerprint, dan
+bounded response sample dibuang sebelum persistence. Sepuluh observation awal akibatnya merekam
+identity metadata manifest, bukan identity response yang benar-benar diterima. Semantik enam rule
+dan 17 tier tidak salah; yang tidak admissible adalah evidence binding revision pertamanya.
+
+Koreksi tidak mengubah atau menghapus history tersebut. Writer mendeteksi evidence lama yang tidak
+memenuhi kontrak response, memverifikasi ulang kelima dokumen sebelum transaction, kemudian
+menambahkan enam revision nomor 2 dengan `supersedes_revision_id` ke revision nomor 1 dan sepuluh
+observation baru dengan `supersedes_observation_id` ke evidence lama. Revision aktif tetap tepat
+enam dengan 12 band tier dan 5 tick tier. Kelima pasangan evidence aktif kini membawa status 200,
+content type response aktual, exact document SHA-256/ref/byte length, schema fingerprint, serta
+self-consistent bounded sample pada row `CAPTURED`; row `ACCEPTED/PASSED` menunjuk capture itu tanpa
+menduplikasi body. Oracle current-state menghasilkan **0 evidence violation**.
+
+Ini merupakan koreksi evidence `F-011a`, bukan perubahan fakta pasar atau penerapan `F-011b`.
+Apply koreksi mencatat `evidence_correction_revision_count=6`; apply identik segera sesudahnya
+kembali menjadi true no-op dengan `inserted_revision_count=0`, `unchanged_revision_count=6`,
+`evidence_correction_revision_count=0`, dan `source_observation_insert_count=0`.
+
+### Guard, idempotensi, dan kemurnian tahap
+
+Command `market-data:market-structure:record-authoritative-rules` default ke dry-run dan hanya
+menulis saat `--apply`. Ia menolak schema drift, record-only false, scope/board drift, gap atau
+overlap rezim yang tidak cocok deklarasi, tier/range/inclusivity yang berubah, authority/transport
+yang tidak diizinkan, byte evidence berbeda, duplicate immutable revision yang konflik, dan source
+observation yang bukan `ACCEPTED/PASSED`. Enam revision disimpan dalam satu transaction setelah
+seluruh remote verification selesai, sehingga kegagalan tidak menghasilkan subset data.
+
+Re-apply produksi menghasilkan `inserted_revision_count=0`, `unchanged_revision_count=6`, semua
+tier insert `0`, dan `source_observation_insert_count=0`. Perbandingan idempoten menormalisasi bentuk
+DECIMAL MariaDB (`50` dan `50.0000`) sebagai nilai numerik yang sama tanpa melonggarkan string,
+scope, identity, hash, atau evidence comparison.
+
+Static guard atas `AuthoritativeExchangeMarketStructureService` memastikan tidak ada surface
+`DB::table(...)` ke run, publication, pointer,
+bar/history, indicator, eligibility, factor, event legacy, atau lineage binding. Stage 7 tidak
+membuat resolver dan tidak menyentuh `PriceScaleBreakDetectionService`; config
+`market_data.price_scale_break.min_price_idr=50` tetap input detector legacy yang **bukan**
+exchange-verified. Dengan demikian tidak ada penerapan terselubung ke Stage 8.
+
+Snapshot apply awal, dipertahankan sebagai riwayat eksekusi:
+
+| Tabel/fakta | Sebelum | Sesudah |
+|---|---:|---:|
+| `md_exchange_market_structure_revisions` | 0 | 6 |
+| `md_exchange_price_band_tiers` | 0 | 12 |
+| `md_exchange_tick_size_tiers` | 0 | 5 |
+| `md_source_observations` | 6 | 16 |
+| `md_corporate_action_revisions` | 3 | 3 |
+| `md_adjustment_factor_sets` | 0 | 0 |
+| `md_adjustment_factors` | 0 | 0 |
+| `eod_runs` | 72.777 | 72.777 |
+| `eod_publications` | 64.951 | 64.951 |
+| `eod_bars` | 756.329 | 756.329 |
+| `eod_bars_history` | 56.908.318 | 56.908.318 |
+| `eod_indicators` | 756.328 | 756.328 |
+| `eod_eligibility` | 779.402 | 779.402 |
+
+Current state sesudah koreksi evidence append-only:
+
+| Tabel/fakta | Total fisik | Current/latest |
+|---|---:|---:|
+| `md_exchange_market_structure_revisions` | 12 | 6 revision nomor 2 |
+| `md_exchange_price_band_tiers` | 24 | 12 |
+| `md_exchange_tick_size_tiers` | 10 | 5 |
+| `md_source_observations` | 26 | 10 observation / 5 pasangan evidence aktif |
+| revision aktif tanpa `supersedes_revision_id` | — | 0 |
+| evidence aktif yang tidak cocok response identity | — | 0 |
+
+Enam revision nomor 1 dan sepuluh observation awal tetap immutable sebagai history yang secara
+eksplisit disupersede; angka fisik 12/24/10/26 tidak boleh disalahartikan sebagai duplikasi current
+authority. Tidak ada row lama yang diedit atau dihapus oleh koreksi.
+
+Reason code `AUTHORITATIVE_MARKET_STRUCTURE_VALIDATED` dipasang melalui migration sempit yang
+memvalidasi conflict, bukan menjalankan full seed. Runtime registry berubah tepat **364→365**;
+tidak ada pengulangan efek samping 29 kode di luar scope yang pernah terjadi pada Tahap 5/6.
+
+### Verdict
+
+Exit criterion Tahap 7 terpenuhi untuk scope owner yang dikunci: band/floor/tick bersumber,
+effective-dated, revisioned, coverage scope serta unknown policy terekam, immutable evidence dapat
+diaudit, dan tidak ada penerapan ke output. `F-011a` **CLOSED**. Parent `F-011` tetap
+**OPEN/PARTIAL** karena point-in-time board resolution dan pengikatan revision ke korpus baru adalah
+`F-011b` pada Tahap 8. Tahap 7 **SELESAI**. Tahap berikut yang diizinkan adalah Tahap 8 —
+rekonstruksi korpus aktif melalui lifecycle normal; pekerjaan itu belum dimulai di sini.
+
+### Evidence penutupan Tahap 7
+
+- verifier runtime: 5/5 HTTP 200; exact content-type policy, byte length, dan SHA-256 cocok;
+- response-persistence oracle: 5/5 evidence aktif membawa exact response identity dan bounded
+  capture sample; 6/6 revision aktif adalah revision nomor 2 dengan supersession; 0 violation;
+- command unit/negative/idempotency/correction suite: 8 test, 194 assertion — PASS;
+- audit synchronization guard: 11 test, 553 assertion — PASS;
+- SQLite/schema mirror guard: 6 test, 587 assertion — PASS;
+- full MarketData suite: 1.472 test, 10.749 assertion — PASS;
+- PHP syntax seluruh berkas PHP Stage 7: PASS;
+- repository diff check dengan kebijakan `cr-at-eol`: PASS; owned-file trailing-whitespace scan: PASS;
+- production initial apply: 6 revision, 12 band tier, 5 tick tier, 10 observations;
+- production evidence correction: append-only 6 revision + 12 band tier + 5 tick tier + 10
+  observations; current authority tetap 6/12/5 dan re-apply true no-op;
+- production residue oracle: 0 orphan/linkage/response-identity violation, 1 exact coverage scope,
+  seluruh 5 evidence aktif memiliki pasangan `CAPTURED/PENDING` → `ACCEPTED/PASSED`,
+  output/history/factor/event tetap pada baseline, dan registry hanya bertambah satu exact Stage 7
+  reason code.
+
+## Tahap 8 — Rekonstruksi korpus aktif satu kali — SELESAI 2026-08-14
+
+### Jalur kedua yang disahkan
+
+Jalur kedua mempertahankan dua boundary yang berbeda dan tidak menulis ulang salah satunya:
+
+- `2023-01-02` tetap **intentional dataset start** pembangunan;
+- `2026-07-08` adalah **conformant-corpus admission boundary** pertama yang terukur terhadap source,
+  status perdagangan, coverage, dan quality gate yang dikunci.
+
+Keputusan admission id 1/UID
+`c791f200c11d6f98013e6b53d2797591d3f2f315e8e86b4fc348e7a1a5bc3a70` mengikat snapshot
+long-suspension IDX per `2026-06-30` (observation 1984), transition search sampai `2026-07-28`
+(observation 1986), status-revision-set hash, source-cache hash, measurement hash, threshold
+`0,980000`, dan algoritma `stage8-conformant-suffix-admission/v1`. Apply ulang adalah true no-op.
+
+Pengukuran mencakup 21 trading date `2026-06-30`…`2026-07-28`. Earliest continuous passing
+suffix dimulai `2026-07-08`: predecessor `2026-07-07` gagal (`0,979978`), boundary lulus
+(`0,980022`), dan setiap tanggal sesudahnya sampai frontier lulus. Bukti status menyatakan 59 listing
+`NOT_EXPECTED` berdasarkan authority IDX, bukan berdasarkan absence/zero-volume Yahoo. Tanggal status
+yang lebih lama hanya dipakai sesuai effective/known-time evidence; tidak ada proyeksi current state
+ke masa lalu.
+
+### Rekonstruksi dan hasil current-authoritative
+
+Kampanye pertama id 1/full-range tetap immutable sebagai bukti jalur yang gagal dan berstatus
+`SUPERSEDED`, bukan dihapus atau diubah menjadi pass. Kampanye kedua id 2/UID
+`bbeaa5f28935742e9944b4d16c44d900fc301cfb17874fa22254e78b35a4eaaa` mengikat admission id 1,
+mensupersede kampanye 1, dan membekukan tepat 15 trading date `2026-07-08`…`2026-07-28`.
+
+Akuisisi Yahoo dilakukan fresh dan bounded untuk 962 ticker dalam 49 batch. Hasil lifecycle:
+
+- 15/15 target `COMPLETE`; 15 correction `PUBLISHED`;
+- 15 owning run `SUCCESS/READABLE` dan 15 current pointer beralih lewat finalize normal;
+- minimum coverage `0,980022`, maksimum `1,000000`, threshold tetap `0,980000`;
+- 13.860 bar replacement membawa listing, source observation, canonicalization version, exact
+  product `RAW`, quality state, dan source-scale state;
+- 14.427 market-structure binding tersimpan: 1.446 `RESOLVED_STANDARD_BOARD`, sedangkan 12.981
+  sisanya eksplisit fail-closed karena board unknown/not-point-in-time/non-standard;
+- 23 corporate-action factor decision berstatus `HELD_SOURCE_SCALE_UNKNOWN`; tidak ada source scale
+  yang ditebak menjadi `AS_TRADED` dan tidak ada factor tidak-admissible yang diterapkan;
+- first admitted date mempunyai 919 indicator row, seluruhnya deterministic invalid/NULL dan nol
+  warm-up metric terisi karena history pra-admission dilarang menjadi seed.
+
+State `UNKNOWN` dan fail-closed di atas adalah outcome yang diwajibkan owner contract saat evidence
+tidak cukup, bukan residu untuk “dibersihkan” lewat asumsi. Yang wajib nol adalah binding yang hilang,
+ambiguity yang disamarkan, factor yang diterapkan tanpa keputusan, atau output yang lolos tanpa
+lineage; seluruhnya nol.
+
+### Oracle, history, dan batas baca
+
+Oracle final kampanye 2 menghasilkan `violation_count=0`. Masing-masing 16 kelompok berikut bernilai
+nol: target incomplete; admission binding; pointer/identity; bar field; coverage field; eligibility
+field; trading-status binding; publication lineage; market-structure binding dan cardinality;
+factor decision, application, dan missing-applied-factor; baseline metadata dan snapshot immutability;
+serta replacement artifact hash.
+
+Audit hash sempat melaporkan 45 mismatch (tiga artefak × 15 tanggal). Publication dan artefaknya
+tidak rusak: oracle mengurutkan nama kolom replacement secara alfabet, sedangkan hash publication
+memakai urutan kolom kontrak. Oracle diperbaiki untuk mempertahankan urutan
+`MarketDataPipelineService::*_HASH_COLUMNS`; baseline private snapshot tetap memakai urutan alfabet
+karena menambah provenance di luar hash publication. Behavioral regression dan audit ulang atas
+artefak produksi yang sama membuktikan 45→0 tanpa reissue, relabel, atau perubahan data.
+
+Empat correction gagal dari percobaan lifecycle sebelumnya tetap terminal `FAILED`; tiga di
+antaranya merekam perbaikan denominator/finalize invariant yang ditemukan saat eksekusi. Semuanya
+dipertahankan sebagai history append-only. Tidak ada correction Tahap 8 aktif. Pre-admission current
+pointer tidak menerima admission binding (hitungan nol), resolver mengembalikan non-readable untuk
+`2026-07-07`, dan readable untuk `2026-07-08` serta `2026-07-28`.
+
+Replay tidak dipanggil. `md_replay_daily_metrics` terakhir berubah `2026-08-11 08:47:28`, sebelum
+kampanye Tahap 8; oracle kampanye menyimpan `stage_9_replay=NOT_EXECUTED`. Dengan demikian Tahap 8
+tidak mengambil keluaran Tahap 9 untuk mengklaim selesai.
+
+### Verdict
+
+Tahap 8 **PASS dan selesai** untuk korpus conformant admitted. `F-007b`, `F-026b`, `F-017b`,
+`F-018b`, `F-039b`, `F-010b`, `F-027b`, dan `F-011b` telah dieksekusi melalui lifecycle normal;
+parent `F-007`, `F-026`, `F-017`, `F-018`, `F-039`, `F-027`, dan `F-011` ditutup. `F-010` tetap
+parsial hanya karena scope tiga event KSEI bukan authority full-range, bukan karena penerapan tiga
+event itu tertinggal. Intentional dataset start tidak digeser, history lama tidak direlabel, dan
+Tahap 9 belum dimulai.
+
+### Evidence penutupan Tahap 8
+
+- final command re-audit: `status=ALREADY_COMPLETE`, campaign 2, 15 target,
+  `oracle_violation_count=0`, dan `stage_9_replay=NOT_EXECUTED`;
+- full MarketData suite: **1.484 test, 10.991 assertion — PASS**;
+- audit-doc synchronization: 11 test, 555 assertion — PASS;
+- SQLite/schema mirror: 6 test, 683 assertion — PASS;
+- Stage 8 reconstruction/hash guards: 6 test, 41 assertion — PASS;
+- seluruh migration Stage 8 sampai `2026_08_14_000003` applied;
+- PHP syntax seluruh berkas PHP changed/untracked: PASS;
+- `git diff --check` dengan kebijakan repository `cr-at-eol`: PASS;
+- tidak ada proses PHP tersisa dan kedua probe audit sementara telah dihapus.
+
+### HISTORICAL, SUPERSEDED — jalur pertama full-range yang fail-safe
+
+Blok berikut mempertahankan bukti kampanye id 1 sebagai history. Klaim `BLOCKED`, `0/844`, dan
+“Tahap 8 tidak PASS” di dalam blok ini hanya verdict kampanye pertama sebelum admission decision;
+ia bukan current controller state dan tidak boleh mengalahkan penutupan di atas.
+
+#### Implementasi yang tersedia
+
+Tahap 8 hanya mengimplementasikan lifecycle yang dimiliki urutan aktif: command
+`market-data:corpus:reconstruct-current` default dry-run, kampanye/tanggal baseline yang dibekukan,
+akuisisi satu range Yahoo dalam batch 20 ticker dengan cache JSONL resumable, correction per tanggal,
+re-ingest/recompute/republication normal, binding source-scale/factor/market-structure, serta oracle
+current-authoritative dan hash snapshot baseline. Tahap ini tidak menjalankan fixture atau replay
+Tahap 9/10.
+
+Plan produksi membekukan scope `2023-01-02` sampai `2026-07-28`: 844 trading date, 977 ticker
+temporal, 844 baseline current pointer, dan `baseline_max_publication_id=73596`. Seluruh 49 batch
+akuisisi selesai; memori tetap bounded karena row diproses per tanggal dari cache, bukan sebagai satu
+array korpus.
+
+#### Executed fail-safe outcome
+
+Kampanye `campaign_id=1`, UID
+`e2fae5eb8ac99db0c80ea259b47cf5a61018a74979cdc47f2a099277ba07343a`, berhenti pada target pertama
+`2023-01-02` dengan `STAGE8_DATE_NOT_READABLE`. Owning run 72923 mengukur:
+
+| Bukti coverage | Nilai |
+|---|---:|
+| temporal universe / denominator | 825 |
+| observation delivered | 779 |
+| canonical valid | 777 |
+| invalid OHLC | 2 |
+| missing delivery | 46 |
+| ratio / minimum | 0,944242 / 0,980000 |
+| verified `NOT_EXPECTED` | 0 |
+
+Yahoo mengembalikan 973 accepted response dan 5 explicit invalid-symbol response untuk range penuh;
+pada tanggal target 46 listing tidak memiliki observation. Untuk sebagian besar simbol lama, payload
+Yahoo aktif hanya memuat interval baru atau tidak lagi memiliki simbol. Empat puluh empat dari 46
+listing itu mempunyai bar pada publikasi baseline, tetapi seluruhnya tanpa
+`source_observation_id`; mayoritas adalah harga datar bervolume nol dan tiga berasal dari provider
+legacy selain Yahoo. Bar tersebut tidak dapat dipakai sebagai observation baru dan tidak boleh
+dianggap bukti `NOT_EXPECTED`.
+
+Kontrak coverage, source acquisition, dan trading status melarang tiga jalan pintas: provider absence
+atau zero volume tidak mengurangi denominator, bar canonical tidak boleh ditulis tanpa immutable
+observation, dan status penuh-sesi tidak boleh disimpulkan dari data harga/current state. Karena itu
+coverage tidak diturunkan, denominator tidak diubah, bar legacy tidak disalin, dan source lain tidak
+disisipkan ke run Yahoo.
+
+#### Residu dan batas state saat kampanye pertama
+
+- current pointer `2023-01-02` tetap publication 72742/run 72067; jumlah pointer yang beralih dalam
+  kampanye adalah **0**;
+- correction 63963 diterminalkan `FAILED`, run 72923 `FAILED/NOT_READABLE`, dan candidate publication
+  73598 tetap `UNSEALED/is_current=0`; tidak ada correction Stage 8 yang masih aktif;
+- tabel projection `eod_bars`, `eod_indicators`, dan `eod_eligibility` telah kembali menunjuk owning
+  baseline run, sementara candidate history tetap immutable sebagai bukti percobaan gagal;
+- baseline publication 72742 tetap 823 bar dan snapshot/hash baseline kampanye tidak diubah;
+- kampanye `BLOCKED` menyimpan `blocked_trade_date`, reason, complete count 0, dan
+  `stage_9_replay=NOT_EXECUTED`;
+- impact reprocess biasa kini dilarang untuk `request_mode=corpus_reconstruction`; kampanye sendiri
+  adalah owner rebuild kronologis sehingga percobaan berikut tidak membuat fan-out lintas tanggal;
+- resume setelah attempt terminal membuat correction baru dan mempertahankan attempt gagal, bukan
+  membuka kembali atau menimpanya.
+
+#### Verdict historis kampanye pertama
+
+Mekanisme Tahap 8 dan perilaku fail-safe telah terbukti, tetapi exit criterion korpus belum terpenuhi:
+0 dari 844 target selesai dan current-authoritative violations belum nol. Karena itu Tahap 8 **tidak
+PASS dan tidak ditutup**; seluruh finding `b` tetap `OPEN`. Tahap 9 tidak boleh dimulai.
+
+Melanjutkan target yang sama memerlukan salah satu evidence yang belum tersedia dan tidak boleh
+dipilih diam-diam oleh implementasi: observation historis yang sah untuk source mode yang
+dideklarasikan, atau authority status IDX point-in-time/full-session yang benar-benar membuktikan
+`NOT_EXPECTED`. Mengubah intentional dataset start, coverage minimum, denominator, atau menamai bar
+legacy sebagai observation bukan remediation yang diizinkan.
+
+#### Evidence implementasi dan blocker historis
+
+- seluruh migration sampai `2026_08_14_000001` berstatus applied;
+- full MarketData suite: 1.481 test, 10.929 assertion — PASS;
+- focused Stage 8, governance, audit-doc, schema, reason-code, migration-drift, dan anti-bypass
+  guards — PASS;
+- PHP syntax seluruh berkas PHP yang berubah dan `git diff --check` dengan kebijakan `cr-at-eol` —
+  PASS;
+- production frozen-baseline oracle: 844 target, pointer drift 0, baseline metadata violation 0,
+  active Stage 8 correction 0, current replacement 0, replay row baru 0;
+- blocker yang tetap terbuka: target pertama hanya 779 delivered observation dari denominator 825;
+  tidak ada evidence sah di workspace untuk mengubah minimal 30 missing menjadi delivery atau
+  verified full-session `NOT_EXPECTED`.

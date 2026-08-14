@@ -81,15 +81,7 @@ class CoverageSilentImprovementBoundaryTest extends TestCase
     {
         $this->seedUniverse(10, 8);
 
-        DB::table('market_data_trading_status_events')->insert([
-            'ticker_id' => 2,
-            'ticker_code' => 'TST2',
-            'trade_date' => '2026-03-24',
-            'event_type_code' => 'SUSPENDED',
-            'source_name' => 'test_fixture',
-            'recorded_at' => '2026-03-24 00:00:00',
-            'created_at' => '2026-03-24 00:00:00',
-        ]);
+        $this->supersedeExpectation(2, 'SUSPENSION_OBSERVED', 'BAR_NOT_EXPECTED', true);
 
         $result = (new CoverageGateEvaluator(...$this->evaluatorDependencies()))->evaluate('2026-03-24');
 
@@ -105,18 +97,9 @@ class CoverageSilentImprovementBoundaryTest extends TestCase
     {
         $this->seedUniverse(10, 8);
 
-        // Evidence the platform holds and cannot read: a status event whose type the dictionary
-        // does not define. Under :19 that is incomplete expectation evidence, so the listing is
-        // UNKNOWN — and under :21 it stays in the denominator rather than leaving it.
-        DB::table('market_data_trading_status_events')->insert([
-            'ticker_id' => 1,
-            'ticker_code' => 'TST1',
-            'trade_date' => '2026-03-24',
-            'event_type_code' => 'SOME_FUTURE_IDX_STATUS',
-            'source_name' => 'test_fixture',
-            'recorded_at' => '2026-03-24 00:00:00',
-            'created_at' => '2026-03-24 00:00:00',
-        ]);
+        // The other nine listings retain source-backed BAR_EXPECTED revisions, so this isolates
+        // one V2 revision whose expectation cannot be interpreted. UNKNOWN remains denominator.
+        $this->supersedeExpectation(1, 'SOME_FUTURE_IDX_STATUS', 'BAR_EXPECTATION_UNKNOWN', false);
 
         $result = (new CoverageGateEvaluator(...$this->evaluatorDependencies()))->evaluate('2026-03-24');
 
@@ -191,15 +174,7 @@ class CoverageSilentImprovementBoundaryTest extends TestCase
     public function test_the_raw_universe_and_the_expected_denominator_are_reported_separately(): void
     {
         $this->seedUniverse(10, 8);
-        DB::table('market_data_trading_status_events')->insert([
-            'ticker_id' => 2,
-            'ticker_code' => 'TST2',
-            'trade_date' => '2026-03-24',
-            'event_type_code' => 'SUSPENDED',
-            'source_name' => 'test_fixture',
-            'recorded_at' => '2026-03-24 00:00:00',
-            'created_at' => '2026-03-24 00:00:00',
-        ]);
+        $this->supersedeExpectation(2, 'SUSPENSION_OBSERVED', 'BAR_NOT_EXPECTED', true);
         $result = (new CoverageGateEvaluator(...$this->evaluatorDependencies()))->evaluate('2026-03-24');
 
         $this->assertArrayHasKey('coverage_universe_count', $result);
@@ -312,5 +287,56 @@ class CoverageSilentImprovementBoundaryTest extends TestCase
                 ]);
             }
         }
+
+        (new TemporalIdentityRepository())->ensureLegacyProjection();
+        $sourceObservationId = DB::table('md_source_observations')->insertGetId([
+            'observation_uid' => hash('sha256', 'coverage-status-fixture-'.$count),
+            'attempt_uid' => hash('sha256', 'coverage-status-attempt-'.$count),
+            'requested_trade_date' => '2026-03-24',
+            'source_mode' => 'authority_document',
+            'source_name' => 'IDX',
+            'provider' => 'IDX',
+            'sanitized_request_identity' => 'fixture://coverage-status/'.$count,
+            'acquired_at' => '2026-03-24 00:00:00',
+            'adapter_version' => 'test-v2-status',
+            'outcome_state' => 'ACCEPTED',
+            'validation_state' => 'PASSED',
+            'created_at' => '2026-03-24 00:00:00',
+        ]);
+        foreach (DB::table('md_listings')->whereIn('legacy_ticker_id', range(1, $count))->get() as $listing) {
+            DB::table('md_trading_status_revisions')->insert([
+                'listing_id' => (int) $listing->listing_id,
+                'status_code' => 'REGULAR_SESSION_EXPECTED',
+                'bar_expectation_state' => 'BAR_EXPECTED',
+                'authority_class' => 'EXCHANGE_AUTHORITATIVE',
+                'full_session_verified' => 1,
+                'effective_from' => '2026-03-24 00:00:00',
+                'recorded_at' => '2026-03-24 00:00:00',
+                'source_observation_id' => $sourceObservationId,
+                'verification_state' => 'VERIFIED',
+            ]);
+        }
+    }
+
+    private function supersedeExpectation(int $tickerId, string $statusCode, string $expectation, bool $fullSession): void
+    {
+        $listingId = (int) DB::table('md_listings')->where('legacy_ticker_id', $tickerId)->value('listing_id');
+        $current = DB::table('md_trading_status_revisions')
+            ->where('listing_id', $listingId)
+            ->orderByDesc('status_revision_id')
+            ->first();
+
+        DB::table('md_trading_status_revisions')->insert([
+            'listing_id' => $listingId,
+            'status_code' => $statusCode,
+            'bar_expectation_state' => $expectation,
+            'authority_class' => 'EXCHANGE_AUTHORITATIVE',
+            'full_session_verified' => $fullSession ? 1 : 0,
+            'effective_from' => '2026-03-24 00:00:00',
+            'recorded_at' => '2026-03-24 00:00:01',
+            'source_observation_id' => (int) $current->source_observation_id,
+            'supersedes_revision_id' => (int) $current->status_revision_id,
+            'verification_state' => 'VERIFIED',
+        ]);
     }
 }

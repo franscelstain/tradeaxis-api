@@ -12,19 +12,41 @@ class SourceObservationRepository implements SourceObservationRecorder
     public function capture(array $envelope)
     {
         $payload = array_key_exists('payload', $envelope) ? (string) $envelope['payload'] : null;
-        $payloadHash = $payload !== null ? hash('sha256', $payload) : null;
+        $externalIdentity = $payload === null && array_key_exists('payload_hash', $envelope);
+        if ($externalIdentity) {
+            $this->assertExternalPayloadIdentity($envelope);
+        }
+        $payloadHash = $payload !== null
+            ? hash('sha256', $payload)
+            : ($externalIdentity ? strtolower((string) $envelope['payload_hash']) : null);
         $now = $envelope['acquired_at'] ?? Carbon::now(config('market_data.platform.timezone', 'Asia/Jakarta'))->toDateTimeString();
         $boundedBytes = max(0, (int) config('market_data.source.bounded_payload_bytes', 65536));
-        $boundedBody = $payload === null ? null : $this->redactSensitiveText(substr($payload, 0, $boundedBytes));
+        $boundedBody = $payload !== null
+            ? $this->redactSensitiveText(substr($payload, 0, $boundedBytes))
+            : ($externalIdentity
+                ? $this->redactSensitiveText(substr((string) ($envelope['bounded_payload_body'] ?? ''), 0, $boundedBytes))
+                : null);
+        if ($boundedBody === '') {
+            $boundedBody = null;
+        }
+        $payloadByteLength = $payload !== null
+            ? strlen($payload)
+            : ($externalIdentity ? (int) $envelope['payload_byte_length'] : null);
+        $payloadRef = $payloadHash
+            ? (string) ($envelope['payload_ref'] ?? 'sha256:'.$payloadHash)
+            : null;
+        $schemaFingerprint = $payload !== null
+            ? $this->schemaFingerprint($payload)
+            : ($externalIdentity ? (string) $envelope['schema_fingerprint'] : null);
 
         $row = $this->baseRow($envelope, [
             'observation_uid' => (string) Str::uuid(),
             'acquired_at' => $now,
-            'schema_fingerprint' => $this->schemaFingerprint($payload),
+            'schema_fingerprint' => $schemaFingerprint,
             'payload_hash' => $payloadHash,
-            'payload_ref' => $payloadHash ? 'sha256:'.$payloadHash : null,
+            'payload_ref' => $payloadRef,
             'bounded_payload_body' => $boundedBody,
-            'payload_byte_length' => $payload === null ? null : strlen($payload),
+            'payload_byte_length' => $payloadByteLength,
             'outcome_state' => 'CAPTURED',
             'validation_state' => 'PENDING',
             'reason_code' => null,
@@ -90,6 +112,28 @@ class SourceObservationRepository implements SourceObservationRecorder
             ->where('run_id', $runId)
             ->orderBy('observation_uid')
             ->get();
+        return $this->manifestHashForRows($rows);
+    }
+
+    public function manifestHashForObservationIds(array $observationIds)
+    {
+        $observationIds = array_values(array_unique(array_filter(array_map('intval', $observationIds))));
+        sort($observationIds, SORT_NUMERIC);
+
+        $rows = DB::table('md_source_observations')
+            ->whereIn('source_observation_id', $observationIds)
+            ->orderBy('observation_uid')
+            ->get();
+
+        if (count($rows) !== count($observationIds)) {
+            throw new \RuntimeException('SOURCE_OBSERVATION_MANIFEST_INCOMPLETE: one or more selected observations are missing.');
+        }
+
+        return $this->manifestHashForRows($rows);
+    }
+
+    private function manifestHashForRows($rows)
+    {
         $lines = [];
 
         foreach ($rows as $row) {
@@ -110,6 +154,24 @@ class SourceObservationRepository implements SourceObservationRecorder
         }
 
         return hash('sha256', implode("\n", $lines));
+    }
+
+    private function assertExternalPayloadIdentity(array $envelope)
+    {
+        $hash = strtolower((string) ($envelope['payload_hash'] ?? ''));
+        $length = $envelope['payload_byte_length'] ?? null;
+        $schemaFingerprint = strtolower((string) ($envelope['schema_fingerprint'] ?? ''));
+        $payloadRef = (string) ($envelope['payload_ref'] ?? '');
+
+        if (! preg_match('/^[a-f0-9]{64}$/', $hash)
+            || ! is_int($length) || $length <= 0
+            || ! preg_match('/^[a-f0-9]{64}$/', $schemaFingerprint)
+            || $payloadRef !== 'sha256:'.$hash
+            || trim((string) ($envelope['bounded_payload_body'] ?? '')) === '') {
+            throw new \RuntimeException(
+                'SOURCE_OBSERVATION_EXTERNAL_IDENTITY_INVALID: external payload evidence requires exact hash, length, schema fingerprint, content-addressed reference, and bounded sample.'
+            );
+        }
     }
 
     private function baseRow(array $source, array $overrides)

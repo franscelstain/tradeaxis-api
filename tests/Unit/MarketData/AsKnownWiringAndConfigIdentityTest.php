@@ -59,7 +59,6 @@ class AsKnownWiringAndConfigIdentityTest extends TestCase
             'resolveSectorContextForTickerIds',
             'resolveEventRiskContextForTickerIds',
             'resolveCorporateActionContaminationForTickerIds',
-            'resolveAdjustmentFactorsForTickerIds',
         ] as $method) {
             $this->assertTrue(
                 (bool) preg_match('/'.preg_quote($method, '/').'\((?:[^;]*?)\$knownAt/s', $source),
@@ -67,10 +66,18 @@ class AsKnownWiringAndConfigIdentityTest extends TestCase
             );
         }
 
+        $factorSource = (string) file_get_contents(
+            __DIR__.'/../../../app/Application/MarketData/Services/AdjustmentFactorSetService.php'
+        );
+        $this->assertStringContainsString(
+            '$run->started_at ?? $run->created_at',
+            $factorSource,
+            'the publication factor-set builder must resolve authoritative revisions as known when the run started'
+        );
+
         // The private helpers must forward it rather than accepting and dropping it.
         foreach ([
             'resolveCorporateActionContamination',
-            'resolveAdjustmentFactors',
         ] as $helper) {
             $this->assertTrue(
                 (bool) preg_match('/private function '.preg_quote($helper, '/').'\([^)]*\$knownAt/s', $source),

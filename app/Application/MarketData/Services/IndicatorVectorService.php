@@ -107,6 +107,7 @@ class IndicatorVectorService
             'listing_id' => isset($config['listing_id']) ? (int) $config['listing_id'] : null,
             'formula_version' => (string) ($config['formula_version'] ?? $config['set_version']),
             'config_snapshot_id' => isset($config['config_snapshot_id']) ? (int) $config['config_snapshot_id'] : null,
+            'factor_set_id' => isset($config['factor_set_id']) ? (int) $config['factor_set_id'] : null,
             'factor_set_hash' => $config['factor_set_hash'] ?? null,
             'price_product_version' => (string) ($config['price_product_version'] ?? 'structural_adjusted_v1'),
             /*

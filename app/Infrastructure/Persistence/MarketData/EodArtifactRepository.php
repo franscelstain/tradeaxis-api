@@ -34,6 +34,85 @@ class EodArtifactRepository
         $this->calendar = $calendar ?: new MarketCalendarRepository();
     }
 
+    public function bindCandidateBarSourceScale($publicationId, $tradeDate, $listingId, array $payload): void
+    {
+        $query = DB::table('eod_bars_history')
+            ->where('publication_id', $publicationId)
+            ->where('trade_date', $tradeDate)
+            ->where('listing_id', $listingId);
+
+        if ($query->exists()) {
+            $query->update($payload);
+            return;
+        }
+
+        DB::table('eod_bars')
+            ->where('publication_id', $publicationId)
+            ->where('trade_date', $tradeDate)
+            ->where('listing_id', $listingId)
+            ->update($payload);
+    }
+
+    public function loadCandidateEligibilityForGovernance($publicationId, $tradeDate): array
+    {
+        $table = $this->candidateArtifactTable('eod_eligibility', $publicationId, $tradeDate);
+
+        return DB::table($table.' as eligibility')
+            ->leftJoin('md_listings as listing', 'listing.listing_id', '=', 'eligibility.listing_id')
+            ->where('eligibility.publication_id', $publicationId)
+            ->where('eligibility.trade_date', $tradeDate)
+            ->select([
+                'eligibility.listing_id', 'eligibility.bar_expectation_state',
+                'eligibility.temporal_status_state', 'listing.board_code',
+                'eligibility.trading_status_revision_id',
+                'eligibility.trading_status_source_observation_id',
+                'listing.recorded_at as board_identity_recorded_at',
+            ])
+            ->orderBy('eligibility.listing_id')
+            ->get()
+            ->all();
+    }
+
+    public function bindCandidateEligibilityMarketStructure($publicationId, $tradeDate, $listingId, array $payload): void
+    {
+        $table = $this->candidateArtifactTable('eod_eligibility', $publicationId, $tradeDate);
+        DB::table($table)
+            ->where('publication_id', $publicationId)
+            ->where('trade_date', $tradeDate)
+            ->where('listing_id', $listingId)
+            ->update($payload);
+    }
+
+    public function loadPublicationArtifactSnapshot($publicationId, $tradeDate, string $artifact): array
+    {
+        if (! in_array($artifact, ['bars', 'indicators', 'eligibility'], true)) {
+            throw new \InvalidArgumentException('Unknown market-data artifact: '.$artifact);
+        }
+
+        $table = $this->candidateArtifactTable('eod_'.$artifact, $publicationId, $tradeDate);
+
+        return [
+            'columns' => DB::connection()->getSchemaBuilder()->getColumnListing($table),
+            'rows' => DB::table($table)
+                ->where('publication_id', $publicationId)
+                ->where('trade_date', $tradeDate)
+                ->orderBy('ticker_id')
+                ->get(),
+        ];
+    }
+
+    private function candidateArtifactTable(string $baseTable, $publicationId, $tradeDate): string
+    {
+        $historyTable = $baseTable.'_history';
+
+        return DB::table($historyTable)
+            ->where('publication_id', $publicationId)
+            ->where('trade_date', $tradeDate)
+            ->exists()
+                ? $historyTable
+                : $baseTable;
+    }
+
     public function replaceBars($tradeDate, $publicationId, $runId, array $validRows, array $invalidRows, $useHistory = false)
     {
         return DB::transaction(function () use ($tradeDate, $publicationId, $runId, $validRows, $invalidRows, $useHistory) {
@@ -319,9 +398,12 @@ class EodArtifactRepository
             ->all();
     }
 
-    public function loadBarsWindow($tradeDate, $lookbackDays, $requestedPublicationId = null)
+    public function loadBarsWindow($tradeDate, $lookbackDays, $requestedPublicationId = null, $historyStartDate = null)
     {
         $startDate = $this->calendar->tradingDateWindowStart($tradeDate, $lookbackDays);
+        if ($historyStartDate !== null && $startDate < $historyStartDate) {
+            $startDate = $historyStartDate;
+        }
 
         $rows = $this->applyStableArtifactOrder(
             DB::table('eod_bars')->whereBetween('trade_date', [$startDate, $tradeDate])
@@ -484,6 +566,31 @@ class EodArtifactRepository
         }
 
         return array_map('intval', array_keys($this->loadBarsForTradeDate($tradeDate, null)));
+    }
+
+    public function loadDeliveredObservationTickerIdsForTradeDate($tradeDate, $runId, $requestedPublicationId = null)
+    {
+        $tickerIds = array_fill_keys(
+            $this->loadCanonicalBarTickerIdsForTradeDate($tradeDate, $requestedPublicationId),
+            true
+        );
+
+        $invalid = DB::table('eod_invalid_bars as invalid')
+            ->join('md_source_observations as observation', 'observation.source_observation_id', '=', 'invalid.source_observation_id')
+            ->where('invalid.trade_date', $tradeDate)
+            ->where('invalid.run_id', (int) $runId)
+            ->whereNotNull('invalid.ticker_id')
+            ->whereIn('observation.outcome_state', ['ACCEPTED', 'NORMALIZED'])
+            ->pluck('invalid.ticker_id')
+            ->all();
+
+        foreach ($invalid as $tickerId) {
+            $tickerIds[(int) $tickerId] = true;
+        }
+
+        ksort($tickerIds);
+
+        return array_keys($tickerIds);
     }
 
     private function loadCandidateScopedBarTickerIdsForTradeDate($tradeDate, $publicationId)
@@ -990,6 +1097,7 @@ class EodArtifactRepository
             'listing_id', 'source_observation_id', 'previous_close', 'traded_value_idr_actual',
             'trade_count_actual', 'board_code', 'session_code', 'source_timestamp', 'acquired_at',
             'canonicalization_version', 'price_product_code', 'quality_state', 'config_snapshot_id',
+            'source_scale_state', 'source_scale_assessment_id',
         ] as $field) {
             $lineage[$field] = array_key_exists($field, $source) ? $source[$field] : null;
         }
@@ -1005,7 +1113,10 @@ class EodArtifactRepository
         foreach (array_merge(
             ['listing_id'],
             self::REQUIRED_ELIGIBILITY_WRITE_FIELDS,
-            ['config_snapshot_id']
+            [
+                'config_snapshot_id', 'market_structure_resolution_state',
+                'price_band_revision_id', 'minimum_price_revision_id', 'tick_size_revision_id',
+            ]
         ) as $field) {
             $facts[$field] = array_key_exists($field, $source) ? $source[$field] : null;
         }

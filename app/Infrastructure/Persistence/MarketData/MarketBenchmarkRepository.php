@@ -82,9 +82,12 @@ class MarketBenchmarkRepository
         });
     }
 
-    public function loadBarsWindow($benchmarkCode, $tradeDate, $lookbackTradingDays)
+    public function loadBarsWindow($benchmarkCode, $tradeDate, $lookbackTradingDays, $historyStartDate = null)
     {
         $startDate = $this->calendar->tradingDateWindowStart($tradeDate, $lookbackTradingDays);
+        if ($historyStartDate !== null && $startDate < $historyStartDate) {
+            $startDate = $historyStartDate;
+        }
 
         return DB::table('market_benchmark_bars')
             ->where('benchmark_code', Str::upper(trim((string) $benchmarkCode)))

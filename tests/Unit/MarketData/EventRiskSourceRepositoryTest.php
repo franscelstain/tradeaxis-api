@@ -59,7 +59,11 @@ class EventRiskSourceRepositoryTest extends TestCase
         $this->assertSame('SUSPENDED', $context[1]['trading_status_code']);
         $this->assertSame(1, $context[1]['is_suspended']);
         $this->assertSame(1, $context[1]['event_risk_flag']);
-        $this->assertSame([1], $repository->suspendedTickerIdsAsOf([1], '2026-05-20'));
+        $this->assertSame(
+            [],
+            $repository->suspendedTickerIdsAsOf([1], '2026-05-20'),
+            'a legacy status event remains risk context but cannot shrink coverage without a verified V2 revision binding'
+        );
 
         $repository->upsertTradingStatusEvent([
             'ticker_id' => 1,

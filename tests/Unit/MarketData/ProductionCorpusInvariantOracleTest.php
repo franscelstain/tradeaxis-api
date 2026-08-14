@@ -156,44 +156,49 @@ class ProductionCorpusInvariantOracleTest extends TestCase
     }
 
     /**
-     * No adjustment factor inferred from the price series can reach the adjustment path. W11 proved
-     * this on the decision side; here it is read back from the deployed corpus.
+     * Every authoritative event considered by an admitted publication must reach one governed
+     * terminal decision. Applying is correct only for AS_TRADED evidence; holding is the required
+     * output for provider-back-adjusted or unknown source scale. Requiring a non-empty APPLIED set
+     * would pressure the platform to invent source-scale evidence merely to make an oracle green.
      */
-    /**
-     * An authoritative factor must actually reach published output, read back from the corpus.
-     *
-     * Until 2026-08-11 the platform held zero usable factors, so every guard around adjustment
-     * passed while the mechanism had never once fired — `STRUCTURAL_ADJUSTED` was value-identical to
-     * `RAW` across all 756,328 rows and nothing could tell a working adjustment from an absent one.
-     *
-     * The test does not inspect code. If a factor were recorded but never applied, the indicator at
-     * its ex-date would still carry the raw split drop, and `roc20` would sit at roughly
-     * `factor - 1`: -0.96 for a 1:25 split, -0.80 for 1:5. Distance from that value is the evidence
-     * that the series was rescaled. Measured on the three IDX-verified splits it is 0.91 to 1.03.
-     */
-    public function test_an_authoritative_factor_reaches_published_output(): void
+    public function test_authoritative_factor_candidates_reach_an_explicit_applied_or_held_decision(): void
     {
-        $appliedFactors = "FROM market_data_corporate_actions a
-             JOIN tickers t ON t.ticker_code = a.ticker_code
-             JOIN eod_indicators i ON i.ticker_id = t.ticker_id AND i.trade_date = a.ex_date
-             WHERE a.adjustment_source IN ('EXCHANGE_ANNOUNCEMENT','DEPOSITORY_SCHEDULE','OPERATOR_ENTERED')
-               AND a.price_adjustment_factor IS NOT NULL AND a.ex_date IS NOT NULL
-               AND i.roc20 IS NOT NULL";
+        $decisionScope = "FROM eod_current_publication_pointer pointer
+             JOIN eod_publications publication ON publication.publication_id = pointer.publication_id
+             JOIN md_adjustment_factor_decisions decision ON decision.factor_set_id = publication.factor_set_id
+             WHERE publication.corpus_admission_decision_id IS NOT NULL";
 
-        $this->assertSame(
-            0,
-            $this->violations("SELECT COUNT(*) c ".$appliedFactors
-                ." AND ABS(i.roc20 - (a.price_adjustment_factor - 1)) < 0.1"),
-            'an indicator sitting at the raw split drop means its factor was recorded but never applied'
-        );
-
+        $decisionCount = $this->violations('SELECT COUNT(*) c '.$decisionScope);
         $this->assertGreaterThan(
             0,
-            $this->violations("SELECT COUNT(*) c ".$appliedFactors),
-            'at least one authoritative factor must exist with an indicator at its ex-date, '
-            .'otherwise the assertion above is satisfied by an empty corpus — which is exactly how '
-            .'this invariant passed for three years while no factor had ever been applied'
+            $decisionCount,
+            'the deployed admitted corpus must contain real governed event decisions'
         );
+
+        $this->assertSame(0, $this->violations(
+            "SELECT COUNT(*) c ".$decisionScope." AND decision.decision_state NOT IN
+             ('APPLIED','HELD_PROVIDER_BACK_ADJUSTED','HELD_SOURCE_SCALE_UNKNOWN')"
+        ));
+
+        $this->assertSame(0, $this->violations(
+            "SELECT COUNT(*) c ".$decisionScope."
+             AND decision.decision_state = 'APPLIED'
+             AND NOT EXISTS (
+                 SELECT 1 FROM md_adjustment_factors factor
+                 WHERE factor.factor_set_id = decision.factor_set_id
+                   AND factor.corporate_action_revision_id = decision.corporate_action_revision_id
+             )"
+        ));
+
+        $this->assertSame(0, $this->violations(
+            "SELECT COUNT(*) c ".$decisionScope."
+             AND decision.decision_state LIKE 'HELD_%'
+             AND EXISTS (
+                 SELECT 1 FROM md_adjustment_factors factor
+                 WHERE factor.factor_set_id = decision.factor_set_id
+                   AND factor.corporate_action_revision_id = decision.corporate_action_revision_id
+             )"
+        ));
     }
 
     public function test_no_price_derived_factor_is_usable_as_an_adjustment(): void

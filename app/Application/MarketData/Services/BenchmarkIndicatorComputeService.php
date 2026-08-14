@@ -16,7 +16,7 @@ class BenchmarkIndicatorComputeService
         $this->vectors = $vectors;
     }
 
-    public function compute($requestedDate)
+    public function compute($requestedDate, $historyStartDate = null)
     {
         $rows = [];
         $invalid = 0;
@@ -25,7 +25,7 @@ class BenchmarkIndicatorComputeService
 
         foreach ($this->benchmarks->activeBenchmarks() as $benchmark) {
             $code = (string) $benchmark['benchmark_code'];
-            $bars = $this->benchmarks->loadBarsWindow($code, $requestedDate, 50);
+            $bars = $this->benchmarks->loadBarsWindow($code, $requestedDate, 50, $historyStartDate);
             $row = $this->vectors->buildRow($code, $bars, $requestedDate, $now, $config);
 
             if ($row === null) {

@@ -31,7 +31,7 @@ class CoverageGateEvaluator
      * With a cutoff the answer is a function of (trade date, knowledge time) and a replay can
      * reproduce it.
      */
-    public function evaluate($tradeDate, $requestedPublicationId = null, $knownAt = null)
+    public function evaluate($tradeDate, $requestedPublicationId = null, $knownAt = null, $runId = null)
     {
         $coverageBasis = $requestedPublicationId !== null && $requestedPublicationId !== ''
             ? 'CandidatePublication'
@@ -157,6 +157,9 @@ class CoverageGateEvaluator
         }
 
         $availableTickerIds = $this->eodArtifactRepository->loadCanonicalBarTickerIdsForTradeDate($tradeDate, $requestedPublicationId);
+        $deliveredTickerIds = $runId !== null
+            ? $this->eodArtifactRepository->loadDeliveredObservationTickerIdsForTradeDate($tradeDate, $runId, $requestedPublicationId)
+            : $availableTickerIds;
 
         $availableUniverseTickerIds = [];
         foreach ($availableTickerIds as $tickerId) {
@@ -167,15 +170,23 @@ class CoverageGateEvaluator
         }
 
         $availableEodCount = count($availableUniverseTickerIds);
+        $deliveredUniverseTickerIds = [];
+        foreach ($deliveredTickerIds as $tickerId) {
+            $normalizedTickerId = (int) $tickerId;
+            if (array_key_exists($normalizedTickerId, $universeByTickerId)) {
+                $deliveredUniverseTickerIds[$normalizedTickerId] = true;
+            }
+        }
+        $deliveredObservationCount = count($deliveredUniverseTickerIds);
         $missingRows = [];
         foreach ($universeByTickerId as $tickerId => $row) {
-            if (! array_key_exists($tickerId, $availableUniverseTickerIds)) {
+            if (! array_key_exists($tickerId, $deliveredUniverseTickerIds)) {
                 $missingRows[] = $row;
             }
         }
 
         $missingEodCount = count($missingRows);
-        $coverageRatio = $availableEodCount / $expectedUniverseCount;
+        $coverageRatio = $deliveredObservationCount / $expectedUniverseCount;
 
         $coverageGateStatus = $coverageRatio >= $thresholdValue
             ? 'PASS'
@@ -201,6 +212,9 @@ class CoverageGateEvaluator
             'coverage_universe_hash' => $this->universeHash($rawUniverse, $universeBasis, $tradeDate),
             'coverage_excluded_sample' => $this->excludedSample($rawUniverse, $universeByTickerId, $missingSampleLimit),
             'coverage_bar_required_count' => $coverageBarRequiredCount,
+            'delivered_observation_count' => $deliveredObservationCount,
+            'canonical_valid_count' => $availableEodCount,
+            'quality_blocked_count' => max(0, $deliveredObservationCount - $availableEodCount),
             'available_eod_count' => $availableEodCount,
             'missing_eod_count' => $missingEodCount,
             'coverage_ratio' => $coverageRatio,
@@ -217,6 +231,7 @@ class CoverageGateEvaluator
             'candidate_publication_id' => $coverageBasisPublicationId,
             'coverage_basis_artifact_scope' => $coverageBasisPublicationId !== null ? 'candidate_publication_artifact' : 'trade_date_artifact',
             'candidate_available_count' => $availableEodCount,
+            'candidate_delivered_count' => $deliveredObservationCount,
             'candidate_missing_count' => $missingEodCount,
             'candidate_coverage_ratio' => $coverageRatio,
             'reason_code' => $reasonCode,
