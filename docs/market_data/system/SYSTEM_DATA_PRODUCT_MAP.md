@@ -1,58 +1,94 @@
 # System Data Product Map
 
 ## Purpose
-Dokumen ini memetakan produk data utama yang dihasilkan platform. Ia tidak menggantikan contract detail.
+Dokumen ini memetakan produk/fact family utama yang dihasilkan atau dikelola platform. Ia tidak menggantikan contract detail.
 
 ## Product-class rule
-Setiap produk data pada peta ini harus dibaca dalam salah satu kelas berikut:
+Setiap item pada peta ini harus dibaca dalam salah satu kelas berikut:
 - `consumer-facing` = boleh dipakai downstream consumer sebagai intake upstream yang sah bila owner contract mengizinkan
-- `internal-only` = tidak boleh dipakai downstream consumer sebagai kontrak intake
+- `internal-only` = tidak boleh dipakai downstream consumer sebagai kontrak intake langsung
 - `implementation-support only` = artefak teknis/operasional yang membantu implementasi atau audit, tetapi bukan intake contract downstream
 
-Kelas ini tidak menggantikan owner contract. Kelas ini hanya memperjelas apakah downstream consumer seperti `watchlist` boleh membaca artefak tersebut sebagai jalur intake.
+Kelas ini tidak menggantikan owner contract.
 
 ## Quick intake matrix
 
-| Product family | Owner area | Consumer-facing? | Publication-aware intake? | Internal-only? | Watchlist allowed as direct intake? |
-|---|---|---:|---:|---:|---:|
-| Canonical EOD bars | `market_data` | No, unless an owner contract explicitly exposes them | No | Yes | No |
-| Deterministic EOD indicators | `market_data` | No, unless an owner contract explicitly exposes them | No | Yes | No |
-| Eligibility and readability artifacts | `market_data` | Yes | Yes | No | Yes |
-| Publication and current-pointer semantics | `market_data` | Yes, only where owner contract defines consumer-readable publication semantics | Yes | No for semantics, but technical switch procedures remain implementation-support only | Yes, for semantics only |
-| Correction / replay / reseal artifacts | `market_data` | No | No | No | No |
-| Session snapshot artifacts | `market_data` | No, unless a downstream-facing contract later states otherwise | No | Yes | No |
+| Product / fact family | Owner area | Consumer-facing? | Publication-aware intake? | Direct watchlist intake? |
+|---|---|---:|---:|---:|
+| Temporal identity/listing/provider-symbol facts | `market_data` | No, except fields projected through read product | No | No |
+| Calendar/session/trading-status facts | `market_data` | No, except governed state projected through read product | No | No |
+| Temporal IDX-IC sector membership | `market_data` | No, except publication-bound sector state projected through read product | No | No |
+| Immutable source observations | `market_data` | No | No | No |
+| Canonical `RAW` EOD bars | `market_data` | No, unless owner contract explicitly exposes them | No | No |
+| `STRUCTURAL_ADJUSTED` / `TOTAL_RETURN` analytical products | `market_data` | No, except values exposed by versioned read product | No | No |
+| Daily actual/proxy market metrics | `market_data` | Only through read product where contracted | Yes when exposed | Yes only through read product |
+| Deterministic EOD indicators | `market_data` | Only through read product where contracted | Yes when exposed | Yes only through read product |
+| Coverage / quality / data-usability artifacts | `market_data` | Yes through the versioned read product | Yes | Yes |
+| Publication and current-pointer semantics | `market_data` | Yes where owner contract defines readability | Yes | Yes, semantics only |
+| Correction / replay / reseal artifacts | `market_data` | No | No | No |
+| Session snapshot artifacts | `market_data` | No, unless a downstream-facing contract later states otherwise | No | No |
 
-## Main products
-### Canonical EOD bars
-Classification: `internal-only` unless explicitly exposed through a downstream consumer-facing contract.
+## Main fact and product families
+
+### Temporal reference facts
+Classification: `internal-only`, with selected publication-bound projections allowed only through the consumer read contract.
 
 Owner pointers:
+- `book/Tickers_and_Identity_Dependency_Contract_LOCKED.md`
+- `book/Symbol_Lifecycle_and_Mapping_Contract.md`
+- `book/Market_Calendar_Requirements_Contract.md`
+- `book/Trading_Status_Source_Contract_LOCKED.md`
+- `book/Sector_Classification_Contract_LOCKED.md`
+
+These are point-in-time/as-known inputs. Current master state must never substitute for historical resolution.
+
+### Immutable source observations and canonical RAW
+Classification: `internal-only`.
+
+Owner pointers:
+- `book/Source_Data_Acquisition_Contract_LOCKED.md`
+- `book/Source_Mapping_Contract_LOCKED.md`
 - `book/EOD_Bars_Contract.md`
 - `book/Canonicalization_Contract_EOD_Bars.md`
 - `book/Canonical_Row_History_and_Versioning_Policy_LOCKED.md`
 
-### Deterministic EOD indicators
-Classification: `internal-only` unless explicitly exposed through a downstream consumer-facing contract.
+### Corporate-action facts and analytical price products
+Classification: `internal-only` unless projected through an owner-defined read product field.
 
 Owner pointers:
+- `book/Corporate_Action_and_Adjustment_Policy.md`
+- `book/Corporate_Action_and_Adjustment_Policy_Selected_Defaults_LOCKED.md`
+- `registry/Price_Adjustment_Contract_LOCKED.md`
+
+Provider `adj_close` is not an analytical product. `RAW`, `STRUCTURAL_ADJUSTED`, and `TOTAL_RETURN` remain explicitly distinct.
+
+### Daily metrics and deterministic EOD indicators
+Classification: `internal-only` as tables/artifacts; selected versioned fields may be exposed only through the consumer read product.
+
+Owner pointers:
+- `book/Market_Daily_Metrics_Contract.md`
+- `registry/Volume_and_Turnover_Normalization_LOCKED.md`
 - `book/EOD_Indicators_Contract.md`
 - `indicators/EOD_Indicators_Formula_Spec.md`
 - `indicators/Indicator_Computation_Specification.md`
 - `registry/Indicator_Registry_Baseline_LOCKED.md`
 
-### Eligibility and readability artifacts
-Classification: `consumer-facing`.
+Sector-relative fields depend on temporal sector membership; missing/unknown membership never falls back to current sector.
+
+### Coverage, eligibility, and readability facts
+Classification: `consumer-facing` only through the publication-bound intake contract.
 
 Owner pointers:
+- `book/Coverage_Universe_Definition_LOCKED.md`
 - `book/EOD_Eligibility_Snapshot_Contract_LOCKED.md`
 - `book/Eligibility_Partial_Data_Behavior_LOCKED.md`
 - `book/Downstream_Data_Readiness_Guarantee_LOCKED.md`
 - `book/Downstream_Consumer_Read_Model_Contract_LOCKED.md`
 
-Downstream consumers should anchor intake here first.
+Downstream consumers should anchor intake here/read-product gateway first. `eligible` means upstream data usability, not tradability or selection.
 
 ### Publication and current-pointer artifacts
-Classification: `consumer-facing` only where the owner contract defines publication-aware readability; otherwise implementation must treat technical switching procedures as `implementation-support only`.
+Classification: `consumer-facing` only where owner contracts define publication-aware readability; technical switching procedures remain `implementation-support only`.
 
 Owner pointers:
 - `book/Publication_Manifest_Contract_LOCKED.md`
@@ -81,7 +117,7 @@ Owner pointers:
 - `session_snapshot/Session_Snapshot_Date_Alignment_with_Effective_Date_LOCKED.md`
 
 ## Downstream intake note
-For the active scope, `watchlist` must not treat `internal-only` or `implementation-support only` products as a replacement for the consumer-facing intake path.
+Untuk active scope, `watchlist` tidak boleh mengganti consumer-facing read-product path dengan pembacaan langsung terhadap reference/master, raw bars, indicator internals, correction artifacts, atau session snapshots.
 
 ## Readability rule
-System map ini hanya menunjukkan produk utama dan pointer owner-nya. Behavior rinci tetap harus dibaca dari file owner yang dirujuk.
+System map ini hanya menunjukkan produk/fact family utama dan pointer owner-nya. Behavior rinci tetap harus dibaca dari file owner yang dirujuk.

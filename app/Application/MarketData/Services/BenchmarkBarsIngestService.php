@@ -2,7 +2,7 @@
 
 namespace App\Application\MarketData\Services;
 
-use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
+use App\Application\MarketData\Ports\ApiEodBarsSource;
 use App\Infrastructure\MarketData\Source\SourceAcquisitionException;
 use App\Infrastructure\Persistence\MarketData\MarketBenchmarkRepository;
 use Carbon\Carbon;
@@ -12,7 +12,7 @@ class BenchmarkBarsIngestService
     private $apiSourceAdapter;
     private $benchmarks;
 
-    public function __construct(PublicApiEodBarsAdapter $apiSourceAdapter, MarketBenchmarkRepository $benchmarks)
+    public function __construct(ApiEodBarsSource $apiSourceAdapter, MarketBenchmarkRepository $benchmarks)
     {
         $this->apiSourceAdapter = $apiSourceAdapter;
         $this->benchmarks = $benchmarks;

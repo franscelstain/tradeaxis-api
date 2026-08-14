@@ -2,75 +2,104 @@
 
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Three tests were removed. Each asserted the presence of strings for behaviour now driven.
+ *
+ * - Gateway usage was asserted as the method name appearing in four files, which a file that
+ *   names it and ignores it satisfies. CorrectionBaselineResolutionTest proves all four
+ *   publication entry points agree on thirteen broken states, and
+ *   ReadablePublicationReadContractIntegrationTest proves the consumer repositories leak no rows
+ *   from any of them.
+ * - The readiness reason codes were asserted as eight strings present in the service.
+ *   MarketDataReadinessServiceTest produces each of them from a real fixture, and
+ *   ReadinessDiagnosisAgreementTest holds the reason the consumer is given against the platform's
+ *   own diagnosis over every blocked state — which is how a drift was found that string presence
+ *   could not see: every one of those eight strings was present while the service still reported
+ *   a faulty publication as though nothing had been published.
+ * - The latest-date prohibition is now applied to every file under app/ by
+ *   ReadPathShortcutProhibitionTest.
+ *
+ * What remains are prohibitions and a domain rule that execution does not reach.
+ */
 class MarketDataConsumerReadModelStaticGuardTest extends TestCase
 {
-    private function projectPath(string $relativePath): string
-    {
-        return dirname(__DIR__, 3).DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
-    }
-
     private function read(string $relativePath): string
     {
-        $path = $this->projectPath($relativePath);
+        $path = dirname(__DIR__, 3).DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
         $this->assertFileExists($path);
 
         return file_get_contents($path);
     }
 
-    public function test_consumer_read_model_classes_use_official_current_readable_publication_gateway(): void
+    /**
+     * @return string[]
+     */
+    private function readModelFiles(): array
     {
-        foreach ($this->gatewayOwnerFiles() as $file) {
-            $source = $this->read($file);
-
-            $this->assertStringContainsString('resolveCurrentReadablePublicationForTradeDate', $source, $file);
-        }
-
-        $benchmarkService = $this->read('app/Application/MarketData/Services/MarketBenchmarkReadService.php');
-        $this->assertStringContainsString('readinessForTradeDate', $benchmarkService);
-
-        foreach ($this->publicationScopedRepositoryFiles() as $file) {
-            $source = $this->read($file);
-
-            $this->assertStringContainsString('publication_id', $source, $file);
-            $this->assertStringContainsString('trade_date', $source, $file);
-        }
+        return [
+            'app/Application/MarketData/Services/MarketDataReadinessService.php',
+            'app/Application/MarketData/Services/MarketDataReadProductService.php',
+            'app/Infrastructure/Persistence/MarketData/MarketDataReadProductRepository.php',
+            'app/Application/MarketData/Services/MarketDataPriceReadService.php',
+            'app/Infrastructure/Persistence/MarketData/MarketDataPriceReadRepository.php',
+            'app/Application/MarketData/Services/MarketBenchmarkReadService.php',
+            'app/Infrastructure/Persistence/MarketData/MarketBenchmarkReadRepository.php',
+        ];
     }
 
-    public function test_consumer_read_model_classes_forbid_latest_raw_staging_shortcuts(): void
+    /**
+     * Two resolvers exist that are correct in their own context and wrong in this one.
+     *
+     * findLatestReadablePublicationBefore is the pipeline's fallback when source acquisition
+     * fails: it deliberately reaches back to an earlier day so the platform keeps serving
+     * something. resolvePublicationForEvidenceAudit resolves a historical publication for
+     * evidence and replay, where the point is to read a superseded dataset.
+     *
+     * A consumer read path calling either would return data under the wrong trade date — an
+     * earlier day's bars labelled as today, or a superseded publication presented as current.
+     * Both are silent, and both have names that read as reasonable at the call site, which is
+     * exactly why the prohibition is worth stating rather than trusting to review.
+     */
+    public function test_consumer_read_paths_never_use_the_fallback_or_historical_resolvers(): void
     {
+        $violations = [];
+
         foreach ($this->readModelFiles() as $file) {
             $source = $this->read($file);
 
-            $this->assertDoesNotMatchRegularExpression('/\bMAX\s*\(\s*trade_date\s*\)/i', $source, $file);
-            $this->assertDoesNotMatchRegularExpression('/->\s*max\s*\(\s*[\'"]trade_date[\'"]\s*\)/i', $source, $file);
-            $this->assertDoesNotMatchRegularExpression('/->\s*latest\s*\(\s*[\'"]trade_date[\'"]\s*\)/i', $source, $file);
-            $this->assertDoesNotMatchRegularExpression('/->\s*orderByDesc\s*\(\s*[\'"]trade_date[\'"]\s*\)/i', $source, $file);
-            $this->assertDoesNotMatchRegularExpression('/->\s*orderBy\s*\(\s*[\'"]trade_date[\'"]\s*,\s*[\'"]desc[\'"]\s*\)/i', $source, $file);
-            $this->assertDoesNotMatchRegularExpression('/DB::table\s*\(\s*[\'"][^\'"]*(raw|staging)[^\'"]*[\'"]\s*\)/i', $source, $file);
-            $this->assertStringNotContainsString('findLatestReadablePublicationBefore', $source, $file);
-            $this->assertStringNotContainsString('resolvePublicationForEvidenceAudit', $source, $file);
+            foreach (['findLatestReadablePublicationBefore', 'resolvePublicationForEvidenceAudit'] as $forbidden) {
+                if (strpos($source, $forbidden) !== false) {
+                    $violations[] = $file.' calls '.$forbidden;
+                }
+            }
         }
+
+        $this->assertSame([], $violations);
     }
 
-    public function test_readiness_service_is_reason_coded_and_fail_closed(): void
+    /**
+     * Consumers read published artifacts, never the tables data passes through on its way in.
+     */
+    public function test_consumer_read_paths_never_query_raw_or_staging_tables(): void
     {
-        $source = $this->read('app/Application/MarketData/Services/MarketDataReadinessService.php');
-
-        foreach ([
-            'READABLE_PUBLICATION_RESOLVED',
-            'NO_READABLE_PUBLICATION',
-            'PUBLICATION_NOT_SEALED',
-            'RUN_TERMINAL_STATUS_NOT_SUCCESS',
-            'RUN_PUBLISHABILITY_NOT_READABLE',
-            'RUN_COVERAGE_GATE_NOT_PASS',
-            'RESOLVED_READABLE_CURRENT',
-            'NOT_RESOLVED_READABLE_CURRENT',
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $source);
+        foreach ($this->readModelFiles() as $file) {
+            $this->assertDoesNotMatchRegularExpression(
+                '/DB::table\s*\(\s*[\'"][^\'"]*(raw|staging)[^\'"]*[\'"]\s*\)/i',
+                $this->read($file),
+                $file
+            );
         }
     }
 
-    public function test_benchmark_read_model_keeps_ihsg_outside_equity_ticker_universe(): void
+    /**
+     * IHSG is the benchmark the platform measures equities against — rs_20_vs_ihsg compares a
+     * ticker's 20-day move to it. It is not itself tradable, so it lives in market_benchmarks
+     * rather than tickers. If the benchmark read model reached into the equity ticker universe,
+     * or resolved IHSG through an equity provider symbol, the index would become a ticker: it
+     * would count toward the coverage universe it is supposed to be measured against, and could
+     * be ranked as a candidate.
+     */
+    public function test_the_benchmark_read_model_keeps_ihsg_outside_the_equity_ticker_universe(): void
     {
         $source = $this->read('app/Infrastructure/Persistence/MarketData/MarketBenchmarkReadRepository.php')
             .$this->read('app/Application/MarketData/Services/MarketBenchmarkReadService.php');
@@ -78,16 +107,22 @@ class MarketDataConsumerReadModelStaticGuardTest extends TestCase
         $this->assertStringContainsString('market_benchmarks as bench', $source);
         $this->assertStringContainsString('market_benchmark_bars as bar', $source);
         $this->assertStringContainsString('market_benchmark_indicators as ind', $source);
+
         $this->assertStringNotContainsString('tickers as', $source);
         $this->assertStringNotContainsString('^JKSE.JK', $source);
         $this->assertStringNotContainsString('IHSG.JK', $source);
     }
 
+    /**
+     * The consumer read model documents what it provides. It must not claim to provide the
+     * decisions built on top of it: ranking, buy/sell and final P/L are downstream concerns, and
+     * a document asserting they are implemented here would misdirect whoever builds them.
+     */
     public function test_docs_lock_consumer_read_model_scope_without_strategy_claims(): void
     {
-        $inventory = $this->read('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md');
-        $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-        $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
+        $docs = $this->read('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md')
+            .$this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md')
+            .$this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
 
         foreach ([
             'MARKET_DATA_CONSUMER_READ_MODEL_STATUS',
@@ -99,42 +134,11 @@ class MarketDataConsumerReadModelStaticGuardTest extends TestCase
             'no raw/staging/latest/MAX(date)',
             'MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT',
         ] as $needle) {
-            $this->assertStringContainsString($needle, $inventory.$status.$tracker);
+            $this->assertStringContainsString($needle, $docs);
         }
 
         foreach (['buy/sell decision implemented', 'watchlist ranking implemented', 'portfolio P/L final implemented'] as $forbidden) {
-            $this->assertStringNotContainsString($forbidden, strtolower($inventory.$status.$tracker));
+            $this->assertStringNotContainsString($forbidden, strtolower($docs));
         }
-    }
-
-    private function readModelFiles(): array
-    {
-        return [
-            'app/Application/MarketData/Services/MarketDataReadinessService.php',
-            'app/Application/MarketData/Services/MarketDataWatchlistReadService.php',
-            'app/Infrastructure/Persistence/MarketData/MarketDataWatchlistReadRepository.php',
-            'app/Application/MarketData/Services/MarketDataPortfolioPriceService.php',
-            'app/Infrastructure/Persistence/MarketData/MarketDataPortfolioPriceRepository.php',
-            'app/Application/MarketData/Services/MarketBenchmarkReadService.php',
-            'app/Infrastructure/Persistence/MarketData/MarketBenchmarkReadRepository.php',
-        ];
-    }
-
-    private function gatewayOwnerFiles(): array
-    {
-        return [
-            'app/Application/MarketData/Services/MarketDataReadinessService.php',
-            'app/Application/MarketData/Services/MarketDataWatchlistReadService.php',
-            'app/Application/MarketData/Services/MarketDataPortfolioPriceService.php',
-            'app/Infrastructure/Persistence/MarketData/MarketDataPortfolioPriceRepository.php',
-        ];
-    }
-
-    private function publicationScopedRepositoryFiles(): array
-    {
-        return [
-            'app/Infrastructure/Persistence/MarketData/MarketDataWatchlistReadRepository.php',
-            'app/Infrastructure/Persistence/MarketData/MarketDataPortfolioPriceRepository.php',
-        ];
     }
 }

@@ -1,22 +1,26 @@
-# Market Data DB Documentation Index
+# Market Data Database Documentation Index
 
-Status: `DATABASE_DICTIONARY_INDEX`
+Current state: **strategy-corrected V2 foundation; rollout/enforcement proof open**.
 
-Last updated: 2026-06-22
+Read in this order:
 
-## Mandatory first-read documents
+1. `Database_Schema_Contracts_MariaDB.md` — semantic persistence contract.
+2. `MARKET_DATA_DICTIONARY.md` — table/field meanings and transitional roles.
+3. `DB_Schema_And_Migration_Sync_Contract_LOCKED.md` — synchronization and proof rules.
+4. `Database_Schema_MariaDB.sql` — legacy clean-install base executed by the core migration.
+5. ordered `database/migrations/**` — forward evolution; V2 begins with `2026_08_02_000001_add_market_data_strategy_v2_foundation.php`.
 
-For any database-connected Market Data, Watchlist, backtest, audit, API, dashboard, or future feature work, read these first:
+The effective runtime shape is base plus every applied forward migration. Editing the SQL base does not upgrade an existing database.
 
-1. `MARKET_DATA_DICTIONARY.md` — operational table/column dictionary, field roles, as-of rules, and consumer mappings.
-2. `Database_Schema_MariaDB.sql` — physical schema contract.
-3. `Database_Schema_Contracts_MariaDB.md` — semantic schema contract.
-4. `DB_FIELDS_AND_METADATA.md` — coverage-gate and metadata addendum.
-5. `docs/db/DATABASE_DICTIONARY_USAGE_RULE.md` — shared governance rule for all database-connected work.
+Key target authorities:
 
-## Current critical mappings
+- stable historical identity is `listing_id`, not current ticker text/state;
+- `md_source_observations` owns immutable acquisition evidence;
+- `md_config_snapshots` owns full resolved configuration identity;
+- temporal symbol/mapping/calendar/status/event tables own as-of/as-known resolution;
+- factor sets/factors own structural adjustment; price-break detector rows never do;
+- `eod_*_history` plus publication lineage are immutable authority; current tables are projections;
+- actual traded value and close-volume proxy are distinct;
+- consumer authority is the active publication pointer plus versioned read gateway.
 
-- `market_index_roc20` maps to `market_benchmark_indicators.roc_20` for `benchmark_code='IHSG'`.
-- `market_index_ma20_slope_pct` maps to `market_benchmark_indicators.ma20_slope_pct` for `benchmark_code='IHSG'`.
-- `market_calendar` date key is `cal_date`.
-- IHSG is a benchmark/index row outside the equity ticker universe; do not search it in `eod_indicators` unless a future contract explicitly creates that representation.
+Migration V2 uses nullable columns for safe rollout. Null required lineage is not an accepted production state. Repository writers, historical backfill, constraints/references, MariaDB upgrade proof, and semantic fixtures remain required before relock.

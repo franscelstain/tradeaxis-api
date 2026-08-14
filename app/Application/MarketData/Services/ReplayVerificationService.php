@@ -49,6 +49,13 @@ class ReplayVerificationService
         $actual = $this->buildActualReplayState($run, $publication, $correction, $expectedContext);
         $comparison = $this->compareExpectedAndActual($fixture, $actual, $expectedContext);
         $replayStatus = $this->replayStatusForComparison($comparison['comparison_result']);
+        $admissibility = $this->replayAdmissibility($run, $publication, $fixture);
+        if ($admissibility !== null) {
+            $replayStatus = 'BLOCKED';
+            $comparison['comparison_result'] = 'NOT_ADMISSIBLE';
+            $comparison['mismatch_summary'] = $admissibility['reason'];
+        }
+
         $replayId = $replayId ?: $this->replays->nextReplayId();
 
         $manifest = $fixture['manifest'];
@@ -329,6 +336,10 @@ class ReplayVerificationService
                 'publication_publishability_state' => $publicationContext['publication_publishability_state'],
                 'publication_is_current' => $publicationContext['publication_is_current'],
                 'publication_seal_state' => $publicationContext['publication_seal_state'],
+                'price_product_code' => $publicationContext['price_product_code'],
+                'price_product_version' => $publicationContext['price_product_version'],
+                'factor_set_id' => $publicationContext['factor_set_id'],
+                'factor_set_hash' => $publicationContext['factor_set_hash'],
             ],
             'expected_pointer_context' => $pointerContext,
             'expected_fallback_context' => $fallbackContext,
@@ -482,6 +493,12 @@ class ReplayVerificationService
         $publicationVersion = $publication && isset($publication->publication_version) && $publication->publication_version !== null ? (int) $publication->publication_version : (isset($run->publication_version) && $run->publication_version !== null ? (int) $run->publication_version : null);
         $isCurrentPublication = $publication && isset($publication->is_current) ? (bool) $publication->is_current : (isset($run->is_current_publication) ? (bool) $run->is_current_publication : false);
         $sealState = $publication && isset($publication->seal_state) && $publication->seal_state ? $publication->seal_state : ($run->sealed_at ? 'SEALED' : 'UNSEALED');
+        $priceProductCode = $publication->price_product_code ?? ($run->price_product_code ?? null);
+        $priceProductVersion = $publication->price_product_version ?? ($run->price_product_version ?? null);
+        $factorSetId = isset($publication->factor_set_id) && $publication->factor_set_id !== null
+            ? (int) $publication->factor_set_id
+            : null;
+        $factorSetHash = $publication->factor_set_hash ?? ($run->factor_set_hash ?? null);
         $requestMode = $run->request_mode ?? ($notes['request_mode'] ?? null);
         $coverageBasisPublicationId = isset($notes['coverage_basis_publication_id']) && $notes['coverage_basis_publication_id'] !== '' ? (int) $notes['coverage_basis_publication_id'] : null;
         $coverageBasisRunId = isset($notes['coverage_basis_run_id']) && $notes['coverage_basis_run_id'] !== '' ? (int) $notes['coverage_basis_run_id'] : (isset($run->run_id) ? (int) $run->run_id : null);
@@ -542,10 +559,10 @@ class ReplayVerificationService
         ];
         $coverageContext = [
             'coverage_universe_count' => isset($run->coverage_universe_count) && $run->coverage_universe_count !== null ? (int) $run->coverage_universe_count : null,
-            'coverage_expected_count' => isset($run->coverage_universe_count) && $run->coverage_universe_count !== null ? (int) $run->coverage_universe_count : null,
+            'coverage_expected_count' => isset($run->coverage_expected_count) && $run->coverage_expected_count !== null ? (int) $run->coverage_expected_count : null,
             'coverage_available_count' => isset($run->coverage_available_count) && $run->coverage_available_count !== null ? (int) $run->coverage_available_count : null,
             'coverage_missing_count' => isset($run->coverage_missing_count) && $run->coverage_missing_count !== null ? (int) $run->coverage_missing_count : null,
-            'expected_bar_count' => isset($run->coverage_universe_count) && $run->coverage_universe_count !== null ? (int) $run->coverage_universe_count : null,
+            'expected_bar_count' => isset($run->coverage_expected_count) && $run->coverage_expected_count !== null ? (int) $run->coverage_expected_count : null,
             'available_bar_count' => isset($run->coverage_available_count) && $run->coverage_available_count !== null ? (int) $run->coverage_available_count : null,
             'missing_bar_count' => isset($run->coverage_missing_count) && $run->coverage_missing_count !== null ? (int) $run->coverage_missing_count : null,
             'coverage_ratio' => isset($run->coverage_ratio) && $run->coverage_ratio !== null ? (float) $run->coverage_ratio : null,
@@ -590,6 +607,10 @@ class ReplayVerificationService
             'publication_publishability_state' => $run->publishability_state ?? null,
             'publication_is_current' => $isCurrentPublication,
             'publication_seal_state' => $sealState,
+            'price_product_code' => $priceProductCode,
+            'price_product_version' => $priceProductVersion,
+            'factor_set_id' => $factorSetId,
+            'factor_set_hash' => $factorSetHash,
             'replay_actual_resolution_mode' => $replayResolutionContext['replay_actual_resolution_mode'],
             'replay_publication_scope' => $replayResolutionContext['replay_publication_scope'],
             'historical_publication_allowed' => $replayResolutionContext['historical_publication_allowed'],
@@ -635,6 +656,13 @@ class ReplayVerificationService
             'final_reason_code' => $finalReasonCode,
         ];
 
+        if ($priceProductCode !== null || $priceProductVersion !== null || $factorSetId !== null || $factorSetHash !== null) {
+            $lineage['price_product_code'] = $priceProductCode;
+            $lineage['price_product_version'] = $priceProductVersion;
+            $lineage['factor_set_id'] = $factorSetId;
+            $lineage['factor_set_hash'] = $factorSetHash;
+        }
+
         $actual = [
             'trade_date' => $run->trade_date_requested,
             'trade_date_effective' => $resolvedTradeDate,
@@ -665,12 +693,16 @@ class ReplayVerificationService
             'promote_status' => $promoteStatus,
             'promoted' => $promoted,
             'pointer_switched' => $isCurrentPublication,
-            'config_identity' => $run->config_version ?? null,
+            'config_identity' => $this->configIdentityForRun($run),
             'publication_id' => $publicationId,
             'current_publication_id' => $isCurrentPublication ? $publicationId : null,
             'publication_run_id' => $publicationRunId,
             'publication_version' => $publicationVersion,
             'is_current_publication' => $isCurrentPublication,
+            'price_product_code' => $priceProductCode,
+            'price_product_version' => $priceProductVersion,
+            'factor_set_id' => $factorSetId,
+            'factor_set_hash' => $factorSetHash,
             'correction_id' => $correctionContext['correction_id'],
             'correction_status' => $correctionContext['correction_status'],
             'correction_outcome' => $correctionContext['correction_outcome'],
@@ -864,7 +896,7 @@ class ReplayVerificationService
             $this->compareFieldAllowNull($mismatches, 'replay_'.$field, $this->ctx($expectedContext, 'expected_replay_resolution_context.'.$field), $actual['context']['actual_replay_resolution_context'][$field] ?? null);
         }
 
-        foreach (['publication_id', 'publication_run_id', 'publication_version', 'publication_terminal_status', 'publication_publishability_state', 'publication_is_current', 'publication_seal_state'] as $field) {
+        foreach (['publication_id', 'publication_run_id', 'publication_version', 'publication_terminal_status', 'publication_publishability_state', 'publication_is_current', 'publication_seal_state', 'price_product_code', 'price_product_version', 'factor_set_id', 'factor_set_hash'] as $field) {
             $this->compareFieldAllowNull($mismatches, $field, $this->ctx($expectedContext, 'expected_publication_context.'.$field), $actual['context']['actual_publication_context'][$field] ?? null);
         }
         foreach (['pointer_publication_id', 'pointer_run_id', 'pointer_publication_version', 'pointer_resolve_status', 'pointer_switched'] as $field) {
@@ -925,6 +957,10 @@ class ReplayVerificationService
             'expected_publication_run_id' => $this->ctx($expectedContext, 'expected_publication_context.publication_run_id'),
             'expected_publication_version' => $this->ctx($expectedContext, 'expected_publication_context.publication_version'),
             'expected_is_current_publication' => $this->ctx($expectedContext, 'expected_publication_context.publication_is_current'),
+            'expected_price_product_code' => $this->ctx($expectedContext, 'expected_publication_context.price_product_code'),
+            'expected_price_product_version' => $this->ctx($expectedContext, 'expected_publication_context.price_product_version'),
+            'expected_factor_set_id' => $this->ctx($expectedContext, 'expected_publication_context.factor_set_id'),
+            'expected_factor_set_hash' => $this->ctx($expectedContext, 'expected_publication_context.factor_set_hash'),
             'expected_correction_id' => $this->ctx($expectedContext, 'expected_correction_context.correction_id'),
             'expected_correction_status' => $this->ctx($expectedContext, 'expected_correction_context.correction_status'),
             'expected_correction_outcome' => $this->ctx($expectedContext, 'expected_correction_context.correction_outcome'),
@@ -1030,7 +1066,7 @@ class ReplayVerificationService
         ]);
         $expectedCoverage = $this->mergeMissing($expectedCoverage, [
             'coverage_universe_count' => $r['coverage_universe_count'] ?? null,
-            'coverage_expected_count' => $r['coverage_expected_count'] ?? ($r['coverage_universe_count'] ?? null),
+            'coverage_expected_count' => $r['coverage_expected_count'] ?? null,
             'coverage_available_count' => $r['coverage_available_count'] ?? null,
             'coverage_missing_count' => $r['coverage_missing_count'] ?? null,
             'coverage_ratio' => $r['coverage_ratio'] ?? null,
@@ -1049,7 +1085,7 @@ class ReplayVerificationService
             $expectedCoverage['coverage_reason_code'] = $this->resolveCoverageReasonCodeFromState($expectedCoverage['coverage_gate_state']);
         }
         $expectedCoverage = $this->mergeMissing($expectedCoverage, [
-            'expected_bar_count' => $expectedCoverage['coverage_expected_count'] ?? ($expectedCoverage['coverage_universe_count'] ?? null),
+            'expected_bar_count' => $expectedCoverage['coverage_expected_count'] ?? null,
             'available_bar_count' => $expectedCoverage['coverage_available_count'] ?? null,
             'missing_bar_count' => $expectedCoverage['coverage_missing_count'] ?? null,
         ]);
@@ -1077,6 +1113,10 @@ class ReplayVerificationService
             'publication_publishability_state' => $r['expected_publishability_state'] ?? null,
             'publication_is_current' => array_key_exists('expected_is_current_publication', $r) ? $r['expected_is_current_publication'] : ($r['is_current_publication'] ?? null),
             'publication_seal_state' => $r['expected_seal_state'] ?? ($r['seal_state'] ?? null),
+            'price_product_code' => $r['expected_price_product_code'] ?? ($r['price_product_code'] ?? null),
+            'price_product_version' => $r['expected_price_product_version'] ?? ($r['price_product_version'] ?? null),
+            'factor_set_id' => $r['expected_factor_set_id'] ?? ($r['factor_set_id'] ?? null),
+            'factor_set_hash' => $r['expected_factor_set_hash'] ?? ($r['factor_set_hash'] ?? null),
         ]);
         $expectedPointerResolveStatus = 'NOT_RESOLVED_READABLE_CURRENT';
         if (($expectedPublication['publication_id'] ?? null) !== null && ($expectedPublication['publication_id'] ?? null) !== '') {
@@ -1326,11 +1366,20 @@ class ReplayVerificationService
         if ($field === 'coverage_reason_code') return 'REPLAY_COVERAGE_REASON_MISMATCH';
         if (strpos($field, 'coverage_') !== false) return 'REPLAY_COVERAGE_STATE_MISMATCH';
         if (strpos($field, 'batch_hash') !== false) return 'REPLAY_ARTIFACT_HASH_MISMATCH';
+        if (strpos($field, 'price_product') !== false || strpos($field, 'factor_set') !== false) return 'REPLAY_LINEAGE_MISMATCH';
         if ($field === 'artifact_scope' || strpos($field, 'replay_artifact_scope') !== false) return 'REPLAY_HISTORICAL_ARTIFACT_SCOPE_MISMATCH';
-        if (strpos($field, 'replay_replay_actual_resolution_mode') !== false || strpos($field, 'replay_replay_publication_scope') !== false || strpos($field, 'replay_current_pointer_required') !== false || strpos($field, 'replay_historical_publication_allowed') !== false || strpos($field, 'replay_current_pointer_status') !== false || strpos($field, 'replay_replay_reason_code') !== false) return 'REPLAY_EXPECTED_HISTORICAL_ACTUAL_CURRENT_MISMATCH';
+        // The doubled prefix is not a typo. The resolution-context loop passes 'replay_'.$field
+        // over a list whose entries already begin with replay_, so the field really is named
+        // replay_replay_actual_resolution_mode. The names are left alone because they appear in
+        // recorded replay results and in expected fixtures; renaming them would make every
+        // stored proof disagree with a re-run.
+        if (strpos($field, 'replay_replay_actual_resolution_mode') !== false || strpos($field, 'replay_replay_publication_scope') !== false || strpos($field, 'replay_current_pointer_required') !== false || strpos($field, 'replay_historical_publication_allowed') !== false || strpos($field, 'replay_current_pointer_status') !== false || strpos($field, 'replay_replay_reason_code') !== false || strpos($field, 'replay_replay_selector_type') !== false || strpos($field, 'replay_replay_selector_id') !== false) return 'REPLAY_EXPECTED_HISTORICAL_ACTUAL_CURRENT_MISMATCH';
         if (strpos($field, 'replay_run_publication_mirror_status') !== false || strpos($field, 'replay_lineage_verification_status') !== false || strpos($field, 'replay_publication_run_id') !== false || strpos($field, 'replay_run_id') !== false) return 'REPLAY_PUBLICATION_RUN_MISMATCH';
         if ($field === 'seal_state' || strpos($field, 'replay_seal_state') !== false) return 'REPLAY_SEAL_STATE_MISMATCH';
         if (strpos($field, 'publication_version') !== false) return 'REPLAY_PUBLICATION_VERSION_MISMATCH';
+        // is_current_publication has no trailing underscore, so the rule below never reached it
+        // and a publication that stopped being current was reported as non-deterministic output.
+        if (strpos($field, 'is_current_publication') !== false) return 'REPLAY_PUBLICATION_STATE_MISMATCH';
         if (strpos($field, 'publication_') !== false && strpos($field, 'pointer_') === false) return 'REPLAY_PUBLICATION_STATE_MISMATCH';
         if ($field === 'pointer_resolve_status') return 'REPLAY_POINTER_RESOLUTION_MISMATCH';
         if (strpos($field, 'pointer_') !== false) return 'REPLAY_POINTER_TARGET_MISMATCH';
@@ -1339,6 +1388,9 @@ class ReplayVerificationService
         if ($field === 'terminal_status' || $field === 'status' || $field === 'publishability_state') return 'REPLAY_FINAL_STATUS_MISMATCH';
         if ($field === 'final_reason_code' || $field === 'expected_reason_code' || $field === 'reason_code_counts') return 'REPLAY_FINAL_REASON_CODE_MISMATCH';
         if ($field === 'lineage') return 'REPLAY_LINEAGE_MISMATCH';
+        // A replay run under different configuration is explainable and fixable. Reporting it as
+        // non-deterministic output sends the operator looking for instability in the computation.
+        if ($field === 'config_identity') return 'REPLAY_CONFIG_IDENTITY_MISMATCH';
         return 'REPLAY_NON_DETERMINISTIC_OUTPUT';
     }
 
@@ -1757,6 +1809,83 @@ class ReplayVerificationService
         }
         usort($normalized, function ($left, $right) { return strcmp($left['reason_code'], $right['reason_code']); });
         return $normalized;
+    }
+
+    /**
+     * Decide whether a replay result may be believed at all, before asking whether it matched.
+     *
+     * Two conditions make a match meaningless rather than reassuring.
+     *
+     * A publication whose run carries no configuration snapshot is `CONFIG_UNBOUND`
+     * (`Platform_Config_Registry_LOCKED.md:31`): the configuration that produced it cannot be
+     * recovered, so reproducing its output proves the code is stable, not that the artifact is
+     * reproducible. `DOC-71` requires those replays to be `BLOCKED`, and until now none were —
+     * 20,635 results, every one `PASS`, over a corpus that is entirely `CONFIG_UNBOUND`.
+     *
+     * A fixture generated from the very run it verifies is worse: `generateFixtureFromRun()` builds
+     * its expected state by calling `buildActualReplayState()`, so the oracle is the subject. Such
+     * a comparison can only ever return MATCH, which is exactly what the corpus shows — zero FAIL
+     * and zero BLOCKED across every recorded result.
+     */
+    private function replayAdmissibility($run, $publication, array $fixture)
+    {
+        $family = (string) ($fixture['manifest']['fixture_family'] ?? '');
+        if ($family === 'runtime_generated_valid_case') {
+            return [
+                'reason' => 'REPLAY_FIXTURE_SELF_GENERATED: expectation was derived from the run under verification; a match proves only that the run equals itself.',
+            ];
+        }
+
+        // The family name is a label the fixture chooses for itself, so testing only the label lets
+        // a self-generated expectation through by renaming it. fixture_source records which run the
+        // expectation came from, which is the fact the rule is actually about.
+        $source = (string) ($fixture['manifest']['fixture_source'] ?? '');
+        if ($source !== '' && preg_match('/(?:^|_)run_(\d+)(?:_|$)/', $source, $matches)) {
+            if ((int) $matches[1] === (int) $run->run_id) {
+                return [
+                    'reason' => 'REPLAY_FIXTURE_SELF_GENERATED: fixture_source names run_'.$run->run_id
+                        .', the run under verification; a match proves only that the run equals itself.',
+                ];
+            }
+        }
+
+        if (empty($run->config_snapshot_id) && empty($publication->config_snapshot_id ?? null)) {
+            return [
+                'reason' => 'REPLAY_CONFIG_UNBOUND: publication carries no configuration snapshot, so reproducibility cannot be evidenced.',
+            ];
+        }
+
+        return null;
+    }
+
+    /**
+     * The identity of the configuration a run executed under.
+     *
+     * This read `config_version`, which holds `'v1'` on all 72,765 runs — one distinct value across
+     * the entire corpus. Comparing it asserted that config identity had been verified while making
+     * REPLAY_CONFIG_IDENTITY_MISMATCH unreachable by construction. `config_hash` is content-
+     * addressed over the resolved configuration, so it changes when the configuration changes,
+     * which is the difference the comparison exists to detect.
+     *
+     * A run that recorded no config identity yields an explicit marker, never null. compareField()
+     * returns early on a null expectation *before* recording the field as checked, so null here
+     * would relocate the silence rather than remove it: the evidence would show config identity
+     * neither compared nor reported missing. The marker keeps the gap legible, and it is a state to
+     * be closed by binding config identity on the run, not by this method inventing one.
+     */
+    private function configIdentityForRun($run)
+    {
+        $hash = trim((string) ($run->config_hash ?? ''));
+        if ($hash !== '') {
+            return $hash;
+        }
+
+        $snapshotRef = trim((string) ($run->config_snapshot_ref ?? ''));
+        if ($snapshotRef !== '') {
+            return $snapshotRef;
+        }
+
+        return 'CONFIG_IDENTITY_UNRECORDED';
     }
 
     private function replayStatusForComparison($comparisonResult)

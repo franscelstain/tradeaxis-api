@@ -1,33 +1,30 @@
-# Incident Classification and Response Matrix (LOCKED)
+# Incident Classification and Response Matrix (STRATEGY LOCKED)
 
-## Purpose
-Provide one compact matrix for operator response so incident handling does not depend on improvisation.
+## Activation rule
 
-## Matrix
+Before `OPERATIONAL_START_DATE`, unfinished future/daily scope is development frontier, not a production incident. Integrity/security violations are incidents in every phase. After activation, freshness and availability failures are classified below.
 
-| Incident type | Severity | Retry allowed | Hold publication? | Fail run? | Preserve prior current publication? | Escalate? |
-|---|---|---:|---:|---:|---:|---:|
-| isolated source timeout | Medium | Yes | Maybe | No | Yes | Maybe |
-| broad source timeout | High | Yes, limited | Yes | Maybe | Yes | Yes |
-| source schema drift | Critical | No blind retry | Yes | Yes | Yes | Immediate |
-| coverage below threshold | High | Maybe after diagnosis | Yes | Usually no, prefer `HELD` | Yes | Yes |
-| indicator compute failure | High | After diagnosis | Yes | Usually yes | Yes | Yes |
-| hash computation failure | High | After diagnosis | Yes | Yes or non-final | Yes | Yes |
-| seal write failure | High | After diagnosis | Yes | Yes or `HELD` | Yes | Yes |
-| finalize before cutoff | Medium | Later retry | Yes | No immediate fail required | Yes | Maybe |
-| run ownership conflict | High | Non-owner no | Yes | conflicting path yes | Yes | Yes |
-| replay mismatch | High | Retry for diagnosis only | Existing publication may remain | N/A | Yes | Yes |
-| config drift | High | After diagnosis only | Yes if publication unsafe | Maybe | Yes | Yes |
-| correction reseal failure | High | After diagnosis | Yes | candidate non-published | Yes | Yes |
-| publication switch ambiguity | Critical | No unsafe retry | Yes | candidate non-current | Yes | Immediate |
-| session snapshot failure | Low/Medium | Yes or skip | No for EOD alone | No | Yes | Maybe |
+| Class | Examples | Severity floor | Consumer protection | Mutation/retry rule |
+|---|---|---:|---|---|
+| integrity | history mutation attempt, hash/seal/config mismatch, mixed publication, pointer ambiguity | critical | fail closed; preserve last verified publication only if gateway integrity is certain | no ordinary retry or fallback around ambiguity |
+| security/provenance | secret leakage, unauthenticated payload, missing observation provenance | critical | block affected data/evidence | revoke/contain; new sanitized evidence/artifacts |
+| semantic | wrong identity/date/status, mixed price basis, unverified factor, ATR reseed | high | hold/withdraw affected publication by pointer policy | correction creates revisions, never in-place repair |
+| source/schema | outage, stale/wrong-date response, schema drift, rate limit | medium; high when freshness breached | requested date held; prior date explicitly stale if allowed | bounded idempotent retry with retained observations |
+| coverage/quality | missing/invalid expected bars, quarantine threshold | medium/high by breadth | hold requested publication | no denominator shrink or synthetic fill |
+| scheduler/lock | missed due run, lock conflict, stuck worker | medium; high after SLO breach | keep truthful freshness | fenced recovery/retry |
+| consumer freshness | latest expected date unreadable beyond target | medium/high by age | `STALE`, `DEGRADED`, or `NOT_AVAILABLE` | recover root cause; do not relabel prior date |
+| proof/monitoring | missing evidence, alert delivery failure, blocked replay | high for release/activation | block readiness/relock claim | restore proof path; `BLOCKED` is not pass |
 
-## Usage rule (LOCKED)
-This matrix is the first-stop classification layer.
-Detailed step-by-step handling is still governed by:
-- `Failure_Playbook_LOCKED.md`
-- `Operator_Decision_Trees_LOCKED.md`
-- correction runbooks
+Severity increases with breadth, duration, consumer exposure, undetected period, irreversibility, and regulatory/security impact. Every incident records all classes/reasons even when one primary class is used for routing.
 
-## Anti-ambiguity rule (LOCKED)
-If an incident cannot be classified in this matrix, the ops layer is incomplete and the matrix must be versioned and extended.
+## Capability boundary (LOCKED)
+
+**What incident classification proves.** That an observed condition maps to a declared severity and response path deterministically, without operator improvisation, and that closure requires evidence matching the claimed outcome.
+
+**What it cannot prove.**
+
+- **That every incident was observed.** Classification acts on conditions that surfaced. A defect that produced no alert, no failing gate, and no complaint is never classified, and the absence of incidents is therefore not evidence of health.
+- **That severity reflects consequence.** Severity is assigned from declared signals. A low-severity data defect can outrank a high-severity outage for a consumer whose horizon it corrupts.
+- **That a closed incident is a solved one.** Closure requires evidence of the claimed outcome; whether the underlying cause recurs is outside what closure asserts.
+
+Consequently a clean incident record may be cited as evidence that **observed conditions were handled per the matrix**, never as evidence that **nothing went wrong**.

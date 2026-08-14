@@ -10,26 +10,26 @@ Storage format may vary, but semantic content must remain identical.
 
 ## Example 1 — `fixture_hash_payload`
 
-### Bars serialized lines
+### Semantic fixture rows
 
-    2026-03-02|101|100.0000|105.0000|99.0000|104.0000|100000|104.0000|API_FREE
-    2026-03-03|101|104.0000|106.0000|103.0000|105.0000|125000|105.0000|API_FREE
+The fixture contains:
 
-### Indicators serialized lines
+- two publication-bound `RAW` bars for stable `listing_id=101`, each linked to an immutable source-observation hash and config snapshot hash;
+- one `STRUCTURAL_ADJUSTED` indicator row bound to factor-set/formula/config hashes;
+- separately valued `adv20_traded_value_idr_actual` and `adv20_close_volume_proxy_idr` fields;
+- complete quality/null annotations;
+- eligibility rows containing expectation, delivery, quality, liquidity, status, event-risk, freshness, decision, and sorted complete reasons.
 
-    2026-03-03|101|1||baseline|150000000.00|0.0238|1.2500|0.0500|109.0000
-
-### Eligibility serialized lines
-
-    2026-03-03|101|1|
-    2026-03-03|102|0|ELIG_MISSING_BAR
+Canonical serialization and field order come exclusively from `../book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md`; this fixture stores the expected serialized payload and SHA-256 alongside the semantic input.
 
 ### Locked proof intent
-- exact field order
+- exact current-contract field order
 - exact number formatting
 - exact null serialization
 - exact line separator semantics
-- changing only `run_id` must not alter the hash result
+- changing only `run_id` must not alter artifact hashes
+- changing observation/config/factor/formula/reason semantics must alter the relevant hash or manifest context
+- provider `adj_close` must not enter RAW/structural artifact serialization
 
 ---
 
@@ -53,7 +53,7 @@ If next day `TR = 1.50`:
     ATR14(next_date) = ((1.1142857143 * 13) + 1.50) / 14
                      = 1.1418367347
 
-If `basis_close(next_date)=48.00`:
+If coherent `STRUCTURAL_ADJUSTED close(next_date)=48.00`:
 
     atr14_pct(next_date) = 1.1418367347 / 48.00
                          = 0.0237882653
@@ -73,7 +73,8 @@ The fixture must prove:
 Ticker has only 10 trading-day bars.
 
 ### Expected outputs
-- `dv20_idr = NULL`
+- `adv20_traded_value_idr_actual = NULL`
+- `adv20_close_volume_proxy_idr = NULL`
 - `atr14_pct = NULL`
 - `vol_ratio = NULL`
 - `roc20 = NULL`
@@ -84,8 +85,11 @@ Ticker has only 10 trading-day bars.
 ### Expected eligibility output
 
     trade_date=D
-    ticker_id=101
-    eligible=0
+    listing_id=1001
+    ticker_code=FIXTURE
+    data_usable=0
+    reason_codes=[ELIG_INSUFFICIENT_HISTORY]
+    eligible=0                  # legacy compatibility projection only
     reason_code=ELIG_INSUFFICIENT_HISTORY
 
 ### Locked proof intent
@@ -271,8 +275,17 @@ It must also prove expected degraded outcomes.
       "bars_batch_hash": null,
       "indicators_batch_hash": null,
       "eligibility_batch_hash": null,
+      "observation_manifest_hash": "OBS_HASH",
+      "publication_manifest_hash": null,
       "sealed_at": null,
-      "config_version": "cfg_2026_03",
+      "config_snapshot_id": 9001,
+      "config_snapshot_hash": "CONFIG_HASH",
+      "factor_set_id": 7001,
+      "factor_set_hash": "FACTOR_HASH",
+      "price_product_code": "STRUCTURAL_ADJUSTED",
+      "formula_version": "weekly_swing_eod_v2",
+      "read_model_version": "weekly_swing_read_v2",
+      "freshness_state": "NOT_AVAILABLE",
       "started_at": "2026-03-10T15:01:00+07:00",
       "finished_at": "2026-03-10T15:09:30+07:00"
     }

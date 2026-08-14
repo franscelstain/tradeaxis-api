@@ -1,5 +1,10 @@
 # Production Validation Inventory
 
+> **HISTORICAL AUDIT/IMPLEMENTATION EVIDENCE — NON-AUTHORITATIVE FOR CURRENT V2 STRATEGY.** This file preserves dated runtime/inventory facts and may contain legacy field names, command behavior, locks, or production claims from earlier contracts. Current strategy authority is the owner contracts + Blueprint + Conformance Matrix; current execution/conformance state is `MARKET_DATA_IMPLEMENTATION_LEDGER.md`; current audit verdict is `reports/AUDIT_FINAL_STATE.md`. Legacy statements are not current requirements unless explicitly re-admitted by those authorities.
+
+
+Current admission status (2026-08-02): **HISTORICAL VALIDATION SCOPE / NOT CURRENT RELOCK PROOF**. See `reports/AUDIT_FINAL_STATE.md`. Runtime proof below remains valid for the commands and contracts it executed, but it predates the corrected temporal identity, immutable observation/config, factor/product, indicator, coverage, read-model, and as-known replay requirements.
+
 Status: DONE.
 Contract: PRODUCTION_VALIDATION_CONTRACT.
 Active implementation: Production Validation / Manual + Runtime Proof.
@@ -419,16 +424,16 @@ This append-only update closes the governance-only production validation gap lef
 
 Current synchronized status:
 
-- Aggregate production proof pack: `MARKET_DATA_PRODUCTION_READY_LOCKED / LOCKED`.
-- `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT`: `LOCKED`.
-- `LUMEN_IMPLEMENTATION_STATUS.md`: current working implementation `Full Market-Data Production Readiness Proof Pack -> DONE` with `[REVIEW_STATUS] MARKET_DATA_PRODUCTION_READY_LOCKED`.
-- `LUMEN_CONTRACT_TRACKER.md`: current working contract `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT -> LOCKED`.
+- Aggregate production proof pack: `MARKET_DATA_PRODUCTION_READY_LOCKED / LOCKED`.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
+- `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT`: `LOCKED`.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
+- `LUMEN_IMPLEMENTATION_STATUS.md`: current working implementation `Full Market-Data Production Readiness Proof Pack -> DONE` with `[REVIEW_STATUS] MARKET_DATA_PRODUCTION_READY_LOCKED`.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
+- `LUMEN_CONTRACT_TRACKER.md`: current working contract `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT -> LOCKED`.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 - Earlier `PENDING_RUNTIME_EVIDENCE`, `PARTIAL_RUNTIME_PROOF`, and `BLOCKED_RUNTIME_FIXTURE_UNAVAILABLE` rows in this inventory are retained as historical transition records only; they are superseded for the current source state by the ops matrix production-ready artifact root and final production proof pack.
 
 Final validation basis consumed:
 
 - `docs/market_data/audit/MARKET_DATA_PRODUCTION_PROOF_PACK.md`.
-- `docs/market_data/audit/FULL_MARKET_DATA_PRODUCTION_READY_INVENTORY.md`.
+- `docs/market_data/audit/FULL_MARKET_DATA_PRODUCTION_READY_INVENTORY.md`.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 - `storage/app/market-data/ops-command-surface-runtime-matrix-production-ready/**`.
 - `storage/app/market-data/full-production-ready/runtime/historical-replay/**`.
 - `storage/app/market-data/correction-lifecycle-hardening/**`.
@@ -480,7 +485,7 @@ Blocker classification:
 Final rollout decision for this session:
 
 - `OPS_RUNTIME_PARITY_PASSED`.
-- `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid for the locked source state.
+- `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid for the locked source state.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 
 Post-doc validation:
 
@@ -520,7 +525,7 @@ Implementation summary:
 Final decision for this blocker:
 
 - `BLOCKED_TESTING_DATABASE_ENV` is closed for this patched source state.
-- `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid.
+- `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 - At this DB-isolation closure point, full production rollout parity still had `OPS_DEPLOYMENT_TASK_REQUIRED` and `PROVIDER_SMOKE_SAFE_MODE_SURFACE_ADDED`; scheduler status is superseded by the Production Scheduler / Cron Deployment Proof section below.
 
 Post-patch validation:
@@ -566,7 +571,7 @@ Implementation summary:
 Final decision for this blocker:
 
 - `OPS_DEPLOYMENT_TASK_REQUIRED` is closed for this source ZIP because scheduler runtime command-output/log artifacts are supplied and archived.
-- `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid.
+- `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 - Full production rollout parity is `OPS_RUNTIME_PARITY_PASSED` because scheduler due-run proof is produced and provider smoke safe mode returned PASS.
 
 Post-patch validation:
@@ -625,7 +630,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 
 [FINAL_DECISION]
 - `OPS_RUNTIME_PARITY_PASSED` remains the only valid overall ops runtime parity status for this source ZIP.
-- `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid for core market-data source logic.
+- `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid for core market-data source logic.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 - This update closes the missing safe provider-smoke command surface at source level, but does not claim live provider PASS because local artisan execution is blocked by the documented unsupported PHP 8.4.16 runtime.
 
 [IMPLEMENTATION]
@@ -699,7 +704,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 - 2026-06-03 superseding command surface count: 26 after including `market-data:backfill:lifecycle` and adding `market-data:sector-indexes:import-bars` plus `market-data:sector-indexes:ingest-api`; required marker was `26-command command list/full help`.
 - 2026-06-04 superseding command surface count: 28 after adding `market-data:events:import-corporate-actions` and `market-data:events:import-trading-status`; required marker was `28-command command list/full help`.
 - 2026-06-06 current command surface count: 30 after adding `market-data:backfill:missing-tickers` and `market-data:eod-indicators:recompute-current`; required marker is `30-command command list/full help`.
-- Source-state validation remains `MARKET_DATA_PRODUCTION_READY_LOCKED` because full `vendor/bin/phpunit tests/Unit/MarketData` passed after this reconciliation.
+- Source-state validation remains `MARKET_DATA_PRODUCTION_READY_LOCKED` because full `vendor/bin/phpunit tests/Unit/MarketData` passed after this reconciliation.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 
 [VALIDATION]
 - Targeted guards passed: ProductionValidation OK (14 tests, 467 assertions), CommandSurfaceSafety OK (5 tests, 91 assertions), OpsCommandSurfaceRuntimeMatrix OK (6 tests, 120 assertions), ProviderSmokeSafeMode OK (4 tests, 104 assertions), AuditDocs OK (10 tests, 446 assertions), ProductionSchedulerCron OK (5 tests, 104 assertions).
@@ -736,7 +741,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 - Full MarketData PHPUnit proof after encoding/report correction passed: `OK (490 tests, 7506 assertions)`, Time `00:15.508`, Memory `40.00 MB`.
 
 [FINAL_DECISION]
-- Core source-code readiness remains `MARKET_DATA_PRODUCTION_READY_LOCKED`.
+- Core source-code readiness remains `MARKET_DATA_PRODUCTION_READY_LOCKED`.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 - Overall ops runtime parity is `OPS_RUNTIME_PARITY_PASSED` because live provider smoke now returns `provider_smoke_status=PASS` / `reason_code=PROVIDER_SMOKE_OK` / `http_status=200`.
 - Current rollout status is `OPS_RUNTIME_PARITY_PASSED`.
 
@@ -799,7 +804,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 
 [FINAL_DECISION]
 - Ops rollout/runtime parity: `OPS_RUNTIME_PARITY_PASSED`.
-- Source-state decision: `MARKET_DATA_PRODUCTION_READY_LOCKED`.
+- Source-state decision: `MARKET_DATA_PRODUCTION_READY_LOCKED`.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 - Final source-state lock status: `LOCKED`.
 - Final provider smoke: `FINAL_PROVIDER_SMOKE=PASSED`.
 - Live provider smoke: `LIVE_PROVIDER_SMOKE_PASSED`.
@@ -876,7 +881,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 
 [SESSION] SOURCE_READY_FULL_PRODUCTION_READY_GAP_CLOSURE
 
-[SESSION_STATUS] MARKET_DATA_PRODUCTION_READY_LOCKED
+[SESSION_STATUS] MARKET_DATA_PRODUCTION_READY_LOCKED  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 
 [INPUT_SOURCE_ZIP]
 - Source ZIP: `tradeaxis-api.zip`
@@ -889,8 +894,8 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 
 
 [FINAL_DECISION]
-- `FULLY_PRODUCTION_READY`
-- `MARKET_DATA_PRODUCTION_READY_LOCKED`
+- `FULLY_PRODUCTION_READY`  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
+- `MARKET_DATA_PRODUCTION_READY_LOCKED`  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 - `OPS_RUNTIME_PARITY_PASSED`
 - `FINAL_PROVIDER_SMOKE=PASSED`
 - `LIVE_PROVIDER_SMOKE_PASSED`
@@ -933,11 +938,11 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 
 [SESSION] API_DAILY_RUNTIME_PROOF_FINAL_VALIDATION
 
-[SESSION_STATUS] FULLY_PRODUCTION_READY
+[SESSION_STATUS] FULLY_PRODUCTION_READY  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 
 [FINAL_DECISION]
-- `FULLY_PRODUCTION_READY` is valid for the current market-data source state after the final API daily runtime proof, evidence export proof, replay verification proof, and full MarketData PHPUnit proof.
-- `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid.
+- `FULLY_PRODUCTION_READY` is valid for the current market-data source state after the final API daily runtime proof, evidence export proof, replay verification proof, and full MarketData PHPUnit proof.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
+- `MARKET_DATA_PRODUCTION_READY_LOCKED` remains valid.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 - `OPS_RUNTIME_PARITY_PASSED` remains valid.
 - `FINAL_PROVIDER_SMOKE=PASSED` remains valid.
 - `API_DAILY_RUNTIME_PROOF=PASSED`.
@@ -1053,7 +1058,7 @@ This global report confirms all `storage/app/market-data/**/*.txt` evidence file
 - `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions), Time 00:11.456, Memory 40.00 MB.
 
 [FINAL_RULE]
-- The current source state can claim `FULLY_PRODUCTION_READY` for the market-data source/runtime proof represented by this audit pack.
+- The current source state can claim `FULLY_PRODUCTION_READY` for the market-data source/runtime proof represented by this audit pack.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 - API source partial responses can still be validly promoted only when coverage gate remains PASS and the source attempt telemetry is reason-coded.
 - Future provider, scheduler, command-surface, audit-doc, config, coverage, finalize, correction, evidence, or replay changes must rerun the targeted guards and full `vendor/bin/phpunit tests/Unit/MarketData`.
 
@@ -1068,7 +1073,7 @@ Status: `PASS`.
 This append-only reconciliation records the latest current source-state proof after the market benchmark + indicator extension.
 
 - `MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS=PASS`
-- `MARKET_DATA_PRODUCTION_READY_LOCKED=YES`
+- `MARKET_DATA_PRODUCTION_READY_LOCKED=YES`  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 - `FULL_MARKET_DATA_PHPUNIT=PASSED`
 - Full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions).
 - Targeted proof: Benchmark OK (14 tests, 84 assertions); Indicator OK (18 tests, 104 assertions); MarketBenchmarkIndicatorExtensionStaticGuardTest OK (5 tests, 46 assertions); AuditDocsSynchronizationStaticGuardTest OK (10 tests, 468 assertions); StaticGuard OK (199 tests, 4930 assertions).
@@ -1078,7 +1083,7 @@ This append-only reconciliation records the latest current source-state proof af
 - Replay proof: `replay_id=2`, `comparison_result=MATCH`, `replay_status=PASS`, and `mismatch_count=0`.
 - Benchmark proof: `IHSG` is stored as benchmark/index with provider symbol `^JKSE`; `^JKSE.JK` and `IHSG.JK` remain forbidden; benchmark `IND_INSUFFICIENT_HISTORY` is expected until enough historical IHSG bars exist.
 
-Final current-source decision: `FULL_MARKET_DATA_PRODUCTION_READY=YES`, with no remaining blocker for this benchmark/indicator scope.
+Final current-source decision: `FULL_MARKET_DATA_PRODUCTION_READY=YES`, with no remaining blocker for this benchmark/indicator scope.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 
 
 ## 2026-06-07 — Current Indicator Recompute Final Runtime Lock

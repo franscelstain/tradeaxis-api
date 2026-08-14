@@ -1,5 +1,8 @@
 # MARKET DATA CONSUMER READ MODEL INVENTORY
 
+> **HISTORICAL AUDIT/IMPLEMENTATION EVIDENCE — NON-AUTHORITATIVE FOR CURRENT V2 STRATEGY.** This file preserves dated runtime/inventory facts and may contain legacy field names, command behavior, locks, or production claims from earlier contracts. Current strategy authority is the owner contracts + Blueprint + Conformance Matrix; current execution/conformance state is `MARKET_DATA_IMPLEMENTATION_LEDGER.md`; current audit verdict is `reports/AUDIT_FINAL_STATE.md`. Legacy statements are not current requirements unless explicitly re-admitted by those authorities.
+
+
 ## SESSION SCOPE
 
 MARKET_DATA_CONSUMER_READ_MODEL_STATUS: PASS
@@ -17,7 +20,7 @@ The scope remains market-data only. Watchlist ranking, buy/sell decisions, targe
 BASELINE_PRODUCTION_READY_PRESERVED: YES
 
 Source baseline before this session:
-- MARKET_DATA_PRODUCTION_READY_LOCKED: YES
+- MARKET_DATA_PRODUCTION_READY_LOCKED: YES  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 - FULL_MARKET_DATA_PHPUNIT: PASSED
 - Full MarketData suite: OK (513 tests, 7980 assertions)
 - MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS: PASS

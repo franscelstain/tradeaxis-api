@@ -50,6 +50,7 @@ class WeeklySwingParamsetBacktestBindingVerifier
             WatchlistBacktestPriceQualityP01RemediationParamGridCatalog::CATALOG_CODE,
             WatchlistBacktestTailRiskS01ParamGridCatalog::CATALOG_CODE,
             WatchlistBacktestTailRiskS01RemediationParamGridCatalog::CATALOG_CODE,
+            WatchlistBacktestBreakoutIntegrityB01ParamGridCatalog::CATALOG_CODE,
         ], true)) {
             $fieldMap = array_merge($fieldMap, [
                 'max_dv20_idr' => 'liquidity.max_dv20_idr',

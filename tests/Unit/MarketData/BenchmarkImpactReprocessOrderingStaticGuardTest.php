@@ -15,6 +15,7 @@ class BenchmarkImpactReprocessOrderingStaticGuardTest extends TestCase
         $this->assertIsString($source);
         $this->assertSame(2, preg_match_all(
             '/\\$benchmarkResult = \\$this->ingestBenchmarkNonBlocking\\([^;]+;\\s*'
+            .'(?:if \\(\\$input->requestMode !== \'corpus_reconstruction\'\\) \\{\\s*)?'
             .'\\$result = \\$this->withImpactReprocessExecution\\([^;]+;/s',
             $source
         ));

@@ -10,10 +10,10 @@ Default scope is based on upstream-readable dataset membership for the effective
 
 ## Default scope
 Unless a narrower upstream-approved contract is explicitly documented, snapshot scope defaults to:
-- tickers with eligibility rows for effective trade date D
+- stable listings present in the publication-bound **data-usability projection** for effective trade date D
 
 Recommended default:
-- full eligibility set for D
+- full publication-bound listing set represented by the data-usability projection for D
 
 This keeps snapshot capture aligned with the same effective-date reference dataset that downstream consumers are allowed to read.
 
@@ -29,8 +29,8 @@ The scope contract must not describe this as “same-day snapshot” unless it e
 
 ## Allowed narrowing inputs
 The implementation may narrow scope only using upstream-safe criteria, for example:
-- all eligibility rows for D
-- only `eligible = 1` rows for D, if explicitly locked by upstream contract
+- all publication-bound data-usability rows for D
+- only rows meeting an explicitly locked upstream `data_usable` condition; legacy `eligible = 1` may be used only as a compatibility projection with documented equivalence
 - static universe subsets defined by upstream master-data rules
 
 ## Forbidden narrowing inputs
@@ -44,7 +44,7 @@ The implementation must not derive scope from:
 
 ## Dependency rules
 Snapshot scope selection may depend on:
-- eligibility snapshot for D
+- a specific publication-bound data-usability snapshot for D
 - coverage universe definition for D
 - upstream master-data attributes documented as part of market-data domain
 

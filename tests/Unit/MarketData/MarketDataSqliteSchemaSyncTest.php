@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\Support\UsesMarketDataSqlite;
 
@@ -56,12 +57,18 @@ class MarketDataSqliteSchemaSyncTest extends TestCase
             'ticker_sector_memberships' => [
                 'membership_id',
                 'ticker_id',
+                'listing_id',
                 'sector_code',
                 'classification_system',
                 'effective_from',
                 'effective_to',
                 'source_name',
                 'source_ref',
+                'source_authority_class',
+                'recorded_at',
+                'supersedes_membership_id',
+                'operator_name',
+                'reason_code',
                 'created_at',
                 'updated_at',
             ],
@@ -279,6 +286,80 @@ class MarketDataSqliteSchemaSyncTest extends TestCase
         }
     }
 
+    public function test_strategy_v2_schema_is_mirrored_and_contains_no_direct_price_repair_surface(): void
+    {
+        foreach ([
+            'md_config_snapshots' => [
+                'config_snapshot_id', 'snapshot_uid', 'snapshot_schema_version',
+                'serialization_version', 'resolved_config_json', 'config_hash',
+                'registry_revision', 'effective_at', 'recorded_at', 'build_id',
+                'environment_profile', 'resolver_version', 'created_at',
+            ],
+            'md_source_observations' => [
+                'source_observation_id', 'observation_uid', 'run_id', 'attempt_uid',
+                'requested_trade_date', 'source_name', 'provider', 'provider_symbol',
+                'provider_mapping_id', 'sanitized_request_identity', 'response_status',
+                'content_type', 'source_timestamp', 'acquired_at', 'schema_fingerprint',
+                'adapter_version', 'payload_hash', 'payload_ref', 'bounded_payload_body',
+                'outcome_state', 'reason_code', 'supersedes_observation_id', 'created_at',
+            ],
+            'md_issuers' => ['issuer_id', 'issuer_uid', 'legal_name', 'recorded_at', 'created_at'],
+            'md_instruments' => ['instrument_id', 'instrument_uid', 'issuer_id', 'instrument_type', 'currency_code', 'recorded_at', 'created_at'],
+            'md_listings' => ['listing_id', 'listing_uid', 'instrument_id', 'exchange_code', 'board_code', 'listed_date', 'delisted_date', 'recorded_at', 'created_at'],
+            'md_listing_symbols' => ['listing_symbol_id', 'listing_id', 'symbol', 'symbol_type', 'effective_from', 'effective_to', 'recorded_at', 'retracted_at', 'source_observation_id'],
+            'md_provider_symbol_mappings' => ['provider_mapping_id', 'listing_id', 'provider', 'provider_symbol', 'effective_from', 'effective_to', 'recorded_at', 'retracted_at', 'source_observation_id', 'mapping_revision'],
+            'md_market_calendar_revisions' => ['calendar_revision_id', 'market_code', 'cal_date', 'revision_uid', 'timezone', 'session_state', 'session_open_at', 'session_close_at', 'completed_at', 'recorded_at', 'source_observation_id', 'supersedes_revision_id'],
+            'md_trading_status_revisions' => ['status_revision_id', 'listing_id', 'status_code', 'bar_expectation_state', 'full_session_verified', 'effective_from', 'effective_to', 'recorded_at', 'retracted_at', 'source_observation_id', 'supersedes_revision_id'],
+            'md_corporate_action_revisions' => ['corporate_action_revision_id', 'event_uid', 'revision_number', 'listing_id', 'action_type_code', 'lifecycle_state', 'verification_state', 'ex_date', 'cum_date', 'record_date', 'payment_date', 'terms_json', 'source_observation_id', 'effective_at', 'recorded_at', 'supersedes_revision_id'],
+            'md_exchange_market_structure_revisions' => ['market_structure_revision_id', 'rule_uid', 'revision_number', 'rule_type', 'exchange_code', 'market_segment', 'instrument_scope_code', 'coverage_scope_json', 'effective_from', 'effective_to', 'minimum_price_idr', 'verification_state', 'source_uid', 'source_observation_id', 'source_reference', 'content_hash', 'recorded_at', 'supersedes_revision_id'],
+            'md_exchange_price_band_tiers' => ['price_band_tier_id', 'market_structure_revision_id', 'tier_sequence', 'reference_price_min_idr', 'reference_price_min_inclusive', 'reference_price_max_idr', 'reference_price_max_inclusive', 'upper_limit_percent', 'lower_limit_percent'],
+            'md_exchange_tick_size_tiers' => ['tick_size_tier_id', 'market_structure_revision_id', 'tier_sequence', 'price_min_idr', 'price_min_inclusive', 'price_max_idr', 'price_max_inclusive', 'tick_size_idr', 'maximum_price_step_idr'],
+            'md_adjustment_factor_sets' => ['factor_set_id', 'factor_set_uid', 'price_product_code', 'factor_formula_version', 'config_snapshot_id', 'state', 'content_hash', 'recorded_at', 'created_at'],
+            'md_adjustment_factors' => ['adjustment_factor_id', 'factor_set_id', 'listing_id', 'effective_from', 'effective_to', 'price_factor', 'volume_factor', 'corporate_action_revision_id', 'created_at'],
+            'md_source_scale_assessments' => ['source_scale_assessment_id', 'assessment_uid', 'revision_number', 'provider', 'listing_id', 'corporate_action_revision_id', 'source_scale_state', 'scale_effective_from', 'assessment_version', 'evidence_observation_set_hash', 'evidence_json', 'recorded_at', 'supersedes_assessment_id', 'created_at'],
+            'md_adjustment_factor_decisions' => ['factor_decision_id', 'factor_set_id', 'listing_id', 'corporate_action_revision_id', 'source_scale_assessment_id', 'decision_state', 'candidate_price_factor', 'candidate_volume_factor', 'reason_code', 'created_at'],
+            'md_publication_market_structure_bindings' => ['market_structure_binding_id', 'publication_id', 'listing_id', 'resolution_state', 'normalized_board_code', 'board_identity_recorded_at', 'price_band_revision_id', 'minimum_price_revision_id', 'tick_size_revision_id', 'reason_code', 'created_at'],
+            'md_stage8_reconstruction_campaigns' => ['campaign_id', 'campaign_uid', 'scope_start', 'scope_end', 'target_date_count', 'baseline_max_publication_id', 'state', 'baseline_target_set_hash', 'started_at', 'completed_at', 'result_json', 'created_at', 'updated_at'],
+            'md_stage8_reconstruction_targets' => ['campaign_target_id', 'campaign_id', 'trade_date', 'baseline_publication_id', 'baseline_run_id', 'baseline_publication_version', 'baseline_bars_batch_hash', 'baseline_indicators_batch_hash', 'baseline_eligibility_batch_hash', 'baseline_bars_snapshot_hash', 'baseline_indicators_snapshot_hash', 'baseline_eligibility_snapshot_hash', 'correction_id', 'replacement_publication_id', 'replacement_run_id', 'state', 'reason_code', 'completed_at', 'created_at', 'updated_at'],
+            'md_publication_lineage_bindings' => ['publication_lineage_id', 'publication_id', 'config_snapshot_id', 'factor_set_id', 'observation_manifest_hash', 'identity_revision_set_hash', 'calendar_revision_set_hash', 'status_revision_set_hash', 'event_revision_set_hash', 'source_scale_assessment_set_hash', 'market_structure_revision_set_hash', 'factor_decision_set_hash', 'formula_version', 'build_id', 'read_model_version', 'created_at'],
+            'eod_runs' => ['config_snapshot_id', 'observation_manifest_hash', 'price_product_code', 'price_product_version', 'factor_set_hash', 'coverage_universe_hash', 'coverage_excluded_sample_json', 'knowledge_cutoff_at', 'coverage_expected_count', 'coverage_expectation_unknown_count', 'coverage_delivered_count', 'coverage_delivered_valid_count', 'operational_start_date', 'freshness_state', 'latest_expected_trade_date', 'latest_acquired_trade_date', 'latest_canonicalized_trade_date', 'latest_readable_trade_date'],
+            'eod_publications' => ['config_snapshot_id', 'factor_set_id', 'factor_set_hash', 'observation_manifest_hash', 'publication_manifest_hash', 'price_product_code', 'price_product_version', 'read_model_version', 'readiness_state', 'source_scale_assessment_set_hash', 'market_structure_revision_set_hash', 'factor_decision_set_hash'],
+            'eod_bars' => ['source_scale_state', 'source_scale_assessment_id'],
+            'eod_invalid_bars' => ['listing_id', 'source_observation_id'],
+            'eod_bars_history' => ['listing_id', 'source_observation_id', 'previous_close', 'traded_value_idr_actual', 'trade_count_actual', 'board_code', 'session_code', 'source_timestamp', 'acquired_at', 'canonicalization_version', 'price_product_code', 'quality_state', 'config_snapshot_id', 'source_scale_state', 'source_scale_assessment_id'],
+            'eod_indicators_history' => ['listing_id', 'formula_version', 'config_snapshot_id', 'factor_set_id', 'factor_set_hash', 'price_product_code', 'price_product_version', 'sector_membership_id', 'adv20_traded_value_idr_actual', 'adv20_close_volume_proxy_idr', 'atr14', 'atr_state_ref', 'null_reasons_json'],
+            'eod_eligibility' => ['market_structure_resolution_state', 'price_band_revision_id', 'minimum_price_revision_id', 'tick_size_revision_id'],
+            'eod_eligibility_history' => ['listing_id', 'universe_membership_state', 'bar_expectation_state', 'delivery_state', 'canonical_quality_state', 'liquidity_state', 'temporal_status_state', 'event_risk_state', 'eligibility_reasons_json', 'market_structure_resolution_state', 'price_band_revision_id', 'minimum_price_revision_id', 'tick_size_revision_id', 'config_snapshot_id'],
+        ] as $table => $columns) {
+            $this->assertTrue(Schema::hasTable($table), sprintf('Missing V2 SQLite mirror table %s', $table));
+
+            foreach ($columns as $column) {
+                $this->assertTrue(
+                    Schema::hasColumn($table, $column),
+                    sprintf('Missing V2 SQLite mirror column %s.%s', $table, $column)
+                );
+            }
+        }
+
+        foreach ([
+            'repair_factor',
+            'repair_range_end_date',
+            'repaired_bar_count',
+            'repaired_history_row_count',
+            'repaired_at',
+        ] as $column) {
+            $this->assertFalse(
+                Schema::hasColumn('market_data_price_scale_breaks', $column),
+                sprintf('Direct history-repair field must not exist: market_data_price_scale_breaks.%s', $column)
+            );
+        }
+
+        $this->assertFalse(
+            DB::table('market_data_corporate_action_types')->where('action_type_code', 'PRICE_RESCALE_UNCLASSIFIED')->exists(),
+            'Price-derived unclassified rescale must not be seeded as an adjustment-authorizing action type'
+        );
+    }
+
     public function test_replay_metrics_does_not_contain_sqlite_only_source_file_columns(): void
     {
         foreach ([
@@ -372,9 +453,12 @@ class MarketDataSqliteSchemaSyncTest extends TestCase
                 'idx_market_data_sectors_index_code',
             ],
             'ticker_sector_memberships' => [
-                'uq_ticker_sector_membership_effective_from',
+                'uq_sector_membership_listing_effective_known',
                 'idx_ticker_sector_membership_ticker_date',
                 'idx_ticker_sector_membership_sector_date',
+                'idx_sector_membership_listing_effective',
+                'idx_sector_membership_known_authority',
+                'idx_sector_membership_supersedes',
             ],
             'market_data_corporate_actions' => [
                 'uq_md_corp_action_ticker_date_type_source',

@@ -16,6 +16,11 @@ A `manual_file` run may become `READABLE` only when the normal coverage gate pas
 
 A partial `manual_file` dataset does not create a readable current publication by default.
 
+### Operational scope boundary (LOCKED)
+
+Untuk **operational source recovery**, `manual_file` dibatasi sebagai explicit controlled **one-date rescue**. Ia bukan source continuity untuk outage multi-hari. Planned development backfill, correction, atau replay dapat memproses scope tanggal yang lebih luas hanya bila workflow dan range-nya eksplisit; itu bukan fallback operasional dan tidak mengubah publishability gates di dokumen ini.
+
+
 ---
 
 ## 2. Policy Options Reviewed
@@ -93,7 +98,7 @@ Coverage `FAIL` or `NOT_EVALUABLE` blocks readable promotion for:
 
 ### Non-current exception
 
-A repair candidate may seal as non-current metadata, but it must not replace current publication ownership and must not become reader-authoritative.
+A correction candidate may seal as non-current metadata, but it must not replace current publication ownership and must not become reader-authoritative.
 
 ---
 

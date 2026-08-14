@@ -94,11 +94,18 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertNotNull($run->bars_batch_hash);
         $this->assertNotNull($run->indicators_batch_hash);
         $this->assertNotNull($run->eligibility_batch_hash);
+        $this->assertNotNull($run->config_snapshot_id);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', (string) $run->observation_manifest_hash);
 
         $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
         $this->assertNotNull($publication);
         $this->assertSame(1, (int) $publication->is_current);
         $this->assertSame('SEALED', $publication->seal_state);
+        $this->assertSame((int) $run->config_snapshot_id, (int) $publication->config_snapshot_id);
+        $this->assertSame((string) $run->observation_manifest_hash, (string) $publication->observation_manifest_hash);
+        $this->assertSame('STRUCTURAL_ADJUSTED', $publication->price_product_code);
+        $this->assertSame('structural_adjusted_v1', $publication->price_product_version);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $publication->factor_set_hash);
 
         $pointer = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
         $this->assertNotNull($pointer);
@@ -114,6 +121,15 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame((int) $publication->publication_id, (int) $resolvedReadableForRun->publication_id);
 
         $this->assertSame(1, DB::table('eod_bars')->where('trade_date', '2026-03-20')->count());
+        $canonicalBar = DB::table('eod_bars')->where('trade_date', '2026-03-20')->first();
+        $this->assertNotNull($canonicalBar->listing_id);
+        $this->assertNotNull($canonicalBar->source_observation_id);
+        $this->assertSame((int) $run->config_snapshot_id, (int) $canonicalBar->config_snapshot_id);
+        $this->assertSame('RAW', $canonicalBar->price_product_code);
+        $this->assertSame('VALIDATED', $canonicalBar->quality_state);
+        $this->assertNull($canonicalBar->adj_close, 'provider adjusted close remains only in raw observation evidence');
+        $this->assertTrue(DB::table('md_source_observations')->where('source_observation_id', $canonicalBar->source_observation_id)->where('outcome_state', 'ACCEPTED')->exists());
+        $this->assertTrue(DB::table('md_source_observations')->where('run_id', $run->run_id)->where('outcome_state', 'CAPTURED')->exists());
         $this->assertSame(1, DB::table('eod_indicators')->where('trade_date', '2026-03-20')->count());
         $this->assertSame(1, DB::table('eod_eligibility')->where('trade_date', '2026-03-20')->where('eligible', 1)->count());
 
@@ -4490,6 +4506,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'coverage_threshold_mode' => 'MIN_RATIO',
             'coverage_universe_basis' => 'ticker_master_active_on_trade_date',
             'coverage_contract_version' => 'coverage_gate_v1',
+            'knowledge_cutoff_at' => '2026-03-24 23:00:00',
             'bars_rows_written' => 1,
             'indicators_rows_written' => 1,
             'eligibility_rows_written' => 1,
@@ -4896,6 +4913,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
                 ['cal_date' => $date->toDateString()],
                 [
                     'is_trading_day' => in_array($date->dayOfWeekIso, [6, 7], true) ? 0 : 1,
+                    'provenance_tier' => 'VERIFIED',
                     'source' => 'test_fixture',
                     'created_at' => Carbon::now()->toDateTimeString(),
                     'updated_at' => Carbon::now()->toDateTimeString(),
@@ -4951,6 +4969,11 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'coverage_gate_state' => 'PASS',
             'coverage_min_threshold' => '0.9800',
             'coverage_universe_count' => 1,
+            'coverage_expected_count' => 1,
+            'coverage_bar_not_expected_count' => 0,
+            'coverage_expectation_unknown_count' => 0,
+            'coverage_delivered_count' => 1,
+            'coverage_delivered_valid_count' => 1,
             'coverage_available_count' => 1,
             'coverage_missing_count' => 0,
             'coverage_threshold_mode' => 'MIN_RATIO',
@@ -5123,6 +5146,8 @@ class MarketDataPipelineIntegrationTest extends TestCase
         DB::table('eod_bars')->insert([
             'trade_date' => $tradeDate,
             'ticker_id' => $tickerId,
+            'listing_id' => 1000 + $tickerId,
+            'source_observation_id' => 5000 + $tickerId,
             'open' => $close,
             'high' => $close,
             'low' => $close,
@@ -5130,6 +5155,9 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'volume' => 1000,
             'adj_close' => $close,
             'source' => 'MANUAL_FILE',
+            'canonicalization_version' => 'eod_canonical_v1',
+            'price_product_code' => 'RAW',
+            'quality_state' => 'VALIDATED',
             'run_id' => 90,
             'publication_id' => 1,
             'created_at' => Carbon::now()->toDateTimeString(),
@@ -5154,8 +5182,17 @@ class MarketDataPipelineIntegrationTest extends TestCase
         DB::table('eod_eligibility')->insert([
             'trade_date' => $tradeDate,
             'ticker_id' => $tickerId,
+            'listing_id' => 1000 + $tickerId,
             'eligible' => 1,
             'reason_code' => null,
+            'universe_membership_state' => 'MEMBER',
+            'bar_expectation_state' => 'BAR_EXPECTATION_UNKNOWN',
+            'delivery_state' => 'DELIVERED',
+            'canonical_quality_state' => 'VALIDATED',
+            'liquidity_state' => 'ACTIVE',
+            'temporal_status_state' => 'UNKNOWN',
+            'event_risk_state' => 'CLEAR',
+            'eligibility_reasons_json' => '[]',
             'run_id' => 90,
             'publication_id' => 1,
             'created_at' => Carbon::now()->toDateTimeString(),
@@ -5998,6 +6035,8 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
     private function seedCurrentPublicationBaselineForTradeDate(string $tradeDate, int $tickerId, float $close): void
     {
+        $factorSetHash = hash('sha256', 'pipeline-baseline|'.$tradeDate.'|1');
+
         DB::table('eod_runs')->insert([
             'run_id' => 90,
             'trade_date_requested' => $tradeDate,
@@ -6012,6 +6051,11 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'coverage_gate_state' => 'PASS',
             'coverage_min_threshold' => '0.9800',
             'coverage_universe_count' => 1,
+            'coverage_expected_count' => 1,
+            'coverage_bar_not_expected_count' => 0,
+            'coverage_expectation_unknown_count' => 0,
+            'coverage_delivered_count' => 1,
+            'coverage_delivered_valid_count' => 1,
             'coverage_available_count' => 1,
             'coverage_missing_count' => 0,
             'coverage_threshold_mode' => 'MIN_RATIO',
@@ -6029,6 +6073,9 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'indicators_batch_hash' => 'ind-old',
             'eligibility_batch_hash' => 'elig-old',
             'config_version' => 'v1',
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => $factorSetHash,
             'publication_id' => 1,
             'publication_version' => 1,
             'is_current_publication' => 1,
@@ -6052,6 +6099,9 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'bars_batch_hash' => 'bars-old',
             'indicators_batch_hash' => 'ind-old',
             'eligibility_batch_hash' => 'elig-old',
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => $factorSetHash,
             'sealed_at' => '2026-03-20 17:20:00',
             'created_at' => '2026-03-20 17:00:00',
             'updated_at' => '2026-03-20 17:20:00',
@@ -6069,6 +6119,8 @@ class MarketDataPipelineIntegrationTest extends TestCase
         DB::table('eod_bars')->insert([
             'trade_date' => $tradeDate,
             'ticker_id' => $tickerId,
+            'listing_id' => 1000 + $tickerId,
+            'source_observation_id' => 5000 + $tickerId,
             'open' => $close - 1,
             'high' => $close + 2,
             'low' => $close - 2,
@@ -6076,6 +6128,9 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'volume' => 1500,
             'adj_close' => $close,
             'source' => 'MANUAL_FILE',
+            'canonicalization_version' => 'eod_canonical_v1',
+            'price_product_code' => 'RAW',
+            'quality_state' => 'VALIDATED',
             'run_id' => 90,
             'publication_id' => 1,
             'created_at' => '2026-03-20 17:00:00',
@@ -6087,6 +6142,9 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'is_valid' => 1,
             'invalid_reason_code' => null,
             'indicator_set_version' => 'v1',
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => $factorSetHash,
             'dv20_idr' => 1000000,
             'atr14_pct' => 0.01,
             'vol_ratio' => 1.0,
@@ -6100,8 +6158,17 @@ class MarketDataPipelineIntegrationTest extends TestCase
         DB::table('eod_eligibility')->insert([
             'trade_date' => $tradeDate,
             'ticker_id' => $tickerId,
+            'listing_id' => 1000 + $tickerId,
             'eligible' => 1,
             'reason_code' => null,
+            'universe_membership_state' => 'MEMBER',
+            'bar_expectation_state' => 'BAR_EXPECTATION_UNKNOWN',
+            'delivery_state' => 'DELIVERED',
+            'canonical_quality_state' => 'VALIDATED',
+            'liquidity_state' => 'ACTIVE',
+            'temporal_status_state' => 'UNKNOWN',
+            'event_risk_state' => 'CLEAR',
+            'eligibility_reasons_json' => '[]',
             'run_id' => 90,
             'publication_id' => 1,
             'created_at' => '2026-03-20 17:00:00',
@@ -6111,6 +6178,8 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
     private function seedReadableFallbackPublication(string $tradeDate, int $runId, int $publicationId): void
     {
+        $factorSetHash = hash('sha256', 'pipeline-fallback|'.$tradeDate.'|'.$runId.'|'.$publicationId);
+
         DB::table('eod_runs')->insert([
             'run_id' => $runId,
             'trade_date_requested' => $tradeDate,
@@ -6142,6 +6211,9 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'indicators_batch_hash' => 'ind-fallback',
             'eligibility_batch_hash' => 'elig-fallback',
             'config_version' => 'v1',
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => $factorSetHash,
             'publication_id' => $publicationId,
             'publication_version' => 1,
             'is_current_publication' => 1,
@@ -6165,6 +6237,9 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'bars_batch_hash' => 'bars-fallback',
             'indicators_batch_hash' => 'ind-fallback',
             'eligibility_batch_hash' => 'elig-fallback',
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => $factorSetHash,
             'sealed_at' => $tradeDate.' 17:20:00',
             'created_at' => $tradeDate.' 17:00:00',
             'updated_at' => $tradeDate.' 17:20:00',

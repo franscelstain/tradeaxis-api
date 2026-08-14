@@ -1,59 +1,130 @@
-# Indicator Registry — Baseline (LOCKED)
+# Indicator Registry — Baseline (STRATEGY LOCKED)
 
-This registry defines only the upstream baseline indicator set that downstream consumers may expect.
-It does **not** define downstream screening, scoring, grouping, ranking, or portfolio logic.
+## Purpose and boundary
 
-## Mandatory baseline indicators
-- `dv20_idr` using 20-day inclusive turnover average
-- `atr14_pct` using 14-day Wilder ATR on real OHLC
-- `vol_ratio` using current-day volume divided by average of prior 20 trading-day volumes
-- `roc5` using `P(D)` versus `P(D[-5])`
-- `roc10` using `P(D)` versus `P(D[-10])`
-- `roc20` using `P(D)` versus `P(D[-20])`
-- `hh20` using real high over the last 20 trading days inclusive of D
-- `ll20` using real low over the last 20 trading days inclusive of D
-- `close_to_hh20_pct`, `close_to_ll20_pct`, `range_20_pct`, and `range_position_20_pct` as 20-day range structure context
-- `sector_code` as nullable source-backed IDX-IC sector membership context, not a technical formula
-- `sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg` as nullable source-backed sector-index context
-- `corporate_action_flag`, `corporate_action_types`, `trading_status_code`, `is_suspended`, `is_uma`, `event_risk_flag`, and `event_risk_reasons` as nullable source-backed event-risk context, not screening/scoring logic
+This registry owns the minimum upstream indicator artifact for the initial EOD read-product profile. Weekly Swing is the first intended consumer, not the indicator artifact's acceptance authority. This registry does not own screening, ranking, entry/exit, position sizing, or portfolio policy.
 
-## Validity rule
-If any mandatory baseline indicator is NULL because required history is unavailable, then:
-- `eod_indicators.is_valid=0`
-- `invalid_reason_code=IND_INSUFFICIENT_HISTORY`
-- `eod_eligibility.eligible=0`
-- `reason_code=ELIG_INSUFFICIENT_HISTORY`
+The formula owner is `../indicators/EOD_Indicators_Formula_Spec.md`; orchestration is owned by `../indicators/Indicator_Computation_Specification.md`; null behavior is owned by `../book/Indicator_Nullability_And_OHLCV_Gap_Contract.md`. This registry may name fields and dependencies but may not redefine those rules.
 
-`sector_code` is nullable and does not by itself invalidate the row. Missing sector membership means no source-backed sector classification exists for the ticker/date yet; implementations must not fabricate a placeholder sector.
+## Artifact-wide binding
 
-`sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg` are nullable and do not by themselves invalidate the row. Missing sector-index history means no source-backed sector rotation value exists for that date yet; implementations must not fabricate or forward-fill sector values.
+Every row is bound to one immutable publication, trade date, listing identity, coherent price product, factor-set revision, indicator-set/formula version, full configuration snapshot/hash, identity/calendar/status/event revisions, source observation lineage, and computation run.
 
-Event-risk context fields are nullable and do not by themselves invalidate the row. Missing corporate-action/trading-status source rows or active source state means no source-backed event-risk context exists for that ticker/date yet; implementations must not fabricate `event_risk_flag=0` from absence. A `0` flag is valid only when an explicit source row/state reports non-risk status such as `ACTIVE`, `NORMAL`, `UNSUSPENDED`, or special-monitoring exit and no independent risk state remains active. Suspension and special-monitoring rows carry forward as independent source-backed risk states until their matching recognized clear event appears.
+No row may silently read mutable current master data or mix price bases. A compatibility current projection is not the authoritative history.
 
----
+## Required baseline fields
 
-## Amendment 2026-05-26 - Dependency horizon registry
+### Price and range
 
-The out-of-order import impact resolver must account for the active baseline indicator horizon in trading days.
+- `ma20`, `ma50`
+- `roc5`, `roc10`, `roc20`
+- `hh20`, `ll20`
+- `close_to_hh20_pct`, `close_to_ll20_pct`
+- `range_20_pct`, `range_position_20_pct`
+- `atr14`, `atr14_pct`
 
-Baseline dependency requirements:
-- `dv20_idr`: 20
-- `atr14_pct`: 15 conservative dependency days because TR needs prior close
-- `vol_ratio`: 21 because it uses current day volume and the prior 20 trading days
-- `roc5`: 6 because it uses D and D[-5]
-- `roc10`: 11 because it uses D and D[-10]
-- `roc20`: 21 because it uses D and D[-20]
-- `hh20`: 20
-- `ll20`: 20
-- `ma20`: 20
-- `ma50`: 50
+These use the coherent `STRUCTURAL_ADJUSTED` OHLC product selected for the run. Provider `adj_close`, mixed adjusted-close/raw-high-low input, and close fallback are prohibited.
 
-The current maximum dependency horizon is `50` trading days. This is the source-of-truth floor used by the resolver unless a future registry version introduces a longer indicator dependency.
+### Volume and liquidity
 
----
+- `vol_ratio_20`
+- `adv20_traded_value_idr_actual`, only when source-backed actual traded value is complete for the required window
+- `adv20_close_volume_proxy_idr`, explicitly labeled as the `RAW close × RAW volume` proxy
 
-## Amendment 2026-05-27 - Reprocess executor registry note
+Legacy `dv20_idr`, if temporarily exposed, aliases only `adv20_close_volume_proxy_idr`; it must never be described as actual exchange turnover. Adjusted price multiplied by raw volume is not a valid proxy.
 
-The impact reprocess executor uses the same baseline dependency horizon resolved from this registry/config contract. It may recompute full affected dates even when only a subset of tickers changed. This is an intentional conservative execution scope until a per-ticker indicator writer is introduced.
+### Context facts
 
-The executor must not mark readable affected dates as recomputed in live current artifacts; those dates remain correction/republication cases.
+- nullable source-backed `sector_code`
+- nullable, version-bound `sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg`
+- `corporate_action_flag`, action/event revision references, contamination state and reasons
+- temporal `trading_status_code`, `is_suspended`, `is_uma`, `event_risk_flag`, and all event-risk reasons
+
+Context fields are facts, not alpha policy. Missing optional sector or benchmark facts do not justify inventing a value or invalidating independent price indicators.
+
+## ATR state and dependency graph
+
+`ATR14` uses Wilder recurrence with one stable seed constructed from the first fourteen valid true ranges after the later of the intentional dataset start and listing start. After seeding, each date consumes the immediately preceding stored ATR state and that date's true range.
+
+- Sliding-window reseeding is prohibited.
+- A wider query window is not a substitute for the stable seed/state.
+- An unresolved expected-session gap cannot be skipped or forward-filled.
+- A corrected historical true range may affect every later ATR value; its impact is recursive and is not capped at fourteen or any other fixed number of sessions.
+
+Fixed-window indicators retain their exact dependency horizons as defined by the formula owner. The registry and implementation must publish a dependency manifest sufficient to compute correction impact.
+
+## Corporate-action and contamination rules
+
+Only verified event revisions and approved factor-set revisions may transform the structural-adjusted product. Price jumps, provider adjustment fields, or synthetic detector candidates may quarantine or contaminate output but cannot activate a factor.
+
+Action timing uses verified exchange-effective/ex-date semantics. Exact-date-only contamination is insufficient: each affected field carries the applicable dependency interval, event revision, factor-set revision, contamination state, and reason set.
+
+Unresolved structural breaks block or null every dependent field rather than mixing incompatible regimes. Raw canonical bars remain unchanged.
+
+## Contamination radius (LOCKED)
+
+`Terminology_and_Scope.md` assigns this contract the duty of publishing the radius as a number. The baseline field set has two radii, not one, and collapsing them into a single figure would understate the worse case.
+
+**Fixed-window radius: 50 trading sessions.** The longest fixed dependency in the baseline is `ma50`, defined over `D[-49]..D`. An undetected structural event at session `T` therefore mislabels every dependent fixed-window value from `T` through `T+49`. Against the declared decision horizon of five trading days, fifty sessions is roughly **ten consecutive decision cycles** — the defect is not diluted by averaging, it is carried by it.
+
+**Recursive radius: unbounded forward.** `ATR14` uses Wilder recurrence from one stable seed, so a wrong true range at session `T` propagates into every later `ATR14` value without limit. This is already stated above as an impact rule; restated here it is a radius, and it is the reason ATR-dependent output cannot be bounded by any window length.
+
+Consequences that bind:
+
+- Impact resolution for a correction at session `T` covers at minimum `T` through `T+49` for fixed-window fields, and the **entire remaining chain** for ATR-derived fields.
+- A quarantine that covers only the event date is insufficient by a factor of fifty for fixed-window fields and by an unbounded factor for recursive ones.
+- Adding a field with a longer fixed window raises the fixed-window radius and is an output-affecting change under the version rule, not a routine addition.
+- Publishing these numbers does not make them safe. It makes the cost of an undetected event explicit, which is the point: at this horizon, a single missed event consumes more decision opportunities than most operators expect.
+
+## Capability boundary (LOCKED)
+
+**What the engine proves.** That each value follows its declared formula exactly; that the ATR chain is stable and reproducible; that warm-up and insufficient history produce declared nulls with reason codes; that **detected** contamination is surfaced on every dependent field.
+
+**What the engine cannot prove.**
+
+- **That the window is free of undetected discontinuity.** Contamination rules act on verified event revisions and detector candidates. An event nobody recorded, and a scale change below the detector's sensitivity floor, leave no trace in the input. The engine computes over the window it is given.
+- **That a value is meaningful.** An indicator computed across an unadjusted corporate action is arithmetically correct and semantically wrong. It is non-null, within range, carries no reason code, and participates in the artifact hash like any other value.
+- **That the value can be told apart from a real move.** `ROC20` of roughly minus ninety percent across an unadjusted ten-for-one split is numerically indistinguishable from a genuine collapse of the same size. Nothing in the field, its reason set, or its precision reveals which one it is.
+
+### Consequences (LOCKED)
+
+- A non-null indicator value is **not** evidence that its window is clean.
+- An empty contamination reason set records what was **detected**, not what **occurred**. It may never be read, exported, or reported as proof of an undisturbed window.
+- Evidence that a window is clean must come from event completeness under the corporate-action owner contract, never from the shape, range, or nullability of the computed value.
+
+A twenty-session window under a five-trading-day decision horizon spans roughly four weeks of decisions. One undetected structural event does not corrupt a single number; it mislabels every value that window feeds, and each of them looks ordinary.
+
+## Nullability, precision, and reasons
+
+For every registered field, the versioned registry entry must declare:
+
+- required or optional status;
+- dependency fields and window/state rule;
+- price/liquidity basis and unit;
+- warm-up rule;
+- precision, rounding, and serialization rule;
+- allowed null reason codes; and
+- formula and registry version.
+
+Canonical zero-price placeholders, arbitrary defaults, infinity, and `NaN` are forbidden. Field-level reason sets are retained even when a compatibility primary reason is exposed.
+
+## Artifact hash
+
+Every published field and its semantic annotation participates in the artifact content hash, including reason sets, contamination windows, and `corporate_action_window_reasons`. Excluding a published annotation can make two semantically different artifacts hash-identical and can prevent a hash-gated correction from being promoted.
+
+The canonical hash column order, null encoding, numeric normalization, character encoding, and row ordering are versioned config. A formula-, reason-, annotation-, lineage-, or value-change creates a new immutable artifact/publication version.
+
+## Acceptance proof
+
+Order 15 is implementation-ready only when independent golden fixtures prove at least:
+
+1. a long uninterrupted ATR chain against an external/reference oracle;
+2. a later listing and the intentional dataset-start warm-up;
+3. a gap that does not silently reseed or skip state;
+4. an old true-range correction whose ATR impact propagates beyond fourteen sessions;
+5. a verified split with coherent OHLC/volume adjustment;
+6. an unverified price break that contaminates but never adjusts;
+7. actual traded value and close-volume proxy remain distinct; and
+8. deterministic replay produces byte-identical values, reasons, lineage, and hash.
+
+Until these executed fixtures pass against the production path, this document is strategy-locked but the indicator implementation is not production-relocked.

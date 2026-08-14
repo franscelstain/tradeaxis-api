@@ -17,10 +17,20 @@ Untuk paket aktif, harus ada tepat satu report kanonik:
 
 File itu adalah satu-satunya ringkasan status audit saat ini.
 
+Current scope membedakan secara eksplisit:
+
+- documentation strategy closure;
+- implementation conformance;
+- operational/production validation.
+
+Kelulusan documentation strategy tidak boleh diturunkan hanya karena code belum dibangun, dan tidak boleh dipromosikan menjadi implementation/production claim tanpa audit serta executed evidence terpisah.
+
 ## What is allowed in this folder
 Di paket aktif, isi folder ini harus seminimal mungkin:
-- `AUDIT_FINAL_STATE.md`
-- remediation report aktif **hanya jika** masih ada temuan PARTIAL / FAIL yang belum ditutup
+- `README.md` sebagai aturan folder;
+- `AUDIT_FINAL_STATE.md` sebagai satu-satunya **current-state verdict** kanonik;
+- remediation report aktif **hanya jika** masih ada temuan PARTIAL / FAIL yang belum ditutup;
+- dated implementation-evidence report boleh tetap ada hanya sebagai **non-verdict supporting evidence** bila masih direferensikan oleh audit aktif. File seperti itu wajib dibaca sebagai bukti historis/dated dan tidak boleh bersaing dengan `AUDIT_FINAL_STATE.md`.
 
 ## What is not allowed in the active package
 Yang tidak boleh dijadikan pola di paket aktif:
@@ -49,4 +59,4 @@ Yang tidak boleh dijadikan pola di paket aktif:
 - sync requirements
 
 ## Operational rule
-Kalau semua PARTIAL / FAIL sudah selesai, remediation report aktif harus dihapus dan folder ini kembali menyisakan satu file kanonik saja: `AUDIT_FINAL_STATE.md`.
+Kalau semua PARTIAL / FAIL dokumentasi sudah selesai, remediation report dokumentasi aktif harus dihapus. Folder boleh tetap memuat `README.md`, satu current-state verdict `AUDIT_FINAL_STATE.md`, dan dated implementation-evidence report yang masih dibutuhkan sebagai supporting evidence; **tidak boleh ada current-state verdict kedua**.

@@ -60,7 +60,7 @@ Mapping:
 | Promotion conflict with prior current available | `HELD` | `NOT_READABLE` | Restore prior current pointer |
 | Promotion conflict without prior current | `HELD` | `NOT_READABLE` | Clear unsafe pointer/current state |
 | Coverage FAIL/NOT_EVALUABLE | `HELD` or `FAILED` according to fallback availability | `NOT_READABLE` | No candidate pointer switch |
-| Repair candidate / non-current publish target | `SUCCESS` or `HELD` according to existing policy | `NOT_READABLE` unless existing current is preserved | Current pointer preserved |
+| Correction candidate / non-current publish target (legacy runtime may label this `repair_candidate`) | `SUCCESS` or `HELD` according to existing policy | `NOT_READABLE` unless existing current is preserved | Current pointer preserved; no in-place content repair implied |
 
 Conflict is not a successful publish. Conflict is also not automatically a system crash. It is a traceable finalize outcome that prevents unsafe publication ownership.
 
@@ -121,3 +121,15 @@ Every implementation or test touching finalize lock behavior MUST prove:
 - partial/non-readable publish does not become current;
 - unchanged correction preserves existing current pointer;
 - `RUN_LOCK_CONFLICT` has a specific traceable message/event payload.
+
+## 7. Capability Boundary (LOCKED)
+
+**What the lock and pointer mechanism proves.** That one run at a time owned the finalize path for a date, that the pointer moved atomically, and that a failed finalize left the previous pointer intact.
+
+**What it cannot prove.**
+
+- **That the publication the pointer selects is correct.** The pointer selects; it does not evaluate. Pointing at a valid, sealed, wrong publication is a fully successful pointer switch.
+- **That no concurrent work happened outside the lock.** The lock governs paths that acquire it. A direct database session or an unguarded path holds no lock and is invisible to this mechanism.
+- **That pointer stability implies data stability.** A pointer left unchanged for a period says no promotion succeeded, which is equally consistent with nothing being due and with everything failing.
+
+Consequently a clean pointer switch may be cited as evidence that **promotion was serialised and atomic**, never as evidence that **the selected publication is right**.

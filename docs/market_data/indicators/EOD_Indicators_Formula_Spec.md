@@ -1,303 +1,167 @@
 # EOD Indicators Formula Specification (LOCKED)
 
 ## Purpose
-Define the exact deterministic formula rules for the minimum EOD indicators produced by Market Data Platform.
 
-This document is upstream-only.
-It does not define downstream scoring, ranking, signal generation, or strategy decisions.
+Define exact, versioned, deterministic formulas for the Weekly Swing upstream indicator product.
 
-## General formula rules (LOCKED)
-1. All indicator computation uses trading-day sequence, not wall-clock calendar subtraction.
-2. Canonical input source is `eod_bars`.
-3. Where price basis is required, use per-date fallback:
-   - `adj_close` if present
-   - otherwise `close`
-4. Missing required dependency rows must invalidate dependent outputs.
-5. Insufficient history must not be hidden by forward-fill, zero-fill, or guessed backfill.
-6. Indicator output for one `(trade_date, ticker_id)` must be deterministic for identical upstream inputs.
+## Input identity (LOCKED)
 
-## Canonical price basis (LOCKED)
-For any formula requiring closing-price basis on a date `X`:
+One run binds:
 
-    basis_close(X) =
-      adj_close(X)   if adj_close(X) is present
-      close(X)       otherwise
+- one immutable raw-bar publication
+- `STRUCTURAL_ADJUSTED` price-product/factor-set version for technical price/volume vectors
+- one market-calendar/temporal-universe version
+- one indicator/formula version
+- one output-affecting config snapshot/hash
 
-This fallback is evaluated per date, not once for the whole window.
+There is no per-row/per-date fallback to `RAW`, `close`, or provider `adj_close`. Missing/unverified factor state makes affected outputs `NULL`/invalid.
 
-## Trading-day traversal (LOCKED)
-References such as:
-- `D[-1]`
-- `D[-20]`
-- prior 20 days
-- window size 14
-- window size 20
+Define coherent analytical values for date X as `O(X), H(X), L(X), C(X), V(X)`. All OHLC and applicable volume factors come from the same structural-adjusted product. Define raw values as `C_raw(X), V_raw(X)`.
 
-must be interpreted using ordered trading-day sequence from the market calendar, not calendar-day subtraction.
+## Trading-day and precision rules
 
----
+- `D[-N]` follows the bound Regular-Market calendar.
+- Windows contain required trading-date dependencies, not merely N available rows.
+- Missing expected dependency is not skipped or forward-filled.
+- Use declared decimal precision with no intermediate rounding; round only at locked storage/presentation boundary.
+- Ratio outputs are decimal ratios, not multiplied by 100 unless field name/version says so.
 
-## Indicator definitions
+## Liquidity metrics
 
-### 1. `dv20_idr`
+### Actual traded-value average
 
-#### Meaning
-20-day average traded value in IDR using 20 trading days including D.
+When source-backed actual daily traded value `TV(X)` exists for every required session:
 
-#### Formula
-For target date `D`:
+`adv20_traded_value_idr_actual(D) = AVG(TV(X)) for X in D[-19]..D`
 
-    daily_value(X) = basis_close(X) * volume(X)
+Missing actual values yield `NULL`; no proxy fallback.
 
-    dv20_idr(D) = average( daily_value(X) ) over trading days X in [D[-19] ... D]
+### Close-volume proxy average
 
-#### Dependencies
-- 20 trading-day bars including D
-- valid `basis_close(X)`
-- valid `volume(X)`
+`CVP(X) = C_raw(X) * V_raw(X)`
 
-#### Warmup rule
-Requires 20 valid trading-day rows including D.
+`adv20_close_volume_proxy_idr(D) = AVG(CVP(X)) for X in D[-19]..D`
 
-#### Invalid rule
-If any required dependency row is missing or invalid within the required locked input set:
-- output field is `NULL`
-- row may be marked invalid depending on mandatory-indicator contract
-- preferred blocking reason:
-  - `IND_INSUFFICIENT_HISTORY` if history is not yet long enough
-  - `IND_MISSING_DEPENDENCY_BAR` if a required trading-day dependency row is missing unexpectedly
-  - `IND_INVALID_BAR_INPUT` if required bar input exists but is invalid
+Legacy `dv20_idr`, if retained, is a versioned compatibility alias of this proxy and must be labelled as such.
 
----
+## ATR14 Wilder (LOCKED)
 
-### 2. `atr14_pct`
+### True range
 
-#### Meaning
-14-period Average True Range using Wilder smoothing, expressed as ratio to `basis_close(D)`.
+For consecutive valid coherent analytical sessions X and `prev(X)`:
 
-#### Step A — True Range
-For each trading date `X` after the first required dependency row:
+`TR(X) = max(H(X)-L(X), abs(H(X)-C(prev(X))), abs(L(X)-C(prev(X))))`
 
-    TR(X) = max(
-      high(X) - low(X),
-      abs(high(X) - basis_close(prev(X))),
-      abs(low(X)  - basis_close(prev(X)))
-    )
+### Stable seed
 
-where `prev(X)` is the immediately prior trading date.
+The seed chain starts at the later of intentional dataset start `2023-01-02` and the listing's effective start, using the first 15 consecutive expected sessions with valid coherent bars. The first bar supplies previous close; the next 14 sessions supply TR values.
 
-#### Step B — ATR14 seed
-First ATR14 becomes available only when 14 TR values exist.
-That implies 15 canonical bars are required.
+At seed date S:
 
-If target date `S` is the first date where 14 TR values are available:
+`ATR14(S) = AVG(first 14 consecutive TR values)`
 
-    ATR14(S) = average( TR values for the first 14 eligible trading dates )
+### Recursive state
 
-#### Step C — Wilder recursion
-For any later trading date `D`:
+For each later expected session D:
 
-    ATR14(D) = ((ATR14(D[-1]) * 13) + TR(D)) / 14
+`ATR14(D) = ((ATR14(prev(D)) * 13) + TR(D)) / 14`
 
-#### Step D — Percentage form
+`atr14_pct(D) = ATR14(D) / C(D)`
 
-    atr14_pct(D) = ATR14(D) / basis_close(D)
+Implementation must either persist versioned recursive state or recompute from the same stable seed/history chain. It must never seed from the first row of a sliding load window.
 
-#### Warmup rule
-Requires 15 trading-day bars to produce first ATR14 percentage output.
+If a required session/bar/factor/state is missing or invalid, ATR is `NULL` at the gap and cannot silently skip it. Correction must rebuild the chain from the last valid prior state/stable seed. A changed historical TR can affect all later ATR values, so mutation impact is recursive/unbounded until recomputed, not a fixed 15-day horizon.
 
-#### Invalid rule
-If a required dependency bar in the chain is missing:
-- `atr14_pct = NULL`
-- invalid reason should reflect missing dependency or insufficient history
+## Volume ratio
 
----
+`vol_ratio(D) = V(D) / AVG(V(X) for X in D[-20]..D[-1])`
 
-### 3. `vol_ratio`
+Requires 21 coherent sessions. If the prior average is zero or any required dependency is missing/invalid, output is `NULL` with explicit reason.
 
-#### Meaning
-Volume on D divided by average volume over the prior 20 trading days excluding D.
+## Rate of change
 
-#### Formula
+For `N in {5,10,20}`:
 
-    vol_ratio(D) = volume(D) / average( volume(X) ) over X in [D[-20] ... D[-1]]
+`rocN(D) = (C(D) / C(D[-N])) - 1`
 
-#### Warmup rule
-Requires 21 trading-day bars total: D plus 20 prior trading days.
+Requires both endpoints and coherent factor chain.
 
-#### Invalid rule
-If prior-20 history is not available:
-- `vol_ratio = NULL`
-- invalid reason: `IND_INSUFFICIENT_HISTORY`
+## Moving averages
 
-If one of the required prior bars is missing unexpectedly:
-- invalid reason: `IND_MISSING_DEPENDENCY_BAR`
+`ma20(D) = AVG(C(X)) for X in D[-19]..D`
 
----
+`ma50(D) = AVG(C(X)) for X in D[-49]..D`
 
-### 4. `roc20`
+`dist_ma20(D) = C(D) / ma20(D) - 1`
 
-#### Meaning
-20-trading-day rate of change using `basis_close(D)` and `basis_close(D[-20])`.
+`dist_ma50(D) = C(D) / ma50(D) - 1`
 
-#### Formula
+## Range structure
 
-    roc20(D) = ( basis_close(D) / basis_close(D[-20]) ) - 1
+`hh20(D) = MAX(H(X)) for X in D[-19]..D`
 
-#### Important interpretation (LOCKED)
-- Uses trading date `D[-20]`
-- Expressed as ratio, not multiplied by 100
-- Uses per-date fallback `adj_close -> close`
+`ll20(D) = MIN(L(X)) for X in D[-19]..D`
 
-#### Warmup rule
-Requires D and 20 prior trading days.
+`close_to_hh20_pct(D) = C(D) / hh20(D) - 1`
 
-#### Invalid rule
-If `D[-20]` is unavailable or invalid:
-- `roc20 = NULL`
-- invalid reason according to dependency failure cause
+`close_to_ll20_pct(D) = C(D) / ll20(D) - 1`
 
----
+`range_20_pct(D) = hh20(D) / ll20(D) - 1`
 
-### 5. `hh20`
+`range_position_20_pct(D) = (C(D)-ll20(D)) / (hh20(D)-ll20(D))`
 
-#### Meaning
-Highest high over the inclusive 20-trading-day window ending on D.
+If `hh20 = ll20`, range position is `NULL`, not zero or infinity.
 
-#### Formula
+## Sector/benchmark context
 
-    hh20(D) = max( high(X) ) over X in [D[-19] ... D]
+Using coherent, source-backed, point-in-time sector and IHSG benchmark series:
 
-#### Important interpretation (LOCKED)
-Window is inclusive of D.
+- `sector_roc20(D) = sector_C(D) / sector_C(D[-20]) - 1`
+- `rs_20_vs_sector(D) = roc20(D) - sector_roc20(D)`
+- `sector_rs_20_vs_ihsg(D) = sector_roc20(D) - ihsg_roc20(D)`
 
-#### Warmup rule
-Requires 20 trading-day bars including D.
+Missing sector membership/index bars leave only dependent fields `NULL`; no current membership or forward fill is allowed.
 
-#### Invalid rule
-If one or more required dependency rows are missing from the trading-day chain:
-- `hh20 = NULL`
-- invalid reason according to dependency failure cause
+## Nullability and reasons
 
----
+Each field owns its dependency/warm-up state. Early dataset/listing dates emit deterministic `NULL` until sufficient history exists. Distinguish at minimum:
 
-## Worked Examples (LOCKED)
+- insufficient history
+- missing expected dependency
+- invalid bar/input
+- unresolved structural adjustment/price-scale contamination
+- missing benchmark/source fact
+- zero denominator
+- config/formula/provenance mismatch
 
-### A. ATR14 Wilder — Seed Example
-Assume target ticker has 15 consecutive trading-day bars.
-Suppose the first 14 TR values are:
+A zero-price placeholder is never an input because canonical zero OHLC is forbidden.
 
-    1.20, 1.10, 1.00, 0.90, 1.30, 1.40, 1.10,
-    1.00, 1.20, 1.00, 0.80, 1.10, 1.30, 1.20
+## Versioning and corrections
 
-Sum:
+Price basis, factor revision, seed rule, formula, window, rounding, nullability, or required-field change requires a new version, recomputation of every affected date, hashes, seal, publication, and supersession lineage.
 
-    15.60
+## Forbidden behavior
 
-Seed ATR14 on the first eligible date `S`:
+- per-date `adj_close -> close` fallback
+- mixed RAW/adjusted OHLC or raw volume with adjusted price in one coherent vector
+- sliding-window ATR reseed
+- skipping missing expected sessions
+- intermediate rounding that changes chain results
+- zero/forward-filled dependency bars
+- future identity, event, factor, calendar, config, or benchmark state
 
-    ATR14(S) = 15.60 / 14 = 1.1142857143
+## Acceptance criterion (LOCKED)
 
-If on date `S+1`, `TR(S+1) = 1.50`, then:
+Golden long-chain fixtures must reproduce byte/number-equivalent output for the same publication/factor/config/formula identity and detect a one-value divergence far after an ATR seed or historical correction.
 
-    ATR14(S+1) = ((1.1142857143 * 13) + 1.50) / 14
-               = (14.4857142859 + 1.50) / 14
-               = 15.9857142859 / 14
-               = 1.1418367347
+## Capability boundary (LOCKED)
 
-If `basis_close(S+1) = 48.00`, then:
+**What a formula proves.** That a value is the exact arithmetic result of its declared definition over its declared window, reproducible to the declared precision.
 
-    atr14_pct(S+1) = 1.1418367347 / 48.00
-                   = 0.0237882653
+**What it cannot prove.**
 
-### B. ROC20 using D[-20]
-Assume:
-- `basis_close(D) = 105.00`
-- `basis_close(D[-20]) = 100.00`
+- **That the inputs deserved to be used.** Exactness propagates whatever it is given. A formula applied to a contaminated window returns a precisely computed wrong number.
+- **That the window covers the period it names.** Windows are counted in sessions, not elapsed time. Twenty sessions spanning a long holiday sequence, a suspension, or an unrecorded market closure describe a materially longer stretch of calendar than twenty sessions in an ordinary month, while both are labelled the same. A momentum figure therefore measures a period whose real length varies.
+- **That a defined value is a meaningful one.** A ratio remains defined as its denominator approaches the exchange minimum price, and a range measure remains defined across a series of no-trade sessions. Definedness is a property of the arithmetic, not of the market.
 
-Then:
-
-    roc20(D) = (105.00 / 100.00) - 1
-             = 1.05 - 1
-             = 0.05
-
-This is ratio-scaled output, not 5.00 percent text.
-
-### C. Price Basis Fallback (`adj_close -> close`)
-Assume:
-- on D, `adj_close(D)` is `NULL`, `close(D)=110.00`
-- on `D[-20]`, `adj_close(D[-20])=100.00`
-
-Then:
-
-    basis_close(D)      = 110.00
-    basis_close(D[-20]) = 100.00
-
-    roc20(D) = (110.00 / 100.00) - 1 = 0.10
-
-This proves fallback is evaluated per date.
-
-### D. vol_ratio using Prior-20 Excluding D
-Assume:
-- `volume(D)=1,500,000`
-- average volume over prior 20 trading days excluding D = `1,200,000`
-
-Then:
-
-    vol_ratio(D) = 1,500,000 / 1,200,000 = 1.25
-
-### E. hh20 Inclusive Window
-Assume the highs over `D[-19] ... D` are:
-
-    100, 101, 103, 102, 104, 105, 103, 102, 106, 104,
-    103, 107, 105, 104, 103, 108, 106, 105, 104, 109
-
-Then:
-
-    hh20(D) = 109
-
-Because D is included in the window.
-
-### F. Insufficient History Example
-Assume only 10 trading-day bars exist for ticker/date D.
-
-Then:
-- `dv20_idr(D) = NULL`
-- `vol_ratio(D) = NULL`
-- `roc20(D) = NULL`
-- `hh20(D) = NULL`
-- `atr14_pct(D)` may also be `NULL` if ATR warmup not met
-
-Preferred invalid reason:
-- `IND_INSUFFICIENT_HISTORY`
-
-### G. Missing Dependency Bar Example
-Assume the calendar requires `D[-20]`, but that dependency bar is unexpectedly missing from canonical storage while surrounding dates exist.
-
-Then:
-- `roc20(D) = NULL`
-- `vol_ratio(D)` may also be invalid if the missing date is inside prior-20 window
-- invalid reason:
-  - `IND_MISSING_DEPENDENCY_BAR`
-
----
-
-## Null and invalid policy summary (LOCKED)
-
-| Indicator   | Minimum history | Uses D | Uses prior-only window | Typical insufficient-history code |
-|-------------|-----------------|--------|------------------------|-----------------------------------|
-| `dv20_idr`  | 20 bars         | Yes    | No                     | `IND_INSUFFICIENT_HISTORY`        |
-| `atr14_pct` | 15 bars         | Yes    | Yes                    | `IND_INSUFFICIENT_HISTORY`        |
-| `vol_ratio` | 21 bars         | Yes    | Yes                    | `IND_INSUFFICIENT_HISTORY`        |
-| `roc20`     | 21 bars         | Yes    | Yes                    | `IND_INSUFFICIENT_HISTORY`        |
-| `hh20`      | 20 bars         | Yes    | No                     | `IND_INSUFFICIENT_HISTORY`        |
-
----
-
-## Anti-ambiguity rule (LOCKED)
-The following are forbidden:
-- calendar-day subtraction instead of trading-day traversal
-- multiplying `roc20` by 100 unless a separate downstream presentation layer explicitly does so
-- forward-filling missing dependency bars
-- using one global choice of `adj_close` vs `close` for a whole window instead of per date
-- generating non-NULL indicator values when locked warmup/dependency requirements are not satisfied
+Consequently a formula result may be cited as evidence that **the declared computation was performed correctly**, never as evidence that **the quantity it names is a faithful description of the period**.

@@ -7,8 +7,12 @@ Folder `system/` adalah pintu masuk ringkasan sistem market-data. Folder ini mem
 `system/` bukan titik awal authority. Titik awal authority tetap berada pada:
 1. `docs/market_data/README.md`
 2. `book/Terminology_and_Scope.md`
-3. `book/Domain_Boundary_Invariants_LOCKED.md`
-4. `book/INDEX.md`
+3. `book/Market_Data_Strategy_Implementation_Blueprint_LOCKED.md`
+4. `book/Domain_Boundary_Invariants_LOCKED.md`
+5. `book/Market_Data_Implementation_Conformance_Matrix_LOCKED.md`
+6. `book/Market_Data_Implementation_Command_Protocol_LOCKED.md`
+7. `audit/MARKET_DATA_IMPLEMENTATION_LEDGER.md`
+8. `book/INDEX.md`
 
 Bila ada konflik antara `system/` dan owner contracts, owner contracts selalu menang.
 

@@ -18,7 +18,7 @@ class IngestSectorIndexBarsApiCommandTest extends TestCase
 
         DB::table('market_calendar')->insert([
             'cal_date' => '2026-05-19',
-            'is_trading_day' => 1,
+            'is_trading_day' => 1, 'provenance_tier' => 'VERIFIED',
             'source' => 'test',
             'created_at' => date('Y-m-d H:i:s'),
             'updated_at' => date('Y-m-d H:i:s'),

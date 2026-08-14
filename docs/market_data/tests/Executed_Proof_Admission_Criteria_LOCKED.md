@@ -9,6 +9,11 @@ Executed proof requires:
 - real produced outputs
 - real pass/fail or match/mismatch result
 - traceable origin
+- exact owner-contract/fixture version
+- executable build/commit identity
+- database engine/schema/migration state
+- immutable input/observation/config/temporal/factor/product/formula/read-model identities and hashes applicable to the case
+- evidence artifact paths and hashes
 
 ## Required conditions
 
@@ -18,13 +23,18 @@ Must include:
 - actual fixture family
 - actual execution result
 - actual observed values or summaries
+- production-path layer and database/runtime identity
+- expected-versus-actual semantic bindings and reasons
 
 ### For executed replay proof
 Must include:
 - actual `replay_id`
+- replay mode and fixture manifest hash
 - actual trade_date
+- knowledge cutoff for `AS_KNOWN`
 - actual comparison result
 - actual produced hashes or mismatch evidence
+- frozen observation/config/temporal/factor/product/formula/read-model identities
 
 ### For executed correction proof
 Must include:
@@ -32,6 +42,7 @@ Must include:
 - actual old/new publication references
 - actual old/new hashes
 - actual switch result
+- immutable before/after observation/config/factor/product lineage and complete recursive impact scope
 
 ## Prohibited weak claims
 The following must not be described as executed proof:

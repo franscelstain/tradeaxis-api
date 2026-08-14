@@ -4,22 +4,12 @@ use PHPUnit\Framework\TestCase;
 
 class CorrectionLifecycleSafetyStaticGuardTest extends TestCase
 {
-    public function test_correction_baseline_is_current_readable_pointer_resolved_and_not_latest_date_shortcut()
-    {
-        $source = $this->readProjectFile('app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php');
-        $method = $this->extractMethod($source, 'findCorrectionBaselinePublicationForTradeDate');
-
-        $this->assertStringContainsString("eod_current_publication_pointer as ptr", $method);
-        $this->assertStringContainsString("run.terminal_status', 'SUCCESS'", $method);
-        $this->assertStringContainsString("run.publishability_state', 'READABLE'", $method);
-        $this->assertStringContainsString("run.coverage_gate_state', 'PASS'", $method);
-        $this->assertStringContainsString("pub.seal_state', 'SEALED'", $method);
-        $this->assertStringContainsString('readablePublicationRowOrNull', $method);
-        $this->assertStringNotContainsString("max('trade_date')", $method);
-        $this->assertStringNotContainsString('MAX(trade_date)', $method);
-        $this->assertStringNotContainsString("latest('trade_date')", $method);
-        $this->assertStringNotContainsString("orderByDesc('trade_date')", $method);
-    }
+    // This test asserted the correction baseline query's conditions, then was reduced to four
+    // shortcut prohibitions scoped to that one method. Both halves have better homes now:
+    // CorrectionBaselineResolutionTest drives the method over thirteen rejection states and
+    // proves the consumer read path rejects each identically, and
+    // ReadPathShortcutProhibitionTest applies the shortcut ban to every file under app/ rather
+    // than to this method alone.
 
     public function test_correction_finalize_blocks_invalid_diff_and_preserves_pointer_for_unchanged_or_failed_switch()
     {

@@ -1,5 +1,8 @@
 # Executed Publication Manifest Example (LOCKED)
 
+> **ILLUSTRATIVE ONLY — NOT CURRENT STRATEGY AUTHORITY.** Resolve all semantics against the current owner contracts/Blueprint/Matrix; legacy fields in this example are compatibility or historical shape only.
+
+
 ## Purpose
 Show what a real executed publication manifest looks like after a publication is sealed and current.
 

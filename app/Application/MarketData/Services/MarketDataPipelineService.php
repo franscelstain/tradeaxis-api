@@ -14,6 +14,133 @@ use App\Models\EodRun;
 
 class MarketDataPipelineService
 {
+    /**
+     * The columns that make up each artifact's content hash.
+     *
+     * These define what "the same dataset" means. A published column left out of its list makes
+     * two publications that differ in that column hash identically, and a correction that
+     * changes only that column is then declared UNCHANGED and never promoted. That is not
+     * hypothetical: it happened to corporate_action_window_reasons.
+     *
+     * Bookkeeping columns are deliberately excluded. run_id, publication_id and created_at
+     * record who wrote a row, not what was written, and including them would make every
+     * recompute of identical data look like a change.
+     *
+     * PublishedColumnHashCoverageTest reads these constants and checks them against the live
+     * table definitions, so a column added to an artifact table cannot quietly fall outside the
+     * hash that is supposed to cover it.
+     */
+    const HASH_EXCLUDED_BOOKKEEPING_COLUMNS = [
+        'run_id',
+        'publication_id',
+        'created_at',
+        'updated_at',
+        // Acquisition-instance provenance is bound through observation/config manifests.
+        // It is not canonical row content; otherwise an identical re-acquisition can never
+        // be recognized as an unchanged correction.
+        'source_observation_id',
+        'source_timestamp',
+        'acquired_at',
+    ];
+
+    const BARS_HASH_COLUMNS = [
+        'trade_date',
+        'ticker_id',
+        'listing_id',
+        'open',
+        'high',
+        'low',
+        'close',
+        'volume',
+        'adj_close',
+        'source',
+        'previous_close',
+        'traded_value_idr_actual',
+        'trade_count_actual',
+        'board_code',
+        'session_code',
+        'canonicalization_version',
+        'price_product_code',
+        'quality_state',
+        'config_snapshot_id',
+        'source_scale_state',
+        'source_scale_assessment_id',
+    ];
+
+    const INDICATORS_HASH_COLUMNS = [
+        'trade_date',
+        'ticker_id',
+        'listing_id',
+        'is_valid',
+        'invalid_reason_code',
+        'indicator_set_version',
+        'sector_membership_id',
+        'sector_code',
+        'dv20_idr',
+        'atr14_pct',
+        'vol_ratio',
+        'roc5',
+        'roc10',
+        'roc20',
+        'hh20',
+        'll20',
+        'ma20',
+        'ma50',
+        'close_to_hh20_pct',
+        'close_to_ll20_pct',
+        'range_20_pct',
+        'range_position_20_pct',
+        'close_vs_ma20_pct',
+        'close_vs_ma50_pct',
+        'ma20_slope_pct',
+        'rs_20_vs_ihsg',
+        'sector_roc20',
+        'rs_20_vs_sector',
+        'sector_rs_20_vs_ihsg',
+        'corporate_action_flag',
+        'corporate_action_types',
+        'trading_status_code',
+        'is_suspended',
+        'is_uma',
+        'event_risk_flag',
+        'event_risk_reasons',
+        'corporate_action_window_reasons',
+        'formula_version',
+        'config_snapshot_id',
+        'factor_set_id',
+        'factor_set_hash',
+        'price_product_code',
+        'price_product_version',
+        'adv20_traded_value_idr_actual',
+        'adv20_close_volume_proxy_idr',
+        'atr14',
+        'atr_state_ref',
+        'null_reasons_json',
+    ];
+
+    const ELIGIBILITY_HASH_COLUMNS = [
+        'trade_date',
+        'ticker_id',
+        'listing_id',
+        'eligible',
+        'reason_code',
+        'universe_membership_state',
+        'bar_expectation_state',
+        'delivery_state',
+        'canonical_quality_state',
+        'liquidity_state',
+        'temporal_status_state',
+        'trading_status_revision_id',
+        'trading_status_source_observation_id',
+        'event_risk_state',
+        'eligibility_reasons_json',
+        'config_snapshot_id',
+        'market_structure_resolution_state',
+        'price_band_revision_id',
+        'minimum_price_revision_id',
+        'tick_size_revision_id',
+    ];
+
     private $runs;
     private $barsIngest;
     private $indicators;
@@ -28,6 +155,7 @@ class MarketDataPipelineService
     private $coverageGateEvaluator;
     private $benchmarkBarsIngest;
     private $impactReprocess;
+    private $governanceBindings;
 
     public function __construct(
         EodRunRepository $runs,
@@ -43,7 +171,8 @@ class MarketDataPipelineService
         PublicationFinalizeOutcomeService $publicationFinalizeOutcomes,
         CoverageGateEvaluator $coverageGateEvaluator,
         BenchmarkBarsIngestService $benchmarkBarsIngest = null,
-        MarketDataImpactReprocessExecutor $impactReprocess = null
+        MarketDataImpactReprocessExecutor $impactReprocess = null,
+        PublicationGovernanceBindingService $governanceBindings = null
     ) {
         $this->runs = $runs;
         $this->barsIngest = $barsIngest;
@@ -59,6 +188,7 @@ class MarketDataPipelineService
         $this->coverageGateEvaluator = $coverageGateEvaluator;
         $this->benchmarkBarsIngest = $benchmarkBarsIngest;
         $this->impactReprocess = $impactReprocess;
+        $this->governanceBindings = $governanceBindings ?: app(PublicationGovernanceBindingService::class);
     }
 
     public function startStage(MarketDataStageInput $input)
@@ -71,6 +201,11 @@ class MarketDataPipelineService
             ? $this->safeFindRunById($input->runId)
             : null;
 
+        if ($run !== null) {
+            $run = $this->hydrateRunModel($run);
+            $run->assertKnowledgeCutoffForExecution();
+        }
+
         $runPromoteMode = $run && isset($run->promote_mode) && $run->promote_mode !== ''
             ? (string) $run->promote_mode
             : null;
@@ -82,13 +217,23 @@ class MarketDataPipelineService
             in_array($runPromoteMode, ['repair_candidate', 'incremental'], true)
             || in_array($runPublishTarget, ['repair_candidate', 'incremental_candidate'], true)
         );
+        $isAnalyticalRemediation = $input->correctionId
+            && $runPromoteMode === 'analytical_remediation_current';
+        $isCorpusReconstruction = $input->correctionId && (
+            $input->requestMode === 'corpus_reconstruction'
+            || $runPromoteMode === 'corpus_reconstruction_current'
+        );
 
         if ($input->correctionId) {
             $correction = $isRepairCandidate
                 ? $this->safeCanExecuteCorrection($input->correctionId, $input->requestedDate, 'repair_candidate')
                 : $this->corrections->requireApprovedForTradeDate($input->correctionId, $input->requestedDate);
 
-            $priorCurrent = $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
+            $priorCurrent = $isCorpusReconstruction
+                ? $this->publications->findRawCurrentPublicationStateForTradeDate($input->requestedDate)
+                : ($isAnalyticalRemediation
+                    ? $this->publications->findCurrentPublicationForAnalyticalRemediation($input->requestedDate)
+                    : $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate));
 
             if (! $priorCurrent) {
                 throw new \RuntimeException(
@@ -114,6 +259,9 @@ class MarketDataPipelineService
         if (! $run) {
             throw new \RuntimeException('Owning run context not found for market-data stage.');
         }
+
+        $run = $this->hydrateRunModel($run);
+        $run->assertKnowledgeCutoffForExecution();
 
         $existingSourceMode = isset($run->source) && $run->source !== ''
             ? (string) $run->source
@@ -204,7 +352,19 @@ class MarketDataPipelineService
         }
 
         try {
-            $sourceRows = $this->barsIngest->acquireSourceRows($input->requestedDate, $input->sourceMode);
+            $sourceRows = empty($run->config_snapshot_id)
+                ? $this->barsIngest->acquireSourceRows($input->requestedDate, $input->sourceMode)
+                : $this->barsIngest->acquireSourceRows(
+                    $input->requestedDate,
+                    $input->sourceMode,
+                    null,
+                    [
+                    'run_id' => (int) $run->run_id,
+                    'config_snapshot_id' => (int) $run->config_snapshot_id,
+                    'source_mode' => $input->sourceMode === 'api' ? 'api_free' : $input->sourceMode,
+                    'enforce_temporal_mapping' => $input->sourceMode === 'api',
+                    ]
+                );
             $sourceAcquisitionTelemetry = $this->barsIngest->consumeSourceAcquisitionTelemetry($input->sourceMode);
             return DB::transaction(function () use ($run, $input, $priorCurrent, $sourceRows, $sourceAcquisitionTelemetry) {
                 $result = $this->barsIngest->ingestAcquiredRows(
@@ -314,7 +474,7 @@ class MarketDataPipelineService
         }
     }
 
-    public function importDailyFromAcquiredRows($requestedDate, $sourceMode, array $sourceRows, array $sourceAcquisition = [], $correctionId = null)
+    public function importDailyFromAcquiredRows($requestedDate, $sourceMode, array $sourceRows, array $sourceAcquisition = [], $correctionId = null, $requestMode = 'import_only')
     {
         return $this->completeIngestWithAcquiredRows(new MarketDataStageInput(
             $requestedDate,
@@ -324,7 +484,7 @@ class MarketDataPipelineService
             $correctionId,
             false,
             null,
-            'import_only'
+            $requestMode
         ), $sourceRows, $sourceAcquisition);
     }
 
@@ -346,7 +506,7 @@ class MarketDataPipelineService
     {
         [$run, $correction, $priorCurrent] = $this->startStage($input);
 
-        if ($priorCurrent === null) {
+        if ($priorCurrent === null && $input->requestMode !== 'corpus_reconstruction') {
             $baselineCurrent = $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
 
             if ($baselineCurrent) {
@@ -439,7 +599,7 @@ class MarketDataPipelineService
     {
         [$run, $correction, $priorCurrent] = $this->startStage($input);
 
-        if ($priorCurrent === null) {
+        if ($priorCurrent === null && $input->requestMode !== 'corpus_reconstruction') {
             $baselineCurrent = $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
 
             if ($baselineCurrent) {
@@ -458,7 +618,9 @@ class MarketDataPipelineService
                     $priorCurrent
                 );
                 $benchmarkResult = $this->ingestBenchmarkNonBlocking($input->requestedDate, $input->sourceMode);
-                $result = $this->withImpactReprocessExecution($run, $input, $result);
+                if ($input->requestMode !== 'corpus_reconstruction') {
+                    $result = $this->withImpactReprocessExecution($run, $input, $result);
+                }
                 $sourceAcquisitionResult = isset($result['source_acquisition']) && is_array($result['source_acquisition'])
                     ? $result['source_acquisition']
                     : [];
@@ -584,16 +746,28 @@ class MarketDataPipelineService
         try {
             return DB::transaction(function () use ($run, $input, $priorCurrent) {
                 $coverageBasisPublicationId = $this->resolveCandidateCoveragePublicationId($run, $input, $priorCurrent);
-                $coverage = $this->coverageGateEvaluator->evaluate($input->requestedDate, $coverageBasisPublicationId);
+                $coverage = $this->coverageGateEvaluator->evaluate(
+                    $input->requestedDate,
+                    $coverageBasisPublicationId,
+                    $this->runs->resolveKnowledgeCutoff($run),
+                    $run->run_id
+                );
 
                 $coverageGateState = CoverageGateStateNormalizer::normalize($coverage['coverage_gate_status'] ?? 'NOT_EVALUABLE');
                 $qualityGateState = $coverageGateState === 'PASS' ? 'PASS' : ($coverageGateState === 'FAIL' ? 'FAIL' : 'BLOCKED');
 
                 $coverageTelemetry = [
                     'quality_gate_state' => $qualityGateState,
-                    'coverage_universe_count' => $coverage['expected_universe_count'],
+                    'coverage_universe_count' => $coverage['coverage_universe_count'],
                     'coverage_available_count' => $coverage['available_eod_count'],
                     'coverage_missing_count' => $coverage['missing_eod_count'],
+                    // Store measured evidence only. Zero remains zero; absence remains null and is
+                    // rejected at the repository boundary instead of being disguised as evidence.
+                    'coverage_expected_count' => $this->measuredCoverageCount($coverage, 'expected_universe_count'),
+                    'coverage_delivered_count' => $this->measuredCoverageCount($coverage, 'delivered_observation_count'),
+                    'coverage_delivered_valid_count' => $this->measuredCoverageCount($coverage, 'available_eod_count'),
+                    'coverage_bar_not_expected_count' => $this->measuredCoverageCount($coverage, 'coverage_bar_not_expected_count'),
+                    'coverage_expectation_unknown_count' => $this->measuredCoverageCount($coverage, 'coverage_expectation_unknown_count'),
                     'coverage_ratio' => $coverage['coverage_ratio'],
                     'coverage_min_threshold' => $coverage['coverage_threshold_value'],
                     'coverage_gate_state' => $coverageGateState,
@@ -601,6 +775,15 @@ class MarketDataPipelineService
                     'coverage_universe_basis' => $coverage['coverage_universe_basis'] ?? (string) config('market_data.coverage_gate.universe_basis', 'ticker_master_active_on_trade_date'),
                     'coverage_contract_version' => $coverage['coverage_calibration_version'],
                     'coverage_missing_sample_json' => $coverage['missing_ticker_codes'],
+                    /*
+                     * F-043 and F-044. Absent rather than defaulted when the evaluator did not
+                     * produce them, for the same reason the unknown count is NULL when uncomputed:
+                     * "not measured" and "measured as empty" must stay distinguishable.
+                     */
+                    'coverage_universe_hash' => $coverage['coverage_universe_hash'] ?? null,
+                    'coverage_excluded_sample_json' => array_key_exists('coverage_excluded_sample', $coverage)
+                        ? json_encode($coverage['coverage_excluded_sample'])
+                        : null,
                     'notes' => $this->appendRunNotes($run->notes ?? null, $this->coverageBasisNoteSegments($coverage, $coverageBasisPublicationId, $priorCurrent)),
                 ];
 
@@ -650,15 +833,23 @@ class MarketDataPipelineService
                 $result = $this->eligibility->build($run, $input->requestedDate, $input->correctionId !== null);
                 $coverage = $this->coverageGateEvaluator->evaluate(
                     $input->requestedDate,
-                    $result['publication_id']
+                    $result['publication_id'],
+                    $this->runs->resolveKnowledgeCutoff($run),
+                    $run->run_id
                 );
 
                 $run = $this->runs->updateTelemetry($run, [
                     'eligibility_rows_written' => $result['eligibility_rows_written'],
                     'hard_reject_count' => $result['blocked_rows'],
-                    'coverage_universe_count' => $coverage['expected_universe_count'],
+                    'coverage_universe_count' => $coverage['coverage_universe_count'],
                     'coverage_available_count' => $coverage['available_eod_count'],
                     'coverage_missing_count' => $coverage['missing_eod_count'],
+                    // The eligibility stage uses the identical fail-closed evidence projection.
+                    'coverage_expected_count' => $this->measuredCoverageCount($coverage, 'expected_universe_count'),
+                    'coverage_delivered_count' => $this->measuredCoverageCount($coverage, 'delivered_observation_count'),
+                    'coverage_delivered_valid_count' => $this->measuredCoverageCount($coverage, 'available_eod_count'),
+                    'coverage_bar_not_expected_count' => $this->measuredCoverageCount($coverage, 'coverage_bar_not_expected_count'),
+                    'coverage_expectation_unknown_count' => $this->measuredCoverageCount($coverage, 'coverage_expectation_unknown_count'),
                     'coverage_ratio' => $coverage['coverage_ratio'],
                     'coverage_min_threshold' => $coverage['coverage_threshold_value'],
                     'coverage_gate_state' => CoverageGateStateNormalizer::normalize($coverage['coverage_gate_status'] ?? null),
@@ -666,6 +857,15 @@ class MarketDataPipelineService
                     'coverage_universe_basis' => $coverage['coverage_universe_basis'] ?? (string) config('market_data.coverage_gate.universe_basis', 'ticker_master_active_on_trade_date'),
                     'coverage_contract_version' => $coverage['coverage_calibration_version'],
                     'coverage_missing_sample_json' => $coverage['missing_ticker_codes'],
+                    /*
+                     * F-043 and F-044. Absent rather than defaulted when the evaluator did not
+                     * produce them, for the same reason the unknown count is NULL when uncomputed:
+                     * "not measured" and "measured as empty" must stay distinguishable.
+                     */
+                    'coverage_universe_hash' => $coverage['coverage_universe_hash'] ?? null,
+                    'coverage_excluded_sample_json' => array_key_exists('coverage_excluded_sample', $coverage)
+                        ? json_encode($coverage['coverage_excluded_sample'])
+                        : null,
                     'notes' => $this->appendRunNotes($run->notes ?? null, $this->coverageBasisNoteSegments($coverage, $result['publication_id'], null)),
                 ]);
 
@@ -686,7 +886,7 @@ class MarketDataPipelineService
             throw $e;
         }
     }
-    
+
     public function completeHash(MarketDataStageInput $input)
     {
         [$run] = $this->startStage($input);
@@ -708,76 +908,31 @@ class MarketDataPipelineService
                 );
             }
 
+            // Publication-level factor, source-scale, identity, status and market-structure
+            // bindings are artifact content and must be materialized before hashing/sealing.
+            $this->governanceBindings->bind($run, $candidatePublication, $input->requestedDate);
+            $candidatePublication = $this->publications->findByRunId($run->run_id);
+
             $hashes = [
                 'bars_batch_hash' => $this->hashForTable(
                     $useHistory ? 'eod_bars_history' : 'eod_bars',
                     'trade_date',
                     $input->requestedDate,
-                    [
-                        'trade_date',
-                        'ticker_id',
-                        'open',
-                        'high',
-                        'low',
-                        'close',
-                        'volume',
-                        'adj_close',
-                        'source',
-                    ],
+                    self::BARS_HASH_COLUMNS,
                     $useHistory ? ['publication_id' => $candidatePublication->publication_id] : []
                 ),
                 'indicators_batch_hash' => $this->hashForTable(
                     $useHistory ? 'eod_indicators_history' : 'eod_indicators',
                     'trade_date',
                     $input->requestedDate,
-                    [
-                        'trade_date',
-                        'ticker_id',
-                        'is_valid',
-                        'invalid_reason_code',
-                        'indicator_set_version',
-                        'sector_code',
-                        'dv20_idr',
-                        'atr14_pct',
-                        'vol_ratio',
-                        'roc5',
-                        'roc10',
-                        'roc20',
-                        'hh20',
-                        'll20',
-                        'ma20',
-                        'ma50',
-                        'close_to_hh20_pct',
-                        'close_to_ll20_pct',
-                        'range_20_pct',
-                        'range_position_20_pct',
-                        'close_vs_ma20_pct',
-                        'close_vs_ma50_pct',
-                        'ma20_slope_pct',
-                        'rs_20_vs_ihsg',
-                        'sector_roc20',
-                        'rs_20_vs_sector',
-                        'sector_rs_20_vs_ihsg',
-                        'corporate_action_flag',
-                        'corporate_action_types',
-                        'trading_status_code',
-                        'is_suspended',
-                        'is_uma',
-                        'event_risk_flag',
-                        'event_risk_reasons',
-                    ],
+                    self::INDICATORS_HASH_COLUMNS,
                     $useHistory ? ['publication_id' => $candidatePublication->publication_id] : []
                 ),
                 'eligibility_batch_hash' => $this->hashForTable(
                     $useHistory ? 'eod_eligibility_history' : 'eod_eligibility',
                     'trade_date',
                     $input->requestedDate,
-                    [
-                        'trade_date',
-                        'ticker_id',
-                        'eligible',
-                        'reason_code',
-                    ],
+                    self::ELIGIBILITY_HASH_COLUMNS,
                     $useHistory ? ['publication_id' => $candidatePublication->publication_id] : []
                 ),
             ];
@@ -964,7 +1119,7 @@ class MarketDataPipelineService
                         'coverage_calibration_version' => $run->coverage_contract_version,
                         'coverage_contract_version' => $run->coverage_contract_version,
                         'coverage_universe_basis' => $run->coverage_universe_basis,
-                        'expected_universe_count' => $run->coverage_universe_count,
+                        'expected_universe_count' => $run->coverage_expected_count,
                         'available_eod_count' => $run->coverage_available_count,
                         'missing_eod_count' => $run->coverage_missing_count,
                         'edge_case_reason_code' => $this->resolveCoverageEdgeCaseReasonCode($run, $input->requestedDate),
@@ -1831,7 +1986,7 @@ class MarketDataPipelineService
             'terminal_status' => $preDecision['terminal_status'] ?? 'SUCCESS',
             'publishability_state' => $preDecision['publishability_state'] ?? 'READABLE',
             'coverage_gate_state' => CoverageGateStateNormalizer::normalize($run->coverage_gate_state),
-            'expected_universe_count' => $run->coverage_universe_count,
+            'expected_universe_count' => $run->coverage_expected_count,
             'available_eod_count' => $run->coverage_available_count,
             'missing_eod_count' => $run->coverage_missing_count,
             'coverage_ratio' => $run->coverage_ratio,
@@ -1899,7 +2054,7 @@ class MarketDataPipelineService
 
         $state = [
             'coverage_gate_state' => CoverageGateStateNormalizer::normalize($run->coverage_gate_state),
-            'expected_universe_count' => $run->coverage_universe_count,
+            'expected_universe_count' => $run->coverage_expected_count,
             'available_eod_count' => $run->coverage_available_count,
             'missing_eod_count' => $run->coverage_missing_count,
             'coverage_ratio' => $run->coverage_ratio,
@@ -2555,8 +2710,7 @@ class MarketDataPipelineService
 
     private function assertAllowedRequestMode($requestMode, $stage): void
     {
-        $allowed = ['import_only', 'promote', 'full_publish', 'correction', 'repair_candidate', 'replay_verify', 'evidence_export'];
-        if (! in_array((string) $requestMode, $allowed, true)) {
+        if (! in_array((string) $requestMode, MarketDataStageInput::ALLOWED_REQUEST_MODES, true)) {
             throw new \InvalidArgumentException('REQUEST_MODE_INVALID: Unsupported request_mode for market-data run context.');
         }
 
@@ -3147,12 +3301,12 @@ class MarketDataPipelineService
         ];
         $resolvedMode = $aliases[$resolvedMode] ?? $resolvedMode;
 
-        if (! in_array($resolvedMode, ['full_publish', 'correction_current', 'repair_candidate'], true)) {
+        if (! in_array($resolvedMode, ['full_publish', 'correction_current', 'analytical_remediation_current', 'repair_candidate', 'corpus_reconstruction_current'], true)) {
             throw new \InvalidArgumentException('Unsupported promote mode: '.$resolvedMode);
         }
 
-        if ($resolvedMode === 'correction_current' && $correctionId === null) {
-            throw new \InvalidArgumentException('Promote mode correction_current requires correction_id.');
+        if (in_array($resolvedMode, ['correction_current', 'analytical_remediation_current', 'corpus_reconstruction_current'], true) && $correctionId === null) {
+            throw new \InvalidArgumentException('Promote mode '.$resolvedMode.' requires correction_id.');
         }
 
         if ($resolvedMode === 'repair_candidate') {
@@ -3167,6 +3321,24 @@ class MarketDataPipelineService
         if ($resolvedMode === 'correction_current') {
             return [
                 'promote_mode' => 'correction_current',
+                'publish_target' => 'current_replace',
+                'requires_full_coverage' => true,
+                'requires_baseline' => true,
+            ];
+        }
+
+        if ($resolvedMode === 'corpus_reconstruction_current') {
+            return [
+                'promote_mode' => 'corpus_reconstruction_current',
+                'publish_target' => 'current_replace',
+                'requires_full_coverage' => true,
+                'requires_baseline' => true,
+            ];
+        }
+
+        if ($resolvedMode === 'analytical_remediation_current') {
+            return [
+                'promote_mode' => 'analytical_remediation_current',
                 'publish_target' => 'current_replace',
                 'requires_full_coverage' => true,
                 'requires_baseline' => true,
@@ -3265,6 +3437,17 @@ class MarketDataPipelineService
         } catch (\Mockery\Exception\NoMatchingExpectationException $e) {
             return $run;
         }
+    }
+
+    private function measuredCoverageCount(array $coverage, string $field): ?int
+    {
+        if (! array_key_exists($field, $coverage)
+            || $coverage[$field] === null
+            || (is_string($coverage[$field]) && trim($coverage[$field]) === '')) {
+            return null;
+        }
+
+        return (int) $coverage[$field];
     }
 
 

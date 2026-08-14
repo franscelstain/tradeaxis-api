@@ -13,27 +13,11 @@ class ProductionSchedulerCronStaticGuardTest extends TestCase
         return file_get_contents($fullPath);
     }
 
-    public function test_scheduler_registers_daily_command_with_timezone_output_and_failure_markers()
-    {
-        $kernel = $this->read('app/Console/Kernel.php');
-
-        foreach ([
-            "config('market_data.pipeline.daily_enabled')",
-            "command('market-data:daily --latest')",
-            "dailyAt(substr(config('market_data.platform.cutoff_time'), 0, 5))",
-            "config('market_data.platform.timezone', 'Asia/Jakarta')",
-            '->timezone($timezone)',
-            'withoutOverlapping',
-            'appendOutputTo',
-            'onSuccess',
-            'onFailure',
-            'scheduler_status=%s',
-            'scheduleOutputPath',
-            'appendSchedulerStatusLine',
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $kernel);
-        }
-    }
+    // The twelve Kernel source fragments are gone. DailyScheduleRegistrationTest builds the real
+    // schedule and reads the registered event back: the command, the cron expression derived
+    // from the configured cutoff, the exchange timezone, the overlap window, the append-mode
+    // output path, and that both outcomes register a callback. Those are the resolved values,
+    // which is what runs unattended — a source fragment says only that a method was called.
 
     public function test_scheduler_config_and_env_surface_are_documented()
     {

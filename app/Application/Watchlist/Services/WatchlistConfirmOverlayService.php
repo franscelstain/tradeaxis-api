@@ -138,37 +138,10 @@ class WatchlistConfirmOverlayService
 
     public function confirmFromRecommendationOutput(array $recommendationOutput, array $confirmInputs = []): array
     {
-        $groups = [
-            'TOP_PICKS' => [],
-            'SECONDARY' => [],
-            'WATCH_ONLY' => [],
-            'AVOID' => [],
-        ];
-
-        foreach (($recommendationOutput['items'] ?? []) as $item) {
-            $planGroup = (string) ($item['plan_reference']['plan_group'] ?? $item['plan_group_semantic'] ?? 'SECONDARY');
-            if (! in_array($planGroup, self::ACTIVE_PLAN_GROUPS, true)) {
-                $planGroup = 'SECONDARY';
-            }
-
-            $groups[$planGroup][] = [
-                'ticker_id' => $item['ticker_id'] ?? null,
-                'ticker_code' => $item['ticker'] ?? $item['ticker_code'] ?? null,
-                'plan_group' => $planGroup,
-                'group_semantic' => $planGroup,
-                'plan_rank' => $item['plan_rank'] ?? null,
-                'group_rank' => $item['plan_reference']['group_rank'] ?? null,
-                'group_reason_code' => $item['plan_reference']['group_reason_code'] ?? null,
-                'score_total' => $item['plan_reference']['score_total'] ?? $item['recommendation_score'] ?? null,
-                'reason_codes' => $item['reason_codes'] ?? [],
-                'eligible_plan_group' => true,
-            ];
-        }
-
         $planOutput = [
-            'ready' => $recommendationOutput['ready'] ?? false,
-            'is_ready' => $recommendationOutput['is_ready'] ?? false,
-            'reason_code' => $recommendationOutput['meta']['source_plan_reference']['reason_code'] ?? null,
+            'ready' => false,
+            'is_ready' => false,
+            'reason_code' => 'WATCHLIST_CONFIRM_SOURCE_PLAN_REQUIRED',
             'trade_date' => $recommendationOutput['meta']['trade_date'] ?? null,
             'trade_date_effective' => $recommendationOutput['meta']['trade_date_effective'] ?? null,
             'publication_id' => $recommendationOutput['meta']['publication_id'] ?? null,
@@ -177,11 +150,16 @@ class WatchlistConfirmOverlayService
             'policy_code' => $recommendationOutput['meta']['policy_code'] ?? null,
             'policy_version' => $recommendationOutput['meta']['policy_version'] ?? null,
             'paramset_code' => $recommendationOutput['meta']['paramset_code'] ?? null,
-            'groups' => $groups,
+            'groups' => [],
             'excluded' => [],
         ];
 
-        return $this->confirmFromPlanAndRecommendationOutput($planOutput, $recommendationOutput, $confirmInputs);
+        $payload = $this->basePayload($planOutput, $recommendationOutput);
+        $payload['reason_code'] = 'WATCHLIST_CONFIRM_SOURCE_PLAN_REQUIRED';
+        $payload['source_reason_code'] = $recommendationOutput['reason_code'] ?? null;
+        $payload['message'] = 'CONFIRM requires the immutable PLAN output; recommendation membership cannot reconstruct PLAN membership.';
+
+        return $payload;
     }
 
     private function basePayload(array $planOutput, array $recommendationOutput): array

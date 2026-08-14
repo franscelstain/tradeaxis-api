@@ -1,5 +1,7 @@
 # Behavioral Test Coverage Inventory
 
+Current admission status: **HISTORICAL PRE-V2 INVENTORY / SUPERSEDED FOR STRATEGY CLOSURE**. Rows marked `LOCKED`, `YES`, or “no gap” below describe the legacy contract/test surface and cannot close the corrected semantic families in `Contract_Test_Matrix_LOCKED.md`. The current documentation strategy is ready; implementation proof remains open until the required V2 oracles execute on production paths.
+
 ## Status
 
 [RELATED_CONTRACT] TEST_COVERAGE_BEHAVIORAL_CONTRACT
@@ -8,7 +10,7 @@
 
 [SESSION] Test Coverage Behavioral
 
-[STATUS] LOCKED_LOCAL_PHPUNIT_PASS
+[STATUS] HISTORICAL_LOCKED_LOCAL_PHPUNIT_PASS / NOT_CURRENT_V2_PROOF
 [HISTORICAL_ENFORCEMENT_MARKER] ENFORCED_PENDING_LOCAL_PHPUNIT
 
 ## Rule

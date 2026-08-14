@@ -1,0 +1,67 @@
+<?php
+
+namespace App\Console\Commands\Watchlist;
+
+use App\Application\Watchlist\Services\WeeklySwingBreakoutIntegrityB01IsIdentityReviewService;
+use Illuminate\Console\Command;
+
+class RunWeeklySwingBreakoutIntegrityB01IsIdentityReviewCommand extends Command
+{
+    protected $signature =
+        'watchlist:weekly-swing-breakout-integrity-b01-is-identity-review
+        {--source-artifact=storage/app/watchlist/backtest/ws-breakout-integrity-b01-official-is.json : Exact passing B01 Official IS artifact}
+        {--approval-reference= : Exact B01 IS identity-review approval reference}
+        {--operator-approved : Confirm read-only identity review; no OOS, promotion, PLAN, or production}
+        {--output=storage/app/watchlist/backtest/ws-breakout-integrity-b01-is-identity-review.json : Output artifact}
+        {--overwrite : Replace an existing local identity-review artifact}';
+
+    protected $description =
+        'Verify the exact passing B01 IS identity and official evidence manifest before one locked OOS run.';
+
+    public function handle(): int
+    {
+        $result = $this->laravel
+            ->make(
+                WeeklySwingBreakoutIntegrityB01IsIdentityReviewService::class
+            )
+            ->execute(
+                $this->absolutePath(
+                    trim((string) $this->option('source-artifact'))
+                ),
+                trim((string) $this->option('approval-reference')),
+                (bool) $this->option('operator-approved'),
+                $this->absolutePath(trim((string) $this->option('output'))),
+                ['overwrite' => (bool) $this->option('overwrite')]
+            );
+        foreach ([
+            'run_code', 'status', 'reason_code', 'param_set_id', 'bt_param_id',
+            'is_eval_id', 'params_hash', 'is_evidence_manifest_hash',
+            'identity_review_pass', 'single_official_oos_authorized',
+            'oos_runtime_invoked', 'oos_table_read', 'paramset_promoted',
+            'plan_run_created', 'production_ready', 'next_recommendation',
+            'artifact_hash',
+        ] as $key) {
+            if (array_key_exists($key, $result)) {
+                $value = is_bool($result[$key])
+                    ? ($result[$key] ? '1' : '0')
+                    : (string) $result[$key];
+                $this->line($key.'='.$value);
+            }
+        }
+
+        return ($result['identity_review_pass'] ?? false) === true ? 0 : 1;
+    }
+
+    private function absolutePath(string $path): string
+    {
+        if ($path !== '' && (substr($path, 0, 1) === '/'
+            || substr($path, 0, 2) === '\\\\'
+            || (strlen($path) >= 3
+                && ctype_alpha($path[0])
+                && $path[1] === ':'))) {
+            return $path;
+        }
+
+        return base_path($path);
+    }
+}

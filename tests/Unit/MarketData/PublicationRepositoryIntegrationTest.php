@@ -40,6 +40,9 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'indicators_rows_written' => 2,
             'eligibility_rows_written' => 2,
             'is_current_publication' => 1,
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => hash('sha256', 'publication-repository-old'),
             'sealed_at' => '2026-03-20 17:20:00',
             'started_at' => '2026-03-20 17:00:00',
             'created_at' => '2026-03-20 17:00:00',
@@ -70,6 +73,9 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'indicators_rows_written' => 2,
             'eligibility_rows_written' => 2,
             'is_current_publication' => 1,
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => hash('sha256', 'publication-repository-new'),
             'sealed_at' => '2026-03-20 17:21:00',
             'started_at' => '2026-03-20 17:01:00',
             'created_at' => '2026-03-20 17:01:00',
@@ -87,6 +93,9 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'bars_batch_hash' => 'bars-old',
             'indicators_batch_hash' => 'ind-old',
             'eligibility_batch_hash' => 'elig-old',
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => hash('sha256', 'publication-repository-old'),
             'sealed_at' => '2026-03-20 17:20:00',
             'created_at' => '2026-03-20 17:20:00',
             'updated_at' => '2026-03-20 17:20:00',
@@ -100,6 +109,36 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'sealed_at' => '2026-03-20 17:20:00',
             'updated_at' => '2026-03-20 17:20:00',
         ]);
+    }
+
+    public function test_analytical_remediation_can_select_a_legacy_identity_baseline_without_opening_consumer_read(): void
+    {
+        DB::table('eod_publications')->where('publication_id', 10)->update([
+            'price_product_code' => null,
+            'price_product_version' => null,
+            'factor_set_hash' => null,
+        ]);
+        DB::table('eod_runs')->where('run_id', 25)->update([
+            'price_product_code' => null,
+            'price_product_version' => null,
+            'factor_set_hash' => null,
+        ]);
+
+        $repository = new EodPublicationRepository();
+
+        $this->assertNull($repository->resolveCurrentReadablePublicationForTradeDate('2026-03-20'));
+        $baseline = $repository->findCurrentPublicationForAnalyticalRemediation('2026-03-20');
+        $this->assertNotNull($baseline);
+        $this->assertSame(10, (int) $baseline->publication_id);
+    }
+
+    public function test_analytical_remediation_does_not_bypass_non_analytical_integrity_faults(): void
+    {
+        DB::table('eod_runs')->where('run_id', 25)->update(['coverage_gate_state' => 'FAIL']);
+
+        $this->assertNull(
+            (new EodPublicationRepository())->findCurrentPublicationForAnalyticalRemediation('2026-03-20')
+        );
     }
 
 
@@ -319,6 +358,15 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'indicators_batch_hash' => 'ind-new',
             'eligibility_batch_hash' => 'elig-new',
         ]);
+        $repo->bindCandidateAnalyticalProduct(
+            $candidate->publication_id,
+            $run->run_id,
+            'STRUCTURAL_ADJUSTED',
+            'structural_adjusted_v1',
+            hash('sha256', 'publication-repository-new'),
+            1
+        );
+        $this->bindStageEightGovernance($candidate->publication_id, hash('sha256', 'publication-repository-new'));
 
         $sealed = $repo->sealCandidatePublication($run, 'system');
         $this->assertSame('SEALED', $sealed->seal_state);
@@ -363,6 +411,15 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'indicators_batch_hash' => 'ind-new',
             'eligibility_batch_hash' => 'elig-new',
         ]);
+        $repo->bindCandidateAnalyticalProduct(
+            $candidate->publication_id,
+            $run->run_id,
+            'STRUCTURAL_ADJUSTED',
+            'structural_adjusted_v1',
+            hash('sha256', 'publication-repository-new'),
+            1
+        );
+        $this->bindStageEightGovernance($candidate->publication_id, hash('sha256', 'publication-repository-new'));
 
         $repo->sealCandidatePublication($run, 'system');
 
@@ -387,6 +444,15 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'indicators_batch_hash' => 'ind-force',
             'eligibility_batch_hash' => 'elig-force',
         ]);
+        $repo->bindCandidateAnalyticalProduct(
+            $candidate->publication_id,
+            $run->run_id,
+            'STRUCTURAL_ADJUSTED',
+            'structural_adjusted_v1',
+            hash('sha256', 'publication-repository-new'),
+            1
+        );
+        $this->bindStageEightGovernance($candidate->publication_id, hash('sha256', 'publication-repository-new'));
 
         $repo->sealCandidatePublication($run, 'system');
 
@@ -507,6 +573,15 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'indicators_batch_hash' => 'ind-new',
             'eligibility_batch_hash' => 'elig-new',
         ]);
+        $repo->bindCandidateAnalyticalProduct(
+            $candidate->publication_id,
+            $run->run_id,
+            'STRUCTURAL_ADJUSTED',
+            'structural_adjusted_v1',
+            hash('sha256', 'publication-repository-new'),
+            1
+        );
+        $this->bindStageEightGovernance($candidate->publication_id, hash('sha256', 'publication-repository-new'));
         $repo->sealCandidatePublication($run, 'system', 'test seal');
 
         $this->expectException(RuntimeException::class);
@@ -637,4 +712,48 @@ class PublicationRepositoryIntegrationTest extends TestCase
     }
 
 
+    private function bindStageEightGovernance($publicationId, $factorHash): void
+    {
+        DB::table('md_adjustment_factor_sets')->updateOrInsert(
+            ['factor_set_id' => 1],
+            [
+                'factor_set_uid' => $factorHash,
+                'price_product_code' => 'STRUCTURAL_ADJUSTED',
+                'factor_formula_version' => 'structural_factor_product_v1',
+                'config_snapshot_id' => 0,
+                'state' => 'BOUND',
+                'content_hash' => $factorHash,
+                'recorded_at' => '2026-03-20 17:10:00',
+                'created_at' => '2026-03-20 17:10:00',
+            ]
+        );
+
+        $sourceScaleHash = hash('sha256', 'test-source-scale');
+        $marketStructureHash = hash('sha256', 'test-market-structure');
+        $factorDecisionHash = hash('sha256', 'test-factor-decisions');
+        DB::table('eod_publications')->where('publication_id', $publicationId)->update([
+            'source_scale_assessment_set_hash' => $sourceScaleHash,
+            'market_structure_revision_set_hash' => $marketStructureHash,
+            'factor_decision_set_hash' => $factorDecisionHash,
+        ]);
+        DB::table('md_publication_lineage_bindings')->updateOrInsert(
+            ['publication_id' => $publicationId],
+            [
+                'config_snapshot_id' => 0,
+                'factor_set_id' => 1,
+                'observation_manifest_hash' => '',
+                'identity_revision_set_hash' => hash('sha256', 'test-identity'),
+                'calendar_revision_set_hash' => hash('sha256', 'test-calendar'),
+                'status_revision_set_hash' => hash('sha256', 'test-status'),
+                'event_revision_set_hash' => hash('sha256', 'test-event'),
+                'source_scale_assessment_set_hash' => $sourceScaleHash,
+                'market_structure_revision_set_hash' => $marketStructureHash,
+                'factor_decision_set_hash' => $factorDecisionHash,
+                'formula_version' => 'eod_indicators_v1',
+                'build_id' => 'test-build',
+                'read_model_version' => 'market_data_read_product_v1',
+                'created_at' => '2026-03-20 17:10:00',
+            ]
+        );
+    }
 }

@@ -3,6 +3,7 @@
 namespace App\Console;
 
 use App\Console\Commands\MarketData\AuditHashCommand;
+use App\Console\Commands\MarketData\AdmitStageEightConformantSuffixCommand;
 use App\Console\Commands\MarketData\BuildEligibilityCommand;
 use App\Console\Commands\MarketData\ComputeIndicatorsCommand;
 use App\Console\Commands\MarketData\DailyPipelineCommand;
@@ -14,11 +15,15 @@ use App\Console\Commands\MarketData\PurgeSessionSnapshotCommand;
 use App\Console\Commands\MarketData\PromoteMarketDataCommand;
 use App\Console\Commands\MarketData\ProviderSmokeCommand;
 use App\Console\Commands\MarketData\RecomputeCurrentIndicatorsCommand;
+use App\Console\Commands\MarketData\ReconstructCurrentCorpusCommand;
 use App\Console\Commands\MarketData\FinalizeRunCommand;
 use App\Console\Commands\MarketData\ExportEvidenceCommand;
 use App\Console\Commands\MarketData\FullRangeCurrentEvidenceReplayCommand;
 use App\Console\Commands\MarketData\IngestEodBarsCommand;
 use App\Console\Commands\MarketData\IngestSectorIndexBarsApiCommand;
+use App\Console\Commands\MarketData\DetectPriceScaleBreaksCommand;
+use App\Console\Commands\MarketData\DeriveCorporateActionsCommand;
+use App\Console\Commands\MarketData\RepairPriceScaleStretchesCommand;
 use App\Console\Commands\MarketData\ImportCorporateActionsCommand;
 use App\Console\Commands\MarketData\ImportSectorIndexBarsCommand;
 use App\Console\Commands\MarketData\ImportSectorMembershipCommand;
@@ -32,6 +37,9 @@ use App\Console\Commands\MarketData\RequestCorrectionCommand;
 use App\Console\Commands\MarketData\RunCorrectionCommand;
 use App\Console\Commands\MarketData\ApproveCorrectionCommand;
 use App\Console\Commands\MarketData\RepairCurrentPublicationIntegrityCommand;
+use App\Console\Commands\MarketData\RecordAuthoritativeCorporateActionTermsCommand;
+use App\Console\Commands\MarketData\RecordAuthoritativeExchangeMarketStructureCommand;
+use App\Console\Commands\MarketData\RecordAuthoritativeTradingStatusSnapshotCommand;
 use App\Console\Commands\Watchlist\RunBacktestPublishedPriceProofCommand;
 use App\Console\Commands\Watchlist\RunBacktestExitModelContractAuditCommand;
 use App\Console\Commands\Watchlist\RunBacktestExitModelRedesignContractCommand;
@@ -270,6 +278,14 @@ use App\Console\Commands\Watchlist\SeedBacktestC171RemediationParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestC171LowPriceExecutionQualityParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestParamGridCommand;
 use App\Console\Commands\Watchlist\SeedBacktestR2ParamGridCommand;
+use App\Console\Commands\Watchlist\PersistWeeklySwingBreakoutIntegrityB01DraftCatalogCommand;
+use App\Console\Commands\Watchlist\RunWeeklySwingBreakoutIntegrityB01ActiveShadowCommand;
+use App\Console\Commands\Watchlist\RunWeeklySwingBreakoutIntegrityB01DiagnosticCommand;
+use App\Console\Commands\Watchlist\RunWeeklySwingBreakoutIntegrityB01IsIdentityReviewCommand;
+use App\Console\Commands\Watchlist\RunWeeklySwingBreakoutIntegrityB01OfficialIsCommand;
+use App\Console\Commands\Watchlist\RunWeeklySwingBreakoutIntegrityB01OfficialOosCommand;
+use App\Console\Commands\Watchlist\RunWeeklySwingBreakoutIntegrityB01PromotionReadinessReviewCommand;
+use App\Console\Commands\Watchlist\RunWeeklySwingSignalQualityQ01DiagnosticCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Laravel\Lumen\Console\Kernel as ConsoleKernel;
 
@@ -514,7 +530,16 @@ class Kernel extends ConsoleKernel
         SeedBacktestC17ParamGridCommand::class,
         SeedBacktestC171RemediationParamGridCommand::class,
         SeedBacktestC171LowPriceExecutionQualityParamGridCommand::class,
+        PersistWeeklySwingBreakoutIntegrityB01DraftCatalogCommand::class,
+        RunWeeklySwingBreakoutIntegrityB01ActiveShadowCommand::class,
+        RunWeeklySwingBreakoutIntegrityB01DiagnosticCommand::class,
+        RunWeeklySwingBreakoutIntegrityB01IsIdentityReviewCommand::class,
+        RunWeeklySwingBreakoutIntegrityB01OfficialIsCommand::class,
+        RunWeeklySwingBreakoutIntegrityB01OfficialOosCommand::class,
+        RunWeeklySwingBreakoutIntegrityB01PromotionReadinessReviewCommand::class,
+        RunWeeklySwingSignalQualityQ01DiagnosticCommand::class,
         IngestEodBarsCommand::class,
+        AdmitStageEightConformantSuffixCommand::class,
         ComputeIndicatorsCommand::class,
         BuildEligibilityCommand::class,
         AuditHashCommand::class,
@@ -527,6 +552,9 @@ class Kernel extends ConsoleKernel
         ExportEvidenceCommand::class,
         FullRangeCurrentEvidenceReplayCommand::class,
         IngestSectorIndexBarsApiCommand::class,
+        DetectPriceScaleBreaksCommand::class,
+        DeriveCorporateActionsCommand::class,
+        RepairPriceScaleStretchesCommand::class,
         ImportCorporateActionsCommand::class,
         ImportSectorIndexBarsCommand::class,
         ImportSectorMembershipCommand::class,
@@ -540,10 +568,14 @@ class Kernel extends ConsoleKernel
         PromoteMarketDataCommand::class,
         ProviderSmokeCommand::class,
         RecomputeCurrentIndicatorsCommand::class,
+        ReconstructCurrentCorpusCommand::class,
         RequestCorrectionCommand::class,
         RunCorrectionCommand::class,
         ApproveCorrectionCommand::class,
         RepairCurrentPublicationIntegrityCommand::class,
+        RecordAuthoritativeCorporateActionTermsCommand::class,
+        RecordAuthoritativeExchangeMarketStructureCommand::class,
+        RecordAuthoritativeTradingStatusSnapshotCommand::class,
     ];
 
     protected function schedule(Schedule $schedule)

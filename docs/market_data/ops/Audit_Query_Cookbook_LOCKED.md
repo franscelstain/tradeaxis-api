@@ -1,5 +1,9 @@
 # Audit Query Cookbook (LOCKED)
 
+## Corrected-strategy query rule
+
+Queries that expose only legacy `config_version`, `config_hash`, `config_snapshot_ref`, or `config_identity` are compatibility diagnostics, not conformance proof. V2 audit queries must resolve the immutable observation manifest, full config snapshot ID/hash, temporal revision set, factor set, price product, formula/registry/read-model versions, publication manifest, readiness/freshness state, and complete reasons from the target schema contracts. Missing bindings must remain visible and block seal/readability; they must not be coalesced to legacy labels.
+
 ## Purpose
 Provide standard query patterns or query intents for retrieving audit evidence from the schema without ad hoc guesswork.
 
@@ -76,7 +80,7 @@ Inspect rejected source rows.
 
 ### Query intent
 - filter `eod_invalid_bars` by `trade_date`
-- optionally filter by `run_id` or `ticker_id`
+- optionally filter by `run_id` or stable `listing_id`; `ticker_id` is compatibility/display filtering only
 
 ### Must answer
 - invalid reason code distribution

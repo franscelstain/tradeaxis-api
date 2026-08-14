@@ -46,15 +46,68 @@ class OperationalReadinessStaticGuardTest extends TestCase
         }
     }
 
+    /**
+     * Every registered command must appear in the runbook.
+     *
+     * This walked a hand-written roster of twenty-eight while the kernel registered thirty-three,
+     * so four commands were absent from the operator's primary document and the test passed
+     * throughout — a command missing from a roster is one the roster cannot report. Among them
+     * was market-data:repair-price-scale-stretches, which rewrites sealed price history.
+     *
+     * The same shape of gap existed in CommandSurfaceSafetyStaticGuardTest and was closed there
+     * the same way. Two hand-written rosters of the same thing is how they drift apart.
+     */
     public function test_runbook_documents_all_registered_market_data_commands(): void
     {
         $runbook = $this->readProjectFile('docs/market_data/ops/OPERATIONAL_RUNBOOK.md');
-        $kernel = $this->readProjectFile('app/Console/Kernel.php');
 
-        foreach ($this->expectedCommands() as $command) {
-            $this->assertStringContainsString($command['class'], $kernel, $command['class'].' must stay registered.');
-            $this->assertStringContainsString('`'.$command['signature'].'`', $runbook, $command['signature'].' must be documented in operational runbook.');
+        $undocumented = [];
+
+        foreach ($this->registeredMarketDataCommandNames() as $name) {
+            if (strpos($runbook, '`'.$name.'`') === false) {
+                $undocumented[] = $name;
+            }
         }
+
+        $this->assertSame([], $undocumented, 'Registered commands missing from the operational runbook.');
+    }
+
+    /**
+     * @return string[]
+     */
+    private function registeredMarketDataCommandNames(): array
+    {
+        $kernel = new ReflectionClass(\App\Console\Kernel::class);
+        $property = $kernel->getProperty('commands');
+        $property->setAccessible(true);
+
+        $names = [];
+
+        foreach ($property->getValue($kernel->newInstanceWithoutConstructor()) as $commandClass) {
+            if (! class_exists($commandClass)) {
+                continue;
+            }
+
+            $signatureProperty = (new ReflectionClass($commandClass))->getProperty('signature');
+            $signatureProperty->setAccessible(true);
+
+            $signature = (string) $signatureProperty->getValue(
+                (new ReflectionClass($commandClass))->newInstanceWithoutConstructor()
+            );
+
+            $name = trim(strtok($signature, " \n\t{"));
+
+            if (strpos($name, 'market-data:') === 0) {
+                $names[] = $name;
+            }
+        }
+
+        $names = array_values(array_unique($names));
+        sort($names);
+
+        $this->assertGreaterThan(25, count($names), 'Kernel command reflection returned suspiciously few commands.');
+
+        return $names;
     }
 
     public function test_runbook_documents_terminal_states_and_next_actions(): void
@@ -217,58 +270,43 @@ class OperationalReadinessStaticGuardTest extends TestCase
 
         $this->assertStringContainsString('- Operational Readiness -> DONE', $status);
         $this->assertStringContainsString('- OPERATIONAL_READINESS_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('OK (10 tests, 196 assertions)', $status.$tracker.$inventory);
-        $this->assertStringContainsString('OK (368 tests, 4927 assertions)', $status.$tracker.$inventory);
+
+        // Two frozen tallies were asserted here, from runs of 10 and 368 tests. They record what
+        // happened once and cannot fail unless the audit history is edited.
         $this->assertStringContainsString('php artisan list | findstr market-data', $status.$tracker.$inventory);
     }
 
-    public function test_command_surface_and_runbook_stay_synchronized(): void
+    /**
+     * The three operator documents must describe the same command surface.
+     *
+     * The runbook says how to run a command, the safety inventory says what it mutates and what
+     * guards it, and the command index points at both. A command present in one and absent from
+     * another is a command an operator can find instructions for without finding its safety
+     * posture — or the reverse.
+     */
+    public function test_all_three_operator_documents_describe_the_same_command_surface(): void
     {
         $runbook = $this->readProjectFile('docs/market_data/ops/OPERATIONAL_RUNBOOK.md');
         $inventory = $this->readProjectFile('docs/market_data/ops/COMMAND_SURFACE_SAFETY_INVENTORY.md');
         $commandIndex = $this->readProjectFile('docs/market_data/ops/commands/README.md');
 
-        foreach ($this->expectedCommands() as $command) {
-            $signature = '`'.$command['signature'].'`';
-            $this->assertStringContainsString($signature, $runbook);
-            $this->assertStringContainsString($signature, $inventory);
+        $gaps = [];
+
+        foreach ($this->registeredMarketDataCommandNames() as $name) {
+            foreach ([
+                'operational runbook' => $runbook,
+                'command safety inventory' => $inventory,
+                'command index' => $commandIndex,
+            ] as $label => $document) {
+                if (strpos($document, '`'.$name.'`') === false) {
+                    $gaps[] = $name.' missing from '.$label;
+                }
+            }
         }
+
+        $this->assertSame([], $gaps);
 
         $this->assertStringContainsString('OPERATIONAL_RUNBOOK.md', $commandIndex);
         $this->assertStringContainsString('operator source of truth', $commandIndex);
-    }
-
-    private function expectedCommands(): array
-    {
-        return [
-            ['class' => 'IngestEodBarsCommand', 'signature' => 'market-data:eod-bars:ingest'],
-            ['class' => 'ComputeIndicatorsCommand', 'signature' => 'market-data:eod-indicators:compute'],
-            ['class' => 'BuildEligibilityCommand', 'signature' => 'market-data:eod-eligibility:build'],
-            ['class' => 'AuditHashCommand', 'signature' => 'market-data:audit:hash'],
-            ['class' => 'SealDatasetCommand', 'signature' => 'market-data:dataset:seal'],
-            ['class' => 'FinalizeRunCommand', 'signature' => 'market-data:run:finalize'],
-            ['class' => 'DailyPipelineCommand', 'signature' => 'market-data:daily'],
-            ['class' => 'BackfillMarketDataCommand', 'signature' => 'market-data:backfill'],
-            ['class' => 'BackfillLifecycleCommand', 'signature' => 'market-data:backfill:lifecycle'],
-            ['class' => 'BackfillMissingTickersCommand', 'signature' => 'market-data:backfill:missing-tickers'],
-            ['class' => 'PromoteMarketDataCommand', 'signature' => 'market-data:promote'],
-            ['class' => 'ExportEvidenceCommand', 'signature' => 'market-data:evidence:export'],
-            ['class' => 'FullRangeCurrentEvidenceReplayCommand', 'signature' => 'market-data:evidence-replay:full-range-current'],
-            ['class' => 'IngestSectorIndexBarsApiCommand', 'signature' => 'market-data:sector-indexes:ingest-api'],
-            ['class' => 'ImportCorporateActionsCommand', 'signature' => 'market-data:events:import-corporate-actions'],
-            ['class' => 'ImportSectorIndexBarsCommand', 'signature' => 'market-data:sector-indexes:import-bars'],
-            ['class' => 'ImportSectorMembershipCommand', 'signature' => 'market-data:sectors:import-memberships'],
-            ['class' => 'ImportTradingStatusEventsCommand', 'signature' => 'market-data:events:import-trading-status'],
-            ['class' => 'VerifyReplayCommand', 'signature' => 'market-data:replay:verify'],
-            ['class' => 'ReplaySmokeSuiteCommand', 'signature' => 'market-data:replay:smoke'],
-            ['class' => 'ReplayBackfillCommand', 'signature' => 'market-data:replay:backfill'],
-            ['class' => 'GenerateReplayFixtureCommand', 'signature' => 'market-data:replay:fixture:generate'],
-            ['class' => 'CaptureSessionSnapshotCommand', 'signature' => 'market-data:session-snapshot'],
-            ['class' => 'PurgeSessionSnapshotCommand', 'signature' => 'market-data:session-snapshot:purge'],
-            ['class' => 'RequestCorrectionCommand', 'signature' => 'market-data:correction:request'],
-            ['class' => 'ApproveCorrectionCommand', 'signature' => 'market-data:correction:approve'],
-            ['class' => 'RunCorrectionCommand', 'signature' => 'market-data:correction:run'],
-            ['class' => 'RepairCurrentPublicationIntegrityCommand', 'signature' => 'market-data:current-publication:repair'],
-        ];
     }
 }

@@ -28,10 +28,13 @@ if (! function_exists('tradeaxis_early_enforce_testing_database_env_override')) 
             return;
         }
 
-        if ((string) tradeaxis_early_runtime_env($argv) !== 'testing') {
-            return;
-        }
-
+        // This runs before vendor/autoload, so it cannot use the guard class and can only see an
+        // explicitly exported DB_DATABASE. Where none is exported the decision is deferred to the
+        // post-bootstrap guard, which sees the resolved connection.
+        //
+        // The environment is deliberately not consulted. It used to return early unless the
+        // environment was already 'testing', which meant an explicit DB_DATABASE=tradeaxis was
+        // only refused when the operator had already said --env=testing.
         $database = getenv('DB_DATABASE') ?: ($_ENV['DB_DATABASE'] ?? ($_SERVER['DB_DATABASE'] ?? null));
         if ($database === null || $database === '') {
             return;
@@ -40,7 +43,9 @@ if (! function_exists('tradeaxis_early_enforce_testing_database_env_override')) 
         $expectedDatabase = 'tradeaxis_testing';
         if ((string) $database !== $expectedDatabase) {
             fwrite(STDERR, sprintf(
-                "BLOCKED_TESTING_DATABASE_ENV: Refusing %s in testing environment because DB_DATABASE resolves to '%s'; expected '%s'. Fix .env.testing or provide explicit DB_DATABASE=%s before running destructive testing migrations.\n",
+                "BLOCKED_TESTING_DATABASE_ENV: Refusing %s because DB_DATABASE resolves to '%s'; expected '%s'. "
+                ."These commands drop or reset schema and may only target the testing database. "
+                ."Run with --env=testing against %s, or use forward `migrate` if you meant to apply pending migrations.\n",
                 $command,
                 (string) $database,
                 $expectedDatabase,
@@ -74,36 +79,26 @@ function tradeaxis_enforce_testing_database_isolation($app, Symfony\Component\Co
     }
 
     $command = (string) $input->getFirstArgument();
-    $guardedCommands = ['migrate:fresh', 'migrate:refresh', 'migrate:reset', 'db:wipe'];
 
-    if (! in_array($command, $guardedCommands, true)) {
+    if (! App\Support\DestructiveMigrationGuard::isDestructive($command)) {
         return;
     }
 
-    $requestedEnvironment = $input->getParameterOption('--env', null, true);
-    $isTestingEnvironment = (string) $requestedEnvironment === 'testing' || $app->environment('testing');
-
-    if (! $isTestingEnvironment) {
-        return;
-    }
-
+    // The environment is deliberately not consulted here.
+    //
+    // This guard previously returned early unless the environment was 'testing', so it protected
+    // a misconfigured testing run and left the likelier accident open: `php artisan migrate:fresh`
+    // with no --env resolves to .env, which points at the production database, and both guards
+    // returned before reaching the database check.
     $connection = $input->getParameterOption('--database', null, true);
     $connection = $connection !== null && $connection !== false && $connection !== ''
         ? (string) $connection
         : (string) $app['config']->get('database.default', 'mysql');
 
     $database = (string) $app['config']->get('database.connections.'.$connection.'.database', '');
-    $expectedDatabase = 'tradeaxis_testing';
 
-    if ($database !== $expectedDatabase) {
-        fwrite(STDERR, sprintf(
-            "BLOCKED_TESTING_DATABASE_ENV: Refusing %s in testing environment because database connection '%s' resolves to '%s'; expected '%s'. Fix .env.testing or provide explicit DB_DATABASE=%s before running destructive testing migrations.\n",
-            $command,
-            $connection,
-            $database !== '' ? $database : '[empty]',
-            $expectedDatabase,
-            $expectedDatabase
-        ));
+    if (App\Support\DestructiveMigrationGuard::shouldBlock($command, $database)) {
+        fwrite(STDERR, App\Support\DestructiveMigrationGuard::blockMessage($command, $database, $connection));
         exit(3);
     }
 }

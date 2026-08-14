@@ -45,7 +45,7 @@ Rejected policies:
 
 ### OPTION A — STRICT NO REPLACE
 
-Rejected because it blocks legitimate controlled replacement flows such as correction/current replacement and repair workflows.
+Rejected because it blocks legitimate controlled replacement flows such as correction/current replacement and correction/current-replacement and pointer-integrity recovery workflows.
 
 ### OPTION B — AUTO REPLACE
 
@@ -124,7 +124,7 @@ A manual-file run may create a candidate publication and may become current only
 
 A manual-file run must not overwrite an existing valid current publication merely because the source is manually supplied.
 
-Any future force/override behavior requires a separate explicit operator contract and must define:
+Force/override behavior is governed by `Force_Replace_Operator_Control_Policy_LOCKED.md` and must define:
 
 - command flag name;
 - required audit reason;
@@ -132,7 +132,7 @@ Any future force/override behavior requires a separate explicit operator contrac
 - whether replacement is allowed against a valid current publication;
 - how downstream evidence distinguishes normal replacement from forced replacement.
 
-Until such a contract exists, `force_replace` is not part of the locked runtime behavior.
+`force_replace` may authorize a guarded current-pointer ownership switch only. It does not authorize mutation of the prior publication, its row snapshots, hashes, source/config/factor bindings, or lineage.
 
 ---
 
@@ -154,7 +154,7 @@ The current pointer must not change when final outcome is:
 - `NOT_READABLE`;
 - `RUN_LOCK_CONFLICT`;
 - coverage failure;
-- non-current repair candidate publication.
+- non-current correction candidate publication.
 
 ---
 
@@ -217,3 +217,7 @@ This policy is considered enforced only when:
 - pointer changes only on `SUCCESS` + `READABLE` eligible runs;
 - manual file does not bypass current-publication lock;
 - audit files are updated append-only with runtime/test proof.
+
+## Capability boundary scope (LOCKED)
+
+**Gate 11: not applicable.** Kontrak ini menetapkan aturan penguncian dan penggantian publikasi. Ia tidak menghasilkan verdict, state, flag, atau signal yang dapat dikutip sebagai bukti tentang data, sehingga tidak memiliki wilayah buta untuk dinyatakan. Mekanisme yang memang menghasilkan keluaran semacam itu menyatakan batasnya pada owner contract-nya masing-masing, khususnya `Finalize_Lock_And_Pointer_Behavior_LOCKED.md` untuk perilaku lock dan pointer.

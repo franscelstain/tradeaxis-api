@@ -75,6 +75,32 @@ class MarketDataInvariantGuardTest extends TestCase
         $this->assertTrue(true);
     }
 
+    public function test_pointer_target_prefers_explicit_expected_count_over_raw_universe(): void
+    {
+        $publication = (object) [
+            'trade_date' => '2026-07-08',
+            'seal_state' => 'SEALED',
+            'sealed_at' => '2026-07-08 17:20:00',
+        ];
+        $run = (object) [
+            'terminal_status' => 'SUCCESS',
+            'publishability_state' => 'READABLE',
+            'coverage_gate_state' => 'PASS',
+            'coverage_universe_count' => 160,
+            'coverage_expected_count' => 100,
+            'coverage_available_count' => 98,
+            'coverage_missing_count' => 2,
+            'coverage_ratio' => 0.98,
+            'coverage_min_threshold' => 0.98,
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'coverage_universe_basis' => 'ACTIVE_LISTED_EQUITY_AS_OF_DATE',
+            'coverage_contract_version' => 'coverage_gate_v1',
+        ];
+
+        (new MarketDataInvariantGuard())->assertValidPointerTarget($publication, $run, '2026-07-08', 'unit');
+        $this->assertTrue(true);
+    }
+
 
     public function test_pointer_target_rejects_run_publication_mirror_mismatch()
     {

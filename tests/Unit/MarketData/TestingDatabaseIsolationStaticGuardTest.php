@@ -25,24 +25,42 @@ class TestingDatabaseIsolationStaticGuardTest extends TestCase
         $this->assertStringContainsString('new Laravel\Lumen\Bootstrap\LoadEnvironmentVariables', $bootstrap);
     }
 
-    public function test_artisan_blocks_destructive_testing_migrations_when_database_is_not_testing()
+    /**
+     * Ordering, which execution cannot show from inside the process: the guard must run before
+     * the command is handed to the kernel. A guard that ran afterwards would refuse a database
+     * that had already been dropped.
+     *
+     * What the guard decides is proven by DestructiveMigrationGuardTest. The command list and the
+     * expected database name are no longer asserted as strings here — they live on the guard
+     * class and that test drives every one of them.
+     */
+    public function test_the_destructive_migration_guard_runs_before_the_kernel_handles_the_command()
     {
         $artisan = $this->read('artisan');
 
-        $this->assertStringContainsString('tradeaxis_enforce_testing_database_isolation', $artisan);
-        $this->assertStringContainsString('BLOCKED_TESTING_DATABASE_ENV', $artisan);
-        $this->assertStringContainsString("'migrate:fresh'", $artisan);
-        $this->assertStringContainsString("'migrate:refresh'", $artisan);
-        $this->assertStringContainsString("'migrate:reset'", $artisan);
-        $this->assertStringContainsString("'db:wipe'", $artisan);
-        $this->assertStringContainsString("'tradeaxis_testing'", $artisan);
-        $this->assertStringContainsString('$app[\'config\']->get(\'database.connections.\'.$connection.\'.database\'', $artisan);
         $this->assertStringContainsString('tradeaxis_enforce_testing_database_isolation($app, $input);', $artisan);
         $this->assertLessThan(
             strpos($artisan, '$kernel->handle('),
             strpos($artisan, 'tradeaxis_enforce_testing_database_isolation($app, $input);'),
-            'Testing DB isolation guard must run before the migration command is handled.'
+            'Destructive migration guard must run before the migration command is handled.'
         );
+    }
+
+    /**
+     * The environment must not gate the decision.
+     *
+     * Both guards used to return early unless the environment was already `testing`, which left
+     * `php artisan migrate:fresh` with no --env — resolving to .env and therefore to the
+     * production database — completely unguarded. The prohibition is kept as a source check
+     * because it is the shape of the old defect, and reintroducing it would restore a guard that
+     * only refuses the one database it is safe to drop.
+     */
+    public function test_the_guard_does_not_return_early_based_on_environment()
+    {
+        $artisan = $this->read('artisan');
+
+        $this->assertStringNotContainsString('if (! $isTestingEnvironment) {', $artisan);
+        $this->assertStringNotContainsString("!== 'testing') {\n            return;", $artisan);
     }
 
     public function test_testing_env_database_is_explicitly_isolated_from_local_database()

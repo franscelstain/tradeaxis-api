@@ -1,5 +1,8 @@
 # Config / ENV Governance Cleanup Inventory
 
+> **HISTORICAL AUDIT/IMPLEMENTATION EVIDENCE — NON-AUTHORITATIVE FOR CURRENT V2 STRATEGY.** This file preserves dated runtime/inventory facts and may contain legacy field names, command behavior, locks, or production claims from earlier contracts. Current strategy authority is the owner contracts + Blueprint + Conformance Matrix; current execution/conformance state is `MARKET_DATA_IMPLEMENTATION_LEDGER.md`; current audit verdict is `reports/AUDIT_FINAL_STATE.md`. Legacy statements are not current requirements unless explicitly re-admitted by those authorities.
+
+
 Status: DONE / LOCKED_LOCAL_PHPUNIT_PASS  
 Last updated: 2026-05-17  
 Related implementation: Config / ENV Governance Cleanup  
@@ -49,7 +52,7 @@ This inventory records the config/env cleanup for market-data. It is intentional
 | `MARKET_DATA_COVERAGE_MISSING_SAMPLE_LIMIT` | `.env.example`, `.env.testing`, `config/market_data.php` | `25` | int | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |
 | `MARKET_DATA_COVERAGE_DELAY_WINDOW_MINUTES` | `.env.example`, `.env.testing`, `config/market_data.php` | `60` | int | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |
 | `MARKET_DATA_PRICE_BASIS_DEFAULT` | `.env.example`, `.env.testing`, `config/market_data.php` | `close` | string | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |
-| `MARKET_DATA_LOT_SIZE` | `.env.example`, `.env.testing`, `config/market_data.php` | `100` | int | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |
+| `MARKET_DATA_LOT_SIZE` | removed 2026-07-30 | `100` | int | no | no | no | REMOVE | Only caller was the turnover formula, which was wrong: IDX provider volume is in shares, so the lot multiplier inflated `dv20_idr` by 100x. Lot size for position sizing is owned by the watchlist backtest calibration doc, not by market data. |
 | `MARKET_DATA_DAILY_ENABLED` | `.env.example`, `.env.testing`, `config/market_data.php` | `false` | bool | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |
 | `MARKET_DATA_DEFAULT_SOURCE_MODE` | `.env.example`, `.env.testing`, `config/market_data.php` | `api` | string | yes | yes | yes | ACTIVE_USED | Keep; caller/purpose traced |
 | `MARKET_DATA_SCHEDULER_OUTPUT_PATH` | `.env.example`, `.env.testing`, `config/market_data.php` | `storage/logs/market-data-scheduler.log` | string | yes | yes | yes | ACTIVE_USED | Keep; scheduler output/no-silent-failure proof |
@@ -180,7 +183,7 @@ Current canonical status for this scope is LOCKED in `LUMEN_CONTRACT_TRACKER.md`
 
 [SESSION] SOURCE_READY_FULL_PRODUCTION_READY_GAP_CLOSURE
 
-[SESSION_STATUS] MARKET_DATA_PRODUCTION_READY_LOCKED
+[SESSION_STATUS] MARKET_DATA_PRODUCTION_READY_LOCKED  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 
 [INPUT_SOURCE_ZIP]
 - Source ZIP: `tradeaxis-api.zip`
@@ -193,8 +196,8 @@ Current canonical status for this scope is LOCKED in `LUMEN_CONTRACT_TRACKER.md`
 
 
 [FINAL_DECISION]
-- `FULLY_PRODUCTION_READY`
-- `MARKET_DATA_PRODUCTION_READY_LOCKED`
+- `FULLY_PRODUCTION_READY`  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
+- `MARKET_DATA_PRODUCTION_READY_LOCKED`  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 - `OPS_RUNTIME_PARITY_PASSED`
 - `FINAL_PROVIDER_SMOKE=PASSED`
 - `LIVE_PROVIDER_SMOKE_PASSED`
@@ -238,7 +241,7 @@ Status: `PASS`.
 This append-only reconciliation records the latest current source-state proof after the market benchmark + indicator extension.
 
 - `MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS=PASS`
-- `MARKET_DATA_PRODUCTION_READY_LOCKED=YES`
+- `MARKET_DATA_PRODUCTION_READY_LOCKED=YES`  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 - `FULL_MARKET_DATA_PHPUNIT=PASSED`
 - Full `vendor/bin/phpunit tests/Unit/MarketData` -> OK (511 tests, 7871 assertions).
 - Targeted proof: Benchmark OK (14 tests, 84 assertions); Indicator OK (18 tests, 104 assertions); MarketBenchmarkIndicatorExtensionStaticGuardTest OK (5 tests, 46 assertions); AuditDocsSynchronizationStaticGuardTest OK (10 tests, 468 assertions); StaticGuard OK (199 tests, 4930 assertions).
@@ -248,4 +251,4 @@ This append-only reconciliation records the latest current source-state proof af
 - Replay proof: `replay_id=2`, `comparison_result=MATCH`, `replay_status=PASS`, and `mismatch_count=0`.
 - Benchmark proof: `IHSG` is stored as benchmark/index with provider symbol `^JKSE`; `^JKSE.JK` and `IHSG.JK` remain forbidden; benchmark `IND_INSUFFICIENT_HISTORY` is expected until enough historical IHSG bars exist.
 
-Final current-source decision: `FULL_MARKET_DATA_PRODUCTION_READY=YES`, with no remaining blocker for this benchmark/indicator scope.
+Final current-source decision: `FULL_MARKET_DATA_PRODUCTION_READY=YES`, with no remaining blocker for this benchmark/indicator scope.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.

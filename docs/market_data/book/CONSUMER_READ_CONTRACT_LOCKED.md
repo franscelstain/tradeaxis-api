@@ -1,117 +1,65 @@
-# CONSUMER READ CONTRACT (LOCKED)
+# Consumer Read Contract (STRATEGY LOCKED)
 
-## Purpose
-Mengunci aturan downstream consumer agar watchlist dan consumer lain tidak bisa bypass publication safety, coverage gate, atau effective-date resolution.
+## Allowed input surface
 
-Dokumen ini adalah kontrak ringkas yang downstream-facing dan enforceable.
-Ia melengkapi `Downstream_Consumer_Read_Model_Contract_LOCKED.md`, tetapi menjadi entry contract yang lebih tegas untuk implementasi consumer.
+All downstream consumers, including the initial Weekly Swing profile, read only the versioned market-data read model defined by `Downstream_Consumer_Read_Model_Contract_LOCKED.md` and its readiness metadata. Internal acquisition, canonical, history, candidate, current-projection, event, factor, indicator, eligibility, and seal tables are not consumer APIs.
 
----
+This contract proves safe data delivery. It does not require or validate consumer screening, ranking, signals, portfolio behavior, or trading performance.
 
-## Allowed consumer inputs
-Consumer boleh meminta:
-- requested trade date `T`
-- optional consumer-specific filters yang tidak mengubah publication resolution
+## Request
 
-Consumer tidak boleh meminta:
-- raw table terbaru
-- latest row by recency
-- requested date override yang melanggar readability resolution
+A request declares at minimum market/product/read-model version and either an explicit requested trade date or `latest_expected_completed_session`. Optional audit/replay modes are separate endpoints and cannot be selected implicitly.
 
----
+## Resolution order
 
-## Consumer read rule (LOCKED)
-Consumer wajib membaca hanya dari:
-- publication yang `SEALED`
-- publication yang `is_current = 1`
-- requested/effective date yang lolos readability contract
-- current publication pointer / effective-date resolution yang sah
+The read gateway must:
 
----
+1. resolve requested date from the versioned Regular-Market calendar and session-completion rule;
+2. resolve the active publication pointer for that date/product;
+3. verify publication state, seal/manifest/config, and minimum product completeness;
+4. atomically materialize every field from the same immutable publication;
+5. evaluate freshness relative to latest expected date and activation context; and
+6. if policy permits, resolve a prior active publication and label its true effective date and staleness.
 
-## Required resolution order (LOCKED)
-Untuk request tanggal `T`, consumer wajib:
-1. resolve apakah `T` readable
-2. bila readable, ambil current sealed publication untuk `T`
-3. bila tidak readable, resolve `trade_date_effective` menurut readability contract
-4. bila fallback ada, baca current sealed publication untuk `trade_date_effective`
-5. baca bars / indicators / eligibility hanya dari publication context itu
+Failure at any step is reason-coded and fail-closed. A repository must not continue by selecting convenient rows from another table/date/publication.
 
----
+## Response invariant
 
-## Explicitly allowed
-Consumer BOLEH:
-- membaca publication manifest/current pointer
-- membaca bars, indicators, dan eligibility yang terikat ke publication context ter-resolve
-- menggunakan `trade_date_effective` yang diberikan upstream
-- menolak read bila publication resolution ambigu
+Every success-like response includes publication ID/version, requested/effective dates, readiness/freshness states, evaluated-at time, config/factor/formula/read-model versions, and lineage reference. Row filters/pagination remain bound to those values.
 
----
+A stale/degraded response is not equivalent to a fresh response. `200 OK`, non-empty rows, `eligible = 1`, or job completion cannot erase the state.
 
-## Explicitly forbidden
-Consumer DILARANG:
-- query raw table langsung tanpa publication context
-- hitung ulang indicator
-- bangun ulang eligibility dari bars/indicators ad hoc
-- pakai `MAX(date)` sebagai resolver
-- pakai `MAX(run_id)` atau `MAX(updated_at)` sebagai resolver publication
-- bypass coverage gate
-- memilih superseded publication untuk normal read flow
-- menentukan sendiri tanggal readable berdasarkan recency guessing
-- merge dua publication dalam satu logical read
+## Corrections and repeatability
 
----
+An exact `publication_id` request is repeatable and returns that immutable artifact or an explicit unavailable/integrity error. A date-current request may resolve a newer corrected active publication on a later call and therefore exposes its publication identity.
 
-## Effective-date ownership
-`trade_date_effective` adalah output upstream readability/publication contract.
-Consumer wajib memakainya apa adanya.
-Consumer tidak boleh menghitung sendiri effective date dengan logika alternatif.
+Consumers must not cache across publication versions without including publication ID/read-model version in the cache key.
 
----
+## Forbidden behavior
 
-## Ambiguity rule
-Jika consumer tidak bisa membuktikan tepat satu publication current + sealed untuk date yang diresolve, maka:
-- read harus gagal aman
-- consumer tidak boleh fallback ke raw table
-- consumer tidak boleh memilih date terbaru sebagai substitusi diam-diam
+- direct `MAX(trade_date)` or latest-row queries;
+- current-master or current-status fallback for historical rows;
+- implicit adjusted-close/close selection;
+- client-side adjustment, indicator, coverage, or eligibility calculation;
+- reading candidates or superseded artifacts through the normal endpoint;
+- mixing requested-date labels with prior-date data;
+- substituting empty/zero defaults for missing required facts; and
+- bypassing readiness because a lower-level table is populated.
 
----
+## Enforcement
 
-## Correction safety rule
-Bila ada correction resmi untuk trade date D:
-- consumer otomatis membaca publication corrected yang current
-- publication lama menjadi audit-only
-- consumer tidak perlu dan tidak boleh menulis branch logic sendiri untuk memilih versi lama
+Application repositories expose the gateway DTO, database privileges/views deny consumer roles direct internal-table access, and static/integration tests reject bypass patterns. Audit endpoints require explicit authorization and clearly identify non-current or unsealed state.
 
----
+Production lock requires executed enforcement evidence; the document alone does not prove it.
 
-## Minimum join rule
-Setiap logical read harus konsisten pada satu publication context:
-- `trade_date`
-- `publication_id`
-- bars/indicators/eligibility berasal dari context yang sama
+## Capability boundary (LOCKED)
 
----
+**What the read contract proves.** That a consumer receives data resolved from one sealed publication, with its effective date, price-basis identity, and readiness state stated rather than inferred, and that no internal table or recency shortcut is required to obtain it.
 
-## Enforceable implementation consequences
-Implementasi consumer yang patuh kontrak harus bisa menunjukkan minimal:
-- dari pointer/readability mana `trade_date_effective` didapat
-- `publication_id` mana yang sedang dibaca
-- bahwa publication itu sealed/current/readable
-- bahwa query bars/indicators/eligibility dibatasi ke publication context yang sama
+**What it cannot prove.**
 
----
+- **That the delivered content is correct.** The contract governs how data is handed over, not how it was produced. Every upstream capability boundary composes into what arrives here; none of them is cancelled by a clean read.
+- **That the effective date is the requested date.** A conforming response may carry a prior sealed date under fallback. The contract requires that this be visible; it does not require that it be avoidable.
+- **That a consumer will read the fields it is given.** Stating basis, effective date, and readiness satisfies this contract. Whether the consumer acts on them is outside it, and a consumer that ignores them receives correct data and draws wrong conclusions.
 
-## Cross-contract alignment
-Harus sinkron dengan:
-- `Downstream_Consumer_Read_Model_Contract_LOCKED.md`
-- `Consumer_Readability_Decision_Table_LOCKED.md`
-- `Run_Status_and_Quality_Gates_LOCKED.md`
-- `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
-- `Historical_Correction_and_Reseal_Contract_LOCKED.md`
-
----
-
-## Anti-ambiguity rule (LOCKED)
-Jika dua implementer yang jujur masih bisa membuat dua query consumer berbeda untuk request yang sama dan keduanya tampak valid, maka kontrak consumer read ini belum cukup keras.
-Pada baseline ini, perilaku itu dianggap tidak boleh terjadi.
+Consequently a successful read may be cited as evidence that **the handover was governed and self-describing**, never as evidence that **the underlying facts are right**.

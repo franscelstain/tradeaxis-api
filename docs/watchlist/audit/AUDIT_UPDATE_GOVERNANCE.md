@@ -12400,3 +12400,48 @@ C171_PRODUCTION_READY=0
 ```
 
 An operator may record C171 as complete for the evidence-schema and execution-path scope only after migration, focused tests, full Watchlist regression, official IS execution, database hash inspection, and proof that OOS row count remains unchanged. A canonical IS gate failure does not authorize OOS; it returns the work to targeted C171 strategy remediation.
+
+## WS Breakout Integrity B01 Governance
+
+B01 is a separate post-C171 strategy scope governed by the uploaded target
+sequence: bounded hypothesis, diagnostic, one-idea implementation, canonical
+IS, identity review, single Official OOS, canonical promotion, and controlled
+runtime. C171 and all failed intermediate strategy scopes remain immutable.
+
+```text
+WSB01_GOVERNANCE_STATUS=ACTIVE_SHADOW_COMPLETE_PRODUCTION_HOLD
+WSB01_C171_REOPENED=0
+WSB01_CANONICAL_GATES_CHANGED=0
+WSB01_TICKER_BLACKLIST_USED=0
+WSB01_MONTH_BLACKLIST_USED=0
+WSB01_FUTURE_RETURN_INPUT_USED=0
+WSB01_FUTURE_DERIVED_ROUTE_USED=0
+WSB01_OOS_READ_BEFORE_IS_PASS=0
+WSB01_OFFICIAL_OOS_EXECUTION_COUNT=1
+WSB01_RETUNING_AFTER_OOS=0
+WSB01_EXACT_IDENTITY_CHAIN=PARAMSET_29_BT_181_IS_220_OOS_1
+WSB01_CANONICAL_PROMOTION_EXECUTED=1
+WSB01_ACTIVE_PARAMSET_COUNT=1
+WSB01_ACTIVE_PARAM_SET_ID=29
+WSB01_ACTIVE_SHADOW_PASS=1
+WSB01_SHADOW_PUBLICATION_ID=68547
+WSB01_SHADOW_PUBLICATION_VERSION=3
+WSB01_SHADOW_RUN_ID=67865
+WSB01_SHADOW_NON_OFFICIAL_TICKERS=BFIN,GGRM
+WSB01_PLAN_RUN_COUNT=0
+WSB01_PLAN_ITEM_COUNT=0
+WSB01_CONFIRM_MUTATED=0
+WSB01_PRODUCTION_CONFIG_MUTATED=0
+WSB01_OFFICIAL_OUTPUT_PUBLISHED=0
+WSB01_PRODUCTION_READY=0
+```
+
+All five locked OOS gates passed. Governance nevertheless carries the observed
+OOS worst monthly average `-0.019712322274332197` and one failing period into
+the next operator decision. This observation is not a retroactive gate and
+must not be used to retune B01 on OOS.
+
+The next governed action is a separate operator go/no-go review. Until that
+review explicitly authorizes a narrowly bounded controlled stage, no PLAN
+persistence, recommendation persistence, CONFIRM mutation, rollout feature
+flag, or official publication may be executed.

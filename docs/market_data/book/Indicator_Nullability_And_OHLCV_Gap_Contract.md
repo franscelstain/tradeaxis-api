@@ -1,44 +1,40 @@
-# Indicator Nullability and OHLCV Gap Contract
+# Indicator Nullability and OHLCV Gap Contract (LOCKED)
 
-Status: LOCKED as target behavior for EOD indicator computation and publication semantics.
+## Core rules
 
-## Purpose
-This contract separates data completeness, publication completeness, and indicator availability. It prevents normal data states from becoming global runtime errors.
+1. Canonical zero/null OHLC placeholders are forbidden; missing/invalid observations remain separate evidence.
+2. Indicator nullability is per field and reason-coded.
+3. Intentional dataset start `2023-01-02` and later listing dates create normal deterministic warm-up `NULL` states.
+4. Fixed windows require exact expected trading-date dependencies; missing sessions are not skipped or forward-filled.
+5. ATR requires stable recursive seed/state; a gap cannot be hidden by reseeding a sliding window.
+6. Missing optional sector/benchmark/source facts null only their dependent fields.
+7. Unresolved structural action/price break nulls or contaminates every affected field until verified factor/correction lineage exists.
+8. Zero volume with valid positive OHLC is distinct from missing data; price formulas may remain valid while liquidity/volume denominators follow their rules.
 
-## Locked rules
+## Reason separation
 
-1. `market_calendar` is the authority for whether a date is a trading day.
-2. Active/listed ticker universe is evaluated as-of the trade date.
-3. Indicator outputs are nullable per field. A missing dependency for one formula must not nullify unrelated formulas on the same row.
-4. Dataset-start insufficient history is normal. If the database begins on 2023-01-02, early dates may have no MA20, MA50, ROC20, ATR14, or volume-derived fields until each formula has enough valid bars.
-5. Ticker-listed-date insufficient history is normal. A ticker listed later than the dataset start accumulates indicators gradually according to its own available bars.
-6. Missing sector-index benchmark bars leave sector rotation fields NULL. They must not be fabricated.
-7. Missing event-risk source rows leave event-risk fields NULL unless a source-backed carry-forward state exists.
-8. A missing provider OHLCV row for an active/listed ticker on a valid trading day may be represented as an OHLCV zero-placeholder in the publication artifact to preserve universe coverage.
-9. Zero-placeholder OHLCV rows are not valid price inputs. Any price, turnover, range, relative-strength, or moving-average formula depending on a zero-placeholder must return NULL/invalid for that field.
-10. Publication must fail for invalid calendar, broken artifact/hash/seal invariants, or malformed source data. It must not fail solely because an indicator field is NULL due to insufficient history or a zero-placeholder dependency.
+At minimum distinguish insufficient history, missing expected dependency, invalid input, zero denominator, missing optional benchmark, unresolved adjustment/contamination, and provenance/config mismatch.
 
-## Examples
+A compatibility primary reason must not erase field-level reason sets.
 
-- A ticker with 22 valid bars may have `ma20`, `roc20`, and some range fields, while `ma50` remains NULL.
-- A newly listed ticker with 10 valid bars may have close/volume context but no MA20/MA50/ROC20.
-- A sector benchmark missing for 2026-06-04 leaves `sector_roc20`, `rs_20_vs_sector`, and `sector_rs_20_vs_ihsg` NULL for that date while equity-only indicators still compute.
-- A provider-missing row represented by OHLCV zeros keeps the ticker in the publication universe, but those zeros must not enter MA/ROC/ATR/range math as real market prices.
+## Publication behavior
 
+Early or partially-null rows may exist in a publication when run-level gates allow it, but eligibility facts must expose required-field blocks. A missing row or `NULL` is never silently turned into zero.
 
+Published nullability/reasons are immutable and versioned. Corrections create new indicator/publication snapshots.
 
-## Source/master vs publication-bound indicator scope (LOCKED)
-"Without updating sector, corporate action, trading status, or master data" means no writes to source/master tables and no source import commands.
+## Acceptance criterion
 
-It does **not** mean that publication-bound context columns inside a new `eod_indicators` publication must stay frozen. A valid recompute publication may recalculate `sector_code`, sector-rotation fields, corporate-action fields, trading-status fields, and event-risk fields from the existing source/master data already present in the database.
+Every `NULL` has a deterministic, inspectable cause; every non-null value has complete valid dependencies on one coherent basis.
 
-If the intended behavior is to recompute only technical numeric fields while preserving prior publication context columns unchanged, that must be an explicit future `technical-only` mode. No such production-safe command is currently approved.
+## Capability boundary (LOCKED)
 
-See `Indicator_Recompute_Source_Scope_Contract.md` for the locked source-read-only vs publication-recompute boundary.
+**What nullability rules prove.** That a value is emitted only when its declared preconditions are met, that an unmet precondition yields a deterministic `NULL` with a reason rather than a substitute, and that gaps are never forward-filled or interpolated.
 
-## Forbidden
+**What they cannot prove.**
 
-- Treating insufficient history as a global publication error.
-- Treating `close=0` placeholder as a real traded price.
-- Forward-filling sector rotation, event-risk, or indicator values without a source-backed rule.
-- Keeping unproven commands or runbook instructions that claim indicator-only republish is production-ready when runtime proof failed.
+- **That a non-null value met its preconditions meaningfully.** The rules check that the declared conditions were formally satisfied — enough sessions present, dependencies loaded. Formal satisfaction over a window whose content is wrong still produces a non-null value with no reason attached.
+- **That the precondition set is sufficient.** Preconditions cover the failure modes someone anticipated. A window that is complete, contiguous, and contaminated satisfies every count-based precondition there is.
+- **That `NULL` means the market had nothing to say.** `NULL` means the platform declined to assert a value. Those are different statements, and only the second is being made.
+
+Consequently a fully populated indicator row may be cited as evidence that **declared preconditions were satisfied**, never as evidence that **the window was suitable**.

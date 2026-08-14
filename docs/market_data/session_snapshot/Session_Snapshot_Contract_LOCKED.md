@@ -16,13 +16,16 @@ Wall-clock capture timing is represented only by `captured_at`.
 - optional `PRE_CLOSE_CHECK` around 14:45
 
 ## Scope rule (LOCKED)
-Default scope is the eligibility set for the effective trade date D unless a narrower upstream-approved scope contract exists.
-Default behavior must never assume picks, rankings, or portfolio subsets.
+Default scope is the **publication-bound data-usability listing set** for effective trade date D unless a narrower upstream-approved scope contract exists. A legacy `eligible`/eligibility projection may be used only when its equivalence to the locked `data_usable` condition is explicit for that publication/version.
+Default behavior must never assume picks, rankings, tradability, portfolio subsets, or mutable current eligibility/master state.
 
 ## Minimum fields
 - `trade_date`
 - `snapshot_slot`
-- `ticker_id`
+- stable `listing_id` (`instrument_id` where useful)
+- optional compatibility/display `ticker_id` / `ticker_code`, never the target key
+- `scope_publication_id` or equivalent immutable reference to the EOD publication whose effective-date scope was resolved
+- `config_snapshot_id` / config hash governing slot, scope, and source behavior
 - `captured_at`
 - `last_price`
 - `prev_close`
@@ -30,10 +33,12 @@ Default behavior must never assume picks, rankings, or portfolio subsets.
 - `volume`
 - `day_high`
 - `day_low`
-- source/audit/error fields
+- immutable source-observation/reference/hash plus source/audit/error fields
 
 ## Locked rules
 - `trade_date` must equal resolved `trade_date_effective` D
+- snapshot identity must bind the stable point-in-time `listing_id`; current ticker symbol/id is display/compatibility metadata only
+- scope must be resolved from a specific readable publication/config context and its publication-bound data-usability projection, not mutable current eligibility/master state
 - `captured_at` must store the actual wall-clock timestamp of capture
 - when capture uses a locked default slot, rows outside the configured slot-tolerance window must be recorded as skipped/partial, not silently accepted as in-slot rows
 - failure or absence of a session snapshot must never block EOD finalization or sealing

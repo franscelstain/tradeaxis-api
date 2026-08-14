@@ -1,117 +1,34 @@
-# Golden Fixtures Specification (LOCKED)
+# Golden Fixtures Specification (STRATEGY LOCKED)
 
-## Purpose
-Define how golden fixtures must be structured so contract tests and replay proofs can be implemented without guessing.
+## Package
 
-Golden fixtures are immutable proof inputs and expected outputs.
-They are not ad-hoc sample files.
+Each fixture package contains a versioned manifest, immutable input observations/master revisions/config snapshot, independently derived expected artifacts/states/hashes, source/reference notes, and runner/evidence instructions. Package files have hashes; volatile runtime fields are explicitly excluded.
 
-## Fixture design rules (LOCKED)
-1. A fixture must test a clear contract focus.
-2. A fixture family may include multiple files, but they must belong to one semantic scenario.
-3. Changing semantic meaning requires a new fixture version.
-4. Expected outputs are part of the fixture family, not optional commentary.
-5. A fixture that lacks expected outputs does not satisfy this specification.
+Real-market cases are stored as dated frozen evidence with source/licensing metadata. Synthetic minimal cases may isolate mathematics or negative invariants but must be labeled synthetic and cannot replace required real-market semantics.
 
-## Minimum fixture package structure
-Each fixture family should include, as applicable:
-- input source rows
-- normalized/canonical expected rows
-- expected invalid rows
-- expected indicators
-- expected eligibility
-- expected run summary outcome
-- expected hash payload lines
-- expected hash values
-- expected publication/correction outcome
+## Mandatory families
 
-## Required fixture families
-The required families are listed in:
-- `Golden_Fixture_Catalog_LOCKED.md`
+- observation success, stale date, schema drift, provider outage, invalid/zero/conflicting bars;
+- temporal listing membership, symbol transition/reuse, mapping changes, calendar/status corrections;
+- verified no-bar-expected versus unknown expectation;
+- verified split/reverse split/rights/bonus cases plus unverified discontinuity candidates;
+- coherent RAW/structural-adjusted/total-return products and actual/proxy liquidity;
+- ATR seed, long recursive chain, missing session, later listing, and old correction beyond fourteen sessions;
+- coverage and multi-reason eligibility edge cases;
+- full-config drift and deterministic serialization;
+- current, held, failed, explicit stale fallback, correction concurrency, and bypass rejection;
+- exact publication and as-known replay with late-known revisions.
 
-This file defines how those fixture families must be shaped.
+## Oracle discipline
 
-## Minimum contents by fixture type
+Expected values are calculated independently (for example, reviewed spreadsheet/reference implementation and manual lineage derivation) and include precision/rounding. For real events, official/authoritative event terms establish verification; price behavior may confirm a test scenario but cannot be the verifying source.
 
-### A. Bar-validation fixtures
-Must include:
-- source input rows
-- expected canonical output rows
-- expected invalid row outputs
-- expected invalid reason codes
+Provider payloads are sanitized and frozen; provider `adj_close` is never the expected structural product oracle.
 
-### B. Indicator fixtures
-Must include:
-- canonical bar inputs
-- relevant calendar ordering inputs if needed
-- expected indicator outputs
-- expected invalid reason codes where applicable
+## Change rule
 
-### C. Eligibility fixtures
-Must include:
-- coverage-universe inputs
-- canonical bar or indicator dependencies
-- expected eligibility outputs
-- expected row counts
+A semantic change creates a new fixture/contract version. Do not update expected files merely to make a changed implementation green. The review records why the old oracle was wrong or why the new version intentionally differs.
 
-### D. Hash fixtures
-Must include:
-- explicit serialized line payloads
-- explicit expected SHA-256 outputs
-- cases with different `run_id` and identical content
+## Admission
 
-### E. Effective-date fixtures
-Must include:
-- requested date
-- prior readable or non-readable states
-- expected `trade_date_effective`
-- expected terminal outcome
-
-### F. Correction fixtures
-Must include:
-- prior current published state
-- correction request metadata
-- approval metadata where applicable
-- correction execution outputs
-- old hash set
-- new hash set
-- expected publication switch or non-switch result
-
-### G. Replay fixtures
-Must include:
-- source snapshot/extract reference
-- config/registry snapshot reference
-- calendar/mapping snapshot reference
-- expected comparison result
-- expected run-level outputs
-
-## Expected-output discipline (LOCKED)
-Every fixture family must carry enough expected outputs to support:
-- row-level assertions
-- run-level assertions
-- hash-level assertions where applicable
-- publication/correction assertions where applicable
-
-## Fixture naming rule
-Fixture family names must be stable semantic identifiers, for example:
-- `fixture_bars_atr_seed`
-- `fixture_controlled_correction`
-
-Do not use ad-hoc names based only on timestamps or local developer shorthand.
-
-## Anti-drift rule (LOCKED)
-When a contract meaning changes intentionally:
-- create new fixture version
-- keep prior fixture version preserved for historical comparison where needed
-
-Do not silently edit old fixture semantics and pretend nothing changed.
-
-## Executable package rule (LOCKED)
-Golden fixtures are not satisfied by prose-only specification.
-Each required fixture family must be packageable into concrete files that can be loaded by test runners without inventing missing rows, missing expected outputs, or missing manifest metadata.
-
-Minimum expectation per fixture family:
-- at least one concrete input file
-- at least one concrete expected-output file
-- manifest coverage that names the package and its assertion layers
-- stable semantic version identifier
+`PASS` requires the package and actual path to be executable and the evidence to identify runtime/build/database/config. Missing inputs or runner support is `BLOCKED`; a manifest-only example is not executed proof.

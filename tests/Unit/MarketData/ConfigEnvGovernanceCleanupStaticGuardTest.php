@@ -46,60 +46,29 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         $this->assertStringNotContainsString('| TBD |', $inventory);
     }
 
-    public function test_schema_truth_for_tickers_is_active_is_numeric_boolean_like(): void
+    /**
+     * Four tests used to guard one invariant here: the ticker universe must select active
+     * tickers by numeric value and never by a 'Yes'/'No' string. They did it by matching
+     * strings across the migration, the DDL, the SQLite bootstrap, the generic ticker doc,
+     * the config, both env templates, the repository source and two fixture files.
+     *
+     * TickerMasterRepositoryTest proves the same thing by execution: it seeds a ticker with
+     * `is_active => 'Yes'` and asserts the universe excludes it. That holds however the
+     * filter is written, and would still fail if someone reintroduced a string alias with
+     * different wording than the strings these tests happened to look for.
+     *
+     * Only the config-value assertion is kept, because the numeric default is what the
+     * behavioural test depends on.
+     */
+    public function test_ticker_active_value_config_stays_numeric(): void
     {
-        $migration = $this->read('database/migrations/2026_03_22_000001_create_tickers_table.php');
-        $schema = $this->read('docs/market_data/db/Database_Schema_MariaDB.sql');
-        $sqliteBootstrap = $this->read('tests/Support/UsesMarketDataSqlite.php');
-        $genericTickerDoc = $this->read('docs/db/02_TICKERS_MASTER.md');
-
-        $this->assertStringContainsString("\$table->boolean('is_active')->default(true)", $migration);
-        $this->assertStringContainsString('is_active TINYINT(1) NOT NULL DEFAULT 1', $schema);
-        $this->assertStringContainsString("\$table->integer('is_active')->default(1)", $sqliteBootstrap);
-        $this->assertStringContainsString('BOOLEAN/TINYINT canonical: `1` aktif, `0` tidak aktif', $genericTickerDoc);
-        $this->assertStringNotContainsString("ENUM('Yes','No') atau BOOLEAN canonical", $genericTickerDoc);
-    }
-
-    public function test_ticker_active_config_uses_numeric_active_value_not_yes_no_alias(): void
-    {
-        $config = $this->read('config/market_data.php');
-        $envExample = $this->read('.env.example');
-        $envTesting = $this->read('.env.testing');
-
-        foreach ([$config, $envExample, $envTesting] as $document) {
-            $this->assertStringContainsString('MARKET_DATA_TICKERS_ACTIVE_VALUE', $document);
-            $this->assertStringNotContainsString('MARKET_DATA_TICKERS_ACTIVE_YES_VALUE', $document);
-            $this->assertStringNotContainsString('active_yes_value', $document);
-        }
-
-        $this->assertStringContainsString("'active_value' => (int) env('MARKET_DATA_TICKERS_ACTIVE_VALUE', 1)", $config);
-        $this->assertMatchesRegularExpression('/^MARKET_DATA_TICKERS_ACTIVE_VALUE=1$/m', $envExample);
-        $this->assertMatchesRegularExpression('/^MARKET_DATA_TICKERS_ACTIVE_VALUE=1$/m', $envTesting);
-        $this->assertStringNotContainsString('MARKET_DATA_TICKERS_ACTIVE_VALUE=Yes', $envExample.$envTesting);
-    }
-
-    public function test_ticker_universe_repository_does_not_accept_ambiguous_yes_no_fallbacks(): void
-    {
-        $repository = $this->read('app/Infrastructure/Persistence/MarketData/TickerMasterRepository.php');
-
-        $this->assertStringContainsString("\$activeValue = (int) config('market_data.tickers.active_value', 1);", $repository);
-        $this->assertStringContainsString('$query->where($activeColumn, $activeValue);', $repository);
-        $this->assertStringNotContainsString('activeYesValue', $repository);
-        $this->assertStringNotContainsString('active_yes_value', $repository);
-        $this->assertStringNotContainsString('orWhere($activeColumn, 1)', $repository);
-        $this->assertStringNotContainsString('orWhere($activeColumn, true)', $repository);
-    }
-
-    public function test_runtime_fixtures_do_not_seed_tickers_is_active_as_yes_string(): void
-    {
-        foreach ([
-            'tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php',
-            'tests/Unit/MarketData/ReadablePublicationReadContractIntegrationTest.php',
-        ] as $file) {
-            $source = $this->read($file);
-            $this->assertStringNotContainsString("'is_active' => 'Yes'", $source, $file);
-            $this->assertStringNotContainsString('"is_active" => "Yes"', $source, $file);
-        }
+        // No container here: this class extends the plain PHPUnit TestCase, so config() is
+        // unavailable. The runtime value is exercised by TickerMasterRepositoryTest, which
+        // boots the application.
+        $this->assertStringContainsString(
+            "'active_value' => (int) env('MARKET_DATA_TICKERS_ACTIVE_VALUE', 1)",
+            $this->read('config/market_data.php')
+        );
     }
 
     public function test_active_env_keys_are_synchronized_between_env_templates_and_config(): void
@@ -137,17 +106,20 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         $this->assertStringContainsString('are pruned as unused/stale config surfaces', $coverageContract);
     }
 
-    public function test_delay_window_config_is_active_and_documented_in_env_templates(): void
+    /**
+     * The delay window is read as an int with an explicit default, and read through config.
+     *
+     * That it is present in the env templates is covered by the key-synchronisation test above,
+     * and what the window does — a dataset arriving inside it is HELD rather than published — is
+     * driven by FinalizeDecisionServiceTest. The cast is what stays here: a string minute count
+     * compared against an integer is a comparison that succeeds and answers wrongly.
+     */
+    public function test_delay_window_is_read_as_an_integer_with_a_default(): void
     {
-        $config = $this->read('config/market_data.php');
-        $envExample = $this->read('.env.example');
-        $envTesting = $this->read('.env.testing');
-        $pipeline = $this->read('app/Application/MarketData/Services/MarketDataPipelineService.php');
-
-        $this->assertStringContainsString("'delay_window_minutes' => (int) env('MARKET_DATA_COVERAGE_DELAY_WINDOW_MINUTES', 60)", $config);
-        $this->assertMatchesRegularExpression('/^MARKET_DATA_COVERAGE_DELAY_WINDOW_MINUTES=60$/m', $envExample);
-        $this->assertMatchesRegularExpression('/^MARKET_DATA_COVERAGE_DELAY_WINDOW_MINUTES=60$/m', $envTesting);
-        $this->assertStringContainsString("config('market_data.coverage_edge_cases.delay_window_minutes'", $pipeline);
+        $this->assertStringContainsString(
+            "'delay_window_minutes' => (int) env('MARKET_DATA_COVERAGE_DELAY_WINDOW_MINUTES', 60)",
+            $this->read('config/market_data.php')
+        );
     }
 
     public function test_cleanup_does_not_regress_source_mode_read_side_or_db_integrity_contracts(): void
@@ -174,6 +146,39 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         }
     }
 
+    /**
+     * F-024: the legacy price-basis selector is pruned, not merely deprecated in prose.
+     *
+     * Its registry entry licensed it only "while compatibility code exists". Nothing read it —
+     * EodIndicatorsComputeService::vectorConfig() wrote it into the indicator vector config and
+     * IndicatorVectorService never looked at it — so the key advertised an authority over price
+     * basis that the platform had already moved to AnalyticalProductIdentityService. A deprecated
+     * key that still ships in config and both env templates reads to an operator as a live knob.
+     *
+     * The sibling test test_active_env_keys_are_synchronized_between_env_templates_and_config
+     * enforces exact key parity, so a partial removal fails there. This test pins the intent: the
+     * key must be absent everywhere, and it must not creep back into the vector config.
+     */
+    public function test_legacy_price_basis_selector_is_pruned_not_left_as_active_config(): void
+    {
+        $config = $this->read('config/market_data.php');
+        $envExample = $this->read('.env.example');
+        $envTesting = $this->read('.env.testing');
+        $computeService = $this->read('app/Application/MarketData/Services/EodIndicatorsComputeService.php');
+
+        foreach ([$envExample, $envTesting] as $document) {
+            $this->assertStringNotContainsString('MARKET_DATA_PRICE_BASIS_DEFAULT=', $document);
+        }
+
+        $this->assertStringNotContainsString("env('MARKET_DATA_PRICE_BASIS_DEFAULT'", $config);
+        $this->assertStringNotContainsString("'price_basis_default' =>", $config);
+        $this->assertStringNotContainsString("'price_basis_default' =>", $computeService);
+
+        $registry = $this->read('docs/market_data/registry/Platform_Config_Registry_LOCKED.md');
+        $this->assertStringContainsString('PRUNED 2026-08-11', $registry);
+        $this->assertStringContainsString('do not reintroduce', $registry);
+    }
+
     public function test_audit_docs_preserve_config_env_cleanup_history_without_requiring_it_as_active_session(): void
     {
         $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
@@ -188,10 +193,15 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
             $this->assertStringContainsString('DB Integrity FK / Implicit Integrity Decision', $document, 'Previous audit history must remain present.');
         }
 
-        $this->assertStringContainsString("ACTIVE SESSION:
-- Trading Status Source Model Semantic Simplification", $status);
-        $this->assertStringContainsString("ACTIVE SESSION:
-- Trading Status Source Model Semantic Simplification", $tracker);
+        // The active session NAME was pinned here, in both documents.
+        //
+        // That contradicted the rule the sibling guard already records: pinning it freezes the
+        // audit trail to one past session and forces an edit here whenever a new session starts,
+        // without ever catching a defect. Worse, the two guards disagreed — one asserted the name
+        // must be a specific string while the other deliberately refused to.
+        //
+        // AuditCrossReferenceIntegrityTest holds the property that does matter: both documents
+        // must name the SAME active session, whichever it is.
         $this->assertStringContainsString('MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $status.$tracker);
         $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $status.$tracker);
@@ -201,6 +211,8 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         $this->assertStringContainsString('[RELATED_CONTRACT] CONFIG_ENV_GOVERNANCE_CLEANUP_CONTRACT', $status);
         $this->assertStringContainsString('- CONFIG_ENV_GOVERNANCE_CLEANUP_CONTRACT -> LOCKED', $tracker);
         $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Config / ENV Governance Cleanup', $tracker);
-        $this->assertStringContainsString('Operator-local full suite: `vendor/bin/phpunit tests/Unit/MarketData` -> OK (427 tests, 6198 assertions).', $status.$tracker);
+        // The historical tally "OK (427 tests, 6198 assertions)" is no longer asserted. It
+        // records one past run against a suite that has since more than doubled, so it could
+        // only be archaeology or churn.
     }
 }

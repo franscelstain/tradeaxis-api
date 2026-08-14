@@ -160,7 +160,7 @@ function seedCalendar(array $dates, string $now): void
         DB::table('market_calendar')->updateOrInsert(
             ['cal_date' => $date],
             [
-                'is_trading_day' => 1,
+                'is_trading_day' => 1, 'provenance_tier' => 'VERIFIED',
                 'holiday_name' => null,
                 'session_open_time' => '09:00',
                 'session_close_time' => '15:00',

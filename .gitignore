@@ -5,3 +5,5 @@ Homestead.yaml
 .env
 .phpunit.result.cache
 /outputs
+/.claude
+/tmp

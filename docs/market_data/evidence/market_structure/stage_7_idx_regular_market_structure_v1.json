@@ -1,0 +1,233 @@
+{
+  "schema_version": "market-data-authoritative-exchange-market-structure/v1",
+  "scope_id": "stage-7-idx-regular-standard-equity-2023-onward-v1",
+  "scope_statement": "Record-only authority set for IDX Regular-Market standard-equity price bands, minimum price, and tick ladder covering the dataset from 2023-01-02; no tier resolution, factor derivation, series rewrite, publication, or pointer change is authorized.",
+  "record_only": true,
+  "dataset_coverage_start": "2023-01-02",
+  "source_count": 5,
+  "revision_count": 6,
+  "sources": [
+    {
+      "source_uid": "80b815ab96c96623ba3abe26927a53ee5840d92f364ddebe7de9ac16c18469ea",
+      "authority_name": "OJK",
+      "authority_class": "REGULATOR",
+      "document_number": "29/SEOJK.04/2021",
+      "document_date": "2021-12-01",
+      "document_url": "https://www.ojk.go.id/id/regulasi/Documents/Pages/Kebijakan-Relaksasi-atas-Kewajiban-Penyampaian-Laporan-Lembaga-Efek-dan-Perintah-Kepada-Bursa-Efek%2C-Lembaga-Kliring-dan-Pen/SEOJK%2029%20-%2004%20-%202021.pdf",
+      "document_sha256": "6251db009403322782d26b3585bd478e769f5d1939831f434243d8bb36364809",
+      "document_byte_length": 109505,
+      "content_type": "application/pdf",
+      "transport_role": "AUTHORITY_ORIGIN"
+    },
+    {
+      "source_uid": "3329d0dc7523911f839345c360f9f6e5c182f10844cecd3d3a6efd8f312c98f6",
+      "authority_name": "IDX",
+      "authority_class": "EXCHANGE",
+      "document_number": "PR-043/BEI.SPR/05-2023",
+      "document_date": "2023-05-31",
+      "document_url": "https://www.idx.id/primary/NewsAnnouncement/GetPressReleaseDetail/1928?lang=id",
+      "document_sha256": "5b67ec6ad53545d31466689ccd0361534736cc4cddcf36b7eabfb58a3de12a90",
+      "document_byte_length": 4648,
+      "content_type": "application/json",
+      "transport_role": "AUTHORITY_ORIGIN"
+    },
+    {
+      "source_uid": "637f0f4b6fe0175e4efffa843ddd46b99168d6d40810c58cb720d56e4681423e",
+      "authority_name": "IDX",
+      "authority_class": "EXCHANGE",
+      "document_number": "S-07234/BEI.POP/08-2023",
+      "document_date": "2023-08-28",
+      "document_url": "https://utrade.co.id/ViewImportantNotice.aspx?idNotice=2184",
+      "document_sha256": "6f210eaad92746cab54da39fe5d7cb1b1a1e48041225bdee96bf0da5102879b8",
+      "document_byte_length": 167032,
+      "content_type": "application/pdf",
+      "transport_role": "AUTHORITY_DOCUMENT_MIRROR"
+    },
+    {
+      "source_uid": "774b709668ab93293ba7a08db1c3952d42d5df6e99d8aa2b06a499bb20e64763",
+      "authority_name": "IDX",
+      "authority_class": "EXCHANGE",
+      "document_number": "Kep-00003/BEI/04-2025",
+      "document_date": "2025-04-08",
+      "document_url": "https://www.idx.id/id/produk-layanan/jam-dan-mekanisme-perdagangan/",
+      "document_sha256": "309d8c8ad96b82008ea8a4327037fc1e0cee115fce82724024f8cb7756731aad",
+      "document_byte_length": 346533,
+      "content_type": "text/html",
+      "transport_role": "AUTHORITY_ORIGIN"
+    },
+    {
+      "source_uid": "31b6ddc653b28c889dc92f6ee741241bf8bd22b3ae43a615de8c3e6bb630882d",
+      "authority_name": "IDX",
+      "authority_class": "EXCHANGE",
+      "document_number": "S-02774/BEI.PPG/04-2016",
+      "document_date": "2016-04-29",
+      "document_url": "https://www.dropbox.com/s/of2sbdqnhzcmslm/S-02774-BEI.PPG-04-2016.pdf?dl=1",
+      "document_sha256": "a9e14d67f8d927c0bf797ed9bb717e8e0babc3a2be2e09a67669a2ab99e1a9d6",
+      "document_byte_length": 368940,
+      "content_type": "application/pdf",
+      "transport_role": "AUTHORITY_DOCUMENT_MIRROR_REDIRECT"
+    }
+  ],
+  "revisions": [
+    {
+      "rule_uid": "d855453e58c45f78cd952f051c720bfa8c789baffefb50dbc1ebd60f5dd48899",
+      "revision_number": 1,
+      "supersedes_revision_number": null,
+      "rule_type": "PRICE_BAND",
+      "exchange_code": "IDX",
+      "market_segment": "REGULAR",
+      "instrument_scope_code": "IDX_REGULAR_STANDARD_EQUITY",
+      "effective_from": "2021-12-01",
+      "effective_to": "2023-06-04",
+      "minimum_price_idr": null,
+      "verification_state": "AUTHORITATIVE_VERIFIED",
+      "source_uid": "80b815ab96c96623ba3abe26927a53ee5840d92f364ddebe7de9ac16c18469ea",
+      "source_reference": "29/SEOJK.04/2021",
+      "coverage_scope": {
+        "dataset_coverage_start": "2023-01-02",
+        "included_boards": ["MAIN", "DEVELOPMENT", "NEW_ECONOMY"],
+        "excluded_boards": ["ACCELERATION", "SPECIAL_MONITORING"],
+        "unresolved_board_policy": "FAIL_CLOSED",
+        "use_boundary": "INTERPRETATION_ONLY_NO_SERIES_APPLICATION"
+      },
+      "tiers": [
+        {"tier_sequence": 1, "reference_price_min_idr": 50, "reference_price_min_inclusive": true, "reference_price_max_idr": 200, "reference_price_max_inclusive": true, "upper_limit_percent": 35, "lower_limit_percent": 7},
+        {"tier_sequence": 2, "reference_price_min_idr": 200, "reference_price_min_inclusive": false, "reference_price_max_idr": 5000, "reference_price_max_inclusive": true, "upper_limit_percent": 25, "lower_limit_percent": 7},
+        {"tier_sequence": 3, "reference_price_min_idr": 5000, "reference_price_min_inclusive": false, "reference_price_max_idr": null, "reference_price_max_inclusive": false, "upper_limit_percent": 20, "lower_limit_percent": 7}
+      ]
+    },
+    {
+      "rule_uid": "507faa94f6c85687c03ed54f6f6012891d39767aa42ed816aded65f66e1488cc",
+      "revision_number": 1,
+      "supersedes_revision_number": null,
+      "rule_type": "PRICE_BAND",
+      "exchange_code": "IDX",
+      "market_segment": "REGULAR",
+      "instrument_scope_code": "IDX_REGULAR_STANDARD_EQUITY",
+      "effective_from": "2023-06-05",
+      "effective_to": "2023-09-03",
+      "minimum_price_idr": null,
+      "verification_state": "AUTHORITATIVE_VERIFIED",
+      "source_uid": "3329d0dc7523911f839345c360f9f6e5c182f10844cecd3d3a6efd8f312c98f6",
+      "source_reference": "PR-043/BEI.SPR/05-2023",
+      "coverage_scope": {
+        "dataset_coverage_start": "2023-01-02",
+        "included_boards": ["MAIN", "DEVELOPMENT", "NEW_ECONOMY"],
+        "excluded_boards": ["ACCELERATION", "SPECIAL_MONITORING"],
+        "unresolved_board_policy": "FAIL_CLOSED",
+        "use_boundary": "INTERPRETATION_ONLY_NO_SERIES_APPLICATION"
+      },
+      "tiers": [
+        {"tier_sequence": 1, "reference_price_min_idr": 50, "reference_price_min_inclusive": true, "reference_price_max_idr": 200, "reference_price_max_inclusive": true, "upper_limit_percent": 35, "lower_limit_percent": 15},
+        {"tier_sequence": 2, "reference_price_min_idr": 200, "reference_price_min_inclusive": false, "reference_price_max_idr": 5000, "reference_price_max_inclusive": true, "upper_limit_percent": 25, "lower_limit_percent": 15},
+        {"tier_sequence": 3, "reference_price_min_idr": 5000, "reference_price_min_inclusive": false, "reference_price_max_idr": null, "reference_price_max_inclusive": false, "upper_limit_percent": 20, "lower_limit_percent": 15}
+      ]
+    },
+    {
+      "rule_uid": "b808384e9cb319fae751bb35ecb22c46a00bfa623c6f129a79ba745ccf58d4e7",
+      "revision_number": 1,
+      "supersedes_revision_number": null,
+      "rule_type": "PRICE_BAND",
+      "exchange_code": "IDX",
+      "market_segment": "REGULAR",
+      "instrument_scope_code": "IDX_REGULAR_STANDARD_EQUITY",
+      "effective_from": "2023-09-04",
+      "effective_to": "2025-04-07",
+      "minimum_price_idr": null,
+      "verification_state": "AUTHORITATIVE_VERIFIED",
+      "source_uid": "637f0f4b6fe0175e4efffa843ddd46b99168d6d40810c58cb720d56e4681423e",
+      "source_reference": "S-07234/BEI.POP/08-2023",
+      "coverage_scope": {
+        "dataset_coverage_start": "2023-01-02",
+        "included_boards": ["MAIN", "DEVELOPMENT", "NEW_ECONOMY"],
+        "excluded_boards": ["ACCELERATION", "SPECIAL_MONITORING"],
+        "unresolved_board_policy": "FAIL_CLOSED",
+        "use_boundary": "INTERPRETATION_ONLY_NO_SERIES_APPLICATION"
+      },
+      "tiers": [
+        {"tier_sequence": 1, "reference_price_min_idr": 50, "reference_price_min_inclusive": true, "reference_price_max_idr": 200, "reference_price_max_inclusive": true, "upper_limit_percent": 35, "lower_limit_percent": 35},
+        {"tier_sequence": 2, "reference_price_min_idr": 200, "reference_price_min_inclusive": false, "reference_price_max_idr": 5000, "reference_price_max_inclusive": true, "upper_limit_percent": 25, "lower_limit_percent": 25},
+        {"tier_sequence": 3, "reference_price_min_idr": 5000, "reference_price_min_inclusive": false, "reference_price_max_idr": null, "reference_price_max_inclusive": false, "upper_limit_percent": 20, "lower_limit_percent": 20}
+      ]
+    },
+    {
+      "rule_uid": "768fa1771ad1c340ecf6e1f71de57b7925aaca6929e3d7831052fda842f3d806",
+      "revision_number": 1,
+      "supersedes_revision_number": null,
+      "rule_type": "PRICE_BAND",
+      "exchange_code": "IDX",
+      "market_segment": "REGULAR",
+      "instrument_scope_code": "IDX_REGULAR_STANDARD_EQUITY",
+      "effective_from": "2025-04-08",
+      "effective_to": null,
+      "minimum_price_idr": null,
+      "verification_state": "AUTHORITATIVE_VERIFIED",
+      "source_uid": "774b709668ab93293ba7a08db1c3952d42d5df6e99d8aa2b06a499bb20e64763",
+      "source_reference": "Kep-00003/BEI/04-2025",
+      "coverage_scope": {
+        "dataset_coverage_start": "2023-01-02",
+        "included_boards": ["MAIN", "DEVELOPMENT", "NEW_ECONOMY"],
+        "excluded_boards": ["ACCELERATION", "SPECIAL_MONITORING"],
+        "unresolved_board_policy": "FAIL_CLOSED",
+        "use_boundary": "INTERPRETATION_ONLY_NO_SERIES_APPLICATION"
+      },
+      "tiers": [
+        {"tier_sequence": 1, "reference_price_min_idr": 50, "reference_price_min_inclusive": true, "reference_price_max_idr": 200, "reference_price_max_inclusive": true, "upper_limit_percent": 35, "lower_limit_percent": 15},
+        {"tier_sequence": 2, "reference_price_min_idr": 200, "reference_price_min_inclusive": false, "reference_price_max_idr": 5000, "reference_price_max_inclusive": true, "upper_limit_percent": 25, "lower_limit_percent": 15},
+        {"tier_sequence": 3, "reference_price_min_idr": 5000, "reference_price_min_inclusive": false, "reference_price_max_idr": null, "reference_price_max_inclusive": false, "upper_limit_percent": 20, "lower_limit_percent": 15}
+      ]
+    },
+    {
+      "rule_uid": "391e732fa0b44b3e64de098aeb003f36f66fca11e048d9cd027c3ecfabaa8b43",
+      "revision_number": 1,
+      "supersedes_revision_number": null,
+      "rule_type": "MINIMUM_PRICE",
+      "exchange_code": "IDX",
+      "market_segment": "REGULAR",
+      "instrument_scope_code": "IDX_REGULAR_STANDARD_EQUITY",
+      "effective_from": "2016-05-02",
+      "effective_to": null,
+      "minimum_price_idr": 50,
+      "verification_state": "AUTHORITATIVE_VERIFIED",
+      "source_uid": "31b6ddc653b28c889dc92f6ee741241bf8bd22b3ae43a615de8c3e6bb630882d",
+      "source_reference": "S-02774/BEI.PPG/04-2016",
+      "coverage_scope": {
+        "dataset_coverage_start": "2023-01-02",
+        "included_boards": ["MAIN", "DEVELOPMENT", "NEW_ECONOMY"],
+        "excluded_boards": ["ACCELERATION", "SPECIAL_MONITORING"],
+        "unresolved_board_policy": "FAIL_CLOSED",
+        "use_boundary": "INTERPRETATION_ONLY_NO_SERIES_APPLICATION"
+      },
+      "tiers": []
+    },
+    {
+      "rule_uid": "a1af9b9e1178b826d8ee0951a5f3b2733dbc43b82b59e2cc11634f9457a5dca8",
+      "revision_number": 1,
+      "supersedes_revision_number": null,
+      "rule_type": "TICK_SIZE",
+      "exchange_code": "IDX",
+      "market_segment": "REGULAR",
+      "instrument_scope_code": "IDX_REGULAR_STANDARD_EQUITY",
+      "effective_from": "2016-05-02",
+      "effective_to": null,
+      "minimum_price_idr": null,
+      "verification_state": "AUTHORITATIVE_VERIFIED",
+      "source_uid": "31b6ddc653b28c889dc92f6ee741241bf8bd22b3ae43a615de8c3e6bb630882d",
+      "source_reference": "S-02774/BEI.PPG/04-2016",
+      "coverage_scope": {
+        "dataset_coverage_start": "2023-01-02",
+        "included_boards": ["MAIN", "DEVELOPMENT", "NEW_ECONOMY"],
+        "excluded_boards": ["ACCELERATION", "SPECIAL_MONITORING"],
+        "unresolved_board_policy": "FAIL_CLOSED",
+        "use_boundary": "INTERPRETATION_ONLY_NO_SERIES_APPLICATION"
+      },
+      "tiers": [
+        {"tier_sequence": 1, "price_min_idr": null, "price_min_inclusive": false, "price_max_idr": 200, "price_max_inclusive": false, "tick_size_idr": 1, "maximum_price_step_idr": 10},
+        {"tier_sequence": 2, "price_min_idr": 200, "price_min_inclusive": true, "price_max_idr": 500, "price_max_inclusive": false, "tick_size_idr": 2, "maximum_price_step_idr": 20},
+        {"tier_sequence": 3, "price_min_idr": 500, "price_min_inclusive": true, "price_max_idr": 2000, "price_max_inclusive": false, "tick_size_idr": 5, "maximum_price_step_idr": 50},
+        {"tier_sequence": 4, "price_min_idr": 2000, "price_min_inclusive": true, "price_max_idr": 5000, "price_max_inclusive": false, "tick_size_idr": 10, "maximum_price_step_idr": 100},
+        {"tier_sequence": 5, "price_min_idr": 5000, "price_min_inclusive": true, "price_max_idr": null, "price_max_inclusive": false, "tick_size_idr": 25, "maximum_price_step_idr": 250}
+      ]
+    }
+  ]
+}

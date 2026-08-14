@@ -1,5 +1,7 @@
 # TEST MATRIX COVERAGE GATE
 
+Status: **LEGACY COVERAGE/PUBLICATION COMPANION — NOT CURRENT SEMANTIC CLOSURE MATRIX**. These cases remain required where compatible, but `Contract_Test_Matrix_LOCKED.md`, `Golden_Fixture_Catalog_LOCKED.md`, and `Test_Coverage_Closure_Contract_LOCKED.md` govern corrected V2 proof. Passing this file alone cannot prove temporal universe, observation/config lineage, coherent factors/products, exact ATR, actual/proxy metrics, minimum read DTO, or as-known replay.
+
 ## UNIT / SERVICE LEVEL
 
 ### PASS

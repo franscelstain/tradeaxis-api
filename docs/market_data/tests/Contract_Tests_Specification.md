@@ -1,198 +1,52 @@
-# Contract Tests Specification (LOCKED)
+# Contract Tests Specification (STRATEGY LOCKED)
 
-## Purpose
-Define the minimum automated contract tests required so Market Data Platform remains:
-- canonical
-- deterministic
-- consumer-safe
-- auditable
-- correction-safe
-- replay-verifiable
+## Proof rule
 
-This specification is normative.
-It is not satisfied by smoke tests or process-completed assertions.
+Tests derive expected meaning from independently reviewed owner contracts and oracles, not from copying current implementation output. A green test for a superseded rule is regression evidence against the new strategy, not proof of correctness.
 
-Tests in this folder prove locked behavior from the normative contracts. They must not introduce new domain rules, silently narrow or widen contract meaning, or become a parallel owner for semantics already defined in `book/`, `db/`, or locked operational contracts.
+## What a source-text assertion proves (LOCKED)
 
-## Test implementation rule (LOCKED)
-Every implemented contract test must map to:
-- a test ID from `Contract_Test_Matrix_LOCKED.md`
-- a fixture family from `Golden_Fixture_Catalog_LOCKED.md`
-- expected row-level outputs
-- expected run-level outputs
-- expected hash/seal/publication outcomes when applicable
+A test that reads implementation source and asserts on its text establishes exactly one thing: **that the text is present**. It is a lint, and it must be counted as one.
+
+- A source-text assertion proves neither old meaning nor new meaning. It proves a string exists in a file, which survives a rewrite that preserves the string and changes the behaviour, and fails on a rewrite that changes the string and preserves the behaviour.
+- Such a test may guard against **reintroduction of a named forbidden construct**, which is a legitimate and narrow purpose. It may not stand as the proof that a contract rule holds.
+- Every contract rule requires at least one assertion that **executes the path it governs**. Where only a source-text assertion exists for a rule, that rule is **unproven**, and the suite must not be described as covering it.
+- A rule whose only feasible check is textual states that explicitly, so its weakness is visible rather than absorbed into an aggregate pass count.
+
+Counting rules: a green suite is reported with its behavioural and source-text proportions separated. An aggregate figure that mixes them overstates coverage by exactly the share that never executed anything.
+
+## Fixtures must exist as artifacts (LOCKED)
+
+A fixture catalog, manifest, oracle, or vector document describes what a fixture must contain. It is not the fixture.
+
+- A specification without a corresponding artifact proves nothing and must not be cited as coverage. The correct reading of a fully specified, unbuilt fixture set is **capability absent**, not **coverage pending**.
+- Every fixture document names where its artifacts live, so their presence or absence is checkable rather than assumed.
+- An acceptance criterion that depends on a golden fixture is **unmet** while the fixture does not exist. It is not partially met by the specification being thorough.
+
+Each test identifies contract/version, fixture/manifest hash, runtime/database/build, frozen input revisions/config, assertion layers, and evidence admission state.
 
 ## Required test groups
 
-### 1. Canonical bar validation
-Must prove:
-- valid bars enter canonical artifact
-- invalid rows never enter canonical bars
-- invalid rows are preserved in audit storage
-- duplicate provider rows resolve deterministically
-- duplicate resolution is auditable
+1. **Acquisition/provenance:** immutable success/failure/stale/schema-invalid observations, secret sanitization, refetch linkage, provider-neutral mapping, wrong-date rejection.
+2. **Temporal identity:** inactive-now/active-then, listing/symbol changes, symbol reuse, provider mapping intervals, as-known cutoff.
+3. **Calendar/status/expectation:** completed IDX Regular-Market sessions, verified full-session no-bar state, unknown expectation, no dormancy/provider-absence exclusion.
+4. **Canonical bars:** exact source mapping, positive/internal OHLC consistency, zero/null rejection, duplicate conflict quarantine, actual EOD field provenance.
+5. **History/correction:** observation and snapshots immutable, corrected publication distinct, pointer switch atomic, rollback by pointer, direct repair impossible.
+6. **Corporate actions/products:** synthetic detector never verifies, ex-date and versioned event/factor lifecycle, coherent structural OHLC/volume, RAW unchanged, total return separate.
+7. **Coverage/eligibility:** expectation/delivery/quality/liquidity/status/event facts independent; unknown in denominator; complete reason sets.
+8. **Metrics/indicators:** actual versus proxy units, stable Wilder ATR long chain, warm-up/gap/correction propagation, fixed windows, null reasons, formula/config/hash determinism.
+9. **Readiness/consumer:** full minimum DTO, same publication/config/factor/formula, explicit fresh/stale/degraded/unavailable, no current/latest/internal bypass.
+10. **Replay/backtest:** exact publication and as-known modes, anti-future/anti-survivorship fixtures, original/corrected contexts.
+11. **Operations/schema:** scheduler target/lock fencing/idempotent retry, activation-aware stale alert, MariaDB clean install/upgrade, SQLite mirror, non-null enforcement and privileges.
 
-Minimum tests:
-- `bars_valid_accept`
-- `bars_invalid_reject`
-- `bars_duplicate_resolution`
+## Assertion layers
 
-### 2. Indicator correctness
-Must prove:
-- ATR14 Wilder seed
-- ATR14 recursive continuation
-- ROC20 uses D[-20]
-- vol_ratio uses prior 20 excluding D
-- hh20 is inclusive of D
-- per-date `adj_close -> close` fallback works
-- results do not depend on wall-clock date subtraction
+Required scenarios assert row values/null reasons, observation and temporal lineage, run/gate/reason states, artifact/manifest/config hashes, publication/seal/pointer state, gateway response/freshness, and replay result. Row count or exit code alone is insufficient.
 
-Minimum tests:
-- `atr14_seed`
-- `atr14_recursive`
-- `roc20_dminus20`
-- `vol_ratio_prior20_excl_d`
-- `hh20_inclusive`
-- `price_basis_adj_close_fallback`
+## Database requirement
 
-### 3. Null and warmup policy
-Must prove:
-- insufficient history produces NULL mandatory indicators
-- invalid indicators carry the correct invalid reason code
-- missing dependency bars invalidate dependent indicators
-- no forward-fill or zero-fill is used to fake readiness
+Portable unit tests may use SQLite, but uniqueness/check/FK/transaction/isolation/locking and migration behavior are proven on MariaDB. Any unsupported SQLite behavior is an explicit non-pass until MariaDB proof exists.
 
-Minimum tests:
-- `indicator_insufficient_history`
-- `missing_dependency_bar`
+## Current closure state
 
-### 4. Eligibility determinism
-Must prove:
-- one eligibility row exists per universe ticker/date
-- missing bars map to the correct reason code
-- invalid indicators map to the correct reason code
-- insufficient history maps to the correct reason code
-- eligibility semantics do not depend on downstream ranking or selection logic
-
-Minimum tests:
-- `eligibility_one_row_per_universe`
-- `eligibility_missing_bar`
-- `eligibility_invalid_indicators`
-- `eligibility_insufficient_history`
-
-### 5. Effective-date readiness and fallback
-Must prove:
-- held requested date falls back to prior readable sealed date
-- if no prior readable date exists, effective date stays NULL
-- consumers do not infer readability from `MAX(trade_date)`
-- readable state requires seal
-
-Minimum tests:
-- `effective_date_hold_fallback`
-- `effective_date_no_prior_success`
-- `success_requires_seal`
-
-### 6. Hash determinism and reproducibility
-Must prove:
-- identical content yields identical hashes
-- different `run_id` alone does not change hashes
-- changed content changes the relevant hash
-- field ordering is fixed
-- formatting is fixed
-- null serialization is fixed
-- hashing covers only the effective-date artifact content being sealed
-
-Minimum tests:
-- `hash_same_content_same_hash`
-- `hash_different_runid_same_hash`
-- `hash_changed_content_diff_hash`
-- `hash_field_order_locked`
-- `hash_formatting_locked`
-
-### 7. Seal/finalize sequencing
-Must prove:
-- seal cannot happen before mandatory hashes
-- final success cannot happen before seal
-- a readable publication maps to one coherent sealed run context
-
-Minimum tests:
-- `seal_requires_hashes`
-- `success_requires_seal`
-- `single_current_publication`
-
-### 8. Historical correction integrity
-Must prove:
-- prior published state remains queryable after correction
-- corrected publication becomes current only after reseal
-- unchanged rerun does not create fake correction publication
-- unapproved correction does not publish
-- failed reseal does not switch current publication
-
-Minimum tests:
-- `correction_preserves_prior_publication`
-- `correction_publishes_new_current`
-- `correction_unchanged_content_no_publish`
-- `correction_requires_approval`
-- `correction_failed_reseal_no_switch`
-
-### 9. Replay and data-quality proof
-Must prove:
-- identical replay inputs reproduce identical outputs/hashes
-- degraded input produces expected degraded outcome
-- runtime/locale differences do not change hash payload formatting
-
-Minimum tests:
-- `replay_same_input_same_output`
-- `replay_degraded_expected_hold`
-- `replay_runtime_format_stability`
-
-## Minimum assertion payload per implemented test (LOCKED)
-Every implemented test must assert all relevant layers below:
-
-### Row-level assertions
-Examples:
-- expected canonical bar rows
-- expected invalid rows
-- expected indicator values
-- expected eligibility rows
-- expected reason codes
-
-### Run-level assertions
-Examples:
-- expected terminal status
-- expected effective date
-- expected counts
-- expected warning/hard reject counts
-
-### Hash-level assertions
-Examples:
-- expected bars hash
-- expected indicators hash
-- expected eligibility hash
-- equality across identical reruns
-- inequality across changed-content correction runs
-
-### Publication-level assertions
-Examples:
-- seal exists or does not exist
-- current publication did or did not switch
-- superseded publication preserved
-- unchanged rerun did not create new current publication
-
-## Anti-ambiguity rule (LOCKED)
-A test is incomplete if it only validates process completion without validating the contract outputs that matter to consumers and auditors.
-
-
-## Read-Side Enforcement / Anti Bypass Total Tests
-
-Required tests:
-
-- `ReadablePublicationReadContractIntegrationTest` proves pointer-resolved readable/current reads for eligibility/evidence consumers.
-- `PublicationRepositoryIntegrationTest` proves current publication resolution fails safe when pointer/publication/run state is invalid.
-- `ReadSideAntiBypassStaticContractTest` proves consumer read files do not introduce latest/current shortcuts such as `MAX(trade_date)`, `MAX(publication_id)`, unsafe latest naming, or direct artifact reads without pointer/readability validation.
-
-Acceptance:
-
-- Consumer read path returns data only when `eod_current_publication_pointer` resolves to a sealed current publication whose run is `SUCCESS` and `READABLE`.
-- Pointer missing, non-readable publication, invalid current mirror, or stale pointer must produce controlled empty/null/fail-safe behavior.
-- Direct raw/artifact table access remains allowed only for write/admin/test setup classifications.
+The V2 schema mirror test proves only table/column presence and removal of the draft repair schema. Most behavior groups above remain unimplemented or unexecuted; therefore order 21 and production relock remain open.

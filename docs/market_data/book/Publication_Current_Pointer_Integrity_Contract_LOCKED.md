@@ -122,3 +122,15 @@ If affected non-readable dates are recomputed, pointer state remains unchanged u
 When out-of-order impact execution promotes an affected date that is not already readable/current, pointer changes are allowed only through the existing `promoteDaily()` coverage/hash/seal/finalize path. The impact executor itself does not write pointer state.
 
 If the affected date is already readable/current, impact execution must not call ordinary promote as a shortcut. It must preserve the existing pointer and require correction/republication.
+
+## Capability boundary (LOCKED)
+
+**What pointer integrity proves.** That at most one publication per scope is current, that the current publication is sealed and valid, and that integrity violations are detected and fail closed rather than resolving by recency.
+
+**What it cannot prove.**
+
+- **That the current publication is the one that should be current.** Integrity is a structural property. A structurally perfect pointer to a superseded-in-substance publication passes every check.
+- **That undetected drift did not occur between scans.** Integrity is established when the scan runs; between runs the property is assumed, not observed.
+- **That a repaired pointer restored the right state.** Pointer repair may clear ambiguity among valid publications; which of them deserves to be current is a publication-lifecycle question, not a pointer-integrity one.
+
+Consequently a passing pointer-integrity scan may be cited as evidence that **the pointer is structurally sound**, never as evidence that **consumers are reading the correct data**.

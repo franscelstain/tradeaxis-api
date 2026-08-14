@@ -26,11 +26,17 @@ class EodRun extends Model
         'publication_id' => 'integer',
         'correction_id' => 'integer',
         'coverage_universe_count' => 'integer',
+        'coverage_bar_not_expected_count' => 'integer',
+        'coverage_expected_count' => 'integer',
+        'coverage_expectation_unknown_count' => 'integer',
+        'coverage_delivered_count' => 'integer',
+        'coverage_delivered_valid_count' => 'integer',
         'coverage_available_count' => 'integer',
         'coverage_missing_count' => 'integer',
         'coverage_ratio' => 'float',
         'coverage_min_threshold' => 'float',
         'coverage_missing_sample_json' => 'array',
+        'knowledge_cutoff_at' => 'datetime',
         'bars_rows_written' => 'integer',
         'indicators_rows_written' => 'integer',
         'eligibility_rows_written' => 'integer',
@@ -38,5 +44,30 @@ class EodRun extends Model
         'invalid_indicator_count' => 'integer',
         'hard_reject_count' => 'integer',
         'warning_count' => 'integer',
+        'config_snapshot_id' => 'integer',
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::updating(function (EodRun $run) {
+            if ($run->isDirty('knowledge_cutoff_at')) {
+                throw new \LogicException(
+                    'RUN_KNOWLEDGE_CUTOFF_IMMUTABLE: knowledge_cutoff_at is fixed when the run is created.'
+                );
+            }
+        });
+    }
+
+    public function assertKnowledgeCutoffForExecution(): void
+    {
+        $knowledgeCutoff = $this->getAttributes()['knowledge_cutoff_at'] ?? null;
+
+        if ($knowledgeCutoff === null || trim((string) $knowledgeCutoff) === '') {
+            throw new \LogicException(
+                'RUN_KNOWLEDGE_CUTOFF_MISSING: a run without a creation-time knowledge cutoff cannot execute.'
+            );
+        }
+    }
 }

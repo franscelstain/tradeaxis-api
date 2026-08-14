@@ -49,10 +49,14 @@ Such a mode does not currently exist as an accepted production command. It must 
 
 The invalid command `market-data:eod-indicators:republish-current` remains removed after operator runtime proved it failed the seal/hash lifecycle and did not satisfy this contract.
 
+"Removed" means the class no longer exists. It was previously only deregistered from the console kernel, and `RepublishCurrentIndicatorsCommand.php` stayed in the repository for some time afterwards — unreachable, untested, and still carrying a hand-rolled stage sequence that bypassed `promoteDaily`, which is where the hash and seal stages are orchestrated. That is the defect the runtime proof found. The file has since been deleted.
+
+Its one capability the approved command lacked, `--max_dates`, was carried over rather than lost: it bounds how many current publications a single recompute run may replace.
+
 The approved recompute command uses correction-current lifecycle: it snapshots existing current bars into candidate history, recomputes indicators and eligibility, hashes, seals, finalizes, and switches the current pointer only when validation passes.
 
 ## Non-error indicator rule
-Indicator nullability remains per field. Missing/insufficient dependencies such as MA20, MA50, ROC20, ATR14, sector benchmark history, or zero-placeholder OHLCV must produce NULL only for affected fields and must not fail the whole publication date.
+Indicator nullability remains per field. Missing/insufficient dependencies such as MA20, MA50, ROC20, ATR14, or sector benchmark history produce NULL only for affected fields and must not fail the whole publication date. **Zero-price placeholder OHLCV is not a dependency state because canonical zero OHLC placeholders are forbidden**; a missing/invalid observation remains missing/invalid evidence and dependent fields become NULL with the applicable reason set.
 
 ## Runtime lock evidence
 

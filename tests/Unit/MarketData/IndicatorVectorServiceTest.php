@@ -9,7 +9,6 @@ class IndicatorVectorServiceTest extends TestCase
     {
         return [
             'set_version' => 'ind_v1',
-            'lot_size' => 100,
             'price_basis_default' => 'close',
             'dv_window_days' => 20,
             'atr_window_days' => 14,
@@ -95,6 +94,23 @@ class IndicatorVectorServiceTest extends TestCase
         $this->assertEqualsWithDelta(2.5, $row['sector_roc20'], 0.000000001);
         $this->assertEqualsWithDelta(12.31481481, $row['rs_20_vs_sector'], 0.000000001);
         $this->assertEqualsWithDelta(-2.5, $row['sector_rs_20_vs_ihsg'], 0.000000001);
+    }
+
+    /**
+     * Locks the turnover formula to price times share volume, with no lot multiplier.
+     *
+     * The fixture uses close = 100 + i and volume = 1000 + 10i, so daily value is
+     * 10 * (100 + i)^2 and the 20-day window i = 36..55 averages to 212,035. A lot
+     * multiplier of 100 would yield 21,203,500 instead.
+     *
+     * Owner contract: docs/market_data/registry/Volume_and_Turnover_Normalization_LOCKED.md
+     */
+    public function test_dv20_idr_uses_share_volume_without_a_lot_multiplier()
+    {
+        $service = new IndicatorVectorService();
+        $row = $service->buildRow(101, $this->bars(55), '2026-05-25', 55, 9001, '2026-05-25 18:00:00', $this->config());
+
+        $this->assertSame(212035.0, $row['dv20_idr']);
     }
 
     public function test_extension_indicators_remain_null_when_optional_lookback_or_benchmark_dependency_is_missing()

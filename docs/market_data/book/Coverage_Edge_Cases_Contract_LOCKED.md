@@ -38,7 +38,7 @@ If the expected universe is 900 and only 400 requested-date canonical valid bars
 - final reason must identify the edge as `RUN_PARTIAL_DATA` when partial counts are available
 - fallback may only point to a previous `READABLE` publication
 
-Partial data must not be promoted as requested-date current readable publication.
+Coverage-failing partial data must not be promoted as requested-date current readable publication. A bounded gap at or above the locked `0.98` threshold follows `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`: missing listings stay explicit and all independent hard gates must still pass.
 
 ## 4. Delayed Data Rule
 
@@ -150,3 +150,23 @@ Runtime mapping:
 ## 11. Non-Negotiable Invariant
 
 No edge case may produce `READABLE` unless coverage is `PASS`.
+
+## 12. Dormancy, zero-volume, and provider-outage correction (LOCKED)
+
+Dormancy and zero-volume history are factual liquidity/activity observations, not proof that a bar was not expected and not automatic failures of upstream data usability. They remain in the coverage denominator unless verified temporal calendar/listing/status evidence says `NOT_EXPECTED` for the full Regular-Market session.
+
+A provider that stops serving an otherwise valid listing must continue increasing missing delivery; no elapsed-day threshold may hide it. A valid zero-volume canonical bar is delivered coverage and remains explicit for downstream tradability policy. A missing row is not delivered even when the instrument was historically illiquid.
+
+Coverage edge handling must expose expectation, delivery, canonical validity, quality, liquidity, and eligibility as separate counts/states.
+
+## Capability boundary (LOCKED)
+
+**What edge-case handling proves.** That dormancy, zero volume, delayed delivery, and provider outage are classified explicitly rather than absorbed into the denominator, and that each classification carries its own reason.
+
+**What it cannot prove.**
+
+- **That the classification matches reality.** An instrument correctly classified dormant by the declared rule may simply have had no trade that day; the rule sorts observations, it does not diagnose the market.
+- **That the edge-case set is complete.** Cases are enumerated as they are discovered. A situation not yet enumerated falls through to the default path, and the default path is safe only for cases someone anticipated.
+- **That a rarely triggered branch works.** Frequency of use is not evidence of correctness; a branch triggered once a year is exercised by production once a year.
+
+Consequently a clean edge-case classification may be cited as evidence that **known cases were sorted by declared rules**, never as evidence that **nothing unusual happened**.

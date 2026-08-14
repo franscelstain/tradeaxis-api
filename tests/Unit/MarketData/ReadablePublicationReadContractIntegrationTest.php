@@ -17,7 +17,10 @@ class ReadablePublicationReadContractIntegrationTest extends TestCase
         config()->set('market_data.tickers.table', 'tickers');
         config()->set('market_data.tickers.id_column', 'ticker_id');
         config()->set('market_data.tickers.code_column', 'ticker_code');
-        config()->set('market_data.session_snapshot.scope_default', 'universe_only');
+        // `eligibility_set` is the contract's recommended default. The previous value here,
+        // `universe_only`, appeared nowhere in the scope contract and produced identical behaviour,
+        // since the query reads eligibility rows either way.
+        config()->set('market_data.session_snapshot.scope_default', 'eligibility_set');
 
         DB::table('tickers')->insert([
             ['ticker_id' => 1, 'ticker_code' => 'BBCA', 'is_active' => 1],
@@ -118,6 +121,37 @@ class ReadablePublicationReadContractIntegrationTest extends TestCase
     {
         DB::table('eod_runs')->where('run_id', 25)->update([
             'publishability_state' => 'NOT_READABLE',
+        ]);
+
+        $repository = new EligibilitySnapshotScopeRepository();
+
+        $this->assertSame([], $repository->getScopeForTradeDate('2026-03-20'));
+    }
+
+    /**
+     * Seal is the proof that the dataset content was frozen and hashed. An unsealed
+     * publication may still be mutating, so it must never reach a consumer even when the
+     * pointer happens to reference it.
+     */
+    public function test_scope_repository_returns_empty_when_current_publication_is_not_sealed(): void
+    {
+        DB::table('eod_publications')->where('publication_id', 10)->update([
+            'seal_state' => 'UNSEALED',
+        ]);
+
+        $repository = new EligibilitySnapshotScopeRepository();
+
+        $this->assertSame([], $repository->getScopeForTradeDate('2026-03-20'));
+    }
+
+    /**
+     * A superseded publication is audit-only. Being newer or having a larger run id must not
+     * make it readable.
+     */
+    public function test_scope_repository_returns_empty_when_publication_is_no_longer_current(): void
+    {
+        DB::table('eod_publications')->where('publication_id', 10)->update([
+            'is_current' => 0,
         ]);
 
         $repository = new EligibilitySnapshotScopeRepository();

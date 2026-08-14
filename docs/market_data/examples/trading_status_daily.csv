@@ -1,6 +1,0 @@
-ticker_code,trade_date,event_type_code,source_name,source_ref,notes
-RGAS,2026-07-02,SUSPENDED,idx_official_suspensi,https://www.idx.co.id/id/berita/suspensi,IDX menghentikan sementara perdagangan RGAS.
-BKDP,2026-07-02,UNSUSPENDED,idx_official_suspensi,https://www.idx.co.id/id/berita/suspensi,IDX membuka kembali perdagangan BKDP.
-BAPA,2026-07-02,SPECIAL_MONITORING_START,idx_official_special_monitoring,https://www.idx.co.id/id/perusahaan-tercatat/daftar-efek-pemantauan-khusus,BAPA masuk Papan Pemantauan Khusus.
-META,2026-07-02,SPECIAL_MONITORING_END,idx_official_special_monitoring,https://www.idx.co.id/id/perusahaan-tercatat/daftar-efek-pemantauan-khusus,META keluar dari Papan Pemantauan Khusus.
-BBCA,2026-07-02,UMA,idx_official_uma,https://www.idx.co.id/id/berita/uma,IDX mengumumkan UMA untuk BBCA.

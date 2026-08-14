@@ -7,7 +7,9 @@
 
 ## Capture policy
 
-`market-data:session-snapshot` is state-changing because it replaces rows for a specific `(trade_date, snapshot_slot)` scope. It is allowed without a separate `--apply` flag because the mutation is slot-scoped, deterministic, and still guarded by the readable-current-publication contract inside `SessionSnapshotService`. The command must render `trade_date`, `trade_date_effective`, `publication_id`, `run_id`, capture counts, skipped counts, slot tolerance, and output artifact path.
+`market-data:session-snapshot` is state-changing because it materializes the projection for a specific `(trade_date, snapshot_slot, listing_id)` scope. A retry may replace the **slot projection** only if the underlying acquisition/source observations remain append-only and auditable; it must never mutate the EOD canonical dataset or discard observation lineage. `ticker_id` is compatibility/display only.
+
+It is allowed without a separate `--apply` flag because the projection mutation is slot-scoped, deterministic, and guarded by a specific readable publication/config context. The command must render `trade_date`, `trade_date_effective`, `publication_id`/scope publication, config snapshot/hash, `run_id`, capture counts, skipped counts, slot tolerance, and output artifact path.
 
 `trade_date` and `snapshot_slot` are required by the operator contract. Parser-level optional arguments are allowed only so missing input returns `status=BLOCKED` with `reason_code=COMMAND_MISSING_REQUIRED_INPUT`; a missing slot must not fall through to a framework missing-argument error.
 

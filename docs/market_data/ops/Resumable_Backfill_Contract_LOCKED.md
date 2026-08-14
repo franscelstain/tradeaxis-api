@@ -2,6 +2,12 @@
 
 Backfill must be restartable by date range without corrupting canonical output.
 
+## V2 immutable-observation / candidate-projection boundary (LOCKED)
+
+Every retry/refetch first appends a new immutable source observation/acquisition attempt. The term **partial-upsert** retained in the historical amendment below applies only to an **unsealed mutable candidate/workspace projection** used to assemble a publication candidate; it never means overwriting the immutable observation, a sealed publication/history snapshot, or a revision already bound to readable output. Target row identity is stable `listing_id`; legacy ticker/date keys are compatibility projection only.
+
+If a selected observation changes for any already-readable date, correction/republication is mandatory. If a not-yet-readable candidate is rebuilt, the replacement must retain old/new observation lineage so the candidate remains reproducible.
+
 ## Locked rules
 - each date is processed idempotently
 - completed dates do not need to be recomputed unless explicitly requested
@@ -15,11 +21,11 @@ Backfill must be restartable by date range without corrupting canonical output.
 When `--resume --only-failed` retries a failed source checkpoint:
 
 - retry still failed -> source state remains blocked, recovered apply is `NOOP`, no derived reprocess, no fake readable
-- retry succeeded with rows -> recovered rows must be partial-upserted before the command returns
+- retry succeeded with rows -> append the recovered source observation, then merge it into the **unsealed candidate projection** before the command returns; historical wording calls this a partial-upsert
 - retry succeeded with unchanged rows -> recovered apply is `UNCHANGED` and derived reprocess is `NOOP_UNCHANGED_BARS`
 - retry succeeded with changed rows -> affected dates are resolved and non-readable affected dates execute indicator/eligibility reprocess
 
-The resume checkpoint identity remains window/ticker scoped. Recovered row apply must not use full-date replacement.
+The resume checkpoint identity remains window/ticker scoped. Recovered candidate-projection merge must not use full-date replacement and must key stable `listing_id`; it must never mutate immutable observation or sealed/history content.
 
 ---
 

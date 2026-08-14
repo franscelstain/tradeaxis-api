@@ -132,21 +132,8 @@ class LoggingTraceabilityReasonCodesStaticGuardTest extends TestCase
         $this->assertStringNotContainsString('Final run state below is still forced to non-readable if pointer cleanup fails.', $pipeline);
     }
 
-    public function test_no_forbidden_latest_trade_date_shortcuts_are_introduced_in_logging_scope(): void
-    {
-        foreach ([
-            'app/Application/MarketData/Services/MarketDataPipelineService.php',
-            'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
-            'app/Application/MarketData/Services/ReplayVerificationService.php',
-            'app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php',
-            'app/Infrastructure/Persistence/MarketData/EodRunRepository.php',
-        ] as $path) {
-            $source = $this->readProjectFile($path);
-            foreach (["MAX(trade_date)", "max('trade_date')", "latest('trade_date')", "orderByDesc('trade_date')", 'ORDER BY trade_date DESC'] as $forbidden) {
-                $this->assertStringNotContainsString($forbidden, $source, $path.' contains forbidden latest-date shortcut '.$forbidden);
-            }
-        }
-    }
+    // The latest-trade-date prohibition previously checked five named paths here.
+    // ReadPathShortcutProhibitionTest applies it to the whole runtime.
 
     private function readProjectFile($relativePath): string
     {

@@ -23,6 +23,7 @@ use App\Application\Watchlist\Services\WatchlistBacktestPriceQualityP01ParamGrid
 use App\Application\Watchlist\Services\WatchlistBacktestPriceQualityP01RemediationParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestTailRiskS01ParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestTailRiskS01RemediationParamGridCatalog;
+use App\Application\Watchlist\Services\WatchlistBacktestBreakoutIntegrityB01ParamGridCatalog;
 use App\Application\Watchlist\Services\WatchlistBacktestR2ParamGridCatalog;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -387,6 +388,11 @@ class WatchlistBacktestParamGridRepository
                 WatchlistBacktestTailRiskS01RemediationParamGridCatalog::CATALOG_VERSION,
                 WatchlistBacktestTailRiskS01RemediationParamGridCatalog::hash(),
                 WatchlistBacktestTailRiskS01RemediationParamGridCatalog::CATALOG_COUNT,
+            ],
+            WatchlistBacktestBreakoutIntegrityB01ParamGridCatalog::CATALOG_CODE => [
+                WatchlistBacktestBreakoutIntegrityB01ParamGridCatalog::CATALOG_VERSION,
+                WatchlistBacktestBreakoutIntegrityB01ParamGridCatalog::hash(),
+                WatchlistBacktestBreakoutIntegrityB01ParamGridCatalog::CATALOG_COUNT,
             ],
         ];
         if (! isset($known[$code])) {

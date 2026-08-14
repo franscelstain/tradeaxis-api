@@ -21,7 +21,7 @@ Import/ingest is the process of accepting source data into traceable run/candida
 - `promote`
 - `full_publish`
 - `correction`
-- `repair_candidate`
+- `correction_candidate` (legacy persisted/request alias `repair_candidate` may be accepted only for backward compatibility and must never authorize in-place repair)
 - `replay_verify`
 - `evidence_export`
 
@@ -57,3 +57,7 @@ Promote must be explicit and must validate, in order of runtime proof, source/im
 ## Evidence and replay boundary
 
 Evidence export must show whether a run is import-only or promoted without requiring direct DB inspection. Replay must compare expected vs actual request mode, source mode, import status, promote status, publication state, pointer state, and reason code. Unexpected import promotion must be a replay mismatch, not a silent pass.
+
+## Capability boundary scope (LOCKED)
+
+**Gate 11: not applicable.** Kontrak ini menetapkan pemisahan tanggung jawab antara fase import dan promote. Ia tidak menghasilkan verdict, state, flag, atau signal yang dapat dikutip sebagai bukti tentang data, sehingga tidak memiliki wilayah buta untuk dinyatakan. Mekanisme yang memang menghasilkan keluaran semacam itu menyatakan batasnya pada owner contract-nya masing-masing.

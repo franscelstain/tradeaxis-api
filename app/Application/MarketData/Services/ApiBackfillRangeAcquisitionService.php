@@ -2,7 +2,7 @@
 
 namespace App\Application\MarketData\Services;
 
-use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
+use App\Application\MarketData\Ports\ApiEodBarsSource;
 use App\Infrastructure\MarketData\Source\SourceAcquisitionException;
 use Carbon\Carbon;
 
@@ -10,7 +10,7 @@ class ApiBackfillRangeAcquisitionService
 {
     private $apiSourceAdapter;
 
-    public function __construct(PublicApiEodBarsAdapter $apiSourceAdapter)
+    public function __construct(ApiEodBarsSource $apiSourceAdapter)
     {
         $this->apiSourceAdapter = $apiSourceAdapter;
     }

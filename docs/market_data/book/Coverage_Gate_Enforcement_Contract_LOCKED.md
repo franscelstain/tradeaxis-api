@@ -2,19 +2,30 @@
 
 Status: LOCKED  
 Contract owner: Market Data / Publication Safety  
-Last updated: 2026-04-27
+Last updated: 2026-08-12
 
 ## Purpose
 
-Coverage gate is the single source of truth for deciding whether an EOD publication candidate may become readable and current. Coverage is not metadata-only; it is an enforcing gate that controls finalize outcome, terminal status, publishability, current pointer ownership, evidence export, and replay verification.
+Coverage gate is the enforcing owner for delivery completeness, but not the sole readability decision. Independent quality, provenance, event-risk, eligibility, seal, and pointer gates must also pass.
 
 ## Coverage Inputs
 
-Coverage MUST be evaluated from persisted canonical valid EOD bars for the requested trade date and the applicable publication candidate when one is supplied.
+Coverage MUST be evaluated from persisted temporal expectation plus immutable requested-date delivery evidence for the applicable candidate. Canonical-valid rows are a separate quality/readability count and are never substituted for delivery evidence.
 
 Required fields:
 
 - `expected_universe_count`
+- `coverage_universe_count` raw temporal-universe evidence
+- `coverage_universe_hash`
+- `verified_not_expected_count`
+- `coverage_bar_not_expected_count` persisted/evidence field
+- `expectation_unknown_count`
+- `coverage_expectation_unknown_count` persisted/evidence field
+- `delivered_observation_count`
+- `coverage_delivered_count` persisted/evidence field
+- `canonical_valid_count`
+- `coverage_delivered_valid_count` persisted/evidence field
+- `quality_blocked_count`
 - `available_eod_count`
 - `missing_eod_count`
 - `expected_bar_count` / `coverage_expected_count` evidence alias
@@ -30,16 +41,24 @@ Required fields:
 - `coverage_universe_basis`
 - `coverage_contract_version`
 - `coverage_missing_sample`
+- `coverage_missing_sample_json` exact stored-field export
+- `coverage_excluded_sample_json`
 
 ## Calculation Rules
 
-`expected_universe_count` is the number of active ticker universe members for the trade date according to the locked universe definition.
+`expected_universe_count` is the temporal as-of-D universe count minus only verified `NOT_EXPECTED` listing/date states. `UNKNOWN` remains included.
 
-`available_eod_count` is the count of unique canonical valid EOD bar ticker IDs for the trade date that also belong to the expected universe.
+`available_eod_count`/`delivered_observation_count` is the count of unique traceably delivered requested-date market observations in the expected universe. Canonical-valid and quality-blocked counts remain separate.
 
-`missing_eod_count = expected_universe_count - available_eod_count`.
+`missing_eod_count = expected_universe_count - delivered_observation_count`.
 
-`coverage_ratio = available_eod_count / expected_universe_count`.
+`coverage_available_count` remains a canonical-availability compatibility metric. It must never be
+substituted for `coverage_delivered_count`, just as raw `coverage_universe_count` must never be
+substituted for `coverage_expected_count`.
+
+`coverage_ratio = delivered_observation_count / expected_universe_count`.
+
+Dormancy, zero volume, illiquidity, provider failure, or current activity/status may not reduce `expected_universe_count`. Delivered-but-invalid observations can contribute to delivery measurement but independently block quality/eligibility/readability.
 
 The single locked platform threshold is `MARKET_DATA_COVERAGE_MIN = 0.98`. Runtime config key `market_data.coverage_gate.min_ratio` and legacy alias `market_data.platform.coverage_min` must resolve to the same 0.98 default unless a future locked policy update changes it explicitly.
 
@@ -49,7 +68,7 @@ When `expected_universe_count = 0`, coverage MUST NOT be coerced to 0 or 1. The 
 
 Allowed coverage gate statuses:
 
-- `PASS`: `expected_universe_count > 0` and `coverage_ratio >= coverage_threshold_value`
+- `PASS`: `expected_universe_count > 0` and `coverage_ratio >= coverage_threshold_value`; this does not imply quality/readability pass
 - `FAIL`: `expected_universe_count > 0` and `coverage_ratio < coverage_threshold_value`
 - `NOT_EVALUABLE`: `expected_universe_count = 0` or coverage cannot be evaluated safely
 
@@ -107,7 +126,12 @@ Replay verification MUST compare coverage fields when present in the fixture exp
 Required replay-comparable coverage fields:
 
 - `coverage_universe_count`
+- `coverage_universe_hash`
 - `coverage_expected_count`
+- `coverage_bar_not_expected_count`
+- `coverage_expectation_unknown_count`
+- `coverage_delivered_count`
+- `coverage_delivered_valid_count`
 - `coverage_available_count`
 - `coverage_missing_count`
 - `expected_bar_count`
@@ -122,6 +146,8 @@ Required replay-comparable coverage fields:
 - `coverage_universe_basis`
 - `coverage_contract_version`
 - `coverage_missing_sample`
+- `coverage_missing_sample_json`
+- `coverage_excluded_sample_json`
 
 ## Command Enforcement
 
@@ -133,6 +159,20 @@ The following are forbidden:
 
 - treating coverage as metadata-only
 - allowing current publication when coverage is `FAIL` or `NOT_EVALUABLE`
-- allowing source mode, manual file, correction, repair, replay, or evidence export to bypass coverage enforcement
+- allowing source mode, manual file, correction/republication, pointer-integrity repair, replay, or evidence export to bypass coverage enforcement
+- excluding dormant, zero-volume, illiquid, provider-missing, or current-inactive listings without verified point-in-time `NOT_EXPECTED` evidence
+- treating delivery coverage as quality or eligibility
 - using fallback to convert a failed candidate into readable
 - changing threshold without an explicit locked policy update
+
+## Capability boundary (LOCKED)
+
+**What gate enforcement proves.** That the coverage decision was computed from governed counts, compared against the bound threshold, and that a failing or non-evaluable result blocked readability rather than degrading quietly.
+
+**What it cannot prove.**
+
+- **That a passing ratio means the delivered data is right.** The gate counts delivered observations against expected ones. Correctness of the values is a different dimension with its own gates, and passing here says nothing about it.
+- **That the threshold is the right threshold.** A configured boundary expresses a chosen tolerance. A date just above it is not thereby sound, and a date just below it is not thereby unusable.
+- **That the counts it compared were themselves correct.** Numerator and denominator arrive from delivery and expectation resolution. If either is wrong, the gate computes a precise ratio of wrong numbers and reports it confidently.
+
+Consequently a coverage `PASS` may be cited as evidence that **the delivered share met the declared threshold**, never as evidence that **the date is complete or correct**.

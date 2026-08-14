@@ -150,7 +150,14 @@ class MarketDataInvariantGuard
 
     private function assertCoverageTelemetryCompleteForReadable($state, $context): void
     {
-        $expected = $this->numericCoverageField($state, 'expected_universe_count', ['coverage_universe_count', 'run_coverage_universe_count']);
+        $expected = $this->numericCoverageField($state, 'expected_universe_count', [
+            'coverage_expected_count',
+            'run_coverage_expected_count',
+            // Legacy publications predate the explicit denominator field. Raw universe remains a
+            // compatibility fallback only when neither explicit expected-count alias is present.
+            'coverage_universe_count',
+            'run_coverage_universe_count',
+        ]);
         $available = $this->numericCoverageField($state, 'available_eod_count', ['coverage_available_count', 'run_coverage_available_count']);
         $missing = $this->numericCoverageField($state, 'missing_eod_count', ['coverage_missing_count', 'run_coverage_missing_count']);
         $ratio = $this->numericCoverageField($state, 'coverage_ratio', ['run_coverage_ratio']);

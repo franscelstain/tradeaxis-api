@@ -190,6 +190,28 @@ class WatchlistConfirmOverlayServiceTest extends TestCase
         $this->assertSame('WATCHLIST_CONFIRM_SOURCE_PLAN_NOT_READY', $result['reason_code']);
     }
 
+    public function test_recommendation_only_entrypoint_fails_closed_without_immutable_plan_membership(): void
+    {
+        $service = new WatchlistConfirmOverlayService();
+        $recommendation = $this->recommendationOutput([
+            [
+                'ticker_id' => 1,
+                'ticker_code' => 'TOPA',
+                'recommended_flag' => true,
+                'plan_group_semantic' => 'TOP_PICKS',
+            ],
+        ]);
+
+        $result = $service->confirmFromRecommendationOutput($recommendation, [
+            ['ticker_code' => 'TOPA', 'confirm_state' => 'CONFIRMED'],
+        ]);
+
+        $this->assertFalse($result['is_ready']);
+        $this->assertSame('WATCHLIST_CONFIRM_SOURCE_PLAN_REQUIRED', $result['reason_code']);
+        $this->assertSame([], $result['items']);
+        $this->assertStringContainsString('immutable PLAN output', $result['message']);
+    }
+
     public function test_confirm_overlay_does_not_produce_portfolio_execution_backtest_or_command_fields(): void
     {
         $planOutput = $this->planOutput([

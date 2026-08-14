@@ -315,6 +315,7 @@ class WatchlistPlanGroupingService
             'SIGNAL_IHSG_MIXED_REGIME_ONLY',
             'SIGNAL_ROC20_10_TO_15_AND_IHSG_NON_WEAK',
             WatchlistBacktestPriceQualityP01ParamGridCatalog::RULE_CODE,
+            WatchlistBacktestBreakoutIntegrityB01ParamGridCatalog::RULE_CODE,
         ], true)) {
             return $context;
         }
@@ -356,6 +357,7 @@ class WatchlistPlanGroupingService
                 'SIGNAL_IHSG_MIXED_REGIME_ONLY',
                 'SIGNAL_ROC20_10_TO_15_AND_IHSG_NON_WEAK',
                 WatchlistBacktestPriceQualityP01ParamGridCatalog::RULE_CODE,
+                WatchlistBacktestBreakoutIntegrityB01ParamGridCatalog::RULE_CODE,
             ], true)) {
             return $items;
         }
@@ -452,6 +454,47 @@ class WatchlistPlanGroupingService
                 && $signalClose >= $minSignalClose
                 ? []
                 : ['WATCHLIST_P01_MIN_SIGNAL_PRICE_QUALITY_FAIL'];
+        }
+        if ($ruleCode
+            === WatchlistBacktestBreakoutIntegrityB01ParamGridCatalog::RULE_CODE) {
+            $roc20 = $this->fractionOrNull(
+                $momentum['roc20'] ?? $metrics['roc20'] ?? null
+            );
+            $closeToHh20 = $this->fractionOrNull(
+                $breakout['close_to_hh20_pct']
+                    ?? $metrics['close_to_hh20_pct']
+                    ?? null
+            );
+            $signalClose = $this->numericOrNull(
+                $metrics['signal_close_price']
+                    ?? $item['signal_close_price']
+                    ?? $item['close_price']
+                    ?? null
+            );
+            $min = $this->numericOrNull($thresholds['min_roc20'] ?? null);
+            $max = $this->numericOrNull($thresholds['max_roc20'] ?? null);
+            $minSignalClose = $this->numericOrNull(
+                $thresholds['min_signal_close_price'] ?? null
+            );
+            $minCloseToHh20 = $this->numericOrNull(
+                $thresholds['min_close_to_hh20_pct'] ?? null
+            );
+            $allowed = is_array($thresholds['allowed_regimes'] ?? null)
+                ? array_values(array_map('strval', $thresholds['allowed_regimes']))
+                : [];
+            $regime = (string) (
+                $metrics['market_regime'] ?? $item['market_regime'] ?? ''
+            );
+
+            return $roc20 !== null && $closeToHh20 !== null
+                && $signalClose !== null && $min !== null && $max !== null
+                && $minSignalClose !== null && $minCloseToHh20 !== null
+                && $roc20 >= $min && $roc20 <= $max
+                && in_array($regime, $allowed, true)
+                && $signalClose >= $minSignalClose
+                && $closeToHh20 >= $minCloseToHh20
+                ? []
+                : ['WATCHLIST_B01_BREAKOUT_INTEGRITY_FAIL'];
         }
         if ($ruleCode === 'SIGNAL_ROC20_10_TO_15_AND_TICK_RISK_LT_1P5') {
             $roc20 = $this->fractionOrNull($momentum['roc20'] ?? $metrics['roc20'] ?? null);

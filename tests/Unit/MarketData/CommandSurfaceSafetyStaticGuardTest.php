@@ -10,15 +10,76 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
         $this->commandDir = base_path('app/Console/Commands/MarketData');
     }
 
+    /**
+     * Every registered command must appear in the ops safety inventory.
+     *
+     * This used to walk a hand-written list of thirty commands. Three commands added in a later
+     * session were registered in the kernel and never reached the inventory, and the test passed
+     * throughout — a command absent from the list is a command the list cannot miss.
+     *
+     * The inventory is where an operator learns whether a command mutates anything and what
+     * guards it. A registered command missing from it is an undocumented destructive surface.
+     *
+     * Derived from the kernel now, so a command added tomorrow is covered without editing this.
+     */
     public function test_all_registered_market_data_commands_are_in_ops_safety_inventory(): void
     {
-        $kernel = file_get_contents(base_path('app/Console/Kernel.php'));
         $inventory = file_get_contents(base_path('docs/market_data/ops/COMMAND_SURFACE_SAFETY_INVENTORY.md'));
 
-        foreach ($this->expectedCommands() as $command) {
-            $this->assertStringContainsString($command['class'], $kernel, $command['class'].' must be registered in Console Kernel.');
-            $this->assertStringContainsString('`'.$command['signature'].'`', $inventory, $command['signature'].' must be listed in command safety inventory.');
+        $undocumented = [];
+
+        foreach ($this->registeredMarketDataCommandNames() as $name) {
+            if (strpos($inventory, '`'.$name.'`') === false) {
+                $undocumented[] = $name;
+            }
         }
+
+        $this->assertSame([], $undocumented, 'Registered commands missing from the ops command safety inventory.');
+    }
+
+    /**
+     * Guards the guard: a reflection failure returning nothing would make the check above pass
+     * against an empty command set.
+     */
+    public function test_the_kernel_registers_a_meaningful_command_surface(): void
+    {
+        $this->assertGreaterThan(25, count($this->registeredMarketDataCommandNames()));
+    }
+
+    /**
+     * @return string[]
+     */
+    private function registeredMarketDataCommandNames(): array
+    {
+        $kernel = new ReflectionClass(\App\Console\Kernel::class);
+        $property = $kernel->getProperty('commands');
+        $property->setAccessible(true);
+
+        $names = [];
+
+        foreach ($property->getValue($kernel->newInstanceWithoutConstructor()) as $commandClass) {
+            if (! class_exists($commandClass)) {
+                continue;
+            }
+
+            $signatureProperty = (new ReflectionClass($commandClass))->getProperty('signature');
+            $signatureProperty->setAccessible(true);
+
+            $signature = (string) $signatureProperty->getValue(
+                (new ReflectionClass($commandClass))->newInstanceWithoutConstructor()
+            );
+
+            $name = trim(strtok($signature, " \n\t{"));
+
+            if (strpos($name, 'market-data:') === 0) {
+                $names[] = $name;
+            }
+        }
+
+        $names = array_values(array_unique($names));
+        sort($names);
+
+        return $names;
     }
 
     public function test_DryRun_destructive_session_snapshot_purge_is_default_and_Apply_required_for_delete(): void
@@ -43,8 +104,10 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
     {
         $abstract = file_get_contents($this->commandDir.'/AbstractMarketDataCommand.php');
         $registry = file_get_contents(base_path('docs/market_data/registry/Reason_Codes_Registry.md'));
-        $seed = file_get_contents(base_path('docs/market_data/registry/Reason_Codes_Seed.sql'));
 
+        // The seed file is no longer checked here. ReasonCodeSeedExecutionTest runs the seed
+        // and proves every registry code lands in eod_reason_codes, so repeating a textual
+        // presence check per code adds nothing.
         foreach ([
             'COMMAND_MISSING_REQUIRED_INPUT',
             'COMMAND_INVALID_DATE_FORMAT',
@@ -60,7 +123,6 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
             'COMMAND_CORRECTION_STATUS_NOT_EXECUTABLE',
         ] as $reasonCode) {
             $this->assertStringContainsString($reasonCode, $registry, $reasonCode.' must exist in registry.');
-            $this->assertStringContainsString($reasonCode, $seed, $reasonCode.' must exist in seed SQL.');
         }
 
         $this->assertStringContainsString('renderCommandBlocked', $abstract);
@@ -108,7 +170,8 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
         $this->assertStringContainsString('source_master_write_executed', $command);
         $this->assertStringContainsString('eod_bars_write_executed', $command);
         $this->assertStringContainsString('promoteDaily(', $command);
-        $this->assertStringContainsString('correction_current', $command);
+        $this->assertStringContainsString("'analytical_remediation_current'", $command);
+        $this->assertStringNotContainsString("'correction_current'", $command);
         $this->assertStringContainsString('exportCorrectionEvidence', $command);
         $this->assertStringContainsString('recomputePreservedCurrentPublication', $command);
         $this->assertStringNotContainsString('completeIngest(', $command);

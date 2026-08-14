@@ -2,13 +2,42 @@
 
 namespace App\Application\MarketData\Services;
 
+use App\Domain\MarketData\MarketDataScope;
+
 class IndicatorVectorService
 {
-    public function buildRow($tickerId, array $bars, $requestedDate, $publicationId, $runId, $createdAt, array $config)
+    /**
+     * Baseline indicators whose NULL forces is_valid=0.
+     *
+     * Owner contract: docs/market_data/registry/Indicator_Registry_Baseline_LOCKED.md
+     * ma20/ma50 and the sector-rotation fields are intentionally absent: they are not
+     * mandatory baseline indicators, so contaminating them alone does not invalidate a row.
+     */
+    private const MANDATORY_BASELINE_INDICATORS = [
+        'dv20_idr',
+        'atr14_pct',
+        'vol_ratio',
+        'roc5',
+        'roc10',
+        'roc20',
+        'hh20',
+        'll20',
+        'close_to_hh20_pct',
+        'close_to_ll20_pct',
+        'range_20_pct',
+        'range_position_20_pct',
+    ];
+
+    public function buildRow($tickerId, array $bars, $requestedDate, $publicationId, $runId, $createdAt, array $config, array $atrSeries = null)
     {
         usort($bars, function ($a, $b) {
             return strcmp($a['trade_date'], $b['trade_date']);
         });
+
+        $rawBars = $bars;
+        $adjustment = $this->applyPriceAdjustment($bars, $config);
+        $bars = $adjustment['bars'];
+        $priceProductCode = $adjustment['price_product_code'];
 
         $index = null;
         foreach ($bars as $i => $bar) {
@@ -26,6 +55,8 @@ class IndicatorVectorService
         $sectorCode = $this->normalizeSectorCode($config['sector_code'] ?? null);
         $values = [
             'dv20_idr' => null,
+            'adv20_close_volume_proxy_idr' => null,
+            'adv20_traded_value_idr_actual' => null,
             'atr14_pct' => null,
             'vol_ratio' => null,
             'sector_code' => $sectorCode,
@@ -49,7 +80,23 @@ class IndicatorVectorService
             'sector_rs_20_vs_ihsg' => null,
         ] + $this->eventRiskValues($config);
 
-        $values = $this->calculateIndicators($bars, $index, $config);
+        $values = $this->calculateIndicators($bars, $index, $config, $rawBars, $atrSeries);
+
+        $quarantine = $this->applyCorporateActionQuarantine($values, $config);
+        $values = $quarantine['values'];
+
+        // Contamination is a known, explainable cause. Reporting it as insufficient history
+        // would misdescribe it and strip the operator's ability to find affected tickers by
+        // reason code. HARD structural codes are preserved: a missing dependency bar is a
+        // genuine data hole and stays more actionable than the quarantine annotation.
+        if ($quarantine['mandatory_contaminated']
+            && ($invalidReason === null || $invalidReason === 'IND_INSUFFICIENT_HISTORY')) {
+            // A corporate action names the cause; an unexplained price-scale break only says
+            // the series jumped. When both apply, the named cause is the more actionable one.
+            $invalidReason = $quarantine['price_scale_contaminated'] && ! $quarantine['corporate_action_contaminated']
+                ? 'IND_PRICE_SCALE_DISCONTINUITY'
+                : 'IND_CORPORATE_ACTION_DISCONTINUITY';
+        }
 
         return [
             'trade_date' => $requestedDate,
@@ -57,8 +104,25 @@ class IndicatorVectorService
             'is_valid' => $invalidReason ? 0 : 1,
             'invalid_reason_code' => $invalidReason,
             'indicator_set_version' => $config['set_version'],
+            'listing_id' => isset($config['listing_id']) ? (int) $config['listing_id'] : null,
+            'formula_version' => (string) ($config['formula_version'] ?? $config['set_version']),
+            'config_snapshot_id' => isset($config['config_snapshot_id']) ? (int) $config['config_snapshot_id'] : null,
+            'factor_set_id' => isset($config['factor_set_id']) ? (int) $config['factor_set_id'] : null,
+            'factor_set_hash' => $config['factor_set_hash'] ?? null,
+            'price_product_version' => (string) ($config['price_product_version'] ?? 'structural_adjusted_v1'),
+            /*
+             * The vector must state which price product it was computed on. Without it a consumer
+             * cannot tell an adjusted series from an unadjusted one, and the two are not
+             * comparable: a split-affected window differs by the split ratio, not by a few
+             * percent. Leaving it null let RAW-based and STRUCTURAL_ADJUSTED-based rows sit in one
+             * column indistinguishably.
+             */
+            'price_product_code' => $priceProductCode,
             'sector_code' => $values['sector_code'],
+            'sector_membership_id' => isset($config['sector_membership_id']) ? (int) $config['sector_membership_id'] : null,
             'dv20_idr' => $values['dv20_idr'],
+            'adv20_close_volume_proxy_idr' => $values['adv20_close_volume_proxy_idr'],
+            'adv20_traded_value_idr_actual' => $values['adv20_traded_value_idr_actual'],
             'atr14_pct' => $values['atr14_pct'],
             'vol_ratio' => $values['vol_ratio'],
             'roc5' => $values['roc5'],
@@ -86,6 +150,7 @@ class IndicatorVectorService
             'is_uma' => $values['is_uma'],
             'event_risk_flag' => $values['event_risk_flag'],
             'event_risk_reasons' => $values['event_risk_reasons'],
+            'corporate_action_window_reasons' => $quarantine['tokens'],
             'run_id' => $runId,
             'publication_id' => $publicationId,
             'created_at' => $createdAt,
@@ -121,9 +186,11 @@ class IndicatorVectorService
         return null;
     }
 
-    public function calculateIndicators(array $bars, $index, array $config)
+    public function calculateIndicators(array $bars, $index, array $config, array $rawBars = null, array $atrSeries = null)
     {
-        $lotSize = (int) $config['lot_size'];
+        // The turnover proxy is defined on the as-traded series, so it is computed from the raw
+        // bars even when every other indicator runs on the adjusted ones.
+        $rawBars = $rawBars === null ? $bars : $rawBars;
         $dvWindow = (int) $config['dv_window_days'];
         $atrWindow = (int) $config['atr_window_days'];
         $volLookback = (int) $config['vol_ratio_lookback_days'];
@@ -132,8 +199,8 @@ class IndicatorVectorService
 
         $currentBar = $bars[$index];
         $priceBasisCurrent = $this->priceBasis($currentBar, $config);
-        $dv20Idr = $this->averageTurnover($bars, $index, $dvWindow, $lotSize, $config);
-        $atr = $this->wilderAtr($bars, $index, $atrWindow, $config);
+        $dv20Idr = $this->averageTurnover($rawBars, $index, $dvWindow, $config);
+        $atr = $this->wilderAtr($bars, $index, $atrWindow, $config, $atrSeries);
         $priorVolAverage = $this->priorVolumeAverage($bars, $index, $volLookback);
         $hh20 = $this->windowExtreme($bars, $index, $hhWindow, 'high', 'max');
         $ll20 = $this->windowExtreme($bars, $index, $hhWindow, 'low', 'min');
@@ -150,7 +217,19 @@ class IndicatorVectorService
         $equityRoc20Pct = $roc20 !== null ? $roc20 * 100 : null;
 
         return [
+            /*
+             * `dv20_idr` is the legacy alias for the proxy and carries the same value. The two
+             * explicitly named fields exist so a consumer never has to guess which one it holds:
+             * the actual is source-backed traded value, the proxy is RAW close x RAW volume.
+             *
+             * The actual stays NULL because the provider does not supply traded value at all —
+             * the adapter declares `provides_actual_traded_value => false`. NULL is the contract's
+             * required value when the actual is unavailable, and it is the only honest one: a
+             * proxy written into the actual field would be a misstatement, not an approximation.
+             */
             'dv20_idr' => $dv20Idr,
+            'adv20_close_volume_proxy_idr' => $dv20Idr,
+            'adv20_traded_value_idr_actual' => null,
             'atr14_pct' => $atr !== null && $priceBasisCurrent > 0 ? round($atr / $priceBasisCurrent, 10) : null,
             'vol_ratio' => $priorVolAverage !== null
                 && $priorVolAverage > 0
@@ -180,7 +259,262 @@ class IndicatorVectorService
         ] + $this->eventRiskValues($config);
     }
 
-    private function averageTurnover(array $bars, $index, $window, $lotSize, array $config)
+    /**
+     * Express every bar in the window on the scale in force at the requested date.
+     *
+     * Owner contract: docs/market_data/registry/Price_Adjustment_Contract_LOCKED.md
+     *
+     * Canonical bars stay raw in storage. Adjustment happens here, in memory, so the
+     * as-traded series is never destroyed and no historical row is rewritten.
+     *
+     * A bar dated B is multiplied by the product of every factor whose ex_date falls after
+     * B, so two splits inside one window compound correctly. Bars at or after the last
+     * ex_date are already on the current scale and are left alone.
+     */
+    private function applyPriceAdjustment(array $bars, array $config)
+    {
+        $factors = isset($config['price_adjustment_factors']) && is_array($config['price_adjustment_factors'])
+            ? $config['price_adjustment_factors']
+            : [];
+
+        // The selected analytical product is run-wide. A cumulative factor of one describes the
+        // value transformation for this row; it never changes the product's identity back to RAW.
+        $selectedProduct = strtoupper(trim((string) ($config['selected_price_product_code'] ?? MarketDataScope::STRUCTURAL_ADJUSTED_PRODUCT)));
+        if ($selectedProduct !== MarketDataScope::STRUCTURAL_ADJUSTED_PRODUCT) {
+            throw new \RuntimeException('ANALYTICAL_PRICE_PRODUCT_INVALID: expected STRUCTURAL_ADJUSTED.');
+        }
+
+        if (empty($factors) || empty($bars)) {
+            return ['bars' => $bars, 'price_product_code' => $selectedProduct];
+        }
+
+        foreach ($bars as $index => $bar) {
+            $barDate = (string) $bar['trade_date'];
+            $priceFactor = 1.0;
+            $volumeFactor = 1.0;
+
+            foreach ($factors as $factor) {
+                if ($barDate < $factor['ex_date']) {
+                    $priceFactor *= $factor['price_factor'];
+                    $volumeFactor *= $factor['volume_factor'];
+                }
+            }
+
+            if (abs($priceFactor - 1.0) < 1e-12 && abs($volumeFactor - 1.0) < 1e-12) {
+                continue;
+            }
+
+            /*
+             * open, high, low and close move together. Adjusting close alone would corrupt true
+             * range, which mixes high, low and the previous close.
+             *
+             * `adj_close` is deliberately excluded. It is a provider observation, not a platform
+             * product, so multiplying it by the platform's own structural factor yields a value
+             * that is neither: not what the provider reported, and not a product the platform
+             * defines. That hybrid sitting in the same vector as `close` is exactly the mixing the
+             * stage-11 exit gate forbids.
+             */
+            foreach (['open', 'high', 'low', 'close'] as $field) {
+                if (isset($bars[$index][$field]) && $bars[$index][$field] !== null) {
+                    $bars[$index][$field] = (float) $bars[$index][$field] * $priceFactor;
+                }
+            }
+
+            if (isset($bars[$index]['volume']) && $bars[$index]['volume'] !== null) {
+                $bars[$index]['volume'] = (float) $bars[$index]['volume'] * $volumeFactor;
+            }
+        }
+
+        return [
+            'bars' => $bars,
+            'price_product_code' => $selectedProduct,
+        ];
+    }
+
+    /**
+     * Quarantine indicators whose dependency window spans a corporate action that breaks
+     * price or volume continuity.
+     *
+     * Owner contract: docs/market_data/registry/Indicator_Registry_Baseline_LOCKED.md
+     * (Amendment 2026-07-29 - Corporate action window contamination)
+     *
+     * An indicator with horizon W is contaminated when an entry sits at depth < W, where
+     * depth counts trading days back from the requested date. At depth == W the action lands
+     * exactly on the window start, so every bar in the window already sits on the post-action
+     * scale and the window is clean.
+     */
+    private function applyCorporateActionQuarantine(array $values, array $config)
+    {
+        $entries = isset($config['corporate_action_contamination']) && is_array($config['corporate_action_contamination'])
+            ? $config['corporate_action_contamination']
+            : [];
+
+        // A detected price-scale break contaminates identically to a SCALED corporate action.
+        // Splits are routinely absent from the source feed, so the price series itself is the
+        // only reliable signal for them.
+        $priceScaleEntries = isset($config['price_scale_break_contamination']) && is_array($config['price_scale_break_contamination'])
+            ? $config['price_scale_break_contamination']
+            : [];
+
+        foreach ($priceScaleEntries as $entry) {
+            $entries[] = [
+                // Name the cause when the break has one. An operator reading
+                // STOCK_SPLIT@2026-07-15 knows what happened and on which day; reading
+                // PRICE_SCALE_SCALE_SHIFT@2026-07-15 only learns that the price jumped.
+                //
+                // The date is always the detected break date, never the action's recorded date:
+                // the series is what says when the scale actually changed.
+                'action_type_code' => empty($entry['matched_action_type'])
+                    ? 'PRICE_SCALE_'.$entry['break_type']
+                    : strtoupper(trim((string) $entry['matched_action_type'])),
+                'action_date' => $entry['trade_date'],
+                'depth' => $entry['depth'],
+                'breaks_price_continuity' => true,
+                'breaks_volume_continuity' => true,
+                'is_price_scale_break' => true,
+            ];
+        }
+
+        if (empty($entries)) {
+            return [
+                'values' => $values,
+                'tokens' => null,
+                'mandatory_contaminated' => false,
+                'price_scale_contaminated' => false,
+                'corporate_action_contaminated' => false,
+            ];
+        }
+
+        $tokens = [];
+        $mandatoryContaminated = false;
+        $priceScaleContaminated = false;
+        $corporateActionContaminated = false;
+
+        foreach ($this->contaminationHorizons($config) as $field => $horizon) {
+            list($horizonDays, $sensitiveToPrice, $sensitiveToVolume) = $horizon;
+
+            if ($horizonDays <= 0) {
+                continue;
+            }
+
+            foreach ($entries as $entry) {
+                if ((int) $entry['depth'] >= $horizonDays) {
+                    continue;
+                }
+
+                $applies = ($sensitiveToPrice && ! empty($entry['breaks_price_continuity']))
+                    || ($sensitiveToVolume && ! empty($entry['breaks_volume_continuity']));
+
+                if (! $applies) {
+                    continue;
+                }
+
+                $values[$field] = null;
+                $tokens[$entry['action_type_code'].'@'.$entry['action_date']] = true;
+
+                if (in_array($field, self::MANDATORY_BASELINE_INDICATORS, true)) {
+                    $mandatoryContaminated = true;
+
+                    if (empty($entry['is_price_scale_break'])) {
+                        $corporateActionContaminated = true;
+                    } else {
+                        $priceScaleContaminated = true;
+                    }
+                }
+            }
+        }
+
+        $tokenList = array_keys($tokens);
+        sort($tokenList);
+
+        return [
+            'values' => $values,
+            'tokens' => empty($tokenList) ? null : $this->joinContaminationTokens($tokenList),
+            'mandatory_contaminated' => $mandatoryContaminated,
+            'price_scale_contaminated' => $priceScaleContaminated,
+            'corporate_action_contaminated' => $corporateActionContaminated,
+        ];
+    }
+
+    /**
+     * Contamination horizon per indicator, in trading days inclusive of the requested date.
+     *
+     * Horizons are derived from the same window config the indicators themselves use, so a
+     * change to a window size cannot leave the quarantine describing a horizon that no longer
+     * matches the computation.
+     *
+     * Tuple shape: [horizon_days, price_scale_sensitive, volume_scale_sensitive]
+     */
+    private function contaminationHorizons(array $config)
+    {
+        $dvWindow = (int) $config['dv_window_days'];
+        $volLookback = (int) $config['vol_ratio_lookback_days'];
+        $rocLookback = (int) $config['roc_lookback_days'];
+        $hhWindow = (int) $config['hh_window_days'];
+
+        // ATR is seeded cumulatively across the whole loaded bar window rather than the 15
+        // days the registry declares, so its contamination horizon is supplied by the caller
+        // from the actual load window. See the ATR note in the registry amendment.
+        $atrHorizon = (int) (isset($config['atr_contamination_horizon_days']) ? $config['atr_contamination_horizon_days'] : 0);
+
+        return [
+            'dv20_idr' => [$dvWindow, true, true],
+            // The explicitly named proxy carries the same value over the same window, so it is
+            // contaminated by exactly the same events. Omitting it here would leave a quarantined
+            // window readable through its clearer name.
+            'adv20_close_volume_proxy_idr' => [$dvWindow, true, true],
+            'atr14_pct' => [$atrHorizon, true, false],
+            'vol_ratio' => [$volLookback + 1, false, true],
+            'roc5' => [6, true, false],
+            'roc10' => [11, true, false],
+            'roc20' => [$rocLookback + 1, true, false],
+            'hh20' => [$hhWindow, true, false],
+            'll20' => [$hhWindow, true, false],
+            'ma20' => [20, true, false],
+            'ma50' => [50, true, false],
+            'close_to_hh20_pct' => [$hhWindow, true, false],
+            'close_to_ll20_pct' => [$hhWindow, true, false],
+            'range_20_pct' => [$hhWindow, true, false],
+            'range_position_20_pct' => [$hhWindow, true, false],
+            'close_vs_ma20_pct' => [20, true, false],
+            'close_vs_ma50_pct' => [50, true, false],
+            // ma20(D) and ma20(D[-5]) together span D[-24]..D.
+            'ma20_slope_pct' => [25, true, false],
+            'rs_20_vs_ihsg' => [$rocLookback + 1, true, false],
+            'rs_20_vs_sector' => [$rocLookback + 1, true, false],
+        ];
+    }
+
+    /**
+     * Join tokens without splitting one mid-way when the persisted column runs out of room.
+     */
+    private function joinContaminationTokens(array $tokenList)
+    {
+        $joined = '';
+
+        foreach ($tokenList as $token) {
+            $candidate = $joined === '' ? $token : $joined.','.$token;
+
+            if (strlen($candidate) > 255) {
+                break;
+            }
+
+            $joined = $candidate;
+        }
+
+        return $joined === '' ? null : $joined;
+    }
+
+    /**
+     * Average traded value in IDR over the window.
+     *
+     * Provider volume for IDX equities is reported in shares, not lots, so turnover is
+     * price times share volume with no lot multiplier. Verified against the market total:
+     * close * volume across all tickers gives roughly 9.6 trillion IDR for a normal
+     * session, which matches published IDX turnover, while applying a lot size of 100
+     * produces roughly 959 trillion IDR, which exceeds any real exchange.
+     */
+    private function averageTurnover(array $bars, $index, $window, array $config)
     {
         if ($index < 0 || ($index + 1) < $window) {
             return null;
@@ -202,14 +536,44 @@ class IndicatorVectorService
                 return null;
             }
 
-            $turnovers[] = $price * (float) $bar['volume'] * $lotSize;
+            // RAW close x RAW volume — Volume_and_Turnover_Normalization_LOCKED.md:27. Both terms
+            // come from the same as-traded bar, so a corporate action that scales price without
+            // scaling volume cannot skew the product.
+            $turnovers[] = $price * (float) $bar['volume'];
         }
 
         return round(array_sum($turnovers) / $window, 2);
     }
 
-    private function wilderAtr(array $bars, $index, $window, array $config)
+    /**
+     * Wilder ATR seeded at the dataset/listing boundary rather than at the start of the load
+     * window. `$atrSeries` carries the full as-traded series when the caller can supply it; the
+     * loaded window is used only as a fallback, and that fallback is an approximation, not the
+     * contract value.
+     *
+     * Owner: Market_Data_Strategy_Implementation_Blueprint_LOCKED.md stage 15 — "Wilder ATR
+     * memakai stable seed dan recursive state dari dataset/listing boundary, bukan sliding-window
+     * reseed."
+     */
+    private function wilderAtr(array $bars, $index, $window, array $config, array $atrSeries = null)
     {
+        if ($atrSeries !== null && ! empty($atrSeries)) {
+            $anchor = (string) $bars[$index]['trade_date'];
+            $boundarySeries = [];
+            foreach ($atrSeries as $entry) {
+                if ((string) $entry['trade_date'] <= $anchor) {
+                    $boundarySeries[] = $entry;
+                }
+            }
+
+            if (count($boundarySeries) > $index + 1) {
+                // Boundary state is part of the selected analytical product too. Feeding the RAW
+                // series here would mix RAW ATR with structurally adjusted MA/ROC values.
+                $bars = $this->applyPriceAdjustment($boundarySeries, $config)['bars'];
+                $index = count($boundarySeries) - 1;
+            }
+        }
+
         if ($index < $window) {
             return null;
         }
@@ -357,12 +721,8 @@ class IndicatorVectorService
 
     private function priceBasis(array $bar, array $config)
     {
-        $basis = strtolower((string) $config['price_basis_default']);
-
-        if ($basis === 'adj_close' && isset($bar['adj_close']) && $bar['adj_close'] !== null) {
-            return (float) $bar['adj_close'];
-        }
-
+        // applyPriceAdjustment has already built the selected coherent product in the canonical
+        // OHLC fields. Provider adjusted-close observations never participate in this selector.
         return (float) $bar['close'];
     }
 

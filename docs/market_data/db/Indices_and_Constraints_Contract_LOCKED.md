@@ -11,15 +11,17 @@ This document complements:
 
 ### Canonical bars
 Must enforce:
-- one row per `(trade_date, ticker_id)`
+- one row per `(trade_date, listing_id)` within the resolved canonical revision/publication identity
 
 ### Indicators
 Must enforce:
-- one row per `(trade_date, ticker_id)`
+- one row per `(trade_date, listing_id)` per immutable publication/product binding
 
-### Eligibility
+### Data usability / eligibility compatibility projection
 Must enforce:
-- one row per `(trade_date, ticker_id)`
+- one row per `(trade_date, listing_id)` per publication/read-product binding
+
+`ticker_id` may remain as a legacy compatibility column/index only while its invariant equivalence to the stable `listing_id` is documented and tested. It is not a target key for new schema surfaces.
 
 ### Replay reason-code counts
 Must enforce:
@@ -33,18 +35,21 @@ If explicit publication table is used, must enforce:
 
 ### Bars
 Recommended:
-- `(ticker_id, trade_date)`
+- `(listing_id, trade_date)`
+- optional compatibility `(ticker_id, trade_date)` only while legacy projection exists
 - `(run_id)`
 
 ### Indicators
 Recommended:
-- `(ticker_id, trade_date)`
+- `(listing_id, trade_date)`
+- optional compatibility `(ticker_id, trade_date)` only while legacy projection exists
 - `(run_id)`
 - `(invalid_reason_code)`
 
-### Eligibility
+### Eligibility / data usability
 Recommended:
-- `(ticker_id, trade_date)`
+- `(listing_id, trade_date)`
+- optional compatibility `(ticker_id, trade_date)` only while legacy projection exists
 - `(run_id)`
 - `(reason_code)`
 
@@ -110,13 +115,13 @@ The invariant must still be enforced deterministically by transaction or procedu
 
 ## 2026-04-26 — Schema Sync Index Addendum
 
-Status: LOCKED
+Status: LOCKED / HISTORICAL RUNTIME SHAPE WHERE IT USES `ticker_id`
 
 The following indexes/constraints are now included in the DB schema sync contract:
 
 - `tickers`: `PRIMARY KEY (ticker_id)`, `UNIQUE KEY ticker_code (ticker_code)`
 - `market_calendar`: `PRIMARY KEY (cal_date)`, `KEY market_calendar_trading_idx (is_trading_day, cal_date)`
-- `md_session_snapshots`: `PRIMARY KEY (snapshot_id)`, `UNIQUE KEY (trade_date, snapshot_slot, ticker_id)`, `KEY (trade_date, snapshot_slot)`, `KEY (captured_at)`
+- **Historical 2026-04-26 runtime shape:** `md_session_snapshots` used `UNIQUE KEY (trade_date, snapshot_slot, ticker_id)`. **V2 target:** uniqueness is `(trade_date, snapshot_slot, listing_id)`; `ticker_id` is compatibility-only until migrated.
 
 SQLite mirror must include equivalent indexes where Laravel/SQLite supports them.
 
@@ -153,7 +158,7 @@ The current runtime schema, migration chain, and SQLite mirror must include thes
 - `eod_dataset_corrections`: `idx_corr_baseline_publication (baseline_publication_id)`
 - `eod_dataset_corrections`: `idx_corr_replacement_publication (replacement_publication_id)`
 - `eod_dataset_corrections`: `idx_corr_baseline_replacement_publication (baseline_publication_id, replacement_publication_id)`
-- `eod_bars`, `eod_indicators`, `eod_eligibility`: publication-scoped artifact lookup indexes `(publication_id, trade_date, ticker_id)`
+- **V2 target** `eod_bars`, `eod_indicators`, and data-usability/eligibility projection: publication-scoped lookup indexes `(publication_id, trade_date, listing_id)`. A legacy `(publication_id, trade_date, ticker_id)` index may coexist only as transitional compatibility.
 - `md_replay_daily_metrics`: replay status, publishability, publication identity, effective date, comparison, coverage gate, artifact scope, publication version, and config identity indexes
 
 Current-publication uniqueness is owned by `eod_current_publication_pointer.trade_date` plus unique `publication_id`. `eod_publications.is_current` is retained only as a mirror/cache marker and must never compete with the pointer table for authoritative current-state resolution.

@@ -4,12 +4,16 @@
 Read order untuk paket ini harus mengikuti source-of-truth yang sudah ada, bukan menggantinya dengan summary generik.
 
 ## Mandatory outer read order
-1. `book/Terminology_and_Scope.md`
-2. `book/Domain_Boundary_Invariants_LOCKED.md`
-3. `book/INDEX.md`
-4. `docs/market_data/README.md`
+1. `docs/market_data/README.md`
+2. `book/Terminology_and_Scope.md`
+3. `book/Market_Data_Strategy_Implementation_Blueprint_LOCKED.md`
+4. `book/Domain_Boundary_Invariants_LOCKED.md`
+5. `book/Market_Data_Implementation_Conformance_Matrix_LOCKED.md`
+6. `book/Market_Data_Implementation_Command_Protocol_LOCKED.md`
+7. `audit/MARKET_DATA_IMPLEMENTATION_LEDGER.md`
+8. `book/INDEX.md`
 
-Setelah empat anchor ini dipahami, pembaca boleh memakai `system/` dan `audit/` untuk navigasi lebih cepat. Urutan ini harus tetap sinkron dengan `audit/AUDIT_BASELINE.md` dan `docs/market_data/README.md`.
+Setelah delapan anchor ini dipahami, pembaca boleh memakai `system/` dan `audit/` untuk navigasi lebih cepat. Urutan ini harus tetap sinkron dengan `audit/AUDIT_BASELINE.md` dan `docs/market_data/README.md`.
 
 ## Recommended repo-shaped read order
 ### Orientation
@@ -40,12 +44,15 @@ Setelah empat anchor ini dipahami, pembaca boleh memakai `system/` dan `audit/` 
 ## Downstream consumer read path
 Jika pembaca datang dari domain consumer seperti `watchlist`, jalur baca minimum yang sah adalah:
 1. `book/Terminology_and_Scope.md`
-2. `book/Domain_Boundary_Invariants_LOCKED.md`
-3. `docs/market_data/README.md`
-4. `book/Downstream_Consumer_Read_Model_Contract_LOCKED.md`
-5. `book/EOD_Eligibility_Snapshot_Contract_LOCKED.md`
-6. `book/Downstream_Data_Readiness_Guarantee_LOCKED.md`
-7. `book/Publication_Current_Pointer_Integrity_Contract_LOCKED.md`
+2. `book/Market_Data_Strategy_Implementation_Blueprint_LOCKED.md`
+3. `book/Domain_Boundary_Invariants_LOCKED.md`
+4. `book/Market_Data_Implementation_Conformance_Matrix_LOCKED.md`
+5. `book/Market_Data_Implementation_Command_Protocol_LOCKED.md`
+6. `docs/market_data/README.md`
+7. `book/Downstream_Consumer_Read_Model_Contract_LOCKED.md`
+8. `book/EOD_Eligibility_Snapshot_Contract_LOCKED.md`
+9. `book/Downstream_Data_Readiness_Guarantee_LOCKED.md`
+10. `book/Publication_Current_Pointer_Integrity_Contract_LOCKED.md`
 
 Baru setelah itu pembaca boleh lanjut ke `docs/watchlist/README.md` dan `docs/api_architecture/README.md`.
 

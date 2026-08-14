@@ -1,6 +1,8 @@
 # Correction Lifecycle Safety Test Matrix
 
-Status: LOCKED for code/test/runtime correction lifecycle scope after 2026-05-20 correction lifecycle hardening. Runtime unchanged replay MATCH and failed-correction pointer preservation proof are now recorded.
+Current admission status: **HISTORICAL LEGACY CORRECTION PROOF / V2 EXTENSION REQUIRED**. The recorded pointer/reseal behavior remains useful evidence, but current closure additionally requires immutable observation/config/temporal/factor/product bindings, no in-place repair path, recursive indicator impact, and exact/as-known replay under the corrected contracts.
+
+Historical status: LOCKED for the narrower code/test/runtime correction lifecycle scope after 2026-05-20 hardening.
 
 Required validation coverage:
 

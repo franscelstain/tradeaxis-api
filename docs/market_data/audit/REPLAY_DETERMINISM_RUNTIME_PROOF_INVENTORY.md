@@ -1,12 +1,15 @@
 # Replay Determinism Runtime Proof Inventory
 
+> **HISTORICAL AUDIT/IMPLEMENTATION EVIDENCE — NON-AUTHORITATIVE FOR CURRENT V2 STRATEGY.** This file preserves dated runtime/inventory facts and may contain legacy field names, command behavior, locks, or production claims from earlier contracts. Current strategy authority is the owner contracts + Blueprint + Conformance Matrix; current execution/conformance state is `MARKET_DATA_IMPLEMENTATION_LEDGER.md`; current audit verdict is `reports/AUDIT_FINAL_STATE.md`. Legacy statements are not current requirements unless explicitly re-admitted by those authorities.
+
+
 Last updated: 2026-05-20
 
 ## Decision
 
 Replay determinism runtime proof is complete for the current-readable fixture scope, command/evidence surfaces, and historical non-current publication scope. The runtime proof produced explicit `PASS`, `FAIL`, and `BLOCKED` outcomes. Historical replay is locked as an explicit-context audit path because the current source ZIP includes the required historical non-current runtime artifact pack with `historical_publication_allowed=true`, `replay_actual_resolution_mode=HISTORICAL_PUBLICATION_AUDIT`, and `replay_publication_scope=HISTORICAL_SEALED_PUBLICATION`.
 
-This inventory now supports full market-data production readiness for this source ZIP because the historical non-current replay runtime artifacts are supplied and the `FULL_MARKET_DATA_PRODUCTION_READY_INVENTORY.md` lock conditions are satisfied.
+This inventory now supports full market-data production readiness for this source ZIP because the historical non-current replay runtime artifacts are supplied and the `FULL_MARKET_DATA_PRODUCTION_READY_INVENTORY.md` lock conditions are satisfied.  **[SUPERSEDED 2026-08-06 — W22]** Klaim ini tidak berlaku untuk baseline yang dikoreksi; lihat `reports/AUDIT_FINAL_STATE.md`.
 
 ## Runtime Proof
 

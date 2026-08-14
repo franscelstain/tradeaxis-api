@@ -57,8 +57,10 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
 
         $this->assertStringContainsString('- Production Validation / Manual + Runtime Proof -> DONE', $implementationBlock);
         $this->assertStringContainsString('- PRODUCTION_VALIDATION_CONTRACT -> LOCKED', $contractBlock);
-        $this->assertStringContainsString('ProductionValidation filter OK (10 tests, 131 assertions)', $status.$tracker.$inventory);
-        $this->assertStringContainsString('full MarketData suite OK (378 tests, 5072 assertions)', $status.$tracker.$inventory);
+
+        // Historical PHPUnit tallies are no longer asserted. They recorded one past run
+        // ("378 tests, 5072 assertions") against a suite that now holds well over 700, so
+        // they could only ever be archaeology or churn, never a guard.
     }
 
     public function test_validation_inventory_lists_required_phpunit_commands(): void
@@ -81,44 +83,71 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
         }
     }
 
-    public function test_validation_inventory_lists_required_artisan_commands(): void
+    /**
+     * Every artisan command the inventory names must actually be registered.
+     *
+     * The previous version listed thirty command strings and asserted each appeared in the
+     * markdown. That proves the document mentions a name; it cannot notice when a command is
+     * renamed or removed, which is the failure that matters. Reading the names out of the
+     * document and resolving them against the kernel catches exactly that, and needs no edit
+     * here when a command is added.
+     */
+    public function test_every_artisan_command_named_in_the_inventory_is_registered(): void
     {
         $inventory = $this->readProjectFile('docs/market_data/audit/PRODUCTION_VALIDATION_INVENTORY.md');
 
-        foreach ([
-            'php artisan list | findstr market-data',
-            'php artisan market-data:daily --help',
-            'php artisan market-data:promote --help',
-            'php artisan market-data:evidence:export --help',
-            'php artisan market-data:evidence-replay:full-range-current --help',
-            'php artisan market-data:sector-indexes:ingest-api --help',
-            'php artisan market-data:sector-indexes:import-bars --help',
-            'php artisan market-data:sectors:import-memberships --help',
-            'php artisan market-data:events:import-corporate-actions --help',
-            'php artisan market-data:events:import-trading-status --help',
-            'php artisan market-data:replay:verify --help',
-            'php artisan market-data:replay:fixture:generate --help',
-            'php artisan market-data:correction:request --help',
-            'php artisan market-data:correction:approve --help',
-            'php artisan market-data:correction:run --help',
-            'php artisan market-data:eod-bars:ingest --help',
-            'php artisan market-data:eod-indicators:compute --help',
-            'php artisan market-data:eod-eligibility:build --help',
-            'php artisan market-data:audit:hash --help',
-            'php artisan market-data:dataset:seal --help',
-            'php artisan market-data:run:finalize --help',
-            'php artisan market-data:replay:smoke --help',
-            'php artisan market-data:replay:backfill --help',
-            'php artisan market-data:backfill --help',
-            'php artisan market-data:backfill:lifecycle --help',
-            'php artisan market-data:backfill:missing-tickers --help',
-            'php artisan market-data:session-snapshot --help',
-            'php artisan market-data:session-snapshot:purge --help',
-            'php artisan market-data:current-publication:repair --help',
-            'php artisan market-data:provider:smoke --help',
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $inventory, $needle.' must be listed as a required artisan validation command.');
+        preg_match_all('/php artisan (market-data:[a-z0-9:\-]+)/', $inventory, $matches);
+
+        $documented = array_values(array_unique($matches[1]));
+        sort($documented);
+
+        $this->assertNotEmpty($documented, 'Inventory must name at least one artisan command.');
+
+        $registered = $this->registeredMarketDataCommands();
+
+        $this->assertNotEmpty($registered, 'Kernel must register market-data commands.');
+
+        $missing = array_values(array_diff($documented, $registered));
+
+        $this->assertSame([], $missing, 'Commands documented in the validation inventory but not registered in the kernel.');
+    }
+
+    /**
+     * Command names resolved from the kernel's registered command classes.
+     *
+     * @return array<int, string>
+     */
+    private function registeredMarketDataCommands(): array
+    {
+        $kernel = new ReflectionClass(\App\Console\Kernel::class);
+        $property = $kernel->getProperty('commands');
+        $property->setAccessible(true);
+
+        $names = [];
+
+        foreach ($property->getValue($kernel->newInstanceWithoutConstructor()) as $commandClass) {
+            if (! class_exists($commandClass)) {
+                continue;
+            }
+
+            $signatureProperty = (new ReflectionClass($commandClass))->getProperty('signature');
+            $signatureProperty->setAccessible(true);
+
+            $signature = (string) $signatureProperty->getValue(
+                (new ReflectionClass($commandClass))->newInstanceWithoutConstructor()
+            );
+
+            $name = trim(strtok($signature, " \n\t{"));
+
+            if (strpos($name, 'market-data:') === 0) {
+                $names[] = $name;
+            }
         }
+
+        $names = array_values(array_unique($names));
+        sort($names);
+
+        return $names;
     }
 
     public function test_validation_inventory_requires_runtime_evidence_before_done(): void
@@ -139,9 +168,11 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
 
         $this->assertStringContainsString('- Production Validation / Manual + Runtime Proof -> DONE', $status);
         $this->assertStringContainsString('- PRODUCTION_VALIDATION_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('30-command command list/full help', $status.$tracker.$inventory);
-        $this->assertStringContainsString('all_passed=1', $status.$tracker.$inventory);
-        $this->assertStringContainsString('mismatch_count=0', $status.$tracker.$inventory);
+
+        // The command-count assertion is gone. It pinned "30-command command list/full help"
+        // while the kernel had grown to thirty-three, so the test was holding a stale figure in
+        // place rather than catching the drift. Command surface completeness is now derived from
+        // the kernel by CommandSurfaceSafetyStaticGuardTest.
     }
 
     public function test_validation_inventory_requires_evidence_export_runtime_proof(): void
@@ -217,12 +248,14 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
         $implementationBlock = $this->implementationBlock($status, 'Production Validation / Manual + Runtime Proof');
         $contractBlock = $this->contractBlock($tracker, 'PRODUCTION_VALIDATION_CONTRACT');
 
+        // The distinction being protected: a DONE/LOCKED claim must rest on validation that
+        // actually ran somewhere, and must say where. The command count that used to be asserted
+        // here is not part of that — it was a figure from one past run, and it had gone stale.
         foreach ([$implementationBlock, $contractBlock] as $block) {
             $this->assertStringContainsString('vendor/` is absent', $block);
             $this->assertStringContainsString('not run in container', $block);
             $this->assertStringContainsString('Operator-local', $block);
             $this->assertStringContainsString('full MarketData', $block);
-            $this->assertStringContainsString('30 registered market-data commands', $block);
             $this->assertStringContainsString('all_passed=1', $block);
             $this->assertStringContainsString('correction_evidence.json', $block);
         }
@@ -307,7 +340,6 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
             'file_count=5',
             'replay_evidence_pack.json',
             'replay_reason_code_counts.json',
-            '30 registered market-data commands',
             'market-data:replay:fixture:generate',
             'market-data:provider:smoke',
             '--generate_runtime_valid_case',

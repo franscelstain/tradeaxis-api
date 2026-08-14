@@ -11,7 +11,20 @@ class EligibilitySnapshotScopeRepository
         $tickersTable = config('market_data.tickers.table');
         $tickerIdColumn = config('market_data.tickers.id_column');
         $tickerCodeColumn = config('market_data.tickers.code_column');
-        $scopeDefault = config('market_data.session_snapshot.scope_default', 'universe_only');
+        /*
+         * An unrecognised scope is refused rather than guessed. The previous fallback was
+         * `universe_only`, a name that appears nowhere in the scope contract, so a mistyped
+         * configuration silently produced the widest scope instead of failing.
+         *
+         * Owner: Session_Snapshot_Scope_Selection_and_Dependencies_LOCKED.md — scope resolves from
+         * upstream dataset membership, and unresolvable scope is a refusal, not a default.
+         */
+        $scopeDefault = (string) config('market_data.session_snapshot.scope_default', 'eligibility_set');
+        if (! in_array($scopeDefault, ['eligibility_set', 'eligible_only'], true)) {
+            throw new \RuntimeException(
+                'SESSION_SNAPSHOT_SCOPE_UNRECOGNISED: '.$scopeDefault.' is not an upstream-safe scope; expected eligibility_set or eligible_only.'
+            );
+        }
 
         $query = DB::table('eod_eligibility as elig')
             ->join('eod_publications as pub', 'pub.publication_id', '=', 'elig.publication_id')

@@ -136,6 +136,99 @@ class ImportCorporateActionsCommand extends AbstractMarketDataCommand
         ];
     }
 
+    /**
+     * The quantitative payload: dates, ratios, and the adjustment factors themselves.
+     *
+     * These columns existed on the table with no importer behind them. The only writer was the
+     * platform's own price-series detector, which stamps DERIVED_FROM_PRICE_SERIES, and that value
+     * is refused for adjustment — so the platform could produce exactly the factors it would not
+     * use, and an authoritative factor had no way in. This is that way in.
+     *
+     * Returns null when the row is rejected; an empty array when the row carries no quantitative
+     * payload at all, which stays legal because many actions are recorded for contamination alone.
+     */
+    private function validateQuantitativePayload(array $row, $line, array &$errors)
+    {
+        $payload = [];
+
+        foreach (['ex_date', 'cum_date'] as $dateField) {
+            $value = trim((string) ($row[$dateField] ?? ''));
+            if ($value === '') {
+                continue;
+            }
+            if (! $this->isIsoDate($value)) {
+                $errors[] = 'line '.$line.': '.$dateField.' must use YYYY-MM-DD.';
+
+                return null;
+            }
+            $payload[$dateField] = $value;
+        }
+
+        foreach ([
+            'ratio_from', 'ratio_to', 'price_adjustment_factor', 'volume_adjustment_factor',
+            'dividend_per_share',
+        ] as $numericField) {
+            $value = trim((string) ($row[$numericField] ?? ''));
+            if ($value === '') {
+                continue;
+            }
+            if (! is_numeric($value) || (float) $value <= 0) {
+                $errors[] = 'line '.$line.': '.$numericField.' must be a positive decimal.';
+
+                return null;
+            }
+            $payload[$numericField] = (float) $value;
+        }
+
+        $adjustmentSource = $this->normalizeCode($row['adjustment_source'] ?? '');
+        $carriesFactor = isset($payload['price_adjustment_factor']) || isset($payload['volume_adjustment_factor']);
+
+        if ($adjustmentSource !== '') {
+            if (! in_array($adjustmentSource, EventRiskSourceRepository::ADJUSTMENT_SOURCES, true)) {
+                $errors[] = 'line '.$line.': adjustment_source '.$adjustmentSource.' is not a declared value ('
+                    .implode(', ', EventRiskSourceRepository::ADJUSTMENT_SOURCES).').';
+
+                return null;
+            }
+
+            // Refused outright rather than merely ignored downstream. DERIVED_FROM_PRICE_SERIES
+            // records that the platform inferred a factor from the price series; accepting it from
+            // a CSV would let an operator launder an inference into a source, and nothing
+            // afterwards could tell the two apart.
+            if (! in_array($adjustmentSource, EventRiskSourceRepository::AUTHORITATIVE_ADJUSTMENT_SOURCES, true)) {
+                $errors[] = 'line '.$line.': adjustment_source '.$adjustmentSource
+                    .' is produced by the platform, not imported; it cannot adjust published output.';
+
+                return null;
+            }
+
+            $payload['adjustment_source'] = $adjustmentSource;
+        }
+
+        if ($carriesFactor && ! isset($payload['adjustment_source'])) {
+            $errors[] = 'line '.$line.': adjustment_source is required when a factor is supplied; '
+                .'an unattributed factor cannot adjust published output.';
+
+            return null;
+        }
+
+        // ex_date is what places the factor on the timeline; resolveAdjustmentFactorsForTickerIds
+        // falls back to action_date only for rows recorded before this payload existed. A factor
+        // imported today without an ex-date would silently inherit that fallback.
+        if ($carriesFactor && ! isset($payload['ex_date'])) {
+            $errors[] = 'line '.$line.': ex_date is required when a factor is supplied.';
+
+            return null;
+        }
+
+        $adjustmentNote = trim((string) ($row['adjustment_note'] ?? ''));
+        if ($adjustmentNote !== '') {
+            $payload['adjustment_note'] = substr($adjustmentNote, 0, 255);
+        }
+
+        return $payload;
+    }
+
     private function validateRows(array $rows)
     {
         $errors = [];
@@ -189,17 +282,31 @@ class ImportCorporateActionsCommand extends AbstractMarketDataCommand
             }
             $seen[$identity] = true;
 
+            $quantitative = $this->validateQuantitativePayload($row, $line, $errors);
+            if ($quantitative === null) {
+                continue;
+            }
+
+            $descriptive = [];
+            // Same rule the repository applies to the quantitative payload: a column the CSV never
+            // carried leaves the stored value alone. Sending null for an absent header would erase
+            // provenance on re-import, which is the defect this import path was built to avoid.
+            if (array_key_exists('source_ref', $row)) {
+                $descriptive['source_ref'] = $sourceRef !== '' ? substr($sourceRef, 0, 255) : null;
+            }
+            if (array_key_exists('notes', $row)) {
+                $descriptive['notes'] = $notes !== '' ? substr($notes, 0, 255) : null;
+            }
+
             $validRows[] = [
                 'ticker_id' => (int) $tickerIdsByCode[$tickerCode],
                 'ticker_code' => $tickerCode,
                 'action_date' => $actionDate,
                 'action_type' => $actionType,
                 'source_name' => $sourceName,
-                'source_ref' => $sourceRef !== '' ? substr($sourceRef, 0, 255) : null,
-                'notes' => $notes !== '' ? substr($notes, 0, 255) : null,
                 'created_at' => $now,
                 'updated_at' => $now,
-            ];
+            ] + $descriptive + $quantitative;
         }
 
         return [

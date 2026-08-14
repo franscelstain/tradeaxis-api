@@ -18,8 +18,10 @@ A sealed publication for trade date D must never be silently mutated in place.
 
 Any material correction to the consumer-readable upstream dataset for D must happen only through a controlled correction flow that produces:
 - a new run context
+- a new immutable source/config/identity/factor selection or explicit reuse binding
 - a new content hash set
 - a new seal event
+- a new publication identity/version
 - an explicit supersession relation
 - preserved historical visibility of prior published state
 
@@ -30,6 +32,7 @@ A correction exists when a rerun for trade date D changes any consumer-visible u
 - eligibility snapshot
 - content hashes derived from those artifacts
 - current publication state for D
+- source observation, identity/universe, calendar/status, price-basis/factor, formula, or configuration binding that affects interpretation
 
 ## What does not count as a correction
 The following do not by themselves create a correction publication:
@@ -39,6 +42,8 @@ The following do not by themselves create a correction publication:
 - rerunning a date and producing byte-identical consumer-visible content and identical hashes
 
 If content is unchanged, the result is an audit rerun, not a new published correction.
+
+Metadata-equivalent content with a different output-affecting binding is not unchanged. Hash/equality comparison must cover every protected field and version defined by the seal contract.
 
 ## Controlled correction flow states (LOCKED)
 At minimum, a correction request must progress through explicit states:
@@ -106,6 +111,8 @@ When a corrected publication becomes current for D:
 - prior publication must not remain current
 - silent in-place replacement is forbidden
 
+Rollback to previously published values is still a new governed publication event/version; the platform must not merely point backward and erase the intervening lineage.
+
 ## Consumer read rule (LOCKED)
 Consumers must always read the current sealed publication for D.
 They must not:
@@ -155,7 +162,7 @@ If correction execution fails before safe publication:
 - partial candidate state must remain non-current
 - evidence of failure must remain auditable
 
-Coverage `FAIL` or `NOT_EVALUABLE` is a failed-safe correction candidate for current replacement. It may leave audit evidence or a non-current repair candidate according to the finalize/publish-target contract, but it must not replace the current pointer.
+Coverage `FAIL` or `NOT_EVALUABLE` is a failed-safe correction candidate for current replacement. It may leave audit evidence or a non-current correction candidate according to the finalize/publish-target contract, but it must not replace the current pointer.
 
 ## Historical replay requirement (LOCKED)
 Replay and data-quality verification must be able to prove:
@@ -178,6 +185,18 @@ For every corrected date D it must be possible to answer:
 ## Anti-drift rule (LOCKED)
 If a later readable state for D differs from a prior sealed publication without explicit correction trail, supersession trail, and reseal evidence, it is a contract violation.
 
+## Capability boundary (LOCKED)
+
+**What the correction lifecycle proves.** That a content change produced a new revision, hashes, seal, publication, and supersession lineage; that the prior publication remains queryable; that the pointer moved only after the new publication was valid.
+
+**What it cannot prove.**
+
+- **That every affected date was corrected.** The impact resolver propagates along recorded dependencies. A dependency that was never recorded — an unrecorded event, an unrecorded calendar session — leaves affected dates outside the correction set, and they remain published with stale derived values while the correction reports success.
+- **That the correction improved the data.** The lifecycle validates process, not outcome. A correction replacing a right value with a wrong one follows exactly the same path and produces exactly the same evidence.
+- **That the absence of corrections means the history is right.** It means no correction was requested.
+
+Consequently a completed correction may be cited as evidence that **the change was applied safely and traceably**, never as evidence that **the corrected range is now correct** or that **no other range needs correcting**.
+
 ## See also
 - `Dataset_Seal_and_Freeze_Contract_LOCKED.md`
 - `Audit_Hash_and_Reproducibility_Contract_LOCKED.md`
@@ -191,12 +210,14 @@ If a later readable state for D differs from a prior sealed publication without 
 
 Historical import can arrive after later dates were already processed. When changed historical bars affect downstream dates:
 
-- non-readable affected dates may be reprocessed in place for indicators and eligibility;
+- unsealed candidate workspaces for non-readable affected dates may be rebuilt/replaced before seal, but immutable observations and published/history snapshots are never reprocessed in place;
 - readable affected dates must not be reprocessed in live current tables outside correction;
 - readable affected dates must be reported as requiring correction/reseal/republication;
 - hash/seal/pointer changes remain governed by the correction lifecycle.
 
 Already-readable affected dates may be automatically republished only through the correction-current lifecycle. The system must create/approve a correction, preserve baseline lineage, run the guarded replacement lifecycle, and leave the current pointer unchanged if any correction, reseal, finalize, replay, or pointer validation step fails.
+
+Impact resolution must include every later trade date whose rolling/recursive indicator, price adjustment, eligibility, hash, or publication depends on changed content. A per-date storage layout is not proof that impact is isolated.
 
 ## Amendment 2026-05-27 - Non-readable impact publication reprocess
 

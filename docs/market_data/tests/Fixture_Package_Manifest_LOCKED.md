@@ -10,7 +10,20 @@ Define the manifest shape for one fixture package so every fixture family is exp
 
     {
       "fixture_family": "fixture_controlled_correction",
-      "version": "v1",
+      "version": "v2",
+      "market_scope": "IDX_REGULAR_EOD",
+      "intentional_dataset_start": "2023-01-02",
+      "replay_mode": "PUBLICATION_EXACT",
+      "knowledge_cutoff": null,
+      "input_manifest_hash": "INPUT_HASH",
+      "expected_manifest_hash": "EXPECTED_HASH",
+      "source_observation_manifest_hash": "OBS_HASH",
+      "config_snapshot_hash": "CONFIG_HASH",
+      "temporal_revision_set_hash": "TEMPORAL_HASH",
+      "factor_set_hash": "FACTOR_HASH",
+      "price_product_code": "STRUCTURAL_ADJUSTED",
+      "formula_version": "weekly_swing_eod_v2",
+      "read_model_version": "weekly_swing_read_v2",
       "contract_areas": [
         "historical_correction_integrity",
         "publication_resolution",
@@ -27,12 +40,28 @@ Define the manifest shape for one fixture package so every fixture family is exp
         "expected_run_summary.json"
       ],
       "assertion_layers": [
+        "observation",
+        "temporal_identity",
         "row",
+        "factor_product",
         "run",
         "hash",
-        "publication"
-      ]
+        "publication",
+        "read_model",
+        "replay"
+      ],
+      "source_and_license_notes": "sanitized frozen fixture; redistribution constraints recorded",
+      "independent_oracle_ref": "reviewed expected artifact or calculation source"
     }
+
+## Mandatory manifest rules
+
+- All package files have SHA-256 entries in a canonical file manifest.
+- Required semantic bindings cannot be replaced by current environment/master state.
+- `AS_KNOWN` packages require a non-null knowledge cutoff and recorded-time revisions.
+- Real-market cases record source, retrieval/recorded times, sanitation, licensing, and verification authority.
+- Synthetic mathematics fixtures are labeled synthetic and cannot replace required real-market semantic cases.
+- Expected artifacts are independently derived and are not regenerated from the implementation being tested.
 
 ## Required manifest fields
 - fixture_family

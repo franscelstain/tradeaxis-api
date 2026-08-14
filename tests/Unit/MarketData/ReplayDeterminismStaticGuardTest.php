@@ -87,24 +87,25 @@ class ReplayDeterminismStaticGuardTest extends TestCase
         }
     }
 
-    public function test_replay_verifier_and_commands_do_not_use_latest_max_or_raw_shortcuts(): void
+    /**
+     * Replay must never read a raw or staging table.
+     *
+     * The latest-date half of this check is now applied to every file under app/ by
+     * ReadPathShortcutProhibitionTest. What stays is the raw/staging prohibition, which is
+     * specific to replay: replay re-derives a run from published artifacts, so reaching into an
+     * intermediate table would let it "reproduce" data that was never published — the one thing
+     * a determinism proof must not be able to do.
+     */
+    public function test_replay_never_reads_a_raw_or_staging_table(): void
     {
-        $files = [
+        foreach ([
             'app/Application/MarketData/Services/ReplayVerificationService.php',
             'app/Application/MarketData/Services/ReplayBackfillService.php',
             'app/Application/MarketData/Services/ReplaySmokeSuiteService.php',
             'app/Console/Commands/MarketData/VerifyReplayCommand.php',
             'app/Infrastructure/Persistence/MarketData/ReplayResultRepository.php',
-        ];
-
-        foreach ($files as $file) {
-            $source = $this->read($file);
-            $this->assertDoesNotMatchRegularExpression('/\bMAX\s*\(\s*trade_date\s*\)/i', $source, $file);
-            $this->assertDoesNotMatchRegularExpression('/->\s*max\s*\(\s*[\'\"]trade_date[\'\"]\s*\)/i', $source, $file);
-            $this->assertDoesNotMatchRegularExpression('/->\s*latest\s*\(\s*[\'\"]trade_date[\'\"]\s*\)/i', $source, $file);
-            $this->assertDoesNotMatchRegularExpression('/->\s*orderByDesc\s*\(\s*[\'\"]trade_date[\'\"]\s*\)/i', $source, $file);
-            $this->assertDoesNotMatchRegularExpression('/ORDER\s+BY\s+trade_date\s+DESC/i', $source, $file);
-            $this->assertDoesNotMatchRegularExpression('/eod_(raw|staging|stg)_/i', $source, $file);
+        ] as $file) {
+            $this->assertDoesNotMatchRegularExpression('/eod_(raw|staging|stg)_/i', $this->read($file), $file);
         }
     }
 
@@ -129,36 +130,9 @@ class ReplayDeterminismStaticGuardTest extends TestCase
         }
     }
 
-    public function test_replay_reason_codes_are_registered_and_seeded(): void
-    {
-        $registry = $this->read('docs/market_data/registry/Reason_Codes_Registry.md');
-        $seed = $this->read('docs/market_data/registry/Reason_Codes_Seed.sql');
-
-        foreach ([
-            'REPLAY_FIXTURE_SCHEMA_MISMATCH',
-            'REPLAY_EXPECTED_PROOF_INCOMPLETE',
-            'REPLAY_ACTUAL_PROOF_INCOMPLETE',
-            'REPLAY_SOURCE_MODE_MISMATCH',
-            'REPLAY_SOURCE_FILE_HASH_MISMATCH',
-            'REPLAY_PROVIDER_CONTEXT_MISMATCH',
-            'REPLAY_COVERAGE_STATE_MISMATCH',
-            'REPLAY_COVERAGE_RATIO_MISMATCH',
-            'REPLAY_COVERAGE_REASON_MISMATCH',
-            'REPLAY_ARTIFACT_HASH_MISMATCH',
-            'REPLAY_SEAL_STATE_MISMATCH',
-            'REPLAY_PUBLICATION_STATE_MISMATCH',
-            'REPLAY_PUBLICATION_VERSION_MISMATCH',
-            'REPLAY_POINTER_TARGET_MISMATCH',
-            'REPLAY_POINTER_RESOLUTION_MISMATCH',
-            'REPLAY_FALLBACK_CONTEXT_MISMATCH',
-            'REPLAY_CORRECTION_BASELINE_MISMATCH',
-            'REPLAY_FINAL_STATUS_MISMATCH',
-            'REPLAY_FINAL_REASON_CODE_MISMATCH',
-            'REPLAY_LINEAGE_MISMATCH',
-            'REPLAY_NON_DETERMINISTIC_OUTPUT',
-        ] as $code) {
-            $this->assertStringContainsString($code, $registry);
-            $this->assertStringContainsString($code, $seed);
-        }
-    }
+    // The twenty-one hand-listed reason codes are gone. EmittedReasonCodeRegistrationTest now
+    // reads the replay codes out of the service and checks every one against the seeded
+    // dictionary — thirty-eight of them, not twenty-one. The seventeen the list never mentioned
+    // included REPLAY_MISMATCH, the fallback the comparator uses when a difference carries no
+    // specific code, which was registered nowhere at all.
 }

@@ -37,6 +37,8 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
             [
                 'trade_date' => '2026-05-01',
                 'ticker_id' => 4,
+                'listing_id' => 1004,
+                'source_observation_id' => 5004,
                 'open' => 400,
                 'high' => 410,
                 'low' => 390,
@@ -44,6 +46,9 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
                 'volume' => 4000,
                 'adj_close' => 405,
                 'source' => 'YAHOO_FINANCE',
+                'canonicalization_version' => 'eod_canonical_v1',
+                'price_product_code' => 'RAW',
+                'quality_state' => 'VALIDATED',
                 'publication_id' => 77,
                 'run_id' => 20,
                 'created_at' => Carbon::now()->toDateTimeString(),
@@ -110,6 +115,8 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
             [
                 'trade_date' => '2026-05-01',
                 'ticker_id' => 1,
+                'listing_id' => 1001,
+                'source_observation_id' => 5001,
                 'open' => 100,
                 'high' => 110,
                 'low' => 90,
@@ -117,6 +124,9 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
                 'volume' => 1000,
                 'adj_close' => 105,
                 'source' => 'API_FREE',
+                'canonicalization_version' => 'eod_canonical_v1',
+                'price_product_code' => 'RAW',
+                'quality_state' => 'VALIDATED',
                 'run_id' => 10,
                 'publication_id' => 10,
                 'created_at' => Carbon::now()->toDateTimeString(),
@@ -127,6 +137,8 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
             [
                 'trade_date' => '2026-05-01',
                 'ticker_id' => 1,
+                'listing_id' => 1001,
+                'source_observation_id' => 5001,
                 'open' => 100,
                 'high' => 110,
                 'low' => 90,
@@ -134,6 +146,9 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
                 'volume' => 1000,
                 'adj_close' => 105,
                 'source' => 'API_FREE',
+                'canonicalization_version' => 'eod_canonical_v1',
+                'price_product_code' => 'RAW',
+                'quality_state' => 'VALIDATED',
                 'publication_id' => 77,
                 'run_id' => 20,
                 'created_at' => Carbon::now()->toDateTimeString(),
@@ -141,6 +156,8 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
             [
                 'trade_date' => '2026-05-01',
                 'ticker_id' => 2,
+                'listing_id' => 1002,
+                'source_observation_id' => 5002,
                 'open' => 200,
                 'high' => 210,
                 'low' => 190,
@@ -148,6 +165,9 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
                 'volume' => 2000,
                 'adj_close' => 205,
                 'source' => 'YAHOO_FINANCE',
+                'canonicalization_version' => 'eod_canonical_v1',
+                'price_product_code' => 'RAW',
+                'quality_state' => 'VALIDATED',
                 'publication_id' => 77,
                 'run_id' => 20,
                 'created_at' => Carbon::now()->toDateTimeString(),
@@ -233,6 +253,26 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
         $this->assertSame('2026-01-02', $window[1][1]['trade_date']);
     }
 
+    public function test_atr_boundary_loader_is_scoped_to_one_ticker(): void
+    {
+        DB::table('eod_bars')->insert([
+            $this->barForDate(1, '2026-01-01', 100),
+            $this->barForDate(1, '2026-01-02', 101),
+            $this->barForDate(2, '2026-01-01', 200),
+            $this->barForDate(2, '2026-01-02', 201),
+        ]);
+
+        $series = (new EodArtifactRepository())->loadAtrSeriesForTickerFromBoundary(
+            1,
+            '2026-01-02',
+            '2026-01-01'
+        );
+
+        $this->assertCount(2, $series);
+        $this->assertSame(['2026-01-01', '2026-01-02'], array_column($series, 'trade_date'));
+        $this->assertSame([100, 101], array_map('intval', array_column($series, 'close')));
+    }
+
     private function barForDate(int $tickerId, string $date, float $close): array
     {
         return [
@@ -255,7 +295,7 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
     {
         return [
             'cal_date' => $date,
-            'is_trading_day' => $isTradingDay ? 1 : 0,
+            'is_trading_day' => $isTradingDay, 'provenance_tier' => 'VERIFIED' ? 1 : 0,
             'holiday_name' => $isTradingDay ? 'HARI BURSA' : 'AKHIR PEKAN',
             'session_open_time' => null,
             'session_close_time' => null,
@@ -271,6 +311,8 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
         return [
             'trade_date' => '2026-05-01',
             'ticker_id' => $tickerId,
+            'listing_id' => 1000 + $tickerId,
+            'source_observation_id' => 5000 + $tickerId,
             'open' => 100 * $tickerId,
             'high' => 110 * $tickerId,
             'low' => 90 * $tickerId,
@@ -278,6 +320,9 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
             'volume' => 1000 * $tickerId,
             'adj_close' => 105 * $tickerId,
             'source' => $source,
+            'canonicalization_version' => 'eod_canonical_v1',
+            'price_product_code' => 'RAW',
+            'quality_state' => 'VALIDATED',
             'run_id' => 10,
             'publication_id' => 77,
             'created_at' => Carbon::now()->toDateTimeString(),

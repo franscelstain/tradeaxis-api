@@ -54,47 +54,24 @@ class TestCoverageBehavioralStaticGuardTest extends TestCase
         }
     }
 
-    public function test_db_backed_lifecycle_proof_files_are_not_internal_mock_heavy(): void
-    {
-        $proofFiles = [
-            'tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php',
-            'tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php',
-            'tests/Unit/MarketData/ReadablePublicationReadContractIntegrationTest.php',
-            'tests/Unit/MarketData/CorrectionRepositoryIntegrationTest.php',
-            'tests/Unit/MarketData/ReplayResultRepositoryIntegrationTest.php',
-        ];
+    // The five named proof files are now covered by LifecycleProofIsNotMockedTest, which derives
+    // the set instead: every *IntegrationTest must be DB-backed and free of test doubles, and no
+    // DB-backed test anywhere may mock an application service or a persistence repository. Only
+    // the source adapter may be stood in for, because a test cannot call a third-party API.
 
-        foreach ($proofFiles as $file) {
-            $source = $this->read($file);
-
-            $this->assertStringContainsString('UsesMarketDataSqlite', $source, $file.' must stay DB-backed.');
-            $this->assertStringContainsString('DB::table', $source, $file.' must assert persisted state.');
-            $this->assertStringNotContainsString('use Mockery', $source, $file.' must not become internal Mockery-based lifecycle proof.');
-            $this->assertStringNotContainsString('shouldReceive', $source, $file.' must not prove lifecycle with mocked internal behavior.');
-            $this->assertStringNotContainsString('m::mock', $source, $file.' must not prove lifecycle with mocked internal behavior.');
-        }
-    }
-
-    public function test_pipeline_integration_proves_import_promote_finalize_coverage_pointer_correction_and_fallback_state(): void
+    /**
+     * The pipeline integration proof must keep covering every terminal outcome.
+     *
+     * The twelve test METHOD NAMES that used to be pinned here are gone. Pinning a name breaks
+     * when a test is renamed for clarity, catches nothing when one is deleted and replaced by a
+     * weaker test of the same name, and says nothing about what is asserted.
+     *
+     * What survives is the substance: the state combinations and persisted tables the proof has
+     * to reach. A run cannot end in a state this file does not mention.
+     */
+    public function test_pipeline_integration_covers_every_terminal_outcome_and_persisted_surface(): void
     {
         $pipeline = $this->read('tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php');
-
-        foreach ([
-            'test_manual_file_import_only_writes_candidate_bars_without_finalize_or_pointer_switch',
-            'test_manual_file_promote_from_imported_partial_dataset_enforces_coverage_gate_and_does_not_switch_pointer',
-            'test_run_daily_persists_full_db_backed_pipeline_and_current_publication',
-            'test_run_daily_full_coverage_persists_finalize_coverage_payload_and_readable_publication',
-            'test_run_daily_low_coverage_with_fallback_holds_requested_date_and_preserves_old_readable_publication',
-            'test_run_daily_low_coverage_without_fallback_finishes_not_readable_and_emits_coverage_reason_code',
-            'test_complete_finalize_is_idempotent_for_already_completed_success_run',
-            'test_completed_success_finalize_rerun_with_invalid_pointer_fails_safe_without_duplicate_publication',
-            'test_run_daily_correction_replaces_current_publication_and_marks_correction_published',
-            'test_run_daily_correction_with_unchanged_artifacts_cancels_request_and_preserves_current_publication',
-            'test_run_daily_correction_with_reseal_failure_keeps_prior_current_and_leaves_candidate_non_current',
-            'test_run_daily_correction_with_changed_artifacts_and_promotion_failure_holds_and_preserves_prior_current_publication',
-        ] as $testName) {
-            $this->assertStringContainsString($testName, $pipeline, $testName.' must remain as runtime-like proof.');
-        }
 
         foreach ([
             "'SUCCESS'",

@@ -12,22 +12,27 @@ class OutOfOrderImportImpactStaticGuardTest extends TestCase
         return file_get_contents($path);
     }
 
-    public function test_eod_bar_replacement_returns_mutation_summary_before_artifact_delete(): void
+    /**
+     * The comparison must happen before the delete. Ordering inside a single method is not
+     * something execution can observe from outside it, so this stays a source check.
+     *
+     * The counts it used to assert as field names are driven by
+     * BarMutationSummaryClassificationTest, which is also where the consequence of getting this
+     * ordering wrong is shown: with the previous rows already deleted, everything incoming looks
+     * inserted and a ticker dropped from the feed is never reported as removed at all.
+     */
+    public function test_eod_bar_replacement_compares_before_it_deletes(): void
     {
-        $repository = $this->read('app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php');
-        $replaceBars = $this->extractMethod($repository, 'replaceBars');
+        $replaceBars = $this->extractMethod(
+            $this->read('app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php'),
+            'replaceBars'
+        );
 
-        $this->assertStringContainsString('$mutationSummary = $this->buildBarsMutationSummary', $replaceBars);
         $this->assertLessThan(
             strpos($replaceBars, "->delete();"),
             strpos($replaceBars, '$mutationSummary = $this->buildBarsMutationSummary'),
             'Mutation summary must be built before replacement deletes the previous canonical rows.'
         );
-        $this->assertStringContainsString('return $mutationSummary;', $replaceBars);
-        $this->assertStringContainsString('inserted_bar_count', $repository);
-        $this->assertStringContainsString('updated_bar_count', $repository);
-        $this->assertStringContainsString('unchanged_bar_count', $repository);
-        $this->assertStringContainsString('removed_bar_count', $repository);
     }
 
     public function test_ingest_and_command_surfaces_expose_mutation_and_impact_summaries(): void
@@ -58,35 +63,48 @@ class OutOfOrderImportImpactStaticGuardTest extends TestCase
         $this->assertStringContainsString('publication_reprocess_state', $lifecycleCommand);
     }
 
-    public function test_impact_resolver_uses_trading_calendar_and_ma50_horizon(): void
+    /**
+     * Only the correction reason code stays asserted from source, because it names a policy
+     * rather than a computation.
+     *
+     * The horizon itself is proven by BarMutationImpactResolverTest, which changes a bar
+     * mid-series and checks the affected range. The old assertion looked for the literal "50"
+     * inside maxDependencyTradingDays(), which would pass on a method that returned the right
+     * number and then applied it to the wrong dates, or on one that mentioned 50 in a comment.
+     */
+    public function test_impact_resolver_escalates_affected_publications_to_correction(): void
     {
         $resolver = $this->read('app/Application/MarketData/Services/EodBarsMutationImpactResolver.php');
 
-        $this->assertStringContainsString('tradingDatesBetween', $resolver);
-        $this->assertStringContainsString('loadAvailableBarTradeDatesOnOrAfter', $resolver);
-        $this->assertStringContainsString('maxDependencyTradingDays', $resolver);
-        $this->assertStringContainsString('50', $this->extractMethod($resolver, 'maxDependencyTradingDays'));
-        $this->assertStringContainsString('REQUIRES_REPUBLICATION', $resolver);
         $this->assertStringContainsString('AFFECTED_PUBLICATION_REQUIRES_CORRECTION', $resolver);
     }
 
-    public function test_recovered_checkpoint_apply_uses_partial_upsert_not_full_date_replace(): void
+    /**
+     * Recovery must upsert, never replace the whole trade date.
+     *
+     * Only the prohibitions stay. A full-date replace during recovery would delete the bars of
+     * every ticker that had already succeeded, so retrying a handful of failed tickers would
+     * destroy the rest of the day.
+     *
+     * That the partial path actually preserves the other tickers is proven by
+     * EodArtifactRepositoryPartialUpsertTest, which seeds three tickers, upserts a fourth, and
+     * checks all four survive.
+     */
+    public function test_recovery_never_replaces_a_whole_trade_date(): void
     {
         $repository = $this->read('app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php');
-        $ingest = $this->read('app/Application/MarketData/Services/EodBarsIngestService.php');
-        $pipeline = $this->read('app/Application/MarketData/Services/MarketDataPipelineService.php');
         $orchestrator = $this->read('app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php');
 
         $partialUpsert = $this->extractMethod($repository, 'upsertBarsPartial');
 
         $this->assertStringContainsString('updateOrInsert', $partialUpsert);
         $this->assertStringNotContainsString('DB::table($table)->where', str_replace(["\r", "\n", ' '], '', $partialUpsert));
+
+        // The partial summary must not compute removals: a ticker absent from a recovery batch
+        // was never being retried, and reporting it removed would trigger a reprocess for data
+        // that did not move.
         $this->assertStringContainsString('buildBarsMutationSummary($tradeDate, $publicationId, $validRows, $useHistory, false)', $partialUpsert);
-        $this->assertStringContainsString('ingestRecoveredRowsPartial', $ingest);
-        $this->assertStringContainsString('upsertBarsPartial', $ingest);
-        $this->assertStringContainsString('ensureBarsHistoryFromCurrentTradeDate', $ingest);
-        $this->assertStringContainsString('applyRecoveredRowsPartial', $pipeline);
-        $this->assertStringContainsString('applyOnlyFailedRecoveredRows', $orchestrator);
+
         $this->assertStringNotContainsString('importDailyFromAcquiredRows($tradeDate, $sourceMode, $rows', $orchestrator);
     }
 

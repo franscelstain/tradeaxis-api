@@ -5,6 +5,9 @@ This folder stores archived actual execution evidence only.
 
 It is separate from `../examples/`, which may contain illustrative or representative structures. This archive is a repository of produced evidence, not a normative owner of new domain behavior. Any behavioral rule referenced by archived evidence must trace back to the authoritative contracts in `../book/`, `../ops/`, `../tests/`, and other normative companion folders.
 
+## V2 interpretation rule
+Archived evidence may retain legacy telemetry names such as `bar_mutation_*`, `affected_ticker_count`, `eligibility_*`, or older replay/status fields. Those names describe what an executed run emitted at that time. They do not authorize current strategy behavior. Under V2, source observations remain immutable, ticker identity is compatibility-only, already-readable truth changes require correction/republication, and exact replay evidence does not substitute for AS_KNOWN proof.
+
 ## Evidence classes
 - `runs/` for actual executed run evidence
 - `replays/` for actual executed replay evidence

@@ -1,5 +1,8 @@
 # Executed Replay Evidence Example (LOCKED)
 
+> **ILLUSTRATIVE ONLY — NOT CURRENT STRATEGY AUTHORITY.** Resolve all semantics against the current owner contracts/Blueprint/Matrix; legacy fields in this example are compatibility or historical shape only.
+
+
 ## Purpose
 Show what a real replay evidence artifact should look like after actual execution, not just as a contract shape.
 

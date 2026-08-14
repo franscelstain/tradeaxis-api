@@ -459,6 +459,29 @@ class WeeklySwingParamsetValidator
             )) {
             return;
         }
+        if (WatchlistBacktestBreakoutIntegrityB01ParamGridCatalog::isKnownRow(
+            $hypothesis
+        )
+            && $rule
+                === WatchlistBacktestBreakoutIntegrityB01ParamGridCatalog::RULE_CODE
+            && $this->sameKeys($thresholds, [
+                'min_roc20', 'max_roc20', 'benchmark_code', 'allowed_regimes',
+                'min_signal_close_price', 'min_close_to_hh20_pct',
+            ])
+            && $this->exactNumber($thresholds['min_roc20'] ?? null, 0.10)
+            && $this->exactNumber($thresholds['max_roc20'] ?? null, 0.15)
+            && ($thresholds['benchmark_code'] ?? null) === 'IHSG'
+            && ($thresholds['allowed_regimes'] ?? null) === ['STRONG', 'MIXED']
+            && $this->exactNumber(
+                $thresholds['min_signal_close_price'] ?? null,
+                50.0
+            )
+            && $this->exactNumber(
+                $thresholds['min_close_to_hh20_pct'] ?? null,
+                -0.05
+            )) {
+            return;
+        }
 
         $this->error($errors, 'WS_PARAMSET_RESEARCH_SELECTION_INVALID', 'research_selection.thresholds');
     }

@@ -1,85 +1,109 @@
-# Replay Verification Contract (LOCKED)
+# Replay Verification Contract (STRATEGY LOCKED)
 
-## Scope
+## Two replay modes
 
-Replay verification proves that an executed market-data run can be compared against an explicit fixture package without resolving data through latest-date, latest-run, raw, or staging shortcuts.
+Replay mode is mandatory and explicit.
 
-This contract covers current-readable replay, explicit historical replay, comparison semantics, result persistence, command output, and evidence export linkage.
+### Publication replay
 
-## Fixture Rule
+Reproduces or verifies one historical immutable publication using exactly the observations, temporal master revisions, calendar/status revisions, event/factor revisions, configuration snapshot, formulas/registries, build/adapter versions, serialization rules, and publication manifest frozen with it.
 
-Replay fixtures must include `manifest.json` and expected files listed by the manifest. A valid replay manifest must identify:
+It answers: “Can the published artifact and its decision be verified exactly?” It does not re-resolve historical truth from today's databases.
 
-- `fixture_id`
-- `fixture_family`
-- `fixture_version`
-- `fixture_schema_version`
-- `fixture_created_at`
-- `fixture_source`
-- `contract_areas`
-- `files`
-- `assertion_layers`
+### As-known replay
 
-Expected replay context must include run, source/provider, coverage, artifact hash, seal, publication, pointer, fallback, correction, final state, reason-code, and lineage context when available.
+Builds a labeled replay using only facts whose `recorded_at`/knowledge time was at or before a declared `knowledge_cutoff`, while effective-time rules determine where those facts apply. It answers: “What could the platform have known at that cutoff?”
 
-## Current Publication Rule
+It may differ from a historical publication when the selected cutoff, approved as-known configuration, or declared scenario differs. It creates new replay artifacts and never mutates or impersonates the original publication.
 
-Current replay verification must resolve the actual publication through the current-readable pointer path:
+## Required bound inputs
 
-`eod_current_publication_pointer` -> `eod_publications` -> sealed/success/readable/coverage-pass publication and run checks.
+Every fixture/manifest binds at minimum:
 
-Current replay must not resolve the actual state through latest run, latest date, raw, staging, or unscoped artifact tables.
+- replay mode, fixture ID/version, requested/effective date, and knowledge cutoff where applicable;
+- intentional dataset boundary and temporal universe/listing/symbol/provider mappings;
+- Regular-Market calendar/session and trading-status revisions;
+- immutable source observation IDs/hashes and adapter/schema/normalization versions;
+- canonical `RAW` publication/input set;
+- corporate-action event revisions, verification states, factor-set revisions, and contamination decisions;
+- full configuration snapshot ID/hash;
+- formula, indicator registry, reason registry, price-product, coverage, eligibility, read-model, hash/serialization, and build versions;
+- expected publication/pointer/seal state and deterministic output/hash assertions.
 
-## Historical Publication Rule
+Missing input is `BLOCKED`, not permission to query current/latest state.
 
-Historical replay is allowed only when the fixture declares explicit historical publication context. Historical replay must carry explicit `run_id`, `publication_id`, and `trade_date` selectors and must not masquerade as current replay.
+## Anti-future and anti-survivorship rules
 
-Historical publications are audit evidence only. They do not satisfy current consumer reads and must expose `historical_publication_allowed=true`, `current_pointer_required=false`, and a non-current pointer status.
+Replay must not use today's `is_active`, current symbol, current sector, current suspension/status, latest calendar correction, later corporate-action revision, later factor, current config, or latest provider mapping unless that exact revision was frozen/known in the selected mode.
 
-## Comparison Rule
+Required fixtures include:
 
-Replay verification must compare, when present:
+1. a listing active at historical T but inactive today;
+2. a symbol change and provider-symbol mapping transition;
+3. symbol text reused by another listing;
+4. a calendar/status fact corrected after T;
+5. a corporate action learned or verified later;
+6. a configuration/formula change after T;
+7. an original and corrected immutable publication; and
+8. a provider outage that cannot disappear through dormancy/current-universe filtering.
 
-- coverage gate state, ratio, minimum threshold, expected/available/missing counts
-- terminal status and publishability state
-- final reason code and reason-code count distribution
-- source mode, source name, provider context, source file identity, and manual-file policy context
-- artifact hashes for bars, indicators, and eligibility
-- seal state and seal metadata
-- publication identity, version, current flag, and pointer resolution context
-- fallback context
-- correction lifecycle and lineage context
-- deterministic field list and ignored volatile fields
+## Resolution rules
 
-Missing expected or actual proof is a mismatch or blocked prerequisite, not a silent success.
+Publication replay starts from explicit publication identity, never latest/current. Current-read verification is a separate assertion that the pointer resolves a specific publication.
 
-## Result Rule
+As-known replay performs bitemporal resolution with `effective_at <= target context` and `recorded_at <= knowledge_cutoff`; ties and corrections use versioned deterministic rules. Unresolved ambiguity fails closed.
 
-Replay result status is explicit:
+## Result and evidence
 
-- `PASS`: comparison is deterministic (`MATCH`) or an expected degraded outcome matches (`EXPECTED_DEGRADE`)
-- `FAIL`: comparison ran and found divergence (`MISMATCH` or `UNEXPECTED`)
-- `BLOCKED`: replay could not run because fixture, context, or runtime prerequisites were missing
+- `PASS`: all expected values, null reasons, states, lineages, content hashes, manifest, and seal assertions match.
+- `FAIL`: comparison executed and diverged.
+- `BLOCKED`: required fixture/runtime/input proof was unavailable.
 
-`comparison_result` remains the detailed replay comparison class. `replay_status` is the operator-facing result class used by command output, persistence, smoke/backfill summaries, and evidence export.
+Evidence preserves fixture/manifest hashes, actual and expected contexts, mismatch paths, reason distributions, publication/pointer context, executable command/build identity, timestamps, and admission state without requiring a mutable database as the primary explanation.
 
-## Evidence Linkage Rule
+“Command exited successfully” or matching row counts alone is not replay proof.
 
-Replay evidence export must be able to reference:
+## Mode recording and single-mode implementation (LOCKED)
 
-- `replay_id`
-- `replay_status`
-- `comparison_result`
-- expected context
-- actual context
-- comparison summary
-- reason-code counts
-- publication and pointer context
-- coverage comparison
-- hash/seal comparison
+Replay mode is declared mandatory and explicit above. That declaration binds the **result** as much as the request:
 
-Evidence export must preserve admission state and must not require an external database query as the primary proof of replay status.
+- Every replay result records its mode as a first-class field. A result set in which publication and as-known outcomes are indistinguishable does not satisfy the mandatory-mode rule, regardless of what the invoking command intended.
+- A result carrying no mode is not a publication-replay result by default. It is **unclassified**, and an unclassified result may not be cited as either.
 
-## Locked Validation Rule
+### While only one mode exists (LOCKED)
 
-This contract may be treated as LOCKED only when replay command surface, generated fixture proof, PASS/FAIL/BLOCKED runtime outcomes, evidence export linkage, targeted replay tests, replay static guards, audit docs guard, and full MarketData unit scope pass in a Lumen-compatible local environment.
+Publication replay and as-known replay answer different questions, and only the second bears on future-state leakage. Where as-known replay is not implemented, the following hold without exception:
+
+- **Publication-replay results carry no information about anti-survivorship or future-state leakage.** They compare an artifact against inputs frozen with it; a future master, a later action revision, or a later configuration is absent from both sides of that comparison and therefore cannot produce a mismatch.
+- No volume of publication-replay `PASS` results substitutes for a single as-known fixture. Accumulating them raises confidence in determinism only.
+- The eight anti-survivorship fixtures required below are as-known fixtures. Until as-known replay exists, their absence is not a gap in coverage — it is a gap in capability, and any claim resting on them is unavailable rather than untested.
+- A conformance or activation claim that cites replay evidence names which mode produced it. Citing an unmoded or publication-only corpus in support of a point-in-time property is a governance violation.
+
+## Capability boundary (LOCKED)
+
+Replay is the strongest proof this platform has, which makes an unstated limit here more dangerous than anywhere else.
+
+**What replay proves.** That a published artifact is reproducible from the inputs frozen with it; that the pipeline is deterministic across runs, builds, and environments; that the tested paths do not read future or current state; that a divergence, when it appears, is real.
+
+**What replay cannot prove.**
+
+- **That the values are correct.** Replay compares an output against itself under fixed inputs. A publication computed from a wrong observation, a missing corporate action, or an absent factor reproduces exactly and returns `PASS`. The verdict means "the pipeline agreed with itself", never "the market data is right".
+- **That the source observation was faithful.** Provider error inside an immutable observation is frozen by the same mechanism that guarantees reproducibility.
+- **That an event was not missed.** A corporate action nobody recorded is absent from both sides of the comparison, so it cannot create a mismatch.
+- **That the semantic rules are right.** Replay verifies the rules were applied consistently, not that they express the intended meaning. A rule that is wrong in the same way on both sides replays green.
+- **That untested paths are safe.** Only the bound inputs and asserted fields are covered. A field absent from the assertion set is unverified regardless of the verdict.
+
+### Admissibility of a PASS (LOCKED)
+
+- A replay `PASS` may be cited as evidence of **reproducibility and determinism**. It may never be cited as evidence of **data correctness, event completeness, or factor validity**.
+- A replay `PASS` may not close a data-quality finding, release a quarantine, dismiss a corporate-action candidate, or satisfy a continuity check.
+- Where an audit claim requires correctness, the admissible evidence is independent — verified event terms, source reconciliation, or exchange-published facts — not a replay verdict.
+- `BLOCKED` is not a weaker `PASS`. It states that the comparison did not execute.
+
+This is the same principle the detection and adjustment contracts already carry: a bounded mechanism agreeing with itself is not evidence about the world.
+
+## Trading backtest boundary
+
+This contract verifies the upstream data product; it does not measure alpha or portfolio performance. A downstream backtest consumes the versioned as-known read product defined by `../backtest/Point_In_Time_Backtest_Input_Contract_LOCKED.md` and owns its own decision/execution assumptions.
+
+Production relock requires executed publication and as-known fixtures, including all anti-survivorship cases above, on the actual production path.

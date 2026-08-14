@@ -1,5 +1,8 @@
 # Executed Test Run Example (LOCKED)
 
+> **ILLUSTRATIVE ONLY — NOT CURRENT STRATEGY AUTHORITY.** Resolve all semantics against the current owner contracts/Blueprint/Matrix; legacy fields in this example are compatibility or historical shape only.
+
+
 ## Purpose
 Show what an executed proof-style test output looks like after a real test run.
 

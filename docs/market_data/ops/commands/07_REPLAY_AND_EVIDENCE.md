@@ -8,6 +8,15 @@
 - market-data:replay:backfill
 - market-data:replay:fixture:generate
 
+
+## V2 replay-mode boundary
+
+Current strategy requires two distinct replay meanings:
+- `EXACT_PUBLICATION`: reproduce/verify the exact sealed publication and its bound observation/config/temporal/factor/formula/read-model context.
+- `AS_KNOWN`: reconstruct what was knowable at an explicit historical knowledge cutoff, using bitemporal `known_at`/revision context and rejecting future leakage.
+
+The historical runtime commands and MATCH fixtures below are useful execution evidence, but an exact-only MATCH does not prove `AS_KNOWN` correctness. Both modes must remain explicit in evidence and acceptance criteria.
+
 ## Runtime MATCH fixture generation
 
 Use `market-data:replay:fixture:generate <run_id> --case=valid_case --output_dir=<fixture_path>` to generate a deterministic replay fixture from the actual run/publication/pointer/evidence context. This is required for runtime MATCH proof when committed smoke fixtures are intentionally static or stale against the current local run.

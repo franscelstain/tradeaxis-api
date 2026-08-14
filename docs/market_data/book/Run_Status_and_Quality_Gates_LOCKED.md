@@ -127,6 +127,36 @@ Minimum field final yang harus audit-visible:
 
 ---
 
+## Date-level anomaly checks (LOCKED)
+
+Row-level validation cannot, by construction, see a pattern across rows. A defect affecting many instruments on one acquisition date presents as many individually admissible rows, and every per-row rule passes.
+
+This contract therefore owns the date-level checks and their thresholds. At minimum, for each requested trade date:
+
+- **Zero-volume share.** The proportion of delivered bars with `volume = 0`, compared against the dataset baseline and against neighbouring trading dates. A materially elevated share is an acquisition-fault finding for the date, not a market observation about the instruments.
+- **Flat-bar share.** The proportion of bars whose `open`, `high`, `low`, and `close` are identical. Elevation here has the same acquisition-fault reading and additionally suppresses true range for every dependent window.
+- **Cross-field contradiction count.** The number of rows rejected under the cross-field consistency rule in `EOD_Bars_Contract.md`. A non-zero count concentrated on one date is systematic, not incidental.
+
+Rules:
+
+- Thresholds are configured values bound to the run's configuration snapshot, never implicit judgement.
+- A date-level finding is quality evidence. It does not delete or alter rows; it blocks or holds according to the gate rules above and feeds the correction lifecycle.
+- Comparison against neighbouring dates uses governed trading days, never calendar days.
+- Absence of a date-level finding is not evidence the date is clean; these checks detect concentration, and a defect spread evenly across dates produces no concentration to detect.
+
+## Capability boundary (LOCKED)
+
+**What the quality gates prove.** That each declared gate was evaluated for the run, that its outcome and reason codes are explicit, that a failing gate blocks or holds rather than degrading silently, and that concentration-style defects on a single acquisition date are surfaced.
+
+**What they cannot prove.**
+
+- **That the data is correct.** Every gate here tests a declared property. A defect with no declared gate passes all of them, and the run reports clean.
+- **That a defect exists at all, when it is evenly spread.** The date-level checks detect concentration by comparison against neighbouring trading dates. A fault affecting every date equally shifts the baseline it is compared against and produces no signal.
+- **That a passing threshold means a normal date.** Thresholds are configured boundaries, not statements about the market. A date just under its threshold is not thereby healthy.
+- **That the gate set is complete.** Gates are added when a failure mode is known. Silence about an unknown failure mode is the default state, not a finding.
+
+Consequently a clean run status may be cited as evidence that **every declared gate passed**, never as evidence that **the requested date is correct**. This is the same limit the coverage, canonicalization, and detection contracts state for their own mechanisms, and it composes with theirs rather than covering for them.
+
 ## Anti-ambiguity rules
 Implementasi/dokumen tidak boleh:
 - menyebut import selesai sebagai publish success

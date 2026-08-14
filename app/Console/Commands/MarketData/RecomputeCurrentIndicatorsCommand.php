@@ -19,6 +19,7 @@ class RecomputeCurrentIndicatorsCommand extends AbstractMarketDataCommand
         {--with-evidence}
         {--with-replay}
         {--continue-on-error}
+        {--max_dates= : Optional positive limit on how many trading dates are processed.}
         {--dry-run}';
 
     protected $description = 'Recompute publication-bound indicators from existing current readable bars without source acquisition, bar ingest, or source/master writes.';
@@ -66,6 +67,15 @@ class RecomputeCurrentIndicatorsCommand extends AbstractMarketDataCommand
             return 1;
         }
 
+        $maxDates = $this->option('max_dates');
+        if ($maxDates !== null && $maxDates !== '' && (int) $maxDates <= 0) {
+            $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'max_dates must be a positive integer when provided.', [
+                'max_dates' => $maxDates,
+            ]);
+
+            return 1;
+        }
+
         try {
             $dates = app(MarketCalendarRepository::class)->tradingDatesBetween($startDate, $endDate);
         } catch (\Throwable $e) {
@@ -86,6 +96,14 @@ class RecomputeCurrentIndicatorsCommand extends AbstractMarketDataCommand
             return 1;
         }
 
+        // Applied after the calendar check so an empty result always means the calendar had
+        // nothing, never that the limit removed everything. max_dates is > 0 here, so slicing a
+        // non-empty list cannot empty it.
+        $resolvedTradingDateCount = count($dates);
+        if ($maxDates !== null && $maxDates !== '') {
+            $dates = array_slice($dates, 0, (int) $maxDates);
+        }
+
         $this->ensureDirectory($outputDir);
 
         $summary = [
@@ -100,7 +118,12 @@ class RecomputeCurrentIndicatorsCommand extends AbstractMarketDataCommand
             'eod_bars_write_executed' => false,
             'start_date' => (string) $startDate,
             'end_date' => (string) $endDate,
+            // trading_date_count is what this run will actually process, because all_passed is
+            // measured against it. The resolved count is kept alongside so the artifact still
+            // shows that the requested range was larger than the processed slice.
             'trading_date_count' => count($dates),
+            'resolved_trading_date_count' => $resolvedTradingDateCount,
+            'max_dates' => ($maxDates === null || $maxDates === '') ? null : (int) $maxDates,
             'dry_run' => $dryRun,
             'with_evidence' => $withEvidence,
             'with_replay' => $withReplay,
@@ -147,6 +170,8 @@ class RecomputeCurrentIndicatorsCommand extends AbstractMarketDataCommand
         $this->line('start_date='.$summary['start_date']);
         $this->line('end_date='.$summary['end_date']);
         $this->line('trading_date_count='.$summary['trading_date_count']);
+        $this->line('resolved_trading_date_count='.$summary['resolved_trading_date_count']);
+        $this->line('max_dates='.($summary['max_dates'] === null ? '' : $summary['max_dates']));
         $this->line('processed_count='.$summary['processed_count']);
         $this->line('success_count='.$summary['success_count']);
         $this->line('failed_count='.$summary['failed_count']);
@@ -161,7 +186,7 @@ class RecomputeCurrentIndicatorsCommand extends AbstractMarketDataCommand
 
     private function planTradeDate($tradeDate)
     {
-        $publication = app(EodPublicationRepository::class)->findCurrentPublicationForTradeDate($tradeDate);
+        $publication = app(EodPublicationRepository::class)->findCurrentPublicationForAnalyticalRemediation($tradeDate);
 
         if (! $publication) {
             return [
@@ -189,7 +214,7 @@ class RecomputeCurrentIndicatorsCommand extends AbstractMarketDataCommand
     private function recomputeTradeDate($tradeDate, $reason, $withEvidence, $outputDir)
     {
         try {
-            $publication = app(EodPublicationRepository::class)->findCurrentPublicationForTradeDate($tradeDate);
+            $publication = app(EodPublicationRepository::class)->findCurrentPublicationForAnalyticalRemediation($tradeDate);
             if (! $publication) {
                 throw new \RuntimeException('NO_READABLE_PUBLICATION: No current readable publication exists for trade_date.');
             }
@@ -215,7 +240,7 @@ class RecomputeCurrentIndicatorsCommand extends AbstractMarketDataCommand
                 $sourceMode,
                 (int) $publication->run_id,
                 (int) $correction->correction_id,
-                'correction_current',
+                'analytical_remediation_current',
                 false,
                 $reason
             );

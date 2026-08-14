@@ -2,16 +2,27 @@
 
 namespace App\Infrastructure\MarketData\Source;
 
+use App\Application\MarketData\Ports\ManualEodBarsSource;
+use App\Application\MarketData\Ports\SourceObservationRecorder;
+use App\Infrastructure\MarketData\Observation\InMemorySourceObservationRecorder;
+use App\Infrastructure\Persistence\MarketData\SourceObservationRepository;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
-class LocalFileEodBarsAdapter
+class LocalFileEodBarsAdapter implements ManualEodBarsSource
 {
     private $lastAcquisitionTelemetry = [];
     private $csvFileIndexCache = [];
     private $jsonFileIndexCache = [];
+    private $observations;
 
-    public function fetchOrLoadEodBars($tradeDate, $sourceMode)
+    public function __construct(SourceObservationRecorder $observations = null)
+    {
+        $this->observations = $observations ?: $this->defaultObservationRecorder();
+    }
+
+    public function fetchOrLoadEodBars($tradeDate, $sourceMode, array $tickerCodes = [], array $context = [])
     {
         $this->lastAcquisitionTelemetry = [];
 
@@ -23,9 +34,17 @@ class LocalFileEodBarsAdapter
             );
         }
 
-        $explicitInputFile = $this->resolveExplicitInputFilePath();
+        try {
+            $explicitInputFile = $this->resolveExplicitInputFilePath();
+        } catch (SourceAcquisitionException $e) {
+            $this->observations->recordTransportFailure(
+                $this->fileObservationEnvelope(config('market_data.source.local_input_file'), $tradeDate, null, $context),
+                $e->reasonCode()
+            );
+            throw $e;
+        }
         if ($explicitInputFile !== null) {
-            return $this->loadExplicitInputFile($explicitInputFile, $tradeDate);
+            return $this->loadObservedFile($explicitInputFile, $tradeDate, $context);
         }
 
         $basePath = base_path(config('market_data.source.local_directory'));
@@ -33,12 +52,17 @@ class LocalFileEodBarsAdapter
         $csvPath = $basePath.'/'.str_replace('{date}', $tradeDate, config('market_data.source.file_template_csv'));
 
         if (file_exists($jsonPath)) {
-            return $this->loadJson($jsonPath, $tradeDate);
+            return $this->loadObservedFile($jsonPath, $tradeDate, $context);
         }
 
         if (file_exists($csvPath)) {
-            return $this->loadCsv($csvPath, $tradeDate);
+            return $this->loadObservedFile($csvPath, $tradeDate, $context);
         }
+
+        $this->observations->recordTransportFailure(
+            $this->fileObservationEnvelope($jsonPath.'|'.$csvPath, $tradeDate, null, $context),
+            'RUN_SOURCE_MANUAL_FILE_NOT_FOUND'
+        );
 
         throw $this->manualFileException(
             'Sumber bars lokal untuk '.$tradeDate.' tidak ditemukan pada path JSON/CSV yang dikonfigurasi.',
@@ -91,6 +115,60 @@ class LocalFileEodBarsAdapter
             'RUN_SOURCE_MANUAL_FILE_MALFORMED',
             ['source_input_file' => $path]
         );
+    }
+
+    private function loadObservedFile($path, $tradeDate, array $context)
+    {
+        $extension = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
+        $payload = file_get_contents($path);
+        if ($payload === false) {
+            $this->observations->recordTransportFailure(
+                $this->fileObservationEnvelope($path, $tradeDate, null, $context),
+                'RUN_SOURCE_MANUAL_FILE_NOT_FOUND'
+            );
+            throw $this->manualFileException('Manual source file could not be read.', 'RUN_SOURCE_MANUAL_FILE_NOT_FOUND');
+        }
+
+        $capture = $this->persistCapture(
+            $this->fileObservationEnvelope($path, $tradeDate, $payload, $context, $extension)
+        );
+
+        try {
+            $rows = $this->loadExplicitInputFile($path, $tradeDate);
+        } catch (SourceAcquisitionException $e) {
+            $this->persistOutcome($capture, 'REJECTED', $e->reasonCode());
+            throw $e;
+        }
+
+        $outcome = $this->persistOutcome($capture, 'ACCEPTED');
+
+        return array_map(function (array $row) use ($capture, $outcome) {
+            return array_merge($row, [
+                'source_observation_id' => $outcome['source_observation_id'],
+                'source_capture_observation_id' => $capture['source_observation_id'],
+                'source_payload_hash' => $capture['payload_hash'] ?? null,
+                'source_schema_fingerprint' => $capture['schema_fingerprint'] ?? null,
+                'source_observation_persisted' => ! empty($outcome['persisted']),
+            ]);
+        }, $rows);
+    }
+
+    private function fileObservationEnvelope($path, $tradeDate, $payload, array $context, $format = null)
+    {
+        $resolvedPath = (string) $path;
+
+        return array_merge($context, [
+            'requested_trade_date' => $tradeDate,
+            'source_mode' => 'manual_file',
+            'source_name' => 'LOCAL_FILE',
+            'provider' => null,
+            'sanitized_request_identity' => 'local-file:'.hash('sha256', $resolvedPath),
+            'content_type' => $format === 'csv' ? 'text/csv' : ($format === 'json' ? 'application/json' : null),
+            'acquired_at' => Carbon::now(config('market_data.platform.timezone'))->toDateTimeString(),
+            'adapter_version' => (string) config('market_data.source.manual.adapter_version', 'local_file_eod_v1'),
+            'provider_schema_version' => (string) config('market_data.source.manual.schema_version', 'manual_file_schema_v1'),
+            'payload' => $payload,
+        ]);
     }
 
     public function consumeLastAcquisitionTelemetry()
@@ -432,5 +510,46 @@ class LocalFileEodBarsAdapter
             'source_row_ref' => $row['source_row_ref'] ?? $fallbackRowRef,
             'captured_at' => $capturedAt,
         ];
+    }
+
+    private function defaultObservationRecorder()
+    {
+        try {
+            if (Schema::hasTable('md_source_observations')) {
+                return new SourceObservationRepository();
+            }
+        } catch (\Throwable $e) {
+            // Isolated adapter tests intentionally have no persistence foundation.
+        }
+
+        return new InMemorySourceObservationRecorder();
+    }
+
+    private function persistCapture(array $envelope)
+    {
+        try {
+            return $this->observations->capture($envelope);
+        } catch (\Throwable $e) {
+            throw new SourceAcquisitionException(
+                'Manual source bytes could not be persisted before parsing.',
+                'SOURCE_OBSERVATION_PERSISTENCE_FAILED',
+                0,
+                $e
+            );
+        }
+    }
+
+    private function persistOutcome(array $capture, $state, $reasonCode = null)
+    {
+        try {
+            return $this->observations->recordOutcome($capture, $state, $reasonCode);
+        } catch (\Throwable $e) {
+            throw new SourceAcquisitionException(
+                'Manual source observation outcome could not be persisted immutably.',
+                'SOURCE_OBSERVATION_PERSISTENCE_FAILED',
+                0,
+                $e
+            );
+        }
     }
 }

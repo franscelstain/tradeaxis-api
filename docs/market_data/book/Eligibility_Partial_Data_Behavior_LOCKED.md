@@ -1,93 +1,59 @@
-# Eligibility Partial Data Behavior (LOCKED)
+# Eligibility Partial and Degraded Data Behavior (LOCKED)
 
 ## Purpose
-Define how eligibility must behave when upstream data for trade date D is partial, missing, invalid, or degraded.
 
-This document prevents ambiguous “best effort” readiness that could mislead downstream consumers.
+Define deterministic upstream data-usability facts when market-data is partial, missing, invalid, stale, quarantined, or otherwise degraded.
 
 ## Core rule (LOCKED)
-Eligibility must be explicit even when upstream data is partial.
 
-For every ticker in coverage universe for D:
-- one eligibility row must still exist
-- partial or degraded data must result in `eligible = 0` with a registered blocking `reason_code`
-- partial data must never be silently treated as readable
+Every temporal-universe instrument for D receives an explicit data-usability facts row in a completed candidate snapshot. Missing facts never cause the row to disappear or default to usable.
 
-## Allowed partial-data outcomes
-The platform may still build an eligibility snapshot for D even when some rows are blocked.
+## Required degraded behavior
 
-Examples:
-- some tickers have missing bars
-- some tickers have invalid indicators
-- some tickers have insufficient history
-- some tickers have optional fetch failures
+- Missing expected observation: delivery missing, canonical unavailable, `eligible=false`, registered delivery reason.
+- Delivered invalid observation: delivery present, quality invalid, canonical unavailable, `eligible=false`.
+- Stale/wrong-date observation: requested delivery missing/stale, `eligible=false`.
+- Missing/invalid indicators: indicator state explicit, `eligible=false` when required.
+- Insufficient warm-up: affected indicators `NULL`, warm-up state/reasons explicit; eligibility follows versioned required-field rules.
+- Unverified corporate action/break/factor: contamination explicit, `eligible=false` for affected dependency window.
+- Unknown/conflicting status or identity dependency: explicit unknown/blocking reason; no current-state fallback.
+- Zero-volume/illiquid observation: delivery remains present and liquidity facts remain explicit; downstream tradability policy decides preference. It blocks only a required metric whose input is missing/invalid, not otherwise valid market data.
 
-This is allowed as long as:
-- one row per universe ticker still exists
-- each blocked row has the correct registered blocking reason
-- run-level readiness rules remain independent from row-level eligibility details
+## Multiple-reason behavior
 
-## Minimum row-level blocking codes (LOCKED)
-Use only official registered codes:
-- `ELIG_MISSING_BAR`
-- `ELIG_MISSING_INDICATORS`
-- `ELIG_INVALID_INDICATORS`
-- `ELIG_INSUFFICIENT_HISTORY`
-- `ELIG_UNIVERSE_DEPENDENCY_MISSING`
-- `ELIG_FETCH_FAILURE` if optional fetch-failure tracking is implemented
+All material reasons are retained. A versioned primary-reason precedence may select one compatibility `reason_code`, but evidence and normalized reason set must preserve every applicable cause.
 
-## Missing-bar behavior
-If a ticker is in universe for D but no canonical valid bar exists:
-- emit eligibility row
-- `eligible = 0`
-- `reason_code = ELIG_MISSING_BAR`
+No `eligible=false` row may have an empty reason set. No `eligible=true` row may carry an unresolved blocking reason.
 
-## Missing-indicators behavior
-If canonical bar exists but required indicators are absent:
-- emit eligibility row
-- `eligible = 0`
-- `reason_code = ELIG_MISSING_INDICATORS`
+## Run-level distinction
 
-## Invalid-indicators behavior
-If indicator row exists but required indicator state is invalid:
-- emit eligibility row
-- `eligible = 0`
-- `reason_code = ELIG_INVALID_INDICATORS`
+Row-level blocks do not alone determine terminal run status:
 
-## Insufficient-history behavior
-If the blocking cause is insufficient history:
-- emit eligibility row
-- `eligible = 0`
-- `reason_code = ELIG_INSUFFICIENT_HISTORY`
+- some blocked rows may coexist with readable publication if delivery threshold and all global gates pass
+- global schema/provenance/config/identity/calendar corruption may make the run held/failed/not evaluable
+- coverage pass cannot override quality/eligibility blockers
+- a held/failed run cannot expose its candidate eligibility as readable
 
-## Optional fetch-failure behavior
-If optional fetch-failure tracking is implemented and source retrieval failure is the direct blocking cause for a ticker:
-- emit eligibility row
-- `eligible = 0`
-- `reason_code = ELIG_FETCH_FAILURE`
+## Fail-safe absence rule
 
-If fetch-failure tracking is not implemented, the implementation must still map the row to a valid registered blocking reason based on the downstream artifact that is actually missing or invalid.
+Absence of source/status/event/liquidity data means unknown or missing, never normal/safe/zero by default. Consumers must not guess or rebuild missing data-usability facts. Missing optional liquidity fields remain reason-coded nulls and are not silently converted into a market-data-wide strategy exclusion.
 
-## Run-level vs row-level distinction (LOCKED)
-Row-level blocked eligibility does not automatically determine run-level terminal status.
+## Determinism and immutability
 
-Run-level status still depends on:
-- coverage thresholds
-- required artifact existence
-- hash/seal/finalization rules
-- other locked gates
+Identical publication-bound inputs, temporal snapshots, factor/config/formula versions, and reason precedence produce identical rows and ordered reason sets. Published rows are immutable; changes create a new publication.
 
-Therefore:
-- some blocked eligibility rows may coexist with terminal `SUCCESS`
-- severe degradation may cause run `HELD` or `FAILED`
-- row-level eligibility and run-level final status must not be conflated
+## Capability boundary (LOCKED)
 
-## Anti-silent-readiness rule (LOCKED)
-Partial data must never cause:
-- missing eligibility rows
-- empty blocking reason for blocked rows
-- implicit best-effort readiness
-- consumer-side guessing about why a ticker is blocked
+**What partial-data handling proves.** That an incomplete input set produces an explicit partial or blocked state with reasons, rather than a silently narrowed result, and that absence fails safe rather than defaulting to usable.
 
-## Determinism rule
-Given identical upstream inputs and registry contracts, partial-data eligibility outcomes must remain deterministic across reruns.
+**What it cannot prove.**
+
+- **That the present data is right.** Partiality is about which facts arrived, not whether they are correct. A complete set of wrong facts is not partial.
+- **That the missing facts would have changed the decision.** A blocked row states that a required input was absent, not that its presence would have blocked or unblocked anything.
+- **That partiality was detected at all.** Detection depends on knowing which facts were required. A dimension nobody declared is never missing, because nothing expects it — which is why the required dimension list in the snapshot contract is load-bearing rather than descriptive.
+
+Consequently a non-partial result may be cited as evidence that **every declared input was present**, never as evidence that **the row is fully described**.
+
+## Acceptance criterion (LOCKED)
+
+Partial data never disappears into data usability, coverage exclusions, or consumer guesses; every blocked state remains explicit, independently classified, and reason-coded. Watchlist preference is not part of this acceptance criterion.

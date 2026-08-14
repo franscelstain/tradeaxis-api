@@ -6,6 +6,10 @@ Define the minimum operator-facing artifact formats generated per requested trad
 These artifacts are operational evidence companions.
 They do not replace the authoritative state stored in the main database contracts.
 
+## Corrected-strategy binding rule (LOCKED)
+
+Every artifact must expose the V2 semantic bindings applicable to its scope: immutable observation-manifest hash, full config snapshot ID/hash, temporal revision-set identity, factor-set ID/hash, price-product code, canonicalization/formula/registry/read-model versions, requested/effective dates, readiness/freshness states, and complete sorted reason sets. Legacy `config_version` or `config_identity` may remain as compatibility labels but never satisfies this rule by itself.
+
 ## Artifact categories
 For one requested trade date T, the implementation should be able to produce artifact outputs for:
 - normal readable success
@@ -66,10 +70,20 @@ A conforming summary should contain at minimum:
       "bars_batch_hash": null,
       "indicators_batch_hash": null,
       "eligibility_batch_hash": null,
+      "observation_manifest_hash": "OBS_HASH",
+      "publication_manifest_hash": null,
       "sealed_at": null,
       "config_version": "cfg_2026_03",
-      "config_hash": "abc123",
-      "config_snapshot_ref": "configs/2026-03-10.json",
+      "config_snapshot_id": 9001,
+      "config_snapshot_hash": "CONFIG_HASH",
+      "temporal_revision_set_hash": "TEMPORAL_HASH",
+      "factor_set_id": 7001,
+      "factor_set_hash": "FACTOR_HASH",
+      "price_product_code": "STRUCTURAL_ADJUSTED",
+      "canonicalization_version": "canonical_v2",
+      "formula_version": "weekly_swing_eod_v2",
+      "read_model_version": "weekly_swing_read_v2",
+      "freshness_state": "NOT_AVAILABLE",
       "publication_version": null,
       "is_current_publication": false,
       "supersedes_run_id": null,
@@ -101,14 +115,27 @@ A conforming manifest should contain at minimum:
       "supersedes_publication_id": 1188,
       "seal_state": "SEALED",
       "sealed_at": "2026-03-06T10:15:00+07:00",
-      "config_identity": "cfg_2026_03",
+      "observation_manifest_hash": "OBS_HASH",
+      "config_snapshot_id": 9002,
+      "config_snapshot_hash": "CONFIG_HASH",
+      "temporal_revision_set_hash": "TEMPORAL_HASH",
+      "factor_set_id": 7002,
+      "factor_set_hash": "FACTOR_HASH",
+      "price_product_code": "STRUCTURAL_ADJUSTED",
+      "canonicalization_version": "canonical_v2",
+      "formula_version": "weekly_swing_eod_v2",
+      "read_model_version": "weekly_swing_read_v2",
       "bars_batch_hash": "H2B",
       "indicators_batch_hash": "H2I",
       "eligibility_batch_hash": "H2E",
+      "publication_manifest_hash": "MANIFEST_HASH",
       "bars_rows_written": 1000,
       "indicators_rows_written": 1000,
       "eligibility_rows_written": 1000,
-      "trade_date_effective": "2026-03-05"
+      "trade_date_requested": "2026-03-05",
+      "trade_date_effective": "2026-03-05",
+      "readiness_state": "READABLE",
+      "freshness_state": "FRESH"
     }
 
 ### Locked rules
@@ -154,12 +181,15 @@ Provide a row-level readable/blocking view for the resolved trade date D.
 
 ### Minimum columns
 - `trade_date`
-- `ticker_id`
-- `eligible`
-- `reason_code`
+- stable `listing_id`
+- optional compatibility/display `ticker_id` / `ticker_code`
+- `publication_id`
+- `data_usable`
+- complete deterministic `reason_codes` / reason-set representation
+- optional legacy `eligible` and primary `reason_code` projection, never as the sole V2 meaning
 
 ### Example
-    trade_date,ticker_id,eligible,reason_code
+    trade_date,listing_id,ticker_code,publication_id,data_usable,reason_codes,eligible,reason_code
     2026-03-09,101,1,
     2026-03-09,102,0,ELIG_MISSING_BAR
 
@@ -174,13 +204,15 @@ Provide row-level audit evidence for rejected source rows.
 
 ### Minimum columns
 - `trade_date`
-- `ticker_id`
+- stable `listing_id` when mapping resolved
+- optional display/compatibility `ticker_id` / `ticker_code`
+- immutable `source_observation_id` or observation reference/hash
 - `source`
 - `source_row_ref`
 - `invalid_reason_code`
 
 ### Example
-    trade_date,ticker_id,source,source_row_ref,invalid_reason_code
+    trade_date,listing_id,ticker_code,source_observation_id,source,source_row_ref,invalid_reason_code
     2026-03-10,101,API_FREE,row_001,BAR_INVALID_OHLC_ORDER
     2026-03-10,205,API_FREE,row_019,BAR_NON_POSITIVE_PRICE
 
@@ -312,7 +344,17 @@ Provide a machine-readable summary when replay comparison does not fully match e
       "replay_status": "FAIL",
       "comparison_note": "eligibility output diverged",
       "artifact_changed_scope": "eligibility_only",
-      "config_identity": "cfg_2025_12_v2",
+      "replay_mode": "PUBLICATION_EXACT",
+      "knowledge_cutoff": null,
+      "observation_manifest_hash": "OBS_HASH",
+      "config_snapshot_id": 9001,
+      "config_snapshot_hash": "CONFIG_HASH",
+      "temporal_revision_set_hash": "TEMPORAL_HASH",
+      "factor_set_id": 7001,
+      "factor_set_hash": "FACTOR_HASH",
+      "price_product_code": "STRUCTURAL_ADJUSTED",
+      "formula_version": "weekly_swing_eod_v2",
+      "read_model_version": "weekly_swing_read_v2",
       "publication_version": 1,
       "bars_batch_hash": "A1",
       "indicators_batch_hash": "B1",
@@ -339,7 +381,14 @@ Preserve the replay fixture expectation as exported evidence, including expected
       "status": "SUCCESS",
       "trade_date_effective": "2025-12-10",
       "seal_state": "SEALED",
-      "config_identity": "cfg_2025_12_v2",
+      "replay_mode": "PUBLICATION_EXACT",
+      "observation_manifest_hash": "OBS_HASH",
+      "config_snapshot_hash": "CONFIG_HASH",
+      "temporal_revision_set_hash": "TEMPORAL_HASH",
+      "factor_set_hash": "FACTOR_HASH",
+      "price_product_code": "STRUCTURAL_ADJUSTED",
+      "formula_version": "weekly_swing_eod_v2",
+      "read_model_version": "weekly_swing_read_v2",
       "publication_version": 1,
       "bars_batch_hash": "A1",
       "indicators_batch_hash": "B1",
@@ -356,7 +405,14 @@ Preserve the actual replay proof state exported from `md_replay_daily_metrics` a
       "status": "SUCCESS",
       "trade_date_effective": "2025-12-10",
       "seal_state": "SEALED",
-      "config_identity": "cfg_2025_12_v2",
+      "replay_mode": "PUBLICATION_EXACT",
+      "observation_manifest_hash": "OBS_HASH",
+      "config_snapshot_hash": "CONFIG_HASH",
+      "temporal_revision_set_hash": "TEMPORAL_HASH",
+      "factor_set_hash": "FACTOR_HASH",
+      "price_product_code": "STRUCTURAL_ADJUSTED",
+      "formula_version": "weekly_swing_eod_v2",
+      "read_model_version": "weekly_swing_read_v2",
       "publication_version": 1,
       "bars_batch_hash": "A1",
       "indicators_batch_hash": "B1",

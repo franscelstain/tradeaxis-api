@@ -16,6 +16,10 @@ class WatchlistBacktestOosEvaluationRepository
         'picks_count_oos', 'avg_ret_net_top_oos', 'win_rate_top_oos',
         'median_ret_net_top_oos', 'p25_ret_net_top_oos', 'month_win_rate_min_oos',
     ];
+    private const OPTIONAL_IDENTITY_FIELDS = [
+        'paramset_hash', 'eval_model_hash', 'implementation_hash',
+        'is_evidence_manifest_hash', 'implementation_version',
+    ];
 
     public function persist(array $row): array
     {
@@ -67,6 +71,13 @@ class WatchlistBacktestOosEvaluationRepository
                 $value = (string) $value;
             }
             $canonical[$field] = $value;
+        }
+        foreach (self::OPTIONAL_IDENTITY_FIELDS as $field) {
+            if (array_key_exists($field, $row)) {
+                $canonical[$field] = $row[$field] === null
+                    ? null
+                    : (string) $row[$field];
+            }
         }
 
         return $canonical;

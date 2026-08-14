@@ -292,6 +292,8 @@ class OpsCommandSurfaceTest extends TestCase
 
     public function test_session_snapshot_capture_command_renders_summary(): void
     {
+        // This case exercises capture behaviour, so it asserts the feature is enabled.
+        config()->set('market_data.session_snapshot.enabled', true);
         $service = m::mock(SessionSnapshotService::class);
         $service->shouldReceive('capture')
             ->once()
@@ -343,6 +345,8 @@ class OpsCommandSurfaceTest extends TestCase
 
     public function test_session_snapshot_capture_command_blocks_without_readable_publication(): void
     {
+        // This case exercises capture behaviour, so it asserts the feature is enabled.
+        config()->set('market_data.session_snapshot.enabled', true);
         $service = m::mock(SessionSnapshotService::class);
         $service->shouldReceive('capture')
             ->once()
@@ -373,6 +377,8 @@ class OpsCommandSurfaceTest extends TestCase
 
     public function test_session_snapshot_capture_command_blocks_missing_slot_before_service(): void
     {
+        // This case exercises capture behaviour, so it asserts the feature is enabled.
+        config()->set('market_data.session_snapshot.enabled', true);
         $service = m::mock(SessionSnapshotService::class);
         $service->shouldNotReceive('capture');
 
@@ -506,21 +512,38 @@ class OpsCommandSurfaceTest extends TestCase
 
     public function test_current_publication_repair_apply_records_reason_and_pointer_before_after(): void
     {
-        $repo = m::mock(EodPublicationRepository::class);
+        // Partial mock: the scan and the clear are stubbed, but the reason derivation runs for
+        // real. Fully mocking the repository is what let the command's own copy of that
+        // derivation drift out of sync without any test noticing.
+        $repo = m::mock(EodPublicationRepository::class)->makePartial();
         $repo->shouldReceive('findInvalidCurrentPublicationStates')
             ->once()
             ->with('2026-03-17')
             ->andReturn(collect([
+                // A complete pointer row, valid in every respect except that the publication no
+                // longer claims to be current. One fault, so one reason is expected.
                 (object) [
                     'pointer_trade_date' => '2026-03-17',
                     'trade_date' => '2026-03-17',
                     'publication_id' => 2501,
+                    'pointer_publication_id' => 2501,
                     'run_id' => 25,
                     'pointer_run_id' => 25,
                     'publication_version' => 2,
                     'pointer_publication_version' => 2,
+                    'run_publication_id' => 2501,
+                    'run_publication_version' => 2,
                     'terminal_status' => 'SUCCESS',
                     'publishability_state' => 'READABLE',
+                    'coverage_gate_state' => 'PASS',
+                    'coverage_universe_count' => 2,
+                    'coverage_available_count' => 2,
+                    'coverage_missing_count' => 0,
+                    'coverage_ratio' => '1.000000',
+                    'coverage_min_threshold' => '0.980000',
+                    'coverage_threshold_mode' => 'MIN_RATIO',
+                    'coverage_universe_basis' => 'ACTIVE_TICKER_MASTER_FOR_TRADE_DATE',
+                    'coverage_contract_version' => 'coverage_gate_v1',
                     'is_current' => 0,
                     'is_current_publication' => 1,
                     'seal_state' => 'SEALED',
@@ -555,6 +578,10 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('pointer_before_run_id=25', $display);
         $this->assertStringContainsString('repair_action=CLEARED_INVALID_CURRENT_STATE', $display);
         $this->assertStringContainsString('pointer_after_state=CLEARED', $display);
+
+        // The operator is told to review integrity_reasons before authorising this clear, so
+        // the field has to name the fault and nothing else.
+        $this->assertStringContainsString('integrity_reasons=PUBLICATION_NOT_MARKED_CURRENT', $display);
     }
 
     public function test_replay_smoke_command_propagates_operator_options_and_renders_case_identifiers(): void

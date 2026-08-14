@@ -3,6 +3,7 @@
 namespace App\Console\Commands\Watchlist;
 
 use App\Application\Watchlist\Services\WeeklySwingWatchlistRuntimeService;
+use App\Application\Watchlist\Services\WeeklySwingActiveParamsetResolver;
 use Illuminate\Console\Command;
 
 class GenerateWeeklySwingWatchlistCommand extends Command
@@ -10,19 +11,24 @@ class GenerateWeeklySwingWatchlistCommand extends Command
     protected $signature = 'watchlist:weekly-swing-generate
         {--trade-date= : Explicit Market Data trade date in YYYY-MM-DD format}
         {--output= : Date-specific JSON output path}
-        {--paramset= : Optional executable Watchlist paramset JSON path}
+        {--paramset= : Explicit executable paramset JSON override; otherwise the single ACTIVE WS paramset is required}
         {--capital= : Optional input capital in IDR}
         {--overwrite : Replace an existing output only when explicitly requested}
         {--progress : Print runtime progress}';
 
-    protected $description = 'Run the C168 real published-Market-Data to Weekly Swing stock-ticker Watchlist pipeline.';
+    protected $description = 'Generate Weekly Swing Watchlist from published Market Data using the single ACTIVE WS paramset.';
 
     private WeeklySwingWatchlistRuntimeService $service;
+    private WeeklySwingActiveParamsetResolver $activeParamsetResolver;
 
-    public function __construct(?WeeklySwingWatchlistRuntimeService $service = null)
-    {
+    public function __construct(
+        ?WeeklySwingWatchlistRuntimeService $service = null,
+        ?WeeklySwingActiveParamsetResolver $activeParamsetResolver = null
+    ) {
         parent::__construct();
         $this->service = $service ?: new WeeklySwingWatchlistRuntimeService();
+        $this->activeParamsetResolver = $activeParamsetResolver
+            ?: new WeeklySwingActiveParamsetResolver();
     }
 
     public function handle(): int
@@ -39,7 +45,7 @@ class GenerateWeeklySwingWatchlistCommand extends Command
         }
 
         $paramset = [];
-        $paramsetSource = 'canonical_executable_watchlist_service_defaults';
+        $paramsetSource = '';
         if ($paramsetPath !== '') {
             $loaded = $this->loadParamset($paramsetPath);
             if (! $loaded['valid']) {
@@ -49,6 +55,18 @@ class GenerateWeeklySwingWatchlistCommand extends Command
             }
             $paramset = $loaded['payload'];
             $paramsetSource = $loaded['path'];
+        } else {
+            $active = $this->activeParamsetResolver->resolve('WS');
+            if (! ($active['valid'] ?? false)) {
+                $this->error(
+                    (string) ($active['reason_code'] ?? 'WS_ACTIVE_PARAMSET_NOT_READY')
+                    .': '.(string) ($active['message'] ?? 'ACTIVE paramset resolution failed.')
+                );
+
+                return 1;
+            }
+            $paramset = $active['paramset'];
+            $paramsetSource = (string) $active['paramset_source'];
         }
 
         $capitalInput = [];

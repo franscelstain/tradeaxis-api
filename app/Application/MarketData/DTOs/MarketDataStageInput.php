@@ -13,12 +13,20 @@ class MarketDataStageInput
     public $forceReplaceReason;
     public $requestMode;
 
-    private static $allowedRequestModes = [
+    /**
+     * The request modes a run may carry.
+     *
+     * This was previously a private static property that nothing read, while
+     * MarketDataPipelineService held its own inline copy of the same list. The copy here is the
+     * canonical one and the pipeline guard now reads it, so the vocabulary is defined once.
+     */
+    const ALLOWED_REQUEST_MODES = [
         'import_only',
         'promote',
         'full_publish',
         'correction',
         'repair_candidate',
+        'corpus_reconstruction',
         'replay_verify',
         'evidence_export',
     ];

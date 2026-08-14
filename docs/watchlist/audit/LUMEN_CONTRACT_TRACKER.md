@@ -14,6 +14,96 @@ Dokumen ini bukan owner business rule. Kontrak di sini harus ditelusuri ke:
 ## ACTIVE SESSION
 
 Session:
+`WATCHLIST - WS BREAKOUT INTEGRITY B01 CANONICAL IS/OOS PASS, ACTIVE PROMOTION, AND NON-MUTATING SHADOW`
+
+Current status:
+
+`ONE_PRIMARY_BREAKOUT_IDEA / ONE_AUTHORIZED_CANDIDATE / SEVEN_OF_SEVEN_CANONICAL_IS_GATES_PASS / FIVE_OF_FIVE_LOCKED_OOS_GATES_PASS / PARAMSET_29_ACTIVE / ACTIVE_SHADOW_PASS / PLAN_AND_CONFIRM_ZERO / NOT_PRODUCTION_READY`.
+
+B01 contract status:
+
+- `WL-CONTRACT-WSB01-001`: PASS_SCOPE. C171, R02, S01, P01, Q01, and the
+  preliminary M01 screen remain closed or rejected. B01 is a separate strategy
+  scope and does not mutate their evidence.
+- `WL-CONTRACT-WSB01-002`: PASS_RESEARCH_BOUNDARY. B01 locked one primary
+  hypothesis, inspected three decision-time variants, authorized only the
+  `-5%` close-to-HH20 floor, and used zero remediation rounds.
+- `WL-CONTRACT-WSB01-003`: PASS_SOURCE. The runtime rule uses only signal-date
+  ROC20, price, close-to-HH20, and IHSG regime. It uses no ticker/month
+  blacklist, future return, future-derived router, or OOS selection.
+- `WL-CONTRACT-WSB01-004`: PASS_OPERATOR. DRAFT paramset `29` and BT param
+  `181` were persisted under catalog
+  `WS_BT_GRID_BREAKOUT_INTEGRITY_B01_2026_07`, catalog hash
+  `69b3999d1fa2cfc932a7dbd14165f8e84da5549c`, and params hash
+  `ff14df49c1a5b3da997dafbea163a51e008314fd`.
+- `WL-CONTRACT-WSB01-005`: PASS_QUALITY. Official IS eval `220` used only
+  `2023-01-02..2025-05-21`; 146 trades over 500 days passed all seven
+  unchanged canonical gates, including P25 `0.005220092973476967`, worst
+  monthly win rate `0.625`, and worst monthly average
+  `-0.008998265585691277`.
+- `WL-CONTRACT-WSB01-006`: PASS_IDENTITY. The IS identity review recomputed
+  146 picks, 401,705 universe rows, and 508 cutoff rows under evidence
+  manifest `e413a21f8951722e113a99cb6c60691d8b289750` before authorizing exactly
+  one Official OOS execution.
+- `WL-CONTRACT-WSB01-007`: PASS_OOS. Official OOS row `1` used only
+  `2025-05-22..2026-05-29`; 84 trades passed all five locked gates with
+  positive average `0.002326377918853518`, median
+  `0.0070446965286297515`, P25 `0.005048780318109579`, and worst monthly win
+  rate `0.7142857142857143`. No retuning occurred.
+- `WL-CONTRACT-WSB01-008`: PASS_PROMOTION. The exact chain
+  `paramset 29 -> BT 181 -> IS 220 -> OOS 1` passed read-only promotion
+  readiness and the canonical promotion command changed only paramset `29`
+  from DRAFT to ACTIVE. Exactly one WS paramset is ACTIVE.
+- `WL-CONTRACT-WSB01-009`: PASS_SHADOW. The ACTIVE paramset—not runtime
+  defaults—executed against explicit readable publication `68547`, version
+  `3`, run `67865`, trade date `2026-07-28`. It generated non-official BFIN
+  and GGRM rows.
+- `WL-CONTRACT-WSB01-010`: PASS_TICKER_AUDIT. Both shadow rows match the exact
+  publication lineage, ROC20 range `10%-15%`, minimum price `50`, allowed
+  STRONG IHSG regime, and close-to-HH20 floor `-5%`.
+- `WL-CONTRACT-WSB01-011`: PASS_BOUNDARY. Shadow execution left one ACTIVE
+  paramset, one Official OOS row, zero PLAN runs/items, zero recommendation
+  rows, zero CONFIRM rows, all production feature flags disabled, and no
+  official publication.
+- `WL-CONTRACT-WSB01-012`: PASS_OPERATOR. Focused B01 regression passed
+  7 tests / 65 assertions and the full Watchlist regression passed
+  7,171 tests / 48,832 assertions.
+- `WL-CONTRACT-WSB01-013`: HOLD_PRODUCTION. Shadow is complete, but controlled
+  PLAN/rollout, production operator approval, and official publication remain
+  separate unexecuted stages. OOS worst monthly average was
+  `-0.019712322274332197` with one failing period; this is not one of the five
+  locked OOS gates but must remain visible during the next go/no-go review.
+
+```text
+WSB01_PRIMARY_HYPOTHESIS_COUNT=1
+WSB01_DIAGNOSTIC_CANDIDATE_COUNT=3
+WSB01_AUTHORIZED_CANDIDATE_COUNT=1
+WSB01_REMEDIATION_ROUNDS_USED=0
+WSB01_PARAM_SET_ID=29
+WSB01_BT_PARAM_ID=181
+WSB01_IS_EVAL_ID=220
+WSB01_ALL_CANONICAL_IS_GATES_PASS=1
+WSB01_OOS_ID=1
+WSB01_ALL_LOCKED_OOS_GATES_PASS=1
+WSB01_RETUNING_PERFORMED=0
+WSB01_ACTIVE_PARAMSET_COUNT=1
+WSB01_ACTIVE_PARAM_SET_ID=29
+WSB01_ACTIVE_SHADOW_PASS=1
+WSB01_SHADOW_TICKERS=BFIN,GGRM
+WSB01_PLAN_RUN_COUNT=0
+WSB01_PLAN_ITEM_COUNT=0
+WSB01_CONFIRM_MUTATED=0
+WSB01_OFFICIAL_OUTPUT_PUBLISHED=0
+WSB01_PRODUCTION_READY=0
+WSB01_NEXT=OPERATOR_GO_NO_GO_REVIEW_BEFORE_ANY_CONTROLLED_PLAN_OR_ROLLOUT
+```
+
+Watchlist Production Ready: `NO`.
+
+
+## PRIOR SESSION - WS PRICE QUALITY P01 CLOSURE
+
+Session:
 `WATCHLIST - WS PRICE QUALITY P01 DIAGNOSTIC, TWO CANDIDATES, SINGLE REMEDIATION, IDENTITY REPAIR, AND FAILED/NOT-READY CLOSURE`
 
 Current status:

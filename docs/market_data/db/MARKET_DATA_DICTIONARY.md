@@ -1,978 +1,230 @@
 # Market Data Database Dictionary
 
-Status: `CANONICAL_REFERENCE_FOR_DATABASE_CONNECTED_WORK`
+Status: **strategy-corrected transitional dictionary; production enforcement open**.
 
-Last updated: 2026-06-22
+## Reading rule
 
-This document is the operational data dictionary for database-connected Market Data, Watchlist, backtest, audit, and future feature work. It complements the physical DDL in `Database_Schema_MariaDB.sql`; it does not replace migrations or locked schema contracts.
+The logical model below is authoritative for meaning. Physical rollout is the base `Database_Schema_MariaDB.sql` plus forward migrations. Fields introduced by `2026_08_02_000001_add_market_data_strategy_v2_foundation.php` are nullable during adoption; null provenance/config/factor/publication bindings cannot pass seal/readability.
 
-## Database-Connected Work Rule
+Stable `listing_id` is the historical security key. Legacy `ticker_id`/`ticker_code`, live tables, and current master rows are compatibility projections and may not be used to infer point-in-time identity.
 
-Any prompt, implementation, audit, bug fix, backtest, diagnostic, or production feature that reads/writes database-backed data must read this dictionary first, plus the module-specific owner docs. This rule applies even when the work seems small.
+## Time vocabulary
 
-Minimum pre-work checklist:
+- `effective_from`/`effective_to` or a market date: when a fact applies in market time.
+- `recorded_at`: when the platform knew/recorded the revision.
+- `retracted_at`: when that recorded assertion ceased to be an accepted as-known revision.
+- `created_at`: storage event, not a substitute for either semantic time.
 
-1. Identify all tables touched.
-2. Confirm date key and identifier key from this dictionary.
-3. Confirm whether each field is pre-trade safe, evaluation-only, or forbidden for selection.
-4. Confirm as-of lookup rule; never use unbounded `MAX(trade_date)` or future lookup.
-5. Confirm whether source belongs to equity current tables, benchmark tables, history tables, audit/replay tables, or Watchlist-only tables.
-6. If a needed field/table is not in the dictionary, stop and update dictionary/governance before coding or claiming evidence.
+Publication replay uses frozen revision identities. As-known replay resolves both effective and recorded time against its target/knowledge cutoff.
 
-No agent should assume column names from memory. The C57 repair proved why: benchmark ROC20 is `market_benchmark_indicators.roc_20`, while equity ROC20 is `eod_indicators.roc20`.
+## Acquisition and configuration
 
-## Canonical Field Mapping and Alias Rules
+### `md_source_observations`
 
-These mappings are mandatory for database-connected work. Do not infer alternate names without checking the dictionary and schema.
+Immutable evidence envelope for every response/file/failed attempt.
 
-| Domain field needed by consumer/backtest | Canonical DB source | Canonical DB column | Notes |
-|---|---|---|---|
-| `market_index_roc20` | `market_benchmark_indicators` | `roc_20` where `benchmark_code='IHSG'` | This is not `roc20`; C57 fixed this mapping. |
-| `market_index_ma20_slope_pct` | `market_benchmark_indicators` | `ma20_slope_pct` where `benchmark_code='IHSG'` | Use `market_benchmark_bars` fallback only when indicator is null and sufficient bounded history exists. |
-| IHSG market-index identity | `market_benchmarks` | `benchmark_code='IHSG'`, provider symbol `^JKSE` | IHSG is outside the equity ticker universe. Do not search it as normal `ticker_id` unless a future contract says so. |
-| Sector index ROC20 | `market_benchmark_indicators` | `roc_20` for sector benchmark code | Join through `market_data_sectors.sector_index_code` and ticker sector membership as-of date. |
-| Equity ROC20 | `eod_indicators` | `roc20` | Equity indicator spelling differs from benchmark `roc_20`. |
-| Equity MA20 slope | `eod_indicators` | `ma20_slope_pct` | Use only as-of signal/trade date. |
-| Market calendar date | `market_calendar` | `cal_date` | Not `trade_date`. Use bounded previous trading day lookup, never unbounded `MAX(trade_date)`. |
-| Equity bar close | `eod_bars` | `adj_close` preferred where adjusted logic applies; otherwise `close` | Future path use is evaluation-only. |
-| Benchmark bar close | `market_benchmark_bars` | `adjusted_close` preferred; `close_price` fallback | Used to compute benchmark indicators when source indicator is null. |
+| Field group | Meaning |
+|---|---|
+| `source_observation_id`, `observation_uid` | stable storage and external identities |
+| `run_id`, `attempt_uid`, `requested_trade_date` | execution context |
+| `source_name`, `provider`, `provider_symbol`, `provider_mapping_id` | selected source and temporal routing context |
+| `sanitized_request_identity` | URL/file/request identity with credentials removed |
+| `response_status`, `content_type`, `source_timestamp`, `acquired_at` | transport/source time evidence |
+| `schema_fingerprint`, `adapter_version` | decoding contract |
+| `payload_hash`, `payload_ref`, `bounded_payload_body` | retained content identity/location; bounded body is optional |
+| `outcome_state`, `reason_code` | complete/partial/failed/stale/schema-invalid/quarantined outcome |
+| `supersedes_observation_id` | refetch/correction lineage; never overwrite predecessor |
 
-## Table Inventory Summary
+Payload and request fields must not contain secrets. Canonical rows link only to an accepted observation; non-accepted rows remain evidence.
 
-| Table | Purpose | Primary/identity key | Identifier key | Date/as-of key | Selection safety |
-|---|---|---|---|---|---|
-| `tickers` | Master saham/listing; maps ticker_code to ticker_id and active/listed/delisted state. | `ticker_id` | `ticker_code` | `listed_date/delisted_date` | Pre-trade safe as master data when resolved as-of date. |
-| `market_calendar` | Canonical exchange calendar; determines trading days, sessions, holidays, and previous-trading-day lookup. Date key is cal_date, not trade_date. | `cal_date` | `cal_date` | `cal_date` | Pre-trade safe; required for previous trading day lookup. Do not use MAX(trade_date). |
-| `market_data_sectors` | IDX-IC sector taxonomy and sector-index mapping such as IDXTECHNO/IDXFINANCE. | `sector_code` | `sector_code` | `effective_from/effective_to` | Pre-trade safe when membership/sector state is resolved as-of date. |
-| `ticker_sector_memberships` | Historical ticker-to-sector membership as of trade date. Required for sector reconstruction. | `membership_id` | `ticker_id + sector_code` | `effective_from/effective_to` | Pre-trade safe if date-bounded; no fabricated sector fallback. |
-| `market_data_corporate_actions` | Source-backed corporate action events by ticker/date/type. | `corporate_action_id` | `ticker_id/ticker_code` | `action_date` | Pre-trade safe only if source row is known as-of date; not future action leakage. |
-| `market_data_trading_status_event_types` | Canonical dictionary for trading-status event semantics, risk families, transition rules, and expected-bar policy. | `event_type_code` | `event_type_code` | n/a | Pre-trade safe configuration when seeded/locked. |
-| `market_data_trading_status_events` | Source-backed trading status events such as suspension, UMA, and special monitoring start/end states. | `trading_status_id` | `ticker_id/ticker_code` | `trade_date` | Pre-trade safe when event is known/carry-forward as-of date. |
-| `market_benchmarks` | Benchmark/index master. IHSG maps to Yahoo ^JKSE; sector benchmarks map to IDX sector provider symbols. | `benchmark_id` | `benchmark_code` | `n/a` | Pre-trade safe master mapping; IHSG is market index identifier. |
-| `market_benchmark_bars` | Benchmark/index OHLCV rows outside equity ticker universe. Correct source for IHSG/sector index bars. | `benchmark_bar_id` | `benchmark_code` | `trade_date` | Pre-trade safe for benchmark OHLC if trade_date <= signal/asof date. |
-| `market_benchmark_indicators` | Derived benchmark/index indicators. Correct source for IHSG roc_20 and ma20_slope_pct used by Watchlist market-index regime fields. | `benchmark_indicator_id` | `benchmark_code` | `trade_date` | Pre-trade safe for benchmark indicators if trade_date <= signal/asof date. |
-| `eod_reason_codes` | Reason-code registry for EOD lifecycle, bars, indicators, eligibility and audit semantics. | `code` | `code` | `n/a` | Metadata only. |
-| `eod_bars` | Current readable canonical equity EOD OHLCV rows, one row per trade_date/ticker_id. | `(trade_date,ticker_id)` | `ticker_id` | `trade_date` | Pre-trade safe only for asof EOD/date <= signal date. Future path bars are evaluation only. |
-| `eod_invalid_bars` | Rejected/invalid source-row evidence and reason-code payload. | `invalid_bar_id` | `ticker_id` | `trade_date` | Audit/evidence only; not a selection source. |
-| `eod_indicators` | Current readable derived equity indicators and event-risk/sector-rotation fields, one row per trade_date/ticker_id. | `(trade_date,ticker_id)` | `ticker_id` | `trade_date` | Primary pre-trade indicator source if trade_date <= signal/asof date. |
-| `eod_eligibility` | Current readable eligibility state and block reason per trade_date/ticker_id. | `(trade_date,ticker_id)` | `ticker_id` | `trade_date` | Primary pre-trade eligibility source if trade_date <= signal/asof date. |
-| `eod_runs` | Lifecycle/run audit header for source acquisition, backfill, recompute, promote and coverage-gate operations. | `run_id` | `run_id` | `trade_date_requested/effective` | Audit/run metadata; not trading selection feature unless explicitly whitelisted. |
-| `eod_run_events` | Append-only run event log with stage/severity/reason payloads. | `event_id` | `run_id` | `event_time/trade_date_requested` | Audit/log only. |
-| `eod_publications` | Publication/seal records for current and superseded readable datasets. | `publication_id` | `run_id` | `trade_date` | Publication state; used to ensure readable state, not selection alpha. |
-| `eod_current_publication_pointer` | Canonical pointer from trade_date to the current readable publication. | `trade_date` | `publication_id` | `trade_date` | Publication pointer; use to resolve current readable state. |
-| `eod_dataset_corrections` | Correction workflow state and publication lineage for reprocessing/corrections. | `correction_id` | `prior_run/new_run` | `trade_date` | Correction audit only. |
-| `eod_bars_history` | Publication-bound immutable history for equity EOD bars. | `(publication_id,trade_date,ticker_id)` | `ticker_id` | `trade_date` | Audit/history; current consumer read should prefer current published rows/pointer unless replaying a locked publication. |
-| `eod_indicators_history` | Publication-bound immutable history for equity indicators. | `(publication_id,trade_date,ticker_id)` | `ticker_id` | `trade_date` | Audit/history; safe only when locked publication is explicit. |
-| `eod_eligibility_history` | Publication-bound immutable history for eligibility rows. | `(publication_id,trade_date,ticker_id)` | `ticker_id` | `trade_date` | Audit/history; safe only when locked publication is explicit. |
-| `md_session_snapshots` | Intraday/session snapshot storage for manual/live snapshot evidence. | `snapshot_id` | `ticker_id` | `trade_date/captured_at` | Confirm/intraday snapshot evidence; not EOD backtest selection unless explicitly modeled. |
-| `md_replay_daily_metrics` | Daily replay/evidence metrics for determinism, coverage and publishability verification. | `replay_id + trade_date` | `replay suite/case` | `trade_date` | Evaluation/audit only; not pre-trade selection input. |
-| `md_replay_reason_code_counts` | Aggregated reason-code counts by replay/date. | `(replay_id,trade_date,reason_code)` | `reason_code` | `trade_date` | Evaluation/audit only. |
+### `md_config_snapshots`
 
-## Detailed Table Dictionary
+Immutable full output-affecting configuration.
 
-### `tickers`
+`snapshot_uid`, schema/serialization versions, canonical `resolved_config_json`, `config_hash`, registry revision, effective/recorded timestamps, build, environment profile, resolver version, and creation time are mandatory. Secret values are absent; only sanitized credential profile/revision identifiers may appear.
 
-- Purpose: Master saham/listing; maps ticker_code to ticker_id and active/listed/delisted state.
-- Primary/identity key: `ticker_id`
-- Identifier key: `ticker_code`
-- Date/as-of key: `listed_date/delisted_date`
-- Selection safety: Pre-trade safe as master data when resolved as-of date.
+The same snapshot binds run, artifacts, publication lineage, manifest, and seal.
 
-| Column | Type / contract | Field role |
-|---|---|---|
-| `ticker_id` | `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` | identifier / relationship key |
-| `ticker_code` | `VARCHAR(10) NOT NULL` | identifier / relationship key |
-| `company_name` | `VARCHAR(255) NOT NULL` | data field |
-| `company_logo` | `VARCHAR(255) NULL` | data field |
-| `listed_date` | `DATE NULL` | date/time / as-of or audit metadata |
-| `delisted_date` | `DATE NULL` | date/time / as-of or audit metadata |
-| `board_code` | `VARCHAR(10) NULL` | data field |
-| `exchange_code` | `VARCHAR(10) NULL` | data field |
-| `is_active` | `TINYINT(1) NOT NULL DEFAULT 1` | data field |
-| `created_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | date/time / as-of or audit metadata |
-| `updated_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP` | date/time / as-of or audit metadata |
+## Temporal identity
+
+### `md_issuers`
+
+Stable legal entity: `issuer_id`, `issuer_uid`, legal name, recorded/created times.
+
+### `md_instruments`
+
+Stable financial instrument issued by an issuer: `instrument_id`, `instrument_uid`, `issuer_id`, instrument type, currency, recorded/created times.
+
+### `md_listings`
+
+Exchange listing of an instrument: stable `listing_id`/`listing_uid`, `instrument_id`, exchange/board, listed/delisted dates, recorded/created times. Delisted rows remain historical members where applicable.
+
+### `md_listing_symbols`
+
+Bitemporal exchange/display symbol assertions: listing, symbol/type, effective interval, recorded/retracted time, and source observation. Symbol reuse is allowed across non-overlapping listing/revision context; symbol text is never identity.
+
+### `md_provider_symbol_mappings`
+
+Bitemporal provider routing: listing, provider/provider symbol, effective interval, recorded/retracted time, source observation, mapping revision. `.JK` or any suffix is mapping data, not an inferred identity rule.
+
+### Legacy `tickers`
+
+Compatibility/current projection. `is_active`, `ticker_code`, company name, board/exchange, and listed/delisted dates do not replace the temporal identity tables. Historical queries must not filter by today's `is_active` or join by current code alone.
+
+## Calendar, status, sector, and benchmarks
+
+### `md_market_calendar_revisions`
+
+Immutable market/date revision with timezone `Asia/Jakarta`, session state/open/close/completion, recorded time, source observation, and supersession. It owns latest completed Regular-Market session semantics.
 
 ### `market_calendar`
 
-- Purpose: Canonical exchange calendar; determines trading days, sessions, holidays, and previous-trading-day lookup. Date key is cal_date, not trade_date.
-- Primary/identity key: `cal_date`
-- Identifier key: `cal_date`
-- Date/as-of key: `cal_date`
-- Selection safety: Pre-trade safe; required for previous trading day lookup. Do not use MAX(trade_date).
+Legacy current calendar projection (`cal_date`, trading-day/session fields). It may serve current operations only when its revision binding is explicit; it is not as-known replay authority.
 
-| Column | Type / contract | Field role |
-|---|---|---|
-| `cal_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `is_trading_day` | `TINYINT(1) NOT NULL DEFAULT 1` | data field |
-| `holiday_name` | `VARCHAR(120) NULL` | data field |
-| `session_open_time` | `VARCHAR(5) NULL` | data field |
-| `session_close_time` | `VARCHAR(5) NULL` | data field |
-| `breaks_json` | `TEXT NULL` | data field |
-| `source` | `VARCHAR(120) NULL` | data field |
-| `created_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | date/time / as-of or audit metadata |
-| `updated_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | date/time / as-of or audit metadata |
+### `md_trading_status_revisions`
 
-### `market_data_sectors`
+Bitemporal listing status with `bar_expectation_state`, full-session verification, effective interval, recorded/retracted time, source observation, and supersession. Only verified full-session status can produce `BAR_NOT_EXPECTED`; absence/unknown cannot.
 
-- Purpose: IDX-IC sector taxonomy and sector-index mapping such as IDXTECHNO/IDXFINANCE.
-- Primary/identity key: `sector_code`
-- Identifier key: `sector_code`
-- Date/as-of key: `effective_from/effective_to`
-- Selection safety: Pre-trade safe when membership/sector state is resolved as-of date.
+### Legacy trading-status tables
 
-| Column | Type / contract | Field role |
-|---|---|---|
-| `sector_code` | `VARCHAR(8) NOT NULL` | identifier / relationship key |
-| `sector_name` | `VARCHAR(120) NOT NULL` | data field |
-| `sector_index_code` | `VARCHAR(32) NULL` | data field |
-| `classification_system` | `VARCHAR(32) NOT NULL DEFAULT 'IDX-IC'` | data field |
-| `effective_from` | `DATE NOT NULL DEFAULT '2021-01-25'` | date/time / as-of or audit metadata |
-| `effective_to` | `DATE NULL` | date/time / as-of or audit metadata |
-| `is_active` | `TINYINT(1) NOT NULL DEFAULT 1` | data field |
-| `source_name` | `VARCHAR(64) NOT NULL DEFAULT 'idx'` | data field |
-| `source_ref` | `VARCHAR(255) NULL` | data field |
-| `created_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | date/time / as-of or audit metadata |
-| `updated_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | date/time / as-of or audit metadata |
+`market_data_trading_status_event_types` remains a registry/projection and `market_data_trading_status_events` retains source events. Historical/readability logic migrates to immutable listing-bound revisions; current ticker code and event absence cannot create “active/no risk.”
 
-### `ticker_sector_memberships`
+### Sector and benchmark tables
 
-- Purpose: Historical ticker-to-sector membership as of trade date. Required for sector reconstruction.
-- Primary/identity key: `membership_id`
-- Identifier key: `ticker_id + sector_code`
-- Date/as-of key: `effective_from/effective_to`
-- Selection safety: Pre-trade safe if date-bounded; no fabricated sector fallback.
+`market_data_sectors`, `ticker_sector_memberships`, `market_benchmarks`, `market_benchmark_bars`, and `market_benchmark_indicators` hold source-backed taxonomy/membership/index context. Membership and benchmark revisions used by output must be frozen/as-known. Missing sector/benchmark data yields dependent null reasons, never fabricated values.
 
-| Column | Type / contract | Field role |
-|---|---|---|
-| `membership_id` | `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` | identifier / relationship key |
-| `ticker_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `sector_code` | `VARCHAR(8) NOT NULL` | identifier / relationship key |
-| `classification_system` | `VARCHAR(32) NOT NULL DEFAULT 'IDX-IC'` | data field |
-| `effective_from` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `effective_to` | `DATE NULL` | date/time / as-of or audit metadata |
-| `source_name` | `VARCHAR(64) NULL` | data field |
-| `source_ref` | `VARCHAR(255) NULL` | data field |
-| `created_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | date/time / as-of or audit metadata |
-| `updated_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | date/time / as-of or audit metadata |
+## Corporate actions and price products
 
-### `market_data_corporate_actions`
+### `md_corporate_action_revisions`
 
-- Purpose: Source-backed corporate action events by ticker/date/type.
-- Primary/identity key: `corporate_action_id`
-- Identifier key: `ticker_id/ticker_code`
-- Date/as-of key: `action_date`
-- Selection safety: Pre-trade safe only if source row is known as-of date; not future action leakage.
+Immutable `(event_uid, revision_number)` lifecycle: listing, type, lifecycle/verification state, ex/cum/record/payment dates, versioned terms JSON, source observation, effective/recorded times, and superseded revision.
 
-| Column | Type / contract | Field role |
-|---|---|---|
-| `corporate_action_id` | `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` | identifier / relationship key |
-| `ticker_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `ticker_code` | `VARCHAR(16) NOT NULL` | identifier / relationship key |
-| `action_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `action_type` | `VARCHAR(64) NOT NULL` | data field |
-| `source_name` | `VARCHAR(64) NOT NULL DEFAULT 'manual_corporate_action_csv'` | data field |
-| `source_ref` | `VARCHAR(255) NULL` | data field |
-| `notes` | `VARCHAR(255) NULL` | data field |
-| `created_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | date/time / as-of or audit metadata |
-| `updated_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | date/time / as-of or audit metadata |
+Only authoritative or explicitly operator-verified complete revisions are factor-eligible. Synthetic price-break candidates remain unverified/quarantined.
 
-### `market_data_trading_status_event_types`
+### `md_adjustment_factor_sets`
 
-- Purpose: Canonical dictionary for source-backed trading-status event semantics. Daily imports must not repeat semantic fields; this table defines the risk family, transition type, expected-bar policy, carry-forward behavior, and clearing behavior for each allowed `event_type_code`.
-- Primary/identity key: `event_type_code`
-- Identifier key: `event_type_code`
-- Date/as-of key: n/a
-- Selection safety: Pre-trade safe configuration once seeded and locked.
+Immutable analytical product factor-set identity: product, factor formula version, full config snapshot, state, content hash, and recorded/created times.
 
-| Column | Type / contract | Field role |
-|---|---|---|
-| `event_type_code` | `VARCHAR(64) NOT NULL` | canonical event identity |
-| `risk_family` | `VARCHAR(64) NOT NULL` | semantic family: `SUSPENSION`, `SPECIAL_MONITORING`, `UMA` |
-| `transition_type` | `VARCHAR(32) NOT NULL` | `START`, `OBSERVED`, `END`, or `POINT_IN_TIME` |
-| `expected_bar_policy` | `VARCHAR(32) NOT NULL` | `BAR_NOT_REQUIRED`, `BAR_REQUIRED`, or `BAR_REQUIRED_WITH_RISK` |
-| `carries_forward` | `TINYINT(1) NOT NULL DEFAULT 0` | whether the event remains active until a matching end event |
-| `clears_risk_family` | `VARCHAR(64) NULL` | risk family cleared by an end event |
-| `description` | `VARCHAR(255) NULL` | human-readable contract note |
-| `created_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | audit metadata |
-| `updated_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | audit metadata |
+### `md_adjustment_factors`
 
-#### Canonical trading-status event types
+Per-listing effective factor intervals with coherent price factor, optional volume factor, and mandatory verified corporate-action revision link. Append-only revisions; no raw bar rewrite.
 
-| `event_type_code` | Risk family | Transition | Expected-bar policy | Carry-forward | Clears |
-|---|---|---|---|---:|---|
-| `SUSPENDED` | `SUSPENSION` | `START` | `BAR_NOT_REQUIRED` | 1 |  |
-| `SUSPENSION_OBSERVED` | `SUSPENSION` | `OBSERVED` | `BAR_NOT_REQUIRED` | 1 |  |
-| `UNSUSPENDED` | `SUSPENSION` | `END` | `BAR_REQUIRED` | 0 | `SUSPENSION` |
-| `SPECIAL_MONITORING_START` | `SPECIAL_MONITORING` | `START` | `BAR_REQUIRED_WITH_RISK` | 1 |  |
-| `SPECIAL_MONITORING_END` | `SPECIAL_MONITORING` | `END` | `BAR_REQUIRED` | 0 | `SPECIAL_MONITORING` |
-| `UMA` | `UMA` | `POINT_IN_TIME` | `BAR_REQUIRED_WITH_RISK` | 0 |  |
+### Legacy `market_data_corporate_actions`
 
-### `market_data_trading_status_events`
+Transitional observation/projection. Dates/terms/factor-like columns are not by themselves verified factor authority. `adjustment_source` must never authorize `DERIVED_FROM_PRICE_SERIES` behavior.
 
-- Purpose: Source-backed trading status event table. The table stores only the actual event identity and source metadata. It does not store duplicated semantic columns such as `status_code`, `status_effect`, `event_risk_scope`, `coverage_exclusion_flag`, `is_suspended`, or `is_uma`.
-- Primary/identity key: `trading_status_id`
-- Identifier key: `ticker_id/ticker_code`
-- Date/as-of key: `trade_date`
-- Selection safety: Pre-trade safe when the source event is known/carry-forward as-of date.
+### `market_data_price_scale_breaks`
 
-| Column | Type / contract | Field role |
-|---|---|---|
-| `trading_status_id` | `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` | identifier / relationship key |
-| `ticker_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `ticker_code` | `VARCHAR(16) NOT NULL` | identifier / relationship key |
-| `trade_date` | `DATE NOT NULL` | source event effective date |
-| `event_type_code` | `VARCHAR(64) NOT NULL` | canonical event type; references dictionary semantics |
-| `source_name` | `VARCHAR(64) NOT NULL DEFAULT 'manual_trading_status_csv'` | source/audit identity |
-| `source_ref` | `VARCHAR(255) NULL` | source/audit reference |
-| `notes` | `VARCHAR(255) NULL` | source/audit note |
-| `created_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | audit metadata |
-| `updated_at` | `TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP` | audit metadata |
+Detector evidence only: discontinuity measurements, match/review context, and detector version. It has no repair factor/range/count/time fields and must never drive direct updates of `eod_bars` or `eod_bars_history`.
 
-#### Trading status semantic rules
-
-- Operators import only actual source-backed events: `SUSPENDED`, `SUSPENSION_OBSERVED`, `UNSUSPENDED`, `SPECIAL_MONITORING_START`, `SPECIAL_MONITORING_END`, and `UMA`.
-- `SUSPENDED` is a suspension-start transition and resolves to `BAR_NOT_REQUIRED` until `UNSUSPENDED` appears.
-- `SUSPENSION_OBSERVED` is a source/snapshot observation that suspension is active, including long-suspension lists; it resolves to `BAR_NOT_REQUIRED` but is not a suspension-start transition.
-- `UNSUSPENDED` clears only the active suspension state.
-- `SPECIAL_MONITORING_START` carries forward as event-risk context and does not exclude coverage.
-- `SPECIAL_MONITORING_END` clears only the active special-monitoring state.
-- `UMA` is exact-date event-risk context and has no start/end pair.
-- `ACTIVE` is not a source event type. It is a resolved state that exists only when no risk state remains active.
-- Absence of source data must never be converted into a fabricated `ACTIVE`, `BAR_REQUIRED`, `BAR_REQUIRED_WITH_RISK`, or `BAR_NOT_REQUIRED` row.
-
-### `market_benchmarks`
-
-- Purpose: Benchmark/index master. IHSG maps to Yahoo ^JKSE; sector benchmarks map to IDX sector provider symbols.
-- Primary/identity key: `benchmark_id`
-- Identifier key: `benchmark_code`
-- Date/as-of key: `n/a`
-- Selection safety: Pre-trade safe master mapping; IHSG is market index identifier.
-
-| Column | Type / contract | Field role |
-|---|---|---|
-| `benchmark_id` | `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` | identifier / relationship key |
-| `benchmark_code` | `VARCHAR(32) NOT NULL` | identifier / relationship key |
-| `benchmark_name` | `VARCHAR(120) NOT NULL` | data field |
-| `provider` | `VARCHAR(64) NOT NULL` | data field |
-| `provider_symbol` | `VARCHAR(64) NOT NULL` | data field |
-| `instrument_type` | `VARCHAR(32) NOT NULL` | data field |
-| `is_active` | `TINYINT(1) NOT NULL DEFAULT 1` | data field |
-| `created_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
-| `updated_at` | `DATETIME NULL` | date/time / as-of or audit metadata |
-
-### `market_benchmark_bars`
-
-- Purpose: Benchmark/index OHLCV rows outside equity ticker universe. Correct source for IHSG/sector index bars.
-- Primary/identity key: `benchmark_bar_id`
-- Identifier key: `benchmark_code`
-- Date/as-of key: `trade_date`
-- Selection safety: Pre-trade safe for benchmark OHLC if trade_date <= signal/asof date.
-
-| Column | Type / contract | Field role |
-|---|---|---|
-| `benchmark_bar_id` | `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` | identifier / relationship key |
-| `benchmark_code` | `VARCHAR(32) NOT NULL` | identifier / relationship key |
-| `trade_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `open_price` | `DECIMAL(20,4) NOT NULL` | raw price/volume market data |
-| `high_price` | `DECIMAL(20,4) NOT NULL` | raw price/volume market data |
-| `low_price` | `DECIMAL(20,4) NOT NULL` | raw price/volume market data |
-| `close_price` | `DECIMAL(20,4) NOT NULL` | raw price/volume market data |
-| `adjusted_close` | `DECIMAL(20,4) NULL` | raw price/volume market data |
-| `volume` | `BIGINT NULL` | raw price/volume market data |
-| `provider` | `VARCHAR(64) NOT NULL` | data field |
-| `provider_symbol` | `VARCHAR(64) NOT NULL` | data field |
-| `created_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
-| `updated_at` | `DATETIME NULL` | date/time / as-of or audit metadata |
-
-### `market_benchmark_indicators`
-
-- Purpose: Derived benchmark/index indicators. Correct source for IHSG roc_20 and ma20_slope_pct used by Watchlist market-index regime fields.
-- Primary/identity key: `benchmark_indicator_id`
-- Identifier key: `benchmark_code`
-- Date/as-of key: `trade_date`
-- Selection safety: Pre-trade safe for benchmark indicators if trade_date <= signal/asof date.
-
-| Column | Type / contract | Field role |
-|---|---|---|
-| `benchmark_indicator_id` | `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` | identifier / relationship key |
-| `benchmark_code` | `VARCHAR(32) NOT NULL` | identifier / relationship key |
-| `trade_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `roc_20` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `ma20` | `DECIMAL(20,4) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `ma50` | `DECIMAL(20,4) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `ma20_slope_pct` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `close_to_ma20_pct` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `close_to_ma50_pct` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `is_valid` | `TINYINT(1) NOT NULL DEFAULT 0` | data field |
-| `invalid_reason_code` | `VARCHAR(64) NULL` | state/reason/audit field |
-| `indicator_set_version` | `VARCHAR(64) NOT NULL` | data field |
-| `created_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
-| `updated_at` | `DATETIME NULL` | date/time / as-of or audit metadata |
-
-### `eod_reason_codes`
-
-- Purpose: Reason-code registry for EOD lifecycle, bars, indicators, eligibility and audit semantics.
-- Primary/identity key: `code`
-- Identifier key: `code`
-- Date/as-of key: `n/a`
-- Selection safety: Metadata only.
-
-| Column | Type / contract | Field role |
-|---|---|---|
-| `code` | `VARCHAR(64) NOT NULL` | identifier / relationship key |
-| `category` | `VARCHAR(32) NOT NULL` | data field |
-| `description` | `VARCHAR(255) NOT NULL` | data field |
-| `severity` | `ENUM('INFO','WARN','HARD') NOT NULL` | data field |
-| `is_active` | `TINYINT(1) NOT NULL DEFAULT 1` | data field |
-| `created_at` | `DATETIME NULL` | date/time / as-of or audit metadata |
-| `updated_at` | `DATETIME NULL` | date/time / as-of or audit metadata |
-
-### `eod_bars`
-
-- Purpose: Current readable canonical equity EOD OHLCV rows, one row per trade_date/ticker_id.
-- Primary/identity key: `(trade_date,ticker_id)`
-- Identifier key: `ticker_id`
-- Date/as-of key: `trade_date`
-- Selection safety: Pre-trade safe only for asof EOD/date <= signal date. Future path bars are evaluation only.
-
-| Column | Type / contract | Field role |
-|---|---|---|
-| `trade_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `ticker_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `open` | `DECIMAL(20,4) NOT NULL` | raw price/volume market data |
-| `high` | `DECIMAL(20,4) NOT NULL` | raw price/volume market data |
-| `low` | `DECIMAL(20,4) NOT NULL` | raw price/volume market data |
-| `close` | `DECIMAL(20,4) NOT NULL` | raw price/volume market data |
-| `volume` | `BIGINT NOT NULL` | raw price/volume market data |
-| `adj_close` | `DECIMAL(20,4) NULL` | raw price/volume market data |
-| `source` | `VARCHAR(32) NOT NULL` | data field |
-| `run_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `publication_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `created_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
-
-### `eod_invalid_bars`
-
-- Purpose: Rejected/invalid source-row evidence and reason-code payload.
-- Primary/identity key: `invalid_bar_id`
-- Identifier key: `ticker_id`
-- Date/as-of key: `trade_date`
-- Selection safety: Audit/evidence only; not a selection source.
-
-| Column | Type / contract | Field role |
-|---|---|---|
-| `invalid_bar_id` | `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` | identifier / relationship key |
-| `trade_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `ticker_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `run_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `source` | `VARCHAR(32) NOT NULL` | data field |
-| `source_row_ref` | `VARCHAR(255) NULL` | data field |
-| `open` | `DECIMAL(20,4) NULL` | raw price/volume market data |
-| `high` | `DECIMAL(20,4) NULL` | raw price/volume market data |
-| `low` | `DECIMAL(20,4) NULL` | raw price/volume market data |
-| `close` | `DECIMAL(20,4) NULL` | raw price/volume market data |
-| `volume` | `BIGINT NULL` | raw price/volume market data |
-| `adj_close` | `DECIMAL(20,4) NULL` | raw price/volume market data |
-| `invalid_reason_code` | `VARCHAR(64) NOT NULL` | state/reason/audit field |
-| `invalid_note` | `VARCHAR(255) NULL` | data field |
-| `loser_of_trade_date` | `DATE NULL` | date/time / as-of or audit metadata |
-| `loser_of_ticker_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `created_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
-
-### `eod_indicators`
-
-- Purpose: Current readable derived equity indicators and event-risk/sector-rotation fields, one row per trade_date/ticker_id.
-- Primary/identity key: `(trade_date,ticker_id)`
-- Identifier key: `ticker_id`
-- Date/as-of key: `trade_date`
-- Selection safety: Primary pre-trade indicator source if trade_date <= signal/asof date.
-
-| Column | Type / contract | Field role |
-|---|---|---|
-| `trade_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `ticker_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `is_valid` | `TINYINT(1) NOT NULL` | data field |
-| `invalid_reason_code` | `VARCHAR(64) NULL` | state/reason/audit field |
-| `indicator_set_version` | `VARCHAR(64) NOT NULL` | data field |
-| `sector_code` | `VARCHAR(8) NULL` | identifier / relationship key |
-| `dv20_idr` | `DECIMAL(24,2) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `atr14_pct` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `vol_ratio` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `roc5` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `roc10` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `roc20` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `hh20` | `DECIMAL(20,4) NULL` | data field |
-| `ll20` | `DECIMAL(20,4) NULL` | data field |
-| `ma20` | `DECIMAL(20,4) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `ma50` | `DECIMAL(20,4) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `close_to_hh20_pct` | `DECIMAL(20,10) NULL` | data field |
-| `close_to_ll20_pct` | `DECIMAL(20,10) NULL` | data field |
-| `range_20_pct` | `DECIMAL(20,10) NULL` | data field |
-| `range_position_20_pct` | `DECIMAL(20,10) NULL` | data field |
-| `close_vs_ma20_pct` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `close_vs_ma50_pct` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `ma20_slope_pct` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `rs_20_vs_ihsg` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `sector_roc20` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `rs_20_vs_sector` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `sector_rs_20_vs_ihsg` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `corporate_action_flag` | `TINYINT(1) NULL` | data field |
-| `corporate_action_types` | `VARCHAR(255) NULL` | data field |
-| `trading_status_code` | `VARCHAR(64) NULL` | data field |
-| `is_suspended` | `TINYINT(1) NULL` | data field |
-| `is_uma` | `TINYINT(1) NULL` | data field |
-| `event_risk_flag` | `TINYINT(1) NULL` | data field |
-| `event_risk_reasons` | `VARCHAR(255) NULL` | data field |
-| `run_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `publication_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `created_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
-
-### `eod_eligibility`
-
-- Purpose: Current readable eligibility state and block reason per trade_date/ticker_id.
-- Primary/identity key: `(trade_date,ticker_id)`
-- Identifier key: `ticker_id`
-- Date/as-of key: `trade_date`
-- Selection safety: Primary pre-trade eligibility source if trade_date <= signal/asof date.
-
-| Column | Type / contract | Field role |
-|---|---|---|
-| `trade_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `ticker_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `eligible` | `TINYINT(1) NOT NULL` | data field |
-| `reason_code` | `VARCHAR(64) NULL` | state/reason/audit field |
-| `run_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `publication_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `created_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
-
-### `eod_runs`
-
-- Purpose: Lifecycle/run audit header for source acquisition, backfill, recompute, promote and coverage-gate operations.
-- Primary/identity key: `run_id`
-- Identifier key: `run_id`
-- Date/as-of key: `trade_date_requested/effective`
-- Selection safety: Audit/run metadata; not trading selection feature unless explicitly whitelisted.
-
-| Column | Type / contract | Field role |
-|---|---|---|
-| `run_id` | `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` | identifier / relationship key |
-| `trade_date_requested` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `trade_date_effective` | `DATE NULL` | date/time / as-of or audit metadata |
-| `lifecycle_state` | `ENUM('PENDING','RUNNING','FINALIZING','COMPLETED','FAILED','CANCELLED') NOT NULL` | state/reason/audit field |
-| `terminal_status` | `ENUM('SUCCESS','HELD','FAILED') NULL` | state/reason/audit field |
-| `quality_gate_state` | `ENUM('PENDING','PASS','FAIL','BLOCKED') NOT NULL DEFAULT 'PENDING'` | state/reason/audit field |
-| `publishability_state` | `ENUM('NOT_READABLE','READABLE') NOT NULL DEFAULT 'NOT_READABLE'` | state/reason/audit field |
-| `stage` | `ENUM('INGEST_BARS','PUBLISH_BARS','COMPUTE_INDICATORS','BUILD_ELIGIBILITY','HASH','SEAL','FINALIZE') NOT NULL` | data field |
-| `source` | `VARCHAR(32) NOT NULL` | data field |
-| `request_mode` | `VARCHAR(32) NULL` | data field |
-
-Dictionary note: `lifecycle_state=RUNNING` is reserved for an active executing process. Successful `request_mode=import_only` closure must use `COMPLETED + terminal_status=NULL + publishability_state=NOT_READABLE`, not `RUNNING`.
-| `source_name` | `VARCHAR(64) NULL` | data field |
-| `source_provider` | `VARCHAR(64) NULL` | data field |
-| `source_input_file` | `VARCHAR(255) NULL` | data field |
-| `source_timeout_seconds` | `INT NULL` | data field |
-| `source_retry_max` | `INT NULL` | data field |
-| `source_attempt_count` | `INT NULL` | data field |
-| `source_success_after_retry` | `TINYINT(1) NULL` | data field |
-| `source_retry_exhausted` | `TINYINT(1) NULL` | data field |
-| `source_final_http_status` | `INT NULL` | data field |
-| `source_final_reason_code` | `VARCHAR(64) NULL` | data field |
-| `source_file_hash` | `VARCHAR(64) NULL` | data field |
-| `source_file_hash_algorithm` | `VARCHAR(32) NULL` | data field |
-| `source_file_size_bytes` | `BIGINT UNSIGNED NULL` | data field |
-| `source_file_row_count` | `INT UNSIGNED NULL` | data field |
-| `coverage_universe_count` | `INT NULL` | data field |
-| `coverage_available_count` | `INT NULL` | data field |
-| `coverage_missing_count` | `INT NULL` | data field |
-| `coverage_ratio` | `DECIMAL(12,6) NULL` | data field |
-| `coverage_min_threshold` | `DECIMAL(12,6) NULL` | data field |
-| `coverage_gate_state` | `ENUM('PASS','FAIL','NOT_EVALUABLE') NULL` | data field |
-| `coverage_threshold_mode` | `VARCHAR(32) NULL` | data field |
-| `coverage_universe_basis` | `VARCHAR(64) NULL` | data field |
-| `coverage_contract_version` | `VARCHAR(64) NULL` | data field |
-| `coverage_missing_sample_json` | `JSON NULL` | data field |
-| `bars_rows_written` | `INT NULL` | data field |
-| `indicators_rows_written` | `INT NULL` | data field |
-| `eligibility_rows_written` | `INT NULL` | data field |
-| `invalid_bar_count` | `INT NULL` | data field |
-| `invalid_indicator_count` | `INT NULL` | data field |
-| `hard_reject_count` | `INT NULL` | data field |
-| `warning_count` | `INT NULL` | data field |
-| `notes` | `TEXT NULL` | data field |
-| `bars_batch_hash` | `VARCHAR(64) NULL` | data field |
-| `indicators_batch_hash` | `VARCHAR(64) NULL` | data field |
-| `eligibility_batch_hash` | `VARCHAR(64) NULL` | data field |
-| `config_version` | `VARCHAR(64) NULL` | data field |
-| `config_hash` | `VARCHAR(64) NULL` | data field |
-| `config_snapshot_ref` | `VARCHAR(255) NULL` | data field |
-| `supersedes_run_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `publication_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `publication_version` | `INT UNSIGNED NULL` | data field |
-| `is_current_publication` | `TINYINT(1) NOT NULL DEFAULT 0` | data field |
-| `correction_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `promote_mode` | `VARCHAR(32) NULL` | data field |
-| `publish_target` | `VARCHAR(64) NULL` | data field |
-| `final_reason_code` | `VARCHAR(64) NULL` | data field |
-| `sealed_at` | `DATETIME NULL` | date/time / as-of or audit metadata |
-| `sealed_by` | `VARCHAR(64) NULL` | data field |
-| `seal_note` | `VARCHAR(255) NULL` | data field |
-| `started_at` | `DATETIME NOT NULL` | data field |
-| `finished_at` | `DATETIME NULL` | data field |
-| `created_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
-| `updated_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
-
-### `eod_run_events`
-
-- Purpose: Append-only run event log with stage/severity/reason payloads.
-- Primary/identity key: `event_id`
-- Identifier key: `run_id`
-- Date/as-of key: `event_time/trade_date_requested`
-- Selection safety: Audit/log only.
-
-| Column | Type / contract | Field role |
-|---|---|---|
-| `event_id` | `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` | identifier / relationship key |
-| `run_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `trade_date_requested` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `event_time` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
-| `stage` | `VARCHAR(64) NOT NULL` | data field |
-| `event_type` | `VARCHAR(64) NOT NULL` | data field |
-| `severity` | `ENUM('INFO','WARN','ERROR') NOT NULL` | data field |
-| `reason_code` | `VARCHAR(64) NULL` | state/reason/audit field |
-| `message` | `VARCHAR(255) NULL` | data field |
-| `event_payload_json` | `LONGTEXT NULL` | data field |
-| `created_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
-
-### `eod_publications`
-
-- Purpose: Publication/seal records for current and superseded readable datasets.
-- Primary/identity key: `publication_id`
-- Identifier key: `run_id`
-- Date/as-of key: `trade_date`
-- Selection safety: Publication state; used to ensure readable state, not selection alpha.
-
-| Column | Type / contract | Field role |
-|---|---|---|
-| `publication_id` | `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` | identifier / relationship key |
-| `trade_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `run_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `publication_version` | `INT UNSIGNED NOT NULL` | data field |
-| `is_current` | `TINYINT(1) NOT NULL DEFAULT 0` | data field |
-| `supersedes_publication_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `previous_publication_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `replaced_publication_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `seal_state` | `ENUM('SEALED','UNSEALED') NOT NULL DEFAULT 'UNSEALED'` | data field |
-| `bars_batch_hash` | `VARCHAR(64) NULL` | data field |
-| `indicators_batch_hash` | `VARCHAR(64) NULL` | data field |
-| `eligibility_batch_hash` | `VARCHAR(64) NULL` | data field |
-| `source_file_hash` | `VARCHAR(64) NULL` | data field |
-| `source_file_hash_algorithm` | `VARCHAR(32) NULL` | data field |
-| `source_file_size_bytes` | `BIGINT UNSIGNED NULL` | data field |
-| `source_file_row_count` | `INT UNSIGNED NULL` | data field |
-| `sealed_at` | `DATETIME NULL` | date/time / as-of or audit metadata |
-| `created_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
-| `updated_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
-
-### `eod_current_publication_pointer`
-
-- Purpose: Canonical pointer from trade_date to the current readable publication.
-- Primary/identity key: `trade_date`
-- Identifier key: `publication_id`
-- Date/as-of key: `trade_date`
-- Selection safety: Publication pointer; use to resolve current readable state.
-
-| Column | Type / contract | Field role |
-|---|---|---|
-| `trade_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `publication_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `run_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `publication_version` | `INT UNSIGNED NOT NULL` | data field |
-| `sealed_at` | `DATETIME NULL` | date/time / as-of or audit metadata |
-| `updated_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
-
-### `eod_dataset_corrections`
-
-- Purpose: Correction workflow state and publication lineage for reprocessing/corrections.
-- Primary/identity key: `correction_id`
-- Identifier key: `prior_run/new_run`
-- Date/as-of key: `trade_date`
-- Selection safety: Correction audit only.
-
-| Column | Type / contract | Field role |
-|---|---|---|
-| `correction_id` | `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` | identifier / relationship key |
-| `trade_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `prior_run_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `new_run_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `baseline_publication_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `replacement_publication_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `correction_reason_code` | `VARCHAR(64) NOT NULL` | data field |
-| `correction_reason_note` | `TEXT NULL` | data field |
-| `status` | `ENUM('REQUESTED','APPROVED','EXECUTING','RESEALED','REPAIR_ACTIVE','REPAIR_EXECUTED','REPAIR_CANDIDATE','CONSUMED_CURRENT','PUBLISHED','FAILED','REJECTED','CANCELLED','CLOSED') NOT NULL` | state/reason/audit field |
-| `requested_by` | `VARCHAR(64) NOT NULL` | data field |
-| `requested_at` | `DATETIME NOT NULL` | data field |
-| `approved_by` | `VARCHAR(64) NULL` | data field |
-| `approved_at` | `DATETIME NULL` | data field |
-| `published_at` | `DATETIME NULL` | data field |
-| `execution_count` | `INT UNSIGNED NOT NULL DEFAULT 0` | data field |
-| `last_executed_at` | `DATETIME NULL` | data field |
-| `current_consumed_at` | `DATETIME NULL` | data field |
-| `final_outcome_note` | `TEXT NULL` | data field |
-| `created_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
-| `updated_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
+## Canonical bar artifacts
 
 ### `eod_bars_history`
 
-- Purpose: Publication-bound immutable history for equity EOD bars.
-- Primary/identity key: `(publication_id,trade_date,ticker_id)`
-- Identifier key: `ticker_id`
-- Date/as-of key: `trade_date`
-- Selection safety: Audit/history; current consumer read should prefer current published rows/pointer unless replaying a locked publication.
+Authoritative immutable `publication_id × trade_date × listing` snapshot. During transition it also carries legacy `ticker_id`.
 
-| Column | Type / contract | Field role |
-|---|---|---|
-| `publication_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `trade_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `ticker_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `open` | `DECIMAL(20,4) NOT NULL` | raw price/volume market data |
-| `high` | `DECIMAL(20,4) NOT NULL` | raw price/volume market data |
-| `low` | `DECIMAL(20,4) NOT NULL` | raw price/volume market data |
-| `close` | `DECIMAL(20,4) NOT NULL` | raw price/volume market data |
-| `volume` | `BIGINT NOT NULL` | raw price/volume market data |
-| `adj_close` | `DECIMAL(20,4) NULL` | raw price/volume market data |
-| `source` | `VARCHAR(32) NOT NULL` | data field |
-| `run_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `created_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
+Core fields are Regular-Market `RAW` OHLCV plus optional source-backed `previous_close`, `traded_value_idr_actual`, `trade_count_actual`, board/session/status and timestamps. `source_observation_id`, config snapshot, canonicalization version, product code, and quality state preserve lineage.
+
+OHLC must be positive and internally consistent; volume is non-negative. Missing/invalid observations are separate evidence. Provider `adj_close` is legacy lineage only and cannot become RAW close or structural adjustment input.
+
+### `eod_bars`
+
+Replaceable current projection of the active publication. It shares bar meaning/bindings but is not historical authority. Consumers use the read gateway, not this table directly.
+
+### `eod_invalid_bars`
+
+Rejected normalized/canonical candidates with observation/run/date/listing context, values, reason set, and duplicate relation. A rejected row never leaks into a readable artifact and is never “fixed” in place.
+
+## Indicators and daily metrics
 
 ### `eod_indicators_history`
 
-- Purpose: Publication-bound immutable history for equity indicators.
-- Primary/identity key: `(publication_id,trade_date,ticker_id)`
-- Identifier key: `ticker_id`
-- Date/as-of key: `trade_date`
-- Selection safety: Audit/history; safe only when locked publication is explicit.
+Authoritative immutable publication-bound indicators. Bindings include listing, config snapshot, factor set, coherent `STRUCTURAL_ADJUSTED` product, formula/indicator registry version, recursive ATR state reference, field null reasons, sector/event/status context, and run.
 
-| Column | Type / contract | Field role |
-|---|---|---|
-| `publication_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `trade_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `ticker_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `is_valid` | `TINYINT(1) NOT NULL` | data field |
-| `invalid_reason_code` | `VARCHAR(64) NULL` | state/reason/audit field |
-| `indicator_set_version` | `VARCHAR(64) NOT NULL` | data field |
-| `sector_code` | `VARCHAR(8) NULL` | identifier / relationship key |
-| `dv20_idr` | `DECIMAL(24,2) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `atr14_pct` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `vol_ratio` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `roc5` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `roc10` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `roc20` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `hh20` | `DECIMAL(20,4) NULL` | data field |
-| `ll20` | `DECIMAL(20,4) NULL` | data field |
-| `ma20` | `DECIMAL(20,4) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `ma50` | `DECIMAL(20,4) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `close_to_hh20_pct` | `DECIMAL(20,10) NULL` | data field |
-| `close_to_ll20_pct` | `DECIMAL(20,10) NULL` | data field |
-| `range_20_pct` | `DECIMAL(20,10) NULL` | data field |
-| `range_position_20_pct` | `DECIMAL(20,10) NULL` | data field |
-| `close_vs_ma20_pct` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `close_vs_ma50_pct` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `ma20_slope_pct` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `rs_20_vs_ihsg` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `sector_roc20` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `rs_20_vs_sector` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `sector_rs_20_vs_ihsg` | `DECIMAL(20,10) NULL` | derived indicator / pre-trade safe only when as-of bounded |
-| `corporate_action_flag` | `TINYINT(1) NULL` | data field |
-| `corporate_action_types` | `VARCHAR(255) NULL` | data field |
-| `trading_status_code` | `VARCHAR(64) NULL` | data field |
-| `is_suspended` | `TINYINT(1) NULL` | data field |
-| `is_uma` | `TINYINT(1) NULL` | data field |
-| `event_risk_flag` | `TINYINT(1) NULL` | data field |
-| `event_risk_reasons` | `VARCHAR(255) NULL` | data field |
-| `run_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `created_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
+`adv20_traded_value_idr_actual` uses complete source-backed actual traded value. `adv20_close_volume_proxy_idr` is explicitly `RAW close × RAW volume`; legacy `dv20_idr` aliases only the proxy. `atr14`/`atr14_pct` use the stable Wilder seed/state and are not sliding-window reseeded.
+
+### `eod_indicators`
+
+Current projection of the active publication. It is not replay or historical authority.
+
+### Benchmark/daily aggregates
+
+Aggregates expose actual and proxy values separately and include temporal universe, completeness/partialness, source publication/config, and reason metadata. Cross-sectional totals do not become a substitute for per-listing delivery/quality.
+
+## Eligibility
 
 ### `eod_eligibility_history`
 
-- Purpose: Publication-bound immutable history for eligibility rows.
-- Primary/identity key: `(publication_id,trade_date,ticker_id)`
-- Identifier key: `ticker_id`
-- Date/as-of key: `trade_date`
-- Selection safety: Audit/history; safe only when locked publication is explicit.
+One immutable row per publication/date/listing containing separate universe membership, bar expectation, delivery, canonical quality, liquidity, temporal status, event risk, final upstream data-usability decision, complete reasons JSON, config, and run/publication context. Existing eligibility field/table names are compatibility naming and must not encode downstream tradability or watchlist policy.
 
-| Column | Type / contract | Field role |
-|---|---|---|
-| `publication_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `trade_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `ticker_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `eligible` | `TINYINT(1) NOT NULL` | data field |
-| `reason_code` | `VARCHAR(64) NULL` | state/reason/audit field |
-| `run_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `created_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
+The legacy `eligible` and primary `reason_code` fields are compatibility summaries. Eligibility is not alpha/ranking and does not alone imply publication readability.
 
-### `md_session_snapshots`
+### `eod_eligibility`
 
-- Purpose: Intraday/session snapshot storage for manual/live snapshot evidence.
-- Primary/identity key: `snapshot_id`
-- Identifier key: `ticker_id`
-- Date/as-of key: `trade_date/captured_at`
-- Selection safety: Confirm/intraday snapshot evidence; not EOD backtest selection unless explicitly modeled.
+Current projection only. Consumers receive the publication-bound read model.
 
-| Column | Type / contract | Field role |
-|---|---|---|
-| `snapshot_id` | `BIGINT UNSIGNED NOT NULL AUTO_INCREMENT` | identifier / relationship key |
-| `trade_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `snapshot_slot` | `VARCHAR(32) NOT NULL` | data field |
-| `ticker_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `captured_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
-| `last_price` | `DECIMAL(18,4) NULL` | data field |
-| `prev_close` | `DECIMAL(18,4) NULL` | data field |
-| `chg_pct` | `DECIMAL(18,10) NULL` | data field |
-| `volume` | `BIGINT UNSIGNED NULL` | raw price/volume market data |
-| `day_high` | `DECIMAL(18,4) NULL` | data field |
-| `day_low` | `DECIMAL(18,4) NULL` | data field |
-| `source` | `VARCHAR(32) NOT NULL` | data field |
-| `run_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `reason_code` | `VARCHAR(64) NULL` | state/reason/audit field |
-| `error_note` | `VARCHAR(255) NULL` | data field |
-| `created_at` | `DATETIME NULL` | date/time / as-of or audit metadata |
-| `updated_at` | `DATETIME NULL` | date/time / as-of or audit metadata |
+## Runs, publications, and lineage
 
-### `md_replay_daily_metrics`
+### `eod_runs`
 
-- Purpose: Daily replay/evidence metrics for determinism, coverage and publishability verification.
-- Primary/identity key: `replay_id + trade_date`
-- Identifier key: `replay suite/case`
-- Date/as-of key: `trade_date`
-- Selection safety: Evaluation/audit only; not pre-trade selection input.
+Execution lifecycle and outcome, requested/effective dates, source/retry evidence, independent expected/unknown/delivered/delivered-valid coverage counts, quality counts, artifact hashes, full config snapshot, observation manifest, correction/publication context, activation/freshness state, and latest expected/acquired/canonicalized/readable dates.
 
-| Column | Type / contract | Field role |
-|---|---|---|
-| `replay_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `trade_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `trade_date_effective` | `DATE NULL` | date/time / as-of or audit metadata |
-| `replay_suite` | `VARCHAR(128) NULL` | data field |
-| `replay_case` | `VARCHAR(128) NULL` | data field |
-| `fixture_id` | `VARCHAR(128) NULL` | identifier / relationship key |
-| `fixture_version` | `VARCHAR(64) NULL` | data field |
-| `fixture_schema_version` | `VARCHAR(64) NULL` | data field |
-| `fixture_source` | `VARCHAR(128) NULL` | data field |
-| `fixture_created_at` | `VARCHAR(64) NULL` | data field |
-| `source` | `VARCHAR(32) NOT NULL` | data field |
-| `source_mode` | `VARCHAR(32) NULL` | data field |
-| `source_name` | `VARCHAR(64) NULL` | data field |
-| `source_provider` | `VARCHAR(64) NULL` | data field |
-| `source_timeout_seconds` | `INT NULL` | data field |
-| `source_retry_max` | `INT NULL` | data field |
-| `source_attempt_count` | `INT NULL` | data field |
-| `source_success_after_retry` | `TINYINT(1) NULL` | data field |
-| `source_retry_exhausted` | `TINYINT(1) NULL` | data field |
-| `source_final_http_status` | `INT NULL` | data field |
-| `source_final_reason_code` | `VARCHAR(64) NULL` | data field |
-| `source_input_file` | `VARCHAR(255) NULL` | data field |
-| `status` | `ENUM('SUCCESS','HELD','FAILED') NOT NULL` | state/reason/audit field |
-| `publishability_state` | `ENUM('READABLE','NOT_READABLE') NULL` | state/reason/audit field |
-| `publication_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `publication_run_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `comparison_result` | `ENUM('MATCH','MISMATCH','EXPECTED_DEGRADE','UNEXPECTED') NOT NULL` | data field |
-| `replay_status` | `ENUM('PASS','FAIL','BLOCKED') NOT NULL` | data field |
-| `comparison_note` | `VARCHAR(255) NULL` | data field |
-| `artifact_changed_scope` | `VARCHAR(64) NULL` | data field |
-| `config_identity` | `VARCHAR(128) NULL` | data field |
-| `publication_version` | `INT UNSIGNED NULL` | data field |
-| `is_current_publication` | `TINYINT(1) NULL` | data field |
-| `correction_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `correction_status` | `VARCHAR(32) NULL` | data field |
-| `correction_outcome` | `VARCHAR(32) NULL` | data field |
-| `correction_reseal_status` | `VARCHAR(64) NULL` | data field |
-| `correction_publication_switch` | `TINYINT(1) NULL` | data field |
-| `baseline_publication_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `candidate_publication_id` | `BIGINT UNSIGNED NULL` | date/time / as-of or audit metadata |
-| `expected_correction_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `expected_correction_status` | `VARCHAR(32) NULL` | data field |
-| `expected_correction_outcome` | `VARCHAR(32) NULL` | data field |
-| `expected_correction_reseal_status` | `VARCHAR(64) NULL` | data field |
-| `expected_correction_publication_switch` | `TINYINT(1) NULL` | data field |
-| `expected_baseline_publication_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `expected_candidate_publication_id` | `BIGINT UNSIGNED NULL` | date/time / as-of or audit metadata |
-| `coverage_universe_count` | `INT NULL` | data field |
-| `coverage_available_count` | `INT NULL` | data field |
-| `coverage_missing_count` | `INT NULL` | data field |
-| `coverage_ratio` | `DECIMAL(12,6) NULL` | data field |
-| `coverage_min_threshold` | `DECIMAL(12,6) NULL` | data field |
-| `coverage_gate_state` | `VARCHAR(16) NULL` | data field |
-| `coverage_threshold_mode` | `VARCHAR(32) NULL` | data field |
-| `coverage_universe_basis` | `VARCHAR(64) NULL` | data field |
-| `coverage_contract_version` | `VARCHAR(64) NULL` | data field |
-| `coverage_missing_sample_json` | `JSON NULL` | data field |
-| `bars_rows_written` | `INT NULL` | data field |
-| `indicators_rows_written` | `INT NULL` | data field |
-| `eligibility_rows_written` | `INT NULL` | data field |
-| `eligible_count` | `INT NULL` | data field |
-| `invalid_bar_count` | `INT NULL` | data field |
-| `invalid_indicator_count` | `INT NULL` | data field |
-| `warning_count` | `INT NULL` | data field |
-| `hard_reject_count` | `INT NULL` | data field |
-| `bars_batch_hash` | `VARCHAR(64) NULL` | data field |
-| `indicators_batch_hash` | `VARCHAR(64) NULL` | data field |
-| `eligibility_batch_hash` | `VARCHAR(64) NULL` | data field |
-| `seal_state` | `ENUM('SEALED','UNSEALED') NOT NULL` | data field |
-| `sealed_at` | `DATETIME NULL` | date/time / as-of or audit metadata |
-| `expected_status` | `ENUM('SUCCESS','HELD','FAILED') NULL` | data field |
-| `expected_terminal_status` | `ENUM('SUCCESS','HELD','FAILED') NULL` | data field |
-| `expected_publishability_state` | `ENUM('READABLE','NOT_READABLE') NULL` | data field |
-| `expected_trade_date_effective` | `DATE NULL` | date/time / as-of or audit metadata |
-| `expected_seal_state` | `ENUM('SEALED','UNSEALED') NULL` | data field |
-| `expected_source_mode` | `VARCHAR(32) NULL` | data field |
-| `expected_source_name` | `VARCHAR(64) NULL` | data field |
-| `expected_source_provider` | `VARCHAR(64) NULL` | data field |
-| `expected_source_timeout_seconds` | `INT NULL` | data field |
-| `expected_source_retry_max` | `INT NULL` | data field |
-| `expected_source_attempt_count` | `INT NULL` | data field |
-| `expected_source_success_after_retry` | `TINYINT(1) NULL` | data field |
-| `expected_source_retry_exhausted` | `TINYINT(1) NULL` | data field |
-| `expected_source_final_http_status` | `INT NULL` | data field |
-| `expected_source_final_reason_code` | `VARCHAR(64) NULL` | data field |
-| `expected_source_input_file` | `VARCHAR(255) NULL` | data field |
-| `expected_source_file_hash` | `VARCHAR(128) NULL` | data field |
-| `expected_source_file_hash_algorithm` | `VARCHAR(32) NULL` | data field |
-| `expected_source_file_size_bytes` | `BIGINT UNSIGNED NULL` | data field |
-| `expected_source_file_row_count` | `INT UNSIGNED NULL` | data field |
-| `expected_config_identity` | `VARCHAR(128) NULL` | data field |
-| `expected_publication_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `expected_publication_run_id` | `BIGINT UNSIGNED NULL` | identifier / relationship key |
-| `expected_publication_version` | `INT UNSIGNED NULL` | data field |
-| `expected_is_current_publication` | `TINYINT(1) NULL` | data field |
-| `expected_coverage_universe_count` | `INT NULL` | data field |
-| `expected_coverage_available_count` | `INT NULL` | data field |
-| `expected_coverage_missing_count` | `INT NULL` | data field |
-| `expected_coverage_ratio` | `DECIMAL(12,6) NULL` | data field |
-| `expected_coverage_min_threshold` | `DECIMAL(12,6) NULL` | data field |
-| `expected_coverage_gate_state` | `VARCHAR(16) NULL` | data field |
-| `expected_coverage_threshold_mode` | `VARCHAR(32) NULL` | data field |
-| `expected_coverage_universe_basis` | `VARCHAR(64) NULL` | data field |
-| `expected_coverage_contract_version` | `VARCHAR(64) NULL` | data field |
-| `expected_coverage_missing_sample_json` | `JSON NULL` | data field |
-| `expected_bars_batch_hash` | `VARCHAR(64) NULL` | data field |
-| `expected_indicators_batch_hash` | `VARCHAR(64) NULL` | data field |
-| `expected_eligibility_batch_hash` | `VARCHAR(64) NULL` | data field |
-| `expected_reason_code_counts_json` | `LONGTEXT NULL` | data field |
-| `mismatch_summary` | `LONGTEXT NULL` | data field |
-| `mismatch_count` | `INT NULL` | data field |
-| `mismatch_reason_codes_json` | `JSON NULL` | data field |
-| `mismatches_json` | `LONGTEXT NULL` | data field |
-| `expected_context_json` | `LONGTEXT NULL` | data field |
-| `actual_context_json` | `LONGTEXT NULL` | data field |
-| `ignored_volatile_fields_json` | `JSON NULL` | data field |
-| `deterministic_fields_checked_json` | `JSON NULL` | data field |
-| `final_reason_code` | `VARCHAR(64) NULL` | data field |
-| `created_at` | `DATETIME NOT NULL` | date/time / as-of or audit metadata |
+`coverage_universe_count` remains required raw-universe evidence and is never the denominator.
+`coverage_available_count` and legacy interpretations of `coverage_missing_count` are compatibility
+metrics; new decisions use explicit expected/unknown/delivered/delivered-valid fields. Compatibility
+fields must not shrink the denominator, impersonate another stored field during export, or satisfy
+full-config proof. `config_version/hash/ref` and repair-like status values retain their separately
+documented transitional boundaries.
 
-### `md_replay_reason_code_counts`
+### `eod_run_events`
 
-- Purpose: Aggregated reason-code counts by replay/date.
-- Primary/identity key: `(replay_id,trade_date,reason_code)`
-- Identifier key: `reason_code`
-- Date/as-of key: `trade_date`
-- Selection safety: Evaluation/audit only.
+Append-only structured stage/reason evidence. Logs do not replace domain tables or immutable observations.
 
-| Column | Type / contract | Field role |
-|---|---|---|
-| `replay_id` | `BIGINT UNSIGNED NOT NULL` | identifier / relationship key |
-| `trade_date` | `DATE NOT NULL` | date/time / as-of or audit metadata |
-| `reason_code` | `VARCHAR(64) NOT NULL` | state/reason/audit field |
-| `reason_count` | `INT NOT NULL` | data field |
+### `eod_publications`
 
-## Watchlist Versioned Official Backtest Evidence Tables
+Immutable versioned publication metadata: run/date/version/supersession, hashes, seal, config/factor/observation/manifest binding, product/read-model version, and readiness state. `is_current` is compatibility metadata; pointer is current authority.
 
-These tables are owned by Watchlist, but they are listed here because database-connected diagnostics consume them together with Market Data. Their return/outcome fields are evaluation-only and must never become selection inputs.
+### `md_publication_lineage_bindings`
 
-### `watchlist_bt_eval`
+One row per publication binding config/factor plus observation, identity, calendar, status, event revision-set hashes, formula/build/read-model versions. All non-applicable nullable factor fields are explicit; required bindings are non-null before seal.
 
-- Purpose: Immutable official IS evaluation header and evidence-manifest owner.
-- Primary/identity key: `eval_id`.
-- Identifier keys used by C171 diagnostic: `eval_id`, `param_id`, `paramset_hash`, `eval_model_hash`, `implementation_hash`.
-- Date/as-of key: `from_date/to_date`.
-- Selection safety: Evaluation/audit only.
+### `eod_current_publication_pointer`
 
-| Column | Type / contract | Field role |
-|---|---|---|
-| `eval_id` | `BIGINT` identity | exact official evaluation identifier |
-| `param_id` | integer FK | bound backtest catalog row |
-| `from_date` / `to_date` | `DATE` | explicit IS window |
-| `paramset_hash` | `CHAR(40)` | immutable canonical paramset identity |
-| `eval_model_hash` | `CHAR(40)` | evaluation-model identity |
-| `implementation_hash` | `CHAR(40)` | implementation identity |
-| `picks_count` / `picks_hash` | count/hash | official TOP population manifest |
-| `universe_count` / `universe_hash` | count/hash | full signal-date universe manifest |
-| `cutoff_count` / `cutoffs_hash` | count/hash | daily cutoff manifest |
-| `market_data_lineage_hash` | `CHAR(40)` | locked Market Data lineage identity |
-| `evidence_manifest_hash` | `CHAR(40)` | aggregate immutable evidence identity |
-| return/stability metric columns | numeric | evaluation-only; forbidden for selection |
+Atomic normal-read authority. One pointer per product/date scope is the target model; the legacy date-only key requires expansion before multiple products/markets are activated. A switch never changes snapshot content.
 
-### `watchlist_bt_picks_ws`
+### `eod_dataset_corrections`
 
-- Purpose: Immutable official metrics-ready TOP/TOP_PICKS rows for one exact evaluation.
-- Primary/identity key used by C171: `(eval_id,asof_eod_date,ticker_id)`.
-- Identifier key: `ticker_id/ticker_code`.
-- Date/as-of key: `asof_eod_date`.
-- Selection safety: `score_total` reflects decision-time scoring; `ret_net` is evaluation-only and forbidden for selection/tuning routing.
+Audited request/approval/candidate/reseal/pointer lifecycle. Legacy `REPAIR_*` values must not authorize mutation and require cleanup/enforcement migration. Original and replacement publication IDs remain distinct.
 
-| Column | Type / contract | Field role |
-|---|---|---|
-| `eval_id` | FK to `watchlist_bt_eval` | exact evidence owner |
-| `param_id` | FK to catalog | catalog binding |
-| `asof_eod_date` | `DATE` | signal/decision date |
-| `ticker_id` / `ticker_code` | identifier | exact equity identity |
-| `bucket_code` | `TOP` / `TOP_PICKS` | official metrics population |
-| `score_total` | decimal | decision-time score evidence |
-| `ret_net` | decimal | future outcome; evaluation-only |
-| `source_publication_id/version/run_id` | positive lineage tuple | entry/published Market Data evidence |
-| `row_hash` | `CHAR(40)` | immutable row identity |
+### `md_corpus_admission_decisions`
 
-### `watchlist_bt_universe_ws`
+Immutable Stage 8 decision that distinguishes the intentional historical start from the first
+measured conformant/readable suffix. It records market/product scope, `intentional_dataset_start`,
+`admitted_from`, `measured_through`, coverage threshold/source mode, accepted status snapshot and
+transition-search observations, measurement campaign, canonical measurement/status hashes,
+algorithm version, complete measurement JSON, state/reason, supersession, and recorded time.
 
-- Purpose: Immutable signal-date universe and guard evidence for one exact evaluation.
-- Primary/identity key: `(eval_id,asof_eod_date,ticker_id)`.
-- Identifier key: `ticker_id/ticker_code`.
-- Date/as-of key: `asof_eod_date`.
-- Selection safety: signal-date fields are pre-trade safe only within the exact evaluation/as-of date; no return/path fields are present.
+Its ID binds the reconstruction campaign, owning run, sealed publication, and publication lineage.
+Eligibility rows bind the exact status revision/source observation used for verified
+`BAR_NOT_EXPECTED` decisions. Dates before the active boundary remain immutable/non-readable and
+cannot be indicator warm-up; admission is never a relabel or movement of dataset start.
 
-| Column | Type / contract | Field role |
-|---|---|---|
-| `eval_id` / `param_id` | identifiers | exact evaluation/catalog binding |
-| `asof_eod_date` | `DATE` | decision date |
-| `ticker_id` / `ticker_code` | identifier | equity identity |
-| `required_ok` / `guard_ok` / `eligible_ok` | booleans | decision-time eligibility evidence |
-| `dv20_idr` | integer/decimal | signal-date liquidity diagnostic |
-| `atr14_pct` | decimal | signal-date risk diagnostic |
-| `vol_ratio` | `DECIMAL(20,6)` | signal-date volume diagnostic |
-| `reason_code` | reason | guard/eligibility explanation |
-| `source_publication_id/version/run_id` | lineage tuple | exact published source identity |
-| `row_hash` | `CHAR(40)` | immutable row identity |
+### `md_stage8_reconstruction_campaigns` and `md_stage8_reconstruction_targets`
 
-### `watchlist_bt_cutoffs_ws`
+Campaigns freeze exact scope, baseline maximum publication, target-set hash, admission and campaign
+supersession identities, state/result, and lifecycle times. Targets preserve per-date baseline
+publication/run/version plus three sealed hashes and three provenance snapshot hashes, then append
+correction/replacement identities and terminal checkpoint state. A superseded or failed attempt is
+retained; only the normal correction/seal/finalize lifecycle can replace a current pointer.
 
-- Purpose: Immutable daily TOP/SECONDARY cutoff evidence per exact evaluation.
-- Primary/identity key: `(eval_id,policy_code,param_id,asof_eod_date)`.
-- Identifier key: `eval_id/param_id`.
-- Date/as-of key: `asof_eod_date`.
-- Selection safety: historical decision-time cutoff evidence; diagnostics may verify it but must not rewrite or route using future outcomes.
+## Replay and evidence tables
 
-| Column | Type / contract | Field role |
-|---|---|---|
-| `eval_id` / `param_id` | identifiers | exact evidence owner and catalog row |
-| `asof_eod_date` | `DATE` | decision date |
-| `top_cutoff_score` / `secondary_cutoff_score` | decimal | deterministic daily cutoffs |
-| `source_publication_id/version/run_id` | lineage tuple | exact published source identity |
-| `row_hash` | `CHAR(40)` | immutable row identity |
+`md_replay_daily_metrics`, `md_replay_reason_code_counts`, session snapshots, and evidence artifacts retain explicit replay mode, fixture/knowledge context, frozen identities/config/revisions, expected/actual states, hashes, reasons, and admission result. Existing replay tables are transitional until they bind all V2 inputs.
 
-## Watchlist Consumer Notes
+## Consumer mapping
 
-- Watchlist PLAN/CONFIRM and backtest must read Market Data via published/current readable state unless a locked artifact explicitly allows another source.
-- For market-index regime reconstruction, use `market_benchmark_indicators` with `benchmark_code=IHSG`, not `eod_indicators`.
-- Backtest return/path fields are evaluation-only. They must never be used to define selection, source reconstruction, regime fields, or candidate eligibility.
-- OOS rows, OOS returns, OOS bad months, and future raw path prices are forbidden for IS tuning or candidate selection.
+Normal consumers read the versioned market-data gateway, whose minimum DTO binds exactly one publication and exposes RAW facts, coherent structural-adjusted product, indicators, data-usability facts, lineage, requested/effective dates, readiness, and freshness. Direct current/history/master joins are forbidden.
 
-## When This Dictionary Must Be Updated
+## Synchronization gate
 
-Update this dictionary when any migration adds/renames/removes a table/column, when a feature discovers a missing field mapping, or when a module starts using a table for a new purpose. Update the related governance/tracker docs in the same session.
+Update this dictionary with every semantic/migration change. Production relock additionally requires repositories and SQLite mirror to adopt every used field, followed by MariaDB clean-install/upgrade dumps and semantic negative tests. The current nullable V2 foundation is implementation progress, not closure.

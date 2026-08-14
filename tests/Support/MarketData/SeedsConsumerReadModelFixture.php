@@ -31,15 +31,29 @@ trait SeedsConsumerReadModelFixture
         int $publicationVersion = 1,
         array $overrides = []
     ): void {
-        $sealedAt = $overrides['sealed_at'] ?? $tradeDate.' 17:20:00';
-        $terminalStatus = $overrides['terminal_status'] ?? 'SUCCESS';
-        $publishabilityState = $overrides['publishability_state'] ?? 'READABLE';
-        $coverageGateState = $overrides['coverage_gate_state'] ?? 'PASS';
-        $isCurrent = $overrides['is_current'] ?? 1;
-        $isCurrentRun = $overrides['is_current_publication'] ?? 1;
-        $sealState = $overrides['seal_state'] ?? 'SEALED';
-        $runPublicationId = $overrides['run_publication_id'] ?? $publicationId;
-        $runPublicationVersion = $overrides['run_publication_version'] ?? $publicationVersion;
+        $factorSetHash = hash('sha256', 'consumer-read-model-fixture|'.$tradeDate.'|'.$publicationId);
+        // array_key_exists, not ??. Half the states worth testing are "this column is null", and
+        // ?? treats a null override as an absent one — so a test asking for a missing seal
+        // timestamp silently received a present one and passed for the wrong reason.
+        $override = function (string $key, $default) use ($overrides) {
+            return array_key_exists($key, $overrides) ? $overrides[$key] : $default;
+        };
+
+        $sealedAt = $override('sealed_at', $tradeDate.' 17:20:00');
+        $terminalStatus = $override('terminal_status', 'SUCCESS');
+        $publishabilityState = $override('publishability_state', 'READABLE');
+        $coverageGateState = $override('coverage_gate_state', 'PASS');
+        $isCurrent = $override('is_current', 1);
+        $isCurrentRun = $override('is_current_publication', 1);
+        $sealState = $override('seal_state', 'SEALED');
+        $runPublicationId = $override('run_publication_id', $publicationId);
+        $runPublicationVersion = $override('run_publication_version', $publicationVersion);
+
+        // The publication and pointer carry their own seal timestamps. They default to the run's
+        // so that the common case stays a single value, but each can be nulled independently.
+        $publicationSealedAt = $override('publication_sealed_at', $sealedAt);
+        $pointerSealedAt = $override('pointer_sealed_at', $sealedAt);
+        $rowTimestamp = $sealedAt ?: $tradeDate.' 17:20:00';
 
         DB::table('eod_runs')->insert([
             'run_id' => $runId,
@@ -56,41 +70,47 @@ trait SeedsConsumerReadModelFixture
             'terminal_status' => $terminalStatus,
             'publishability_state' => $publishabilityState,
             'coverage_gate_state' => $coverageGateState,
-            'coverage_universe_count' => 2,
-            'coverage_available_count' => 2,
-            'coverage_missing_count' => 0,
-            'coverage_ratio' => '1.000000',
-            'coverage_min_threshold' => '0.980000',
-            'coverage_threshold_mode' => 'MIN_RATIO',
-            'coverage_universe_basis' => 'ACTIVE_LISTED_EQUITY_AS_OF_DATE',
-            'coverage_contract_version' => 'coverage_gate_v1',
+            'coverage_universe_count' => $override('coverage_universe_count', 2),
+            'coverage_available_count' => $override('coverage_available_count', 2),
+            'coverage_missing_count' => $override('coverage_missing_count', 0),
+            'coverage_ratio' => $override('coverage_ratio', '1.000000'),
+            'coverage_min_threshold' => $override('coverage_min_threshold', '0.980000'),
+            'coverage_threshold_mode' => $override('coverage_threshold_mode', 'MIN_RATIO'),
+            'coverage_universe_basis' => $override('coverage_universe_basis', 'ACTIVE_LISTED_EQUITY_AS_OF_DATE'),
+            'coverage_contract_version' => $override('coverage_contract_version', 'coverage_gate_v1'),
             'is_current_publication' => $isCurrentRun,
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => $factorSetHash,
             'sealed_at' => $sealedAt,
             'started_at' => $tradeDate.' 17:00:00',
             'created_at' => $tradeDate.' 17:00:00',
-            'updated_at' => $sealedAt,
+            'updated_at' => $rowTimestamp,
         ]);
 
         DB::table('eod_publications')->insert([
             'publication_id' => $publicationId,
-            'trade_date' => $tradeDate,
+            'trade_date' => $override('publication_trade_date', $tradeDate),
             'run_id' => $runId,
             'publication_version' => $publicationVersion,
             'is_current' => $isCurrent,
             'seal_state' => $sealState,
-            'sealed_at' => $sealedAt,
-            'created_at' => $sealedAt,
-            'updated_at' => $sealedAt,
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => $factorSetHash,
+            'sealed_at' => $publicationSealedAt,
+            'created_at' => $rowTimestamp,
+            'updated_at' => $rowTimestamp,
         ]);
 
         if (! ($overrides['skip_pointer'] ?? false)) {
             DB::table('eod_current_publication_pointer')->insert([
                 'trade_date' => $tradeDate,
-                'publication_id' => $overrides['pointer_publication_id'] ?? $publicationId,
-                'run_id' => $overrides['pointer_run_id'] ?? $runId,
-                'publication_version' => $overrides['pointer_publication_version'] ?? $publicationVersion,
-                'sealed_at' => $overrides['pointer_sealed_at'] ?? $sealedAt,
-                'updated_at' => $sealedAt,
+                'publication_id' => $override('pointer_publication_id', $publicationId),
+                'run_id' => $override('pointer_run_id', $runId),
+                'publication_version' => $override('pointer_publication_version', $publicationVersion),
+                'sealed_at' => $pointerSealedAt,
+                'updated_at' => $rowTimestamp,
             ]);
         }
     }
@@ -133,9 +153,13 @@ trait SeedsConsumerReadModelFixture
             'is_valid' => 1,
             'invalid_reason_code' => null,
             'indicator_set_version' => 'v1',
+            'formula_version' => 'v1',
+            'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'price_product_version' => 'structural_adjusted_v1',
+            'factor_set_hash' => hash('sha256', 'consumer-read-model-fixture|'.$tradeDate.'|'.$publicationId),
             'sector_code' => 'G',
             'dv20_idr' => '123456789000.00',
-            'atr14_pct' => '0.0210000000',
+            'atr14_pct' => '2.1000000000',
             'vol_ratio' => '1.5000000000',
             'roc5' => '0.0180000000',
             'roc10' => '0.0310000000',
@@ -184,7 +208,7 @@ trait SeedsConsumerReadModelFixture
     {
         DB::table('market_calendar')->insert([
             'cal_date' => $tradeDate,
-            'is_trading_day' => 1,
+            'is_trading_day' => 1, 'provenance_tier' => 'VERIFIED',
             'created_at' => $tradeDate.' 00:00:00',
         ]);
     }

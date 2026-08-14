@@ -2,240 +2,108 @@
 
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Six tests were removed from this file, which held 143 string assertions.
+ *
+ * - The cross-reference roster was about a hundred assertions of the shape "status says X -> DONE"
+ *   / "[RELATED_CONTRACT] Y" / "tracker says Y -> LOCKED" / "[RELATED_IMPLEMENTATION] X", written
+ *   out by hand for roughly a dozen of the fifty entries. AuditCrossReferenceIntegrityTest derives
+ *   the same rule and applies it to every entry in both documents, including entries not written
+ *   yet.
+ * - Registry-and-seed synchronization was checked by parsing both files with regexes. That is the
+ *   exact check that passed for years while the seed carried a trailing comma and inserted
+ *   nothing. ReasonCodeSeedExecutionTest runs the statement and compares the registry against the
+ *   rows that actually landed in eod_reason_codes.
+ * - Three tests asserted frozen historical tallies and runtime-proof identifiers — "OK (511 tests,
+ *   7871 assertions)", run_id=33, replay_id=15, benchmark_rows_written=1, storage paths from a
+ *   past operator run. They record what happened once. They cannot fail unless someone edits the
+ *   audit history, and if someone does, the tallies are not what protects it.
+ *
+ * What remains are the rules that hold regardless of which entries exist.
+ */
 class AuditDocsSynchronizationStaticGuardTest extends TestCase
 {
-    private function projectPath(string $path): string
+    private function read(string $path): string
     {
-        return dirname(__DIR__, 3).DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $path);
-    }
-
-    private function readProjectFile(string $path): string
-    {
-        $fullPath = $this->projectPath($path);
+        $fullPath = dirname(__DIR__, 3).DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $path);
         $this->assertFileExists($fullPath);
 
         return file_get_contents($fullPath);
     }
 
-    public function test_audit_docs_have_active_session_and_contract_tracker_alignment(): void
-    {
-        $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-
-        $statusActiveSession = $this->activeSessionName($status);
-        $trackerActiveSession = $this->activeSessionName($tracker);
-
-        $this->assertSame($statusActiveSession, $trackerActiveSession, 'Implementation status and contract tracker must name the same active session.');
-        $this->assertSame('Trading Status Source Model Semantic Simplification', $statusActiveSession);
-        $this->assertStringContainsString("ACTIVE SESSION:\n- ".$statusActiveSession, $status);
-        $this->assertStringContainsString("ACTIVE SESSION:\n- ".$trackerActiveSession, $tracker);
-
-        foreach ([$status, $tracker] as $document) {
-            $this->assertStringContainsString('WEEKLY_SWING_PRIORITY1_INDICATOR_EXTENSION_CONTRACT', $document);
-            $this->assertStringContainsString('AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $document);
-            $this->assertStringContainsString('POST_SESSION_1_8_LOCKED_LOCAL_PHPUNIT_PASS', $document);
-            $this->assertStringContainsString('OPERATIONAL_READINESS_CONTRACT', $document);
-            $this->assertStringContainsString('PRODUCTION_VALIDATION_CONTRACT', $document);
-            $this->assertStringContainsString('OPS_ENVIRONMENT_BASELINE_CONTRACT', $document);
-            $this->assertStringContainsString('COVERAGE_POLICY_RECONCILIATION_CONTRACT', $document);
-            $this->assertStringContainsString('DB_SCHEMA_AND_MIGRATION_SYNC_CONTRACT', $document);
-            $this->assertStringContainsString('READ_SIDE_POINTER_ENFORCEMENT_CONTRACT', $document);
-            $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $document);
-            $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $document);
-            $this->assertStringContainsString('CORRECTION_LIFECYCLE_SAFETY_CONTRACT', $document);
-            $this->assertStringContainsString('OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT', $document);
-            $this->assertStringContainsString('TESTING_DATABASE_ISOLATION_SAFE_MIGRATION_CONTRACT', $document);
-            $this->assertStringContainsString('PRODUCTION_SCHEDULER_CRON_DEPLOYMENT_PROOF_CONTRACT', $document);
-            $this->assertStringContainsString('FINAL_PROOF_PACK_OPS_RUNTIME_PARITY_RECONCILIATION_CONTRACT', $document);
-            $this->assertStringContainsString('MARKET_BENCHMARK_INDICATOR_EXTENSION_CONTRACT', $document);
-            $this->assertStringContainsString('MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT', $document);
-            $this->assertStringContainsString('MARKET_DATA_EVENT_RISK_SOURCE_CONTEXT_CONTRACT', $document);
-            $this->assertStringContainsString('MARKET_DATA_TRADING_STATUS_CARRY_FORWARD_STATE_CONTRACT', $document);
-            $this->assertStringContainsString('MARKET_DATA_MISSING_TICKER_LIFECYCLE_BACKFILL_CONTRACT', $document);
-            $this->assertStringContainsString('MARKET_DATA_MISSING_TICKER_PARTIAL_SOURCE_ACQUISITION_GUARD_CONTRACT', $document);
-            $this->assertStringContainsString('MARKET_DATA_MISSING_TICKER_FILTERED_CANDIDATE_PRESERVATION_CONTRACT', $document);
-            $this->assertStringContainsString('MARKET_DATA_INDICATOR_WARMUP_WINDOW_CONTRACT', $document);
-            $this->assertStringContainsString('MARKET_DATA_MANUAL_FILE_MULTI_DATE_LIFECYCLE_INPUT_CONTRACT', $document);
-        }
-
-$this->assertStringContainsString('- Market Data Consumer Read Model -> DONE', $status);
-$this->assertStringContainsString('[RELATED_CONTRACT] MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT', $status);
-$this->assertStringContainsString('- MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT -> LOCKED', $tracker);
-$this->assertStringContainsString('[RELATED_IMPLEMENTATION] Market Data Consumer Read Model', $tracker);
-$this->assertStringContainsString('MARKET_DATA_CONSUMER_READ_MODEL_STATUS', $status.$tracker.$this->readProjectFile('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md'));
-$this->assertStringContainsString('WATCHLIST_READ_SURFACE', $status.$tracker.$this->readProjectFile('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md'));
-$this->assertStringContainsString('PORTFOLIO_PRICE_SURFACE', $status.$tracker.$this->readProjectFile('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md'));
-$this->assertStringContainsString('BENCHMARK_READ_SURFACE', $status.$tracker.$this->readProjectFile('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md'));
-$this->assertStringContainsString('READINESS_SURFACE', $status.$tracker.$this->readProjectFile('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md'));
-$this->assertStringContainsString('READABLE_PUBLICATION_RESOLVED', $status.$tracker.$this->readProjectFile('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md'));
-$this->assertStringContainsString('current readable publication only; no raw/staging/latest/MAX(date)', $status.$tracker.$this->readProjectFile('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md'));
-$this->assertStringContainsString('OK (534 tests, 8287 assertions)', $status.$tracker.$this->readProjectFile('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md'));
-
-        $this->assertStringContainsString('- API Daily Runtime Proof / Final Production Ready Validation -> DONE', $status);
-        $this->assertStringContainsString('[RELATED_CONTRACT] API_DAILY_RUNTIME_PROOF_FINAL_PRODUCTION_READY_CONTRACT', $status);
-        $this->assertStringContainsString('- API_DAILY_RUNTIME_PROOF_FINAL_PRODUCTION_READY_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] API Daily Runtime Proof / Final Production Ready Validation', $tracker);
-        $this->assertStringContainsString('OPS_RUNTIME_PARITY_PASSED', $status.$tracker);
-        $this->assertStringContainsString('`OPS_RUNTIME_PARITY_PASSED` requires scheduler due-run proof plus provider smoke PASS', $status.$tracker);
-        $this->assertStringContainsString('[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED', $status.$tracker);
-        $this->assertStringContainsString('ROOT_CAUSE_FIXED=PHP_ADAPTER_HEADER_CONTEXT_MISMATCH', $status.$tracker);
-        $this->assertStringContainsString('30 registered market-data commands', $status.$tracker);
-$this->assertStringContainsString('PROVIDER_SMOKE_OK', $status.$tracker);
-
-$this->assertStringContainsString('- Market Benchmark + Indicator Extension / Final Production Ready Re-Lock -> DONE', $status);
-$this->assertStringContainsString('[RELATED_CONTRACT] MARKET_BENCHMARK_INDICATOR_EXTENSION_CONTRACT', $status);
-$this->assertStringContainsString('- MARKET_BENCHMARK_INDICATOR_EXTENSION_CONTRACT -> LOCKED', $tracker);
-$this->assertStringContainsString('[RELATED_IMPLEMENTATION] Market Benchmark + Indicator Extension / Final Production Ready Re-Lock', $tracker);
-$this->assertStringContainsString('MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS=PASS', $status.$tracker);
-$this->assertStringContainsString('BASELINE_BENCHMARK_EXTENSION_FULL_MARKET_DATA_SUITE=OK (511 tests, 7871 assertions)', $status.$tracker);
-$this->assertStringContainsString('benchmark_import_status=COMPLETED', $status.$tracker);
-$this->assertStringContainsString('benchmark_rows_written=1', $status.$tracker);
-$this->assertStringContainsString('IHSG/^JKSE/INDEX/is_active=1', $status.$tracker);
-$this->assertStringContainsString('IND_INSUFFICIENT_HISTORY', $status.$tracker);
-$this->assertStringContainsString('replay_id=2', $status.$tracker);
-
-        $this->assertStringContainsString('- Ops Command Surface Runtime Matrix -> DONE', $status);
-        $this->assertStringContainsString('[RELATED_CONTRACT] OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT', $status);
-        $this->assertStringContainsString('- OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Ops Command Surface Runtime Matrix', $tracker);
-        $this->assertStringContainsString('OPS_COMMAND_SURFACE_RUNTIME_MATRIX_INVENTORY.md', $status.$tracker);
-        $this->assertStringContainsString('LOCKED_LOCAL_RUNTIME_PROOF', $status.$tracker);
-        $this->assertStringContainsString('run_id=33', $status.$tracker);
-        $this->assertStringContainsString('replay_id=15', $status.$tracker);
-        $this->assertStringContainsString('COMMAND_DESTRUCTIVE_GUARD_REQUIRED', $status.$tracker);
-        $this->assertStringContainsString('RUN_LOCK_CONFLICT', $status.$tracker);
-        $this->assertStringContainsString('RUN_SOURCE_MANUAL_FILE_EMPTY', $status.$tracker);
-
-        $this->assertStringContainsString('- Correction Lifecycle Hardening / Correction Lifecycle Safety -> DONE', $status);
-        $this->assertStringContainsString('[RELATED_CONTRACT] CORRECTION_LIFECYCLE_SAFETY_CONTRACT', $status);
-        $this->assertStringContainsString('- CORRECTION_LIFECYCLE_SAFETY_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Correction Lifecycle Hardening / Correction Lifecycle Safety', $tracker);
-        $this->assertStringContainsString('CORRECTION_LIFECYCLE_HARDENING_INVENTORY.md', $status.$tracker);
-        $this->assertStringContainsString('correction_id=3', $status.$tracker);
-        $this->assertStringContainsString('candidate_publication_switch=false', $status.$tracker);
-        $this->assertStringContainsString('replay_id=10', $status.$tracker);
-        $this->assertStringContainsString('UNCHANGED_CORRECTION_BASELINE_PRESERVED', $status.$tracker);
-        $this->assertStringContainsString('correction_id=4', $status.$tracker);
-        $this->assertStringContainsString('RUN_SOURCE_MANUAL_FILE_NOT_FOUND', $status.$tracker);
-
-        $this->assertStringContainsString('- Replay Determinism Runtime Proof / PASS-FAIL-BLOCKED Evidence Linkage -> DONE', $status);
-        $this->assertStringContainsString('[RELATED_CONTRACT] REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $status);
-        $this->assertStringContainsString('- REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Replay Determinism Runtime Proof / PASS-FAIL-BLOCKED Evidence Linkage', $tracker);
-        $this->assertStringContainsString('replay_status=PASS', $status.$tracker);
-        $this->assertStringContainsString('replay_status=FAIL', $status.$tracker);
-        $this->assertStringContainsString('replay_status=BLOCKED', $status.$tracker);
-        $this->assertStringContainsString('REPLAY_FINAL_REASON_CODE_MISMATCH', $status.$tracker);
-        $this->assertStringContainsString('storage/app/market-data/replay-determinism-runtime-proof/verify-pass/replay_result.json', $status.$tracker);
-
-        $this->assertStringContainsString('- Evidence Export Runtime Proof / Admission Artifact Hardening -> DONE', $status);
-        $this->assertStringContainsString('Full evidence export runtime proof across run + correction + replay is LOCKED', $status);
-        $this->assertStringContainsString('[RELATED_CONTRACT] EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $status);
-        $this->assertStringContainsString('- EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('full run+correction+replay runtime artifact scope', $tracker);
-        $this->assertStringContainsString('UNCHANGED_CORRECTION_CANDIDATE_DISCARDED', $status.$tracker);
-        $this->assertStringContainsString('Operator-local post-patch correction re-export for `correction_id=1`', $status);
-        $this->assertStringContainsString('Replay runtime proof has been supplied for `replay_id=1`', $status);
-        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Evidence Export Runtime Proof / Admission Artifact Hardening', $tracker);
-        $this->assertStringContainsString('- Read-Side Consumer Surface Completion / Final Sweep Revalidation -> DONE', $status);
-        $this->assertStringContainsString('[RELATED_CONTRACT] READ_SIDE_POINTER_ENFORCEMENT_CONTRACT', $status);
-        $this->assertStringContainsString('- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Read-Side Consumer Surface Completion / Final Sweep Revalidation', $tracker);
-        $this->assertStringContainsString('- DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization ->', $status);
-        $this->assertStringContainsString('[RELATED_CONTRACT] DB_SCHEMA_AND_MIGRATION_SYNC_CONTRACT', $status);
-        $this->assertStringContainsString('- DB_SCHEMA_AND_MIGRATION_SYNC_CONTRACT ->', $tracker);
-        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization', $tracker);
-        $this->assertStringContainsString('- Coverage Policy Reconciliation -> DONE', $status);
-        $this->assertStringContainsString('[RELATED_CONTRACT] COVERAGE_POLICY_RECONCILIATION_CONTRACT', $status);
-        $this->assertStringContainsString('- COVERAGE_POLICY_RECONCILIATION_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Coverage Policy Reconciliation', $tracker);
-        $this->assertStringContainsString('- Audit Docs Synchronization -> DONE', $status);
-        $this->assertStringContainsString('[RELATED_CONTRACT] AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $status);
-        $this->assertStringContainsString('- AUDIT_DOCS_SYNCHRONIZATION_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Audit Docs Synchronization', $tracker);
-        $this->assertStringContainsString('- Ops Environment Baseline -> DONE', $status);
-        $this->assertStringContainsString('[RELATED_CONTRACT] OPS_ENVIRONMENT_BASELINE_CONTRACT', $status);
-        $this->assertStringContainsString('- OPS_ENVIRONMENT_BASELINE_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Ops Environment Baseline', $tracker);
-    }
-
-    public function test_current_working_sections_start_with_active_session(): void
-    {
-        $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-
-        $implementationEntry = $this->firstNonEmptyLineAfter($status, '## CURRENT WORKING ENTRY');
-        $contractEntry = $this->firstNonEmptyLineAfter($tracker, '## CURRENT WORKING CONTRACT');
-
-        $activeSession = $this->activeSessionName($status);
-        $this->assertStringContainsString($activeSession, $implementationEntry);
-        $this->assertStringContainsString('[SESSION] '.$activeSession, $status);
-        $this->assertStringContainsString('MARKET_DATA_TRADING_STATUS_CARRY_FORWARD_STATE_CONTRACT', $contractEntry);
-
-        $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
-        $trackerContracts = $this->canonicalContractsFromTracker($tracker);
-
-        foreach ($implementationContracts as $contractName) {
-            $this->assertContains($contractName, $trackerContracts, $contractName.' is referenced by implementation status but missing from contract tracker.');
-        }
-
-        $this->assertMatchesRegularExpression('/^- [A-Z0-9_]+_CONTRACT (?:->|→) (DONE|LOCKED|ENFORCED|PARTIAL|BLOCKED|REVIEW_REQUIRED)$/', $contractEntry);
-    }
-
+    /**
+     * A LOCKED contract is one nothing may quietly change. That status is only meaningful if the
+     * document says what evidence locked it, so every LOCKED block must carry its validation
+     * sections, cite operator-local validation, cite a passing result, and name the test scope.
+     *
+     * Derived over whichever contracts are LOCKED, so a contract locked tomorrow is held to the
+     * same standard without editing this test.
+     */
     public function test_locked_contracts_have_concrete_validation_evidence(): void
     {
-        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-        $lockedBlocks = $this->contractBlocksByStatus($tracker, 'LOCKED');
+        $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
 
-        $this->assertNotEmpty($lockedBlocks);
+        preg_match_all(
+            '/^- ([A-Z0-9_]+_CONTRACT) -> LOCKED\R(?P<body>.*?)(?=^- [A-Z0-9_]+_CONTRACT (?:->|→)|\z)/msu',
+            $tracker,
+            $matches,
+            PREG_SET_ORDER
+        );
 
-        foreach ($lockedBlocks as $contractName => $block) {
+        $this->assertNotEmpty($matches, 'The tracker must contain LOCKED contracts.');
+
+        foreach ($matches as $match) {
+            [$block, $contractName] = [$match[0], $match[1]];
+
             $this->assertStringContainsString('[VALIDATED]', $block, $contractName.' must have a VALIDATED section.');
             $this->assertStringContainsString('[FINAL_RULE]', $block, $contractName.' must have a FINAL_RULE section.');
-            $this->assertMatchesRegularExpression('/(Operator-local|Operator local|Local PHPUnit|PHPUnit\/artisan validation was supplied by operator|local validation)/i', $block, $contractName.' must cite local/operator validation.');
+            $this->assertMatchesRegularExpression(
+                '/(Operator-local|Operator local|Local PHPUnit|PHPUnit\/artisan validation was supplied by operator|local validation)/i',
+                $block,
+                $contractName.' must cite local/operator validation.'
+            );
             $this->assertMatchesRegularExpression('/(OK \(|PASS|passed)/i', $block, $contractName.' must cite a passing validation result.');
             $this->assertStringContainsString('tests/Unit/MarketData', $block, $contractName.' must cite MarketData validation scope.');
         }
     }
 
-    public function test_audit_docs_do_not_duplicate_canonical_contracts(): void
+    /**
+     * The working entry at the top of each document must belong to the session both documents
+     * declare active. Otherwise the first thing a reader sees is work from a different session.
+     */
+    public function test_current_canonical_overrides_are_aligned_and_precede_history(): void
     {
-        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-        preg_match_all('/^- ([A-Z0-9_]+_CONTRACT) (?:->|→)/mu', $tracker, $matches);
+        $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
+        $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
 
-        $contracts = $matches[1];
-        $this->assertNotEmpty($contracts);
-        $this->assertCount(count(array_unique($contracts)), $contracts, 'Canonical contract names must not be duplicated.');
-        $this->assertSame(1, substr_count($tracker, '- AUDIT_DOCS_SYNCHRONIZATION_CONTRACT ->'));
+        $statusDate = $this->canonicalOverrideDate($status);
+        $trackerDate = $this->canonicalOverrideDate($tracker);
+
+        $this->assertSame($statusDate, $trackerDate);
+        $this->assertLessThan(strpos($status, '## HISTORICAL SESSION RECORD'), strpos($status, '## CURRENT CANONICAL OVERRIDE'));
+        $this->assertLessThan(strpos($tracker, '## HISTORICAL SESSION RECORD'), strpos($tracker, '## CURRENT CANONICAL AUDIT OVERRIDE'));
+        $this->assertStringContainsString('Implementation status: `NOT_GRANTED / NOT_PRODUCTION_RELOCKED`', $status);
+        $this->assertStringContainsString('`[IMPLEMENTATION_RELOCK_STATUS] NOT_GRANTED / NOT_PRODUCTION_RELOCKED`', $tracker);
+        $this->assertStringNotContainsString("\nACTIVE SESSION:\n", $status.$tracker);
+
+        // The working contract line must be a well-formed canonical entry. The contract it names
+        // is not asserted: pinning it freezes the documents to one session.
+        $this->assertMatchesRegularExpression(
+            '/^- [A-Z0-9_]+_CONTRACT (?:->|→) (DONE|LOCKED|ENFORCED|PARTIAL|BLOCKED|REVIEW_REQUIRED)$/',
+            $this->firstNonEmptyLineAfter($tracker, '## CURRENT WORKING CONTRACT')
+        );
     }
 
-    public function test_implementation_status_and_contract_tracker_are_synchronized(): void
-    {
-        $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-
-        $implementationContracts = $this->relatedContractsFromImplementationStatus($status);
-        $trackerContracts = $this->canonicalContractsFromTracker($tracker);
-
-        foreach ($implementationContracts as $contractName) {
-            $this->assertContains($contractName, $trackerContracts, $contractName.' is referenced by implementation status but missing from contract tracker.');
-        }
-
-        $this->assertContains('AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $implementationContracts);
-        $this->assertContains('AUDIT_DOCS_SYNCHRONIZATION_CONTRACT', $trackerContracts);
-        $this->assertContains('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $implementationContracts);
-        $this->assertContains('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $trackerContracts);
-        $this->assertContains('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $implementationContracts);
-        $this->assertContains('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $trackerContracts);
-        $this->assertContains('OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT', $implementationContracts);
-        $this->assertContains('OPS_COMMAND_SURFACE_RUNTIME_MATRIX_CONTRACT', $trackerContracts);
-    }
-
+    /**
+     * The governance document is what makes the audit trail trustworthy: append-only, no
+     * duplicate canonical entries, evidence recorded against a named environment. These markers
+     * are its structure, and nothing else asserts they survive.
+     */
     public function test_audit_governance_enforces_append_only_anti_duplication_and_static_guard(): void
     {
-        $governance = $this->readProjectFile('docs/market_data/audit/AUDIT_UPDATE_GOVERNANCE.md');
-        $inventory = $this->readProjectFile('docs/market_data/audit/AUDIT_DOCS_SYNCHRONIZATION_INVENTORY.md');
-        $postSessionInventory = $this->readProjectFile('docs/market_data/audit/AUDIT_DOCS_SYNCHRONIZATION_POST_SESSION_1_8_INVENTORY.md');
+        $documents = $this->read('docs/market_data/audit/AUDIT_UPDATE_GOVERNANCE.md')
+            .$this->read('docs/market_data/audit/AUDIT_DOCS_SYNCHRONIZATION_INVENTORY.md')
+            .$this->read('docs/market_data/audit/AUDIT_DOCS_SYNCHRONIZATION_POST_SESSION_1_8_INVENTORY.md');
 
         foreach ([
             'AUDIT DOCS SYNCHRONIZATION HARD RULE',
@@ -244,155 +112,694 @@ $this->assertStringContainsString('replay_id=2', $status.$tracker);
             'ACTIVE SESSION',
             'targeted and full local PHPUnit evidence',
             'LOCKED_LOCAL_PHPUNIT_PASS',
-            'AuditDocsSynchronizationStaticGuardTest.php',
             'AUDIT_DOCS_SYNCHRONIZATION_CONTRACT',
             'RUNTIME ENVIRONMENT BASELINE HARD RULE',
             'operator-local PHP version',
             'operator-local PHPUnit version',
-            'POST_SESSION_1_8_LOCKED_LOCAL_PHPUNIT_PASS',
         ] as $needle) {
-            $this->assertStringContainsString($needle, $governance.$inventory.$postSessionInventory);
+            $this->assertStringContainsString($needle, $documents);
         }
     }
 
-    public function test_latest_market_data_full_suite_evidence_is_recorded(): void
+    /**
+     * F-045 was originally recorded inside a dated W15 re-audit block. Keeping that history is
+     * required, but allowing it to look active again would make a later partial read contradict
+     * the current controller. This guard binds all three views: current open IDs, active-finding
+     * rows, and the local superseded marker on the historical claim itself.
+     */
+    public function test_stage_two_f045_cannot_regress_to_active_or_ambiguous_audit_state(): void
     {
-        $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-        $inventory = $this->readProjectFile('docs/market_data/audit/AUDIT_DOCS_SYNCHRONIZATION_POST_SESSION_1_8_INVENTORY.md');
+        $ledger = $this->read('docs/market_data/audit/MARKET_DATA_IMPLEMENTATION_LEDGER.md');
 
-        foreach ([$status, $tracker, $inventory] as $document) {
-            $this->assertStringContainsString('349 tests, 4558 assertions', $document);
-            $this->assertStringContainsString('358 tests, 4711 assertions', $document);
-            $this->assertStringContainsString('368 tests, 4927 assertions', $document);
-            $this->assertStringContainsString('435 tests, 6299 assertions', $document);
-            $this->assertStringContainsString('435 tests, 6318 assertions', $document);
-            $this->assertStringContainsString('164 tests, 3702 assertions', $document);
-            $this->assertStringContainsString('164 tests, 3721 assertions', $document);
-            $this->assertStringContainsString('511 tests, 7871 assertions', $document);
-            $this->assertStringContainsString('vendor/bin/phpunit tests/Unit/MarketData', $document);
-            $this->assertStringContainsString('not a new container PHPUnit run', $document);
+        $matched = preg_match(
+            '/^- open findings recorded by command protocol:.*?\((?<ids>[^\r\n)]*)\)\./m',
+            $ledger,
+            $openFindingMatch
+        );
+        $this->assertSame(1, $matched, 'The current open-finding roster could not be inspected.');
+        preg_match_all('/`(?<id>F-\d+)`/', $openFindingMatch['ids'], $openIdMatches);
+        $this->assertNotContains('F-045', $openIdMatches['id'], 'Closed F-045 returned to the current open-finding roster.');
+
+        $matched = preg_match('/^## Active findings\R(?<table>.*?)(?=^## )/ms', $ledger, $activeFindingMatch);
+        $this->assertSame(1, $matched, 'The active-finding table could not be inspected.');
+        $this->assertStringNotContainsString(
+            '| `F-045` |',
+            $activeFindingMatch['table'],
+            'Closed F-045 must not remain in the current-state active-finding table.'
+        );
+
+        $this->assertStringContainsString(
+            '## `MD-REAUDIT W15` — 2026-08-11 keempat — HISTORICAL, SUPERSEDED UNTUK `F-045`',
+            $ledger,
+            'The original F-045 claim must carry its superseded marker at the claim location.'
+        );
+        $this->assertDoesNotMatchRegularExpression(
+            '/^.*(?:\bOPEN\b|\bPARTIAL\b|open findings).*`F-045`.*$|^.*`F-045`.*(?:\bOPEN\b|\bPARTIAL\b|open findings).*$/mi',
+            $ledger,
+            'No line may textually mix F-045 with an open/partial roster or verdict.'
+        );
+        $this->assertMatchesRegularExpression(
+            '/^## `MD-REAUDIT W15` — 2026-08-11 keempat — HISTORICAL, SUPERSEDED UNTUK `F-045`\R\R> \*\*STATUS HISTORIS — BUKAN CURRENT FINDING\.\*\*/m',
+            $ledger,
+            'The historical status marker must sit directly beside the original F-045 audit block.'
+        );
+        $this->assertStringContainsString(
+            '| 2 | Ekspos bukti coverage — **SELESAI 2026-08-12** | `F-045` |',
+            $ledger,
+            'The ordered-stage table must state that Stage 2 is complete.'
+        );
+        $this->assertStringContainsString(
+            'kolom coverage tersimpan tanpa jalur ekspor maupun alias silang. `F-045` **CLOSED**.',
+            $ledger,
+            'The authoritative Stage 2 closure verdict is missing.'
+        );
+        $matched = preg_match(
+            '/next permitted implementation action: \*\*Tahap (?<stage>\d+)\b/',
+            $ledger,
+            $nextStageMatch
+        );
+        $this->assertSame(1, $matched, 'The next permitted stage could not be inspected.');
+        $this->assertGreaterThan(2, (int) $nextStageMatch['stage'], 'The controller must not point back to Stage 2.');
+
+        $matched = preg_match('/^## Tahap 2 .*?\R(?<stage>.*?)(?=^## |\z)/ms', $ledger, $stageMatch);
+        $this->assertSame(1, $matched, 'The authoritative Stage 2 section could not be inspected.');
+        foreach (['resolveKnowledgeCutoff', 'MarketDataPipelineService', 'ReplayVerificationService'] as $foreignOwner) {
+            $this->assertStringNotContainsString(
+                $foreignOwner,
+                $stageMatch['stage'],
+                'Stage 2 evidence must not claim work owned by '.$foreignOwner.'.'
+            );
         }
+        foreach ([
+            'MarketDataEvidenceExportService::RUN_COVERAGE_STORAGE_EXPORT_PATHS',
+            'MarketDataEvidenceExportService::buildCoverageState()',
+            'decodeNullableJsonArray()',
+        ] as $ownedSymbol) {
+            $this->assertStringContainsString(
+                $ownedSymbol,
+                $stageMatch['stage'],
+                'Stage 2 must explicitly bind its conformance claim to '.$ownedSymbol.'.'
+            );
+        }
+        $this->assertStringContainsString(
+            '## Impact review alignment kontrak sebelum Tahap 2 — BUKAN EXIT EVIDENCE',
+            $ledger,
+            'Required cross-contract alignment must be reviewed outside the Stage 2 evidence block.'
+        );
     }
 
-    public function test_full_market_data_production_ready_claim_is_locked_after_final_audit_docs_sync(): void
+    public function test_stage_three_closes_only_write_guards_and_keeps_corpus_findings_open(): void
     {
-        $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-        $inventory = $this->readProjectFile('docs/market_data/audit/FULL_MARKET_DATA_PRODUCTION_READY_INVENTORY.md');
-        $replayInventory = $this->readProjectFile('docs/market_data/audit/REPLAY_DETERMINISM_RUNTIME_PROOF_INVENTORY.md');
+        $ledger = $this->read('docs/market_data/audit/MARKET_DATA_IMPLEMENTATION_LEDGER.md');
+
+        $this->assertStringContainsString(
+            '| 3 | Bekukan populasi cacat — **SELESAI 2026-08-13** | `F-007a` `F-026a` `F-017a` `F-018a` |',
+            $ledger
+        );
+        $matched = preg_match(
+            '/next permitted implementation action: \*\*Tahap (?<stage>\d+)\b/',
+            $ledger,
+            $nextStageMatch
+        );
+        $this->assertSame(1, $matched, 'The controller next stage could not be inspected.');
+        $this->assertGreaterThan(3, (int) $nextStageMatch['stage'], 'The controller must not point back to Stage 3.');
+
+        $matched = preg_match(
+            '/^## Tahap 3 — Bekukan populasi cacat — SELESAI 2026-08-13\R(?<stage>.*?)(?=^## |\z)/ms',
+            $ledger,
+            $stageMatch
+        );
+        $this->assertSame(1, $matched, 'The authoritative Stage 3 section could not be inspected.');
+        $stage = $stageMatch['stage'];
+
+        foreach (['F-007a', 'F-026a', 'F-017a', 'F-018a'] as $closedHalf) {
+            $this->assertMatchesRegularExpression(
+                '/`'.preg_quote($closedHalf, '/').'`.*\*\*CLOSED\*\*/s',
+                $stage,
+                $closedHalf.' must have an explicit Stage 3 closure verdict.'
+            );
+        }
+
+        foreach (['F-007', 'F-026', 'F-017', 'F-018'] as $openParent) {
+            $this->assertMatchesRegularExpression(
+                '/`'.preg_quote($openParent, '/').'`.*tetap \*\*OPEN\*\*/s',
+                $stage,
+                $openParent.' must remain open for its corpus half.'
+            );
+        }
 
         foreach ([
-            '- Full Market-Data Production Readiness Proof Pack -> DONE',
-            '[RELATED_CONTRACT] FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT',
-            '- FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT -> LOCKED',
-            '[RELATED_IMPLEMENTATION] Full Market-Data Production Readiness Proof Pack',
-            'MARKET_DATA_PRODUCTION_PROOF_PACK.md',
-            'MARKET_DATA_PRODUCTION_READY_LOCKED',
-            'Full market-data production-ready: `MARKET_DATA_PRODUCTION_READY_LOCKED`',
-            '`FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT`: `LOCKED`',
-            'Full market-data runtime proof pack for current source: `MARKET_DATA_PRODUCTION_READY_LOCKED / LOCKED`',
-            'Historical previous source-state proof pack: `DONE / LOCKED`',
-            'Historical non-current replay runtime proof: `LOCKED`',
-            'replay_actual_resolution_mode=HISTORICAL_PUBLICATION_AUDIT',
-            'replay_publication_scope=HISTORICAL_SEALED_PUBLICATION',
-            'historical_publication_allowed=true',
-            'current_pointer_required=false',
-            'current_pointer_status=NOT_CURRENT_POINTER',
-            'storage/app/market-data/full-production-ready/runtime/historical-replay/fixtures/run-2-publication-2/manifest.json',
-            'storage/app/market-data/full-production-ready/runtime/historical-replay/verify-run-2-publication-2/replay_result.json',
-            'storage/app/market-data/full-production-ready/runtime/historical-replay/evidence-export-replay-8/evidence_admission.json',
-            '475 tests, 6942 assertions',
-            'run_id=33',
-            'replay_id=15',
-            'all_passed=1',
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $status.$tracker.$inventory.$replayInventory);
+            'listing_id',
+            'source_observation_id',
+            'canonicalization_version',
+            'price_product_code',
+            'quality_state',
+            'coverage_expected_count',
+            'coverage_bar_not_expected_count',
+            'coverage_expectation_unknown_count',
+            'coverage_delivered_count',
+            'coverage_delivered_valid_count',
+            'universe_membership_state',
+            'bar_expectation_state',
+            'delivery_state',
+            'canonical_quality_state',
+            'liquidity_state',
+            'temporal_status_state',
+            'event_risk_state',
+            'eligibility_reasons_json',
+        ] as $protectedField) {
+            $this->assertStringContainsString($protectedField, $stage, $protectedField.' is missing from Stage 3 evidence.');
         }
 
-        $proofPack = $this->readProjectFile('docs/market_data/audit/MARKET_DATA_PRODUCTION_PROOF_PACK.md');
+        foreach ([
+            'EodArtifactRepository::REQUIRED_CANONICAL_BAR_WRITE_FIELDS',
+            'EodArtifactRepository::REQUIRED_ELIGIBILITY_WRITE_FIELDS',
+            'EodRunRepository::REQUIRED_COVERAGE_EVIDENCE_WRITE_FIELDS',
+            'assertCompleteBarRows()',
+            'assertCompleteEligibilityRows()',
+            'assertCompleteCoverageTelemetry()',
+            'StageThreeWriteCompletenessGuardTest',
+            'StageThreeEligibilityProducerTest',
+        ] as $ownedProof) {
+            $this->assertStringContainsString($ownedProof, $stage, 'Stage 3 must bind its claim to '.$ownedProof.'.');
+        }
+
+        $this->assertStringContainsString('tidak melakukan backfill tahap 5', $stage);
+        $this->assertStringContainsString('Tidak ada migrasi schema', $stage);
+        $this->assertStringContainsString('Tidak ada klaim bahwa nilai `NULL` historis sudah berkurang.', $stage);
+        $this->assertStringContainsString(
+            '`operational_start_date`, fixture replay independen, terms IDX,',
+            $stage,
+            'Stage 3 scope exclusions must remain explicit.'
+        );
+    }
+
+    public function test_revised_stage_four_onward_sequence_is_independent_and_keeps_activation_outside_build(): void
+    {
+        $ledger = $this->read('docs/market_data/audit/MARKET_DATA_IMPLEMENTATION_LEDGER.md');
+
+        $this->assertStringContainsString(
+            '## 2026-08-12 — Urutan pengerjaan: tiap tahap dapat dinyatakan selesai sendiri — HISTORICAL, SUPERSEDED MULAI TAHAP 4',
+            $ledger,
+            'The replaced planning sequence must remain visibly historical.'
+        );
+        $this->assertMatchesRegularExpression(
+            '/HISTORICAL, SUPERSEDED MULAI TAHAP 4\R\R> \*\*STATUS HISTORIS — BUKAN URUTAN AKTIF MULAI TAHAP 4\./',
+            $ledger,
+            'The superseded marker must sit beside the old sequence.'
+        );
+
+        $matched = preg_match(
+            '/^## 2026-08-13 — CURRENT AUTHORITATIVE SEQUENCE mulai Tahap 4\R(?<sequence>.*)\z/ms',
+            $ledger,
+            $sequenceMatch
+        );
+        $this->assertSame(1, $matched, 'The current Stage 4 onward sequence could not be inspected.');
+        $sequence = $sequenceMatch['sequence'];
+
+        $this->assertStringContainsString(
+            'next permitted implementation action: **Tahap 9 — author fixture replay independen.',
+            $ledger
+        );
+        $this->assertStringContainsString('`F-021` tetap terbuka tetapi berstatus **`PRE_ACTIVATION_DEFERRED`**', $ledger);
+
+        $matched = preg_match(
+            '/^### Urutan pembangunan yang berlaku\R(?<table>.*?)(?=^### )/ms',
+            $sequence,
+            $buildTableMatch
+        );
+        $this->assertSame(1, $matched, 'The authoritative build-stage table could not be inspected.');
+        $buildTable = $buildTableMatch['table'];
+
+        preg_match_all('/^\| (?<stage>\d+) \|/m', $buildTable, $stageMatches);
+        $this->assertSame(['4', '5', '6', '7', '8', '9', '10', '11'], $stageMatches['stage']);
+
+        foreach ([
+            '4' => ['F-039a', 'Keputusan makna `RAW`', 'SELESAI 2026-08-13'],
+            '5' => ['F-038', 'Keputusan batas baca bar tak beridentitas', 'SELESAI 2026-08-13'],
+            '6' => ['F-010a', 'F-027a', 'SELESAI 2026-08-13', 'immutable KSEI evidence'],
+            '7' => ['F-011a', 'tier struktur pasar IDX', 'SELESAI 2026-08-13'],
+            '8' => ['F-007b', 'F-026b', 'F-017b', 'F-018b', 'current-authoritative'],
+            '9' => ['F-030a', 'replay target belum dijalankan'],
+            '10' => ['F-030b', 'F-020', 'F-024', "bukan `'v1'`"],
+            '11' => ['F-023a', 'PRE_ACTIVATION_DEFERRED'],
+        ] as $stageNumber => $needles) {
+            $matched = preg_match('/^\| '.preg_quote($stageNumber, '/').' \|(?<row>.*)$/m', $buildTable, $rowMatch);
+            $this->assertSame(1, $matched, 'Stage '.$stageNumber.' is missing from the current sequence.');
+            foreach ($needles as $needle) {
+                $this->assertStringContainsString($needle, $rowMatch['row'], 'Stage '.$stageNumber.' is missing '.$needle.'.');
+            }
+            if (in_array((string) $stageNumber, ['4', '5', '6', '7', '8'], true)) {
+                $this->assertStringNotContainsString('**BELUM DIMULAI**', $rowMatch['row']);
+            } else {
+                $this->assertStringContainsString('**BELUM DIMULAI**', $rowMatch['row']);
+            }
+            if ((string) $stageNumber === '8') {
+                $this->assertStringContainsString('**SELESAI 2026-08-14**', $rowMatch['row']);
+                $this->assertStringContainsString('15/15 current pointer', $rowMatch['row']);
+            }
+        }
+
+        $this->assertStringNotContainsString('F-021', $buildTable, 'Operational activation must not block the build sequence.');
+        $this->assertStringContainsString('bukan `UPDATE ... SET` atas fakta lama', $sequence);
+        $this->assertStringContainsString('history lama tidak diubah', $buildTable);
+        $this->assertMatchesRegularExpression('/Pelanggaran\s+harus nol untuk 18 field/', $sequence);
+        $this->assertStringContainsString('history row lama tidak berubah hash maupun jumlahnya', $sequence);
+
+        foreach ([
+            '`F-039a` keputusan pada Tahap 4; `F-039b` penerapan pada Tahap 8',
+            '`F-038` | keputusan dan enforcement fail-closed diselesaikan pada Tahap 5',
+            '`a` perekaman authority pada Tahap 6; `b` penerapan pada Tahap 8',
+            '`F-011a` perekaman tier pada Tahap 7; `F-011b` penerapan pada Tahap 8',
+            '`F-030a` authoring fixture pada Tahap 9; `F-030b` eksekusi pada Tahap 10',
+            '`F-023a` gate implementasi pada Tahap 11; `F-023b` evidence operasi pada `O3`',
+            '`F-021a` deklarasi pada `O1`; `F-021b` propagasi pada `O2`',
+        ] as $splitRule) {
+            $this->assertStringContainsString($splitRule, $sequence, 'Missing independent-closure split: '.$splitRule);
+        }
+
+        $matched = preg_match('/^### Gate di luar burn-down pembangunan\R(?<gates>.*?)(?=^### )/ms', $sequence, $gateMatch);
+        $this->assertSame(1, $matched, 'The external operational gate table could not be inspected.');
+        foreach (['`O1` — deklarasi activation', '`O2` — propagasi marker', '`O3` — consecutive activated sessions'] as $gate) {
+            $this->assertStringContainsString($gate, $gateMatch['gates']);
+        }
+        foreach (['F-021a', 'F-021b', 'F-023b'] as $externalFinding) {
+            $this->assertStringContainsString($externalFinding, $gateMatch['gates']);
+        }
+        $this->assertStringContainsString(
+            'COUNT(*) WHERE operational_start_date IS NULL = 0',
+            $gateMatch['gates'],
+            'The deferred F-021 propagation gate must preserve its original measurable purpose.'
+        );
+        $this->assertStringContainsString(
+            'state historis sebelum boundary tidak diubah menjadi klaim fresh',
+            $gateMatch['gates']
+        );
+
+        $this->assertStringContainsString(
+            'Tahap berikut yang diizinkan adalah **Tahap 9 — author fixture replay independen**.',
+            $sequence
+        );
+        $this->assertMatchesRegularExpression(
+            '/Tahap 8 selesai\s+dan tidak menjalankan replay\./',
+            $sequence
+        );
+    }
+
+    public function test_stage_four_records_only_the_owner_raw_decision_and_keeps_implementation_open(): void
+    {
+        $ledger = $this->read('docs/market_data/audit/MARKET_DATA_IMPLEMENTATION_LEDGER.md');
+
+        $matched = preg_match(
+            '/^## Tahap 4 — Keputusan makna `RAW` — SELESAI 2026-08-13\R(?<stage>.*?)(?=^## Tahap 5 )/ms',
+            $ledger,
+            $stageMatch
+        );
+        $this->assertSame(1, $matched, 'The authoritative Stage 4 decision section could not be inspected.');
+        $stage = $stageMatch['stage'];
+
+        foreach ([
+            '`api_free/yahoo_finance` **tetap bootstrap primary EOD source**',
+            'field `indicators.quote.0`',
+            'tidak di-adjust, diperbaiki,',
+            '/bukan klaim\s+bahwa Yahoo adalah source resmi IDX/',
+            '`AS_TRADED`, `PROVIDER_BACK_ADJUSTED`, dan `UNKNOWN`',
+            'Provider `adj_close` tetap diagnostic observation metadata',
+            '`PROVIDER_BACK_ADJUSTED` tidak boleh di-adjust ulang',
+            '/`UNKNOWN`\s+harus fail-safe sebagai held\/quarantined/',
+            'provider berbayar **tidak diwajibkan pada fase sekarang**',
+        ] as $decisionPart) {
+            if (str_starts_with($decisionPart, '/')) {
+                $this->assertMatchesRegularExpression($decisionPart, $stage, 'Stage 4 is missing owner decision part: '.$decisionPart);
+
+                continue;
+            }
+
+            $this->assertStringContainsString($decisionPart, $stage, 'Stage 4 is missing owner decision part: '.$decisionPart);
+        }
+
+        $this->assertStringContainsString('`F-039a` **CLOSED**', $stage);
+        $this->assertStringContainsString('`F-039b` di Tahap 8', $stage);
+        $this->assertStringContainsString('`F-039` karena itu tetap **OPEN/PARTIAL**', $stage);
+        $this->assertStringContainsString('Tahap berikut yang diizinkan adalah Tahap 5', $stage);
+        $this->assertStringContainsString(
+            '### HISTORICAL, SUPERSEDED — Evidence penyesuaian urutan sebelum Tahap 4 — 2026-08-13',
+            $ledger
+        );
+        $this->assertStringNotContainsString(
+            'Tahap 4 tetap **BELUM DIMULAI**',
+            $ledger,
+            'A superseded pre-execution status must not remain readable as the current Stage 4 state.'
+        );
+
+        foreach ([
+            'Tidak ada kode produksi',
+            'migration',
+            'database row',
+            'terms IDX',
+            'fixture replay',
+            'activation marker',
+            '/Tahap 5\s+dan seterusnya belum dikerjakan/',
+        ] as $scopeBoundary) {
+            if (str_starts_with($scopeBoundary, '/')) {
+                $this->assertMatchesRegularExpression($scopeBoundary, $stage, 'Stage 4 scope boundary is missing '.$scopeBoundary.'.');
+
+                continue;
+            }
+
+            $this->assertStringContainsString($scopeBoundary, $stage, 'Stage 4 scope boundary is missing '.$scopeBoundary.'.');
+        }
+
+        $this->assertStringContainsString(
+            '| `F-039` | `W12` | P0 | CLOSED 2026-08-14:',
+            $ledger
+        );
+        $this->assertStringContainsString(
+            '| 4 | Keputusan makna `RAW` — **SELESAI 2026-08-13** | `F-039a` |',
+            $ledger
+        );
+    }
+
+    public function test_stage_five_is_fail_closed_complete_and_cannot_be_reopened_by_history(): void
+    {
+        $ledger = $this->read('docs/market_data/audit/MARKET_DATA_IMPLEMENTATION_LEDGER.md');
+
+        $matched = preg_match(
+            '/^## Tahap 5 — Keputusan batas baca bar tak beridentitas — SELESAI 2026-08-13\R(?<stage>.*?)(?=^## Tahap 6 )/ms',
+            $ledger,
+            $stageMatch
+        );
+        $this->assertSame(1, $matched, 'The authoritative Stage 5 section could not be inspected.');
+        $stage = $stageMatch['stage'];
+
+        foreach ([
+            'tafsir historis “bar mentah bukan analytical row',
+            '`NULL`, string kosong, whitespace, perbedaan case,',
+            '`EodPublicationRepository` sekarang menjadi sumber keputusan tunggal',
+            '`eod_bars` serta `eod_bars_history`',
+            '`PRICE_PRODUCT_UNRECORDED`',
+            '`CANONICAL_BAR_PRICE_PRODUCT_INVALID`',
+            'Pencocokan memakai `HEX(...)`',
+            'lowercase `raw`, dan padded ` RAW `',
+            'seluruh 844 publication tersebut ditahan',
+            'Korpus legacy tidak diberi label `RAW` dan tidak disentuh.',
+            'registry runtime dari 392 menjadi 363 baris',
+            'Dua puluh sembilan kode di luar scope',
+            '`F-038` **CLOSED**',
+            'Tahap berikut yang diizinkan adalah Tahap 6',
+            'Tahap 6 belum dimulai.',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $stage, 'Stage 5 closure is missing '.$needle.'.');
+        }
+
+        $matched = preg_match(
+            '/^- open findings recorded by command protocol: \*\*(?<count>\d+) terbuka\*\* \((?<ids>[^\r\n)]*)\)\./m',
+            $ledger,
+            $openFindingMatch
+        );
+        $this->assertSame(1, $matched, 'The current open-finding roster could not be inspected.');
+        $this->assertSame('7', $openFindingMatch['count']);
+        preg_match_all('/`(?<id>F-\d+)`/', $openFindingMatch['ids'], $openIdMatches);
+        $this->assertCount(7, $openIdMatches['id']);
+        $this->assertNotContains('F-038', $openIdMatches['id']);
+
+        $matched = preg_match('/^## Active findings\R(?<table>.*?)(?=^## )/ms', $ledger, $activeFindingMatch);
+        $this->assertSame(1, $matched, 'The active-finding table could not be inspected.');
+        $this->assertStringNotContainsString('| `F-038` |', $activeFindingMatch['table']);
+
+        $this->assertStringContainsString(
+            '## HISTORICAL, SUPERSEDED — W12 remediation `F-026` — 2026-08-11',
+            $ledger
+        );
+        $this->assertStringContainsString(
+            '| 5 | Keputusan batas baca bar tak beridentitas — **SELESAI 2026-08-13** | `F-038` |',
+            $ledger
+        );
+        $this->assertStringContainsString(
+            'next permitted implementation action: **Tahap 9 — author fixture replay independen.',
+            $ledger
+        );
+    }
+
+    public function test_stage_six_records_only_declared_authoritative_terms_and_leaves_application_open(): void
+    {
+        $ledger = $this->read('docs/market_data/audit/MARKET_DATA_IMPLEMENTATION_LEDGER.md');
+
+        $matched = preg_match(
+            '/^## Tahap 6 — Rekam terms corporate action otoritatif — SELESAI 2026-08-13\R(?<stage>.*?)(?=^## Tahap 7 )/ms',
+            $ledger,
+            $stageMatch
+        );
+        $this->assertSame(1, $matched, 'The authoritative Stage 6 closure section could not be inspected.');
+        $stage = $stageMatch['stage'];
+
+        foreach ([
+            'MLPT, RAJA, dan RMKE',
+            'Scope ini sengaja kecil dan terukur',
+            'bukan klaim bahwa 533 aksi legacy',
+            '`record_only=true`',
+            '`md_corporate_action_revisions`',
+            '`md_source_observations`',
+            '`verification_state=AUTHORITATIVE_VERIFIED`',
+            '`announcement_at=NULL`',
+            'URL non-HTTPS',
+            'overwrite dilarang',
+            '`inserted_revision_count=0`',
+            '`source_observation_insert_count=0`',
+            '`md_adjustment_factor_sets` | 0 | 0',
+            '`md_adjustment_factors` | 0 | 0',
+            '`eod_runs` | 72.777 | 72.777',
+            '`eod_publications` | 64.951 | 64.951',
+            '`eod_bars` | 756.329 | 756.329',
+            '`eod_indicators` | 756.328 | 756.328',
+            '`eod_eligibility` | 779.402 | 779.402',
+            '`ba8c24bc787876481807679c130d5662472c4d14e005436c59967e89d4690b61`',
+            '363→393',
+            'Exact 29 kode di luar scope',
+            '**364 = 360 baseline + 1 Tahap 1 + 2 Tahap 5 + 1 Tahap 6**',
+            '`F-010a` dan `F-027a` **CLOSED untuk scope yang dideklarasikan**',
+            'Parent `F-010` dan',
+            '`F-027` tetap **OPEN/PARTIAL**',
+            'Tahap berikut yang diizinkan adalah Tahap 7',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $stage, 'Stage 6 closure is missing '.$needle.'.');
+        }
+
+        foreach ([
+            'stage_6_ksei_stock_split_terms_v1.json',
+            'AuthoritativeCorporateActionTermsService',
+            'verifier runtime HTTP 200/application-PDF',
+            'market-data:events:record-authoritative-terms',
+            'AUTHORITATIVE_TERMS_VALIDATED',
+        ] as $ownedArtifact) {
+            $this->assertStringContainsString($ownedArtifact, $stage, 'Stage 6 is missing owned artifact '.$ownedArtifact.'.');
+        }
+
+        $this->assertStringContainsString(
+            '| 6 | Rekam terms corporate action otoritatif — **SELESAI 2026-08-13** | `F-010a` `F-027a` |',
+            $ledger
+        );
+        $this->assertStringNotContainsString(
+            '| 6 | Rekam terms corporate action otoritatif — **BELUM DIMULAI** |',
+            $ledger
+        );
+        $this->assertStringContainsString(
+            '| `F-010` | `W11` | P1 | PARTIAL — `F-010a` CLOSED pada Tahap 6',
+            $ledger
+        );
+        $this->assertStringContainsString(
+            '| `F-027` | `W12` | P0 | CLOSED 2026-08-14',
+            $ledger
+        );
+        $this->assertStringContainsString(
+            '## HISTORICAL, SUPERSEDED — W12 remediation `F-027` — 2026-08-11',
+            $ledger
+        );
+        $this->assertMatchesRegularExpression(
+            '/HISTORICAL, SUPERSEDED — W12 remediation `F-027` — 2026-08-11\R\R> \*\*STATUS HISTORIS — BUKAN AUTHORITY EVENT AKTIF\.\*\*/',
+            $ledger
+        );
+
+        foreach (['tier/band/floor/tick Tahap 7', 'Tahap 8', 'fixture/replay Tahap 9–10', 'gate Tahap 11', 'activation marker'] as $deferred) {
+            $this->assertStringContainsString($deferred, $stage, 'Stage 6 must explicitly defer '.$deferred.'.');
+        }
+    }
+
+    public function test_stage_seven_closure_is_record_only_source_backed_and_history_clean(): void
+    {
+        $ledger = $this->read('docs/market_data/audit/MARKET_DATA_IMPLEMENTATION_LEDGER.md');
+        preg_match(
+            '/^## Tahap 7 — Rekam tier struktur pasar IDX — SELESAI 2026-08-13\R(?<stage>.*)\z/ms',
+            $ledger,
+            $stageMatch
+        );
+        $this->assertArrayHasKey('stage', $stageMatch, 'Stage 7 closure block must exist.');
+        $stage = $stageMatch['stage'];
+
+        foreach ([
+            '`IDX_REGULAR_STANDARD_EQUITY`',
+            '`2023-01-02`',
+            'Papan Utama, Pengembangan, dan Ekonomi Baru',
+            'Papan Akselerasi dan Pemantauan Khusus dikecualikan',
+            '`FAIL_CLOSED`',
+            '`record_only=true`',
+            'stage_7_idx_regular_market_structure_v1.json',
+            '`md_exchange_market_structure_revisions`',
+            '`md_exchange_price_band_tiers`',
+            '`md_exchange_tick_size_tiers`',
+            '`AUTHORITATIVE_VERIFIED`',
+            '`AUTHORITATIVE_MARKET_STRUCTURE_VALIDATED`',
+            '`inserted_revision_count=0`',
+            '`unchanged_revision_count=6`',
+            '`evidence_correction_revision_count=6`',
+            '`source_observation_insert_count=0`',
+            '`eod_runs` | 72.777 | 72.777',
+            '`eod_publications` | 64.951 | 64.951',
+            '`eod_bars` | 756.329 | 756.329',
+            '`eod_bars_history` | 56.908.318 | 56.908.318',
+            '`md_adjustment_factor_sets` | 0 | 0',
+            '`md_adjustment_factors` | 0 | 0',
+            '**364→365**',
+            '`F-011a` **CLOSED**',
+            'Parent `F-011` tetap',
+            '**OPEN/PARTIAL**',
+            'Tahap berikut yang diizinkan adalah Tahap 8',
+            'pekerjaan itu belum dimulai di sini',
+            'identity metadata manifest, bukan identity response yang benar-benar diterima',
+            'enam revision nomor 2 dengan `supersedes_revision_id`',
+            'observation baru dengan `supersedes_observation_id` ke evidence lama',
+            '**0 evidence violation**',
+            '`md_exchange_market_structure_revisions` | 12 | 6 revision nomor 2',
+            '`md_source_observations` | 26 | 10 observation / 5 pasangan evidence aktif',
+            'Tidak ada row lama yang diedit atau dihapus oleh koreksi.',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $stage, 'Stage 7 closure is missing '.$needle.'.');
+        }
+
+        foreach ([
+            'AuthoritativeExchangeMarketStructureService',
+            'market-data:market-structure:record-authoritative-rules',
+            '5/5 HTTP 200',
+            '6 revision, 12 band tier, 5 tick tier, 10 observations',
+            '5/5 evidence aktif membawa exact response identity',
+            'production evidence correction: append-only 6 revision + 12 band tier + 5 tick tier + 10',
+        ] as $ownedArtifact) {
+            $this->assertStringContainsString($ownedArtifact, $stage, 'Stage 7 is missing owned proof '.$ownedArtifact.'.');
+        }
+
+        $this->assertStringContainsString(
+            '| 7 | Rekam tier struktur pasar IDX — **SELESAI 2026-08-13** | `F-011a` |',
+            $ledger
+        );
+        $this->assertStringNotContainsString(
+            '| 7 | Rekam tier struktur pasar IDX — **BELUM DIMULAI** |',
+            $ledger
+        );
+        $this->assertStringContainsString(
+            '| `F-011` | `W11` | P1 | CLOSED 2026-08-14:',
+            $ledger
+        );
+        $auditReport = $this->read('docs/market_data/audit/reports/AUDIT_FINAL_STATE.md');
+        $this->assertStringContainsString(
+            '| P1-30/F-011 band, floor, dan tick otoritatif | `CLOSED — F-011a/F-011b` |',
+            $auditReport
+        );
+        $this->assertStringContainsString(
+            'Tahap 7 merekam authority: enam revision current',
+            $auditReport
+        );
+        $this->assertStringContainsString(
+            '1.446 publication/listing binding `RESOLVED_STANDARD_BOARD`',
+            $auditReport
+        );
+        $this->assertStringNotContainsString(
+            '| P1-30 band, floor, dan tick belum bersumber dan belum effective-dated | `OPEN` |',
+            $auditReport
+        );
+        $this->assertStringContainsString(
+            '### HISTORICAL, SUPERSEDED — `F-011` — band, floor, dan tick masih konstanta',
+            $ledger
+        );
+        $marketStructureOwner = $this->read(
+            'docs/market_data/registry/Exchange_Market_Structure_Facts_LOCKED.md'
+        );
+        $this->assertStringNotContainsString(
+            'The current in-code single scalar is recorded above as exactly that.',
+            $marketStructureOwner
+        );
+        $this->assertStringContainsString(
+            'The Stage 7 authority rows carry source references,',
+            $marketStructureOwner
+        );
+        $this->assertStringContainsString(
+            'non-authoritative and cannot inherit the recorded rows\' verification state.',
+            $marketStructureOwner
+        );
+        $this->assertStringContainsString(
+            'The current authority set is revision 2 for all six rules.',
+            $marketStructureOwner
+        );
+        $runbook = $this->read('docs/market_data/ops/OPERATIONAL_RUNBOOK.md');
+        $this->assertStringContainsString(
+            'must append an evidence-correction revision and observation pair with',
+            $runbook
+        );
+        $this->assertStringContainsString(
+            'It must never update or delete the old revision/evidence.',
+            $runbook
+        );
+        $safetyInventory = $this->read('docs/market_data/ops/COMMAND_SURFACE_SAFETY_INVENTORY.md');
+        $this->assertStringContainsString(
+            'legacy evidence mismatch appends a superseding correction revision/observation pair',
+            $safetyInventory
+        );
+        $fieldDictionary = $this->read('docs/market_data/db/DB_FIELDS_AND_METADATA.md');
+        $this->assertStringContainsString(
+            'A legacy observation containing manifest metadata alone cannot be',
+            $fieldDictionary
+        );
+        $this->assertStringContainsString(
+            'next permitted implementation action: **Tahap 9 — author fixture replay independen.**',
+            $ledger
+        );
+    }
+
+    /**
+     * The production-ready claim is a decision, not a measurement, and the proof pack must state
+     * the decision it actually reached. The rejected outcomes are asserted absent so a downgrade
+     * cannot be left sitting next to the claim it contradicts.
+     */
+    /**
+     * Archived source-state evidence records one settled decision per artifact.
+     *
+     * SUPERSEDED at W01 — stage 1: this method previously asserted that the retired claims
+     * `MARKET_DATA_PRODUCTION_READY_LOCKED`, `Final source-state lock status: LOCKED`, and
+     * `FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT -> LOCKED` remained present in the audit
+     * documents. `docs/market_data/README.md` retires those claims for the corrected
+     * data-readiness baseline, so a green suite was requiring the platform to keep asserting
+     * something the owner document had already withdrawn — and removing the claims from the
+     * fourteen documents that carry them would have broken this test.
+     *
+     * Those three assertions are removed rather than adjusted, per the retirement obligation in
+     * `Market_Data_Strategy_Implementation_Blueprint_LOCKED.md` steps 3 and 7: a stage that
+     * rejects a behaviour retires the proof that locks it, in the same stage.
+     *
+     * What remains are archived execution facts — runtime parity, provider smoke, and audit-doc
+     * synchronisation — which record what was executed and claim nothing about current readiness.
+     */
+    public function test_archived_source_state_evidence_states_a_single_settled_decision(): void
+    {
+        $proofPack = $this->read('docs/market_data/audit/MARKET_DATA_PRODUCTION_PROOF_PACK.md');
+        $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
+        $inventory = $this->read('docs/market_data/audit/FULL_MARKET_DATA_PRODUCTION_READY_INVENTORY.md');
+
         $this->assertStringContainsString('Decision: `OPS_RUNTIME_PARITY_PASSED`', $proofPack);
         $this->assertStringNotContainsString('Decision: `OPS_RUNTIME_PARITY_PARTIAL_PROVIDER_RATE_LIMITED`', $proofPack);
         $this->assertStringContainsString('FINAL_PROVIDER_SMOKE=PASSED', $proofPack);
-        $this->assertStringContainsString('Source-state decision: `MARKET_DATA_PRODUCTION_READY_LOCKED`', $proofPack);
-        $this->assertStringContainsString('Final source-state lock status: `LOCKED`', $proofPack);
         $this->assertStringContainsString('FINAL_AUDIT_DOCS_SYNCHRONIZED', $tracker.$proofPack);
-        $this->assertStringContainsString('- FULL_MARKET_DATA_PRODUCTION_READY_CONTRACT -> LOCKED', $tracker);
+
+        // A provisional claim scoped to one delivered archive must not survive the final lock.
         $this->assertStringNotContainsString('Full market-data production-ready: `CLAIMED_FOR_THIS_SOURCE_ZIP`', $inventory.$proofPack);
-    }
-
-public function test_market_benchmark_indicator_extension_final_lock_is_recorded(): void
-{
-    $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-    $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-    $inventory = $this->readProjectFile('docs/market_data/audit/MARKET_BENCHMARK_INDICATOR_EXTENSION_INVENTORY.md');
-    $proofPack = $this->readProjectFile('docs/market_data/audit/MARKET_DATA_PRODUCTION_PROOF_PACK.md');
-
-    foreach ([$status, $tracker, $inventory, $proofPack] as $document) {
-        $this->assertStringContainsString('MARKET_BENCHMARK_INDICATOR_EXTENSION_STATUS', $document);
-        $this->assertStringContainsString('PASS', $document);
-        $this->assertStringContainsString('OK (511 tests, 7871 assertions)', $document);
-        $this->assertStringContainsString('run_id=3', $document);
-        $this->assertStringContainsString('publication_id=2', $document);
-        $this->assertStringContainsString('benchmark_import_status=COMPLETED', $document);
-        $this->assertStringContainsString('benchmark_rows_written=1', $document);
-        $this->assertStringContainsString('comparison_result=MATCH', $document);
-        $this->assertStringContainsString('replay_status=PASS', $document);
-        $this->assertStringContainsString('mismatch_count=0', $document);
-        $this->assertStringContainsString('FULL_MARKET_DATA_PRODUCTION_READY', $document);
-    }
-
-    $this->assertStringContainsString('IHSG -> ^JKSE', $inventory);
-    $this->assertStringContainsString('^JKSE.JK', $inventory);
-    $this->assertStringContainsString('IND_INSUFFICIENT_HISTORY', $inventory);
-    $this->assertStringContainsString('REMAINING_BLOCKERS: none', $inventory);
-}
-
-    public function test_reason_code_registry_and_seed_are_synchronized(): void
-    {
-        $registry = $this->readProjectFile('docs/market_data/registry/Reason_Codes_Registry.md');
-        $seed = $this->readProjectFile('docs/market_data/registry/Reason_Codes_Seed.sql');
-
-        preg_match_all('/^\| `([A-Z0-9_]+)` \|/m', $registry, $registryMatches);
-        preg_match_all("/\('([A-Z0-9_]+)'\s*,/", $seed, $seedMatches);
-
-        $registryCodes = array_values(array_unique($registryMatches[1]));
-        $seedCodes = array_values(array_unique($seedMatches[1]));
-        sort($registryCodes);
-        sort($seedCodes);
-
-        $this->assertCount(353, $registryCodes);
-        $this->assertSame($registryCodes, $seedCodes, 'Reason code registry and seed must stay synchronized.');
-    }
-
-    public function test_post_session_audit_docs_scope_is_locked_after_final_local_proof(): void
-    {
-        $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-        $inventory = $this->readProjectFile('docs/market_data/audit/AUDIT_DOCS_SYNCHRONIZATION_POST_SESSION_1_8_INVENTORY.md');
-
-        $implementationBlock = $this->implementationBlock($status, 'Audit Docs Synchronization');
-        $contractBlock = $this->contractBlock($tracker, 'AUDIT_DOCS_SYNCHRONIZATION_CONTRACT');
-        $combined = $implementationBlock.$contractBlock.$inventory;
-
-        $this->assertStringContainsString('[NEXT_ACTION]', $implementationBlock);
-        $this->assertStringContainsString('[LOCK_CONDITION]', $contractBlock);
-        $this->assertStringContainsString('POST_SESSION_1_8_LOCKED_LOCAL_PHPUNIT_PASS', $combined);
-        $this->assertStringContainsString('BLOCKED_CONTAINER_RUNTIME_ENV', $combined);
-        $this->assertStringContainsString('ENV_UNSUPPORTED_PHP_VERSION', $combined);
-        $this->assertStringContainsString('164 tests, 3721 assertions', $combined);
-        $this->assertStringContainsString('435 tests, 6318 assertions', $combined);
-        $this->assertStringContainsString('- Audit Docs Synchronization -> DONE', $status);
-        $this->assertStringContainsString('- AUDIT_DOCS_SYNCHRONIZATION_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringNotContainsString('PENDING_OPERATOR_LOCAL_PHPUNIT_RERUN', $combined);
-    }
-
-    private function activeSessionName(string $document): string
-    {
-        $this->assertMatchesRegularExpression('/ACTIVE SESSION:\R- (?P<session>[^\r\n]+)/', $document);
-        preg_match('/ACTIVE SESSION:\R- (?P<session>[^\r\n]+)/', $document, $match);
-
-        return trim($match['session']);
     }
 
     private function firstNonEmptyLineAfter(string $document, string $heading): string
@@ -400,8 +807,7 @@ public function test_market_benchmark_indicator_extension_final_lock_is_recorded
         $position = strpos($document, $heading);
         $this->assertNotFalse($position, $heading.' heading must exist.');
 
-        $afterHeading = substr($document, $position + strlen($heading));
-        foreach (preg_split('/\R/', $afterHeading) as $line) {
+        foreach (preg_split('/\R/', substr($document, $position + strlen($heading))) as $line) {
             if (trim($line) !== '') {
                 return trim($line);
             }
@@ -410,47 +816,12 @@ public function test_market_benchmark_indicator_extension_final_lock_is_recorded
         $this->fail('No non-empty line found after '.$heading.'.');
     }
 
-    private function contractBlocksByStatus(string $tracker, string $status): array
+    private function canonicalOverrideDate(string $document): string
     {
-        preg_match_all('/^- ([A-Z0-9_]+_CONTRACT) -> '.preg_quote($status, '/').'\R(?P<body>.*?)(?=^- [A-Z0-9_]+_CONTRACT (?:->|→)|\z)/msu', $tracker, $matches, PREG_SET_ORDER);
+        $pattern = '/^## CURRENT CANONICAL(?: AUDIT)? OVERRIDE .* (?P<date>\d{4}-\d{2}-\d{2})$/mu';
+        $this->assertMatchesRegularExpression($pattern, $document);
+        preg_match($pattern, $document, $match);
 
-        $blocks = [];
-        foreach ($matches as $match) {
-            $blocks[$match[1]] = $match[0];
-        }
-
-        return $blocks;
-    }
-
-    private function relatedContractsFromImplementationStatus(string $status): array
-    {
-        preg_match_all('/\[RELATED_CONTRACT\] ([A-Z0-9_]+_CONTRACT)/', $status, $matches);
-
-        return array_values(array_unique($matches[1]));
-    }
-
-    private function canonicalContractsFromTracker(string $tracker): array
-    {
-        preg_match_all('/^- ([A-Z0-9_]+_CONTRACT) (?:->|→)/mu', $tracker, $matches);
-
-        return array_values(array_unique($matches[1]));
-    }
-
-    private function implementationBlock(string $status, string $name): string
-    {
-        $pattern = '/^- '.preg_quote($name, '/').' -> [A-Z_]+\R.*?(?=^- .+ (?:->|→) [A-Z_]+\R|\z)/msu';
-        $this->assertMatchesRegularExpression($pattern, $status);
-        preg_match($pattern, $status, $match);
-
-        return $match[0];
-    }
-
-    private function contractBlock(string $tracker, string $name): string
-    {
-        $pattern = '/^- '.preg_quote($name, '/').' (?:->|→) [A-Z_]+\R.*?(?=^- [A-Z0-9_]+_CONTRACT (?:->|→) [A-Z_]+\R|\z)/msu';
-        $this->assertMatchesRegularExpression($pattern, $tracker);
-        preg_match($pattern, $tracker, $match);
-
-        return $match[0];
+        return trim($match['date']);
     }
 }

@@ -1,112 +1,141 @@
-# EOD Bars Contract (Canonical OHLCV)
+# EOD Bars Contract — Canonical Regular-Market `RAW` OHLCV (LOCKED)
 
 ## Purpose
-Define the authoritative current-state canonical OHLCV artifact published by Market Data Platform for one trade date D.
 
-This contract governs:
-- canonical row identity
-- minimum fields
-- publication-context semantics
-- validation rules
-- invalid-row handling
-- null policy
+Define the canonical, publication-bound IDX Regular-Market EOD `RAW` bar artifact, its identity, fields, validation, nullability, and immutable revision semantics.
 
-## Canonical output table
-`eod_bars`
+## Product meaning (LOCKED)
 
-## Row identity vs publication context (LOCKED)
-The logical artifact identity for the current readable bars table is:
-- `(trade_date, ticker_id)`
+A canonical EOD bar represents market-observed Regular-Market OHLCV for one stable listing and completed trade date on the unadjusted `RAW` price scale.
 
-That identity remains the current-state row key.
-It does **not** expand to `(trade_date, ticker_id, publication_id)` in the live current table.
+It is not:
 
-However, every live readable row must also carry one mandatory `publication_id` showing which sealed current publication produced that readable state.
+- a raw provider payload
+- a cash/negotiated-market aggregate
+- a zero/missing placeholder
+- a coherent adjusted price product
+- a provider `adj_close` series
 
-Therefore:
-- the live current table keeps one row per `(trade_date, ticker_id)`
-- `publication_id` is a mandatory publication-context field on that row
-- `publication_id` is not a second competing primary key for the live current table
-- historical publication-bound row sets belong in publication trail and/or `*_history` tables, not as duplicate live current rows
+## Logical and physical identity (LOCKED)
 
-## Minimum fields
-Required minimum fields:
-- `trade_date` DATE
-- `ticker_id` BIGINT/INT
-- `open`, `high`, `low`, `close` DECIMAL
-- `volume` BIGINT
-- `adj_close` DECIMAL NULL
-- `source` VARCHAR(32)
-- `run_id` BIGINT
-- `publication_id` BIGINT
-- `created_at` / equivalent audit timestamp
+Within one publication revision, logical content identity is `(trade_date, listing_id)` or an explicitly documented stable equivalent.
 
-Equivalent naming is allowed only if semantics remain identical.
+Physical immutable identity must also bind:
 
-## Current-state publication-context rule (LOCKED)
-For the live readable table `eod_bars`:
-- each row must belong to exactly one sealed publication context
-- that context must be represented by non-null `publication_id`
-- `publication_id` must match the current readable publication for `trade_date`
-- superseded publication row sets must not remain side-by-side in `eod_bars`
+- publication/revision identity
+- selected source observation identity
+- run and configuration identity
 
-If historical row preservation is required per publication version, it must be stored through:
-- publication trail + hashes + correction evidence, and/or
-- immutable `eod_bars_history` rows keyed by `(publication_id, trade_date, ticker_id)`
+Multiple publication revisions may contain different versions for the same logical listing/date. A current pointer selects a readable publication; it does not authorize mutation or deletion of superseded content.
 
-## Canonical bar validation rules (LOCKED)
-A bar is canonical and publishable to `eod_bars` only if all conditions pass:
-1) `open`, `high`, `low`, `close` are non-null and strictly greater than 0.
-2) `high >= GREATEST(open, close)`.
-3) `low <= LEAST(open, close)`.
-4) `high >= low`.
-5) `volume` is non-null and `volume >= 0`.
-6) `(trade_date, ticker_id)` is unique in current readable output.
-7) `trade_date` must be a trading day in the market calendar.
-8) `adj_close`, if present, must be strictly greater than 0.
-9) `source`, `run_id`, and `publication_id` are mandatory audit/context fields for every canonical live row.
+If `eod_bars` remains a materialized current projection, it is non-authoritative and rebuildable from immutable publication-bound rows. Consumers still resolve publication context first, and no projection update may mutate immutable history.
 
-## Invalid-bar handling (LOCKED)
-- Invalid rows must not be inserted into `eod_bars`.
-- Invalid rows must be recorded in `eod_invalid_bars` with `invalid_reason_code` unless the provider payload was never received at all.
-- If a canonical bar is missing because provider data was invalid or absent, eligibility for that ticker/date must be `eligible=0` with the appropriate reason code.
+## Required fields
 
-## Null policy (LOCKED)
-- Canonical OHLCV fields except `adj_close` must never be NULL in `eod_bars`.
-- `publication_id` must never be NULL in `eod_bars`.
-- Missing provider fields are handled as invalid rows, not as partially-null canonical rows.
-- Consumers must treat `eod_bars` as already validated canonical current-state output and must not apply a second, incompatible validity policy.
+- `trade_date`
+- stable `instrument_id` and `listing_id` (`ticker_id` only as governed compatibility key)
+- `open`, `high`, `low`, `close` as precision-preserving decimals
+- `volume` as non-negative integer
+- `price_basis = RAW` or equivalent explicit identity
+- `observation_id`/payload hash or immutable reference
+- selected source/provider and mapping identity
+- `run_id`, `publication_id`, and bar revision identity
+- source observed timestamp and platform ingested timestamp
 
----
+Nullable source-backed extensions:
 
-## Amendment 2026-05-26 - Out-of-order mutation impact
+- previous/reference price
+- actual traded value
+- trade count/frequency
+- board/market-segment code
+- trading-status code
+- provider adjusted-close observation retained only for lineage/diagnosis
 
-EOD bar imports must not assume chronological operator execution.
+Equivalent naming is allowed only when semantics, units, provenance, and nullability remain identical.
 
-Every canonical EOD bar insert/update/delete-by-replacement path must emit a changed bar summary before downstream derived artifacts are trusted:
-- `changed_bar_count`
-- `inserted_bar_count`
-- `updated_bar_count`
-- `unchanged_bar_count`
-- `removed_bar_count`
-- changed ticker ids
-- changed trade dates
+## Validation rules (LOCKED)
 
-An idempotent upsert/replacement with identical canonical OHLCV/source values is not a changed bar.
+A canonical bar is valid only when:
 
-A changed historical bar can affect rolling indicators and downstream eligibility/hash/seal/publication state for later trading dates. If affected dates include an already readable publication, the live readable publication must not be mutated silently; the safe path is correction/reseal/republication or an explicit blocked/review state.
+1. `open`, `high`, `low`, and `close` are non-null and strictly greater than zero.
+2. `high >= max(open, close)`.
+3. `low <= min(open, close)`.
+4. `high >= low`.
+5. `volume` is non-null, integral, and `>= 0`.
+6. stable identity and temporal mapping are unambiguous for `trade_date`.
+7. `trade_date` is a completed IDX Regular-Market trading session under the bound calendar version.
+8. source observation, run, configuration, and publication/revision references are non-null for readable content.
+9. optional numeric fields, when present, satisfy their own units/range/source rules.
 
----
+Zero volume with valid positive OHLC may represent a source-backed no-trade/unchanged observation and must remain distinguishable from a missing bar. Zero or negative OHLC is always invalid and never canonical.
 
-## Amendment 2026-05-27 - Recovered row partial apply execution
+### Cross-field consistency (LOCKED)
 
-Recovered rows from failed API checkpoint retry are not a full-date source file. They must be applied as partial ticker/date upserts.
+Rules 1 to 9 validate each field against its own domain. They cannot detect a bar whose fields are individually valid but jointly impossible. One such combination is common enough, and damaging enough, to be named:
 
-Rules:
-- Do not use full-date replacement for recovered single-ticker/window rows.
-- Preserve existing EOD bars for unrelated tickers on the same `trade_date`.
-- Write only inserted or canonical-value-updated rows.
-- Do not rewrite metadata for unchanged canonical rows.
-- Emit `recovered_row_apply_state`, `recovered_row_count`, and `bar_mutation_summary`.
+10. **Zero volume with intra-session price movement is invalid.** When `volume = 0`, the session recorded no executed trade, so `open`, `high`, `low`, and `close` must be identical. A bar reporting `volume = 0` alongside `high > low` asserts that price moved without any trade occurring, which no market mechanism produces. It is rejected as invalid with its own reason code, never stored as canonical.
 
-Recovered row apply is idempotent. A retry that returns the same canonical OHLCV/source values must remain `UNCHANGED`/`NOOP_UNCHANGED_BARS` and must not trigger derived reprocess.
+This is the volume-side sibling of the zero-price rule. A zero price is impossible in isolation; a zero volume is legitimate in isolation and impossible only in combination.
+
+Two consequences:
+
+- The contradiction is a **source defect**, not a market fact. It is handled as invalid observation evidence under the missing-versus-invalid model, and the affected listing/date becomes a delivery gap rather than a silently wrong bar.
+- Such defects cluster by acquisition date rather than by instrument. When a single trade date carries a materially higher share of zero-volume bars than its neighbours, that is date-level evidence of an acquisition fault, and it must surface even for rows whose OHLC happen to be flat and are therefore individually admissible. **The date-level check and its threshold are owned by `Run_Status_and_Quality_Gates_LOCKED.md`**; this contract owns only the per-row rule, because a per-row rule cannot by construction see a pattern across rows.
+
+A bar accepted before this rule existed does not become valid retroactively; correcting it follows the correction/republication lifecycle like any other content change.
+
+## Null and missing policy (LOCKED)
+
+- Required canonical OHLCV and identity fields are never `NULL`.
+- Missing required provider values create invalid/rejection evidence, not partially-null bars.
+- No provider row for an expected listing/date creates missing-delivery evidence, not a canonical row.
+- Unknown expectation creates held/unknown evidence, not automatic denominator exclusion.
+- Optional source fields may be `NULL` only to mean unavailable/unknown; zero cannot substitute for missing.
+- Provider adjusted close, if retained, must be nullable and must not become the analytical price basis.
+
+## Invalid-bar handling
+
+Invalid observations are stored outside canonical bar content with immutable observation linkage and governed reason codes. If an expected canonical bar is missing/invalid, coverage delivery and eligibility reflect the failure explicitly.
+
+Invalid storage is audit evidence and is never a consumer price source.
+
+## Publication and mutation rule (LOCKED)
+
+- Sealed canonical bar content is immutable.
+- Insert/update/delete-by-replacement of published logical content creates a new correction run, bar revision, hashes, derived artifacts, seal, publication, and supersession lineage.
+- A detector or recovery command cannot update `eod_bars`/history in-place.
+- Idempotent reprocessing with identical canonical values and provenance is `NOOP/UNCHANGED` and must not create false mutation.
+- A partial recovered source row is candidate input; if it changes a published date, it follows correction/republication rather than direct current-row update.
+
+## Historical impact rule
+
+A changed bar can affect later adjusted products, rolling indicators, eligibility, hashes, and publications. The mutation-impact resolver must identify every affected trade date using the governed market calendar and must either republish all affected versions or hold them as stale/contaminated until safely rebuilt.
+
+## Consumer rule
+
+Consumers read bars only through a resolved sealed/readable publication and explicit price-basis identity. They must not read raw observation storage, invalid rows, unbound current projections, or `MAX(trade_date)` shortcuts.
+
+## Capability boundary (LOCKED)
+
+**What the validation rules prove.** That each canonical bar is internally coherent, positively priced, integrally volumed, identity-resolved, calendar-bound, and provenance-complete; and, under rule 10, that no bar asserts price movement without trade.
+
+**What they cannot prove.**
+
+- **That the values are the ones the market produced.** Every rule tests the bar against itself or against structural facts. A fabricated bar with plausible, internally consistent values satisfies all ten.
+- **That a flat bar is a genuine no-trade day.** `open = high = low = close` with zero volume is admissible and usually correct, but it is also the exact shape a provider produces when it repeats a prior session. The rules cannot separate the two.
+- **That a bar belongs to the session it claims.** Rule 7 checks the trade date against the bound calendar. If the calendar itself is wrong, a bar for a non-session passes, and if a real session is missing from the calendar, its bars are rejected as non-trading.
+- **That an accepted bar is contamination-free.** Validity is a property of the bar; contamination is a property of its window and belongs to the corporate-action and detection contracts.
+
+Consequently a valid canonical bar may be cited as evidence that **the row is admissible and traceable**, never as evidence that **the price is right**.
+
+## Acceptance criterion (LOCKED)
+
+Canonical semantics are singular and testable when zero/null OHLC never appears, missing and invalid remain separate, every bar traces to immutable observation and temporal identity, and every content change creates new revision/publication lineage.
+
+## Cross-contract alignment
+
+- `Canonicalization_Contract_EOD_Bars.md`
+- `Dataset_Seal_and_Freeze_Contract_LOCKED.md`
+- `Canonical_Row_History_and_Versioning_Policy_LOCKED.md`
+- `Historical_Correction_and_Reseal_Contract_LOCKED.md`
+- `../registry/Price_Adjustment_Contract_LOCKED.md`

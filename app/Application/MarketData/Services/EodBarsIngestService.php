@@ -2,13 +2,16 @@
 
 namespace App\Application\MarketData\Services;
 
-use App\Infrastructure\MarketData\Source\LocalFileEodBarsAdapter;
-use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
+use App\Application\MarketData\Ports\ApiEodBarsSource;
+use App\Application\MarketData\Ports\ManualEodBarsSource;
 use App\Infrastructure\MarketData\Source\SourceAcquisitionException;
 use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
+use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
+use App\Infrastructure\Persistence\MarketData\SourceObservationRepository;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class EodBarsIngestService
 {
@@ -18,14 +21,18 @@ class EodBarsIngestService
     private $artifacts;
     private $publications;
     private $impactResolver;
+    private $observations;
+    private $calendar;
 
     public function __construct(
-        LocalFileEodBarsAdapter $localSourceAdapter,
-        PublicApiEodBarsAdapter $apiSourceAdapter,
+        ManualEodBarsSource $localSourceAdapter,
+        ApiEodBarsSource $apiSourceAdapter,
         TickerMasterRepository $tickers,
         EodArtifactRepository $artifacts,
         EodPublicationRepository $publications,
-        EodBarsMutationImpactResolver $impactResolver = null
+        EodBarsMutationImpactResolver $impactResolver = null,
+        SourceObservationRepository $observations = null,
+        MarketCalendarRepository $calendar = null
     ) {
         $this->localSourceAdapter = $localSourceAdapter;
         $this->apiSourceAdapter = $apiSourceAdapter;
@@ -33,6 +40,8 @@ class EodBarsIngestService
         $this->artifacts = $artifacts;
         $this->publications = $publications;
         $this->impactResolver = $impactResolver;
+        $this->observations = $observations ?: new SourceObservationRepository();
+        $this->calendar = $calendar ?: new MarketCalendarRepository();
     }
 
     public function ingest($run, $requestedDate, $sourceMode, $priorCurrentPublication = null)
@@ -43,9 +52,14 @@ class EodBarsIngestService
         return $this->ingestAcquiredRows($run, $requestedDate, $sourceMode, $sourceRows, $sourceAcquisition, $priorCurrentPublication);
     }
 
-    public function acquireSourceRows($requestedDate, $sourceMode, array $tickerCodes = null)
+    public function acquireSourceRows($requestedDate, $sourceMode, array $tickerCodes = null, array $context = [])
     {
-        return $this->fetchSourceRows($requestedDate, $sourceMode, $tickerCodes);
+        if (! empty($context['config_snapshot_id'])) {
+            $calendarContext = $this->calendar->assertCompletedRegularSession($requestedDate, $context['known_at'] ?? null);
+            $context['calendar_revision_id'] = $calendarContext['calendar_revision_id'];
+        }
+
+        return $this->fetchSourceRows($requestedDate, $sourceMode, $tickerCodes, $context);
     }
 
     public function ingestAcquiredRows($run, $requestedDate, $sourceMode, array $sourceRows, array $sourceAcquisition = null, $priorCurrentPublication = null)
@@ -85,6 +99,22 @@ class EodBarsIngestService
 
         $this->assertSingleDaySourceBoundary($requestedDate, $sourceMode, $sourceRows);
         $tickerMap = $this->tickers->resolveTickerIdsByCodes(array_column($sourceRows, 'ticker_code'));
+        /*
+         * Traceability and configuration binding are two obligations, and making the first
+         * conditional on the second is what left every canonical row untraceable. The gate used to
+         * read `! empty($run->config_snapshot_id)`, while the lineage assertion it guarded threw on
+         * that same value being empty — so the assertion could only run once its own precondition
+         * already held, and its config branch was unreachable by construction. Config binding has
+         * never been populated, so across 71,917 runs the lineage requirement executed zero times
+         * and all 756,329 canonical rows carry NULL lineage.
+         *
+         * `Canonicalization_Contract_EOD_Bars.md:138` forbids emitting an untraceable row with no
+         * condition attached. The configuration gate is a different rule with a different subject:
+         * `Platform_Config_Registry_LOCKED.md:31` scopes it to a sealed publication, which is
+         * sealing and consumer readability, not import.
+         */
+        $configSnapshotId = ! empty($run->config_snapshot_id) ? (int) $run->config_snapshot_id : null;
+        $identityContexts = $this->tickers->resolveTemporalContextsByCodes(array_column($sourceRows, 'ticker_code'), $requestedDate);
 
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
         $deduped = [];
@@ -94,6 +124,9 @@ class EodBarsIngestService
             $tickerCode = (string) ($row['ticker_code'] ?? '');
             $tickerId = isset($tickerMap[$tickerCode]) ? $tickerMap[$tickerCode] : null;
             $row['ticker_id'] = $tickerId;
+            $identity = $identityContexts[$tickerCode] ?? null;
+            $row['listing_id'] = $row['listing_id'] ?? ($identity['listing_id'] ?? null);
+            $row['resolved_board_code'] = $identity['board_code'] ?? null;
 
             if ($tickerId === null) {
                 $invalidRows[] = $this->makeInvalidRow(
@@ -131,6 +164,19 @@ class EodBarsIngestService
             $validation = $this->validateCanonicalRow($row, $requestedDate);
 
             if ($validation['valid']) {
+                /*
+                 * A row that cannot prove where it came from is rejected, not published and not
+                 * silently degraded to NULL lineage. It is routed to the invalid store rather than
+                 * aborting the run, because the contract requires each provider row to resolve to
+                 * exactly one of canonical, invalid/rejected, missing, or held — one unresolvable
+                 * instrument is not grounds for discarding the other ~950.
+                 */
+                $lineageRejection = $this->lineageRejectionReason($row);
+                if ($lineageRejection !== null) {
+                    $invalidRows[] = $this->makeInvalidRow($run->run_id, $row, $lineageRejection['reason_code'], $lineageRejection['note'], $now);
+                    continue;
+                }
+
                 $validRows[] = [
                     'trade_date' => $requestedDate,
                     'ticker_id' => $row['ticker_id'],
@@ -139,9 +185,37 @@ class EodBarsIngestService
                     'low' => $row['low'],
                     'close' => $row['close'],
                     'volume' => $row['volume'],
-                    'adj_close' => $row['adj_close'],
+                    /*
+                     * Provider adjusted close does not enter the canonical row. Its canonical home
+                     * is the observation evidence — `Canonicalization_Contract_EOD_Bars.md:29`
+                     * admits it as a nullable lineage field only, never as a per-row analytical
+                     * value, and `:16` forbids it bridging the raw and adjusted layers implicitly.
+                     * Keeping it out is what makes the exit-gate prohibition structural rather than
+                     * a naming convention two columns apart.
+                     */
+                    'adj_close' => null,
                     'source' => $this->canonicalSourceForRow($row),
                     'run_id' => $run->run_id,
+                    'listing_id' => (int) $row['listing_id'],
+                    'source_observation_id' => (int) $row['source_observation_id'],
+                    'previous_close' => null,
+                    'traded_value_idr_actual' => null,
+                    'trade_count_actual' => null,
+                    'board_code' => $row['resolved_board_code'] ?? null,
+                    'session_code' => 'REGULAR',
+                    'source_timestamp' => $row['source_timestamp'] ?? null,
+                    'acquired_at' => $row['captured_at'] ?? $now,
+                    'canonicalization_version' => (string) config('market_data.source.canonicalization_version'),
+                    'price_product_code' => (string) config('market_data.scope.raw_product_code', 'RAW'),
+                    'quality_state' => 'VALIDATED',
+                    // Yahoo quote OHLCV remains canonical RAW; whether its historical scale was
+                    // already rewritten by the provider is a separate, explicit fact. UNKNOWN is
+                    // the honest ingest default until a factor/event assessment binds otherwise.
+                    'source_scale_state' => 'UNKNOWN',
+                    'source_scale_assessment_id' => null,
+                    // Null here is the CONFIG_UNBOUND state, not a missing obligation at this
+                    // layer; it is sealing and readability that the config gate governs.
+                    'config_snapshot_id' => $configSnapshotId,
                     'created_at' => $now,
                 ];
                 continue;
@@ -203,6 +277,17 @@ class EodBarsIngestService
         }, $validRows);
 
         $barMutationSummary = $this->artifacts->replaceBars($requestedDate, $candidatePublication->publication_id, $run->run_id, $validRows, $invalidRows, $useHistory);
+        // The manifest hash describes which observations produced this candidate, so it is bound
+        // whether or not a config snapshot exists. Withholding it alongside the config binding was
+        // the same conflation: it left the candidate unable to state its own acquisition set.
+        $manifestHash = $this->observations->manifestHashForObservationIds(array_column($sourceRows, 'source_observation_id'));
+        $this->publications->bindCandidateAcquisitionProvenance(
+            $candidatePublication->publication_id,
+            $run->run_id,
+            $manifestHash,
+            $configSnapshotId
+        );
+        $run->observation_manifest_hash = $manifestHash;
         if (! is_array($barMutationSummary)) {
             $barMutationSummary = $this->defaultBarMutationSummary($requestedDate, $candidatePublication->publication_id, $validRows, $useHistory);
         }
@@ -551,7 +636,7 @@ class EodBarsIngestService
     }
 
 
-    private function fetchSourceRows($requestedDate, $sourceMode, array $tickerCodes = null)
+    private function fetchSourceRows($requestedDate, $sourceMode, array $tickerCodes = null, array $context = [])
     {
         if ($sourceMode === 'api') {
             if ($tickerCodes === null) {
@@ -561,10 +646,47 @@ class EodBarsIngestService
                 }, $universe))));
             }
 
-            return $this->apiSourceAdapter->fetchOrLoadEodBars($requestedDate, $sourceMode, $tickerCodes);
+            return $this->apiSourceAdapter->fetchOrLoadEodBars($requestedDate, $sourceMode, $tickerCodes, $context);
         }
 
-        return $this->localSourceAdapter->fetchOrLoadEodBars($requestedDate, $sourceMode);
+        return $this->localSourceAdapter->fetchOrLoadEodBars($requestedDate, $sourceMode, $tickerCodes ?: [], $context);
+    }
+
+    /**
+     * Decide whether a row may become canonical, given what it can prove about its own origin.
+     *
+     * Returns null when the row is traceable, or the reason it is not. It reports rather than
+     * throws because an untraceable row is a rejected row, and rejection is a recorded outcome
+     * under `Invalid_Bar_Storage_Policy_LOCKED.md` — not a reason to abandon the whole date.
+     *
+     * The configuration snapshot is deliberately not checked here. It governs sealing and consumer
+     * readability (`Platform_Config_Registry_LOCKED.md:31`), and checking it at import is what
+     * previously made traceability itself conditional.
+     */
+    private function lineageRejectionReason(array $row)
+    {
+        if (empty($row['listing_id'])) {
+            return [
+                'reason_code' => 'BAR_TEMPORAL_LISTING_MAPPING_MISSING',
+                'note' => 'No point-in-time listing resolves for this instrument on the requested date.',
+            ];
+        }
+
+        if (empty($row['source_observation_id']) || empty($row['source_observation_persisted'])) {
+            return [
+                'reason_code' => 'BAR_SOURCE_OBSERVATION_MISSING',
+                'note' => 'Canonical bar requires a persisted source observation.',
+            ];
+        }
+
+        if (! $this->observations->existsAccepted((int) $row['source_observation_id'])) {
+            return [
+                'reason_code' => 'BAR_SOURCE_OBSERVATION_NOT_ACCEPTED',
+                'note' => 'Referenced source observation is not in an accepted immutable state.',
+            ];
+        }
+
+        return null;
     }
 
     private function assertSingleDaySourceBoundary($requestedDate, $sourceMode, array $sourceRows)
@@ -672,6 +794,8 @@ class EodBarsIngestService
         return [
             'trade_date' => $row['trade_date'] ?? null,
             'ticker_id' => $row['ticker_id'] ?? null,
+            'listing_id' => $row['listing_id'] ?? null,
+            'source_observation_id' => $row['source_observation_id'] ?? null,
             'run_id' => $runId,
             'source' => $this->canonicalSourceForRow($row),
             'source_row_ref' => (string) ($row['source_row_ref'] ?? ''),

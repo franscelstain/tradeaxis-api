@@ -1,4 +1,35 @@
-# 📦 AUDIT UPDATE GOVERNANCE — FINAL HARDENED RULES (LUMEN AUDIT FILES)
+# 📦 AUDIT UPDATE GOVERNANCE — V2 CURRENT RULES
+
+Current status: **ACTIVE V2 GOVERNANCE — 2026-08-08**
+
+## Current authority model
+
+Audit/update governance for the corrected market-data strategy uses:
+
+1. `reports/AUDIT_FINAL_STATE.md` — the **single canonical current audit verdict**;
+2. `MARKET_DATA_IMPLEMENTATION_LEDGER.md` — the **single current implementation work-order/finding/conformance state**;
+3. `../book/Market_Data_Strategy_Implementation_Blueprint_LOCKED.md` — normative dependency/work order;
+4. `../book/Market_Data_Implementation_Conformance_Matrix_LOCKED.md` — document/deliverable/proof assignment and exit gates;
+5. `../book/Market_Data_Implementation_Command_Protocol_LOCKED.md` — controlled start/result/remediation/re-audit lifecycle.
+
+`LUMEN_IMPLEMENTATION_STATUS.md` and `LUMEN_CONTRACT_TRACKER.md` are **historical execution archives only**. New V2 implementation findings, status transitions, or closure claims must be written to `MARKET_DATA_IMPLEMENTATION_LEDGER.md`, not to the Lumen files. Historical Lumen records may be annotated for supersession/traceability but may not regain current authority.
+
+## Mandatory update rules
+
+- owner behavior changes first in the relevant owner contract, then Blueprint/Matrix/registry/schema/support docs are synchronized; audit files do not invent behavior;
+- documentation-only closure updates `AUDIT_FINAL_STATE.md` and must not promote implementation/operational claim levels;
+- implementation work updates the current ledger with exact work order, finding ID, evidence, status, dependency impact, and next action;
+- a historical `LOCKED`, `DONE`, `PASS`, or production-ready statement never closes a V2 finding unless explicitly re-admitted by current Matrix/ledger gates;
+- if a corrected upstream dependency reopens, dependent historical PASS rows remain dated evidence and must be revalidated before current conformance is granted;
+- reports folder keeps exactly one current-state verdict (`AUDIT_FINAL_STATE.md`); dated implementation evidence is supporting/non-verdict only;
+- inventories/history/proof packs must be labeled historical/non-authoritative when they contain pre-V2 semantics.
+
+---
+
+# HISTORICAL PRE-V2 LUMEN GOVERNANCE — SUPERSEDED
+
+> Everything below this marker is retained only to explain how the former Lumen tracker/status pair was maintained. All words such as **WAJIB**, **SOURCE OF TRUTH**, **FINAL HARDENED**, and update instructions below are **superseded for current V2 governance** by the rules above.
+
 
 Dokumen ini adalah **aturan final (HARD RULES)** untuk mengelola, menulis, memperbarui, dan memvalidasi dua file audit Lumen berikut:
 
@@ -1224,3 +1255,17 @@ market_index_roc20 => market_benchmark_indicators.roc_20 where benchmark_code='I
 market_index_ma20_slope_pct => market_benchmark_indicators.ma20_slope_pct where benchmark_code='IHSG'
 market_calendar date key => cal_date
 ```
+
+## 28. Pencabutan klaim dilakukan di tempat (LOCKED)
+
+Aturan bagian 27 mengatur apa yang terjadi ketika sesi baru merusak hasil sesi lama. Bagian ini mengatur hal yang lebih sederhana dan lebih sering terlewat: **klaim yang sudah tidak berlaku tetapi masih tertulis sebagai berlaku.**
+
+Mengumumkan pencabutan di satu dokumen tidak mencabut klaim yang tertulis di dokumen lain. Pembaca yang mendarat di dokumen kedua melihat klaim yang berlaku, dan pencabutan yang hanya hidup di tempat lain bukan pencabutan — ia harapan bahwa setiap pembaca membaca urutan yang benar.
+
+Aturan:
+
+- Klaim status, kesiapan, atau kelulusan yang dicabut wajib diberi **penanda superseded pada klaim itu sendiri**, di dokumen tempat ia ditulis, dengan rujukan ke keputusan yang menggantikannya dan tanggalnya.
+- Dokumennya **tidak dihapus**. Riwayat audit tetap bernilai sebagai catatan apa yang pernah dinilai benar; yang dilarang adalah klaimnya terbaca sebagai masih berlaku.
+- Penanda diletakkan sedekat mungkin dengan klaim, bukan hanya di kepala dokumen. Dokumen panjang dibaca sebagian.
+- Sebuah sesi yang mencabut klaim bertanggung jawab menandai **seluruh** tempat klaim itu muncul, bukan hanya dokumen yang sedang dikerjakannya. Pencarian teks atas nama klaim adalah bagian dari pekerjaan pencabutan.
+- Klaim yang tidak dapat ditemukan seluruh kemunculannya dinyatakan demikian, sehingga pembaca berikutnya tahu bahwa penandaannya belum tuntas.

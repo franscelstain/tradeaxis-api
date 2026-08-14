@@ -1,90 +1,30 @@
-# BOOTSTRAP AND BACKFILL RUNBOOK (LOCKED)
+# Bootstrap and Backfill Runbook (STRATEGY LOCKED)
 
-## Purpose
-Menjamin bootstrap/backfill mengikuti split arsitektur baru.
+## Scope
 
-Backfill sekarang adalah **import-range command**, bukan full publish pipeline.
+Bootstrap starts at the intentional dataset boundary `2023-01-02` or a later listing start. Backfill fills explicitly declared missing/invalid ranges. Neither operation implies that pre-boundary history is required for current scope.
 
----
+Yahoo Finance remains the bootstrap acquisition source under its source strategy; a future paid source requires a separate adapter/observation/config decision, not a hidden current backlog.
 
-## Date-driven role of backfill (LOCKED)
-Backfill adalah **first-class citizen** untuk historical ingestion.
+## Planning
 
-Artinya:
-- backfill bukan fitur tambahan
-- backfill adalah mekanisme inti untuk memasukkan historical bars berdasarkan tanggal target operator
-- backfill harus mampu memproses range tanggal trading apa pun yang sah
-- backfill harus tetap relevan baik untuk bootstrap awal maupun recovery historical date tertentu
+Freeze requested range, temporal universe/listings and provider mappings, calendar/status revisions, source adapter/schema, full config, rate/request-window limits, price product/formulas, and expected output counts/states. Partition by provider-safe windows while retaining listing/date identity.
 
----
+Indicator dependency loading is expressed in expected trading sessions. Stable recursive ATR state begins from its defined dataset/listing seed and must not be reseeded per chunk.
 
-## Official sequence
+## Execution
 
-### Step 1 — Import historical bars
-Jalankan:
-- `market-data:backfill {start_date} {end_date}`
+- acquire immutable observations with checkpoints and bounded retry;
+- resume only completed durable units and never overwrite earlier observations;
+- validate/canonicalize each date under the same rules as daily runs;
+- build immutable candidates in dependency order;
+- record unknown expectation/provider missing separately from verified not-expected;
+- promote only complete validated publications through the normal seal/pointer path.
 
-Tujuan:
-- import bars per trading day
-- simpan invalid rows
-- simpan telemetry
-- simpan bars coverage evidence minimum
-- mempertahankan requested date identity per hari dalam range
+## Safety
 
-### Step 2 — Review import readiness
-Operator menilai:
-- tanggal mana yang import evidence-nya cukup
-- tanggal mana yang perlu diulang
-- tanggal mana yang mungkin akan ditolak promote karena coverage lemah
-- tanggal mana yang terkena provider limitation tetapi belum menjadi fatal run-level blocker
+Dry-run reports dates/listings/observations/publications affected. Backfill cannot auto-create verified actions from price jumps, apply price-scale repair, mutate sealed history, or force-promote incomplete/configless candidates. Corrections discovered during backfill follow the correction/reseal lifecycle with distinct revisions.
 
-### Step 3 — Promote selected dates
-Jalankan:
-- `market-data:promote {requested_date}`
+## Completion evidence
 
-Promote menangani:
-- coverage validation
-- indicators
-- eligibility
-- hash
-- seal
-- finalize
-
----
-
-## Yahoo-specific note
-Karena active Yahoo path berjalan per ticker dan rawan `429`:
-- backfill harus partial-tolerant
-- backfill tidak boleh fail-fast hanya karena satu ticker/date mengalami rate limit
-- default Yahoo window seperti `10d` tidak boleh dianggap batas historis sistem
-- implementation boleh memakai windowing, `period1` / `period2`, looping batch, retry, backoff, dan throttle
-- keputusan publishability tetap dipindahkan ke promote
-
----
-
-## Scalability and resumability expectation
-Backfill wajib diperlakukan sebagai jalur operasional yang scalable.
-
-Minimum expectation:
-- batch-aware per tanggal trading
-- retry-aware untuk failure transient
-- aman dijalankan ulang per range bila operating model mengizinkan
-- tidak menyamakan partial provider failure dengan kegagalan total seluruh historical range
-
----
-
-## Acceptance expectations
-Bootstrap/backfill dianggap benar bila:
-- bars historis berhasil diimport terpisah dari publishability
-- coverage evidence tersedia
-- promote hanya dijalankan dari bars hasil import
-- tidak ada asumsi bahwa backfill otomatis menghasilkan readable publication
-- tidak ada asumsi bahwa provider recent window menentukan batas historical ingestion
-
----
-
-## Cross-contract alignment
-Harus sinkron dengan:
-- `Commands_and_Runbook_LOCKED.md`
-- `../book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md`
-- `../book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md`
+Per range/date retain plan/config/adapter hashes, observations and outcomes, checkpoints, expected/delivered/quality counts, product/indicator proofs, publications/seals, gaps/reasons, and consumer-gateway verification. A range is not complete merely because every request was attempted.
