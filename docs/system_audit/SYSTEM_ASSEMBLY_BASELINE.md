@@ -41,7 +41,7 @@ Pembaca mengunci `docs/system_audit/` untuk memastikan intake lintas-domain, rea
 Pembaca mengunci `watchlist` sebagai owner perilaku consumer yang berjalan di atas input upstream yang sah.
 
 ### Phase 5 — Implementation Entry
-Pembaca baru boleh masuk ke `watchlist/system/implementation/` setelah Phase 2 sampai Phase 4 stabil.
+Pembaca baru boleh masuk ke `watchlist/implementation/` setelah Phase 2 sampai Phase 4 stabil.
 
 ### Phase 6 — Architecture Translation
 Pembaca masuk ke `docs/api_architecture/` untuk menerjemahkan kontrak domain ke controller/service/repository/domain compute tanpa menciptakan policy baru.
@@ -55,9 +55,9 @@ Pembaca masuk ke `docs/api_architecture/` untuk menerjemahkan kontrak domain ke 
 5. `docs/system_audit/SYSTEM_READINESS_CONTRACT_TRACKER.md`
 6. `docs/system_audit/SYSTEM_CROSS_DOMAIN_INPUT_BASELINE.md`
 7. `docs/watchlist/README.md`
-8. `docs/watchlist/system/README.md`
+8. `docs/watchlist/history/documentation_architecture/LEGACY_SYSTEM_README.md`
 9. owner policy docs watchlist
-10. `docs/watchlist/system/implementation/README.md`
+10. `docs/watchlist/implementation/README.md`
 11. `docs/api_architecture/README.md`
 12. architecture guidance yang relevan
 

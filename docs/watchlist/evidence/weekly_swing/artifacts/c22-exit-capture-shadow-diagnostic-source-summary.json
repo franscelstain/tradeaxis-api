@@ -1,0 +1,64 @@
+{
+  "artifact_type": "C22_EXIT_CAPTURE_SHADOW_DIAGNOSTIC_SOURCE_SUMMARY",
+  "status": "SOURCE_IMPLEMENTED_RUNTIME_VALIDATED_FINAL_RECORDED",
+  "scope": "IS_ONLY_EXIT_CAPTURE_SHADOW_DIAGNOSTIC",
+  "source_implemented": true,
+  "runtime_validated": true,
+  "phpunit_c22": "PASS",
+  "full_watchlist_phpunit": "PASS",
+  "runtime_artifacts": {
+    "focused": {
+      "status": "PASS",
+      "artifact_hash": "2831edfb89c884ccb86072d047e5950dcae463dd",
+      "evaluated_picks_count": 394,
+      "path_missing_count": 11
+    },
+    "all_param": {
+      "status": "PASS",
+      "artifact_hash": "4e939d091a03ed49bbf460c0424ff1a018f98e72",
+      "evaluated_picks_count": 1575,
+      "path_missing_count": 45,
+      "exit_capture_signal_found": true
+    }
+  },
+  "source_components": {
+    "service": "app/Application/Watchlist/Services/WatchlistBacktestC22ExitCaptureShadowDiagnosticService.php",
+    "command": "app/Console/Commands/Watchlist/RunBacktestC22ExitCaptureShadowDiagnoseCommand.php",
+    "tests": [
+      "tests/Unit/Watchlist/WatchlistBacktestC22ExitCaptureShadowDiagnosticServiceTest.php",
+      "tests/Unit/Watchlist/WatchlistBacktestC22StaticGuardTest.php"
+    ],
+    "audit_doc": "docs/watchlist/findings/weekly_swing/records/WS_C22_EXIT_CAPTURE_SHADOW_DIAGNOSTIC.md",
+    "operator_commands": "docs/watchlist/evidence/weekly_swing/operator_commands/WS_C22_OPERATOR_VALIDATION_COMMANDS.md",
+    "policy_note": "docs/watchlist/research/weekly_swing/experiments/WS_EXIT_CAPTURE_SHADOW_C22_DESIGN_NOTE.md"
+  },
+  "preserved_evidence": {
+    "c19_final_status": "C19_CATALOG_CANDIDATE_FAILED",
+    "c20_final_status": "C20_DATE_GATE_NOT_ENOUGH",
+    "c21_final_status": "C21_EXECUTION_SIGNAL_FOUND",
+    "c21_all_param_artifact_hash": "d6c6c72d51b40a0c852ce9bbc6a452c55920df13"
+  },
+  "boundaries": {
+    "is_only": true,
+    "oos_not_run": true,
+    "production_ready": 0,
+    "c22_catalog_code": "NOT_CREATED",
+    "c22_catalog_implementation_deferred": true,
+    "no_c01_to_c21_mutation": true,
+    "no_c19_reopen": true,
+    "no_c20_reopen": true,
+    "no_c21_reopen": true,
+    "canonical_model_unchanged": true
+  },
+  "next_step": "C23_FIRST_PROFIT_CAPTURE_RULE_CANDIDATE_DIAGNOSTIC",
+  "final_result_summary": "docs/watchlist/evidence/weekly_swing/artifacts/c22-final-diagnostic-result-summary.json",
+  "decision": {
+    "decision_status": "C22_EXIT_CAPTURE_SIGNAL_FOUND",
+    "catalog_allowed": false,
+    "oos_allowed": false,
+    "first_profit_capture_direction_found": true,
+    "breakeven_standalone_rejected": true,
+    "stop_distance_standalone_rejected": true,
+    "next_step": "C23_FIRST_PROFIT_CAPTURE_RULE_CANDIDATE_DIAGNOSTIC"
+  }
+}

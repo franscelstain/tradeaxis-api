@@ -97,8 +97,8 @@ Hubungan `market_data -> watchlist` untuk intake lintas domain pada fase aktif s
 - `docs/market_data/README.md`
 - `docs/market_data/system/SYSTEM_DATA_PRODUCT_MAP.md`
 - `docs/watchlist/README.md`
-- `docs/watchlist/system/implementation/weekly_swing/02_WS_MODULE_MAPPING.md`
-- `docs/watchlist/system/implementation/weekly_swing/03_WS_RUNTIME_ARTIFACT_FLOW.md`
+- `docs/watchlist/implementation/weekly_swing/guidance/02_WS_MODULE_MAPPING.md`
+- `docs/watchlist/implementation/weekly_swing/guidance/03_WS_RUNTIME_ARTIFACT_FLOW.md`
 - `docs/system_audit/SYSTEM_CROSS_DOMAIN_INPUT_BASELINE.md`
 
 #### Tracking rule
@@ -123,8 +123,8 @@ Assembly baseline sistem untuk fase aktif sudah cukup eksplisit dan sinkron pada
 #### Main evidence
 - `docs/README.md`
 - `docs/system_audit/SYSTEM_ASSEMBLY_BASELINE.md`
-- `docs/watchlist/system/README.md`
-- `docs/watchlist/system/implementation/README.md`
+- `docs/watchlist/history/documentation_architecture/LEGACY_SYSTEM_README.md`
+- `docs/watchlist/implementation/README.md`
 - `docs/api_architecture/README.md`
 - `docs/api_architecture/contoh-implementasi-end-to-end.md`
 - `docs/api_architecture/panduan-adopsi-minimum.md`
@@ -150,8 +150,8 @@ Translation baseline, module mapping aktif, runtime step layer mapping, DTO boun
 
 #### Main evidence
 - `docs/system_audit/SYSTEM_TRANSLATION_BASELINE.md`
-- `docs/watchlist/system/implementation/weekly_swing/02_WS_MODULE_MAPPING.md`
-- `docs/watchlist/system/implementation/weekly_swing/03_WS_RUNTIME_ARTIFACT_FLOW.md`
+- `docs/watchlist/implementation/weekly_swing/guidance/02_WS_MODULE_MAPPING.md`
+- `docs/watchlist/implementation/weekly_swing/guidance/03_WS_RUNTIME_ARTIFACT_FLOW.md`
 - `docs/api_architecture/repository.md`
 - `docs/api_architecture/application-service.md`
 - `docs/api_architecture/domain-compute.md`

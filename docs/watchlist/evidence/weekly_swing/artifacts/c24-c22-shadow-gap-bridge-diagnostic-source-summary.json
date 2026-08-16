@@ -1,0 +1,142 @@
+{
+  "artifact_type": "C24_C22_SHADOW_GAP_BRIDGE_DIAGNOSTIC_SOURCE_SUMMARY",
+  "status": "SOURCE_IMPLEMENTED_TEST_AND_RUNTIME_VALIDATED",
+  "scope": "IS_ONLY_C22_SHADOW_GAP_BRIDGE_DIAGNOSTIC",
+  "source_implemented": true,
+  "runtime_validated": true,
+  "php_lint": [
+    {
+      "status": "PASS",
+      "command": "php -l app/Application/Watchlist/Services/WatchlistBacktestC24C22ShadowGapBridgeDiagnosticService.php",
+      "result": "No syntax errors detected"
+    },
+    {
+      "status": "PASS",
+      "command": "php -l app/Console/Commands/Watchlist/RunBacktestC24C22ShadowGapBridgeDiagnoseCommand.php",
+      "result": "No syntax errors detected"
+    }
+  ],
+  "phpunit_c24_filter": {
+    "status": "PASS",
+    "command": "vendor\\bin\\phpunit.bat tests/Unit/Watchlist --filter \"WatchlistBacktestC24\"",
+    "result": "OK (4 tests, 64 assertions)"
+  },
+  "phpunit_c23_filter_after_c24": {
+    "status": "PASS",
+    "command": "vendor\\bin\\phpunit.bat tests/Unit/Watchlist --filter \"WatchlistBacktestC23\"",
+    "result": "OK (6 tests, 490 assertions)"
+  },
+  "full_watchlist_phpunit": {
+    "status": "PASS",
+    "command": "vendor\\bin\\phpunit.bat tests/Unit/Watchlist",
+    "result": "OK (413 tests, 10356 assertions)"
+  },
+  "command_registered": {
+    "status": "PASS",
+    "command": "php artisan list | Select-String -Pattern \"watchlist:backtest-c24-c22-shadow-gap-bridge-diagnose\"",
+    "signature": "watchlist:backtest-c24-c22-shadow-gap-bridge-diagnose"
+  },
+  "runtime_artifact": {
+    "status": "PASS",
+    "path": "storage/app/watchlist/backtest/c24-c22-shadow-gap-bridge-diagnostic-all-param.json",
+    "artifact_hash": "feabfbe720d39155a3d741e509cc69cade3ef31c",
+    "artifact_size_bytes": 35555,
+    "input_c23_artifact_hash": "5b79103c74faa01e4ce01cabbad1a3b36cdf31aa",
+    "candidate_profile_code": "C23_R09_EXIT_NEXT_OPEN_AFTER_D1_OR_D2_OR_D3_CLOSE_PROFIT_GT_0",
+    "evaluated_picks_count": 1575,
+    "decision_status": "C24_C22_SHADOW_GAP_STILL_MATERIAL",
+    "c24_gap_bridge_explained": true,
+    "dominant_gap_component": "no_rule_profit_signal_before_fallback",
+    "c24_catalog_code": "NOT_CREATED",
+    "oos_executed": 0,
+    "production_ready": 0
+  },
+  "metric_bridge_summary": {
+    "candidate_avg_ret_net": -0.00021743307264814,
+    "candidate_median_ret_net": -0.00049987503124219,
+    "candidate_p25_ret_net": -0.021244659600659,
+    "candidate_win_rate": 0.47174603174603,
+    "c22_shadow_s06_avg_ret_net": -0.00016239014891423,
+    "c22_shadow_s06_median_ret_net": 0.0042799597180262,
+    "c22_shadow_s06_p25_ret_net": -0.0082526173206962,
+    "c22_shadow_s06_win_rate": 0.59619047619048,
+    "avg_gap_vs_c22_s06": 0.000055042923733914,
+    "median_gap_vs_c22_s06": 0.0047798347492684,
+    "p25_gap_vs_c22_s06": 0.012992042279963,
+    "win_rate_gap_vs_c22_s06": 0.12444444444444,
+    "avg_capture_ratio_vs_c22_s06": 0.98784365528006,
+    "median_capture_ratio_vs_c22_s06": 0.43032380598996,
+    "p25_capture_ratio_vs_c22_s06": 0.16167366271912,
+    "win_rate_capture_ratio_vs_c22_s06": 0.38940809968847,
+    "rows_where_c22_beats_candidate_rate": 0.35492063492063
+  },
+  "gap_components": [
+    {
+      "component": "candidate_matches_or_beats_c22",
+      "count": 1016,
+      "avg_gap_c22_minus_candidate": -0.009983558340572178,
+      "rows_where_c22_beats_candidate_rate": 0
+    },
+    {
+      "component": "next_open_delay_after_close_signal",
+      "count": 264,
+      "avg_gap_c22_minus_candidate": 0.014125436205220044,
+      "median_gap_c22_minus_candidate": 0.007998000499875032,
+      "rows_where_c22_beats_candidate_rate": 1
+    },
+    {
+      "component": "no_rule_profit_signal_before_fallback",
+      "count": 295,
+      "avg_gap_c22_minus_candidate": 0.022036856680420897,
+      "median_gap_c22_minus_candidate": 0.01743749060480032,
+      "rows_where_c22_beats_candidate_rate": 1
+    }
+  ],
+  "source_components": {
+    "service": "app/Application/Watchlist/Services/WatchlistBacktestC24C22ShadowGapBridgeDiagnosticService.php",
+    "command": "app/Console/Commands/Watchlist/RunBacktestC24C22ShadowGapBridgeDiagnoseCommand.php",
+    "tests": [
+      "tests/Unit/Watchlist/WatchlistBacktestC24C22ShadowGapBridgeDiagnosticServiceTest.php",
+      "tests/Unit/Watchlist/WatchlistBacktestC24StaticGuardTest.php"
+    ],
+    "audit_doc": "docs/watchlist/findings/weekly_swing/records/WS_C24_C22_SHADOW_GAP_BRIDGE_DIAGNOSTIC.md",
+    "operator_commands": "docs/watchlist/evidence/weekly_swing/operator_commands/WS_C24_OPERATOR_VALIDATION_COMMANDS.md",
+    "policy_note": "docs/watchlist/research/weekly_swing/experiments/WS_C22_SHADOW_GAP_BRIDGE_C24_DESIGN_NOTE.md"
+  },
+  "preserved_evidence": {
+    "c19_final_status": "C19_CATALOG_CANDIDATE_FAILED",
+    "c20_final_status": "C20_DATE_GATE_NOT_ENOUGH",
+    "c21_final_status": "C21_EXECUTION_SIGNAL_FOUND",
+    "c22_final_status": "C22_EXIT_CAPTURE_SIGNAL_FOUND",
+    "c23_final_status": "C23_NON_LOOKAHEAD_RULE_CANDIDATE_FOUND_WITH_C22_SHADOW_GAP_NOT_ACCEPTABLE",
+    "c22_all_param_artifact_hash": "4e939d091a03ed49bbf460c0424ff1a018f98e72",
+    "c23_all_param_artifact_hash": "5b79103c74faa01e4ce01cabbad1a3b36cdf31aa"
+  },
+  "boundaries": {
+    "is_only": true,
+    "oos_not_run": true,
+    "production_ready": 0,
+    "c24_catalog_code": "NOT_CREATED",
+    "c24_catalog_implementation_deferred": true,
+    "catalog_allowed": false,
+    "oos_allowed": false,
+    "no_c01_to_c23_mutation": true,
+    "no_c19_reopen": true,
+    "no_c20_reopen": true,
+    "no_c21_reopen": true,
+    "no_c22_reopen": true,
+    "no_c23_reopen": true,
+    "canonical_model_unchanged": true,
+    "reads_c23_artifact_only": true,
+    "future_path_price_used_for_selection": false,
+    "candidate_ret_used_for_selection": false,
+    "c22_shadow_s06_used_for_selection": false
+  },
+  "decision": {
+    "runtime_decision_status": "C24_C22_SHADOW_GAP_STILL_MATERIAL",
+    "c24_gap_bridge_explained": true,
+    "catalog_allowed": false,
+    "oos_allowed": false,
+    "next_step": "Do not create catalog or run OOS; if continuing, run only a later diagnostic for next-open delay and no-signal fallback cases."
+  }
+}

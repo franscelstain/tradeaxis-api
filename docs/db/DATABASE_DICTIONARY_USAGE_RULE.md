@@ -14,7 +14,7 @@ Before coding or auditing database-connected work, read:
 2. Physical schema/migrations relevant to touched tables:
    - `docs/market_data/db/Database_Schema_MariaDB.sql`
    - `database/migrations/**`
-   - `docs/watchlist/system/db/**` when touching Watchlist tables
+   - `docs/watchlist/implementation/persistence/**` when touching Watchlist tables
 3. Module owner docs for the feature behavior.
 
 ## Hard Rules

@@ -1,0 +1,31 @@
+{
+  "status": "PASS",
+  "markdown_files_checked_excluding_raw_migration_snapshots": 852,
+  "json_files": 110,
+  "csv_files": 18,
+  "canonical_strategy_files": 12,
+  "strategy_leak_counts": {
+    "campaign_token": 0,
+    "physical_table": 0,
+    "sql_block": 0,
+    "sha_phpunit": 0,
+    "history_leak": 0
+  },
+  "stale_active_reference_counts": {
+    "stale_strategy_support_path": 0,
+    "legacy_system_path": 0,
+    "legacy_audit_path": 0
+  },
+  "behavior_preservation_missing": [],
+  "error_count": 0,
+  "errors": [],
+  "note": "Raw documentation_migrations snapshots are intentionally excluded from link integrity because they preserve pre-move relative links verbatim.",
+  "pre_cleanup_rule_token_preservation": {
+    "reason_or_rule_tokens_checked": 22,
+    "reason_or_rule_tokens_missing": [],
+    "physical_backtest_table_tokens_checked": 6,
+    "physical_backtest_table_tokens_missing": [],
+    "evaluation_marker_classes_checked": 13,
+    "evaluation_marker_classes_missing": []
+  }
+}

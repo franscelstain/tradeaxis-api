@@ -148,7 +148,7 @@ Mulai dari:
 - `docs/market_data/README.md`
 - kontrak consumer-facing/downstream-facing yang dirujuk oleh `market_data`
 - `docs/watchlist/README.md`
-- `docs/watchlist/system/README.md`
+- `docs/watchlist/history/documentation_architecture/LEGACY_SYSTEM_README.md`
 - `docs/api_architecture/README.md`
 
 Urutan ini wajib diikuti agar:
@@ -376,7 +376,7 @@ Urutan build minimum untuk sistem aktif adalah:
 2. kunci `market_data` sebagai producer contract dan publication-ready output;
 3. kunci baseline lintas-domain pada `docs/system_audit/`;
 4. kunci `watchlist` sebagai consumer behavior yang bergantung pada upstream producer-facing intake;
-5. masuk ke `watchlist/system/implementation/` hanya setelah policy dan intake baseline stabil;
+5. masuk ke `watchlist/implementation/` hanya setelah policy dan intake baseline stabil;
 6. gunakan `api_architecture` sebagai translation guardrail untuk controller/service/repository/domain compute;
 7. implementasi kode tidak boleh menciptakan kontrak baru yang bersaing dengan owner docs.
 

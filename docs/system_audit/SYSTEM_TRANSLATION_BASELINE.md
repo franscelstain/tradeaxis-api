@@ -149,10 +149,10 @@ Yang dilarang:
 Sebelum menerjemahkan ke kode, pembaca minimal harus melewati urutan ini:
 1. `docs/market_data/README.md`
 2. kontrak producer-facing yang relevan di `docs/market_data/book/`
-3. `docs/watchlist/system/README.md`
+3. `docs/watchlist/history/documentation_architecture/LEGACY_SYSTEM_README.md`
 4. owner docs weekly_swing yang relevan
-5. `docs/watchlist/system/implementation/weekly_swing/02_WS_MODULE_MAPPING.md`
-6. `docs/watchlist/system/implementation/weekly_swing/03_WS_RUNTIME_ARTIFACT_FLOW.md`
+5. `docs/watchlist/implementation/weekly_swing/guidance/02_WS_MODULE_MAPPING.md`
+6. `docs/watchlist/implementation/weekly_swing/guidance/03_WS_RUNTIME_ARTIFACT_FLOW.md`
 7. `docs/api_architecture/README.md`
 8. dokumen layer terkait di `docs/api_architecture/`
 

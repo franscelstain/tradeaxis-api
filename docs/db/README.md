@@ -29,9 +29,9 @@ Baca berurutan:
 - **Identitas ticker**: canonical code, status aktif, dan histori listing/delisting.
 
 ## Source of truth
-- Untuk **kontrak data sumber**, dokumen di folder ini ([`./`](./README.md)) adalah **source of truth**.
-- Untuk **schema database watchlist aplikasi**, baca [`../watchlist/db/`](../watchlist/db/README.md) karena itu layer penyimpanan aplikasi, bukan layer sumber market data.
-- Untuk **aturan policy**, baca [`../watchlist/policies/`](../watchlist/policies/README.md).
+- Untuk **kontrak data sumber**, dokumen di folder ini ([`./`](README.md)) adalah **source of truth**.
+- Untuk **schema database watchlist aplikasi**, baca [`../watchlist/db/`](../watchlist/implementation/persistence/README.md) karena itu layer penyimpanan aplikasi, bukan layer sumber market data.
+- Untuk **aturan policy**, baca [`../watchlist/policies/`](../watchlist/strategy/README.md).
 
 ## Cara pakai
 Jika implementasi memakai nama tabel/kolom fisik berbeda, tetap wajib menyediakan mapping yang membuat kontrak di folder ini terpenuhi.
@@ -57,5 +57,5 @@ docs/market_data/db/MARKET_DATA_DICTIONARY.md
 For Watchlist-owned tables and Market Data consumer rules, also read:
 
 ```text
-docs/watchlist/system/db/WATCHLIST_DB_DICTIONARY.md
+docs/watchlist/implementation/persistence/WATCHLIST_DB_DICTIONARY.md
 ```

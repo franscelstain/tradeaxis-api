@@ -1,62 +1,34 @@
-# Watchlist Docs
+# Watchlist Documentation
 
-Folder `docs/watchlist/` dipisah menjadi dua jalur utama:
+Watchlist saat ini hanya memiliki satu active strategy: **Weekly Swing**. Tujuan dokumentasi dipisahkan berdasarkan authority agar implementasi tidak lagi menulis progress/history ke canonical strategy.
 
-- `system/` = source of truth untuk membangun fitur watchlist
-- `audit/` = guardrail review untuk menjaga scope, boundary, dan sinkronisasi dokumen watchlist
+## Read Order
 
-## Current Active Scope
+1. `governance/DOCUMENTATION_ARCHITECTURE.md`
+2. `governance/DOCUMENT_CHANGE_POLICY.md`
+3. `strategy/weekly_swing/README.md`
+4. canonical Weekly Swing strategy docs
+5. `implementation/` saat menerjemahkan strategy ke software
+6. `evidence/`, `findings/`, `decisions/`, dan `history/` hanya sesuai kebutuhan traceability
 
-Saat ini scope aktif watchlist adalah:
+## Active Scope
 
 - domain: `watchlist`
-- active policy: `weekly_swing`
+- strategy: `weekly_swing`
+- runtime recommendation flow currently documented: `PLAN -> RECOMMENDATION -> CONFIRM`
+- output adalah saran; bukan order execution, portfolio lifecycle, holdings, atau trade journal.
 
-Policy lain di luar `weekly_swing` tidak dibahas sampai Weekly Swing benar-benar matang.
+## Upstream Boundary
 
-## Boundary
+Watchlist adalah consumer `market_data`. Fakta market, publication/read model, readiness, OHLCV, indicators, corporate-action handling, dan producer-side data semantics tetap dimiliki `docs/market_data/`.
 
-Watchlist hanya membahas **saran**.
+## Documentation Roles
 
-Watchlist bukan owner untuk:
-
-- execution order
-- transaksi beli/jual aktual
-- holdings / portfolio state
-- market-data ingestion internals
-- provider fetch pipeline
-
-Watchlist hanya memakai data yang sudah tersedia dari domain `market-data` atau input manual yang sah.
-
-### Allowed Upstream Intake
-Untuk scope aktif, intake upstream `watchlist` dari `market-data` harus mengikuti kontrak producer-facing yang jelas dari domain `market_data`, terutama kontrak consumer-readable dan publication-aware yang memang ditujukan untuk downstream consumption.
-
-`watchlist` tidak boleh menganggap hal berikut sebagai jalur intake yang setara tanpa kontrak producer yang eksplisit:
-- raw internal tables / raw bars / raw indicators
-- pipeline state antara
-- technical switching artifacts
-- implementation shortcut yang hanya nyaman untuk kode
-
-Aturan ini ada agar arti input upstream tetap dimiliki producer, sedangkan `watchlist` hanya memiliki perilaku setelah input itu diterima.
-
-
-
-## Layer Reading Guard
-
-Folder ini bisa memuat system docs, audit docs, implementation guidance, examples, fixtures, SQL support, schema markdown, dan sample payload.
-Keberadaan artefak-artefak tersebut **tidak otomatis** berarti paket ini sudah masuk audit Layer C.
-Tanpa bukti code aplikasi nyata, runtime payload nyata dari aplikasi, atau persistence runtime nyata yang bisa ditelusuri, pembacaan audit **harus tetap A/B**, bukan C.
-
-## Folder Layout
-
-- `system/` = source of truth watchlist
-- `audit/` = audit baseline watchlist
-- `system/implementation/` = implementation guidance yang tunduk pada baseline system docs
-
-
-Audit implementasi watchlist berada di `docs/watchlist/audit/implementation/`.
-
-
-## Layer Activation Reference
-
-Gunakan [`LAYER_ACTIVATION_RULE.md`](LAYER_ACTIVATION_RULE.md) untuk menentukan apakah paket harus dibaca sebagai Layer A, B, atau C.
+- `strategy/` — canonical/stable behavior.
+- `implementation/` — technical translation.
+- `research/` — non-canonical experiments.
+- `evidence/` — actual results.
+- `findings/` — discovered issues/insights.
+- `decisions/` — explicit decisions.
+- `history/` — superseded/historical records.
+- `governance/` — authority and change rules.

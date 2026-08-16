@@ -1,0 +1,33 @@
+{
+  "validation_date": "2026-08-16",
+  "canonical_strategy_owner_count": 11,
+  "canonical_strategy_contamination": {},
+  "canonical_strategy_contamination_count": 0,
+  "strategy_local_reference_errors": [],
+  "active_authority_legacy_reference_errors": [],
+  "json_parse_errors": [],
+  "csv_parse_errors": [],
+  "key_strategy_markers": {
+    "weekly_swing_only": true,
+    "plan_recommend_confirm": true,
+    "plan_immutable": true,
+    "recommend_plan_only": true,
+    "confirm_no_recommend_change": true,
+    "next_open": true,
+    "horizon_5": true,
+    "slippage_zero": true,
+    "is_floor": true,
+    "oos_split": true,
+    "oos_floor": true,
+    "recommend_count_zero": true,
+    "no_transaction": true
+  },
+  "governance_and_history_checks": {
+    "readme_is_not_strategy_owner": true,
+    "purity_rule_in_governance": true,
+    "audit_rule_relocated": true,
+    "old_cleanup_reports_removed_from_governance": true,
+    "pre_cleanup_snapshot_exists": true
+  },
+  "pass": true
+}

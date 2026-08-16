@@ -1,0 +1,36 @@
+{
+  "original_watchlist_files": 671,
+  "refactored_watchlist_files": 703,
+  "category_counts": {
+    "governance": 29,
+    "strategy": 13,
+    "implementation": 108,
+    "research": 68,
+    "evidence": 389,
+    "findings": 40,
+    "decisions": 45,
+    "history": 10
+  },
+  "local_markdown_links_checked": 125,
+  "missing_local_markdown_links": [],
+  "current_inline_local_reference_errors": [],
+  "json_parse_errors": [],
+  "csv_parse_errors": [],
+  "mixed_document_content_preservation_after_path_normalization": {
+    "system/policies/weekly_swing/04_WS_PARAMSET_JSON_CONTRACT.md": true,
+    "system/policies/weekly_swing/06_WS_PARAMSET_VALIDATOR_SPEC.md": true,
+    "system/policies/weekly_swing/07_WS_REASON_CODES_AND_HASH.md": true,
+    "system/policies/weekly_swing/08_WS_PLAN_ALGORITHM.md": true,
+    "system/policies/weekly_swing/09_WS_DYNAMIC_SELECTION_DETERMINISTIC.md": true,
+    "system/policies/weekly_swing/12_WS_BACKTEST_AND_CALIBRATION_STRATEGY.md": true,
+    "system/policies/weekly_swing/13_WS_CONTRACT_TEST_CHECKLIST.md": true,
+    "system/policies/weekly_swing/18_WS_BACKTEST_ARTIFACT_MANIFEST_LOCKED.md": true,
+    "audit/AUDIT_UPDATE_GOVERNANCE.md": true
+  },
+  "campaign_identifiers_remaining_in_canonical_strategy": [],
+  "legacy_directories_remaining": {
+    "docs/watchlist/system": false,
+    "docs/watchlist/audit": false
+  },
+  "scope_note": "Architecture separation only. Numeric thresholds, scoring formulas, acceptance gates, entry/exit rules, and recommendation rules were not intentionally redesigned."
+}
