@@ -1,0 +1,125 @@
+{
+  "artifact_type": "C23_FIRST_PROFIT_CAPTURE_RULE_DIAGNOSTIC_SOURCE_SUMMARY",
+  "status": "SOURCE_IMPLEMENTED_TEST_AND_RUNTIME_VALIDATED",
+  "scope": "IS_ONLY_FIRST_PROFIT_CAPTURE_RULE_CANDIDATE_DIAGNOSTIC",
+  "source_implemented": true,
+  "runtime_validated": true,
+  "phpunit_c23_service": {
+    "status": "PASS",
+    "command": "vendor\\bin\\phpunit.bat tests/Unit/Watchlist/WatchlistBacktestC23FirstProfitCaptureRuleDiagnosticServiceTest.php",
+    "result": "OK (3 tests, 426 assertions)"
+  },
+  "phpunit_c23_static_guard": {
+    "status": "PASS",
+    "command": "vendor\\bin\\phpunit.bat tests/Unit/Watchlist/WatchlistBacktestC23StaticGuardTest.php",
+    "result": "OK (3 tests, 61 assertions)"
+  },
+  "phpunit_c23_filter": {
+    "status": "PASS",
+    "command": "vendor\\bin\\phpunit.bat tests/Unit/Watchlist --filter \"WatchlistBacktestC23\"",
+    "result": "OK (6 tests, 490 assertions)"
+  },
+  "full_watchlist_phpunit": {
+    "status": "PASS",
+    "command": "vendor\\bin\\phpunit.bat tests/Unit/Watchlist",
+    "result": "OK (409 tests, 10292 assertions)"
+  },
+  "command_registered": {
+    "status": "PASS",
+    "command": "php artisan list | Select-String -Pattern \"watchlist:backtest-c23-first-profit-capture-rule-diagnose\"",
+    "signature": "watchlist:backtest-c23-first-profit-capture-rule-diagnose"
+  },
+  "runtime_artifacts": {
+    "focused": {
+      "status": "PASS",
+      "artifact_hash": "5e4c57c85f196749b269400316215c6a80f431b7",
+      "evaluated_picks_count": 394,
+      "path_missing_count": 11,
+      "first_profit_capture_rule_signal_found": true,
+      "non_lookahead_rule_candidate_found": true
+    },
+    "all_param": {
+      "status": "PASS",
+      "artifact_hash": "5b79103c74faa01e4ce01cabbad1a3b36cdf31aa",
+      "evaluated_picks_count": 1575,
+      "path_missing_count": 45,
+      "rule_profile_count": 19,
+      "first_profit_capture_rule_signal_found": true,
+      "c22_shadow_gap_acceptable": false,
+      "non_lookahead_rule_candidate_found": true,
+      "param_consistency_found": true,
+      "month_stability_sufficient": true,
+      "lookahead_violation_count": 0
+    }
+  },
+  "runtime_attempts": [
+    {
+      "scope": "ALL_PROFILE_ALL_PARAM",
+      "status": "TIMEOUT_NO_ARTIFACT",
+      "timeout_seconds": 184,
+      "process_stopped": true
+    },
+    {
+      "scope": "FOCUSED_PARAM_148_152_155",
+      "status": "TIMEOUT_NO_ARTIFACT",
+      "timeout_seconds": 184,
+      "process_stopped": true
+    },
+    {
+      "scope": "FOCUSED_PARAM_148_152_155_REUSE_SELECTION_ARTIFACT",
+      "status": "PASS",
+      "artifact_hash": "5e4c57c85f196749b269400316215c6a80f431b7"
+    },
+    {
+      "scope": "ALL_PROFILE_ALL_PARAM_REUSE_SELECTION_ARTIFACT_MEMORY_2048M",
+      "status": "PASS",
+      "artifact_hash": "5b79103c74faa01e4ce01cabbad1a3b36cdf31aa"
+    }
+  ],
+  "source_components": {
+    "service": "app/Application/Watchlist/Services/WatchlistBacktestC23FirstProfitCaptureRuleDiagnosticService.php",
+    "command": "app/Console/Commands/Watchlist/RunBacktestC23FirstProfitCaptureRuleDiagnoseCommand.php",
+    "tests": [
+      "tests/Unit/Watchlist/WatchlistBacktestC23FirstProfitCaptureRuleDiagnosticServiceTest.php",
+      "tests/Unit/Watchlist/WatchlistBacktestC23StaticGuardTest.php"
+    ],
+    "audit_doc": "docs/watchlist/development/findings/C23_FIRST_PROFIT_CAPTURE_RULE_DIAGNOSTIC.md",
+    "operator_commands": "docs/watchlist/records/evidence/runs/C23_OP_CMDS.md",
+    "policy_note": "docs/watchlist/development/research/WS_FIRST_PROFIT_CAPTURE_RULE_C23_DESIGN_NOTE.md"
+  },
+  "preserved_evidence": {
+    "c19_final_status": "C19_CATALOG_CANDIDATE_FAILED",
+    "c20_final_status": "C20_DATE_GATE_NOT_ENOUGH",
+    "c21_final_status": "C21_EXECUTION_SIGNAL_FOUND",
+    "c22_final_status": "C22_EXIT_CAPTURE_SIGNAL_FOUND",
+    "c22_all_param_artifact_hash": "4e939d091a03ed49bbf460c0424ff1a018f98e72"
+  },
+  "boundaries": {
+    "is_only": true,
+    "oos_not_run": true,
+    "production_ready": 0,
+    "c23_catalog_code": "NOT_CREATED",
+    "c23_catalog_implementation_deferred": true,
+    "catalog_allowed": false,
+    "oos_allowed": false,
+    "no_c01_to_c22_mutation": true,
+    "no_c19_reopen": true,
+    "no_c20_reopen": true,
+    "no_c21_reopen": true,
+    "no_c22_reopen": true,
+    "canonical_model_unchanged": true,
+    "future_path_price_used_for_selection": false,
+    "rule_exit_used_for_selection": false,
+    "rule_ret_net_used_for_selection": false,
+    "c22_shadow_s06_used_for_selection": false,
+    "mfe_mae_used_for_selection": false
+  },
+  "rule_profile_count": 19,
+  "rule_profile_prefix": "C23_R",
+  "decision": {
+    "runtime_decision_status": "C23_FIRST_PROFIT_CAPTURE_RULE_SIGNAL_FOUND",
+    "catalog_allowed": false,
+    "oos_allowed": false,
+    "next_step": "C23 closed the non-lookahead consistency gap but still failed the C22 shadow gap; continue only as C24 gap-bridge diagnostic, not catalog or OOS."
+  }
+}

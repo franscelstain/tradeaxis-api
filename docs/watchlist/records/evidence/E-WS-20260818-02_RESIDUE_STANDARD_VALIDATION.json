@@ -1,0 +1,40 @@
+{
+  "record_id": "E-WS-20260818-02",
+  "document_type": "EVIDENCE",
+  "status": "FINAL",
+  "scope": "watchlist/weekly_swing implementation residue governance adoption",
+  "created": "2026-08-18",
+  "related_finding": "F-WS-20260818-03",
+  "related_decision": "D-WS-20260818-03",
+  "verdict": "PASS",
+  "semantic_checks_passed": 21,
+  "semantic_checks_total": 21,
+  "checks": {
+    "canonical_standard_exists": true,
+    "four_residue_classes_defined": true,
+    "recurring_gate_defined": true,
+    "done_gate_defined": true,
+    "grep_not_sufficient": true,
+    "document_recording_bound": true,
+    "stage_reentry_bound": true,
+    "build_sequence_bound": true,
+    "stage_register_bound": true,
+    "start_here_bound": true,
+    "watchlist_readme_bound": true,
+    "implementation_readme_bound": true,
+    "implementation_prompt_bound": true,
+    "audit_prompt_bound": true,
+    "implementation_checklist_bound": true,
+    "audit_checklist_bound": true,
+    "test_checklist_bound": true,
+    "delivery_checklist_bound": true,
+    "alignment_marker_bound": true,
+    "finding_decision_trace_present": true,
+    "prior_authority_snapshots_present": true
+  },
+  "notes": [
+    "This evidence validates documentation/governance adoption only; it does not claim source-code implementation is residue-free.",
+    "Each WS-Bxx stage remains NOT_ASSESSED for residue until that stage is formally opened and inspected.",
+    "Text search is not sufficient future proof; stage evidence must include reachability/behavior checks appropriate to the impacted scope."
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "plan": {
+    "meta": {"trade_date": "2026-03-16"},
+    "items": [
+      {"ticker": "AAA", "candidate_state": "RECOMMENDATION_CANDIDATES"},
+      {"ticker": "CCC", "candidate_state": "WATCH_ONLY"}
+    ]
+  },
+  "recommendation": {
+    "items": [
+      {"ticker": "AAA", "recommended_flag": true, "recommendation_rank": 1}
+    ]
+  },
+  "confirm": {
+    "items": [
+      {"ticker": "AAA", "confirm_status": "ACTIONABLE"}
+    ]
+  }
+}

@@ -1,0 +1,176 @@
+{
+  "record_id": "E-WS-20260818-06",
+  "document_type": "EVIDENCE",
+  "status": "FINAL",
+  "scope": "watchlist governance/work traceability control adoption",
+  "generated_at": "2026-08-18T16:50:01.973079+07:00",
+  "verdict": "PASS",
+  "checks": [
+    {
+      "check": "RELATIONSHIP_INTEGRITY_GATE",
+      "status": "PASS",
+      "details": {
+        "status": "PASS",
+        "errors": []
+      }
+    },
+    {
+      "check": "DOCUMENT_INTEGRITY_GATE",
+      "status": "PASS",
+      "details": {
+        "status": "PASS_WITH_REGISTERED_LEGACY_EXCEPTION",
+        "failed": []
+      }
+    },
+    {
+      "check": "REQUIRED_CONTROL_FILES",
+      "status": "PASS",
+      "details": {
+        "missing": []
+      }
+    },
+    {
+      "check": "WORK_REGISTRY_HEADER",
+      "status": "PASS",
+      "details": {
+        "header": [
+          "record_id",
+          "record_type",
+          "stage_id",
+          "attempt_id",
+          "work_id",
+          "baseline_id",
+          "record_status",
+          "file_path",
+          "related_finding_ids",
+          "related_evidence_ids",
+          "related_decision_ids",
+          "related_dependency_ids",
+          "supersedes",
+          "created_at",
+          "notes"
+        ]
+      }
+    },
+    {
+      "check": "DEPENDENCY_REGISTRY_HEADER",
+      "status": "PASS",
+      "details": {
+        "header": [
+          "dependency_id",
+          "status",
+          "consumer_stage",
+          "originating_work_id",
+          "provider",
+          "requirement",
+          "affected_rule_ids",
+          "evidence_ref",
+          "owner",
+          "resume_trigger",
+          "first_seen",
+          "last_verified",
+          "resolution_ref",
+          "notes"
+        ]
+      }
+    },
+    {
+      "check": "STAGE_REGISTER_LATEST_ATTEMPT_WORK_ID",
+      "status": "PASS",
+      "details": {}
+    },
+    {
+      "check": "STAGE_REGISTER_CHANGE_IMPACT",
+      "status": "PASS",
+      "details": {}
+    },
+    {
+      "check": "STAGE_REGISTER_DEPENDENCY_ID",
+      "status": "PASS",
+      "details": {}
+    },
+    {
+      "check": "STAGE_REGISTER_CLOSURE_MANIFEST",
+      "status": "PASS",
+      "details": {}
+    },
+    {
+      "check": "CURRENT_STATE_GENERATED",
+      "status": "PASS",
+      "details": {}
+    },
+    {
+      "check": "START_HERE_WORK_CORRELATION_AND_RECORD_REGISTRY_STANDARD",
+      "status": "PASS",
+      "details": {}
+    },
+    {
+      "check": "START_HERE_CHANGE_IMPACT_DECLARATION_STANDARD",
+      "status": "PASS",
+      "details": {}
+    },
+    {
+      "check": "START_HERE_DEPENDENCY_REGISTRY_STANDARD",
+      "status": "PASS",
+      "details": {}
+    },
+    {
+      "check": "START_HERE_STAGE_CLOSURE_MANIFEST_STANDARD",
+      "status": "PASS",
+      "details": {}
+    },
+    {
+      "check": "START_HERE_WORK_RECORD_REGISTRY",
+      "status": "PASS",
+      "details": {}
+    },
+    {
+      "check": "PHP_LINT",
+      "status": "PASS",
+      "details": {
+        "checked": 5,
+        "errors": []
+      }
+    },
+    {
+      "check": "JSON_PARSE_ALL",
+      "status": "PASS",
+      "details": {
+        "checked": 103,
+        "errors": []
+      }
+    },
+    {
+      "check": "CSV_STRUCTURE_ALL",
+      "status": "PASS",
+      "details": {
+        "checked": 23,
+        "errors": []
+      }
+    },
+    {
+      "check": "WINDOWS_PATH_LENGTH",
+      "status": "PASS",
+      "details": {
+        "max_length": 116,
+        "max_path": "docs/watchlist/development/research/C171_VERSIONED_OFFICIAL_BACKTEST_EVIDENCE_AND_EXECUTABLE_IS_STRAT_REMEDIATION.md"
+      }
+    },
+    {
+      "check": "TRACEABILITY_ROWS",
+      "status": "PASS",
+      "details": {
+        "rows": 1006
+      }
+    },
+    {
+      "check": "PRE_CHANGE_SNAPSHOTS",
+      "status": "PASS",
+      "details": {
+        "missing": []
+      }
+    }
+  ],
+  "document_integrity_gate": "PASS_WITH_REGISTERED_LEGACY_EXCEPTION",
+  "relationship_integrity_gate": "PASS"
+}

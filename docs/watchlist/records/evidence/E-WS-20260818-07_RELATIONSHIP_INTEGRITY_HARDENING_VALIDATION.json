@@ -1,0 +1,77 @@
+{
+  "document_type": "EVIDENCE",
+  "status": "FINAL",
+  "record_id": "E-WS-20260818-07",
+  "scope": "watchlist documentation governance / relationship integrity hardening",
+  "created_at": "2026-08-18T10:04:32.413225+00:00",
+  "finding": "docs/watchlist/development/findings/WS_RELATIONSHIP_INTEGRITY_HARDENING_GAP_2026-08-18.md",
+  "decision": "docs/watchlist/records/decisions/WS_RELATIONSHIP_INTEGRITY_HARDENING_ADOPTION_2026-08-18.md",
+  "relationship_gate": {
+    "status": "PASS",
+    "generated_at": "2026-08-18T10:03:45+00:00",
+    "stage_rows": 13,
+    "work_record_rows": 0,
+    "relationship_rows": 0,
+    "dependency_rows": 0,
+    "attempt_identities": 0,
+    "baseline_locks": 0,
+    "enforced_invariants": {
+      "attempt_identity_unique_stage_and_baseline": true,
+      "record_id_unique": true,
+      "stage_reference_exists": true,
+      "baseline_reference_exists_and_bound": true,
+      "related_finding_type_safe": true,
+      "related_decision_type_safe": true,
+      "supersedes_acyclic": true,
+      "closure_cross_baseline_evidence_controlled": true,
+      "cross_attempt_relationship_explicit": true
+    },
+    "errors": []
+  },
+  "document_integrity_gate": {
+    "status": "PASS_WITH_REGISTERED_LEGACY_EXCEPTION",
+    "failed_checks": [],
+    "registered_legacy_exceptions_used": [
+      "DOC-INT-EXC-20260818-001"
+    ]
+  },
+  "mutation_self_test": {
+    "status": "PASS",
+    "cases": [
+      "PASS base_valid",
+      "PASS attempt_unique_stage_baseline -> ATTEMPT_MULTIPLE_BASELINES",
+      "PASS record_id_unique -> DUP_RECORD_ID",
+      "PASS stage_exists -> UNKNOWN_STAGE",
+      "PASS baseline_exists -> ATTEMPT_BASELINE_LOCK_MISSING",
+      "PASS related_finding_type -> RELATED_FINDING_WRONG_TYPE",
+      "PASS related_decision_type -> RELATED_DECISION_WRONG_TYPE",
+      "PASS supersedes_acyclic -> SUPERSEDES_CYCLE",
+      "PASS closure_cross_baseline_control -> CLOSURE_CROSS_BASELINE_UNAUTHORIZED",
+      "PASS cross_attempt_explicit -> CROSS_ATTEMPT_RELATION_UNDECLARED",
+      "PASS authorized_cross_baseline_closure"
+    ],
+    "hard_invariant_mutations": 9,
+    "positive_authorized_cross_baseline_case": true
+  },
+  "php_lint": "PASS",
+  "enforced_invariants_9_of_9": {
+    "attempt_identity_unique_stage_and_baseline": true,
+    "record_id_unique": true,
+    "stage_reference_exists": true,
+    "baseline_reference_exists_and_bound": true,
+    "related_finding_type_safe": true,
+    "related_decision_type_safe": true,
+    "supersedes_acyclic": true,
+    "closure_cross_baseline_evidence_controlled": true,
+    "cross_attempt_relationship_explicit": true
+  },
+  "files_sha1": {
+    "docs/watchlist/development/implementation/tests/WatchlistRelationshipIntegrityGate.php": "6C3CA9A018432DA1E18940BC2783C449D064EE76",
+    "docs/watchlist/development/implementation/tests/WatchlistRelationshipIntegrityGateSelfTest.php": "9C7E698F3B7748EDF5D63C4BA54B388F781B3FC5",
+    "docs/watchlist/development/implementation/tests/RegisterWorkRelationship.php": "9856D4BA85261C27936B9626506CF2C86BEED6DC",
+    "docs/watchlist/development/implementation/tests/RegisterWorkRecord.php": "435BF75AA95D2D5098542310938D93673C06BB88",
+    "docs/watchlist/development/implementation/tests/CreateWorkBaselineLock.php": "569246D63D9F9F4E79B907CD06F39DBF8EB3E8BB",
+    "docs/watchlist/authority/governance/WORK_CORRELATION_AND_RECORD_REGISTRY_STANDARD.md": "B11D7336BB5F57C65A71FAF6B9CE6A3B04B503C4",
+    "docs/watchlist/records/WORK_RELATIONSHIP_REGISTRY.csv": "6C8C377D09419D3D06E1EC62A6F03D849E32519B"
+  }
+}

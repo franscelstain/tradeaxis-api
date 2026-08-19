@@ -1,0 +1,26 @@
+{
+  "date": "2026-08-18",
+  "source_zip": "docs-watchlist-weekly-swing-start-here-build-sequence.zip",
+  "source_file_count": 1130,
+  "output_file_count": 1146,
+  "before_max_relative_path_length": 196,
+  "after_max_relative_path_length": 105,
+  "longest_output_path": "docs/watchlist/records/history/archive/H0043_strategy_weekly_swing_validation_16_WS_EVAL_METRICS_SUFF_DDF1B526.md",
+  "broken_active_markdown_links": 0,
+  "json_parse_errors": 0,
+  "csv_parse_errors": 0,
+  "windows_filename_issues": 0,
+  "windows_casefold_collisions": 0,
+  "stale_redundant_weekly_swing_path_refs": 0,
+  "watchlist_layer_file_counts": {
+    "evidence": 388,
+    "governance": 29,
+    "strategy": 15,
+    "decisions": 50,
+    "implementation": 111,
+    "research": 66,
+    "history": 153,
+    "findings": 42
+  },
+  "verdict": "PASS_WINDOWS_SAFE_AND_ARCHITECTURE_SIMPLIFIED"
+}

@@ -1,0 +1,124 @@
+{
+  "document_type": "EVIDENCE",
+  "status": "FINAL",
+  "scope": "watchlist / weekly_swing governance adoption",
+  "record_id": "E-WS-20260818-05",
+  "created": "2026-08-18",
+  "subject": "Work Baseline Lock + executable documentation integrity gate + canonical attempt record adoption validation",
+  "integrity_gate_result": {
+    "status": "PASS_WITH_REGISTERED_LEGACY_EXCEPTION",
+    "generated_at": "2026-08-18T09:27:59+00:00",
+    "watchlist_root": "docs/watchlist",
+    "checks": [
+      {
+        "check": "ROOT_ARCHITECTURE",
+        "status": "PASS",
+        "details": {
+          "missing": []
+        }
+      },
+      {
+        "check": "ACTIVE_MARKDOWN_LINKS",
+        "status": "PASS",
+        "details": {
+          "checked": 109,
+          "broken_count": 0,
+          "samples": []
+        }
+      },
+      {
+        "check": "JSON_PARSE",
+        "status": "PASS",
+        "details": {
+          "checked": 101,
+          "errors": []
+        }
+      },
+      {
+        "check": "CSV_STRUCTURE",
+        "status": "PASS",
+        "details": {
+          "checked": 21,
+          "errors": []
+        }
+      },
+      {
+        "check": "WINDOWS_SAFE_PATHS",
+        "status": "PASS",
+        "details": {
+          "limit": 180,
+          "max_length": 116,
+          "max_path": "docs/watchlist/development/research/C171_VERSIONED_OFFICIAL_BACKTEST_EVIDENCE_AND_EXECUTABLE_IS_STRAT_REMEDIATION.md",
+          "too_long": []
+        }
+      },
+      {
+        "check": "GOVERNANCE_NUMBERED_HEADINGS",
+        "status": "PASS",
+        "details": {
+          "duplicates": []
+        }
+      },
+      {
+        "check": "STALE_ACTIVE_LEGACY_REFERENCES",
+        "status": "PASS",
+        "details": {
+          "count": 0,
+          "samples": []
+        }
+      },
+      {
+        "check": "DUPLICATE_CHANGE_IDS",
+        "status": "PASS",
+        "details": {
+          "unregistered_duplicates": [],
+          "registered_exceptions": [
+            "DOC-INT-EXC-20260818-001"
+          ]
+        }
+      },
+      {
+        "check": "TRACEABILITY_MATRIX",
+        "status": "PASS",
+        "details": {
+          "rows": 1006,
+          "errors": []
+        }
+      },
+      {
+        "check": "STAGE_LIFECYCLE_VOCABULARY",
+        "status": "PASS",
+        "details": {
+          "errors": []
+        }
+      },
+      {
+        "check": "BASELINE_LOCK",
+        "status": "PASS",
+        "details": {
+          "checked": false,
+          "errors": []
+        }
+      }
+    ],
+    "failed_checks": [],
+    "registered_legacy_exceptions_used": [
+      "DOC-INT-EXC-20260818-001"
+    ]
+  },
+  "baseline_generator_test": {
+    "status": "PASS",
+    "mode": "DOCUMENTATION_GOVERNANCE",
+    "test_baseline_id": "WSBL-20260818-000",
+    "test_attempt_id": "WS-B00-A000",
+    "baseline_gate_result": "PASS_WITH_REGISTERED_LEGACY_EXCEPTION",
+    "baseline_lock_check": "PASS",
+    "note": "Temporary test baseline was created outside the package only to validate generator and baseline-aware gate behavior; it is not a current WS-Bxx implementation baseline."
+  },
+  "known_legacy_exception": {
+    "exception_id": "DOC-INT-EXC-20260818-001",
+    "target": "DOC-CHG-20260818-003 duplicate historical block",
+    "impact": "identity uniqueness check only; no current strategy/implementation defect is exempted"
+  },
+  "verdict": "PASS_WITH_REGISTERED_LEGACY_EXCEPTION"
+}

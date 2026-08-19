@@ -1,0 +1,62 @@
+{
+  "artifact_type": "C28_RULE_REVISION_TIEBREAK_DIAGNOSTIC_SOURCE_SUMMARY",
+  "status": "PASS",
+  "scope": "IS_ONLY_RULE_REVISION_TIEBREAK_DIAGNOSTIC",
+  "source_files": [
+    "app/Application/Watchlist/Services/WatchlistBacktestC28RuleRevisionTiebreakDiagnosticService.php",
+    "app/Console/Commands/Watchlist/RunBacktestC28RuleRevisionTiebreakDiagnoseCommand.php",
+    "tests/Unit/Watchlist/WatchlistBacktestC28RuleRevisionTiebreakDiagnosticServiceTest.php",
+    "tests/Unit/Watchlist/WatchlistBacktestC28StaticGuardTest.php",
+    "docs/watchlist/audit/WS_C28_RULE_REVISION_TIEBREAK_DIAGNOSTIC.md",
+    "docs/watchlist/audit/WS_C28_OPERATOR_VALIDATION_COMMANDS.md",
+    "docs/watchlist/system/policies/weekly_swing/_refs/WS_CATALOG_CANDIDATE_C28_RULE_REVISION_TIEBREAK_NOTE.md"
+  ],
+  "runtime_artifacts": {
+    "focused": {
+      "path": "storage/app/watchlist/backtest/c28-rule-revision-tiebreak-diagnostic-focused.json",
+      "artifact_hash": "94805cfba218fab4baae0a0e25f427f688acb924",
+      "evaluated_picks_count": 395,
+      "candidate_param_pass_count": 3,
+      "candidate_param_fail_count": 0,
+      "candidate_month_pass_count": 26,
+      "candidate_month_fail_count": 1,
+      "candidate_bucket_pass_count": 3,
+      "candidate_bucket_fail_count": 0,
+      "c28_revised_candidate_ready": false
+    },
+    "all_param": {
+      "path": "storage/app/watchlist/backtest/c28-rule-revision-tiebreak-diagnostic-all-param.json",
+      "artifact_hash": "64ec3e48fa3c6beb4b1175cc8f0cc277f22d20fd",
+      "evaluated_picks_count": 1575,
+      "candidate_profile_code": "C28_G05_BUCKET_TIEBREAK_R09_STABLE_G21_NO_SIGNAL_G16_DELAY",
+      "candidate_avg_ret_net": 0.0061941599395967,
+      "candidate_median_ret_net": 0.0058664259927798,
+      "candidate_p25_ret_net": -0.0065973510332174,
+      "candidate_param_pass_count": 12,
+      "candidate_param_fail_count": 0,
+      "candidate_month_pass_count": 27,
+      "candidate_month_fail_count": 0,
+      "candidate_bucket_pass_count": 3,
+      "candidate_bucket_fail_count": 0,
+      "c28_revised_candidate_ready": true,
+      "c29_oos_proof_recommended": true
+    }
+  },
+  "input_artifacts": {
+    "c27_all_param_artifact_hash": "9bae5ed7227615d64765738b1ff83fa8b9232769"
+  },
+  "boundary": {
+    "is_only": true,
+    "catalog_created": false,
+    "oos_run": false,
+    "production_ready": 0,
+    "mutates_c01_to_c27": false,
+    "derived_mfe_mae_used_for_execution": false,
+    "raw_ohlc_used_for_execution": true,
+    "best_profile_binding_allowed": false
+  },
+  "final_decision": {
+    "decision_status": "C28_REVISED_RAW_CANDIDATE_READY_FOR_C29_OOS_PROOF",
+    "next_step": "C29_OOS_PROOF_WITH_C28_ARTIFACT_HASH_LOCK"
+  }
+}

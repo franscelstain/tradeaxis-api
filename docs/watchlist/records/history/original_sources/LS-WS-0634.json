@@ -1,0 +1,134 @@
+{
+  "fixture_id": "WS_ARTIFACT_REFERENCE_GUARD_MINIMAL_V4",
+  "policy_code": "WS",
+  "owner_root_locked": "docs/watchlist/system/",
+  "policy_root_locked": "docs/watchlist/system/policies/weekly_swing/",
+  "base_path_locked": "docs/watchlist/system/policies/weekly_swing/fixtures/",
+  "contract_reference_excerpt": [
+    "Referensi artifact produksi wajib ada pada manifest resmi WS atau pada daftar fixture evidence yang eksplisit di file ini.",
+    "Artifact name wajib sesuai allowlist dan scope policy.",
+    "Jika artifact mengandung param_id, maka param_id wajib match dengan paramset/evidence yang mengklaimnya.",
+    "Violation adalah BLOCK: promosi paramset origin=BT harus ditolak."
+  ],
+  "allowlist_production_artifacts": [
+    "watchlist_bt_param_grid",
+    "watchlist_bt_eval",
+    "watchlist_bt_picks_ws",
+    "watchlist_bt_universe_ws",
+    "watchlist_bt_cutoffs_ws",
+    "watchlist_bt_oos_eval_ws",
+    "PLAN_UNIVERSE_SNAPSHOT_EXPORT"
+  ],
+  "allowlist_fixture_evidence_files": [
+    "bt_coverage_guard_minimal.json",
+    "bt_eval_metrics_minimal.json",
+    "bt_oos_proof_minimal.json",
+    "universe_equivalence_sample.json"
+  ],
+  "cases": [
+    {
+      "case_id": "PASS_MINIMAL",
+      "references": [
+        {
+          "name": "watchlist_bt_param_grid",
+          "param_id": 1
+        },
+        {
+          "name": "watchlist_bt_eval",
+          "param_id": 1
+        },
+        {
+          "name": "watchlist_bt_oos_eval_ws",
+          "param_id": 1
+        },
+        {
+          "name": "PLAN_UNIVERSE_SNAPSHOT_EXPORT",
+          "asof_eod_date": "2026-02-13"
+        },
+        {
+          "name": "bt_eval_metrics_minimal.json",
+          "case_id": "PASS_MINIMAL"
+        },
+        {
+          "name": "bt_oos_proof_minimal.json",
+          "case_id": "PASS_MINIMAL"
+        }
+      ],
+      "expected": {
+        "should_pass": true,
+        "cf_code": null,
+        "reason_codes": []
+      }
+    },
+    {
+      "case_id": "FAIL_MISSING_REQUIRED_ARTIFACT",
+      "references": [
+        {
+          "name": "watchlist_bt_param_grid",
+          "param_id": 1
+        },
+        {
+          "name": "watchlist_bt_eval",
+          "param_id": 1
+        }
+      ],
+      "expected": {
+        "should_pass": false,
+        "cf_code": "CF_ARTIFACT_REFERENCE_VIOLATION",
+        "reason_codes": [
+          "WS_BT_ARTIFACT_MISSING"
+        ]
+      }
+    },
+    {
+      "case_id": "FAIL_NOT_ALLOWED_ARTIFACT",
+      "references": [
+        {
+          "name": "watchlist_bt_param_grid",
+          "param_id": 1
+        },
+        {
+          "name": "watchlist_bt_eval",
+          "param_id": 1
+        },
+        {
+          "name": "watchlist_bt_dataset_ws"
+        }
+      ],
+      "expected": {
+        "should_pass": false,
+        "cf_code": "CF_ARTIFACT_REFERENCE_VIOLATION",
+        "reason_codes": [
+          "WS_BT_ARTIFACT_NOT_ALLOWED"
+        ]
+      }
+    },
+    {
+      "case_id": "FAIL_PARAM_ID_MISMATCH",
+      "references": [
+        {
+          "name": "watchlist_bt_param_grid",
+          "param_id": 999
+        },
+        {
+          "name": "watchlist_bt_eval",
+          "param_id": 999
+        },
+        {
+          "name": "bt_coverage_guard_minimal.json"
+        }
+      ],
+      "expected": {
+        "should_pass": false,
+        "cf_code": "CF_ARTIFACT_REFERENCE_VIOLATION",
+        "reason_codes": [
+          "WS_BT_ARTIFACT_PARAM_ID_MISMATCH"
+        ]
+      }
+    }
+  ],
+  "_fixture_expected": {
+    "should_pass": true,
+    "notes": "V4: root path dikunci ke docs/watchlist/system/policies/weekly_swing/fixtures/ dan dipisahkan jelas antara owner root, policy root, dan fixture base path."
+  }
+}

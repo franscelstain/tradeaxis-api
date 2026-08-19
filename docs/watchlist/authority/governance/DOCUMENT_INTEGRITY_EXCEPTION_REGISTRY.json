@@ -1,0 +1,19 @@
+{
+  "status": "CANONICAL_GOVERNANCE_EXCEPTION_REGISTRY",
+  "scope": "docs/watchlist executable documentation integrity gate",
+  "updated": "2026-08-18",
+  "rule": "Exceptions must be exact, evidence-backed, and limited to immutable/append-only legacy integrity defects.",
+  "exceptions": [
+    {
+      "exception_id": "DOC-INT-EXC-20260818-001",
+      "check": "DUPLICATE_CHANGE_ID",
+      "target": "DOC-CHG-20260818-003",
+      "path": "docs/watchlist/authority/governance/DOCUMENT_CHANGE_LOG.md",
+      "reason": "The change-log block was duplicated before executable integrity-gate adoption. The two blocks are semantically identical; append-only governance forbids deleting or rewriting the historical entry solely to make the scanner green.",
+      "disposition": "Treat the first occurrence as the canonical log event and the later identical occurrence as a registered legacy duplicate for identity-uniqueness checking only. Do not create any new record with this Change ID.",
+      "related_finding": "F-WS-20260818-06",
+      "related_decision": "D-WS-20260818-06",
+      "related_evidence": "E-WS-20260818-05"
+    }
+  ]
+}

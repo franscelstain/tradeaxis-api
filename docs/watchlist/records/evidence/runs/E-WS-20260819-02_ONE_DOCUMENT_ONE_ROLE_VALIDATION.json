@@ -1,0 +1,28 @@
+{
+  "record_id": "E-WS-20260819-02",
+  "document_type": "EVIDENCE",
+  "authoritative_role": "EVIDENCE",
+  "status": "FINAL",
+  "scope": "watchlist_document_role_purity",
+  "created": "2026-08-19",
+  "finding": "F-WS-20260819-02",
+  "decision": "D-WS-20260819-02",
+  "strategy_behavior_changed": false,
+  "validation": {
+    "status": "PASS",
+    "legacy_sources_total": 671,
+    "legacy_multi_role_sources_fully_decomposed": 255,
+    "retained_multi_role_legacy_sources": 0,
+    "retained_role_pure_legacy_sources": 416,
+    "legacy_role_extracts_total": 877,
+    "bundle_exceptions_total": 198,
+    "multi_role_bundle_exceptions": 0,
+    "document_role_registry_rows": 2085,
+    "document_role_registry_unique_paths": 2085,
+    "canonical_strategy_owner_files_unchanged": "14/14",
+    "documentation_integrity_gate": "PASS_WITH_REGISTERED_LEGACY_EXCEPTION",
+    "one_document_one_authoritative_role_check": "PASS",
+    "relationship_integrity_gate": "PASS",
+    "relationship_mutation_tests": "9/9 PASS"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "status": "PASS",
+  "date": "2026-08-18",
+  "scope": "docs/watchlist root authority-development-records reorganization",
+  "root_entries": [
+    "README.md",
+    "START_HERE.md",
+    "authority",
+    "development",
+    "records"
+  ],
+  "expected_root_entries": [
+    "README.md",
+    "START_HERE.md",
+    "authority",
+    "development",
+    "records"
+  ],
+  "old_root_role_directories_remaining": [],
+  "missing_required_directories": [],
+  "active_markdown_files_checked": 869,
+  "broken_active_markdown_links": 0,
+  "broken_link_samples": [],
+  "json_files_checked": 122,
+  "json_parse_errors": 0,
+  "json_error_samples": [],
+  "csv_files_checked": 22,
+  "csv_parse_errors": 0,
+  "csv_error_samples": [],
+  "stale_old_absolute_watchlist_path_refs_active": 0,
+  "stale_samples": [],
+  "traceability_rows": 1006,
+  "traceability_strategy_owner_files": 14,
+  "invalid_strategy_owner_paths": [],
+  "tracker_relocated_to_development": true,
+  "migration_records_role_placement": true,
+  "entry_point_checks": {
+    "root_readme_groups": true,
+    "start_here_groups": true,
+    "architecture_groups": true,
+    "group_readmes": true
+  },
+  "max_relative_path_chars": 116,
+  "max_relative_path": "docs/watchlist/development/research/C171_VERSIONED_OFFICIAL_BACKTEST_EVIDENCE_AND_EXECUTABLE_IS_STRAT_REMEDIATION.md",
+  "windows_safe_target_max_chars": 120
+}

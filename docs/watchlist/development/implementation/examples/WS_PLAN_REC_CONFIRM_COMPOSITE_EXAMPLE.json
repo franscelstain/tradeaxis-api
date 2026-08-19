@@ -1,0 +1,30 @@
+{
+  "trade_date": "2026-03-16",
+  "consumer_view_only": true,
+  "items": [
+    {
+      "ticker": "AAA",
+      "recommendation_rank": 1,
+      "recommended_flag": true,
+      "confirm_status": "ACTIONABLE",
+      "semantic": "TOP_PICK_ACTIONABLE",
+      "interpretation": "qualified EOD Top Pick with additional current-actionability evidence"
+    },
+    {
+      "ticker": "BBB",
+      "recommendation_rank": 2,
+      "recommended_flag": true,
+      "confirm_status": "UNAVAILABLE_RETRYABLE",
+      "semantic": "TOP_PICK_CONFIRM_UNAVAILABLE",
+      "interpretation": "qualified EOD Top Pick remains valid; current-entry data is not yet sufficient and CONFIRM may be retried"
+    },
+    {
+      "ticker": "CCC",
+      "recommended_flag": false,
+      "confirm_status": null,
+      "semantic": "NOT_A_TOP_PICK",
+      "interpretation": "non-Top-Pick is not a valid CONFIRM target"
+    }
+  ],
+  "note": "Composite view is consumer-only. CONFIRM is optional and does not alter EOD recommendation membership or rank."
+}

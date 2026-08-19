@@ -1,0 +1,86 @@
+{
+  "verdict": "PASS",
+  "checks": {
+    "matrix_rows": 1006,
+    "unique_rule_ids": true,
+    "source_or_fingerprint_errors": 0,
+    "strategy_substantive_clauses_expected": 1006,
+    "strategy_substantive_clauses_inventoried": 1006,
+    "full_strategy_clause_inventory": true,
+    "canonical_strategy_owner_files": 14,
+    "all_strategy_owners_covered": true,
+    "required_traceability_units": 823,
+    "reference_only_units": 183,
+    "mandatory_or_conditional_units": 708,
+    "optional_units": 115,
+    "mandatory_satisfied": 0,
+    "baseline_json_matches_rows": true,
+    "build_stage_counts": {
+      "WS-B00": {
+        "mandatory": 66,
+        "optional": 0
+      },
+      "WS-B01": {
+        "mandatory": 104,
+        "optional": 0
+      },
+      "WS-B02": {
+        "mandatory": 0,
+        "optional": 0
+      },
+      "WS-B03": {
+        "mandatory": 83,
+        "optional": 0
+      },
+      "WS-B04": {
+        "mandatory": 62,
+        "optional": 0
+      },
+      "WS-B05": {
+        "mandatory": 113,
+        "optional": 0
+      },
+      "WS-B06": {
+        "mandatory": 0,
+        "optional": 0
+      },
+      "WS-B07": {
+        "mandatory": 0,
+        "optional": 90
+      },
+      "WS-B08": {
+        "mandatory": 84,
+        "optional": 0
+      },
+      "WS-B09": {
+        "mandatory": 72,
+        "optional": 0
+      },
+      "WS-B10": {
+        "mandatory": 35,
+        "optional": 0
+      },
+      "WS-B11": {
+        "mandatory": 18,
+        "optional": 25
+      },
+      "WS-B12": {
+        "mandatory": 71,
+        "optional": 0
+      }
+    },
+    "adoption_reference_checks": 17,
+    "adoption_reference_total": 17,
+    "active_markdown_files_checked": 607,
+    "broken_active_markdown_links": 0,
+    "json_checked": 121,
+    "json_errors": 0,
+    "csv_checked": 21,
+    "csv_errors": 0,
+    "prior_authority_snapshots_present": true,
+    "file_count": 1192,
+    "max_relative_path_length": 105,
+    "max_relative_path": "docs/watchlist/records/history/archive/H0043_strategy_weekly_swing_validation_16_WS_EVAL_METRICS_SUFF_DDF1B526.md"
+  },
+  "errors": []
+}

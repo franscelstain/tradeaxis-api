@@ -1,0 +1,1 @@
+record_id,record_type,stage_id,attempt_id,work_id,baseline_id,record_status,file_path,related_finding_ids,related_evidence_ids,related_decision_ids,related_dependency_ids,supersedes,created_at,notes

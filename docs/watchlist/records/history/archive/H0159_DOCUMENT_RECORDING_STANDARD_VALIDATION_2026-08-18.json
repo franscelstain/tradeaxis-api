@@ -1,0 +1,63 @@
+{
+  "validation_date": "2026-08-18",
+  "scope": "docs/watchlist universal document recording lifecycle adoption",
+  "verdict": "PASS",
+  "semantic_checks": {
+    "passed": 28,
+    "total": 28,
+    "details": {
+      "canonical_recording_standard_exists": true,
+      "append_only_change_log_exists": true,
+      "mutability_classes_defined": true,
+      "evidence_correction_rule_defined": true,
+      "research_lock_rule_defined": true,
+      "finding_lifecycle_rule_defined": true,
+      "decision_supersession_rule_defined": true,
+      "implementation_traceability_rule_defined": true,
+      "ledger_append_rule_defined": true,
+      "readme_navigation_only_rule_defined": true,
+      "finding_record_created": true,
+      "decision_record_created": true,
+      "change_log_entry_created": true,
+      "evidence_readme_enforces_immutable": true,
+      "decision_readme_enforces_supersession": true,
+      "research_readme_enforces_lock": true,
+      "finding_readme_preserves_original": true,
+      "implementation_readme_enforces_traceability": true,
+      "history_readme_enforces_immutable": true,
+      "start_here_points_to_recording_standard": true,
+      "build_sequence_enforces_recording": true,
+      "audit_governance_enforces_recording": true,
+      "audit_checklist_enforces_recording": true,
+      "implementation_prompt_enforces_recording": true,
+      "implementation_checklist_enforces_recording": true,
+      "audit_prompt_enforces_recording": true,
+      "prior_governance_snapshots_preserved": true,
+      "owner_matrix_matches_current_impl_dirs": true
+    }
+  },
+  "active_markdown": {
+    "checked": 853,
+    "broken_links": 0,
+    "broken": []
+  },
+  "json": {
+    "checked": 116,
+    "errors": 0,
+    "details": []
+  },
+  "csv": {
+    "checked": 20,
+    "errors": 0,
+    "details": []
+  },
+  "path_safety": {
+    "max_relative_path_length_from_docs": 100,
+    "max_relative_path": "watchlist/history/archive/H0043_strategy_weekly_swing_validation_16_WS_EVAL_METRICS_SUFF_DDF1B526.md",
+    "target_max": 120
+  },
+  "governance_snapshots_preserved": 6,
+  "notes": [
+    "history/archive links are intentionally not rewritten; active-link validation excludes immutable archive content."
+  ]
+}

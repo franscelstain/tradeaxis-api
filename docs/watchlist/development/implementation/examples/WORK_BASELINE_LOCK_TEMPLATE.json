@@ -1,0 +1,69 @@
+{
+  "document_type": "EVIDENCE",
+  "status": "FINAL_ON_ISSUE",
+  "scope": "watchlist / weekly_swing",
+  "verification_epoch": "WS-REBASELINE-20260819-001",
+  "record_id": "E-WS-Bxx-Ayyy-NNN",
+  "baseline_id": "WSBL-YYYYMMDD-NNN",
+  "stage_id": "WS-Bxx",
+  "attempt_id": "WS-Bxx-A001",
+  "work_id": "WS-Bxx-A001",
+  "baseline_mode": "IMPLEMENTATION",
+  "created_at": "YYYY-MM-DDTHH:MM:SS+07:00",
+  "source_repository": {
+    "git_commit": "<40-hex commit>",
+    "branch": "<branch/ref>",
+    "working_tree": "CLEAN|DIRTY_DECLARED",
+    "dirty_diff_sha1": "N/A|<sha1>",
+    "repo_root": "<repository root>"
+  },
+  "strategy_authority_lock": [
+    {
+      "path": "docs/watchlist/authority/strategy/<owner>.md",
+      "sha1": "<SHA1>"
+    }
+  ],
+  "governance_authority_lock": [
+    {
+      "path": "docs/watchlist/authority/governance/<standard>.md",
+      "sha1": "<SHA1>"
+    }
+  ],
+  "market_data_contract_lock": [
+    {
+      "path": "docs/market_data/book/<consumer-contract>.md",
+      "sha1": "<SHA1>"
+    },
+    {
+      "path": "docs/watchlist/authority/strategy/WS_MARKET_DATA_INPUT_REQUIREMENTS.md",
+      "sha1": "<SHA1>"
+    },
+    {
+      "path": "docs/watchlist/development/implementation/MARKET_DATA_INTAKE_IMPLEMENTATION_CONTRACT.md",
+      "sha1": "<SHA1>"
+    }
+  ],
+  "traceability_matrix": {
+    "path": "docs/watchlist/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv",
+    "sha1": "<SHA1>",
+    "verification_build_stage": "WS-Bxx",
+    "rule_ids": [
+      "<rule-id>"
+    ]
+  },
+  "dependency_lock": {
+    "composer_lock_sha1": "N/A|<SHA1>",
+    "other": []
+  },
+  "schema_migration_lock": {
+    "migration_head": "N/A|<identity>",
+    "schema_identity": "N/A|<identity>",
+    "reason": "<required when N/A>"
+  },
+  "toolchain": {
+    "php": "<version>",
+    "database": "N/A|<engine version>",
+    "os": "<os/environment>"
+  },
+  "notes": "Template only. Replace placeholders before issue; issued baseline is immutable."
+}

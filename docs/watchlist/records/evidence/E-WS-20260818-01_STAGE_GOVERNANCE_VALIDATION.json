@@ -1,0 +1,35 @@
+{
+  "document_type": "EVIDENCE",
+  "status": "FINAL",
+  "record_id": "E-WS-20260818-01",
+  "scope": "watchlist / weekly_swing stage governance",
+  "created": "2026-08-18",
+  "finding": "F-WS-20260818-02",
+  "decision": "D-WS-20260818-02",
+  "purpose": "Validate adoption of mandatory stage re-entry, attempt convergence, strict DONE semantics, evidence-backed terminal closure, and successor/decomposition governance.",
+  "verdict": "PASS",
+  "validation_summary": {
+    "status": "PASS",
+    "active_markdown_checked": 601,
+    "broken_active_markdown_links": 0,
+    "json_checked": 118,
+    "json_errors": 0,
+    "csv_checked": 20,
+    "csv_errors": 0,
+    "semantic_pass_count": 15,
+    "semantic_total": 15,
+    "max_relative_path_length": 105,
+    "max_relative_path": "docs/watchlist/records/history/archive/H0043_strategy_weekly_swing_validation_16_WS_EVAL_METRICS_SUFF_DDF1B526.md"
+  },
+  "locked_principles": [
+    "Failure count, elapsed time, fatigue, or opinion are never closure criteria.",
+    "Every attempt closes with evidence even when the stage remains active.",
+    "Rerun requires reading current prior-attempt lineage before code changes.",
+    "Improving diagnostic convergence keeps a stage active while a reasonable remediation remains.",
+    "WAITING_VERIFIED_DEPENDENCY is active and requires evidence plus an objective resume trigger.",
+    "DONE means the declared stage objective and exit criteria were achieved.",
+    "An evaluation stage may be DONE with a valid FAIL verdict when producing the verdict is the stage objective.",
+    "Terminal unresolved closure requires objective evidence and a reviewed decision.",
+    "Successor/decomposition must be materially different and map all residual objectives."
+  ]
+}

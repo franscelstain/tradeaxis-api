@@ -1,0 +1,21 @@
+{
+  "document_type": "EVIDENCE",
+  "status": "FINAL",
+  "scope": "exact duplicate legacy source physical compaction",
+  "record_id": "E-WS-20260819-04",
+  "verification_epoch": "WS-REBASELINE-20260819-001",
+  "result": "PASS",
+  "exact_duplicate_sources_removed": 305,
+  "remaining_physical_legacy_sources": 111,
+  "deduplicated_source_policy": "DEDUPLICATED_TO_ROLE_PRIMARY",
+  "source_count": 671,
+  "fully_split_removed_sources": 255,
+  "role_pure_split_extracts": 877,
+  "document_integrity_gate": "PASS_WITH_REGISTERED_LEGACY_EXCEPTION",
+  "legacy_source_normalization": "PASS",
+  "one_document_one_authoritative_role": "PASS",
+  "current_verification_rebaseline": "PASS",
+  "strategy_behavior_changed": false,
+  "current_strategy_coverage_changed": false,
+  "deletion_rule": "only SHA1(duplicate LS physical copy) == SHA1(final_primary_path) == registered original_sha1"
+}

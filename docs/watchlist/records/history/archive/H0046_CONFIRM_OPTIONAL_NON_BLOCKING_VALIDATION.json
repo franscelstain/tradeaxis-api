@@ -1,0 +1,50 @@
+{
+  "verdict": "PASS",
+  "summary": {
+    "json_files": 114,
+    "json_errors": 0,
+    "csv_files": 18,
+    "csv_errors": 0,
+    "active_markdown_files": 259,
+    "active_local_links_checked": 96,
+    "active_broken_local_links": 0,
+    "semantic_markers": {
+      "core_runtime_complete_at_s04": true,
+      "s05_optional_branch": true,
+      "s05_not_required_predecessor": true,
+      "confirm_core_dependency_none": true,
+      "confirm_not_requested": true,
+      "confirm_unavailable_retryable": true,
+      "confirm_actionable": true,
+      "confirm_not_actionable": true,
+      "confirm_expired_unconfirmed": true,
+      "missing_snapshot_not_negative": true,
+      "not_actionable_requires_valid_data": true,
+      "retry_rule_present": true,
+      "core_proof_confirm_not_gate": true,
+      "confirm_insufficient_does_not_block": true,
+      "implementation_guard": true
+    },
+    "semantic_markers_pass": 15,
+    "semantic_markers_total": 15,
+    "stale_active_confirm_semantics": [],
+    "alignment_guards": {
+      "final_top_picks_eligibility": true,
+      "core_without_confirm_test": true,
+      "audit_prompt_nonblocking": true,
+      "audit_checklist_retryable": true,
+      "root_readme_branch": true,
+      "tracker_current_override": true
+    },
+    "active_example_fixture_json": 45,
+    "active_example_fixture_json_errors": 0,
+    "traceability": {
+      "watchlist/findings/weekly_swing/strategy/WS_STRATEGY_OPTIONAL_CONFIRM_NON_BLOCKING_FINDING.md": true,
+      "watchlist/decisions/weekly_swing/strategy/WS_STRATEGY_DECISION_OPTIONAL_CONFIRM_NON_BLOCKING.md": true,
+      "watchlist/history/weekly_swing/superseded/2026-08-17_pre-confirm-optional-nonblocking-alignment": true
+    },
+    "historical_tracker_stale_lines_preserved": 2,
+    "historical_tracker_override_present": true
+  },
+  "errors": []
+}

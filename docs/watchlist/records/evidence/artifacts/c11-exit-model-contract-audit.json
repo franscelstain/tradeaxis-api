@@ -1,0 +1,168 @@
+{
+    "meta": {
+        "artifact_version": "WATCHLIST_C11_EXIT_MODEL_CONTRACT_AUDIT_V1",
+        "generated_at": "2026-06-12T23:26:39+07:00",
+        "scope": "C11_EXIT_MODEL_CONTRACT_AUDIT_IS_ONLY",
+        "source_summary_path": "D:\\Laravel\\watchlist\\tradeaxis-api/storage/app/watchlist/backtest/c10-batched-c07-exit-model-summary.csv",
+        "source_summary_sha1": "04ee547ee3f982901cabe23e55078868f14104c9",
+        "oos_executed": false,
+        "strategy_catalog_created": false,
+        "production_ready": false,
+        "artifact_hash": "4b8a6a383c1ad9f5cab78394b3851b4b3a3325ea"
+    },
+    "source_catalog": {
+        "catalog_code": "WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06",
+        "catalog_version": "C07",
+        "catalog_count": "12",
+        "catalog_hash": "233b45b06cbf34da221d5d7de2d9725fdf4d3441",
+        "catalog_codes": [
+            "WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06"
+        ],
+        "catalog_versions": [
+            "C07"
+        ],
+        "catalog_hashes": [
+            "233b45b06cbf34da221d5d7de2d9725fdf4d3441"
+        ],
+        "strategy_catalog_created": false
+    },
+    "c10_summary": {
+        "row_count": 12,
+        "metric_ranges": {
+            "picks_count": {
+                "min": 728,
+                "max": 1355
+            },
+            "median_ret_net_top": {
+                "min": -0.010278977744098,
+                "max": -0.0069927968181773
+            },
+            "p25_ret_net_top": {
+                "min": -0.040155604190463,
+                "max": -0.034275706780085
+            },
+            "month_win_rate_min": {
+                "min": 0.17857142857143,
+                "max": 0.25
+            },
+            "hit_target_count": {
+                "min": 168,
+                "max": 249
+            },
+            "hit_stop_count": {
+                "min": 315,
+                "max": 504
+            },
+            "timeout_hold_expired_count": {
+                "min": 443,
+                "max": 667
+            }
+        },
+        "exit_totals": {
+            "hit_target_total": 2585,
+            "hit_stop_total": 4927,
+            "timeout_hold_expired_total": 6858,
+            "known_exit_outcome_total": 14370,
+            "stop_plus_timeout_gt_target": true
+        },
+        "target_hit_share": 0.17988865692414752,
+        "stop_or_timeout_share": 0.8201113430758524,
+        "missing_runtime_evidence_fields": [],
+        "nullable_runtime_no_positive_evidence_fields": [
+            "corporate_action_flag|corporate_action_types|event_risk_reasons"
+        ],
+        "next_focus_values": [
+            "STRATEGY_QUALITY_DIAGNOSTIC_BEFORE_NEXT_CATALOG"
+        ],
+        "next_decision_values": [
+            "NEXT_CATALOG_NOT_DESIGNED"
+        ],
+        "oos_executed_values": [
+            "0"
+        ],
+        "production_ready_values": [
+            "0"
+        ]
+    },
+    "runtime_axis_support": [
+        {
+            "axis": "risk.stop_atr_mult",
+            "runtime_support": "SUPPORTED_BY_GRID_SCHEMA_FACTORY_AND_METRICS",
+            "current_catalog_status": "FIXED_FOR_R1_R2_C01_C02_C03_C04_C05_C06_C07",
+            "future_use_requirement": "REQUIRES_NEW_EXPLICIT_CATALOG_CONTRACT_AND_FACTORY_DEFINITION"
+        },
+        {
+            "axis": "risk.min_rr",
+            "runtime_support": "SUPPORTED_BY_GRID_SCHEMA_FACTORY_AND_METRICS",
+            "current_catalog_status": "FIXED_FOR_R1_R2_C01_C02_C03_C04_C05_C06_C07",
+            "future_use_requirement": "REQUIRES_NEW_EXPLICIT_CATALOG_CONTRACT_AND_FACTORY_DEFINITION"
+        },
+        {
+            "axis": "backtest.holding_days",
+            "runtime_support": "METRICS_SERVICE_CONSUMES_VALUE",
+            "current_catalog_status": "PUBLISHED_PRICE_RUNTIME_FORCES_HOLD_5",
+            "future_use_requirement": "REQUIRES_BOUNDARY_CENSORING_CONTRACT_CHANGE_AND_TEST_PROOF"
+        },
+        {
+            "axis": "backtest.target_pct|backtest.stop_pct",
+            "runtime_support": "METRICS_SERVICE_CONSUMES_VALUES_WHEN_PRESENT",
+            "current_catalog_status": "NOT_PRESENT_IN_PARAM_GRID_SCHEMA_OR_CURATED_FACTORY_ROWS",
+            "future_use_requirement": "REQUIRES_SCHEMA_OR_APPROVED_EXTENSION_CONTRACT_BEFORE_CATALOG_USE"
+        }
+    ],
+    "code_contract_audit": {
+        "factory_rejects_fixed_execution_snapshot_drift": true,
+        "factory_defines_c07_as_fixed_execution_catalog": true,
+        "metrics_consumes_stop_atr_mult_and_min_rr": true,
+        "metrics_consumes_target_stop_pct_when_present": true,
+        "metrics_consumes_holding_days": true,
+        "published_runtime_forces_holding_days_5": true,
+        "param_grid_schema_exposes_stop_atr_mult_and_min_rr": true,
+        "param_grid_schema_exposes_target_stop_pct": false,
+        "oos_service_dependency": false,
+        "oos_repository_dependency": false
+    },
+    "strategy_quality_gate_summary": {
+        "median_return_gate": ">= 0",
+        "best_median_ret_net_top": -0.0069927968181773,
+        "best_median_passes_gate": false,
+        "p25_downside_gate": ">= -0.03",
+        "best_p25_ret_net_top": -0.034275706780085,
+        "best_p25_passes_gate": false,
+        "monthly_win_rate_gate": ">= 0.45",
+        "best_month_win_rate_min": 0.25,
+        "best_month_win_rate_passes_gate": false
+    },
+    "decision": {
+        "status": "EXIT_MODEL_CATALOG_NOT_AUTHORIZED",
+        "reason_code": "WS_BT_C11_EXIT_MODEL_CONTRACT_REQUIRED_BEFORE_CATALOG",
+        "exit_model_catalog_authorized": false,
+        "strategy_catalog_created": false,
+        "next_decision": "NEXT_CATALOG_NOT_DESIGNED",
+        "oos_eligible": false,
+        "production_ready": false,
+        "blocking_reasons": [
+            "C01_C07_FACTORY_REJECTS_EXIT_AXIS_DRIFT",
+            "PUBLISHED_RUNTIME_FORCES_HOLD_5",
+            "PARAM_GRID_SCHEMA_LACKS_TARGET_STOP_PERCENT_FIELDS",
+            "C10_SUMMARY_REMAINS_BELOW_LOCKED_IS_GATES",
+            "C10_EXIT_OUTCOMES_STOP_OR_TIMEOUT_DOMINATE_TARGET"
+        ]
+    },
+    "no_oos_leakage_summary": {
+        "oos_service_invoked": false,
+        "oos_repository_invoked": false,
+        "oos_executed": false,
+        "production_ready": false
+    },
+    "validation": {
+        "source_summary_exists": true,
+        "source_summary_sha1": "04ee547ee3f982901cabe23e55078868f14104c9",
+        "source_summary_has_rows": true,
+        "all_rows_oos_not_run": true,
+        "all_rows_not_production_ready": true,
+        "catalog_not_mutated": true,
+        "oos_not_run": true,
+        "artifact_hash": "4b8a6a383c1ad9f5cab78394b3851b4b3a3325ea"
+    }
+}

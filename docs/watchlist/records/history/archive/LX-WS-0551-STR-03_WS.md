@@ -1,0 +1,159 @@
+# Legacy Role Extract — WS — STRATEGY
+
+> **Document Type:** STRATEGY
+> **Status:** HISTORICAL_EXTRACT / IMMUTABLE
+> **Legacy Extract ID:** `LX-WS-0551-STR-03`
+> **Legacy Source ID:** `LS-WS-0551`
+> **Legacy Work Key:** `WS`
+> **Original Path:** `docs/watchlist/system/policies/weekly_swing/13_WS_CONTRACT_TEST_CHECKLIST.md`
+> **Original SHA1:** `99AA10494EB908109701F152E21402943FEF0B63`
+> **Source Sections:** L3-L10 Scope; L11-L14 A. PLAN Runtime Shape Acceptance; L15-L26 B. RECOMMENDATION Runtime Shape Acceptance; L27-L31 C. Empty Recommendation Acceptance; L32-L40 D. CONFIRM Runtime Shape Acceptance; L41-L49 E. Cross-Layer Boundary Acceptance; L50-L56 F. Determinism Acceptance; L57-L73 G. Published-Price Backtest Runtime Acceptance; L74-L82 Final Rules; L83-L95 OOS runtime gap-closure test additions; L96-L103 OOS grid paramset compatibility; L123-L135 C01 Downside/Stability IS-Only Implementation Additions; L136-L151 C01 IS Failure Drilldown Payload Additions; L152-L164 C171 Immutable Real-IS Remediation DRAFT Catalog Additions
+> **Extract Body SHA1:** `EA4C071FB030357ADF56BAF24AE603A64B6FA86E`
+> **Current Authority:** NO
+
+The body below is an exact copy of the identified original sections. No semantic rewriting was applied.
+
+---
+
+## Scope
+
+Checklist ini menetapkan acceptance minimum untuk artefak dan boundary Weekly Swing berikut:
+1. PLAN
+2. RECOMMENDATION
+3. CONFIRM
+4. relationship antar ketiga lapisan tersebut
+
+## A. PLAN Runtime Shape Acceptance
+- [ ] PLAN runtime output memiliki `meta`, `items`, `summary`
+- [ ] PLAN output dapat direplay dengan stabil
+
+## B. RECOMMENDATION Runtime Shape Acceptance
+- [ ] recommendation output memiliki `meta`, `items`, dan `summary`
+- [ ] recommendation `meta.trade_date` cocok dengan PLAN `trade_date`
+- [ ] recommendation hanya memuat ticker yang berasal dari PLAN item yang sah
+- [ ] recommendation output dapat tersedia walaupun CONFIRM belum ada
+- [ ] recommendation output tidak memuat field hasil CONFIRM sebagai input pembentukannya
+- [ ] recommendation set boleh kosong
+- [ ] `empty_recommendation_flag = true` jika dan hanya jika `recommended_count = 0`
+- [ ] recommendation ranking deterministik untuk input yang sama
+- [ ] mode `CAPITAL_FREE` tetap valid tanpa capital input
+- [ ] mode `CAPITAL_AWARE` tetap deterministic untuk capital input yang sama
+
+## C. Empty Recommendation Acceptance
+- [ ] recommendation set kosong dianggap valid jika proses recommendation selesai dengan policy yang sah
+- [ ] recommendation set kosong tidak dianggap error hanya karena `TOP_PICKS` dan/atau `SECONDARY` pada PLAN tidak kosong
+- [ ] consumer tetap dapat membaca PLAN dan CONFIRM walaupun recommendation set kosong
+
+## D. CONFIRM Runtime Shape Acceptance
+- [ ] setiap hasil CONFIRM harus terikat ke candidate PLAN yang sah pada `trade_date` yang sama
+- [ ] ticker di luar candidate PLAN tidak boleh menghasilkan CONFIRM yang valid
+- [ ] ticker recommended dapat di-confirm
+- [ ] ticker non-recommended tetap dapat di-confirm selama masih valid sebagai candidate PLAN
+- [ ] recommendation yang kosong tidak menghalangi CONFIRM terhadap candidate PLAN
+- [ ] CONFIRM tidak menambah ticker baru di luar PLAN
+- [ ] CONFIRM tidak mengubah recommendation membership/rank/score/label/hash
+
+## E. Cross-Layer Boundary Acceptance
+- [ ] PLAN dapat berdiri sendiri tanpa RECOMMENDATION dan tanpa CONFIRM
+- [ ] RECOMMENDATION hanya membaca PLAN immutable
+- [ ] CONFIRM hanya membaca PLAN candidate binding dan overlay input yang sah
+- [ ] RECOMMENDATION tidak membaca hasil CONFIRM
+- [ ] CONFIRM tidak membentuk recommendation baru
+- [ ] ticker recommended lalu confirmed tetap mempertahankan recommendation score/rank/label yang sama
+- [ ] ticker non-recommended lalu confirmed tetap tidak otomatis menjadi recommended
+
+## F. Determinism Acceptance
+- [ ] PLAN replay dengan input yang sama menghasilkan PLAN output yang identik
+- [ ] recommendation replay dengan PLAN dan policy yang sama menghasilkan output recommendation yang identik
+- [ ] recommendation capital-aware replay dengan capital input yang sama menghasilkan output yang identik
+- [ ] menjalankan CONFIRM setelah recommendation tidak mengubah payload recommendation normatif
+- [ ] menjalankan CONFIRM pada ticker non-recommended tidak mengubah membership recommendation
+
+## G. Published-Price Backtest Runtime Acceptance
+- [ ] runtime replay menggunakan explicit `from/to` dan official trading calendar
+- [ ] exact-date readable publication dan published EOD OHLCV digunakan tanpa latest fallback
+- [ ] trade candidate dibekukan sebelum future price series dibaca
+- [ ] bar `volume <= 0` atau volume tidak tersedia tidak digunakan sebagai entry, TP, SL, atau time-exit fill
+- [ ] zero-volume entry menghasilkan `BT_SKIP_NO_TRADABLE_ENTRY` dan `ret_net = NULL`
+- [ ] zero-volume final exit menghasilkan `BT_SKIP_NO_TRADABLE_EXIT` dan `ret_net = NULL`
+- [ ] gap di bawah stop memakai executable open, bukan theoretical stop
+- [ ] gap di atas target memakai executable open, bukan theoretical target
+- [ ] intraday stop/target memakai normalized IDX price fraction
+- [ ] artifact membedakan `trigger_price` dan `executed_price`
+- [ ] adjusted-looking/fractional OHLC entry/exit fail closed dengan `ret_net = NULL`
+- [ ] canonical `eval` thresholds tersedia pada `paramset_snapshot`
+- [ ] threshold unresolved memblokir artifact export
+- [ ] input identik menghasilkan canonical `validation.artifact_hash` identik
+- [ ] file-byte hash boleh berbeda hanya karena metadata non-hashed yang terdokumentasi
+
+## Final Rules
+
+1. Acceptance Weekly Swing **MUST** mencakup PLAN, RECOMMENDATION, CONFIRM, dan boundary di antaranya.
+2. Recommendation availability **MUST NOT** bergantung pada CONFIRM.
+3. Recommendation set **MAY** kosong dan kondisi tersebut **MUST** tetap dianggap valid.
+4. CONFIRM eligibility **MUST** berasal dari candidate PLAN membership.
+5. Ticker non-recommended **MAY** tetap memiliki CONFIRM yang valid jika masih merupakan candidate PLAN.
+6. CONFIRM **MUST NOT** mengubah recommendation payload normatif.
+
+## OOS runtime gap-closure test additions
+
+- canonical grid catalog is non-empty, deterministic, duplicate-free, and ordered by persisted `param_id ASC`;
+- every grid row has valid units, positive targets, `stop_atr_mult > 0`, `min_rr > 0`, and scoring weights summing to `1.0`;
+- grid seed rerun is idempotent and duplicate database payloads fail closed;
+- existing grid schema without stop/RR is migrated without deleting rows;
+- `watchlist_bt_eval` identity includes `eval_model` and `paramset_hash`, preserving legacy evidence across semantic reruns;
+- published-price runtime reads exact candidate date/ticker pairs instead of a full date/ticker cartesian product;
+- IS grid evaluation stays in memory and writes no temporary JSON per parameter;
+- ATR/RR fallback levels are applied when PLAN has no explicit stop/target and carry trade evidence;
+- OOS proof remains one explicit window; internal bounded reads do not change split or selection;
+- worst/best trade evidence contains prices, dates, level source, returns, volumes, and publication lineage where available.
+
+## OOS grid paramset compatibility
+
+- [ ] Every canonical `watchlist_bt_param_grid` row resolves into a cross-field valid runtime paramset.
+- [ ] `min_atr14_pct <= atr_ideal_low <= atr_ideal_high <= max_atr14_pct` for all rows.
+- [ ] Strict max-ATR rows are not rejected only because active default ideal-band values are wider.
+- [ ] `bt_grid_resolution.risk_band_rule` is present and deterministic.
+- [ ] The projection uses no OOS metrics or price outcomes.
+
+## C01 Downside/Stability IS-Only Implementation Additions
+
+- [ ] R1 rows remain count `24` and hash `9da8b0983c57bde1ce0a1fbf1c119756f8af431c` before and after C01 seed/calibration.
+- [ ] R2 rows remain count `12` and hash `0f2eaadaa446980a3d5e48cd498df2a8157c01a5` before and after C01 seed/calibration.
+- [ ] C01 has semantic catalog identity `WS_BT_GRID_DOWNSIDE_STABILITY_C01_2026_06`, version `C01`, count `8`, and hash `604ac98f6f193a4c317d4f25582deada84682846`.
+- [ ] C01 catalog is finite, curated, deterministic, duplicate-free, and has no `_R3_`, `_R4_`, or `_R5_` catalog identity.
+- [ ] every C01 axis is `bt_target=true`, persisted, mapped, and consumed by runtime.
+- [ ] explicit C01 values are never replaced by defaults.
+- [ ] C01 seed is explicit and idempotent; conflicting duplicate payloads fail closed.
+- [ ] C01 calibration uses only `2023-01-02..2025-05-21` and does not call OOS service/repository or mutate `watchlist_bt_oos_eval_ws`.
+- [ ] C01 runtime returns `C01_GRID_FAILED_IS_QUALITY` when all rows reach canonical gates but none pass.
+- [ ] C01 success may freeze a best-IS binding only when every canonical IS gate passes; no best-of-failed binding is allowed.
+
+## C01 IS Failure Drilldown Payload Additions
+
+- [ ] `watchlist:backtest-is-diagnose` requires explicit catalog/from/to/output and has no OOS option.
+- [ ] drilldown reads only `2023-01-02..2025-05-21` for the immutable C01 diagnostic window.
+- [ ] artifact includes `is_trading_date_hash`, `artifact_hash`, and `canonical_artifact_hash`.
+- [ ] canonical artifact hash excludes timestamp-like metadata such as `generated_at`.
+- [ ] two identical drilldown runs produce equal canonical artifact hashes.
+- [ ] file SHA1 is identical when generated files are byte-identical.
+- [ ] artifact contains ticker, month, trade-date, setup, ATR, score, breakout, momentum, volume, liquidity, sector, and score-component diagnostic sections.
+- [ ] diagnostic feature sections are runtime-derived only when source fields exist in evaluated trade evidence.
+- [ ] missing runtime feature fields are marked `FIELD_NOT_AVAILABLE_IN_RUNTIME_EVIDENCE`, `NOT_DERIVED`, and `NOT_USED_FOR_NEXT_CATALOG_DECISION`.
+- [ ] `runtime_consumed_parameter_summary` covers only registry/runtime-owned C01 axes.
+- [ ] `dead_parameter_or_silent_default_summary` reports catalog mapping gaps or explicitly records no detected dead/silent default axis.
+- [ ] no next catalog is designed from unavailable diagnostic fields.
+- [ ] no OOS service/repository call, OOS table write, best-of-failed binding, promotion, order, broker, allocation, or production-ready output occurs.
+
+## C171 Immutable Real-IS Remediation DRAFT Catalog Additions
+
+- [ ] catalog identity is exactly `WS_BT_GRID_REAL_IS_REMEDIATION_C171_R1_2026_07`, version `C171-R1`, count `5`, and hash `82b0fcbf17823fda5ab59bd2dba3d947b4f9e233`;
+- [ ] source `eval_id=188`, source `param_set_id=1`, diagnostic identity, and candidate-design identity are verified before any DRAFT persistence;
+- [ ] `max_dv20_idr`, `max_vol_ratio`, and `top_max_score_total` are persisted, mapped, hashed, validated, and consumed at decision time;
+- [ ] legacy paramsets without the optional upper bounds remain valid and behaviorally unchanged;
+- [ ] `WS_LIQ_HIGH` and `WS_VOLR_HIGH` follow the locked reason priority and remain parity with the official seed;
+- [ ] TOP score cap recalculates the same-day TOP quantile pool and cannot use realized return, OOS evidence, ticker blacklist, sector whitelist, or month blacklist;
+- [ ] seed and DRAFT persistence reruns are idempotent; conflicting duplicate catalog/DRAFT payloads fail closed;
+- [ ] exactly five new immutable DRAFT paramsets are persisted with distinct hashes and explicit catalog binding provenance;
+- [ ] catalog persistence invokes no official IS runtime, OOS service/repository, promotion, PLAN, recommendation, CONFIRM, activation, or rollout;
+- [ ] canonical gates remain unchanged and C172 stays blocked until a later official IS run passes every gate.

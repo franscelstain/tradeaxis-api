@@ -1,0 +1,33 @@
+{
+  "document_type": "EVIDENCE",
+  "status": "FINAL",
+  "scope": "documentation governance rebaseline",
+  "record_id": "E-WS-20260819-03",
+  "verification_epoch": "WS-REBASELINE-20260819-001",
+  "result": "REBASELINE_APPLIED",
+  "mandatory_rules": 708,
+  "current_satisfied": 0,
+  "current_not_assessed": 708,
+  "verification_status_counts": {
+    "CURRENT_NAVIGATION": 19,
+    "CURRENT_AUTHORITY": 58,
+    "HISTORICAL_ONLY": 1900,
+    "CURRENT_GOVERNANCE_RECORD": 3,
+    "NOT_ASSESSED_REVALIDATION_REQUIRED": 101,
+    "CURRENT_PROCESS_SUPPORT": 15,
+    "CURRENT_STATUS_CONTAINER_REBASELINED": 2,
+    "CURRENT_REGISTRY": 3
+  },
+  "role_purity_requirement": "ONE_DOCUMENT_ONE_AUTHORITATIVE_ROLE",
+  "historical_inheritance": "PROHIBITED",
+  "current_proof_requires": "WS-Bxx Work Record + current epoch Baseline + current evidence",
+  "document_integrity_gate": "PASS_WITH_REGISTERED_LEGACY_EXCEPTION",
+  "relationship_integrity_gate": "PASS",
+  "relationship_selftest": "PASS",
+  "current_verification_gate": "PASS",
+  "one_document_one_role": "PASS",
+  "verification_registry_rows": 2102,
+  "historical_only_rows": 1901,
+  "revalidation_required_rows": 101,
+  "current_proof_eligible_rows": 0
+}

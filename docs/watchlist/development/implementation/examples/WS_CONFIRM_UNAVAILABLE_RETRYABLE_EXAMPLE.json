@@ -1,0 +1,24 @@
+{
+  "meta": {
+    "strategy_code": "WS",
+    "policy_code": "WEEKLY_SWING",
+    "trade_date": "2026-03-16",
+    "ticker": "AAA",
+    "source_plan_reference": "PLAN-20260316",
+    "source_recommendation_reference": "REC-20260316",
+    "entry_window_state": "OPEN"
+  },
+  "item": {
+    "ticker": "AAA",
+    "recommended_flag": true,
+    "confirm_status": "UNAVAILABLE_RETRYABLE",
+    "reason_codes": [
+      "WS_CONFIRM_NO_DATA"
+    ]
+  },
+  "summary": {
+    "core_recommendation_valid": true,
+    "retry_allowed": true,
+    "interpretation": "current-entry data is not yet sufficient; this is not NOT_ACTIONABLE and does not fail the Top Pick"
+  }
+}

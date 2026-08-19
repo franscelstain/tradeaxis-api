@@ -1,0 +1,52 @@
+{
+  "artifact_type": "C27_CATALOG_CANDIDATE_RAW_OHLC_VALIDATION_SOURCE_SUMMARY",
+  "status": "PASS",
+  "scope": "IS_ONLY_CATALOG_CANDIDATE_RAW_OHLC_VALIDATION",
+  "source_files": [
+    "app/Application/Watchlist/Services/WatchlistBacktestC27CatalogCandidateRawOhlcValidationService.php",
+    "app/Console/Commands/Watchlist/RunBacktestC27CatalogCandidateRawOhlcValidateCommand.php",
+    "tests/Unit/Watchlist/WatchlistBacktestC27CatalogCandidateRawOhlcValidationServiceTest.php",
+    "tests/Unit/Watchlist/WatchlistBacktestC27StaticGuardTest.php",
+    "docs/watchlist/audit/WS_C27_CATALOG_CANDIDATE_RAW_OHLC_VALIDATION.md",
+    "docs/watchlist/audit/WS_C27_OPERATOR_VALIDATION_COMMANDS.md",
+    "docs/watchlist/system/policies/weekly_swing/_refs/WS_CATALOG_CANDIDATE_C27_RAW_OHLC_VALIDATION_NOTE.md"
+  ],
+  "runtime_artifacts": {
+    "focused": {
+      "path": "storage/app/watchlist/backtest/c27-catalog-candidate-raw-ohlc-validation-focused.json",
+      "artifact_hash": "ec42b7585e166f72ab57794a3de4667c5f0a04ac",
+      "evaluated_picks_count": 395,
+      "raw_ohlc_validated_count": 395,
+      "raw_ohlc_missing_count": 0,
+      "raw_ohlc_validation_pass": true
+    },
+    "all_param": {
+      "path": "storage/app/watchlist/backtest/c27-catalog-candidate-raw-ohlc-validation-all-param.json",
+      "artifact_hash": "9bae5ed7227615d64765738b1ff83fa8b9232769",
+      "evaluated_picks_count": 1575,
+      "raw_ohlc_validated_count": 1575,
+      "raw_ohlc_missing_count": 0,
+      "raw_ohlc_validation_pass": true,
+      "g21_raw_catalog_candidate_ready": false,
+      "failure_reason": "G21_BUCKET_STABILITY_WEAK"
+    }
+  },
+  "input_artifacts": {
+    "c21_path_artifact_hash": "d6c6c72d51b40a0c852ce9bbc6a452c55920df13",
+    "c26_all_param_artifact_hash": "e31ee7fd9bfc0cfb05b88ce5ff6fcbc9111d4b56"
+  },
+  "boundary": {
+    "is_only": true,
+    "catalog_created": false,
+    "oos_run": false,
+    "production_ready": 0,
+    "mutates_c01_to_c26": false,
+    "derived_mfe_mae_used_for_execution": false,
+    "raw_ohlc_used_for_execution": true
+  },
+  "final_decision": {
+    "decision_status": "C27_RAW_OHLC_VALIDATED_BUT_CANDIDATE_NOT_READY",
+    "c28_oos_proof_recommended": false,
+    "next_step": "C28_RULE_REVISION_OR_G13_G16_TIEBREAK_DIAGNOSTIC_IS_ONLY"
+  }
+}

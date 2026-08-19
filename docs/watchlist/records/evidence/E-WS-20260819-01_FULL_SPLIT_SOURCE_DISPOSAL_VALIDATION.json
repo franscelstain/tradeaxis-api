@@ -1,0 +1,19 @@
+{
+  "record_id": "E-WS-20260819-01",
+  "finding_id": "F-WS-20260819-01",
+  "decision_id": "D-WS-20260819-01",
+  "status": "PASS",
+  "split_sources": 118,
+  "predelete_original_sha_verified": 118,
+  "coverage_100_percent_sources": 118,
+  "coverage_missing_lines": 0,
+  "coverage_overlap_lines": 0,
+  "new_preservation_extracts": 119,
+  "total_extracts_after_completion": 453,
+  "removed_original_source_copies": 118,
+  "removed_full_composite_records": 107,
+  "current_derived_documents_retained": 11,
+  "source_index": "docs/watchlist/records/history/LEGACY_SOURCE_INDEX.csv",
+  "reconstruction_index": "docs/watchlist/records/history/LEGACY_SPLIT_RECONSTRUCTION_INDEX.csv",
+  "catalog": "docs/watchlist/records/history/LEGACY_SPLIT_SOURCE_CATALOG.md"
+}

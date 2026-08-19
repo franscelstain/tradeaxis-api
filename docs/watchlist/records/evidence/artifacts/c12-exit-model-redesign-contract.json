@@ -1,0 +1,172 @@
+{
+    "meta": {
+        "artifact_version": "WATCHLIST_C12_EXIT_MODEL_REDESIGN_CONTRACT_V1",
+        "generated_at": "2026-06-12T23:37:53+07:00",
+        "scope": "C12_EXIT_MODEL_REDESIGN_CONTRACT_ONLY",
+        "source_c11_artifact_path": "D:\\Laravel\\watchlist\\tradeaxis-api/storage/app/watchlist/backtest/c11-exit-model-contract-audit.json",
+        "source_c11_file_sha1": "e00e9ba960e50ce1e32aba717bdfbd1ec0be54a4",
+        "source_c11_artifact_hash": "4b8a6a383c1ad9f5cab78394b3851b4b3a3325ea",
+        "oos_executed": false,
+        "strategy_catalog_created": false,
+        "production_ready": false,
+        "artifact_hash": "04d4e2f230685962fadd1bc26c294cbaed10f38b"
+    },
+    "source_catalog": {
+        "catalog_code": "WS_BT_GRID_DOWNSIDE_STABILITY_C07_2026_06",
+        "catalog_version": "C07",
+        "catalog_count": "12",
+        "catalog_hash": "233b45b06cbf34da221d5d7de2d9725fdf4d3441",
+        "catalog_mutated": false
+    },
+    "source_c11_decision": {
+        "status": "EXIT_MODEL_CATALOG_NOT_AUTHORIZED",
+        "reason_code": "WS_BT_C11_EXIT_MODEL_CONTRACT_REQUIRED_BEFORE_CATALOG",
+        "exit_model_catalog_authorized": false,
+        "next_decision": "NEXT_CATALOG_NOT_DESIGNED",
+        "blocking_reasons": [
+            "C01_C07_FACTORY_REJECTS_EXIT_AXIS_DRIFT",
+            "PUBLISHED_RUNTIME_FORCES_HOLD_5",
+            "PARAM_GRID_SCHEMA_LACKS_TARGET_STOP_PERCENT_FIELDS",
+            "C10_SUMMARY_REMAINS_BELOW_LOCKED_IS_GATES",
+            "C10_EXIT_OUTCOMES_STOP_OR_TIMEOUT_DOMINATE_TARGET"
+        ]
+    },
+    "source_c10_evidence": {
+        "target_hit_share": 0.17988865692414752,
+        "stop_or_timeout_share": 0.8201113430758524,
+        "exit_totals": {
+            "hit_target_total": 2585,
+            "hit_stop_total": 4927,
+            "timeout_hold_expired_total": 6858,
+            "known_exit_outcome_total": 14370,
+            "stop_plus_timeout_gt_target": true
+        },
+        "strategy_quality_gate_summary": {
+            "median_return_gate": ">= 0",
+            "best_median_ret_net_top": -0.0069927968181773,
+            "best_median_passes_gate": false,
+            "p25_downside_gate": ">= -0.03",
+            "best_p25_ret_net_top": -0.034275706780085,
+            "best_p25_passes_gate": false,
+            "monthly_win_rate_gate": ">= 0.45",
+            "best_month_win_rate_min": 0.25,
+            "best_month_win_rate_passes_gate": false
+        }
+    },
+    "redesign_contract": {
+        "objective": "Define a future exit-model or strategy-family implementation contract without creating a new catalog in this session.",
+        "evidence_basis": {
+            "source_c11_status": "EXIT_MODEL_CATALOG_NOT_AUTHORIZED",
+            "source_c11_blocking_reasons": [
+                "C01_C07_FACTORY_REJECTS_EXIT_AXIS_DRIFT",
+                "PUBLISHED_RUNTIME_FORCES_HOLD_5",
+                "PARAM_GRID_SCHEMA_LACKS_TARGET_STOP_PERCENT_FIELDS",
+                "C10_SUMMARY_REMAINS_BELOW_LOCKED_IS_GATES",
+                "C10_EXIT_OUTCOMES_STOP_OR_TIMEOUT_DOMINATE_TARGET"
+            ],
+            "target_hit_share": 0.17988865692414752,
+            "stop_or_timeout_share": 0.8201113430758524,
+            "best_median_ret_net_top": -0.0069927968181773,
+            "best_p25_ret_net_top": -0.034275706780085,
+            "best_month_win_rate_min": 0.25
+        },
+        "hard_boundaries": {
+            "do_not_mutate_r1_r2_c01_c02_c03_c04_c05_c06_c07": true,
+            "do_not_change_locked_is_quality_gates": true,
+            "do_not_select_best_of_failed": true,
+            "do_not_run_oos": true,
+            "do_not_claim_production_ready": true,
+            "do_not_add_fake_sector_filter": true
+        },
+        "allowed_first_phase_axis_policy": [
+            {
+                "axis": "risk.min_rr",
+                "authorization": "CONDITIONALLY_ALLOWED_FOR_FUTURE_IMPLEMENTATION",
+                "why": "C10 target-hit share is low while stop-or-timeout dominates; min_rr is runtime/schema supported but fixed in C01-C07.",
+                "required_before_catalog": [
+                    "new_catalog_definition_entry_in_paramset_factory",
+                    "calibration_execution_definition_update",
+                    "static_guard_showing_c01_c07_remain_fixed",
+                    "two_run_is_only_seed_and_calibration_proof"
+                ]
+            },
+            {
+                "axis": "risk.stop_atr_mult",
+                "authorization": "CONDITIONALLY_ALLOWED_FOR_FUTURE_IMPLEMENTATION",
+                "why": "Stop distance is runtime/schema supported, but changing it can worsen downside; any future use must keep locked p25 and stability gates unchanged.",
+                "required_before_catalog": [
+                    "new_catalog_definition_entry_in_paramset_factory",
+                    "explicit_downside_risk_rationale_per_row",
+                    "static_guard_showing_no_gate_relaxation",
+                    "two_run_is_only_seed_and_calibration_proof"
+                ]
+            }
+        ],
+        "blocked_first_phase_axis_policy": [
+            {
+                "axis": "backtest.holding_days",
+                "authorization": "BLOCKED_FOR_FIRST_PHASE_CATALOG",
+                "why": "Metrics can consume holding_days, but published-price runtime currently forces HOLD=5 and boundary censoring must be redesigned before this axis can vary.",
+                "required_before_use": [
+                    "published_price_runtime_holding_days_override_contract",
+                    "boundary_censoring_rule_update",
+                    "strict_is_boundary_tests_for_each_holding_day",
+                    "operator_artifact_showing_max_requested_market_data_date_within_is"
+                ]
+            },
+            {
+                "axis": "backtest.target_pct|backtest.stop_pct",
+                "authorization": "BLOCKED_UNTIL_SCHEMA_OR_APPROVED_EXTENSION",
+                "why": "Metrics can consume target_pct and stop_pct when present, but the official param-grid schema and curated catalog rows do not expose them.",
+                "required_before_use": [
+                    "schema_or_approved_paramset_extension_contract",
+                    "repository_persistence_support",
+                    "factory_projection_support",
+                    "artifact_manifest_support"
+                ]
+            }
+        ],
+        "required_implementation_sequence_before_any_catalog": [
+            "create_new_catalog_identity_only_after_contract_support_exists",
+            "keep_c01_c07_fixed_execution_snapshot_guards",
+            "add_factory_and_calibration_definitions_for_the_new_family_only",
+            "add static/unit guards for no_oos_no_best_of_failed_no_gate_relaxation",
+            "seed_new_catalog_idempotently",
+            "run_is_calibration_twice_only",
+            "allow_oos_only_if_is_valid_param_count_ge_1_and_best_binding_hash_is_non_empty"
+        ],
+        "current_code_observations": {
+            "factory_rejects_fixed_execution_snapshot_drift": true,
+            "published_runtime_forces_holding_days_5": true,
+            "param_grid_schema_exposes_target_stop_pct": false,
+            "metrics_consumes_target_stop_pct_when_present": true
+        }
+    },
+    "decision": {
+        "status": "EXIT_MODEL_REDESIGN_CONTRACT_READY",
+        "reason_code": "WS_BT_C12_EXIT_MODEL_REDESIGN_CONTRACT_READY",
+        "design_contract_ready": true,
+        "strategy_catalog_created": false,
+        "catalog_creation_authorized": false,
+        "exit_model_catalog_authorized": false,
+        "next_required_step": "IMPLEMENT_CONTRACTED_EXIT_AXIS_SUPPORT_BEFORE_CATALOG",
+        "oos_eligible": false,
+        "production_ready": false
+    },
+    "no_oos_leakage_summary": {
+        "oos_service_invoked": false,
+        "oos_repository_invoked": false,
+        "oos_executed": false,
+        "production_ready": false
+    },
+    "validation": {
+        "source_c11_artifact_exists": true,
+        "source_c11_artifact_hash_present": true,
+        "source_c11_catalog_not_authorized": true,
+        "source_c11_next_catalog_not_designed": true,
+        "contract_has_allowed_axis_policy": true,
+        "contract_keeps_catalog_creation_blocked": true,
+        "contract_keeps_oos_blocked": true,
+        "artifact_hash": "04d4e2f230685962fadd1bc26c294cbaed10f38b"
+    }
+}

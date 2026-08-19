@@ -1,0 +1,41 @@
+{
+  "status": "CANONICAL_TRACEABILITY_BASELINE_INITIALIZED",
+  "generated_date": "2026-08-18",
+  "matrix": "docs/watchlist/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv",
+  "total_strategy_clauses_inventoried": 1006,
+  "required_traceability_units": 823,
+  "reference_only_units": 183,
+  "mandatory_or_conditional_units": 708,
+  "optional_confirm_units": 115,
+  "satisfied_mandatory_units": 0,
+  "mandatory_coverage_pct": 0.0,
+  "by_strategy_stage_required": {
+    "CROSS": 50,
+    "WS-S00": 66,
+    "WS-S01": 104,
+    "WS-S02": 83,
+    "WS-S03": 62,
+    "WS-S04": 113,
+    "WS-S05": 90,
+    "WS-S06": 84,
+    "WS-S07": 72,
+    "WS-S08": 28,
+    "WS-S09": 7,
+    "WS-S10": 43,
+    "WS-S11": 21
+  },
+  "by_verification_build_stage_required": {
+    "WS-B00": 66,
+    "WS-B01": 104,
+    "WS-B03": 83,
+    "WS-B04": 62,
+    "WS-B05": 113,
+    "WS-B07": 90,
+    "WS-B08": 84,
+    "WS-B09": 72,
+    "WS-B10": 35,
+    "WS-B11": 43,
+    "WS-B12": 71
+  },
+  "rule_id_unique": true
+}

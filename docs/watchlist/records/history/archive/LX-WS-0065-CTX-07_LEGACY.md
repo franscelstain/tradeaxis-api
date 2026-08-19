@@ -1,0 +1,821 @@
+# Legacy Role Extract — LEGACY — CONTEXT
+
+> **Document Type:** HISTORICAL_CONTEXT
+> **Authoritative Role:** `HISTORY`
+> **Status:** HISTORICAL_EXTRACT / IMMUTABLE
+> **Legacy Extract ID:** `LX-WS-0065-CTX-07`
+> **Legacy Source ID:** `LS-WS-0065`
+> **Legacy Work Key:** `LEGACY`
+> **Original Path:** `docs/watchlist/audit/LUMEN_IMPLEMENTATION_STATUS.md`
+> **Original SHA1:** `EE2593354FAC55E6E3B4579525334F9865A752A4`
+> **Source Sections:** L1-L2 (preamble/title); L3-L14 Document Purpose; L15-L73 ACTIVE SESSION; L858-L933 PRIOR SESSION - C31 CONTROLLED GATE RECLASSIFICATION; L2772-L2775 C16 FINAL BASELINE RETAINED; L2912-L2932 C16 final next action; L3934-L3940 Source of Truth ZIP; L3996-L4024 Market-Data Dependency; L4124-L4131 Active Gaps; L5748-L5751 Audit Append - 2026-06-15 C16 final operator validation; L7189-L7245 C45 - IS Validation and Anti-Overfit Check for C44 Refinement; L9885-L9963 C69_PRODUCTION_DEPLOYMENT_PREP_OR_BRIDGE_REVIEW â€” Final Operator Validation; L11448-L11499 C97_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_FINALIZATION_REVIEW; L13285-L13311 C111/C112 Boundary Clarification - 2026-06-30; L16178-L16228 C151 Weekly Swing Watchlist Production Live Runtime Activation Post-Execution Observation Review; L16286-L16333 C153 Weekly Swing Watchlist Production Live Runtime Controlled Output Generation Boundary Review; L16549-L16605 C158 Weekly Swing Watchlist Production Live Runtime Controlled Output Publication Boundary Review; L18051-L18085 C163 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Completion Post-Handoff Boundary Review; L18378-L18421 C164 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Completion Post-Handoff Activation Completion Boundary Review; L18765-L18803 C166 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout Post-Rollout Observation Review; L18921-L18951 C167 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout Completion Boundary Review; L18999-L19021 C171 Low Price Execution Quality C01 Immutable DRAFT Catalog; L19199-L19239 WS Breakout Integrity B01 IS/OOS, Promotion, and ACTIVE Shadow
+> **Extract Body SHA1:** `B3B9F70DB693224E112B2926D928A4AA45C2D789`
+> **Current Authority:** NO
+
+The body below is an exact preservation copy of the registered source sections. It is historical context only.
+
+---
+
+# Watchlist Lumen Implementation Status
+
+## Document Purpose
+
+Dokumen ini mencatat status implementasi watchlist pada codebase Lumen. Dokumen ini adalah status tracker, bukan owner behavior bisnis.
+
+Behavioral owner tetap:
+
+1. `docs/watchlist/system/policy.md`
+2. `docs/watchlist/system/README.md`
+3. `docs/watchlist/system/policies/weekly_swing/**`
+4. `docs/watchlist/system/implementation/weekly_swing/**` untuk translation guidance
+5. `docs/watchlist/audit/**` untuk audit guardrail dan status tracking
+
+## ACTIVE SESSION
+
+Session:
+`WATCHLIST - WS PRICE QUALITY P01 DIAGNOSTIC, TWO CANDIDATES, SINGLE REMEDIATION, IDENTITY REPAIR, AND FAILED/NOT-READY CLOSURE`
+
+Current status:
+
+`SEPARATE_PRICE_QUALITY_SCOPE / THREE_PRICE_THRESHOLDS_PREDECLARED / TWO_DIAGNOSTIC_AUTHORIZED_DRAFTS_FAILED_OFFICIAL_IS / ONE_REMEDIATION_USED / EXECUTION_IDENTITY_GAP_REPAIRED_WITHOUT_STRATEGY_CHANGE / AUTHORITATIVE_EVAL_219_FAILED_FOUR_CANONICAL_GATES / NO_OOS_READ_OR_RUNTIME / NO_PROMOTION / NO_PLAN / P01_FAILED_NOT_READY_CLOSED / NOT_PRODUCTION_READY`.
+
+```text
+P01_SOURCE_EVAL_ID=212
+P01_DIAGNOSTIC_ARTIFACT_HASH=3e12d95c1a39673859aa95831c84017ca4b298c7
+P01_PREDECLARED_THRESHOLDS=50,100,200
+P01_AUTHORIZED_THRESHOLDS=50,100
+P01_REJECTED_THRESHOLD=200
+P01_INITIAL_CATALOG_CODE=WS_BT_GRID_PRICE_QUALITY_P01_2026_07
+P01_INITIAL_CATALOG_HASH=e91085d64706ef9a0f296a42ea30e750f831217d
+P01_INITIAL_PARAM_SET_IDS=25,26
+P01_INITIAL_EVAL_IDS=216,217
+P01_INITIAL_PASSING_CANDIDATE_COUNT=0
+P01_REMEDIATION_COUNT=1
+P01_MAX_REMEDIATION_COUNT=1
+P01_REMEDIATION_PARAM_SET_ID=27
+P01_REMEDIATION_BT_PARAM_ID=180
+P01_INVALID_IDENTITY_EVAL_ID=218
+P01_IDENTITY_REPAIR_STRATEGY_CHANGE=0
+P01_IDENTITY_REPAIR_PARAM_SET_ID=28
+P01_AUTHORITATIVE_REMEDIATION_EVAL_ID=219
+P01_AUTHORITATIVE_REMEDIATION_PARAMS_HASH=b3a61e825751fa007f9fcfed8d30ecbbfa78c171
+P01_AUTHORITATIVE_REMEDIATION_ARTIFACT_HASH=521b74201b95f91e2e811e0b8e1bd9b2b9fe1758
+P01_AUTHORITATIVE_REMEDIATION_FILE_SHA1=ab191c46ff64116ecb4663e36aab1c2025bdf6a4
+P01_AUTHORITATIVE_REMEDIATION_PICKS_COUNT=187
+P01_AUTHORITATIVE_REMEDIATION_DAYS_COVERED=497
+P01_AUTHORITATIVE_REMEDIATION_AVG_RET_NET=0.008006009018199029
+P01_AUTHORITATIVE_REMEDIATION_MEDIAN_RET_NET=-0.0005000750112516877
+P01_AUTHORITATIVE_REMEDIATION_P25_RET_NET=-0.04232922821700027
+P01_AUTHORITATIVE_REMEDIATION_WIN_RATE=0.48663101604278075
+P01_AUTHORITATIVE_REMEDIATION_MONTH_WIN_RATE_MIN=0
+P01_AUTHORITATIVE_REMEDIATION_MONTH_AVG_RET_NET_MIN=-0.08743718592964825
+P01_AUTHORITATIVE_REMEDIATION_PERIOD_FAIL_COUNT=11
+P01_AUTHORITATIVE_REMEDIATION_FAILED_GATES=MEDIAN,P25,MONTHLY_WIN_RATE,MONTHLY_AVERAGE
+P01_FOCUSED_PHPUNIT=PASS_10_TESTS_154_ASSERTIONS
+P01_S01_REGRESSION=PASS_5_TESTS_46_ASSERTIONS
+P01_R02_REGRESSION=PASS_7_TESTS_56_ASSERTIONS
+P01_FULL_WATCHLIST_PHPUNIT=PASS_7161_TESTS_48725_ASSERTIONS
+P01_OOS_RUNTIME_INVOKED=0
+P01_OOS_REPOSITORY_INVOKED=0
+P01_OOS_TABLE_READ=0
+P01_PARAMSET_PROMOTED=0
+P01_ACTIVE_PARAMSET_COUNT=0
+P01_PLAN_RUN_COUNT=0
+P01_PRODUCTION_READY=0
+P01_FINAL_STATUS=FAILED_NOT_READY_CLOSED
+P01_NEXT=NEW_SEPARATE_PREREGISTERED_STRATEGY_SCOPE_ONLY
+```
+
+Watchlist Production Ready: `NO`.
+
+## PRIOR SESSION - C31 CONTROLLED GATE RECLASSIFICATION
+
+Session:
+`WATCHLIST - C31 CONTROLLED GATE RECLASSIFICATION`
+
+Current status:
+
+`C31_SOURCE_IMPLEMENTED / C31_COMMAND_REGISTERED / C31_TESTS_ADDED / C31_DOCS_SYNCED / C31_PHPUNIT_FILTER_PASS / FULL_WATCHLIST_PHPUNIT_PASS / C31_RUNTIME_COMPLETED / C31_CONTROLLED_GATE_RECLASSIFICATION_COMPLETED / C29_ARTIFACT_HASH_LOCK_PASS / C30_ARTIFACT_HASH_LOCK_PASS / ACTUAL_LOOKAHEAD_GATE_PASS / SELECTION_LEAK_GATE_PASS / DATA_COMPLETENESS_GATE_FAIL / MONTH_WIN_RATE_GATE_FAIL / CLEAN_MONTH_WIN_RATE_GATE_FAIL / CONTROLLED_OOS_GATE_FAIL / MISSING_PATH_NOT_LOOKAHEAD_LEAK_CONFIRMED / NO_RETUNE / NO_BEST_OF_OOS / NO_PRODUCTION_CATALOG / NO_PLAN_CONFIRM_MUTATION / NO_C01_TO_C30_MUTATION / NOT_PRODUCTION_READY`.
+
+C31 source implementation result:
+
+- `WatchlistBacktestC31ControlledGateReclassificationService` exists as a controlled gate reclassification service for locked C29 and C30 artifacts;
+- `RunBacktestC31ControlledGateReclassificationCommand` exists as `watchlist:backtest-c31-controlled-gate-reclassification`;
+- the command is registered in `app/Console/Kernel.php` and is not scheduled;
+- C31 reads `storage/app/watchlist/backtest/c29-oos-proof-c28-g05.json` and validates expected stable hash `c02add8f2cc8af53bdb3f0cf9d0c7d90d63e1dd9`;
+- C31 reads `storage/app/watchlist/backtest/c30-oos-failure-attribution.json` and validates expected stable hash `667b639951d6b566cc9b0fa6cf7dc278db92a8f0`;
+- C31 blocks on missing C29/C30 artifact, hash mismatch, unexpected C29/C30 status, or unexpected C30 verdict;
+- C31 separates reported lookahead, actual lookahead, selection leak, data completeness, source month win-rate, clean month win-rate, and overall controlled OOS gates;
+- C31 does not retune, reselect profiles, create best-of-OOS, create a production catalog, promote a candidate, or mutate PLAN/CONFIRM behavior;
+- `production_ready` remains `false/0`.
+
+C31 source files:
+
+```text
+app/Application/Watchlist/Services/WatchlistBacktestC31ControlledGateReclassificationService.php
+app/Console/Commands/Watchlist/RunBacktestC31ControlledGateReclassificationCommand.php
+tests/Unit/Watchlist/WatchlistBacktestC31ControlledGateReclassificationServiceTest.php
+tests/Unit/Watchlist/WatchlistBacktestC31StaticGuardTest.php
+docs/watchlist/audit/WS_C31_CONTROLLED_GATE_RECLASSIFICATION.md
+docs/watchlist/audit/WS_C31_OPERATOR_VALIDATION_COMMANDS.md
+```
+
+C31 final operator validation status:
+
+```text
+PHPUNIT_C31=PASS
+PHPUNIT_C31_RESULT=OK (14 tests, 126 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS
+FULL_WATCHLIST_PHPUNIT_RESULT=OK (478 tests, 11130 assertions)
+C31_RUNTIME=COMPLETED
+C31_FINAL_STATUS=C31_CONTROLLED_GATE_RECLASSIFICATION_COMPLETED
+C31_ARTIFACT_PATH=storage/app/watchlist/backtest/c31-controlled-gate-reclassification.json
+C31_ARTIFACT_HASH=4c6203621ed53ade368328a3aad567cbfc12f3a0
+C31_FILE_SHA1=B9EC57659113EFED3B99E9DC22235E44398A5DA2
+EXPECTED_C29_HASH=c02add8f2cc8af53bdb3f0cf9d0c7d90d63e1dd9
+ACTUAL_C29_HASH=c02add8f2cc8af53bdb3f0cf9d0c7d90d63e1dd9
+C29_HASH_MATCH=1
+C29_STATUS=C29_OOS_PROOF_FAILED
+EXPECTED_C30_HASH=667b639951d6b566cc9b0fa6cf7dc278db92a8f0
+ACTUAL_C30_HASH=667b639951d6b566cc9b0fa6cf7dc278db92a8f0
+C30_HASH_MATCH=1
+C30_STATUS=C30_ATTRIBUTION_COMPLETED
+C30_ATTRIBUTION_VERDICT=MIXED_DATA_AND_STRATEGY_FAILURE
+PRODUCTION_READY=0
+```
+
+C31 separated gate summary:
+
+```text
+reported_lookahead_gate=FAIL
+actual_lookahead_gate=PASS
+selection_leak_gate=PASS
+data_completeness_gate=FAIL
+month_win_rate_gate=FAIL
+clean_month_win_rate_gate=FAIL
+overall_controlled_oos_gate=FAIL
+```
+
+C31 final conclusion:
+
+```text
+RECLASSIFICATION_CONCLUSION=C31_RECLASSIFICATION_CONFIRMED_MISSING_PATH_NOT_LOOKAHEAD_LEAK
+CONTROLLED_PROOF_STATUS=C31_CONTROLLED_OOS_PROOF_FAILED_DATA_COMPLETENESS_AND_ROBUSTNESS
+NEXT_STEP=C32_SPLIT_DATA_PATH_REMEDIATION_PROOF_AND_BAD_MONTH_ROBUSTNESS_DIAGNOSTIC
+```
+
+## C16 FINAL BASELINE RETAINED
+
+C16 remains immutable and unchanged. C16 final status stays `C16_GRID_FAILED_IS_QUALITY`, `OOS_NOT_RUN=true`, and `production_ready=0`. C17 used C16 only as diagnostic direction, not as binding or promotion.
+
+## C16 final next action
+
+```text
+NEXT_ACTION=DOCUMENT_C16_FINAL_AND_DESIGN_C17
+C16_MUTATION_ALLOWED=false
+C16_OOS_ALLOWED=false
+C16_PROMOTION_ALLOWED=false
+C17_DESIGN_DIRECTION=QUALITY_PRESERVING_SAMPLE_RECOVERY_FROM_C16_FAILURE_EVIDENCE
+```
+
+C17 should use C16 rows `140`, `134`, `143`, `137`, and `141` as diagnostic anchors only. C17 must be a new immutable catalog and must not lower canonical gates, mutate C16, use best-of-failed binding, blacklist tickers/months, or run OOS until a valid IS candidate exists.
+
+C16 result is recorded in:
+
+```text
+docs/watchlist/audit/WS_C16_QUALITY_RECOVERY_DESIGN_RESULT.md
+docs/watchlist/audit/WS_C16_OPERATOR_VALIDATION_COMMANDS.md
+docs/watchlist/audit/_artifacts/c16-source-implementation-summary.json
+docs/watchlist/system/policies/weekly_swing/_refs/WS_DOWNSIDE_STABILITY_C16_DESIGN_NOTE.md
+```
+
+## Source of Truth ZIP
+
+- Source ZIP: `tradeaxis-api.zip`
+- Session date: `2026-06-11`
+- Latest local validation date: `2026-06-11`
+- Scope classification: C01 IS failure drilldown payload expansion completed at code, unit/static, and local IS-only runtime diagnostic scope; OOS remains unread and production readiness is not claimed.
+
+## Market-Data Dependency
+
+Watchlist depends on market-data as the official upstream data source.
+
+Watchlist must consume:
+
+- sealed publication;
+- `SUCCESS` run;
+- `READABLE` publication;
+- coverage `PASS`;
+- valid current publication pointer;
+- valid publication/run mirror;
+- valid indicator rows;
+- valid eligibility rows.
+
+Watchlist must not consume:
+
+- raw provider response;
+- raw staging table;
+- unsealed `eod_bars`;
+- unsealed `eod_indicators`;
+- unsealed `eod_eligibility`;
+- `MAX(trade_date)` shortcut;
+- latest available row without publication pointer;
+- indicator rows with required null values;
+- invalid indicator rows.
+
+Market-data production-ready does not automatically make watchlist production-ready. Watchlist must prove its own read contract, scoring contract, backtest contract, and runtime behavior.
+
+## Active Gaps
+
+| Severity | Gap | Impact |
+|---|---|---|
+| `STRATEGY_QUALITY_BLOCKED` | C07 has `is_valid_param_count=0`, empty `param_id_best_is`, and empty `best_is_binding_hash`; scoped drilldowns for params 102 and 106 still fail robust return/downside/stability. | C07 cannot advance to OOS and must remain rejected as a strategy-quality catalog. |
+| `OOS_NOT_ELIGIBLE` | OOS is intentionally not run for C07 because no valid frozen IS binding exists. | No OOS PASS, promotion review, or production-ready claim may be made. |
+| `RUNTIME_PAYLOAD_ENRICHMENT_BEFORE_NEXT_CATALOG` | Scoped drilldown found `corporate_action_flag` missing and only scoped two C07 rows. | C08 should not be created as a same-shape threshold retune; next work should enrich/complete runtime diagnostic payload or define a distinct strategy family/exit model. |
+
+## Audit Append - 2026-06-15 C16 final operator validation
+
+C16 final operator validation is now recorded as runtime-validated but strategy-quality failed. PHPUnit C16 and full Watchlist suites passed, seed passed, diagnose-batch passed, and IS calibration run 1/run 2 were deterministic with artifact hash `63698d0c809a1f2124d8218273ba4d34d9c78deb`. C16 remains `OOS_NOT_RUN` and `production_ready=0` because `is_valid_param_count=0` and `best_is_binding=null`.
+
+## C45 - IS Validation and Anti-Overfit Check for C44 Refinement
+
+```text
+C45_IMPLEMENTATION_STATUS=IMPLEMENTED
+C45_PHPUNIT=PASS - OK (11 tests, 76 assertions)
+C45_FULL_WATCHLIST_PHPUNIT=PASS - OK (675 tests, 13179 assertions)
+C45_RUNTIME_STATUS=COMPLETED
+artifact_path=storage/app/watchlist/backtest/c45-is-validation-and-anti-overfit-check-for-c44-refinement.json
+artifact_hash=47970ba6e772bcf7fec68f306883f9f3d6cdd976
+file_sha1=CF7D7D78103B543814C1B84F29B33AEA3E4FAF78
+```
+
+Validation result:
+
+```text
+overall_anti_overfit_result=WARNING
+passed_layers=6
+warning_layers=3
+failed_layers=0
+full_is_result=PASS
+yearly_result=WARNING
+rolling_result=WARNING
+bad_month_like_stress_result=PASS
+non_bad_month_result=WARNING
+ticker_concentration_result=PASS
+branch_concentration_result=PASS
+month_coverage_result=PASS
+downside_stability_result=PASS
+rolling_slices=57
+rolling_pass=45
+rolling_warning=12
+rolling_fail=0
+```
+
+Achieved outcome:
+
+```text
+full_is_delta_avg_ret_net=+0.0004453772039743186
+full_is_delta_p10_ret_net=+0.0014328532206546469
+full_is_delta_month_avg_ret_net_min=+0.005767206176365093
+full_is_delta_bad_month_like_count=-3
+bad_month_stress_delta_avg_ret_net=+0.004050459823141623
+worst_rolling_delta_avg_ret_net=-0.0011491263561919643
+non_bad_month_delta_avg_ret_net=-0.0002410594293102246
+months_covered=27
+zero_pick_months=0
+min_selected_rows_per_month=13
+top_branch_share=0.79374624173181
+diagnostic_conclusion=C45_C44_REFINEMENT_WARNING_REQUIRES_REVIEW_BEFORE_OOS
+next_step=C46_IS_REVIEW_OR_EVIDENCE_EXPANSION_BEFORE_OOS
+direct_oos_proof_recommended=false
+oos_proof_unlocked=false
+production_ready=false
+```
+
+C45 completed all validation layers with no material failure, but the small yearly, rolling, and non-bad-month drifts keep the result at WARNING. The candidate remains non-production and OOS remains locked pending C46 review or IS evidence expansion.
+
+## C69_PRODUCTION_DEPLOYMENT_PREP_OR_BRIDGE_REVIEW â€” Final Operator Validation
+
+Status: `IMPLEMENTED_OPERATOR_VALIDATED`
+
+C69 final operator evidence:
+
+```text
+PHPUNIT_C69=PASS: OK (26 tests, 318 assertions)
+FULL_WATCHLIST_PHPUNIT=PASS: OK (1119 tests, 19649 assertions)
+C69_RUNTIME=COMPLETED
+C69_FINAL_STATUS=C69_PRODUCTION_DEPLOYMENT_PREP_OR_BRIDGE_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C69_REASON_CODE=C69_PRODUCTION_DEPLOYMENT_PREP_OR_BRIDGE_REVIEW_PASSED_PRIMARY_AND_BACKUP
+C69_ARTIFACT_HASH=477a279a1f35cfafb811f5984e7a329f72d3f08e
+C69_FILE_SHA1=82BAF5F192AF0C4680303F7A0409D0EA446A8192
+```
+
+C69 lock and lineage validation passed:
+
+```text
+C68_HASH_MATCH=true
+C68_FILE_SHA1_MATCH=true
+C67_HASH_MATCH=true
+C67_FILE_SHA1_MATCH=true
+C66_HASH_MATCH=true
+C66_FILE_SHA1_MATCH=true
+C65_HASH_MATCH=true
+C65_FILE_SHA1_MATCH=true
+C64_HASH_MATCH=true
+C64_FILE_SHA1_MATCH=true
+C63_HASH_MATCH=true
+C63_FILE_SHA1_MATCH=true
+C62_HASH_MATCH=true
+C62_FILE_SHA1_MATCH=true
+C61_HASH_MATCH=true
+C61_FILE_SHA1_MATCH=true
+C60_HASH_MATCH=true
+C60_FILE_SHA1_MATCH=true
+```
+
+C69 readiness and safety result:
+
+```text
+PRODUCTION_DEPLOYMENT_PREP_OR_BRIDGE_REVIEW_EXECUTED=true
+PRODUCTION_DEPLOYMENT_PREP_OR_BRIDGE_REVIEW_PASS=true
+PRODUCTION_DEPLOYMENT_PREP_ALLOWED=true
+PRODUCTION_DEPLOYMENT_EXECUTION_REVIEW_ALLOWED=true
+PLAN_CONFIRM_WIRING_PREP_ALLOWED=true
+PRODUCTION_CATALOG_RUNTIME_WIRED=false
+PRODUCTION_DEPLOYMENT_ALLOWED=false
+PRODUCTION_DEPLOYMENT_EXECUTED=false
+PLAN_CONFIRM_MUTATION_ALLOWED=false
+PLAN_CONFIRM_MUTATED=false
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=false
+```
+
+Candidate scope result:
+
+```text
+PRIMARY_CANDIDATE=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE
+BACKUP_CANDIDATE=C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+COMPARATOR_ONLY_CANDIDATE=C61_A01_B01_WEAK_REGIME_QUALITY_FIRST
+PRIMARY_BRIDGE_REVIEW_PASS=true
+BACKUP_BRIDGE_REVIEW_PASS=true
+A01_COMPARATOR_ONLY=true
+A01_PROMOTED=false
+```
+
+C70 readiness decision:
+
+```text
+C70_VALIDATION_COMPLETED=true
+CANDIDATE_READY_FOR_C70_COUNT=2
+CANDIDATE_READY_FOR_C70_CODES=C61_E02_B01_HYBRID_ALL_GUARDS_PRELOCK_CANDIDATE,C61_B01_A02_MARKET_SECTOR_DEFENSIVE_CONFIRMATION
+C70_RECOMMENDATION=C70_PRODUCTION_DEPLOYMENT_EXECUTION_REVIEW
+```
+
+Final C69 conclusion: C69 is accepted as production deployment prep / bridge review for E02 primary and B01 backup. A01 remains comparator-only. No production deployment was executed, PLAN/CONFIRM was not mutated, and the activated catalog was not wired to runtime. The only valid next step is `C70_PRODUCTION_DEPLOYMENT_EXECUTION_REVIEW`.
+
+## C97_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_FINALIZATION_REVIEW
+
+Status: C97_CONTROLLED_LIMITED_RUNTIME_OPT_IN_PILOT_OR_SHADOW_ROLLOUT_POST_ACTIVATION_AUDIT_ARCHIVE_FINALIZATION_REVIEW_PASSED_AUDIT_ARCHIVE_FINALIZED_PRIMARY_AND_BACKUP.
+
+C97 validates C96 artifact hash and file SHA1.
+C97 validates C96 audit archive closure seal state.
+C97 requires --operator-approved.
+C97 requires non-empty --approval-reference.
+C97 confirms no temporary negative test artifact remains.
+C97 records audit archive finalization only.
+C97 does not wire activated catalog to PLAN/CONFIRM live default runtime.
+C97 does not deploy live production.
+C97 does not mutate PLAN/CONFIRM.
+C97 does not change PLAN/CONFIRM output.
+C97 does not activate pilot runtime.
+C97 does not activate shadow runtime.
+C97 does not activate runtime bridge.
+C97 does not activate weekly swing watchlist runtime.
+C97 does not create weekly swing live output.
+C97 keeps production_ready=false.
+C97 keeps production_catalog_runtime_wired=false.
+C97 keeps controlled_opt_in_runtime_bridge_active=false.
+C97 keeps controlled_parallel_run_active=false.
+C97 keeps controlled_rollout_active=false.
+C97 keeps audit_archive_finalization_context_persisted_to_live_runtime=false.
+C97 keeps production_deployment_allowed=false.
+C97 keeps production_deployment_executed=false.
+C97 keeps plan_confirm_mutation_allowed=false.
+C97 keeps plan_confirm_mutated=false.
+C97 keeps plan_confirm_runtime_reads_activated_catalog=false.
+C97 keeps live_plan_confirm_rollout_allowed=false.
+C97 keeps live_plan_confirm_rollout_executed=false.
+C97 keeps pilot_runtime_active=false.
+C97 keeps shadow_runtime_active=false.
+C97 keeps runtime_bridge_active=false.
+C97 keeps weekly_swing_watchlist_runtime_active=false.
+C97 keeps weekly_swing_watchlist_plan_confirm_mutation_allowed=false.
+C97 keeps weekly_swing_watchlist_live_output_enabled=false.
+C97 audit archive finalization means continue to C98 weekly swing watchlist non-live rehearsal review only.
+C97 audit archive finalization record is not production deployment.
+C97 audit archive finalization record is not PLAN/CONFIRM live rollout.
+C97 audit archive finalization record is not runtime bridge activation.
+C97 audit archive finalization record is not weekly swing live output.
+
+C97 implementation is per-session and per catalog item. C97 does not rewrite C77-C96 sections.
+
+Runtime artifact:
+
+```text
+storage/app/watchlist/backtest/c97-controlled-limited-runtime-opt-in-pilot-or-shadow-rollout-post-activation-audit-archive-finalization-review.json
+```
+
+## C111/C112 Boundary Clarification - 2026-06-30
+
+This boundary clarification records that C111 is the terminal final-closure point for the weekly swing watchlist non-live rehearsal handoff audit archive chain. C112 is a separate post-C111 production-phase transition gate and must not be interpreted as another audit archive continuation.
+
+```text
+C111_NON_LIVE_HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSED=1
+C111_NON_LIVE_AUDIT_ARCHIVE_TERMINAL=1
+C111_NO_NEXT_NON_LIVE_REHEARSAL_HANDOFF_AUDIT_ARCHIVE_REVIEW_REQUIRED=1
+C112_SEPARATE_POST_C111_PRODUCTION_PHASE_TRANSITION_GATE=1
+C112_NOT_AUDIT_ARCHIVE_CONTINUATION=1
+C112_DOES_NOT_REOPEN_C111_FINAL_CLOSURE=1
+C112_DOES_NOT_EXTEND_NON_LIVE_AUDIT_ARCHIVE_REVIEW=1
+C112_PRODUCTION_PHASE_APPROVAL_IS_READINESS_ENTRY_ONLY=1
+C112_PRODUCTION_READY=0
+C112_PRODUCTION_RUNTIME_WIRING_ALLOWED=0
+C112_PRODUCTION_RUNTIME_WIRING_EXECUTED=0
+C112_PRODUCTION_DEPLOYMENT_ALLOWED=0
+C112_PRODUCTION_DEPLOYMENT_EXECUTED=0
+C112_PLAN_CONFIRM_MUTATION_ALLOWED=0
+C112_WEEKLY_SWING_LIVE_OUTPUT_ENABLED=0
+C112_OFFICIAL_WEEKLY_SWING_RECOMMENDATION_GENERATED=0
+NEXT_AFTER_C111_NON_LIVE_AUDIT_ARCHIVE=STOP_OR_SEPARATE_PRODUCTION_PHASE_TRANSITION_GATE_ONLY
+NEXT_AFTER_C112_IF_OPERATOR_CONTINUES_PRODUCTION_READINESS_PATH=C113_WEEKLY_SWING_WATCHLIST_PRODUCTION_READINESS_REVIEW
+```
+
+C111 remains the final close of the non-live audit archive. C112 only records a new production-phase approval for readiness review and does not cancel, reopen, weaken, or continue the C111 final-closed audit archive state.
+
+## C151 Weekly Swing Watchlist Production Live Runtime Activation Post-Execution Observation Review
+
+C151 observes the active runtime state after C150 final execution.
+C151 confirms the runtime bridge and weekly swing live output remain active.
+C151 confirms official recommendation generation, official publication, and live recommendation generation remain off.
+C151 confirms PLAN/CONFIRM remains unchanged.
+C151 does not write a new runtime state and does not mutate production config defaults.
+
+```text
+C151_STATUS=C151_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_POST_EXECUTION_OBSERVATION_REVIEW_PASSED_RUNTIME_ACTIVE_READY_FOR_OBSERVATION_RESULT_REVIEW_PRIMARY_AND_BACKUP
+FOCUSED_PHPUNIT_C151=OK (28 tests, 87 assertions)
+FULL_WATCHLIST_PHPUNIT_POST_C151=OK (5426 tests, 41130 assertions)
+C151_ARTIFACT_HASH=55f06c57436ead483bea22626552b7e500d53120
+C151_FILE_SHA1=198B10144A6ADC5447478E36347CD8DAD6136E16
+C150_HASH_MATCH=1
+C150_FILE_SHA1_MATCH=1
+C150_CONVERT_FROM_JSON_PASS=1
+C150_LOCK_VALID=1
+C150_FINAL_EXECUTION_VALID=1
+RUNTIME_STATE_HASH_MATCH=1
+RUNTIME_STATE_FILE_SHA1_MATCH=1
+RUNTIME_STATE_LOCK_VALID=1
+RUNTIME_STATE_OBSERVATION_VALID=1
+PRODUCTION_LIVE_RUNTIME_ACTIVATION_EXECUTED=1
+PRODUCTION_READY=1
+PRODUCTION_CATALOG_RUNTIME_WIRED=1
+PRODUCTION_RUNTIME_WIRING_EXECUTED=1
+RUNTIME_BRIDGE_ACTIVE=1
+WEEKLY_SWING_WATCHLIST_RUNTIME_ACTIVE=1
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=1
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATION_ALLOWED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C151_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_POST_EXECUTION_OBSERVATION_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_RUNTIME_STATE_LOCK_MISMATCH=C151_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_POST_EXECUTION_OBSERVATION_REVIEW_REJECTED_RUNTIME_STATE_LOCK_MISMATCH
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C151_TEST_ARTIFACTS_REMAINING
+NEXT_RECOMMENDATION=C152_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_ACTIVATION_POST_EXECUTION_OBSERVATION_RESULT_REVIEW
+```
+
+C151 update is limited to C151 service, C151 command, C151 tests, C151 docs, command registration, and C151 runtime artifact.
+C151 does not modify C60-C150 artifacts.
+C151 does not change production config defaults.
+C151 does not mutate PLAN/CONFIRM.
+C151 does not generate official weekly swing output.
+C151 does not publish weekly swing output.
+C151 keeps E02 primary, B01 backup standby, and A01 comparator-only.
+
+## C153 Weekly Swing Watchlist Production Live Runtime Controlled Output Generation Boundary Review
+
+C153 reviews the controlled output-generation boundary after the locked C152 observation-result review.
+C153 confirms controlled output-generation execution may proceed next, but does not generate output in C153.
+C153 does not publish weekly swing output.
+C153 does not unlock unrestricted publication.
+C153 does not mutate PLAN/CONFIRM.
+
+```text
+C153_STATUS=C153_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_GENERATION_BOUNDARY_REVIEW_PASSED_READY_FOR_CONTROLLED_OUTPUT_GENERATION_EXECUTION_PRIMARY_AND_BACKUP
+FOCUSED_PHPUNIT_C153=OK (25 tests, 78 assertions)
+C153_ARTIFACT_HASH=51bdfbcbb34ce49a185122f0df932451fd914a78
+C153_FILE_SHA1=9B8A640C6C7C9DD1947AB4C69706C76F44793B43
+C152_HASH_MATCH=1
+C152_FILE_SHA1_MATCH=1
+C152_CONVERT_FROM_JSON_PASS=1
+C152_LOCK_VALID=1
+C152_CONTROLLED_OUTPUT_GENERATION_BOUNDARY_READY=1
+RUNTIME_BRIDGE_ACTIVE=1
+WEEKLY_SWING_WATCHLIST_RUNTIME_ACTIVE=1
+WEEKLY_SWING_WATCHLIST_LIVE_OUTPUT_ENABLED=1
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATION_ALLOWED=1
+READY_FOR_WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_GENERATION_EXECUTION=1
+PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_GENERATION_EXECUTION_ALLOWED_NEXT=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_GENERATION_ALLOWED_NEXT=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_GENERATION_EXECUTED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C153_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_GENERATION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_C152_ARTIFACT_LOCK_MISMATCH=C153_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_GENERATION_BOUNDARY_REVIEW_REJECTED_C152_ARTIFACT_LOCK_MISMATCH
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C153_TEST_ARTIFACTS_REMAINING
+NEXT_RECOMMENDATION=C154_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_GENERATION_EXECUTION
+```
+
+C153 update is limited to C153 service, C153 command, C153 tests, C153 docs, command registration, and C153 runtime artifact.
+C153 does not modify C60-C152 artifacts.
+C153 does not change production config defaults.
+C153 does not mutate PLAN/CONFIRM.
+C153 does not generate official weekly swing output.
+C153 does not publish weekly swing output.
+C153 keeps E02 primary, B01 backup standby, and A01 comparator-only.
+
+## C158 Weekly Swing Watchlist Production Live Runtime Controlled Output Publication Boundary Review
+
+C158 starts the controlled output publication topic.
+C158 boundary locks C157 and opens only the same-topic C158 execution stage.
+C158 boundary does not publish weekly swing output.
+C158 boundary does not unlock unrestricted publication.
+C158 boundary does not mutate PLAN/CONFIRM.
+
+```text
+C158_TOPIC=C158_CONTROLLED_OUTPUT_PUBLICATION
+C158_STAGE=BOUNDARY_REVIEW
+C158_BOUNDARY_STATUS=C158_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_BOUNDARY_REVIEW_PASSED_READY_FOR_CONTROLLED_OUTPUT_PUBLICATION_EXECUTION_PRIMARY_AND_BACKUP
+FOCUSED_PHPUNIT_C158_BOUNDARY=OK (28 tests, 119 assertions)
+C158_BOUNDARY_ARTIFACT_HASH=f17826dd8eb388491be7ef94d18600647dbccc85
+C158_BOUNDARY_FILE_SHA1=B61A0522835494811E3306ABDFE37639D5ED56C8
+C157_HASH_MATCH=1
+C157_FILE_SHA1_MATCH=1
+C157_CONVERT_FROM_JSON_PASS=1
+C157_LOCK_VALID=1
+C157_GO_DECISION_FINALIZATION_VALID=1
+C156_LOCK_VALID=1
+C156_OPERATOR_GO_NO_GO_REVIEW_VALID=1
+CONTROLLED_OUTPUT_LOCK_VALID=1
+CONTROLLED_OUTPUT_INTEGRITY_VALID=1
+PUBLICATION_BOUNDARY_CONFIRMED=1
+CONTROLLED_PUBLICATION_ONLY_CONFIRMED=1
+PLAN_CONFIRM_UNCHANGED_CONFIRMED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_GENERATION_EXECUTED=1
+WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_GENERATION_RESULT_REVIEWED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_GENERATED=1
+WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATED=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_CONTROLLED_PUBLICATION_ALLOWED_NEXT=1
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+READY_FOR_WEEKLY_SWING_WATCHLIST_CONTROLLED_OUTPUT_PUBLICATION_EXECUTION=1
+PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_EXECUTION_ALLOWED_NEXT=1
+C158_TOPIC_NUMBER_RETAINED_FOR_EXECUTION=1
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C158_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_MISSING_PUBLICATION_BOUNDARY_CONFIRMATION=C158_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_BOUNDARY_REVIEW_REJECTED_PUBLICATION_BOUNDARY_CONFIRMATION_MISSING
+NEGATIVE_MISSING_CONTROLLED_PUBLICATION_ONLY_CONFIRMATION=C158_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_BOUNDARY_REVIEW_REJECTED_CONTROLLED_PUBLICATION_ONLY_CONFIRMATION_MISSING
+NEGATIVE_C157_ARTIFACT_LOCK_MISMATCH=C158_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_BOUNDARY_REVIEW_REJECTED_C157_ARTIFACT_LOCK_MISMATCH
+TEMPORARY_NEGATIVE_ARTIFACT_CLEANUP=NO_C158_TEST_ARTIFACTS_REMAINING
+NEXT_RECOMMENDATION=C158_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_CONTROLLED_OUTPUT_PUBLICATION_EXECUTION
+```
+
+C158 boundary update is limited to C158 boundary service, C158 boundary command, C158 boundary tests, C158 docs, command registration, and C158 boundary runtime artifact.
+C158 boundary does not modify C60-C157 artifacts or the controlled output artifact.
+C158 boundary does not change production config defaults.
+C158 boundary does not mutate PLAN/CONFIRM.
+C158 boundary does not publish weekly swing output.
+C158 boundary keeps E02 primary, B01 backup standby, and A01 comparator-only.
+Next plan: continue inside the C158 topic with controlled output publication execution.
+
+## C163 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Completion Post-Handoff Boundary Review
+
+C163 post-handoff boundary review starts the next contract only after C162 handoff audit archive final closure recorded the terminal no-next marker.
+C163 confirms the post-handoff boundary and allows only a C163 post-handoff activation readiness review next.
+C163 does not free-publish output, unlock unrestricted publication, mutate PLAN/CONFIRM, make PLAN/CONFIRM read the activated catalog, or execute live PLAN/CONFIRM rollout.
+
+```text
+C163_TOPIC=C163_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_BOUNDARY
+C163_STAGE=PLAN_CONFIRM_COMPLETION_POST_HANDOFF_BOUNDARY_REVIEW
+C163_STATUS=C163_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_BOUNDARY_REVIEW_PASSED_C162_HANDOFF_CLOSED_READY_FOR_POST_HANDOFF_ACTIVATION_READINESS_REVIEW
+FOCUSED_PHPUNIT_C163_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_BOUNDARY_REVIEW=OK (26 tests, 102 assertions)
+C163_ARTIFACT_HASH=e0cb142d4a075acefb89e5a6f0a367e090ec190d
+C163_FILE_SHA1=986469AFAC7F1349A77F4FD1712AB2272CC6E37A
+C162_HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSURE_ARTIFACT_HASH=4de6d670e5e6d6990dd618e0e818e57a7f79716e
+C162_HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSURE_FILE_SHA1=97E9057EE0E7A71BC7F74B019F16FE1D251A3157
+C162_HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSURE_COMPLETE=1
+NO_NEXT_WEEKLY_SWING_WATCHLIST_PLAN_CONFIRM_COMPLETION_HANDOFF_AUDIT_ARCHIVE_REVIEW_REQUIRED=1
+POST_HANDOFF_BOUNDARY_CONFIRMED=1
+C162_TERMINAL_NO_NEXT_CONFIRMED=1
+READY_FOR_WEEKLY_SWING_WATCHLIST_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_READINESS_REVIEW=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=0
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C163_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_MISSING_POST_HANDOFF_BOUNDARY_CONFIRMATION=C163_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_BOUNDARY_REVIEW_REJECTED_POST_HANDOFF_BOUNDARY_CONFIRMATION_MISSING
+NEGATIVE_C162_HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSURE_ARTIFACT_LOCK_MISMATCH=C163_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_BOUNDARY_REVIEW_REJECTED_C162_HANDOFF_AUDIT_ARCHIVE_FINAL_CLOSURE_ARTIFACT_LOCK_MISMATCH
+NEXT_RECOMMENDATION=C163_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_READINESS_REVIEW
+```
+
+C163 post-handoff boundary update is limited to C163 service, command, tests, docs, command registration, and runtime artifact.
+Next plan: continue within C163 to the post-handoff activation readiness review.
+
+## C164 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Completion Post-Handoff Activation Completion Boundary Review
+
+C164 post-handoff activation completion boundary review starts after C163 is closed by GO decision finalization.
+C164 does not repeat C163 activation; it locks the C163 finalization artifact, confirms C163 topic completion and post-handoff activation closure, then clears the boundary for C164 completion execution.
+C164 completion boundary review does not free-publish output, unlock unrestricted publication, mutate PLAN/CONFIRM, make PLAN/CONFIRM read the activated catalog, execute live PLAN/CONFIRM rollout, or promote A01.
+
+```text
+C164_TOPIC=C164_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_COMPLETION
+C164_STAGE=PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_COMPLETION_BOUNDARY_REVIEW
+C164_STATUS=C164_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_COMPLETION_BOUNDARY_REVIEW_PASSED_BOUNDARY_CLEARED_READY_FOR_COMPLETION_EXECUTION_PRIMARY_AND_BACKUP
+FOCUSED_PHPUNIT_C164_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_COMPLETION_BOUNDARY_REVIEW=OK (28 tests, 111 assertions)
+FULL_PHPUNIT_FILTER_C164=OK (29 tests, 135 assertions)
+C164_ARTIFACT_HASH=997bb3cc6f5565da92438a2afaca441bb50977b4
+C164_FILE_SHA1=2EBE74B5E40E53C60456A4110DF41A29B1D3E1A6
+C163_GO_DECISION_FINALIZATION_ARTIFACT_HASH=e7a4e300eea57aa5f28a87e5cceb297fd92c195a
+C163_GO_DECISION_FINALIZATION_FILE_SHA1=450DC99CAC858CBE08D4E2FB32BC4D9D2F1845B9
+C163_GO_DECISION_FINALIZATION_LOCK_VALID=1
+C163_POST_HANDOFF_ACTIVATION_GO_DECISION_FINALIZATION_VALID=1
+C163_TOPIC_COMPLETE_AFTER_FINALIZATION=1
+POST_HANDOFF_ACTIVATION_CLOSED=1
+COMPLETION_BOUNDARY_CLEARED=1
+BOUNDARY_GO_DECISION=BOUNDARY_CLEARED_GO
+READY_FOR_WEEKLY_SWING_WATCHLIST_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_COMPLETION_EXECUTION=1
+WATCHLIST_FUNCTION_USED=CONTROLLED_WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATION
+PRIMARY_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_COMPLETION_EXECUTION=1
+BACKUP_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_COMPLETION_EXECUTION=1
+COMPARATOR_CANDIDATE_READY_FOR_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_COMPLETION_EXECUTION=0
+A01_REMAINS_COMPARATOR_ONLY=1
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+PLAN_CONFIRM_MUTATED=0
+PLAN_CONFIRM_RUNTIME_READS_ACTIVATED_CATALOG=0
+LIVE_PLAN_CONFIRM_ROLLOUT_EXECUTED=0
+NEGATIVE_WITHOUT_OPERATOR_APPROVAL=C164_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_COMPLETION_BOUNDARY_REVIEW_REJECTED_OPERATOR_APPROVAL_MISSING
+NEGATIVE_MISSING_COMPLETION_BOUNDARY_CONFIRMATION=C164_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_COMPLETION_BOUNDARY_REVIEW_REJECTED_COMPLETION_BOUNDARY_CONFIRMATION_MISSING
+NEGATIVE_MISSING_C163_TOPIC_COMPLETE_CONFIRMATION=C164_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_COMPLETION_BOUNDARY_REVIEW_REJECTED_C163_TOPIC_COMPLETE_CONFIRMATION_MISSING
+NEGATIVE_C163_GO_DECISION_FINALIZATION_ARTIFACT_LOCK_MISMATCH=C164_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_COMPLETION_BOUNDARY_REVIEW_REJECTED_C163_GO_DECISION_FINALIZATION_ARTIFACT_LOCK_MISMATCH
+NEXT_RECOMMENDATION=C164_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_COMPLETION_POST_HANDOFF_ACTIVATION_COMPLETION_EXECUTION
+```
+
+C164 post-handoff activation completion boundary update is limited to C164 service, command, tests, docs, command registration, and runtime artifact.
+Next plan: continue within C164 to post-handoff activation completion execution.
+
+## C166 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout Post-Rollout Observation Review
+
+C166 opens a distinct post-rollout observation topic by locking the C165 finalization and active rollout-state artifacts. It captures a read-only control-plane snapshot for E02 primary and B01 backup while preserving A01 as comparator-only.
+This stage does not invoke the watchlist function or execute a new rollout, mutation, catalog read, configuration change, or publication. Market outcome, price performance, and recommendation quality metrics are not present and are explicitly excluded from the observation conclusion.
+
+```text
+C166_TOPIC=C166_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION
+C166_STAGE=PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_REVIEW
+C166_STATUS=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_REVIEW_PASSED_CONTROLLED_ROLLOUT_OBSERVED_READY_FOR_POST_ROLLOUT_OBSERVATION_RESULT_REVIEW_PRIMARY_AND_BACKUP
+FOCUSED_PHPUNIT_C166_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_REVIEW=OK (41 tests, 100 assertions)
+FULL_PHPUNIT_FILTER_C166=OK (43 tests, 123 assertions)
+C166_OBSERVATION_ARTIFACT_HASH=9ffec96e1a08e927c5ad14445d6e6d038528a7f2
+C166_OBSERVATION_FILE_SHA1=D9AF66D1488F3BA14134820647E8C1A288C75525
+C165_FINALIZATION_ARTIFACT_HASH=618a09a64ba295aee023edc8131452782e184a9f
+C165_FINALIZATION_FILE_SHA1=8EBDA0F4267597ED04F7AB798A1B1A227ACE4B9A
+C165_ROLLOUT_STATE_HASH=3a8350955f6a1396f5225af3fddcfa31fa622904
+C165_ROLLOUT_STATE_FILE_SHA1=4B58D3A17B56136CF02BE1635FB2F16F12831722
+C166_TOPIC_COMPLETE=0
+OBSERVATION_BASIS=LOCKED_CONTROL_PLANE_RUNTIME_STATE_SNAPSHOT
+CONTROLLED_ROLLOUT_OBSERVATION_STABLE=1
+MARKET_OUTCOME_METRICS_AVAILABLE=0
+PRICE_PERFORMANCE_EVALUATED=0
+RECOMMENDATION_QUALITY_EVALUATED=0
+WATCHLIST_FUNCTION_USED=CONTROLLED_WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATION
+WATCHLIST_FUNCTION_INVOKED_BY_OBSERVATION_REVIEW=0
+NEW_ROLLOUT_EXECUTED_BY_OBSERVATION=0
+NEW_PLAN_CONFIRM_MUTATION_EXECUTED_BY_OBSERVATION=0
+NEW_CATALOG_READ_EXECUTED_BY_OBSERVATION=0
+PRODUCTION_CONFIG_MUTATED=0
+UNRESTRICTED_ROLLOUT_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_PUBLICATION_ALLOWED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+NEXT_RECOMMENDATION=C166_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_POST_ROLLOUT_OBSERVATION_RESULT_REVIEW
+```
+
+C166 remains active. Next plan: review the locked control-plane observation result inside the same C166 topic without inferring unavailable market metrics.
+
+## C167 Weekly Swing Watchlist Production Live Runtime PLAN/CONFIRM Controlled Rollout Completion Boundary Review
+
+C167 boundary review locks the completed C166 post-rollout observation finalization and opens only same-topic controlled rollout completion execution. It recognizes the existing controlled rollout while proving that this boundary performs no new rollout, PLAN/CONFIRM mutation, catalog read, function invocation, metric inference, configuration mutation, or publication.
+
+```text
+C167_TOPIC=C167_PLAN_CONFIRM_CONTROLLED_ROLLOUT_COMPLETION
+C167_STAGE=PLAN_CONFIRM_CONTROLLED_ROLLOUT_COMPLETION_BOUNDARY_REVIEW
+C167_STATUS=C167_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_COMPLETION_BOUNDARY_REVIEW_PASSED_READY_FOR_CONTROLLED_ROLLOUT_COMPLETION_EXECUTION_PRIMARY_AND_BACKUP
+C167_BOUNDARY_ARTIFACT_HASH=5b1a5efc91cfc56b8b98cadb5802f275cf417394
+C167_BOUNDARY_FILE_SHA1=075A32EBEF7CAF03B5671C9B7BF9BF85A24F8CEF
+C166_FINALIZATION_ARTIFACT_HASH=299eb7f2978b8755351d28bb299249f0cb0d818f
+C166_FINALIZATION_FILE_SHA1=3E2CF7C226756EFD9F3AADBDDCAE3BD133D174BA
+FOCUSED_PHPUNIT_C167_CONTROLLED_ROLLOUT_COMPLETION_BOUNDARY_REVIEW=OK (6 tests, 31 assertions)
+FULL_PHPUNIT_FILTER_C167=OK (8 tests, 55 assertions)
+CONTROLLED_ROLLOUT_COMPLETION_BOUNDARY_OPEN=1
+CONTROLLED_ROLLOUT_EXECUTED=1
+NEW_ROLLOUT_EXECUTED_BY_BOUNDARY=0
+NEW_PLAN_CONFIRM_MUTATION_EXECUTED_BY_BOUNDARY=0
+NEW_CATALOG_READ_EXECUTED_BY_BOUNDARY=0
+WATCHLIST_FUNCTION_USED=CONTROLLED_WEEKLY_SWING_WATCHLIST_LIVE_RECOMMENDATION_GENERATION
+WATCHLIST_FUNCTION_INVOKED_BY_BOUNDARY=0
+PRODUCTION_CONFIG_MUTATED=0
+WEEKLY_SWING_WATCHLIST_OFFICIAL_OUTPUT_PUBLISHED=0
+WEEKLY_SWING_WATCHLIST_UNRESTRICTED_PUBLICATION_ALLOWED=0
+A01_REMAINS_COMPARATOR_ONLY=1
+C167_TOPIC_COMPLETE=0
+NEXT_RECOMMENDATION=C167_WEEKLY_SWING_WATCHLIST_PRODUCTION_LIVE_RUNTIME_PLAN_CONFIRM_CONTROLLED_ROLLOUT_COMPLETION_EXECUTION
+```
+
+C167 remains active. Next plan: execute the controlled rollout completion stage from the immutable C167 boundary artifact; keep the same C-number and free publication disabled.
+
+## C171 Low Price Execution Quality C01 Immutable DRAFT Catalog
+
+```text
+C171_LOW_PRICE_C01_STATUS=CATALOG_PERSISTED_AND_OFFICIAL_IS_COMPLETED_ALL_CANDIDATES_FAILED
+C171_LOW_PRICE_C01_ANCHOR_EVAL_ID=192
+C171_LOW_PRICE_C01_ANCHOR_PARAM_SET_ID=5
+C171_LOW_PRICE_C01_PRIMARY_FOCUS=LOW_PRICE_EXECUTION_QUALITY
+C171_LOW_PRICE_C01_CATALOG_CODE=WS_BT_GRID_LOW_PRICE_EXECUTION_QUALITY_C01_2026_07
+C171_LOW_PRICE_C01_CANDIDATE_COUNT=5
+C171_LOW_PRICE_C01_DECISION_TIME_TICK_RISK_GUARD_ADDED=1
+C171_LOW_PRICE_C01_SCORE_RECALIBRATION_CANDIDATES_ADDED=1
+C171_LOW_PRICE_C01_DRAFT_ONLY=1
+C171_LOW_PRICE_C01_OFFICIAL_IS_RUNTIME_INVOKED=1
+C171_LOW_PRICE_C01_OOS_RUNTIME_INVOKED=0
+C171_LOW_PRICE_C01_PARAMSET_PROMOTED=0
+C171_LOW_PRICE_C01_PLAN_RUN_CREATED=0
+C171_LOW_PRICE_C01_PRODUCTION_READY=0
+C171_LOW_PRICE_C01_OFFICIAL_IS_EVAL_IDS=194,195,196,197,198
+C171_LOW_PRICE_C01_OFFICIAL_IS_PASSING_CANDIDATE_COUNT=0
+C171_LOW_PRICE_C01_NEXT=C171_C01_TICK_RISK_GUARD_EXECUTION_AND_EVIDENCE_PROPAGATION_REPAIR
+```
+
+## WS Breakout Integrity B01 IS/OOS, Promotion, and ACTIVE Shadow
+
+The post-C171 strategy target has been executed as a separate bounded B01
+scope. One signal-date breakout-integrity candidate passed all canonical IS
+gates, passed the five preregistered Official OOS gates, was promoted through
+the canonical DRAFT-to-ACTIVE service, and passed one artifact-only ACTIVE
+shadow. Controlled PLAN/CONFIRM and production publication remain closed.
+
+```text
+WSB01_IMPLEMENTATION_STATUS=OPERATOR_VALIDATED_ACTIVE_SHADOW_PASS
+WSB01_C171_REOPENED=0
+WSB01_PRIMARY_HYPOTHESIS_COUNT=1
+WSB01_DIAGNOSTIC_CANDIDATE_COUNT=3
+WSB01_AUTHORIZED_CANDIDATE_COUNT=1
+WSB01_REMEDIATION_ROUNDS_USED=0
+WSB01_PARAM_SET_ID=29
+WSB01_BT_PARAM_ID=181
+WSB01_IS_EVAL_ID=220
+WSB01_IS_WINDOW=2023-01-02..2025-05-21
+WSB01_IS_PICKS=146
+WSB01_IS_DAYS_COVERED=500
+WSB01_ALL_CANONICAL_IS_GATES_PASS=1
+WSB01_OOS_ID=1
+WSB01_OOS_WINDOW=2025-05-22..2026-05-29
+WSB01_OOS_PICKS=84
+WSB01_ALL_LOCKED_OOS_GATES_PASS=1
+WSB01_RETUNING_PERFORMED=0
+WSB01_PARAMSET_STATUS=ACTIVE
+WSB01_ACTIVE_PARAMSET_COUNT=1
+WSB01_ACTIVE_SHADOW_TRADE_DATE=2026-07-28
+WSB01_ACTIVE_SHADOW_PASS=1
+WSB01_ACTIVE_SHADOW_TICKERS=BFIN,GGRM
+WSB01_PLAN_RUN_COUNT=0
+WSB01_PLAN_ITEM_COUNT=0
+WSB01_CONFIRM_MUTATED=0
+WSB01_OFFICIAL_OUTPUT_PUBLISHED=0
+WSB01_FOCUSED_PHPUNIT=OK (7 tests, 65 assertions)
+WSB01_FULL_WATCHLIST_PHPUNIT=OK (7171 tests, 48832 assertions)
+WSB01_PRODUCTION_READY=0
+WSB01_NEXT=SEPARATE_OPERATOR_GO_NO_GO_REVIEW_BEFORE_CONTROLLED_PLAN
+```

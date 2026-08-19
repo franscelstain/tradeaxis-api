@@ -1,0 +1,14 @@
+{
+  "trade_date": "2026-03-16",
+  "ticker": "AAA",
+  "recommendation_membership": true,
+  "current_snapshot_available": false,
+  "entry_window_open": true,
+  "expected_confirm_status": "UNAVAILABLE_RETRYABLE",
+  "expected_core_recommendation_valid": true,
+  "expected_retry_allowed": true,
+  "must_not_emit": [
+    "NOT_ACTIONABLE",
+    "CORE_RUN_FAILED"
+  ]
+}

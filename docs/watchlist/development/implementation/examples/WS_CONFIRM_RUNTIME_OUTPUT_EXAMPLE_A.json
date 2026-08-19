@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "strategy_code": "WS",
+    "policy_code": "WEEKLY_SWING",
+    "trade_date": "2026-03-16",
+    "source_plan_reference": "PLAN-20260316",
+    "source_recommendation_reference": "REC-20260316",
+    "entry_window_state": "OPEN"
+  },
+  "items": [
+    {
+      "ticker": "AAA",
+      "recommendation_rank": 1,
+      "recommended_flag": true,
+      "confirm_status": "ACTIONABLE",
+      "reason_codes": ["WS_CONFIRM_OK"]
+    },
+    {
+      "ticker": "BBB",
+      "recommendation_rank": 2,
+      "recommended_flag": true,
+      "confirm_status": "NOT_ACTIONABLE",
+      "reason_codes": ["WS_DRIFT_FAR"]
+    },
+    {
+      "ticker": "DDD",
+      "recommendation_rank": 3,
+      "recommended_flag": true,
+      "confirm_status": "UNAVAILABLE_RETRYABLE",
+      "reason_codes": ["WS_CONFIRM_NO_DATA"]
+    }
+  ],
+  "summary": {
+    "actionable_count": 1,
+    "not_actionable_count": 1,
+    "unavailable_retryable_count": 1,
+    "core_recommendation_valid": true
+  }
+}
