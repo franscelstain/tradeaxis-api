@@ -1,0 +1,328 @@
+{
+    "evidence_id": "E-MD-B00-A001-002",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B00",
+    "attempt_id": "MD-B00-A001",
+    "work_id": "MD-B00-A001",
+    "baseline_id": "MD-B00-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "source_revision": "dd6ca2a2e56ad4b1bef30467209d6c592eb572f9",
+    "working_tree": "CLEAN",
+    "issued_at": "2026-08-20T10:14:33+02:00",
+    "title": "Executed gate, negative-gate, test-suite, and deployed-corpus proof for the MD-B00 baseline",
+    "integrity_gates": {
+        "documentation_integrity_gate": {
+            "tool": "development/implementation/tests/MarketDataDocumentationIntegrityGate.php",
+            "status": "PASS",
+            "exit_code": 0,
+            "checks": {
+                "ROOT_ARCHITECTURE": "PASS",
+                "ONE_DOCUMENT_ONE_ROLE": "PASS",
+                "STRATEGY_FREEZE": "PASS",
+                "CURRENT_VERIFICATION_REBASELINE": "PASS",
+                "JSON_PARSE": "PASS",
+                "CSV_STRUCTURE": "PASS",
+                "ACTIVE_MARKDOWN_LINKS": "PASS",
+                "TRACEABILITY_MATRIX": "PASS",
+                "LEGACY_SEMANTIC_SPLIT_INTEGRITY": "PASS",
+                "WINDOWS_SAFE_PATHS": "PASS",
+                "EXACT_DUPLICATE_FILES": "PASS",
+                "NO_LEGACY_ROOT_AREAS": "PASS"
+            },
+            "registered_documents": 731,
+            "frozen_strategy_documents": 91,
+            "split_sources_reconstructed": "43/43"
+        },
+        "relationship_integrity_gate": {
+            "tool": "development/implementation/tests/MarketDataRelationshipIntegrityGate.php",
+            "status": "PASS",
+            "exit_code": 0,
+            "errors": 0
+        }
+    },
+    "negative_gate_proof": {
+        "method": "Full docs/market_data tree copied to an isolated scratch location. Each mutation applied to the copy, gate executed, copy restored. The repository was never mutated.",
+        "control_unmutated": {
+            "expected": "PASS",
+            "observed": "PASS",
+            "exit_code": 0
+        },
+        "mutations": [
+            {
+                "id": "N1",
+                "mutation": "unregistered physical document added",
+                "gate": "documentation",
+                "expected": "FAIL",
+                "observed": "FAIL",
+                "failed_checks": [
+                    "ONE_DOCUMENT_ONE_ROLE",
+                    "CURRENT_VERIFICATION_REBASELINE"
+                ],
+                "verdict": "FAILS_CLOSED"
+            },
+            {
+                "id": "N2",
+                "mutation": "frozen strategy document byte mutated",
+                "gate": "documentation",
+                "expected": "FAIL",
+                "observed": "FAIL",
+                "failed_checks": [
+                    "STRATEGY_FREEZE"
+                ],
+                "verdict": "FAILS_CLOSED"
+            },
+            {
+                "id": "N3",
+                "mutation": "legacy evidence row flipped to current_proof_eligible=YES",
+                "gate": "documentation",
+                "expected": "FAIL",
+                "observed": "FAIL",
+                "failed_checks": [
+                    "CURRENT_VERIFICATION_REBASELINE"
+                ],
+                "verdict": "FAILS_CLOSED"
+            },
+            {
+                "id": "N4",
+                "mutation": "work_id differs from attempt_id",
+                "gate": "relationship",
+                "expected": "FAIL",
+                "observed": "FAIL",
+                "error": "work identity mismatch",
+                "verdict": "FAILS_CLOSED"
+            },
+            {
+                "id": "N5",
+                "mutation": "malformed attempt ID shape",
+                "gate": "relationship",
+                "expected": "FAIL",
+                "observed": "FAIL",
+                "error": "bad attempt",
+                "verdict": "FAILS_CLOSED"
+            },
+            {
+                "id": "N6",
+                "mutation": "relationship row references a non-existent record",
+                "gate": "relationship",
+                "expected": "FAIL",
+                "observed": "FAIL",
+                "error": "unresolved relationship",
+                "verdict": "FAILS_CLOSED"
+            },
+            {
+                "id": "N7",
+                "mutation": "text appended AFTER legacy extract body-end marker",
+                "gate": "documentation",
+                "expected": "FAIL",
+                "observed": "PASS",
+                "verdict": "GAP",
+                "finding": "F-MD-B00-A001-003"
+            },
+            {
+                "id": "N7b",
+                "mutation": "text inserted INSIDE sealed legacy extract body",
+                "gate": "documentation",
+                "expected": "FAIL",
+                "observed": "FAIL",
+                "failed_checks": [
+                    "LEGACY_SEMANTIC_SPLIT_INTEGRITY"
+                ],
+                "errors": [
+                    "body hash LX-MD-0003-EVD-01",
+                    "reconstruction hash LS-MD-0003"
+                ],
+                "verdict": "FAILS_CLOSED"
+            },
+            {
+                "id": "N8",
+                "mutation": "broken active markdown link introduced",
+                "gate": "documentation",
+                "expected": "FAIL",
+                "observed": "FAIL",
+                "failed_checks": [
+                    "ACTIVE_MARKDOWN_LINKS"
+                ],
+                "verdict": "FAILS_CLOSED"
+            }
+        ],
+        "summary": {
+            "mutations": 9,
+            "fails_closed": 8,
+            "gaps": 1,
+            "conclusion": "Both gates are executable and fail closed on every governance invariant tested except the extract post-body region, recorded as F-MD-B00-A001-003."
+        }
+    },
+    "test_suite_execution": {
+        "command": "php vendor/bin/phpunit",
+        "toolchain": "PHPUnit 9.6.34 on PHP 7.4.33",
+        "duration_seconds": 292.877,
+        "tests": 1488,
+        "assertions": 8828,
+        "errors": 26,
+        "failures": 108,
+        "skipped": 0,
+        "passed": 1354,
+        "status": "RED",
+        "exit_code": 2,
+        "root_cause_analysis": {
+            "distinct_failing_test_methods": 134,
+            "attributable_to_dead_documentation_paths": 134,
+            "attributable_to_business_logic_defects": 0,
+            "note": "Every failing method traces to one root cause: executable code binds to pre-normalization documentation paths. No failure in this run indicates a Market Data business-logic defect."
+        },
+        "test_file_inventory": {
+            "total_test_files": 169,
+            "files_with_no_documentation_path_dependency": 129,
+            "files_with_at_least_one_dead_documentation_path": 40
+        }
+    },
+    "documentation_path_binding_scan": {
+        "method": "PHP tokenizer strips comments and docblocks. Only string literals reaching runtime are counted.",
+        "scopes_scanned": [
+            "app",
+            "database",
+            "config",
+            "routes",
+            "bootstrap",
+            "tools",
+            "artisan",
+            "tests"
+        ],
+        "distinct_documentation_paths_referenced_from_executable_code": 45,
+        "resolving": 0,
+        "dead": 45,
+        "class_R_relocated": 19,
+        "class_S_split_and_sealed": 26,
+        "unresolved": 0,
+        "runtime_non_test_breakages": [
+            {
+                "artifact": "database/migrations/2026_03_22_000003_create_market_data_core_schema.php",
+                "line": 11,
+                "dead_path": "docs/market_data/db/Database_Schema_MariaDB.sql",
+                "behavior": "throws RuntimeException",
+                "impact": "clean install cannot pass migration 3 of 62",
+                "severity": "P0"
+            },
+            {
+                "artifact": "database/seeders/MarketData/MarketDataReasonCodesSeeder.php",
+                "line": 12,
+                "dead_path": "docs/market_data/registry/Reason_Codes_Seed.sql",
+                "behavior": "throws RuntimeException",
+                "impact": "eod_reason_codes is never populated",
+                "severity": "P0"
+            },
+            {
+                "artifact": "app/Console/Commands/MarketData/RecordAuthoritativeExchangeMarketStructureCommand.php",
+                "dead_path": "docs/market_data/evidence/market_structure/stage_7_idx_regular_market_structure_v1.json",
+                "behavior": "default argument dead, overridable",
+                "impact": "degraded operator default",
+                "severity": "P2"
+            },
+            {
+                "artifact": "app/Console/Commands/MarketData/RecordAuthoritativeCorporateActionTermsCommand.php",
+                "dead_path": "docs/market_data/evidence/corporate_actions/stage_6_ksei_stock_split_terms_v1.json",
+                "behavior": "default argument dead, overridable",
+                "impact": "degraded operator default",
+                "severity": "P2"
+            },
+            {
+                "artifact": "app/Console/Commands/MarketData/RecordAuthoritativeTradingStatusSnapshotCommand.php",
+                "dead_path": "docs/market_data/evidence/trading_status/stage_8_idx_long_suspension_2026-06-30_v1.json",
+                "behavior": "default argument dead, overridable",
+                "impact": "degraded operator default",
+                "severity": "P2"
+            }
+        ],
+        "finding": "F-MD-B00-A001-001"
+    },
+    "deployed_corpus_observation": {
+        "note": "Read-only inspection of the reachable MariaDB corpus. Recorded as an environment baseline fact, not as current implementation proof.",
+        "database": "tradeaxis",
+        "tables": 62,
+        "row_counts": {
+            "eod_bars": 757125,
+            "eod_indicators": 757124,
+            "eod_publications": 65020,
+            "eod_eligibility": 779402,
+            "eod_reason_codes": 407
+        },
+        "migration_drift": {
+            "applied_in_database": 73,
+            "files_in_repository": 62,
+            "applied_without_a_repository_file": 11,
+            "files_not_applied": 0,
+            "domain": "All 11 orphans are Watchlist-domain migrations, outside Market Data acceptance authority per MARKET_DATA_DOCUMENT_AUTHORITY.md clause 6.",
+            "severity": "P2"
+        },
+        "reason_code_registry_drift": {
+            "codes_in_seed_document": 436,
+            "codes_in_deployed_table": 407,
+            "in_seed_but_missing_from_database": 29,
+            "in_database_but_not_in_seed": 0,
+            "physical_foreign_keys_referencing_eod_reason_codes": 0,
+            "live_rows_carrying_an_unregistered_reason_code": {
+                "table": "eod_eligibility",
+                "column": "reason_code",
+                "code": "ELIG_TRADING_SUSPENDED",
+                "rows": 3431,
+                "trade_date_min": "2023-06-13",
+                "trade_date_max": "2026-07-07"
+            },
+            "interpretation": "The broken seeder is not merely a future risk. 3431 live eligibility rows already carry a reason code that has no registry row, and no physical foreign key exists that would have prevented it.",
+            "severity": "P0"
+        }
+    },
+    "schema_verification_capability": {
+        "canonical_schema_document": "development/implementation/db/Database_Schema_MariaDB.sql",
+        "test_schema_source": "tests/Support/UsesMarketDataSqlite.php",
+        "test_schema_construction": "hand-written 1523-line SQLite mirror, not derived from the canonical schema document",
+        "cross_check_tests": [
+            "MarketDataSqliteSchemaSyncTest",
+            "PublishedColumnHashCoverageTest",
+            "ArtifactIntegrityPolicyTest"
+        ],
+        "cross_check_status": "ALL_DISABLED_BY_DEAD_PATH",
+        "consequence": "No executable control currently proves the SQLite mirror matches the authoritative schema. The 1354 passing tests therefore run against an unverified schema.",
+        "severity": "P1"
+    },
+    "strategy_coverage": {
+        "stage": "MD-B00",
+        "required_rules": 0,
+        "satisfied": 0,
+        "note": "No traceability rule assigns MD-B00 as primary stage. MD-B00 coverage requirement is 0/0 and is satisfied vacuously.",
+        "matrix_totals": {
+            "rows": 6490,
+            "required_mandatory_or_conditional": 1407,
+            "satisfied": 0,
+            "not_assessed": 1407,
+            "optional_not_requested": 54,
+            "reference_only": 5029
+        }
+    },
+    "conformance_matrix_assignment": {
+        "frozen_strategy_documents": 91,
+        "documents_with_traceability_rows": 91,
+        "documents_with_zero_rows": 0,
+        "physical_documents": 731,
+        "registered_in_document_role_registry": 731,
+        "registered_in_current_verification_registry": 731,
+        "verdict": "SATISFIED. Every active document carries a conformance-matrix assignment."
+    },
+    "residue_verdict": {
+        "md_b00_own_scope": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "discovered_outside_md_b00_scope": "NON_CONFORMANT_HARMFUL_RESIDUE_OPEN",
+        "note": "MD-B00 created records only and altered no runtime behavior. Harmful residue found during the survey is attributed to its owning stages through F-MD-B00-A001-001 and MD-DEP-0001..MD-DEP-0003 rather than absorbed into this stage."
+    },
+    "open_findings": [
+        "F-MD-B00-A001-001",
+        "F-MD-B00-A001-002",
+        "F-MD-B00-A001-003",
+        "F-MD-B00-A001-004"
+    ],
+    "related_evidence": [
+        "E-MD-B00-A001-001"
+    ],
+    "supersedes": null
+}

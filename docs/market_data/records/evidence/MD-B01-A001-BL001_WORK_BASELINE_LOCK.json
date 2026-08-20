@@ -1,0 +1,52 @@
+{
+    "baseline_id": "MD-B01-A001-BL001",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260820-001",
+    "strategy_freeze_manifest_sha1": "14CF5BE3AF96D7D0E936C414C1AFA28249243302",
+    "strategy_tree_fingerprint_sha1": "1EAA76503540328865799098CA534477DD247D57",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "C1C9B70601B556D990E577FDC03900588C25D754",
+    "governance_document_count": 42,
+    "traceability_matrix_sha1": "21DC4A90697280C52CDDED37482E1CAC3B29C668",
+    "source_revision": "dd6ca2a2e56ad4b1bef30467209d6c592eb572f9",
+    "working_tree": "DIRTY+BA6BCE827A8EC2611DB37DA085734B12D243F6D0",
+    "working_tree_note": "MD-B00-A001 records are issued but not yet committed at lock time. The uncommitted-state sha1 covers the tracked diff plus untracked file contents.",
+    "source_revision_branch": "master",
+    "predecessor_stage": {
+        "stage_id": "MD-B00",
+        "attempt_id": "MD-B00-A001",
+        "baseline_id": "MD-B00-A001-BL001",
+        "verdict": "PASS",
+        "closure_manifest": "SC-MD-B00-A001-001"
+    },
+    "app_code_fingerprint_sha1": "04F73602F622F0C52D5168A2E2C0A0920AB5D50B",
+    "tests_fingerprint_sha1": "CE3EC2D0D53704D43BDD4DE3FAC3CAD594234EFB",
+    "schema_config_identity": "schema:EFAC1C8E2438D039BBCC5662389375C661863039;config:AC6603B50E3FDC44C101A10A6CFCDD43491A2870;migrations:548F5FA6E4EE5F5A3F5AA79175DD412CB16F218C",
+    "toolchain_identity": "PHP 7.4.33 ZTS VC15 x64; PHPUnit 9.6.34; Lumen 8.3.4",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "external_dependency_contract_identity": {
+        "registered_dependencies": 3,
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "blocking_this_stage": "NONE",
+        "state": "MD-DEP-0001 and MD-DEP-0002 are OPEN_BLOCKING for MD-B21 only; MD-DEP-0003 is OPEN_NON_BLOCKING"
+    },
+    "created_at": "2026-08-20T11:12:18+02:00",
+    "stage_required_coverage": {
+        "required_rules": 127,
+        "satisfied_at_lock": 0,
+        "strategy_owners": {
+            "authority/strategy/book/Terminology_and_Scope.md": 50,
+            "authority/strategy/MARKET_DATA_PLATFORM_EOD_BASELINE.md": 41,
+            "authority/strategy/book/Domain_Boundary_Invariants_LOCKED.md": 36
+        }
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "augmentation_note": "Fields emitted by CreateMarketDataWorkBaselineLock.php are preserved verbatim. strategy_freeze_id, governance fingerprint, dependency identity, and external dependency contract identity were added because the current tool does not emit the full WORK_BASELINE_LOCK_STANDARD minimum set. Tool gap tracked as F-MD-B00-A001-004.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE"
+}

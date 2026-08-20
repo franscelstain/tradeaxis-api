@@ -1,0 +1,42 @@
+{
+    "baseline_id": "MD-B03-A001-BL001",
+    "stage_id": "MD-B03",
+    "attempt_id": "MD-B03-A001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260820-001",
+    "strategy_freeze_manifest_sha1": "14CF5BE3AF96D7D0E936C414C1AFA28249243302",
+    "strategy_tree_fingerprint_sha1": "1EAA76503540328865799098CA534477DD247D57",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "C1E7400C7939CE3F7F598A17D2B533FB3A3B4F5E",
+    "governance_document_count": 42,
+    "traceability_matrix_sha1": "FCF73F4FC912537B1742AC9C57EA12956D576FBD",
+    "source_revision": "dd6ca2a2e56ad4b1bef30467209d6c592eb572f9",
+    "working_tree": "DIRTY+6EC2996D7E7C65430D666F67F627E2D844FB14C3",
+    "source_revision_branch": "master",
+    "tests_fingerprint_sha1": "1EB36B2C10ABB4EDA12ED68E2AC6107627FD5926",
+    "out_of_order_entry": {
+        "md_b01_state": "IN_PROGRESS at 21/127, not abandoned",
+        "md_b02_state": "NOT_STARTED, deferred not skipped",
+        "justification": "MD-DEP-0001 and MD-DEP-0002 are registered OPEN_BLOCKING with owner MD-B03. MD-B01 cannot close because MD-DEP-0004 sits inside authority/, which is read-only for implementation work. The Stage Register resume note for MD-B03 already directs this work. Entry is dependency-driven under the Stage Register clause permitting out-of-order entry with valid dependency/governance basis.",
+        "scope_limit": "Closes MD-DEP-0001 and MD-DEP-0002 and the Class R half of F-MD-B00-A001-001 only. MD-B03 is NOT claimed DONE by this attempt; its own required coverage is 0/0 but MD-DEP-0004 still bars closure on coverage grounds for every stage but MD-B13."
+    },
+    "schema_config_identity": "schema:EFAC1C8E2438D039BBCC5662389375C661863039;config:AC6603B50E3FDC44C101A10A6CFCDD43491A2870;migrations:548F5FA6E4EE5F5A3F5AA79175DD412CB16F218C",
+    "toolchain_identity": "PHP 7.4.33 ZTS VC15 x64; PHPUnit 9.6.34; Lumen 8.3.4",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "external_dependency_contract_identity": {
+        "registered_dependencies": 4,
+        "targeted_by_this_attempt": [
+            "MD-DEP-0001",
+            "MD-DEP-0002"
+        ],
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv"
+    },
+    "created_at": "2026-08-20T19:05:53+02:00",
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\u0000<UPPER_SHA1>\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "augmentation_note": "Tool-emitted fields preserved verbatim; standard-minimum fields added per F-MD-B00-A001-004, which this attempt also remediates.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE"
+}

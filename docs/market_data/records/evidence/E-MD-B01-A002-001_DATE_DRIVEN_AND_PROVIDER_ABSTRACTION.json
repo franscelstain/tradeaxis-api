@@ -1,0 +1,287 @@
+{
+    "evidence_id": "E-MD-B01-A002-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A002",
+    "work_id": "MD-B01-A002",
+    "baseline_id": "MD-B01-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "source_revision": "dd6ca2a2e56ad4b1bef30467209d6c592eb572f9",
+    "issued_at": "2026-08-20T11:55:41+02:00",
+    "title": "MD-B01 date-driven capability, provider limitation abstraction, and boundary-direction revalidation",
+    "attempt_outcome": "PARTIAL \u2014 stage remains open",
+    "predecessor_attempt": {
+        "attempt_id": "MD-B01-A001",
+        "evidence": "E-MD-B01-A001-001",
+        "coverage_carried_in": "5/127"
+    },
+    "objective": "Advance MD-B01 coverage on predicate-bearing rules that can be proven against current code, without touching the requirement classification blocked by MD-DEP-0004.",
+    "work_performed": {
+        "new_test_file": {
+            "artifact": "tests/Unit/MarketData/DateDrivenCapabilityAndProviderAbstractionTest.php",
+            "tests": 16,
+            "assertions": 52,
+            "result": "PASS",
+            "covers": "date-driven capability and provider limitation abstraction"
+        },
+        "extended_test_file": {
+            "artifact": "tests/Unit/MarketData/ScopeProductAndTimeBoundaryTest.php",
+            "tests": 25,
+            "assertions": 582,
+            "result": "PASS",
+            "added": [
+                "policy-namespace dependency direction",
+                "readiness dependency closure",
+                "eligible alias surface pinning"
+            ]
+        },
+        "design_principle": "Absence is only evidence when paired with a positive locator. Each isolation check is paired with an assertion that the vocabulary IS present in the adapter, so a rename or deleted file cannot turn the suite green by making the search find nothing anywhere."
+    },
+    "executed_checks": [
+        {
+            "area": "provider abstraction",
+            "check": "app/Domain scanned for provider transport shape, comments stripped",
+            "result": "zero occurrences"
+        },
+        {
+            "area": "provider abstraction",
+            "check": "app/Application scanned (52 files) for provider transport shape",
+            "result": "zero occurrences; provider identity labels present and permitted"
+        },
+        {
+            "area": "provider abstraction",
+            "check": "app/Infrastructure scanned for provider transport shape",
+            "result": "present in exactly one file, PublicApiEodBarsAdapter.php, and no other"
+        },
+        {
+            "area": "provider abstraction",
+            "check": "ApiEodBarsSource port inspected by reflection",
+            "result": "is an interface, names no provider, carries no transport shape; range entry point parameters are startDate and endDate"
+        },
+        {
+            "area": "provider abstraction",
+            "check": "adapter capability disclosure",
+            "result": "board/trading-status, authoritative corporate actions, and actual traded value each disclosed as explicit false; PROVIDER_ADJ_CLOSE named as forbidden canonical basis"
+        },
+        {
+            "area": "provider abstraction",
+            "check": "all four quirks named by the contract: query window, rate limits, per-ticker fan-out, transport shape",
+            "result": "requestWithRetry, circuit_breaker, and per-ticker fan-out all located in the adapter; none reachable from Domain or Application"
+        },
+        {
+            "area": "date-driven capability",
+            "check": "seven arbitrary requested dates spanning years, a month end, and a leap day",
+            "result": "all accepted"
+        },
+        {
+            "area": "date-driven capability",
+            "check": "arbitrary requested range 2023-01-02..2026-07-07",
+            "result": "accepted whole; span asserted greater than a ten-day provider default window"
+        },
+        {
+            "area": "date-driven capability",
+            "check": "scope contract key names inspected for window concepts",
+            "result": "no range, window, period, or lookback key in the scope contract"
+        },
+        {
+            "area": "date-driven capability",
+            "check": "pre-boundary date refusal",
+            "result": "refused by name and the message states the boundary it enforced"
+        },
+        {
+            "area": "boundary direction",
+            "check": "123 market-data PHP files scanned for policy-namespace imports",
+            "result": "zero"
+        },
+        {
+            "area": "boundary direction",
+            "check": "MarketDataReadinessService dependency closure",
+            "result": "MarketDataScope, EodPublicationRepository, Illuminate DB only"
+        },
+        {
+            "area": "alias containment",
+            "check": "bare eligible column across 28 canonical tables",
+            "result": "exactly eod_eligibility and eod_eligibility_history"
+        },
+        {
+            "area": "alias containment",
+            "check": "enum values, 436 reason codes, and 38 command signatures",
+            "result": "no surface adopts the alias"
+        }
+    ],
+    "negative_proof": {
+        "method": "Each mutation applied to a tracked file, guard executed, file restored via git checkout; restoration verified clean after every mutation.",
+        "mutations": [
+            {
+                "id": "N1",
+                "mutation": "provider query shape leaked into an application service",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "N2",
+                "mutation": "adapter stripped of provider query shape",
+                "expected": "FAIL",
+                "observed": "FAIL",
+                "note": "proves the isolation checks are not vacuous absence"
+            },
+            {
+                "id": "N3",
+                "mutation": "port given a provider-named method",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "N4",
+                "mutation": "market-data class imports a policy namespace",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "N5",
+                "mutation": "readiness service gains a policy dependency",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "N6",
+                "mutation": "eligible column added to a third table",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "N7",
+                "mutation": "default_lookback_window key added to the scope contract",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "N8",
+                "mutation": "circuit breaker vocabulary leaked into an application service",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            }
+        ],
+        "summary": {
+            "mutations": 8,
+            "fails_closed": 8,
+            "gaps": 0
+        },
+        "process_note": "N4 initially reported no reaction. Diagnosis showed the mutation script targeted a \"use Illuminate\" line the file does not contain, so the mutation was a no-op rather than the guard being blind. Re-run against the first \"use App\" line, the guard failed closed. A mutation that does not mutate is indistinguishable from a guard that does not guard unless the mutation itself is verified."
+    },
+    "strategy_coverage": {
+        "stage": "MD-B01",
+        "required_rules": 127,
+        "satisfied_before_this_attempt": 5,
+        "satisfied_at_this_attempt": 11,
+        "satisfied_total": 16,
+        "remaining_not_assessed": 111,
+        "newly_satisfied_rules": [
+            {
+                "rule_id": "MD-S001-R0031",
+                "rule": "domain capability must be date-driven"
+            },
+            {
+                "rule_id": "MD-S001-R0036",
+                "rule": "target date is the primary domain input, not derived from a provider default"
+            },
+            {
+                "rule_id": "MD-S001-R0038",
+                "rule": "domain capability must not be limited by a provider default query window such as range=10d"
+            },
+            {
+                "rule_id": "MD-S001-R0080",
+                "rule": "provider limitation must be isolated in the source adapter or import strategy"
+            },
+            {
+                "rule_id": "MD-S001-R0081",
+                "rule": "the domain must still support arbitrary date requests"
+            },
+            {
+                "rule_id": "MD-S001-R0083",
+                "rule": "a provider default window must not be treated as the platform official historical boundary"
+            },
+            {
+                "rule_id": "MD-S056-R0088",
+                "rule": "the platform accepts explicit requested dates as domain input"
+            },
+            {
+                "rule_id": "MD-S056-R0093",
+                "rule": "provider quirks must be absorbed by the acquisition strategy rather than inherited as domain limits"
+            },
+            {
+                "rule_id": "MD-S056-R0118",
+                "rule": "date-driven capability must never be reduced to provider default recent-window behaviour"
+            },
+            {
+                "rule_id": "MD-S056-R0127",
+                "rule": "market-data readiness must never depend on watchlist implementation, ranking stability, strategy metrics, profitability, or user preference"
+            },
+            {
+                "rule_id": "MD-S020-R0173",
+                "rule": "eligible may be preserved but never propagated to a new surface"
+            }
+        ],
+        "rules_deliberately_not_claimed": [
+            {
+                "rule_id": "MD-S020-R0161",
+                "rule": "market-data facts may be inputs to watchlist policy, never outputs of it",
+                "reason": "The import-direction guard proves no market-data class depends on a policy namespace, which is necessary but not sufficient. A policy component in another package could still write market-data tables directly, and this repository cannot prove the absence of code it does not contain. The guard was kept because it is valuable; the rule was not claimed because the evidence does not reach it."
+            },
+            {
+                "rule_id": "MD-S056-R0128",
+                "rule": "the decision horizon must never be expressed in calendar days",
+                "reason": "Existing warm-up guards cover windows, not the horizon itself, and the 5-trading-day horizon has no code or config binding to assert against. A vacuously true check would be worse than none."
+            }
+        ]
+    },
+    "observations": [
+        {
+            "subject": "overloaded vocabulary confirmed in live code",
+            "detail": "PublicationGovernanceBindingService maps the IDX board code WATCHLIST to SPECIAL_MONITORING. This is an exchange market-structure fact, not policy leakage, and the normalisation is exactly the disambiguation Domain_Boundary_Invariants_LOCKED.md asks for. It is also a live example of why the policy-vocabulary guards target names on persisted surfaces rather than string literals in code."
+        },
+        {
+            "subject": "provider identity versus provider limitation",
+            "detail": "Five application services reference the provider by name as a provenance label. That is permitted and distinct from transport shape. Conflating the two would have produced a false violation and a wrong finding."
+        }
+    ],
+    "test_suite_execution": {
+        "tests": 1528,
+        "assertions": 9462,
+        "errors": 25,
+        "failures": 108,
+        "skipped": 0,
+        "passed": 1395,
+        "status": "RED",
+        "exit_code": 2,
+        "delta_from_A001": {
+            "tests": "+18",
+            "assertions": "+555",
+            "errors": "0",
+            "failures": "0",
+            "passed": "+18"
+        },
+        "md_b01_owned_failures": 0,
+        "failing_class_set": "identical to MD-B01-A001; 39 classes, all owned by other stages under F-MD-B00-A001-001"
+    },
+    "integrity_gates": {
+        "documentation_integrity_gate": "PASS",
+        "relationship_integrity_gate": "PASS"
+    },
+    "residue_verdict": {
+        "md_b01_own_scope": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "basis": "Two test files added or extended, eleven matrix rows advanced. No runtime code changed, no schema changed, no strategy byte touched, no governance classification altered."
+    },
+    "blocking_condition": {
+        "finding": "F-MD-B01-A001-001",
+        "dependency": "MD-DEP-0004",
+        "statement": "MD-B01 still cannot reach DONE. 18 of its 127 required rules carry no verifiable predicate, so 127/127 remains unreachable until a reviewed governance decision re-derives the classification.",
+        "not_worked_around": "No matrix row was reclassified at this attempt either."
+    },
+    "open_findings": [
+        "F-MD-B01-A001-001"
+    ],
+    "supersedes": null
+}

@@ -1,0 +1,231 @@
+{
+    "evidence_id": "E-MD-B01-A003-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A003",
+    "work_id": "MD-B01-A003",
+    "baseline_id": "MD-B01-A003-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "source_revision": "dd6ca2a2e56ad4b1bef30467209d6c592eb572f9",
+    "issued_at": "2026-08-20T12:19:40+02:00",
+    "title": "MD-B01 activation-claim and terminology-claim revalidation",
+    "attempt_outcome": "PARTIAL \u2014 stage remains open",
+    "predecessor_attempt": {
+        "attempt_id": "MD-B01-A002",
+        "evidence": "E-MD-B01-A002-001",
+        "coverage_carried_in": "16/127"
+    },
+    "objective": "Advance MD-B01 coverage on the locked interpretation rules governing what the platform may claim about itself, testing through the service that makes the claim rather than by reading source.",
+    "work_performed": {
+        "new_test_file": {
+            "artifact": "tests/Unit/MarketData/ActivationClaimAndTerminologyBoundaryTest.php",
+            "tests": 8,
+            "assertions": 38,
+            "result": "PASS",
+            "note": "Three of the eight are behavioural: they boot the SQLite harness, seed a genuinely readable publication, and call MarketDataReadinessService, because a freshness claim is made by the readiness payload rather than by a document."
+        }
+    },
+    "executed_checks": [
+        {
+            "area": "activation claim",
+            "check": "readable publication with no governed marker",
+            "result": "is_ready true, activation_state DEVELOPMENT \u2014 readiness and freshness reported as separate facts"
+        },
+        {
+            "area": "activation claim",
+            "check": "blocked date with no governed marker",
+            "result": "activation_state DEVELOPMENT on the blocked path too, same vocabulary"
+        },
+        {
+            "area": "activation claim",
+            "check": "marker set to the trade date, then to the day after",
+            "result": "OPERATIONAL on the boundary, DEVELOPMENT before it \u2014 the state is derived, not decorative"
+        },
+        {
+            "area": "activation claim",
+            "check": "consecutive-SLO vocabulary across app/ and config/, comments stripped",
+            "result": "zero occurrences on any executable surface"
+        },
+        {
+            "area": "activation claim",
+            "check": "capability-limit disclosures",
+            "result": "present only as source/detector disclosure; never attached to scope, activation, frontier, or dataset start"
+        },
+        {
+            "area": "terminology claim",
+            "check": "cross-aliasing among RAW, STRUCTURAL_ADJUSTED, TOTAL_RETURN, PROVIDER_ADJ_CLOSE",
+            "result": "none; three distinct product constants and the provider payload named as a forbidden canonical basis"
+        },
+        {
+            "area": "terminology claim",
+            "check": "eligibility surface across four files plus 10 ELIG reason codes",
+            "result": "no alpha, approval, ranking, tradability, conviction, signal, or recommendation vocabulary"
+        },
+        {
+            "area": "terminology claim",
+            "check": "decision-grade across executable code, reason codes, command names, test names, and 50+ active documents",
+            "result": "no surface asserts it as achieved"
+        }
+    ],
+    "negative_proof": {
+        "method": "Each mutation applied to a tracked file, verified present before running the guard, guard executed, file restored via git checkout. The verification step exists because MD-B01-A002 recorded a mutation that silently did not apply.",
+        "mutations": [
+            {
+                "id": "M1",
+                "mutation": "readiness stops reporting activation_state",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M2",
+                "mutation": "activation_state hardcoded to OPERATIONAL",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M3",
+                "mutation": "consecutive-SLO vocabulary enters an executable surface",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M4",
+                "mutation": "one price product aliased to another",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M5",
+                "mutation": "approval vocabulary enters the eligibility surface",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M6",
+                "mutation": "a DECISION_GRADE_ACHIEVED reason code is registered",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M7",
+                "mutation": "a capability limit is attached to activation",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M8",
+                "mutation": "an active document asserts the platform has already reached the headline quality property",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            }
+        ],
+        "summary": {
+            "mutations": 8,
+            "fails_closed": 8,
+            "gaps": 0,
+            "all_mutations_verified_as_applied": true
+        }
+    },
+    "self_correction_during_this_attempt": [
+        {
+            "issue": "the decision-grade guard failed on its own test method name",
+            "resolution": "renamed the method rather than adding a self-exemption. A carve-out would have weakened the guard for every other file to accommodate one."
+        },
+        {
+            "issue": "the eligibility vocabulary omitted \"signal\", one of the four meanings the rule names",
+            "resolution": "added before claiming MD-S056-R0126, so the claim covers the full rule text rather than three quarters of it."
+        },
+        {
+            "issue": "the alias-repetition scan matched only snake_case data_usable and reported 18 non-conforming documents",
+            "resolution": "seven of those state the meaning in prose as data-usability, which satisfies the rule as written. Corrected pattern yields 11. The finding was written from the corrected figure."
+        },
+        {
+            "issue": "this evidence record itself tripped the decision-grade guard: explaining what MD-S056-R0131 forbids used a copula immediately before the term, which the guard reads as an assertion",
+            "resolution": "reworded to \"qualifies as\" rather than weakening the guard or exempting records/evidence from it. Regex cannot reliably parse negation scope, so the discipline is to word records so they do not read as claims \u2014 which is the same reason the boundary contract worries about the phrase at all. No fact in this record changed."
+        },
+        {
+            "issue": "the baseline lock was issued after the analysis and test-authoring phase rather than at attempt start",
+            "resolution": "recorded in the lock issuance_note rather than backdated. The authority binding it exists to fix \u2014 strategy freeze, epoch, traceability matrix \u2014 was unchanged throughout."
+        }
+    ],
+    "strategy_coverage": {
+        "stage": "MD-B01",
+        "required_rules": 127,
+        "satisfied_before_this_attempt": 16,
+        "satisfied_at_this_attempt": 5,
+        "satisfied_total": 21,
+        "remaining_not_assessed": 106,
+        "newly_satisfied_rules": [
+            {
+                "rule_id": "MD-S056-R0121",
+                "rule": "a development data frontier must never be described as a capability limit or as operational freshness before activation"
+            },
+            {
+                "rule_id": "MD-S056-R0122",
+                "rule": "operational freshness and consecutive SLO claims must begin only from an explicit governed activation boundary"
+            },
+            {
+                "rule_id": "MD-S056-R0123",
+                "rule": "raw source observation, canonical RAW, STRUCTURAL_ADJUSTED, and TOTAL_RETURN must never be treated as interchangeable"
+            },
+            {
+                "rule_id": "MD-S056-R0126",
+                "rule": "eligibility must never be described as alpha approval, candidate ranking, tradability approval, or a trading signal"
+            },
+            {
+                "rule_id": "MD-S056-R0130",
+                "rule": "decision-grade must never be described as an achieved state before the order-22 re-audit"
+            }
+        ],
+        "rules_deliberately_not_claimed": [
+            {
+                "rule_id": "MD-S020-R0067",
+                "reason": "Ten frozen strategy contracts use bare `eligible` without repeating the data-usability meaning the rule requires. Not satisfiable by implementation work; raised as F-MD-B01-A003-001."
+            },
+            {
+                "rule_id": "MD-S056-R0131",
+                "reason": "It forbids one specific inference \u2014 that a non-null, in-range, reason-free field qualifies as decision-grade on that basis alone. Proving no code makes that inference reduces to proving no decision-grade claim exists, which is MD-S056-R0130. Claiming both from one body of evidence would double-count it."
+            }
+        ]
+    },
+    "test_suite_execution": {
+        "tests": 1537,
+        "assertions": 9506,
+        "errors": 25,
+        "failures": 108,
+        "skipped": 0,
+        "passed": 1404,
+        "status": "RED",
+        "exit_code": 2,
+        "delta_from_A002": {
+            "tests": "+9",
+            "assertions": "+44",
+            "errors": "0",
+            "failures": "0",
+            "passed": "+9"
+        },
+        "md_b01_owned_failures": 0,
+        "failing_class_set": "identical to MD-B01-A002 and MD-B01-A001; 39 classes, all owned by other stages under F-MD-B00-A001-001"
+    },
+    "integrity_gates": {
+        "documentation_integrity_gate": "PASS",
+        "relationship_integrity_gate": "PASS"
+    },
+    "residue_verdict": {
+        "md_b01_own_scope": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "basis": "One test file added, five matrix rows advanced, one finding raised. No runtime code, schema, config, strategy byte, or governance classification changed."
+    },
+    "blocking_condition": {
+        "finding": "F-MD-B01-A001-001",
+        "dependency": "MD-DEP-0004",
+        "statement": "MD-B01 still cannot reach DONE. 18 of its 127 required rules carry no verifiable predicate.",
+        "not_worked_around": "No matrix row was reclassified at this attempt either. The global required set remains exactly 1407."
+    },
+    "open_findings": [
+        "F-MD-B01-A001-001",
+        "F-MD-B01-A003-001"
+    ],
+    "supersedes": null
+}

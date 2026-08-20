@@ -1,8 +1,8 @@
 {
     "gate": "MarketDataRelationshipIntegrityGate",
     "status": "PASS",
-    "records": 0,
+    "records": 16,
     "relationships": 0,
     "errors": [],
-    "generated_at": "2026-08-20T07:00:48+00:00"
+    "generated_at": "2026-08-20T12:19:54+02:00"
 }

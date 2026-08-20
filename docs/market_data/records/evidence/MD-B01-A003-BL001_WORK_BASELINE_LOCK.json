@@ -1,0 +1,49 @@
+{
+    "baseline_id": "MD-B01-A003-BL001",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A003",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260820-001",
+    "strategy_freeze_manifest_sha1": "14CF5BE3AF96D7D0E936C414C1AFA28249243302",
+    "strategy_tree_fingerprint_sha1": "1EAA76503540328865799098CA534477DD247D57",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "80A6348D000813B7EA4BF787F6812EC504DAA09E",
+    "governance_document_count": 42,
+    "traceability_matrix_sha1": "FCF73F4FC912537B1742AC9C57EA12956D576FBD",
+    "source_revision": "dd6ca2a2e56ad4b1bef30467209d6c592eb572f9",
+    "working_tree": "DIRTY+6B8BAB75030F620D983CB1B3A353A65229A4ADEB",
+    "source_revision_branch": "master",
+    "app_code_fingerprint_sha1": "04F73602F622F0C52D5168A2E2C0A0920AB5D50B",
+    "tests_fingerprint_sha1": "1EB36B2C10ABB4EDA12ED68E2AC6107627FD5926",
+    "issuance_note": "Issued after the analysis and test-authoring phase of MD-B01-A003 rather than at attempt start. The tests fingerprint therefore already includes ActivationClaimAndTerminologyBoundaryTest.php. Recorded rather than backdated; the authority binding that matters \u2014 strategy freeze, epoch, and traceability matrix \u2014 is unchanged from attempt start.",
+    "predecessor_attempt": {
+        "stage_id": "MD-B01",
+        "attempt_id": "MD-B01-A002",
+        "baseline_id": "MD-B01-A002-BL001",
+        "outcome": "PARTIAL",
+        "coverage_carried_in": "16/127",
+        "evidence": "E-MD-B01-A002-001"
+    },
+    "schema_config_identity": "schema:EFAC1C8E2438D039BBCC5662389375C661863039;config:AC6603B50E3FDC44C101A10A6CFCDD43491A2870;migrations:548F5FA6E4EE5F5A3F5AA79175DD412CB16F218C",
+    "toolchain_identity": "PHP 7.4.33 ZTS VC15 x64; PHPUnit 9.6.34; Lumen 8.3.4",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "external_dependency_contract_identity": {
+        "registered_dependencies": 4,
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "blocking_closure_of_this_stage": "MD-DEP-0004",
+        "blocking_work_of_this_stage": "NONE"
+    },
+    "created_at": "2026-08-20T12:11:10+02:00",
+    "stage_required_coverage": {
+        "required_rules": 127,
+        "satisfied_at_lock": 16,
+        "satisfied_at_close": 21
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\u0000<UPPER_SHA1>\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "augmentation_note": "Tool-emitted fields preserved verbatim; standard-minimum fields added per F-MD-B00-A001-004.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE"
+}

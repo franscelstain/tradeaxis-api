@@ -1,0 +1,285 @@
+{
+    "evidence_id": "E-MD-B01-A001-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A001",
+    "work_id": "MD-B01-A001",
+    "baseline_id": "MD-B01-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "source_revision": "dd6ca2a2e56ad4b1bef30467209d6c592eb572f9",
+    "issued_at": "2026-08-20T11:31:32+02:00",
+    "title": "MD-B01 scope, product, time-boundary, and policy-leakage revalidation against current authority",
+    "attempt_outcome": "PARTIAL \u2014 stage remains open",
+    "objective": "Revalidate existing implementation against the frozen W01 scope: no ambiguity in market, product, or time boundary, and no watchlist policy leakage into the market-data surface.",
+    "work_performed": {
+        "class_R_rebind": {
+            "artifact": "tests/Unit/MarketData/TerminologyOwnerVocabularyTest.php",
+            "dead_path": "docs/market_data/db/MARKET_DATA_DICTIONARY.md",
+            "rebound_to": "docs/market_data/development/implementation/db/MARKET_DATA_DICTIONARY.md",
+            "guard_added": "assertFileExists precedes the read so a future relocation fails loudly instead of silently disabling the check",
+            "result": "TerminologyOwnerVocabularyTest 7/7 PASS; this was the only MD-B01-owned file among the 40 in F-MD-B00-A001-001",
+            "closes_for_this_stage": "F-MD-B00-A001-001 Class R item, MD-B01 portion only"
+        },
+        "new_executable_coverage": {
+            "artifact": "tests/Unit/MarketData/ScopeProductAndTimeBoundaryTest.php",
+            "tests": 22,
+            "assertions": 74,
+            "result": "PASS",
+            "design_note": "Every guard asserts the size of the population it inspected before asserting zero violations, because a guard that scans an empty set is indistinguishable from one that scans everything."
+        }
+    },
+    "executed_checks": [
+        {
+            "area": "market scope",
+            "check": "canonical scope fails closed on market_segment=NEGOTIATED, market_segment=CASH, market_code=NYSE, frequency=INTRADAY",
+            "result": "all four throw MARKET_DATA_SCOPE_INVALID"
+        },
+        {
+            "area": "market scope",
+            "check": "timezone fails closed when scope clock, platform clock, or both drift from Asia/Jakarta",
+            "result": "all three throw MARKET_DATA_TIMEZONE_INVALID"
+        },
+        {
+            "area": "market scope",
+            "check": "lowercase scope identity is normalised, not rejected",
+            "result": "accepted, recorded as intended behaviour"
+        },
+        {
+            "area": "time boundary",
+            "check": "request before intentional dataset start 2023-01-02",
+            "result": "throws MARKET_DATA_REQUEST_BEFORE_DATASET_START; the boundary date itself is accepted"
+        },
+        {
+            "area": "time boundary",
+            "check": "no governed activation marker set",
+            "result": "operationalStartDate()=null and every probed date reports DEVELOPMENT, including dates already backfilled and published"
+        },
+        {
+            "area": "time boundary",
+            "check": "marker set to 2026-01-01",
+            "result": "splits the timeline at exactly one inclusive point"
+        },
+        {
+            "area": "time boundary",
+            "check": "marker backdated behind dataset start",
+            "result": "throws MARKET_DATA_OPERATIONAL_START_DATE_INVALID"
+        },
+        {
+            "area": "time boundary",
+            "check": "source scan of app/ and database/ for any assignment of market_data.scope.operational_start_date",
+            "result": "zero assignments across the scanned tree; activation reaches the domain from governed config alone"
+        },
+        {
+            "area": "time boundary",
+            "check": "locale-shaped requested date 02/01/2023",
+            "result": "throws MARKET_DATA_REQUESTED_DATE_INVALID"
+        },
+        {
+            "area": "policy leakage",
+            "check": "canonical schema tables and columns",
+            "result": "28 tables and 674 columns inspected, zero violations"
+        },
+        {
+            "area": "policy leakage",
+            "check": "canonical status enum values",
+            "result": "43 distinct values inspected, zero violations"
+        },
+        {
+            "area": "policy leakage",
+            "check": "reason code registry",
+            "result": "436 codes inspected, zero violations"
+        },
+        {
+            "area": "policy leakage",
+            "check": "artisan command signatures",
+            "result": "38 signatures inspected, zero violations"
+        },
+        {
+            "area": "policy leakage",
+            "check": "market_data configuration tree re-walked with the full vocabulary",
+            "result": "zero violations"
+        },
+        {
+            "area": "policy leakage",
+            "check": "live MariaDB corpus, 48 market-data tables and their columns",
+            "result": "zero violations (probe, not an in-suite assertion)"
+        },
+        {
+            "area": "product identity",
+            "check": "RAW, STRUCTURAL_ADJUSTED, TOTAL_RETURN distinct and provider adj_close excluded",
+            "result": "three distinct codes, adj_close absent"
+        },
+        {
+            "area": "product identity",
+            "check": "eligible derived from data_usable in the read product",
+            "result": "data_usable computed first, eligible and eligibility_state both assigned from it"
+        }
+    ],
+    "policy_vocabulary_adequacy": {
+        "concern": "The vocabulary is the load-bearing part of five naming guards. Too narrow and all five report clean while policy names sit in the schema.",
+        "defect_found_and_fixed_during_this_attempt": "The first vocabulary missed ranked_picks, one of the boundary contract own forbidden examples, because a bare rank alternative does not match the morphological variant ranked.",
+        "self_verification": "test_the_policy_vocabulary_matches_the_contract_examples_in_both_directions asserts the matcher catches all five forbidden examples the contract names, clears all six valid examples it names, and clears five overloaded upstream names.",
+        "overloaded_token_handling": "candidate, signal, execution, long, short, target, and position are excluded as bare tokens per Domain_Boundary_Invariants_LOCKED.md, which requires such a guard to check the surrounding contract rather than the token. A separate compound pattern catches trade_candidates and buy_candidate while leaving candidate_publication_id and range_position_20_pct clean."
+    },
+    "negative_proof": {
+        "method": "Each mutation applied to a tracked file, the guard executed, the file restored with git checkout. Restoration verified clean after every mutation.",
+        "mutations": [
+            {
+                "id": "M1",
+                "mutation": "policy-named column alpha_score added to canonical schema",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M2",
+                "mutation": "canonical schema truncated to zero bytes",
+                "expected": "FAIL",
+                "observed": "FAIL",
+                "note": "proves the population assertion, not just the violation assertion"
+            },
+            {
+                "id": "M3",
+                "mutation": "reason code RANK_TOO_LOW injected into the seed",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M4",
+                "mutation": "command signature renamed to market-data:rank-candidates",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M5",
+                "mutation": "eligible reassigned independently of data_usable",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M6",
+                "mutation": "a service given a method that sets the activation marker",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M7",
+                "mutation": "policy status value RANK_REJECTED added to a schema enum",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            }
+        ],
+        "summary": {
+            "mutations": 7,
+            "fails_closed": 7,
+            "gaps": 0
+        }
+    },
+    "strategy_coverage": {
+        "stage": "MD-B01",
+        "required_rules": 127,
+        "satisfied_at_this_attempt": 5,
+        "remaining_not_assessed": 122,
+        "satisfied_rules": [
+            {
+                "rule_id": "MD-S001-R0008",
+                "owner": "MARKET_DATA_PLATFORM_EOD_BASELINE.md:19",
+                "rule": "cash and negotiated market must not be silently mixed into canonical Regular-Market EOD",
+                "evidence": "ScopeProductAndTimeBoundaryTest::test_canonical_market_scope_fails_closed_on_every_identity_field"
+            },
+            {
+                "rule_id": "MD-S056-R0013",
+                "owner": "Terminology_and_Scope.md:29",
+                "rule": "canonical market segment is Regular Market; cash and negotiated observations must not be silently mixed",
+                "evidence": "ScopeProductAndTimeBoundaryTest::test_canonical_market_scope_fails_closed_on_every_identity_field"
+            },
+            {
+                "rule_id": "MD-S001-R0046",
+                "owner": "MARKET_DATA_PLATFORM_EOD_BASELINE.md:92",
+                "rule": "OPERATIONAL_START_DATE is never set implicitly by a backfill or a proof run that once executed",
+                "evidence": "ScopeProductAndTimeBoundaryTest::test_no_runtime_path_assigns_the_activation_marker"
+            },
+            {
+                "rule_id": "MD-S056-R0046",
+                "owner": "Terminology_and_Scope.md:96",
+                "rule": "the boundary is set by an explicit governed marker, never implied by a backfill, a proof run, or a recent development frontier",
+                "evidence": "ScopeProductAndTimeBoundaryTest::test_without_a_governed_marker_no_date_is_operationally_activated"
+            },
+            {
+                "rule_id": "MD-S020-R0125",
+                "owner": "Domain_Boundary_Invariants_LOCKED.md:212",
+                "rule": "names in this domain must remain upstream-neutral",
+                "evidence": "ScopeProductAndTimeBoundaryTest naming guards across tables, columns, enums, reason codes, commands, and config keys"
+            }
+        ],
+        "rules_deliberately_not_claimed": [
+            {
+                "rule_id": "MD-S020-R0054",
+                "reason": "seven of the eight enumerated surfaces are covered by executed guards, but \"positive feature definitions\" is not a name check and is not proven. Claiming the rule would overstate the evidence."
+            },
+            {
+                "rule_id": "MD-S020-R0055",
+                "reason": "the eligible/data_usable half is proven; the point-in-time instrument, trade date, and publication context half belongs to MD-B16 and MD-B17."
+            },
+            {
+                "rule_id": "MD-S001-R0055",
+                "reason": "adj_close exclusion is proven; \"not mixed with close across one vector\" and \"one run one versioned basis\" belong to MD-B12 and MD-B14, and BarPriceProductIdentityTest is currently disabled by a dead path."
+            },
+            {
+                "rule_id": "MD-S056-R0045",
+                "reason": "the never-backdated half is proven; consecutive SLO measurement belongs to MD-B19."
+            },
+            {
+                "rule_id": "MD-S056-R0063",
+                "reason": "RAW as a distinct product code is proven; canonical validation of the series belongs to MD-B09."
+            }
+        ]
+    },
+    "test_suite_execution": {
+        "command": "php vendor/bin/phpunit",
+        "tests": 1510,
+        "assertions": 8907,
+        "errors": 25,
+        "failures": 108,
+        "skipped": 0,
+        "passed": 1377,
+        "status": "RED",
+        "exit_code": 2,
+        "delta_from_md_b00_baseline": {
+            "tests": "+22",
+            "assertions": "+79",
+            "errors": "-1",
+            "failures": "0",
+            "passed": "+23"
+        },
+        "md_b01_owned_failures": 0,
+        "note": "The 133 remaining failures are owned by MD-B03, MD-B06, MD-B10, MD-B12, MD-B14, MD-B15, MD-B17, MD-B18, MD-B19, MD-B21, and MD-B22 under F-MD-B00-A001-001. No MD-B01-owned test fails."
+    },
+    "integrity_gates": {
+        "documentation_integrity_gate": {
+            "status": "PASS",
+            "note": "The gate correctly FAILED mid-attempt when MD-B01-A001-BL001 existed on disk but was not yet registered, and returned to PASS once registered. That transition is itself evidence the registry completeness check is live."
+        },
+        "relationship_integrity_gate": {
+            "status": "PASS"
+        }
+    },
+    "residue_verdict": {
+        "md_b01_own_scope": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "basis": "One dead path rebound and guarded, one new test file added, five matrix rows advanced. No runtime behaviour changed, no strategy byte touched, no reachable behaviour contradicting current authority was found within the MD-B01 surface."
+    },
+    "blocking_condition": {
+        "finding": "F-MD-B01-A001-001",
+        "statement": "MD-B01 cannot reach DONE at any attempt while 15 of its 127 required rules are bare colon-terminated list headers and 3 more are owner pointers. 127/127 is unreachable by construction, independent of implementation quality.",
+        "not_worked_around": "No matrix row was reclassified to make the target reachable. DOCUMENT_CHANGE_POLICY.md forbids weakening governance to make implementation pass, and the traceability matrix is governance."
+    },
+    "open_findings": [
+        "F-MD-B01-A001-001"
+    ],
+    "dependencies": [
+        "MD-DEP-0001 and MD-DEP-0002 do not gate MD-B01",
+        "MD-DEP-0003 does not gate MD-B01"
+    ],
+    "supersedes": null
+}
