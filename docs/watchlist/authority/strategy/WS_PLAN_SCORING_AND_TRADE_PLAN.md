@@ -58,6 +58,24 @@ dengan:
 
 `score_total` adalah canonical quality score yang dipakai downstream untuk final recommendation qualification dan ranking. Baseline Weekly Swing tidak membuat second opaque score yang tidak mempunyai hubungan jelas dengan PLAN quality.
 
+## Score Interpretation Boundary
+
+`score_total` mengukur relative/canonical setup quality dan **bukan calibrated probability of profit, target return, atau certainty score**. Monotonic ordering harus dibuktikan downstream melalui realized ranking utility; nilai score sendiri tidak boleh dipakai untuk mengklaim probabilitas kemenangan.
+
+## Feature-Family Expansion / Challenger Rule
+
+Canonical baseline tetap empat quality dimensions di atas. Penambahan feature family seperti relative strength vs IHSG, sector relative strength, trend structure, atau regime-specific score **tidak boleh masuk diam-diam** ke baseline.
+
+Setiap feature-family addition harus:
+
+1. menjadi preregistered challenger identity;
+2. memakai same-date causal producer facts;
+3. dibandingkan dengan canonical baseline pada dates, friction, dan evaluation semantics yang sama;
+4. menunjukkan incremental edge/ranking utility yang bukan hanya isolated best return;
+5. melewati multiple-testing, IS robustness, untouched OOS, stress, dan shadow proof sebagai identity baru sebelum dapat menggantikan baseline.
+
+Feature yang gagal menambah robust evidence tidak dipertahankan hanya karena terlihat intuitif.
+
 ## Canonical PLAN Ordering
 
 `RECOMMENDATION_CANDIDATES` diurutkan dengan prioritas:
@@ -108,3 +126,30 @@ PLAN adalah planning information, bukan order instruction.
 3. `WATCH_ONLY` dan `AVOID` tidak dapat menjadi Top Picks pada run yang sama.
 4. `score_total` adalah canonical downstream quality score dengan explicit weighted-sum semantics.
 5. Candidate count tidak boleh dipaksa untuk memenuhi kebutuhan output.
+
+## Strategy Calculation vs Market-Fact Derivation
+
+PLAN boleh menghitung keputusan Weekly Swing, tetapi tidak boleh menjadi feature-engineering layer Market Data.
+
+- Score component, `score_total`, ordering, entry reference/zone, stop, target, dan horizon-derived plan adalah Weekly Swing strategy outputs dan boleh dihitung dari authoritative producer facts + frozen strategy parameters.
+- Intermediate calculation yang meaning-nya hanya ada di dalam frozen Weekly Swing score/trade-plan identity tetap strategy output; ia tidak boleh dipublikasikan sebagai pengganti market fact upstream.
+- Reusable factual measurement seperti new momentum/liquidity/relative-strength/regime/sector/session feature tetap Market Data-owned walaupun PLAN dapat menghitungnya dari raw inputs; PLAN **MUST NOT** melakukan derivation tersebut untuk menyelamatkan active rule.
+- Adopsi new market feature ke score/trade-plan membutuhkan producer-facing fact yang authoritative serta controlled strategy identity/re-proof; keberadaan raw ingredients saja tidak cukup.
+
+## Weekday-Neutral Baseline
+
+- Canonical PLAN tidak memberi bonus/penalty, eligibility override, score component, entry preference, atau exit preference hanya karena nama weekday.
+- Stop, target, dan maximum holding/time-exit tetap mengendalikan exit; PLAN tidak menahan posisi sampai Kamis/Jumat hanya untuk mengikuti calendar effect.
+- Bila weekday/calendar anomaly kelak diuji, ia harus menjadi preregistered challenger dengan explicit Market Data calendar fact, trial lineage, frozen parameters, dan full re-proof sebelum dapat memengaruhi PLAN.
+- Post-hoc weekday filter yang dipilih karena hasil historis terlihat lebih baik dilarang sebagai canonical strategy.
+
+
+## Immutable and Reproducible PLAN Contract
+
+- Finalized PLAN **MUST** mengikat exact `requested_trade_date`, `effective_trade_date`, authoritative Market Data publication/revision identity, strategy identity, parameter identity, candidate classification, score components, `score_total`, deterministic ordering, entry reference/zone, stop, target, dan holding/time-exit identity yang dipakai pada run tersebut.
+- Setelah PLAN dinyatakan final untuk recommendation run, semantic PLAN payload **MUST NOT** diubah in-place oleh future market outcome, Market Data correction, strategy/parameter revision, atau retry.
+- Market Data correction atau material strategy/parameter revision yang memerlukan PLAN baru **MUST** menghasilkan explicit new PLAN/run lineage; PLAN lama tetap historical immutable.
+- Stop, target, entry reference/zone, horizon, score, atau ordering **MUST NOT** diedit post-outcome untuk membuat trade historical terlihat lebih baik atau lebih executable.
+- Exact frozen factual inputs + exact strategy/parameter identity **MUST** menghasilkan PLAN decision payload yang sama pada deterministic replay.
+- Numeric precision, rounding, boundary comparison, null handling, dan final tie-break policy yang dapat memengaruhi PLAN **MUST** dibekukan/versioned sebagai bagian deterministic calculation identity; environment-dependent implicit rounding tidak boleh mengubah PLAN.
+- Implementasi **MUST** menyediakan stable deterministic PLAN fingerprint/hash atau equivalent immutable identity atas semantic PLAN payload; volatile issuance metadata seperti generated timestamp tidak boleh menjadi penyebab fingerprint business payload berubah.

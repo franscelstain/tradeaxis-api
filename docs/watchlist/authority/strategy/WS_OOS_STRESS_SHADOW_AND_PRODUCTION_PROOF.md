@@ -27,7 +27,26 @@ Untuk `N` ordered trading dates:
 - `oos_count = N - is_count`;
 - IS adalah prefix;
 - OOS adalah untouched suffix;
-- tidak boleh overlap, randomization, hidden gap, atau post-result date removal.
+- tidak boleh overlap, randomization, **undeclared/hidden gap**, atau post-result date removal; explicit predeclared purge interval untuk mencegah outcome-overlap leakage justru wajib diterapkan.
+
+## Purged Boundary and OOS Contamination Control
+
+Chronological split harus melindungi OOS dari IS outcome dependency.
+
+Setelah nominal 70/30 boundary ditentukan, setiap IS recommendation yang maximum possible entry/exit/outcome dependency interval menyentuh atau melewati first OOS signal date harus **dipurge dari IS selection metrics**. Purge rule dihitung dari frozen maximum strategy horizon/execution dependency sebelum returns dibaca dan dicatat sebagai explicit split metadata; purge tidak menggeser atau mengecilkan protected OOS suffix setelah outcome terlihat.
+
+Protected OOS tidak boleh dipakai untuk:
+
+- parameter selection;
+- threshold/weight/feature choice;
+- deciding which IS rule to keep/remove;
+- debugging strategy quality dengan outcome-specific changes lalu dianggap masih untouched.
+
+## OOS Consumption / Burn Rule
+
+Saat first OOS performance result, trade-level outcome, summary, atau diagnostic yang dapat mengungkap strategy quality telah dibaca oleh research/implementation process, OOS identity tersebut menjadi **CONSUMED_OOS**.
+
+Jika setelah itu terjadi material strategy change, consumed OOS tetap historical validation evidence tetapi **tidak boleh disebut untouched OOS untuk identity baru**. Identity baru membutuhkan fresh untouched later holdout bila tersedia; jika tidak ada historical holdout yang benar-benar belum dilihat, fresh proof harus datang dari forward shadow/forward validation. Tidak boleh mereset label OOS hanya dengan mengganti campaign/paramset name.
 
 ## OOS / Stress / Shadow Protocol
 
@@ -84,6 +103,17 @@ Jika CONFIRM capability ingin dinyatakan **proven**, minimum evaluated CONFIRM s
 
 Untuk `ACTIONABLE` outcome, causal executable entry price harus tersedia **pada atau setelah CONFIRM timestamp**. Earlier D+1 open tidak boleh dipakai sebagai synthetic fill bila CONFIRM terjadi kemudian.
 
+## Operational and Capacity Proof Requirements
+
+OOS/shadow production proof harus mengikat:
+
+- `recommendation_available_at` dan minimum 30-minute decision lead-time compliance untuk canonical D+1 open claim;
+- frozen `reference_order_notional_idr` dan `max_adv20_participation_rate`;
+- supported notional/capacity headroom per Top Pick;
+- count of late publications, pre-entry non-executable trades, post-entry delayed exits, dan unresolved exposures.
+
+Recommendation selection/rank tetap capital-independent, tetapi production-use proof gagal bila reference notional yang dideklarasikan tidak dapat dieksekusi secara konsisten dengan frozen liquidity/participation assumptions.
+
 ## OOS Acceptance Criteria
 
 Seluruh kriteria berikut wajib lulus untuk core strategy.
@@ -116,6 +146,25 @@ Jika sample tidak cukup, status adalah **INSUFFICIENT OOS EVIDENCE**, bukan PASS
 - `median_ret_net_rank1_oos >= 0`;
 - score-vs-return rank correlation OOS **MUST NOT** negatif;
 - higher-ranked bucket tidak boleh menunjukkan persistent inversion terhadap lower-ranked bucket.
+
+### E1. Statistical confidence, economic significance, benchmark, and Top-K
+
+- `avg_ret_net_top_oos >= 0.0025`;
+- `lower_95ci_avg_ret_net_top_oos > 0` using date-clustered/block bootstrap;
+- `avg_excess_ret_vs_ihsg_oos > 0` and `lower_95ci_avg_excess_ret_vs_ihsg_oos > 0` when required benchmark input is available;
+- `avg_selection_uplift_vs_eligible_universe_oos > 0`;
+- Top-1, Top-3, and Top-5 average net return must be positive when their minimum sample is available;
+- Top-1/Top-3 must not show persistent underperformance versus `ALL_QUALIFIED`;
+- OOS must not show material contradiction to IS multiple-testing/plateau robustness conclusion.
+
+### E2. Tail-risk and execution-risk acceptance
+
+- `p05_ret_net_top_oos >= -0.08`;
+- `expected_shortfall_05_ret_net_top_oos >= -0.10`;
+- date-level equal-reference-notional `max_drawdown_oos <= 0.20`;
+- all post-entry non-executable exposures remain counted; none may be skipped from return distribution;
+- unresolved post-entry exposure must use conservative terminal-loss treatment and any material concentration triggers FAIL/review rather than sample deletion;
+- MAE, loss-streak, exit-delay, and capacity metrics must not show material breakdown versus frozen IS risk profile.
 
 ### F. Adverse-friction robustness
 
@@ -153,6 +202,43 @@ CONFIRM capability dapat diberi status `CONFIRM_PROVEN` hanya bila:
 
 Jika valid CONFIRM sample tidak cukup atau source data belum tersedia, capability status adalah `CONFIRM_UNPROVEN` / `CONFIRM_EVIDENCE_INSUFFICIENT`. Status tersebut **tidak mengubah** core OOS/stress/shadow verdict dan tidak memblokir core production-use review.
 
+## Post-Production Strategy Health and Automatic Safety Boundary
+
+Production-use approval is not permanent proof. Exact active strategy identity must continue a **live-equivalent causal monitoring stream** using the same recommendation, execution-model, friction, benchmark, ranking, capacity, and tail-risk semantics.
+
+Canonical health states:
+
+- `HEALTHY` — no material degradation signal;
+- `WATCH` — short-window degradation exists but confirmation threshold not yet met;
+- `SUSPEND_NEW_RECOMMENDATIONS_REVIEW_REQUIRED` — material degradation is confirmed; new Top Picks publication for real-use must stop while diagnosis/revalidation runs;
+- `REVALIDATION_REQUIRED` — strategy/material assumption changed or proof identity can no longer be relied upon.
+
+Minimum monitoring windows:
+
+- **20 trading days** = early-warning window;
+- **60 trading days** = confirmation window, extended when sample is insufficient.
+
+Material degradation indicators include at minimum:
+
+- rolling net edge at/below zero or below the +0.25% economic-edge objective for a sustained confirmation window;
+- rolling benchmark-relative edge at/below zero;
+- persistent Top-K/rank inversion;
+- realized/model execution friction materially exceeding tested stress assumptions;
+- tail-risk or drawdown breach of production acceptance floor;
+- repeated late recommendation publication / insufficient decision lead time;
+- liquidity/capacity deterioration that violates frozen reference-notional participation assumptions;
+- systematic Market Data/readiness degradation that prevents trustworthy production behavior.
+
+Deterministic health transitions untuk baseline monitoring adalah:
+
+- `WATCH` bila 20-trading-day window mempunyai `avg_ret_net < 0.0025`, benchmark-relative mean `<= 0`, persistent Top-3-vs-All inversion, atau operational/capacity warning yang berulang;
+- `SUSPEND_NEW_RECOMMENDATIONS_REVIEW_REQUIRED` bila 60-trading-day confirmation window mempunyai `avg_ret_net <= 0`, `avg_excess_ret_vs_ihsg <= 0`, `p05 < -0.08`, `expected_shortfall_05 < -0.10`, date-level max drawdown `> 0.20`, reference-notional capacity violation pada `>= 10%` recommendation days, atau late-publication lead-time failure pada `>= 5%` recommendation days;
+- immediate `REVALIDATION_REQUIRED` bila material strategy/data/execution identity berubah, OOS/proof contamination ditemukan, atau monitoring calculation tidak lagi comparable dengan production identity.
+
+Jika required 60-day sample belum cukup, state tidak boleh dinaikkan menjadi `HEALTHY` hanya karena calendar window selesai; monitoring diperpanjang sampai evidence cukup. A single noisy short-window observation dapat memindahkan state ke `WATCH`, tetapi tidak mengizinkan retuning.
+
+**No automatic retuning:** production/shadow outcome may open finding/research, but threshold/feature/weight/ranking/exit changes create a new strategy identity and require the applicable IS/OOS/stress/shadow proof again. Old production proof cannot be administratively inherited.
+
 ## Production-Use Boundary
 
 Core production-use approval hanya dapat dipertimbangkan bila exact core strategy identity telah mempunyai:
@@ -189,3 +275,110 @@ Canonical core order:
 `freeze dates → split IS/OOS → calibrate IS → freeze one winner → evaluate OOS → stress exact OOS trades → core forward shadow`
 
 Optional CONFIRM capability proof dapat berjalan pada forward shadow yang sama bila valid decision-time data tersedia, tetapi tidak menjadi prerequisite urutan core tersebut.
+
+
+## EOD-Only Production Proof Boundary
+
+Core production-use proof tetap proof untuk **EOD Weekly Swing recommendation**, bukan certification atas exact broker execution.
+
+- OOS, adverse-friction, dan core forward-shadow **MUST** dapat diselesaikan tanpa realtime/orderbook dependency menggunakan frozen EOD strategy identity dan conservative modeled-execution rules.
+- Forward shadow wajib membuktikan recommendation availability/timestamp sebelum intended next-session opportunity, reproducibility, data freshness, dan causal outcome accounting; ia tidak wajib membuktikan queue position atau exact opening fill pengguna.
+- Production evidence harus menyebut modeled execution sebagai modeled/reference execution dan tidak boleh menggunakan istilah `actual_fill` untuk price yang hanya berasal dari EOD OHLC plus model assumptions.
+- Missing realtime/orderbook capability **MUST NOT** menurunkan core strategy menjadi unproven bila seluruh EOD proof gates telah lulus; hanya optional capability yang bergantung pada source tersebut yang dapat berstatus unproven/unavailable.
+- Jika future intraday/orderbook enhancement diaktifkan, enhancement harus mempunyai separately versioned capability/proof identity; result-nya tidak boleh dicampur ke core EOD OOS/shadow denominator tanpa controlled strategy revision.
+- Core approval tetap menilai apakah EOD Top Picks mempunyai robust positive net edge setelah conservative friction/execution uncertainty, bukan apakah setiap investor memperoleh harga yang identik dengan backtest reference price.
+
+## Proof Input Ownership Across OOS, Stress, Shadow, and Production
+
+Seluruh post-IS proof memakai boundary fakta yang sama dengan core runtime.
+
+- Untouched OOS dan adverse-friction stress **MUST** memakai producer-facing point-in-time facts/replay identity; local reconstruction atau substitute market feature membuat affected proof tidak valid untuk production qualification.
+- Forward shadow **MUST** mengonsumsi live-available authoritative Market Data publication dan tidak boleh menjalankan hidden local feature pipeline untuk membuat Top Picks tetap tersedia ketika producer fact missing.
+- Production-health monitoring yang membutuhkan market inputs **MUST** memakai authoritative producer facts/identities yang comparable dengan approved strategy; monitoring tidak boleh repair/recompute market facts untuk mempertahankan `HEALTHY` state.
+- Material/persistent upstream fact gap yang membuat approved runtime/proof identity tidak lagi dapat dievaluasi harus menghasilkan unavailable/insufficient-evidence/revalidation behavior sesuai affected stage, bukan local substitution atau automatic rule relaxation.
+
+## EOD Availability and Action-Window Production Proof
+
+Production-use proof harus membuktikan bukan hanya kualitas Top Picks, tetapi bahwa EOD recommendation secara operasional tersedia ketika opportunity yang diklaim masih dapat ditindaklanjuti.
+
+Minimum metrics pada forward shadow/live-equivalent observation:
+
+- `requested_eod_runs_count`;
+- `market_data_unavailable_retryable_count`;
+- `same_date_ready_count`;
+- `timely_recommendation_count` — qualified/no-pick current runs yang selesai sebelum canonical entry cutoff;
+- `late_action_window_expired_count`;
+- `timely_recommendation_rate`;
+- `previous_context_only_count` bila stale/prior-date context ditampilkan.
+
+Canonical shadow acceptance untuk operational availability:
+
+- `timely_recommendation_rate >= 0.95` pada seluruh governed requested runs yang memang dijadwalkan untuk active strategy; upstream/provider unavailability tetap dihitung sebagai operational unavailability dan tidak boleh dikeluarkan dari denominator hanya agar availability terlihat lebih baik;
+- `late_action_window_expired_count / evaluable_requested_runs <= 0.05`;
+- stale/prior-date context **MUST NOT** pernah dihitung sebagai timely current recommendation;
+- expired recommendation **MUST NOT** pernah menggunakan already-passed intended-session open sebagai modeled/user-actionable fill;
+- no automatic carry-forward dari expired result ke session berikutnya.
+
+Jika historical publication timestamps tidak tersedia, OOS return-quality proof tidak boleh mengarang timeliness PASS; operational availability/cutoff acceptance harus dibuktikan oleh forward shadow/live-equivalent evidence.
+
+Production health monitoring harus terus menghitung ready/timely/expired rates dengan semantic yang sama. Persistent breach terhadap frozen operational availability limits dapat memicu `WATCH` atau `SUSPEND_NEW_RECOMMENDATIONS_REVIEW_REQUIRED` sesuai health rules, tanpa local Market Data workaround.
+
+## Real-World Followability, Concentration, Correction, and Session Gates
+
+### Follower-replay proof
+
+- Exact frozen OOS recommendation stream **MUST** menghasilkan `FOLLOW_TOP1`, `FOLLOW_TOP3`, dan `FOLLOW_TOP5` replay menggunakan no-overlapping-same-listing rule dan frozen reference notional; core recommendation membership/rank tidak boleh diubah untuk memperbaiki follower result.
+- Pada `FOLLOW_TOPK`, recommendation date dengan qualified picks kurang dari `K` **MUST** memakai hanya picks yang benar-benar qualified/tersedia; evaluator tidak boleh mengisi kekurangan dengan lower-quality non-Top-Pick atau carry-forward recommendation lama.
+- `FOLLOW_TOP1`, `FOLLOW_TOP3`, dan `FOLLOW_TOP5` masing-masing **MUST** mempunyai positive `avg_ret_net` pada valid OOS sample; exact user-facing Top-K policy juga harus mempertahankan positive expectation pada adverse-friction stress.
+- Follower replay **MUST** memenuhi canonical tail-risk floor `p05 >= -0.08`, `expected_shortfall_05 >= -0.10`, dan date-level maximum drawdown `<= 0.20` untuk exact production presentation policy.
+- Same-listing double-entry, carry-forward signal setelah action window lewat, atau post-hoc position merging **MUST** membuat affected follower proof invalid.
+- `max_concurrent_positions` dan `peak_reference_capital_required` **MUST** dilaporkan sebagai followability/capacity context tetapi tidak boleh mengubah ranking atau menjadi personal capital recommendation.
+
+### Edge-concentration robustness gate
+
+- OOS dan adverse-friction proof **MUST** menjalankan remove-best-ticker, remove-best-sector, remove-best-month, remove-best-recommendation-date-cluster, dan trim-top-1%-winner stress yang didefinisikan sebelum OOS dibuka.
+- Stress view yang masih mempunyai sufficient remaining sample tetapi mengubah `avg_ret_net` menjadi `<= 0` **MUST** menghasilkan verdict `EDGE_CONCENTRATION_FRAGILITY` dan memblokir production-use PASS untuk identity tersebut.
+- Bila stress removal meninggalkan sample yang tidak cukup untuk inference yang telah dibekukan, verdict adalah `EDGE_CONCENTRATION_INCONCLUSIVE`; evidence tidak boleh dilabel robust dan production review harus menuntut additional untouched/forward evidence daripada mengabaikan test.
+- Diagnostic top-5%-winner trim **MUST** dilaporkan tetapi tidak menjadi automatic fail gate kecuali preregistered strategy identity menetapkannya demikian.
+- Concentration stress **MUST NOT** dipakai untuk membuat post-hoc ticker/sector/month blacklist pada identity yang sama.
+
+### Producer-correction sensitivity gate
+
+- Jika tersedia minimal **20 corrected recommendation dates** dengan valid original-versus-corrected producer lineage, production proof **MUST** menghitung correction sensitivity pada exact frozen strategy identity.
+- Pada sufficient correction sample, canonical robustness limits adalah `top1_flip_rate <= 0.10`, `top3_membership_flip_rate <= 0.15`, `action_intent_flip_rate <= 0.10`, dan `median_abs_score_shift <= 0.05` pada normalized score scale `[0,1]`.
+- Breach salah satu correction limit menghasilkan `CORRECTION_SENSITIVITY_FRAGILITY` dan memblokir production-use PASS sampai diagnosis/strategy revision/revalidation yang sah selesai.
+- Bila corrected recommendation dates `< 20`, status adalah `CORRECTION_SENSITIVITY_SAMPLE_INSUFFICIENT`; kekurangan genuine correction event tidak sendirian memblokir core production proof, tetapi metric harus terus dikumpulkan pada forward production-health monitoring.
+- Correction sensitivity **MUST NOT** menggunakan locally perturbed/synthetic data sebagai pengganti genuine producer correction lineage.
+
+### Execution-mode and half-day conformance
+
+- Setiap OOS/stress/shadow Top Pick **MUST** mempunyai supported execution-mode fact pada relevant recommendation/entry path; recommendation yang lolos pada unsupported/unknown mode adalah conformance failure, bukan valid trade sample.
+- Shortened/half-day recommendation **MUST** mengikuti frozen session-comparability rule; jika comparability unproven, final Top Pick pada session tersebut adalah strategy-conformance failure.
+- Forward shadow **MUST** melaporkan recommendation counts/outcomes by normal versus shortened/exception session sehingga hidden session-specific degradation dapat terlihat tanpa membuat intraday dependency.
+
+### Corporate-action completeness gate
+
+- Setiap OOS/stress/shadow exposure yang melintasi authoritative corporate action **MUST** mempunyai economic-return treatment yang lengkap dan traceable ke exact producer facts.
+- Price-only outcome yang mengabaikan valid cash/quantity entitlement, local adjustment factor, atau unresolved unsupported corporate-action treatment **MUST** membuat affected proof insufficient/invalid untuk production qualification.
+
+### Condition-dependent friction conformance
+
+- Baseline dan adverse-stress OOS **MUST** menggunakan frozen condition-dependent EOD slippage function; satu fixed slippage value untuk seluruh liquidity/volatility/participation state tidak boleh menjadi sole production proof kecuali function identity sendiri membuktikan seluruh components collapse secara konservatif ke fixed upper bound.
+- Adverse-friction stress **MUST NOT** menghasilkan per-trade modeled slippage yang lebih ringan daripada baseline untuk factual state yang sama.
+
+### Production-health continuation
+
+- Production-health stream **MUST** terus melaporkan follower-replay followability, repeated-signal overlap counts, execution-mode/session conformance, corporate-action completeness, friction-model applicability, dan correction-sensitivity sample/flip metrics.
+- Material follower edge breakdown, new concentration fragility, supported-mode leakage, corporate-action accounting failure, atau sufficient-sample correction fragility **MUST** memicu minimal `WATCH` dan dapat memicu `SUSPEND_NEW_RECOMMENDATIONS_REVIEW_REQUIRED` / `REVALIDATION_REQUIRED` sesuai severity dan existing health transition rules.
+
+
+## Final EOD Ambiguity, No-Pick, Immutability, and Determinism Gates
+
+- OOS/adverse-stress canonical trade evaluation **MUST** memakai `STOP_FIRST` untuk unresolved same-daily-bar stop/target ambiguity; optimistic target-first assumption membuat affected proof invalid.
+- OOS proof **MUST** melaporkan valid recommendation-run count, non-empty Top-Pick run count, `NO_ACTIONABLE_TOP_PICKS` count/rate, dan evaluable trade count secara terpisah; zero-pick run tidak boleh dihapus dari operational denominator.
+- `NO_ACTIONABLE_TOP_PICKS` sendiri **MUST NOT** dianggap strategy failure; production usefulness tetap ditentukan oleh sample sufficiency, edge/risk, ranking/follower proof, dan operational availability tanpa memaksa minimum daily quota.
+- Forward shadow **MUST** persist both non-empty Top-Pick outcomes and `NO_ACTIONABLE_TOP_PICKS` outcomes sebagai valid issued EOD records sehingga no-pick frequency dan operational completion dapat diaudit.
+- Forward shadow **MUST** membuktikan issued PLAN/recommendation truth tidak berubah in-place setelah future Market Data correction/outcome; correction/re-evaluation harus menghasilkan explicit lineage baru.
+- Repeated same-identity shadow replay/check **MUST** menghasilkan identical core recommendation truth; mismatch menghasilkan `NON_DETERMINISTIC_RECOMMENDATION` dan memblokir trusted production-equivalence claim.
+- Production-use review **MUST** mempunyai evidence bahwa deterministic replay of frozen recommendation/evaluation identities menghasilkan stable business payload/outcome; nondeterminism unresolved adalah production blocker.
+- Silent mutation/overwrite terhadap issued PLAN, recommendation truth, atau historical evaluation record **MUST** menghasilkan integrity/conformance failure dan memblokir production-use PASS sampai lineage dan immutable-record guarantees dipulihkan.

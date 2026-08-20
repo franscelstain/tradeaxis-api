@@ -8,9 +8,11 @@ Dokumen di sini hanya menjelaskan **apa yang harus dilakukan Weekly Swing**, buk
 
 ## Core direction
 
-`trusted Market Data → eligible candidates → immutable PLAN → qualified ranked TOP PICKS → manual buy decision support`
+`trusted Market Data EOD → eligible candidates → immutable PLAN → qualified ranked TOP PICKS + EOD action intent → manual buy decision support`
 
-Optional: `TOP PICK → D+1 CONFIRM`, non-blocking.
+Optional: `TOP PICK → next-trading-session CONFIRM`, non-blocking.
+
+Canonical timing uses `effective_trade_date → NEXT_TRADING_SESSION`; `D+1` is not calendar arithmetic.
 
 ## Reading order
 

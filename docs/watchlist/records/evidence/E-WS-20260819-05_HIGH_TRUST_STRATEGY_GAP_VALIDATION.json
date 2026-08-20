@@ -1,0 +1,51 @@
+{
+  "record_id": "E-WS-20260819-05",
+  "role": "EVIDENCE",
+  "status": "ISSUED",
+  "date": "2026-08-19",
+  "scope": "canonical Weekly Swing high-trust strategy completeness review",
+  "finding": "F-WS-20260819-05",
+  "decision": "D-WS-20260819-05",
+  "review_result": "MATERIAL_STRATEGY_STRENGTHENING_REQUIRED",
+  "validated_gap_count": 14,
+  "validated_gaps": [
+    "post-entry non-executable exit could cause optimistic sample exclusion",
+    "D+1 open lacked explicit operational recommendation-availability lead time",
+    "IS/OOS outcome-overlap purge was not explicit",
+    "OOS consumption after observation was not explicit",
+    "multiple-testing and selection-bias control was insufficiently explicit",
+    "confidence interval and economic-significance floor were missing",
+    "benchmark-relative and eligible-universe uplift proof were missing",
+    "Top-1/Top-3/Top-5 presentation proof was incomplete",
+    "tail/path-risk acceptance was incomplete",
+    "reference-notional/capacity execution proof was incomplete",
+    "WATCH_ONLY versus AVOID boundary was insufficiently precise",
+    "quality score could be misinterpreted as probability",
+    "post-production degradation suspension/revalidation was missing",
+    "new feature families lacked explicit baseline-vs-challenger proof discipline"
+  ],
+  "methodological_references": [
+    {
+      "title": "The Deflated Sharpe Ratio: Correcting for Selection Bias, Backtest Overfitting and Non-Normality",
+      "authors": "David H. Bailey, Marcos Lopez de Prado",
+      "ssrn_abstract_id": "2460551",
+      "relevance": "selection bias under multiple testing and non-normal return distributions"
+    },
+    {
+      "title": "The Probability of Backtest Overfitting",
+      "authors": "David H. Bailey, Jonathan M. Borwein, Marcos Lopez de Prado, Qiji Jim Zhu",
+      "ssrn_abstract_id": "2326253",
+      "relevance": "probability that model/parameter selection is overfit to backtest outcomes"
+    },
+    {
+      "title": "Advances in Financial Machine Learning: Lecture 4/10",
+      "authors": "Marcos Lopez de Prado",
+      "ssrn_abstract_id": "3257420",
+      "relevance": "time-respecting purging/embargo concepts for leakage control"
+    }
+  ],
+  "policy_note": "Numeric acceptance thresholds in D-WS-20260819-05 are project strategy policy choices. External references support the need for multiple-testing and leakage controls; they do not prescribe the project-specific thresholds.",
+  "prior_strategy_snapshot_ids": ["H0358","H0359","H0360","H0361","H0362","H0363","H0364","H0365","H0366","H0367","H0368","H0369","H0370","H0371"],
+  "current_proof_effect": "NONE_UNTIL_WS_BXX_REVALIDATION",
+  "historical_result_inheritance": "PROHIBITED"
+}

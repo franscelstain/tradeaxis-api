@@ -3,7 +3,7 @@
 > **GENERATED — DO NOT EDIT MANUALLY**
 > Sources: Stage Register, Strategy Traceability Matrix, Dependency Registry, Work Record Registry.
 
-Generated: 2026-08-19T15:07:15+07:00
+Generated: 2026-08-20T10:28:00+07:00
 
 ## Current Verification Epoch
 
@@ -13,12 +13,12 @@ Generated: 2026-08-19T15:07:15+07:00
 
 ## Strategy Coverage
 
-- Mandatory/conditional required rules: **708**
+- Mandatory/conditional required rules: **1257**
 - SATISFIED: **0**
-- NOT_ASSESSED: **708**
+- NOT_ASSESSED: **1257**
 - Other open/gap states: **0**
 - Verified mandatory coverage: **0%**
-- Optional rules (CONFIRM branch etc.): **115**
+- Optional rules (CONFIRM branch etc.): **132**
 - Optional SATISFIED: **0**
 
 ## Stage Lifecycle

@@ -1,0 +1,44 @@
+{
+  "status": "CANONICAL_TRACEABILITY_BASELINE_REAL_WORLD_WEEKLY_SWING_STRENGTHENED",
+  "generated_date": "2026-08-20",
+  "matrix": "docs/watchlist/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv",
+  "total_strategy_clauses_inventoried": 1552,
+  "required_traceability_units": 1346,
+  "reference_only_units": 206,
+  "mandatory_or_conditional_units": 1214,
+  "optional_confirm_units": 132,
+  "satisfied_mandatory_units": 0,
+  "mandatory_coverage_pct": 0.0,
+  "by_strategy_stage_required": {
+    "CROSS": 51,
+    "WS-S00": 156,
+    "WS-S01": 158,
+    "WS-S02": 108,
+    "WS-S03": 79,
+    "WS-S04": 192,
+    "WS-S05": 107,
+    "WS-S06": 173,
+    "WS-S07": 122,
+    "WS-S08": 78,
+    "WS-S09": 10,
+    "WS-S10": 58,
+    "WS-S11": 54
+  },
+  "by_verification_build_stage_required": {
+    "WS-B00": 156,
+    "WS-B01": 158,
+    "WS-B03": 108,
+    "WS-B04": 79,
+    "WS-B05": 192,
+    "WS-B07": 107,
+    "WS-B08": 173,
+    "WS-B09": 122,
+    "WS-B10": 88,
+    "WS-B11": 58,
+    "WS-B12": 105
+  },
+  "rule_id_unique": true,
+  "new_rules_by_decision": {
+    "D-WS-20260820-03": 106
+  }
+}

@@ -23,9 +23,9 @@ historical PASS / FAIL / PARTIAL / DONE / READY
 
 Untuk revalidation track saat epoch diterbitkan:
 
-- mandatory/conditional strategy rules: `708`;
+- mandatory/conditional strategy rules: `1081`;
 - current `SATISFIED`: `0`;
-- current `NOT_ASSESSED`: `708`;
+- current `NOT_ASSESSED`: `1081`;
 - optional CONFIRM remains `OPTIONAL_NOT_REQUESTED` unless explicitly requested;
 - `WS-B00..WS-B12` keep their current lifecycle initialization from Stage Register;
 - existing code/docs may be reused only after current revalidation.
@@ -116,3 +116,22 @@ Documentation/relationship gates MUST reject:
 ## 10. One-line Rule
 
 > **Old verdicts remain true as history, but every current implementation/proof claim starts again from NOT_ASSESSED and must earn current status under the new authority.**
+
+
+## High-trust strategy revision synchronization — 2026-08-19
+
+After `D-WS-20260819-05`, active mandatory/conditional inventory is `886` and remains `0` current SATISFIED / `886` NOT_ASSESSED. The verification epoch remains `WS-REBASELINE-20260819-001`; exact Work Baseline strategy/matrix fingerprints prevent pre-revision proof inheritance.
+
+
+## EOD core-boundary strategy revision synchronization — 2026-08-19
+
+`D-WS-20260819-05` previously raised the active mandatory/conditional inventory to `886`. After `D-WS-20260819-06`, the current active mandatory/conditional inventory is `927` and remains `0` current SATISFIED / `927` NOT_ASSESSED. Optional capability required units are `120` and remain `OPTIONAL_NOT_REQUESTED` unless explicitly requested. The verification epoch remains `WS-REBASELINE-20260819-001`; exact Work Baseline strategy/matrix fingerprints prevent pre-revision proof inheritance.
+
+## Market Data fact-ownership strategy revision synchronization — 2026-08-19
+
+After `D-WS-20260819-07`, the current active mandatory/conditional inventory is `985` and remains `0` current SATISFIED / `985` NOT_ASSESSED. Optional capability required units are `123` and remain `OPTIONAL_NOT_REQUESTED` unless explicitly requested. The verification epoch remains `WS-REBASELINE-20260819-001`; no prior implementation/evidence inherits conformance for the strengthened Market Data ownership/no-local-substitution rules.
+
+
+## EOD Temporal / Action-Intent Strategy Revision Synchronization — 2026-08-20
+
+After `D-WS-20260820-01`, the current active mandatory/conditional inventory is `1081` and remains `0` current SATISFIED / `1081` NOT_ASSESSED. Optional capability required units are `132` and remain `OPTIONAL_NOT_REQUESTED` unless explicitly requested. The verification epoch remains `WS-REBASELINE-20260819-001`; no prior implementation/evidence inherits conformance for the clarified temporal identity, late-EOD handling, action-intent, weekday-neutral, or operational-availability rules.

@@ -1,0 +1,112 @@
+{
+  "record_id": "E-WS-20260820-01",
+  "document_role": "EVIDENCE",
+  "status": "PASS",
+  "date": "2026-08-20",
+  "finding_id": "F-WS-20260820-01",
+  "decision_id": "D-WS-20260820-01",
+  "scope": "EOD temporal identity, Top-Pick action intent, late Market Data behavior, next-trading-session semantics, CONFIRM preconditions, weekday-neutral baseline, and operational availability proof",
+  "changed_strategy_owners": [
+    "WS_D1_CONFIRM_ACTIONABILITY.md",
+    "WS_END_TO_END_STRATEGY_LIFECYCLE.md",
+    "WS_HISTORICAL_EVALUATION_STRATEGY.md",
+    "WS_IS_SUFFICIENCY_AND_WINNER_FREEZE.md",
+    "WS_MARKET_DATA_INPUT_REQUIREMENTS.md",
+    "WS_OOS_STRESS_SHADOW_AND_PRODUCTION_PROOF.md",
+    "WS_PLAN_SCORING_AND_TRADE_PLAN.md",
+    "WS_PRODUCT_OBJECTIVE_AND_LAYERS.md",
+    "WS_RUNTIME_FLOW.md",
+    "WS_SCOPE_AND_SUCCESS_CRITERIA.md",
+    "WS_TOP_PICKS_RECOMMENDATION.md"
+  ],
+  "unchanged_strategy_owners": [
+    "WS_CANDIDATE_CLASSIFICATION.md",
+    "WS_CANDIDATE_ELIGIBILITY_AND_SETUP.md",
+    "WS_TOP_PICKS_QUALIFICATION_AND_RANKING.md"
+  ],
+  "pre_change_strategy_snapshot_range": "H0413..H0426",
+  "support_snapshot_range": "H0427..H0435",
+  "traceability": {
+    "matrix_rows_total": 1425,
+    "active_clauses": 1419,
+    "required_units": 1213,
+    "mandatory_or_conditional_units": 1081,
+    "optional_capability_required_units": 132,
+    "new_d08_rows": 105,
+    "new_rows_by_owner": {
+      "WS_D1_CONFIRM_ACTIONABILITY.md": 9,
+      "WS_END_TO_END_STRATEGY_LIFECYCLE.md": 7,
+      "WS_HISTORICAL_EVALUATION_STRATEGY.md": 7,
+      "WS_IS_SUFFICIENCY_AND_WINNER_FREEZE.md": 5,
+      "WS_MARKET_DATA_INPUT_REQUIREMENTS.md": 12,
+      "WS_OOS_STRESS_SHADOW_AND_PRODUCTION_PROOF.md": 12,
+      "WS_PLAN_SCORING_AND_TRADE_PLAN.md": 4,
+      "WS_PRODUCT_OBJECTIVE_AND_LAYERS.md": 12,
+      "WS_RUNTIME_FLOW.md": 16,
+      "WS_SCOPE_AND_SUCCESS_CRITERIA.md": 10,
+      "WS_TOP_PICKS_RECOMMENDATION.md": 11
+    },
+    "current_satisfied_mandatory": 0,
+    "current_not_assessed_mandatory": 1081
+  },
+  "semantic_and_structure_checks": {
+    "weekly_swing_identity_lock": true,
+    "eod_only_core_preserved": true,
+    "market_data_fact_owner_preserved": true,
+    "requested_vs_effective_trade_date_explicit": true,
+    "next_trading_session_not_calendar_plus_one": true,
+    "market_data_unavailable_retryable_state": true,
+    "prior_date_context_not_current_recommendation": true,
+    "late_eod_before_cutoff_retry_allowed": true,
+    "late_eod_after_cutoff_action_window_expired": true,
+    "no_automatic_carry_forward": true,
+    "top_pick_eod_action_intent": true,
+    "confirm_requires_existing_top_pick_and_open_window": true,
+    "confirm_cannot_replace_missing_eod_recommendation": true,
+    "weekday_neutral_baseline": true,
+    "weekday_only_preregistered_challenger": true,
+    "historical_next_session_causality": true,
+    "historical_timeliness_not_invented": true,
+    "forward_shadow_timely_rate_gate": true,
+    "provider_unavailability_counts_against_operational_availability": true,
+    "fourteen_strategy_owners_preserved": true,
+    "mandatory_all_not_assessed": true,
+    "optional_all_not_requested": true
+  },
+  "documentation_integrity_gate": {
+    "status": "PASS_WITH_REGISTERED_LEGACY_EXCEPTION",
+    "failed_checks": [],
+    "registered_legacy_exceptions_used": [
+      "DOC-INT-EXC-20260818-001"
+    ]
+  },
+  "relationship_integrity_gate": {
+    "status": "PASS",
+    "errors": [],
+    "enforced_invariants": {
+      "attempt_identity_unique_stage_and_baseline": true,
+      "record_id_unique": true,
+      "stage_reference_exists": true,
+      "baseline_reference_exists_and_bound": true,
+      "related_finding_type_safe": true,
+      "related_decision_type_safe": true,
+      "supersedes_acyclic": true,
+      "closure_cross_baseline_evidence_controlled": true,
+      "cross_attempt_relationship_explicit": true
+    }
+  },
+  "relationship_selftest_pass_lines": [
+    "PASS base_valid",
+    "PASS attempt_unique_stage_baseline -> ATTEMPT_MULTIPLE_BASELINES",
+    "PASS record_id_unique -> DUP_RECORD_ID",
+    "PASS stage_exists -> UNKNOWN_STAGE",
+    "PASS baseline_exists -> ATTEMPT_BASELINE_LOCK_MISSING",
+    "PASS related_finding_type -> RELATED_FINDING_WRONG_TYPE",
+    "PASS related_decision_type -> RELATED_DECISION_WRONG_TYPE",
+    "PASS supersedes_acyclic -> SUPERSEDES_CYCLE",
+    "PASS closure_cross_baseline_control -> CLOSURE_CROSS_BASELINE_UNAUTHORIZED",
+    "PASS cross_attempt_explicit -> CROSS_ATTEMPT_RELATION_UNDECLARED",
+    "PASS authorized_cross_baseline_closure"
+  ],
+  "conclusion": "Weekly Swing now has explicit EOD temporal identity and action-intent semantics: same-date Market Data is required for new recommendations, next-session timing comes from the authoritative trading calendar, late recommendations expire instead of rolling forward, CONFIRM only sharpens an existing open-window Top Pick, and weekday patterns remain non-canonical unless separately proven."
+}

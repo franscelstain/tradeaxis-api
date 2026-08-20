@@ -27,7 +27,7 @@ Register tidak menggantikan evidence, finding, decision, atau implementation sta
 
 - **Verification Epoch:** `WS-REBASELINE-20260819-001`
 - All pre-epoch stage/campaign PASS/FAIL/PARTIAL/DONE/READY is historical-only.
-- Current verified strategy coverage starts `0/708`; existing code is revalidation input, not inherited PASS.
+- Current verified strategy coverage starts `0/1257`; existing code is revalidation input, not inherited PASS.
 - Current `WS-Bxx` result may only be issued from current Work/Attempt/Baseline evidence.
 
 ## Baseline Initialization
@@ -77,19 +77,19 @@ Initial baseline counts berasal dari current canonical matrix dan seluruh mandat
 
 | Stage | Maps to | Lifecycle state | Stage / evaluation verdict | Latest attempt / Work ID | Baseline ID | Change impact | Convergence | Strategy coverage | Residue state / evidence | Integrity gate | Dependency ID | Dependency / resume trigger | Open finding | Active remediation / decision | Closure manifest | Successor | Resume from | Last update |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `WS-B00` | `WS-S00` | `NOT_STARTED` | — | — | — | — | — | `0/66` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | begin stage | 2026-08-18 |
-| `WS-B01` | `WS-S01` | `NOT_STARTED` | — | — | — | — | — | `0/104` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | after B00 handoff | 2026-08-18 |
+| `WS-B00` | `WS-S00` | `NOT_STARTED` | — | — | — | — | — | `0/162` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | begin stage | 2026-08-18 |
+| `WS-B01` | `WS-S01` | `NOT_STARTED` | — | — | — | — | — | `0/158` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | after B00 handoff | 2026-08-18 |
 | `WS-B02` | support `S01..S04` | `NOT_STARTED` | — | — | — | — | — | `0/0 support` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | after B01 contract boundary | 2026-08-18 |
-| `WS-B03` | `WS-S02` | `NOT_STARTED` | — | — | — | — | — | `0/83` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | after B02 technical alignment | 2026-08-18 |
-| `WS-B04` | `WS-S03` | `NOT_STARTED` | — | — | — | — | — | `0/62` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | after B03 candidate state handoff | 2026-08-18 |
-| `WS-B05` | `WS-S04` | `NOT_STARTED` | — | — | — | — | — | `0/113` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | after immutable PLAN | 2026-08-18 |
+| `WS-B03` | `WS-S02` | `NOT_STARTED` | — | — | — | — | — | `0/108` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | after B02 technical alignment | 2026-08-18 |
+| `WS-B04` | `WS-S03` | `NOT_STARTED` | — | — | — | — | — | `0/86` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | after B03 candidate state handoff | 2026-08-18 |
+| `WS-B05` | `WS-S04` | `NOT_STARTED` | — | — | — | — | — | `0/207` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | after immutable PLAN | 2026-08-18 |
 | `WS-B06` | core delivery | `NOT_STARTED` | — | — | — | — | — | `0/0 support` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | after B05 Top Picks | 2026-08-18 |
-| `WS-B07` | optional `WS-S05` | `NOT_REQUESTED_OPTIONAL` | — | — | — | — | — | `0/90 optional` | `NOT_ASSESSED` | `NOT_RUN` | — | valid decision-time source + feature request | — | — | — | — | optional branch | 2026-08-18 |
-| `WS-B08` | `WS-S06` | `NOT_STARTED` | — | — | — | — | — | `0/84` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | after core delivery is testable | 2026-08-18 |
-| `WS-B09` | `WS-S07` | `NOT_STARTED` | — | — | — | — | — | `0/72` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | after historical evaluator | 2026-08-18 |
-| `WS-B10` | `WS-S08..S09` | `NOT_STARTED` | — | — | — | — | — | `0/35` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | only after valid IS handoff | 2026-08-18 |
-| `WS-B11` | `WS-S10` | `NOT_STARTED` | — | — | — | — | — | `0/18 mandatory + 0/25 optional` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | only when proof path reaches shadow | 2026-08-18 |
-| `WS-B12` | `WS-S11` | `NOT_STARTED` | — | — | — | — | — | `0/71` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | after required proof verdicts | 2026-08-18 |
+| `WS-B07` | optional `WS-S05` | `NOT_REQUESTED_OPTIONAL` | — | — | — | — | — | `0/0 mandatory + 0/107 optional` | `NOT_ASSESSED` | `NOT_RUN` | — | valid decision-time source + feature request | — | — | — | — | optional branch | 2026-08-18 |
+| `WS-B08` | `WS-S06` | `NOT_STARTED` | — | — | — | — | — | `0/180` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | after core delivery is testable | 2026-08-18 |
+| `WS-B09` | `WS-S07` | `NOT_STARTED` | — | — | — | — | — | `0/122` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | after historical evaluator | 2026-08-18 |
+| `WS-B10` | `WS-S08..S09` | `NOT_STARTED` | — | — | — | — | — | `0/91` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | only after valid IS handoff | 2026-08-18 |
+| `WS-B11` | `WS-S10` | `NOT_STARTED` | — | — | — | — | — | `0/36 mandatory + 0/25 optional` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | only when proof path reaches shadow | 2026-08-18 |
+| `WS-B12` | `WS-S11` | `NOT_STARTED` | — | — | — | — | — | `0/107` | `NOT_ASSESSED` | `NOT_RUN` | — | — | — | — | — | — | after required proof verdicts | 2026-08-18 |
 
 ## Mandatory Update Rule
 
@@ -156,3 +156,40 @@ Current table boleh diperbarui sebagai summary. Event di bawah append-only.
 - **Historical records:** preserved, no rewrite.
 - **Current mandatory coverage:** `0/708`; optional CONFIRM unchanged as optional.
 - **Rule:** old results may inform revalidation but cannot close a current stage.
+
+
+### STAGE-REG-20260819-001 — EOD Core Boundary Strategy Synchronization
+
+- **Date:** 2026-08-19
+- **Event:** strategy traceability counts synchronized after `D-WS-20260819-06`; all new mandatory rules remain `NOT_ASSESSED`, optional CONFIRM rules remain `OPTIONAL_NOT_REQUESTED`.
+- **Current mandatory inventory:** `927`, SATISFIED `0`.
+- **Count correction:** `WS-B04` and `WS-B12` summary denominators were synchronized to the canonical matrix (`71` and `101` respectively); this is an orchestration-count correction, not an implementation verdict.
+- **Boundary:** core Weekly Swing remains EOD-only; no realtime/orderbook dependency was introduced.
+
+### STAGE-REG-20260819-002 — Market Data Ownership Strategy Synchronization
+
+- **Date:** 2026-08-19
+- **Event:** strategy/traceability denominators synchronized after `D-WS-20260819-07`; all new mandatory/conditional rules remain `NOT_ASSESSED`, optional CONFIRM rules remain `OPTIONAL_NOT_REQUESTED`.
+- **Current mandatory inventory:** `985`, SATISFIED `0`.
+- **Boundary:** Watchlist remains a consumer of authoritative Market Data; no local market-fact reconstruction/substitution is permitted at runtime, research, replay, proof, or monitoring.
+
+### STAGE-REG-20260820-001 — EOD Temporal / Action-Intent Strategy Synchronization
+
+- **Date:** 2026-08-20
+- **Event:** strategy/traceability denominators synchronized after `D-WS-20260820-01`; all added mandatory rules remain `NOT_ASSESSED`, optional CONFIRM remains `OPTIONAL_NOT_REQUESTED`.
+- **Current mandatory inventory:** `1081`, SATISFIED `0`.
+- **Boundary:** core remains EOD Weekly Swing; canonical action timing is `effective_trade_date → NEXT_TRADING_SESSION`, with no weekday default and no stale/late carry-forward.
+
+## 2026-08-20 Temporal Field Ownership Synchronization
+
+- **Event:** temporal field ownership contract synchronized after `D-WS-20260820-02`; all added rules remain `NOT_ASSESSED`.
+- **Current mandatory inventory:** `1108`, SATISFIED `0`.
+- **Affected build denominators:** `WS-B00=0/147`, `WS-B01=0/151`, `WS-B05=0/181`.
+- **Boundary:** Market Data owns producer temporal provenance; Watchlist owns request/recommendation lifecycle and strategy-derived next-session/action timing.
+
+## 2026-08-20 Final Bounded EOD Strategy Closure Synchronization
+
+- **Event:** strategy/traceability denominators synchronized after `D-WS-20260820-04`; all 43 final bounded EOD rules remain `NOT_ASSESSED`.
+- **Current mandatory inventory:** `1257`, SATISFIED `0`; optional capability units remain `132`.
+- **Affected build denominators:** `WS-B00=0/162`, `WS-B04=0/86`, `WS-B05=0/207`, `WS-B08=0/180`, `WS-B10=0/91`, `WS-B11=0/36 mandatory + 0/25 optional`, `WS-B12=0/107`.
+- **Boundary:** no scope expansion; same-bar ambiguity, issued-record immutability, zero-pick validity, and deterministic replay are now explicit closure invariants for the EOD Weekly Swing baseline.

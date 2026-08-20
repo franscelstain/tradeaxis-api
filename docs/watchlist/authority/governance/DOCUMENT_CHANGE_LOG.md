@@ -213,3 +213,102 @@ Outcome:
 - **Change:** remove only exact duplicate `LS-*` physical copies whose SHA1 equals the registered `original_sha1` and the normalized `final_primary_path`; preserve provenance in source/compaction indexes; harden the executable gate to verify the retained primary hash.
 - **Archived prior authority/tool:** `H0356..H0357` in `records/history/ARCHIVE_INDEX.csv`.
 - **Strategy behavior changed:** NO.
+
+## DOC-CHG-20260819-005 — Strengthen Weekly Swing Strategy for High-Trust Top Picks Proof
+
+- **Date:** 2026-08-19
+- **Change Class:** STRATEGY / PROOF ROBUSTNESS / EXECUTION REALISM / PRODUCTION HEALTH
+- **Scope:** current canonical Weekly Swing strategy and its current traceability baseline
+- **Files/areas affected:** 13 strategy owners materially revised; 14-owner pre-change strategy snapshot preserved; traceability matrix/baseline, current verification counts, stage coverage summaries, and generated current state synchronized
+- **Reason:** canonical strategy already enforced qualified final Top Picks, realistic friction, untouched OOS, ranking proof, and shadow, but still lacked explicit protection against post-entry non-executable sample loss, operational D+1 timing mismatch, boundary leakage/OOS reuse, multiple-testing inflation, statistically/economically weak edge, incomplete Top-K/tail/capacity proof, and post-production degradation.
+- **Related Finding:** `../../development/findings/F-WS-20260819-05_HIGH_TRUST_TOP_PICKS_STRATEGY_GAPS.md`
+- **Related Decision:** `../../records/decisions/D-WS-20260819-05_HIGH_TRUST_TOP_PICKS_STRATEGY_STRENGTHENING.md`
+- **Archived prior authority:** `../../records/history/archive/H0358_WS_SCOPE_AND_SUCCESS_CRITERIA_PRE_HIGH_TRUST_PROOF.md` through `H0371_WS_OOS_STRESS_SHADOW_AND_PRODUCTION_PROOF_PRE_HIGH_TRUST_PROOF.md`; traceability/rebaseline prior governance snapshots `H0372..H0374`; all indexed by `../../records/history/ARCHIVE_INDEX.csv`.
+- **Validation/Evidence:** `../../records/evidence/E-WS-20260819-05_HIGH_TRUST_STRATEGY_GAP_VALIDATION.json` plus documentation/relationship integrity gates in the sealed package.
+- **Traceability impact:** active canonical clauses `1200`; active required units `1001`; mandatory/conditional units `886`; optional capability units `115`; current mandatory SATISFIED remains `0`.
+- **Outcome:** Weekly Swing now requires operationally reachable entry timing, no post-entry survivorship exclusion, purged/consumed OOS discipline, trial-aware statistical proof, +0.25% minimum average net economic edge with confidence support, benchmark/selection uplift, Top-K ranking evidence, tail/capacity controls, and continuing 20/60-day production health monitoring with deterministic suspension/revalidation behavior.
+
+
+## DOC-CHG-20260819-006 — Clarify EOD-Only Core and Historical Modeled Execution Boundary
+
+- **Date:** 2026-08-19
+- **Change Class:** STRATEGY / PRODUCT BOUNDARY / EXECUTION-MODEL CLARIFICATION
+- **Scope:** canonical Weekly Swing EOD core, historical execution proof, optional CONFIRM boundary, and current traceability baseline
+- **Reason:** high-trust execution-realism wording could be misread as requiring intraday/orderbook data or claiming exact investor fills. The product must remain EOD decision support.
+- **Related Finding:** `../../development/findings/F-WS-20260819-06_EOD_CORE_BOUNDARY_AMBIGUITY.md`
+- **Related Decision:** `../../records/decisions/D-WS-20260819-06_EOD_ONLY_CORE_EXECUTION_MODEL_CLARIFICATION.md`
+- **Archived prior authority:** complete 14-owner strategy snapshot `H0375..H0388`; supporting rebaseline/matrix/stage snapshots `H0389..H0392`, indexed by `../../records/history/ARCHIVE_INDEX.csv`.
+- **Validation/Evidence:** `../../records/evidence/E-WS-20260819-06_EOD_CORE_BOUNDARY_VALIDATION.json`.
+- **Traceability impact:** active canonical clauses `1253`; active required units `1047`; mandatory/conditional units `927`; optional capability required units `120`; current mandatory SATISFIED remains `0`.
+- **Outcome:** core PLAN/Top Picks/proof do not require realtime/intraday/orderbook; `NEXT_OPEN` is a conservative historical reference execution model, not exact investor fill; optional CONFIRM remains non-blocking and orderbook-independent unless a future capability explicitly adopts it.
+- **Strategy behavior changed:** product boundary clarified and made stricter; no conversion to intraday/realtime trading.
+
+## DOC-CHG-20260819-007 — Enforce Market Data Fact Ownership and No Local Substitution
+
+- **Date:** 2026-08-19
+- **Change Class:** STRATEGY / DOMAIN OWNERSHIP / MARKET-DATA DEPENDENCY BOUNDARY
+- **Scope:** canonical Weekly Swing runtime, research, historical replay, proof, monitoring, and optional CONFIRM fact consumption
+- **Reason:** existing strategy prohibited several named recomputations but still needed a universal market-fact ownership test, explicit upstream dependency-gap behavior, and a hard ban on local substitute facts for future Market Data needs.
+- **Related Finding:** `../../development/findings/F-WS-20260819-07_MARKET_DATA_FACT_OWNERSHIP_BOUNDARY_GAP.md`
+- **Related Decision:** `../../records/decisions/D-WS-20260819-07_MARKET_DATA_FACT_OWNERSHIP_AND_NO_LOCAL_SUBSTITUTION.md`
+- **Archived prior authority:** complete 14-owner strategy snapshot `H0393..H0406`; supporting traceability/rebaseline/epoch/matrix/coverage/stage snapshots `H0407..H0412`, indexed by `../../records/history/ARCHIVE_INDEX.csv`.
+- **Validation/Evidence:** `../../records/evidence/E-WS-20260819-07_MARKET_DATA_OWNERSHIP_BOUNDARY_VALIDATION.json`.
+- **Traceability impact:** active canonical clauses `1314`; active required units `1108`; mandatory/conditional units `985`; optional capability required units `123`; current mandatory SATISFIED remains `0`.
+- **Outcome:** every factual market-data need is producer-owned; Watchlist may only calculate strategy-dependent decisions/outcomes, and missing producer facts remain explicit upstream dependencies rather than local reconstructions.
+- **Strategy behavior changed:** domain ownership/allowed implementation behavior strengthened; EOD Top Picks product objective and ranking semantics unchanged.
+
+
+## DOC-CHG-20260820-001 — Clarify EOD Temporal Identity, Action Intent, Late Data, and Weekday-Neutral Baseline
+
+- **Date:** 2026-08-20
+- **Change Class:** STRATEGY / EOD TEMPORAL SEMANTICS / ACTION INTENT / LATE-DATA SAFETY
+- **Scope:** canonical Weekly Swing current runtime, Top Picks action intent, next-session timing, optional CONFIRM, historical proof, and production availability proof
+- **Reason:** eliminate ambiguity between wall-clock date, effective EOD date, next trading session, and provider-late publication; ensure Top Picks give useful EOD entry-consideration intent without becoming realtime/order execution; prevent unproven weekday/calendar rules.
+- **Related Finding:** `../../development/findings/F-WS-20260820-01_EOD_TEMPORAL_ACTION_INTENT_AND_LATE_DATA_AMBIGUITY.md`
+- **Related Decision:** `../../records/decisions/D-WS-20260820-01_EOD_TEMPORAL_ACTION_INTENT_AND_LATE_DATA_CLARIFICATION.md`
+- **Archived prior authority:** complete 14-owner strategy snapshot `H0413..H0426`; supporting matrix/baseline/stage/current-state/navigation snapshots `H0427..H0432` plus governance synchronization snapshots `H0433..H0435`, indexed by `../../records/history/ARCHIVE_INDEX.csv`.
+- **Validation/Evidence:** `../../records/evidence/E-WS-20260820-01_EOD_TEMPORAL_ACTION_INTENT_VALIDATION.json`.
+- **Outcome:** canonical timing is `effective_trade_date → NEXT_TRADING_SESSION`, delayed same-date EOD is retryable before cutoff, late recommendation expires instead of rolling forward, Top Picks carry explicit EOD action intent, CONFIRM remains optional, and baseline has no weekday buy/sell assumption.
+- **Strategy behavior changed:** YES — temporal/actionability semantics are made explicit; EOD-only/Market-Data ownership boundaries are unchanged.
+
+## DOC-CHG-20260820-002 — Make Temporal Field Ownership Explicit
+
+- **Date:** 2026-08-20
+- **Change Class:** STRATEGY / TEMPORAL OWNERSHIP / CAUSAL PROVENANCE
+- **Scope:** canonical EOD temporal identity across Market Data intake, Watchlist runtime, and Top-Picks output
+- **Reason:** field meaning was already documented but ownership was not centralized strongly enough to prevent cross-domain fabrication/override or conflation of producer publication time with recommendation generation time.
+- **Related Finding:** `../../development/findings/F-WS-20260820-02_TEMPORAL_FIELD_OWNERSHIP_AMBIGUITY.md`
+- **Related Decision:** `../../records/decisions/D-WS-20260820-02_TEMPORAL_FIELD_OWNERSHIP_CONTRACT.md`
+- **Archived prior authority:** complete 14-owner strategy snapshot `H0436..H0449`; supporting traceability/orchestration snapshots `H0450..H0454`, indexed by `../../records/history/ARCHIVE_INDEX.csv`.
+- **Validation/Evidence:** `../../records/evidence/E-WS-20260820-02_TEMPORAL_FIELD_OWNERSHIP_VALIDATION.json`.
+- **Traceability impact:** active clauses `1446`; required units `1240`; mandatory/conditional units `1108`; optional units `132`; current mandatory SATISFIED remains `0`.
+- **Outcome:** `requested_trade_date` and recommendation lifecycle fields are Watchlist-owned; `effective_trade_date` and producer publication/revision provenance are Market-Data-owned; derived next-session/cutoff/action fields remain Watchlist strategy outputs using authoritative Market Data session facts.
+- **Strategy behavior changed:** semantic ownership clarified and made enforceable; EOD Weekly Swing behavior and market-data/work split remain unchanged.
+
+## DOC-CHG-20260820-003 — Strengthen Real-World EOD Weekly Swing Followability and Proof
+
+- **Date:** 2026-08-20
+- **Change Class:** STRATEGY / REAL-WORLD FOLLOWABILITY / EXECUTION REALISM / ROBUSTNESS
+- **Scope:** canonical EOD Weekly Swing recommendation, historical evaluation, OOS/stress/shadow proof, and production-health monitoring
+- **Reason:** close remaining real-world gaps without expanding scope into realtime/orderbook/portfolio management.
+- **Related Finding:** `../../development/findings/F-WS-20260820-03_REAL_WORLD_WEEKLY_SWING_PROOF_GAPS.md`
+- **Related Decision:** `../../records/decisions/D-WS-20260820-03_REAL_WORLD_WEEKLY_SWING_STRATEGY_STRENGTHENING.md`
+- **Archived prior authority:** complete 14-owner strategy snapshot plus matrix/coverage/stage/current-state/traceability-standard snapshots beginning at `H0455`, indexed by `../../records/history/ARCHIVE_INDEX.csv`.
+- **Validation/Evidence:** `../../records/evidence/E-WS-20260820-03_REAL_WORLD_WEEKLY_SWING_STRATEGY_VALIDATION.json`.
+- **Traceability impact:** active canonical clauses `1552`; required units `1346`; mandatory/conditional units `1214`; optional capability units `132`; `106` new D03 mandatory rules, all `NOT_ASSESSED`; current mandatory `SATISFIED = 0`.
+- **Outcome:** repeated recommendations remain valid position-independent EOD Top Picks while follower replay prevents same-listing double exposure; economic return accounts for authoritative corporate actions; unsupported execution modes fail closed; production friction becomes condition-dependent EOD modeling; Top-1/3/5 followability, concentration, correction sensitivity, and shortened-session conformance become explicit proof requirements.
+- **Strategy behavior changed:** YES — real-world evaluation/proof semantics strengthened; EOD Weekly Swing product identity unchanged.
+
+## DOC-CHG-20260820-004 — Close Final Bounded EOD Weekly Swing Strategy Ambiguities
+
+- **Date:** 2026-08-20
+- **Change Class:** STRATEGY / EOD AMBIGUITY / IMMUTABILITY / NO-PICK / DETERMINISM
+- **Scope:** canonical EOD Weekly Swing recommendation truth, historical evaluation, rerun semantics, and production proof
+- **Reason:** close the final bounded ambiguities without expanding into intraday/orderbook/broker/portfolio scope.
+- **Related Finding:** `../../development/findings/F-WS-20260820-04_FINAL_BOUNDED_EOD_STRATEGY_CLOSURE_GAPS.md`
+- **Related Decision:** `../../records/decisions/D-WS-20260820-04_FINAL_BOUNDED_EOD_STRATEGY_CLOSURE.md`
+- **Archived prior authority:** complete 14-owner strategy snapshot `H0474..H0487`; supporting traceability/orchestration snapshots `H0488..H0492`, indexed by `../../records/history/ARCHIVE_INDEX.csv`.
+- **Validation/Evidence:** `../../records/evidence/E-WS-20260820-04_FINAL_BOUNDED_EOD_STRATEGY_VALIDATION.json`.
+- **Traceability impact:** active canonical clauses `1595`; required units `1389`; mandatory/conditional units `1257`; optional capability units `132`; `43` new D04 mandatory rules, all `NOT_ASSESSED`; current mandatory `SATISFIED = 0`.
+- **Outcome:** unresolved same-daily-bar stop/target ambiguity is conservative `STOP_FIRST`; issued PLAN/recommendation truth is immutable; zero qualified picks is valid `NO_ACTIONABLE_TOP_PICKS`; same frozen identities must reproduce the same business recommendation/evaluation truth.
+- **Strategy behavior changed:** YES — ambiguity/record-integrity/determinism semantics strengthened; EOD Weekly Swing product boundary unchanged.

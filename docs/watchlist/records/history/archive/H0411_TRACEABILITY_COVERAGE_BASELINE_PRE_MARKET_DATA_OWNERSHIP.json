@@ -1,0 +1,41 @@
+{
+  "status": "CANONICAL_TRACEABILITY_BASELINE_EOD_CORE_BOUNDARY_CLARIFIED",
+  "generated_date": "2026-08-19",
+  "matrix": "docs/watchlist/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv",
+  "total_strategy_clauses_inventoried": 1253,
+  "required_traceability_units": 1047,
+  "reference_only_units": 206,
+  "mandatory_or_conditional_units": 927,
+  "optional_confirm_units": 120,
+  "satisfied_mandatory_units": 0,
+  "mandatory_coverage_pct": 0.0,
+  "by_strategy_stage_required": {
+    "CROSS": 51,
+    "WS-S00": 95,
+    "WS-S01": 113,
+    "WS-S02": 94,
+    "WS-S03": 71,
+    "WS-S04": 142,
+    "WS-S05": 95,
+    "WS-S06": 122,
+    "WS-S07": 105,
+    "WS-S08": 57,
+    "WS-S09": 8,
+    "WS-S10": 44,
+    "WS-S11": 50
+  },
+  "by_verification_build_stage_required": {
+    "WS-B00": 95,
+    "WS-B01": 113,
+    "WS-B03": 94,
+    "WS-B04": 71,
+    "WS-B05": 142,
+    "WS-B07": 95,
+    "WS-B08": 122,
+    "WS-B09": 105,
+    "WS-B10": 65,
+    "WS-B11": 44,
+    "WS-B12": 101
+  },
+  "rule_id_unique": true
+}

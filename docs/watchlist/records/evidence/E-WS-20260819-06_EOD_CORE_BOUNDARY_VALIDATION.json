@@ -1,0 +1,98 @@
+{
+  "record_id": "E-WS-20260819-06",
+  "document_role": "EVIDENCE",
+  "status": "PASS",
+  "date": "2026-08-19",
+  "finding_id": "F-WS-20260819-06",
+  "decision_id": "D-WS-20260819-06",
+  "scope": "EOD-only Weekly Swing core boundary and modeled-execution clarification",
+  "changed_strategy_owners": [
+    "WS_SCOPE_AND_SUCCESS_CRITERIA.md",
+    "WS_PRODUCT_OBJECTIVE_AND_LAYERS.md",
+    "WS_END_TO_END_STRATEGY_LIFECYCLE.md",
+    "WS_MARKET_DATA_INPUT_REQUIREMENTS.md",
+    "WS_RUNTIME_FLOW.md",
+    "WS_D1_CONFIRM_ACTIONABILITY.md",
+    "WS_HISTORICAL_EVALUATION_STRATEGY.md",
+    "WS_OOS_STRESS_SHADOW_AND_PRODUCTION_PROOF.md"
+  ],
+  "unchanged_strategy_owners": [
+    "WS_CANDIDATE_ELIGIBILITY_AND_SETUP.md",
+    "WS_CANDIDATE_CLASSIFICATION.md",
+    "WS_PLAN_SCORING_AND_TRADE_PLAN.md",
+    "WS_TOP_PICKS_RECOMMENDATION.md",
+    "WS_TOP_PICKS_QUALIFICATION_AND_RANKING.md",
+    "WS_IS_SUFFICIENCY_AND_WINNER_FREEZE.md"
+  ],
+  "pre_change_snapshot_range": "H0375..H0388",
+  "traceability": {
+    "matrix_rows_total": 1259,
+    "active_clauses": 1253,
+    "required_units": 1047,
+    "mandatory_or_conditional_units": 927,
+    "optional_capability_required_units": 120,
+    "new_or_clarified_d06_rows": 55,
+    "current_satisfied_mandatory": 0,
+    "current_not_assessed_mandatory": 927
+  },
+  "semantic_and_structure_checks": {
+    "eod_core_explicit": true,
+    "core_no_realtime_prerequisite": true,
+    "missing_realtime_not_core_failure": true,
+    "next_open_reference_not_guarantee": true,
+    "recommendation_modeled_actual_split": true,
+    "market_data_eod_dependency_lock": true,
+    "runtime_no_orderbook_wait": true,
+    "confirm_optional_no_orderbook_requirement": true,
+    "historical_no_intraday_dependency": true,
+    "daily_ohlc_not_intraday_dependency": true,
+    "modeled_vs_actual_fields": true,
+    "production_proof_eod_only": true,
+    "future_intraday_separate_identity": true,
+    "fourteen_strategy_owners": true,
+    "exact_changed_owner_set": true,
+    "mandatory_all_not_assessed": true,
+    "optional_all_not_requested": true,
+    "documentation_integrity_pass": true,
+    "relationship_integrity_pass": true,
+    "relationship_selftest_9_invariants": true,
+    "role_registry_full": true,
+    "verification_registry_full": true
+  },
+  "documentation_integrity_gate": {
+    "status": "PASS_WITH_REGISTERED_LEGACY_EXCEPTION",
+    "failed_checks": [],
+    "registered_legacy_exceptions_used": [
+      "DOC-INT-EXC-20260818-001"
+    ]
+  },
+  "relationship_integrity_gate": {
+    "status": "PASS",
+    "errors": [],
+    "enforced_invariants": {
+      "attempt_identity_unique_stage_and_baseline": true,
+      "record_id_unique": true,
+      "stage_reference_exists": true,
+      "baseline_reference_exists_and_bound": true,
+      "related_finding_type_safe": true,
+      "related_decision_type_safe": true,
+      "supersedes_acyclic": true,
+      "closure_cross_baseline_evidence_controlled": true,
+      "cross_attempt_relationship_explicit": true
+    }
+  },
+  "relationship_selftest_pass_lines": [
+    "PASS base_valid",
+    "PASS attempt_unique_stage_baseline -> ATTEMPT_MULTIPLE_BASELINES",
+    "PASS record_id_unique -> DUP_RECORD_ID",
+    "PASS stage_exists -> UNKNOWN_STAGE",
+    "PASS baseline_exists -> ATTEMPT_BASELINE_LOCK_MISSING",
+    "PASS related_finding_type -> RELATED_FINDING_WRONG_TYPE",
+    "PASS related_decision_type -> RELATED_DECISION_WRONG_TYPE",
+    "PASS supersedes_acyclic -> SUPERSEDES_CYCLE",
+    "PASS closure_cross_baseline_control -> CLOSURE_CROSS_BASELINE_UNAUTHORIZED",
+    "PASS cross_attempt_explicit -> CROSS_ATTEMPT_RELATION_UNDECLARED",
+    "PASS authorized_cross_baseline_closure"
+  ],
+  "conclusion": "Core Weekly Swing remains EOD-only decision support. Realtime/intraday/orderbook are not core prerequisites; NEXT_OPEN is a conservative historical reference/model execution, not exact investor fill. Optional CONFIRM remains non-blocking."
+}

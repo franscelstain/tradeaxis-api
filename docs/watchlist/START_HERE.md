@@ -30,11 +30,11 @@ Jika tujuan Anda adalah memahami, mengimplementasikan, menguji, atau melanjutkan
 
 Current product scope hanya:
 
-`Watchlist → Weekly Swing → qualified ranked Top Picks → manual buy decision support`
+`Watchlist → Weekly Swing EOD → qualified ranked Top Picks + next-session action intent → manual buy decision support`
 
 Optional enhancement:
 
-`Top Pick → optional D+1 CONFIRM → current actionability`
+`Top Pick + EOD action intent → optional next-trading-session CONFIRM → current actionability`
 
 Watchlist bukan broker execution engine, portfolio manager, multi-strategy platform, atau pengganti Market Data.
 
@@ -219,15 +219,15 @@ Bagian ini adalah **urutan baca wajib dari halaman pertama sampai halaman terakh
 
 Setelah Chapter 1–10 dan implementation `WS-S00..WS-S04` selesai, core Watchlist secara fungsional harus dapat menghasilkan:
 
-`trusted Market Data → PLAN → qualified ranked TOP PICKS (0..N)`
+`trusted Market Data → PLAN → qualified ranked TOP PICKS (0..N) → EOD action intent untuk NEXT_TRADING_SESSION`
 
-Ini adalah **core product completion point**.
+Canonical timing identity membedakan `requested_trade_date`, `effective_trade_date`, `recommendation_generated_at`, `intended_entry_session`, dan `canonical_entry_cutoff`. Ini adalah **core product completion point**.
 
-## Chapter 11 — Optional D+1 CONFIRM
+## Chapter 11 — Optional Next-Trading-Session CONFIRM
 
 **Read:** [`authority/strategy/WS_D1_CONFIRM_ACTIONABILITY.md`](authority/strategy/WS_D1_CONFIRM_ACTIONABILITY.md)
 
-**Question answered:** Bila valid decision-time data tersedia, apakah Top Pick masih actionable pada entry window?
+**Question answered:** Bila valid decision-time data tersedia, apakah EOD Top Pick yang action window-nya masih open tetap actionable pada governed next trading session?
 
 **Important:** Chapter ini optional untuk core construction.
 

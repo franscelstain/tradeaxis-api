@@ -1,0 +1,44 @@
+{
+  "status": "CANONICAL_TRACEABILITY_BASELINE_TEMPORAL_FIELD_OWNERSHIP_EXPLICIT",
+  "generated_date": "2026-08-20",
+  "matrix": "docs/watchlist/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv",
+  "total_strategy_clauses_inventoried": 1446,
+  "required_traceability_units": 1240,
+  "reference_only_units": 206,
+  "mandatory_or_conditional_units": 1108,
+  "optional_confirm_units": 132,
+  "satisfied_mandatory_units": 0,
+  "mandatory_coverage_pct": 0.0,
+  "by_strategy_stage_required": {
+    "CROSS": 51,
+    "WS-S00": 147,
+    "WS-S01": 151,
+    "WS-S02": 101,
+    "WS-S03": 79,
+    "WS-S04": 181,
+    "WS-S05": 107,
+    "WS-S06": 134,
+    "WS-S07": 114,
+    "WS-S08": 58,
+    "WS-S09": 8,
+    "WS-S10": 57,
+    "WS-S11": 52
+  },
+  "by_verification_build_stage_required": {
+    "WS-B00": 147,
+    "WS-B01": 151,
+    "WS-B03": 101,
+    "WS-B04": 79,
+    "WS-B05": 181,
+    "WS-B07": 107,
+    "WS-B08": 134,
+    "WS-B09": 114,
+    "WS-B10": 66,
+    "WS-B11": 57,
+    "WS-B12": 103
+  },
+  "rule_id_unique": true,
+  "new_rules_by_decision": {
+    "D-WS-20260820-02": 27
+  }
+}

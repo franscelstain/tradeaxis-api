@@ -1,0 +1,19 @@
+{
+  "document_type": "REGISTRY",
+  "status": "CURRENT",
+  "scope": "watchlist / weekly_swing current verification",
+  "verification_epoch": "WS-REBASELINE-20260819-001",
+  "effective_date": "2026-08-19",
+  "prior_results_policy": "HISTORICAL_ONLY_NO_CURRENT_INHERITANCE",
+  "mandatory_strategy_rules": 886,
+  "initial_satisfied": 0,
+  "initial_not_assessed": 886,
+  "optional_rules": 115,
+  "optional_initial_status": "OPTIONAL_NOT_REQUESTED",
+  "current_stage_register": "docs/watchlist/development/implementation/WS_IMPLEMENTATION_STAGE_REGISTER.md",
+  "traceability_matrix": "docs/watchlist/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv",
+  "proof_requirement": "current WS-Bxx Work Record + current epoch Baseline ID + current evidence + residue/integrity pass",
+  "strategy_revision": "D-WS-20260819-05",
+  "strategy_revision_date": "2026-08-19",
+  "active_traceability_clauses": 1200
+}

@@ -38,6 +38,24 @@ Setiap Top Pick harus mempunyai:
 - PLAN entry dan predeclared exit/risk-plan binding;
 - optional current-actionability state bila CONFIRM tersedia; absence of CONFIRM does not reduce recommendation validity.
 
+## Recommendation Publication Binding
+
+Setiap final recommendation set harus mengikat minimal:
+
+- `recommendation_trade_date`;
+- `recommendation_available_at`;
+- source EOD publication/read identity;
+- intended canonical entry session;
+- applicable `minimum_decision_lead_time_minutes`.
+
+Canonical baseline minimum decision lead time adalah **30 minutes** sebelum earliest intended entry opportunity. Value yang lebih konservatif boleh ditetapkan melalui versioned strategy identity; value tidak boleh dipersingkat setelah melihat outcome.
+
+Jika recommendation belum tersedia sebelum cutoff tersebut, system tidak boleh menganggap `open(D+1)` sebagai executable user price. Runtime/evaluation harus memakai later causal executable rule yang memang dibuktikan atau menyatakan entry opportunity non-executable untuk canonical proof.
+
+## Recommendation Score Meaning
+
+`recommendation_score` adalah ordered quality score dan bukan probability of profit. User-facing probability/confidence percentage memerlukan separate calibrated capability proof dan tidak boleh diturunkan langsung dari score.
+
 ## Capital Independence
 
 Modal pengguna, affordability, atau jumlah lot tidak mengukur kualitas saham dan **tidak boleh**:
@@ -60,3 +78,59 @@ CONFIRM tidak mengubah historical recommendation membership atau rank. CONFIRM a
 3. Ranking Top Picks harus merepresentasikan canonical PLAN quality ordering setelah final qualification.
 4. Capital tidak memengaruhi kualitas atau ranking recommendation.
 5. Recommendation harus dapat dievaluasi langsung pada backtest/OOS; PLAN candidate state tidak boleh menjadi proxy untuk final recommendation proof.
+
+## EOD Action-Intent Binding
+
+Setiap current Top Pick set harus menyimpan recommendation truth terpisah dari current action intent.
+
+Required temporal/action fields minimum:
+
+- `requested_trade_date`;
+- `effective_trade_date`;
+- `recommendation_generated_at`;
+- `intended_entry_session`;
+- `canonical_entry_cutoff`;
+- `action_window_status`;
+- per-pick `action_intent`.
+
+Canonical action-intent rules:
+
+- qualified Top Pick + action window `OPEN` → `ENTRY_CANDIDATE_NEXT_TRADING_SESSION`;
+- qualified EOD result + action window `EXPIRED` → `ACTION_WINDOW_EXPIRED`, not a current new-entry suggestion;
+- zero final qualified candidates → `NO_QUALIFIED_TOP_PICKS`;
+- no valid same-date EOD recommendation because upstream is not ready → no Top Pick set is created; runtime availability remains `MARKET_DATA_UNAVAILABLE_RETRYABLE`.
+
+`ENTRY_CANDIDATE_NEXT_TRADING_SESSION` berarti **layak dipertimbangkan**, bukan guaranteed buy/fill. Optional CONFIRM dapat mengubah current interpretation menjadi `ACTIONABLE` atau `NOT_ACTIONABLE`, tetapi tidak mengubah membership/rank/recommendation truth.
+
+Late/expired Top Pick record tidak boleh otomatis diteruskan sebagai entry candidate pada session setelah `intended_entry_session`; next opportunity harus dibentuk dari new governed EOD run.
+
+## Temporal Ownership in Top-Picks Output
+
+Top-Picks payload boleh membawa field dari dua domain untuk auditability, tetapi semantic ownership tetap terpisah:
+
+- Producer provenance pada recommendation **MUST** memuat exact `effective_trade_date`, `market_data_published_at`, dan `market_data_revision_id` yang dikonsumsi; field tersebut tetap Market-Data-owned walaupun tersimpan pada record Watchlist.
+- Recommendation lifecycle **MUST** memuat Watchlist-owned `requested_trade_date`, `recommendation_generated_at`, `intended_entry_session`, `canonical_entry_cutoff`, dan `action_window_status` tanpa mengklaim bahwa field tersebut diterbitkan oleh Market Data.
+- Satu issued recommendation version harus immutable terhadap temporal provenance-nya; rerun karena Market Data revision atau retry yang menghasilkan result baru harus mempunyai explicit new recommendation/run lineage, bukan overwrite diam-diam terhadap record lama.
+
+## Repeated Top Pick Presentation Boundary
+
+Top Picks adalah recommendation EOD per session; repeated recommendation tidak otomatis berarti instruksi menambah posisi.
+
+- Ticker yang kembali qualified dapat tetap muncul sebagai Top Pick dengan rank current yang murni berasal dari current strategy inputs.
+- Bila continuity metadata tersedia, presentation boleh menjelaskan bahwa ticker merupakan repeated Top Pick, tetapi metadata tersebut **MUST NOT** dipresentasikan sebagai buy-more, pyramiding, averaging, atau portfolio instruction.
+- `ENTRY_CANDIDATE_NEXT_TRADING_SESSION` pada repeated Top Pick tetap berarti **layak dipertimbangkan** terhadap PLAN current; keputusan apakah pengguna sudah memiliki posisi tetap berada di luar core Watchlist authority.
+- Optional CONFIRM dapat menilai current actionability dari repeated Top Pick dengan semantics yang sama seperti Top Pick baru, tetapi **MUST NOT** mengubah historical/current EOD rank lineage.
+- Follower-replay metrics boleh ditampilkan sebagai strategy-proof context, tetapi **MUST NOT** diubah menjadi personal portfolio recommendation.
+
+
+## No-Actionable-Picks, Immutability, and Recommendation-Truth Determinism
+
+- Bila final qualified member count adalah `0`, RECOMMENDATION **MUST** tetap menerbitkan/persist valid recommendation envelope dengan empty Top-Pick member set dan canonical state `NO_ACTIONABLE_TOP_PICKS`.
+- `NO_ACTIONABLE_TOP_PICKS` **MUST NOT** diperlakukan sebagai processing failure, data failure, atau alasan automatic threshold relaxation bila Market Data dan strategy evaluation sendiri valid.
+- Empty Top-Pick set **MUST NOT** dipadding dengan `WATCH_ONLY`, `AVOID`, lower-ranked non-qualified candidate, prior-date Top Pick, atau ticker carry-forward.
+- Issued recommendation truth snapshot **MUST** mengikat source PLAN immutable identity/fingerprint, exact member set, rank, score, PLAN-derived trade levels, strategy/parameter identity, dan exact Market Data revision yang menghasilkan recommendation tersebut.
+- Setelah issued, recommendation truth snapshot **MUST NOT** dimutasi in-place oleh later Market Data correction, later strategy revision, future outcome, retry, CONFIRM, atau production-health result.
+- Correction/revision/rerun yang menghasilkan semantic recommendation truth baru **MUST** membuat explicit new recommendation lineage yang mereferensikan predecessor; historical issued recommendation tetap utuh.
+- Dengan exact frozen recommendation-truth inputs yang sama, member set, rank, score, qualification, dan attached PLAN semantics **MUST** identical pada replay; output berbeda tanpa identity change adalah `NON_DETERMINISTIC_RECOMMENDATION`.
+- Perbedaan `recommendation_generated_at` antar rerun **MUST NOT** mengubah recommendation truth membership/rank; timestamp hanya berpartisipasi pada temporal/action-window envelope yang memang time-dependent.
+- `action_window_status` dan optional CONFIRM state **MUST** disimpan sebagai lifecycle/actionability semantics terpisah dan tidak boleh retroactively mengubah historical EOD recommendation truth.

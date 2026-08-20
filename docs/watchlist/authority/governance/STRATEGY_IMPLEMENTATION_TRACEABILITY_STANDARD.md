@@ -17,12 +17,13 @@ Setiap substantive non-heading clause dari current canonical strategy owner diin
 
 Current baseline inventory:
 
-- total canonical strategy clauses inventoried: **1006**;
-- required traceability units: **823**;
-- reference-only/navigation units: **183**;
-- mandatory/conditional required units: **708**;
-- optional CONFIRM required units: **115**;
+- total canonical strategy clauses inventoried: **1595**;
+- required traceability units: **1389**;
+- reference-only/navigation units: **206**;
+- mandatory/conditional required units: **1257**;
+- optional CONFIRM required units: **132**;
 - current canonical strategy owner files inventoried: **14**.
+- current inventory includes revisions through `D-WS-20260820-04`; 6 prior semantic clauses remain in the matrix as inactive `SUPERSEDED` historical rows and are not included in the active counts above.
 
 Matrix adalah **coverage index**, bukan business-rule owner. Jika `rule_text` di matrix dan strategy owner berbeda, strategy owner menang dan matrix harus ditandai stale lalu diperbarui melalui traceable documentation change.
 
@@ -213,3 +214,19 @@ For verification epoch `WS-REBASELINE-20260819-001`:
 - historical/pre-epoch evidence may only be supporting context;
 - `SATISFIED` requires current Work Record evidence whose Baseline Lock carries the active epoch;
 - no old PASS/OOS/shadow/production verdict can be inherited directly into current coverage.
+## Market Data fact-ownership strategy revision synchronization — 2026-08-19
+
+After `D-WS-20260819-07`, active canonical clauses are `1314`, active required traceability units are `1108`, mandatory/conditional units are `985`, and optional capability required units are `123`. All new mandatory/conditional rows start `NOT_ASSESSED`; optional CONFIRM rows remain `OPTIONAL_NOT_REQUESTED`. Market-fact ownership remains in strategy, while this matrix only tracks implementation/proof coverage.
+
+
+## EOD Temporal / Action-Intent Strategy Revision Synchronization — 2026-08-20
+
+After `D-WS-20260820-01`, active canonical clauses are `1419`, active required traceability units are `1213`, mandatory/conditional units are `1081`, and optional capability required units are `132`. All added mandatory/conditional rows start `NOT_ASSESSED`; optional CONFIRM rows remain `OPTIONAL_NOT_REQUESTED`. The new rows cover explicit EOD action intent, requested/effective-date separation, `NEXT_TRADING_SESSION`, delayed Market Data behavior, action-window expiry/no carry-forward, weekday-neutral baseline, and live-equivalent availability proof.
+
+## Temporal Field Ownership Strategy Revision Synchronization — 2026-08-20
+
+After `D-WS-20260820-02`, active canonical clauses are `1446`, active required traceability units are `1240`, mandatory/conditional units are `1108`, and optional capability required units remain `132`. The `27` new mandatory rows explicitly trace temporal ownership/provenance rules across `WS-B00`, `WS-B01`, and `WS-B05`; all start `NOT_ASSESSED`.
+
+## Real-World Weekly Swing strategy revision synchronization — 2026-08-20
+
+After `D-WS-20260820-03`, active canonical clauses are `1552`, active required traceability units are `1346`, mandatory/conditional units are `1214`, and optional capability required units are `132`. The `106` new real-world rules start `NOT_ASSESSED`. Historical implementation/evidence does not inherit current satisfaction.
