@@ -1,0 +1,194 @@
+{
+    "evidence_id": "E-MD-B03-A001-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B03",
+    "attempt_id": "MD-B03-A001",
+    "work_id": "MD-B03-A001",
+    "baseline_id": "MD-B03-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "source_revision": "dd6ca2a2e56ad4b1bef30467209d6c592eb572f9",
+    "issued_at": "2026-08-20T19:19:50+02:00",
+    "title": "MD-B03 dependency remediation: clean install, reason-code seed, schema drift detector, and governance tooling",
+    "attempt_outcome": "PARTIAL \u2014 dependencies closed, stage remains open",
+    "out_of_order_entry": {
+        "md_b01_state": "IN_PROGRESS at 21/127, not abandoned and not closed",
+        "md_b02_state": "NOT_STARTED, deferred not skipped",
+        "basis": "MD-DEP-0001 and MD-DEP-0002 were registered OPEN_BLOCKING with owner MD-B03. MD-B01 cannot close because MD-DEP-0004 sits inside authority/, which is read-only for implementation work. The Stage Register resume note for MD-B03 already directed this work.",
+        "scope_limit": "This attempt closes dependencies and defects only. MD-B03 is NOT claimed DONE."
+    },
+    "defects_fixed": [
+        {
+            "id": "D1",
+            "severity": "P0",
+            "finding": "F-MD-B00-A001-001",
+            "defect": "Clean-install migration bound to the pre-normalization schema document path and threw RuntimeException.",
+            "artifact": "database/migrations/2026_03_22_000003_create_market_data_core_schema.php",
+            "fix": "Rebound to development/implementation/db/Database_Schema_MariaDB.sql."
+        },
+        {
+            "id": "D2",
+            "severity": "P0",
+            "finding": "F-MD-B00-A001-001",
+            "defect": "Reason-code seeder bound to the pre-normalization seed path and threw RuntimeException.",
+            "artifact": "database/seeders/MarketData/MarketDataReasonCodesSeeder.php",
+            "fix": "Rebound to development/implementation/db/registry/Reason_Codes_Seed.sql."
+        },
+        {
+            "id": "D3",
+            "severity": "P0",
+            "finding": "discovered by executing D1; not previously recorded",
+            "defect": "hasIndex() called getDoctrineSchemaManager() and swallowed every Throwable as \"index absent\". doctrine/dbal is not a dependency of this project, so the call raised a class-not-found Error on every invocation and the guard always returned false. On an existing database this was invisible; on a clean install the migration re-added idx_eod_indicators_event_risk_date, which the clean-install base already creates, and the run died on a duplicate key.",
+            "artifact": "database/migrations/2026_06_04_000001_add_event_risk_source_context.php",
+            "fix": "Replaced with a driver-native probe: information_schema.STATISTICS on mysql, PRAGMA index_list on sqlite, and an explicit throw on any other driver rather than a fail-open guess. This is the same approach the two later trading-status migrations already used, so the three now agree.",
+            "note": "A guard that answers \"absent\" when it cannot determine presence is worse than no guard, because it looks like protection. This is the third instance of that shape in this codebase, after the reason-code seed guard and the relationship gate self-test."
+        },
+        {
+            "id": "D4",
+            "severity": "P0",
+            "finding": "discovered by executing D3 fix; not previously recorded",
+            "defect": "Four index adds on ticker_sector_memberships were unguarded while the same migration already carried a working indexExists() helper. The clean-install base already creates all four, so clean install died on uq_sector_membership_listing_effective_known.",
+            "artifact": "database/migrations/2026_08_08_000001_harden_sector_membership_and_analytical_product_identity.php",
+            "fix": "Wrapped each add in the migration own indexExists() check, as the migration policy in DB_Schema_And_Migration_Sync_Contract_LOCKED.md requires: \"include idempotency/preflight for partially drifted developer databases\"."
+        },
+        {
+            "id": "D5",
+            "severity": "P1",
+            "finding": "F-MD-B00-A001-001",
+            "defect": "20 Class R documentation paths dead across executable code, disabling 40 test files including the entire schema drift detector.",
+            "artifact": "38 files across app/, database/, config/, tests/",
+            "fix": "79 path replacements, Class R only. The 26 Class S split-sealed paths were deliberately left untouched."
+        },
+        {
+            "id": "D6",
+            "severity": "P1",
+            "finding": "F-MD-B00-A001-002",
+            "defect": "Relationship gate self-test printed nine PASS lines and asserted nothing; exit code always 0.",
+            "artifact": "development/implementation/tests/MarketDataRelationshipIntegrityGateSelfTest.php",
+            "fix": "Rewritten to execute both gates against a temporary copy of the tree under eight mutations, with an unmutated control, a post-restore control, and per-mutation verification that the mutation actually applied."
+        },
+        {
+            "id": "D7",
+            "severity": "P2",
+            "finding": "F-MD-B00-A001-004",
+            "defect": "Baseline lock tool emitted 11 fields and omitted 4 required by WORK_BASELINE_LOCK_STANDARD, so every attempt had to augment its lock by hand.",
+            "artifact": "development/implementation/tests/CreateMarketDataWorkBaselineLock.php",
+            "fix": "Derives and emits all 12 minimum fields natively; reads external dependency contract identity from the dependency registry; derives revision and working-tree from git when omitted; rejects a baseline ID that does not begin with its attempt ID."
+        }
+    ],
+    "executed_proof": {
+        "clean_install": {
+            "method": "Isolated scratch database tradeaxis_mdb03_probe, created and dropped by this attempt. The live tradeaxis corpus was never written to.",
+            "before_fix": "died at migration 3 of 62 (RuntimeException: schema document not found)",
+            "after_D1": "died at 2026_06_04_000001 with duplicate key idx_eod_indicators_event_risk_date, 34 applied",
+            "after_D3": "died at 2026_08_08_000001 with duplicate key uq_sector_membership_listing_effective_known, 48 applied",
+            "after_D4": "php artisan migrate --force exit 0, 62/62 applied, 51 tables",
+            "verdict": "CLEAN_INSTALL_PROVEN"
+        },
+        "reason_code_seed": {
+            "method": "php artisan db:seed --class=Database\\Seeders\\MarketData\\MarketDataReasonCodesSeeder --force on the scratch database",
+            "before": "eod_reason_codes 43 rows (migration-seeded only)",
+            "after": "eod_reason_codes 436 rows",
+            "seed_file_codes": 436,
+            "missing_after_seed": 0,
+            "elig_trading_suspended_registered": true,
+            "verdict": "SEED_EXECUTION_PROVEN"
+        },
+        "schema_drift_detector": {
+            "tests": [
+                "MarketDataSqliteSchemaSyncTest",
+                "PublishedColumnHashCoverageTest",
+                "ArtifactIntegrityPolicyTest"
+            ],
+            "result": "30 tests, 721 assertions, PASS",
+            "finding": "No actual drift. The SQLite mirror does match the canonical schema. That was previously an assumption, because the only tests capable of checking it were disabled by the same dead path as the schema document itself.",
+            "verdict": "MIRROR_PARITY_PROVEN"
+        },
+        "gate_self_test": {
+            "mutations": 8,
+            "fails_closed": 8,
+            "controls": 4,
+            "first_run_after_rewrite": "FAIL on the documentation-gate control, correctly, because the MD-B03-A001 baseline lock was on disk but not yet registered. The rewritten self-test found a real defect on its first execution.",
+            "verdict": "SELF_TEST_NOW_EXECUTES"
+        },
+        "baseline_lock_tool": {
+            "probe": "lock generated with only --stage --attempt --baseline --output",
+            "minimum_fields_present": "12/12",
+            "manual_augmentation_required": false,
+            "negative": "baseline ID not beginning with its attempt ID is rejected",
+            "verdict": "TOOL_CONFORMANT"
+        }
+    },
+    "documentation_path_binding": {
+        "before": {
+            "resolving": 4,
+            "dead": 46
+        },
+        "after": {
+            "resolving": 60,
+            "dead": 26
+        },
+        "dead_remaining": "exactly the 26 Class S split-sealed composites; repointing them is forbidden by CURRENT_VERIFICATION_REBASELINE_STANDARD"
+    },
+    "test_suite_execution": {
+        "before": {
+            "tests": 1537,
+            "assertions": 9507,
+            "errors": 25,
+            "failures": 108,
+            "passed": 1404
+        },
+        "after": {
+            "tests": 1537,
+            "assertions": 10309,
+            "errors": 4,
+            "failures": 67,
+            "passed": 1466
+        },
+        "delta": {
+            "errors": "-21",
+            "failures": "-41",
+            "assertions": "+802",
+            "passed": "+62"
+        },
+        "failing_classes": {
+            "before": 39,
+            "after": 24
+        },
+        "remaining_failure_cause": "Every remaining failure references a Class S path. Zero remaining failures have any other cause.",
+        "assertion_note": "The +802 assertions are checks that existed all along and could not execute. Restoring them is the substantive result, not the failure count."
+    },
+    "integrity_gates": {
+        "documentation_integrity_gate": "PASS",
+        "relationship_integrity_gate": "PASS",
+        "gate_self_test": "PASS"
+    },
+    "residue_verdict": {
+        "md_b03_own_scope": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "basis": "Seven defects fixed, each proven by execution rather than by path resolution. No strategy byte touched, no authority document modified, no schema shape changed \u2014 the migration fixes are idempotency guards only, and the deployed database was not written to.",
+        "harmful_residue_retired": "The live-corpus reason-code gap is fixed at source: a clean install now produces all 436 codes. The deployed tradeaxis database still carries 407 and 3431 rows with an unregistered ELIG_TRADING_SUSPENDED; closing that requires running the seeder against the live corpus, which is an operator decision on production data and is not taken by this attempt."
+    },
+    "dependencies_closed": {
+        "MD-DEP-0001": "RESOLVED",
+        "MD-DEP-0002": "RESOLVED"
+    },
+    "dependencies_open": {
+        "MD-DEP-0003": "OPEN_NON_BLOCKING, narrowed from 40 files to 24",
+        "MD-DEP-0004": "OPEN_BLOCKING, inside authority/, not fixable by implementation work"
+    },
+    "findings_closed": [
+        "F-MD-B00-A001-002",
+        "F-MD-B00-A001-004"
+    ],
+    "findings_partially_resolved": [
+        "F-MD-B00-A001-001"
+    ],
+    "open_findings": [
+        "F-MD-B00-A001-001 (Class S half)",
+        "F-MD-B00-A001-003",
+        "F-MD-B01-A001-001",
+        "F-MD-B01-A003-001"
+    ],
+    "supersedes": null
+}

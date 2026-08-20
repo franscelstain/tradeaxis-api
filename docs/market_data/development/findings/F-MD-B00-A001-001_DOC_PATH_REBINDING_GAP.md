@@ -1,6 +1,6 @@
 # F-MD-B00-A001-001 — Documentation architecture normalization left runtime and test path bindings unmigrated
 
-- Status: `OPEN`
+- Status: `PARTIALLY_RESOLVED`
 - Severity: `P0`
 - Stage / Attempt / Baseline / Epoch: `MD-B00` / `MD-B00-A001` / `MD-B00-A001-BL001` / `MD-REBASELINE-20260820-001`
 - Detected at source revision: `dd6ca2a2e56ad4b1bef30467209d6c592eb572f9`
@@ -63,3 +63,16 @@ Every one of those extracts is registered `HISTORICAL_ONLY` with `current_proof_
 
 - Supersedes nothing. Caused by `D-MD-20260820-01` and `D-MD-20260820-02`.
 - Interacts with `F-MD-B00-A001-002` (governance tooling that reports PASS without executing).
+
+## Partial resolution — MD-B03-A001
+
+The Class R half is closed. All 20 relocatable paths were rebound across 38 files (79 replacements) in `app/`, `database/`, `config/`, and `tests/`. Documentation paths reachable from executable code went from 4 resolving / 46 dead to 60 resolving / 26 dead, and the 26 remaining are exactly the Class S set.
+
+The two runtime P0 breakages are closed with executed proof rather than path-resolution proof:
+
+- clean install runs 62/62 migrations to exit 0 on an isolated database;
+- the reason-code seeder runs and brings `eod_reason_codes` from 43 to 436 with zero seed codes missing.
+
+Fixing the migration path exposed a second, independent P0 that only execution could reveal: `hasIndex()` in `2026_06_04_000001_add_event_risk_source_context.php` called `getDoctrineSchemaManager()` and swallowed every Throwable as "index absent". `doctrine/dbal` is not a dependency of this project, so the guard always answered false and the migration re-added an index the clean-install base already creates. A second unguarded index block in `2026_08_08_000001` failed the same way. Both are fixed and the fix is proven by a full clean install. Detail in `E-MD-B03-A001-001`.
+
+The Class S half remains OPEN under `MD-DEP-0003`: 24 test files bind only to split-sealed composites and need a per-stage retire-or-rewrite decision. Repointing them at the `HISTORICAL_ONLY` extracts is still forbidden.

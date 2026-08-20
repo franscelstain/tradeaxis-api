@@ -1,9 +1,10 @@
 # F-MD-B00-A001-004 — Baseline lock tool does not emit the standard minimum field set
 
-- Status: `OPEN`
+- Status: `CLOSED`
 - Severity: `P2`
 - Stage / Attempt / Baseline / Epoch: `MD-B00` / `MD-B00-A001` / `MD-B00-A001-BL001` / `MD-REBASELINE-20260820-001`
 - Owning stage for remediation: `MD-B00`
+- Resolved by: `MD-B03-A001`, evidence `E-MD-B03-A001-001`
 - Artifact: `development/implementation/tests/CreateMarketDataWorkBaselineLock.php`
 
 ## Finding
@@ -21,3 +22,11 @@ A lock produced by running the tool as documented is therefore not standard-conf
 ## Required outcome
 
 Extend the tool to emit the full minimum set natively, so the next attempt does not need manual augmentation, and reconcile `WORK_BASELINE_LOCK_TEMPLATE.json` with the standard. Until then, every attempt must repeat the augmentation, and any lock lacking the four fields should be treated as an incomplete lock rather than a valid one.
+
+## Resolution
+
+Closed by `MD-B03-A001`. `CreateMarketDataWorkBaselineLock.php` now derives and emits all twelve standard-minimum fields natively: strategy freeze ID and tree fingerprint, governance fingerprint and document count, verification epoch and its hash, traceability matrix hash, source revision and branch, working-tree state, app and test tree fingerprints, schema/config/migration identity, dependency identity, toolchain identity, and external dependency contract identity read from `MD_DEPENDENCY_REGISTRY.csv` rather than asserted.
+
+Revision and working-tree state are derived from git when not supplied, so a lock can no longer record a stale or hand-typed value by omission. The tool also now rejects a baseline ID that does not begin with its attempt ID, which the previous version accepted.
+
+Verified: a probe lock generated with only `--stage --attempt --baseline --output` reports 12/12 minimum fields present with no manual augmentation. Locks issued before this fix keep their `augmentation_note`; the note is a record of how they were completed, not a defect in them.

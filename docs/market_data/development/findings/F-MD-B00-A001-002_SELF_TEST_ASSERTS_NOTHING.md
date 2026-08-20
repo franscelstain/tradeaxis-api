@@ -1,9 +1,10 @@
 # F-MD-B00-A001-002 — Relationship integrity gate self-test reports PASS without executing anything
 
-- Status: `OPEN`
+- Status: `CLOSED`
 - Severity: `P1`
 - Stage / Attempt / Baseline / Epoch: `MD-B00` / `MD-B00-A001` / `MD-B00-A001-BL001` / `MD-REBASELINE-20260820-001`
 - Owning stage for remediation: `MD-B00`
+- Resolved by: `MD-B03-A001`, evidence `E-MD-B03-A001-001`
 - Artifact: `development/implementation/tests/MarketDataRelationshipIntegrityGateSelfTest.php`
 
 ## Finding
@@ -36,3 +37,9 @@ So the gate deserves current PASS and the self-test does not. The self-test adds
 Either delete the file, or replace its body with the mutation matrix above executed against a temporary copy of the tree, asserting a non-zero exit per mutation and a zero exit for the unmutated control. A self-test that cannot fail is worse than no self-test, because it consumes the reviewer's attention budget while returning nothing.
 
 Until one of those happens, no closure manifest may cite `MarketDataRelationshipIntegrityGateSelfTest.php` as evidence.
+
+## Resolution
+
+Closed by `MD-B03-A001`. The file now copies the `market_data` tree to a temporary location, applies eight mutations to the copy, runs the real gates against each, and asserts a non-zero exit — with an unmutated control asserting zero and a post-restore control proving the copy returned to a passing state. Each mutation is verified as applied before its gate runs, so a mutation that silently fails to apply is reported as `MUTATION_NOT_APPLIED` rather than being read as a passing gate. The repository is never modified.
+
+First execution after the rewrite returned `FAIL` on the documentation-gate control, which was correct: the `MD-B03-A001` baseline lock existed on disk but was not yet registered. The self-test found a real unregistered document on its first run, which is more than its predecessor did in its entire life.
