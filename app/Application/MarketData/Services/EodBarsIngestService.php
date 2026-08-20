@@ -640,7 +640,13 @@ class EodBarsIngestService
     {
         if ($sourceMode === 'api') {
             if ($tickerCodes === null) {
-                $universe = $this->tickers->getUniverseForTradeDate($requestedDate);
+                /*
+                 * Invariant 14: as-known reads resolve only revisions known by the declared
+                 * cutoff, and current state must not leak in. The context already carried
+                 * `known_at` for the calendar assertion and the provider symbol resolver;
+                 * this universe read was the acquisition input still answering "as of now".
+                 */
+                $universe = $this->tickers->getUniverseForTradeDate($requestedDate, $context['known_at'] ?? null);
                 $tickerCodes = array_values(array_unique(array_filter(array_map(function ($row) {
                     return isset($row['ticker_code']) ? $row['ticker_code'] : null;
                 }, $universe))));

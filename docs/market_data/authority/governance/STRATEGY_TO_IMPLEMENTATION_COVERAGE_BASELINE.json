@@ -1,0 +1,9 @@
+{
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_documents": 91,
+  "traceability_rows": 6490,
+  "required_mandatory_or_conditional": 1407,
+  "required_optional_capability": 54,
+  "current_satisfied": 0,
+  "current_status": "NOT_ASSESSED_REVALIDATION_REQUIRED"
+}

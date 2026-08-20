@@ -1,0 +1,19 @@
+# Legacy Semantic Extract — LX-MD-0212-DEC-01
+
+- Source ID: `LS-MD-0212`
+- Original path: `patches/TRADING_STATUS_SEMANTICS_LONG_SUSPENSION_CLOSURE_2026_07_02.md`
+- Original SHA1: `A26CB394EAA179AFC224499200FE3C7B5AAE0E7B`
+- Extract role: `DECISION`
+- Source range: `L11-L14`
+- Extract body SHA1: `911E916588EC94E9D12077458E29F163F23CC13E`
+- Current authority: `NO`
+- Current verification effect: `HISTORICAL_ONLY`
+- Preservation policy: `EXACT_SOURCE_RANGE_COPY_WITH_METADATA`
+
+<!-- LEGACY_EXTRACT_BODY_START -->
+## Status
+
+COMPLETED / VALIDATED
+
+
+<!-- LEGACY_EXTRACT_BODY_END -->

@@ -1,0 +1,103 @@
+{
+    "gate": "MarketDataDocumentationIntegrityGate",
+    "status": "PASS",
+    "checks": [
+        {
+            "check": "ROOT_ARCHITECTURE",
+            "status": "PASS",
+            "details": {
+                "missing": []
+            }
+        },
+        {
+            "check": "ONE_DOCUMENT_ONE_ROLE",
+            "status": "PASS",
+            "details": {
+                "physical": 731,
+                "registry": 731,
+                "duplicates": [],
+                "missing": [],
+                "extra": []
+            }
+        },
+        {
+            "check": "STRATEGY_FREEZE",
+            "status": "PASS",
+            "details": {
+                "registered": 91,
+                "mismatches": []
+            }
+        },
+        {
+            "check": "CURRENT_VERIFICATION_REBASELINE",
+            "status": "PASS",
+            "details": {
+                "registry": 731,
+                "missing": [],
+                "legacy_current_proof": []
+            }
+        },
+        {
+            "check": "JSON_PARSE",
+            "status": "PASS",
+            "details": {
+                "errors": []
+            }
+        },
+        {
+            "check": "CSV_STRUCTURE",
+            "status": "PASS",
+            "details": {
+                "errors": []
+            }
+        },
+        {
+            "check": "ACTIVE_MARKDOWN_LINKS",
+            "status": "PASS",
+            "details": {
+                "broken_count": 0,
+                "samples": []
+            }
+        },
+        {
+            "check": "TRACEABILITY_MATRIX",
+            "status": "PASS",
+            "details": {
+                "rows": 6490,
+                "errors": []
+            }
+        },
+        {
+            "check": "LEGACY_SEMANTIC_SPLIT_INTEGRITY",
+            "status": "PASS",
+            "details": {
+                "split_sources": 43,
+                "reconstructed": 43,
+                "errors": []
+            }
+        },
+        {
+            "check": "WINDOWS_SAFE_PATHS",
+            "status": "PASS",
+            "details": {
+                "max_length": 102,
+                "too_long": []
+            }
+        },
+        {
+            "check": "EXACT_DUPLICATE_FILES",
+            "status": "PASS",
+            "details": {
+                "duplicates": []
+            }
+        },
+        {
+            "check": "NO_LEGACY_ROOT_AREAS",
+            "status": "PASS",
+            "details": {
+                "unexpected": []
+            }
+        }
+    ],
+    "generated_at": "2026-08-20T07:00:48+00:00"
+}

@@ -1,0 +1,827 @@
+{
+  "freeze_id": "MD-STRATEGY-FREEZE-20260820-001",
+  "created_at": "2026-08-20T11:42:00+07:00",
+  "strategy_document_count": 91,
+  "rule": "All registered current strategy source documents were moved byte-for-byte. Architecture refactor may add external IDs/authority metadata but must not change registered strategy bytes.",
+  "documents": [
+    {
+      "strategy_id": "MD-S001",
+      "source_path_before_refactor": "README.md",
+      "current_path": "authority/strategy/MARKET_DATA_PLATFORM_EOD_BASELINE.md",
+      "sha1": "654D3D246A56C8BF587B40FF6D275D31F30FDC9B",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S002",
+      "source_path_before_refactor": "backtest/Backtest_Metrics_and_Acceptance_Criteria_LOCKED.md",
+      "current_path": "authority/strategy/backtest/Backtest_Metrics_and_Acceptance_Criteria_LOCKED.md",
+      "sha1": "461A5B4AE488B75D48BD43D1A7E31E6B28D76AE8",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S003",
+      "source_path_before_refactor": "backtest/Historical_Replay_and_Data_Quality_Backtest.md",
+      "current_path": "authority/strategy/backtest/Historical_Replay_and_Data_Quality_Backtest.md",
+      "sha1": "81934283651529E5145B569089DB9D5E3585396F",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S004",
+      "source_path_before_refactor": "backtest/Point_In_Time_Backtest_Input_Contract_LOCKED.md",
+      "current_path": "authority/strategy/backtest/Point_In_Time_Backtest_Input_Contract_LOCKED.md",
+      "sha1": "1429599447ABFB901C9CF9F0A5E1273229CD3284",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S005",
+      "source_path_before_refactor": "book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md",
+      "sha1": "B907B13F18250A94A033F4C03E2A69B0D58C4AFB",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S006",
+      "source_path_before_refactor": "book/CONSUMER_READ_CONTRACT_LOCKED.md",
+      "current_path": "authority/strategy/book/CONSUMER_READ_CONTRACT_LOCKED.md",
+      "sha1": "8C7559A9B0758EE6593D926ACCD16B7E0C27DBB1",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S007",
+      "source_path_before_refactor": "book/Canonical_Row_History_and_Versioning_Policy_LOCKED.md",
+      "current_path": "authority/strategy/book/Canonical_Row_History_and_Versioning_Policy_LOCKED.md",
+      "sha1": "5CD4CA78786DA8194EB746C1A6818ACDD2FB50FA",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S008",
+      "source_path_before_refactor": "book/Canonicalization_Contract_EOD_Bars.md",
+      "current_path": "authority/strategy/book/Canonicalization_Contract_EOD_Bars.md",
+      "sha1": "FDB0BEFBC83DBB6ADC03B99D8BB60EDF26F3353B",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S009",
+      "source_path_before_refactor": "book/Consumer_Readability_Decision_Table_LOCKED.md",
+      "current_path": "authority/strategy/book/Consumer_Readability_Decision_Table_LOCKED.md",
+      "sha1": "E2DFB224B21707E4FD4055FEBC104B2C3D636A42",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S010",
+      "source_path_before_refactor": "book/Corporate_Action_Impact_Flags_Contract.md",
+      "current_path": "authority/strategy/book/Corporate_Action_Impact_Flags_Contract.md",
+      "sha1": "8C0BDE74471A9D4D7CBAE6736DAC81C97DCFBFCD",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S011",
+      "source_path_before_refactor": "book/Corporate_Action_and_Adjustment_Policy.md",
+      "current_path": "authority/strategy/book/Corporate_Action_and_Adjustment_Policy.md",
+      "sha1": "AA4CB754D7027CD30E9F9E1CF95F9B7ADD6BEB0C",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S012",
+      "source_path_before_refactor": "book/Corporate_Action_and_Adjustment_Policy_Selected_Defaults_LOCKED.md",
+      "current_path": "authority/strategy/book/Corporate_Action_and_Adjustment_Policy_Selected_Defaults_LOCKED.md",
+      "sha1": "F96A93051816DF8F153F56B98FD1DB8F7293F2CB",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S013",
+      "source_path_before_refactor": "book/Correction_Lifecycle_Safety_Contract.md",
+      "current_path": "authority/strategy/book/Correction_Lifecycle_Safety_Contract.md",
+      "sha1": "65E031D21C262AA99CFDD7DF69937E82DAA55F99",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S014",
+      "source_path_before_refactor": "book/Coverage_Edge_Cases_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Coverage_Edge_Cases_Contract_LOCKED.md",
+      "sha1": "08EF896C0C5F865E1260B8C719E20670DBB97327",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S015",
+      "source_path_before_refactor": "book/Coverage_Gate_Enforcement_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Coverage_Gate_Enforcement_Contract_LOCKED.md",
+      "sha1": "F4E8BD159DEC8EE87578D98DBA8F05483ECEB997",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S016",
+      "source_path_before_refactor": "book/Coverage_Universe_Definition_LOCKED.md",
+      "current_path": "authority/strategy/book/Coverage_Universe_Definition_LOCKED.md",
+      "sha1": "2AEE0B5C853562F9EB9A0EA6098CD36F20C5DEC1",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S017",
+      "source_path_before_refactor": "book/Current_Indicator_Recompute_Command_Contract.md",
+      "current_path": "authority/strategy/book/Current_Indicator_Recompute_Command_Contract.md",
+      "sha1": "92E4BA3EC57565F9CFE8F707EE87B164D14A0DB8",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S018",
+      "source_path_before_refactor": "book/Dataset_Seal_and_Freeze_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Dataset_Seal_and_Freeze_Contract_LOCKED.md",
+      "sha1": "8CA7FF9C2096326E0D6D2F12D5A62FFFD2ECA63A",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S019",
+      "source_path_before_refactor": "book/Determinism_Invariants_LOCKED.md",
+      "current_path": "authority/strategy/book/Determinism_Invariants_LOCKED.md",
+      "sha1": "4A2C80642D64993B0E17A7489E6E24A5E1415ADE",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S020",
+      "source_path_before_refactor": "book/Domain_Boundary_Invariants_LOCKED.md",
+      "current_path": "authority/strategy/book/Domain_Boundary_Invariants_LOCKED.md",
+      "sha1": "5637ED5D917635066E8F94C2E7C65C53DAE299F9",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S021",
+      "source_path_before_refactor": "book/Downstream_Consumer_Read_Model_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Downstream_Consumer_Read_Model_Contract_LOCKED.md",
+      "sha1": "8717EB02874AAD084062C9C93D6E3E08AA14B29E",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S022",
+      "source_path_before_refactor": "book/Downstream_Data_Readiness_Guarantee_LOCKED.md",
+      "current_path": "authority/strategy/book/Downstream_Data_Readiness_Guarantee_LOCKED.md",
+      "sha1": "DBB771D9A74BE99A1D3C3293A39F1B3FB29020DE",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S023",
+      "source_path_before_refactor": "book/EOD_Bars_Contract.md",
+      "current_path": "authority/strategy/book/EOD_Bars_Contract.md",
+      "sha1": "19F64F20E9B38E3D45C79E97862B1884157A7B50",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S024",
+      "source_path_before_refactor": "book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md",
+      "current_path": "authority/strategy/book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md",
+      "sha1": "9DC7B4144BCB09E0EB0B28F2B41876CDDB227166",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S025",
+      "source_path_before_refactor": "book/EOD_Cutoff_and_Finalization_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/EOD_Cutoff_and_Finalization_Contract_LOCKED.md",
+      "sha1": "8569C53CC6EB4F110B76E3043B522ACBDE73B9B7",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S026",
+      "source_path_before_refactor": "book/EOD_Data_Retention_and_History_Rewrite_Policy_LOCKED.md",
+      "current_path": "authority/strategy/book/EOD_Data_Retention_and_History_Rewrite_Policy_LOCKED.md",
+      "sha1": "418920341E7E60F371E46879793441E9607544E2",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S027",
+      "source_path_before_refactor": "book/EOD_Eligibility_Snapshot_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/EOD_Eligibility_Snapshot_Contract_LOCKED.md",
+      "sha1": "E0AE7FDFCC7E5B04549A65666EC204739B9251FD",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S028",
+      "source_path_before_refactor": "book/EOD_Indicators_Contract.md",
+      "current_path": "authority/strategy/book/EOD_Indicators_Contract.md",
+      "sha1": "D70186C635CBB9EF4F54ABD4AE0AB725E5F38FDB",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S029",
+      "source_path_before_refactor": "book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md",
+      "current_path": "authority/strategy/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md",
+      "sha1": "041B584C82FDA614B7862CFFF1E949C7EB987A99",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S030",
+      "source_path_before_refactor": "book/Effective_Trade_Date_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Effective_Trade_Date_Contract_LOCKED.md",
+      "sha1": "7D3C3EDAEC7CE8D5550F92CE9EA2A8F02C481134",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S031",
+      "source_path_before_refactor": "book/Eligibility_Partial_Data_Behavior_LOCKED.md",
+      "current_path": "authority/strategy/book/Eligibility_Partial_Data_Behavior_LOCKED.md",
+      "sha1": "79067C60B394D1F7493F7790B1CE24E0952205FA",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S032",
+      "source_path_before_refactor": "book/Finalize_Lock_And_Pointer_Behavior_LOCKED.md",
+      "current_path": "authority/strategy/book/Finalize_Lock_And_Pointer_Behavior_LOCKED.md",
+      "sha1": "270FE0D2D095D4FD1A70B750DDDC0F82600A9DFB",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S033",
+      "source_path_before_refactor": "book/Force_Replace_Operator_Control_Policy_LOCKED.md",
+      "current_path": "authority/strategy/book/Force_Replace_Operator_Control_Policy_LOCKED.md",
+      "sha1": "AEEB8CEE15370DFE9D675C580FA83D8A846A705C",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S034",
+      "source_path_before_refactor": "book/Hash_Number_Formatting_LOCKED.md",
+      "current_path": "authority/strategy/book/Hash_Number_Formatting_LOCKED.md",
+      "sha1": "EBEB8BC26F5624EE230207CEF89C1E4AC49B256A",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S035",
+      "source_path_before_refactor": "book/Historical_Correction_and_Reseal_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Historical_Correction_and_Reseal_Contract_LOCKED.md",
+      "sha1": "3E6C8B81F391A848822415981C9DED121148EE80",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S036",
+      "source_path_before_refactor": "book/Import_Promote_Separation_Contract.md",
+      "current_path": "authority/strategy/book/Import_Promote_Separation_Contract.md",
+      "sha1": "F79FF1A3D106029F9A76793BDB1FFD9E1941FF4A",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S037",
+      "source_path_before_refactor": "book/Indicator_Nullability_And_OHLCV_Gap_Contract.md",
+      "current_path": "authority/strategy/book/Indicator_Nullability_And_OHLCV_Gap_Contract.md",
+      "sha1": "3A4EAC7F640B4340F0030AB6AA16C37F988810D7",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S038",
+      "source_path_before_refactor": "book/Indicator_Recompute_Source_Scope_Contract.md",
+      "current_path": "authority/strategy/book/Indicator_Recompute_Source_Scope_Contract.md",
+      "sha1": "7A87F7F50F6095965AC35F12AC1656139BD6B262",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S039",
+      "source_path_before_refactor": "book/Invalid_Bar_Storage_Policy_LOCKED.md",
+      "current_path": "authority/strategy/book/Invalid_Bar_Storage_Policy_LOCKED.md",
+      "sha1": "B7EAFDFBF4378902E5BB6B6AA4B0B87AB6C4AAB3",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S040",
+      "source_path_before_refactor": "book/Manual_File_Publishability_Policy_LOCKED.md",
+      "current_path": "authority/strategy/book/Manual_File_Publishability_Policy_LOCKED.md",
+      "sha1": "6D9134E20165BA0E5586E965E3BA00E60B7E1E23",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S041",
+      "source_path_before_refactor": "book/Market_Calendar_Requirements_Contract.md",
+      "current_path": "authority/strategy/book/Market_Calendar_Requirements_Contract.md",
+      "sha1": "677C75EA4A2E50934D7003585393A85D67AB2D45",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S042",
+      "source_path_before_refactor": "book/Market_Daily_Metrics_Contract.md",
+      "current_path": "authority/strategy/book/Market_Daily_Metrics_Contract.md",
+      "sha1": "3F8B40E65FBFD735C47979CFF922E54B11A1CB01",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S043",
+      "source_path_before_refactor": "book/Publication_Current_Pointer_Integrity_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Publication_Current_Pointer_Integrity_Contract_LOCKED.md",
+      "sha1": "A11D1140FD155F133F6659B19CD588969DDB1052",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S044",
+      "source_path_before_refactor": "book/Publication_Lock_And_Replacement_Policy_LOCKED.md",
+      "current_path": "authority/strategy/book/Publication_Lock_And_Replacement_Policy_LOCKED.md",
+      "sha1": "E5475522309AE686724CBECE33D9E29C1FE5EE2D",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S045",
+      "source_path_before_refactor": "book/Publication_Manifest_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Publication_Manifest_Contract_LOCKED.md",
+      "sha1": "F6F41F6C1B4450AE8248E675EF4A7F383ED88227",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S046",
+      "source_path_before_refactor": "book/Publication_Traceability_Immutability_Lineage_LOCKED.md",
+      "current_path": "authority/strategy/book/Publication_Traceability_Immutability_Lineage_LOCKED.md",
+      "sha1": "CEFF98397CB096EBB3C34C75138DE0830763EF0A",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S047",
+      "source_path_before_refactor": "book/Publishability_Coverage_Fallback_Cross_Consistency_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Publishability_Coverage_Fallback_Cross_Consistency_Contract_LOCKED.md",
+      "sha1": "C1763EB9910748576EC53F2A0E4F9F1C3A9D48E0",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S048",
+      "source_path_before_refactor": "book/Publishability_State_Integrity_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Publishability_State_Integrity_Contract_LOCKED.md",
+      "sha1": "6499797446AD0EF829411737A54D43FC3EAB5594",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S049",
+      "source_path_before_refactor": "book/Read_Side_Enforcement_Anti_Bypass_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Read_Side_Enforcement_Anti_Bypass_Contract_LOCKED.md",
+      "sha1": "30A0FDCED846A812D39B7064CA1BFC31995CD6A0",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S050",
+      "source_path_before_refactor": "book/Replay_Verification_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Replay_Verification_Contract_LOCKED.md",
+      "sha1": "F46285AD7A15F11D255C34EE93577C77AA8424C0",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S051",
+      "source_path_before_refactor": "book/Run_Status_and_Quality_Gates_LOCKED.md",
+      "current_path": "authority/strategy/book/Run_Status_and_Quality_Gates_LOCKED.md",
+      "sha1": "93CDB6BED7C0DC7E593551550C1F22863D5697E9",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S052",
+      "source_path_before_refactor": "book/Sector_Classification_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Sector_Classification_Contract_LOCKED.md",
+      "sha1": "853D9CE2EFF062041BAB1065C897F5D949E37213",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S053",
+      "source_path_before_refactor": "book/Source_Data_Acquisition_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Source_Data_Acquisition_Contract_LOCKED.md",
+      "sha1": "C20DDA589CF00B113BC055AD127537DA80347A62",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S054",
+      "source_path_before_refactor": "book/Source_Mapping_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Source_Mapping_Contract_LOCKED.md",
+      "sha1": "44559844825D7E2AB556123C97DD192A32408BB7",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S055",
+      "source_path_before_refactor": "book/Symbol_Lifecycle_and_Mapping_Contract.md",
+      "current_path": "authority/strategy/book/Symbol_Lifecycle_and_Mapping_Contract.md",
+      "sha1": "5A12D46592E1415401B8BCF707026CBD9C44CA05",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S056",
+      "source_path_before_refactor": "book/Terminology_and_Scope.md",
+      "current_path": "authority/strategy/book/Terminology_and_Scope.md",
+      "sha1": "A2FD4CCF6D8FEE0A3308D5B188BCA8AA8AE098EE",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S057",
+      "source_path_before_refactor": "book/Tickers_and_Identity_Dependency_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Tickers_and_Identity_Dependency_Contract_LOCKED.md",
+      "sha1": "0B0FA8C60D6547675456838E771894D65FF31B1E",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S058",
+      "source_path_before_refactor": "book/Trading_Status_Source_Contract_LOCKED.md",
+      "current_path": "authority/strategy/book/Trading_Status_Source_Contract_LOCKED.md",
+      "sha1": "AB4F6A09AE650981626ACD9D352210417FE6B429",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S059",
+      "source_path_before_refactor": "book/Yahoo_Finance_Bootstrap_Source_Strategy.md",
+      "current_path": "authority/strategy/book/Yahoo_Finance_Bootstrap_Source_Strategy.md",
+      "sha1": "B0D717413191F6C7585328A724F5C6133BCBFDFA",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S060",
+      "source_path_before_refactor": "indicators/EOD_Indicators_Formula_Spec.md",
+      "current_path": "authority/strategy/indicators/EOD_Indicators_Formula_Spec.md",
+      "sha1": "F72C7BFD4657D1450A50D710C8CE6C7BB6E9696A",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S061",
+      "source_path_before_refactor": "indicators/Indicator_Computation_Specification.md",
+      "current_path": "authority/strategy/indicators/Indicator_Computation_Specification.md",
+      "sha1": "9837A0212E672292EBA55755B70B59892AC6B097",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S062",
+      "source_path_before_refactor": "ops/Archived_Actual_Execution_Evidence_Contract_LOCKED.md",
+      "current_path": "authority/strategy/ops/Archived_Actual_Execution_Evidence_Contract_LOCKED.md",
+      "sha1": "A4F20DDC13F3B552646DADB3798CC9D50374594E",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S063",
+      "source_path_before_refactor": "ops/Audit_Evidence_Pack_Contract_LOCKED.md",
+      "current_path": "authority/strategy/ops/Audit_Evidence_Pack_Contract_LOCKED.md",
+      "sha1": "0B1739489EA556F9607AF0B962348E9EA6199876",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S064",
+      "source_path_before_refactor": "ops/Commands_and_Runbook_LOCKED.md",
+      "current_path": "authority/strategy/ops/Commands_and_Runbook_LOCKED.md",
+      "sha1": "4428F3611A536ECB6BAED4FB00D59A5031B0AA74",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S065",
+      "source_path_before_refactor": "ops/Config_Change_Protocol_LOCKED.md",
+      "current_path": "authority/strategy/ops/Config_Change_Protocol_LOCKED.md",
+      "sha1": "FBAC0291FEA9C1C4B073C44A62BF46D6198BA0CC",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S066",
+      "source_path_before_refactor": "ops/Credentials_and_Secrets_Contract.md",
+      "current_path": "authority/strategy/ops/Credentials_and_Secrets_Contract.md",
+      "sha1": "BD75710F5EE9183EEE6F98EF243C47E3AF078BFA",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S067",
+      "source_path_before_refactor": "ops/Error_Taxonomy_and_Run_Status_Decision_Table_LOCKED.md",
+      "current_path": "authority/strategy/ops/Error_Taxonomy_and_Run_Status_Decision_Table_LOCKED.md",
+      "sha1": "92B4154C9DBD2CB2C3CC1DE625152F2A13F8D0DE",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S068",
+      "source_path_before_refactor": "ops/Executed_Run_Admission_Criteria_LOCKED.md",
+      "current_path": "authority/strategy/ops/Executed_Run_Admission_Criteria_LOCKED.md",
+      "sha1": "16A5B0AEBC4157FF3414FD1CCF06235D85B5DFF3",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S069",
+      "source_path_before_refactor": "ops/Incident_Classification_and_Response_Matrix_LOCKED.md",
+      "current_path": "authority/strategy/ops/Incident_Classification_and_Response_Matrix_LOCKED.md",
+      "sha1": "4807F1AC422E996EC04951E7CA0BE6BBBE9B1FEB",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S070",
+      "source_path_before_refactor": "ops/Observability_Minimum_Contract_LOCKED.md",
+      "current_path": "authority/strategy/ops/Observability_Minimum_Contract_LOCKED.md",
+      "sha1": "D4603CC806C63DA66F926BC34165F94252045542",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S071",
+      "source_path_before_refactor": "ops/Operator_Decision_Trees_LOCKED.md",
+      "current_path": "authority/strategy/ops/Operator_Decision_Trees_LOCKED.md",
+      "sha1": "FCB64429D4A520D95127800A9EBB87F100030B4E",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S072",
+      "source_path_before_refactor": "ops/Performance_SLO_and_Limits_LOCKED.md",
+      "current_path": "authority/strategy/ops/Performance_SLO_and_Limits_LOCKED.md",
+      "sha1": "29B65C554AF9BEA3742E11823A82D41DFBA11208",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S073",
+      "source_path_before_refactor": "ops/Release_Gates_LOCKED.md",
+      "current_path": "authority/strategy/ops/Release_Gates_LOCKED.md",
+      "sha1": "E2C5D627AAC62E1C58735DEA7433DCC336B1DD98",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S074",
+      "source_path_before_refactor": "ops/Resumable_Backfill_Contract_LOCKED.md",
+      "current_path": "authority/strategy/ops/Resumable_Backfill_Contract_LOCKED.md",
+      "sha1": "689572A8815FC6D9FB6894A3E252CC6FB6A70F4B",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S075",
+      "source_path_before_refactor": "ops/Run_Artifacts_Format_LOCKED.md",
+      "current_path": "authority/strategy/ops/Run_Artifacts_Format_LOCKED.md",
+      "sha1": "4D5A48BCAE4046BE1385B941DFE566CF5B9672A9",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S076",
+      "source_path_before_refactor": "ops/Run_Execution_Evidence_Pack_Contract_LOCKED.md",
+      "current_path": "authority/strategy/ops/Run_Execution_Evidence_Pack_Contract_LOCKED.md",
+      "sha1": "FFA1C871D67F76E0171FD9FD40AB5083A13DC18F",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S077",
+      "source_path_before_refactor": "ops/Run_Ownership_and_Recovery_LOCKED.md",
+      "current_path": "authority/strategy/ops/Run_Ownership_and_Recovery_LOCKED.md",
+      "sha1": "2E16C17FDBC4E916FE9E57C3508CCC27A123E0BC",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S078",
+      "source_path_before_refactor": "ops/Scheduling_and_Locking_Contract_LOCKED.md",
+      "current_path": "authority/strategy/ops/Scheduling_and_Locking_Contract_LOCKED.md",
+      "sha1": "A20EB0B337834E2CB896F871B0DA97456FE9446B",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S079",
+      "source_path_before_refactor": "registry/Corporate_Action_Type_Registry_LOCKED.md",
+      "current_path": "authority/strategy/registry/Corporate_Action_Type_Registry_LOCKED.md",
+      "sha1": "A96DFA722A9480CE0D499EA54673C0B637DE8ADB",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S080",
+      "source_path_before_refactor": "registry/Exchange_Market_Structure_Facts_LOCKED.md",
+      "current_path": "authority/strategy/registry/Exchange_Market_Structure_Facts_LOCKED.md",
+      "sha1": "9941E7163806F1B985AF1BA6D5028081B1D082AF",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S081",
+      "source_path_before_refactor": "registry/Indicator_Registry_Baseline_LOCKED.md",
+      "current_path": "authority/strategy/registry/Indicator_Registry_Baseline_LOCKED.md",
+      "sha1": "3A19AB8F61FD1788B2FAE29D1F1ADE429DB9FE40",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S082",
+      "source_path_before_refactor": "registry/Platform_Config_Registry_LOCKED.md",
+      "current_path": "authority/strategy/registry/Platform_Config_Registry_LOCKED.md",
+      "sha1": "6B61EE4D591054BAF3F44BFE7AD159AD09DF1E36",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S083",
+      "source_path_before_refactor": "registry/Price_Adjustment_Contract_LOCKED.md",
+      "current_path": "authority/strategy/registry/Price_Adjustment_Contract_LOCKED.md",
+      "sha1": "303A8523DDC42DF2A3E7BDD22BEBC5547D99D7FF",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S084",
+      "source_path_before_refactor": "registry/Price_Scale_Break_Detection_LOCKED.md",
+      "current_path": "authority/strategy/registry/Price_Scale_Break_Detection_LOCKED.md",
+      "sha1": "653297FE2D3C79E3376549918B6FC6A2EE796F77",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S085",
+      "source_path_before_refactor": "registry/Reason_Codes_Registry.md",
+      "current_path": "authority/strategy/registry/Reason_Codes_Registry.md",
+      "sha1": "19E607D87B1A5E493DEB2756426746022681EC38",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S086",
+      "source_path_before_refactor": "registry/Volume_and_Turnover_Normalization_LOCKED.md",
+      "current_path": "authority/strategy/registry/Volume_and_Turnover_Normalization_LOCKED.md",
+      "sha1": "8863399D0A5EDB40CDEC2594B29EDCEA1A5A9B00",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S087",
+      "source_path_before_refactor": "session_snapshot/Session_Snapshot_Contract_LOCKED.md",
+      "current_path": "authority/strategy/session_snapshot/Session_Snapshot_Contract_LOCKED.md",
+      "sha1": "805DB06F231E40AB8C501370F200239F06FEBD08",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S088",
+      "source_path_before_refactor": "session_snapshot/Session_Snapshot_Date_Alignment_with_Effective_Date_LOCKED.md",
+      "current_path": "authority/strategy/session_snapshot/Session_Snapshot_Date_Alignment_with_Effective_Date_LOCKED.md",
+      "sha1": "14E373EDB6D1CA53A8550EDF0BAD53D77B514113",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S089",
+      "source_path_before_refactor": "session_snapshot/Session_Snapshot_Retention_Defaults_LOCKED.md",
+      "current_path": "authority/strategy/session_snapshot/Session_Snapshot_Retention_Defaults_LOCKED.md",
+      "sha1": "DE89005539719AD5058094599436342A53628714",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S090",
+      "source_path_before_refactor": "session_snapshot/Session_Snapshot_Scope_Selection_and_Dependencies_LOCKED.md",
+      "current_path": "authority/strategy/session_snapshot/Session_Snapshot_Scope_Selection_and_Dependencies_LOCKED.md",
+      "sha1": "E0EAD95D45259C4069739EECB7439B03039E11D9",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    },
+    {
+      "strategy_id": "MD-S091",
+      "source_path_before_refactor": "session_snapshot/Snapshot_Slot_Tolerances_and_Session_Rules_LOCKED.md",
+      "current_path": "authority/strategy/session_snapshot/Snapshot_Slot_Tolerances_and_Session_Rules_LOCKED.md",
+      "sha1": "0DFD74697D1D8A7CCBED1528E81D3F9091BED393",
+      "authority_status": "CURRENT_STRATEGY_AUTHORITY",
+      "semantic_change": "NONE",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+    }
+  ]
+}

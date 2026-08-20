@@ -363,6 +363,14 @@ class MarketDataPipelineService
                     'config_snapshot_id' => (int) $run->config_snapshot_id,
                     'source_mode' => $input->sourceMode === 'api' ? 'api_free' : $input->sourceMode,
                     'enforce_temporal_mapping' => $input->sourceMode === 'api',
+                    /*
+                     * The run's own knowledge coordinate, fed to acquisition so the universe,
+                     * calendar session, and provider symbol mapping resolve as the platform knew
+                     * them rather than as it knows them now. Determinism_Invariants_LOCKED.md:122
+                     * states it plainly: current state must not leak into either replay mode.
+                     * This context key was read in two places and written in none.
+                     */
+                    'known_at' => $this->runs->resolveKnowledgeCutoff($run),
                     ]
                 );
             $sourceAcquisitionTelemetry = $this->barsIngest->consumeSourceAcquisitionTelemetry($input->sourceMode);

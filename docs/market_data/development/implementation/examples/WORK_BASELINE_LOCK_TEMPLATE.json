@@ -1,0 +1,15 @@
+{
+  "baseline_id": "MD-B00-A001-BL001",
+  "stage_id": "MD-B00",
+  "attempt_id": "MD-B00-A001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260820-001",
+  "strategy_manifest_sha1": "<sha1>",
+  "governance_fingerprint": "<sha1>",
+  "traceability_matrix_sha1": "<sha1>",
+  "source_revision": "<git-sha-or-source-id>",
+  "working_tree": "<clean|dirty+hash>",
+  "schema_config_identity": "<identity>",
+  "toolchain_identity": "<identity>",
+  "created_at": "<timezone-aware>"
+}

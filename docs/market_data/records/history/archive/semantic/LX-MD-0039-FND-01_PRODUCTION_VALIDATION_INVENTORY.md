@@ -1,0 +1,36 @@
+# Legacy Semantic Extract — LX-MD-0039-FND-01
+
+- Source ID: `LS-MD-0039`
+- Original path: `audit/PRODUCTION_VALIDATION_INVENTORY.md`
+- Original SHA1: `A8D8B95268BF27AB2D2EE5D169FEE87AFCAF4EB7`
+- Extract role: `FINDING`
+- Source range: `L42-L62`
+- Extract body SHA1: `5461311D1CF82FE704B86E67424E96EB9820F80A`
+- Current authority: `NO`
+- Current verification effect: `HISTORICAL_ONLY`
+- Preservation policy: `EXACT_SOURCE_RANGE_COPY_WITH_METADATA`
+
+<!-- LEGACY_EXTRACT_BODY_START -->
+## Fix ledger / runtime findings after fix2
+
+- Operator-local runtime PASS: daily import-only for `2026-02-18` produced `run_id=1`, accepted 901 rows, stayed `NOT_READABLE`, did not promote, did not switch pointer, and stayed `UNSEALED`.
+- Operator-local runtime PASS: promote/finalize for `run_id=1` produced `SUCCESS`, `READABLE`, `SEALED`, coverage `PASS`, `COVERAGE_THRESHOLD_MET`, and pointer switched to publication `1`.
+- Operator-local runtime PASS: run evidence export for `run_id=1` produced complete evidence with 9 files and pointer status `RESOLVED_READABLE_CURRENT`.
+- Operator-local runtime BLOCKED before fix3: replay smoke/verify exposed `SQLSTATE[22001]` because long mismatch details overflowed `md_replay_daily_metrics.mismatch_summary`.
+- Patch applied in this ZIP: `mismatch_summary LONGTEXT`, concise `buildOperatorMismatchSummary`, details retained in `mismatches_json`, and domain reason-code extraction for replay command failures.
+- Operator-local replay after fix3 historical PASS/REVIEW_REQUIRED note: `reason_code_mismatch_case` observed `MISMATCH` and passed, `broken_manifest_case` exposed `REPLAY_FIXTURE_SCHEMA_MISMATCH`, `missing_file_case` exposed `REPLAY_EXPECTED_PROOF_INCOMPLETE`, and stale committed `valid_case` cleanly observed `MISMATCH` instead of SQL truncation.
+- Replay fixture note: the committed `valid_case` fixture expects `2026-03-17`, `run_id=41`, `publication_id=4`, and 10 rows; using it against runtime `run_id=1` / `2026-02-18` / 901 rows is expected to produce MISMATCH, not MATCH. A generated runtime fixture is required for true MATCH proof.
+- Patch applied in fix4: `market-data:replay:fixture:generate` creates `manifest.json`, `expected/expected_replay_result.json`, and `expected/expected_reason_code_counts.json` from the actual run; `market-data:replay:smoke --generate_runtime_valid_case` can use this generated runtime valid fixture for smoke MATCH proof.
+- Operator-local replay fixture proof after fix4 PASS: `market-data:replay:fixture:generate 1 --case=valid_case --output_dir=storage/app/market_data/replay-fixtures/generated-valid-run-1` produced `fixture_generated=1`, `expected_result=MATCH`, `fixture_family=runtime_generated_valid_case`, `trade_date=2026-02-18`, publication/pointer `1`, and expected fixture files.
+- Operator-local generated replay verify PASS: `market-data:replay:verify 1 storage/app/market_data/replay-fixtures/generated-valid-run-1 --output_dir=storage/app/market-data/replay` produced `replay_id=5`, `comparison_result=MATCH`, `mismatch_count=0`, `final_reason_code=COVERAGE_THRESHOLD_MET`, `artifact_changed_scope=none`, and `replay_artifact_path=storage/app/market-data/replay/replay_result.json`.
+- Operator-local generated smoke PASS: `market-data:replay:smoke 1 --generate_runtime_valid_case --output_dir=storage/app/market-data/replay` produced `all_passed=1`, `runtime_valid_fixture_generated=1`, generated valid case `MATCH/pass`, reason-code mismatch `MISMATCH/pass`, broken manifest `ERROR/pass`, and missing file `ERROR/pass`.
+- Operator-local replay evidence export PASS after fix5: `market-data:evidence:export --replay_id=5 --trade_date=2026-02-18 --output_dir=storage/app/market-data/evidence` produced selector=replay, `selector_id=5`, `status=SUCCESS`, `comparison_result=MATCH`, `trade_date=2026-02-18`, `file_count=5`, and files `replay_result.json`, `replay_expected_state.json`, `replay_actual_state.json`, `replay_reason_code_counts.json`, and `replay_evidence_pack.json`.
+- Operator-local failed/held runtime proof after fix6 PASS: `market-data:daily --requested_date=2026-03-20 --source_mode=manual_file --input_file=storage/app/market_data/operator/manual-2026-03-20.csv --output_dir=storage/app/market-data/runs` produced `run_id=2`, `request_mode=import_only`, `accepted_row_count=5`, `promoted=false`, `pointer_switched=false`, `seal_state=UNSEALED`, and `is_current_publication=0`.
+- Operator-local failed/held promote proof after fix6 PASS: `market-data:promote --requested_date=2026-03-20 --source_mode=manual_file --run_id=2 --output_dir=storage/app/market-data/runs` produced `terminal_status=HELD`, `publishability_state=NOT_READABLE`, `promote_status=HELD`, `promoted=false`, `pointer_switched=false`, `coverage_gate_state=FAIL`, `coverage_reason_code=COVERAGE_BELOW_THRESHOLD`, `coverage_summary=available=5/901 | missing=896 | ratio=0.0055 | threshold=0.9800`, `seal_state=UNSEALED`, and `final_reason_code=RUN_PARTIAL_DATA`.
+- Operator-local held-run evidence export PASS_WITH_WARNING after fix6: `market-data:evidence:export --run_id=2 --output_dir=storage/app/market-data/evidence` produced selector `run`, `selector_id=2`, `terminal_status=HELD`, `publishability_state=NOT_READABLE`, `coverage_gate_state=FAIL`, `final_reason_code=RUN_PARTIAL_DATA`, `evidence_completeness_state=INCOMPLETE`, `pointer_resolve_status=MISSING`, `fallback_used=1`, `file_count=8`, and `evidence_warning=EVIDENCE_INCOMPLETE`. This is an expected warning proof for a non-readable/unsealed held run and must not be treated as a complete readable proof package.
+- Operator-local correction status guard proof PASS: `market-data:correction:request --trade_date=2026-02-18 --reason_code=CORRECTION_OPERATOR_REQUESTED --reason_note="production validation correction proof" --requested_by=operator` produced `correction_id=1` and status `REQUESTED`; executing before approval produced `status=BLOCKED`, `reason_code=COMMAND_CORRECTION_STATUS_NOT_EXECUTABLE`, and preserved correction status `REQUESTED`; evidence export for REQUESTED produced `correction_evidence.json`.
+- Operator-local correction lifecycle proof PASS after approval: `market-data:correction:approve 1 --approved_by=operator` produced status `APPROVED`; `market-data:correction:run 1 --requested_date=2026-02-18 --source_mode=manual_file` produced `run_id=3`, `request_mode=correction`, `terminal_status=SUCCESS`, `publishability_state=READABLE`, `promote_status=PROMOTED`, `pointer_switched=true`, `current_publication_id=3`, `publication_id=3`, `publication_version=2`, `seal_state=SEALED`, `coverage_gate_state=PASS`, `coverage_reason_code=COVERAGE_THRESHOLD_MET`, `correction_status=PUBLISHED`, `correction_outcome=PUBLISHED`, `correction_reseal_status=RESEALED`, `baseline_publication_id=1`, `candidate_publication_id=3`, and `candidate_publication_switch=true`.
+- Operator-local correction evidence export PASS: `market-data:evidence:export --correction_id=1 --output_dir=storage/app/market-data/evidence` produced selector `correction`, `selector_id=1`, `status=PUBLISHED`, `changed_decision=CHANGED`, `reseal_status=RESEALED`, `publication_switch=1`, `file_count=1`, and file `correction_evidence.json`.
+
+
+<!-- LEGACY_EXTRACT_BODY_END -->
