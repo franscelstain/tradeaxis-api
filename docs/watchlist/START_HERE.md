@@ -1,0 +1,465 @@
+# START HERE — Building Watchlist Weekly Swing
+
+> **Current Verification Epoch:** `WS-REBASELINE-20260819-001`  
+> **Rebaseline rule:** semua pre-epoch PASS/FAIL/PARTIAL/DONE/READY adalah historical-only. Current implementation/proof dimulai `NOT_ASSESSED`. Read [`authority/governance/CURRENT_VERIFICATION_REBASELINE_STANDARD.md`](authority/governance/CURRENT_VERIFICATION_REBASELINE_STANDARD.md).
+
+
+
+## Root Map — Know Where You Are Before Reading
+
+```text
+docs/watchlist/
+├── START_HERE.md
+├── authority/      # what must be followed
+├── development/    # where implementation work evolves
+└── records/        # what actually happened / was decided / archived
+```
+
+- **Read authority first:** [`authority/strategy/`](authority/strategy/README.md) + required [`authority/governance/`](authority/governance/README.md).
+- **Work in development:** [`development/implementation/`](development/implementation/README.md), [`development/research/`](development/research/README.md), [`development/findings/`](development/findings/README.md).
+- **Record facts in records:** [`records/evidence/`](records/evidence/README.md), [`records/decisions/`](records/decisions/README.md), [`records/history/`](records/history/README.md).
+
+**Do not move files based on temporary status.** Folder role is permanent; lifecycle/status lives in document metadata, stage register, evidence, and governance.
+
+
+## Why This Document Exists
+
+Dokumen ini adalah **pintu masuk pertama** untuk siapa pun yang baru membaca atau membangun Watchlist.
+
+Jika tujuan Anda adalah memahami, mengimplementasikan, menguji, atau melanjutkan Weekly Swing, **mulai dari file ini dan ikuti urutan yang ditetapkan di bawah**. Jangan menentukan urutan sendiri dari nama file, nomor campaign lama, tracker historis, atau hasil audit terdahulu.
+
+Current product scope hanya:
+
+`Watchlist → Weekly Swing EOD → qualified ranked Top Picks + next-session action intent → manual buy decision support`
+
+Optional enhancement:
+
+`Top Pick + EOD action intent → optional next-trading-session CONFIRM → current actionability`
+
+Watchlist bukan broker execution engine, portfolio manager, multi-strategy platform, atau pengganti Market Data.
+
+---
+
+## 1. One Authoritative Path
+
+Urutan resmi pembangunan berasal dari lifecycle strategy:
+
+`WS-S00 → WS-S01 → WS-S02 → WS-S03 → WS-S04 → WS-S06 → WS-S07 → WS-S08 → WS-S09 → WS-S10 → WS-S11`
+
+`WS-S05 CONFIRM` adalah **optional branch** dari `WS-S04` dan bukan prerequisite core runtime/proof.
+
+Interpretasi sederhananya:
+
+1. pahami apa yang ingin dibangun;
+2. bind data pasar yang terpercaya;
+3. tentukan ticker yang layak dievaluasi;
+4. bentuk PLAN yang deterministic dan immutable;
+5. pilih dan ranking semua qualified Top Picks;
+6. buktikan kualitas recommendation secara historis dan forward;
+7. baru review apakah exact strategy identity layak digunakan nyata;
+8. CONFIRM dapat ditambahkan kapan data decision-time tersedia tanpa memblokir core system.
+
+Lifecycle strategy authoritative: [`authority/strategy/WS_END_TO_END_STRATEGY_LIFECYCLE.md`](authority/strategy/WS_END_TO_END_STRATEGY_LIFECYCLE.md).
+
+---
+
+## 2. Before Reading Anything Else — Documentation Authority
+
+Gunakan urutan authority berikut:
+
+1. **Governance** — menentukan bagaimana dokumen dibaca, dicatat, diubah, dikoreksi, dan disupersede.
+2. **Strategy** — menjawab *apa yang harus dilakukan Weekly Swing*.
+3. **Implementation** — menjawab *bagaimana software memenuhi strategy*.
+4. **Research** — eksperimen/candidate/preregistration; bukan current behavior.
+5. **Evidence** — hasil aktual; bukan pembuat strategy baru.
+6. **Findings** — masalah/insight yang ditemukan.
+7. **Decisions** — alasan formal menerima/menolak perubahan; issued decision immutable.
+8. **History** — superseded/migration/historical records; immutable.
+
+Jangan menggunakan dokumen research, evidence, decision lama, atau history sebagai current strategy hanya karena isinya lebih detail.
+
+Governance minimum yang perlu dipahami sebelum mengubah dokumen:
+
+- [`authority/governance/CURRENT_VERIFICATION_REBASELINE_STANDARD.md`](authority/governance/CURRENT_VERIFICATION_REBASELINE_STANDARD.md)
+- [`authority/governance/CURRENT_VERIFICATION_EPOCH.json`](authority/governance/CURRENT_VERIFICATION_EPOCH.json)
+- [`authority/governance/CURRENT_VERIFICATION_REGISTRY.csv`](authority/governance/CURRENT_VERIFICATION_REGISTRY.csv)
+- [`authority/governance/DOCUMENTATION_ARCHITECTURE.md`](authority/governance/DOCUMENTATION_ARCHITECTURE.md)
+- [`authority/governance/DOCUMENT_RECORDING_STANDARD.md`](authority/governance/DOCUMENT_RECORDING_STANDARD.md)
+- [`authority/governance/WORK_BASELINE_LOCK_STANDARD.md`](authority/governance/WORK_BASELINE_LOCK_STANDARD.md)
+- [`authority/governance/WORK_CORRELATION_AND_RECORD_REGISTRY_STANDARD.md`](authority/governance/WORK_CORRELATION_AND_RECORD_REGISTRY_STANDARD.md)
+- [`authority/governance/CHANGE_IMPACT_DECLARATION_STANDARD.md`](authority/governance/CHANGE_IMPACT_DECLARATION_STANDARD.md)
+- [`authority/governance/DEPENDENCY_REGISTRY_STANDARD.md`](authority/governance/DEPENDENCY_REGISTRY_STANDARD.md)
+- [`authority/governance/STAGE_CLOSURE_MANIFEST_STANDARD.md`](authority/governance/STAGE_CLOSURE_MANIFEST_STANDARD.md)
+- [`authority/governance/STAGE_EXECUTION_AND_REWORK_STANDARD.md`](authority/governance/STAGE_EXECUTION_AND_REWORK_STANDARD.md)
+- [`authority/governance/IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD.md`](authority/governance/IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD.md)
+- [`authority/governance/DOCUMENT_INTEGRITY_GATE_STANDARD.md`](authority/governance/DOCUMENT_INTEGRITY_GATE_STANDARD.md)
+- [`authority/governance/DOCUMENT_CHANGE_POLICY.md`](authority/governance/DOCUMENT_CHANGE_POLICY.md)
+- [`authority/governance/WATCHLIST_DOCUMENT_AUTHORITY.md`](authority/governance/WATCHLIST_DOCUMENT_AUTHORITY.md)
+
+**Recording rule:** final evidence, issued decision, locked research, dan history tidak boleh ditulis ulang. Implementation boleh berubah tetapi material semantic/contract change harus traceable melalui `DOCUMENT_CHANGE_LOG.md`, tests/evidence, dan status/contract tracker.
+
+---
+
+
+
+
+**Current implementation orientation:** buka [`development/implementation/CURRENT_STATE.md`](development/implementation/CURRENT_STATE.md), lalu Stage Register dan Work Record Registry untuk mengetahui stage/attempt/dependency current.
+
+**Work/Correlation rule:** setiap formal `WS-Bxx` attempt memakai Attempt ID sebagai Work ID; semua record current attempt harus searchable dengan ID itu dan terdaftar pada [`records/WORK_RECORD_REGISTRY.csv`](records/WORK_RECORD_REGISTRY.csv).
+
+**Before changing implementation:** issue a Work Baseline Lock, open an attempt using the canonical attempt template, and run the executable integrity gate. This is mandatory even when the programmer already understands the strategy; it prevents evidence from becoming detached from the exact authority/source revision used.
+
+- Baseline: [`authority/governance/WORK_BASELINE_LOCK_STANDARD.md`](authority/governance/WORK_BASELINE_LOCK_STANDARD.md)
+- Attempt template: [`development/implementation/examples/WS_STAGE_ATTEMPT_RECORD_TEMPLATE.md`](development/implementation/examples/WS_STAGE_ATTEMPT_RECORD_TEMPLATE.md)
+- Executable gate: [`development/implementation/tests/WatchlistDocumentationIntegrityGate.php`](development/implementation/tests/WatchlistDocumentationIntegrityGate.php)
+
+**Recurring implementation rule:** setiap build/rerun yang menyentuh behavior atau proof wajib melakukan residue/conformance check. Jangan menghapus semua legacy identifier; classify berdasarkan reachability dan semantic impact. `HARMFUL_RESIDUE` memblokir implementation-stage `DONE`; controlled compatibility/history boleh tetap bila terisolasi dan terbukti.
+
+---
+
+# PART I — READ THE STRATEGY LIKE A BOOK
+
+Bagian ini adalah **urutan baca wajib dari halaman pertama sampai halaman terakhir strategy**. Jangan melompat langsung ke implementation sebelum Bab 1–10 dipahami; proof chapters dapat dibaca setelah runtime behavior jelas.
+
+## Chapter 1 — Scope, Success, and Hard Boundary
+
+**Read:** [`authority/strategy/WS_SCOPE_AND_SUCCESS_CRITERIA.md`](authority/strategy/WS_SCOPE_AND_SUCCESS_CRITERIA.md)
+
+**Question answered:** Sistem apa yang sedang dibangun, apa arti berhasil, dan apa yang tidak boleh masuk scope?
+
+**You must understand before continuing:**
+- active strategy hanya Weekly Swing;
+- output adalah decision-support;
+- tujuan adalah positive expected net return setelah realistic friction dengan downside terkendali, bukan guaranteed profit;
+- final Top Picks boleh kosong;
+- execution/portfolio lifecycle tetap out-of-scope.
+
+**Exit:** Anda dapat menjelaskan produk dalam satu kalimat tanpa menyebut C-number atau implementation class.
+
+## Chapter 2 — Product Objective and Layer Meaning
+
+**Read:** [`authority/strategy/WS_PRODUCT_OBJECTIVE_AND_LAYERS.md`](authority/strategy/WS_PRODUCT_OBJECTIVE_AND_LAYERS.md)
+
+**Question answered:** PLAN, RECOMMENDATION, TOP PICKS, dan CONFIRM masing-masing berarti apa?
+
+**Exit:** Tidak ada ambiguity antara PLAN candidate dan final Top Picks.
+
+## Chapter 3 — End-to-End Lifecycle
+
+**Read:** [`authority/strategy/WS_END_TO_END_STRATEGY_LIFECYCLE.md`](authority/strategy/WS_END_TO_END_STRATEGY_LIFECYCLE.md)
+
+**Question answered:** Stage apa yang required, optional, proof-only, dan apa handoff antar-stage?
+
+**Exit:** Anda dapat menggambar `WS-S00..WS-S11` dan menjelaskan bahwa `WS-S05` optional.
+
+## Chapter 4 — Market Data Intake Boundary
+
+**Read:** [`authority/strategy/WS_MARKET_DATA_INPUT_REQUIREMENTS.md`](authority/strategy/WS_MARKET_DATA_INPUT_REQUIREMENTS.md)
+
+**Question answered:** Fakta apa yang dimiliki Market Data, fakta apa yang dibutuhkan Weekly Swing, dan bagaimana Watchlist bereaksi bila field/readiness tidak valid?
+
+**Key rule:** Market Data owns facts; Watchlist owns decision policy.
+
+**Exit:** Anda tahu bahwa current PLAN membutuhkan producer-facing read product yang `READABLE + FRESH + same effective trade date`, dan tidak boleh membuat direct-table shortcut/recompute fakta Market Data.
+
+## Chapter 5 — Runtime Flow
+
+**Read:** [`authority/strategy/WS_RUNTIME_FLOW.md`](authority/strategy/WS_RUNTIME_FLOW.md)
+
+**Question answered:** Bagaimana trusted input berubah menjadi PLAN, Recommendation/Top Picks, dan optional CONFIRM?
+
+**Exit:** Anda tahu core runtime selesai di final Top Picks, bukan di CONFIRM.
+
+## Chapter 6 — Candidate Eligibility and Setup
+
+**Read:** [`authority/strategy/WS_CANDIDATE_ELIGIBILITY_AND_SETUP.md`](authority/strategy/WS_CANDIDATE_ELIGIBILITY_AND_SETUP.md)
+
+**Question answered:** Kondisi absolut apa yang harus dipenuhi sebelum ticker boleh masuk jalur recommendation?
+
+**Exit:** Missing active required feature tidak di-zero-fill dan tidak diselamatkan oleh relative ranking.
+
+## Chapter 7 — Candidate Classification
+
+**Read:** [`authority/strategy/WS_CANDIDATE_CLASSIFICATION.md`](authority/strategy/WS_CANDIDATE_CLASSIFICATION.md)
+
+**Question answered:** Bagaimana setiap evaluated ticker diberi state deterministic sebelum scoring?
+
+**Expected states:**
+- `RECOMMENDATION_CANDIDATES`
+- `WATCH_ONLY`
+- `AVOID`
+
+**Exit:** Hanya `RECOMMENDATION_CANDIDATES` yang boleh lanjut ke score/recommendation path.
+
+## Chapter 8 — PLAN Scoring and Trade Plan
+
+**Read:** [`authority/strategy/WS_PLAN_SCORING_AND_TRADE_PLAN.md`](authority/strategy/WS_PLAN_SCORING_AND_TRADE_PLAN.md)
+
+**Question answered:** Bagaimana candidate dinilai, diurutkan, diberi entry/risk/exit plan, lalu PLAN dibekukan?
+
+**Exit:** PLAN deterministic, replayable, dan immutable sebelum Recommendation dibentuk.
+
+## Chapter 9 — Recommendation Meaning
+
+**Read:** [`authority/strategy/WS_TOP_PICKS_RECOMMENDATION.md`](authority/strategy/WS_TOP_PICKS_RECOMMENDATION.md)
+
+**Question answered:** Apa yang membuat recommendation berbeda dari candidate PLAN?
+
+**Exit:** Anda memahami bahwa tidak ada fixed quota dan valid result dapat `NO QUALIFIED TOP PICKS`.
+
+## Chapter 10 — Qualification and Ranking Top Picks
+
+**Read:** [`authority/strategy/WS_TOP_PICKS_QUALIFICATION_AND_RANKING.md`](authority/strategy/WS_TOP_PICKS_QUALIFICATION_AND_RANKING.md)
+
+**Question answered:** Siapa yang benar-benar menjadi Top Pick dan mengapa rank #1 berada di atas rank #2?
+
+**Exit:** Semua dan hanya candidate yang melewati final quality gates menjadi `TOP_PICKS`, ranking deterministic, dan capital tidak mengubah membership/rank.
+
+### CORE RUNTIME MILESTONE
+
+Setelah Chapter 1–10 dan implementation `WS-S00..WS-S04` selesai, core Watchlist secara fungsional harus dapat menghasilkan:
+
+`trusted Market Data → PLAN → qualified ranked TOP PICKS (0..N) → EOD action intent untuk NEXT_TRADING_SESSION`
+
+Canonical timing identity membedakan `requested_trade_date`, `effective_trade_date`, `recommendation_generated_at`, `intended_entry_session`, dan `canonical_entry_cutoff`. Ini adalah **core product completion point**.
+
+## Chapter 11 — Optional Next-Trading-Session CONFIRM
+
+**Read:** [`authority/strategy/WS_D1_CONFIRM_ACTIONABILITY.md`](authority/strategy/WS_D1_CONFIRM_ACTIONABILITY.md)
+
+**Question answered:** Bila valid decision-time data tersedia, apakah EOD Top Pick yang action window-nya masih open tetap actionable pada governed next trading session?
+
+**Important:** Chapter ini optional untuk core construction.
+
+Valid availability/actionability states harus membedakan:
+- `NOT_REQUESTED`
+- `UNAVAILABLE_RETRYABLE`
+- `ACTIONABLE`
+- `NOT_ACTIONABLE`
+- `EXPIRED_UNCONFIRMED`
+
+Missing/stale/incomplete data bukan `NOT_ACTIONABLE` dan bukan core failure.
+
+## Chapter 12 — Historical Evaluation Model
+
+**Read:** [`authority/strategy/WS_HISTORICAL_EVALUATION_STRATEGY.md`](authority/strategy/WS_HISTORICAL_EVALUATION_STRATEGY.md)
+
+**Question answered:** Bagaimana exact final Top Picks direplay secara causal tanpa future leakage dan dinilai setelah friction?
+
+**Exit:** Historical evaluator mengukur final recommendations, bukan PLAN proxy.
+
+## Chapter 13 — IS Sufficiency and Winner Freeze
+
+**Read:** [`authority/strategy/WS_IS_SUFFICIENCY_AND_WINNER_FREEZE.md`](authority/strategy/WS_IS_SUFFICIENCY_AND_WINNER_FREEZE.md)
+
+**Question answered:** Kapan evidence IS cukup dan kapan tepat satu best-IS identity boleh dibekukan?
+
+**Exit:** hanya `IS PASS + exactly one frozen winner` boleh diteruskan ke untouched OOS.
+
+## Chapter 14 — OOS, Friction, Shadow, Production Boundary
+
+**Read:** [`authority/strategy/WS_OOS_STRESS_SHADOW_AND_PRODUCTION_PROOF.md`](authority/strategy/WS_OOS_STRESS_SHADOW_AND_PRODUCTION_PROOF.md)
+
+**Question answered:** Bagaimana winner dibuktikan pada untouched OOS, adverse friction, forward shadow, lalu dinilai untuk real-use review?
+
+**Exit:** Anda dapat membedakan `PASS`, `FAIL`, `INSUFFICIENT EVIDENCE`, core proof, dan optional CONFIRM proof.
+
+### STRATEGY BOOK END
+
+Jika Chapter 1–14 telah dipahami, Anda telah membaca current Weekly Swing strategy dari awal sampai akhir. Baru setelah itu gunakan implementation layer untuk membangun software.
+
+---
+
+
+## MANDATORY STRATEGY COVERAGE MATRIX
+
+Sebelum coding stage-by-stage, baca:
+
+- [`authority/governance/STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md`](authority/governance/STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md);
+- [`authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv`](authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv).
+
+Matrix adalah backlog coverage rule-by-rule. Pada setiap `WS-Bxx`, programmer harus memfilter row `verification_build_stage` stage tersebut dan memastikan tidak ada mandatory rule yang hilang dari mapping/test/evidence.
+
+**Stage `DONE` bukan pengganti matrix.** Final 100% mandatory strategy coverage hanya sah ketika seluruh active mandatory/conditional row `SATISFIED`; optional CONFIRM boleh tetap `OPTIONAL_NOT_REQUESTED`.
+
+# PART II — BUILD THE SYSTEM STEP BY STEP
+
+Detailed technical build sequence berada di:
+
+[`development/implementation/WS_IMPLEMENTATION_BUILD_SEQUENCE.md`](development/implementation/WS_IMPLEMENTATION_BUILD_SEQUENCE.md)
+
+Jangan memakai nama file implementation lama sebagai build order. Build order harus mengikuti lifecycle stage.
+
+Ringkasan urutan:
+
+| Build step | Lifecycle | Build target | May proceed when |
+|---|---|---|---|
+| `WS-B00` | `WS-S00` | lock current authority/strategy/authority before code changes | scope and strategy identity understood |
+| `WS-B01` | `WS-S01` | governed Market Data intake boundary | read contract + mapping + fail-closed behavior defined |
+| `WS-B02` | support `S01..S04` | align paramset/data model/validator/reason semantics | technical contracts match revised strategy |
+| `WS-B03` | `WS-S02` | eligibility + classification | deterministic candidate states tested |
+| `WS-B04` | `WS-S03` | PLAN scoring/trade-plan/immutability | PLAN deterministic and immutable |
+| `WS-B05` | `WS-S04` | final qualification + ranked Top Picks | valid `0..N` Top Picks tested |
+| `WS-B06` | core runtime | API/persistence/composite core delivery | PLAN + Recommendation survive round-trip without semantic drift |
+| `WS-B07` | optional `WS-S05` | CONFIRM capability, only if desired/data-source ready | must remain non-blocking; may be deferred indefinitely |
+| `WS-B08` | `WS-S06` | historical evaluator + persistence | exact final Top Picks replayable causally |
+| `WS-B09` | `WS-S07` | IS evaluator + winner freeze | sufficiency gates + exactly-one-winner behavior tested |
+| `WS-B10` | `WS-S08..S09` | untouched OOS + adverse friction | frozen identity preserved, no retuning |
+| `WS-B11` | `WS-S10` | forward shadow core flow | forward-only core sample/evidence sufficient |
+| `WS-B12` | `WS-S11` | production-use review package | all required core proof stages have explicit verdict |
+
+---
+
+# PART II-B — WHEN A STAGE IS BEING REWORKED OR RESUMED
+
+Before rerunning any `WS-Bxx` stage that has prior attempts, read:
+
+1. [`authority/governance/STAGE_EXECUTION_AND_REWORK_STANDARD.md`](authority/governance/STAGE_EXECUTION_AND_REWORK_STANDARD.md)
+2. [`development/implementation/WS_IMPLEMENTATION_STAGE_REGISTER.md`](development/implementation/WS_IMPLEMENTATION_STAGE_REGISTER.md)
+3. latest attempt evidence linked by the register
+4. open/accepted unresolved findings
+5. active remediation/decision
+6. documentation change log since the prior attempt
+
+Do **not** restart from code or from historical campaign prose.
+
+Key rule:
+
+> Repeated failure does not justify closure. If evidence is still narrowing the problem or a reasonable remedy remains, keep the stage active and record the next testable action.
+
+`DONE` means the declared stage objective/exit criteria were achieved. A proof/evaluation stage may be `DONE` with verdict `FAIL` when producing that valid verdict is itself the stage objective. An implementation stage with unresolved failing acceptance tests is not `DONE`.
+
+If a real external dependency is missing, use `WAITING_VERIFIED_DEPENDENCY` with evidence + resume trigger. If the approach is truly terminally infeasible, closure requires immutable evidence + reviewed decision; never personal judgement alone.
+
+# PART III — HOW TO HANDLE MISSING DATA WITHOUT BREAKING DEVELOPMENT
+
+## A. Missing Live/Runtime Market Data
+
+If runtime producer data is not yet available, software construction may continue using contract-valid fixtures/mocks for module and contract tests.
+
+This permits:
+- contract development;
+- deterministic unit tests;
+- persistence/API implementation;
+- negative/failure-path tests.
+
+It does **not** permit claiming:
+- real runtime readiness;
+- historical proof based on fabricated producer facts;
+- production readiness.
+
+Required Market Data facts must eventually come through the governed producer-facing contract.
+
+## B. Missing CONFIRM Data
+
+CONFIRM is different because it is optional.
+
+Missing CONFIRM data:
+- never blocks PLAN;
+- never blocks Recommendation/Top Picks;
+- never blocks core historical proof;
+- never blocks core production-use review;
+- produces availability state, not core failure.
+
+CONFIRM can be implemented later and can evaluate a still-open entry window when valid data arrives.
+
+## C. Missing Historical Evidence
+
+Code may be complete while proof is incomplete.
+
+Use the correct state:
+- implementation complete, proof pending; or
+- `INSUFFICIENT EVIDENCE`.
+
+Never weaken gates or fabricate evidence just to complete the lifecycle.
+
+---
+
+# PART IV — WHERE TO WRITE NEW INFORMATION
+
+When building or testing the system:
+
+| What happened | Write/update here |
+|---|---|
+| strategy behavior genuinely changes due to material evidence | `authority/strategy/` only after finding + evidence + decision |
+| technical design/code mapping changes | `development/implementation/` |
+| new experiment/hypothesis | `development/research/` |
+| test/backtest/runtime result | `records/evidence/` |
+| problem discovered | `development/findings/` |
+| formal accept/reject/go/no-go/change decision | `records/decisions/` |
+| old/superseded material | `records/history/` |
+| authority/change rules | `authority/governance/` |
+
+Do not append implementation progress, hashes, test output, or campaign history to canonical strategy documents.
+
+---
+
+# PART V — NEW DEVELOPER CHECKPOINTS
+
+A new programmer should be able to answer these questions in order:
+
+1. **What am I building?** → Chapter 1–2.
+2. **What is the stage order?** → Chapter 3.
+3. **Where do market facts come from?** → Chapter 4.
+4. **How does a ticker enter the candidate path?** → Chapter 6–7.
+5. **How is it scored and given a trade plan?** → Chapter 8.
+6. **When does it become an actual Top Pick?** → Chapter 9–10.
+7. **Does the system require CONFIRM?** → No; Chapter 11 is optional.
+8. **How is profitability/robustness proven?** → Chapter 12–14.
+9. **What do I implement first?** → `WS-B00`, then follow the build sequence.
+10. **Where do I record results/problems?** → Part IV above.
+
+If any answer still requires reading a C-number/history file, stop: the current-authority path is being bypassed.
+
+11. **If I am resuming a stage, what do I read first?** → stage register + re-entry protocol + latest attempt lineage, not random history.
+
+---
+
+# PART VI — DEFINITION OF COMPLETION
+
+## Core software complete
+
+Selain build-stage Definition of Done, seluruh mandatory matrix row yang terkait core implementation harus `SATISFIED` sesuai canonical traceability standard.
+
+At minimum:
+- governed Market Data intake exists;
+- deterministic eligibility/classification exists;
+- immutable PLAN exists;
+- final qualified ranked Top Picks `0..N` exists;
+- required core contracts/persistence/API/tests are aligned.
+
+CONFIRM is not required.
+
+## Core strategy proof complete
+
+Required:
+- historical model valid;
+- IS sufficient + one winner frozen;
+- untouched OOS PASS;
+- adverse-friction PASS;
+- core forward-shadow PASS;
+- production-use review verdict recorded.
+
+## CONFIRM capability complete
+
+Only if implemented:
+- non-blocking availability states work;
+- valid decision-time inputs can produce actionability result;
+- missing data remains retryable/non-failing;
+- capability proof is recorded separately from core proof.
+
+---
+
+## Next File
+
+If you are new to the project, read next:
+
+[`authority/strategy/WS_SCOPE_AND_SUCCESS_CRITERIA.md`](authority/strategy/WS_SCOPE_AND_SUCCESS_CRITERIA.md)
+
+## Legacy corpus normalization rule
+
+When a current task references historical Watchlist material, use `records/history/LEGACY_SOURCE_INDEX.csv` and `LEGACY_WORK_CORRELATION_INDEX.csv`. Original `LS-*` files and `LX-*` extracts are historical records only. Do not treat an old C/R/P/B/S/Q document as current strategy, governance, research, or finding merely because its original filename used that role.
+
+## One Document, One Role
+
+Setiap dokumen current/future mempunyai tepat satu authoritative role. Baca [`ONE_DOCUMENT_ONE_AUTHORITATIVE_ROLE_STANDARD.md`](authority/governance/ONE_DOCUMENT_ONE_AUTHORITATIVE_ROLE_STANDARD.md) sebelum membuat atau memperluas semantic document. Supporting references boleh; authority kedua harus menjadi record terpisah.

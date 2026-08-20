@@ -1,62 +1,110 @@
-# Watchlist Docs
+# Watchlist Documentation
 
-Folder `docs/watchlist/` dipisah menjadi dua jalur utama:
+Watchlist saat ini hanya memiliki satu active strategy: **Weekly Swing**. Root documentation sengaja dibagi menjadi tiga fungsi permanen agar programmer baru langsung mengetahui mana authority, mana working area, dan mana record.
 
-- `system/` = source of truth untuk membangun fitur watchlist
-- `audit/` = guardrail review untuk menjaga scope, boundary, dan sinkronisasi dokumen watchlist
+## START HERE — Single Entry Point
 
-## Current Active Scope
+Siapa pun yang baru ingin memahami, membangun, melanjutkan, atau mengaudit Watchlist **harus mulai dari**:
 
-Saat ini scope aktif watchlist adalah:
+[`START_HERE.md`](START_HERE.md)
 
-- domain: `watchlist`
-- active policy: `weekly_swing`
+Jangan menentukan build order dari campaign number, tracker historis, evidence, atau nama file lama.
 
-Policy lain di luar `weekly_swing` tidak dibahas sampai Weekly Swing benar-benar matang.
+## Root Architecture
 
-## Boundary
+```text
+docs/watchlist/
+├── README.md
+├── START_HERE.md
+├── authority/
+│   ├── strategy/
+│   └── governance/
+├── development/
+│   ├── implementation/
+│   ├── research/
+│   └── findings/
+└── records/
+    ├── evidence/
+    ├── decisions/
+    └── history/
+```
 
-Watchlist hanya membahas **saran**.
+Mental model yang wajib dipakai:
 
-Watchlist bukan owner untuk:
+**Authority menentukan → Development mengerjakan → Records membuktikan/merekam.**
 
-- execution order
-- transaksi beli/jual aktual
-- holdings / portfolio state
-- market-data ingestion internals
-- provider fetch pipeline
+### `authority/` — stable current authority
 
-Watchlist hanya memakai data yang sudah tersedia dari domain `market-data` atau input manual yang sah.
+- [`authority/strategy/`](authority/strategy/README.md) — canonical Weekly Swing behavior.
+- [`authority/governance/`](authority/governance/README.md) — lifecycle, recording, stage, residue, traceability, audit, change control.
 
-### Allowed Upstream Intake
-Untuk scope aktif, intake upstream `watchlist` dari `market-data` harus mengikuti kontrak producer-facing yang jelas dari domain `market_data`, terutama kontrak consumer-readable dan publication-aware yang memang ditujukan untuk downstream consumption.
+Default: **controlled revision**. Implementation tidak boleh mengubah authority agar pekerjaan terlihat lulus.
 
-`watchlist` tidak boleh menganggap hal berikut sebagai jalur intake yang setara tanpa kontrak producer yang eksplisit:
-- raw internal tables / raw bars / raw indicators
-- pipeline state antara
-- technical switching artifacts
-- implementation shortcut yang hanya nyaman untuk kode
+### `development/` — active working area
 
-Aturan ini ada agar arti input upstream tetap dimiliki producer, sedangkan `watchlist` hanya memiliki perilaku setelah input itu diterima.
+- [`development/implementation/`](development/implementation/README.md) — technical translation dan current stage execution.
+- [`development/research/`](development/research/README.md) — experiment/hypothesis.
+- [`development/findings/`](development/findings/README.md) — discovered problems/insights dan remediation lineage.
 
+Default: **mutable/working tetapi traceable**, sesuai lifecycle masing-masing.
 
+### `records/` — factual/issued/historical records
 
-## Layer Reading Guard
+- [`records/evidence/`](records/evidence/README.md) — actual results/proof.
+- [`records/decisions/`](records/decisions/README.md) — issued decisions/supersession.
+- [`records/history/`](records/history/README.md) — immutable archive/superseded/migration records.
 
-Folder ini bisa memuat system docs, audit docs, implementation guidance, examples, fixtures, SQL support, schema markdown, dan sample payload.
-Keberadaan artefak-artefak tersebut **tidak otomatis** berarti paket ini sudah masuk audit Layer C.
-Tanpa bukti code aplikasi nyata, runtime payload nyata dari aplikasi, atau persistence runtime nyata yang bisa ditelusuri, pembacaan audit **harus tetap A/B**, bukan C.
+Default: **append/immutable-oriented**. Records bukan working area dan bukan fallback current authority.
 
-## Folder Layout
+## Short Read / Build Order
 
-- `system/` = source of truth watchlist
-- `audit/` = audit baseline watchlist
-- `system/implementation/` = implementation guidance yang tunduk pada baseline system docs
+1. [`START_HERE.md`](START_HERE.md)
+2. strategy chapters di [`authority/strategy/`](authority/strategy/README.md)
+3. current governance yang diwajibkan oleh START_HERE
+4. [`development/implementation/STRATEGY_ALIGNMENT_REQUIRED.md`](development/implementation/STRATEGY_ALIGNMENT_REQUIRED.md)
+5. [`development/implementation/WS_IMPLEMENTATION_BUILD_SEQUENCE.md`](development/implementation/WS_IMPLEMENTATION_BUILD_SEQUENCE.md)
+6. current resume pointer: [`development/implementation/WS_IMPLEMENTATION_STAGE_REGISTER.md`](development/implementation/WS_IMPLEMENTATION_STAGE_REGISTER.md)
+7. gunakan `development/findings/` saat ada masalah dan `records/` untuk evidence/decision/history sesuai perannya
 
+## Active Product Direction
 
-Audit implementasi watchlist berada di `docs/watchlist/audit/implementation/`.
+Core product flow:
 
+`trusted Market Data -> eligible candidates -> immutable PLAN -> qualified RECOMMENDATION/TOP PICKS -> manual buy decision support`
 
-## Layer Activation Reference
+Optional non-blocking enhancement:
 
-Gunakan [`LAYER_ACTIVATION_RULE.md`](LAYER_ACTIVATION_RULE.md) untuk menentukan apakah paket harus dibaca sebagai Layer A, B, atau C.
+`qualified TOP PICKS -> D+1 CONFIRM (when valid decision-time data is available) -> ACTIONABLE / NOT_ACTIONABLE`
+
+Jika CONFIRM data tidak tersedia, core Top Picks tetap valid; missing CONFIRM data bukan core failure.
+
+## Canonical Build / Proof Order
+
+Urutan strategis authoritative berada di [`authority/strategy/WS_END_TO_END_STRATEGY_LIFECYCLE.md`](authority/strategy/WS_END_TO_END_STRATEGY_LIFECYCLE.md). Core runtime adalah `WS-S00..WS-S04`; `WS-S05` optional non-blocking CONFIRM; core proof `WS-S06..WS-S11`.
+
+Current implementation state tetap:
+
+`STRATEGY_REVISED_IMPLEMENTATION_ALIGNMENT_PENDING`
+
+Historical evidence tetap historical dan tidak ditulis ulang.
+
+## Upstream Market Data Boundary
+
+Watchlist adalah consumer `market_data`. Current binding owner adalah [`authority/strategy/WS_MARKET_DATA_INPUT_REQUIREMENTS.md`](authority/strategy/WS_MARKET_DATA_INPUT_REQUIREMENTS.md), dengan technical translation di [`development/implementation/MARKET_DATA_INTAKE_IMPLEMENTATION_CONTRACT.md`](development/implementation/MARKET_DATA_INTAKE_IMPLEMENTATION_CONTRACT.md). Watchlist tidak boleh membuat producer-internal Market Data path menjadi authority paralel.
+
+## Mandatory Governance for Implementation
+
+Sebelum dan selama implementation, ikuti:
+
+- [`authority/governance/DOCUMENT_RECORDING_STANDARD.md`](authority/governance/DOCUMENT_RECORDING_STANDARD.md) — no silent semantic update;
+- [`authority/governance/WORK_BASELINE_LOCK_STANDARD.md`](authority/governance/WORK_BASELINE_LOCK_STANDARD.md) — immutable attempt baseline before code change;
+- [`authority/governance/STAGE_EXECUTION_AND_REWORK_STANDARD.md`](authority/governance/STAGE_EXECUTION_AND_REWORK_STANDARD.md) — re-entry, convergence, strict DONE/closure;
+- [`authority/governance/IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD.md`](authority/governance/IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD.md) — recurring residue gate;
+- [`authority/governance/DOCUMENT_INTEGRITY_GATE_STANDARD.md`](authority/governance/DOCUMENT_INTEGRITY_GATE_STANDARD.md) — executable integrity checks before attempt/stage/package closure;
+- [`authority/governance/STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md`](authority/governance/STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md) + [`authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv`](authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv) — rule-by-rule strategy coverage.
+
+Stage `DONE` saja tidak membuktikan seluruh strategy terpenuhi. 100% mandatory coverage hanya sah bila semua applicable mandatory rule `SATISFIED`, required evidence lengkap, dan harmful residue open = 0.
+
+## One Document, One Role
+
+Setiap dokumen current/future mempunyai tepat satu authoritative role. Baca [`ONE_DOCUMENT_ONE_AUTHORITATIVE_ROLE_STANDARD.md`](authority/governance/ONE_DOCUMENT_ONE_AUTHORITATIVE_ROLE_STANDARD.md) sebelum membuat atau memperluas semantic document. Supporting references boleh; authority kedua harus menjadi record terpisah.
