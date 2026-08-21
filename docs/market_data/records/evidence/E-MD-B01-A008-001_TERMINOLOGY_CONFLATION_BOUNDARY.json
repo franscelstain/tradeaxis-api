@@ -1,0 +1,220 @@
+{
+    "evidence_id": "E-MD-B01-A008-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A008",
+    "work_id": "MD-B01-A008",
+    "baseline_id": "MD-B01-A008-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B01-A008-001",
+    "issued_at": "2026-08-21T12:38:08+02:00",
+    "title": "MD-B01 terminology conflation boundary and documentation-state readings",
+    "attempt_outcome": "PARTIAL \u2014 stage remains open at 69/155",
+    "runtime_artifact_boundary": {
+        "standard": "RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md (DOC-CHG-20260821-003)",
+        "classification": "Section 5. Document and in-repository test work; no externally-stored runtime output is claimed.",
+        "storage_inspected": false,
+        "raw_artifact_linkage_claimed": false,
+        "basis": "The proof is a PHPUnit guard reading the active document corpus and the app, config, and database trees. Nothing under storage/** is read, so section 4 is not triggered."
+    },
+    "owner_contracts": [
+        "authority/strategy/book/Terminology_and_Scope.md \u2014 locked interpretation rules",
+        "authority/strategy/.../MARKET_DATA_PLATFORM_EOD_BASELINE.md \u2014 forbidden-claims list and documentation-state readings"
+    ],
+    "rules_satisfied": {
+        "count": 14,
+        "groups": [
+            {
+                "rules": [
+                    "MD-S056-R0113",
+                    "MD-S056-R0115",
+                    "MD-S056-R0116",
+                    "MD-S056-R0117",
+                    "MD-S056-R0119",
+                    "MD-S056-R0120",
+                    "MD-S056-R0128",
+                    "MD-S056-R0131"
+                ],
+                "obligation": "the locked interpretation rules that forbid one term being described as another",
+                "proof": "TerminologyConflationBoundaryTest::test_no_active_document_states_the_forbidden_conflation, one data set per rule, plus test_no_executable_surface_encodes_a_forbidden_conflation",
+                "surface": "171 active documents plus the app, config, and database trees",
+                "result": "no active document and no executable surface states any of the eight conflations"
+            },
+            {
+                "rules": [
+                    "MD-S001-R0139",
+                    "MD-S001-R0140",
+                    "MD-S001-R0141"
+                ],
+                "obligation": "the forbidden-claims list in the platform baseline: what the daily command runs, what the backfill command publishes, and what coverage is counted from",
+                "proof": "TerminologyConflationBoundaryTest::test_no_active_document_states_the_forbidden_conflation",
+                "surface": "the same corpus and source trees",
+                "result": "none of the three claims is made anywhere"
+            },
+            {
+                "rules": [
+                    "MD-S001-R0154",
+                    "MD-S001-R0156",
+                    "MD-S001-R0157"
+                ],
+                "obligation": "three of the five documentation-state readings",
+                "proof": "TerminologyConflationBoundaryTest::test_the_documentation_state_reading_is_never_contradicted",
+                "surface": "the active corpus, checked twice per rule: the subject must be raised and the reading must nowhere be contradicted",
+                "result": "each subject is raised by at least one active document and no document contradicts the required reading"
+            }
+        ]
+    },
+    "deliberately_not_claimed": [
+        {
+            "rules": [
+                "MD-S001-R0155",
+                "MD-S001-R0158"
+            ],
+            "reason": "Zero active documents raise either subject. A prohibition is satisfied by absence, but an affirmative reading is not: a corpus that never states the thing being read cannot be shown to read it correctly, so a clean contradiction check would be vacuous. Recorded here rather than claimed on empty evidence.",
+            "becomes_provable_when": "a current-state document describes the archived proof window, or states the disclaimer that internal conformance is not an official authority, commercial SLA, or redistribution claim."
+        },
+        {
+            "rules": [
+                "MD-S056-R0019",
+                "MD-S056-R0020",
+                "MD-S056-R0021",
+                "MD-S056-R0022",
+                "MD-S056-R0129"
+            ],
+            "reason": "No dependency window in the baseline field set declares a horizon role anywhere in this repository, so the rules governing those roles cannot be evaluated.",
+            "finding": "F-MD-B01-A008-001 (P2), remediation owned by MD-B14"
+        },
+        {
+            "rules": [
+                "MD-S056-R0124",
+                "MD-S056-R0125"
+            ],
+            "reason": "Both carry a behavioural half beyond this stage: price-basis coherence across an indicator run belongs to the indicator engine, and separate explainability of coverage and liquidity has no implementation surface until MD-B13 and MD-B15 exist."
+        }
+    ],
+    "test_execution": {
+        "new_file": {
+            "artifact": "tests/Unit/MarketData/TerminologyConflationBoundaryTest.php",
+            "tests": 19,
+            "assertions": 51,
+            "result": "PASS"
+        }
+    },
+    "anti_vacuity_controls": {
+        "concern": "A pattern too narrow to match anything reports a clean corpus; a contradiction check over a corpus that never raises the subject reports the same thing.",
+        "control_one": "test_every_pattern_matches_the_statement_it_forbids asserts all 11 conflation patterns fire against the statement they forbid.",
+        "control_two": "test_a_quotation_of_the_prohibition_is_not_read_as_an_assertion asserts none of them fires against the prohibition wording itself.",
+        "control_three": "test_patterns_do_not_overlap_each_other asserts no pattern matches another rule fixture.",
+        "control_four": "For each documentation-state reading, the subject must be raised by at least one active document before the contradiction result is accepted.",
+        "control_five": "Population assertions: more than 100 active documents and more than 100 source files must be reached."
+    },
+    "negative_proof": {
+        "method": "Document injections were written to a transient probe file inside the scanned corpus so that no governed document was edited. Each mutation was verified as landed before its verdict was read, then removed and verified removed.",
+        "mutations": [
+            {
+                "id": "M1",
+                "mutation": "a document asserting the MD-S056-R0113 conflation between import completion and readable publication",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M2",
+                "mutation": "a document asserting the MD-S056-R0116 conflation between coverage and successful request count",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M3",
+                "mutation": "a document expressing the decision horizon in calendar days, MD-S056-R0128",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M4",
+                "mutation": "a document asserting the MD-S056-R0117 conflation about what publication means",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M5",
+                "mutation": "a document contradicting the MD-S001-R0156 development-frontier reading",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M6",
+                "mutation": "the MD-S001-R0157 subject removed from all four active files that raise it, testing the anti-vacuity control itself",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "C1",
+                "mutation": "CONTROL: a document correctly restating three of the prohibitions",
+                "expected": "PASS",
+                "observed": "PASS"
+            },
+            {
+                "id": "C2",
+                "mutation": "CONTROL: a document stating two of the required readings",
+                "expected": "PASS",
+                "observed": "PASS"
+            }
+        ],
+        "summary": {
+            "mutations": 6,
+            "fails_closed": 6,
+            "controls": 2,
+            "controls_ok": 2,
+            "gaps": 0
+        },
+        "why_m6_matters": "The documentation-state readings are proven partly by a population check, so the proof is only as strong as that check. Removing the subject from every active file that carries it turned the guard red, which is what separates this from a check that would pass on an empty corpus."
+    },
+    "guard_defects_found_during_attempt": [
+        {
+            "defect": "The first revision read a quotation of a prohibition as a violation of it.",
+            "detail": "It flagged E-MD-B01-A002-001 for containing the sentence that the decision horizon must never be expressed in calendar days \u2014 a correct restatement, not a breach. This is the second time a corpus guard in this stage has made that mistake.",
+            "fix": "The gap between subject and verb in every pattern can no longer span a negation, and test_a_quotation_of_the_prohibition_is_not_read_as_an_assertion asserts this for all eleven rules against the prohibition wording itself.",
+            "why_not_a_weakening": "The guard is meant to detect assertions. A document restating the prohibition is obeying the contract, and flagging it would make the guard unusable on a conformant corpus. All six mutations were proven against the corrected version."
+        },
+        {
+            "defect": "MD-S056-R0117 could not match its own fixture.",
+            "detail": "An optional single character stood where four were needed, so the pattern would have reported the corpus clean regardless of content.",
+            "fix": "Corrected before any rule was claimed; the adequacy test is what caught it."
+        },
+        {
+            "defect": "The MD-S001-R0154 subject pattern was tighter than the corpus wording.",
+            "detail": "It required the date within sixty characters of the phrase; three active documents state the reading without that adjacency.",
+            "fix": "The subject pattern now matches the phrase the corpus actually uses."
+        }
+    ],
+    "stated_limits": {
+        "implication": "The guard proves that no document states a conflation. Conflation by implication is not mechanically detectable and is not claimed to be covered \u2014 the same limit recorded at MD-B01-A006.",
+        "corpus_scope": "Frozen strategy and the traceability matrix are excluded because both legitimately contain the forbidden sentences: the first owns the prohibition, the second stores rule text verbatim under fingerprint control."
+    },
+    "coverage_effect": {
+        "md_b01": {
+            "before": "55/155",
+            "after": "69/155",
+            "not_assessed_after": 86
+        },
+        "global": {
+            "before": "55/2010",
+            "after": "69/2010"
+        },
+        "denominator_change": "none; only coverage_status changed on 14 rows"
+    },
+    "change_impact_timing": "CI-MD-B01-A008-001 was issued before the matrix mutation and after the guard was mutation-proven.",
+    "residue_verdict": {
+        "md_b01_own_scope": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "basis": "One test file added, one finding opened, 14 matrix rows advanced. No strategy byte, no runtime code, no schema, no deployed database, no storage artifact, and no immutable record altered. The transient probe file was removed and the four files touched by M6 were restored and verified."
+    },
+    "open_findings": [
+        "F-MD-B01-A008-001 (P2, opened by this attempt)",
+        "F-MD-B01-A003-001 (P2)",
+        "F-MD-B00-A001-001 (Class S half)",
+        "F-MD-B00-A001-003 (P3)"
+    ],
+    "supersedes": null
+}

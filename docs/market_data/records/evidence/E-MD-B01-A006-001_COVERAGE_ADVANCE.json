@@ -1,0 +1,145 @@
+{
+    "evidence_id": "E-MD-B01-A006-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A006",
+    "work_id": "MD-B01-A006",
+    "baseline_id": "MD-B01-A006-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B01-A006-001",
+    "issued_at": "2026-08-21T09:55:26+02:00",
+    "title": "MD-B01 coverage advance against the corrected 155-rule set",
+    "attempt_outcome": "PARTIAL \u2014 stage remains open at 35/155",
+    "runtime_artifact_boundary": {
+        "standard": "RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md (DOC-CHG-20260821-003)",
+        "classification": "Section 5. Document and in-repository test work; no externally-stored runtime output is claimed.",
+        "storage_inspected": false,
+        "raw_artifact_linkage_claimed": false,
+        "basis": "Both proofs execute inside the repository: a PHPUnit guard over the active document corpus and source tree, and a re-execution of two existing scope tests. Neither depends on an artifact under storage/**, so section 4 is not triggered."
+    },
+    "state_repair_performed": {
+        "what": "The three MD-B01-A005 records were absent from DOCUMENT_ROLE_REGISTRY, CURRENT_VERIFICATION_REGISTRY, DOCUMENT_ID_REGISTRY, and WORK_RECORD_REGISTRY on entry, while their files and their three relationship rows survived.",
+        "detected_by": "Both integrity gates failed on entry: ONE_DOCUMENT_ONE_ROLE and CURRENT_VERIFICATION_REBASELINE named the three unregistered files, and the relationship gate reported MD-REL-0034/0035/0036 as unresolved.",
+        "verified_before_repair": "The A005 material effect was intact: 15 ownership moves still present in the matrix (MD-B17 9, MD-B19 3, MD-B10 2, MD-B15 1) and MD-B01 required still 155.",
+        "action": "Re-registered the three records across all four registries. No A005 work was re-derived and no immutable record was edited.",
+        "classification": "Registry state loss between sessions, not a proof defect."
+    },
+    "rules_satisfied": {
+        "count": 14,
+        "carried_forward_from_prior_attempt": [
+            {
+                "rule_id": "MD-S001-R0033",
+                "rule": "accept any single requested trade date",
+                "proof": "DateDrivenCapabilityAndProviderAbstractionTest::test_the_domain_accepts_an_arbitrary_requested_date",
+                "prior_evidence": "E-MD-B01-A002-001",
+                "note": "REFERENCE_ONLY until MD-B01-A004 promoted it, so it could not be claimed when first proven. Re-executed at this baseline."
+            },
+            {
+                "rule_id": "MD-S001-R0034",
+                "rule": "accept any date range over valid trading dates",
+                "proof": "DateDrivenCapabilityAndProviderAbstractionTest::test_the_domain_accepts_an_arbitrary_requested_range",
+                "prior_evidence": "E-MD-B01-A002-001",
+                "note": "same; re-executed at this baseline."
+            }
+        ],
+        "newly_proven": {
+            "family": "Anti-assumption rules, MARKET_DATA_PLATFORM_EOD_BASELINE.md",
+            "rules": [
+                "MD-S001-R0127",
+                "MD-S001-R0128",
+                "MD-S001-R0129",
+                "MD-S001-R0130",
+                "MD-S001-R0131",
+                "MD-S001-R0132",
+                "MD-S001-R0133",
+                "MD-S001-R0134",
+                "MD-S001-R0135",
+                "MD-S001-R0136",
+                "MD-S001-R0137",
+                "MD-S001-R0138"
+            ],
+            "proof": "AntiAssumptionClaimBoundaryTest",
+            "surface": "171 active documents plus the app/ and config/ trees. Frozen strategy is excluded because it owns the prohibition; the traceability matrix is excluded because it stores strategy rule text verbatim under its own fingerprint control.",
+            "result": "zero forbidden assumptions stated on any surface"
+        }
+    },
+    "test_execution": {
+        "new_file": {
+            "artifact": "tests/Unit/MarketData/AntiAssumptionClaimBoundaryTest.php",
+            "tests": 15,
+            "assertions": 40,
+            "result": "PASS"
+        },
+        "reexecuted": [
+            "DateDrivenCapabilityAndProviderAbstractionTest arbitrary-date and arbitrary-range checks: PASS"
+        ]
+    },
+    "anti_vacuity_controls": {
+        "concern": "A pattern too narrow to match anything reports a clean corpus and is indistinguishable from a corpus that genuinely is clean.",
+        "control_one": "test_every_pattern_matches_the_statement_it_forbids asserts each of the 12 patterns matches the exact statement it forbids. A mistyped or over-narrow pattern fails here rather than passing silently.",
+        "control_two": "test_patterns_do_not_overlap_each_other asserts no pattern matches another rule's fixture, so one rule's evidence cannot stand in for another's.",
+        "control_three": "Population assertions: the document scan must reach more than 100 active documents and the source scan more than 100 files."
+    },
+    "negative_proof": {
+        "method": "Each mutation applied, verified as landed by content grep, guard executed, state restored.",
+        "mutations": [
+            {
+                "id": "M1",
+                "mutation": "an active document was made to assert the MD-S001-R0136 assumption about provider defaults",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M2",
+                "mutation": "an active document was made to assert the MD-S001-R0133 assumption about the provider adjusted-close field",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M3",
+                "mutation": "an active document was made to assert the MD-S001-R0130 assumption about the development frontier",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M4",
+                "mutation": "an executable surface was made to assert the MD-S001-R0138 assumption about ingestion scope",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            }
+        ],
+        "summary": {
+            "mutations": 4,
+            "fails_closed": 4,
+            "gaps": 0
+        },
+        "self_correction": "The first issue of this record quoted the four forbidden sentences verbatim in the mutation list above. The guard read those quotations as claims and turned red on exactly those four rules in the full-suite run, while passing under --filter because the record did not exist when the filtered run was made. The entries were reworded to name each rule rather than restate its assumption. The guard was not weakened and records/evidence was not exempted from it, for the reason already recorded at MD-B01-A003 for the decision-grade guard: a record that must refer to a prohibition should name it, not utter it. No fact in this record changed.",
+        "do_not_repeat": "A guard whose surface includes the records tree must be re-run as part of the full suite after its own evidence is written. A filtered PASS taken before the record exists does not cover the record."
+    },
+    "stated_limit": "The baseline contract forbids documents that \"menyatakan atau menyiratkan\" these assumptions. The guard detects stated assumptions. Implication is not mechanically detectable and is not claimed to be covered.",
+    "coverage_effect": {
+        "md_b01": {
+            "before": "21/155",
+            "after": "35/155",
+            "not_assessed_after": 120
+        },
+        "global": {
+            "before": "21/2010",
+            "after": "35/2010"
+        },
+        "denominator_change": "none; only coverage_status changed on 14 rows"
+    },
+    "change_impact_timing": "CI-MD-B01-A006-001 was issued before the matrix mutation and after the guard was mutation-proven, following the do-not-repeat recorded at MD-B01-A005 where the declaration was written after the applier ran.",
+    "residue_verdict": {
+        "md_b01_own_scope": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "basis": "One test file added, 14 matrix rows advanced, three lost registry rows repaired. No strategy byte, no runtime code, no schema, no deployed database, no storage artifact, and no immutable record altered."
+    },
+    "open_findings": [
+        "F-MD-B01-A003-001 (P2)",
+        "F-MD-B00-A001-001 (Class S half)",
+        "F-MD-B00-A001-003 (P3)"
+    ],
+    "supersedes": null
+}

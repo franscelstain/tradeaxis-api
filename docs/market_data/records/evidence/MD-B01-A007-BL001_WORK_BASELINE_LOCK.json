@@ -1,0 +1,33 @@
+{
+    "baseline_id": "MD-B01-A007-BL001",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A007",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260820-001",
+    "strategy_freeze_manifest_sha1": "14CF5BE3AF96D7D0E936C414C1AFA28249243302",
+    "strategy_tree_fingerprint_sha1": "5A08CAD89469EDAF53067D6EBA8B608F13C0F618",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "FC174143B9AE08A9402139C696A712DC118B0567",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "5FE1EBFA7A493BD063BACDEA37451C89C6EF49DB",
+    "source_revision": "5d7f15b9d87c791a11dfd8fddb33146fa4c96ea3",
+    "source_revision_branch": "master",
+    "working_tree": "DIRTY+603EBA359670DE3FB8B41F17EBE275BD34471469",
+    "app_code_fingerprint_sha1": "2F8D3FB7789D1CB991DEEA05A695799C5D64699D",
+    "tests_fingerprint_sha1": "49BBA7C40832A7FEC162CA6E9389896EDEB92014",
+    "schema_config_identity": "schema:EFAC1C8E2438D039BBCC5662389375C661863039;config:AC6603B50E3FDC44C101A10A6CFCDD43491A2870;migrations:E6A74B4422B4292321938BB9A1B582F353107E70",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "PHP 7.4.33",
+    "external_dependency_contract_identity": {
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "registered": 4,
+        "open_blocking": []
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-08-21T10:02:31+02:00"
+}

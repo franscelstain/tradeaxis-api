@@ -1,0 +1,215 @@
+{
+    "evidence_id": "E-MD-B01-A009-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A009",
+    "work_id": "MD-B01-A009",
+    "baseline_id": "MD-B01-A009-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B01-A009-001",
+    "issued_at": "2026-08-21T12:58:54+02:00",
+    "title": "MD-S020 dual-use fact rule, cross-contract alignment, and domain ownership",
+    "attempt_outcome": "PARTIAL \u2014 stage remains open at 85/155",
+    "runtime_artifact_boundary": {
+        "standard": "RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md (DOC-CHG-20260821-003)",
+        "classification": "Section 5. Document and in-repository test work; no externally-stored runtime output is claimed.",
+        "storage_inspected": false,
+        "raw_artifact_linkage_claimed": false,
+        "basis": "The proof reads migrations, the market-data source tree, configuration, the governance registries, and three strategy contracts. Nothing under storage/** is read, so section 4 is not triggered."
+    },
+    "owner_contract": "authority/strategy/book/Domain_Boundary_Invariants_LOCKED.md",
+    "rules_satisfied": {
+        "count": 16,
+        "groups": [
+            {
+                "rules": [
+                    "MD-S020-R0182",
+                    "MD-S020-R0183",
+                    "MD-S020-R0184",
+                    "MD-S020-R0185",
+                    "MD-S020-R0186",
+                    "MD-S020-R0187",
+                    "MD-S020-R0188"
+                ],
+                "obligation": "the seven documents this owner contract must remain aligned with",
+                "proof": "DualUseFactAndContractAlignmentTest::test_each_alignment_target_exists_and_is_current_authority, one data set per rule",
+                "surface": "each path resolved relative to book/ as the contract writes it, then matched against three governance registries",
+                "result": "all seven exist where the contract points and each is registered as current authority in at least two registries",
+                "additional": "test_the_two_credited_owners_carry_the_split_they_are_credited_with confirms the exchange contract carries the auto-rejection band and tick ladder, and the volume contract carries the actual-versus-proxy split and the lot-size disownment"
+            },
+            {
+                "rules": [
+                    "MD-S020-R0189"
+                ],
+                "obligation": "where a dependent document uses older wording, this owner boundary takes precedence",
+                "proof": "DualUseFactAndContractAlignmentTest::test_no_active_document_overrides_the_owner_boundary_definition",
+                "surface": "every active document outside frozen strategy and history",
+                "result": "no active document defines the compatibility alias as anything other than data-usability"
+            },
+            {
+                "rules": [
+                    "MD-S020-R0088",
+                    "MD-S020-R0096"
+                ],
+                "obligation": "each dual-use fact carries its market-data half here and its downstream half elsewhere",
+                "proof": "DualUseFactAndContractAlignmentTest::test_each_dual_use_fact_carries_only_its_market_data_half",
+                "surface": "the schema, the market-data source tree with comments stripped, and the configuration tree",
+                "result": "four facts present with the market-data half only; exchange lot size absent entirely, as its market-data half is recorded as None"
+            },
+            {
+                "rules": [
+                    "MD-S020-R0101",
+                    "MD-S020-R0171"
+                ],
+                "obligation": "a dual-use fact must have both halves stated by its owner contract before it reaches a published output",
+                "proof": "DualUseFactAndContractAlignmentTest::test_every_dual_use_fact_has_both_halves_stated_by_the_owner_contract",
+                "surface": "the dual-use table parsed out of the owner contract",
+                "result": "all five rows state both halves, and every fact this guard constrains appears in the table"
+            },
+            {
+                "rules": [
+                    "MD-S020-R0014",
+                    "MD-S020-R0015",
+                    "MD-S020-R0018",
+                    "MD-S020-R0023"
+                ],
+                "obligation": "four capabilities the contract says this domain owns",
+                "proof": "DualUseFactAndContractAlignmentTest::test_an_owned_capability_has_a_real_surface_in_this_domain, one data set per rule",
+                "surface": "the schema built from 62 migrations",
+                "result": "each capability resolves to real tables and columns: publication/lineage/replay, run readiness and freshness state, immutable source observations, and versioned indicators with benchmark context"
+            }
+        ]
+    },
+    "the_load_bearing_case": {
+        "fact": "exchange lot size",
+        "contract_position": "the market-data half is recorded as None, explicitly disowned by the volume contract",
+        "why_it_is_the_sharp_one": "Every other dual-use fact is proven by presence of one half and absence of the other. This one is proven by absence alone, which is exactly the shape that goes wrong quietly: a disownment nobody checks is indistinguishable from a disownment nobody honoured.",
+        "result": "no lot-size, board-lot, or round-lot identifier exists anywhere in the schema, source, or configuration; and MD-S020-R0187 separately confirms the volume contract carries the disownment it is credited with."
+    },
+    "test_execution": {
+        "new_file": {
+            "artifact": "tests/Unit/MarketData/DualUseFactAndContractAlignmentTest.php",
+            "tests": 18,
+            "assertions": 55,
+            "result": "PASS"
+        }
+    },
+    "anti_vacuity_controls": {
+        "concern": "A pattern that cannot fire reports every surface clean; an existence check against a path that resolves nowhere reports the same.",
+        "control_one": "test_every_downstream_pattern_can_fire asserts all five downstream patterns match a downstream identifier.",
+        "control_two": "test_every_market_data_pattern_can_fire asserts each market-data pattern matches this domain own identifier.",
+        "control_three": "test_a_comment_about_the_disownment_is_not_read_as_a_surface asserts the separation in both directions.",
+        "control_four": "Alignment targets must be registered in at least two registries, not merely exist; the dual-use table must yield at least five parsed rows; the scanned surface must exceed 200000 characters and the schema 50000."
+    },
+    "negative_proof": {
+        "method": "Each mutation applied, verified as landed by comparing the files on disk against the intended content, guard executed, files restored, restoration verified byte-identical.",
+        "mutations": [
+            {
+                "id": "M1",
+                "mutation": "a lot-size column added to the schema, giving the disowned fact a market-data surface",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M2",
+                "mutation": "a downstream entry/exit column added, the auto-rejection band half that belongs downstream",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M3",
+                "mutation": "a downstream liquidity threshold added to market-data configuration",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M4",
+                "mutation": "an alignment target de-registered from all three governance registries, MD-S020-R0184",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M5",
+                "mutation": "the lot-size disownment removed from the contract credited with owning it, MD-S020-R0187",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M6",
+                "mutation": "the immutable source observation table renamed out of the schema, MD-S020-R0018",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "C1",
+                "mutation": "CONTROL: a legitimate tick-size revision column added",
+                "expected": "PASS",
+                "observed": "PASS"
+            },
+            {
+                "id": "C2",
+                "mutation": "CONTROL: a comment mentioning the lot-size disownment added to a market-data service",
+                "expected": "PASS",
+                "observed": "PASS"
+            }
+        ],
+        "summary": {
+            "mutations": 6,
+            "fails_closed": 6,
+            "controls": 2,
+            "controls_ok": 2,
+            "gaps": 0
+        },
+        "frozen_strategy_mutation": {
+            "which": "M5 edited a frozen strategy contract because that is the only way to test whether the credited-owner check can fail.",
+            "restoration_verified_twice": "by byte comparison in the mutation driver, and by the documentation integrity gate STRATEGY_FREEZE check, which re-verified the freeze manifest byte-for-byte and passed afterwards."
+        }
+    },
+    "guard_defects_found_during_attempt": [
+        {
+            "defect": "The dual-use scan read a comment as a surface.",
+            "detail": "It flagged IndicatorVectorService for the phrase lot size, which appears in a docblock explaining that turnover applies no lot multiplier and that the alternative overstates the market by two orders of magnitude. That comment is the disownment being honoured.",
+            "fix": "The scan now strips PHP comments before reading identifiers, and test_a_comment_about_the_disownment_is_not_read_as_a_surface asserts both directions: the comment must not be flagged, a real lot-size identifier must still be.",
+            "relationship_to_prior_attempts": "Same root cause as the MD-B01-A008 defect where a quotation of a prohibition was read as a violation of it, and the MD-B01-A006 defect where an evidence record flagged itself. A description of an obligation is not a breach of it. This is the first time it appeared on the code surface rather than the document corpus."
+        },
+        {
+            "defect": "MD-S020-R0015 was checked against an identifier this schema does not use.",
+            "detail": "The readiness surface is freshness_state and coverage_gate_state on eod_runs; run_status does not exist.",
+            "fix": "Corrected before the rule was claimed; the population check is what caught it."
+        },
+        {
+            "defect": "assertRegExp is deprecated in PHPUnit 9 and raised a warning.",
+            "fix": "Replaced with assertMatchesRegularExpression."
+        }
+    ],
+    "stated_limits": {
+        "alignment": "Alignment is proven as existence, registration as current authority, and \u2014 for the two contracts credited with owning a specific split \u2014 presence of that split. Full semantic alignment across seven contracts is not mechanically decidable and is not claimed.",
+        "naming": "The dual-use check proves no downstream half is present under the names this domain would use for it. A downstream threshold hidden under an innocent name would not be caught; the same inherent limit was recorded for the naming boundary at MD-B01-A007."
+    },
+    "coverage_effect": {
+        "md_b01": {
+            "before": "69/155",
+            "after": "85/155",
+            "not_assessed_after": 70
+        },
+        "global": {
+            "before": "69/2010",
+            "after": "85/2010"
+        },
+        "denominator_change": "none; only coverage_status changed on 16 rows"
+    },
+    "change_impact_timing": "CI-MD-B01-A009-001 was issued before the matrix mutation and after the guard was mutation-proven.",
+    "residue_verdict": {
+        "md_b01_own_scope": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "basis": "One test file added and 16 matrix rows advanced. No strategy byte, no runtime code, no schema, no deployed database, no storage artifact, and no immutable record altered. The nine files touched by the negative proof were restored and verified, and the strategy freeze was re-verified by the documentation integrity gate."
+    },
+    "open_findings": [
+        "F-MD-B01-A008-001 (P2)",
+        "F-MD-B01-A003-001 (P2)",
+        "F-MD-B00-A001-001 (Class S half)",
+        "F-MD-B00-A001-003 (P3)"
+    ],
+    "supersedes": null
+}

@@ -1,0 +1,197 @@
+{
+    "evidence_id": "E-MD-B01-A007-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A007",
+    "work_id": "MD-B01-A007",
+    "baseline_id": "MD-B01-A007-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B01-A007-001",
+    "issued_at": "2026-08-21T11:14:40+02:00",
+    "title": "MD-S020 downstream-concept surface boundary proven on every surface the contract names",
+    "attempt_outcome": "PARTIAL \u2014 stage remains open at 55/155",
+    "runtime_artifact_boundary": {
+        "standard": "RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md (DOC-CHG-20260821-003)",
+        "classification": "Section 5. Document and in-repository test work; no externally-stored runtime output is claimed.",
+        "storage_inspected": false,
+        "raw_artifact_linkage_claimed": false,
+        "basis": "The proof is a PHPUnit guard that reads migrations, the reason-code seed, the configuration tree, command signatures, routes, and the market-data source tree. Nothing under storage/** is read, so section 4 is not triggered."
+    },
+    "owner_contract": "authority/strategy/.../Domain_Boundary_Invariants_LOCKED.md",
+    "rules_satisfied": {
+        "count": 20,
+        "groups": [
+            {
+                "rules": [
+                    "MD-S020-R0054"
+                ],
+                "obligation": "the forbidden downstream concepts must not be exposed as columns, reason codes, statuses, commands, configuration keys, APIs, tables, or positive feature definitions",
+                "proof": "DownstreamConceptSurfaceBoundaryTest \u2014 five surface tests",
+                "surface": "456 schema table and column names from 62 migrations, 468 reason codes from the registry seed, 153 configuration keys, 38 command signatures and options, and the HTTP route surface",
+                "result": "no surface identifier expresses a forbidden downstream concept"
+            },
+            {
+                "rules": [
+                    "MD-S020-R0075",
+                    "MD-S020-R0076",
+                    "MD-S020-R0077",
+                    "MD-S020-R0078",
+                    "MD-S020-R0079"
+                ],
+                "obligation": "indicators must not become strategy signals, ranked scores or candidate ordering, recommendation engines, hidden entry/exit rules, or position-sizing inputs",
+                "proof": "DownstreamConceptSurfaceBoundaryTest::test_no_indicator_identifier_becomes_a_signal_or_ranking",
+                "surface": "the indicator columns plus every method name on the indicator services",
+                "result": "no indicator identifier carries a signal, ranking, recommendation, timing, or sizing meaning"
+            },
+            {
+                "rules": [
+                    "MD-S020-R0110",
+                    "MD-S020-R0111",
+                    "MD-S020-R0112",
+                    "MD-S020-R0113"
+                ],
+                "obligation": "eligibility must never become a screening engine, a watchlist replacement, a proxy ranking layer, or entry/exit timing infrastructure",
+                "proof": "DownstreamConceptSurfaceBoundaryTest::test_no_eligibility_identifier_becomes_screening_or_timing",
+                "surface": "the eligibility service and repository methods, their result keys, and their ordering behaviour",
+                "result": "no eligibility identifier carries a screening, ranking, or timing meaning, and the surface applies no preference ordering"
+            },
+            {
+                "rules": [
+                    "MD-S020-R0115",
+                    "MD-S020-R0116",
+                    "MD-S020-R0117",
+                    "MD-S020-R0118",
+                    "MD-S020-R0119",
+                    "MD-S020-R0120",
+                    "MD-S020-R0121",
+                    "MD-S020-R0122",
+                    "MD-S020-R0123"
+                ],
+                "obligation": "consumer policy must not be silently embedded inside the nine named market-data surfaces",
+                "proof": "DownstreamConceptSurfaceBoundaryTest::test_no_named_surface_embeds_consumer_policy, one data set per rule",
+                "surface": "each rule resolves to its own file set within the 123 market-data source files; every set is asserted non-empty before its result is read",
+                "result": "no market-data surface references a downstream policy namespace"
+            },
+            {
+                "rules": [
+                    "MD-S020-R0158"
+                ],
+                "obligation": "a guard enforcing the forbidden list must distinguish the legitimate upstream sense of the overloaded vocabulary from the forbidden downstream sense",
+                "proof": "DownstreamConceptSurfaceBoundaryTest::test_no_legitimate_upstream_identifier_is_flagged with test_every_forbidden_concept_matches_the_identifier_it_forbids and test_the_ordering_check_separates_retrieval_order_from_preference",
+                "surface": "21 real identifiers from this domain that a token blacklist would flag, against 19 identifiers that state the forbidden sense",
+                "result": "every legitimate identifier stays clean and every forbidden identifier is flagged"
+            }
+        ]
+    },
+    "test_execution": {
+        "new_file": {
+            "artifact": "tests/Unit/MarketData/DownstreamConceptSurfaceBoundaryTest.php",
+            "tests": 19,
+            "assertions": 55,
+            "result": "PASS"
+        }
+    },
+    "anti_vacuity_controls": {
+        "concern": "A naming guard whose patterns are too narrow reports every surface clean and is indistinguishable from a surface that genuinely is clean.",
+        "control_one": "test_every_forbidden_concept_matches_the_identifier_it_forbids asserts all 19 concepts fire against an identifier stating the forbidden sense.",
+        "control_two": "test_no_legitimate_upstream_identifier_is_flagged asserts none of them fires against 21 real, legitimate identifiers from this schema.",
+        "control_three": "Population assertions on every surface: more than 400 schema identifiers, more than 400 reason codes, more than 100 configuration keys, more than 30 command tokens, more than 20 indicator identifiers, more than 10 eligibility identifiers, and a per-rule minimum file count on each of the nine consumer surfaces."
+    },
+    "negative_proof": {
+        "method": "Each mutation applied, verified as landed by comparing the file on disk against the intended content, guard executed, file restored, restoration verified.",
+        "mutations": [
+            {
+                "id": "M1",
+                "mutation": "a price-target column added to the tickers migration",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M2",
+                "mutation": "a trade-signal reason code appended to the registry seed",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M3",
+                "mutation": "a portfolio configuration key added to the market-data config",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M4",
+                "mutation": "a screening command name added to a market-data command signature",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M5",
+                "mutation": "a downstream policy reference added to the indicator surface, MD-S020-R0120",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M6",
+                "mutation": "preference ordering by a liquidity measure added to the eligibility repository",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "C1",
+                "mutation": "CONTROL: a legitimate candidate-publication target date column added",
+                "expected": "PASS",
+                "observed": "PASS"
+            },
+            {
+                "id": "C2",
+                "mutation": "CONTROL: a legitimate retention policy configuration key added",
+                "expected": "PASS",
+                "observed": "PASS"
+            }
+        ],
+        "summary": {
+            "mutations": 6,
+            "fails_closed": 6,
+            "controls": 2,
+            "controls_ok": 2,
+            "gaps": 0
+        },
+        "residue_check": "All eight target files verified byte-identical to their pre-mutation content, and a repository-wide search for every injected string returned nothing."
+    },
+    "guard_correction_during_attempt": {
+        "what": "The first ordering check flagged the eligibility repository for calling orderBy at all.",
+        "finding": "That call orders by ticker identity, which is the deterministic retrieval order a reproducible read requires, not a preference between instruments. The contract forbids ranked scores and candidate ordering, not ordering as such.",
+        "action": "The check now separates ordering by a stable identity, date, or version key from ordering by a measure, and an in-memory comparator remains forbidden outright because no key check can vouch for what its closure decides.",
+        "why_this_is_not_a_weakening": "MD-S020-R0158 requires exactly this distinction and names a guard that cannot make it as non-conformant. The correction was made before any rule was claimed, the separation is asserted in both directions, and all six mutations were proven against the corrected version."
+    },
+    "stated_limits": {
+        "naming_boundary": "The guard proves that no market-data surface names a downstream concept and that no named surface references downstream policy. It does not prove that no downstream semantic could be expressed under an innocent name. That limit is inherent to a naming boundary and is not claimed to be covered.",
+        "api_surface": "MD-S020-R0054 names APIs among its surfaces. This application publishes no market-data HTTP endpoint, so that surface is presently empty. The test asserts the emptiness rather than assuming it and begins checking route names as soon as one is added.",
+        "positive_feature_definitions": "The remaining half of MD-S020-R0054 is document prose. It rests on the document-corpus guards from MD-B01-A003 and MD-B01-A006, not on this one."
+    },
+    "coverage_effect": {
+        "md_b01": {
+            "before": "35/155",
+            "after": "55/155",
+            "not_assessed_after": 100
+        },
+        "global": {
+            "before": "35/2010",
+            "after": "55/2010"
+        },
+        "denominator_change": "none; only coverage_status changed on 20 rows"
+    },
+    "change_impact_timing": "CI-MD-B01-A007-001 was issued before the matrix mutation and after the guard was mutation-proven.",
+    "residue_verdict": {
+        "md_b01_own_scope": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "basis": "One test file added and 20 matrix rows advanced. No strategy byte, no runtime code, no schema, no deployed database, no storage artifact, and no immutable record altered. The eight files touched by the negative proof were restored and verified."
+    },
+    "open_findings": [
+        "F-MD-B01-A003-001 (P2)",
+        "F-MD-B00-A001-001 (Class S half)",
+        "F-MD-B00-A001-003 (P3)"
+    ],
+    "supersedes": null
+}
