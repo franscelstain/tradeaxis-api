@@ -1,0 +1,27 @@
+{
+    "evidence_id": "E-MD-20260821-03",
+    "record_type": "EVIDENCE",
+    "role_scope": "PROOF_RECORD",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "issued_at": "2026-08-21T11:35:00+07:00",
+    "title": "Runtime artifact / governed evidence governance gap assessment",
+    "finding": "F-MD-20260821-03",
+    "scope": "documentation snapshot only; no PHP/runtime/storage filesystem was provided or inspected",
+    "observed_state": {
+        "architecture": "authority/development/records separation is active",
+        "strategy_freeze": "no strategy change required",
+        "current_proof_criteria": "existing technical proof criteria already require evidence artifact paths and hashes",
+        "governance_gap": "no authority-level standard explicitly defined docs-first resume order, mandatory/optional storage inspection, raw-artifact proof eligibility, and missing/hash-mismatch handling",
+        "supporting_read_order_gap": "development/implementation/guides/system/SYSTEM_READ_ORDER.md still described pre-normalization navigation and could conflict with START_HERE.md"
+    },
+    "decision_basis": [
+        "make governed records the current proof/navigation layer",
+        "keep raw/generated artifacts in configured storage",
+        "require current correlation plus path/hash/manifest integrity when external artifacts are material",
+        "prohibit broad storage scans as default resume behavior",
+        "avoid retroactive editing of immutable evidence"
+    ],
+    "strategy_semantic_change": "NO",
+    "runtime_code_change": "NOT_ASSESSED; runtime source was not part of the provided docs snapshot"
+}

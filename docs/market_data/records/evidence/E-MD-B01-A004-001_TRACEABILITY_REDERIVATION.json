@@ -1,0 +1,140 @@
+{
+    "evidence_id": "E-MD-B01-A004-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A004",
+    "work_id": "MD-B01-A004",
+    "baseline_id": "MD-B01-A004-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B01-A004-001",
+    "issued_at": "2026-08-21T06:13:26+02:00",
+    "title": "Governed re-derivation of traceability classification by predicate meaning",
+    "attempt_outcome": "PARTIAL \u2014 MD-DEP-0004 predicate half remediated; stage remains open",
+    "remediates": [
+        "MD-DEP-0004 (predicate-classification half)",
+        "F-MD-B01-A001-001 (measured claim)"
+    ],
+    "objective": "Correct the traceability matrix so that only rows expressing a provable predicate carry a required implementation obligation, per STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md section 2, without changing strategy bytes.",
+    "defect_corrected": {
+        "direction_one": {
+            "description": "non-predicates classified REQUIRED",
+            "count": 214,
+            "breakdown": {
+                "list introducer ending with a colon": 210,
+                "owner pointer": 2,
+                "bare bold label": 1,
+                "reading-order item": 1
+            },
+            "examples": [
+                "MD-S001-R0032 \"Artinya sistem harus mampu:\"",
+                "MD-S001-R0089 \"Consumer downstream wajib:\"",
+                "MD-S001-R0093 \"Consumer downstream dilarang:\""
+            ]
+        },
+        "direction_two": {
+            "description": "predicate-bearing children of those introducers left REFERENCE_ONLY",
+            "count": 817,
+            "examples": [
+                "MD-S001-R0033 \"- menerima requested trade date tunggal apa pun\"",
+                "MD-S001-R0090 \"- baca hanya dari publication (sealed + readable + current)\"",
+                "MD-S001-R0095 \"- pakai MAX(date)\""
+            ]
+        },
+        "why_prior_classification_was_defective": "The split was arbitrary inside single homogeneous lists. Under \"Domain ini tetap menjadi owner untuk:\" the first bullet was REQUIRED and its nine siblings REFERENCE_ONLY with no semantic difference. The pattern is consistent with classification by position rather than by meaning, which section 2 forbids: for a structured list the predicate-bearing child rules, not the introductory header, own the proof obligation."
+    },
+    "method": {
+        "classification": "A row is non-predicate when it is a markdown heading, an owner pointer, a table separator, a colon-terminated list introducer, a bare bold label, or a reading-order item. A REFERENCE_ONLY row is promoted only when it is an immediate list child of a demoted introducer, is active, is not itself an introducer, is not optional-capability, and either it or its header carries an obligation modal.",
+        "conservatism": "Promotion is confined to direct list children of a demoted header. Free-standing reference prose was not swept in.",
+        "dry_run_first": "Both directions were measured before any write, and the counts below were predicted by the dry run and confirmed after apply."
+    },
+    "source_traceability_preserved": {
+        "rule_text_changed": 0,
+        "rule_fingerprint_changed": 0,
+        "strategy_owner_changed": 0,
+        "source_line_changed": 0,
+        "verification": "All 6490 rows recomputed: sha1(rule_text) equals rule_fingerprint_sha1 on every row, 0 mismatches. The documentation gate TRACEABILITY_MATRIX check passes with 0 errors, which independently validates rule-id uniqueness, owner-file existence, source-line text match, and fingerprint identity.",
+        "strategy_bytes": "unchanged; 91 frozen strategy documents remain byte-identical"
+    },
+    "coverage_effect": {
+        "required_before": 1407,
+        "required_after": 2010,
+        "net_change": "+603",
+        "reference_only_after": 4426,
+        "optional_after": 54,
+        "total_rows": 6490,
+        "satisfied_before": 21,
+        "satisfied_after": 21,
+        "satisfied_rows_demoted": 0,
+        "not_a_coverage_reduction": "The required set increased by 43%. Section 6 forbids editing the matrix merely to reduce required coverage or make a stage pass; this correction does the opposite and no stage became easier to close.",
+        "md_b01": {
+            "before": "21/127",
+            "after": "21/170",
+            "not_assessed_after": 149
+        }
+    },
+    "satisfied_state_revalidation": {
+        "rule": "Section 5 allows a prior SATISFIED to carry forward only when the corrected row has demonstrably equivalent predicate identity and the existing evidence still proves that exact predicate.",
+        "evaluated": 21,
+        "carried_forward": 21,
+        "returned_to_not_assessed": 0,
+        "basis": "None of the 21 was demoted, promoted, or otherwise reclassified. Each keeps its rule_text, rule_fingerprint_sha1, coverage_requirement, applicability, primary_stage, and current_evidence_ids unchanged, so predicate identity is not merely equivalent but identical. The evidence that proved them \u2014 E-MD-B01-A001-001, E-MD-B01-A002-001, E-MD-B01-A003-001 \u2014 proves the same predicates under the same epoch."
+    },
+    "defect_elimination_verified": {
+        "non_predicate_required_rows_before": 214,
+        "non_predicate_required_rows_after": 0,
+        "stages_able_to_reach_full_required_coverage_before": "1 of 18 (MD-B13 only)",
+        "stages_able_to_reach_full_required_coverage_after": "18 of 18",
+        "per_stage_required_after": {
+            "MD-B01": 170,
+            "MD-B02": 38,
+            "MD-B04": 184,
+            "MD-B05": 76,
+            "MD-B06": 64,
+            "MD-B07": 135,
+            "MD-B08": 132,
+            "MD-B09": 71,
+            "MD-B10": 452,
+            "MD-B11": 108,
+            "MD-B12": 33,
+            "MD-B13": 19,
+            "MD-B14": 73,
+            "MD-B15": 88,
+            "MD-B16": 28,
+            "MD-B17": 93,
+            "MD-B18": 27,
+            "MD-B19": 219
+        }
+    },
+    "affected_current_verification": {
+        "attempts_whose_coverage_figures_were_taken_against_the_old_denominator": [
+            "MD-B01-A001",
+            "MD-B01-A002",
+            "MD-B01-A003"
+        ],
+        "treatment": "Their issued evidence remains immutable and true as issued. The denominator is restated here rather than by editing them. No SATISFIED state they established is invalidated, because none of the 21 rows changed identity.",
+        "baselines_affected": "Every baseline lock issued before this attempt binds traceability_matrix_sha1 FCF73F4FC912537B1742AC9C57EA12956D576FBD. That is correct and expected: a baseline records the matrix as it was. MD-B01-A004-BL001 binds the same pre-correction hash deliberately, so this change is diffable against a fixed reference.",
+        "rebaseline_required": "No. No prior proof depended on a row whose classification changed."
+    },
+    "scope_not_taken": {
+        "proof_owning_stage_re_derivation": "Section 4 requires each predicate to be assigned to the stage that can own and close its proof obligation. That is NOT attempted here. It needs a per-rule judgement across 2010 rows \u2014 for example whether MD-S001-R0065, a read-side rule extracted from the MD-B01 baseline document, is provable only at MD-B17. Applying a heuristic would substitute mechanism for the judgement the standard asks for, which is precisely the defect being corrected. MD-DEP-0004 therefore stays OPEN, narrowed to this half."
+    },
+    "gates_executed": {
+        "documentation_integrity_gate": {
+            "TRACEABILITY_MATRIX": "PASS, 6490 rows, 0 errors"
+        },
+        "note": "Full gate results recorded after record registration; see the attempt closing state in the stage register."
+    },
+    "residue_verdict": {
+        "md_b01_own_scope": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "basis": "Classification-only change to a MUTABLE_TRACEABLE governed artifact. No strategy byte, no runtime code, no schema, no test, no deployed database, and no immutable record altered."
+    },
+    "open_findings": [
+        "F-MD-B01-A001-001 (stage-ownership half)",
+        "F-MD-B01-A003-001 (P2)",
+        "F-MD-B00-A001-001 (Class S half)",
+        "F-MD-B00-A001-003 (P3)"
+    ],
+    "supersedes": null
+}

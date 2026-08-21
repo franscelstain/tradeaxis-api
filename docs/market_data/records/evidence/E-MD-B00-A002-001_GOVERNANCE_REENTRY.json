@@ -1,0 +1,179 @@
+{
+    "evidence_id": "E-MD-B00-A002-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B00",
+    "attempt_id": "MD-B00-A002",
+    "work_id": "MD-B00-A002",
+    "baseline_id": "MD-B00-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "source_revision": "03f97f5323151b6b21eac7cc26fe353a84cd5f9f",
+    "issued_at": "2026-08-20T20:55:12+02:00",
+    "title": "MD-B00 governance re-entry under DOC-CHG-20260821-001",
+    "change_impact_declaration": "CI-MD-B00-A002-001",
+    "predecessor_attempt": {
+        "attempt_id": "MD-B00-A001",
+        "baseline_id": "MD-B00-A001-BL001",
+        "closure": "SC-MD-B00-A001-001",
+        "status": "immutable, retained, no longer sufficient alone under the revised invariants"
+    },
+    "objective": "Restore MD-B00 closure sufficiency under the four closure-bearing invariants revised by DOC-CHG-20260821-001: relationship completeness, formal Change Impact Declaration, deterministic single exact resume point, and gate/closure sufficiency.",
+    "governance_delta_addressed": {
+        "governance_fingerprint_at_MD-B03-A001": "C1E7400C7939CE3F7F598A17D2B533FB3A3B4F5E",
+        "governance_fingerprint_at_MD-B00-A002": "FCAB5554C589F43FD4ED2949C2CECA67C7F452B5",
+        "conclusion": "The governance tree changed after the prior closure, so prior gate results were obtained under superseded invariants and could not be carried forward unexamined."
+    },
+    "defects_found_and_fixed": [
+        {
+            "id": "G1",
+            "severity": "P0",
+            "defect": "The relationship integrity gate enforced validity only. It returned PASS on an empty registry, which WORK_CORRELATION_AND_RECORD_REGISTRY_STANDARD section 3 now names explicitly as a result the gate MUST NOT produce.",
+            "artifact": "development/implementation/tests/MarketDataRelationshipIntegrityGate.php",
+            "fix": "Rewritten to enforce both properties. Completeness is derived from the canonical relationship-bearing columns of WORK_RECORD_REGISTRY.csv and from predecessor declarations inside baseline-lock records. Validity was also widened: baseline-belongs-to-attempt, allowed relationship type, non-empty justification, self-relationship, supersession cycle, record document existence, and dependency-reference resolution.",
+            "proof": "Three completeness mutations added to the gate self-test; all fail closed."
+        },
+        {
+            "id": "G2",
+            "severity": "P1",
+            "defect": "Six current-epoch records existed as documents but were absent from WORK_RECORD_REGISTRY.csv, breaching correlation standard section 1: F-MD-20260820-01/02, E-MD-20260820-01/02, D-MD-20260820-01/02.",
+            "fix": "Registered with empty attempt correlation, which is their true identity as pre-attempt current-epoch records.",
+            "note": "This was invisible until the completeness check existed. Four current records had been declaring related_decisions pointing at unregistered targets."
+        },
+        {
+            "id": "G3",
+            "severity": "P1",
+            "defect": "14 relationships required by current records had no registry row, including the MD-B01-A001 to MD-B00-A001 baseline predecessor edge declared inside the lock itself.",
+            "fix": "Reconciled. Registry went from 9 rows to 23.",
+            "method": "Gap list produced by the completeness check, not by inspection. The check was rerun after each reconciliation pass until it reported zero, converging through two rounds."
+        }
+    ],
+    "executed_gates": {
+        "relationship_integrity_gate": {
+            "before_reconciliation": {
+                "status": "FAIL",
+                "validity": "PASS",
+                "completeness": "FAIL",
+                "gaps": 8
+            },
+            "after_first_pass": {
+                "status": "FAIL",
+                "completeness_gaps": 2,
+                "note": "registering the six records surfaced two further declared edges; the check converged rather than being assumed complete"
+            },
+            "final": {
+                "status": "PASS",
+                "validity": "PASS",
+                "completeness": "PASS",
+                "records": 24,
+                "relationships": 23
+            }
+        },
+        "documentation_integrity_gate": {
+            "status": "PASS",
+            "checks": 12
+        },
+        "gate_self_test": {
+            "status": "PASS",
+            "mutations": 11,
+            "fails_closed": 11,
+            "controls": 4,
+            "new_completeness_mutations": [
+                "a required relationship row is removed",
+                "relationship registry emptied while records declare relationships",
+                "record declares a cross-attempt relationship with no registry row"
+            ]
+        },
+        "phpunit": {
+            "tests": 1537,
+            "assertions": 10309,
+            "errors": 4,
+            "failures": 67,
+            "passed": 1466,
+            "role": "regression control only; this attempt changed no file under app/, database/, config/, or tests/"
+        }
+    },
+    "closure_criteria_evaluation": [
+        {
+            "criterion": "authority requirements in scope examined",
+            "result": "MET",
+            "detail": "Revised CHANGE_IMPACT_DECLARATION_STANDARD, WORK_CORRELATION_AND_RECORD_REGISTRY_STANDARD, STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD, STAGE_EXECUTION_AND_REWORK_STANDARD, DOCUMENT_CHANGE_POLICY read and applied."
+        },
+        {
+            "criterion": "current implementation conform",
+            "result": "MET",
+            "detail": "MD-B00 owns governance-mechanic conformance; the gate now enforces the invariant the standard names."
+        },
+        {
+            "criterion": "required positive tests PASS",
+            "result": "MET",
+            "detail": "Both gates PASS; self-test controls PASS."
+        },
+        {
+            "criterion": "required negative/fail-closed proof PASS",
+            "result": "MET",
+            "detail": "11 of 11 mutations fail closed, including the three that target the newly required invariant."
+        },
+        {
+            "criterion": "harmful residue absent",
+            "result": "MET",
+            "detail": "Registry completeness restored; no immutable record edited; no parallel registry created."
+        },
+        {
+            "criterion": "required dependency resolved",
+            "result": "MET_FOR_THIS_STAGE",
+            "detail": "MD-DEP-0003 is OPEN_NON_BLOCKING and explicitly governed. MD-DEP-0004 is owned by MD-B01 and does not gate MD-B00 closure."
+        },
+        {
+            "criterion": "baseline valid",
+            "result": "MET",
+            "detail": "MD-B00-A002-BL001 issued before any material change of this attempt, binding the revised governance fingerprint."
+        },
+        {
+            "criterion": "Change Impact complete",
+            "result": "MET",
+            "detail": "CI-MD-B00-A002-001 issued and registered."
+        },
+        {
+            "criterion": "required relationships complete",
+            "result": "MET",
+            "detail": "Completeness enforced by the gate rather than asserted."
+        },
+        {
+            "criterion": "current evidence available",
+            "result": "MET",
+            "detail": "This record."
+        },
+        {
+            "criterion": "traceability valid",
+            "result": "MET",
+            "detail": "MD-B00 required coverage is 0/0. No rule state changed at this attempt."
+        },
+        {
+            "criterion": "gates test the intended invariant",
+            "result": "MET",
+            "detail": "Demonstrated by mutation rather than by gate exit code."
+        },
+        {
+            "criterion": "current state synchronized",
+            "result": "MET",
+            "detail": "Stage register, dependency registry, finding states, work/relationship registries, and generated CURRENT_STATE reconciled."
+        }
+    ],
+    "residue_verdict": {
+        "md_b00_own_scope": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "basis": "Governance mechanics only. No strategy byte, no runtime code, no schema, no deployed database, no immutable record altered."
+    },
+    "scope_not_taken": [
+        "MD-DEP-0004 traceability matrix re-derivation \u2014 owned by MD-B01, the return target.",
+        "MD-DEP-0003 Class S retire-or-rewrite decisions \u2014 owned by the individual stages.",
+        "Live corpus reason-code seeding \u2014 operator decision on production data."
+    ],
+    "open_findings": [
+        "F-MD-B00-A001-003 (P3)",
+        "F-MD-B00-A001-001 (Class S half)",
+        "F-MD-B01-A001-001 (P0)",
+        "F-MD-B01-A003-001 (P2)"
+    ],
+    "supersedes": null
+}

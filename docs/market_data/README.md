@@ -17,8 +17,10 @@ Mulai dari [`START_HERE.md`](START_HERE.md).
 - `development/implementation/` — existing technical realization and the current `MD-B00..MD-B22` revalidation track.
 - `development/research/` — current research only.
 - `development/findings/` — current finding lifecycle only.
-- `records/evidence/` — evidence records; pre-rebaseline evidence is historical-only for current implementation verification.
+- `records/evidence/` — governed evidence records; raw generated execution artifacts remain in configured `storage/**` and are linked/verified according to governance. Pre-rebaseline evidence is historical-only for current implementation verification.
 - `records/decisions/` — issued decisions.
 - `records/history/` — historical/superseded documentation, prior W00–W22 status/audit corpus, and provenance indexes.
 
 Old `PASS/DONE/READY/CONFORMANT` remains a historical fact but has **zero current-verification effect** until revalidated under the active epoch.
+
+Raw `storage/**` output is not an independent source of current truth. Start/resume from [`START_HERE.md`](START_HERE.md), determine the current proof obligation from canonical records, then inspect only the referenced/required runtime artifacts.

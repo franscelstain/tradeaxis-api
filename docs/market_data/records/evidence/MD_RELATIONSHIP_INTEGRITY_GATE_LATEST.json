@@ -1,8 +1,14 @@
 {
     "gate": "MarketDataRelationshipIntegrityGate",
     "status": "PASS",
-    "records": 18,
-    "relationships": 0,
-    "errors": [],
-    "generated_at": "2026-08-20T19:20:35+02:00"
+    "records": 32,
+    "relationships": 29,
+    "validity_errors": [],
+    "completeness_gaps": [],
+    "checks": {
+        "validity": "PASS",
+        "completeness": "PASS"
+    },
+    "note": "Completeness is derived from the canonical relationship-bearing columns of WORK_RECORD_REGISTRY.csv and from predecessor declarations inside baseline-lock records. An empty relationship registry cannot pass while any current record declares a cross-correlation relationship.",
+    "generated_at": "2026-08-21T06:16:17+02:00"
 }

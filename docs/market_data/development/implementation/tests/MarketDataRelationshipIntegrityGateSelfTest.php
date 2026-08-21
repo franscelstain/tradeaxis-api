@@ -196,6 +196,31 @@ file_put_contents($rel, $relBackup."SELF-TEST-R1,DOES-NOT-EXIST,ALSO-MISSING,SUP
 record($results, $failed, 'relationship references a non-existent record', 1, runGate($relGate), strpos(file_get_contents($rel), 'SELF-TEST-R1') !== false);
 file_put_contents($rel, $relBackup);
 
+// ---- relationship completeness (revised invariant, DOC-CHG-20260821-001) --
+// Validity mutations above prove the gate rejects malformed rows. These prove the other half:
+// that it rejects a registry which is merely *incomplete*. Without them, a gate could return PASS
+// on an empty registry and this self-test would not notice — which is the exact failure the
+// revised standard names.
+$relAll = file_get_contents($rel);
+$relLines = preg_split('/\R/', rtrim($relAll, "\r\n"));
+if (count($relLines) > 1) {
+    $dropped = implode("\n", array_slice($relLines, 0, count($relLines) - 1))."\n";
+    file_put_contents($rel, $dropped);
+    record($results, $failed, 'a required relationship row is removed', 1, runGate($relGate), $dropped !== $relAll);
+    file_put_contents($rel, $relAll);
+} else {
+    record($results, $failed, 'a required relationship row is removed', 1, 0, false);
+}
+
+file_put_contents($rel, "relationship_id,source_record_id,target_record_id,relationship_type,justification,reviewed_decision_id,issued_at,notes\n");
+record($results, $failed, 'relationship registry emptied while records declare relationships', 1, runGate($relGate), true);
+file_put_contents($rel, $relAll);
+
+$recAll = file_get_contents($rec);
+file_put_contents($rec, $recAll."SELF-TEST-3,EVIDENCE,MD-B00,MD-B00-A001,MD-B00-A001,MD-B00-A001-BL001,ISSUED,records/README.md,,E-MD-B01-A001-001,,,,2026-01-01T00:00:00+00:00,\n");
+record($results, $failed, 'record declares a cross-attempt relationship with no registry row', 1, runGate($relGate), strpos(file_get_contents($rec), 'SELF-TEST-3') !== false);
+file_put_contents($rec, $recAll);
+
 // ---- final control: the copy must be back to a passing state -------------
 record($results, $failed, 'post-restore control: documentation gate', 0, runGate($docGate));
 record($results, $failed, 'post-restore control: relationship gate', 0, runGate($relGate));

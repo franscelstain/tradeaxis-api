@@ -1,0 +1,152 @@
+{
+    "evidence_id": "E-MD-B03-A001-002",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B03",
+    "attempt_id": "MD-B03-A001",
+    "work_id": "MD-B03-A001",
+    "baseline_id": "MD-B03-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "issued_at": "2026-08-21T01:31:41+02:00",
+    "title": "Post-restoration database proof execution and migration drift-detector correction",
+    "attempt_outcome": "PARTIAL \u2014 MD-B03-A001 remains open",
+    "related_evidence": "E-MD-B03-A001-001",
+    "note_on_attempt_identity": "No new attempt was opened. MD-B03-A001 was already IN_PROGRESS and owns the migration framework and test harness contract area, which is where the corrected drift detector belongs. MD-B00-A002 is closed and its immutable records were not edited.",
+    "trigger": "MariaDB at 127.0.0.1:3306 was unreachable at MD-B00-A002 closure. The database-dependent proofs deferred then have now been executed against the restored server, and every record below reflects actual execution rather than the pre-outage expectation.",
+    "environment_at_execution": {
+        "server": "10.4.27-MariaDB",
+        "host": "127.0.0.1:3306",
+        "database": "tradeaxis",
+        "tables": 62,
+        "applied_migrations": 73,
+        "reason_codes": 407,
+        "scratch_probe_database": "absent, confirming MD-B03-A001 cleanup held across the outage"
+    },
+    "deferred_proofs_now_executed": [
+        {
+            "proof": "full PHPUnit suite as regression control",
+            "during_outage": {
+                "tests": 1537,
+                "assertions": 10260,
+                "errors": 5,
+                "failures": 67,
+                "skipped": 16
+            },
+            "after_restoration": {
+                "tests": 1537,
+                "assertions": 10309,
+                "errors": 4,
+                "failures": 67,
+                "skipped": 0
+            },
+            "conclusion": "Identical to the pre-outage measurement recorded in E-MD-B00-A002-001. The extra error and all 16 skips were database availability, not code regression. The MD-B00-A002 control figures are confirmed accurate by execution."
+        },
+        {
+            "proof": "database-dependent tests that skipped during the outage",
+            "result": "80 tests, 412 assertions, PASS, zero skipped",
+            "includes": [
+                "ProductionCorpusInvariantOracle \u2014 10 invariants executed against the live corpus: no non-positive price, no OHLC ordering violation, exactly one current publication per trade date, no readable publication on a failed run, every failed run carries a reason code, provider failure never shrinks the denominator, authoritative factor candidates reach an explicit decision, no price-derived factor usable as an adjustment, every history row binds to a publication, history immutability guards deployed",
+                "ReplayAdmissibilityVerdictStorability \u2014 verdict fits the deployed column; inadmissible never counted as pass; relabelled self-generated fixture refused",
+                "ReplayResultsSchemaDocumentSync \u2014 document enum matches the deployed column",
+                "SectorMembershipImportLock \u2014 advisory lock refuses a second importer and does not strand on a dropped connection"
+            ]
+        },
+        {
+            "proof": "migration drift detection required by DB_Schema_And_Migration_Sync_Contract_LOCKED.md",
+            "result": "executed; defect found in the detector itself"
+        }
+    ],
+    "defect_found_and_fixed": {
+        "id": "D8",
+        "severity": "P1",
+        "artifact": "tests/Unit/MarketData/MigrationIntegrityAndDriftTest.php",
+        "defect": "test_no_applied_migration_has_lost_its_file asserted count($orphans) <= count($applied). Orphans is a subset of applied, so the assertion is true by construction and can never fail. It then called addToAssertionCount(1) when orphans existed, so the suite reported an assertion that tested nothing. Eleven applied migrations had no file for the entire period the test was green.",
+        "second_defect": "appliedMigrations() hardcoded host, database, user, and an empty password. In any environment differing from that literal it returned null and both drift directions skipped. A skip is indistinguishable from \"no drift found\", which is the outcome drift detection exists to prevent.",
+        "fix": "Direction two now asserts zero in-scope orphans and pins the out-of-scope set by identifier. The connection is read from the configured .env.",
+        "scope_judgement": "The 11 orphans are Watchlist-domain migrations whose files live in another package. MARKET_DATA_DOCUMENT_AUTHORITY.md clause 6 places watchlist outside market-data acceptance authority, so they are not market-data drift. They are pinned by name rather than filtered silently, so a new orphan must be classified deliberately instead of being absorbed by a pattern. The sync contract requires the identifiers involved to be recorded in both directions, which pinning satisfies.",
+        "not_a_weakening": "A tautology was replaced by two assertions that can fail. In-scope orphans must be zero; the out-of-scope set must match exactly. Neither existed before."
+    },
+    "negative_proof": {
+        "method": "Mutation applied, verified as landed, test executed, state restored.",
+        "mutations": [
+            {
+                "id": "M1",
+                "mutation": "a market-data migration file is removed, making it an applied-without-file orphan",
+                "expected": "FAIL",
+                "observed": "FAIL",
+                "verified_applied": true
+            },
+            {
+                "id": "M2",
+                "mutation": "the pinned out-of-scope orphan set is widened by one entry",
+                "expected": "FAIL",
+                "observed": "FAIL",
+                "verified_applied": true
+            }
+        ],
+        "summary": {
+            "mutations": 2,
+            "fails_closed": 2,
+            "gaps": 0
+        }
+    },
+    "drift_result_recorded": {
+        "direction_one_file_present_not_applied": {
+            "count": 0,
+            "identifiers": []
+        },
+        "direction_two_applied_without_file": {
+            "total": 11,
+            "in_scope_market_data": 0,
+            "out_of_scope_watchlist": 11,
+            "identifiers": [
+                "2026_06_09_000001_create_watchlist_backtest_oos_schema",
+                "2026_06_09_000002_add_stop_rr_to_watchlist_bt_param_grid",
+                "2026_06_09_000003_version_watchlist_bt_eval_identity",
+                "2026_06_09_000004_version_watchlist_bt_oos_identity",
+                "2026_06_10_000001_add_watchlist_backtest_catalog_identity_and_r2_entry_quality",
+                "2026_07_24_000001_create_watchlist_runtime_paramset_and_plan_schema",
+                "2026_07_25_000001_version_watchlist_official_backtest_evidence_and_paramset_identity",
+                "2026_07_27_000001_widen_watchlist_backtest_universe_vol_ratio_precision",
+                "2026_07_27_000002_add_c171_real_is_remediation_catalog_bounds",
+                "2026_07_28_000001_add_c171_low_price_execution_quality_catalog_fields",
+                "2026_07_28_000002_version_c171_tick_risk_evidence_pipeline"
+            ]
+        },
+        "environment_declared": "verified; MariaDB 10.4.27 reachable, applied-migration position 73"
+    },
+    "final_execution_state": {
+        "phpunit": {
+            "tests": 1537,
+            "assertions": 10308,
+            "errors": 4,
+            "failures": 67,
+            "skipped": 0,
+            "assertion_delta": "-1 versus the restored baseline, because the phantom addToAssertionCount was removed and replaced by real assertions",
+            "failing_set": "identical; all 4 errors and 67 failures reference Class S split-sealed paths"
+        },
+        "documentation_integrity_gate": "PASS",
+        "relationship_integrity_gate": "PASS (validity + completeness)",
+        "gate_self_test": "PASS (11 mutations fail closed, 4 controls)"
+    },
+    "live_corpus_state_unchanged": {
+        "note": "This attempt wrote nothing to the deployed database. Read-only inspection only.",
+        "reason_codes": 407,
+        "seed_file_codes": 436,
+        "eligibility_rows_with_unregistered_reason_code": 3431,
+        "status": "OPEN \u2014 closing it requires running the reason-code seeder against the live corpus, which remains an operator decision on production data and was not taken by this attempt."
+    },
+    "residue_verdict": {
+        "md_b03_own_scope": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "basis": "One test corrected from tautology to real assertion and mutation-proven. No runtime code, schema, strategy byte, governance semantic document, deployed database, or immutable record altered."
+    },
+    "traceability_effect": "None. No rule changed state. Coverage remains 21/1407 with MD-B01 at 21/127.",
+    "open_findings": [
+        "F-MD-B00-A001-001 (Class S half)",
+        "F-MD-B00-A001-003 (P3)",
+        "F-MD-B01-A001-001 (P0)",
+        "F-MD-B01-A003-001 (P2)"
+    ],
+    "supersedes": null
+}

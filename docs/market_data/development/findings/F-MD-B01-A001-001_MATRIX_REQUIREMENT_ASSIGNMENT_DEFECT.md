@@ -1,10 +1,10 @@
 # F-MD-B01-A001-001 — Required-rule sets are not satisfiable as assigned, across 17 of 18 stages
 
-- Status: `OPEN`
-- Severity: `P0`
+- Status: `PARTIALLY_RESOLVED`
+- Severity: `P0` (predicate half remediated; stage-ownership half open)
 - Stage / Attempt / Baseline / Epoch: `MD-B01` / `MD-B01-A001` / `MD-B01-A001-BL001` / `MD-REBASELINE-20260820-001`
-- Owning stage for remediation: governance — requires a reviewed decision under `DOCUMENT_CHANGE_POLICY.md`
-- Blocks: every stage except `MD-B13` reaching `DONE`, at any attempt, until resolved
+- Owning stage for remediation: governance / `MD-B01` revalidation — governance clarification issued as `DOC-CHG-20260821-001`; semantic matrix correction still required
+- Blocks: **predicate half no longer blocks** — all 18 stages can now reach full required coverage. The stage-ownership half still blocks any stage holding rules it cannot prove.
 - Dependency: `MD-DEP-0004`
 
 > Raised at `MD-B01` and initially scoped to it. A follow-on scan executed at the same attempt showed the same defect across the whole matrix, so the severity is `P0` and the scope is the `MD-B01..MD-B22` track rather than one stage. `E-MD-B01-A001-001` records the stage-scoped measurement it was issued with; the global measurement below supersedes its scope statement.
@@ -88,7 +88,32 @@ A reviewed governance decision that re-derives the requirement classification by
 
 Until then `MD-B01` stays open and no stage except `MD-B13` can legitimately close. The rules already marked `SATISFIED` are unaffected by the remediation: each is a predicate-bearing rule whose evidence stands on its own.
 
+
+## Governance revision impact — 2026-08-21
+
+`DOC-CHG-20260821-001` removes the procedural deadlock that previously treated this matrix defect as unfixable merely because the matrix lives under `authority/`. The current governance now states explicitly that `STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv` is `MUTABLE_TRACEABLE`, that only predicate-bearing rows may own executable proof obligations, and that `primary_stage` must follow proof ownership rather than extraction position.
+
+This finding therefore remains **OPEN**, but its remediation is now executable governance work. This synchronization does **not** reclassify the 210 rows, does not change any strategy byte, and does not carry forward existing `SATISFIED` states automatically. The matrix must still be re-derived semantically, affected counts recalculated, and any affected attempts/baselines/evidence invalidated or revalidated according to the revised standard.
+
+Because `DOC-CHG-20260821-001` also changes closure/gate invariants, the exact repository resume point is first the `MD-B00` governance re-entry recorded in `MD_IMPLEMENTATION_STAGE_REGISTER.md`; after that re-entry succeeds, execution returns to `MD-B01` for this matrix remediation.
+
 ## Related
 
 - Does not supersede any record. Independent of `F-MD-B00-A001-001`.
 - The five satisfied rules and their evidence are listed in `E-MD-B01-A001-001`.
+
+## Partial resolution — MD-B01-A004
+
+The predicate-classification half is closed, remediated under `CI-MD-B01-A004-001` with evidence `E-MD-B01-A004-001`.
+
+Both directions of the defect were corrected in one governed mutation. 214 non-predicates were demoted to reference context: 210 colon-terminated list introducers, 2 owner pointers, 1 bare bold label, 1 reading-order item. 817 predicate-bearing children of those introducers were promoted to required — the clauses that carry the actual obligation, such as `- baca hanya dari publication (sealed + readable + current)` and `- pakai MAX(date)`.
+
+**The required set grew from 1407 to 2010, a net increase of 603.** Section 6 forbids editing the matrix merely to reduce required coverage or make a stage pass; this correction moved the number the other way by 43%. Zero of the 21 `SATISFIED` rows were demoted, so no proven work was hidden and no coverage was manufactured.
+
+Measured effect on the table above: non-predicate required rows went from 210 to **0**, and stages able to reach full required coverage went from **1 of 18** to **18 of 18**. The claim that this blocks the whole track no longer holds for the predicate reason.
+
+Strategy bytes unchanged; `rule_text`, `rule_fingerprint_sha1`, `strategy_owner`, and `source_line` untouched on every row, verified by recomputing sha1 across all 6490 rows with 0 mismatches and by the documentation gate TRACEABILITY_MATRIX check passing with 0 errors.
+
+### What remains open
+
+The secondary concern recorded above — proof-owning stage assignment under section 4 — is **not** addressed. `primary_stage` is still derived from the physical document a rule was extracted from rather than from the stage that can close its proof. `MD-DEP-0004` stays `OPEN_BLOCKING`, narrowed to this half, because a stage holding a rule it cannot prove still cannot reach full coverage honestly.
