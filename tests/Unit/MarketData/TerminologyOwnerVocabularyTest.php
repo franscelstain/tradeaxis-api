@@ -110,7 +110,14 @@ class TerminologyOwnerVocabularyTest extends TestCase
      */
     public function test_schema_dictionary_does_not_contradict_price_product_terminology(): void
     {
-        $dictionary = file_get_contents($this->root().'/docs/market_data/db/MARKET_DATA_DICTIONARY.md');
+        $path = $this->root().'/docs/market_data/development/implementation/db/MARKET_DATA_DICTIONARY.md';
+
+        $this->assertFileExists(
+            $path,
+            'the schema dictionary must resolve; a dead documentation path silently disables this check'
+        );
+
+        $dictionary = file_get_contents($path);
 
         $this->assertNotFalse($dictionary);
         $this->assertStringContainsString('STRUCTURAL_ADJUSTED', $dictionary);

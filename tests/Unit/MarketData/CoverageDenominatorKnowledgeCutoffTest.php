@@ -288,8 +288,8 @@ class CoverageDenominatorKnowledgeCutoffTest extends TestCase
 
     public function test_the_execution_guard_reason_code_is_registered_and_seeded(): void
     {
-        $registry = file_get_contents(base_path('docs/market_data/registry/Reason_Codes_Registry.md'));
-        $seed = file_get_contents(base_path('docs/market_data/registry/Reason_Codes_Seed.sql'));
+        $registry = file_get_contents(base_path('docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md'));
+        $seed = file_get_contents(base_path('docs/market_data/development/implementation/db/registry/Reason_Codes_Seed.sql'));
 
         $this->assertStringContainsString('`RUN_KNOWLEDGE_CUTOFF_MISSING` | RUN | HARD', $registry);
         $this->assertStringContainsString("('RUN_KNOWLEDGE_CUTOFF_MISSING', 'RUN'", $seed);

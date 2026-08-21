@@ -6,8 +6,8 @@ class LoggingTraceabilityReasonCodesStaticGuardTest extends TestCase
 {
     public function test_reason_code_registry_and_seed_are_synchronized(): void
     {
-        $registry = $this->readProjectFile('docs/market_data/registry/Reason_Codes_Registry.md');
-        $seed = $this->readProjectFile('docs/market_data/registry/Reason_Codes_Seed.sql');
+        $registry = $this->readProjectFile('docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md');
+        $seed = $this->readProjectFile('docs/market_data/development/implementation/db/registry/Reason_Codes_Seed.sql');
 
         preg_match_all('/^\| `([A-Z][A-Z0-9_]+)` \|/m', $registry, $registryMatches);
         preg_match_all('/^\(\'([A-Z][A-Z0-9_]+)\'/m', $seed, $seedMatches);
@@ -36,8 +36,8 @@ class LoggingTraceabilityReasonCodesStaticGuardTest extends TestCase
 
     public function test_failure_held_not_readable_and_blocked_paths_have_registered_reason_codes(): void
     {
-        $registry = $this->readProjectFile('docs/market_data/registry/Reason_Codes_Registry.md');
-        $seed = $this->readProjectFile('docs/market_data/registry/Reason_Codes_Seed.sql');
+        $registry = $this->readProjectFile('docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md');
+        $seed = $this->readProjectFile('docs/market_data/development/implementation/db/registry/Reason_Codes_Seed.sql');
 
         foreach ([
             'RUN_COMPUTE_FAILED',
@@ -61,8 +61,8 @@ class LoggingTraceabilityReasonCodesStaticGuardTest extends TestCase
 
     public function test_coverage_finalize_pointer_correction_replay_and_evidence_reason_codes_are_registered(): void
     {
-        $registry = $this->readProjectFile('docs/market_data/registry/Reason_Codes_Registry.md');
-        $seed = $this->readProjectFile('docs/market_data/registry/Reason_Codes_Seed.sql');
+        $registry = $this->readProjectFile('docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md');
+        $seed = $this->readProjectFile('docs/market_data/development/implementation/db/registry/Reason_Codes_Seed.sql');
 
         foreach ([
             'COVERAGE_THRESHOLD_MET',

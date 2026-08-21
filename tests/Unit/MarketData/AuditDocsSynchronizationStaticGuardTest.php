@@ -101,7 +101,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
      */
     public function test_audit_governance_enforces_append_only_anti_duplication_and_static_guard(): void
     {
-        $documents = $this->read('docs/market_data/audit/AUDIT_UPDATE_GOVERNANCE.md')
+        $documents = $this->read('docs/market_data/records/history/archive/audit/AUDIT_UPDATE_GOVERNANCE.md')
             .$this->read('docs/market_data/audit/AUDIT_DOCS_SYNCHRONIZATION_INVENTORY.md')
             .$this->read('docs/market_data/audit/AUDIT_DOCS_SYNCHRONIZATION_POST_SESSION_1_8_INVENTORY.md');
 
@@ -721,7 +721,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             $ledger
         );
         $marketStructureOwner = $this->read(
-            'docs/market_data/registry/Exchange_Market_Structure_Facts_LOCKED.md'
+            'docs/market_data/authority/strategy/registry/Exchange_Market_Structure_Facts_LOCKED.md'
         );
         $this->assertStringNotContainsString(
             'The current in-code single scalar is recorded above as exactly that.',
@@ -739,7 +739,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             'The current authority set is revision 2 for all six rules.',
             $marketStructureOwner
         );
-        $runbook = $this->read('docs/market_data/ops/OPERATIONAL_RUNBOOK.md');
+        $runbook = $this->read('docs/market_data/development/implementation/ops/OPERATIONAL_RUNBOOK.md');
         $this->assertStringContainsString(
             'must append an evidence-correction revision and observation pair with',
             $runbook
@@ -753,7 +753,7 @@ class AuditDocsSynchronizationStaticGuardTest extends TestCase
             'legacy evidence mismatch appends a superseding correction revision/observation pair',
             $safetyInventory
         );
-        $fieldDictionary = $this->read('docs/market_data/db/DB_FIELDS_AND_METADATA.md');
+        $fieldDictionary = $this->read('docs/market_data/development/implementation/db/DB_FIELDS_AND_METADATA.md');
         $this->assertStringContainsString(
             'A legacy observation containing manifest metadata alone cannot be',
             $fieldDictionary

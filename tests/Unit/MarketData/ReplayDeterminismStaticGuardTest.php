@@ -114,7 +114,7 @@ class ReplayDeterminismStaticGuardTest extends TestCase
         $repository = $this->read('app/Infrastructure/Persistence/MarketData/ReplayResultRepository.php');
         $evidence = $this->read('app/Application/MarketData/Services/MarketDataEvidenceExportService.php');
         $command = $this->read('app/Console/Commands/MarketData/VerifyReplayCommand.php');
-        $schema = $this->read('docs/market_data/db/Database_Schema_MariaDB.sql');
+        $schema = $this->read('docs/market_data/development/implementation/db/Database_Schema_MariaDB.sql');
 
         foreach (['expected_context_json', 'actual_context_json', 'mismatch_reason_codes_json', 'mismatches_json', 'final_reason_code', 'replay_status'] as $needle) {
             $this->assertStringContainsString($needle, $repository);

@@ -103,7 +103,7 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
     public function test_operator_validation_failures_render_registered_reason_codes(): void
     {
         $abstract = file_get_contents($this->commandDir.'/AbstractMarketDataCommand.php');
-        $registry = file_get_contents(base_path('docs/market_data/registry/Reason_Codes_Registry.md'));
+        $registry = file_get_contents(base_path('docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md'));
 
         // The seed file is no longer checked here. ReasonCodeSeedExecutionTest runs the seed
         // and proves every registry code lands in eod_reason_codes, so repeating a textual

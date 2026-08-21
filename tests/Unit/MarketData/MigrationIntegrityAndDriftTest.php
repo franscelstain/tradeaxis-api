@@ -150,25 +150,79 @@ class MigrationIntegrityAndDriftTest extends TestCase
 
         $orphans = array_values(array_diff($applied, array_keys($this->migrationFiles())));
 
-        $this->assertLessThanOrEqual(
-            count($applied),
-            count($orphans),
-            'applied migrations without files cannot be reproduced on a clean install'
+        // The prior assertion here was `count($orphans) <= count($applied)`, which is true by
+        // construction because orphans is a subset of applied. It could not fail, and it called
+        // addToAssertionCount() so the suite reported an assertion that tested nothing. Eleven
+        // orphans were present in the deployed database the whole time it was green.
+        $outOfScope = [];
+        $inScope = [];
+        foreach ($orphans as $orphan) {
+            // Watchlist is a separate domain. MARKET_DATA_DOCUMENT_AUTHORITY.md clause 6 places
+            // watchlist outcomes outside market-data acceptance authority, so a watchlist
+            // migration whose file lives in another package is not market-data drift. It is still
+            // named here rather than silently dropped, because the sync contract requires the
+            // identifiers involved to be recorded in both directions.
+            if (preg_match('/(watchlist|_bt_|backtest|paramset|c171)/i', $orphan)) {
+                $outOfScope[] = $orphan;
+            } else {
+                $inScope[] = $orphan;
+            }
+        }
+
+        $this->assertSame(
+            [],
+            $inScope,
+            'schema drift: market-data migrations applied to the database with no file to reproduce them on a clean install'
         );
 
-        // Reported rather than asserted to zero: historical renames are recorded, not erased.
-        if ($orphans !== []) {
-            $this->addToAssertionCount(1);
-        }
+        // Explicit result for the out-of-scope direction, per the sync contract.
+        $this->assertSame(
+            ['2026_06_09_000001_create_watchlist_backtest_oos_schema',
+             '2026_06_09_000002_add_stop_rr_to_watchlist_bt_param_grid',
+             '2026_06_09_000003_version_watchlist_bt_eval_identity',
+             '2026_06_09_000004_version_watchlist_bt_oos_identity',
+             '2026_06_10_000001_add_watchlist_backtest_catalog_identity_and_r2_entry_quality',
+             '2026_07_24_000001_create_watchlist_runtime_paramset_and_plan_schema',
+             '2026_07_25_000001_version_watchlist_official_backtest_evidence_and_paramset_identity',
+             '2026_07_27_000001_widen_watchlist_backtest_universe_vol_ratio_precision',
+             '2026_07_27_000002_add_c171_real_is_remediation_catalog_bounds',
+             '2026_07_28_000001_add_c171_low_price_execution_quality_catalog_fields',
+             '2026_07_28_000002_version_c171_tick_risk_evidence_pipeline'],
+            $outOfScope,
+            'the known out-of-scope orphan set changed; a new orphan must be classified deliberately rather than absorbed'
+        );
     }
 
     /** @return array<int,string>|null */
     private function appliedMigrations(): ?array
     {
-        $dsn = 'mysql:host=127.0.0.1;dbname=tradeaxis';
+        // Read the configured connection rather than hardcoding it. The previous version pinned
+        // host, database, user, and an empty password; in any environment that differs it returned
+        // null and the drift checks skipped. A skip reads the same as "no drift found", which is
+        // the outcome drift detection exists to prevent.
+        $config = [];
+        $envPath = $this->root().'/.env';
+        if (is_file($envPath)) {
+            foreach (file($envPath) as $line) {
+                if (preg_match('/^(DB_[A-Z_]+)=(.*)$/', trim($line), $m)) {
+                    $config[$m[1]] = trim($m[2], "\"'");
+                }
+            }
+        }
+
+        $host = $config['DB_HOST'] ?? '127.0.0.1';
+        $port = $config['DB_PORT'] ?? '3306';
+        $name = $config['DB_DATABASE'] ?? 'tradeaxis';
+        $user = $config['DB_USERNAME'] ?? 'root';
+        $pass = $config['DB_PASSWORD'] ?? '';
 
         try {
-            $pdo = new PDO($dsn, 'root', '', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 3]);
+            $pdo = new PDO(
+                'mysql:host='.$host.';port='.$port.';dbname='.$name,
+                $user,
+                $pass,
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_TIMEOUT => 3]
+            );
             $rows = $pdo->query('SELECT migration FROM migrations')->fetchAll(PDO::FETCH_COLUMN);
         } catch (\Throwable $e) {
             return null;

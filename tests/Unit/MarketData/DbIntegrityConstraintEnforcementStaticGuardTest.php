@@ -35,7 +35,7 @@ class DbIntegrityConstraintEnforcementStaticGuardTest extends TestCase
 
     public function test_locked_sql_schema_declares_primary_keys_for_all_critical_market_data_tables(): void
     {
-        $schema = $this->read('docs/market_data/db/Database_Schema_MariaDB.sql');
+        $schema = $this->read('docs/market_data/development/implementation/db/Database_Schema_MariaDB.sql');
 
         foreach ([
             'tickers' => 'PRIMARY KEY (ticker_id)',
@@ -66,7 +66,7 @@ class DbIntegrityConstraintEnforcementStaticGuardTest extends TestCase
 
     public function test_business_keys_and_runtime_indexes_are_explicit_in_sql_schema_and_sqlite_mirror(): void
     {
-        $schema = $this->read('docs/market_data/db/Database_Schema_MariaDB.sql');
+        $schema = $this->read('docs/market_data/development/implementation/db/Database_Schema_MariaDB.sql');
         $sqlite = $this->read('tests/Support/UsesMarketDataSqlite.php');
         $migration = $this->read('database/migrations/2026_05_07_000002_enforce_market_data_db_integrity_indexes.php')
             .$this->read('database/migrations/2026_05_24_000001_add_market_benchmark_indicator_extension.php');
@@ -146,7 +146,7 @@ class DbIntegrityConstraintEnforcementStaticGuardTest extends TestCase
 
     public function test_implicit_integrity_policy_and_repository_guards_cover_non_fk_lifecycle_relations(): void
     {
-        $schema = $this->read('docs/market_data/db/Database_Schema_MariaDB.sql');
+        $schema = $this->read('docs/market_data/development/implementation/db/Database_Schema_MariaDB.sql');
         $publicationRepository = $this->read('app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php');
         $evidenceRepository = $this->read('app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php');
         $correctionRepository = $this->read('app/Infrastructure/Persistence/MarketData/EodCorrectionRepository.php');
@@ -178,9 +178,9 @@ class DbIntegrityConstraintEnforcementStaticGuardTest extends TestCase
 
     public function test_enum_like_values_are_not_schema_or_registry_orphaned(): void
     {
-        $schema = $this->read('docs/market_data/db/Database_Schema_MariaDB.sql');
-        $registry = $this->read('docs/market_data/registry/Reason_Codes_Registry.md');
-        $seed = $this->read('docs/market_data/registry/Reason_Codes_Seed.sql');
+        $schema = $this->read('docs/market_data/development/implementation/db/Database_Schema_MariaDB.sql');
+        $registry = $this->read('docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md');
+        $seed = $this->read('docs/market_data/development/implementation/db/registry/Reason_Codes_Seed.sql');
 
         foreach ([
             "ENUM('SUCCESS','HELD','FAILED')",

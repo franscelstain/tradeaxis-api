@@ -8,7 +8,7 @@ class CreateMarketDataCoreSchema extends Migration
 {
     public function up()
     {
-        $schemaPath = base_path('docs/market_data/db/Database_Schema_MariaDB.sql');
+        $schemaPath = base_path('docs/market_data/development/implementation/db/Database_Schema_MariaDB.sql');
 
         if (! file_exists($schemaPath)) {
             throw new RuntimeException('Official market-data schema document not found: '.$schemaPath);

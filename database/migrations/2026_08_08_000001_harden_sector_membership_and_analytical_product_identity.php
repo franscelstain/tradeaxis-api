@@ -113,20 +113,33 @@ class HardenSectorMembershipAndAnalyticalProductIdentity extends Migration
             });
         }
 
+        // Idempotency is required by the migration policy in
+        // `DB_Schema_And_Migration_Sync_Contract_LOCKED.md`: "include idempotency/preflight for
+        // partially drifted developer databases". These four already exist in the clean-install
+        // base, so adding them unconditionally made `migrate` on an empty database die on a
+        // duplicate key. The migration's own indexExists() helper is used rather than a new one.
         Schema::table('ticker_sector_memberships', function (Blueprint $table) {
-            $table->unique(
-                ['listing_id', 'classification_system', 'effective_from', 'recorded_at'],
-                'uq_sector_membership_listing_effective_known'
-            );
-            $table->index(
-                ['listing_id', 'classification_system', 'effective_from', 'effective_to'],
-                'idx_sector_membership_listing_effective'
-            );
-            $table->index(
-                ['recorded_at', 'source_authority_class'],
-                'idx_sector_membership_known_authority'
-            );
-            $table->index('supersedes_membership_id', 'idx_sector_membership_supersedes');
+            if (! $this->indexExists('ticker_sector_memberships', 'uq_sector_membership_listing_effective_known')) {
+                $table->unique(
+                    ['listing_id', 'classification_system', 'effective_from', 'recorded_at'],
+                    'uq_sector_membership_listing_effective_known'
+                );
+            }
+            if (! $this->indexExists('ticker_sector_memberships', 'idx_sector_membership_listing_effective')) {
+                $table->index(
+                    ['listing_id', 'classification_system', 'effective_from', 'effective_to'],
+                    'idx_sector_membership_listing_effective'
+                );
+            }
+            if (! $this->indexExists('ticker_sector_memberships', 'idx_sector_membership_known_authority')) {
+                $table->index(
+                    ['recorded_at', 'source_authority_class'],
+                    'idx_sector_membership_known_authority'
+                );
+            }
+            if (! $this->indexExists('ticker_sector_memberships', 'idx_sector_membership_supersedes')) {
+                $table->index('supersedes_membership_id', 'idx_sector_membership_supersedes');
+            }
         });
     }
 

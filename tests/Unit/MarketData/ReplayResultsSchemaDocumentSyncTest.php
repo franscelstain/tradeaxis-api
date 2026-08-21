@@ -15,7 +15,7 @@
  */
 class ReplayResultsSchemaDocumentSyncTest extends TestCase
 {
-    private const DOCUMENT = 'docs/market_data/backtest/Replay_Results_Schema_MariaDB.sql';
+    private const DOCUMENT = 'docs/market_data/development/implementation/db/backtest/Replay_Results_Schema_MariaDB.sql';
 
     public function test_the_document_enum_matches_the_deployed_column(): void
     {

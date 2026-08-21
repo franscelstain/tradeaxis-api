@@ -348,7 +348,7 @@ class RecordAuthoritativeExchangeMarketStructureCommandTest extends TestCase
 
     private function manifestPath(): string
     {
-        return base_path('docs/market_data/evidence/market_structure/stage_7_idx_regular_market_structure_v1.json');
+        return base_path('docs/market_data/records/evidence/legacy/market_structure/stage_7_idx_regular_market_structure_v1.json');
     }
 
     private function manifest(): array

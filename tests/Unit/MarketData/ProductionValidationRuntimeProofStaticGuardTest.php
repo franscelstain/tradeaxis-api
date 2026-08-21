@@ -284,8 +284,8 @@ class ProductionValidationRuntimeProofStaticGuardTest extends TestCase
 
     public function test_replay_runtime_persistence_fix_is_documented_and_guarded(): void
     {
-        $schema = $this->readProjectFile('docs/market_data/db/Database_Schema_MariaDB.sql');
-        $backtestSchema = $this->readProjectFile('docs/market_data/backtest/Replay_Results_Schema_MariaDB.sql');
+        $schema = $this->readProjectFile('docs/market_data/development/implementation/db/Database_Schema_MariaDB.sql');
+        $backtestSchema = $this->readProjectFile('docs/market_data/development/implementation/db/backtest/Replay_Results_Schema_MariaDB.sql');
         $migration = $this->readProjectFile('database/migrations/2026_05_08_000001_expand_replay_mismatch_summary_to_longtext.php');
         $service = $this->readProjectFile('app/Application/MarketData/Services/ReplayVerificationService.php');
         $command = $this->readProjectFile('app/Console/Commands/MarketData/VerifyReplayCommand.php');

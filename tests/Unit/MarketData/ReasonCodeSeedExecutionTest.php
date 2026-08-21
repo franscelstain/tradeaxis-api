@@ -32,7 +32,7 @@ class ReasonCodeSeedExecutionTest extends TestCase
     private function seedPath(): string
     {
         return dirname(__DIR__, 3).DIRECTORY_SEPARATOR
-            .str_replace('/', DIRECTORY_SEPARATOR, 'docs/market_data/registry/Reason_Codes_Seed.sql');
+            .str_replace('/', DIRECTORY_SEPARATOR, 'docs/market_data/development/implementation/db/registry/Reason_Codes_Seed.sql');
     }
 
     /**
@@ -91,7 +91,7 @@ class ReasonCodeSeedExecutionTest extends TestCase
 
         $registry = file_get_contents(
             dirname(__DIR__, 3).DIRECTORY_SEPARATOR
-            .str_replace('/', DIRECTORY_SEPARATOR, 'docs/market_data/registry/Reason_Codes_Registry.md')
+            .str_replace('/', DIRECTORY_SEPARATOR, 'docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md')
         );
 
         preg_match_all('/^\| `([A-Z0-9_]+)` \|/m', $registry, $matches);

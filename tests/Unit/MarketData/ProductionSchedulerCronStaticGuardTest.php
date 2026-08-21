@@ -84,7 +84,7 @@ class ProductionSchedulerCronStaticGuardTest extends TestCase
 
     public function test_operational_runbook_documents_cron_operator_contract()
     {
-        $runbook = $this->read('docs/market_data/ops/OPERATIONAL_RUNBOOK.md');
+        $runbook = $this->read('docs/market_data/development/implementation/ops/OPERATIONAL_RUNBOOK.md');
 
         foreach ([
             'Scheduler / cron deployment flow',

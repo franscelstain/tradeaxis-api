@@ -377,8 +377,8 @@ class MarketDataSqliteSchemaSyncTest extends TestCase
 
     public function test_coverage_decimal_precision_is_synchronized_across_schema_migration_and_sqlite_mirror(): void
     {
-        $schema = file_get_contents(dirname(__DIR__, 3).'/docs/market_data/db/Database_Schema_MariaDB.sql');
-        $metadata = file_get_contents(dirname(__DIR__, 3).'/docs/market_data/db/DB_FIELDS_AND_METADATA.md');
+        $schema = file_get_contents(dirname(__DIR__, 3).'/docs/market_data/development/implementation/db/Database_Schema_MariaDB.sql');
+        $metadata = file_get_contents(dirname(__DIR__, 3).'/docs/market_data/development/implementation/db/DB_FIELDS_AND_METADATA.md');
         $migration = file_get_contents(dirname(__DIR__, 3).'/database/migrations/2026_05_19_000001_widen_market_data_coverage_decimal_precision.php');
         $sqlite = file_get_contents(dirname(__DIR__, 3).'/tests/Support/UsesMarketDataSqlite.php');
 

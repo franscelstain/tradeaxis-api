@@ -19,7 +19,7 @@ class OperationalReadinessStaticGuardTest extends TestCase
 
     public function test_operational_runbook_exists_and_covers_required_flows(): void
     {
-        $runbook = $this->readProjectFile('docs/market_data/ops/OPERATIONAL_RUNBOOK.md');
+        $runbook = $this->readProjectFile('docs/market_data/development/implementation/ops/OPERATIONAL_RUNBOOK.md');
 
         foreach ([
             'OPERATIONAL_READINESS_CONTRACT',
@@ -59,7 +59,7 @@ class OperationalReadinessStaticGuardTest extends TestCase
      */
     public function test_runbook_documents_all_registered_market_data_commands(): void
     {
-        $runbook = $this->readProjectFile('docs/market_data/ops/OPERATIONAL_RUNBOOK.md');
+        $runbook = $this->readProjectFile('docs/market_data/development/implementation/ops/OPERATIONAL_RUNBOOK.md');
 
         $undocumented = [];
 
@@ -112,7 +112,7 @@ class OperationalReadinessStaticGuardTest extends TestCase
 
     public function test_runbook_documents_terminal_states_and_next_actions(): void
     {
-        $runbook = $this->readProjectFile('docs/market_data/ops/OPERATIONAL_RUNBOOK.md');
+        $runbook = $this->readProjectFile('docs/market_data/development/implementation/ops/OPERATIONAL_RUNBOOK.md');
 
         foreach ([
             'SUCCESS / READABLE',
@@ -134,7 +134,7 @@ class OperationalReadinessStaticGuardTest extends TestCase
 
     public function test_runbook_documents_evidence_export_and_replay_verification(): void
     {
-        $runbook = $this->readProjectFile('docs/market_data/ops/OPERATIONAL_RUNBOOK.md');
+        $runbook = $this->readProjectFile('docs/market_data/development/implementation/ops/OPERATIONAL_RUNBOOK.md');
 
         foreach ([
             'market-data:evidence:export --run_id',
@@ -175,7 +175,7 @@ class OperationalReadinessStaticGuardTest extends TestCase
 
     public function test_runbook_documents_manual_file_import_vs_promote(): void
     {
-        $runbook = $this->readProjectFile('docs/market_data/ops/OPERATIONAL_RUNBOOK.md');
+        $runbook = $this->readProjectFile('docs/market_data/development/implementation/ops/OPERATIONAL_RUNBOOK.md');
 
         foreach ([
             'manual_file',
@@ -196,7 +196,7 @@ class OperationalReadinessStaticGuardTest extends TestCase
 
     public function test_runbook_documents_correction_lifecycle(): void
     {
-        $runbook = $this->readProjectFile('docs/market_data/ops/OPERATIONAL_RUNBOOK.md');
+        $runbook = $this->readProjectFile('docs/market_data/development/implementation/ops/OPERATIONAL_RUNBOOK.md');
 
         foreach ([
             'market-data:correction:request',
@@ -216,7 +216,7 @@ class OperationalReadinessStaticGuardTest extends TestCase
 
     public function test_runbook_forbids_raw_staging_latest_and_max_date_shortcuts(): void
     {
-        $runbook = $this->readProjectFile('docs/market_data/ops/OPERATIONAL_RUNBOOK.md');
+        $runbook = $this->readProjectFile('docs/market_data/development/implementation/ops/OPERATIONAL_RUNBOOK.md');
 
         foreach ([
             'raw/staging/latest/MAX(date)',
@@ -238,7 +238,7 @@ class OperationalReadinessStaticGuardTest extends TestCase
 
     public function test_runbook_documents_manual_db_action_policy(): void
     {
-        $runbook = $this->readProjectFile('docs/market_data/ops/OPERATIONAL_RUNBOOK.md');
+        $runbook = $this->readProjectFile('docs/market_data/development/implementation/ops/OPERATIONAL_RUNBOOK.md');
 
         foreach ([
             'Manual DB action is exceptional',
@@ -286,9 +286,9 @@ class OperationalReadinessStaticGuardTest extends TestCase
      */
     public function test_all_three_operator_documents_describe_the_same_command_surface(): void
     {
-        $runbook = $this->readProjectFile('docs/market_data/ops/OPERATIONAL_RUNBOOK.md');
+        $runbook = $this->readProjectFile('docs/market_data/development/implementation/ops/OPERATIONAL_RUNBOOK.md');
         $inventory = $this->readProjectFile('docs/market_data/ops/COMMAND_SURFACE_SAFETY_INVENTORY.md');
-        $commandIndex = $this->readProjectFile('docs/market_data/ops/commands/README.md');
+        $commandIndex = $this->readProjectFile('docs/market_data/development/implementation/ops/commands/README.md');
 
         $gaps = [];
 

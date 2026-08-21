@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
  * "mengganti adapter tidak mengubah canonical/product/indicator/read contracts dan Yahoo tidak
  *  pernah dilabel official IDX source."
  *
- * Owner contract: docs/market_data/book/Yahoo_Finance_Bootstrap_Source_Strategy.md
+ * Owner contract: docs/market_data/authority/strategy/book/Yahoo_Finance_Bootstrap_Source_Strategy.md
  *
  * These execute the boundary rather than asserting a document says so: they resolve the real
  * config, load the real port and adapter, and walk the real downstream source tree.
@@ -146,7 +146,7 @@ class ProviderNeutralBoundaryTest extends TestCase
      */
     public function test_licensing_basis_declaration_is_recorded(): void
     {
-        $strategy = file_get_contents($this->root().'/docs/market_data/book/Yahoo_Finance_Bootstrap_Source_Strategy.md');
+        $strategy = file_get_contents($this->root().'/docs/market_data/authority/strategy/book/Yahoo_Finance_Bootstrap_Source_Strategy.md');
 
         $this->assertStringContainsString('### Deklarasi berlaku', $strategy);
         $this->assertStringContainsString('Internal dan non-komersial', $strategy);
@@ -161,7 +161,7 @@ class ProviderNeutralBoundaryTest extends TestCase
      */
     public function test_no_compliance_claim_exists_while_provider_terms_are_undated(): void
     {
-        $strategy = file_get_contents($this->root().'/docs/market_data/book/Yahoo_Finance_Bootstrap_Source_Strategy.md');
+        $strategy = file_get_contents($this->root().'/docs/market_data/authority/strategy/book/Yahoo_Finance_Bootstrap_Source_Strategy.md');
         $termsAreUndated = strpos($strategy, 'Belum dibaca dan belum bertanggal') !== false;
 
         if (! $termsAreUndated) {

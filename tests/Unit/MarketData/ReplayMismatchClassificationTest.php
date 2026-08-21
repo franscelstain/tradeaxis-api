@@ -154,7 +154,7 @@ class ReplayMismatchClassificationTest extends TestCase
     {
         $registry = file_get_contents(
             dirname(__DIR__, 3).DIRECTORY_SEPARATOR
-            .str_replace('/', DIRECTORY_SEPARATOR, 'docs/market_data/registry/Reason_Codes_Registry.md')
+            .str_replace('/', DIRECTORY_SEPARATOR, 'docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md')
         );
 
         preg_match_all('/^\| `([A-Z0-9_]+)` \|/m', $registry, $matches);

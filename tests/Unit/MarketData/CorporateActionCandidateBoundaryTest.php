@@ -16,7 +16,7 @@ use Tests\Support\UsesMarketDataSqlite;
  *   docs/market_data/book/Corporate_Action_Impact_Flags_Contract.md
  *   docs/market_data/registry/Corporate_Action_Type_Registry_LOCKED.md
  *   docs/market_data/registry/Price_Scale_Break_Detection_LOCKED.md
- *   docs/market_data/registry/Exchange_Market_Structure_Facts_LOCKED.md
+ *   docs/market_data/authority/strategy/registry/Exchange_Market_Structure_Facts_LOCKED.md
  *
  * A price discontinuity proves that something happened. It cannot establish what, on which terms,
  * or effective when. Using the ratio implied by the gap as an adjustment factor closes the loop on

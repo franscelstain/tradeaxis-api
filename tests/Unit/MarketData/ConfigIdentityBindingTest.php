@@ -11,7 +11,7 @@ use Tests\Support\UsesMarketDataSqlite;
  * Exit gate: "semua writer berikut dapat menerima non-null config/reason/build identity sejak
  * pertama kali dibuat."
  *
- * Owner contract: docs/market_data/registry/Platform_Config_Registry_LOCKED.md
+ * Owner contract: docs/market_data/authority/strategy/registry/Platform_Config_Registry_LOCKED.md
  *
  * The existing foundation test proves the snapshot object itself is deterministic and redacted.
  * What was unproven is the part the exit gate actually names: that a writer creating a run

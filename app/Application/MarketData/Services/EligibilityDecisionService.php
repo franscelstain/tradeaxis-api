@@ -8,7 +8,7 @@ class EligibilityDecisionService
      * Indicator reason codes that carry a more specific eligibility meaning than the generic
      * ELIG_INVALID_INDICATORS fallback.
      *
-     * Owner contract: docs/market_data/registry/Reason_Codes_Registry.md
+     * Owner contract: docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md
      */
     private const INDICATOR_REASON_TO_ELIGIBILITY_REASON = [
         'IND_INSUFFICIENT_HISTORY' => 'ELIG_INSUFFICIENT_HISTORY',

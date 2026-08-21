@@ -33,8 +33,8 @@ class CoveragePolicyDocsStaticGuardTest extends TestCase
 
     public function test_locked_schema_and_migration_normalize_legacy_blocked_coverage_state(): void
     {
-        $schema = $this->read('docs/market_data/db/Database_Schema_MariaDB.sql');
-        $metadata = $this->read('docs/market_data/db/DB_FIELDS_AND_METADATA.md');
+        $schema = $this->read('docs/market_data/development/implementation/db/Database_Schema_MariaDB.sql');
+        $metadata = $this->read('docs/market_data/development/implementation/db/DB_FIELDS_AND_METADATA.md');
         $migration = $this->read('database/migrations/2026_05_18_000001_normalize_legacy_blocked_coverage_gate_state.php');
 
         $this->assertStringContainsString("coverage_gate_state ENUM('PASS','FAIL','NOT_EVALUABLE') NULL", $schema);
@@ -53,7 +53,7 @@ class CoveragePolicyDocsStaticGuardTest extends TestCase
         $config = $this->read('config/market_data.php');
         $envExample = $this->read('.env.example');
         $envTesting = $this->read('.env.testing');
-        $contract = $this->read('docs/market_data/book/Coverage_Gate_Enforcement_Contract_LOCKED.md');
+        $contract = $this->read('docs/market_data/authority/strategy/book/Coverage_Gate_Enforcement_Contract_LOCKED.md');
 
         $this->assertStringContainsString("env('MARKET_DATA_COVERAGE_MIN', 0.98)", $config);
         $this->assertStringContainsString('MARKET_DATA_COVERAGE_MIN=0.98', $envExample);
@@ -90,9 +90,9 @@ class CoveragePolicyDocsStaticGuardTest extends TestCase
 
     public function test_locked_contract_docs_require_coverage_aliases_and_legacy_raw_trace(): void
     {
-        $coverage = $this->read('docs/market_data/book/Coverage_Gate_Enforcement_Contract_LOCKED.md');
-        $eod = $this->read('docs/market_data/book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md');
-        $evidence = $this->read('docs/market_data/ops/Audit_Evidence_Pack_Contract_LOCKED.md');
+        $coverage = $this->read('docs/market_data/authority/strategy/book/Coverage_Gate_Enforcement_Contract_LOCKED.md');
+        $eod = $this->read('docs/market_data/authority/strategy/book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md');
+        $evidence = $this->read('docs/market_data/authority/strategy/ops/Audit_Evidence_Pack_Contract_LOCKED.md');
 
         foreach (['expected_bar_count', 'available_bar_count', 'missing_bar_count', 'legacy_coverage_gate_state_raw'] as $field) {
             $this->assertStringContainsString($field, $coverage.$eod.$evidence);

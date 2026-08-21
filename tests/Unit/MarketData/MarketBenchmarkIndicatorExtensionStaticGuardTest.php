@@ -17,7 +17,7 @@ class MarketBenchmarkIndicatorExtensionStaticGuardTest extends TestCase
 
     public function test_benchmark_schema_keeps_ihsg_outside_equity_tickers_boundary(): void
     {
-        $schema = $this->read('docs/market_data/db/Database_Schema_MariaDB.sql');
+        $schema = $this->read('docs/market_data/development/implementation/db/Database_Schema_MariaDB.sql');
         $migration = $this->read('database/migrations/2026_05_24_000001_add_market_benchmark_indicator_extension.php');
 
         foreach ([$schema, $migration] as $source) {

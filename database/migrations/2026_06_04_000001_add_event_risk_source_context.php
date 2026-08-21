@@ -251,14 +251,51 @@ class AddEventRiskSourceContext extends Migration
         });
     }
 
+    /**
+     * Index presence, resolved through the driver rather than through Doctrine.
+     *
+     * The previous implementation called `getDoctrineSchemaManager()` and swallowed every Throwable
+     * as "index absent". `doctrine/dbal` is not a dependency of this project, so the call raised a
+     * class-not-found Error on every invocation and the guard always answered false. On an existing
+     * database that was harmless — the index was already there and nothing re-ran. On a clean
+     * install it was not: `Database_Schema_MariaDB.sql` already creates
+     * `idx_eod_indicators_event_risk_date`, this migration then tried to add it again, and the run
+     * died on a duplicate key.
+     *
+     * The two later trading-status migrations already resolve this through
+     * `information_schema.STATISTICS`; this uses the same approach so the three agree.
+     */
     private function hasIndex($tableName, $indexName)
     {
-        try {
-            $indexes = Schema::getConnection()->getDoctrineSchemaManager()->listTableIndexes($tableName);
-
-            return array_key_exists($indexName, $indexes);
-        } catch (\Throwable $e) {
+        if (! Schema::hasTable($tableName)) {
             return false;
         }
+
+        $driver = Schema::getConnection()->getDriverName();
+
+        if ($driver === 'mysql') {
+            $rows = DB::select(
+                'SELECT COUNT(*) as aggregate FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?',
+                [$tableName, $indexName]
+            );
+
+            return isset($rows[0]) && (int) $rows[0]->aggregate > 0;
+        }
+
+        if ($driver === 'sqlite') {
+            foreach (DB::select('PRAGMA index_list('.$tableName.')') as $index) {
+                if (isset($index->name) && $index->name === $indexName) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        throw new RuntimeException(
+            'MIGRATION_INDEX_PROBE_UNSUPPORTED_DRIVER: cannot determine whether index '.$indexName.
+            ' exists on '.$tableName.' for driver '.$driver.'. Refusing to guess, because guessing '
+            .'"absent" is what broke clean install.'
+        );
     }
 }

@@ -160,7 +160,7 @@ class EvidenceExportCompletenessStaticGuardTest extends TestCase
             'A stored coverage field must export under its own key; aliases can hide an unread source column.'
         );
 
-        $canonicalSchema = file_get_contents($this->projectPath('docs/market_data/db/Database_Schema_MariaDB.sql'));
+        $canonicalSchema = file_get_contents($this->projectPath('docs/market_data/development/implementation/db/Database_Schema_MariaDB.sql'));
         $matched = preg_match(
             '/CREATE TABLE IF NOT EXISTS eod_runs \((.*?)\n\) ENGINE=/s',
             $canonicalSchema,

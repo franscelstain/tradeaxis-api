@@ -24,7 +24,7 @@ class ReadSideAntiBypassStaticContractTest extends TestCase
     public function test_read_side_contract_document_is_locked_and_audit_governed(): void
     {
         $path = dirname(__DIR__, 3).DIRECTORY_SEPARATOR
-            .str_replace('/', DIRECTORY_SEPARATOR, 'docs/market_data/book/Read_Side_Enforcement_Anti_Bypass_Contract_LOCKED.md');
+            .str_replace('/', DIRECTORY_SEPARATOR, 'docs/market_data/authority/strategy/book/Read_Side_Enforcement_Anti_Bypass_Contract_LOCKED.md');
 
         $this->assertFileExists($path);
 

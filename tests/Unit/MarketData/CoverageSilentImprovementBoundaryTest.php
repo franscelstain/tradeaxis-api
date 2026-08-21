@@ -13,9 +13,9 @@ use Tests\Support\UsesMarketDataSqlite;
  *
  * Owner contracts:
  *   docs/market_data/book/Coverage_Universe_Definition_LOCKED.md
- *   docs/market_data/book/Coverage_Gate_Enforcement_Contract_LOCKED.md
- *   docs/market_data/book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md
- *   docs/market_data/book/Coverage_Edge_Cases_Contract_LOCKED.md
+ *   docs/market_data/authority/strategy/book/Coverage_Gate_Enforcement_Contract_LOCKED.md
+ *   docs/market_data/authority/strategy/book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md
+ *   docs/market_data/authority/strategy/book/Coverage_Edge_Cases_Contract_LOCKED.md
  *
  * Coverage is delivered over expected, so anything that shrinks the denominator raises the ratio.
  * Only verified `NOT_EXPECTED` may shrink it; dormancy is never sufficient. The exclusion count and

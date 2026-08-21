@@ -73,8 +73,8 @@ class BarPriceProductIdentityTest extends TestCase
 
     public function test_the_unrecorded_reason_code_is_registered(): void
     {
-        $registry = $this->read('docs/market_data/registry/Reason_Codes_Registry.md');
-        $seed = $this->read('docs/market_data/registry/Reason_Codes_Seed.sql');
+        $registry = $this->read('docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md');
+        $seed = $this->read('docs/market_data/development/implementation/db/registry/Reason_Codes_Seed.sql');
 
         $this->assertStringContainsString('`PRICE_PRODUCT_UNRECORDED`', $registry);
         $this->assertStringContainsString("('PRICE_PRODUCT_UNRECORDED', 'READ_SIDE'", $seed);

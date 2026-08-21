@@ -19,7 +19,7 @@ class RecordAuthoritativeTradingStatusSnapshotCommand extends AbstractMarketData
         }
 
         $manifest = $this->argument('manifest') ?: base_path(
-            'docs/market_data/evidence/trading_status/stage_8_idx_long_suspension_2026-06-30_v1.json'
+            'docs/market_data/records/evidence/legacy/trading_status/stage_8_idx_long_suspension_2026-06-30_v1.json'
         );
         $apply = (bool) $this->option('apply');
         try {

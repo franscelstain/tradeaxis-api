@@ -9,7 +9,7 @@ class MarketDataReasonCodesSeeder extends Seeder
 {
     public function run()
     {
-        $seedSqlPath = base_path('docs/market_data/registry/Reason_Codes_Seed.sql');
+        $seedSqlPath = base_path('docs/market_data/development/implementation/db/registry/Reason_Codes_Seed.sql');
 
         if (! file_exists($seedSqlPath)) {
             throw new \RuntimeException('Reason code seed document not found: '.$seedSqlPath);

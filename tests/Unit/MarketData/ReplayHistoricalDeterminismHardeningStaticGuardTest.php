@@ -114,8 +114,8 @@ class ReplayHistoricalDeterminismHardeningStaticGuardTest extends TestCase
 
     public function test_replay_historical_reason_codes_are_registered_and_seeded(): void
     {
-        $registry = file_get_contents($this->projectPath('docs/market_data/registry/Reason_Codes_Registry.md'));
-        $seed = file_get_contents($this->projectPath('docs/market_data/registry/Reason_Codes_Seed.sql'));
+        $registry = file_get_contents($this->projectPath('docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md'));
+        $seed = file_get_contents($this->projectPath('docs/market_data/development/implementation/db/registry/Reason_Codes_Seed.sql'));
         $service = file_get_contents($this->projectPath('app/Application/MarketData/Services/ReplayVerificationService.php'));
 
         foreach ([

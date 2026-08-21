@@ -92,7 +92,7 @@ class ProviderSmokeSafeModeStaticGuardTest extends TestCase
     public function test_provider_smoke_outputs_reason_coded_pass_fail_blocked_results(): void
     {
         $command = $this->read('app/Console/Commands/MarketData/ProviderSmokeCommand.php');
-        $registry = $this->read('docs/market_data/registry/Reason_Codes_Registry.md');
+        $registry = $this->read('docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md');
 
         foreach ([
             'PROVIDER_SMOKE_OK',

@@ -93,7 +93,7 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         $config = $this->read('config/market_data.php');
         $envExample = $this->read('.env.example');
         $envTesting = $this->read('.env.testing');
-        $coverageContract = $this->read('docs/market_data/book/Coverage_Edge_Cases_Contract_LOCKED.md');
+        $coverageContract = $this->read('docs/market_data/authority/strategy/book/Coverage_Edge_Cases_Contract_LOCKED.md');
 
         foreach ([$config, $envExample, $envTesting] as $document) {
             $this->assertStringNotContainsString('MARKET_DATA_MULTI_SOURCE_MODE', $document);
@@ -174,7 +174,7 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         $this->assertStringNotContainsString("'price_basis_default' =>", $config);
         $this->assertStringNotContainsString("'price_basis_default' =>", $computeService);
 
-        $registry = $this->read('docs/market_data/registry/Platform_Config_Registry_LOCKED.md');
+        $registry = $this->read('docs/market_data/authority/strategy/registry/Platform_Config_Registry_LOCKED.md');
         $this->assertStringContainsString('PRUNED 2026-08-11', $registry);
         $this->assertStringContainsString('do not reintroduce', $registry);
     }

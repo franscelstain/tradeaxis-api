@@ -117,7 +117,7 @@ class EmittedReasonCodeRegistrationTest extends TestCase
     private function seedRegisteredCodes(): array
     {
         $path = $this->projectRoot().DIRECTORY_SEPARATOR
-            .str_replace('/', DIRECTORY_SEPARATOR, 'docs/market_data/registry/Reason_Codes_Seed.sql');
+            .str_replace('/', DIRECTORY_SEPARATOR, 'docs/market_data/development/implementation/db/registry/Reason_Codes_Seed.sql');
 
         $lines = array_filter(explode("\n", file_get_contents($path)), function ($line) {
             return strpos(ltrim($line), '--') !== 0;

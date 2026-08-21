@@ -113,7 +113,7 @@ class TestCoverageBehavioralStaticGuardTest extends TestCase
     public function test_behavioral_guard_keeps_static_checks_as_support_not_runtime_replacement(): void
     {
         $inventory = $this->read('docs/market_data/tests/Behavioral_Test_Coverage_Inventory.md');
-        $guidance = $this->read('docs/market_data/tests/Test_Implementation_Guidance_LOCKED.md');
+        $guidance = $this->read('docs/market_data/development/implementation/tests/specs/Test_Implementation_Guidance_LOCKED.md');
 
         foreach ([
             'Static guard is not runtime proof',

@@ -6,7 +6,7 @@ class RunPublicationPointerLinkageStaticGuardTest extends TestCase
 {
     public function test_correction_schema_persists_baseline_and_replacement_publication_lineage(): void
     {
-        $sql = $this->read('docs/market_data/db/Database_Schema_MariaDB.sql');
+        $sql = $this->read('docs/market_data/development/implementation/db/Database_Schema_MariaDB.sql');
         $sqlite = $this->read('tests/Support/UsesMarketDataSqlite.php');
         $repository = $this->read('app/Infrastructure/Persistence/MarketData/EodCorrectionRepository.php');
         $pipeline = $this->read('app/Application/MarketData/Services/MarketDataPipelineService.php');
@@ -74,8 +74,8 @@ class RunPublicationPointerLinkageStaticGuardTest extends TestCase
 
     public function test_linkage_reason_codes_are_registered_and_seeded(): void
     {
-        $registry = $this->read('docs/market_data/registry/Reason_Codes_Registry.md');
-        $seed = $this->read('docs/market_data/registry/Reason_Codes_Seed.sql');
+        $registry = $this->read('docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md');
+        $seed = $this->read('docs/market_data/development/implementation/db/registry/Reason_Codes_Seed.sql');
 
         foreach ([
             'RUN_PUBLICATION_LINK_CREATED',

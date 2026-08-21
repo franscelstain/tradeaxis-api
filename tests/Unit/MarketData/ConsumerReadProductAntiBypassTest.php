@@ -13,7 +13,7 @@ use App\Infrastructure\Persistence\MarketData\MarketDataReadProductRepository;
  *   docs/market_data/book/Downstream_Consumer_Read_Model_Contract_LOCKED.md
  *   docs/market_data/book/CONSUMER_READ_CONTRACT_LOCKED.md
  *   docs/market_data/book/Consumer_Readability_Decision_Table_LOCKED.md
- *   docs/market_data/book/Read_Side_Enforcement_Anti_Bypass_Contract_LOCKED.md
+ *   docs/market_data/authority/strategy/book/Read_Side_Enforcement_Anti_Bypass_Contract_LOCKED.md
  *
  * There are currently no consumers, which means the bypass prohibition cannot be violated and
  * cannot be observed either — a gate that passes because nothing exercises it has proven nothing.

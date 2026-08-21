@@ -22,7 +22,7 @@ class RecordAuthoritativeCorporateActionTermsCommand extends AbstractMarketDataC
         }
 
         $manifest = $this->argument('manifest') ?: base_path(
-            'docs/market_data/evidence/corporate_actions/stage_6_ksei_stock_split_terms_v1.json'
+            'docs/market_data/records/evidence/legacy/corporate_actions/stage_6_ksei_stock_split_terms_v1.json'
         );
         $apply = (bool) $this->option('apply');
 

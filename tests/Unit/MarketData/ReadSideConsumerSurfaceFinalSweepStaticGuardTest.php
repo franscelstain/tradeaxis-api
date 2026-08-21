@@ -20,7 +20,7 @@ class ReadSideConsumerSurfaceFinalSweepStaticGuardTest extends TestCase
     public function test_final_sweep_inventory_exists_and_maps_to_existing_read_side_contract(): void
     {
         $inventory = $this->read('docs/market_data/audit/READ_SIDE_CONSUMER_SURFACE_FINAL_SWEEP_INVENTORY.md');
-        $contract = $this->read('docs/market_data/book/Read_Side_Enforcement_Anti_Bypass_Contract_LOCKED.md');
+        $contract = $this->read('docs/market_data/authority/strategy/book/Read_Side_Enforcement_Anti_Bypass_Contract_LOCKED.md');
 
         foreach ([
             'Read-Side Consumer Surface Final Sweep',
@@ -151,7 +151,7 @@ class ReadSideConsumerSurfaceFinalSweepStaticGuardTest extends TestCase
         $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
         $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
         $inventory = $this->read('docs/market_data/audit/READ_SIDE_CONSUMER_SURFACE_FINAL_SWEEP_INVENTORY.md');
-        $governance = $this->read('docs/market_data/audit/AUDIT_UPDATE_GOVERNANCE.md');
+        $governance = $this->read('docs/market_data/records/history/archive/audit/AUDIT_UPDATE_GOVERNANCE.md');
 
         foreach ([$status, $tracker, $inventory, $governance] as $document) {
             $this->assertStringContainsString('PHP 7.4.33', $document);

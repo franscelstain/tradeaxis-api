@@ -22,7 +22,7 @@ class RecordAuthoritativeExchangeMarketStructureCommand extends AbstractMarketDa
         }
 
         $manifest = $this->argument('manifest') ?: base_path(
-            'docs/market_data/evidence/market_structure/stage_7_idx_regular_market_structure_v1.json'
+            'docs/market_data/records/evidence/legacy/market_structure/stage_7_idx_regular_market_structure_v1.json'
         );
         $apply = (bool) $this->option('apply');
 

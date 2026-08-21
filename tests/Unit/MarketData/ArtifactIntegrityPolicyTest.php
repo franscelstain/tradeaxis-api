@@ -34,7 +34,7 @@ class ArtifactIntegrityPolicyTest extends TestCase
     {
         if (self::$schema === null) {
             $path = dirname(__DIR__, 3).DIRECTORY_SEPARATOR
-                .str_replace('/', DIRECTORY_SEPARATOR, 'docs/market_data/db/Database_Schema_MariaDB.sql');
+                .str_replace('/', DIRECTORY_SEPARATOR, 'docs/market_data/development/implementation/db/Database_Schema_MariaDB.sql');
 
             $this->assertFileExists($path);
             self::$schema = file_get_contents($path);

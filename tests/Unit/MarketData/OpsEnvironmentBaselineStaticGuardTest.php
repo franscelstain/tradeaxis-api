@@ -174,7 +174,7 @@ class OpsEnvironmentBaselineStaticGuardTest extends TestCase
 
     public function test_operational_runbook_points_to_environment_baseline_gate(): void
     {
-        $runbook = $this->read('docs/market_data/ops/OPERATIONAL_RUNBOOK.md');
+        $runbook = $this->read('docs/market_data/development/implementation/ops/OPERATIONAL_RUNBOOK.md');
 
         foreach ([
             'Ops environment baseline gate',
