@@ -46,3 +46,14 @@
 - Governance result: added explicit docs-first start/resume order for executed proof; separated governed evidence records from raw `storage/**` artifacts; defined when storage inspection is mandatory versus unnecessary; required current correlation plus path/hash/manifest integrity when external raw artifacts are material; prohibited raw historical artifacts from becoming current proof implicitly; defined missing/mismatched artifact handling and closure effect.
 - Downstream synchronization: aligned authority ownership/change-impact matrices, `START_HERE.md`, root/records evidence navigation, generated `CURRENT_STATE.md`, current implementation `SYSTEM_READ_ORDER.md`, and executed-proof admission guidance.
 - Verification impact: no automatic retroactive rewrite/invalidation of immutable issued evidence solely because application storage was not part of this docs-only snapshot. New executed proof, open-attempt closure, and future carry-forward of execution proof must satisfy the new artifact-linkage/integrity rule when external raw artifacts are required.
+
+## DOC-CHG-20260821-004 — Semantic predicate context and conditional applicability governance
+
+- Date: 2026-08-21
+- Finding/rationale: current traceability execution exposed two governance gaps: non-self-contained child/list fragments could be treated as independent proof predicates, and conditional requirements had no explicit terminal applicability lifecycle when their condition evaluated false.
+- Supporting evidence basis: current documentation audit identified rows whose physical `rule_text` was only a filename/metadata/list fragment while the governing obligation lived in the parent statement, plus conditional rules that could remain `NOT_ASSESSED` indefinitely despite a false applicability condition.
+- Reviewed decision: explicit user-authorized controlled governance adjustment on 2026-08-21.
+- Strategy impact: none; frozen strategy bytes/semantics are unchanged.
+- Governance result: proof identity is defined as the semantic predicate rather than a physical source line; non-self-contained fragments require deterministic parent/context binding and a normalized predicate; conditional applicability now has explicit pending/applicable/not-applicable lifecycle and denominator/closure rules; active stages must normalize transitional applicability/context before closure.
+- Downstream impact only (not executed by this authority patch): Agent AI must re-derive affected traceability rows, revalidate affected current `SATISFIED` states, recompute stage coverage/denominators, synchronize current stage/dependency/current-state records, and update implementation/tooling if required by the revised authority. Immutable historical evidence/baselines are not edited by this authority revision.
+

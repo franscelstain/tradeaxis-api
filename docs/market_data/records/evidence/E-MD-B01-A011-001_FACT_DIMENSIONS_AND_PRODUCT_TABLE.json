@@ -1,0 +1,266 @@
+{
+    "evidence_id": "E-MD-B01-A011-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A011",
+    "work_id": "MD-B01-A011",
+    "baseline_id": "MD-B01-A011-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B01-A011-001",
+    "issued_at": "2026-08-21T14:10:49+02:00",
+    "title": "Five separate fact dimensions, the price-product table, and date-driven import",
+    "attempt_outcome": "PARTIAL \u2014 stage remains open at 110/155",
+    "runtime_artifact_boundary": {
+        "standard": "RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md (DOC-CHG-20260821-003)",
+        "classification": "Section 5. Document and in-repository test work; no externally-stored runtime output is claimed.",
+        "storage_inspected": false,
+        "raw_artifact_linkage_claimed": false,
+        "basis": "The proof reads the full schema surface, the market-data source tree, configuration, the reason-code registry, and the console command signatures. Nothing under storage/** is read."
+    },
+    "owner_contracts": [
+        "authority/strategy/MARKET_DATA_PLATFORM_EOD_BASELINE.md",
+        "authority/strategy/book/Domain_Boundary_Invariants_LOCKED.md",
+        "authority/strategy/book/Terminology_and_Scope.md"
+    ],
+    "rules_satisfied": {
+        "count": 12,
+        "groups": [
+            {
+                "rules": [
+                    "MD-S001-R0056",
+                    "MD-S020-R0066",
+                    "MD-S056-R0125"
+                ],
+                "obligation": "coverage, quality, liquidity, event risk, and data usability are five separate dimensions that must remain separately inspectable and separately explainable",
+                "proof": "three separate tests in FactDimensionSeparationAndProductTableTest, one per owner contract",
+                "surface": "109 columns across the full schema: coverage 30, quality 14, liquidity 9, event risk 40, data usability 16",
+                "result": "every dimension is populated and no two dimensions share a single column",
+                "per_owner_addition": "The boundary contract additionally requires the eligibility result to carry its own explanatory field; the terminology register additionally requires each dimension to own reason codes rather than share one explanation. Both hold."
+            },
+            {
+                "rules": [
+                    "MD-S001-R0051"
+                ],
+                "obligation": "the provider payload with provenance is immutable and is not yet a canonical bar",
+                "proof": "FactDimensionSeparationAndProductTableTest::test_the_raw_source_observation_is_not_yet_a_canonical_bar",
+                "result": "md_source_observations and eod_bars are distinct surfaces and are not column-identical"
+            },
+            {
+                "rules": [
+                    "MD-S001-R0053"
+                ],
+                "obligation": "STRUCTURAL_ADJUSTED is OHLC coherent with inverse volume where the semantics require it, from verified corporate-action factors",
+                "proof": "FactDimensionSeparationAndProductTableTest::test_structural_adjusted_pairs_ohlc_adjustment_with_inverse_volume",
+                "result": "the product is declared and the factor table carries a volume factor alongside the price factor, which is what makes inverse adjustment possible"
+            },
+            {
+                "rules": [
+                    "MD-S001-R0055",
+                    "MD-S056-R0124"
+                ],
+                "obligation": "provider adj_close is not one of the three price products, must not be a per-row fallback, and must not be mixed with close across one vector",
+                "proof": "FactDimensionSeparationAndProductTableTest::test_provider_adjusted_close_is_not_a_price_product_and_never_a_fallback",
+                "result": "exactly three products are declared and they are exactly RAW, STRUCTURAL_ADJUSTED, and TOTAL_RETURN; no declaration names a provider adjusted close and the indicator engine reads none anywhere in its vector"
+            },
+            {
+                "rules": [
+                    "MD-S001-R0035"
+                ],
+                "obligation": "import runs for historical dates and for the latest date alike",
+                "proof": "FactDimensionSeparationAndProductTableTest::test_the_import_path_accepts_historical_and_latest_dates_alike",
+                "result": "import is driven by a requested date and no command defaults that date to today or latest, which would make the historical path unreachable"
+            },
+            {
+                "rules": [
+                    "MD-S001-R0061"
+                ],
+                "obligation": "a partial import \u2014 unfinished, unevaluated, or missing artifact/reason rows \u2014 must not become a readable publication",
+                "proof": "FactDimensionSeparationAndProductTableTest::test_a_partial_import_cannot_become_a_readable_publication",
+                "result": "every registered partial-import reason is HARD or WARN, never an ordinary readable outcome"
+            },
+            {
+                "rules": [
+                    "MD-S001-R0077"
+                ],
+                "obligation": "the provider default query window is a provider property, isolated in the source adapter or import strategy",
+                "proof": "FactDimensionSeparationAndProductTableTest::test_the_provider_default_query_window_is_isolated_in_the_adapter",
+                "result": "the window is represented explicitly in the acquisition layer and reaches no read, publication, seal, pointer, or eligibility surface"
+            },
+            {
+                "rules": [
+                    "MD-S001-R0098"
+                ],
+                "obligation": "a downstream consumer must not determine dates by recency guessing",
+                "proof": "ConsumerReadProductAntiBypassTest::test_the_read_path_never_resolves_a_date_by_taking_the_latest, re-executed at this baseline",
+                "reuse_note": "This test already existed and passed but backed no rule. It is reused rather than duplicated, and re-executed at this baseline so the proof is current rather than inherited.",
+                "result": "the read path never resolves a date by taking the latest"
+            },
+            {
+                "rules": [
+                    "MD-S001-R0100"
+                ],
+                "obligation": "this domain owns immutable source observations and provenance",
+                "proof": "FactDimensionSeparationAndProductTableTest::test_immutable_source_observations_carry_provenance",
+                "result": "provenance is present in four separate aspects: the source, the payload identity, the provider symbol, and the provider schema version"
+            }
+        ]
+    },
+    "rules_un_deferred": {
+        "rules": [
+            "MD-S056-R0124",
+            "MD-S056-R0125"
+        ],
+        "previously": "Recorded at MD-B01-A008 as not provable because coverage and liquidity were said to have no implementation surface until MD-B13 and MD-B15.",
+        "why_that_was_wrong": "That reading came from a schema view covering only database/migrations/**. MD-B01-A010 corrected the reader to include the base SQL the core migration executes. With the full surface visible all five dimensions are present and share no column.",
+        "classification": "The deferral was an artefact of the instrument, not of the codebase.",
+        "why_it_is_recorded_here": "A deferral made on a wrong reading is indistinguishable from a real blocker until someone re-checks it. The resume point carried both rules as blocked for three attempts. The remaining eight blocked rules were re-checked against the corrected surface and are unaffected."
+    },
+    "test_execution": {
+        "new_file": {
+            "artifact": "tests/Unit/MarketData/FactDimensionSeparationAndProductTableTest.php",
+            "tests": 11,
+            "assertions": 36,
+            "result": "PASS"
+        },
+        "reused": {
+            "artifact": "tests/Unit/MarketData/ConsumerReadProductAntiBypassTest.php",
+            "tests": 7,
+            "assertions": 38,
+            "result": "PASS",
+            "note": "existing test, previously backing no rule, re-executed at this baseline"
+        }
+    },
+    "anti_vacuity_controls": {
+        "control_one": "Each dimension must be populated before the separation is judged; an empty dimension fails rather than passing silently.",
+        "control_two": "test_a_provider_field_map_entry_is_not_read_as_a_product_declaration asserts the product check separates a declaration from a payload field map, in both directions.",
+        "control_three": "Population assertions: more than 90 dimension columns, more than 30 console commands, and the partial-import reason rows must be readable from the registry before their severities are judged."
+    },
+    "negative_proof": {
+        "method": "Each mutation applied, verified as landed, guard executed, files restored, restoration verified byte-identical.",
+        "mutations": [
+            {
+                "id": "M1",
+                "mutation": "a column made to belong to two dimensions at once, collapsing coverage into quality",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M2.1",
+                "mutation": "the source origin removed from the observation provenance, MD-S001-R0100",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M2.2",
+                "mutation": "the payload identity removed from the observation provenance",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M2.3",
+                "mutation": "the provider symbol removed from the observation provenance",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M2.4",
+                "mutation": "the provider schema version removed from the observation provenance",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M3",
+                "mutation": "a fourth price product declared for the provider adjusted close, MD-S001-R0055",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M4",
+                "mutation": "the indicator vector made to read a provider adjusted close, MD-S056-R0124",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M5",
+                "mutation": "a partial-import reason downgraded to an ordinary readable outcome, MD-S001-R0061",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M6",
+                "mutation": "the volume adjustment factor removed, breaking the inverse-volume pairing, MD-S001-R0053",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M7",
+                "mutation": "the provider transport window leaked into the read layer, MD-S001-R0077",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "C1",
+                "mutation": "CONTROL: another provider field-map entry added",
+                "expected": "PASS",
+                "observed": "PASS"
+            },
+            {
+                "id": "C2",
+                "mutation": "CONTROL: a legitimate additional coverage column added",
+                "expected": "PASS",
+                "observed": "PASS"
+            }
+        ],
+        "summary": {
+            "mutations": 10,
+            "fails_closed": 10,
+            "controls": 2,
+            "controls_ok": 2,
+            "gaps": 0
+        }
+    },
+    "guard_defects_found_during_attempt": [
+        {
+            "defect": "The MD-S001-R0100 provenance check was satisfied by a single survivor.",
+            "detail": "It asked whether any provenance-like column existed. The observation table has six; removing four left it green.",
+            "fix": "Four provenance aspects are now required separately. Re-run per aspect, all four fail closed.",
+            "how_it_surfaced": "The mutation reported GUARD_DID_NOT_REACT. The guard was in fact correct on that run \u2014 the mutation had renamed four of six columns and left two standing \u2014 so the report was ambiguous until the real column list was read. Trusting either the guard or the mutation without looking would have been wrong.",
+            "family": "Same shape as the MD-S056-R0033 defect recorded at MD-B01-A010."
+        },
+        {
+            "defect": "The MD-S001-R0055 check read a provider field-map entry as a product declaration.",
+            "detail": "It flagged adj_close in config/market_data.php, which is the name of a field in the provider payload \u2014 exactly what reading a raw source observation requires under MD-S001-R0051.",
+            "fix": "The check now reads *_PRODUCT declarations, and a new test asserts the separation in both directions.",
+            "family": "The recurring description-versus-surface confusion recorded at MD-B01-A006, A008, A009, and A010. Fourth venue: a configuration field map."
+        }
+    ],
+    "stated_limits": {
+        "dimension_separation": "Separation is proven at the column level. Two dimensions could still be conflated in prose or in a downstream read model without sharing a column; that is a different obligation, owned by the read-model contract."
+    },
+    "coverage_effect": {
+        "md_b01": {
+            "before": "98/155",
+            "after": "110/155",
+            "not_assessed_after": 45
+        },
+        "global": {
+            "before": "98/2010",
+            "after": "110/2010"
+        },
+        "denominator_change": "none; only coverage_status changed on 12 rows"
+    },
+    "change_impact_timing": "CI-MD-B01-A011-001 was issued before the matrix mutation and after the guard was mutation-proven.",
+    "residue_verdict": {
+        "md_b01_own_scope": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "basis": "One test file added and 12 matrix rows advanced. No strategy byte, no runtime code, no schema, no deployed database, no storage artifact, and no immutable record altered. Every file touched by the negative proof was restored and verified."
+    },
+    "open_findings": [
+        "F-MD-B01-A008-001 (P2)",
+        "F-MD-B01-A003-001 (P2)",
+        "F-MD-B00-A001-001 (Class S half)",
+        "F-MD-B00-A001-003 (P3)"
+    ],
+    "supersedes": null
+}

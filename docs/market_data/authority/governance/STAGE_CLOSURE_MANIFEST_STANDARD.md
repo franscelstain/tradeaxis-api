@@ -16,3 +16,18 @@ For required external raw proof, closure MUST NOT claim execution sufficiency wh
 - the available environment could not access the artifact and no valid replacement execution was performed.
 
 Document-only gates do not substitute for runtime-artifact verification when runtime proof is part of the stage acceptance criteria.
+
+## Traceability semantic/applicability effect
+
+A terminal stage closure MUST use the semantic-predicate and applicability lifecycle from `STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md`.
+
+Closure MUST report and satisfy all of the following for the stage:
+
+- zero required rows with transitional `MANDATORY_OR_CONDITIONAL`;
+- zero `CONDITIONAL_PENDING` / `APPLICABILITY_PENDING` rows;
+- all `MANDATORY` and `CONDITIONAL_APPLICABLE` denominator rows are `SATISFIED`;
+- every `CONDITIONAL_NOT_APPLICABLE` row has current evidence/rationale proving its condition false;
+- every context-dependent required fragment has deterministic parent/context binding and a normalized predicate;
+- any previously `SATISFIED` proof invalidated by semantic-context/applicability correction has been re-proven or is no longer counted.
+
+A stage MUST NOT claim `DONE` from a percentage computed over a provisional denominator.

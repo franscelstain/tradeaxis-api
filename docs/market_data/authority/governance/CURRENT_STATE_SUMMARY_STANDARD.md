@@ -8,10 +8,21 @@ The generated current state MUST summarize, from canonical sources:
 
 1. current verification epoch;
 2. stage states/verdicts;
-3. strategy coverage counts/state;
+3. strategy coverage counts/state, including applicability state;
 4. open/resolved blocking dependencies relevant to current execution;
 5. current work-record counts by material record type or canonical registry total;
 6. the single next executable resume point.
+
+When any active/current stage contains conditional or transitional applicability, the summary MUST also report:
+
+- current denominator;
+- satisfied and not-assessed counts inside that denominator;
+- `CONDITIONAL_NOT_APPLICABLE` count;
+- `CONDITIONAL_PENDING` / `APPLICABILITY_PENDING` count;
+- transitional `MANDATORY_OR_CONDITIONAL` count;
+- whether the displayed coverage percentage is FINAL or PROVISIONAL.
+
+A provisional denominator MUST NOT be displayed as if it were closure-ready coverage.
 
 ## Deterministic resume summary
 

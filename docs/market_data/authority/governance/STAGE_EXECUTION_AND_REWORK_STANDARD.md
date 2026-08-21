@@ -63,3 +63,17 @@ Do not recursively scan storage as a substitute for determining current state.
 For an open attempt that needs executed proof, the raw-artifact admission/linkage requirements of `RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md` apply before that proof can support closure.
 
 If an environment-blocked proof becomes executable again, continue the valid attempt when governance permits, execute the deferred command/test, and bind the resulting raw artifact to new/current governed evidence. Environment restoration alone does not create PASS.
+
+## 7. Traceability applicability/context normalization at active-stage entry
+
+An active stage MUST treat legacy `MANDATORY_OR_CONDITIONAL` values and context-dependent fragment rows as migration debt, not as closure-ready classifications.
+
+Before further coverage can be treated as final for that stage, execute the stage-scoped semantic revalidation required by `STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md`:
+
+- classify each required row as mandatory or an explicit conditional applicability state;
+- bind parent/context for non-self-contained fragments;
+- normalize the testable predicate without changing strategy bytes;
+- revalidate affected prior `SATISFIED` rows;
+- recompute the stage denominator and current resume/closure state.
+
+This normalization may be the next valid attempt on an already-open stage. It is not a strategy revision and must not be skipped merely because earlier attempts advanced nominal coverage.
