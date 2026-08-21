@@ -1,0 +1,310 @@
+{
+    "evidence_id": "E-MD-B01-A014-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A014",
+    "work_id": "MD-B01-A014",
+    "baseline_id": "MD-B01-A014-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B01-A014-001",
+    "issued_at": "2026-08-21T22:05:00+07:00",
+    "title": "Reference-only predicate re-derivation, classification gate, and alias-cluster proof",
+    "attempt_outcome": "PARTIAL — the MD-B01 denominator is corrected from a false FINAL 143 to 207 and coverage falls to 144/207; the stage remains open",
+    "authority_basis": {
+        "strategy": [
+            "authority/strategy/MARKET_DATA_PLATFORM_EOD_BASELINE.md",
+            "authority/strategy/book/Domain_Boundary_Invariants_LOCKED.md",
+            "authority/strategy/book/Terminology_and_Scope.md"
+        ],
+        "governance": [
+            "authority/governance/STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md",
+            "authority/governance/MARKET_DATA_DOCUMENT_AUTHORITY.md",
+            "authority/governance/DOCUMENT_CHANGE_POLICY.md",
+            "authority/governance/CHANGE_IMPACT_DECLARATION_STANDARD.md",
+            "authority/governance/RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md",
+            "authority/governance/WORK_CORRELATION_AND_RECORD_REGISTRY_STANDARD.md"
+        ],
+        "strategy_bytes_changed": 0,
+        "rule_text_or_fingerprint_changes": 0,
+        "fingerprint_recomputation": "sha1 recomputed across all 6490 rows after the mutation; 0 mismatches"
+    },
+    "runtime_artifact_boundary": {
+        "classification": "Authority interpretation, traceability classification, and source/unit-test proof under section 5 of RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md.",
+        "storage_inspected": false,
+        "storage_mutated": false,
+        "raw_artifact_linkage_claimed": false,
+        "basis": "No predicate advanced here depends on generated runtime output. The two rules bound to proof are naming and canonical-field predicates over schema DDL, configuration, repository source, and command signatures."
+    },
+    "baseline": {
+        "record": "records/evidence/MD-B01-A014-BL001_WORK_BASELINE_LOCK.json",
+        "issued_before_material_change": true,
+        "predecessor_attempt": "MD-B01-A013",
+        "predecessor_baseline": "MD-B01-A013-BL001",
+        "pre_change_state": "MD-B01 declared a FINAL 143-row denominator at 142/143 with 330 active rows classified REFERENCE_ONLY.",
+        "traceability_matrix_sha1_at_baseline": "3CD9CFECD32556B379372E02B42D7BAF2B659772"
+    },
+    "finding_measured": {
+        "defect": "The matrix classified requirement rows by grammatical mood rather than by semantic predicate. A row stating an obligation with a deontic modal was REQUIRED; a row stating the same class of obligation in declarative form was REFERENCE_ONLY.",
+        "authority_violated": "STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md section 2 permits reference classification only for headings, list introducers, labels, descriptive context, examples, introductory prose, and context-dependent bare fragments. Mood is not among them, and section 1 states the unit of proof is a semantic predicate.",
+        "measurement_method": "Enumerated runs were detected as contiguous same-marker list rows inside one strategy document and section; a run holding both REQUIRED and REFERENCE_ONLY members is inconsistent by the matrix's own hand rather than by outside judgement.",
+        "mixed_runs_in_md_b01": 17,
+        "reference_only_members_in_those_runs": 72,
+        "worked_examples": [
+            "Domain_Boundary_Invariants_LOCKED.md 'Boundary invariants': 14 numbered items, of which 2, 11, 12, 14 were REQUIRED and 1, 3-10, 13 were REFERENCE_ONLY. The four kept items are the four containing a modal.",
+            "Terminology_and_Scope.md 'Locked interpretation rules': 19 items, of which only item 2 was REFERENCE_ONLY. It is the one item without 'must never'.",
+            "Terminology_and_Scope.md 'decision-grade (LOCKED)': 4 conditions, of which only condition 3 was REQUIRED, though MD-S056-R0004 states the term must not stay undefined and the platform target rests on all four.",
+            "MARKET_DATA_PLATFORM_EOD_BASELINE.md 'Anti-assumption rules': 19 forbidden claims, of which R0127-R0141 were REQUIRED and R0142-R0145 were not; the cut is where the list was truncated, not what the entries mean."
+        ],
+        "relationship_to_prior_remediation": "F-MD-B01-A001-001 states the defect runs both ways and cites five homogeneous-list splits as evidence. MD-B01-A004 remediated the demotion direction and measured non-predicate required rows to 0. Three of the five cited splits were still present unchanged at this baseline: MD-S001-R0099 (1 of 10 ownership bullets required), MD-S056-R0053 (1 of 8 target-output bullets required), and MD-S001-R0074 (1 of 4 provider-limitation bullets required). A004 promoted 817 children of introducers it demoted; these three introducers were already REFERENCE_ONLY, so their children were never in the promotion set."
+    },
+    "traceability_result": {
+        "rows_promoted": 72,
+        "promotion_direction": "REFERENCE_ONLY -> REQUIRED; no SATISFIED row was demoted and no coverage was manufactured",
+        "structural_exclusions_retained": 0,
+        "predicate_context_bound": 59,
+        "predicate_context_self": 13,
+        "applicability_assigned": {
+            "MANDATORY": 70,
+            "CONDITIONAL_APPLICABLE": 2
+        },
+        "proof_ownership_moves": {
+            "MD-S001-R0060": "MD-B15 — delivery-coverage gate arithmetic; sibling MD-S001-R0059 already owns the 98% prerequisite there",
+            "MD-S001-R0063": "MD-B02 — provider source order and the manual one-date rescue path",
+            "MD-S001-R0064": "MD-B09 — dedup/conflict resolution persistence",
+            "MD-S020-R0009": "MD-B12 — semantic correctness and stable units/bases",
+            "MD-S020-R0010": "MD-B07 — source provenance, licensing disclosure, schema validation",
+            "MD-S020-R0011": "MD-B05 — temporal identity and universe correctness",
+            "MD-S020-R0012": "MD-B15 — coverage, integrity, correction safety",
+            "MD-S020-R0013": "MD-B14 — deterministic indicators and versioned configuration"
+        },
+        "denominator_before": 143,
+        "denominator_before_claim": "FINAL",
+        "denominator_after": 207,
+        "denominator_after_claim": "FINAL for the mixed-run correction; PROVISIONAL for the standalone reference-only population still under the MD-DEP-0004 entry obligation",
+        "satisfied_before": 142,
+        "satisfied_after": 144,
+        "not_assessed_after": 63,
+        "verified_coverage_before": "99.30%",
+        "verified_coverage_after": "69.57%",
+        "coverage_direction_note": "Coverage falls because the denominator was understated, not because proof was lost. All 142 prior SATISFIED rows keep their own evidence and none was revalidated downward."
+    },
+    "rules_advanced": [
+        {
+            "rule_id": "MD-S020-R0068",
+            "normalized_predicate": "The eligible compatibility-alias lifecycle requires that `data_usable` is the canonical field and `eligible` is a compatibility alias retained solely so existing consumers do not break.",
+            "applicability": "CONDITIONAL_APPLICABLE",
+            "proofs": [
+                "AliasNamingAndMeaningBoundaryTest::test_data_usable_is_the_canonical_field_and_eligible_is_only_its_alias",
+                "ScopeProductAndTimeBoundaryTest::test_the_eligible_alias_is_derived_from_data_usable_and_never_independent"
+            ]
+        },
+        {
+            "rule_id": "MD-S020-R0071",
+            "normalized_predicate": "The eligible compatibility-alias lifecycle requires that until retirement, no new artifact, column, reason code, config key, or API field may be named with `eligible`; new surfaces use `data_usable`, and the alias may be preserved, not propagated.",
+            "applicability": "CONDITIONAL_APPLICABLE",
+            "surfaces_covered": "columns, enum vocabulary, reason codes, and command signatures by the existing A002 guard; configuration keys and API fields by the new A014 guard; the positive half by the read product exposing data_usable and an explicit DATA_USABLE/DATA_NOT_USABLE state beside the alias",
+            "proofs": [
+                "AliasNamingAndMeaningBoundaryTest::test_no_configuration_key_or_api_field_is_named_with_the_alias",
+                "AliasNamingAndMeaningBoundaryTest::test_a_data_usability_surface_states_the_canonical_name_beside_the_alias",
+                "ScopeProductAndTimeBoundaryTest::test_the_eligible_alias_is_not_propagated_to_a_new_surface"
+            ]
+        }
+    ],
+    "tooling_result": {
+        "added": [
+            "development/implementation/tests/MarketDataClassificationConsistencyGate.php — enforces traceability standard section 2 in both directions across all 18 stages",
+            "development/implementation/tests/MarketDataClassificationRederivation.php — the governed A014 matrix mutator and A014 proof binder"
+        ],
+        "changed": [
+            "development/implementation/tests/MarketDataTraceabilityApplicabilityGate.php — accepts A014-normalized rows, recomputes their predicate context from the matrix instead of reading it from the note under test, verifies the normalized predicate contains the row fragment, and moves the required-row lock from 143 to 207",
+            "development/implementation/tests/MarketDataScopeBoundaryCompletionGate.php — denominator lock moved from 143 to 207 with the satisfied figure locked at 144 and the remainder derived"
+        ],
+        "why_the_existing_gates_could_not_see_it": "MarketDataTraceabilityApplicabilityGate validates rows that are already REQUIRED, so a row wrongly excluded is invisible to it. MarketDataScopeBoundaryCompletionGate asserted the denominator had not drifted from 143 without checking how 143 was derived. Both returned PASS against a figure this attempt proves wrong; a gate that locks a number without checking its derivation reports PASS for exactly as long as the derivation stays broken.",
+        "vacuity_floors": "The new gate fails when it reads fewer than 6000 active rows or detects fewer than 200 enumerated runs, so a scan that silently matches nothing cannot be mistaken for a clean corpus."
+    },
+    "test_execution": {
+        "runner": "vendor/bin/phpunit <test-file>",
+        "aggregate": {
+            "tests": 132,
+            "assertions": 1126,
+            "failures": 0,
+            "errors": 0,
+            "result": "PASS"
+        },
+        "files": [
+            {
+                "path": "tests/Unit/MarketData/ClassificationConsistencyGateTest.php",
+                "tests": 8,
+                "assertions": 27,
+                "result": "PASS",
+                "status": "NEW"
+            },
+            {
+                "path": "tests/Unit/MarketData/AliasNamingAndMeaningBoundaryTest.php",
+                "tests": 5,
+                "assertions": 176,
+                "result": "PASS",
+                "status": "NEW"
+            },
+            {
+                "path": "tests/Unit/MarketData/TraceabilityApplicabilityGateTest.php",
+                "tests": 11,
+                "assertions": 23,
+                "result": "PASS",
+                "status": "EXTENDED"
+            },
+            {
+                "path": "tests/Unit/MarketData/ScopeBoundaryCompletionGateTest.php",
+                "tests": 6,
+                "assertions": 16,
+                "result": "PASS",
+                "status": "UPDATED"
+            },
+            {
+                "path": "tests/Unit/MarketData/ScopeProductAndTimeBoundaryTest.php",
+                "tests": 25,
+                "assertions": 582,
+                "result": "PASS",
+                "status": "REGRESSION"
+            },
+            {
+                "path": "tests/Unit/MarketData/DualUseFactAndContractAlignmentTest.php",
+                "tests": 20,
+                "assertions": 84,
+                "result": "PASS",
+                "status": "REGRESSION"
+            },
+            {
+                "path": "tests/Unit/MarketData/TerminologyConflationBoundaryTest.php",
+                "tests": 19,
+                "assertions": 51,
+                "result": "PASS",
+                "status": "REGRESSION"
+            },
+            {
+                "path": "tests/Unit/MarketData/AntiAssumptionClaimBoundaryTest.php",
+                "tests": 15,
+                "assertions": 40,
+                "result": "PASS",
+                "status": "REGRESSION"
+            },
+            {
+                "path": "tests/Unit/MarketData/ActivationClaimAndTerminologyBoundaryTest.php",
+                "tests": 8,
+                "assertions": 38,
+                "result": "PASS",
+                "status": "REGRESSION"
+            },
+            {
+                "path": "tests/Unit/MarketData/ScopeBoundaryAndOrchestrationCompletionTest.php",
+                "tests": 8,
+                "assertions": 73,
+                "result": "PASS",
+                "status": "REGRESSION"
+            },
+            {
+                "path": "tests/Unit/MarketData/TerminologyOwnerVocabularyTest.php",
+                "tests": 7,
+                "assertions": 16,
+                "result": "PASS",
+                "status": "REGRESSION"
+            }
+        ]
+    },
+    "negative_and_fail_closed_proof": {
+        "method": "Every mutation is asserted to have landed before the guard is judged. One mutation in this attempt reported 'guard did not react' while the replacement string had not matched at all; it was re-run with a landing assertion and the guard then failed correctly. That is the second instance of the shape recorded at MD-B01-A002.",
+        "in_suite_mutations": [
+            "MarketDataClassificationConsistencyGate: a REQUIRED member of a normalized-stage run demoted to REFERENCE_ONLY -> MIXED_RUN error",
+            "MarketDataClassificationConsistencyGate: a colon-terminated list introducer promoted to REQUIRED -> REQUIRED_STRUCTURE error",
+            "MarketDataClassificationConsistencyGate: a required bare document reference stripped of its governing predicate_context -> REQUIRED_STRUCTURE error",
+            "MarketDataClassificationConsistencyGate: a 12-row matrix slice -> VACUOUS_SCAN error",
+            "MarketDataTraceabilityApplicabilityGate: an A014 row declaring a predicate parent it does not have -> context mismatch error",
+            "MarketDataTraceabilityApplicabilityGate: an A014 row whose normalized predicate no longer contains its own fragment -> fabrication error",
+            "MarketDataTraceabilityApplicabilityGate: a promoted row demoted back out of the denominator -> required row count error"
+        ],
+        "on_disk_mutations": [
+            "config/market_data.php: canonical key data_usability_field renamed -> MD-S020-R0068 guard failed (landing verified, count=1)",
+            "config/market_data.php: new key eligible_default added -> MD-S020-R0071 guard failed (landing verified, count=1)",
+            "MarketDataReadProductRepository.php: the 'compatibility alias only' marker removed -> MD-S020-R0068 guard failed (landing verified, count=1)",
+            "MarketDataReadProductRepository.php: eligibility_state re-derived from the raw alias instead of data_usable -> MD-S020-R0071 positive-half guard failed (landing verified, count=1)",
+            "docs/market_data: a new document using the alias identifier without repeating data_usable -> the corrected measurement guard failed and named the file"
+        ],
+        "restoration_verified": "All on-disk mutations were restored from pre-mutation copies and the full suite re-executed green."
+    },
+    "finding_correction": {
+        "finding": "F-MD-B01-A003-001",
+        "status_after": "OPEN",
+        "defect_in_the_finding": "The alias-repetition scan was taken on the bare English word `eligible`, not on the compatibility field identifier that MD-S020-R0067 governs.",
+        "published_figure": "10 frozen strategy contracts use `eligible` without repeating its data-usability meaning",
+        "corrected_figure": "1 frozen strategy contract uses the alias identifier without repeating the meaning",
+        "documents_wrongly_named": [
+            "book/Dataset_Seal_and_Freeze_Contract_LOCKED.md — uses 'success-eligible' and 'eligibility snapshot'",
+            "book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md — uses the domain noun 'eligibility'",
+            "book/EOD_Cutoff_and_Finalization_Contract_LOCKED.md — uses 'success-eligible'",
+            "book/Finalize_Lock_And_Pointer_Behavior_LOCKED.md — uses 'promotion-eligible'",
+            "book/Manual_File_Publishability_Policy_LOCKED.md — 'coverage PASS -> eligible for READABLE'",
+            "book/Publication_Lock_And_Replacement_Policy_LOCKED.md — 'not eligible for pointer switch'",
+            "book/Source_Data_Acquisition_Contract_LOCKED.md — retry-diagnostic counts and the eligibility artifact",
+            "ops/Commands_and_Runbook_LOCKED.md — 'eligible non-authoritative artifacts'",
+            "registry/Volume_and_Turnover_Normalization_LOCKED.md — names `eligible` as a prior alias in a cross-reference; it exposes no such field"
+        ],
+        "genuine_remaining_document": "book/CONSUMER_READ_CONTRACT_LOCKED.md, which states `eligible = 1` as a signal that cannot establish freshness and does not repeat that it means data_usable. It is the contract a downstream consumer reads, which is exactly where the boundary contract warns the misreading occurs.",
+        "effect_on_the_block": "None. MD-S020-R0067 stays NOT_ASSESSED and F-MD-B01-A003-001 stays OPEN. What changes is the size of the governance outcome required: one ordered strategy-update step, not ten.",
+        "measurement_is_now_executable": "AliasNamingAndMeaningBoundaryTest pins both the identifier-sense result and the fact that the word-sense scan would flag six documents that never use the alias, so the corrected figure cannot silently revert."
+    },
+    "coverage_effect": {
+        "stage": "MD-B01",
+        "before": "142/143 (99.30%) declared FINAL",
+        "after": "144/207 (69.57%)",
+        "rows_still_not_assessed": 63,
+        "blocked_rule": "MD-S020-R0067",
+        "blocking_finding": "F-MD-B01-A003-001"
+    },
+    "artifact_hashes_sha256": {
+        "docs/market_data/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv": "2d73e229665b7587a3c05dd2e60c28aa23c463e619dd97cbe212f75a533311be",
+        "docs/market_data/development/implementation/tests/MarketDataClassificationConsistencyGate.php": "a48cbd0d2d6c948f323c0b20dbfe5fc13b9eaf647cfdc79997de5e700af5ac69",
+        "docs/market_data/development/implementation/tests/MarketDataClassificationRederivation.php": "5886afdae2c39af3d265696825b71a58fc88335b0d0523e065a917fcaabcc1ac",
+        "tests/Unit/MarketData/ClassificationConsistencyGateTest.php": "bce50f0fca8e61053e20fa15f129188a66f84bddebf8ebb51c91141fe4ba3068",
+        "tests/Unit/MarketData/AliasNamingAndMeaningBoundaryTest.php": "f716a6dac3134b6758c9b2ec554b82f2966835c84789100a25244a012172c22b",
+        "docs/market_data/development/implementation/CI-MD-B01-A014-001_REFERENCE_ONLY_PREDICATE_RE_DERIVATION.md": "bb68d33dbc72938805100c6d935781afbae49acbb6462eb3f42f4d340f50f6ad",
+        "docs/market_data/records/evidence/MD-B01-A014-BL001_WORK_BASELINE_LOCK.json": "3c6decb504c148cd8ccc6fab4df56c881d2973698104252547a1d505512be86a",
+        "docs/market_data/development/findings/F-MD-B01-A014-001_ELIGIBILITY_EXPORT_OMITS_MANDATORY_COLUMNS.md": "c7a91b5a219d2bd5919a918d3c3e35e2de9ea7a5d43b375fbb0e25b69022a5a7",
+        "tests/Unit/MarketData/TraceabilityApplicabilityGateTest.php": "04772c113eead3fe6265c88671c9429633ae80155f3daf4588159d9d6098ce7c",
+        "docs/market_data/development/implementation/tests/MarketDataTraceabilityApplicabilityGate.php": "3f036a3d29772baeae596534086f29c12afbdbf90007128a2b2c7d6a133ef397",
+        "docs/market_data/development/implementation/tests/MarketDataScopeBoundaryCompletionGate.php": "38feea232a5d4091901e49c972dd4a0cfcae6d29996717603b6e8579966e1c4d"
+    },
+    "residue_verdict": {
+        "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_A014_SCOPE",
+        "checked": [
+            "No promoted row was left without a predicate context or a normalized predicate; the applicability gate rejects both.",
+            "No promoted row entered a stage that cannot evidence it; eight rows moved to their proof-owning stages with MD-B01 retained as supporting stage.",
+            "No stale 143 constant remains: both gates and all three gate self-tests were moved and re-executed.",
+            "The re-derivation tool is idempotent; re-running it reports 0 promotions because no mixed run remains in MD-B01.",
+            "Round-trip CSV fidelity was proven byte-identical before the matrix was written, so unchanged rows are unchanged bytes.",
+            "The conflation guard rejected this attempt's own Change Impact Declaration for quoting a forbidden claim, and the document was rewritten rather than exempted."
+        ],
+        "known_residue_out_of_scope": "F-MD-B01-A014-001 records an executable non-conformance in the eligibility evidence export owned by MD-B19. It is deliberately not fixed here because this attempt's Change Impact Declaration excludes runtime mutation and MD-B19 has no baseline."
+    },
+    "open_findings": [
+        "F-MD-B01-A003-001 — OPEN (P2), measurement corrected, still blocks MD-S020-R0067",
+        "F-MD-B01-A001-001 — OPEN, extended with the previously unmeasured exclusion half",
+        "F-MD-B01-A014-001 — OPEN (P2), eligibility evidence export omits three mandatory columns and presents the alias as the sole meaning; owner MD-B19",
+        "F-MD-B01-A008-001 — OPEN, owned by MD-B14, outside this attempt"
+    ],
+    "open_dependencies": [
+        "MD-DEP-0004 — OPEN_NON_BLOCKING, extended: each stage now also resolves its own reference-only classification at entry. 630 reference-only members of mixed-classification runs remain across 18 unopened stages, reported per stage by the new gate."
+    ],
+    "relationship_requirements": {
+        "attempt_predecessor": "MD-B01-A013",
+        "baseline": "MD-B01-A014-BL001",
+        "change_impact": "CI-MD-B01-A014-001",
+        "extends_finding": "F-MD-B01-A001-001",
+        "corrects_finding_measurement": "F-MD-B01-A003-001",
+        "raises_finding": "F-MD-B01-A014-001",
+        "dependency": "MD-DEP-0004"
+    },
+    "exact_resume_point": "Open MD-B01-A015 to prove the 63 remaining NOT_ASSESSED rows of the corrected MD-B01 denominator, beginning with the 62 promoted rows that now carry a normalized predicate and no proof. MD-S020-R0067 stays excluded until an authorised strategy-change process resolves F-MD-B01-A003-001. Do not enter MD-B02 first.",
+    "supersedes": "Nothing. E-MD-B01-A012-001 and E-MD-B01-A013-001 remain immutable and unedited; their figures stay true as issued under the denominator then in force."
+}

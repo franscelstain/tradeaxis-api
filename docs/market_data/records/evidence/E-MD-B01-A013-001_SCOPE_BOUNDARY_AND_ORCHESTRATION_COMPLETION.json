@@ -1,0 +1,194 @@
+{
+    "evidence_id": "E-MD-B01-A013-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A013",
+    "work_id": "MD-B01-A013",
+    "baseline_id": "MD-B01-A013-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B01-A013-001",
+    "issued_at": "2026-08-21T21:12:21+07:00",
+    "title": "Scope, boundary, orchestration, and consumer-profile completion proof",
+    "attempt_outcome": "PARTIAL_BLOCKED — executable A013 scope complete; stage remains open at 142/143",
+    "authority_basis": {
+        "strategy": [
+            "authority/strategy/MARKET_DATA_PLATFORM_EOD_BASELINE.md",
+            "authority/strategy/book/Domain_Boundary_Invariants_LOCKED.md",
+            "authority/strategy/book/Terminology_and_Scope.md",
+            "authority/strategy/book/Activation_State_Machine_LOCKED.md",
+            "authority/strategy/book/Consumer_Profile_And_Decision_Support_Boundary_LOCKED.md"
+        ],
+        "governance": [
+            "authority/governance/STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md",
+            "authority/governance/STAGE_EXECUTION_AND_REWORK_STANDARD.md",
+            "authority/governance/CHANGE_IMPACT_DECLARATION_STANDARD.md",
+            "authority/governance/RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md",
+            "authority/governance/WORK_CORRELATION_AND_RECORD_REGISTRY_STANDARD.md"
+        ],
+        "strategy_bytes_changed": 0,
+        "current_stage_rule_fingerprint_mismatches": 0
+    },
+    "runtime_artifact_boundary": {
+        "classification": "Document, source, and in-repository unit-test proof under section 5 of RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md.",
+        "storage_inspected": false,
+        "storage_mutated": false,
+        "raw_artifact_linkage_claimed": false,
+        "basis": "The scoped predicates concern semantic boundaries, source ownership, and orchestration. No claim depends on generated runtime output under storage/**."
+    },
+    "baseline": {
+        "record": "records/evidence/MD-B01-A013-BL001_WORK_BASELINE_LOCK.json",
+        "issued_before_material_change": true,
+        "pre_change_state": "Final 143-row MD-B01 denominator with 111 current proofs, 31 locally executable rows, and MD-S020-R0067 finding-blocked.",
+        "working_tree_binding": "DIRTY+0A9FBF909F434A2CDC28BC3E1BA1927419F2CF80"
+    },
+    "scope": {
+        "proof_map_count": 31,
+        "rules": [
+            "MD-S001-R0003",
+            "MD-S001-R0069",
+            "MD-S001-R0124",
+            "MD-S001-R0125",
+            "MD-S001-R0151",
+            "MD-S020-R0001",
+            "MD-S020-R0003",
+            "MD-S020-R0006",
+            "MD-S020-R0042",
+            "MD-S020-R0055",
+            "MD-S020-R0065",
+            "MD-S020-R0083",
+            "MD-S020-R0084",
+            "MD-S020-R0085",
+            "MD-S020-R0086",
+            "MD-S020-R0087",
+            "MD-S020-R0107",
+            "MD-S020-R0124",
+            "MD-S020-R0139",
+            "MD-S020-R0152",
+            "MD-S020-R0159",
+            "MD-S020-R0161",
+            "MD-S020-R0170",
+            "MD-S056-R0001",
+            "MD-S056-R0004",
+            "MD-S056-R0008",
+            "MD-S056-R0010",
+            "MD-S056-R0015",
+            "MD-S056-R0016",
+            "MD-S056-R0023",
+            "MD-S056-R0047"
+        ],
+        "excluded_blocked_rule": "MD-S020-R0067",
+        "blocking_finding": "F-MD-B01-A003-001"
+    },
+    "implementation_result": {
+        "runtime_code_changed": false,
+        "strategy_changed": false,
+        "guide_updated": "development/implementation/guides/system/SYSTEM_CONTEXT_AND_DEPENDENCIES.md",
+        "revalidated_surfaces": [
+            "app/Application/MarketData/Services/EligibilityDecisionService.php",
+            "app/Application/MarketData/Services/MarketDataReadinessService.php",
+            "app/Domain/MarketData",
+            "app/Application/MarketData",
+            "app/Infrastructure/MarketData",
+            "app/Infrastructure/Persistence/MarketData/SourceObservationRepository.php"
+        ],
+        "result": "Existing implementation is conformant for the 31 scoped predicates; the canonical guide now states the subordinate scope/consumer-profile boundary without creating a parallel authority role."
+    },
+    "test_execution": {
+        "runner": "php vendor/bin/phpunit <test-file> --colors=never",
+        "semantic_proof_aggregate": {
+            "tests": 163,
+            "assertions": 1131,
+            "failures": 0,
+            "errors": 0,
+            "result": "PASS"
+        },
+        "files": [
+            {"path": "tests/Unit/MarketData/ScopeProductAndTimeBoundaryTest.php", "tests": 25, "assertions": 582, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/DateDrivenCapabilityAndProviderAbstractionTest.php", "tests": 16, "assertions": 52, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/DownstreamConceptSurfaceBoundaryTest.php", "tests": 19, "assertions": 55, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/DualUseFactAndContractAlignmentTest.php", "tests": 20, "assertions": 84, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/TermOwnershipAndPriceProductTest.php", "tests": 13, "assertions": 44, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/ActivationClaimAndTerminologyBoundaryTest.php", "tests": 8, "assertions": 38, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/EligibilityExplainabilityBoundaryTest.php", "tests": 7, "assertions": 20, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/ActualVersusProxyMetricBoundaryTest.php", "tests": 5, "assertions": 10, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/CoverageDormantUniverseTest.php", "tests": 8, "assertions": 16, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/CoverageSilentImprovementBoundaryTest.php", "tests": 11, "assertions": 28, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/AsKnownReplayBoundaryTest.php", "tests": 10, "assertions": 65, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/SourceObservationImmutabilityTest.php", "tests": 6, "assertions": 26, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/ConsumerReadProductAntiBypassTest.php", "tests": 7, "assertions": 38, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/ScopeBoundaryAndOrchestrationCompletionTest.php", "tests": 8, "assertions": 73, "result": "PASS"}
+        ],
+        "proof_map_gate": {
+            "path": "development/implementation/tests/MarketDataScopeBoundaryCompletionGate.php",
+            "phase": "BIND_COMPLETE",
+            "proof_map_rules": 31,
+            "bound_rules": 31,
+            "status": "PASS"
+        },
+        "proof_map_gate_self_test": {
+            "path": "tests/Unit/MarketData/ScopeBoundaryCompletionGateTest.php",
+            "tests": 6,
+            "assertions": 16,
+            "failures": 0,
+            "errors": 0,
+            "result": "PASS"
+        },
+        "applicability_gate": {
+            "path": "development/implementation/tests/MarketDataTraceabilityApplicabilityGate.php",
+            "required_rows": 143,
+            "satisfied": 142,
+            "not_assessed": 1,
+            "transitional": 0,
+            "status": "PASS"
+        }
+    },
+    "negative_and_fail_closed_proof": {
+        "semantic_mutations": 7,
+        "proof_map_and_lifecycle_mutations": 4,
+        "all_mutations_verified_as_applied": true,
+        "all_expected_failures_observed": true,
+        "blocked_rule_advanced_by_mutation": false
+    },
+    "coverage_effect": {
+        "md_b01": {
+            "before": "111/143",
+            "after": "142/143",
+            "mandatory": 139,
+            "conditional_applicable": 4,
+            "not_assessed_after": 1,
+            "blocked_after": 1
+        },
+        "binding": "All 31 rows were bound atomically to E-MD-B01-A013-001; no partial binding is accepted by the gate."
+    },
+    "artifact_hashes_sha256": {
+        "authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv": "7E87A6FB7F08ECB4204C836C2B432C5524DA146C6D17351B3C2160FFAE1C3BBE",
+        "development/implementation/guides/system/SYSTEM_CONTEXT_AND_DEPENDENCIES.md": "4DF9B9D27A04EF8B2A780E06E1282D129376326129AF771772E2302D14E9AEC2",
+        "development/implementation/tests/MarketDataScopeBoundaryCompletionGate.php": "6BCD25AF8BDB9A0D2ED91F2F07D4ADA0FBCC5C93E4232B79B9397D6B802E89C2",
+        "tests/Unit/MarketData/ScopeBoundaryAndOrchestrationCompletionTest.php": "5218066E92EECA8DDE98D6C67E0ABCF7EDBBDD8E64062DFC7DFA641AF9984D03",
+        "tests/Unit/MarketData/ScopeBoundaryCompletionGateTest.php": "D9A6487ACE49020885576AFAF340250E391731261AAD39214B818E6353836E0A",
+        "development/implementation/CI-MD-B01-A013-001_SCOPE_BOUNDARY_AND_ORCHESTRATION_COMPLETION.md": "DE90AA0D27F1FB0057B95ABA7B11273F9E4C4C3BFAFC0432049F43EC4AEF042B"
+    },
+    "residue_verdict": {
+        "attempt_scope": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "missing_proof_map_rows": 0,
+        "partially_bound_rows": 0,
+        "unrestored_mutations": 0,
+        "required_rework_rows": 1,
+        "required_rework_rule": "MD-S020-R0067"
+    },
+    "open_findings": [
+        "F-MD-B01-A003-001 (OPEN; sole MD-B01 coverage block)",
+        "F-MD-B01-A008-001 (OPEN at MD-B14; outside A013)"
+    ],
+    "open_dependencies": [
+        "MD-DEP-0004 (OPEN_NON_BLOCKING; per-stage entry normalization obligation)"
+    ],
+    "relationship_requirements": [
+        "CARRIED_FROM E-MD-B01-A012-001",
+        "DEPENDS_ON F-MD-B01-A003-001"
+    ],
+    "exact_resume_point": "After an authorised strategy-change process resolves F-MD-B01-A003-001, open MD-B01-A014 to rebaseline and revalidate MD-S020-R0067, synchronize current state, and evaluate MD-B01 closure; do not enter MD-B02 first.",
+    "supersedes": null
+}

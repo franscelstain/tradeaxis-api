@@ -4,7 +4,7 @@
 - Severity: `P2`
 - Stage / Attempt / Baseline / Epoch: `MD-B01` / `MD-B01-A008` / `MD-B01-A008-BL001` / `MD-REBASELINE-20260820-001`
 - Owning stage for remediation: `MD-B14` — the indicator dependency manifest is the surface that must carry the role
-- Blocks: `MD-S056-R0019`, `MD-S056-R0020`, `MD-S056-R0021`, `MD-S056-R0022`, `MD-S056-R0129` reaching `SATISFIED`
+- Blocks at proof-owning stage `MD-B14`: `MD-S056-R0019`, `MD-S056-R0020`, `MD-S056-R0021`, `MD-S056-R0022`, `MD-S056-R0024`, `MD-S056-R0129` reaching `SATISFIED`
 
 ## Finding
 
@@ -50,6 +50,6 @@ So `MD-B01` owns the horizon and the obligation, and the indicator owner contrac
 
 ## Remediation
 
-When `MD-B14` opens, the indicator dependency manifest must carry a `horizon_role` for every window in the published field set, drawn from the three locked roles, and a guard must assert that no field enters the baseline set without one. At that point `MD-S056-R0019`–`R0022` and `R0129` become provable, and `MD-S056-R0129` in particular becomes enforceable rather than merely stated.
+When `MD-B14` opens, the indicator dependency manifest must carry a `horizon_role` for every window in the published field set, drawn from the three locked roles, and a guard must assert that no field enters the baseline set without one. At that point `MD-S056-R0019`–`R0022`, `R0024`, and `R0129` become provable, and `MD-S056-R0129` in particular becomes enforceable rather than merely stated.
 
-Until then the five rules remain `NOT_ASSESSED`. They are not claimed on the strength of the roles being derivable — deriving a role is not declaring one, and the contract requires the declaration.
+`MD-B01-A012` normalized all six predicates to `MD-B14` with `MD-B01` retained as a supporting stage. Until remediation, the six rules remain `NOT_ASSESSED`. They are not claimed on the strength of the roles being derivable — deriving a role is not declaring one, and the contract requires the declaration.

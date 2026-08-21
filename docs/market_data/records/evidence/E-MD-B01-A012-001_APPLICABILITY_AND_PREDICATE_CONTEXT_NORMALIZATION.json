@@ -1,0 +1,181 @@
+{
+    "evidence_id": "E-MD-B01-A012-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A012",
+    "work_id": "MD-B01-A012",
+    "baseline_id": "MD-B01-A012-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B01-A012-001",
+    "issued_at": "2026-08-21T20:48:34+07:00",
+    "title": "Explicit applicability, deterministic predicate context, proof-owner revalidation, and semantic-alignment enforcement",
+    "attempt_outcome": "PARTIAL — stage remains open at 111/143",
+    "authority_basis": {
+        "strategy": [
+            "authority/strategy/MARKET_DATA_PLATFORM_EOD_BASELINE.md",
+            "authority/strategy/book/Domain_Boundary_Invariants_LOCKED.md",
+            "authority/strategy/book/Terminology_and_Scope.md"
+        ],
+        "governance_change": "DOC-CHG-20260821-004",
+        "strategy_bytes_changed": 0,
+        "current_stage_rule_fingerprint_mismatches": 0
+    },
+    "runtime_artifact_boundary": {
+        "standard": "RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md (DOC-CHG-20260821-003)",
+        "classification": "Section 5 document and in-repository test work; no externally stored runtime output is claimed.",
+        "storage_inspected": false,
+        "raw_artifact_linkage_claimed": false,
+        "basis": "The proof reads canonical strategy/governance records, active documentation, source/schema/config surfaces, and in-repository tests. Nothing under storage/** is read."
+    },
+    "baseline": {
+        "record": "records/evidence/MD-B01-A012-BL001_WORK_BASELINE_LOCK.json",
+        "issued_before_material_change": true,
+        "pre_change_state": "155 MD-B01 executable rows, all carrying transitional MANDATORY_OR_CONDITIONAL applicability; nominal 110/155 proof state was provisional"
+    },
+    "applicability_and_context_result": {
+        "pre_normalization_rows": 155,
+        "final_md_b01_denominator": 143,
+        "mandatory": 139,
+        "conditional_applicable": 4,
+        "conditional_pending": 0,
+        "conditional_not_applicable": 0,
+        "transitional_remaining": 0,
+        "context_dependent_predicates": 84,
+        "self_contained_predicates": 59,
+        "unknown_or_missing_parent_bindings": 0,
+        "normalized_predicate_gaps": 0
+    },
+    "proof_ownership_result": {
+        "moved_count": 12,
+        "moves": {
+            "MD-B14": [
+                "MD-S056-R0019",
+                "MD-S056-R0020",
+                "MD-S056-R0021",
+                "MD-S056-R0022",
+                "MD-S056-R0024",
+                "MD-S056-R0129"
+            ],
+            "MD-B17": [
+                "MD-S020-R0015",
+                "MD-S020-R0069",
+                "MD-S020-R0070"
+            ],
+            "MD-B18": [
+                "MD-S020-R0014"
+            ],
+            "MD-B19": [
+                "MD-S056-R0042",
+                "MD-S056-R0045"
+            ]
+        },
+        "supporting_stage_retained": "MD-B01"
+    },
+    "prior_proof_revalidation": {
+        "prior_satisfied": 110,
+        "carried_after_current_reexecution": 108,
+        "invalidated": [
+            {
+                "rule_id": "MD-S020-R0014",
+                "prior_evidence": "E-MD-B01-A009-001",
+                "reason": "Existence of an aligned target document did not prove immutable publication, lineage, reproducibility, and replay under the normalized parent predicate.",
+                "new_owner": "MD-B18"
+            },
+            {
+                "rule_id": "MD-S020-R0015",
+                "prior_evidence": "E-MD-B01-A009-001",
+                "reason": "Existence of an aligned target document did not prove explicit readiness/freshness states and fail-safe operations under the normalized parent predicate.",
+                "new_owner": "MD-B17"
+            }
+        ],
+        "immutable_prior_evidence_edited": false
+    },
+    "new_current_proof": {
+        "count": 3,
+        "rules": [
+            "MD-S001-R0155",
+            "MD-S001-R0158",
+            "MD-S056-R0142"
+        ],
+        "implementation_surface": "development/implementation/guides/system/SYSTEM_DATA_PRODUCT_MAP.md",
+        "proof_method": "TraceabilityApplicabilityGateTest::test_current_system_summary_carries_the_three_previously_missing_state_predicates",
+        "negative_proof": "Three independent summary mutations remove the archived-window, non-authority/non-SLA, and owner-precedence predicates; each mutation is verified as applied and rejected."
+    },
+    "test_execution": {
+        "runner": "php vendor/bin/phpunit <test-file> --colors=never",
+        "aggregate": {
+            "tests": 167,
+            "assertions": 1063,
+            "failures": 0,
+            "errors": 0,
+            "result": "PASS"
+        },
+        "files": [
+            {"path": "tests/Unit/MarketData/TraceabilityApplicabilityGateTest.php", "tests": 8, "assertions": 17, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/DualUseFactAndContractAlignmentTest.php", "tests": 20, "assertions": 84, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/SourceObservationImmutabilityTest.php", "tests": 6, "assertions": 26, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/ScopeProductAndTimeBoundaryTest.php", "tests": 25, "assertions": 582, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/DateDrivenCapabilityAndProviderAbstractionTest.php", "tests": 16, "assertions": 52, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/ActivationClaimAndTerminologyBoundaryTest.php", "tests": 8, "assertions": 38, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/AntiAssumptionClaimBoundaryTest.php", "tests": 15, "assertions": 40, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/DownstreamConceptSurfaceBoundaryTest.php", "tests": 19, "assertions": 55, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/TerminologyConflationBoundaryTest.php", "tests": 19, "assertions": 51, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/TermOwnershipAndPriceProductTest.php", "tests": 13, "assertions": 44, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/FactDimensionSeparationAndProductTableTest.php", "tests": 11, "assertions": 36, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/ConsumerReadProductAntiBypassTest.php", "tests": 7, "assertions": 38, "result": "PASS"}
+        ]
+    },
+    "negative_and_anti_vacuity_proof": {
+        "traceability_mutations": 5,
+        "coverage_summary_mutations": 3,
+        "semantic_alignment_mutations": 14,
+        "all_mutations_verified_as_applied": true,
+        "all_expected_failures_observed": true,
+        "controls_or_current_positive_state_passed": true
+    },
+    "coverage_effect": {
+        "md_b01": {
+            "before": "110/155 provisional",
+            "after": "111/143 final for current authority",
+            "not_assessed_after": 32,
+            "unblocked_after": 31,
+            "blocked_after": 1
+        },
+        "global": {
+            "executable_required_universe": 2010,
+            "provisional_denominator": 2009,
+            "current_proven": 111,
+            "conditional_pending": 1,
+            "transitional_rows_in_unopened_stages": 1855,
+            "optional_rows": 54,
+            "status": "PROVISIONAL_OUTSIDE_MD-B01"
+        }
+    },
+    "artifact_hashes_sha256": {
+        "authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv": "9075415A68CA65B311198E87F02028A0240006845BC6E0EC712706CE51AE775E",
+        "development/implementation/tests/MarketDataTraceabilityApplicabilityGate.php": "685D5D93DB77D4A73263AC4E6CE1EE51E4548B19BEB3CEEC762170F5A6740930",
+        "tests/Unit/MarketData/TraceabilityApplicabilityGateTest.php": "BD85FBA62D1922EF0A3BF190F4DF6F86A0D55819DC6EC01A38ACA5A6F924855E",
+        "tests/Unit/MarketData/DualUseFactAndContractAlignmentTest.php": "3C378C3E58DFA30415138D0905FCCB0B90D855FDDA3C5ADEE8E95D0F3E76384D",
+        "development/implementation/guides/system/SYSTEM_DATA_PRODUCT_MAP.md": "53F88DC24149CC53BF97853A1349467CD3B57939510E7D877A98E9790C0A4A34",
+        "development/implementation/CI-MD-B01-A012-001_APPLICABILITY_AND_PREDICATE_CONTEXT_NORMALIZATION.md": "FA59D04F3DAF756127584ED9EC0DADECE41D2D6DB969559E702F4508DB50B887"
+    },
+    "residue_verdict": {
+        "attempt_scope": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "transitional_md_b01_rows": 0,
+        "missing_context_bindings": 0,
+        "unrestored_mutations": 0,
+        "required_rework_rows": 32
+    },
+    "open_findings": [
+        "F-MD-B01-A001-001 (PARTIALLY_RESOLVED; governs unopened-stage entry validation)",
+        "F-MD-B01-A003-001 (OPEN; blocks MD-S020-R0067)",
+        "F-MD-B01-A008-001 (OPEN at MD-B14; blocks six transferred predicates)"
+    ],
+    "open_dependencies": [
+        "MD-DEP-0004 (OPEN_NON_BLOCKING; per-stage applicability/context/ownership entry obligation)"
+    ],
+    "exact_resume_point": "Open MD-B01-A013 against the final 143-row denominator; prove the 31 unblocked rows among the remaining 32 and keep MD-S020-R0067 blocked by F-MD-B01-A003-001 until governed resolution.",
+    "supersedes": null
+}

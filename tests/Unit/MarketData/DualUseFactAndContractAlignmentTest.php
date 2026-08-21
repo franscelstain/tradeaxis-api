@@ -175,6 +175,109 @@ class DualUseFactAndContractAlignmentTest extends TestCase
     }
 
     /**
+     * DOC-CHG-20260821-004 made the parent predicate explicit: the seven named documents must
+     * remain semantically aligned with this owner contract. File existence is necessary but no
+     * longer sufficient. These are the shared boundary predicates each target must actually carry.
+     *
+     * @return array<string,array{path:string,patterns:array<int,string>}>
+     */
+    private function semanticAlignmentRequirements(): array
+    {
+        return [
+            'MD-S020-R0182' => [
+                'path' => 'Terminology_and_Scope.md',
+                'patterns' => [
+                    '/This module remains upstream-only\..*does not promise profit or define watchlist scoring, alpha ranking/is',
+                    '/Eligibility means the upstream data passes.*It is not a buy\/sell signal, alpha approval, ranking preference/is',
+                ],
+            ],
+            'MD-S020-R0183' => [
+                'path' => 'Downstream_Consumer_Read_Model_Contract_LOCKED.md',
+                'patterns' => [
+                    '/Eligibility is an explainable upstream data-usability fact\..*it is not watchlist selection, tradability approval, alpha, ranking/is',
+                    '/Market-data conformance ends.*Watchlist implementation, ranking behavior, strategy metrics, and profitability are outside/is',
+                ],
+            ],
+            'MD-S020-R0184' => [
+                'path' => 'Downstream_Data_Readiness_Guarantee_LOCKED.md',
+                'patterns' => [
+                    '/These conditions are entirely data-facing\..*No candidate count, ranking stability, signal outcome, P&L/is',
+                    '/Job success, row counts, eligibility, or a seal record alone do not imply `READABLE`/i',
+                ],
+            ],
+            'MD-S020-R0185' => [
+                'path' => 'EOD_Eligibility_Snapshot_Contract_LOCKED.md',
+                'patterns' => [
+                    '/It does not encode ranking, alpha, picks, buy\/sell signals, liquidity\/tradability preference, event-avoidance preference, or portfolio policy/i',
+                    '/True does not mean selected, liquid enough for a strategy, ranked, attractive, event-safe under a strategy, or approved for a trade/i',
+                ],
+            ],
+            'MD-S020-R0186' => [
+                'path' => '../registry/Exchange_Market_Structure_Facts_LOCKED.md',
+                'patterns' => [
+                    '/Market-data owns only the first\..*not.*market-data/is',
+                    '/using these facts to score, rank, or filter instruments for tradability.*belongs downstream/is',
+                ],
+            ],
+            'MD-S020-R0187' => [
+                'path' => '../registry/Volume_and_Turnover_Normalization_LOCKED.md',
+                'patterns' => [
+                    '/Exchange lot size belongs to downstream order\/position sizing, not market-data traded-value normalization/i',
+                    '/proxy.*not actual turnover\/traded value/is',
+                ],
+            ],
+            'MD-S020-R0188' => [
+                'path' => '../session_snapshot/Session_Snapshot_Contract_LOCKED.md',
+                'patterns' => [
+                    '/optional, non-streaming upstream artifact/i',
+                    '/must never assume picks, rankings, tradability, portfolio subsets/i',
+                ],
+            ],
+        ];
+    }
+
+    /** @param array<string,string> $overrides rule id => in-memory document contents */
+    private function semanticAlignmentErrors(array $overrides = []): array
+    {
+        $errors = [];
+        foreach ($this->semanticAlignmentRequirements() as $ruleId => $spec) {
+            $contents = $overrides[$ruleId] ?? (string) file_get_contents($this->resolve($spec['path']));
+            foreach ($spec['patterns'] as $index => $pattern) {
+                if (!preg_match($pattern, $contents)) {
+                    $errors[] = $ruleId.'#'.($index + 1);
+                }
+            }
+        }
+
+        return $errors;
+    }
+
+    public function test_each_alignment_target_carries_the_shared_boundary_predicate(): void
+    {
+        $this->assertSame(
+            [],
+            $this->semanticAlignmentErrors(),
+            'MD-S020-R0182..R0188 require semantic alignment; target existence alone is not proof'
+        );
+    }
+
+    public function test_semantic_alignment_guard_fails_closed_when_any_required_relation_is_removed(): void
+    {
+        foreach ($this->semanticAlignmentRequirements() as $ruleId => $spec) {
+            $original = (string) file_get_contents($this->resolve($spec['path']));
+            foreach ($spec['patterns'] as $index => $pattern) {
+                $mutated = preg_replace($pattern, '__SEMANTIC_RELATION_REMOVED__', $original, 1, $count);
+                $this->assertSame(1, $count, $ruleId.' mutation '.($index + 1).' must land before the guard is judged');
+                $this->assertContains(
+                    $ruleId.'#'.($index + 1),
+                    $this->semanticAlignmentErrors([$ruleId => $mutated]),
+                    $ruleId.' semantic alignment mutation '.($index + 1).' must fail closed'
+                );
+            }
+        }
+    }
+
+    /**
      * MD-S020-R0186 and MD-S020-R0187 do not merely name a document — they say what it owns. A target
      * that exists but does not carry the split it is credited with would leave the boundary unowned.
      */

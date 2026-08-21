@@ -1,10 +1,10 @@
 # F-MD-B01-A001-001 — Required-rule sets are not satisfiable as assigned, across 17 of 18 stages
 
 - Status: `PARTIALLY_RESOLVED`
-- Severity: `P0` (both halves remediated for `MD-B01`; other stages validate ownership at entry)
+- Severity: `P0` (predicate, ownership, and exclusion halves remediated for `MD-B01`; other stages validate classification and ownership at entry)
 - Stage / Attempt / Baseline / Epoch: `MD-B01` / `MD-B01-A001` / `MD-B01-A001-BL001` / `MD-REBASELINE-20260820-001`
 - Owning stage for remediation: governance / `MD-B01` revalidation — governance clarification issued as `DOC-CHG-20260821-001`; semantic matrix correction still required
-- Blocks: **nothing currently open.** All 18 stages can reach full required coverage, and `MD-B01` no longer holds rules it cannot prove. Ownership validation becomes an entry obligation for each stage as it opens.
+- Blocks: **63 `NOT_ASSESSED` rows of the corrected `MD-B01` denominator**, 62 of them promoted by `MD-B01-A014` and not yet proven. `MD-B01-A012` performed the successor applicability/context revalidation and moved 12 further predicates whose executable proof belongs to other stages. `MD-S020-R0067` remains separately blocked by `F-MD-B01-A003-001`, not by this assignment defect. Classification and ownership validation remain an entry obligation for each stage as it opens, covering 630 reference-only members still queued across 18 unopened stages.
 - Dependency: `MD-DEP-0004`
 
 > Raised at `MD-B01` and initially scoped to it. A follow-on scan executed at the same attempt showed the same defect across the whole matrix, so the severity is `P0` and the scope is the `MD-B01..MD-B22` track rather than one stage. `E-MD-B01-A001-001` records the stage-scoped measurement it was issued with; the global measurement below supersedes its scope statement.
@@ -129,3 +129,56 @@ The defect was measured before it was corrected: **all 91 strategy documents map
 A keyword classifier was written first and **rejected**: it proposed 41 moves, roughly a third of them wrong — it pulled the boundary-ownership statement and the Weekly Swing horizon to `MD-B17` on the words "read model" and "consumer", and would have moved two rules that already hold valid current proof. Substituting a pattern for the judgement section 4 asks for is the same defect this finding exists to correct, so an explicit hand-verified table was used instead.
 
 `MD-DEP-0004` is downgraded to `OPEN_NON_BLOCKING` and restructured into a per-stage entry obligation: each stage validates its own rule ownership when it opens. It no longer blocks `MD-B01`.
+
+## Successor-governance revalidation — MD-B01-A012
+
+`DOC-CHG-20260821-004` made applicability and deterministic predicate context explicit closure-bearing invariants. `MD-B01-A012` therefore re-entered under baseline `MD-B01-A012-BL001` rather than inheriting the A005 ownership result as sufficient.
+
+The governed normalizer bound 84 context-dependent fragments, classified every current `MD-B01` row explicitly, and moved 12 additional predicates to their actual proof-owning stages. Two previously `SATISFIED` rows (`MD-S020-R0014`, `MD-S020-R0015`) were invalidated because A009 had proved only target-document existence, not the stronger alignment/readiness predicates produced by their parent context. Immutable A009 evidence remains unchanged. The strengthened semantic-alignment suite and traceability gate now fail closed on those distinctions.
+
+This successor result does not reopen this finding as a stage blocker: after the moves, the final `MD-B01` executable denominator is 143 and no remaining row has an executable proof owner in another implementation stage. The other stages still perform the same validation at entry, so the finding and `MD-DEP-0004` remain partially resolved/open non-blocking rather than being declared globally closed.
+
+## The exclusion half, measured at last — MD-B01-A014
+
+This finding states that "the consequence runs both ways: the required set contains rules that cannot be proved, and **excludes rules that both can and should be**." The first half was measured at 210 rows and remediated at `MD-B01-A004`. The second half was never measured. `MD-B01-A014` measured it, and it is live.
+
+### The discriminator was grammatical mood
+
+Section 2 of `STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md` permits reference classification for headings, list introducers, labels, descriptive context, examples, introductory prose, and context-dependent bare fragments. Mood is not on that list, and section 1 states the unit of proof is a semantic predicate.
+
+The matrix nevertheless splits on it. Measured across `MD-B01`'s 473 active rows, **17 enumerated lists carried mixed classification, holding 72 `REFERENCE_ONLY` members whose siblings in the same list were `REQUIRED`.** In each one the kept members are the ones containing a deontic modal:
+
+| List | Required | Reference-only |
+|---|---|---|
+| `Domain_Boundary_Invariants_LOCKED.md` "Boundary invariants", 14 numbered items | 2, 11, 12, 14 | 1, 3–10, 13 |
+| `Terminology_and_Scope.md` "Locked interpretation rules", 19 items | all but item 2 | item 2 |
+| `Terminology_and_Scope.md` "`decision-grade` (LOCKED)", 4 conditions | condition 3 | conditions 1, 2, 4 |
+| `MARKET_DATA_PLATFORM_EOD_BASELINE.md` "Anti-assumption rules", 19 claims | `R0127`–`R0141` | `R0142`–`R0145` |
+
+"Eligibility is not ranking, selection, tradability approval, or alpha approval" carried no proof obligation; "Market-data facts may be inputs to watchlist policy, never outputs of it" did. They are the same class of prohibition in different grammar.
+
+### Three of this finding's own cited examples were never fixed
+
+The five homogeneous-list splits listed above as evidence were checked against the matrix at the `MD-B01-A014` baseline. Three were unchanged:
+
+- `MD-S001-R0099` "Domain ini tetap menjadi owner untuk:" — still one of ten ownership bullets required;
+- `MD-S056-R0053` "Its target minimum outputs are:" — still one of eight required;
+- `MD-S001-R0074` "Untuk jalur default aktif `yahoo_finance`:" — still one of four required.
+
+`MD-B01-A004` promoted 817 children **of the introducers it demoted**. These three introducers were already `REFERENCE_ONLY`, so their children were never in the promotion set. The A004 statement that non-predicate required rows went from 210 to 0 remains true; it measured the demotion direction only, and this finding's other half stayed open behind a number that looked like completion.
+
+### What A014 corrected
+
+72 rows promoted to `REQUIRED` under `CI-MD-B01-A014-001` with evidence `E-MD-B01-A014-001`: 59 bound to a governing parent with a composed normalized predicate, 13 self-contained. Eight moved to their proof-owning stages under section 4. No `SATISFIED` row was demoted and no coverage was manufactured.
+
+**The `MD-B01` denominator moves from 143 — recorded as `FINAL` — to 207, and verified coverage falls from 99.30% to 69.57%.** The direction matters: as at A004, the correction increases the obligation rather than reducing it.
+
+### What is still open
+
+`MarketDataClassificationConsistencyGate` now reports **630 `REFERENCE_ONLY` members of mixed-classification runs across the 18 unopened stages**, largest at `MD-B10` (127), `MD-B14` (65), and `MD-B04` (50). These are not remediated here: deciding classification by meaning is a per-rule judgement, and a keyword classifier was already written and rejected for this at `MD-B01-A005` for proposing roughly a third wrong moves. Substituting a pattern for that judgement is the defect this finding exists to correct.
+
+They are carried as an explicit per-stage `MD-DEP-0004` entry obligation, and the gate now fails closed for any stage on the normalized list, so the backlog is visible per stage rather than implied.
+
+### Do-not-repeat
+
+A remediation that measures one direction of a two-directional defect and reports the measured direction at zero will read as closed. State which direction a number covers, or the unmeasured half inherits the credibility of the measured one.

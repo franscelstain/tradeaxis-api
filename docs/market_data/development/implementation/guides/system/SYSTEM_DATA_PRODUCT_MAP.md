@@ -121,3 +121,10 @@ Untuk active scope, `watchlist` tidak boleh mengganti consumer-facing read-produ
 
 ## Readability rule
 System map ini hanya menunjukkan produk/fact family utama dan pointer owner-nya. Behavior rinci tetap harus dibaca dari file owner yang dirujuk.
+
+## Current-state interpretation
+
+Bagian ini hanya ringkasan current implementation state. Semantic owner tetap [`authority/strategy/book/Terminology_and_Scope.md`](../../../../authority/strategy/book/Terminology_and_Scope.md); bila ringkasan ini berbeda, definisi owner tersebut yang berlaku.
+
+- `2023-01-02` sampai `2025-10-31` adalah archived proof window, bukan dataset end atau current-freshness proof.
+- Historical source-state/internal conformance tidak membuktikan official IDX authority, commercial data SLA, redistribution right, atau achieved `decision-grade` correctness.

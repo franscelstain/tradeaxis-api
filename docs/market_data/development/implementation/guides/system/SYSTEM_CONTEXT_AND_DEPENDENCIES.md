@@ -82,3 +82,16 @@ For downstream consumers, the minimum authoritative intake anchors are:
 - `book/Publication_Current_Pointer_Integrity_Contract_LOCKED.md`
 
 These anchors exist to keep downstream intake single in meaning.
+
+## Scope and consumer-profile boundary
+
+This section is a subordinate implementation summary, not a second semantic owner. The owner is [`authority/strategy/book/Terminology_and_Scope.md`](../../../../authority/strategy/book/Terminology_and_Scope.md), together with [`authority/strategy/book/Domain_Boundary_Invariants_LOCKED.md`](../../../../authority/strategy/book/Domain_Boundary_Invariants_LOCKED.md); if this summary differs, those owner contracts prevail.
+
+- The executable scope is IDX Regular-Market EOD on `Asia/Jakarta`.
+- Watchlist Weekly Swing is the initial consumer profile. Its decision horizon is **5 IDX trading days**, with a practical holding range of **3 to 15 trading days**. It is a scope/prioritization input, never a market-data readiness or completion gate.
+- Market-data readiness is decided only from upstream market facts: correctness or explicit blocking, coverage, provenance, temporal integrity, reproducibility, publication/readability safety, and activation-aware freshness. Ranking, signals, P&L, profitability, and strategy usefulness are downstream outcomes and cannot establish upstream readiness.
+- Market-data facts may flow to watchlist policy as inputs. Ranking, entry/exit, sizing, portfolio, or execution policy may not flow back into source observations, canonicalization, indicators, coverage, data usability, readiness, or publication history.
+- `eligible` is a compatibility alias for upstream `data_usable`, not `strategy_eligible`, tradability permission, ranking, or selection. A blocked result remains present and explainable through an upstream reason code.
+- Actual traded value and a close-times-volume proxy remain distinct factual fields; a proxy must stay explicitly named as a proxy and cannot fill an unavailable actual field.
+- Replay reproduces market-data values, reasons, temporal identity, lineage, and hashes. It does not prove a trading strategy, and it does not produce signal, trade, P&L, or performance conclusions.
+- The term `decision-grade`, its four conditions, and its claim state remain owned by `Terminology_and_Scope.md`. This summary does not assert that the target state has been achieved; in particular, a bounded check that stays silent is not a substitute for correctness or an explicit reason-bearing block.

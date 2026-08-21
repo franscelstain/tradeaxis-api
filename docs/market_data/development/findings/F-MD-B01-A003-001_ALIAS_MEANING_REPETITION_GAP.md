@@ -57,3 +57,38 @@ A governance decision that either schedules the ten ordered strategy-update step
 
 - Independent of `F-MD-B01-A001-001` (`MD-DEP-0004`), which concerns requirement classification rather than document wording.
 - The alias containment half of the boundary — that `eligible` is derived from `data_usable` and reaches no new surface — is proven and recorded under `MD-S020-R0173` in `E-MD-B01-A002-001`.
+
+## Measurement corrected — MD-B01-A014
+
+The count of ten frozen strategy contracts is wrong, and the correction is recorded here rather than by editing the table above, which stands as what this finding was published with.
+
+The scan was taken on the bare English word `eligible`. `MD-S020-R0067` governs the compatibility **field** named `eligible` — the section it sits in is titled "Retirement of the `eligible` alias" and its sibling rules speak of columns, reason codes, config keys, and API fields. The subject of the obligation is therefore the identifier, not the word.
+
+Re-measured on the identifier, across the same active corpus: **24 documents use the alias, and 5 do not repeat the meaning.** Of the ten frozen contracts named above, eight never use the alias at all:
+
+| Document | What it actually contains |
+|---|---|
+| `book/Dataset_Seal_and_Freeze_Contract_LOCKED.md` | `success-eligible` runs; the eligibility snapshot artifact |
+| `book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md` | the domain noun `eligibility` as a gate category |
+| `book/EOD_Cutoff_and_Finalization_Contract_LOCKED.md` | `success-eligible` run state |
+| `book/Finalize_Lock_And_Pointer_Behavior_LOCKED.md` | `promotion-eligible` candidates |
+| `book/Manual_File_Publishability_Policy_LOCKED.md` | "coverage PASS → eligible for `READABLE`" |
+| `book/Publication_Lock_And_Replacement_Policy_LOCKED.md` | "not eligible for pointer switch" |
+| `book/Source_Data_Acquisition_Contract_LOCKED.md` | retry-diagnostic counts; the eligibility artifact |
+| `ops/Commands_and_Runbook_LOCKED.md` | "eligible non-authoritative artifacts" for purge |
+
+`registry/Volume_and_Turnover_Normalization_LOCKED.md` names `eligible` once, as a cross-reference to a prior alias while retiring `dv20_idr`. It exposes no such field, so it is not a contract that uses the alias either.
+
+**One frozen strategy contract genuinely fails: `book/CONSUMER_READ_CONTRACT_LOCKED.md`.** It states `eligible = 1` as a signal that cannot establish freshness, and never repeats that the field means `data_usable`. That is the document this finding already identified as the most consequential — it is the contract a downstream consumer reads, which is exactly where the boundary contract warns the misreading occurs.
+
+### What changes and what does not
+
+`MD-S020-R0067` remains `NOT_ASSESSED` and this finding remains `OPEN`. One frozen contract failing is still a frozen contract failing, and implementation cannot remediate it.
+
+What changes is the size of the required outcome: **one** ordered strategy-update step, not ten. Eight documents were named as defective that are not.
+
+### Do-not-repeat
+
+This finding already carried a measurement note correcting the *repetition* side of the pattern — `data_usable` alone missed the seven documents that state the meaning in prose. The subject side was never checked. Correcting one half of a two-sided scan and publishing the result reads as diligence and is not: both sides of a match have to be right before the number means anything.
+
+The corrected measurement is now executable and pinned, so it cannot silently revert: `AliasNamingAndMeaningBoundaryTest::test_the_alias_meaning_repetition_gap_is_measured_on_the_identifier_not_the_word` asserts the exact five-document result, and `::test_the_word_sense_scan_would_flag_documents_that_never_use_the_alias` asserts that six of the wrongly-named documents contain the word and do not use the alias. Evidence `E-MD-B01-A014-001`.
