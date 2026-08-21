@@ -13,8 +13,8 @@
             "check": "ONE_DOCUMENT_ONE_ROLE",
             "status": "PASS",
             "details": {
-                "physical": 757,
-                "registry": 757,
+                "physical": 764,
+                "registry": 764,
                 "duplicates": [],
                 "missing": [],
                 "extra": []
@@ -32,7 +32,7 @@
             "check": "CURRENT_VERIFICATION_REBASELINE",
             "status": "PASS",
             "details": {
-                "registry": 757,
+                "registry": 764,
                 "missing": [],
                 "legacy_current_proof": []
             }
@@ -99,5 +99,5 @@
             }
         }
     ],
-    "generated_at": "2026-08-21T06:16:16+02:00"
+    "generated_at": "2026-08-21T08:07:48+02:00"
 }

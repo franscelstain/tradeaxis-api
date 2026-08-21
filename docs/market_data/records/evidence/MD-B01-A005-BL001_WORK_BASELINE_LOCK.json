@@ -1,0 +1,36 @@
+{
+    "baseline_id": "MD-B01-A005-BL001",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A005",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260820-001",
+    "strategy_freeze_manifest_sha1": "14CF5BE3AF96D7D0E936C414C1AFA28249243302",
+    "strategy_tree_fingerprint_sha1": "5A08CAD89469EDAF53067D6EBA8B608F13C0F618",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "7990B242A056247E4821F00ACB22060E00D7C21E",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "2BD318991C98575B3C87C8EA58AF71F1AADCBE2E",
+    "source_revision": "3020cd0951cf7ab0ee5fc5b9bd91b3df713f0476",
+    "source_revision_branch": "master",
+    "working_tree": "DIRTY+397727E53C715B5DFA871543CA84D35B99D48A4C",
+    "app_code_fingerprint_sha1": "2F8D3FB7789D1CB991DEEA05A695799C5D64699D",
+    "tests_fingerprint_sha1": "512914EA39544D21B433BD6DF27842DECCF7311F",
+    "schema_config_identity": "schema:EFAC1C8E2438D039BBCC5662389375C661863039;config:AC6603B50E3FDC44C101A10A6CFCDD43491A2870;migrations:E6A74B4422B4292321938BB9A1B582F353107E70",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "PHP 7.4.33 ZTS VC15 x64; PHPUnit 9.6.34; Lumen 8.3.4",
+    "external_dependency_contract_identity": {
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "registered": 4,
+        "open_blocking": [
+            "MD-DEP-0004"
+        ]
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-08-21T07:56:17+02:00",
+    "issuance_note": "Completes MD-DEP-0004: proof-owning stage re-derivation under traceability standard section 4. Issued before any matrix mutation. Binds the post-predicate-correction matrix so the ownership change is diffable against MD-B01-A004 output. Document-only work per RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD section 5; no executed-proof obligation and no storage inspection required."
+}

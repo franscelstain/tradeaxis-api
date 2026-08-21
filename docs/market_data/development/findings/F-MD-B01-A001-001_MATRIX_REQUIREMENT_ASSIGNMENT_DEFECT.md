@@ -1,10 +1,10 @@
 # F-MD-B01-A001-001 — Required-rule sets are not satisfiable as assigned, across 17 of 18 stages
 
 - Status: `PARTIALLY_RESOLVED`
-- Severity: `P0` (predicate half remediated; stage-ownership half open)
+- Severity: `P0` (both halves remediated for `MD-B01`; other stages validate ownership at entry)
 - Stage / Attempt / Baseline / Epoch: `MD-B01` / `MD-B01-A001` / `MD-B01-A001-BL001` / `MD-REBASELINE-20260820-001`
 - Owning stage for remediation: governance / `MD-B01` revalidation — governance clarification issued as `DOC-CHG-20260821-001`; semantic matrix correction still required
-- Blocks: **predicate half no longer blocks** — all 18 stages can now reach full required coverage. The stage-ownership half still blocks any stage holding rules it cannot prove.
+- Blocks: **nothing currently open.** All 18 stages can reach full required coverage, and `MD-B01` no longer holds rules it cannot prove. Ownership validation becomes an entry obligation for each stage as it opens.
 - Dependency: `MD-DEP-0004`
 
 > Raised at `MD-B01` and initially scoped to it. A follow-on scan executed at the same attempt showed the same defect across the whole matrix, so the severity is `P0` and the scope is the `MD-B01..MD-B22` track rather than one stage. `E-MD-B01-A001-001` records the stage-scoped measurement it was issued with; the global measurement below supersedes its scope statement.
@@ -117,3 +117,15 @@ Strategy bytes unchanged; `rule_text`, `rule_fingerprint_sha1`, `strategy_owner`
 ### What remains open
 
 The secondary concern recorded above — proof-owning stage assignment under section 4 — is **not** addressed. `primary_stage` is still derived from the physical document a rule was extracted from rather than from the stage that can close its proof. `MD-DEP-0004` stays `OPEN_BLOCKING`, narrowed to this half, because a stage holding a rule it cannot prove still cannot reach full coverage honestly.
+
+## Secondary concern resolved for MD-B01 — MD-B01-A005
+
+The proof-ownership concern recorded above is addressed for `MD-B01` under `CI-MD-B01-A005-001` with evidence `E-MD-B01-A005-001`.
+
+The defect was measured before it was corrected: **all 91 strategy documents map to exactly one `primary_stage`, and none maps to more than one**, so the field was a pure function of the extraction document with no per-rule differentiation — exactly what section 4 forbids.
+
+15 of `MD-B01`'s 170 required rules moved to the stages that can evidence them: 9 to `MD-B17` (consumer read-path enforcement, including the `MAX(date)` and raw-table prohibitions named in this finding), 3 to `MD-B19` (retention and maintenance), 2 to `MD-B10` (publication immutability and the correction/reseal trail), 1 to `MD-B15` (the 98% delivery-coverage prerequisite). Each keeps `MD-B01` as a supporting stage. `MD-B01` is now `21/155`.
+
+A keyword classifier was written first and **rejected**: it proposed 41 moves, roughly a third of them wrong — it pulled the boundary-ownership statement and the Weekly Swing horizon to `MD-B17` on the words "read model" and "consumer", and would have moved two rules that already hold valid current proof. Substituting a pattern for the judgement section 4 asks for is the same defect this finding exists to correct, so an explicit hand-verified table was used instead.
+
+`MD-DEP-0004` is downgraded to `OPEN_NON_BLOCKING` and restructured into a per-stage entry obligation: each stage validates its own rule ownership when it opens. It no longer blocks `MD-B01`.
