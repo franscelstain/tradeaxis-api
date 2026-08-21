@@ -1,6 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\MarketData\ReadsMarketDataSchema;
 
 /**
  * MD-B01 — the dual-use fact rule, the cross-contract alignment list, and the domain ownership
@@ -25,6 +26,8 @@ use PHPUnit\Framework\TestCase;
  */
 class DualUseFactAndContractAlignmentTest extends TestCase
 {
+    use ReadsMarketDataSchema;
+
     private function root(): string
     {
         return dirname(__DIR__, 3);
@@ -82,12 +85,7 @@ class DualUseFactAndContractAlignmentTest extends TestCase
 
     private function schemaText(): string
     {
-        $text = '';
-        foreach (glob($this->root().'/database/migrations/*.php') as $migration) {
-            $text .= (string) file_get_contents($migration)."\n";
-        }
-
-        return $text;
+        return $this->schemaSurface();
     }
 
     /**

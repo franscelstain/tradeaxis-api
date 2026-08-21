@@ -1,6 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
+use Tests\Support\MarketData\ReadsMarketDataSchema;
 
 /**
  * MD-B01 — the downstream-concept surface boundary.
@@ -19,6 +20,8 @@ use PHPUnit\Framework\TestCase;
  */
 class DownstreamConceptSurfaceBoundaryTest extends TestCase
 {
+    use ReadsMarketDataSchema;
+
     private function root(): string
     {
         return dirname(__DIR__, 3);
@@ -128,20 +131,20 @@ class DownstreamConceptSurfaceBoundaryTest extends TestCase
 
     // ---------- surfaces ----------
 
-    /** @return array<string,string> identifier => label */
+    /**
+     * Every table and column name across the full schema surface — the base SQL the core migration
+     * executes, plus the migrations that extend it. An earlier revision read only the migrations, which
+     * proved this claim over a subset; the identifier set it reaches is now 582 rather than 456.
+     *
+     * @return array<string,string> identifier => label
+     */
     private function schemaIdentifiers(): array
     {
         $out = [];
-        $table = null;
-        foreach (glob($this->root().'/database/migrations/*.php') as $migration) {
-            foreach (file($migration) as $line) {
-                if (preg_match("/Schema::(?:create|table|rename)\(\s*'([a-z0-9_]+)'/", $line, $m)) {
-                    $table = $m[1];
-                    $out[$table] = 'table '.$table;
-                }
-                if ($table !== null && preg_match("/->\s*[a-zA-Z]+\(\s*'([a-z0-9_]+)'/", $line, $m)) {
-                    $out[$m[1]] = 'column '.$table.'.'.$m[1];
-                }
+        foreach ($this->schemaColumnMap() as $table => $columns) {
+            $out[$table] = 'table '.$table;
+            foreach (array_keys($columns) as $column) {
+                $out[$column] = 'column '.$table.'.'.$column;
             }
         }
 

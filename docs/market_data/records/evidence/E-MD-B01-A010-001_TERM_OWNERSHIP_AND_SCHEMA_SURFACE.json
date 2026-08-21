@@ -1,0 +1,282 @@
+{
+    "evidence_id": "E-MD-B01-A010-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A010",
+    "work_id": "MD-B01-A010",
+    "baseline_id": "MD-B01-A010-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B01-A010-001",
+    "issued_at": "2026-08-21T13:55:03+02:00",
+    "title": "MD-S056 term ownership and price-product terminology, with a correction to the schema-reading instrument",
+    "attempt_outcome": "PARTIAL \u2014 stage remains open at 98/155",
+    "runtime_artifact_boundary": {
+        "standard": "RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md (DOC-CHG-20260821-003)",
+        "classification": "Section 5. Document and in-repository test work; no externally-stored runtime output is claimed.",
+        "storage_inspected": false,
+        "raw_artifact_linkage_claimed": false,
+        "basis": "The proof reads the base schema SQL, the migrations, the market-data source tree, configuration, the reason-code seed, and the active document corpus. Nothing under storage/** is read."
+    },
+    "owner_contract": "authority/strategy/book/Terminology_and_Scope.md",
+    "rules_satisfied": {
+        "count": 13,
+        "groups": [
+            {
+                "rules": [
+                    "MD-S056-R0141"
+                ],
+                "obligation": "other documents may use, summarise, and refer to the owned terms but may not redefine, widen, or narrow them",
+                "proof": "TermOwnershipAndPriceProductTest::test_no_active_document_carries_a_competing_definition_of_an_owned_term",
+                "surface": "268 active markdown documents outside frozen strategy and history",
+                "result": "no active document carries a competing definition of any of the twenty owned terms",
+                "method_note": "The contract supplies its own test for a breach: a term with two substantive definitions in two documents. The guard therefore looks for a definition heading followed by a defining sentence, and deliberately does not flag a document that uses the term, assigns it a role, or heads a section with it."
+            },
+            {
+                "rules": [
+                    "MD-S056-R0054",
+                    "MD-S056-R0062"
+                ],
+                "obligation": "the raw source observation is the immutable provider payload with provenance, source and acquisition timestamps, and observation identity, and is not automatically a canonical bar",
+                "proof": "TermOwnershipAndPriceProductTest::test_the_raw_source_observation_surface_carries_provenance_and_identity",
+                "surface": "md_source_observations, 32 columns, against eod_bars as a separate surface",
+                "result": "all four required aspects present and the two surfaces are distinct"
+            },
+            {
+                "rules": [
+                    "MD-S056-R0063",
+                    "MD-S056-R0064"
+                ],
+                "obligation": "RAW and STRUCTURAL_ADJUSTED are declared price products, the second resting on verified versioned corporate-action factors",
+                "proof": "TermOwnershipAndPriceProductTest::test_the_raw_price_product_is_a_product_identity_not_a_provider_payload_synonym and test_structural_adjusted_is_built_only_from_verified_versioned_factors",
+                "surface": "the product declaration surface \u2014 MarketDataScope, AnalyticalProductIdentityService, and configuration \u2014 plus the product/basis columns and the adjustment factor tables",
+                "result": "both products are declared, carried by a product or basis column, and STRUCTURAL_ADJUSTED rests on a versioned factor set"
+            },
+            {
+                "rules": [
+                    "MD-S056-R0065"
+                ],
+                "obligation": "one indicator run binds one explicit versioned basis; provider adj_close must not be a per-row fallback nor mixed with close across one vector",
+                "proof": "TermOwnershipAndPriceProductTest::test_one_indicator_run_binds_one_explicit_basis_and_never_provider_adj_close",
+                "surface": "the price basis selector in IndicatorVectorService, comments stripped",
+                "result": "the selector reads one canonical field and no provider adjusted close participates anywhere in the vector"
+            },
+            {
+                "rules": [
+                    "MD-S056-R0067"
+                ],
+                "obligation": "an unresolved or unverified material factor must quarantine or block through eligibility; a price anomaly alone is not permission to adjust history",
+                "proof": "TermOwnershipAndPriceProductTest::test_an_unresolved_factor_blocks_rather_than_mutates_history",
+                "surface": "the reason-code registry and the eligibility decision path",
+                "result": "both discontinuity kinds are expressible and both map to a blocking eligibility decision"
+            },
+            {
+                "rules": [
+                    "MD-S056-R0100",
+                    "MD-S056-R0107",
+                    "MD-S056-R0108"
+                ],
+                "obligation": "liquidity published as a named measure with unit and basis; rejected rows stored separately with a reason; indicators deterministic and versioned",
+                "proof": "three separate tests in TermOwnershipAndPriceProductTest",
+                "surface": "the full schema surface across 50 tables",
+                "result": "an explicitly labelled proxy measure with its unit, an invalid-row table carrying invalid_reason_code, and a versioned indicator set"
+            },
+            {
+                "rules": [
+                    "MD-S056-R0033",
+                    "MD-S056-R0096",
+                    "MD-S056-R0098"
+                ],
+                "obligation": "deterministic NULL until warm-up; per-ticker failure recorded and tolerated; dormancy exclusion requires point-in-time evidence",
+                "proof": "three separate tests in TermOwnershipAndPriceProductTest",
+                "surface": "every windowed computation in the indicator engine, the reason-code registry, and the coverage columns on eod_runs",
+                "result": "all three windowed computations guard their warm-up; partial-run reasons exist; and denominator exclusion rests on point-in-time trading-status evidence while the legacy dormancy exclusion is registered inactive and emitted by no runtime path"
+            }
+        ]
+    },
+    "deliberately_not_claimed": [
+        {
+            "rules": [
+                "MD-S056-R0142"
+            ],
+            "reason": "The rule requires a summary of an owned term elsewhere to carry a pointer back to the register and the precedence rule. No active document summarises an owned term meaning; the corpus uses and refers to the terms, which the register explicitly permits. An affirmative obligation with no subject cannot be proven.",
+            "precedent": "Same reasoning applied to MD-S001-R0155 and MD-S001-R0158 at MD-B01-A008.",
+            "becomes_provable_when": "any active document restates what one of the twenty owned terms means."
+        }
+    ],
+    "instrument_correction": {
+        "what_was_wrong": "The deployed schema is not the migrations alone. 2026_03_22_000003_create_market_data_core_schema.php executes db/Database_Schema_MariaDB.sql, which creates 28 tables; the migrations then extend it. The guards written at MD-B01-A007 and MD-B01-A009 read only database/migrations/**.",
+        "effect_on_prior_claims": "Each proved its claim over a subset: 456 identifiers rather than 582.",
+        "were_prior_claims_wrong": "No. Before any change, the base SQL was searched directly for every forbidden downstream concept and every downstream dual-use half. The only matches were three words on one SQL comment line stating the disownment itself, which is the contract being honoured. Zero identifiers breach either rule.",
+        "claims_revalidated": [
+            "MD-S020-R0054",
+            "MD-S020-R0088",
+            "MD-S020-R0096",
+            "MD-S020-R0101",
+            "MD-S020-R0171"
+        ],
+        "fix": "tests/Support/MarketData/ReadsMarketDataSchema.php now holds one definition of the schema surface, used by all three guards. It strips comments from both sources, because a comment stating an obligation is not a surface breaching it.",
+        "proof_the_widening_is_real": "Two mutations were placed in the base SQL where neither guard could previously see them \u2014 a forbidden alpha_score column and a lot_size column. Both now turn their guard red.",
+        "prior_evidence_untouched": "E-MD-B01-A007-001 and E-MD-B01-A009-001 remain valid and are not edited; their proofs were re-executed at this baseline over the widened surface."
+    },
+    "test_execution": {
+        "new_file": {
+            "artifact": "tests/Unit/MarketData/TermOwnershipAndPriceProductTest.php",
+            "tests": 13,
+            "assertions": 41,
+            "result": "PASS"
+        },
+        "new_support": {
+            "artifact": "tests/Support/MarketData/ReadsMarketDataSchema.php",
+            "role": "shared schema surface reader"
+        },
+        "reexecuted_over_widened_surface": [
+            {
+                "artifact": "DownstreamConceptSurfaceBoundaryTest",
+                "tests": 19,
+                "assertions": 55,
+                "result": "PASS",
+                "identifiers": "582, previously 456"
+            },
+            {
+                "artifact": "DualUseFactAndContractAlignmentTest",
+                "tests": 18,
+                "assertions": 55,
+                "result": "PASS"
+            }
+        ]
+    },
+    "anti_vacuity_controls": {
+        "control_one": "test_permitted_uses_of_an_owned_term_are_not_read_as_redefinition asserts a role statement and a constraint section stay clean while a real competing definition is flagged.",
+        "control_two": "Population assertions: more than 200 active documents, at least three windowed computations, and the observation table read before its columns are judged.",
+        "control_three": "The MD-S056-R0033 check enumerates every windowed function rather than looking for one guard anywhere."
+    },
+    "negative_proof": {
+        "method": "Each mutation applied, verified as landed, guard executed, files restored, restoration verified byte-identical. Document injections used a transient probe file so no governed document was edited.",
+        "mutations": [
+            {
+                "id": "M1",
+                "mutation": "a competing definition of an owned term in an active document, MD-S056-R0141",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M2",
+                "mutation": "the rejection reason removed from the invalid-row surface, MD-S056-R0107",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M3",
+                "mutation": "the indicator price basis made to read provider adjusted close, MD-S056-R0065",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M4.1",
+                "mutation": "the warm-up guard removed from averageTurnover, MD-S056-R0033",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M4.2",
+                "mutation": "the warm-up guard removed from windowExtreme, MD-S056-R0033",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M4.3",
+                "mutation": "the warm-up guard removed from movingAverage, MD-S056-R0033",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M5",
+                "mutation": "the dormancy exclusion reason code removed, MD-S056-R0098",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M6",
+                "mutation": "STRUCTURAL_ADJUSTED removed from the product declaration surface, MD-S056-R0064",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M7",
+                "mutation": "WIDENED SURFACE: a forbidden alpha_score column added to the base SQL, previously invisible to the MD-B01-A007 guard",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "M8",
+                "mutation": "WIDENED SURFACE: a lot_size column added to the base SQL, previously invisible to the MD-B01-A009 guard",
+                "expected": "FAIL",
+                "observed": "FAIL"
+            },
+            {
+                "id": "C1",
+                "mutation": "CONTROL: the base SQL comment stating the eligibility disownment",
+                "expected": "PASS",
+                "observed": "PASS"
+            },
+            {
+                "id": "C2",
+                "mutation": "CONTROL: a permitted role statement about an owned term",
+                "expected": "PASS",
+                "observed": "PASS"
+            }
+        ],
+        "summary": {
+            "mutations": 10,
+            "fails_closed": 10,
+            "controls": 2,
+            "controls_ok": 2,
+            "gaps": 0
+        }
+    },
+    "inverted_proof_caught_by_an_existing_guard": {
+        "what_happened": "The first MD-S056-R0098 proof asserted that the dormancy exclusion reason code must be present. That is the opposite of the rule.",
+        "how_it_surfaced": "The full suite failed one additional test that the filtered run could not show: GlobalConvergenceClosureTest::test_no_test_expects_dormancy_to_shrink_the_denominator, an existing guard which permits a test to mention the deprecated code only in an assertion that it never appears.",
+        "the_actual_position": "COVERAGE_DORMANT_TICKERS_EXCLUDED is registered with active flag 0 and described as a deprecated legacy reason whose emission blocks V2 relock. The only runtime mention is a comment in CoverageGateEvaluator stating that emitting it is a defect. The rule itself reads in full: denominator exclusion requires point-in-time evidence that a bar was not expected, such as verified suspension or market status. Dormancy is precisely not such evidence.",
+        "corrected_proof": "The rule is now proven by three things: the denominator carries its own evidence columns, exclusion rests on verified trading-status events, and no market-data runtime path emits the deprecated code \u2014 asserted over reason codes collected from the source tree with comments stripped, so the CoverageGateEvaluator comment honouring the rule is not counted as breaking it.",
+        "why_this_matters": "The claim was applied to the matrix before the full suite ran. Had the suite not been run as a regression control, MD-S056-R0098 would have been recorded SATISFIED on an inverted proof. The existing guard did exactly the job it was written for.",
+        "do_not_repeat": "A rule quoted in part can invert. MD-S056-R0098 was read from its first sentence; its second sentence names the admissible evidence and excludes dormancy by implication. Read the whole rule text before writing the assertion, and run the full suite before treating a filtered PASS as proof."
+    },
+    "guard_defect_found_during_attempt": {
+        "defect": "The first MD-S056-R0033 assertion was satisfied by any surviving warm-up guard.",
+        "detail": "The indicator engine has three windowed computations, each with its own guard. Removing the guard from one left the test green, so the assertion proved that some guard existed rather than that the rule held.",
+        "fix": "It now enumerates every function taking a window parameter and requires each to compare available history against its window and return NULL. Re-run per function, all three fail closed.",
+        "how_it_surfaced": "The mutation reported GUARD_DID_NOT_REACT. The same mutation had earlier reported NO_OP twice because the pattern could not span the inner parentheses in the real condition. Judging the guard on either run would have been wrong in opposite directions; the standing rule that a mutation must be verified as landed before its verdict is read is what separated the two.",
+        "family": "This is the guard-satisfied-by-a-survivor shape, a sibling of the tautological assertion recorded at MD-B00."
+    },
+    "stated_limits": {
+        "redefinition_by_implication": "MD-S056-R0141 is proven against the contract own test of two substantive definitions in two documents. A definition that drifts by implication rather than by statement is not mechanically detectable and is not claimed.",
+        "schema_surface": "The schema surface is the base SQL plus the migrations. Any table created outside both would still be invisible; none exists today."
+    },
+    "coverage_effect": {
+        "md_b01": {
+            "before": "85/155",
+            "after": "98/155",
+            "not_assessed_after": 57
+        },
+        "global": {
+            "before": "85/2010",
+            "after": "98/2010"
+        },
+        "denominator_change": "none; only coverage_status changed on 13 rows"
+    },
+    "change_impact_timing": "CI-MD-B01-A010-001 was issued before the matrix mutation and after the guard was mutation-proven.",
+    "residue_verdict": {
+        "md_b01_own_scope": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "basis": "One test file and one support trait added, two existing guards widened, 13 matrix rows advanced. No strategy byte, no runtime code, no schema, no deployed database, no storage artifact, and no immutable record altered. Every file touched by the negative proof was restored and verified."
+    },
+    "open_findings": [
+        "F-MD-B01-A008-001 (P2)",
+        "F-MD-B01-A003-001 (P2)",
+        "F-MD-B00-A001-001 (Class S half)",
+        "F-MD-B00-A001-003 (P3)"
+    ],
+    "supersedes": null
+}
