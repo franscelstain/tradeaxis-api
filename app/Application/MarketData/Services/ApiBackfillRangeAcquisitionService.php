@@ -21,6 +21,8 @@ class ApiBackfillRangeAcquisitionService
         $tradingDates = $this->normalizeDates($tradingDates);
         $windows = $this->splitWindows($warmupStart, $requestedEnd, $this->windowDays());
         $batchId = $context['source_acquisition_batch_id'] ?? $this->makeBatchId($requestedStart, $requestedEnd);
+        $context['source_acquisition_batch_id'] = $batchId;
+        $context['enforce_temporal_mapping'] = true;
         $resume = ! empty($context['resume']);
         $onlyFailed = ! empty($context['only_failed']);
         $checkpointRows = isset($context['source_acquisition_checkpoint']) && is_array($context['source_acquisition_checkpoint'])

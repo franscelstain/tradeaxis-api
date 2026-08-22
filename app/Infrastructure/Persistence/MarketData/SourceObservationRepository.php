@@ -13,6 +13,11 @@ class SourceObservationRepository implements SourceObservationRecorder
     {
         $payload = array_key_exists('payload', $envelope) ? (string) $envelope['payload'] : null;
         $externalIdentity = $payload === null && array_key_exists('payload_hash', $envelope);
+        if ($payload === null && ! $externalIdentity) {
+            throw new \RuntimeException(
+                'SOURCE_OBSERVATION_PAYLOAD_IDENTITY_REQUIRED: capture requires payload bytes or verifiable external identity.'
+            );
+        }
         if ($externalIdentity) {
             $this->assertExternalPayloadIdentity($envelope);
         }
@@ -91,19 +96,173 @@ class SourceObservationRepository implements SourceObservationRecorder
         ];
     }
 
+    public function recordAcceptedRows(array $capture, array $rows, array $rejectedRows = [])
+    {
+        if ($rows === []) {
+            throw new \RuntimeException('SOURCE_OBSERVATION_ACCEPTED_ROWS_REQUIRED: an accepted observation must contain normalized rows.');
+        }
+
+        return DB::transaction(function () use ($capture, $rows, $rejectedRows) {
+            $outcome = $this->recordOutcome($capture, 'ACCEPTED');
+            $comparisonCount = 0;
+            $divergenceCount = 0;
+
+            foreach (array_values($rows) as $index => $row) {
+                $persisted = $this->persistNormalizedRow($capture, $outcome, $row, $index + 1);
+                if ($persisted['comparison_created']) {
+                    $comparisonCount++;
+                }
+                if ($persisted['divergence_created']) {
+                    $divergenceCount++;
+                }
+            }
+            foreach (array_values($rejectedRows) as $index => $row) {
+                $this->persistRejectedRow($capture, $outcome, $row, $index + 1);
+            }
+
+            return $outcome + [
+                'normalized_row_count' => count($rows),
+                'comparison_count' => $comparisonCount,
+                'divergence_finding_count' => $divergenceCount,
+                'rejected_row_count' => count($rejectedRows),
+            ];
+        });
+    }
+
+    public function recordRejectedRows(array $capture, array $rejectedRows, $reasonCode)
+    {
+        if ($rejectedRows === []) {
+            throw new \RuntimeException('SOURCE_OBSERVATION_REJECTED_ROWS_REQUIRED: row rejection evidence cannot be empty.');
+        }
+
+        return DB::transaction(function () use ($capture, $rejectedRows, $reasonCode) {
+            $outcome = $this->recordOutcome($capture, 'REJECTED', $reasonCode);
+            foreach (array_values($rejectedRows) as $index => $row) {
+                $this->persistRejectedRow($capture, $outcome, $row, $index + 1);
+            }
+
+            return $outcome + ['rejected_row_count' => count($rejectedRows)];
+        });
+    }
+
     public function recordTransportFailure(array $envelope, $reasonCode)
     {
+        $envelope['content_type'] = 'application/vnd.tradeaxis.source-transport-failure+json';
+        $envelope['payload'] = json_encode([
+            'observation_type' => 'TRANSPORT_FAILURE',
+            'reason_code' => strtoupper((string) $reasonCode),
+            'requested_trade_date' => $envelope['requested_trade_date'] ?? ($envelope['trade_date'] ?? null),
+            'requested_start_date' => $envelope['requested_start_date'] ?? ($envelope['source_window_start'] ?? null),
+            'requested_end_date' => $envelope['requested_end_date'] ?? ($envelope['source_window_end'] ?? null),
+            'sanitized_request_identity' => $this->redactSensitiveText((string) ($envelope['sanitized_request_identity'] ?? 'unavailable')),
+        ], JSON_UNESCAPED_SLASHES);
         $capture = $this->capture($envelope);
 
         return $this->recordOutcome($capture, 'FAILED', $reasonCode);
     }
 
-    public function existsAccepted($observationId)
+    public function existsAccepted($observationId, $sourceRowRef = null)
     {
-        return DB::table('md_source_observations')
+        $outcome = DB::table('md_source_observations')
             ->where('source_observation_id', $observationId)
             ->whereIn('outcome_state', ['ACCEPTED', 'NORMALIZED'])
-            ->exists();
+            ->first();
+        if (! $outcome || empty($outcome->parent_observation_id)) {
+            return false;
+        }
+
+        $capture = DB::table('md_source_observations')
+            ->where('source_observation_id', (int) $outcome->parent_observation_id)
+            ->where('outcome_state', 'CAPTURED')
+            ->first();
+        if (! $capture) {
+            return false;
+        }
+
+        $hash = strtolower((string) $capture->payload_hash);
+        $schema = strtolower((string) $capture->schema_fingerprint);
+        $hasExecutionIdentity = ! empty($capture->run_id) || ! empty($capture->acquisition_batch_id);
+        $normalizedRows = DB::table('md_source_observation_rows')
+            ->where('source_observation_id', (int) $outcome->source_observation_id);
+        $identityBindings = DB::table('md_source_observation_identity_bindings')
+            ->where('source_observation_id', (int) $outcome->source_observation_id);
+        if ($sourceRowRef !== null) {
+            $normalizedRows->where('source_row_ref', (string) $sourceRowRef);
+            $rowIds = $normalizedRows->pluck('source_observation_row_id')->all();
+            $identityBindings->whereIn('source_observation_row_id', $rowIds);
+        }
+        $normalizedRowCount = $normalizedRows->count();
+        $identityBindingCount = $identityBindings->count();
+        $hasNormalizedRows = $normalizedRowCount > 0;
+
+        return $hasExecutionIdentity
+            && $hasNormalizedRows
+            && $identityBindingCount === $normalizedRowCount
+            && ! empty($capture->attempt_uid)
+            && ! empty($capture->requested_trade_date)
+            && ! empty($capture->source_mode)
+            && ! empty($capture->source_name)
+            && ! empty($capture->sanitized_request_identity)
+            && ! empty($capture->acquired_at)
+            && ! empty($capture->adapter_version)
+            && preg_match('/^[a-f0-9]{64}$/', $hash) === 1
+            && preg_match('/^[a-f0-9]{64}$/', $schema) === 1
+            && (int) $capture->payload_byte_length > 0
+            && (string) $capture->payload_ref === 'sha256:'.$hash
+            && strtolower((string) $outcome->payload_hash) === $hash
+            && strtolower((string) $outcome->schema_fingerprint) === $schema;
+    }
+
+    public function bindResolvedIdentity($observationId, $sourceRowRef, array $identity)
+    {
+        foreach (['listing_id', 'trade_date'] as $field) {
+            if (empty($identity[$field])) {
+                throw new \RuntimeException('SOURCE_OBSERVATION_IDENTITY_BINDING_INVALID: missing '.$field.'.');
+            }
+        }
+
+        $observationRow = DB::table('md_source_observation_rows')
+            ->where('source_observation_id', (int) $observationId)
+            ->where('source_row_ref', (string) $sourceRowRef)
+            ->first();
+        if (! $observationRow) {
+            throw new \RuntimeException('SOURCE_OBSERVATION_ROW_MISSING: normalized observation row cannot be identity-bound.');
+        }
+
+        $mappingRevision = trim((string) ($identity['mapping_revision'] ?? ''));
+        if ($mappingRevision === '') {
+            $mappingRevision = 'IDENTITY-'.strtoupper(substr(hash('sha256', implode('|', [
+                $identity['listing_id'],
+                $identity['listing_symbol_id'] ?? '',
+                $identity['identity_recorded_at'] ?? '',
+                $identity['trade_date'],
+            ])), 0, 32));
+        }
+
+        $binding = [
+            'source_observation_row_id' => (int) $observationRow->source_observation_row_id,
+            'source_observation_id' => (int) $observationId,
+            'listing_id' => (int) $identity['listing_id'],
+            'provider_mapping_id' => ! empty($identity['provider_mapping_id']) ? (int) $identity['provider_mapping_id'] : null,
+            'mapping_revision' => $mappingRevision,
+            'effective_trade_date' => (string) $identity['trade_date'],
+            'recorded_at' => Carbon::now(config('market_data.platform.timezone', 'Asia/Jakarta'))->toDateTimeString(),
+        ];
+
+        $existing = DB::table('md_source_observation_identity_bindings')
+            ->where('source_observation_row_id', (int) $observationRow->source_observation_row_id)
+            ->first();
+        if ($existing) {
+            foreach (['source_observation_id', 'listing_id', 'provider_mapping_id', 'mapping_revision', 'effective_trade_date'] as $field) {
+                if ((string) $existing->{$field} !== (string) $binding[$field]) {
+                    throw new \RuntimeException('SOURCE_OBSERVATION_IDENTITY_BINDING_CONFLICT: immutable binding differs for '.$field.'.');
+                }
+            }
+
+            return (int) $existing->source_observation_identity_binding_id;
+        }
+
+        return (int) DB::table('md_source_observation_identity_bindings')->insertGetId($binding);
     }
 
     public function manifestHashForRun($runId)
@@ -181,6 +340,8 @@ class SourceObservationRepository implements SourceObservationRecorder
             'parent_observation_id' => $source['parent_observation_id'] ?? null,
             'run_id' => $source['run_id'] ?? null,
             'attempt_uid' => $source['attempt_uid'] ?? (string) Str::uuid(),
+            'acquisition_batch_id' => $source['acquisition_batch_id'] ?? ($source['source_acquisition_batch_id'] ?? null),
+            'acquisition_checkpoint_id' => $source['acquisition_checkpoint_id'] ?? null,
             'requested_trade_date' => $source['requested_trade_date'] ?? ($source['trade_date'] ?? ($source['requested_start_date'] ?? null)),
             'requested_start_date' => $source['requested_start_date'] ?? ($source['source_window_start'] ?? null),
             'requested_end_date' => $source['requested_end_date'] ?? ($source['source_window_end'] ?? null),
@@ -212,6 +373,215 @@ class SourceObservationRepository implements SourceObservationRecorder
             'supersedes_observation_id' => $source['supersedes_observation_id'] ?? null,
             'created_at' => $source['created_at'] ?? Carbon::now(config('market_data.platform.timezone', 'Asia/Jakarta'))->toDateTimeString(),
         ], $overrides);
+    }
+
+    private function persistNormalizedRow(array $capture, array $outcome, array $row, $fallbackIndex)
+    {
+        $instrumentCode = $row['ticker_code'] ?? ($row['benchmark_code'] ?? null);
+        if ($instrumentCode === null || trim((string) $instrumentCode) === '') {
+            throw new \RuntimeException('SOURCE_OBSERVATION_NORMALIZED_ROW_INVALID: missing instrument code.');
+        }
+        foreach (['trade_date', 'open', 'high', 'low', 'close', 'volume'] as $field) {
+            if (! array_key_exists($field, $row) || $row[$field] === null || $row[$field] === '') {
+                throw new \RuntimeException('SOURCE_OBSERVATION_NORMALIZED_ROW_INVALID: missing '.$field.'.');
+            }
+        }
+
+        $values = $this->normalizedOhlcvValues($row);
+        $sourceRowRef = trim((string) ($row['source_row_ref'] ?? 'row:'.$fallbackIndex));
+        if ($sourceRowRef === '') {
+            $sourceRowRef = 'row:'.$fallbackIndex;
+        }
+
+        $provider = $row['provider'] ?? ($capture['provider'] ?? null);
+        $providerSymbol = $row['provider_symbol'] ?? ($capture['provider_symbol'] ?? null);
+        $listingId = ! empty($row['listing_id']) ? (int) $row['listing_id'] : null;
+        $tradeDate = (string) $row['trade_date'];
+        $prior = $this->priorNormalizedObservationRow($listingId, $provider, $providerSymbol, (string) $instrumentCode, $tradeDate, (int) $outcome['source_observation_id']);
+        $now = Carbon::now(config('market_data.platform.timezone', 'Asia/Jakarta'))->toDateTimeString();
+
+        $stored = [
+            'source_observation_id' => (int) $outcome['source_observation_id'],
+            'capture_observation_id' => (int) $capture['source_observation_id'],
+            'source_row_ref' => substr($sourceRowRef, 0, 255),
+            'listing_id' => $listingId,
+            'provider' => $provider,
+            'provider_symbol' => $providerSymbol,
+            'provider_mapping_id' => ! empty($row['provider_mapping_id']) ? (int) $row['provider_mapping_id'] : null,
+            'mapping_revision' => $row['mapping_revision'] ?? ($capture['mapping_revision'] ?? null),
+            'ticker_code' => Str::upper(trim((string) $instrumentCode)),
+            'trade_date' => $tradeDate,
+            'source_timestamp' => $row['source_timestamp'] ?? ($row['captured_at'] ?? ($capture['source_timestamp'] ?? null)),
+            'open_value' => $values['open'],
+            'high_value' => $values['high'],
+            'low_value' => $values['low'],
+            'close_value' => $values['close'],
+            'volume_value' => $values['volume'],
+            'adj_close_value' => $values['adj_close'],
+            'row_fingerprint' => hash('sha256', json_encode([
+                $listingId, $provider, $providerSymbol, $tradeDate, $values,
+            ], JSON_UNESCAPED_SLASHES)),
+            'created_at' => $now,
+        ];
+        $rowId = (int) DB::table('md_source_observation_rows')->insertGetId($stored);
+
+        if (! $prior) {
+            return ['comparison_created' => false, 'divergence_created' => false];
+        }
+
+        $current = (object) ($stored + ['source_observation_row_id' => $rowId]);
+        $this->persistRevisionComparison($prior, $current, $now);
+
+        return [
+            'comparison_created' => true,
+            'divergence_created' => (string) $prior->row_fingerprint !== (string) $current->row_fingerprint,
+        ];
+    }
+
+    private function persistRejectedRow(array $capture, array $outcome, array $row, $fallbackIndex)
+    {
+        $instrumentCode = Str::upper(trim((string) ($row['ticker_code'] ?? ($row['benchmark_code'] ?? 'UNKNOWN'))));
+        $tradeDate = (string) ($row['trade_date'] ?? ($capture['requested_trade_date'] ?? ''));
+        $reasonCode = strtoupper(trim((string) ($row['invalid_reason_code'] ?? 'BAR_INVALID_SOURCE_ROW')));
+        $sourceRowRef = trim((string) ($row['source_row_ref'] ?? 'rejected-row:'.$fallbackIndex));
+        if ($tradeDate === '' || $reasonCode === '') {
+            throw new \RuntimeException('SOURCE_OBSERVATION_REJECTED_ROW_INVALID: trade date and reason are required.');
+        }
+
+        DB::table('md_source_observation_rejected_rows')->insert([
+            'source_observation_id' => (int) $outcome['source_observation_id'],
+            'capture_observation_id' => (int) $capture['source_observation_id'],
+            'source_row_ref' => substr($sourceRowRef, 0, 255),
+            'instrument_code' => $instrumentCode === '' ? 'UNKNOWN' : $instrumentCode,
+            'provider_symbol' => $row['provider_symbol'] ?? ($capture['provider_symbol'] ?? null),
+            'trade_date' => $tradeDate,
+            'open_value' => $this->nullableObservedValue($row['open'] ?? null),
+            'high_value' => $this->nullableObservedValue($row['high'] ?? null),
+            'low_value' => $this->nullableObservedValue($row['low'] ?? null),
+            'close_value' => $this->nullableObservedValue($row['close'] ?? null),
+            'volume_value' => $this->nullableObservedValue($row['volume'] ?? null),
+            'adj_close_value' => $this->nullableObservedValue($row['adj_close'] ?? null),
+            'reason_code' => substr($reasonCode, 0, 64),
+            'reason_note' => substr((string) ($row['invalid_note'] ?? 'Provider row failed normalized OHLCV validation.'), 0, 255),
+            'created_at' => Carbon::now(config('market_data.platform.timezone', 'Asia/Jakarta'))->toDateTimeString(),
+        ]);
+    }
+
+    private function nullableObservedValue($value)
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if (is_scalar($value)) {
+            return substr((string) $value, 0, 64);
+        }
+
+        return substr((string) json_encode($value, JSON_UNESCAPED_SLASHES), 0, 64);
+    }
+
+    private function priorNormalizedObservationRow($listingId, $provider, $providerSymbol, $tickerCode, $tradeDate, $currentObservationId)
+    {
+        $query = DB::table('md_source_observation_rows')
+            ->where('trade_date', $tradeDate)
+            ->where('source_observation_id', '<>', $currentObservationId);
+
+        if ($listingId !== null) {
+            $query->where('listing_id', $listingId);
+        } else {
+            $query->whereNull('listing_id')
+                ->where('provider', $provider)
+                ->where('provider_symbol', $providerSymbol)
+                ->where('ticker_code', Str::upper(trim($tickerCode)));
+        }
+
+        return $query->orderByDesc('source_observation_row_id')->first();
+    }
+
+    private function persistRevisionComparison($prior, $current, $now)
+    {
+        $priorValues = $this->storedOhlcvValues($prior);
+        $currentValues = $this->storedOhlcvValues($current);
+        $differing = [];
+        $deltas = [];
+        foreach (array_keys($priorValues) as $field) {
+            if ($priorValues[$field] !== $currentValues[$field]) {
+                $differing[] = $field;
+                $deltas[$field] = $this->numericDelta($priorValues[$field], $currentValues[$field]);
+            }
+        }
+
+        $isDivergent = $differing !== [];
+        $comparisonUid = hash('sha256', implode('|', [
+            $prior->source_observation_row_id,
+            $current->source_observation_row_id,
+            $prior->row_fingerprint,
+            $current->row_fingerprint,
+        ]));
+
+        DB::table('md_source_observation_revision_comparisons')->insert([
+            'comparison_uid' => $comparisonUid,
+            'prior_source_observation_row_id' => (int) $prior->source_observation_row_id,
+            'current_source_observation_row_id' => (int) $current->source_observation_row_id,
+            'prior_source_observation_id' => (int) $prior->source_observation_id,
+            'current_source_observation_id' => (int) $current->source_observation_id,
+            'listing_id' => $current->listing_id !== null ? (int) $current->listing_id : null,
+            'provider' => $current->provider,
+            'provider_symbol' => $current->provider_symbol,
+            'ticker_code' => $current->ticker_code,
+            'trade_date' => $current->trade_date,
+            'comparison_state' => $isDivergent ? 'OPEN_DIVERGENCE' : 'CONFIRMED_SAME',
+            'divergence_finding_uid' => $isDivergent ? 'MD-SOURCE-DIV-'.strtoupper(substr($comparisonUid, 0, 32)) : null,
+            'finding_state' => $isDivergent ? 'OPEN' : 'NOT_APPLICABLE',
+            'differing_fields_json' => $isDivergent ? json_encode($differing) : null,
+            'prior_values_json' => json_encode($priorValues, JSON_UNESCAPED_SLASHES),
+            'current_values_json' => json_encode($currentValues, JSON_UNESCAPED_SLASHES),
+            'value_deltas_json' => json_encode($deltas, JSON_UNESCAPED_SLASHES),
+            'created_at' => $now,
+        ]);
+    }
+
+    private function normalizedOhlcvValues(array $row)
+    {
+        $values = [];
+        foreach (['open', 'high', 'low', 'close', 'volume'] as $field) {
+            $values[$field] = $this->normalizeNumericValue($row[$field], $field);
+        }
+        $values['adj_close'] = array_key_exists('adj_close', $row) && $row['adj_close'] !== null && $row['adj_close'] !== ''
+            ? $this->normalizeNumericValue($row['adj_close'], 'adj_close')
+            : null;
+
+        return $values;
+    }
+
+    private function storedOhlcvValues($row)
+    {
+        return [
+            'open' => (string) $row->open_value,
+            'high' => (string) $row->high_value,
+            'low' => (string) $row->low_value,
+            'close' => (string) $row->close_value,
+            'volume' => (string) $row->volume_value,
+            'adj_close' => $row->adj_close_value === null ? null : (string) $row->adj_close_value,
+        ];
+    }
+
+    private function normalizeNumericValue($value, $field)
+    {
+        if (! is_numeric($value)) {
+            throw new \RuntimeException('SOURCE_OBSERVATION_NORMALIZED_ROW_INVALID: '.$field.' is not numeric.');
+        }
+
+        $normalized = rtrim(rtrim(sprintf('%.10F', (float) $value), '0'), '.');
+        return $normalized === '-0' || $normalized === '' ? '0' : $normalized;
+    }
+
+    private function numericDelta($prior, $current)
+    {
+        if ($prior === null || $current === null) {
+            return null;
+        }
+
+        return $this->normalizeNumericValue((float) $current - (float) $prior, 'delta');
     }
 
     private function schemaFingerprint($payload)

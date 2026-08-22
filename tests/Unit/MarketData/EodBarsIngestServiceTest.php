@@ -76,7 +76,17 @@ class EodBarsIngestServiceTest extends TestCase
 
         $apiSource->expects($this->once())
             ->method('fetchOrLoadEodBars')
-            ->with('2026-03-24', 'api', ['BBCA', 'BBRI'])
+            ->with(
+                '2026-03-24',
+                'api',
+                ['BBCA', 'BBRI'],
+                $this->callback(function (array $context) {
+                    return $context['run_id'] === 56
+                        && $context['enforce_temporal_mapping'] === true
+                        && $context['calendar_revision_id'] === 7001
+                        && ! empty($context['calendar_revision_uid']);
+                })
+            )
             ->willReturn([
                 [
                     'ticker_code' => 'BBCA',
@@ -766,6 +776,81 @@ class EodBarsIngestServiceTest extends TestCase
             $this->assertSame(1, $context['invalid_row_count']);
             $this->assertSame(['BAR_TICKER_MAPPING_MISSING' => 1], $context['invalid_reason_summary']);
             $this->assertSame('BAR_TICKER_MAPPING_MISSING', $context['invalid_rows_sample'][0]['invalid_reason_code']);
+        }
+    }
+
+    public function test_conflicting_duplicate_rows_are_quarantined_and_never_resolved_by_latest_capture_time()
+    {
+        $this->bindMarketDataConfig([
+            'market_data' => [
+                'platform' => ['timezone' => 'Asia/Jakarta'],
+                'source' => [
+                    'default_source_name' => 'YAHOO_FINANCE',
+                    'canonicalization_version' => 'eod-canonical-v1',
+                ],
+                'scope' => ['raw_product_code' => 'RAW'],
+            ],
+        ]);
+
+        $localSource = $this->createMock(LocalFileEodBarsAdapter::class);
+        $apiSource = $this->createMock(PublicApiEodBarsAdapter::class);
+        $tickers = $this->createMock(TickerMasterRepository::class);
+        $artifacts = $this->createMock(EodArtifactRepository::class);
+        $publications = $this->createMock(EodPublicationRepository::class);
+        $observations = $this->createMock(SourceObservationRepository::class);
+        $run = new EodRun(['run_id' => 62, 'trade_date_requested' => '2026-06-09']);
+
+        $base = [
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-06-09',
+            'open' => 9000, 'high' => 9100, 'low' => 8950, 'volume' => 1000,
+            'adj_close' => null, 'source_name' => 'YAHOO_FINANCE',
+            'source_observation_persisted' => true,
+            'provider_mapping_id' => 501,
+        ];
+        $sourceRows = [
+            $base + [
+                'close' => 9050, 'source_row_ref' => 'provider:first',
+                'captured_at' => '2026-06-09 17:00:00', 'source_observation_id' => 912,
+            ],
+            $base + [
+                'close' => 9075, 'source_row_ref' => 'provider:later',
+                'captured_at' => '2026-06-09 18:00:00', 'source_observation_id' => 913,
+            ],
+        ];
+
+        $publications->method('findCurrentPublicationForTradeDate')->willReturn(null);
+        $publications->expects($this->never())->method('getOrCreateCandidatePublication');
+        $tickers->method('resolveTickerIdsByCodes')->willReturn(['BBCA' => 1]);
+        $tickers->method('resolveTemporalContextsByCodes')->willReturn([
+            'BBCA' => ['listing_id' => 5001, 'board_code' => 'RG', 'provider_mapping_id' => 501, 'mapping_revision' => 'YF-501'],
+        ]);
+        $observations->method('existsAccepted')->willReturn(true);
+        $artifacts->expects($this->once())
+            ->method('persistInvalidBars')
+            ->with('2026-06-09', 62, $this->callback(function (array $rows) {
+                return count($rows) === 2
+                    && $rows[0]['invalid_reason_code'] === 'BAR_CONFLICTING_SOURCE_ROWS'
+                    && $rows[1]['invalid_reason_code'] === 'BAR_CONFLICTING_SOURCE_ROWS';
+            }));
+        $artifacts->expects($this->never())->method('replaceBars');
+
+        $service = new EodBarsIngestService(
+            $localSource,
+            $apiSource,
+            $tickers,
+            $artifacts,
+            $publications,
+            null,
+            $observations,
+            $this->completedCalendar()
+        );
+
+        try {
+            $service->ingestAcquiredRows($run, '2026-06-09', 'api', $sourceRows, ['source_acquisition_state' => 'SUCCESS']);
+            $this->fail('Conflicting duplicates must not create a canonical winner.');
+        } catch (SourceAcquisitionException $e) {
+            $this->assertSame(0, $e->context()['accepted_row_count']);
+            $this->assertSame(['BAR_CONFLICTING_SOURCE_ROWS' => 2], $e->context()['invalid_reason_summary']);
         }
     }
 

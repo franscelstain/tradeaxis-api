@@ -71,6 +71,7 @@ class BenchmarkProviderSymbolResolverTest extends TestCase
 
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode([
                     'chart' => [
                         'result' => [[

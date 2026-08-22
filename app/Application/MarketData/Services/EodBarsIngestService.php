@@ -46,7 +46,10 @@ class EodBarsIngestService
 
     public function ingest($run, $requestedDate, $sourceMode, $priorCurrentPublication = null)
     {
-        $sourceRows = $this->acquireSourceRows($requestedDate, $sourceMode);
+        $sourceRows = $this->acquireSourceRows($requestedDate, $sourceMode, null, [
+            'run_id' => ! empty($run->run_id) ? (int) $run->run_id : null,
+            'config_snapshot_id' => ! empty($run->config_snapshot_id) ? (int) $run->config_snapshot_id : null,
+        ]);
         $sourceAcquisition = $this->consumeSourceAcquisitionTelemetry($sourceMode);
 
         return $this->ingestAcquiredRows($run, $requestedDate, $sourceMode, $sourceRows, $sourceAcquisition, $priorCurrentPublication);
@@ -60,6 +63,9 @@ class EodBarsIngestService
         $context['calendar_revision_id'] = $calendarContext['calendar_revision_id'];
         $context['calendar_revision_uid'] = $calendarContext['revision_uid'];
         $context['calendar_source_version'] = $calendarContext['source_version'];
+        if ($sourceMode === 'api') {
+            $context['enforce_temporal_mapping'] = true;
+        }
 
         return $this->fetchSourceRows($requestedDate, $sourceMode, $tickerCodes, $context);
     }
@@ -120,6 +126,7 @@ class EodBarsIngestService
 
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
         $deduped = [];
+        $conflictingDuplicateKeys = [];
         $duplicateLosers = [];
         $invalidRows = [];
         foreach ($sourceRows as $row) {
@@ -141,10 +148,51 @@ class EodBarsIngestService
                 continue;
             }
 
+            if (! empty($row['source_observation_id']) && ! empty($row['source_observation_persisted']) && $identity !== null) {
+                $this->observations->bindResolvedIdentity(
+                    (int) $row['source_observation_id'],
+                    (string) ($row['source_row_ref'] ?? ''),
+                    array_merge($identity, [
+                        'ticker_id' => $tickerId,
+                        'trade_date' => (string) ($row['trade_date'] ?? $requestedDate),
+                        'provider_mapping_id' => $row['provider_mapping_id'] ?? ($identity['provider_mapping_id'] ?? null),
+                        'mapping_revision' => $row['mapping_revision'] ?? ($identity['mapping_revision'] ?? null),
+                    ])
+                );
+            }
+
             $key = $row['trade_date'].'|'.$tickerId;
+
+            if (isset($conflictingDuplicateKeys[$key])) {
+                $duplicateLosers[] = $row + [
+                    'invalid_reason_code' => 'BAR_CONFLICTING_SOURCE_ROWS',
+                    'invalid_note' => 'Additional row for an already-conflicting listing/date source set.',
+                    'loser_of_trade_date' => $row['trade_date'],
+                    'loser_of_ticker_id' => $tickerId,
+                ];
+                continue;
+            }
 
             if (! isset($deduped[$key])) {
                 $deduped[$key] = $row;
+                continue;
+            }
+
+            if (! $this->rowsEquivalentForDedup($deduped[$key], $row)) {
+                $duplicateLosers[] = $deduped[$key] + [
+                    'invalid_reason_code' => 'BAR_CONFLICTING_SOURCE_ROWS',
+                    'invalid_note' => 'Conflicting values for the same stable listing/date cannot be resolved by acquisition time.',
+                    'loser_of_trade_date' => $row['trade_date'],
+                    'loser_of_ticker_id' => $tickerId,
+                ];
+                $duplicateLosers[] = $row + [
+                    'invalid_reason_code' => 'BAR_CONFLICTING_SOURCE_ROWS',
+                    'invalid_note' => 'Conflicting values for the same stable listing/date cannot be resolved by acquisition time.',
+                    'loser_of_trade_date' => $row['trade_date'],
+                    'loser_of_ticker_id' => $tickerId,
+                ];
+                unset($deduped[$key]);
+                $conflictingDuplicateKeys[$key] = true;
                 continue;
             }
 
@@ -243,6 +291,7 @@ class EodBarsIngestService
             : $this->consumeSourceAcquisitionTelemetry($sourceMode);
 
         if (count($validRows) === 0) {
+            $this->artifacts->persistInvalidBars($requestedDate, $run->run_id, $invalidRows);
             $context = array_merge($sourceAcquisition, [
                 'source_mode' => $sourceMode,
                 'trade_date' => $requestedDate,
@@ -345,15 +394,21 @@ class EodBarsIngestService
 
         $this->assertSingleDaySourceBoundary($requestedDate, $sourceMode, $sourceRows);
         $tickerMap = $this->tickers->resolveTickerIdsByCodes(array_column($sourceRows, 'ticker_code'));
+        $identityContexts = $this->tickers->resolveTemporalContextsByCodes(array_column($sourceRows, 'ticker_code'), $requestedDate);
+        $configSnapshotId = ! empty($run->config_snapshot_id) ? (int) $run->config_snapshot_id : null;
 
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
         $deduped = [];
+        $conflictingDuplicateKeys = [];
         $duplicateLosers = [];
         $invalidRows = [];
         foreach ($sourceRows as $row) {
             $tickerCode = (string) ($row['ticker_code'] ?? '');
             $tickerId = isset($tickerMap[$tickerCode]) ? $tickerMap[$tickerCode] : null;
             $row['ticker_id'] = $tickerId;
+            $identity = $identityContexts[$tickerCode] ?? null;
+            $row['listing_id'] = $row['listing_id'] ?? ($identity['listing_id'] ?? null);
+            $row['resolved_board_code'] = $identity['board_code'] ?? null;
 
             if ($tickerId === null) {
                 $invalidRows[] = $this->makeInvalidRow(
@@ -366,10 +421,51 @@ class EodBarsIngestService
                 continue;
             }
 
+            if (! empty($row['source_observation_id']) && ! empty($row['source_observation_persisted']) && $identity !== null) {
+                $this->observations->bindResolvedIdentity(
+                    (int) $row['source_observation_id'],
+                    (string) ($row['source_row_ref'] ?? ''),
+                    array_merge($identity, [
+                        'ticker_id' => $tickerId,
+                        'trade_date' => (string) ($row['trade_date'] ?? $requestedDate),
+                        'provider_mapping_id' => $row['provider_mapping_id'] ?? ($identity['provider_mapping_id'] ?? null),
+                        'mapping_revision' => $row['mapping_revision'] ?? ($identity['mapping_revision'] ?? null),
+                    ])
+                );
+            }
+
             $key = $row['trade_date'].'|'.$tickerId;
+
+            if (isset($conflictingDuplicateKeys[$key])) {
+                $duplicateLosers[] = $row + [
+                    'invalid_reason_code' => 'BAR_CONFLICTING_SOURCE_ROWS',
+                    'invalid_note' => 'Additional recovered row for an already-conflicting listing/date source set.',
+                    'loser_of_trade_date' => $row['trade_date'],
+                    'loser_of_ticker_id' => $tickerId,
+                ];
+                continue;
+            }
 
             if (! isset($deduped[$key])) {
                 $deduped[$key] = $row;
+                continue;
+            }
+
+            if (! $this->rowsEquivalentForDedup($deduped[$key], $row)) {
+                $duplicateLosers[] = $deduped[$key] + [
+                    'invalid_reason_code' => 'BAR_CONFLICTING_SOURCE_ROWS',
+                    'invalid_note' => 'Conflicting recovered values cannot be resolved by acquisition time.',
+                    'loser_of_trade_date' => $row['trade_date'],
+                    'loser_of_ticker_id' => $tickerId,
+                ];
+                $duplicateLosers[] = $row + [
+                    'invalid_reason_code' => 'BAR_CONFLICTING_SOURCE_ROWS',
+                    'invalid_note' => 'Conflicting recovered values cannot be resolved by acquisition time.',
+                    'loser_of_trade_date' => $row['trade_date'],
+                    'loser_of_ticker_id' => $tickerId,
+                ];
+                unset($deduped[$key]);
+                $conflictingDuplicateKeys[$key] = true;
                 continue;
             }
 
@@ -391,6 +487,12 @@ class EodBarsIngestService
             $validation = $this->validateCanonicalRow($row, $requestedDate);
 
             if ($validation['valid']) {
+                $lineageRejection = $this->lineageRejectionReason($row);
+                if ($lineageRejection !== null) {
+                    $invalidRows[] = $this->makeInvalidRow($run->run_id, $row, $lineageRejection['reason_code'], $lineageRejection['note'], $now);
+                    continue;
+                }
+
                 $validRows[] = [
                     'trade_date' => $requestedDate,
                     'ticker_id' => $row['ticker_id'],
@@ -399,9 +501,24 @@ class EodBarsIngestService
                     'low' => $row['low'],
                     'close' => $row['close'],
                     'volume' => $row['volume'],
-                    'adj_close' => $row['adj_close'],
+                    'adj_close' => null,
                     'source' => $this->canonicalSourceForRow($row),
                     'run_id' => $run->run_id,
+                    'listing_id' => (int) $row['listing_id'],
+                    'source_observation_id' => (int) $row['source_observation_id'],
+                    'previous_close' => null,
+                    'traded_value_idr_actual' => null,
+                    'trade_count_actual' => null,
+                    'board_code' => $row['resolved_board_code'] ?? null,
+                    'session_code' => 'REGULAR',
+                    'source_timestamp' => $row['source_timestamp'] ?? null,
+                    'acquired_at' => $row['captured_at'] ?? $now,
+                    'canonicalization_version' => (string) config('market_data.source.canonicalization_version'),
+                    'price_product_code' => (string) config('market_data.scope.raw_product_code', 'RAW'),
+                    'quality_state' => 'VALIDATED',
+                    'source_scale_state' => 'UNKNOWN',
+                    'source_scale_assessment_id' => null,
+                    'config_snapshot_id' => $configSnapshotId,
                     'created_at' => $now,
                 ];
                 continue;
@@ -427,6 +544,7 @@ class EodBarsIngestService
             : $this->consumeSourceAcquisitionTelemetry($sourceMode);
 
         if (count($validRows) === 0) {
+            $this->artifacts->persistInvalidBars($requestedDate, $run->run_id, $invalidRows);
             $context = array_merge($sourceAcquisition, [
                 'source_mode' => $sourceMode,
                 'trade_date' => $requestedDate,
@@ -687,7 +805,10 @@ class EodBarsIngestService
             ];
         }
 
-        if (! $this->observations->existsAccepted((int) $row['source_observation_id'])) {
+        if (! $this->observations->existsAccepted(
+            (int) $row['source_observation_id'],
+            (string) ($row['source_row_ref'] ?? '')
+        )) {
             return [
                 'reason_code' => 'BAR_SOURCE_OBSERVATION_NOT_ACCEPTED',
                 'note' => 'Referenced source observation is not in an accepted immutable state.',
@@ -751,17 +872,30 @@ class EodBarsIngestService
 
     private function choosePreferredRow(array $left, array $right)
     {
-        $leftCaptured = Carbon::parse($left['captured_at'])->timestamp;
-        $rightCaptured = Carbon::parse($right['captured_at'])->timestamp;
-
-        if ($leftCaptured !== $rightCaptured) {
-            return $leftCaptured > $rightCaptured ? $left : $right;
-        }
-
         $leftRef = (string) ($left['source_row_ref'] ?? '');
         $rightRef = (string) ($right['source_row_ref'] ?? '');
 
-        return strcmp($leftRef, $rightRef) >= 0 ? $left : $right;
+        return strcmp($leftRef, $rightRef) <= 0 ? $left : $right;
+    }
+
+    private function rowsEquivalentForDedup(array $left, array $right)
+    {
+        foreach (['open', 'high', 'low', 'close', 'volume'] as $field) {
+            if (! array_key_exists($field, $left) || ! array_key_exists($field, $right) || (float) $left[$field] !== (float) $right[$field]) {
+                return false;
+            }
+        }
+
+        $leftAdj = array_key_exists('adj_close', $left) && $left['adj_close'] !== null && $left['adj_close'] !== ''
+            ? (float) $left['adj_close']
+            : null;
+        $rightAdj = array_key_exists('adj_close', $right) && $right['adj_close'] !== null && $right['adj_close'] !== ''
+            ? (float) $right['adj_close']
+            : null;
+
+        return $leftAdj === $rightAdj
+            && (string) ($left['listing_id'] ?? '') === (string) ($right['listing_id'] ?? '')
+            && (string) ($left['provider_mapping_id'] ?? '') === (string) ($right['provider_mapping_id'] ?? '');
     }
 
     private function validateCanonicalRow(array $row, $requestedDate)

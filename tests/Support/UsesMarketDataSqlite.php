@@ -1083,6 +1083,8 @@ trait UsesMarketDataSqlite
             $table->integer('parent_observation_id')->nullable();
             $table->integer('run_id')->nullable();
             $table->string('attempt_uid', 64);
+            $table->string('acquisition_batch_id', 128)->nullable();
+            $table->string('acquisition_checkpoint_id', 128)->nullable();
             $table->date('requested_trade_date');
             $table->date('requested_start_date')->nullable();
             $table->date('requested_end_date')->nullable();
@@ -1117,6 +1119,94 @@ trait UsesMarketDataSqlite
             $table->index(['parent_observation_id', 'outcome_state'], 'idx_md_obs_parent_outcome');
             $table->index(['source_mode', 'requested_start_date', 'requested_end_date'], 'idx_md_obs_mode_range');
             $table->index(['config_snapshot_id', 'mapping_revision'], 'idx_md_obs_config_mapping');
+            $table->index(['acquisition_batch_id', 'acquisition_checkpoint_id'], 'idx_md_obs_acquisition_identity');
+        });
+
+        $schema->create('md_source_observation_rows', function (Blueprint $table) {
+            $table->bigIncrements('source_observation_row_id');
+            $table->integer('source_observation_id');
+            $table->integer('capture_observation_id');
+            $table->string('source_row_ref', 255);
+            $table->integer('listing_id')->nullable();
+            $table->string('provider', 64)->nullable();
+            $table->string('provider_symbol', 128)->nullable();
+            $table->integer('provider_mapping_id')->nullable();
+            $table->string('mapping_revision', 64)->nullable();
+            $table->string('ticker_code', 32);
+            $table->date('trade_date');
+            $table->dateTime('source_timestamp')->nullable();
+            $table->string('open_value', 64);
+            $table->string('high_value', 64);
+            $table->string('low_value', 64);
+            $table->string('close_value', 64);
+            $table->string('volume_value', 64);
+            $table->string('adj_close_value', 64)->nullable();
+            $table->string('row_fingerprint', 64);
+            $table->dateTime('created_at');
+            $table->unique(['source_observation_id', 'source_row_ref'], 'uq_md_obs_row_observation_ref');
+            $table->index(['listing_id', 'trade_date', 'source_observation_row_id'], 'idx_md_obs_row_listing_date');
+            $table->index(['provider', 'provider_symbol', 'trade_date', 'source_observation_row_id'], 'idx_md_obs_row_provider_date');
+        });
+
+        $schema->create('md_source_observation_revision_comparisons', function (Blueprint $table) {
+            $table->bigIncrements('source_observation_comparison_id');
+            $table->string('comparison_uid', 64);
+            $table->integer('prior_source_observation_row_id');
+            $table->integer('current_source_observation_row_id');
+            $table->integer('prior_source_observation_id');
+            $table->integer('current_source_observation_id');
+            $table->integer('listing_id')->nullable();
+            $table->string('provider', 64)->nullable();
+            $table->string('provider_symbol', 128)->nullable();
+            $table->string('ticker_code', 32);
+            $table->date('trade_date');
+            $table->string('comparison_state', 32);
+            $table->string('divergence_finding_uid', 64)->nullable();
+            $table->string('finding_state', 32);
+            $table->text('differing_fields_json')->nullable();
+            $table->text('prior_values_json');
+            $table->text('current_values_json');
+            $table->text('value_deltas_json');
+            $table->dateTime('created_at');
+            $table->unique(['prior_source_observation_row_id', 'current_source_observation_row_id'], 'uq_md_obs_comparison_pair');
+            $table->unique(['comparison_uid'], 'uq_md_obs_comparison_uid');
+            $table->unique(['divergence_finding_uid'], 'uq_md_obs_divergence_finding');
+            $table->index(['listing_id', 'trade_date', 'finding_state'], 'idx_md_obs_comparison_listing_state');
+            $table->index(['comparison_state', 'finding_state'], 'idx_md_obs_comparison_state');
+        });
+
+        $schema->create('md_source_observation_identity_bindings', function (Blueprint $table) {
+            $table->bigIncrements('source_observation_identity_binding_id');
+            $table->integer('source_observation_row_id');
+            $table->integer('source_observation_id');
+            $table->integer('listing_id');
+            $table->integer('provider_mapping_id')->nullable();
+            $table->string('mapping_revision', 64);
+            $table->date('effective_trade_date');
+            $table->dateTime('recorded_at');
+            $table->unique(['source_observation_row_id'], 'uq_md_obs_identity_row');
+            $table->index(['listing_id', 'effective_trade_date'], 'idx_md_obs_identity_listing_date');
+        });
+
+        $schema->create('md_source_observation_rejected_rows', function (Blueprint $table) {
+            $table->bigIncrements('source_observation_rejected_row_id');
+            $table->integer('source_observation_id');
+            $table->integer('capture_observation_id');
+            $table->string('source_row_ref', 255);
+            $table->string('instrument_code', 32);
+            $table->string('provider_symbol', 128)->nullable();
+            $table->date('trade_date');
+            $table->string('open_value', 64)->nullable();
+            $table->string('high_value', 64)->nullable();
+            $table->string('low_value', 64)->nullable();
+            $table->string('close_value', 64)->nullable();
+            $table->string('volume_value', 64)->nullable();
+            $table->string('adj_close_value', 64)->nullable();
+            $table->string('reason_code', 64);
+            $table->string('reason_note', 255);
+            $table->dateTime('created_at');
+            $table->unique(['source_observation_id', 'source_row_ref'], 'uq_md_obs_rejected_row_ref');
+            $table->index(['instrument_code', 'trade_date', 'reason_code'], 'idx_md_obs_rejected_identity');
         });
 
         $schema->create('md_issuers', function (Blueprint $table) {

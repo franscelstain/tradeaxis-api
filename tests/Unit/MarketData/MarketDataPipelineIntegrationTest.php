@@ -561,6 +561,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode(['rows' => [[
                     'ticker_code' => 'BBCA',
                     'trade_date' => '2026-03-20',
@@ -637,6 +638,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode(['rows' => [[
                     'ticker_code' => 'BBCA',
                     'trade_date' => $date,

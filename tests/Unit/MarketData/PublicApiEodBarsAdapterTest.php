@@ -3,6 +3,7 @@
 require_once __DIR__.'/../../Support/InteractsWithMarketDataConfig.php';
 
 use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
+use App\Infrastructure\MarketData\Observation\InMemorySourceObservationRecorder;
 use App\Infrastructure\MarketData\Source\SourceAcquisitionException;
 use PHPUnit\Framework\TestCase;
 
@@ -40,6 +41,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
         $adapter = new PublicApiEodBarsAdapter(function () {
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode([
                     'data' => [
                         'items' => [
@@ -87,6 +89,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
 
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode([
                     'chart' => [
                         'result' => [[
@@ -145,6 +148,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
 
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode([
                     'chart' => [
                         'result' => [[
@@ -209,6 +213,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
 
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode([
                     'chart' => [
                         'result' => [[
@@ -266,6 +271,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
 
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode([
                     'chart' => [
                         'result' => [[
@@ -327,6 +333,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
 
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode([
                     'chart' => [
                         'result' => [[
@@ -396,6 +403,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
         $adapter = new PublicApiEodBarsAdapter(function () {
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => $this->yahooEmptyChartSeriesBody('DUCK.JK'),
             ];
         });
@@ -431,12 +439,14 @@ class PublicApiEodBarsAdapterTest extends TestCase
             if (strpos($url, 'DUCK.JK') !== false) {
                 return [
                     'status' => 200,
+                    'headers' => ['Content-Type' => 'application/json'],
                     'body' => $this->yahooEmptyChartSeriesBody('DUCK.JK'),
                 ];
             }
 
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => $this->yahooOneBarBody(),
             ];
         });
@@ -519,6 +529,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
             }
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode(['rows' => [[
                     'ticker_code' => 'BBRI',
                     'trade_date' => '2026-03-20',
@@ -558,6 +569,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
 
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode(['rows' => [[
                     'ticker_code' => 'BBCA',
                     'trade_date' => '2026-03-20',
@@ -595,6 +607,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
 
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode(['rows' => [[
                     'ticker_code' => 'BBCA',
                     'trade_date' => '2026-03-20',
@@ -728,6 +741,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
         $adapter = new PublicApiEodBarsAdapter(function () {
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode(['data' => ['items' => []]]),
             ];
         });
@@ -743,6 +757,35 @@ class PublicApiEodBarsAdapterTest extends TestCase
             $this->assertSame(0, $context['returned_row_count']);
             $this->assertSame(0, $context['accepted_row_count']);
             $this->assertTrue($context['empty_response_blocked']);
+        }
+    }
+
+    /**
+     * A parseable body does not excuse missing or incompatible transport metadata. This is the
+     * fail-closed guard for HTML/error bodies that happen to contain JSON-shaped text.
+     */
+    public function test_success_status_with_missing_or_incompatible_content_type_is_rejected_before_parse()
+    {
+        foreach ([[], ['Content-Type' => 'text/html; charset=utf-8']] as $headers) {
+            $this->bindMarketDataConfig($this->config([
+                'endpoint_template' => 'https://example.test/eod/{date}',
+                'response_rows_path' => 'data.items',
+            ], 0, 0));
+
+            $adapter = new PublicApiEodBarsAdapter(function () use ($headers) {
+                return [
+                    'status' => 200,
+                    'headers' => $headers,
+                    'body' => json_encode(['data' => ['items' => [['ticker_code' => 'BBCA']]]]),
+                ];
+            });
+
+            try {
+                $adapter->fetchOrLoadEodBars('2026-03-20', 'api');
+                $this->fail('Missing/HTML content type must not reach the configured parser.');
+            } catch (SourceAcquisitionException $e) {
+                $this->assertSame('RUN_SOURCE_RESPONSE_CHANGED', $e->reasonCode());
+            }
         }
     }
 
@@ -815,6 +858,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
 
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode([
                     'chart' => [
                         'result' => [[
@@ -852,6 +896,144 @@ class PublicApiEodBarsAdapterTest extends TestCase
         $this->assertSame(1, $telemetry['failed_ticker_count']);
         $this->assertContains('BAD', $telemetry['failed_ticker_codes']);
         $this->assertSame(400, $telemetry['final_http_status']);
+    }
+
+    public function test_range_response_persists_partial_invalid_row_evidence_instead_of_silently_skipping_it()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'provider' => 'yahoo_finance',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}',
+            'source_name' => 'YAHOO_FINANCE',
+            'yahoo' => ['symbol_suffix' => '.JK', 'range' => '10d', 'interval' => '1d'],
+        ], 0, 0));
+
+        $recorder = new InMemorySourceObservationRecorder();
+        $adapter = new PublicApiEodBarsAdapter(function () {
+            return [
+                'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
+                'body' => json_encode([
+                    'chart' => ['result' => [[
+                        'meta' => ['exchangeTimezoneName' => 'Asia/Jakarta'],
+                        'timestamp' => [
+                            strtotime('2026-05-01 09:00:00 Asia/Jakarta'),
+                            strtotime('2026-05-04 09:00:00 Asia/Jakarta'),
+                        ],
+                        'indicators' => [
+                            'quote' => [[
+                                'open' => [100, 200], 'high' => [110, 210],
+                                'low' => [90, 190], 'close' => [105, null],
+                                'volume' => [1000, 2000],
+                            ]],
+                            'adjclose' => [['adjclose' => [105, null]]],
+                        ],
+                    ]]],
+                ]),
+            ];
+        }, null, null, $recorder);
+
+        $rows = $adapter->fetchOrLoadEodBarsRange(
+            '2026-05-01',
+            '2026-05-04',
+            'api',
+            ['BBCA'],
+            ['2026-05-01', '2026-05-04']
+        );
+
+        $this->assertCount(1, $rows['2026-05-01']);
+        $this->assertCount(0, $rows['2026-05-04']);
+        $accepted = collect($recorder->rows())->firstWhere('outcome_state', 'ACCEPTED');
+        $this->assertCount(1, $accepted['normalized_rejected_rows']);
+        $this->assertSame('BAR_MISSING_REQUIRED_FIELD', $accepted['normalized_rejected_rows'][0]['invalid_reason_code']);
+    }
+
+    public function test_misaligned_quote_arrays_fail_as_schema_change_before_row_acceptance()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'provider' => 'yahoo_finance',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}',
+            'source_name' => 'YAHOO_FINANCE',
+            'yahoo' => ['symbol_suffix' => '.JK', 'range' => '10d', 'interval' => '1d'],
+        ], 0, 0));
+
+        $adapter = new PublicApiEodBarsAdapter(function () {
+            return [
+                'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
+                'body' => json_encode([
+                    'chart' => ['result' => [[
+                        'meta' => ['exchangeTimezoneName' => 'Asia/Jakarta'],
+                        'timestamp' => [strtotime('2026-05-01 09:00:00 Asia/Jakarta')],
+                        'indicators' => ['quote' => [[
+                            'open' => [100], 'high' => [110], 'low' => [90],
+                            'close' => [], 'volume' => [1000],
+                        ]]],
+                    ]]],
+                ]),
+            ];
+        });
+
+        try {
+            $adapter->fetchOrLoadEodBarsRange('2026-05-01', '2026-05-01', 'api', ['BBCA'], ['2026-05-01']);
+            $this->fail('Misaligned quote arrays must fail closed.');
+        } catch (SourceAcquisitionException $e) {
+            $this->assertSame('RUN_SOURCE_RESPONSE_CHANGED', $e->reasonCode());
+        }
+    }
+
+    public function test_response_provider_symbol_mismatch_fails_closed_against_requested_mapping()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'provider' => 'yahoo_finance',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}',
+            'source_name' => 'YAHOO_FINANCE',
+            'yahoo' => ['symbol_suffix' => '.JK', 'range' => '10d', 'interval' => '1d'],
+        ], 0, 0));
+
+        $adapter = new PublicApiEodBarsAdapter(function () {
+            $payload = json_decode($this->yahooOneBarBody(), true);
+            $payload['chart']['result'][0]['meta']['symbol'] = 'BBRI.JK';
+
+            return [
+                'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
+                'body' => json_encode($payload),
+            ];
+        });
+
+        try {
+            $adapter->fetchOrLoadEodBars('2026-05-01', 'api', ['BBCA']);
+            $this->fail('Response symbol mismatch must not be normalized as the requested listing.');
+        } catch (SourceAcquisitionException $e) {
+            $this->assertSame('RUN_SOURCE_RESPONSE_CHANGED', $e->reasonCode());
+        }
+    }
+
+    public function test_active_yahoo_schema_version_must_match_the_released_adapter_contract()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'provider' => 'yahoo_finance',
+            'adapter_version' => 'yahoo_chart_v2',
+            'schema_version' => 'yahoo_chart_schema_unreviewed',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}',
+            'yahoo' => ['symbol_suffix' => '.JK', 'range' => '10d', 'interval' => '1d'],
+        ], 0, 0));
+
+        $requests = 0;
+        $adapter = new PublicApiEodBarsAdapter(function () use (&$requests) {
+            $requests++;
+            return ['status' => 200, 'headers' => ['Content-Type' => 'application/json'], 'body' => $this->yahooOneBarBody()];
+        });
+
+        try {
+            $adapter->fetchOrLoadEodBars('2026-05-01', 'api', ['BBCA']);
+            $this->fail('Unreviewed schema drift must fail before provider transport or normalization.');
+        } catch (SourceAcquisitionException $e) {
+            $this->assertSame('RUN_SOURCE_RESPONSE_CHANGED', $e->reasonCode());
+            $this->assertSame('yahoo_chart_v2', $e->context()['active_adapter_version']);
+            $this->assertSame('yahoo_chart_schema_unreviewed', $e->context()['active_schema_version']);
+            $this->assertSame(0, $requests);
+        }
     }
 
     private function yahooEmptyChartSeriesBody($symbol)

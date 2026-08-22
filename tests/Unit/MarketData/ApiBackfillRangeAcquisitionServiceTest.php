@@ -3,7 +3,9 @@
 require_once __DIR__.'/../../Support/InteractsWithMarketDataConfig.php';
 
 use App\Application\MarketData\Services\ApiBackfillRangeAcquisitionService;
+use App\Infrastructure\MarketData\Source\EquityProviderSymbolResolver;
 use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
+use App\Infrastructure\Persistence\MarketData\TemporalIdentityRepository;
 use PHPUnit\Framework\TestCase;
 
 class ApiBackfillRangeAcquisitionServiceTest extends TestCase
@@ -21,7 +23,7 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
     {
         $this->bindMarketDataConfig($this->config(90));
 
-        $service = new ApiBackfillRangeAcquisitionService(new PublicApiEodBarsAdapter(function () {
+        $service = new ApiBackfillRangeAcquisitionService($this->adapter(function () {
             $this->fail('Plan must not perform HTTP acquisition.');
         }));
 
@@ -37,7 +39,7 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
     {
         $this->bindMarketDataConfig($this->config(3));
 
-        $service = new ApiBackfillRangeAcquisitionService(new PublicApiEodBarsAdapter(function () {
+        $service = new ApiBackfillRangeAcquisitionService($this->adapter(function () {
             $this->fail('Plan must not perform HTTP acquisition.');
         }));
 
@@ -58,11 +60,12 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
         $this->bindMarketDataConfig($this->config(90));
 
         $requestedUrls = [];
-        $adapter = new PublicApiEodBarsAdapter(function ($url) use (&$requestedUrls) {
+        $adapter = $this->adapter(function ($url) use (&$requestedUrls) {
             $requestedUrls[] = $url;
 
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode([
                     'chart' => [
                         'result' => [[
@@ -91,6 +94,8 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
         $this->assertCount(2, $requestedUrls);
         $this->assertCount(2, $result['rows_by_trade_date']['2026-05-01']);
         $this->assertCount(2, $result['rows_by_trade_date']['2026-05-04']);
+        $this->assertSame('TEST-BBCA-2026-05-01', $result['rows_by_trade_date']['2026-05-01'][0]['mapping_revision']);
+        $this->assertSame('TEST-BBCA-2026-05-04', $result['rows_by_trade_date']['2026-05-04'][0]['mapping_revision']);
         $this->assertSame('SUCCESS', $result['date_telemetry']['2026-05-01']['source_acquisition_state']);
         $this->assertSame('range_window', $result['date_telemetry']['2026-05-01']['source_acquisition_mode']);
     }
@@ -101,7 +106,7 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
     {
         $this->bindMarketDataConfig($this->config(90));
 
-        $adapter = new PublicApiEodBarsAdapter(function ($url) {
+        $adapter = $this->adapter(function ($url) {
             if (strpos($url, 'BAD.JK') !== false) {
                 return [
                     'status' => 400,
@@ -111,6 +116,7 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
 
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode([
                     'chart' => [
                         'result' => [[
@@ -146,7 +152,7 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
     {
         $this->bindMarketDataConfig($this->config(90));
 
-        $adapter = new PublicApiEodBarsAdapter(function ($url) {
+        $adapter = $this->adapter(function ($url) {
             if (strpos($url, 'BAD.JK') !== false) {
                 throw new RuntimeException('Timeout while fetching BAD.JK token=SECRET');
             }
@@ -171,7 +177,7 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
     {
         $this->bindMarketDataConfig($this->config(90));
 
-        $adapter = new PublicApiEodBarsAdapter(function ($url) {
+        $adapter = $this->adapter(function ($url) {
             if (strpos($url, 'BAD.JK') !== false) {
                 return [
                     'status' => 400,
@@ -197,7 +203,7 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
     {
         $this->bindMarketDataConfig($this->config(90));
 
-        $adapter = new PublicApiEodBarsAdapter(function ($url) {
+        $adapter = $this->adapter(function ($url) {
             if (strpos($url, 'WBSA.JK') !== false) {
                 return [
                     'status' => 400,
@@ -226,7 +232,7 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
     {
         $this->bindMarketDataConfig($this->config(90));
 
-        $adapter = new PublicApiEodBarsAdapter(function ($url) {
+        $adapter = $this->adapter(function ($url) {
             if (strpos($url, 'DUCK.JK') !== false) {
                 return $this->emptyYahooChartSeriesResponse();
             }
@@ -252,7 +258,7 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
     {
         $this->bindMarketDataConfig($this->config(90));
 
-        $adapter = new PublicApiEodBarsAdapter(function () {
+        $adapter = $this->adapter(function () {
             return $this->oneBarResponse();
         });
 
@@ -286,11 +292,12 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
         $this->bindMarketDataConfig($this->config(90));
 
         $requestedUrls = [];
-        $adapter = new PublicApiEodBarsAdapter(function ($url) use (&$requestedUrls) {
+        $adapter = $this->adapter(function ($url) use (&$requestedUrls) {
             $requestedUrls[] = $url;
 
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode([
                     'chart' => [
                         'result' => [[
@@ -357,11 +364,12 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
         $this->bindMarketDataConfig($this->config(90));
 
         $requestedUrls = [];
-        $adapter = new PublicApiEodBarsAdapter(function ($url) use (&$requestedUrls) {
+        $adapter = $this->adapter(function ($url) use (&$requestedUrls) {
             $requestedUrls[] = $url;
 
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode([
                     'chart' => [
                         'result' => [[
@@ -407,7 +415,7 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
         $this->bindMarketDataConfig($this->config(90));
 
         $requestedUrls = [];
-        $adapter = new PublicApiEodBarsAdapter(function ($url) use (&$requestedUrls) {
+        $adapter = $this->adapter(function ($url) use (&$requestedUrls) {
             $requestedUrls[] = $url;
 
             return $this->oneBarResponse();
@@ -439,7 +447,7 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
     {
         $this->bindMarketDataConfig($this->config(90));
 
-        $adapter = new PublicApiEodBarsAdapter(function ($url) {
+        $adapter = $this->adapter(function ($url) {
             if (strpos($url, 'TLKM.JK') !== false) {
                 return [
                     'status' => 400,
@@ -472,7 +480,7 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
     {
         $this->bindMarketDataConfig($this->config(90));
 
-        $adapter = new PublicApiEodBarsAdapter(function () {
+        $adapter = $this->adapter(function () {
             return [
                 'status' => 400,
                 'body' => '{"chart":{"error":{"code":"Bad Request","description":"WBSA_ONLY"}}}',
@@ -502,7 +510,7 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
     {
         $this->bindMarketDataConfig($this->config(90));
 
-        $adapter = new PublicApiEodBarsAdapter(function ($url) {
+        $adapter = $this->adapter(function ($url) {
             $this->assertStringContainsString('BBRI.JK', $url);
 
             return $this->oneBarResponse();
@@ -554,6 +562,7 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
 
         return [
             'status' => 200,
+            'headers' => ['Content-Type' => 'application/json'],
             'body' => json_encode($payload),
         ];
     }
@@ -562,6 +571,7 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
     {
         return [
             'status' => 200,
+            'headers' => ['Content-Type' => 'application/json'],
             'body' => json_encode([
                 'chart' => [
                     'result' => [[
@@ -579,6 +589,36 @@ class ApiBackfillRangeAcquisitionServiceTest extends TestCase
                 ],
             ]),
         ];
+    }
+
+    private function adapter(callable $fetcher): PublicApiEodBarsAdapter
+    {
+        $identities = $this->getMockBuilder(TemporalIdentityRepository::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['resolveProviderContext'])
+            ->getMock();
+        $identities->method('resolveProviderContext')
+            ->willReturnCallback(function ($tickerCode, $provider, $tradeDate) {
+                $code = strtoupper(trim((string) $tickerCode));
+                $stableId = (int) sprintf('%u', crc32($code));
+
+                return [
+                    'listing_id' => $stableId,
+                    'ticker_id' => $stableId,
+                    'ticker_code' => $code,
+                    'provider' => $provider,
+                    'provider_symbol' => $code.'.JK',
+                    'provider_mapping_id' => $stableId,
+                    'mapping_revision' => 'TEST-'.$code.'-'.$tradeDate,
+                    'listing_symbol_id' => $stableId,
+                    'identity_recorded_at' => $tradeDate.' 00:00:00',
+                ];
+            });
+
+        return new PublicApiEodBarsAdapter(
+            $fetcher,
+            new EquityProviderSymbolResolver($identities)
+        );
     }
 
     private function config($windowDays)

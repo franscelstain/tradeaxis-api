@@ -12,6 +12,10 @@ use Illuminate\Support\Str;
 
 class PublicApiEodBarsAdapter implements ApiEodBarsSource
 {
+    private const YAHOO_ADAPTER_VERSION = 'yahoo_chart_v2';
+
+    private const YAHOO_SCHEMA_VERSION = 'yahoo_chart_schema_v1';
+
     private $fetcher;
     private $lastAcquisitionTelemetry = [];
     private $equityProviderSymbols;
@@ -39,6 +43,7 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
         }
 
         $apiConfig = config('market_data.source.api');
+        $this->assertActiveSchemaContract($apiConfig);
         $urlTemplate = isset($apiConfig['endpoint_template']) ? trim((string) $apiConfig['endpoint_template']) : '';
         if ($urlTemplate === '') {
             throw new SourceAcquisitionException('Source API endpoint template belum dikonfigurasi.', 'RUN_SOURCE_AUTH_ERROR');
@@ -102,6 +107,7 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
         }
 
         $apiConfig = config('market_data.source.api');
+        $this->assertActiveSchemaContract($apiConfig);
         $urlTemplate = isset($apiConfig['endpoint_template']) ? trim((string) $apiConfig['endpoint_template']) : '';
         if ($urlTemplate === '') {
             throw new SourceAcquisitionException('Source API endpoint template belum dikonfigurasi.', 'RUN_SOURCE_AUTH_ERROR');
@@ -122,6 +128,7 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
         }
 
         $apiConfig = config('market_data.source.api');
+        $this->assertActiveSchemaContract($apiConfig);
         if ($this->providerName($apiConfig) !== 'yahoo_finance') {
             throw new SourceAcquisitionException('Benchmark API source currently supports yahoo_finance only.', 'RUN_SOURCE_RESPONSE_CHANGED');
         }
@@ -162,17 +169,29 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
                     'provider_symbol' => $providerSymbol,
                 ];
 
-                $row = $this->parseYahooFinancePayloadForCode(
+                $parsed = $this->parseYahooFinancePayloadRowsForCode(
                     $response['body'],
-                    $tradeDate,
+                    [(string) $tradeDate => true],
                     $benchmarkCode,
                     $response['captured_at'],
                     $apiConfig,
-                    'benchmark'
+                    'benchmark',
+                    $providerSymbol
                 );
+                $row = $parsed['rows'][0] ?? null;
 
                 if ($row === null) {
-                    $this->rejectResponse($response, 'RUN_SOURCE_NO_VALID_DATA');
+                    $rejectedRows = array_map(function (array $invalid) use ($benchmarkCode, $providerSymbol) {
+                        return array_merge($invalid, [
+                            'benchmark_code' => $benchmarkCode,
+                            'provider_symbol' => $providerSymbol,
+                        ]);
+                    }, $parsed['invalid_rows'] ?? []);
+                    if ($rejectedRows !== []) {
+                        $this->rejectResponseRows($response, $rejectedRows, 'RUN_SOURCE_NO_VALID_DATA');
+                    } else {
+                        $this->rejectResponse($response, 'RUN_SOURCE_NO_VALID_DATA');
+                    }
                     $failureTelemetry[] = $lastBenchmarkRequestTelemetry + [
                         'benchmark_code' => $benchmarkCode,
                         'provider_symbol' => $providerSymbol,
@@ -277,9 +296,26 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
                 $lastTickerRequestTelemetry = $telemetry;
                 $requestTelemetry[] = $this->withTickerTelemetry($telemetry, $tickerCode);
 
-                $row = $this->parseYahooFinancePayload($response['body'], $tradeDate, $tickerCode, $response['captured_at'], $apiConfig);
+                $parsed = $this->parseYahooFinancePayloadRowsForCode(
+                    $response['body'],
+                    [(string) $tradeDate => true],
+                    $tickerCode,
+                    $response['captured_at'],
+                    $apiConfig,
+                    'yahoo',
+                    $providerSymbol
+                );
+                $row = $parsed['rows'][0] ?? null;
                 if ($row === null) {
-                    $this->rejectResponse($response, 'RUN_SOURCE_NO_VALID_DATA');
+                    $rejectedRows = array_map(function (array $invalid) use ($providerSymbol) {
+                        $invalid['provider_symbol'] = $providerSymbol;
+                        return $invalid;
+                    }, $parsed['invalid_rows'] ?? []);
+                    if ($rejectedRows !== []) {
+                        $this->rejectResponseRows($response, $rejectedRows, 'RUN_SOURCE_NO_VALID_DATA');
+                    } else {
+                        $this->rejectResponse($response, 'RUN_SOURCE_NO_VALID_DATA');
+                    }
                     $failureTelemetry[] = $this->withTickerTelemetry(array_merge($lastTickerRequestTelemetry, [
                         'final_reason_code' => 'RUN_SOURCE_NO_VALID_DATA',
                         'source_final_status' => 'FAILED',
@@ -406,7 +442,29 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
         }, $tickerCodes))));
 
         foreach ($uniqueTickerCodes as $tickerCode) {
-            $identity = $this->resolveEquityIdentity($tickerCode, $apiConfig, $endDate, $context);
+            $identitiesByDate = [];
+            foreach ($tradingDates as $tradingDate) {
+                $identitiesByDate[$tradingDate] = $this->resolveEquityIdentity($tickerCode, $apiConfig, $tradingDate, $context);
+            }
+            $providerSymbols = array_values(array_unique(array_map(function (array $resolved) {
+                return (string) $resolved['provider_symbol'];
+            }, $identitiesByDate)));
+            if (count($providerSymbols) !== 1) {
+                throw new SourceAcquisitionException(
+                    'A single range request crosses provider-symbol mapping intervals and cannot prove one transport identity.',
+                    'PROVIDER_SYMBOL_MAPPING_AMBIGUOUS',
+                    0,
+                    null,
+                    [
+                        'ticker_code' => $tickerCode,
+                        'source_window_start' => $startDate,
+                        'source_window_end' => $endDate,
+                        'provider_symbols' => $providerSymbols,
+                    ]
+                );
+            }
+            $lastTradingDate = $tradingDates[count($tradingDates) - 1];
+            $identity = $identitiesByDate[$lastTradingDate];
             $providerSymbol = $identity['provider_symbol'];
             $url = $this->buildYahooFinanceRangeUrl($startDate, $endDate, $tickerCode, $apiConfig, $providerSymbol);
             $requestContext = array_merge($context, $identity, [
@@ -433,11 +491,21 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
                     $tickerCode,
                     $response['captured_at'],
                     $apiConfig,
-                    'yahoo'
+                    'yahoo',
+                    $providerSymbol
                 );
 
+                $rejectedRows = array_map(function (array $invalid) use ($providerSymbol) {
+                    $invalid['provider_symbol'] = $providerSymbol;
+                    return $invalid;
+                }, $parsed['invalid_rows'] ?? []);
+
                 if (empty($parsed['rows'])) {
-                    $this->rejectResponse($response, 'RUN_SOURCE_NO_VALID_DATA');
+                    if ($rejectedRows !== []) {
+                        $this->rejectResponseRows($response, $rejectedRows, 'RUN_SOURCE_NO_VALID_DATA');
+                    } else {
+                        $this->rejectResponse($response, 'RUN_SOURCE_NO_VALID_DATA');
+                    }
                     $failureTelemetry[] = $this->withTickerTelemetry(array_merge($lastTickerRequestTelemetry, [
                         'final_reason_code' => 'RUN_SOURCE_NO_VALID_DATA',
                         'source_final_status' => 'FAILED',
@@ -447,7 +515,8 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
                     continue;
                 }
 
-                $normalizedRows = array_map(function (array $row) use ($identity, $providerSymbol) {
+                $normalizedRows = array_map(function (array $row) use ($identitiesByDate, $providerSymbol) {
+                    $identity = $identitiesByDate[(string) $row['trade_date']];
                     return array_merge($row, [
                         'listing_id' => $identity['listing_id'] ?? null,
                         'provider_symbol' => $providerSymbol,
@@ -455,7 +524,7 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
                         'mapping_revision' => $identity['mapping_revision'] ?? null,
                     ]);
                 }, $parsed['rows']);
-                $normalizedRows = $this->acceptResponseRows($response, $normalizedRows);
+                $normalizedRows = $this->acceptResponseRows($response, $normalizedRows, $rejectedRows);
 
                 foreach ($normalizedRows as $row) {
                     $rowDate = (string) $row['trade_date'];
@@ -991,26 +1060,7 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
         ];
     }
     
-    private function parseYahooFinancePayload($body, $tradeDate, $tickerCode, $capturedAt, array $apiConfig)
-    {
-        return $this->parseYahooFinancePayloadForCode($body, $tradeDate, $tickerCode, $capturedAt, $apiConfig, 'yahoo');
-    }
-
-    private function parseYahooFinancePayloadForCode($body, $tradeDate, $code, $capturedAt, array $apiConfig, $sourceRowRefPrefix)
-    {
-        $parsed = $this->parseYahooFinancePayloadRowsForCode(
-            $body,
-            [(string) $tradeDate => true],
-            $code,
-            $capturedAt,
-            $apiConfig,
-            $sourceRowRefPrefix
-        );
-
-        return $parsed['rows'][0] ?? null;
-    }
-
-    private function parseYahooFinancePayloadRowsForCode($body, array $tradeDateSet, $code, $capturedAt, array $apiConfig, $sourceRowRefPrefix)
+    private function parseYahooFinancePayloadRowsForCode($body, array $tradeDateSet, $code, $capturedAt, array $apiConfig, $sourceRowRefPrefix, $expectedProviderSymbol)
     {
         $decoded = json_decode($body, true);
         if (! is_array($decoded)) {
@@ -1034,13 +1084,56 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
 
         $adjclose = data_get($result, 'indicators.adjclose.0.adjclose', []);
         $meta = is_array(data_get($result, 'meta')) ? data_get($result, 'meta') : [];
-        $exchangeTimezone = isset($meta['exchangeTimezoneName']) ? (string) $meta['exchangeTimezoneName'] : config('market_data.platform.timezone');
+        $metaSymbol = strtoupper(trim((string) ($meta['symbol'] ?? '')));
+        if ($metaSymbol !== '' && $metaSymbol !== strtoupper(trim((string) $expectedProviderSymbol))) {
+            throw new SourceAcquisitionException(
+                'Yahoo Finance response symbol does not match the effective provider mapping used by the request.',
+                'RUN_SOURCE_RESPONSE_CHANGED',
+                0,
+                null,
+                ['expected_provider_symbol' => $expectedProviderSymbol, 'response_provider_symbol' => $metaSymbol]
+            );
+        }
+        $exchangeTimezone = trim((string) ($meta['exchangeTimezoneName'] ?? ''));
+        $expectedTimezone = (string) config('market_data.platform.timezone', 'Asia/Jakarta');
+        if ($exchangeTimezone === '' || $exchangeTimezone !== $expectedTimezone) {
+            throw new SourceAcquisitionException(
+                'Yahoo Finance response timezone is missing or inconsistent with the requested market boundary.',
+                'RUN_SOURCE_RESPONSE_CHANGED',
+                0,
+                null,
+                ['expected_timezone' => $expectedTimezone, 'response_timezone' => $exchangeTimezone ?: null]
+            );
+        }
         $rows = [];
+        $invalidRows = [];
         $invalidOhlcvSkipped = 0;
+
+        $expectedCardinality = count($timestamps);
+        foreach (['open', 'high', 'low', 'close', 'volume'] as $field) {
+            if (! isset($quote[$field]) || ! is_array($quote[$field]) || count($quote[$field]) !== $expectedCardinality) {
+                throw new SourceAcquisitionException(
+                    'Yahoo Finance quote arrays are missing or misaligned with timestamps.',
+                    'RUN_SOURCE_RESPONSE_CHANGED',
+                    0,
+                    null,
+                    ['misaligned_field' => $field, 'timestamp_count' => $expectedCardinality]
+                );
+            }
+        }
+        if ($adjclose !== [] && (! is_array($adjclose) || count($adjclose) !== $expectedCardinality)) {
+            throw new SourceAcquisitionException(
+                'Yahoo Finance adjusted-close evidence is misaligned with timestamps.',
+                'RUN_SOURCE_RESPONSE_CHANGED'
+            );
+        }
 
         foreach (array_values($timestamps) as $position => $timestamp) {
             if (! is_numeric($timestamp)) {
-                continue;
+                throw new SourceAcquisitionException(
+                    'Yahoo Finance timestamp array contains a non-numeric value.',
+                    'RUN_SOURCE_RESPONSE_CHANGED'
+                );
             }
 
             $rowTradeDate = Carbon::createFromTimestampUTC((int) $timestamp)
@@ -1067,8 +1160,13 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
                 'captured_at' => $capturedAt,
             ];
 
-            if (! $this->isValidYahooOhlcvRow($row)) {
+            $validation = $this->validateYahooOhlcvRow($row);
+            if (! $validation['valid']) {
                 $invalidOhlcvSkipped++;
+                $invalidRows[] = $row + [
+                    'invalid_reason_code' => $validation['reason_code'],
+                    'invalid_note' => $validation['note'],
+                ];
                 continue;
             }
 
@@ -1077,6 +1175,7 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
 
         return [
             'rows' => $rows,
+            'invalid_rows' => $invalidRows,
             'invalid_ohlcv_skipped' => $invalidOhlcvSkipped,
         ];
     }
@@ -1111,15 +1210,31 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
         return true;
     }
 
-    private function isValidYahooOhlcvRow(array $row)
+    private function validateYahooOhlcvRow(array $row)
     {
         foreach (['open', 'high', 'low', 'close', 'volume'] as $field) {
             if (! array_key_exists($field, $row) || $row[$field] === null || $row[$field] === '') {
-                return false;
+                return ['valid' => false, 'reason_code' => 'BAR_MISSING_REQUIRED_FIELD', 'note' => 'Missing provider field: '.$field];
+            }
+            if (! is_numeric($row[$field])) {
+                return ['valid' => false, 'reason_code' => 'SOURCE_PROVIDER_MALFORMED_RESPONSE', 'note' => 'Non-numeric provider field: '.$field];
             }
         }
 
-        return true;
+        foreach (['open', 'high', 'low', 'close'] as $field) {
+            if ((float) $row[$field] <= 0) {
+                return ['valid' => false, 'reason_code' => 'BAR_NON_POSITIVE_PRICE', 'note' => 'Non-positive provider field: '.$field];
+            }
+        }
+        if ((float) $row['volume'] < 0) {
+            return ['valid' => false, 'reason_code' => 'BAR_NEGATIVE_VOLUME', 'note' => 'Provider volume is negative.'];
+        }
+        if ((float) $row['high'] < max((float) $row['open'], (float) $row['low'], (float) $row['close'])
+            || (float) $row['low'] > min((float) $row['open'], (float) $row['high'], (float) $row['close'])) {
+            return ['valid' => false, 'reason_code' => 'BAR_INVALID_OHLC_ORDER', 'note' => 'Provider OHLC values are internally inconsistent.'];
+        }
+
+        return ['valid' => true, 'reason_code' => null, 'note' => null];
     }
 
     private function normalizeBenchmarkRow(array $row, array $benchmark, $providerSymbol, $capturedAt, array $apiConfig)
@@ -1252,13 +1367,14 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
             try {
                 $response = $this->performHttpRequest($url);
                 $status = (int) $response['status'];
+                $contentType = $this->extractContentType($response['headers'] ?? []);
                 $responseBodySample = $this->responseBodySample($response['body']);
                 $capture = $this->persistCapture($this->observationEnvelope(
                     $url,
                     $requestContext,
                     $response['body'],
                     $status,
-                    $this->extractContentType($response['headers'] ?? []),
+                    $contentType,
                     $capturedAt,
                     $attemptNumber
                 ));
@@ -1295,6 +1411,8 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
                     ]);
                 }
 
+                $this->assertCompatibleContentType($contentType);
+
                 $attemptCount = count($attemptLog) + 1;
                 $attempts = $attemptLog;
                 $attempts[] = [
@@ -1329,6 +1447,7 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
                 return [
                     'body' => $response['body'],
                     'captured_at' => $capturedAt,
+                    'content_type' => $contentType,
                     'observation_capture' => $capture,
                 ];
             } catch (SourceAcquisitionException $e) {
@@ -1447,7 +1566,7 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
         throw $lastException ?: new SourceAcquisitionException('Unknown source API acquisition failure.', 'RUN_SOURCE_TIMEOUT');
     }
 
-    private function acceptResponseRows(array $response, array $rows)
+    private function acceptResponseRows(array $response, array $rows, array $rejectedRows = [])
     {
         $capture = $response['observation_capture'] ?? null;
         if (! is_array($capture)) {
@@ -1457,7 +1576,7 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
             );
         }
 
-        $outcome = $this->persistOutcome($capture, 'ACCEPTED');
+        $outcome = $this->persistAcceptedRows($capture, $rows, $rejectedRows);
 
         return array_map(function (array $row) use ($capture, $outcome) {
             return array_merge($row, [
@@ -1480,8 +1599,21 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
 
     private function observationEnvelope($url, array $context, $payload, $status, $contentType, $capturedAt, $attemptNumber)
     {
+        $batchId = $context['source_acquisition_batch_id'] ?? null;
+        $checkpointId = $context['acquisition_checkpoint_id'] ?? null;
+        if ($checkpointId === null && $batchId !== null) {
+            $checkpointId = hash('sha256', implode('|', [
+                $batchId,
+                $context['source_window_start'] ?? ($context['trade_date'] ?? ''),
+                $context['source_window_end'] ?? ($context['trade_date'] ?? ''),
+                $context['provider_symbol'] ?? ($context['ticker_code'] ?? ''),
+            ]));
+        }
+
         return array_merge($context, [
             'attempt_uid' => hash('sha256', $this->sanitizeUrl($url).'|'.$capturedAt.'|'.$attemptNumber),
+            'acquisition_batch_id' => $batchId,
+            'acquisition_checkpoint_id' => $checkpointId,
             'requested_trade_date' => $context['trade_date'] ?? ($context['requested_end'] ?? ($context['source_window_end'] ?? null)),
             'requested_start_date' => $context['requested_start'] ?? ($context['source_window_start'] ?? null),
             'requested_end_date' => $context['requested_end'] ?? ($context['source_window_end'] ?? null),
@@ -1541,6 +1673,92 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
                 'SOURCE_OBSERVATION_PERSISTENCE_FAILED',
                 0,
                 $e
+            );
+        }
+    }
+
+    private function rejectResponseRows(array $response, array $rejectedRows, $reasonCode)
+    {
+        $capture = $response['observation_capture'] ?? null;
+        if (! is_array($capture)) {
+            throw new SourceAcquisitionException(
+                'Rejected provider rows cannot be persisted without their raw observation capture.',
+                'SOURCE_OBSERVATION_CAPTURE_REQUIRED'
+            );
+        }
+
+        try {
+            $this->observations->recordRejectedRows($capture, $rejectedRows, $reasonCode);
+        } catch (\Throwable $e) {
+            throw new SourceAcquisitionException(
+                'Rejected source rows could not be persisted as immutable evidence.',
+                'SOURCE_OBSERVATION_PERSISTENCE_FAILED',
+                0,
+                $e
+            );
+        }
+    }
+
+    private function persistAcceptedRows(array $capture, array $rows, array $rejectedRows = [])
+    {
+        try {
+            return $this->observations->recordAcceptedRows($capture, $rows, $rejectedRows);
+        } catch (SourceAcquisitionException $e) {
+            throw $e;
+        } catch (\Throwable $e) {
+            throw new SourceAcquisitionException(
+                'Normalized source observation rows could not be persisted and compared immutably.',
+                'SOURCE_OBSERVATION_PERSISTENCE_FAILED',
+                0,
+                $e
+            );
+        }
+    }
+
+    private function assertCompatibleContentType($contentType)
+    {
+        $normalized = strtolower(trim((string) $contentType));
+        $format = strtolower((string) config('market_data.source.api.response_format', 'json'));
+        $compatible = $format === 'csv'
+            ? preg_match('/^(text|application)\/(?:[^;]+\+)?csv(?:\s*;|$)/', $normalized) === 1
+            : preg_match('/^(?:application|text)\/(?:[^;]+\+)?json(?:\s*;|$)/', $normalized) === 1;
+
+        if ($normalized === '' || ! $compatible) {
+            throw new SourceAcquisitionException(
+                'Source API response content type is missing or incompatible with the active parser.',
+                'RUN_SOURCE_RESPONSE_CHANGED',
+                0,
+                null,
+                ['content_type' => $normalized === '' ? null : $normalized]
+            );
+        }
+    }
+
+    /**
+     * Schema-version changes are executable adapter changes, not operator-tunable labels. The
+     * active Yahoo adapter therefore refuses a version pair that this implementation was not
+     * released to parse; changing either side requires a code-reviewed successor contract.
+     */
+    private function assertActiveSchemaContract(array $apiConfig)
+    {
+        if ($this->providerName($apiConfig) !== 'yahoo_finance') {
+            return;
+        }
+
+        $adapterVersion = trim((string) ($apiConfig['adapter_version'] ?? self::YAHOO_ADAPTER_VERSION));
+        $schemaVersion = trim((string) ($apiConfig['schema_version'] ?? self::YAHOO_SCHEMA_VERSION));
+        if ($adapterVersion !== self::YAHOO_ADAPTER_VERSION || $schemaVersion !== self::YAHOO_SCHEMA_VERSION) {
+            throw new SourceAcquisitionException(
+                'Active Yahoo schema/version pair is not supported by this adapter implementation.',
+                'RUN_SOURCE_RESPONSE_CHANGED',
+                0,
+                null,
+                [
+                    'active_adapter_version' => $adapterVersion,
+                    'active_schema_version' => $schemaVersion,
+                    'supported_adapter_version' => self::YAHOO_ADAPTER_VERSION,
+                    'supported_schema_version' => self::YAHOO_SCHEMA_VERSION,
+                ]
             );
         }
     }

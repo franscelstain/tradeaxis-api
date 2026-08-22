@@ -218,6 +218,7 @@ class MarketDataOrdersOneToFourFoundationTest extends TestCase
         $adapter = new PublicApiEodBarsAdapter(function () use ($timestamp) {
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'headers' => ['Content-Type: application/json'],
                 'body' => json_encode(['chart' => ['result' => [[
                     'meta' => ['exchangeTimezoneName' => 'Asia/Jakarta'],
@@ -245,10 +246,12 @@ class MarketDataOrdersOneToFourFoundationTest extends TestCase
         $recorder = new class implements SourceObservationRecorder {
             public function capture(array $envelope) { throw new RuntimeException('database unavailable'); }
             public function recordOutcome(array $capture, $outcomeState, $reasonCode = null, array $context = []) { return []; }
+            public function recordAcceptedRows(array $capture, array $rows, array $rejectedRows = []) { return []; }
+            public function recordRejectedRows(array $capture, array $rejectedRows, $reasonCode) { return []; }
             public function recordTransportFailure(array $envelope, $reasonCode) { return []; }
         };
         $adapter = new PublicApiEodBarsAdapter(function () {
-            return ['status' => 200, 'headers' => [], 'body' => '{"rows":[]}'];
+            return ['status' => 200, 'headers' => ['Content-Type' => 'application/json'], 'body' => '{"rows":[]}'];
         }, null, null, $recorder);
 
         try {

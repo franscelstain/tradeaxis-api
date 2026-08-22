@@ -71,6 +71,7 @@ class IngestSectorIndexBarsApiCommandTest extends TestCase
         $this->app->instance(PublicApiEodBarsAdapter::class, new PublicApiEodBarsAdapter(function ($url) {
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode([
                     'chart' => [
                         'result' => [[
@@ -117,6 +118,7 @@ class IngestSectorIndexBarsApiCommandTest extends TestCase
 
             return [
                 'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
                 'body' => json_encode([
                     'chart' => [
                         'result' => [[

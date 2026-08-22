@@ -48,6 +48,41 @@ class SourceObservationImmutabilityTest extends TestCase
         ], $override);
     }
 
+    private function normalizedRow(array $override = []): array
+    {
+        return array_merge([
+            'listing_id' => 9001,
+            'provider_symbol' => 'BBCA.JK',
+            'provider_mapping_id' => 7001,
+            'mapping_revision' => 'YF-BBCA-2026-01',
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 100,
+            'high' => 110,
+            'low' => 95,
+            'close' => 105,
+            'volume' => 1000,
+            'adj_close' => null,
+            'source_row_ref' => 'yahoo:BBCA.JK:2026-03-20',
+            'captured_at' => '2026-03-20 17:20:00',
+        ], $override);
+    }
+
+    private function bindIdentity(SourceObservationRepository $repository, array $accepted, array $row): void
+    {
+        $repository->bindResolvedIdentity(
+            $accepted['source_observation_id'],
+            $row['source_row_ref'],
+            [
+                'listing_id' => $row['listing_id'],
+                'ticker_id' => 8001,
+                'provider_mapping_id' => $row['provider_mapping_id'],
+                'mapping_revision' => $row['mapping_revision'],
+                'trade_date' => $row['trade_date'],
+            ]
+        );
+    }
+
     /**
      * A rerun is a new observation, never an edit of the previous one. Overwriting would erase
      * the record of what the platform saw the first time, which is the one thing an immutable
@@ -103,6 +138,13 @@ class SourceObservationImmutabilityTest extends TestCase
         $this->assertNotEmpty($rows->firstWhere('reason_code', 'RUN_SOURCE_EMPTY_SERIES'));
         $this->assertNotEmpty($rows->firstWhere('reason_code', 'RUN_SOURCE_TIMEOUT'));
 
+        $failureCapture = $rows->firstWhere('content_type', 'application/vnd.tradeaxis.source-transport-failure+json');
+        $this->assertNotNull($failureCapture);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', (string) $failureCapture->payload_hash);
+        $this->assertSame('sha256:'.$failureCapture->payload_hash, $failureCapture->payload_ref);
+        $this->assertGreaterThan(0, (int) $failureCapture->payload_byte_length);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', (string) $failureCapture->schema_fingerprint);
+
         foreach ($rows as $row) {
             $this->assertNotEmpty($row->requested_trade_date, 'every outcome records its requested scope');
             $this->assertNotEmpty($row->source_mode, 'every outcome records its source mode');
@@ -139,10 +181,92 @@ class SourceObservationImmutabilityTest extends TestCase
         $repository = new SourceObservationRepository();
 
         $capture = $repository->capture($this->envelope() + ['payload' => '{"ok":true}']);
-        $accepted = $repository->recordOutcome($capture, 'ACCEPTED');
+        $row = $this->normalizedRow();
+        $accepted = $repository->recordAcceptedRows($capture, [$row]);
+        $this->bindIdentity($repository, $accepted, $row);
 
-        $this->assertTrue($repository->existsAccepted($accepted['source_observation_id']));
+        $this->assertTrue($repository->existsAccepted($accepted['source_observation_id'], $row['source_row_ref']));
         $this->assertFalse($repository->existsAccepted(999999), 'an unknown observation id must not resolve');
+    }
+
+    public function test_capture_without_payload_or_verifiable_external_identity_fails_closed(): void
+    {
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('SOURCE_OBSERVATION_PAYLOAD_IDENTITY_REQUIRED');
+
+        (new SourceObservationRepository())->capture($this->envelope());
+    }
+
+    public function test_identical_refetch_records_confirmation_without_a_finding(): void
+    {
+        $repository = new SourceObservationRepository();
+        $row = $this->normalizedRow();
+
+        $firstCapture = $repository->capture($this->envelope() + ['payload' => '{"close":105,"attempt":1}']);
+        $first = $repository->recordAcceptedRows($firstCapture, [$row]);
+        $this->bindIdentity($repository, $first, $row);
+
+        $secondCapture = $repository->capture($this->envelope(['acquired_at' => '2026-03-20 18:20:00']) + ['payload' => '{"close":105,"attempt":2}']);
+        $second = $repository->recordAcceptedRows($secondCapture, [$row]);
+        $this->bindIdentity($repository, $second, $row);
+
+        $comparison = DB::table('md_source_observation_revision_comparisons')->first();
+        $this->assertNotNull($comparison);
+        $this->assertSame('CONFIRMED_SAME', $comparison->comparison_state);
+        $this->assertSame('NOT_APPLICABLE', $comparison->finding_state);
+        $this->assertNull($comparison->divergence_finding_uid);
+        $this->assertNotSame($first['source_observation_id'], $second['source_observation_id']);
+    }
+
+    public function test_changed_refetch_opens_an_explicit_divergence_with_both_values_and_delta(): void
+    {
+        $repository = new SourceObservationRepository();
+        $priorRow = $this->normalizedRow();
+        $currentRow = $this->normalizedRow(['close' => 107]);
+
+        $firstCapture = $repository->capture($this->envelope() + ['payload' => '{"close":105,"attempt":1}']);
+        $first = $repository->recordAcceptedRows($firstCapture, [$priorRow]);
+        $this->bindIdentity($repository, $first, $priorRow);
+
+        $secondCapture = $repository->capture($this->envelope(['acquired_at' => '2026-03-20 18:20:00']) + ['payload' => '{"close":107,"attempt":2}']);
+        $second = $repository->recordAcceptedRows($secondCapture, [$currentRow]);
+        $this->bindIdentity($repository, $second, $currentRow);
+
+        $comparison = DB::table('md_source_observation_revision_comparisons')->first();
+        $this->assertSame('OPEN_DIVERGENCE', $comparison->comparison_state);
+        $this->assertSame('OPEN', $comparison->finding_state);
+        $this->assertStringStartsWith('MD-SOURCE-DIV-', $comparison->divergence_finding_uid);
+        $this->assertSame($first['source_observation_id'], (int) $comparison->prior_source_observation_id);
+        $this->assertSame($second['source_observation_id'], (int) $comparison->current_source_observation_id);
+        $this->assertSame(['close'], json_decode($comparison->differing_fields_json, true));
+        $this->assertSame('105', json_decode($comparison->prior_values_json, true)['close']);
+        $this->assertSame('107', json_decode($comparison->current_values_json, true)['close']);
+        $this->assertSame('2', json_decode($comparison->value_deltas_json, true)['close']);
+    }
+
+    public function test_partially_invalid_response_persists_reason_coded_row_evidence_linked_to_the_capture(): void
+    {
+        $repository = new SourceObservationRepository();
+        $capture = $repository->capture($this->envelope() + ['payload' => '{"valid":1,"invalid":1}']);
+        $accepted = $repository->recordAcceptedRows($capture, [$this->normalizedRow()], [[
+            'ticker_code' => 'BBCA',
+            'trade_date' => '2026-03-20',
+            'open' => 100,
+            'high' => 110,
+            'low' => 95,
+            'close' => null,
+            'volume' => 1000,
+            'source_row_ref' => 'yahoo:BBCA.JK:2026-03-20:invalid',
+            'invalid_reason_code' => 'BAR_MISSING_REQUIRED_FIELD',
+            'invalid_note' => 'Missing provider field: close',
+        ]]);
+
+        $rejected = DB::table('md_source_observation_rejected_rows')->first();
+        $this->assertNotNull($rejected);
+        $this->assertSame($accepted['source_observation_id'], (int) $rejected->source_observation_id);
+        $this->assertSame($capture['source_observation_id'], (int) $rejected->capture_observation_id);
+        $this->assertSame('BAR_MISSING_REQUIRED_FIELD', $rejected->reason_code);
+        $this->assertNull($rejected->close_value);
     }
 
     /**

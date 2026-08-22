@@ -157,6 +157,20 @@ class EodArtifactRepository
         });
     }
 
+    public function persistInvalidBars($tradeDate, $runId, array $invalidRows)
+    {
+        DB::transaction(function () use ($tradeDate, $runId, $invalidRows) {
+            DB::table('eod_invalid_bars')
+                ->where('trade_date', $tradeDate)
+                ->where('run_id', $runId)
+                ->delete();
+
+            if ($invalidRows !== []) {
+                DB::table('eod_invalid_bars')->insert($invalidRows);
+            }
+        });
+    }
+
     public function upsertBarsPartial($tradeDate, $publicationId, $runId, array $validRows, array $invalidRows = [], $useHistory = false)
     {
         return DB::transaction(function () use ($tradeDate, $publicationId, $runId, $validRows, $invalidRows, $useHistory) {

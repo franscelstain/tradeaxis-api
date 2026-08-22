@@ -143,7 +143,7 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
             throw $e;
         }
 
-        $outcome = $this->persistOutcome($capture, 'ACCEPTED');
+        $outcome = $this->persistAcceptedRows($capture, $rows);
 
         return array_map(function (array $row) use ($capture, $outcome) {
             return array_merge($row, [
@@ -549,6 +549,20 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
         } catch (\Throwable $e) {
             throw new SourceAcquisitionException(
                 'Manual source observation outcome could not be persisted immutably.',
+                'SOURCE_OBSERVATION_PERSISTENCE_FAILED',
+                0,
+                $e
+            );
+        }
+    }
+
+    private function persistAcceptedRows(array $capture, array $rows)
+    {
+        try {
+            return $this->observations->recordAcceptedRows($capture, $rows);
+        } catch (\Throwable $e) {
+            throw new SourceAcquisitionException(
+                'Manual normalized source rows could not be persisted and compared immutably.',
                 'SOURCE_OBSERVATION_PERSISTENCE_FAILED',
                 0,
                 $e
