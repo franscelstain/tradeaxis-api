@@ -31,11 +31,11 @@ class ScopeBoundaryCompletionGateTest extends TestCase
 
     /**
      * A013 bound 31 rows against a denominator of 143 that the Stage Register then called FINAL.
-     * `MD-B01-A014` proved the denominator understated the stage by 64 rows, so the same atomic
-     * binding now leaves 65 rows unproven rather than one. The satisfied figure is unchanged: no
-     * A013 proof was weakened, the set it was measured against was wrong.
+     * `MD-B01-A014` proved the denominator understated the stage by 64 rows and `MD-B01-A015` proved
+     * the 62 rows that promotion had left owing. `MD-B01-A016` proved the last one after
+     * `D-MD-20260822-04` resolved `MD-DEP-0005`, so the stage stands at 207 of 207.
      */
-    public function test_in_memory_atomic_binding_reaches_144_of_207_and_keeps_one_blocked(): void
+    public function test_in_memory_atomic_binding_reaches_207_of_207(): void
     {
         $bound = MarketDataScopeBoundaryCompletionGate::bind($this->rows());
         $result = MarketDataScopeBoundaryCompletionGate::validate($bound, $this->root());
@@ -43,7 +43,7 @@ class ScopeBoundaryCompletionGateTest extends TestCase
         $this->assertSame([], $result['errors']);
         $this->assertSame('BIND_COMPLETE', $result['phase']);
         $this->assertSame(31, $result['bound_rules']);
-        $this->assertSame(['denominator' => 207, 'satisfied' => 144, 'not_assessed' => 63], $result['counts']);
+        $this->assertSame(['denominator' => 207, 'satisfied' => 207, 'not_assessed' => 0], $result['counts']);
     }
 
     public function test_gate_fails_closed_when_a_mapped_rule_disappears(): void

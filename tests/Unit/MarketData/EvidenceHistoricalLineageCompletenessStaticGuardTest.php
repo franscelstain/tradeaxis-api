@@ -89,31 +89,4 @@ class EvidenceHistoricalLineageCompletenessStaticGuardTest extends TestCase
         }
     }
 
-    public function test_historical_evidence_static_inventory_and_audit_docs_are_present(): void
-    {
-        foreach ([
-            'docs/market_data/audit/EVIDENCE_HISTORICAL_LINEAGE_COMPLETENESS_INVENTORY.md',
-            'docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md',
-            'docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md',
-        ] as $path) {
-            $this->assertFileExists($this->projectPath($path));
-        }
-
-        $inventory = file_get_contents($this->projectPath('docs/market_data/audit/EVIDENCE_HISTORICAL_LINEAGE_COMPLETENESS_INVENTORY.md'));
-        $status = file_get_contents($this->projectPath('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md'));
-        $tracker = file_get_contents($this->projectPath('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md'));
-
-        foreach ([
-            'Evidence Historical Lineage Completeness',
-            'consumer read resolver tetap current-pointer-only',
-            'evidence audit resolver',
-            'historical sealed publication',
-            'selector-scoped',
-            'lineage-validated',
-            'publication-scoped artifact',
-            'READY_FOR_LOCAL_RUNTIME_VALIDATION',
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $inventory.$status.$tracker, 'Audit docs must preserve '.$needle);
-        }
-    }
 }

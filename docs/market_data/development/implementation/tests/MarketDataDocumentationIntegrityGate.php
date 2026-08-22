@@ -29,6 +29,25 @@ if(is_file($lsi)&&is_file($lsp)&&is_file($lda)){
   foreach($docs as $d){if($d['material_composite']==='YES'&&$d['physical_original_retained']!=='NO')$splitErr[]='composite retained '.$d['legacy_source_id'];}
 }else{$splitErr[]='legacy semantic audit indexes missing';}
 add($checks,'LEGACY_SEMANTIC_SPLIT_INTEGRITY',!$splitErr,array('split_sources'=>$splitCount,'reconstructed'=>$reconstructed,'errors'=>array_slice($splitErr,0,20)));
+// Extract structure. F-MD-B00-A001-003: the seal above hashes only the region between the body
+// markers, so text appended AFTER LEGACY_EXTRACT_BODY_END passed every gate. Appending an
+// unsealed paragraph to a HISTORICAL_ONLY extract is precisely the rewrite DOCUMENT_RECORDING_STANDARD
+// forbids. The fix is structural, not a wider hash: extending the hash would break the reconstruction
+// proof, which must stay bound to the exact original source range.
+$structErr=array();$structChecked=0;
+if(isset($splits)&&is_array($splits)){
+  $sm="<!-- LEGACY_EXTRACT_BODY_START -->";$em="<!-- LEGACY_EXTRACT_BODY_END -->";
+  foreach($splits as $x){$rel=isset($x['extract_path'])?$x['extract_path']:'';if($rel==='')continue;$ep=$md.'/'.$rel;if(!is_file($ep)){$structErr[]='missing extract '.$rel;continue;}
+    $structChecked++;$txt=file_get_contents($ep);
+    if(substr_count($txt,$sm)!==1)$structErr[]='body-start marker count '.$rel;
+    if(substr_count($txt,$em)!==1){$structErr[]='body-end marker count '.$rel;continue;}
+    $after=substr($txt,strpos($txt,$em)+strlen($em));
+    if($after!=="\n"&&$after!=='')$structErr[]='content after sealed body '.$rel;
+    if(strpos($txt,'# Legacy Semantic Extract')!==0)$structErr[]='missing extract header '.$rel;
+  }
+  if($structChecked<400)$structErr[]='extract structure scan reached only '.$structChecked.' extracts';
+}else{$structErr[]='legacy split index unavailable for structure check';}
+add($checks,'LEGACY_EXTRACT_STRUCTURE',!$structErr,array('extracts_checked'=>$structChecked,'errors'=>array_slice($structErr,0,20)));
 // path length and exact duplicates
 $long=array();$max=0;$hash=array();$dups=array();foreach($files as $p){$rp=substr(norm($p),strlen(norm($md))+1);$l=strlen($rp);if($l>$max)$max=$l;if($l>180)$long[]=$rp;$h=strtoupper(sha1_file($p));if(isset($hash[$h]))$dups[]=array($hash[$h],$rp);else$hash[$h]=$rp;}add($checks,'WINDOWS_SAFE_PATHS',!$long,array('max_length'=>$max,'too_long'=>array_slice($long,0,20)));add($checks,'EXACT_DUPLICATE_FILES',!$dups,array('duplicates'=>array_slice($dups,0,20)));
 // only canonical root dirs

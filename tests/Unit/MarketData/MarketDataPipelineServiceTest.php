@@ -11,6 +11,7 @@ use App\Application\MarketData\Services\EodIndicatorsComputeService;
 use App\Application\MarketData\Services\FinalizeDecisionService;
 use App\Application\MarketData\Services\MarketDataImpactReprocessExecutor;
 use App\Application\MarketData\Services\MarketDataPipelineService;
+use App\Application\MarketData\Services\ManualSourceInputContext;
 use App\Application\MarketData\Services\PublicationDiffService;
 use App\Application\MarketData\Services\PublicationFinalizeOutcomeService;
 use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
@@ -38,6 +39,7 @@ class MarketDataPipelineServiceTest extends TestCase
         Facade::setFacadeApplication($container);
 
         $container->instance('app', $container);
+        $container->singleton(ManualSourceInputContext::class);
 
         $config = new Repository([
             'app.env' => 'testing',
@@ -218,7 +220,11 @@ class MarketDataPipelineServiceTest extends TestCase
 
     public function test_complete_ingest_persists_manual_input_file_in_notes_and_event_payload(): void
     {
-        config()->set('market_data.source.local_input_file', 'storage/app/market_data/operator/manual-2026-03-24.csv');
+        app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->set('storage/app/market_data/operator/manual-2026-03-24.csv');
+        $this->assertSame(
+            'storage/app/market_data/operator/manual-2026-03-24.csv',
+            app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->path()
+        );
 
         $runs = m::mock(EodRunRepository::class);
         $bars = m::mock(EodBarsIngestService::class);
@@ -296,7 +302,16 @@ class MarketDataPipelineServiceTest extends TestCase
             ->andReturn($run);
 
         $sourceRows = [['ticker_code' => 'BBCA', 'trade_date' => '2026-03-24']];
-        $bars->shouldReceive('acquireSourceRows')->once()->with('2026-03-24', 'manual_file')->andReturn($sourceRows);
+        $runs->shouldReceive('resolveKnowledgeCutoff')->once()->with($run)->andReturn('2026-03-24 18:00:00');
+        // Acquisition context is unconditional since MD-B05-A001: a run with no config snapshot no
+        // longer drops the knowledge cutoff and the temporal-mapping requirement on the floor.
+        $bars->shouldReceive('acquireSourceRows')->once()->with('2026-03-24', 'manual_file', null, [
+                'run_id' => 88,
+                'config_snapshot_id' => null,
+                'source_mode' => 'manual_file',
+                'enforce_temporal_mapping' => false,
+                'known_at' => '2026-03-24 18:00:00',
+            ])->andReturn($sourceRows);
         $bars->shouldReceive('consumeSourceAcquisitionTelemetry')->once()->with('manual_file')->andReturn([]);
         $bars->shouldReceive('ingestAcquiredRows')->once()->with($run, '2026-03-24', 'manual_file', $sourceRows, [], null)->andReturn([
             'publication_id' => 44,
@@ -314,14 +329,14 @@ class MarketDataPipelineServiceTest extends TestCase
         $result = $service->completeIngest($input);
 
         $this->assertSame(88, $result->run_id);
-        config()->set('market_data.source.local_input_file', null);
+        app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->set(null);
     }
 
 
     public function test_complete_ingest_manual_file_failure_keeps_local_file_source_identity_in_notes(): void
     {
         config()->set('market_data.source.default_source_name', 'YAHOO_FINANCE');
-        config()->set('market_data.source.local_input_file', 'storage/app/market_data/operator/manual-2026-04-14.csv');
+        app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->set('storage/app/market_data/operator/manual-2026-04-14.csv');
 
         $runs = m::mock(EodRunRepository::class);
         $bars = m::mock(EodBarsIngestService::class);
@@ -375,7 +390,14 @@ class MarketDataPipelineServiceTest extends TestCase
             })
         );
 
-        $bars->shouldReceive('acquireSourceRows')->once()->with('2026-04-14', 'manual_file')->andThrow(new RuntimeException('Explicit local input file not found: storage/app/market_data/operator/manual-2026-04-14.csv'));
+        $runs->shouldReceive('resolveKnowledgeCutoff')->once()->with($run)->andReturn('2026-04-14 18:00:00');
+        $bars->shouldReceive('acquireSourceRows')->once()->with('2026-04-14', 'manual_file', null, [
+                'run_id' => 76,
+                'config_snapshot_id' => null,
+                'source_mode' => 'manual_file',
+                'enforce_temporal_mapping' => false,
+                'known_at' => '2026-04-14 18:00:00',
+            ])->andThrow(new RuntimeException('Explicit local input file not found: storage/app/market_data/operator/manual-2026-04-14.csv'));
 
         $service = new MarketDataPipelineService($runs, $bars, $indicators, $eligibility, $publications, $corrections, $artifacts, $hashes, $finalize, $diffs, $outcomes, $coverageGate);
 
@@ -386,7 +408,7 @@ class MarketDataPipelineServiceTest extends TestCase
             $service->completeIngest(new MarketDataStageInput('2026-04-14', 'manual_file', null, 'INGEST_BARS', null));
         } finally {
             config()->set('market_data.source.default_source_name', null);
-            config()->set('market_data.source.local_input_file', null);
+            app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->set(null);
         }
     }
 
@@ -422,9 +444,16 @@ class MarketDataPipelineServiceTest extends TestCase
             'final_http_status' => 200,
         ];
 
+        $runs->shouldReceive('resolveKnowledgeCutoff')->once()->with($run)->andReturn('2026-04-05 18:00:00');
         $barsIngest->shouldReceive('acquireSourceRows')
             ->once()
-            ->with('2026-04-05', 'api')
+            ->with('2026-04-05', 'api', null, [
+                'run_id' => 92,
+                'config_snapshot_id' => null,
+                'source_mode' => 'api_free',
+                'enforce_temporal_mapping' => true,
+                'known_at' => '2026-04-05 18:00:00',
+            ])
             ->andReturn($sourceRows);
         $barsIngest->shouldReceive('consumeSourceAcquisitionTelemetry')
             ->once()
@@ -543,9 +572,16 @@ class MarketDataPipelineServiceTest extends TestCase
             ->with($input)
             ->andReturn([$run, null, null]);
 
+        $runs->shouldReceive('resolveKnowledgeCutoff')->once()->with($run)->andReturn('2026-03-17 18:00:00');
         $barsIngest->shouldReceive('acquireSourceRows')
             ->once()
-            ->with('2026-03-17', 'api')
+            ->with('2026-03-17', 'api', null, [
+                'run_id' => 55,
+                'config_snapshot_id' => null,
+                'source_mode' => 'api_free',
+                'enforce_temporal_mapping' => true,
+                'known_at' => '2026-03-17 18:00:00',
+            ])
             ->andThrow(new \App\Infrastructure\MarketData\Source\SourceAcquisitionException(
                 'Source API rate limited the request.',
                 'RUN_SOURCE_RATE_LIMIT',
@@ -628,9 +664,16 @@ class MarketDataPipelineServiceTest extends TestCase
             ->with($input)
             ->andReturn([$run, null, null]);
 
+        $runs->shouldReceive('resolveKnowledgeCutoff')->once()->with($run)->andReturn('2026-03-17 18:00:00');
         $barsIngest->shouldReceive('acquireSourceRows')
             ->once()
-            ->with('2026-03-17', 'api')
+            ->with('2026-03-17', 'api', null, [
+                'run_id' => 56,
+                'config_snapshot_id' => null,
+                'source_mode' => 'api_free',
+                'enforce_temporal_mapping' => true,
+                'known_at' => '2026-03-17 18:00:00',
+            ])
             ->andThrow(new \App\Infrastructure\MarketData\Source\SourceAcquisitionException(
                 'Source API rate limited the request.',
                 'RUN_SOURCE_RATE_LIMIT',

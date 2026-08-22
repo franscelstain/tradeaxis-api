@@ -1,0 +1,150 @@
+{
+    "evidence_id": "E-MD-B03-A002-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B03",
+    "attempt_id": "MD-B03-A002",
+    "work_id": "MD-B03-A002",
+    "baseline_id": "MD-B03-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B03-A002-001",
+    "issued_at": "2026-08-22T10:40:00+07:00",
+    "title": "Class S historical-binding removal and the first green suite of the epoch",
+    "attempt_outcome": "PARTIAL — MD-DEP-0003's binding half is closed and the suite is green; the replacement-guard half is handed to the owning stages",
+    "authority_basis": {
+        "governance": [
+            "authority/governance/STAGE_EXECUTION_AND_REWORK_STANDARD.md",
+            "authority/governance/CURRENT_VERIFICATION_REBASELINE_STANDARD.md",
+            "authority/governance/DOCUMENT_CHANGE_POLICY.md",
+            "authority/governance/DEPENDENCY_REGISTRY_STANDARD.md",
+            "authority/governance/IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD.md",
+            "authority/governance/CHANGE_IMPACT_DECLARATION_STANDARD.md"
+        ],
+        "strategy_bytes_changed": 0,
+        "basis_for_opening": "STAGE_EXECUTION_AND_REWORK_STANDARD section 3 permits a blocked logical stage to remain IN_PROGRESS while another stage is opened or re-entered to remediate a declared dependency. MD-DEP-0003 is declared and registered; MD-B03 closed its Class R half at A001 and is the recorded owner of the remainder."
+    },
+    "why_md_b01_could_not_continue": {
+        "state": "MD-B01 stands at 206/207 with MD-S020-R0067 unproven.",
+        "re_tested_rather_than_inherited": "CONSUMER_READ_CONTRACT_LOCKED.md names `eligible = 1` once, in a list of signals that cannot establish freshness, and states data_usable nowhere in the document. That sentence prevents a freshness misreading; MD-S020-R0067 requires the repetition that prevents the tradability misreading. They are different misreadings, so the rule is not satisfied and the finding stands. This was checked before the attempt was opened because the finding's history already contains two measurement corrections.",
+        "governance_conclusion": "DOCUMENT_CHANGE_POLICY section 2 requires explicit user authorization for a strategy-byte change. No implementation attempt can supply it, so MD-B01 stays the blocked logical stage."
+    },
+    "governance_gap_closed": {
+        "defect": "The sole blocker of the current stage had never been registered as a dependency. MD_DEPENDENCY_REGISTRY.csv held MD-DEP-0001 through 0004, none covering the frozen-strategy wording block.",
+        "why_it_matters": "STAGE_EXECUTION_AND_REWORK_STANDARD section 3 requires a blocked logical stage to record its blocking dependency ID before another stage may be opened to remediate. Without the registration the block was invisible to the dependency registry and to the generated current-state summary, and no return-to flow could be recorded.",
+        "action": "MD-DEP-0005 registered: stage MD-B01, owner governance plus explicit user authorization, status OPEN_BLOCKING, with both resolutions F-MD-B01-A003-001 names as defensible written into the resume trigger. It is marked as having no implementation remediation path so no future attempt opens a remediation stage against it."
+    },
+    "defect_remediated": {
+        "dependency": "MD-DEP-0003",
+        "half": "Class S",
+        "description": "D-MD-20260820-02 decomposed 26 composite audit documents into role-pure LX-MD extracts and removed the physical originals. 24 test files still bound executable assertions to the removed paths.",
+        "why_repointing_is_forbidden": "CURRENT_VERIFICATION_REBASELINE_STANDARD.md gives all pre-epoch PASS/FAIL/PARTIAL/DONE/READY/CONFORMANT statements zero current-verification effect, and F-MD-B00-A001-001 rules that repointing these tests at the surviving extracts would smuggle inherited PASS into the current epoch and must be rejected in review.",
+        "standing_cost": "67 failures and 4 errors in tests/Unit/MarketData for the whole epoch. A control that has been red that long stops being read, which is the same failure mode F-MD-B01-A001-001 records for an unreachable coverage target."
+    },
+    "removal_result": {
+        "methods_removed": 71,
+        "files_touched": 24,
+        "files_retired": [
+            "tests/Unit/MarketData/AuditCrossReferenceIntegrityTest.php",
+            "tests/Unit/MarketData/AuditDocsSynchronizationStaticGuardTest.php"
+        ],
+        "retirement_basis": "Retired only where every test method in the file was a historical binding. Both files existed to check the internal consistency of the LUMEN audit ledger, which START_HERE.md classifies as supporting history and never current proof.",
+        "per_method_not_per_file": "Removal is per test method. TestingDatabaseIsolationStaticGuardTest failed one of six tests while the other five guard real bootstrap and artisan behaviour; taking the file would have taken those. Twenty-two files kept their live tests.",
+        "dead_helpers_removed": 5,
+        "dead_helper_retained": "ProductionValidationRuntimeProofStaticGuardTest::registeredMarketDataCommands — its removal was attempted, broke the parse, and was reverted automatically by the per-step verification. It is inert dead code, recorded rather than forced.",
+        "test_count": {
+            "before": 1740,
+            "after": 1669,
+            "arithmetic": "1740 - 71 = 1669, so no test outside the removal set was lost and none broke"
+        }
+    },
+    "live_defect_found_while_remediating": {
+        "surface": "docs/market_data/development/implementation/ops/OPERATIONAL_RUNBOOK.md",
+        "defect": "The ops environment baseline gate instructed operators to `execute and retain the gate defined in docs/market_data/ops/OPS_ENVIRONMENT_BASELINE.md`, a document D-MD-20260820-02 removed. The existing guard passed because it only checked that the runbook contained the string, never that the path resolved.",
+        "found_by": "TestPathBindingIntegrityTest, on its first execution.",
+        "fix": "The clause now states the gate directly — the PHP version bounds and the two blocking reason codes were already in the runbook text — instead of delegating to a removed path. It is not repointed at the surviving extracts, which are HISTORICAL_ONLY. The runbook records explicitly that no current document owns the environment baseline as a contract and that establishing one is an operations-stage obligation under MD-DEP-0003.",
+        "scope_note": "This is a documentation edit that CI-MD-B03-A002-001 did not plan. It is a dangling pointer left by the same decomposition MD-DEP-0003 covers, and A001 rebound 60 such paths under the same dependency, so it is within the dependency's remit. It is recorded here rather than absorbed silently."
+    },
+    "tooling_result": {
+        "added": [
+            "development/implementation/tests/MarketDataHistoricalBindingRemoval.php — the governed removal, with the removal set written out so it is reviewable against the baseline measurement, presence-checked per method, and per-file retirement only when no test survives",
+            "tests/Unit/MarketData/TestPathBindingIntegrityTest.php — fails when any test binds to a documentation path that does not resolve, or reads a sealed LX-MD extract as current proof"
+        ],
+        "recurrence_prevention": "The new gate is why this defect class cannot return quietly. It found the runbook defect immediately, which is the evidence that it inspects the real surface rather than restating the removal."
+    },
+    "test_execution": {
+        "runner": "vendor/bin/phpunit",
+        "market_data_directory": {
+            "before": "1740 tests, 4 errors, 67 failures",
+            "after": "1669 tests, 11362 assertions, 0 errors, 0 failures"
+        },
+        "whole_suite_after": {
+            "tests": 1673,
+            "assertions": 11373,
+            "errors": 0,
+            "failures": 0,
+            "result": "PASS"
+        },
+        "note": "First green suite of the verification epoch. At MD-B00-A001 closure the suite was 1488 tests with 26 errors and 108 failures.",
+        "lint": "php -l executed across every file in tests/Unit/MarketData after each mutation of the corpus; 0 parse errors at the end."
+    },
+    "negative_and_fail_closed_proof": {
+        "in_tool": [
+            "Every method named in the removal set is checked for presence before removal; the first run reported seven names that did not exist and refused them. The set was then regenerated from the measured failure list rather than from recollection.",
+            "A file is retired only when the survivor set is empty, computed from the file rather than assumed."
+        ],
+        "on_disk_mutations": [
+            "a test rebinding to the removed PRODUCTION_VALIDATION_INVENTORY -> TestPathBindingIntegrityTest::test_every_documentation_path_a_test_binds_to_resolves failed (landed, count=1)",
+            "a test reading a sealed LX-MD extract -> ::test_no_test_reads_a_sealed_historical_extract_as_current_proof failed (landed, count=1)"
+        ],
+        "restoration_verified": "Both mutations restored from pre-mutation copies; the gate and the whole suite re-executed green."
+    },
+    "tool_defect_found_and_fixed_during_execution": {
+        "defect": "The removal tool's docblock absorption used a regex anchored with `$` under the `/s` modifier. `(?:(?!\\*\\/).)*` is greedy, so it began at the first docblock in the file and ran to the last `*/` before the method, deleting everything in between — including a class's closing brace. It emptied two files before the cause was identified.",
+        "detection": "php -l across the whole test directory after each application, which is why the damage never reached a commit or a suite run.",
+        "fix": "Docblock absorption now walks backwards line by line and cannot reach past the block it is reading. Orphaned private helpers are reported rather than auto-deleted, and the manual cleanup verifies the parse after each single removal and reverts that removal if it fails.",
+        "lesson": "A brace-balanced excision is safe for one method whose span is known and unsafe as a repeated rewrite over shifting offsets. The earlier version also computed a span in a `private`->`public` rewritten copy and applied the offsets to the original, which shifts by one byte per replacement."
+    },
+    "artifact_hashes_sha256": {
+        "docs/market_data/development/implementation/tests/MarketDataHistoricalBindingRemoval.php": "dba8cbc74550f8294869f57ed2e95846e29963f883acf30a0e77018944c9a8e0",
+        "tests/Unit/MarketData/TestPathBindingIntegrityTest.php": "35f3ae8905a8e6cbf20a45da8af2f171e11b370b6d90c078a3e9b1c10853ab99",
+        "docs/market_data/records/evidence/MD-B03-A002-BL001_WORK_BASELINE_LOCK.json": "fae219b53580122331f3301dbc4207e5417b98fcd3f46553f7fcefafce52f9c0",
+        "docs/market_data/development/implementation/CI-MD-B03-A002-001_CLASS_S_HISTORICAL_BINDING_REMOVAL.md": "8ce39d98bc0eec30fb5632d04a3a89ff012ee964ecb1d2b6577b8c37658c4e79",
+        "docs/market_data/development/implementation/ops/OPERATIONAL_RUNBOOK.md": "f3f667c18b40f6d67ee9cf3e7021350496ab22e800819ca07cce0f5928294de5",
+        "docs/market_data/development/implementation/MD_DEPENDENCY_REGISTRY.csv": "5406b6ad454ed39c5efc8d85c0f81654791af87ec823b5d91418f1b6507f41ee"
+    },
+    "residue_verdict": {
+        "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_A002_SCOPE",
+        "checked": [
+            "No executable binding to a removed document remains anywhere in tests/, enforced by a gate rather than asserted.",
+            "No test outside the removal set was lost: 1740 - 71 = 1669 exactly, and the whole suite passes.",
+            "No sealed extract is read as current proof; the gate distinguishes reading an extract from excluding the history directory, which seven suites legitimately do.",
+            "Five dead private helpers removed; one retained because removing it broke the parse, recorded rather than forced.",
+            "The tool's own defect was found by lint, fixed, and the corpus reconstructed from git before the final application, so no partially-damaged file survived."
+        ],
+        "known_residue_declared": "Six operator-facing contracts that the removed inventories used to state have no current owner: production validation, ops command-surface runtime matrix, scheduler cron deployment proof, environment baseline, read-side consumer sweep, and coverage-gate candidate scope. The guards that asserted them are gone, and their replacements need current authority the owning stages have not written. This is the open half of MD-DEP-0003 and is recorded per stage in its resume trigger."
+    },
+    "open_findings": [
+        "F-MD-B01-A003-001 — OPEN (P2); now also registered as MD-DEP-0005, the blocking dependency for MD-B01",
+        "F-MD-B00-A001-001 — Class R and Class S binding halves both closed; the replacement-guard obligation remains",
+        "F-MD-B01-A014-001 — OPEN (P2); owner MD-B19",
+        "F-MD-B01-A001-001 — OPEN; 630 reference-only rows across 18 unopened stages",
+        "F-MD-B01-A008-001 — OPEN; owner MD-B14"
+    ],
+    "open_dependencies": [
+        "MD-DEP-0005 — OPEN_BLOCKING for MD-B01 closure; no implementation remediation path",
+        "MD-DEP-0003 — OPEN_NON_BLOCKING; binding half closed, replacement-guard half per owning stage",
+        "MD-DEP-0004 — OPEN_NON_BLOCKING; per-stage classification obligation at entry"
+    ],
+    "relationship_requirements": {
+        "attempt_predecessor": "MD-B03-A001",
+        "baseline": "MD-B03-A002-BL001",
+        "change_impact": "CI-MD-B03-A002-001",
+        "remediates_dependency": "MD-DEP-0003",
+        "registers_dependency": "MD-DEP-0005",
+        "blocked_logical_stage": "MD-B01",
+        "return_to": "MD-B01"
+    },
+    "exact_resume_point": "MD-B01 remains the blocked logical stage and MD-DEP-0005 is its registered blocker. There is no implementation work that resolves it: DOCUMENT_CHANGE_POLICY section 2 requires explicit user authorization for the strategy revision, or a reviewed governance decision that MD-S020-R0189's owner-boundary precedence is permanent. Once either lands, open MD-B01-A016 to rebaseline, bind MD-S020-R0067, and issue the MD-B01 closure manifest. Do not enter MD-B02 before MD-B01 closes.",
+    "supersedes": "Nothing. E-MD-B03-A001-001 and -002 remain immutable and unedited; this attempt closes the half they left open."
+}

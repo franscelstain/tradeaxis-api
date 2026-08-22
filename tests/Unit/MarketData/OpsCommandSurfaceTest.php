@@ -10,6 +10,7 @@ use App\Application\MarketData\Services\ReplayBackfillService;
 use App\Application\MarketData\Services\ReplaySmokeSuiteService;
 use App\Application\MarketData\Services\ReplayVerificationService;
 use App\Application\MarketData\Services\SessionSnapshotService;
+use App\Application\MarketData\Services\SessionSnapshotFeatureState;
 use App\Infrastructure\Persistence\MarketData\EodEvidenceRepository;
 use App\Infrastructure\Persistence\MarketData\EodRunRepository;
 use App\Console\Commands\MarketData\BackfillMarketDataCommand;
@@ -28,6 +29,14 @@ use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 
 class OpsCommandSurfaceTest extends TestCase
 {
+    private function enableSessionSnapshotForCommandTest(): void
+    {
+        $state = m::mock(SessionSnapshotFeatureState::class);
+        $state->shouldReceive('isEnabled')->andReturn(true);
+        $state->shouldReceive('state')->andReturn('ENABLED');
+        $this->app->instance(SessionSnapshotFeatureState::class, $state);
+    }
+
     protected function tearDown(): void
     {
         m::close();
@@ -158,7 +167,7 @@ class OpsCommandSurfaceTest extends TestCase
 
     public function test_backfill_command_propagates_manual_input_file_override_without_leaking_config(): void
     {
-        config()->set('market_data.source.local_input_file', null);
+        app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->set(null);
 
         $service = m::mock(MarketDataBackfillService::class);
         $service->shouldReceive('execute')
@@ -204,7 +213,7 @@ class OpsCommandSurfaceTest extends TestCase
         $display = $tester->getDisplay();
 
         $this->assertSame(1, $exitCode);
-        $this->assertNull(config('market_data.source.local_input_file'));
+        $this->assertNull(app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->path());
         $this->assertStringContainsString('input_file=storage/app/market_data/operator/manual-2026-04-14.csv', $display);
         $this->assertStringContainsString('source_name=LOCAL_FILE', $display);
         $this->assertStringContainsString('source_input_file=C:/ops/manual-2026-04-14.csv', $display);
@@ -212,14 +221,14 @@ class OpsCommandSurfaceTest extends TestCase
 
     public function test_backfill_lifecycle_command_accepts_manual_input_file_override_without_leaking_config(): void
     {
-        config()->set('market_data.source.local_input_file', null);
+        app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->set(null);
 
         $orchestrator = m::mock(BackfillLifecycleOrchestrator::class);
         $orchestrator->shouldReceive('execute')
             ->once()
             ->with('2026-03-20', '2026-03-21', 'manual_file', m::on(function ($options) {
                 return ($options['input_file'] ?? null) === 'storage\\app\\market_data\\operator\\manual-multi-date.csv'
-                    && config('market_data.source.local_input_file') === 'storage\\app\\market_data\\operator\\manual-multi-date.csv'
+                    && app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->path() === 'storage\\app\\market_data\\operator\\manual-multi-date.csv'
                     && ! empty($options['with_evidence'])
                     && ! empty($options['with_replay']);
             }))
@@ -265,7 +274,7 @@ class OpsCommandSurfaceTest extends TestCase
         $display = $tester->getDisplay();
 
         $this->assertSame(0, $exitCode);
-        $this->assertNull(config('market_data.source.local_input_file'));
+        $this->assertNull(app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->path());
         $this->assertStringContainsString('source_mode=manual_file', $display);
         $this->assertStringContainsString('source_acquisition_mode=single_input_file_filtered_by_date', $display);
         $this->assertStringContainsString('input_file=storage/app/market_data/operator/manual-multi-date.csv', $display);
@@ -293,7 +302,7 @@ class OpsCommandSurfaceTest extends TestCase
     public function test_session_snapshot_capture_command_renders_summary(): void
     {
         // This case exercises capture behaviour, so it asserts the feature is enabled.
-        config()->set('market_data.session_snapshot.enabled', true);
+        $this->enableSessionSnapshotForCommandTest();
         $service = m::mock(SessionSnapshotService::class);
         $service->shouldReceive('capture')
             ->once()
@@ -346,7 +355,7 @@ class OpsCommandSurfaceTest extends TestCase
     public function test_session_snapshot_capture_command_blocks_without_readable_publication(): void
     {
         // This case exercises capture behaviour, so it asserts the feature is enabled.
-        config()->set('market_data.session_snapshot.enabled', true);
+        $this->enableSessionSnapshotForCommandTest();
         $service = m::mock(SessionSnapshotService::class);
         $service->shouldReceive('capture')
             ->once()
@@ -378,7 +387,7 @@ class OpsCommandSurfaceTest extends TestCase
     public function test_session_snapshot_capture_command_blocks_missing_slot_before_service(): void
     {
         // This case exercises capture behaviour, so it asserts the feature is enabled.
-        config()->set('market_data.session_snapshot.enabled', true);
+        $this->enableSessionSnapshotForCommandTest();
         $service = m::mock(SessionSnapshotService::class);
         $service->shouldNotReceive('capture');
 
@@ -1558,7 +1567,7 @@ class OpsCommandSurfaceTest extends TestCase
 
     public function test_daily_pipeline_command_normalizes_manual_input_file_paths_in_summary_artifact(): void
     {
-        config()->set('market_data.source.local_input_file', null);
+        app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->set(null);
 
         $service = m::mock(MarketDataPipelineService::class);
         $service->shouldReceive('importDaily')
@@ -1607,14 +1616,14 @@ class OpsCommandSurfaceTest extends TestCase
 
     public function test_daily_pipeline_command_propagates_manual_input_file_override_without_leaking_config(): void
     {
-        config()->set('market_data.source.local_input_file', null);
+        app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->set(null);
 
         $service = m::mock(MarketDataPipelineService::class);
         $service->shouldReceive('importDaily')
             ->once()
             ->with('2026-03-24', 'manual_file', null)
             ->andReturnUsing(function () {
-                \PHPUnit\Framework\Assert::assertSame('storage\\app\\market_data\\operator\\manual-2026-03-24.csv', config('market_data.source.local_input_file'));
+                \PHPUnit\Framework\Assert::assertSame('storage\\app\\market_data\\operator\\manual-2026-03-24.csv', app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->path());
 
                 return (object) [
                     'run_id' => 55,
@@ -1641,7 +1650,7 @@ class OpsCommandSurfaceTest extends TestCase
         $display = $tester->getDisplay();
 
         $this->assertSame(0, $exitCode);
-        $this->assertNull(config('market_data.source.local_input_file'));
+        $this->assertNull(app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->path());
         $this->assertStringContainsString('request_mode=import_only', $display);
         $this->assertStringContainsString('input_file=storage/app/market_data/operator/manual-2026-03-24.csv', $display);
     }

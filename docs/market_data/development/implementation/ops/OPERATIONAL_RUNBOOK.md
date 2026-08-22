@@ -40,7 +40,9 @@ Missing activation evidence means “not activated,” not a waived prerequisite
 
 ### Ops environment baseline gate
 
-Before any targeted proof, full-suite proof, scheduler rehearsal, or activation claim, execute and retain the gate defined in `docs/market_data/ops/OPS_ENVIRONMENT_BASELINE.md`. PHP must be `>= 7.3` and `< 8.4`. Treat `ENV_UNSUPPORTED_PHP_VERSION` and `BLOCKED_CONTAINER_RUNTIME_ENV` as blocking outcomes; do not suppress or relabel them as application failures. The static contract is guarded by `OpsEnvironmentBaselineStaticGuardTest.php`.
+Before any targeted proof, full-suite proof, scheduler rehearsal, or activation claim, execute and retain this gate. PHP must be `>= 7.3` and `< 8.4`. Treat `ENV_UNSUPPORTED_PHP_VERSION` and `BLOCKED_CONTAINER_RUNTIME_ENV` as blocking outcomes; do not suppress or relabel them as application failures. The static contract is guarded by `OpsEnvironmentBaselineStaticGuardTest.php`.
+
+> The gate used to be defined in `ops/OPS_ENVIRONMENT_BASELINE.md`, which `D-MD-20260820-02` decomposed and removed. `MD-B03-A002` found this clause still delegating to the removed path. The bounds and blocking reason codes above are stated here rather than repointed, because the surviving extracts are `HISTORICAL_ONLY` and may not act as current proof. **No current document owns the environment baseline as a contract**; establishing one is an operations-stage obligation recorded against `MD-DEP-0003`.
 
 ## Daily operator flow
 

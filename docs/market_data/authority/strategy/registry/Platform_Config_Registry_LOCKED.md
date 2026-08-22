@@ -172,7 +172,7 @@ Generated from `config/market_data.php` on 2026-08-03: 128 keys. A key added, re
 | `market_data.hash.delimiter` | string | `\|` | `MARKET_DATA_HASH_DELIMITER` | `../book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md` |
 | `market_data.hash.line_separator` | string | `
 ` | `MARKET_DATA_HASH_LINE_SEPARATOR` | `../book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md` |
-| `market_data.hash.null_token` | string | `[empty]` | `MARKET_DATA_HASH_NULL_TOKEN` | `../book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md` |
+| `market_data.hash.null_token` | string | empty string (zero bytes) | — | `../book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md` |
 | `market_data.source.adapter_contract_version` | string | `provider_neutral_eod_source_v2` | — | `../book/Source_Data_Acquisition_Contract_LOCKED.md` |
 | `market_data.source.observation_schema_version` | string | `source_observation_v2` | — | `../book/Source_Data_Acquisition_Contract_LOCKED.md` |
 | `market_data.source.observation_retention_version` | string | `bounded_payload_v1` | — | `../book/Source_Data_Acquisition_Contract_LOCKED.md` |

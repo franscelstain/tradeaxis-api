@@ -2,7 +2,9 @@
 
 namespace App\Infrastructure\Persistence\MarketData;
 
+use App\Domain\MarketData\MarketDataSemanticBindings;
 use App\Application\MarketData\Services\CoverageGateStateNormalizer;
+use App\Application\MarketData\Services\DeterministicHashService;
 use App\Application\MarketData\Services\MarketDataInvariantGuard;
 use App\Models\EodRun;
 use Carbon\Carbon;
@@ -601,7 +603,7 @@ class EodPublicationRepository
                 'observation_manifest_hash' => $run->observation_manifest_hash ?? null,
                 'publication_manifest_hash' => null,
                 'price_product_code' => (string) config('market_data.indicators.price_product_default', 'STRUCTURAL_ADJUSTED'),
-                'price_product_version' => (string) config('market_data.indicators.price_product_version', 'structural_adjusted_v1'),
+                'price_product_version' => MarketDataSemanticBindings::PRICE_PRODUCT_VERSION,
                 'read_model_version' => 'market_data_read_product_v1',
                 'readiness_state' => 'NOT_READY',
                 'sealed_at' => null,
@@ -1626,7 +1628,7 @@ class EodPublicationRepository
         $manifest['hash_algorithm'] = config('market_data.hash.algorithm', 'SHA-256');
         $manifest['hash_delimiter'] = config('market_data.hash.delimiter', '|');
         $manifest['hash_line_separator'] = config('market_data.hash.line_separator', "\n");
-        $manifest['hash_null_token'] = config('market_data.hash.null_token', '[empty]');
+        $manifest['hash_null_token'] = DeterministicHashService::NULL_TOKEN;
         $manifest['canonical_ordering_rule'] = 'trade_date ASC, ticker_id ASC; DeterministicHashService sorts canonical serialized rows before hashing';
         $manifest['component_hashes'] = [
             'bars_batch_hash' => $row->bars_batch_hash,

@@ -4,6 +4,7 @@ namespace App\Infrastructure\MarketData\Source;
 
 use App\Application\MarketData\Ports\ManualEodBarsSource;
 use App\Application\MarketData\Ports\SourceObservationRecorder;
+use App\Application\MarketData\Services\ManualSourceInputContext;
 use App\Infrastructure\MarketData\Observation\InMemorySourceObservationRecorder;
 use App\Infrastructure\Persistence\MarketData\SourceObservationRepository;
 use Carbon\Carbon;
@@ -16,10 +17,12 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
     private $csvFileIndexCache = [];
     private $jsonFileIndexCache = [];
     private $observations;
+    private $inputContext;
 
-    public function __construct(SourceObservationRecorder $observations = null)
+    public function __construct(SourceObservationRecorder $observations = null, ManualSourceInputContext $inputContext = null)
     {
         $this->observations = $observations ?: $this->defaultObservationRecorder();
+        $this->inputContext = $inputContext ?: app(ManualSourceInputContext::class);
     }
 
     public function fetchOrLoadEodBars($tradeDate, $sourceMode, array $tickerCodes = [], array $context = [])
@@ -38,7 +41,7 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
             $explicitInputFile = $this->resolveExplicitInputFilePath();
         } catch (SourceAcquisitionException $e) {
             $this->observations->recordTransportFailure(
-                $this->fileObservationEnvelope(config('market_data.source.local_input_file'), $tradeDate, null, $context),
+                $this->fileObservationEnvelope($this->inputContext->path(), $tradeDate, null, $context),
                 $e->reasonCode()
             );
             throw $e;
@@ -77,7 +80,7 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
 
     private function resolveExplicitInputFilePath()
     {
-        $configured = trim((string) config('market_data.source.local_input_file', ''));
+        $configured = trim((string) $this->inputContext->path());
         if ($configured == '') {
             return null;
         }

@@ -1,0 +1,195 @@
+{
+    "evidence_id": "E-MD-B03-A003-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B03",
+    "attempt_id": "MD-B03-A003",
+    "work_id": "MD-B03-A003",
+    "baseline_id": "MD-B03-A003-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B03-A003-001",
+    "issued_at": "2026-08-22T14:10:00+07:00",
+    "title": "MD-B03 closure evaluation: coverage validated, both exit criteria proven, closure blocked by an absent record",
+    "attempt_outcome": "PARTIAL_BLOCKED — every technical closure criterion is met; MD-B03 cannot reach DONE because MD-B03-A001 has no Change Impact Declaration",
+    "authority_basis": {
+        "governance": [
+            "authority/governance/STAGE_CLOSURE_MANIFEST_STANDARD.md",
+            "authority/governance/CHANGE_IMPACT_DECLARATION_STANDARD.md",
+            "authority/governance/STAGE_EXECUTION_AND_REWORK_STANDARD.md",
+            "authority/governance/CURRENT_VERIFICATION_REBASELINE_STANDARD.md",
+            "authority/governance/STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md"
+        ],
+        "implementation_authority": [
+            "development/implementation/MD_IMPLEMENTATION_BUILD_SEQUENCE.md",
+            "development/implementation/db/DB_Schema_And_Migration_Sync_Contract_LOCKED.md"
+        ],
+        "strategy_bytes_changed": 0
+    },
+    "runtime_artifact_boundary": {
+        "classification": "Executed database proof plus source and document proof.",
+        "storage_inspected": false,
+        "storage_mutated": false,
+        "database_executed": true,
+        "basis": "The clean-install and reason-registry criteria are runtime proof and were executed against MariaDB 10.4.27 on an isolated database created and dropped by this attempt. No storage/** artifact was required, produced, or claimed."
+    },
+    "baseline": {
+        "record": "records/evidence/MD-B03-A003-BL001_WORK_BASELINE_LOCK.json",
+        "issued_before_material_change": true,
+        "predecessor_attempt": "MD-B03-A002",
+        "predecessor_baseline": "MD-B03-A002-BL001"
+    },
+    "coverage_claim_validated": {
+        "claim": "MD-B03 shows strategy coverage 0/0.",
+        "why_it_needed_validating": "MD-DEP-0004 makes ownership validation a per-stage entry obligation and MD-B03 had never performed it. STAGE_CLOSURE_MANIFEST_STANDARD.md forbids claiming DONE from a percentage computed over a provisional denominator, and an unchecked 0/0 is provisional.",
+        "method": "Checked from both directions. First, the matrix was searched for rules whose subject is an MD-B03 deliverable — migration, additive schema, repository interface, reason registry, test harness. Ten rules matched the words; every one belongs to another stage and mentions migration only as a prohibition qualifier, for example MD-S007-R0033 forbidding a migration from updating sealed snapshot content. None is an MD-B03 predicate. Second, and decisively, the build sequence was read as the authority for what the stage must deliver.",
+        "result": "MD-B03's acceptance criteria are not traceability rows. MD_IMPLEMENTATION_BUILD_SEQUENCE.md states its frozen exit intent as an enabling condition: `clean-install/upgrade path tersedia untuk setiap feature berikut; belum ada nullable placeholder yang dianggap conformant`. MD-B03 builds the skeleton later stages fill; the strategy contracts describe the filled artifacts. 0/0 is correct, and is now validated rather than assumed.",
+        "note_on_method": "A word search alone would have been the weak-pattern trap this stage has recorded before. It was used to find candidates, not to conclude; the build sequence settled it."
+    },
+    "exit_criterion_1_clean_install": {
+        "criterion": "clean-install/upgrade path tersedia untuk setiap feature berikut",
+        "executed_not_inherited": "CURRENT_VERIFICATION_REBASELINE_STANDARD.md gives the A001 run zero current-verification effect, so the proof was re-executed.",
+        "method": "An isolated database was created, migrated from empty, re-migrated to test idempotency, seeded, then dropped.",
+        "result": {
+            "migration_files": 62,
+            "migrations_applied": 62,
+            "batches": 1,
+            "tables_created": 51,
+            "exit_code": 0,
+            "second_run": "Nothing to migrate — the upgrade path is idempotent",
+            "reason_registry": "MarketDataReasonCodesSeeder executed on the clean install: eod_reason_codes 43 -> 436"
+        },
+        "verdict": "PROVEN by current execution"
+    },
+    "exit_criterion_2_nullable_placeholder": {
+        "criterion": "belum ada nullable placeholder yang dianggap conformant",
+        "gap_found": "No test in the repository proved this half. MigrationIntegrityAndDriftTest quotes the exit gate in its own docblock and proved only the clean-install half; the word `nullable` appeared exactly once in the file, inside that quotation, for the whole epoch. This is the shape section 26 of the execution contract names: a gate whose PASS does not test the invariant it claims.",
+        "owner_contract": "db/DB_Schema_And_Migration_Sync_Contract_LOCKED.md, which states the invariant exactly — nullable rollout columns `are not a weaker accepted production state; a later enforcement migration is required after verified backfill`, and backfill and enforcement must be `distinct observable stages when nullability is needed for rollout`.",
+        "guards_added": [
+            "test_the_rollout_matrix_and_the_deployed_schema_agree_that_no_area_is_relocked — parses the nine-area V2 rollout matrix and requires every area to read `open` while the foundation columns are still nullable; a relocked area whose columns were never enforced fails here",
+            "test_no_rollout_column_is_enforced_not_null_before_a_verified_backfill — no later migration may make any of the 69 distinct V2 rollout columns NOT NULL while the matrix reports no verified backfill for any area",
+            "test_the_nullable_foundation_is_still_recorded_as_progress_not_closure — the contract's three statements and the dictionary's `implementation progress, not closure` must remain present, because an affirmative rule is not proven by silence",
+            "test_the_nullable_placeholder_detectors_can_fire — both enforcement probes must match a violation and stay silent on an ordinary nullable declaration"
+        ],
+        "scope_discipline": "A coarse detector — any migration containing both a NOT NULL and a data write — flagged eight files that create ordinary new columns with defaults. That is not the defect the contract describes, and shipping it would have been a false-positive guard of the kind MD-S020-R0172 forbids. The guard targets the V2 rollout columns specifically, which is what the contract's `nullability needed for rollout` actually means.",
+        "what_was_deliberately_not_done": "The nullable columns were not enforced. The contract requires a verified backfill first, and this attempt performed none. Enforcing them to make the gate look satisfied would have been the exact defect the exit criterion exists to prevent.",
+        "verdict": "PROVEN, by a guard that did not exist before this attempt"
+    },
+    "test_execution": {
+        "runner": "vendor/bin/phpunit",
+        "stage_deliverable_suites": [
+            {
+                "path": "tests/Unit/MarketData/MigrationIntegrityAndDriftTest.php",
+                "tests": 9,
+                "assertions": 21,
+                "result": "PASS",
+                "note": "5 pre-existing plus 4 added here"
+            },
+            {
+                "path": "tests/Unit/MarketData/MarketDataSqliteSchemaSyncTest.php",
+                "tests": 6,
+                "assertions": 683,
+                "result": "PASS"
+            },
+            {
+                "path": "tests/Unit/MarketData/ReasonCodeSeedExecutionTest.php",
+                "tests": 5,
+                "assertions": 6,
+                "result": "PASS"
+            },
+            {
+                "path": "tests/Unit/MarketData/PublishedColumnHashCoverageTest.php",
+                "tests": 16,
+                "assertions": 24,
+                "result": "PASS"
+            },
+            {
+                "path": "tests/Unit/MarketData/ArtifactIntegrityPolicyTest.php",
+                "tests": 8,
+                "assertions": 14,
+                "result": "PASS"
+            },
+            {
+                "path": "tests/Unit/MarketData/DestructiveMigrationGuardTest.php",
+                "tests": 23,
+                "assertions": 52,
+                "result": "PASS"
+            }
+        ],
+        "database_execution": "php artisan migrate --force and db:seed against MariaDB 10.4.27 on an isolated database",
+        "whole_suite": {
+            "tests": 1677,
+            "assertions": 11388,
+            "errors": 0,
+            "failures": 0,
+            "result": "PASS"
+        }
+    },
+    "negative_and_fail_closed_proof": {
+        "method": "Every mutation asserted to have landed before the guard was judged.",
+        "mutations": [
+            "the rollout matrix marks `actual EOD fields` as relocked while its columns stay nullable -> matrix/schema agreement guard failed (landed, count=1)",
+            "the dictionary's `implementation progress, not closure` sentence rewritten as `adopted` -> progress-not-closure guard failed (landed, count=1)",
+            "a migration enforces `config_snapshot_id` NOT NULL while every area is open -> enforcement guard failed (landed, 66 bytes)"
+        ],
+        "restoration_verified": "All three restored from pre-mutation copies; the suite re-executed green."
+    },
+    "closure_evaluation": {
+        "standard": "STAGE_CLOSURE_MANIFEST_STANDARD.md plus the Stage Register closure rule",
+        "criteria": {
+            "current_attempt_baseline_epoch_evidence": "MET — MD-B03-A003-BL001 and this record",
+            "required_strategy_coverage": "MET — 0/0, validated rather than assumed; zero transitional, zero conditional-pending, no unsatisfied denominator row",
+            "tests": "MET — both halves of the frozen exit intent proven, one by current database execution and one by a new mutation-proven guard",
+            "residue_verdict": "MET — CONFORMANT_NO_HARMFUL_RESIDUE_FOUND; the isolated database was dropped and no mutation was left applied",
+            "dependencies_resolved_or_explicitly_governed": "MET — MD-DEP-0001 and MD-DEP-0002 RESOLVED; MD-DEP-0003 OPEN_NON_BLOCKING and no longer owned by MD-B03",
+            "required_correlated_change_impact_for_material_attempts": "NOT MET — MD-B03-A001 was material and has no CI record",
+            "complete_valid_registered_relationships": "MET",
+            "integrity_and_relationship_gates": "MET — all six gates PASS",
+            "closure_manifest": "NOT ISSUED — withheld because the criterion above is unmet"
+        },
+        "verdict": "MD-B03 does not close. CHANGE_IMPACT_DECLARATION_STANDARD.md section 3 states that for a material attempt a missing declaration blocks DONE even if tests and other gates pass. Every other criterion is met.",
+        "why_the_missing_record_was_not_written": "Section 3 requires the declaration to exist early enough to guide the attempt's validation scope, and section 13 of the execution contract forbids repairing a historical timing deviation by writing the record late or editing issued evidence. Producing CI-MD-B03-A001-001 today would satisfy section 1 by falsifying section 3."
+    },
+    "artifact_hashes_sha256": {
+        "tests/Unit/MarketData/MigrationIntegrityAndDriftTest.php": "35194fe9edaef0e1ad44df8de20f4819318fcc736e56d8b5262a713abeace296",
+        "docs/market_data/records/evidence/MD-B03-A003-BL001_WORK_BASELINE_LOCK.json": "27eebaadcb0313c54496ba77cdc01aea27eaa5c0b24f5415bd92e3cda9a9509d",
+        "docs/market_data/development/implementation/CI-MD-B03-A003-001_STAGE_CLOSURE_EVALUATION.md": "3ab3faaa6d3d5fa5656283c9c664379c5373f5359f1cb193cd40e7c18d18cfda",
+        "docs/market_data/development/findings/F-MD-B03-A003-001_A001_MATERIAL_ATTEMPT_WITHOUT_CHANGE_IMPACT.md": "08ca3466302bbd5a6a08487bab2959bd12a690afc94e6937a1261a0f92df094a",
+        "docs/market_data/development/implementation/MD_DEPENDENCY_REGISTRY.csv": "f09f9ebf3aa36dcf80c8833399fe9d8b8319a78862e944417e05fdd083beceae"
+    },
+    "residue_verdict": {
+        "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_A003_SCOPE",
+        "checked": [
+            "The isolated clean-install database was dropped after the proof; no test database residue remains.",
+            "No schema, migration, configuration, or application code was mutated — the nullable columns are deliberately unchanged.",
+            "All three guard mutations were restored and verified by re-execution.",
+            "The stale MD-B03 stage-row claim that closure needs the per-stage replacement guards is corrected; that obligation moved to MD-B19/MD-B15/MD-B17/MD-B21/MD-B22 at A002.",
+            "No closure manifest was issued, so no record claims a closure the criteria do not support."
+        ]
+    },
+    "open_findings": [
+        "F-MD-B03-A003-001 — OPEN (P2); MD-B03-A001 material attempt without a Change Impact Declaration; blocks MD-B03 DONE",
+        "F-MD-B01-A003-001 — OPEN (P2); blocks MD-B01 via MD-DEP-0005",
+        "F-MD-B00-A001-001 — OPEN; replacement-guard half of MD-DEP-0003",
+        "F-MD-B01-A014-001 — OPEN (P2); owner MD-B19",
+        "F-MD-B01-A001-001 — OPEN; 630 reference-only rows across 18 unopened stages",
+        "F-MD-B01-A008-001 — OPEN; owner MD-B14"
+    ],
+    "open_dependencies": [
+        "MD-DEP-0006 — OPEN_BLOCKING for MD-B03 closure; reviewed governance decision; no implementation remediation path",
+        "MD-DEP-0005 — OPEN_BLOCKING for MD-B01 closure; authorised strategy revision or reviewed governance decision",
+        "MD-DEP-0003 — OPEN_NON_BLOCKING; replacement-guard half per owning stage",
+        "MD-DEP-0004 — OPEN_NON_BLOCKING; per-stage classification obligation at entry, now performed for MD-B03"
+    ],
+    "relationship_requirements": {
+        "attempt_predecessor": "MD-B03-A002",
+        "baseline": "MD-B03-A003-BL001",
+        "change_impact": "CI-MD-B03-A003-001",
+        "raises_finding": "F-MD-B03-A003-001",
+        "registers_dependency": "MD-DEP-0006",
+        "performs_entry_obligation_for": "MD-DEP-0004",
+        "blocked_logical_stage": "MD-B01"
+    },
+    "exact_resume_point": "Both open stages are now held by decisions only governance can make, each registered by ID. MD-B03 is blocked by MD-DEP-0006 and MD-B01 by MD-DEP-0005. No implementation work advances either. When MD-DEP-0006 resolves, issue SC-MD-B03-A003-001 from the criteria table in this record. When MD-DEP-0005 resolves, open MD-B01-A016 to bind MD-S020-R0067 and issue the MD-B01 closure manifest. Do not enter MD-B02 before MD-B01 closes.",
+    "supersedes": "Nothing. E-MD-B03-A001-001, -002, and E-MD-B03-A002-001 remain immutable and unedited."
+}

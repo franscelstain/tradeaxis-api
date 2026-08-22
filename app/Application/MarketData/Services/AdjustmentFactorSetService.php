@@ -3,6 +3,7 @@
 namespace App\Application\MarketData\Services;
 
 use App\Domain\MarketData\MarketDataScope;
+use App\Domain\MarketData\MarketDataSemanticBindings;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
@@ -17,7 +18,7 @@ use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
 class AdjustmentFactorSetService
 {
     const ASSESSMENT_VERSION = 'yahoo_source_scale_v1';
-    const FACTOR_FORMULA_VERSION = 'structural_factor_product_v1';
+    const FACTOR_FORMULA_VERSION = MarketDataSemanticBindings::FACTOR_FORMULA_VERSION;
 
     private $artifacts;
 

@@ -2,6 +2,8 @@
 
 namespace App\Application\MarketData\Services;
 
+use App\Domain\MarketData\MarketDataSemanticBindings;
+
 use App\Domain\MarketData\MarketDataScope;
 
 class IndicatorVectorService
@@ -109,7 +111,7 @@ class IndicatorVectorService
             'config_snapshot_id' => isset($config['config_snapshot_id']) ? (int) $config['config_snapshot_id'] : null,
             'factor_set_id' => isset($config['factor_set_id']) ? (int) $config['factor_set_id'] : null,
             'factor_set_hash' => $config['factor_set_hash'] ?? null,
-            'price_product_version' => (string) ($config['price_product_version'] ?? 'structural_adjusted_v1'),
+            'price_product_version' => (string) ($config['price_product_version'] ?? MarketDataSemanticBindings::PRICE_PRODUCT_VERSION),
             /*
              * The vector must state which price product it was computed on. Without it a consumer
              * cannot tell an adjusted series from an unadjusted one, and the two are not

@@ -36,16 +36,134 @@ class TermOwnershipAndPriceProductTest extends TestCase
     }
 
     /** Terms the register owns, as listed in its ownership table. */
+    /**
+     * The owned terms are read from the register table itself rather than restated here.
+     *
+     * A hardcoded copy is a second place a term can be added, which is the arrangement
+     * `MD-S056-R0143` exists to prevent. The copy had also drifted: it named 20 of the register's
+     * 33 terms, so 13 owned terms carried no redefinition guard at all.
+     *
+     * @return array<int,string>
+     */
     private function ownedTerms(): array
     {
-        return [
-            'raw source observation', 'RAW', 'STRUCTURAL_ADJUSTED', 'TOTAL_RETURN',
-            'date-driven capability', 'provider limitation abstraction', 'fatal failure',
-            'per-ticker failure', 'eligibility snapshot', 'requested trade date',
-            'effective trade date', 'canonical bars', 'invalid bars', 'session snapshot',
-            'decision horizon', 'decision-grade', 'intentional dataset start',
-            'archived proof window', 'development data frontier', 'operational activation',
-        ];
+        $owner = (string) file_get_contents($this->root().'/'.self::TERM_OWNER_DOCUMENT);
+
+        $terms = [];
+        if (preg_match('/## Term ownership register \(LOCKED\)(.*?)Aturan yang mengikat/s', $owner, $section)) {
+            foreach (preg_split('/\R/', $section[1]) as $line) {
+                $line = trim($line);
+                if (strpos($line, '|') !== 0) {
+                    continue;
+                }
+                $cells = array_map('trim', explode('|', trim($line, "| \t")));
+                if (count($cells) < 2 || $cells[0] === 'Kelompok' || strpos($cells[0], '---') === 0) {
+                    continue;
+                }
+                foreach (explode(',', $cells[1]) as $term) {
+                    $term = trim(str_replace('`', '', $term));
+                    if ($term !== '') {
+                        $terms[] = $term;
+                    }
+                }
+            }
+        }
+
+        return $terms;
+    }
+
+    private const TERM_OWNER_DOCUMENT = 'docs/market_data/authority/strategy/book/Terminology_and_Scope.md';
+
+    /**
+     * The terms the hardcoded list used to name. Coverage may grow with the register; it may not
+     * shrink below what was already guarded.
+     */
+    private const PREVIOUSLY_GUARDED_TERMS = [
+        'raw source observation', 'RAW', 'STRUCTURAL_ADJUSTED', 'TOTAL_RETURN',
+        'date-driven capability', 'provider limitation abstraction', 'fatal failure',
+        'per-ticker failure', 'eligibility snapshot', 'requested trade date',
+        'effective trade date', 'canonical bars', 'invalid bars', 'session snapshot',
+        'decision horizon', 'decision-grade', 'intentional dataset start',
+        'archived proof window', 'development data frontier', 'operational activation',
+    ];
+
+    /**
+     * `MD-S056-R0143` — adding a new term to the register is a change to the register's document,
+     * not to the document that needs the term.
+     *
+     * Structural, and exactly so: the register exists in one place. If a second document carried a
+     * register section, a term could be added without touching the owner, and the rule would be
+     * unenforceable rather than merely unobserved. The guard's own term list is derived from that
+     * one table, so extending the register extends the obligation automatically.
+     */
+    public function test_the_register_has_exactly_one_home_so_a_new_term_changes_that_document(): void
+    {
+        $registerSections = [];
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->root().'/docs/market_data', FilesystemIterator::SKIP_DOTS)) as $file) {
+            if (! $file->isFile() || substr($file->getFilename(), -3) !== '.md') {
+                continue;
+            }
+            $relative = substr(strtr($file->getPathname(), chr(92), '/'), strlen($this->root()) + 1);
+            if (strpos($relative, 'docs/market_data/records/history/') === 0) {
+                continue;
+            }
+            if (preg_match('/^#{2,6}\s+Term ownership register/mi', (string) file_get_contents($file->getPathname()))) {
+                $registerSections[] = $relative;
+            }
+        }
+
+        $this->assertSame(
+            [self::TERM_OWNER_DOCUMENT],
+            $registerSections,
+            'MD-S056-R0143: the register must have exactly one home, or a term could be added elsewhere'
+        );
+
+        $terms = $this->ownedTerms();
+        $this->assertGreaterThanOrEqual(33, count($terms), 'the register table must actually be parsed, not silently empty');
+        foreach (self::PREVIOUSLY_GUARDED_TERMS as $term) {
+            $this->assertContains($term, $terms, 'guard coverage may not shrink: '.$term.' was already guarded');
+        }
+    }
+
+    /**
+     * `MD-S056-R0144` — a term found with two substantive definitions in two documents is a contract
+     * violation, not a difference in writing style.
+     *
+     * The rule classifies rather than counts, so the proof is that the control treats such a case as
+     * a failure. Three things are shown together: the detector fires on a real second definition,
+     * stays silent on the two shapes the contract permits, and the corpus currently holds none — so
+     * the classification is enforced rather than merely declared.
+     */
+    public function test_a_second_substantive_definition_is_a_violation_and_not_a_style_difference(): void
+    {
+        $secondDefinition = "### Canonical bars\nCanonical bars adalah baris apa pun yang lolos import tanpa validasi kanonikal lebih lanjut.\n";
+        $this->assertNotSame(
+            [],
+            $this->competingDefinitions('probe.md', $secondDefinition),
+            'MD-S056-R0144: a second substantive definition must be detected, not tolerated'
+        );
+
+        $styleDifference = "### Canonical bars\nSee `Terminology_and_Scope.md`; bila berbeda, definisi di sana yang berlaku.\n";
+        $this->assertSame(
+            [],
+            $this->competingDefinitions('probe.md', $styleDifference),
+            'MD-S056-R0144: a pointer-carrying summary is the permitted shape and must not be called a violation'
+        );
+
+        $sectionAboutTheTerm = "### Canonical bars\nMust enforce:\n- one row per `(trade_date, listing_id)` within the resolved canonical revision\n";
+        $this->assertSame(
+            [],
+            $this->competingDefinitions('probe.md', $sectionAboutTheTerm),
+            'MD-S056-R0144: a constraints section is about the term, not a competing definition of it'
+        );
+
+        $competing = [];
+        foreach ($this->activeDocuments() as $relative => $text) {
+            foreach ($this->competingDefinitions($relative, $text) as $hit) {
+                $competing[] = $hit;
+            }
+        }
+        $this->assertSame([], $competing, 'MD-S056-R0144: an active document holds a second definition of an owned term');
     }
 
     /**

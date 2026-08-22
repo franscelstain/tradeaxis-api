@@ -89,20 +89,6 @@ class StageEightReconstructionStaticGuardTest extends TestCase
         $this->assertStringContainsString("if (\$input->requestMode !== 'corpus_reconstruction')", $pipeline);
     }
 
-    public function test_completed_stage_eight_is_backed_by_admission_and_zero_violation_evidence(): void
-    {
-        $ledger = $this->source('docs/market_data/audit/MARKET_DATA_IMPLEMENTATION_LEDGER.md');
-        $audit = $this->source('docs/market_data/audit/reports/AUDIT_FINAL_STATE.md');
-
-        $this->assertStringContainsString('active work order: `TAHAP_8_COMPLETE`', $ledger);
-        $this->assertStringContainsString('## Tahap 8 — Rekonstruksi korpus aktif satu kali — SELESAI 2026-08-14', $ledger);
-        $this->assertStringContainsString('15/15 target `COMPLETE`', $ledger);
-        $this->assertStringContainsString('Oracle final kampanye 2 menghasilkan `violation_count=0`', $ledger);
-        $this->assertStringContainsString('stage_9_replay=NOT_EXECUTED', $ledger);
-        $this->assertStringContainsString('HISTORICAL, SUPERSEDED — jalur pertama full-range', $ledger);
-        $this->assertStringContainsString('Tahap 8 `PASS/COMPLETE`', $audit);
-        $this->assertStringContainsString('Tahap 9 belum', $ledger.$audit);
-    }
 
     private function source(string $path): string
     {

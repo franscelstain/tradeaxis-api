@@ -230,6 +230,102 @@ class DateDrivenCapabilityAndProviderAbstractionTest extends TestCase
         $this->assertSame([], $leaked, 'provider quirk handling must not be inherited as a domain concern');
     }
 
+    /**
+     * `MD-S001-R0075`, `R0076`, and `R0078` — for the active `yahoo_finance` path the request is made
+     * per ticker, a free provider may rate limit, and the provider may require `period1`/`period2` or
+     * an equivalent windowing parameter.
+     *
+     * These three were `REFERENCE_ONLY` until `MD-B01-A014`, so the contract's own list of provider
+     * quirks was only partly under obligation. Each is located in the adapter and paired with the
+     * absence of the same concern from the domain and application layers, because "the adapter owns
+     * it" is only meaningful if nothing above the adapter also owns it.
+     */
+    public function test_the_three_named_provider_quirks_are_owned_by_the_adapter_and_by_nothing_above_it(): void
+    {
+        $adapterPath = $this->root().'/app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php';
+        $adapter = (string) file_get_contents($adapterPath);
+
+        // R0075 — the request is made per ticker.
+        $this->assertMatchesRegularExpression(
+            '/foreach\s*\(\s*\$uniqueTickerCodes/',
+            $adapter,
+            'MD-S001-R0075: the adapter must fan the request out per ticker'
+        );
+
+        // R0076 — a free provider may rate limit, and the adapter absorbs it.
+        $this->assertMatchesRegularExpression('/circuit_breaker/i', $adapter, 'MD-S001-R0076: rate-limit protection must live in the adapter');
+        $this->assertMatchesRegularExpression('/requestWithRetry/', $adapter, 'MD-S001-R0076: retry handling must live in the adapter');
+
+        // R0078 — the provider may require period1/period2 or an equivalent window.
+        $this->assertMatchesRegularExpression('/\{period1\}/', $adapter, 'MD-S001-R0078: the provider window parameter must be handled in the adapter');
+        $this->assertMatchesRegularExpression('/\{period2\}/', $adapter, 'MD-S001-R0078: both window bounds must be handled in the adapter');
+        $this->assertMatchesRegularExpression(
+            '/canonicalYahooChartUrl\(\$symbol,\s*\$periodBounds\[\'period1\'\],\s*\$periodBounds\[\'period2\'\]/',
+            $adapter,
+            'MD-S001-R0078: an absent template must fall back to the canonical windowed URL rather than to a domain default'
+        );
+
+        $leaked = [];
+        foreach (['app/Domain', 'app/Application'] as $dir) {
+            $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->root().'/'.$dir, FilesystemIterator::SKIP_DOTS));
+            foreach ($files as $file) {
+                if (! $file->isFile() || substr($file->getFilename(), -4) !== '.php') {
+                    continue;
+                }
+                $code = '';
+                foreach (token_get_all((string) file_get_contents($file->getPathname())) as $token) {
+                    if (is_array($token)) {
+                        if (in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true)) {
+                            continue;
+                        }
+                        $code .= $token[1];
+                    } else {
+                        $code .= $token;
+                    }
+                }
+                if (preg_match('/period1|period2|circuit_breaker/i', $code)) {
+                    $leaked[] = $file->getFilename();
+                }
+            }
+        }
+        $this->assertSame([], $leaked, 'no layer above the adapter may know the provider window or its rate-limit protection');
+    }
+
+    /**
+     * `MD-S001-R0082` — the import strategy may use windowing, an explicit date range, looping
+     * batches, retry, or backoff, as long as the date-driven contract survives.
+     *
+     * The permission half is proven by the mechanisms actually being present in the acquisition
+     * strategy; the constraint half by the requested range still bounding the result, so a windowing
+     * mechanism cannot quietly become the answer to a different question.
+     */
+    public function test_the_import_strategy_may_window_and_retry_while_the_requested_range_still_governs(): void
+    {
+        $acquisition = (string) file_get_contents(
+            $this->root().'/app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php'
+        );
+
+        foreach ([
+            'windowing' => '/\$windows\b|buildWindowCheckpoints/',
+            'explicit date range' => '/\$requestedStart\b.*\$requestedEnd\b/s',
+            'looping batch' => '/source_acquisition_batch_id/',
+            'retry' => '/retry/i',
+        ] as $mechanism => $pattern) {
+            $this->assertMatchesRegularExpression($pattern, $acquisition, 'the import strategy may use '.$mechanism);
+        }
+
+        $this->assertMatchesRegularExpression(
+            "/'source_acquisition_mode'\s*=>\s*'range_window'/",
+            $acquisition,
+            'the acquisition mode must name the windowing it performs rather than hide it'
+        );
+        $this->assertMatchesRegularExpression(
+            '/buildDateTelemetry\(\$rowsByDate,.*\$requestedStart,\s*\$requestedEnd\)/s',
+            $acquisition,
+            'the requested range must still govern what the windowed acquisition reports'
+        );
+    }
+
     // ------------------------------------------------- date-driven capability
 
     /**

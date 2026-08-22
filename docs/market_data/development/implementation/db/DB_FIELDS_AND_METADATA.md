@@ -483,6 +483,66 @@ Correction lifecycle replay fields are part of `md_replay_daily_metrics` and mus
 - `expected_baseline_publication_id`
 - `expected_candidate_publication_id`
 
+## Temporal interval convention (MD-B05-A001)
+
+`Tickers_and_Identity_Dependency_Contract_LOCKED.md` permits either an exclusive or an inclusive
+interval end and requires the choice to be one documented convention.
+`Sector_Classification_Contract_LOCKED.md` states the same requirement for membership. The
+convention was consistent in code and stated nowhere, which is the half of the requirement that was
+not met.
+
+Two record families, each internally consistent:
+
+| Family | Tables | Column type | End boundary |
+|---|---|---|---|
+| Temporal identity | `md_listing_symbols`, `md_listing_boards`, `md_provider_symbol_mappings` | `DATETIME` | **Exclusive.** An interval covers `T` when `effective_from <= T 23:59:59` and (`effective_to IS NULL` or `effective_to > T 00:00:00`). A move recorded at `D 00:00:00` resolves the prior interval on `D-1` and the new one on `D`. |
+| Sector membership | `ticker_sector_memberships` | `DATE` | **Inclusive.** An interval covers `T` when `effective_from <= T` and (`effective_to IS NULL` or `effective_to >= T`). A reclassification effective `R` closes the prior row at `R-1` and opens the new one at `R`. |
+
+Both are asserted by execution rather than left to reading: `ListingBoardAndSegmentTemporalityTest`
+and `TemporalIdentityFixturesTest` pin the exclusive boundary on each side of a move, and
+`SectorMembershipTemporalFactTest` pins the inclusive one. A change to either convention breaks a
+test rather than silently shifting historical answers by one session.
+
+`NULL` in `effective_to` means the interval is open, never that the record is current-state. It
+asserts that no closure was recorded, which is equally consistent with nothing having happened and
+with nothing having been captured — the distinction
+`Sector_Classification_Contract_LOCKED.md` draws in its capability boundary.
+
+### `md_listing_boards` — temporal board and market segment
+
+Runtime owner: effective-dated board and market-segment context for a listing.
+Repository: `TemporalIdentityRepository`.
+
+Board and market segment were single mutable columns on `md_listings`. Recording a move meant
+overwriting one of them, which changed the answer for every historical date at once, and the
+universe query filtered on the current segment — so a listing that was Regular on `T` and moved
+afterwards silently left `T`'s universe. `md_listings.board_code` and `md_listings.market_segment`
+remain as the cached current-state projection the identity contract permits; historical resolution
+reads only this table.
+
+Required fields:
+- `listing_board_id`
+- `listing_id`
+- `market_segment`
+- `board_code`
+- `effective_from`
+- `effective_to`
+- `recorded_at` (known-time boundary)
+- `retracted_at`
+- `source_observation_id`
+- `source_ref`
+- `change_reason`
+
+Required constraint/index:
+- primary key `listing_board_id`
+- unique key `(listing_id, effective_from, recorded_at)`
+- index `(listing_id, effective_from, effective_to)`
+- index `(market_segment, effective_from, effective_to)`
+
+Resolver semantics are fail-closed: a listing with no interval covering `T` is not resolved from the
+cached columns, and two intervals covering `T` raise `LISTING_BOARD_CONTEXT_AMBIGUOUS` rather than
+preferring one.
+
 ## Database Dictionary Cross-Reference
 
 For full table/column purpose, field role, date-key, identifier-key, and as-of usage rules, read:

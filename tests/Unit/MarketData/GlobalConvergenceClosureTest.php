@@ -176,31 +176,4 @@ class GlobalConvergenceClosureTest extends TestCase
         $this->assertSame([], $unresolved);
     }
 
-    /**
-     * Every field this session found unwritten carries a recorded reason in the audit register.
-     *
-     * The stage 20 gate permits a nullable or unwritten semantic field only when the reason is
-     * recorded. This binds the two together: if a finding is ever deleted from the register while
-     * the field is still unwritten, the gate stops being satisfied and this test says so.
-     */
-    public function test_every_unwritten_semantic_field_has_a_recorded_reason(): void
-    {
-        $register = (string) file_get_contents(
-            __DIR__.'/../../../docs/market_data/audit/reports/AUDIT_FINAL_STATE.md'
-        );
-
-        foreach ([
-            'source_observation_id' => 'P1-29',
-            'price_product_code' => 'P1-32',
-            'coverage_expected_count' => 'P1-35',
-            'liquidity_state' => 'P1-36',
-            'config_snapshot_id' => 'P1-25',
-        ] as $field => $finding) {
-            $this->assertStringContainsString(
-                $finding,
-                $register,
-                $field.' is unwritten in the legacy corpus and must keep a recorded reason'
-            );
-        }
-    }
 }

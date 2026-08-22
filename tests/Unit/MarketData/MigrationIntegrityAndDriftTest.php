@@ -230,4 +230,209 @@ class MigrationIntegrityAndDriftTest extends TestCase
 
         return array_map('strval', $rows);
     }
+
+    // ---------------------------------------------------------------- nullable placeholder gate
+
+    /**
+     * The stage exit gate has two halves. The tests above prove the clean-install/upgrade path; this
+     * block proves the other one — "belum ada nullable placeholder yang dianggap conformant" — which
+     * had no test anywhere in the repository. The word `nullable` appeared exactly once in this file,
+     * inside the quotation at the top, for the whole verification epoch.
+     *
+     * Owner contract: `db/DB_Schema_And_Migration_Sync_Contract_LOCKED.md`, which states the
+     * invariant exactly: nullable rollout columns "are not a weaker accepted production state; a
+     * later enforcement migration is required after verified backfill", and backfill and enforcement
+     * must be "distinct observable stages when nullability is needed for rollout".
+     */
+    private const V2_FOUNDATION_MIGRATION = '2026_08_02_000001_add_market_data_strategy_v2_foundation';
+
+    private function contractPath(): string
+    {
+        return $this->root().'/docs/market_data/development/implementation/db/DB_Schema_And_Migration_Sync_Contract_LOCKED.md';
+    }
+
+    /**
+     * Areas of the V2 rollout matrix: area => relock state.
+     *
+     * @return array<string,string>
+     */
+    private function rolloutMatrix(): array
+    {
+        $rows = [];
+        $inMatrix = false;
+        foreach (preg_split('/\R/', (string) file_get_contents($this->contractPath())) as $line) {
+            $line = trim($line);
+            if (strpos($line, '## V2 rollout matrix') === 0) {
+                $inMatrix = true;
+
+                continue;
+            }
+            if ($inMatrix && strpos($line, '## ') === 0) {
+                break;
+            }
+            if (! $inMatrix || strpos($line, '|') !== 0) {
+                continue;
+            }
+            $cells = array_map('trim', explode('|', trim($line, "| \t")));
+            if (count($cells) !== 4 || $cells[0] === 'Area' || strpos($cells[0], '---') === 0) {
+                continue;
+            }
+            $rows[$cells[0]] = strtolower($cells[3]);
+        }
+
+        return $rows;
+    }
+
+    /**
+     * The nullable columns the V2 foundation migration introduced, as table => column list.
+     *
+     * @return array<string,array<int,string>>
+     */
+    private function v2NullableColumns(): array
+    {
+        $path = $this->root().'/database/migrations/'.self::V2_FOUNDATION_MIGRATION.'.php';
+        $out = [];
+        $table = null;
+        foreach (preg_split('/\R/', (string) file_get_contents($path)) as $line) {
+            if (preg_match("/Schema::(?:create|table)\(\s*'([a-z0-9_]+)'/", $line, $m)) {
+                $table = $m[1];
+            }
+            if ($table !== null && preg_match("/\\\$table->[a-zA-Z]+\(\s*'([a-z0-9_]+)'.*nullable\(\)/", $line, $m)) {
+                $out[$table][] = $m[1];
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * The matrix says every rollout area is still `open`, and the schema agrees: the foundation
+     * columns are still nullable. Either side drifting from the other is the defect — a relocked
+     * area whose columns were never enforced, or enforced columns the matrix still calls open.
+     */
+    public function test_the_rollout_matrix_and_the_deployed_schema_agree_that_no_area_is_relocked(): void
+    {
+        $matrix = $this->rolloutMatrix();
+        $this->assertGreaterThanOrEqual(9, count($matrix), 'the V2 rollout matrix must actually be parsed');
+
+        $columns = $this->v2NullableColumns();
+        $total = 0;
+        foreach ($columns as $list) {
+            $total += count($list);
+        }
+        $this->assertGreaterThan(80, $total, 'the foundation migration must really introduce nullable rollout columns');
+
+        $relocked = [];
+        foreach ($matrix as $area => $state) {
+            if ($state !== 'open') {
+                $relocked[] = $area.' => '.$state;
+            }
+        }
+
+        $this->assertSame(
+            [],
+            $relocked,
+            'a rollout area may not be relocked while its columns are still nullable placeholders'
+        );
+    }
+
+    /**
+     * No V2 rollout column may have been enforced `NOT NULL` yet, because the matrix reports no
+     * verified backfill for any area. An enforcement migration landing while the area is still open
+     * is exactly a nullable placeholder being accepted as conformant.
+     */
+    public function test_no_rollout_column_is_enforced_not_null_before_a_verified_backfill(): void
+    {
+        $columns = [];
+        foreach ($this->v2NullableColumns() as $list) {
+            foreach ($list as $column) {
+                $columns[$column] = true;
+            }
+        }
+        // 94 nullable declarations across the foundation migration collapse to 69 distinct names.
+        $this->assertGreaterThan(60, count($columns), 'the rollout column set must be populated before it is searched for');
+
+        $enforced = [];
+        foreach ($this->migrationFiles() as $name => $path) {
+            if ($name === self::V2_FOUNDATION_MIGRATION) {
+                continue;
+            }
+            $source = (string) file_get_contents($path);
+            foreach (array_keys($columns) as $column) {
+                $quoted = preg_quote($column, '/');
+                if (preg_match("/'".$quoted."'[^;\\n]*nullable\(false\)/", $source)
+                    || preg_match('/(?:MODIFY|CHANGE)\s+(?:COLUMN\s+)?`?'.$quoted.'`?[^;]*NOT\s+NULL/i', $source)) {
+                    $enforced[] = $name.' :: '.$column;
+                }
+            }
+        }
+
+        $this->assertSame([], $enforced, 'a rollout column was enforced NOT NULL while its area is still open');
+    }
+
+    /**
+     * The detectors must be able to fire, or a clean result is indistinguishable from a broken scan.
+     */
+    public function test_the_nullable_placeholder_detectors_can_fire(): void
+    {
+        $column = current(current($this->v2NullableColumns()));
+        $this->assertIsString($column, 'a rollout column must be resolvable for the probe');
+
+        $quoted = preg_quote($column, '/');
+        $this->assertSame(
+            1,
+            preg_match("/'".$quoted."'[^;\\n]*nullable\(false\)/", "\$table->string('".$column."')->nullable(false);"),
+            'the Blueprint enforcement probe must match'
+        );
+        $this->assertSame(
+            1,
+            preg_match('/(?:MODIFY|CHANGE)\s+(?:COLUMN\s+)?`?'.$quoted.'`?[^;]*NOT\s+NULL/i', 'ALTER TABLE t MODIFY `'.$column.'` VARCHAR(8) NOT NULL'),
+            'the raw-SQL enforcement probe must match'
+        );
+        $this->assertSame(
+            0,
+            preg_match("/'".$quoted."'[^;\\n]*nullable\(false\)/", "\$table->string('".$column."')->nullable();"),
+            'an ordinary nullable declaration is the rollout state, not a violation'
+        );
+
+        $this->assertSame(
+            1,
+            preg_match('/^open$/', 'open'),
+            'the relock-state comparison must be exact rather than substring'
+        );
+    }
+
+    /**
+     * The contract and the dictionary must keep saying the nullable foundation is progress rather
+     * than closure. An affirmative statement is not proven by silence: if the sentences disappear,
+     * nothing stops the next reader treating the placeholders as the accepted production state.
+     */
+    public function test_the_nullable_foundation_is_still_recorded_as_progress_not_closure(): void
+    {
+        $contract = (string) file_get_contents($this->contractPath());
+        $this->assertStringContainsString(
+            'They are not a weaker accepted production state',
+            $contract,
+            'the contract must keep stating that nullable rollout columns are not an accepted end state'
+        );
+        $this->assertStringContainsString(
+            'a later enforcement migration is required after verified backfill',
+            $contract,
+            'the contract must keep requiring backfill before enforcement'
+        );
+        $this->assertStringContainsString(
+            'make backfill and enforcement distinct observable stages',
+            $contract,
+            'the contract must keep the two stages separate'
+        );
+
+        $dictionary = (string) file_get_contents(
+            $this->root().'/docs/market_data/development/implementation/db/MARKET_DATA_DICTIONARY.md'
+        );
+        $this->assertStringContainsString(
+            'The current nullable V2 foundation is implementation progress, not closure',
+            $dictionary,
+            'the dictionary must keep denying that the nullable foundation is closure'
+        );
+    }
 }

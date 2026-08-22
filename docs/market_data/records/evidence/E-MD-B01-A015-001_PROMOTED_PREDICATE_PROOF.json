@@ -1,0 +1,331 @@
+{
+    "evidence_id": "E-MD-B01-A015-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A015",
+    "work_id": "MD-B01-A015",
+    "baseline_id": "MD-B01-A015-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B01-A015-001",
+    "issued_at": "2026-08-21T23:20:00+07:00",
+    "title": "Proof of the 62 predicates promoted at A014",
+    "attempt_outcome": "PARTIAL_BLOCKED — all 62 locally executable rows proven; MD-B01 stands at 206/207 with MD-S020-R0067 blocked by frozen strategy wording",
+    "authority_basis": {
+        "strategy": [
+            "authority/strategy/MARKET_DATA_PLATFORM_EOD_BASELINE.md",
+            "authority/strategy/book/Domain_Boundary_Invariants_LOCKED.md",
+            "authority/strategy/book/Terminology_and_Scope.md"
+        ],
+        "governance": [
+            "authority/governance/STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md",
+            "authority/governance/STAGE_EXECUTION_AND_REWORK_STANDARD.md",
+            "authority/governance/CHANGE_IMPACT_DECLARATION_STANDARD.md",
+            "authority/governance/RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md",
+            "authority/governance/WORK_CORRELATION_AND_RECORD_REGISTRY_STANDARD.md"
+        ],
+        "strategy_bytes_changed": 0,
+        "rule_text_or_fingerprint_changes": 0,
+        "fingerprint_recomputation": "sha1 recomputed across all 6490 rows after binding; 0 mismatches"
+    },
+    "runtime_artifact_boundary": {
+        "classification": "Source, schema-DDL, configuration, and document proof under section 5 of RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md.",
+        "storage_inspected": false,
+        "storage_mutated": false,
+        "raw_artifact_linkage_claimed": false,
+        "basis": "No predicate in the A015 scope depends on generated runtime output. Ownership, scope, boundary, and register predicates are established against the canonical schema, the market-data source tree, configuration, and the active document corpus."
+    },
+    "baseline": {
+        "record": "records/evidence/MD-B01-A015-BL001_WORK_BASELINE_LOCK.json",
+        "issued_before_material_change": true,
+        "predecessor_attempt": "MD-B01-A014",
+        "predecessor_baseline": "MD-B01-A014-BL001",
+        "pre_change_state": "Corrected MD-B01 denominator of 207 with 144 SATISFIED and 63 NOT_ASSESSED, of which 62 were promoted at A014 with a normalized predicate and no proof."
+    },
+    "scope": {
+        "proof_map_count": 62,
+        "excluded_blocked_rule": "MD-S020-R0067",
+        "blocking_finding": "F-MD-B01-A003-001",
+        "families": {
+            "domain ownership of canonical artifacts": [
+                "MD-S001-R0101",
+                "MD-S001-R0102",
+                "MD-S001-R0103",
+                "MD-S001-R0104",
+                "MD-S001-R0105",
+                "MD-S001-R0106",
+                "MD-S001-R0107",
+                "MD-S001-R0108",
+                "MD-S001-R0109",
+                "MD-S020-R0019",
+                "MD-S020-R0020",
+                "MD-S020-R0021",
+                "MD-S020-R0022",
+                "MD-S020-R0024",
+                "MD-S020-R0025",
+                "MD-S020-R0026",
+                "MD-S020-R0027",
+                "MD-S020-R0028",
+                "MD-S056-R0055",
+                "MD-S056-R0056",
+                "MD-S056-R0057",
+                "MD-S056-R0058",
+                "MD-S056-R0059",
+                "MD-S056-R0060",
+                "MD-S056-R0061"
+            ],
+            "phase ownership": [
+                "MD-S056-R0114"
+            ],
+            "declarative boundary invariants": [
+                "MD-S020-R0160",
+                "MD-S020-R0162",
+                "MD-S020-R0163",
+                "MD-S020-R0164",
+                "MD-S020-R0165",
+                "MD-S020-R0166",
+                "MD-S020-R0167",
+                "MD-S020-R0168",
+                "MD-S020-R0169",
+                "MD-S020-R0172"
+            ],
+            "canonical scope, dataset start, frontier, decision-grade conditions": [
+                "MD-S001-R0006",
+                "MD-S001-R0007",
+                "MD-S001-R0009",
+                "MD-S001-R0062",
+                "MD-S056-R0006",
+                "MD-S056-R0007",
+                "MD-S056-R0009",
+                "MD-S056-R0012",
+                "MD-S056-R0014",
+                "MD-S056-R0031",
+                "MD-S056-R0032",
+                "MD-S056-R0034",
+                "MD-S056-R0035",
+                "MD-S056-R0039",
+                "MD-S056-R0040",
+                "MD-S056-R0041"
+            ],
+            "anti-assumption claims": [
+                "MD-S001-R0142",
+                "MD-S001-R0143",
+                "MD-S001-R0144",
+                "MD-S001-R0145"
+            ],
+            "provider limitation abstraction": [
+                "MD-S001-R0075",
+                "MD-S001-R0076",
+                "MD-S001-R0078",
+                "MD-S001-R0082"
+            ],
+            "term ownership register": [
+                "MD-S056-R0143",
+                "MD-S056-R0144"
+            ]
+        }
+    },
+    "proof_method_notes": {
+        "ownership_is_not_existence": "Section 3 forbids proving a child fragment by the existence of its target, and MD-B01-A012 invalidated two rows for exactly that. Each owned artifact is therefore located by a distinguishing column rather than a table name — `eod_indicators` existing does not show versioned indicators, `indicator_set_version` and `formula_version` do — paired with a market-data class that produces it, and with a single application-wide assertion that nothing outside the market-data tree touches a market-data table. That last assertion is pinned to exactly three legacy Eloquent models, so a new writer elsewhere fails rather than becoming a second owner by habit.",
+        "affirmative_rules_are_not_proven_by_silence": "MD-S056-R0114 states that promote owns indicators, eligibility, hash, seal, and finalize. It is proven from the real stage sequences: `promoteSingleDay` runs all five and `importSingleDay` runs `INGEST_BARS` alone under request mode `import_only`. Both halves are asserted, because the affirmative half cannot be established by the absence of the negative one.",
+        "declarative_invariants_are_two_sided": "Each `X is not Y` invariant names a positive locator that must match on the surface under test and a set of downstream senses that must not. A rename emptying both searches fails on the locator instead of passing on the silence. Every forbidden pattern is also asserted to fire on the sense it forbids and to stay silent on twelve real upstream identifiers, `candidate_publication_id` among them.",
+        "conditions_of_decision_grade": "MD-S056-R0004 already establishes `decision-grade` as a target property rather than an achieved claim, so conditions 1, 2, and 4 are proven by the platform expressing and enforcing each condition — an explicit `recorded_at <= knownAt` knowledge cutoff, one declared basis and factor set bound by the read product, and a freshness state that resolves to `DEVELOPMENT_NOT_OPERATIONAL` until an operational start exists — never by claiming the conditions have been met."
+    },
+    "implementation_result": {
+        "runtime_behaviour_changed": false,
+        "application_code_changed": false,
+        "reason": "Every predicate in scope was found to hold against the implementation as it stands. Section 24 of the execution contract forbids changing conforming code to manufacture implementation work, so the code changes here are confined to test tooling that was itself defective.",
+        "tooling_defects_fixed": [
+            {
+                "surface": "tests/Support/MarketData/ReadsMarketDataSchema.php",
+                "defect": "`schemaColumnMap()` matched any `->name('x')` call, so `$this->dropExisting('md_listings', [...])` registered a table name as a column of whichever table was open — and registered it from a helper whose purpose is to remove columns. `->on('eod_runs')` leaked the same way.",
+                "impact": "A guard asserting that a column exists could be satisfied by a namesake table or by a column a migration had just dropped. Five guards share this trait.",
+                "fix": "Column capture now requires a Blueprint receiver and excludes the table-naming and column-removing methods. All five consuming suites re-executed green.",
+                "found_by": "The A015 ownership map, whose first run reported columns present that the DDL does not contain."
+            },
+            {
+                "surface": "tests/Unit/MarketData/MarketDataOrdersOneToFourArchitectureTest.php",
+                "defect": "The artifact-name guard matched bare `Candidate` against class file names.",
+                "impact": "A `CandidatePublicationRepository` would have been reported as a downstream artifact. `MD-S020-R0172` names this exact shape as non-conformant and `candidate_publication_id` is the boundary contract's own example.",
+                "fix": "`Candidate` now requires a downstream-sense compound; the other four terms stay whole-word. A two-way fixture asserts six downstream names are still caught and four legitimate upstream names are not.",
+                "found_by": "The new corpus-wide R0172 guard, which extracts every regex literal in the 186 market-data suites and runs it against the three overloaded bare words."
+            },
+            {
+                "surface": "tests/Unit/MarketData/TermOwnershipAndPriceProductTest.php",
+                "defect": "`ownedTerms()` was a hardcoded copy of the register naming 20 of its 33 terms.",
+                "impact": "Thirteen owned terms carried no redefinition guard, and the copy was a second place a term could be added — the arrangement MD-S056-R0143 exists to prevent.",
+                "fix": "The list is now parsed from the register table itself, with a floor assertion and a subset assertion so coverage can grow with the register but never shrink below what was already guarded. Extending to all 33 terms produced zero new findings.",
+                "found_by": "Deriving the R0143 proof from the register rather than from the guard."
+            }
+        ]
+    },
+    "tooling_result": {
+        "added": [
+            "development/implementation/tests/MarketDataPromotedPredicateProofGate.php — atomic A015 proof-map binder and validator; refuses a partial binding, verifies every named test method and implementation surface exists, and keeps MD-S020-R0067 out of the map"
+        ],
+        "changed": [
+            "development/implementation/tests/MarketDataScopeBoundaryCompletionGate.php — satisfied-count lock moved from 144 to 206"
+        ]
+    },
+    "test_execution": {
+        "runner": "vendor/bin/phpunit <test-file>",
+        "aggregate": {
+            "suites": 18,
+            "tests": 249,
+            "assertions": 1779,
+            "failures": 0,
+            "errors": 0,
+            "result": "PASS"
+        },
+        "new_suites": [
+            {
+                "path": "tests/Unit/MarketData/DomainOwnershipSurfaceTest.php",
+                "tests": 27,
+                "assertions": 238
+            },
+            {
+                "path": "tests/Unit/MarketData/CanonicalScopeFrontierAndDecisionGradeTest.php",
+                "tests": 12,
+                "assertions": 88
+            },
+            {
+                "path": "tests/Unit/MarketData/BoundaryInvariantSemanticsTest.php",
+                "tests": 11,
+                "assertions": 81
+            },
+            {
+                "path": "tests/Unit/MarketData/PromotedPredicateProofGateTest.php",
+                "tests": 8,
+                "assertions": 21
+            }
+        ],
+        "extended_suites": [
+            {
+                "path": "tests/Unit/MarketData/AntiAssumptionClaimBoundaryTest.php",
+                "tests": 20,
+                "assertions": 60,
+                "added": "four anti-assumption rules with negation-safe gaps and a quotation test"
+            },
+            {
+                "path": "tests/Unit/MarketData/DateDrivenCapabilityAndProviderAbstractionTest.php",
+                "tests": 18,
+                "assertions": 65,
+                "added": "the three named provider quirks and the import-strategy permission"
+            },
+            {
+                "path": "tests/Unit/MarketData/TermOwnershipAndPriceProductTest.php",
+                "tests": 15,
+                "assertions": 71,
+                "added": "register single-home proof and the violation-not-style classification"
+            },
+            {
+                "path": "tests/Unit/MarketData/DownstreamConceptSurfaceBoundaryTest.php",
+                "tests": 20,
+                "assertions": 59,
+                "added": "the corpus-wide overloaded-token guard for MD-S020-R0172"
+            }
+        ],
+        "regression_suites": [
+            "ScopeProductAndTimeBoundaryTest 25/582",
+            "DualUseFactAndContractAlignmentTest 20/84",
+            "FactDimensionSeparationAndProductTableTest 11/36",
+            "TerminologyConflationBoundaryTest 19/51",
+            "ScopeBoundaryAndOrchestrationCompletionTest 8/73",
+            "MarketDataOrdersOneToFourArchitectureTest 5/28",
+            "ScopeBoundaryCompletionGateTest 6/16",
+            "TraceabilityApplicabilityGateTest 11/23",
+            "ClassificationConsistencyGateTest 8/27",
+            "AliasNamingAndMeaningBoundaryTest 5/176"
+        ],
+        "full_market_data_directory": {
+            "tests": 1740,
+            "errors": 4,
+            "failures": 67,
+            "note": "Identical to the pre-existing baseline. All 71 are the static guards bound to the removed docs/market_data/audit/ layout, tracked as MD-DEP-0003 and untouched by this attempt."
+        }
+    },
+    "negative_and_fail_closed_proof": {
+        "method": "Every on-disk mutation asserts its replacement landed before the guard is judged. One did not: the import stage-sequence needle failed to match because the file uses CRLF while the needle assumed LF. Without the landing assertion that would have read as 'the guard did not react'. This is the third instance of the shape in this stage.",
+        "on_disk_mutations": [
+            "EligibilityDecisionService: a candidate_rank key added to the eligibility payload -> MD-S020-R0165 failed (landed, count=1)",
+            "MarketDataPipelineService: a SEAL stage added to the import sequence -> MD-S056-R0114 failed (landed, count=1, CRLF-corrected)",
+            "SessionSnapshotService: a websocketSubscribe method added -> MD-S020-R0167 failed (landed, count=1)",
+            "MarketCalendarRepository: the MARKET_SESSION_NOT_COMPLETED rejection renamed -> MD-S001-R0007 failed (landed, count=1)",
+            "MarketDataScope: the pre-boundary refusal renamed to a missing-data reason -> MD-S056-R0031/R0032 failed (landed, count=1)",
+            "config/market_data.php: daily_enabled default flipped to true -> MD-S056-R0039/R0040/R0041 failed (landed, count=1)",
+            "app/Support: a non-market-data class querying eod_bars -> the ownership boundary failed and named the file",
+            "Terminology_and_Scope.md: the register heading renamed -> MD-S056-R0143 failed (landed, count=1)",
+            "MarketDataOrdersOneToFourArchitectureTest: the compound Candidate pattern reverted to the bare token -> MD-S020-R0172 failed (landed, count=1)"
+        ],
+        "in_suite_mutations": [
+            "proof map shrunk to 61 rules -> atomicity error",
+            "a proof method renamed to one that does not exist -> missing-method error",
+            "a declared implementation surface removed -> missing-surface error",
+            "one bound row demoted to NOT_ASSESSED -> partial-binding error",
+            "a bound row pointed at the wrong evidence id -> evidence mismatch error",
+            "MD-S020-R0067 advanced to SATISFIED -> blocked-rule error"
+        ],
+        "restoration_verified": "All on-disk mutations restored from pre-mutation copies; `git status` reports no residual change under app/, config/, or authority/strategy/, and every suite re-executed green."
+    },
+    "guard_self_correction": {
+        "event": "The new MD-S020-R0172 guard flagged its own adequacy probe, because a literal `/candidate/i` written to prove the scan can detect a violation is itself a bare-token pattern inside the scanned corpus.",
+        "resolution": "The probe is assembled at runtime instead of being written as a literal. No self-exemption was added: MD-B01-A003 records that a carve-out weakens the guard for every other file, and this is the fifth occurrence of a guard flagging the surface that is obeying the rule."
+    },
+    "coverage_effect": {
+        "stage": "MD-B01",
+        "before": "144/207 (69.57%)",
+        "after": "206/207 (99.52%)",
+        "rows_still_not_assessed": 1,
+        "blocked_rule": "MD-S020-R0067",
+        "blocking_finding": "F-MD-B01-A003-001",
+        "note": "The denominator is unchanged. Coverage moved because 62 rows were proven, not because the set they are measured against was adjusted."
+    },
+    "artifact_hashes_sha256": {
+        "docs/market_data/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv": "a5f74e515850976d74ab2aafddf79da280c41b811849ebde2c8249f8d8666cc9",
+        "docs/market_data/development/implementation/tests/MarketDataPromotedPredicateProofGate.php": "85a6b5d74ec9e4cdf1882033b58a071d8f4b4f1b845c7d4d1cbe78d6184ee33a",
+        "tests/Unit/MarketData/DomainOwnershipSurfaceTest.php": "10a3ee4325a6a174a682c1264316801c2dd6cae610eb5018881e3d7d8cc11308",
+        "tests/Unit/MarketData/BoundaryInvariantSemanticsTest.php": "29c330698fcfb4de7b0e03c925be02a849c79efdcfbf73c5174dfab1f02a9f3c",
+        "tests/Unit/MarketData/CanonicalScopeFrontierAndDecisionGradeTest.php": "7c6e2754e43bd880f3bf636f61bf0c4037105a027adc822e5225d7a20bc3e4c2",
+        "tests/Unit/MarketData/PromotedPredicateProofGateTest.php": "7c4493d7983b3fa8f5a522ada3aa57b3f7e30e8a7975d8266fc87df1633ac5cc",
+        "tests/Support/MarketData/ReadsMarketDataSchema.php": "884fa73bc012762641f793b4a65f3796b1814e80f70f19bbcc695fa6d1d3711d",
+        "docs/market_data/records/evidence/MD-B01-A015-BL001_WORK_BASELINE_LOCK.json": "5f8a677d9cb6837c0c8674dd7bca2af0a88cac1aaae427574fcc3ee8d0bfd068",
+        "docs/market_data/development/implementation/CI-MD-B01-A015-001_PROMOTED_PREDICATE_PROOF.md": "6f118ea165f03062d88572296e5e07e2609c0b85853dcce0cb4bdc130c2a383f",
+        "tests/Unit/MarketData/AntiAssumptionClaimBoundaryTest.php": "74de03681f906c2e7b33fc1dc35504cc4e368bc4f29b463f0dae71aea2e12c9a",
+        "tests/Unit/MarketData/TermOwnershipAndPriceProductTest.php": "4e1a6ffce9849da5bac79524cb9309a73121f3085c10c643633a135c106a21c3",
+        "tests/Unit/MarketData/DownstreamConceptSurfaceBoundaryTest.php": "b65d2f29fca3a9a68131825915b4c95f48e3b8adf21af7cf9e8f40c1d68bae09",
+        "tests/Unit/MarketData/MarketDataOrdersOneToFourArchitectureTest.php": "522a1de7c3b530c7f3e390b7b393ca00fd62eae408528729a49cc03f6ce798b9",
+        "tests/Unit/MarketData/DateDrivenCapabilityAndProviderAbstractionTest.php": "876828bdbdeed00b9a3d78a65ba0b3b02fcc3f6ab9523573f7e2952867a0121e"
+    },
+    "residue_verdict": {
+        "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_A015_SCOPE",
+        "checked": [
+            "No row was bound on partial predicate proof; the binder is atomic at 62 or 0.",
+            "No mutation was left applied; app/, config/, and authority/strategy/ are byte-identical to the baseline.",
+            "No stale satisfied-count constant remains: the A013 gate lock was moved from 144 to 206 and its self-test re-executed.",
+            "No parallel coverage was created: four families were added to the suites that already own them rather than to new files.",
+            "The three tooling defects fixed here were each re-verified against every consuming suite, not only against the new one.",
+            "MD-S020-R0067 remains NOT_ASSESSED with no evidence id, enforced by the binder and by its own self-test mutation."
+        ],
+        "known_residue_out_of_scope": "F-MD-B01-A014-001 remains OPEN and owned by MD-B19: the eligibility evidence export ships only the optional legacy projection. It is executable and unfixed, deliberately, because this attempt declares no runtime mutation and MD-B19 has no baseline."
+    },
+    "open_findings": [
+        "F-MD-B01-A003-001 — OPEN (P2); sole remaining block on MD-S020-R0067 and therefore on MD-B01 closure",
+        "F-MD-B01-A014-001 — OPEN (P2); owner MD-B19",
+        "F-MD-B01-A001-001 — OPEN; 630 reference-only rows across 18 unopened stages",
+        "F-MD-B01-A008-001 — OPEN; owner MD-B14"
+    ],
+    "open_dependencies": [
+        "MD-DEP-0004 — OPEN_NON_BLOCKING; per-stage classification, applicability, and ownership obligation at entry",
+        "MD-DEP-0003 — OPEN_NON_BLOCKING; 24 test files bound to split-sealed composites"
+    ],
+    "relationship_requirements": {
+        "attempt_predecessor": "MD-B01-A014",
+        "baseline": "MD-B01-A015-BL001",
+        "change_impact": "CI-MD-B01-A015-001",
+        "carries_forward": "E-MD-B01-A014-001",
+        "depends_on_finding": "F-MD-B01-A003-001"
+    },
+    "exact_resume_point": "MD-B01 has no locally executable proof work left. Every remaining step is governance: an authorised strategy-change process must resolve F-MD-B01-A003-001 so MD-S020-R0067 can be revalidated, after which MD-B01-A016 rebaselines, binds that final row, and issues the stage closure manifest. Do not enter MD-B02 before MD-B01 closes.",
+    "supersedes": "Nothing. E-MD-B01-A012-001 through E-MD-B01-A014-001 remain immutable and unedited."
+}

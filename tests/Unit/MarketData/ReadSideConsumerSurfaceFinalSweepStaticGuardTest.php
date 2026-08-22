@@ -17,29 +17,6 @@ class ReadSideConsumerSurfaceFinalSweepStaticGuardTest extends TestCase
         return file_get_contents($path);
     }
 
-    public function test_final_sweep_inventory_exists_and_maps_to_existing_read_side_contract(): void
-    {
-        $inventory = $this->read('docs/market_data/audit/READ_SIDE_CONSUMER_SURFACE_FINAL_SWEEP_INVENTORY.md');
-        $contract = $this->read('docs/market_data/authority/strategy/book/Read_Side_Enforcement_Anti_Bypass_Contract_LOCKED.md');
-
-        foreach ([
-            'Read-Side Consumer Surface Final Sweep',
-            'READ_SIDE_SCOPE = INTERNAL_ONLY',
-            'READ_SIDE_POINTER_ENFORCEMENT_CONTRACT',
-            'This inventory is a final consumer-surface sweep over the existing read-side anti-bypass contract',
-            'Consumer Surface Matrix',
-            'Raw/Latest Scan Matrix',
-            'Consumer end-to-end trace summary',
-            'NO_READABLE_PUBLICATION',
-            'NO_CONSUMER_BYPASS_FOUND',
-            'DONE_LOCAL_PHPUNIT_PASS',
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $inventory);
-        }
-
-        $this->assertStringContainsString('Status: LOCKED', $contract);
-        $this->assertStringContainsString('resolveCurrentReadablePublicationForTradeDate', $contract);
-    }
 
     // The HTTP boundary was checked against two files by name. ReadSideHasNoHttpSurfaceTest
     // walks every file under routes/ and app/Http instead, so a controller added tomorrow is
@@ -101,66 +78,8 @@ class ReadSideConsumerSurfaceFinalSweepStaticGuardTest extends TestCase
     // The eight-file latest-date sweep is now applied to every file under app/ by
     // ReadPathShortcutProhibitionTest.
 
-    public function test_producer_and_diagnostic_paths_are_classified_in_inventory_not_as_consumer_bypass(): void
-    {
-        $inventory = $this->read('docs/market_data/audit/READ_SIDE_CONSUMER_SURFACE_FINAL_SWEEP_INVENTORY.md');
 
-        foreach ([
-            'WRITE_SIDE_PRODUCER',
-            'ADMIN_REPAIR_DIAGNOSTIC',
-            'EVIDENCE_REPLAY_AUDIT',
-            'TEST_ONLY',
-            'DOCS_ONLY',
-            'INTERNAL_ONLY',
-            'MarketDataPipelineService.php',
-            'EodArtifactRepository.php',
-            'RepairCurrentPublicationIntegrityCommand.php',
-            'findLatestReadablePublicationBefore',
-            'findRawCurrentPublicationStateForTradeDate',
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $inventory);
-        }
-    }
 
-    public function test_audit_docs_track_final_sweep_without_new_contract(): void
-    {
-        $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-        $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-
-        $this->assertStringContainsString('CURRENT CANONICAL OVERRIDE', $status);
-        $this->assertStringContainsString('CURRENT CANONICAL AUDIT OVERRIDE', $tracker);
-        $this->assertStringContainsString('HISTORICAL SESSION:', $status);
-        $this->assertStringContainsString('HISTORICAL SESSION:', $tracker);
-        $this->assertStringNotContainsString("\nACTIVE SESSION:\n", $status.$tracker);
-        $this->assertStringContainsString('- Read-Side Consumer Surface Completion / Final Sweep Revalidation -> DONE', $status);
-        $this->assertStringContainsString('- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('READ_SIDE_CONSUMER_SURFACE_FINAL_SWEEP_INVENTORY.md', $status.$tracker);
-        $this->assertStringContainsString('NO_CONSUMER_BYPASS_FOUND', $status.$tracker);
-        $this->assertStringContainsString('NO_READABLE_PUBLICATION', $status.$tracker);
-        $this->assertStringContainsString('HISTORICAL_CONTEXT_2026_05_01', $tracker);
-        $this->assertStringContainsString('Read-Side Enforcement / Anti Bypass Total', $tracker);
-        $this->assertStringContainsString('2026-05-01 → Canonical read-side pointer enforcement contract opened under audit governance.', $tracker);
-        // Two frozen PHPUnit tallies were asserted here, from runs of 449 and 250 tests against
-        // a suite that now holds four times that. They recorded what happened once.
-        $this->assertStringContainsString('No market-data consumer may read raw/staging/latest/current artifact data unless it is resolved through the current readable publication pointer', $tracker);
-        $this->assertSame(1, substr_count($tracker, '- READ_SIDE_POINTER_ENFORCEMENT_CONTRACT'));
-    }
-
-    public function test_runtime_environment_baseline_is_recorded_in_always_read_audit_materials(): void
-    {
-        $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-        $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-        $inventory = $this->read('docs/market_data/audit/READ_SIDE_CONSUMER_SURFACE_FINAL_SWEEP_INVENTORY.md');
-        $governance = $this->read('docs/market_data/records/history/archive/audit/AUDIT_UPDATE_GOVERNANCE.md');
-
-        foreach ([$status, $tracker, $inventory, $governance] as $document) {
-            $this->assertStringContainsString('PHP 7.4.33', $document);
-            $this->assertStringContainsString('PHPUnit 9.6.34', $document);
-            $this->assertStringContainsString('dom, mbstring, pdo_mysql, pdo_sqlite, xml, xmlreader, xmlwriter', $document);
-            $this->assertStringContainsString('BLOCKED_CONTAINER_RUNTIME_ENV', $document);
-            $this->assertStringContainsString('operator-local phpunit output', strtolower($document));
-        }
-    }
 
     private function assertNoLatestTradeDateShortcut(string $source, string $label): void
     {

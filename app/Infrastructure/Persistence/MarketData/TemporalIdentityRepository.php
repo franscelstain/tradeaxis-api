@@ -48,11 +48,12 @@ class TemporalIdentityRepository
     {
         $tradeDate = MarketDataScope::fromConfig()->assertRequestedDate($tradeDate);
         $this->assertFoundationAvailable();
-        $query = $this->baseIdentityQuery($tradeDate, $knownAt);
-
-        return $query
+        $rows = $this->baseIdentityQuery($tradeDate, $knownAt)
             ->orderBy('l.listing_id')
-            ->get()
+            ->get();
+        $this->assertSingleBoardContext($rows, $tradeDate);
+
+        return $rows
             ->map(function ($row) {
                 return $this->identityRow($row);
             })
@@ -87,6 +88,7 @@ class TemporalIdentityRepository
             ])
             ->orderByDesc('pm.recorded_at')
             ->get();
+        $this->assertSingleBoardContext($rows, $tradeDate);
 
         if ($rows->isEmpty()) {
             throw new \RuntimeException('PROVIDER_SYMBOL_MAPPING_MISSING: '.$provider.' '.$tickerCode.' '.$tradeDate.'.');
@@ -151,15 +153,25 @@ class TemporalIdentityRepository
                     })
                     ->whereNull('ls.retracted_at');
             })
+            ->join('md_listing_boards as lb', function ($join) use ($tradeDate) {
+                $join->on('lb.listing_id', '=', 'l.listing_id')
+                    ->where('lb.effective_from', '<=', $tradeDate.' 23:59:59')
+                    ->where(function ($q) use ($tradeDate) {
+                        $q->whereNull('lb.effective_to')->orWhere('lb.effective_to', '>', $tradeDate.' 00:00:00');
+                    })
+                    ->whereNull('lb.retracted_at');
+            })
             ->where('l.exchange_code', config('market_data.scope.market_code', 'IDX'))
-            ->where('l.market_segment', config('market_data.scope.market_segment', 'REGULAR'))
+            ->where('lb.market_segment', config('market_data.scope.market_segment', 'REGULAR'))
             ->where('l.listed_date', '<=', $tradeDate)
             ->where(function ($q) use ($tradeDate) {
                 $q->whereNull('l.delisted_date')->orWhere('l.delisted_date', '>', $tradeDate);
             })
             ->select([
-                'l.listing_id', 'l.legacy_ticker_id as ticker_id', 'l.exchange_code', 'l.market_segment',
-                'l.board_code', 'l.listed_date', 'l.delisted_date', 'l.recorded_at as listing_recorded_at',
+                'l.listing_id', 'l.legacy_ticker_id as ticker_id', 'l.exchange_code',
+                'lb.market_segment', 'lb.board_code', 'lb.listing_board_id',
+                'lb.recorded_at as board_recorded_at',
+                'l.listed_date', 'l.delisted_date', 'l.recorded_at as listing_recorded_at',
                 'i.instrument_id', 'i.instrument_uid', 'iss.issuer_id', 'iss.issuer_uid',
                 'ls.listing_symbol_id', 'ls.symbol as ticker_code', 'ls.recorded_at as symbol_recorded_at',
             ]);
@@ -168,10 +180,33 @@ class TemporalIdentityRepository
             $query->where('l.recorded_at', '<=', $knownAt)
                 ->where('i.recorded_at', '<=', $knownAt)
                 ->where('iss.recorded_at', '<=', $knownAt)
-                ->where('ls.recorded_at', '<=', $knownAt);
+                ->where('ls.recorded_at', '<=', $knownAt)
+                ->where('lb.recorded_at', '<=', $knownAt);
         }
 
         return $query;
+    }
+
+    /**
+     * Two board/segment intervals covering one trade date is a conflicting temporal record.
+     *
+     * The identity contract makes a conflicting mapping for `T` a blocking condition, not a choice
+     * between rows. Picking the most recent one here would produce a confident answer from a record
+     * that does not know its own history, which is worse than refusing.
+     */
+    private function assertSingleBoardContext($rows, $tradeDate)
+    {
+        $seen = [];
+        foreach ($rows as $row) {
+            $listingId = (int) $row->listing_id;
+            $boardId = (int) $row->listing_board_id;
+            if (isset($seen[$listingId]) && $seen[$listingId] !== $boardId) {
+                throw new \RuntimeException(
+                    'LISTING_BOARD_CONTEXT_AMBIGUOUS: listing '.$listingId.' has more than one board/segment interval covering '.$tradeDate.'.'
+                );
+            }
+            $seen[$listingId] = $boardId;
+        }
     }
 
     private function projectTicker($ticker)
@@ -233,6 +268,25 @@ class TemporalIdentityRepository
 
             $effectiveFrom = $listedDate.' 00:00:00';
             $effectiveTo = $delistedDate ? $delistedDate.' 00:00:00' : null;
+
+            // The board/segment interval is part of the projection, not an afterthought: a listing
+            // without one is unresolvable, and the correct response to that is to record the
+            // interval the master already implies rather than to read the cached column.
+            if (! DB::table('md_listing_boards')->where('listing_id', $listingId)->where('effective_from', $effectiveFrom)->exists()) {
+                DB::table('md_listing_boards')->insert([
+                    'listing_id' => $listingId,
+                    'market_segment' => 'REGULAR',
+                    'board_code' => $ticker->board_code ?? null,
+                    'effective_from' => $effectiveFrom,
+                    'effective_to' => $effectiveTo,
+                    'recorded_at' => $recordedAt,
+                    'retracted_at' => null,
+                    'source_observation_id' => null,
+                    'source_ref' => $sourceRef,
+                    'change_reason' => 'LEGACY_MASTER_PROJECTION',
+                ]);
+            }
+
             if (! DB::table('md_listing_symbols')->where('listing_id', $listingId)->where('symbol', $tickerCode)->where('effective_from', $effectiveFrom)->exists()) {
                 DB::table('md_listing_symbols')->insert([
                     'listing_id' => $listingId,
@@ -281,8 +335,10 @@ class TemporalIdentityRepository
             'ticker_id' => (int) $row->ticker_id,
             'ticker_code' => Str::upper(trim((string) $row->ticker_code)),
             'exchange_code' => (string) $row->exchange_code,
+            // Resolved from md_listing_boards, never from the cached columns on md_listings.
             'market_segment' => (string) $row->market_segment,
             'board_code' => $row->board_code,
+            'listing_board_id' => (int) $row->listing_board_id,
             'listed_date' => (string) $row->listed_date,
             'delisted_date' => $row->delisted_date ? (string) $row->delisted_date : null,
             'listing_symbol_id' => (int) $row->listing_symbol_id,
@@ -292,7 +348,7 @@ class TemporalIdentityRepository
 
     private function assertFoundationAvailable()
     {
-        foreach (['md_issuers', 'md_instruments', 'md_listings', 'md_listing_symbols', 'md_provider_symbol_mappings'] as $table) {
+        foreach (['md_issuers', 'md_instruments', 'md_listings', 'md_listing_symbols', 'md_listing_boards', 'md_provider_symbol_mappings'] as $table) {
             if (! Schema::hasTable($table)) {
                 throw new \RuntimeException('TEMPORAL_IDENTITY_FOUNDATION_MISSING: '.$table.'.');
             }

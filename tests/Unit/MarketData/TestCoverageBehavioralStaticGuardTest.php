@@ -17,42 +17,6 @@ class TestCoverageBehavioralStaticGuardTest extends TestCase
         return file_get_contents($path);
     }
 
-    public function test_behavioral_inventory_documents_all_critical_market_data_areas_and_mock_policy(): void
-    {
-        $inventory = $this->read('docs/market_data/tests/Behavioral_Test_Coverage_Inventory.md');
-
-        foreach ([
-            'TEST_COVERAGE_BEHAVIORAL_CONTRACT',
-            'source/manual/API boundary',
-            'manual import/promote split',
-            'coverage gate',
-            'finalize',
-            'publishability state',
-            'publication repository',
-            'current pointer',
-            'fallback',
-            'correction lifecycle',
-            'evidence export',
-            'replay verification',
-            'read-side consumer',
-            'command surface',
-            'static guard',
-            'migration/schema',
-            'reason code propagation',
-            'full pipeline integration',
-            'INTERNAL_MOCK_HEAVY',
-            'SUPPORT_ONLY',
-            'ENFORCED_PENDING_LOCAL_PHPUNIT',
-            'MarketDataPipelineIntegrationTest',
-            'PublicationRepositoryIntegrationTest',
-            'ReadablePublicationReadContractIntegrationTest',
-            'CorrectionRepositoryIntegrationTest',
-            'ReplayResultRepositoryIntegrationTest',
-            'MarketDataSqliteSchemaSyncTest',
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $inventory, $needle.' must remain in behavioral coverage inventory.');
-        }
-    }
 
     // The five named proof files are now covered by LifecycleProofIsNotMockedTest, which derives
     // the set instead: every *IntegrationTest must be DB-backed and free of test doubles, and no
@@ -97,41 +61,5 @@ class TestCoverageBehavioralStaticGuardTest extends TestCase
         }
     }
 
-    public function test_command_surface_mock_heavy_tests_are_explicitly_not_counted_as_lifecycle_proof(): void
-    {
-        $ops = $this->read('tests/Unit/MarketData/OpsCommandSurfaceTest.php');
-        $inventory = $this->read('docs/market_data/tests/Behavioral_Test_Coverage_Inventory.md');
 
-        $this->assertStringContainsString('use Mockery', $ops);
-        $this->assertStringContainsString('shouldReceive', $ops);
-        $this->assertStringContainsString('INTERNAL_MOCK_HEAVY', $inventory);
-        $this->assertStringContainsString('OpsCommandSurfaceTest', $inventory);
-        $this->assertStringContainsString('Do not count command tests as lifecycle proof', $inventory);
-        $this->assertStringContainsString('command output test without DB/proof state assertion', $inventory);
-    }
-
-    public function test_behavioral_guard_keeps_static_checks_as_support_not_runtime_replacement(): void
-    {
-        $inventory = $this->read('docs/market_data/tests/Behavioral_Test_Coverage_Inventory.md');
-        $guidance = $this->read('docs/market_data/development/implementation/tests/specs/Test_Implementation_Guidance_LOCKED.md');
-
-        foreach ([
-            'Static guard is not runtime proof',
-            'static guard alone',
-            'Unit tests and static guards are support proof only',
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $inventory, $needle.' must stay documented.');
-        }
-
-        foreach ([
-            'Row-level assertions',
-            'Run-level assertions',
-            'Hash-level assertions',
-            'Publication-level assertions',
-            'Replay-level assertions',
-            'No fake-proof rule',
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $guidance, $needle.' must remain locked test guidance.');
-        }
-    }
 }

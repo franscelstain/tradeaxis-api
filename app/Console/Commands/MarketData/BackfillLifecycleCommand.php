@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands\MarketData;
 
+use App\Application\MarketData\Services\ManualSourceInputContext;
+
 use App\Application\MarketData\Services\BackfillLifecycleOrchestrator;
 
 class BackfillLifecycleCommand extends AbstractMarketDataCommand
@@ -43,11 +45,12 @@ class BackfillLifecycleCommand extends AbstractMarketDataCommand
             return 1;
         }
 
-        $previousInputFile = config('market_data.source.local_input_file');
+        $inputContext = app(ManualSourceInputContext::class);
+        $previousInputFile = $inputContext->path();
         $configuredOverride = false;
 
         if (($this->option('source_mode') ?: 'api') === 'manual_file' && $this->option('input_file')) {
-            config()->set('market_data.source.local_input_file', $this->option('input_file'));
+            $inputContext->set($this->option('input_file'));
             $configuredOverride = true;
         }
 
@@ -80,7 +83,7 @@ class BackfillLifecycleCommand extends AbstractMarketDataCommand
             return 1;
         } finally {
             if ($configuredOverride) {
-                config()->set('market_data.source.local_input_file', $previousInputFile);
+                $inputContext->set($previousInputFile);
             }
         }
 

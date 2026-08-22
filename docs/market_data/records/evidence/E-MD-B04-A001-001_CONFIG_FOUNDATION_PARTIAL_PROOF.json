@@ -1,0 +1,185 @@
+{
+  "evidence_id": "E-MD-B04-A001-001",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B04",
+  "attempt_id": "MD-B04-A001",
+  "work_id": "MD-B04-A001",
+  "baseline_id": "MD-B04-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "change_impact_declaration": "CI-MD-B04-A001-001",
+  "issued_at": "2026-08-22T13:30:00+07:00",
+  "title": "Immutable config identity, semantic bindings, reason vocabulary, and canonical hash foundation — partial proof",
+  "attempt_outcome": "PARTIAL_BLOCKED — 113/114 mandatory MD-B04 predicates have current proof; MD-S082-R0062 is withheld by MD-DEP-0007",
+  "authority_basis": {
+    "strategy": [
+      "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md",
+      "authority/strategy/book/Determinism_Invariants_LOCKED.md",
+      "authority/strategy/book/Hash_Number_Formatting_LOCKED.md",
+      "authority/strategy/book/Config_Change_Protocol_LOCKED.md",
+      "authority/strategy/registry/Platform_Config_Registry_LOCKED.md",
+      "authority/strategy/registry/Reason_Codes_Registry.md"
+    ],
+    "governance": [
+      "authority/governance/STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md",
+      "authority/governance/WORK_BASELINE_LOCK_STANDARD.md",
+      "authority/governance/CHANGE_IMPACT_DECLARATION_STANDARD.md",
+      "authority/governance/DOCUMENT_CHANGE_POLICY.md",
+      "authority/governance/RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md"
+    ],
+    "strategy_bytes_changed": 0
+  },
+  "baseline": {
+    "record": "records/evidence/MD-B04-A001-BL001_WORK_BASELINE_LOCK.json",
+    "issued_before_material_change": true,
+    "pre_change_state": "MD-B04 NOT_STARTED with 184 provisional mandatory-or-conditional rows, one provisional optional row, and 50 mixed-classification members."
+  },
+  "traceability_normalization": {
+    "rows_reviewed": 933,
+    "documents": 6,
+    "current_b04_denominator": 114,
+    "satisfied": 113,
+    "not_assessed_blocked": 1,
+    "moved_to_downstream_proof_owners": 181,
+    "reference_only": 638,
+    "blocked_rule": "MD-S082-R0062",
+    "normalization_gate": "MarketDataConfigFoundationTraceabilityGate PASS",
+    "classification_gate": "MarketDataClassificationConsistencyGate PASS; MD-B04 joined NORMALIZED_STAGES and pending mixed members fell from 629 to 579",
+    "semantic_corrections": [
+      "MD-S085-R0001 is a list introducer; R0002..R0008 carry its governing semantic context.",
+      "MD-S082-R0203..R0211 are B21-owned per-key governance-metadata and effective-revision predicates, with MD-B04 supporting linkage.",
+      "MD-S005-R0019 is B10-owned because complete stable keys are artifact-specific, with MD-B04 supporting serializer linkage.",
+      "All moved predicates remain unproven at their proof-owning stages; no historical PASS was inherited."
+    ]
+  },
+  "actual_implementation": {
+    "classification": "PARTIALLY_CONFORMANT — all executable B04 remediation is complete; one strategy contradiction remains",
+    "changes": [
+      "PlatformConfigRegistry derives the exact key/type register from canonical strategy and blocks missing, unknown, or wrongly typed runtime config before snapshot creation.",
+      "MarketDataConfigSnapshotRepository canonically hashes redacted resolved config plus compiled semantic bindings and preserves effective-time/as-known identity semantics.",
+      "MarketDataSemanticBindings centralizes compiled price-product, factor-formula, and session feature identities without inventing unregistered runtime keys.",
+      "ManualSourceInputContext removes request-specific local input from platform config identity; SessionSnapshotFeatureState removes undocumented activation config.",
+      "DeterministicHashService now enforces locked SHA-256, UTF-8, delimiters, row separators, empty NULL token, booleans, canonical dates/timestamps/content hashes, decimal-text formatting, canonical JSON, stable order, and fail-closed unknown numeric formats.",
+      "Pipeline, manifest, and command hash metadata now reports the actual serializer NULL token rather than config('market_data.hash.null_token').",
+      "The canonical activity dormancy key is used for activity facts; the deprecated coverage alias remains snapshot-only compatibility state and cannot shrink coverage."
+    ],
+    "schema_migration": "Not required; existing additive config identity and reason-code schema surfaces were revalidated by SQLite integration execution."
+  },
+  "positive_and_negative_proof": {
+    "current_execution_totals": {
+      "tests": 261,
+      "assertions": 2119,
+      "errors": 0,
+      "failures": 0,
+      "result": "PASS"
+    },
+    "suites": [
+      {"path": "tests/Unit/MarketData/DeterministicHashServiceTest.php", "tests": 13, "assertions": 24, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/PlatformConfigRegistryConformanceTest.php", "tests": 4, "assertions": 7, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/ConfigIdentityBindingTest.php", "tests": 7, "assertions": 31, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/AsKnownWiringAndConfigIdentityTest.php", "tests": 2, "assertions": 11, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/HashSealDatasetIntegrityStaticGuardTest.php", "tests": 6, "assertions": 38, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/PublishedColumnHashCoverageTest.php", "tests": 16, "assertions": 24, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/MarketDataOrdersOneToFourFoundationTest.php", "tests": 9, "assertions": 34, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/EmittedReasonCodeRegistrationTest.php", "tests": 2, "assertions": 7, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/LoggingTraceabilityReasonCodesStaticGuardTest.php", "tests": 5, "assertions": 89, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/ReasonCodeSeedExecutionTest.php", "tests": 5, "assertions": 6, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/ConfigEnvGovernanceCleanupStaticGuardTest.php", "tests": 5, "assertions": 39, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php", "tests": 56, "assertions": 1252, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/ConfigFoundationTraceabilityGateTest.php", "tests": 4, "assertions": 9, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/ConfigFoundationProofGateTest.php", "tests": 4, "assertions": 7, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/CoverageDormantUniverseTest.php", "tests": 8, "assertions": 16, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/TerminologyOwnerVocabularyTest.php", "tests": 7, "assertions": 16, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/CoherentPriceProductBoundaryTest.php", "tests": 7, "assertions": 17, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/ReplayConfigIdentityVariesWithConfigTest.php", "tests": 5, "assertions": 17, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/AsKnownReplayBoundaryTest.php", "tests": 10, "assertions": 65, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/LocalFileEodBarsAdapterTest.php", "tests": 4, "assertions": 19, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/MarketDataPipelineServiceTest.php", "tests": 18, "assertions": 26, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/OpsCommandSurfaceTest.php", "tests": 58, "assertions": 347, "result": "PASS"},
+      {"path": "tests/Unit/MarketData/SessionSnapshotOptionalityBoundaryTest.php", "tests": 6, "assertions": 18, "result": "PASS"}
+    ],
+    "fail_closed_behaviors": [
+      "non-SHA-256 algorithm, changed delimiter/line separator, invalid UTF-8/date/timestamp/content hash, malformed JSON, invalid boolean, unowned numeric scale, missing stable key, and delimiter/newline text are rejected",
+      "missing, unknown, and wrong-typed platform config keys block snapshot creation",
+      "secret cleartext never enters snapshot identity; secret-only rotation does not leak through the hash",
+      "dormant/zero-volume/provider-absent rows remain in the denominator and cannot silently improve coverage",
+      "traceability mutation tests reject a fake list-introducer requirement, stale owner/support linkage, and missing semantic context"
+    ]
+  },
+  "blocked_authority_predicate": {
+    "rule_id": "MD-S082-R0062",
+    "finding": "F-MD-B04-A001-001",
+    "dependency": "MD-DEP-0007",
+    "conflict": "Platform_Config_Registry_LOCKED.md resolves hash.null_token as [empty], while Audit_Hash and Hash_Number_Formatting lock the actual token to empty string.",
+    "technical_truth": "Serializer and emitted metadata conform to the semantic owner; platform config remains registry-conformant but semantically contradictory.",
+    "why_proof_is_withheld": "The snapshot's null-normalization binding cannot be semantically identical to both current authorities.",
+    "required_resolution": "Reviewed decision, explicit strategy-change authorization, corrected freeze, successor attempt baseline, and affected proof revalidation."
+  },
+  "residue_verdict": {
+    "verdict": "NO_HARMFUL_EXECUTABLE_RESIDUE_FOUND_IN_A001_SCOPE; ONE GOVERNED STRATEGY CONTRADICTION OPEN",
+    "checked": [
+      "No unregistered semantic-version, session-activation, or local-input config key remains executable.",
+      "No application metadata path reads market_data.hash.null_token; the serializer owns emitted token identity.",
+      "No coverage behavior reads the deprecated dormancy alias; it remains only because the current registry requires snapshot compatibility.",
+      "No alternate config registry or shadow reason-code dictionary was created.",
+      "Moved downstream predicates remain NOT_ASSESSED and cannot inherit B04 proof."
+    ]
+  },
+  "runtime_artifact_boundary": {
+    "storage_inspected": false,
+    "storage_mutated": false,
+    "raw_artifacts_referenced": [],
+    "database_execution": "SQLite-backed integration tests executed against isolated in-memory/test databases; no retained runtime artifact was claimed.",
+    "basis": "Current proof is repository implementation/config plus deterministic unit/integration execution. No current evidence references storage/**."
+  },
+  "change_impact_status": "CI-MD-B04-A001-001 COMPLETE FOR CURRENT PARTIAL VERDICT; future strategy correction explicitly invalidates affected proof",
+  "open_items_after": {
+    "findings": [
+      "F-MD-B04-A001-001 — OPEN P1; blocks MD-S082-R0062 and MD-B04 closure",
+      "F-MD-B01-A001-001 — PARTIALLY_RESOLVED; classification entry obligations remain for unopened stages",
+      "F-MD-B00-A001-001 — PARTIALLY_RESOLVED; replacement-guard obligations remain with owning stages",
+      "F-MD-B01-A008-001 — OPEN; owner MD-B14",
+      "F-MD-B01-A014-001 — OPEN; owner MD-B19"
+    ],
+    "dependencies": [
+      "MD-DEP-0007 — OPEN_BLOCKING for MD-B04",
+      "MD-DEP-0004 — OPEN_NON_BLOCKING globally; MD-B04 entry obligation complete",
+      "MD-DEP-0003 — OPEN_NON_BLOCKING for later owning stages"
+    ],
+    "b04_residue": "none executable beyond the governed authority contradiction"
+  },
+  "relationship_requirements": {
+    "baseline": "MD-B04-A001-BL001",
+    "change_impact": "CI-MD-B04-A001-001",
+    "finding": "F-MD-B04-A001-001",
+    "dependency": "MD-DEP-0007",
+    "stage_preconditions": ["SC-MD-B02-A001-001", "SC-MD-B03-A003-001"],
+    "closure_manifest": "NOT ISSUED — 113/114 is not closure"
+  },
+  "artifact_hashes_sha256": {
+    "app/Application/MarketData/Services/DeterministicHashService.php": "dabf6e12a040063a1a594eff523ee3aab912e3499780d9f5c85b1f960a47a017",
+    "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php": "9421675900695efd74141f1117b18d72dca0710e9db17b939fa7f51b596c0214",
+    "app/Infrastructure/MarketData/Config/PlatformConfigRegistry.php": "0871f4c5f93996f12936c841a9539ccc8b820a2910beb933d983d2054b2f7cfc",
+    "app/Domain/MarketData/MarketDataSemanticBindings.php": "05585bd8f14bea64d3cf5c773a4aa91f6a8bf794e290112d2cd2c78be7cb90b9",
+    "config/market_data.php": "3222faafc05ec61ebe2d1b29ff361f71a253d06a96e995620744a862a7fd2804",
+    "tests/Unit/MarketData/DeterministicHashServiceTest.php": "af4bf85f0c33e6ab1327ec793e04cad2fc8c0c8cfd8f64471a29a796923d7f0c",
+    "tests/Unit/MarketData/PlatformConfigRegistryConformanceTest.php": "b95731b12bb803c78c912cde44fc346fbf602f2b3a659ba68646cd6b7ff8b923",
+    "tests/Unit/MarketData/ConfigIdentityBindingTest.php": "47a2bbb1bd8b649960d746796ee3c2cae9b27a6ee5ad41935d0fe0021c12427b",
+    "tests/Unit/MarketData/ConfigFoundationTraceabilityGateTest.php": "75687b1ca9961806dd65f934ed394fe76e04e5902b92b3b0a18410d66a5641fa",
+    "tests/Unit/MarketData/ConfigFoundationProofGateTest.php": "112f149c17683a6d080bef6981f32bc7923309fc455954043b17bc35fca5e10b",
+    "tests/Unit/MarketData/HashSealDatasetIntegrityStaticGuardTest.php": "e48044dd3121c4dc1ed474f44ab3a662905338b752c8f24cf0133af46da66924",
+    "development/implementation/tests/MarketDataConfigFoundationTraceabilitySpec.php": "52c7da9237291a5738e76aa53ea7a2f2c773e78a0197f0d15b1b9554fea71e9f",
+    "development/implementation/tests/MarketDataConfigFoundationNormalization.php": "62f3e856b7e3883b5444782ed63a488f07568fc5522103d03a78096af867477a",
+    "development/implementation/tests/MarketDataConfigFoundationTraceabilityGate.php": "074c70e8c001a25707ffa8689767fb4aacc72ba64b6c5909b4422b59a9643c24",
+    "development/implementation/tests/MarketDataConfigFoundationProofBinder.php": "94b68737b67737f272e5eecff082024f5dafd80fa3cfae90ead2b2ddbbec506c",
+    "development/implementation/tests/MarketDataConfigFoundationProofGate.php": "c9cfb3425007a8085e3e0fd4d0437bfd4368febaa0693ca102760785aba75dc7",
+    "authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv": "ee8c6da8ecb2b765ba8c1813983094fda7ed89ed4eb5603d538d8e7f1d1eece4",
+    "development/implementation/CI-MD-B04-A001-001_CONFIG_SNAPSHOT_AND_SEMANTIC_BINDINGS.md": "b62d3473018d96b06805e376224242511eb8ab9ba97948a856275cbf204dbb3b",
+    "development/findings/F-MD-B04-A001-001_HASH_NULL_TOKEN_AUTHORITY_CONTRADICTION.md": "2756a2542eeab49db3599648de00eda7ef7ea7d967ee0e149830679b940b5810",
+    "development/implementation/MD_DEPENDENCY_REGISTRY.csv": "43c7b60dbcec708039422ad3ecbcc2df1096d235f4b41c1510f23d1134e77866",
+    "records/evidence/MD-B04-A001-BL001_WORK_BASELINE_LOCK.json": "4c55d61ccd976ec59a511df06ed6ccc2af5246b32745a41df8e02c53544c2498"
+  },
+  "exact_resume_point": "Obtain reviewed decision and explicit strategy-revision authorization for MD-DEP-0007; correct/refreeze the Platform Config hash.null_token row without weakening the empty-token owner semantics; then open the governed successor MD-B04 attempt with a new pre-change Baseline Lock and revalidate MD-S082-R0062 plus affected config/hash metadata proof.",
+  "supersedes": "Nothing. This is the first MD-B04-A001 evidence record; the immutable baseline and all earlier-stage evidence remain unedited."
+}

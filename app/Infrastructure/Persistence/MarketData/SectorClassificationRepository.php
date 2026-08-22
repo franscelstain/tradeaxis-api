@@ -270,7 +270,8 @@ class SectorClassificationRepository
                 'member.membership_id', 'member.supersedes_membership_id', 'member.ticker_id',
                 'member.listing_id', 'member.sector_code', 'member.effective_from',
                 'member.effective_to', 'member.source_authority_class', 'member.source_name',
-                'member.source_ref', 'member.recorded_at', 'sector.sector_index_code',
+                'member.source_ref', 'member.recorded_at', 'member.operator_name',
+                'member.reason_code', 'sector.sector_index_code',
             ])
             ->whereIn('member.listing_id', array_values($listingIdsByTicker))
             ->where('member.classification_system', $classificationSystem)
@@ -286,15 +287,24 @@ class SectorClassificationRepository
         }
 
         foreach ($listingIdsByTicker as $tickerId => $listingId) {
-            $activeRevisions = $this->activeRevisions($rowsByListing[$listingId] ?? []);
+            $stored = $rowsByListing[$listingId] ?? [];
+            $governed = array_values(array_filter($stored, function ($row) {
+                return $this->operatorGovernanceSatisfied($row);
+            }));
+            $refused = array_values(array_filter($stored, function ($row) use ($tradeDate) {
+                return ! $this->operatorGovernanceSatisfied($row) && $this->covers($row, $tradeDate);
+            }));
+
+            $activeRevisions = $this->activeRevisions($governed);
             $covering = array_values(array_filter($activeRevisions, function ($row) use ($tradeDate) {
-                return (string) $row->effective_from <= (string) $tradeDate
-                    && ($row->effective_to === null || (string) $row->effective_to >= (string) $tradeDate);
+                return $this->covers($row, $tradeDate);
             }));
 
             if (count($covering) !== 1) {
                 $contexts[$tickerId] = $this->unknownContext(
-                    count($covering) > 1 ? 'SECTOR_MEMBERSHIP_OVERLAP_INVALID' : 'SECTOR_MEMBERSHIP_UNKNOWN'
+                    count($covering) > 1
+                        ? 'SECTOR_MEMBERSHIP_OVERLAP_INVALID'
+                        : ($refused === [] ? 'SECTOR_MEMBERSHIP_UNKNOWN' : 'SECTOR_OPERATOR_GOVERNANCE_INCOMPLETE')
                 );
                 continue;
             }
@@ -471,6 +481,41 @@ class SectorClassificationRepository
             'created_at' => $now,
             'updated_at' => $now,
         ]);
+    }
+
+    /**
+     * `OPERATOR_ENTERED` is a conditional authority class, and the condition is part of resolution.
+     *
+     * Sector_Classification_Contract_LOCKED.md permits an operator-entered row to establish
+     * membership "only with an explicit authoritative reference, named operator, and governed reason
+     * code". appendMembership() enforces that triple, but `operator_name` and `reason_code` are
+     * nullable with no database constraint binding them to the class, so a row written by any other
+     * path arrived here naming a conditional class without carrying its condition — and resolved as
+     * authoritative membership. Checking the condition only where it is already satisfied is not
+     * checking it.
+     *
+     * A row that fails this is not authoritative for any purpose: it cannot resolve a sector and it
+     * cannot supersede a row that can.
+     */
+    private function operatorGovernanceSatisfied($row)
+    {
+        if ((string) $row->source_authority_class !== 'OPERATOR_ENTERED') {
+            return true;
+        }
+
+        foreach (['operator_name', 'reason_code', 'source_ref'] as $field) {
+            if (trim((string) ($row->{$field} ?? '')) === '') {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function covers($row, $tradeDate)
+    {
+        return (string) $row->effective_from <= (string) $tradeDate
+            && ($row->effective_to === null || (string) $row->effective_to >= (string) $tradeDate);
     }
 
     private function activeRevisions(array $rows)

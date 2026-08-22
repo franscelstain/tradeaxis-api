@@ -1,6 +1,6 @@
 # F-MD-B01-A003-001 — Ten frozen strategy contracts use `eligible` without repeating its data-usability meaning
 
-- Status: `OPEN`
+- Status: `CLOSED`
 - Severity: `P2`
 - Stage / Attempt / Baseline / Epoch: `MD-B01` / `MD-B01-A003` / `MD-B01-A003-BL001` / `MD-REBASELINE-20260820-001`
 - Owning stage for remediation: governance — the affected documents are frozen strategy and cannot be edited by an implementation attempt
@@ -92,3 +92,32 @@ What changes is the size of the required outcome: **one** ordered strategy-updat
 This finding already carried a measurement note correcting the *repetition* side of the pattern — `data_usable` alone missed the seven documents that state the meaning in prose. The subject side was never checked. Correcting one half of a two-sided scan and publishing the result reads as diligence and is not: both sides of a match have to be right before the number means anything.
 
 The corrected measurement is now executable and pinned, so it cannot silently revert: `AliasNamingAndMeaningBoundaryTest::test_the_alias_meaning_repetition_gap_is_measured_on_the_identifier_not_the_word` asserts the exact five-document result, and `::test_the_word_sense_scan_would_flag_documents_that_never_use_the_alias` asserts that six of the wrongly-named documents contain the word and do not use the alias. Evidence `E-MD-B01-A014-001`.
+
+## Closed — D-MD-20260822-04 / MD-B01-A016
+
+Resolved by reviewed governance decision. **No strategy revision was authorised or required**, and no strategy byte changed.
+
+The review answered the question this finding left open — whether the ten (corrected: one) documents needed the repetition added — by establishing that the obligation is already discharged for `CONSUMER_READ_CONTRACT_LOCKED.md` through canonical ownership plus that document's own delegation:
+
+1. `Terminology_and_Scope.md` registers `eligibility snapshot` and states that a compatibility field named `eligible` has only the upstream data-usability meaning.
+2. `CONSUMER_READ_CONTRACT_LOCKED.md` opens by delegating: consumers read only the versioned read model defined by `Downstream_Consumer_Read_Model_Contract_LOCKED.md`.
+3. That contract repeats the meaning in full — and carries the same freshness caveat the readiness contract restates.
+4. The owner boundary names it in Required cross-contract alignment, so the chain is closed by the owner, not by the decision relying on it.
+
+Adding the sentence to `CONSUMER_READ_CONTRACT_LOCKED.md` would have put a third statement of one semantic into a document that does not own it — which `MD-S056-R0141` forbids and One Document One Authoritative Role exists to prevent.
+
+### What the decision did not lean on
+
+Not `MD-S020-R0189`. Its condition is a dependent document that *conflates* eligibility with readability or policy, and the sentence at issue does the opposite — it separates them, denying that `eligible = 1` establishes freshness. There was no conflation for the owner boundary to override, and "until that dependent contract reaches its ordered strategy-update step" anticipates an update rather than excusing one. R0189 stands unchanged and unused.
+
+### Proof, not declaration
+
+The decision made `MD-S020-R0067` provable; `MD-B01-A016` proved it. `AliasMeaningOwnershipChainTest` asserts each of the five links separately and removes each to confirm it is load-bearing — a chain proven only end-to-end would stay green while an intermediate document dropped the sentence carrying it. Two landed mutations turn it red. `MD-S020-R0067` is bound to `E-MD-B01-A016-001` with the governing decision recorded in the row, and `MD-B01` closed at **207/207** under `SC-MD-B01-A016-001`.
+
+### Standing condition
+
+The decision carries a scope limit. If the owner's definition, the delegation sentence, the read-model repetition, or the alignment listing is removed, the basis fails and this finding reopens. That is enforced, not trusted: each link has its own assertion.
+
+### Do-not-repeat
+
+Writing the decision record triggered the alignment guard, which read the record's quotation of the tradability misreading as an assertion of it — the seventh occurrence of a guard flagging a document that is honouring the rule. The record was rewritten to refer to the misreading rather than reproduce it. The handling has not changed and should not: rewrite the document, never carve out the guard.

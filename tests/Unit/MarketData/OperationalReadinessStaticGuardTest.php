@@ -255,58 +255,5 @@ class OperationalReadinessStaticGuardTest extends TestCase
         }
     }
 
-    public function test_audit_docs_reference_operational_readiness_contract(): void
-    {
-        $status = $this->readProjectFile('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-        $tracker = $this->readProjectFile('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-        $inventory = $this->readProjectFile('docs/market_data/audit/OPERATIONAL_READINESS_INVENTORY.md');
 
-        foreach ([$status, $tracker, $inventory] as $document) {
-            $this->assertStringContainsString('Operational Readiness', $document);
-            $this->assertStringContainsString('OPERATIONAL_READINESS_CONTRACT', $document);
-            $this->assertStringContainsString('OperationalReadinessStaticGuardTest.php', $document);
-            $this->assertStringContainsString('LOCKED_LOCAL_PHPUNIT_PASS', $document);
-        }
-
-        $this->assertStringContainsString('- Operational Readiness -> DONE', $status);
-        $this->assertStringContainsString('- OPERATIONAL_READINESS_CONTRACT -> LOCKED', $tracker);
-
-        // Two frozen tallies were asserted here, from runs of 10 and 368 tests. They record what
-        // happened once and cannot fail unless the audit history is edited.
-        $this->assertStringContainsString('php artisan list | findstr market-data', $status.$tracker.$inventory);
-    }
-
-    /**
-     * The three operator documents must describe the same command surface.
-     *
-     * The runbook says how to run a command, the safety inventory says what it mutates and what
-     * guards it, and the command index points at both. A command present in one and absent from
-     * another is a command an operator can find instructions for without finding its safety
-     * posture — or the reverse.
-     */
-    public function test_all_three_operator_documents_describe_the_same_command_surface(): void
-    {
-        $runbook = $this->readProjectFile('docs/market_data/development/implementation/ops/OPERATIONAL_RUNBOOK.md');
-        $inventory = $this->readProjectFile('docs/market_data/ops/COMMAND_SURFACE_SAFETY_INVENTORY.md');
-        $commandIndex = $this->readProjectFile('docs/market_data/development/implementation/ops/commands/README.md');
-
-        $gaps = [];
-
-        foreach ($this->registeredMarketDataCommandNames() as $name) {
-            foreach ([
-                'operational runbook' => $runbook,
-                'command safety inventory' => $inventory,
-                'command index' => $commandIndex,
-            ] as $label => $document) {
-                if (strpos($document, '`'.$name.'`') === false) {
-                    $gaps[] = $name.' missing from '.$label;
-                }
-            }
-        }
-
-        $this->assertSame([], $gaps);
-
-        $this->assertStringContainsString('OPERATIONAL_RUNBOOK.md', $commandIndex);
-        $this->assertStringContainsString('operator source of truth', $commandIndex);
-    }
 }

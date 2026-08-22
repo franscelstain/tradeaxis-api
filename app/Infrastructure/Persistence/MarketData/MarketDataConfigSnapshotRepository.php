@@ -2,7 +2,9 @@
 
 namespace App\Infrastructure\Persistence\MarketData;
 
+use App\Domain\MarketData\MarketDataSemanticBindings;
 use App\Domain\MarketData\MarketDataScope;
+use App\Infrastructure\MarketData\Config\PlatformConfigRegistry;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -29,7 +31,13 @@ class MarketDataConfigSnapshotRepository
             return $this->resolveAsKnown($requestedDate, $knownAt);
         }
 
-        $resolved = $this->canonicalize($this->redact(config('market_data', [])));
+        $marketDataConfig = config('market_data', []);
+        (new PlatformConfigRegistry())->assertResolvedConfiguration($marketDataConfig);
+
+        $resolved = $this->canonicalize([
+            'resolved_config' => $this->redact($marketDataConfig),
+            'semantic_bindings' => MarketDataSemanticBindings::snapshot(),
+        ]);
         $json = json_encode($resolved, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
 
         if ($json === false) {

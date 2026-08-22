@@ -1170,6 +1170,25 @@ trait UsesMarketDataSqlite
             $table->index(['symbol', 'effective_from', 'effective_to'], 'idx_md_symbol_effective');
         });
 
+        // Mirrors 2026_08_22_000001. Board and market segment are effective-dated here and cached
+        // on md_listings; historical resolution reads only this table.
+        $schema->create('md_listing_boards', function (Blueprint $table) {
+            $table->bigIncrements('listing_board_id');
+            $table->integer('listing_id');
+            $table->string('market_segment', 32);
+            $table->string('board_code', 16)->nullable();
+            $table->dateTime('effective_from');
+            $table->dateTime('effective_to')->nullable();
+            $table->dateTime('recorded_at');
+            $table->dateTime('retracted_at')->nullable();
+            $table->integer('source_observation_id')->nullable();
+            $table->string('source_ref', 255)->nullable();
+            $table->string('change_reason', 64)->nullable();
+            $table->unique(['listing_id', 'effective_from', 'recorded_at'], 'uq_md_listing_board_revision');
+            $table->index(['listing_id', 'effective_from', 'effective_to'], 'idx_md_listing_board_effective');
+            $table->index(['market_segment', 'effective_from', 'effective_to'], 'idx_md_listing_board_segment');
+        });
+
         $schema->create('md_provider_symbol_mappings', function (Blueprint $table) {
             $table->bigIncrements('provider_mapping_id');
             $table->integer('listing_id');

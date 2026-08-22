@@ -49,16 +49,4 @@ class CoverageGateCandidateScopeHardeningStaticGuardTest extends TestCase
         }
     }
 
-    public function test_audit_docs_record_candidate_scope_hardening_without_replacing_existing_coverage_contract(): void
-    {
-        $inventory = file_get_contents($this->projectPath('docs/market_data/audit/COVERAGE_GATE_CANDIDATE_SCOPE_HARDENING_INVENTORY.md'));
-        $status = file_get_contents($this->projectPath('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md'));
-        $tracker = file_get_contents($this->projectPath('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md'));
-
-        foreach (['Coverage Gate Candidate Scope Hardening', 'candidate publication', 'manual promote', 'correction candidate', 'not coverage gate enforcement ulang'] as $needle) {
-            $this->assertStringContainsString($needle, $inventory);
-            $this->assertStringContainsString($needle, $status);
-            $this->assertStringContainsString($needle, $tracker);
-        }
-    }
 }

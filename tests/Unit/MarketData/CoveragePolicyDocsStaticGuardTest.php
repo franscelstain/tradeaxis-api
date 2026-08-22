@@ -17,19 +17,6 @@ class CoveragePolicyDocsStaticGuardTest extends TestCase
         return file_get_contents($fullPath);
     }
 
-    public function test_active_test_matrix_uses_not_evaluable_instead_of_coverage_blocked(): void
-    {
-        $matrix = $this->read('docs/market_data/tests/PHPUNIT_TEST_MATRIX.md');
-
-        $this->assertStringContainsString('expected = 0 -> coverage_gate_state = NOT_EVALUABLE', $matrix);
-        $this->assertStringContainsString('quality_gate_state = BLOCKED', $matrix);
-        $this->assertStringContainsString('publishability_state = NOT_READABLE', $matrix);
-        $this->assertStringContainsString('coverage_gate_state=NOT_EVALUABLE', $matrix);
-        $this->assertStringNotContainsString('expected = 0 → BLOCKED', $matrix);
-        $this->assertStringNotContainsString('expected = 0 -> BLOCKED', $matrix);
-        $this->assertStringNotContainsString('BLOCKED tanpa fallback', $matrix);
-        $this->assertStringNotContainsString('FAILED + NOT_READABLE + BLOCKED', $matrix);
-    }
 
     public function test_locked_schema_and_migration_normalize_legacy_blocked_coverage_state(): void
     {

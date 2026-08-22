@@ -1,0 +1,168 @@
+{
+    "evidence_id": "E-MD-B02-A001-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B02",
+    "attempt_id": "MD-B02-A001",
+    "work_id": "MD-B02-A001",
+    "baseline_id": "MD-B02-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B02-A001-001",
+    "issued_at": "2026-08-22T12:16:00+07:00",
+    "title": "Yahoo bootstrap boundary and provider-neutral acquisition ports revalidated under normalized MD-B02 predicates",
+    "attempt_outcome": "COMPLETE — 86/86 current mandatory MD-B02 predicates proven; six future paid-provider capabilities remain optional and six future-transition predicates are explicitly not applicable",
+    "authority_basis": {
+        "strategy": [
+            "authority/strategy/MARKET_DATA_PLATFORM_EOD_BASELINE.md",
+            "authority/strategy/book/Yahoo_Finance_Bootstrap_Source_Strategy.md",
+            "authority/strategy/book/Source_Data_Acquisition_Contract_LOCKED.md",
+            "authority/strategy/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md",
+            "authority/strategy/book/Source_Mapping_Contract_LOCKED.md"
+        ],
+        "governance": [
+            "authority/governance/STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md",
+            "authority/governance/IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD.md",
+            "authority/governance/RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md",
+            "authority/governance/WORK_BASELINE_LOCK_STANDARD.md",
+            "authority/governance/CHANGE_IMPACT_DECLARATION_STANDARD.md"
+        ],
+        "strategy_bytes_changed": 0,
+        "strategy_diff_check": "git diff --quiet -- docs/market_data/authority/strategy returned 0"
+    },
+    "baseline": {
+        "record": "records/evidence/MD-B02-A001-BL001_WORK_BASELINE_LOCK.json",
+        "issued_before_material_change": true,
+        "pre_change_state": "MD-B02 NOT_STARTED with a provisional 39-row denominator: one mandatory, 38 transitional, four optional, and one known mixed-classification reference member."
+    },
+    "traceability_normalization": {
+        "tool": "development/implementation/tests/MarketDataProviderBootstrapNormalization.php",
+        "gate": "development/implementation/tests/MarketDataProviderBootstrapTraceabilityGate.php",
+        "strategy_rows_reviewed": 151,
+        "reference_context_after": 34,
+        "reference_rows_promoted_to_executable_semantics": 75,
+        "proof_owner_moves": 20,
+        "current_b02_denominator": {
+            "mandatory": 86,
+            "satisfied": 86,
+            "optional_capability": 6,
+            "optional_not_requested": 6,
+            "conditional_not_applicable": 6
+        },
+        "semantic_corrections": [
+            "MD-S059-R0002 is a list introducer and no longer carries fake optional coverage.",
+            "MD-S059-R0116 remains a table header; capability rows R0117-R0124 carry parent-bound predicates.",
+            "MD-S059-R0128 is REQUIRED with R0127 because both halves of the proof-strength boundary bind.",
+            "Future paid-provider trigger rows R0094-R0099 are explicit optional capabilities, not a current backlog.",
+            "Future transition steps R0105-R0110 remain executable semantics with lifecycle CONDITIONAL_NOT_APPLICABLE because no transition decision exists.",
+            "Runtime/closure predicates were moved to the actual proof-owning stages while preserving MD-B02 as a supporting stage."
+        ],
+        "fingerprint_integrity": "The immutable strategy rule fingerprints were not changed; only MUTABLE_TRACEABLE lifecycle, ownership, context, and evidence columns changed."
+    },
+    "actual_implementation_revalidation": {
+        "classification": "CONFORMANT; no application-code remediation was required",
+        "ports": [
+            "app/Application/MarketData/Ports/ApiEodBarsSource.php",
+            "app/Application/MarketData/Ports/ManualEodBarsSource.php"
+        ],
+        "adapters": [
+            "app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php",
+            "app/Infrastructure/MarketData/Source/LocalFileEodBarsAdapter.php"
+        ],
+        "configuration": "config/market_data.php",
+        "proved_behaviors": [
+            "api_free/yahoo_finance remains the explicit bootstrap primary and manual_file remains controlled one-date rescue, never default continuity or consensus.",
+            "Application and Domain depend on provider-neutral date/range ports; Yahoo query shape and quirks stop in the infrastructure adapter/import strategy.",
+            "Requested trade dates and inclusive ranges determine Yahoo period bounds, including historical dates outside the provider's legacy default window.",
+            "The adapter discloses current mapping capabilities and limitations without turning active-mapping absence into an absolute provider capability claim.",
+            "Provider adj_close remains nullable diagnostic metadata and cannot fall back to close or become canonical analytical price.",
+            "Outage, partial, empty, wrong-date, and schema-change observations fail closed, retain the denominator, and cannot produce a readable publication.",
+            "Provider identity is disclosed and is never labelled official IDX authority.",
+            "While provider terms remain explicitly unread and undated, the repository makes no compliance claim; public unauthenticated bootstrap access and current internal/non-commercial use remain honestly declared.",
+            "No paid-provider selection, credential, procurement, migration, or dual-feed backlog/config was introduced."
+        ]
+    },
+    "test_execution": {
+        "runner": "php vendor/bin/phpunit",
+        "totals": {
+            "tests": 107,
+            "assertions": 685,
+            "errors": 0,
+            "failures": 0,
+            "result": "PASS"
+        },
+        "suites": [
+            {"path": "tests/Unit/MarketData/ProviderNeutralBoundaryTest.php", "tests": 8, "assertions": 15, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/DateDrivenCapabilityAndProviderAbstractionTest.php", "tests": 18, "assertions": 65, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/YahooPeriodBoundsTest.php", "tests": 5, "assertions": 9, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/SourceProviderResilienceStaticGuardTest.php", "tests": 4, "assertions": 67, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/SourceFailureResilienceTest.php", "tests": 18, "assertions": 51, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/MarketDataOrdersOneToFourArchitectureTest.php", "tests": 5, "assertions": 28, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/MarketDataOrdersOneToFourFoundationTest.php", "tests": 9, "assertions": 34, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php", "tests": 18, "assertions": 115, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/LocalFileEodBarsAdapterTest.php", "tests": 4, "assertions": 19, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/GlobalConvergenceClosureTest.php", "tests": 6, "assertions": 247, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/ProviderBootstrapTraceabilityGateTest.php", "tests": 4, "assertions": 8, "result": "PASS"},
+            {"path": "tests/Unit/MarketData/ClassificationConsistencyGateTest.php", "tests": 8, "assertions": 27, "result": "PASS"}
+        ],
+        "executed_gates": [
+            "MarketDataClassificationConsistencyGate: PASS; MD-B02 joined NORMALIZED_STAGES and pending mixed members fell from 630 to 629.",
+            "MarketDataProviderBootstrapTraceabilityGate normalization mode: PASS at 86 mandatory + 6 optional + 6 conditional N/A.",
+            "MarketDataProviderBootstrapTraceabilityGate proof mode: PASS at 86/86 bound to this evidence."
+        ]
+    },
+    "negative_and_fail_closed_proof": {
+        "runtime": "The source-failure suite executed five invalid provider outcomes and proved each is non-readable, non-silent, and denominator-preserving; an unsupported fallback date remains non-readable and a count-free PASS claim is downgraded.",
+        "traceability_mutations": [
+            "R0128 demoted to REFERENCE_ONLY -> both the exact traceability gate and classification mixed-run invariant fail.",
+            "R0116 table header promoted to REQUIRED -> exact lifecycle gate and required-structure invariant fail.",
+            "R0044 proof owner moved back to MD-B02 -> exact ownership gate fails.",
+            "R0105 restored to MANDATORY_OR_CONDITIONAL -> exact applicability gate fails."
+        ],
+        "atomic_binding": "The binding tool refuses any count other than all 86 current mandatory MD-B02 predicates."
+    },
+    "residue_verdict": {
+        "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "checked": [
+            "No Yahoo query-shape or concrete adapter dependency in Domain/Application ports or service type hints.",
+            "No close-as-adj_close fallback remains; runtime missing-adjclose proof returns null.",
+            "No paid-provider or dual-feed configuration/backlog residue was introduced.",
+            "Manual paths retain LOCAL_FILE identity and cannot inherit Yahoo API identity.",
+            "No official- or authoritative-IDX label is applied to the bootstrap source.",
+            "Moved predicates remain NOT_ASSESSED at their proof-owning stages; MD-B02 did not inherit or fabricate their later proof."
+        ]
+    },
+    "runtime_artifact_boundary": {
+        "storage_inspected": false,
+        "storage_mutated": false,
+        "raw_artifacts_referenced": [],
+        "basis": "The current proof consists of repository code/config inspection and deterministic in-memory/unit execution. No database, replay, backfill, provider payload, or storage artifact is claimed or needed."
+    },
+    "open_items_after": {
+        "findings": [
+            "F-MD-B00-A001-001 — PARTIALLY_RESOLVED; replacement-guard half of MD-DEP-0003",
+            "F-MD-B01-A001-001 — PARTIALLY_RESOLVED; 629 mixed-classification reference members remain across unopened stages",
+            "F-MD-B01-A008-001 — OPEN; owner MD-B14",
+            "F-MD-B01-A014-001 — OPEN; owner MD-B19"
+        ],
+        "dependency": "MD-DEP-0004 remains OPEN_NON_BLOCKING for unopened stages; its MD-B02 entry obligation is complete.",
+        "b02_blocker": "none"
+    },
+    "relationship_requirements": {
+        "baseline": "MD-B02-A001-BL001",
+        "change_impact": "CI-MD-B02-A001-001",
+        "stage_precondition": "SC-MD-B01-A016-001",
+        "dependency_scope": "MD-DEP-0004",
+        "closure_manifest": "SC-MD-B02-A001-001"
+    },
+    "artifact_hashes_sha256": {
+        "app/Application/MarketData/Ports/ApiEodBarsSource.php": "e307e4ecd42d7a4cd4a9481fd0fc47d211285096c42bbfd4e483cfb351efe956",
+        "app/Application/MarketData/Ports/ManualEodBarsSource.php": "4e136a367085ba43f5721e5fffeaad2e8c0832ea8d0c6f1ba6e8be6581a2b7e3",
+        "app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php": "c8936467515213ef798254c20a2f9048670b0c87d65e75ff2ad9877469726a6c",
+        "app/Infrastructure/MarketData/Source/LocalFileEodBarsAdapter.php": "62cf6d3286136f84400073a1b359d188bc32cb4d7efc6db5a41d48b86ec7ee90",
+        "config/market_data.php": "c8410ba5757cfb110261b845459e8dea6b133ddde153410bf859e8032fcd0c90",
+        "authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv": "0431c2f1613e5fccd2af7781ce526a9d671262bc472daf7901934b430728a119"
+    },
+    "exact_resume_point": "Issue and validate SC-MD-B02-A001-001 only after evidence/Change Impact relationships, document registries, current state, and all closure gates are synchronized.",
+    "supersedes": "Nothing. No historical evidence or immutable baseline was edited."
+}

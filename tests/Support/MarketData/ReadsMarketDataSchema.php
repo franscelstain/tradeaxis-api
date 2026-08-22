@@ -106,8 +106,17 @@ trait ReadsMarketDataSchema
                     $table = $m[1];
                     $out[$table] = isset($out[$table]) ? $out[$table] : [];
                 }
-                if ($table !== null && preg_match("/->\s*[a-zA-Z]+\(\s*'([a-z0-9_]+)'/", $line, $m)) {
-                    $out[$table][$m[1]] = true;
+                // Only Blueprint calls declare columns. The previous pattern matched any `->name('x')`,
+                // so `$this->dropExisting('md_listings', [...])` registered a *table* as a column of
+                // whichever table was open — and registered it from a helper whose purpose is to
+                // remove columns. A guard asserting "this column exists" could be satisfied by a
+                // namesake table or by a column the migration had just dropped. Owner: MD-B01-A015.
+                if ($table !== null && preg_match("/\\\$(?:table|blueprint)\s*->\s*([a-zA-Z]+)\(\s*'([a-z0-9_]+)'/", $line, $m)) {
+                    $namesATable = ['on', 'constrained', 'table', 'onTable'];
+                    $removes = ['dropColumn', 'dropIndex', 'dropForeign', 'dropUnique', 'dropPrimary', 'renameColumn'];
+                    if (! in_array($m[1], $namesATable, true) && ! in_array($m[1], $removes, true)) {
+                        $out[$table][$m[2]] = true;
+                    }
                 }
             }
         }

@@ -1,0 +1,34 @@
+{
+    "baseline_id": "MD-B04-A002-BL001",
+    "stage_id": "MD-B04",
+    "attempt_id": "MD-B04-A002",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260822-001",
+    "strategy_freeze_manifest_sha1": "B9EF92213352F66A8253FE033B3479E0916629AB",
+    "strategy_tree_fingerprint_sha1": "1516FF84486E658D928779EB76B5CEE901B6A33C",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "710C40FB651D41AB99D7A6EA52C138007ABD03AE",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "8EFB93EB8D04A3AB47923BEB6E0A63679ADF3057",
+    "source_revision": "29208da1720298bfe2d6d463ed400a2d367edbde",
+    "source_revision_branch": "master",
+    "working_tree": "DIRTY+07B76988FAE35F815471F7BBCE1C23E55C599EC4",
+    "app_code_fingerprint_sha1": "C310988DAC344FDE05E722444270F2C0C5FE74BB",
+    "tests_fingerprint_sha1": "50F0D93AE9B0C679BE2C8B6CE38BC5AAB2944D4A",
+    "schema_config_identity": "schema:EFAC1C8E2438D039BBCC5662389375C661863039;config:68E4DD8E64B5D4A6E06288B94A3E5E0CDD7226F9;migrations:E6A74B4422B4292321938BB9A1B582F353107E70",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "PHP 7.4.33",
+    "external_dependency_contract_identity": {
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "registered": 7,
+        "open_blocking": []
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-08-22T09:04:32+02:00",
+    "issuance_note": "Issued after D-MD-20260822-06, DOC-CHG-20260822-001, successor freeze MD-STRATEGY-FREEZE-20260822-001, and MD-DEP-0007 resolution; before any A002 runtime config, environment template, registry validation, test, proof-gate, traceability binding, evidence, or closure mutation."
+}

@@ -1,0 +1,34 @@
+{
+    "baseline_id": "MD-B01-A015-BL001",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A015",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260820-001",
+    "strategy_freeze_manifest_sha1": "14CF5BE3AF96D7D0E936C414C1AFA28249243302",
+    "strategy_tree_fingerprint_sha1": "5A08CAD89469EDAF53067D6EBA8B608F13C0F618",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "9F9F0C0DC494E3207F19950C7F0A99EB0667B7DD",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "B05E0DE3BDC4461DAEC1862A4A02E171F8FF19A0",
+    "source_revision": "29208da1720298bfe2d6d463ed400a2d367edbde",
+    "source_revision_branch": "master",
+    "working_tree": "CLEAN",
+    "app_code_fingerprint_sha1": "2F8D3FB7789D1CB991DEEA05A695799C5D64699D",
+    "tests_fingerprint_sha1": "EEACBA0196AE8B7C6CD9A1A986CCB6EB094785EF",
+    "schema_config_identity": "schema:EFAC1C8E2438D039BBCC5662389375C661863039;config:AC6603B50E3FDC44C101A10A6CFCDD43491A2870;migrations:E6A74B4422B4292321938BB9A1B582F353107E70",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "PHP 7.4.33",
+    "external_dependency_contract_identity": {
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "registered": 4,
+        "open_blocking": []
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-08-21T17:20:52+02:00",
+    "issuance_note": "Issued before any MD-B01-A015 material mutation. Predecessor attempt MD-B01-A014, predecessor baseline MD-B01-A014-BL001. Binds the pre-change state in which the corrected MD-B01 denominator is 207 with 144 SATISFIED and 63 NOT_ASSESSED. A015 opens to prove the 62 locally executable rows that A014 promoted with a normalized predicate and no proof; MD-S020-R0067 stays excluded while F-MD-B01-A003-001 is open."
+}

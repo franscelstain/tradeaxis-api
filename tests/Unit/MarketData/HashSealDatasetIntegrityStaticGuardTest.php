@@ -6,7 +6,7 @@
  * - The hashing contract was asserted as six strings present in DeterministicHashService.
  *   DeterministicHashServiceTest already hashes real rows and proves the properties those
  *   strings stand for: input order does not change the hash, numeric shape variation does not
- *   change it, null and empty string stay distinguishable, and a changed value changes it.
+ *   change it, NULL uses the locked empty token, and a changed value changes it.
  * - The reason-code list was checked against the registry and the seed file by hand.
  *   ReasonCodeSeedExecutionTest executes the seed and proves registry and table match exactly,
  *   and EmittedReasonCodeRegistrationTest derives the emitted codes from the runtime.
@@ -53,6 +53,20 @@ class HashSealDatasetIntegrityStaticGuardTest extends TestCase
         ] as $needle) {
             $this->assertStringContainsString($needle, $pipeline);
         }
+    }
+
+    public function test_hash_metadata_cannot_drift_from_the_canonical_serializer_null_token(): void
+    {
+        $pipeline = file_get_contents(base_path('app/Application/MarketData/Services/MarketDataPipelineService.php'));
+        $publication = file_get_contents(base_path('app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php'));
+        $command = file_get_contents(base_path('app/Console/Commands/MarketData/AbstractMarketDataCommand.php'));
+
+        foreach ([$pipeline, $publication, $command] as $surface) {
+            $this->assertStringNotContainsString("config('market_data.hash.null_token'", $surface);
+        }
+        $this->assertStringContainsString('$this->hashes->nullToken()', $pipeline);
+        $this->assertStringContainsString('DeterministicHashService::NULL_TOKEN', $publication);
+        $this->assertStringContainsString('DeterministicHashService::NULL_TOKEN', $command);
     }
 
     /**

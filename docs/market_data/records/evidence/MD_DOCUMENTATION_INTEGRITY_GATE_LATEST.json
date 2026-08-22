@@ -13,8 +13,8 @@
             "check": "ONE_DOCUMENT_ONE_ROLE",
             "status": "PASS",
             "details": {
-                "physical": 797,
-                "registry": 797,
+                "physical": 849,
+                "registry": 849,
                 "duplicates": [],
                 "missing": [],
                 "extra": []
@@ -32,7 +32,7 @@
             "check": "CURRENT_VERIFICATION_REBASELINE",
             "status": "PASS",
             "details": {
-                "registry": 797,
+                "registry": 849,
                 "missing": [],
                 "legacy_current_proof": []
             }
@@ -77,6 +77,14 @@
             }
         },
         {
+            "check": "LEGACY_EXTRACT_STRUCTURE",
+            "status": "PASS",
+            "details": {
+                "extracts_checked": 428,
+                "errors": []
+            }
+        },
+        {
             "check": "WINDOWS_SAFE_PATHS",
             "status": "PASS",
             "details": {
@@ -99,5 +107,5 @@
             }
         }
     ],
-    "generated_at": "2026-08-21T17:11:06+02:00"
+    "generated_at": "2026-08-22T11:37:52+02:00"
 }

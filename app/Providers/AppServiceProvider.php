@@ -8,6 +8,7 @@ use App\Application\MarketData\Ports\AuthoritativeTradingStatusEvidenceVerifier;
 use App\Application\MarketData\Ports\ExchangeMarketStructureEvidenceVerifier;
 use App\Application\MarketData\Ports\ManualEodBarsSource;
 use App\Application\MarketData\Ports\SourceObservationRecorder;
+use App\Application\MarketData\Services\ManualSourceInputContext;
 use App\Infrastructure\MarketData\Source\LocalFileEodBarsAdapter;
 use App\Infrastructure\MarketData\Source\KseiAuthoritativeDocumentEvidenceVerifier;
 use App\Infrastructure\MarketData\Source\IdxExchangeMarketStructureEvidenceVerifier;
@@ -25,6 +26,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->app->singleton(ManualSourceInputContext::class);
         $this->app->bind(ApiEodBarsSource::class, PublicApiEodBarsAdapter::class);
         $this->app->bind(AuthoritativeDocumentEvidenceVerifier::class, KseiAuthoritativeDocumentEvidenceVerifier::class);
         $this->app->bind(AuthoritativeTradingStatusEvidenceVerifier::class, IdxTradingStatusEvidenceVerifier::class);

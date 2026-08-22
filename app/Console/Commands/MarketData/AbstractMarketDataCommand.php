@@ -4,6 +4,7 @@ namespace App\Console\Commands\MarketData;
 
 use App\Application\MarketData\DTOs\MarketDataStageInput;
 use App\Application\MarketData\Services\CoverageGateStateNormalizer;
+use App\Application\MarketData\Services\DeterministicHashService;
 use App\Application\MarketData\Services\MarketDataPipelineService;
 use App\Infrastructure\Persistence\MarketData\EodEvidenceRepository;
 use App\Infrastructure\Persistence\MarketData\EodRunRepository;
@@ -333,7 +334,7 @@ abstract class AbstractMarketDataCommand extends Command
             'hash_algorithm' => config('market_data.hash.algorithm', 'SHA-256'),
             'hash_delimiter' => config('market_data.hash.delimiter', '|'),
             'hash_line_separator' => json_encode(config('market_data.hash.line_separator', "\n")),
-            'hash_null_token' => config('market_data.hash.null_token', '[empty]'),
+            'hash_null_token' => DeterministicHashService::NULL_TOKEN,
             'bars_batch_hash' => $this->runField($run, 'bars_batch_hash'),
             'indicators_batch_hash' => $this->runField($run, 'indicators_batch_hash'),
             'eligibility_batch_hash' => $this->runField($run, 'eligibility_batch_hash'),
@@ -393,7 +394,7 @@ abstract class AbstractMarketDataCommand extends Command
             'hash_algorithm' => config('market_data.hash.algorithm', 'SHA-256'),
             'hash_delimiter' => config('market_data.hash.delimiter', '|'),
             'hash_line_separator' => config('market_data.hash.line_separator', "\n"),
-            'hash_null_token' => config('market_data.hash.null_token', '[empty]'),
+            'hash_null_token' => DeterministicHashService::NULL_TOKEN,
             'bars_batch_hash' => $this->runField($run, 'bars_batch_hash'),
             'indicators_batch_hash' => $this->runField($run, 'indicators_batch_hash'),
             'eligibility_batch_hash' => $this->runField($run, 'eligibility_batch_hash'),

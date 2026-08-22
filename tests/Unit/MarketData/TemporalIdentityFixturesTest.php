@@ -11,8 +11,8 @@ use Tests\Support\UsesMarketDataSqlite;
  * inactive-now-active-then fixtures lulus tanpa survivorship leakage."
  *
  * Owner contracts:
- *   docs/market_data/book/Tickers_and_Identity_Dependency_Contract_LOCKED.md
- *   docs/market_data/book/Symbol_Lifecycle_and_Mapping_Contract.md
+ *   docs/market_data/authority/strategy/book/Tickers_and_Identity_Dependency_Contract_LOCKED.md
+ *   docs/market_data/authority/strategy/book/Symbol_Lifecycle_and_Mapping_Contract.md
  *
  * Each fixture seeds the temporal tables directly rather than projecting from the legacy master,
  * because the cases under test — rename, reuse, mapping revision — cannot be expressed by a
@@ -55,7 +55,7 @@ class TemporalIdentityFixturesTest extends TestCase
             'created_at' => '2020-01-01 00:00:00',
         ]);
 
-        return (int) DB::table('md_listings')->insertGetId(array_merge([
+        $attributes = array_merge([
             'listing_uid' => 'LISTING-'.$n,
             'legacy_ticker_id' => 900 + $n,
             'instrument_id' => $instrumentId,
@@ -67,7 +67,24 @@ class TemporalIdentityFixturesTest extends TestCase
             'listing_state' => 'LISTED',
             'recorded_at' => '2023-01-02 00:00:00',
             'created_at' => '2023-01-02 00:00:00',
-        ], $override));
+        ], $override);
+
+        $listingId = (int) DB::table('md_listings')->insertGetId($attributes);
+
+        // Board and market segment became effective-dated at 2026_08_22_000001, so the fixture
+        // records the interval the listing dates already imply. Without it the listing is
+        // unresolvable by design, which `ListingBoardAndSegmentTemporalityTest` asserts directly.
+        DB::table('md_listing_boards')->insert([
+            'listing_id' => $listingId,
+            'market_segment' => $attributes['market_segment'],
+            'board_code' => $attributes['board_code'],
+            'effective_from' => $attributes['listed_date'].' 00:00:00',
+            'effective_to' => $attributes['delisted_date'] ? $attributes['delisted_date'].' 00:00:00' : null,
+            'recorded_at' => $attributes['recorded_at'],
+            'change_reason' => 'LEGACY_MASTER_PROJECTION',
+        ]);
+
+        return $listingId;
     }
 
     private function seedSymbol(int $listingId, string $symbol, string $from, ?string $to): void

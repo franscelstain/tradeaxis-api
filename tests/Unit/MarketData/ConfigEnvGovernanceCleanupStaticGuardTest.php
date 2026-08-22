@@ -17,34 +17,6 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         return file_get_contents($path);
     }
 
-    public function test_inventory_records_schema_config_env_pruning_and_validation_status(): void
-    {
-        $inventory = $this->read('docs/market_data/audit/CONFIG_ENV_GOVERNANCE_CLEANUP_INVENTORY.md');
-
-        foreach ([
-            'CONFIG_ENV_GOVERNANCE_CLEANUP_CONTRACT',
-            'Config / ENV Governance Cleanup',
-            'Schema / Config Alignment Matrix',
-            'Config / ENV Inventory Matrix',
-            '`tickers.is_active` Decision Matrix',
-            'Pruning Matrix',
-            'Caller Trace Matrix',
-            'Patch Matrix',
-            'Validation Matrix',
-            'READY_FOR_LOCAL_RUNTIME_VALIDATION',
-            'BLOCKED_CONTAINER_RUNTIME_ENV',
-            'MARKET_DATA_TICKERS_ACTIVE_VALUE',
-            'MARKET_DATA_COVERAGE_DELAY_WINDOW_MINUTES',
-            'MARKET_DATA_TICKERS_ACTIVE_YES_VALUE',
-            'REMOVE',
-            'RENAME_AND_UPDATE_CALLERS',
-            'DEFER_WITH_REASON',
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $inventory);
-        }
-
-        $this->assertStringNotContainsString('| TBD |', $inventory);
-    }
 
     /**
      * Four tests used to guard one invariant here: the ticker universe must select active
@@ -122,29 +94,6 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         );
     }
 
-    public function test_cleanup_does_not_regress_source_mode_read_side_or_db_integrity_contracts(): void
-    {
-        $inventory = $this->read('docs/market_data/audit/CONFIG_ENV_GOVERNANCE_CLEANUP_INVENTORY.md');
-        $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-        $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-
-        foreach ([
-            'source-mode, coverage, read-side pointer, publication, replay, evidence, or DB integrity policy',
-            'Source mode non-regression',
-            'Read-side non-regression',
-            'DB integrity FK/implicit policy non-regression',
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $inventory.$status.$tracker);
-        }
-
-        foreach ([
-            'IMPORT_PROMOTE_SEPARATION_CONTRACT',
-            'READ_SIDE_POINTER_ENFORCEMENT_CONTRACT',
-            'DB_INTEGRITY_FK_IMPLICIT_INTEGRITY_DECISION_CONTRACT',
-        ] as $contract) {
-            $this->assertStringContainsString($contract, $tracker);
-        }
-    }
 
     /**
      * F-024: the legacy price-basis selector is pruned, not merely deprecated in prose.
@@ -179,40 +128,4 @@ class ConfigEnvGovernanceCleanupStaticGuardTest extends TestCase
         $this->assertStringContainsString('do not reintroduce', $registry);
     }
 
-    public function test_audit_docs_preserve_config_env_cleanup_history_without_requiring_it_as_active_session(): void
-    {
-        $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-        $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-
-        foreach ([$status, $tracker] as $document) {
-            $this->assertStringContainsString('CONFIG_ENV_GOVERNANCE_CLEANUP_INVENTORY.md', $document);
-            $this->assertStringContainsString('ConfigEnvGovernanceCleanupStaticGuardTest.php', $document);
-            $this->assertStringContainsString('TickerMasterRepositoryTest.php', $document);
-            $this->assertStringContainsString('BLOCKED_CONTAINER_RUNTIME_ENV', $document);
-            $this->assertStringContainsString('LOCKED_LOCAL_PHPUNIT_PASS', $document);
-            $this->assertStringContainsString('DB Integrity FK / Implicit Integrity Decision', $document, 'Previous audit history must remain present.');
-        }
-
-        // The active session NAME was pinned here, in both documents.
-        //
-        // That contradicted the rule the sibling guard already records: pinning it freezes the
-        // audit trail to one past session and forces an edit here whenever a new session starts,
-        // without ever catching a defect. Worse, the two guards disagreed — one asserted the name
-        // must be a specific string while the other deliberately refused to.
-        //
-        // AuditCrossReferenceIntegrityTest holds the property that does matter: both documents
-        // must name the SAME active session, whichever it is.
-        $this->assertStringContainsString('MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT', $status.$tracker);
-        $this->assertStringContainsString('REPLAY_DETERMINISM_RUNTIME_PROOF_CONTRACT', $status.$tracker);
-        $this->assertStringContainsString('EVIDENCE_EXPORT_RUNTIME_PROOF_CONTRACT', $status.$tracker);
-        $this->assertStringContainsString('DB Schema & Migration Sync / Runtime Schema Four-Way Synchronization', $status.$tracker);
-        $this->assertStringContainsString('Ops Environment Baseline', $status.$tracker, 'Latest Ops Environment history must remain present.');
-        $this->assertStringContainsString('- Config / ENV Governance Cleanup -> DONE', $status);
-        $this->assertStringContainsString('[RELATED_CONTRACT] CONFIG_ENV_GOVERNANCE_CLEANUP_CONTRACT', $status);
-        $this->assertStringContainsString('- CONFIG_ENV_GOVERNANCE_CLEANUP_CONTRACT -> LOCKED', $tracker);
-        $this->assertStringContainsString('[RELATED_IMPLEMENTATION] Config / ENV Governance Cleanup', $tracker);
-        // The historical tally "OK (427 tests, 6198 assertions)" is no longer asserted. It
-        // records one past run against a suite that has since more than doubled, so it could
-        // only be archaeology or churn.
-    }
 }

@@ -199,7 +199,7 @@ class EodEligibilityBuildService
      */
     private function dormantTickerIdSet(array $universeRows, $tradeDate): array
     {
-        $lookback = (int) config('market_data.coverage_gate.dormant_absence_trading_days', 60);
+        $lookback = (int) config('market_data.activity.dormant_absence_trading_days', 60);
         $tickerIds = array_values(array_filter(array_map(function ($row) {
             return (int) ($row['ticker_id'] ?? 0);
         }, $universeRows)));

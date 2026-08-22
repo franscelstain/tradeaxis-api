@@ -7,7 +7,7 @@ return [
         'frequency' => 'EOD',
         'timezone' => 'Asia/Jakarta',
         'dataset_start' => env('MARKET_DATA_DATASET_START', '2023-01-02'),
-        'operational_start_date' => env('MARKET_DATA_OPERATIONAL_START_DATE', null),
+        'operational_start_date' => env('MARKET_DATA_OPERATIONAL_START_DATE', null) ?: null,
         'canonical_product_code' => 'IDX_REGULAR_EOD_RAW_V1',
         'raw_product_code' => 'RAW',
         'structural_adjusted_product_code' => 'STRUCTURAL_ADJUSTED',
@@ -51,11 +51,14 @@ return [
         // Deliberately far beyond normal illiquidity; see Coverage_Universe_Definition_LOCKED.md.
         'dormant_absence_trading_days' => (int) env('MARKET_DATA_COVERAGE_DORMANT_ABSENCE_TRADING_DAYS', 60),
     ],
+    'activity' => [
+        // Canonical activity/liquidity fact namespace. The coverage_gate key above is retained
+        // only as the snapshotted compatibility alias named by the locked config registry.
+        'dormant_absence_trading_days' => (int) env('MARKET_DATA_COVERAGE_DORMANT_ABSENCE_TRADING_DAYS', 60),
+    ],
     'indicators' => [
         'set_version' => env('MARKET_DATA_INDICATOR_SET_VERSION', 'v1'),
         'price_product_default' => env('MARKET_DATA_INDICATOR_PRICE_PRODUCT_DEFAULT', 'STRUCTURAL_ADJUSTED'),
-        'price_product_version' => env('MARKET_DATA_INDICATOR_PRICE_PRODUCT_VERSION', 'structural_adjusted_v1'),
-        'factor_formula_version' => env('MARKET_DATA_FACTOR_FORMULA_VERSION', 'structural_factor_product_v1'),
         'dv_window_days' => (int) env('MARKET_DATA_DV_WINDOW_DAYS', 20),
         'atr_window_days' => (int) env('MARKET_DATA_ATR_WINDOW_DAYS', 14),
         'vol_ratio_lookback_days' => (int) env('MARKET_DATA_VOL_RATIO_LOOKBACK_DAYS', 20),
@@ -73,7 +76,7 @@ return [
         'algorithm' => env('MARKET_DATA_HASH_ALGORITHM', 'SHA-256'),
         'delimiter' => env('MARKET_DATA_HASH_DELIMITER', '|'),
         'line_separator' => env('MARKET_DATA_HASH_LINE_SEPARATOR', "\n"),
-        'null_token' => env('MARKET_DATA_HASH_NULL_TOKEN', '[empty]'),
+        'null_token' => '',
     ],
     'source' => [
         'adapter_contract_version' => 'provider_neutral_eod_source_v2',
@@ -184,7 +187,6 @@ return [
          * "switched off by decision" or "switched on and failing", and the stage 17 outcome
          * requires the feature state to be explicit rather than inferred from emptiness.
          */
-        'enabled' => filter_var(env('MARKET_DATA_SESSION_SNAPSHOT_ENABLED', false), FILTER_VALIDATE_BOOLEAN),
         'retention_days' => (int) env('MARKET_DATA_SESSION_SNAPSHOT_RETENTION_DAYS', 30),
         'scope_default' => env('MARKET_DATA_SESSION_SNAPSHOT_SCOPE_DEFAULT', 'eligibility_set'),
         'slot_tolerance_minutes' => (int) env('MARKET_DATA_SESSION_SNAPSHOT_SLOT_TOLERANCE_MINUTES', 3),

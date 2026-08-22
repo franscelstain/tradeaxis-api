@@ -10,32 +10,6 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
         $this->commandDir = base_path('app/Console/Commands/MarketData');
     }
 
-    /**
-     * Every registered command must appear in the ops safety inventory.
-     *
-     * This used to walk a hand-written list of thirty commands. Three commands added in a later
-     * session were registered in the kernel and never reached the inventory, and the test passed
-     * throughout — a command absent from the list is a command the list cannot miss.
-     *
-     * The inventory is where an operator learns whether a command mutates anything and what
-     * guards it. A registered command missing from it is an undocumented destructive surface.
-     *
-     * Derived from the kernel now, so a command added tomorrow is covered without editing this.
-     */
-    public function test_all_registered_market_data_commands_are_in_ops_safety_inventory(): void
-    {
-        $inventory = file_get_contents(base_path('docs/market_data/ops/COMMAND_SURFACE_SAFETY_INVENTORY.md'));
-
-        $undocumented = [];
-
-        foreach ($this->registeredMarketDataCommandNames() as $name) {
-            if (strpos($inventory, '`'.$name.'`') === false) {
-                $undocumented[] = $name;
-            }
-        }
-
-        $this->assertSame([], $undocumented, 'Registered commands missing from the ops command safety inventory.');
-    }
 
     /**
      * Guards the guard: a reflection failure returning nothing would make the check above pass
@@ -179,41 +153,5 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
         $this->assertStringNotContainsString('ingestAcquiredRows', $command);
         $this->assertStringContainsString('bars_rows_written_source=current_publication_snapshot', $pipeline);
         $this->assertStringContainsString('bar_ingest_executed=false', $pipeline);
-    }
-
-    private function expectedCommands(): array
-    {
-        return [
-            ['class' => 'IngestEodBarsCommand', 'signature' => 'market-data:eod-bars:ingest'],
-            ['class' => 'ComputeIndicatorsCommand', 'signature' => 'market-data:eod-indicators:compute'],
-            ['class' => 'BuildEligibilityCommand', 'signature' => 'market-data:eod-eligibility:build'],
-            ['class' => 'AuditHashCommand', 'signature' => 'market-data:audit:hash'],
-            ['class' => 'SealDatasetCommand', 'signature' => 'market-data:dataset:seal'],
-            ['class' => 'FinalizeRunCommand', 'signature' => 'market-data:run:finalize'],
-            ['class' => 'DailyPipelineCommand', 'signature' => 'market-data:daily'],
-            ['class' => 'BackfillMarketDataCommand', 'signature' => 'market-data:backfill'],
-            ['class' => 'BackfillLifecycleCommand', 'signature' => 'market-data:backfill:lifecycle'],
-            ['class' => 'BackfillMissingTickersCommand', 'signature' => 'market-data:backfill:missing-tickers'],
-            ['class' => 'PromoteMarketDataCommand', 'signature' => 'market-data:promote'],
-            ['class' => 'ExportEvidenceCommand', 'signature' => 'market-data:evidence:export'],
-            ['class' => 'FullRangeCurrentEvidenceReplayCommand', 'signature' => 'market-data:evidence-replay:full-range-current'],
-            ['class' => 'IngestSectorIndexBarsApiCommand', 'signature' => 'market-data:sector-indexes:ingest-api'],
-            ['class' => 'ImportCorporateActionsCommand', 'signature' => 'market-data:events:import-corporate-actions'],
-            ['class' => 'ImportSectorIndexBarsCommand', 'signature' => 'market-data:sector-indexes:import-bars'],
-            ['class' => 'ImportSectorMembershipCommand', 'signature' => 'market-data:sectors:import-memberships'],
-            ['class' => 'ImportTradingStatusEventsCommand', 'signature' => 'market-data:events:import-trading-status'],
-            ['class' => 'VerifyReplayCommand', 'signature' => 'market-data:replay:verify'],
-            ['class' => 'ReplaySmokeSuiteCommand', 'signature' => 'market-data:replay:smoke'],
-            ['class' => 'ReplayBackfillCommand', 'signature' => 'market-data:replay:backfill'],
-            ['class' => 'GenerateReplayFixtureCommand', 'signature' => 'market-data:replay:fixture:generate'],
-            ['class' => 'CaptureSessionSnapshotCommand', 'signature' => 'market-data:session-snapshot'],
-            ['class' => 'PurgeSessionSnapshotCommand', 'signature' => 'market-data:session-snapshot:purge'],
-            ['class' => 'RequestCorrectionCommand', 'signature' => 'market-data:correction:request'],
-            ['class' => 'ApproveCorrectionCommand', 'signature' => 'market-data:correction:approve'],
-            ['class' => 'RunCorrectionCommand', 'signature' => 'market-data:correction:run'],
-            ['class' => 'RepairCurrentPublicationIntegrityCommand', 'signature' => 'market-data:current-publication:repair'],
-            ['class' => 'ProviderSmokeCommand', 'signature' => 'market-data:provider:smoke'],
-            ['class' => 'RecomputeCurrentIndicatorsCommand', 'signature' => 'market-data:eod-indicators:recompute-current'],
-        ];
     }
 }

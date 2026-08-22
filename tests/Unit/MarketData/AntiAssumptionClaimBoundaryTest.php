@@ -78,7 +78,67 @@ class AntiAssumptionClaimBoundaryTest extends TestCase
                 '/(sistem|system)[^.]{0,30}(hanya ditujukan|is only intended)[^.]{0,30}recent-only/i',
                 'The system is only intended for recent-only ingestion.',
             ],
+
+            /*
+             * `MD-S001-R0142`–`R0145`, promoted at `MD-B01-A014`. They are the last four entries of
+             * the same nineteen-item list; the first fifteen were required and these were not,
+             * because the list was truncated rather than because they mean anything different.
+             *
+             * These four use the negation-safe gap. The twelve above were written before any record
+             * restated them; these are restated in `E-MD-B01-A015-001` and in the Stage Register, so
+             * a gap that could swallow a negation would read the record obeying the rule as the
+             * record breaking it — which has happened four times in this stage already.
+             */
+            'MD-S001-R0142' => [
+                '/import\s+success'.$this->negationSafeGap(40).'(berarti|means|implies)'.$this->negationSafeGap(40).'readable/i',
+                'Import success berarti requested date readable.',
+            ],
+            'MD-S001-R0143' => [
+                '/import'.$this->negationSafeGap(30).'(menjalankan|runs|executes|performs)'.$this->negationSafeGap(40).'(indicators|eligibility|hash|seal|finalize)/i',
+                'Import menjalankan indicators, eligibility, hash, seal, dan finalize.',
+            ],
+            'MD-S001-R0144' => [
+                '/consumer'.$this->negationSafeGap(30).'(boleh|may|can)\s+(membaca|read)'.$this->negationSafeGap(30).'raw table/i',
+                'Consumer boleh membaca raw table tanpa publication context.',
+            ],
+            'MD-S001-R0145' => [
+                '/publish\s+(cepat|fast)'.$this->negationSafeGap(40).'(boleh mengalahkan|overrides|beats|outranks)'.$this->negationSafeGap(30).'(coverage|readability)/i',
+                'Publish cepat boleh mengalahkan coverage safety.',
+            ],
         ];
+    }
+
+    /**
+     * A within-sentence gap that cannot contain a negation, so a document quoting the prohibition is
+     * not read as making the claim. Same construct as `TerminologyConflationBoundaryTest`.
+     */
+    private function negationSafeGap(int $n): string
+    {
+        return '(?:(?!\bnever\b|\bnot\b|\bno\b|\bbukan\b|\btidak\b|\bjangan\b|\bdilarang\b)[^.]){0,'.$n.'}';
+    }
+
+    /**
+     * The four rules promoted at A014 are restated as prohibitions in this attempt's own records.
+     * Each pattern must stay silent on that restatement.
+     */
+    public function test_a_quotation_of_the_prohibition_is_not_read_as_an_assertion(): void
+    {
+        $quotations = [
+            'MD-S001-R0142' => 'Import success does not mean the requested date is readable.',
+            'MD-S001-R0143' => 'Import never runs indicators, eligibility, hash, seal, or finalize.',
+            'MD-S001-R0144' => 'A consumer may not read a raw table without publication context.',
+            'MD-S001-R0145' => 'Publish cepat tidak boleh mengalahkan coverage safety.',
+        ];
+
+        $forbidden = $this->forbidden();
+        foreach ($quotations as $ruleId => $quotation) {
+            $this->assertArrayHasKey($ruleId, $forbidden, $ruleId.' must be under test before its quotation is checked');
+            $this->assertSame(
+                0,
+                preg_match($forbidden[$ruleId][0], $quotation),
+                $ruleId.': a document stating the prohibition is obeying it, not breaking it'
+            );
+        }
     }
 
     private function root(): string
@@ -128,7 +188,7 @@ class AntiAssumptionClaimBoundaryTest extends TestCase
     public function test_every_pattern_matches_the_statement_it_forbids(): void
     {
         $forbidden = $this->forbidden();
-        $this->assertCount(12, $forbidden, 'the anti-assumption family under test is 12 rules');
+        $this->assertCount(16, $forbidden, 'the anti-assumption family under test is 16 rules after the A014 promotion');
 
         foreach ($forbidden as $ruleId => [$pattern, $fixture]) {
             $this->assertSame(

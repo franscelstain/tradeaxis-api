@@ -1,0 +1,172 @@
+{
+    "evidence_id": "E-MD-B00-A003-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B00",
+    "attempt_id": "MD-B00-A003",
+    "work_id": "MD-B00-A003",
+    "baseline_id": "MD-B00-A003-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B00-A003-001",
+    "issued_at": "2026-08-22T17:30:00+07:00",
+    "title": "Extract seal boundary closed, and open findings made visible in canonical current state",
+    "attempt_outcome": "COMPLETE — F-MD-B00-A001-003 closed by remediation; two synchronization defects found and fixed; MD-B00 remains DONE with a successor closure manifest",
+    "authority_basis": {
+        "governance": [
+            "authority/governance/DOCUMENT_RECORDING_STANDARD.md",
+            "authority/governance/DOCUMENT_INTEGRITY_GATE_STANDARD.md",
+            "authority/governance/CURRENT_VERIFICATION_REBASELINE_STANDARD.md",
+            "authority/governance/STAGE_CLOSURE_MANIFEST_STANDARD.md",
+            "authority/governance/CHANGE_IMPACT_DECLARATION_STANDARD.md",
+            "authority/governance/CURRENT_STATE_SUMMARY_STANDARD.md"
+        ],
+        "strategy_bytes_changed": 0,
+        "legacy_extract_bytes_changed": 0
+    },
+    "runtime_artifact_boundary": {
+        "classification": "Document-corpus and tooling proof under section 5 of RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md.",
+        "storage_inspected": false,
+        "storage_mutated": false,
+        "basis": "The invariants are structural properties of governed document records and of the generated current-state summary. No runtime artifact is required or claimed."
+    },
+    "baseline": {
+        "record": "records/evidence/MD-B00-A003-BL001_WORK_BASELINE_LOCK.json",
+        "issued_before_material_change": true,
+        "predecessor_attempt": "MD-B00-A002",
+        "predecessor_baseline": "MD-B00-A002-BL001",
+        "basis_for_reentry": "MD-B01 and MD-B03 are both held by governance decisions with no implementation remediation path. MD-B00 closed with F-MD-B00-A001-003 declared deferred rather than fixed, and its remediation was already specified in the finding. MD-B00-A002 set the precedent for re-entering a DONE stage and issuing a successor closure manifest without editing the prior one."
+    },
+    "defect_1_extract_seal_boundary": {
+        "finding": "F-MD-B00-A001-003",
+        "severity": "P3",
+        "defect": "LEGACY_SEMANTIC_SPLIT_INTEGRITY hashes only the region between LEGACY_EXTRACT_BODY_START and LEGACY_EXTRACT_BODY_END. Text appended after the body-end marker was covered by nothing, so an unsealed paragraph could be added to a HISTORICAL_ONLY extract and pass every gate — precisely the rewrite DOCUMENT_RECORDING_STANDARD.md forbids.",
+        "reproduced_before_fixing": {
+            "why": "A finding that describes a gap is not the same as a gap that still exists, and the finding was raised two attempts earlier.",
+            "target": "records/history/archive/semantic/LX-MD-0003-CTX-01_AUDIT_DOCS_SYNCHRONIZATION_INVENTORY.md",
+            "text_inside_the_sealed_body": "LEGACY_SEMANTIC_SPLIT_INTEGRITY = FAIL, 2 errors",
+            "same_text_after_the_body_end_marker": "LEGACY_SEMANTIC_SPLIT_INTEGRITY = PASS, 0 errors",
+            "method_note": "The first reproduction attempt read the gate's process exit code and was contaminated: the gate was already exiting 1 because this attempt's own baseline lock was not yet registered. The exit code said 1 for a reason unrelated to the mutation. The check status was isolated and read directly instead."
+        },
+        "fix": {
+            "form": "A structural assertion, as the finding prescribed — not a wider hash. Extending the hash would break the reconstruction proof, which must stay bound to the exact original source range so the 43-source reconstruction remains meaningful.",
+            "check_added": "LEGACY_EXTRACT_STRUCTURE",
+            "asserts": [
+                "exactly one LEGACY_EXTRACT_BODY_START marker",
+                "exactly one LEGACY_EXTRACT_BODY_END marker",
+                "nothing but an optional single newline after the body-end marker",
+                "the file still opens with its `# Legacy Semantic Extract` header — the positive locator, so a file that lost both markers and its header cannot pass by having nothing left to check"
+            ],
+            "scope": "428 extracts, every one the split index references, across records/history/archive/semantic (294), records/evidence/legacy/semantic (100), and records/decisions/legacy (34). The finding's own measurement covered only the first directory.",
+            "vacuity_floor": "The check fails if the scan reaches fewer than 400 extracts. The risk the finding names is an unsealed edit passing silently; a scan that silently reached nothing would reproduce that risk somewhere new."
+        },
+        "reconstruction_proof_untouched": "LEGACY_SEMANTIC_SPLIT_INTEGRITY still reports 43 split sources, 43 reconstructed, 0 errors."
+    },
+    "defect_2_open_findings_invisible": {
+        "found_while": "confirming the current state before opening the attempt",
+        "defect": "GenerateMarketDataCurrentState.php reported findings from the current stage's register row alone, so a finding owned by any other stage never reached CURRENT_STATE.md. Section 20 of the execution contract requires canonical current state to stay synchronized.",
+        "invisible_findings": [
+            "F-MD-B00-A001-003 — OPEN since MD-B00-A001",
+            "F-MD-B01-A008-001 — OPEN, owner MD-B14",
+            "F-MD-B03-A003-001 — OPEN, raised in the immediately preceding attempt and invisible the moment it was written"
+        ],
+        "fix": "The generator now reads the findings corpus and emits every finding that is not CLOSED, RESOLVED, or SUPERSEDED, with its status. CURRENT_STATE.md went from naming 2 findings to naming all of them.",
+        "count_after_fix": "7 open at first regeneration, 6 after F-MD-B00-A001-003 closed in this attempt"
+    },
+    "defect_3_lifecycle_field_inconsistency": {
+        "defect": "Finding records use two lifecycle field names. Most write `- Status:`; F-MD-20260821-03 writes `- State:`. A reader scanning one name silently gets an incomplete corpus.",
+        "fix": "The reader accepts both. F-MD-20260821-03 is registered LIFECYCLE_UPDATE_ONLY, so the record was not restructured to suit a reader — the reader was made to handle the corpus as it is.",
+        "safeguard": "An unreadable lifecycle is treated as open. A status nobody can parse is not evidence of closure."
+    },
+    "tooling_result": {
+        "changed": [
+            "development/implementation/tests/MarketDataDocumentationIntegrityGate.php — LEGACY_EXTRACT_STRUCTURE added over 428 extracts",
+            "development/implementation/tests/GenerateMarketDataCurrentState.php — open findings derived from the corpus rather than from one register row"
+        ],
+        "added": [
+            "tests/Unit/MarketData/FindingRecordConsistencyTest.php — fails when a finding's lifecycle is unreadable or an open finding is missing from the generated current state, which catches a stale CURRENT_STATE.md rather than trusting it"
+        ]
+    },
+    "test_execution": {
+        "runner": "vendor/bin/phpunit and the documentation integrity gate directly",
+        "documentation_integrity_gate": {
+            "LEGACY_SEMANTIC_SPLIT_INTEGRITY": "PASS — 43 split sources, 43 reconstructed, 0 errors",
+            "LEGACY_EXTRACT_STRUCTURE": "PASS — 428 extracts checked, 0 errors"
+        },
+        "new_suite": {
+            "path": "tests/Unit/MarketData/FindingRecordConsistencyTest.php",
+            "tests": 3,
+            "assertions": 13,
+            "result": "PASS"
+        },
+        "whole_suite": {
+            "tests": 1680,
+            "assertions": 11402,
+            "errors": 0,
+            "failures": 0,
+            "result": "PASS"
+        },
+        "note": "1677 before this attempt plus the 3 added here."
+    },
+    "negative_and_fail_closed_proof": {
+        "method": "Every mutation asserted to have landed before the guard was judged, and every probe against a sealed record restored from a pre-mutation copy with the restoration verified by re-running the check.",
+        "mutations": [
+            "text appended after the sealed body of a real extract -> LEGACY_EXTRACT_STRUCTURE failed (landed, 26 bytes); this is the finding's exact case, which passed before the fix",
+            "a duplicated LEGACY_EXTRACT_BODY_END marker -> LEGACY_EXTRACT_STRUCTURE failed (landed)",
+            "the `# Legacy Semantic Extract` header renamed -> LEGACY_EXTRACT_STRUCTURE failed (landed, count=1)",
+            "an open finding removed from CURRENT_STATE.md -> FindingRecordConsistencyTest failed (landed, count=1)",
+            "a finding's `- Status:` line replaced with an unrecognised field -> lifecycle-readability guard failed (landed, count=1)"
+        ],
+        "restoration_verified": "All five restored; LEGACY_EXTRACT_STRUCTURE returns PASS over 428 extracts and the suite is green."
+    },
+    "closure_effect": {
+        "stage": "MD-B00",
+        "state_before": "DONE / PASS with F-MD-B00-A001-003 declared deferred",
+        "state_after": "DONE / PASS with F-MD-B00-A001-003 CLOSED by remediation",
+        "successor_manifest": "SC-MD-B00-A003-001",
+        "prior_manifest": "SC-MD-B00-A002-001 remains immutable and unedited; it is superseded for sufficiency, not corrected."
+    },
+    "artifact_hashes_sha256": {
+        "docs/market_data/development/implementation/tests/MarketDataDocumentationIntegrityGate.php": "7634a67d217fc4e0fee1c3762bf988300cc0ab34282540c504beefea05cfd453",
+        "docs/market_data/development/implementation/tests/GenerateMarketDataCurrentState.php": "fcd28a20fefa4f5eddff87a05b845510693afa03b1bf23e877e98faec422f5b4",
+        "tests/Unit/MarketData/FindingRecordConsistencyTest.php": "991a1660ca8dc2d5f97374ccf530e1c718d1c7821223265dceca2b722bd09435",
+        "docs/market_data/records/evidence/MD-B00-A003-BL001_WORK_BASELINE_LOCK.json": "f9036953bc4a59466ef250aac8e4609783524d35ddcb34315ad906f11772d76c",
+        "docs/market_data/development/implementation/CI-MD-B00-A003-001_EXTRACT_SEAL_AND_FINDING_VISIBILITY.md": "d36d367f4df2b6b7a7835eb09f2408f28d7b2d08333144f51018d7cf069f1777",
+        "docs/market_data/development/findings/F-MD-B00-A001-003_EXTRACT_SEAL_BOUNDARY.md": "799b790d9f61da0294530e03457a3f818a0b88b5c18e5f2bd6bed7fb6f868ee9",
+        "docs/market_data/records/evidence/SC-MD-B00-A003-001_STAGE_CLOSURE_MANIFEST.md": "5a9099505cfc2404c081c6daf94fd5710ef80fcb5a64bd90131cc8b1da992d20"
+    },
+    "residue_verdict": {
+        "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_A003_SCOPE",
+        "checked": [
+            "No legacy extract was left mutated: all probes restored and LEGACY_EXTRACT_STRUCTURE re-run clean over 428 files.",
+            "The reconstruction proof is unchanged — 43 sources, 43 reconstructed — so the seal still binds the exact original source range.",
+            "No strategy, schema, migration, configuration, or application code was touched.",
+            "No governed record was restructured to suit a reader; the LIFECYCLE_UPDATE_ONLY record keeps its field name and the reader accepts both.",
+            "CURRENT_STATE.md was regenerated after the finding was closed, so the document and the corpus agree."
+        ]
+    },
+    "open_findings": [
+        "F-MD-B01-A003-001 — OPEN (P2); blocks MD-B01 via MD-DEP-0005",
+        "F-MD-B03-A003-001 — OPEN (P2); blocks MD-B03 via MD-DEP-0006",
+        "F-MD-B00-A001-001 — PARTIALLY_RESOLVED; replacement-guard half of MD-DEP-0003",
+        "F-MD-B01-A001-001 — PARTIALLY_RESOLVED; 630 reference-only rows across 18 unopened stages",
+        "F-MD-B01-A014-001 — OPEN (P2); owner MD-B19",
+        "F-MD-B01-A008-001 — OPEN (P2); owner MD-B14"
+    ],
+    "open_dependencies": [
+        "MD-DEP-0005 — OPEN_BLOCKING for MD-B01; authorised strategy revision or reviewed governance decision",
+        "MD-DEP-0006 — OPEN_BLOCKING for MD-B03; reviewed governance decision",
+        "MD-DEP-0003 — OPEN_NON_BLOCKING; replacement-guard half per owning stage",
+        "MD-DEP-0004 — OPEN_NON_BLOCKING; per-stage classification obligation at entry"
+    ],
+    "relationship_requirements": {
+        "attempt_predecessor": "MD-B00-A002",
+        "baseline": "MD-B00-A003-BL001",
+        "change_impact": "CI-MD-B00-A003-001",
+        "closes_finding": "F-MD-B00-A001-003",
+        "closure_manifest": "SC-MD-B00-A003-001",
+        "supersedes_manifest": "SC-MD-B00-A002-001"
+    },
+    "exact_resume_point": "Unchanged by this attempt, and still not implementation-executable. MD-B01 waits on MD-DEP-0005 and MD-B03 on MD-DEP-0006, both reviewed governance decisions. When MD-DEP-0006 resolves, issue SC-MD-B03-A003-001 from the criteria table in E-MD-B03-A003-001. When MD-DEP-0005 resolves, open MD-B01-A016 to bind MD-S020-R0067 and issue the MD-B01 closure manifest. Do not enter MD-B02 before MD-B01 closes.",
+    "supersedes": "SC-MD-B00-A002-001 for closure sufficiency only. All prior MD-B00 records remain immutable and unedited."
+}

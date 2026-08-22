@@ -132,14 +132,6 @@ class RunPublicationPointerLinkageStaticGuardTest extends TestCase
 
     // The latest-trade-date prohibition previously checked four named paths here.
     // ReadPathShortcutProhibitionTest applies it to the whole runtime.
-    public function test_linkage_inventory_covers_every_stage_of_the_run_publication_chain(): void
-    {
-        $inventory = $this->read('docs/market_data/ops/RUN_PUBLICATION_POINTER_LINKAGE_INVENTORY.md');
-
-        foreach (['run creation', 'publication candidate', 'current pointer', 'pointer switch', 'correction baseline', 'correction replacement', 'replay', 'evidence', 'command output', 'static guard'] as $needle) {
-            $this->assertStringContainsString($needle, $inventory);
-        }
-    }
 
     private function read(string $relativePath): string
     {

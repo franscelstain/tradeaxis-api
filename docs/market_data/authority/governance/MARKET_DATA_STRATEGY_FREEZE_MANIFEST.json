@@ -1,8 +1,8 @@
 {
-  "freeze_id": "MD-STRATEGY-FREEZE-20260820-001",
-  "created_at": "2026-08-20T11:42:00+07:00",
+  "freeze_id": "MD-STRATEGY-FREEZE-20260822-001",
+  "created_at": "2026-08-22T14:06:00+07:00",
   "strategy_document_count": 91,
-  "rule": "All registered current strategy source documents were moved byte-for-byte. Architecture refactor may add external IDs/authority metadata but must not change registered strategy bytes.",
+  "rule": "The 91 registered documents are the current strategy freeze. Unchanged documents retain their prior fingerprints; MD-S082 carries the bounded, user-authorised controlled correction recorded by DOC-CHG-20260822-001 and D-MD-20260822-06.",
   "documents": [
     {
       "strategy_id": "MD-S001",
@@ -737,10 +737,10 @@
       "strategy_id": "MD-S082",
       "source_path_before_refactor": "registry/Platform_Config_Registry_LOCKED.md",
       "current_path": "authority/strategy/registry/Platform_Config_Registry_LOCKED.md",
-      "sha1": "6B61EE4D591054BAF3F44BFE7AD159AD09DF1E36",
+      "sha1": "8324B44D4259889659E56E1F543C59E55BB16E12",
       "authority_status": "CURRENT_STRATEGY_AUTHORITY",
-      "semantic_change": "NONE",
-      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+      "semantic_change": "CONTROLLED_CORRECTION_DOC-CHG-20260822-001",
+      "notes": "D-MD-20260822-06 corrects only market_data.hash.null_token to an explicit zero-byte empty-string default with no environment input; MD-S005/MD-S034 owner semantics are unchanged."
     },
     {
       "strategy_id": "MD-S083",

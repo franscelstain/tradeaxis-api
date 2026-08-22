@@ -106,6 +106,46 @@ function denominatorQualifier(array $counts, string $stage, array $pending): str
     return 'FINAL for every machine-checked criterion — no transitional applicability, no mixed-classification run';
 }
 
+/**
+ * Open findings read from the findings corpus rather than from the current stage's register row.
+ *
+ * The register row names only the findings of the stage it describes, so a finding raised against
+ * any other stage never reached the generated current state. Three were invisible when this was
+ * found, including one raised in the immediately preceding attempt and one open since MD-B00-A001.
+ *
+ * Two field names are in use: most records write `- Status:` and `F-MD-20260821-03` writes
+ * `- State:`. That record is LIFECYCLE_UPDATE_ONLY, so the reader accepts both rather than
+ * restructuring a governed record to suit the reader.
+ *
+ * @return array<int,array{id:string,status:string,file:string}>
+ */
+function findingCorpus(string $marketData): array
+{
+    $out = [];
+    foreach (glob($marketData.'/development/findings/F-*.md') as $path) {
+        $text = (string) file_get_contents($path);
+        $status = 'UNREADABLE';
+        if (preg_match('/^- (?:Status|State):\s*`?([A-Z_]+)`?/m', $text, $m)) {
+            $status = $m[1];
+        }
+        $id = basename($path);
+        if (preg_match('/^(F-[A-Z0-9-]+)_/', $id, $m)) {
+            $id = $m[1];
+        }
+        $out[] = ['id' => $id, 'status' => $status, 'file' => basename($path)];
+    }
+    usort($out, static function (array $a, array $b): int {
+        return strcmp($a['id'], $b['id']);
+    });
+
+    return $out;
+}
+
+/** A finding still requiring attention. `UNREADABLE` counts: a lifecycle nobody can read is not closed. */
+function findingIsOpen(string $status): bool
+{
+    return ! in_array($status, ['CLOSED', 'RESOLVED', 'SUPERSEDED'], true);
+}
 $md = realpath(dirname(__DIR__, 3));
 $epoch = json_decode(file_get_contents($md.'/authority/governance/CURRENT_VERIFICATION_EPOCH.json'), true);
 $matrix = csvRows($md.'/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv');
@@ -197,6 +237,7 @@ if ($current !== null) {
         $text .= '- Residue/rework: '.$currentStageState['residue']."\n";
         $text .= '- Dependency: '.$currentStageState['dependency']."\n";
         $text .= '- Open finding: '.$currentStageState['finding']."\n";
+
         $text .= '- Change Impact Declaration: '.($currentChangeImpacts === [] ? '**missing**' : implode('; ', $currentChangeImpacts))."\n";
     }
     $text .= '- Denominator: **'.$current['denominator'].'** ('.denominatorQualifier($current, $currentStage, $classificationPending).")\n";
@@ -211,6 +252,15 @@ $text .= "|---|---|---|---|---|---|\n";
 $text .= implode("\n", $stageRows)."\n";
 
 $text .= "\n## Open dependencies and work records\n\n";
+$openFindings = array_values(array_filter(findingCorpus($md), static function (array $f): bool {
+    return findingIsOpen($f['status']);
+}));
+$findingParts = [];
+foreach ($openFindings as $f) {
+    $findingParts[] = '`'.$f['id'].'` — '.$f['status'];
+}
+$text .= '- Open findings across every stage: '.($findingParts === [] ? '**none**' : implode('; ', $findingParts))
+    .' — total **'.count($openFindings)."**\n";
 $text .= '- Open dependencies: '.($openDependencies === [] ? '**none**' : implode('; ', $openDependencies))."\n";
 if ($classificationPending !== []) {
     $pendingParts = [];

@@ -325,6 +325,57 @@ class DownstreamConceptSurfaceBoundaryTest extends TestCase
      * MD-S020-R0158: the guard must distinguish the upstream sense from the downstream sense. Every
      * identifier here is real and legitimate; a guard that flags any of them is a word blacklist.
      */
+    /**
+     * `MD-S020-R0172` — the forbidden-terms list targets meanings, not tokens: `candidate`,
+     * `target`, and `policy` carry legitimate upstream senses that no guard may flag on the word
+     * alone.
+     *
+     * The rule constrains the guards, so the corpus under test is the guard suite itself. Every
+     * regex literal in every market-data guard is extracted and run against the three bare words. A
+     * pattern that matches one of them would flag `candidate_publication_id` — the boundary
+     * contract's own example — and the rule names that as non-conformant.
+     *
+     * This found one: `MarketDataOrdersOneToFourArchitectureTest` matched bare `Candidate` against
+     * class file names, so a `CandidatePublicationRepository` would have been reported as a
+     * downstream artifact. It now requires a downstream-sense compound.
+     */
+    public function test_no_market_data_guard_flags_an_overloaded_word_on_the_token_alone(): void
+    {
+        $bareWords = ['candidate', 'target', 'policy'];
+        $offenders = [];
+        $patterns = 0;
+        $files = 0;
+
+        foreach (glob($this->root().'/tests/Unit/MarketData/*.php') as $file) {
+            $files++;
+            foreach (token_get_all((string) file_get_contents($file)) as $token) {
+                if (! is_array($token) || $token[0] !== T_CONSTANT_ENCAPSED_STRING) {
+                    continue;
+                }
+                $value = substr($token[1], 1, -1);
+                if ($value === '' || $value[0] !== '/' || @preg_match($value, '') === false) {
+                    continue;
+                }
+                $patterns++;
+                foreach ($bareWords as $word) {
+                    if (@preg_match($value, $word)) {
+                        $offenders[] = basename($file).' :: '.$word.' :: '.substr($value, 0, 80);
+                    }
+                }
+            }
+        }
+
+        $this->assertGreaterThan(100, $files, 'the guard-corpus scan must reach the market-data suites');
+        $this->assertGreaterThan(300, $patterns, 'the regex extraction must actually collect patterns');
+        $this->assertSame([], array_values(array_unique($offenders)), 'a guard may not flag an overloaded word on the token alone');
+
+        // The extraction must be able to see a violation, or a clean result proves nothing. The
+        // probe is assembled at runtime rather than written as a literal: a literal here would be
+        // collected by the very scan above and reported as a violation of the rule it is testing.
+        $probe = '/'.'candi'.'date'.'/i';
+        $this->assertSame(1, preg_match($probe, 'candidate'), 'a bare-token pattern must be detectable by this scan');
+    }
+
     public function test_no_legitimate_upstream_identifier_is_flagged(): void
     {
         $legitimate = $this->legitimateIdentifiers();

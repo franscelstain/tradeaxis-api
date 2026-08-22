@@ -23,20 +23,50 @@ class MarketDataOrdersOneToFourArchitectureTest extends TestCase
         }
     }
 
+    /**
+     * `MD-S020-R0172` forbids flagging `candidate` on the word alone: it carries a legitimate
+     * upstream sense, and `candidate_publication_id` is the boundary contract's own example. This
+     * guard used to match bare `Candidate`, so a `CandidatePublicationRepository` would have been
+     * reported as a downstream artifact. `Candidate` now requires a downstream-sense compound;
+     * the other four terms carry no upstream sense in this domain and stay whole-word.
+     */
+    private function downstreamNamedArtifact(): string
+    {
+        return '/(Watchlist|Portfolio|Ranking|EntrySignal|Candidate(Rank|Score|Selection|Screening|Pick))/i';
+    }
+
     public function test_market_data_application_has_no_watchlist_or_portfolio_named_artifact(): void
     {
         $violations = [];
+        $scanned = 0;
         $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->root().'/app'));
         foreach ($iterator as $file) {
             if (! $file->isFile() || $file->getExtension() !== 'php') continue;
             $normalized = str_replace('\\', '/', $file->getPathname());
             if (strpos($normalized, '/MarketData/') === false) continue;
-            if (preg_match('/(Watchlist|Portfolio|Ranking|Candidate|EntrySignal)/i', $file->getFilename())) {
+            $scanned++;
+            if (preg_match($this->downstreamNamedArtifact(), $file->getFilename())) {
                 $violations[] = $normalized;
             }
         }
 
+        $this->assertGreaterThan(100, $scanned, 'the artifact-name scan must reach the market-data tree');
         $this->assertSame([], $violations);
+    }
+
+    /**
+     * Both directions, as `MD-S020-R0172` requires: the downstream sense is still caught, and the
+     * legitimate upstream name is not.
+     */
+    public function test_the_artifact_name_guard_targets_the_downstream_sense_not_the_word(): void
+    {
+        foreach (['WatchlistService.php', 'PortfolioActionJob.php', 'RankingRepository.php', 'EntrySignalBuilder.php', 'CandidateRankService.php', 'CandidateSelectionPolicy.php'] as $downstream) {
+            $this->assertSame(1, preg_match($this->downstreamNamedArtifact(), $downstream), $downstream.' states the downstream sense and must be flagged');
+        }
+
+        foreach (['CandidatePublicationRepository.php', 'CandidatePriceFactorService.php', 'PublishTargetResolver.php', 'CoveragePolicyEvaluator.php'] as $upstream) {
+            $this->assertSame(0, preg_match($this->downstreamNamedArtifact(), $upstream), $upstream.' carries the legitimate upstream sense and must not be flagged');
+        }
     }
 
     public function test_read_product_does_not_apply_strategy_screening_or_current_active_state(): void

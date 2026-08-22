@@ -78,6 +78,19 @@ class ConfigIdentityBindingTest extends TestCase
         }
     }
 
+    public function test_compiled_semantic_versions_and_feature_state_are_inside_the_snapshot_identity(): void
+    {
+        $snapshot = (new MarketDataConfigSnapshotRepository())->resolveForRun('2026-03-20');
+        $payload = json_decode($snapshot['resolved_config_json'], true);
+
+        $this->assertSame('structural_adjusted_v1', $payload['semantic_bindings']['price_product_version']);
+        $this->assertSame('structural_factor_product_v1', $payload['semantic_bindings']['factor_formula_version']);
+        $this->assertSame('DISABLED', $payload['semantic_bindings']['session_snapshot_feature_state']);
+        $this->assertArrayNotHasKey('price_product_version', $payload['resolved_config']['indicators']);
+        $this->assertArrayNotHasKey('factor_formula_version', $payload['resolved_config']['indicators']);
+        $this->assertArrayNotHasKey('enabled', $payload['resolved_config']['session_snapshot']);
+    }
+
     /**
      * Stage 16 exit gate, foundation half: one semantic change must change the identity. A
      * configuration that alters output while reusing an identity makes two different runs

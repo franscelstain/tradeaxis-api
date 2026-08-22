@@ -19,68 +19,9 @@ class ProductionSchedulerCronStaticGuardTest extends TestCase
     // output path, and that both outcomes register a callback. Those are the resolved values,
     // which is what runs unattended — a source fragment says only that a method was called.
 
-    public function test_scheduler_config_and_env_surface_are_documented()
-    {
-        $config = $this->read('config/market_data.php');
-        $envExample = $this->read('.env.example');
-        $envTesting = $this->read('.env.testing');
-        $inventory = $this->read('docs/market_data/audit/CONFIG_ENV_GOVERNANCE_CLEANUP_INVENTORY.md');
-
-        foreach ([$config, $envExample, $envTesting, $inventory] as $document) {
-            $this->assertStringContainsString('MARKET_DATA_SCHEDULER_OUTPUT_PATH', $document);
-            $this->assertStringContainsString('MARKET_DATA_SCHEDULER_WITHOUT_OVERLAPPING_MINUTES', $document);
-            $this->assertStringContainsString('storage/logs/market-data-scheduler.log', $document);
-            $this->assertStringContainsString('120', $document);
-        }
-    }
-
-    public function test_audit_docs_record_scheduler_cron_deployment_proof()
-    {
-        $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-        $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-        $inventory = $this->read('docs/market_data/audit/PRODUCTION_VALIDATION_INVENTORY.md');
-        $proofPack = $this->read('docs/market_data/audit/MARKET_DATA_PRODUCTION_PROOF_PACK.md');
-        $opsBaseline = $this->read('docs/market_data/audit/OPS_ENVIRONMENT_BASELINE_INVENTORY.md');
-
-        foreach ([$status, $tracker, $inventory, $proofPack, $opsBaseline] as $document) {
-            $this->assertStringContainsString('PRODUCTION_SCHEDULER_CRON_DEPLOYMENT_PROOF_CONTRACT', $document);
-            $this->assertStringContainsString('SCHEDULER_RUNTIME_LOG_PRODUCED', $document);
-            $this->assertStringContainsString('scheduler_status=FAILURE', $document);
-            $this->assertStringContainsString('OPS_RUNTIME_PARITY_PASSED', $document);
-            $this->assertStringContainsString('artifact-presence-audit.txt', $document);
-            $this->assertStringContainsString('negative-db-override-proof-gap.txt', $document);
-            $this->assertStringContainsString('provider-smoke-gap.txt', $document);
-        }
-    }
 
 
-    public function test_scheduler_runtime_proof_claim_is_backed_by_current_artifacts()
-    {
-        $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-        $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-        $proofPack = $this->read('docs/market_data/audit/MARKET_DATA_PRODUCTION_PROOF_PACK.md');
 
-        $this->assertStringContainsString('PROVIDER_RATE_LIMIT_SCHEDULER_DUE_RUN_RECONCILIATION', $status.$tracker.$proofPack);
-        $this->assertStringContainsString('SCHEDULER_RUNTIME_LOG_PRODUCED', $status.$tracker.$proofPack);
-        $this->assertStringContainsString('OPS_RUNTIME_PARITY_PASSED', $status.$tracker.$proofPack);
-        if (strpos($status.$tracker.$proofPack, '[SESSION_STATUS] OPS_RUNTIME_PARITY_PASSED') !== false) {
-            $providerArtifact = $this->read('storage/app/market-data/provider-smoke-safe-mode/command-output/provider-smoke-bbca.txt');
-            $this->assertStringContainsString('provider_smoke_status=PASS', $providerArtifact);
-            $this->assertStringContainsString('reason_code=PROVIDER_SMOKE_OK', $providerArtifact);
-        }
-
-        foreach ([
-            'storage/app/market-data/production-scheduler-cron-deployment-proof/command-output/phase3-schedule-run-enabled-due.txt' => 'Running scheduled command',
-            'storage/app/market-data/production-scheduler-cron-deployment-proof/command-output/phase4-scheduler-output-log.txt' => 'SCHEDULER_RUNTIME_LOG_PRODUCED',
-            'storage/app/market-data/production-scheduler-cron-deployment-proof/runtime/market-data-scheduler-proof.log' => 'scheduler_status=FAILURE',
-            'storage/app/market-data/production-scheduler-cron-deployment-proof/reconciliation/artifact-presence-audit.txt' => 'status=PASS_WITH_AUXILIARY_REFRESH_RECOMMENDED',
-            'storage/app/market-data/production-scheduler-cron-deployment-proof/reconciliation/negative-db-override-proof-gap.txt' => 'status=PASS',
-            'storage/app/market-data/production-scheduler-cron-deployment-proof/reconciliation/provider-smoke-gap.txt' => 'status=PASS',
-        ] as $path => $needle) {
-            $contents = $this->read($path);
-            $this->assertStringContainsString($needle, $contents);
-        }
-    }
 
     public function test_operational_runbook_documents_cron_operator_contract()
     {

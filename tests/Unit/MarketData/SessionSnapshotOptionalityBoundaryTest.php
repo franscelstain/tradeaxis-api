@@ -1,5 +1,6 @@
 <?php
 
+use App\Domain\MarketData\MarketDataSemanticBindings;
 use App\Infrastructure\Persistence\MarketData\EligibilitySnapshotScopeRepository;
 use Tests\Support\UsesMarketDataSqlite;
 
@@ -42,8 +43,8 @@ class SessionSnapshotOptionalityBoundaryTest extends TestCase
     {
         $config = require __DIR__.'/../../../config/market_data.php';
 
-        $this->assertArrayHasKey('enabled', $config['session_snapshot']);
-        $this->assertFalse($config['session_snapshot']['enabled'], 'an uncaptured optional feature declares itself off');
+        $this->assertArrayNotHasKey('enabled', $config['session_snapshot'], 'unregistered runtime activation keys are forbidden');
+        $this->assertSame('DISABLED', MarketDataSemanticBindings::SESSION_SNAPSHOT_FEATURE_STATE);
     }
 
     /**
@@ -57,7 +58,7 @@ class SessionSnapshotOptionalityBoundaryTest extends TestCase
         );
 
         $this->assertStringContainsString('SESSION_SNAPSHOT_FEATURE_DISABLED', $source);
-        $this->assertStringContainsString("'feature_state' => 'DISABLED'", $source);
+        $this->assertStringContainsString("'feature_state' => \$featureState->state()", $source);
         $this->assertMatchesRegularExpression(
             '/SESSION_SNAPSHOT_FEATURE_DISABLED[\s\S]{0,400}?return 0;/',
             $source,

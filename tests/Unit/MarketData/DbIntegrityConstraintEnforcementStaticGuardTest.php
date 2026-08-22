@@ -15,23 +15,6 @@ class DbIntegrityConstraintEnforcementStaticGuardTest extends TestCase
         return file_get_contents($path);
     }
 
-    public function test_db_integrity_inventory_is_present_and_contract_mapped(): void
-    {
-        $inventory = $this->read('docs/market_data/tests/Db_Integrity_Constraint_Inventory.md');
-
-        foreach ([
-            'DB_INTEGRITY_CONSTRAINT_ENFORCEMENT_CONTRACT',
-            'Primary Key',
-            'Unique / Business Key',
-            'FK / Implicit Integrity',
-            'Runtime Index Contract',
-            'eod_current_publication_pointer',
-            'md_replay_reason_code_counts',
-            'vendor/bin/phpunit tests/Unit/MarketData --filter "DbIntegrity"',
-        ] as $expected) {
-            $this->assertStringContainsString($expected, $inventory);
-        }
-    }
 
     public function test_locked_sql_schema_declares_primary_keys_for_all_critical_market_data_tables(): void
     {

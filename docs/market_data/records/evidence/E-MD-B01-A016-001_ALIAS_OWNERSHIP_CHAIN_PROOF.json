@@ -1,0 +1,164 @@
+{
+    "evidence_id": "E-MD-B01-A016-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B01",
+    "attempt_id": "MD-B01-A016",
+    "work_id": "MD-B01-A016",
+    "baseline_id": "MD-B01-A016-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B01-A016-001",
+    "governing_decision": "D-MD-20260822-04",
+    "issued_at": "2026-08-22T20:15:00+07:00",
+    "title": "MD-S020-R0067 proved through the alias ownership chain; MD-B01 reaches 207/207",
+    "attempt_outcome": "COMPLETE — the last MD-B01 rule is proven by execution and the stage closes at full coverage",
+    "authority_basis": {
+        "strategy": [
+            "authority/strategy/book/Domain_Boundary_Invariants_LOCKED.md",
+            "authority/strategy/book/Terminology_and_Scope.md",
+            "authority/strategy/book/CONSUMER_READ_CONTRACT_LOCKED.md",
+            "authority/strategy/book/Downstream_Consumer_Read_Model_Contract_LOCKED.md"
+        ],
+        "governance": [
+            "authority/governance/DOCUMENT_CHANGE_POLICY.md",
+            "authority/governance/ONE_DOCUMENT_ONE_AUTHORITATIVE_ROLE_STANDARD.md",
+            "authority/governance/STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md",
+            "authority/governance/STAGE_CLOSURE_MANIFEST_STANDARD.md"
+        ],
+        "strategy_bytes_changed": 0,
+        "fingerprint_recomputation": "sha1 recomputed across all 6490 rows after binding; 0 mismatches"
+    },
+    "runtime_artifact_boundary": {
+        "classification": "Authority-document proof under section 5 of RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md.",
+        "storage_inspected": false,
+        "storage_mutated": false,
+        "basis": "The predicate is a property of four strategy documents and one decision record. No runtime artifact is required or claimed."
+    },
+    "baseline": {
+        "record": "records/evidence/MD-B01-A016-BL001_WORK_BASELINE_LOCK.json",
+        "issued_before_material_change": true,
+        "predecessor_attempt": "MD-B01-A015",
+        "predecessor_baseline": "MD-B01-A015-BL001",
+        "pre_change_state": "MD-B01 at 206/207 with MD-S020-R0067 the single NOT_ASSESSED row, blocked by F-MD-B01-A003-001 and MD-DEP-0005."
+    },
+    "what_the_decision_did_and_did_not_do": {
+        "did": "D-MD-20260822-04 established that R0067's obligation is discharged for CONSUMER_READ_CONTRACT_LOCKED.md through canonical semantic ownership plus that document's own explicit delegation of field semantics.",
+        "did_not": "It did not mark the rule SATISFIED. A decision settles how an obligation may be discharged; it is not proof that the discharge holds. This attempt supplies the proof.",
+        "not_relied_upon": "MD-S020-R0189 is not the operative instrument. Its condition is a dependent document that conflates eligibility with readability or policy, and CONSUMER_READ_CONTRACT_LOCKED.md does the opposite — its sentence exists to separate them. Declaring R0189's interim precedence permanent would also strain the word 'until', which anticipates an update rather than excusing one."
+    },
+    "proof": {
+        "suite": "tests/Unit/MarketData/AliasMeaningOwnershipChainTest.php",
+        "shape": "The predicate is a chain, so each link is asserted separately rather than end-to-end. A chain proven only end-to-end stays green while an intermediate document quietly drops the sentence carrying it.",
+        "links": [
+            {
+                "link": 1,
+                "claim": "the canonical owner registers the term and states the alias meaning",
+                "document": "book/Terminology_and_Scope.md",
+                "asserted": "the Term ownership register exists, claims `eligibility snapshot` under Dimensi fakta, and the document states that a compatibility field named `eligible` has only the upstream data-usability meaning"
+            },
+            {
+                "link": 2,
+                "claim": "the document that names the alias delegates field semantics",
+                "document": "book/CONSUMER_READ_CONTRACT_LOCKED.md",
+                "asserted": "consumers read only the versioned read model defined by Downstream_Consumer_Read_Model_Contract_LOCKED.md; the reviewed sentence naming `eligible = 1` is still present; and the document still does not state the meaning itself, so a future change there reopens the decision rather than silently outgrowing it"
+            },
+            {
+                "link": 3,
+                "claim": "the delegated contract states the meaning in full",
+                "document": "book/Downstream_Consumer_Read_Model_Contract_LOCKED.md",
+                "asserted": "the alias means data_usable; it is not watchlist selection, tradability approval, alpha, ranking, or portfolio policy; and it does not by itself prove the requested publication is readable — the same caveat the readiness contract restates"
+            },
+            {
+                "link": 4,
+                "claim": "the owner boundary closes the chain",
+                "document": "book/Domain_Boundary_Invariants_LOCKED.md",
+                "asserted": "the Required cross-contract alignment section names both the delegated contract and the term owner, so the linkage is required by the owner rather than by the decision relying on it"
+            },
+            {
+                "link": 5,
+                "claim": "the governing decision remains present and scope-limited",
+                "document": "records/decisions/D-MD-20260822-04",
+                "asserted": "status ISSUED, strategy impact NONE, the Scope limit section intact, and the statement that no strategy revision was authorised or required"
+            }
+        ],
+        "load_bearing_check": "test_each_link_is_individually_load_bearing removes each link from a copy of its document text and asserts the removal lands and takes the link with it, so no link can rot unnoticed."
+    },
+    "test_execution": {
+        "runner": "vendor/bin/phpunit",
+        "new_suite": {
+            "path": "tests/Unit/MarketData/AliasMeaningOwnershipChainTest.php",
+            "tests": 6,
+            "assertions": 28,
+            "result": "PASS"
+        },
+        "whole_suite": {
+            "tests": 1686,
+            "assertions": 11432,
+            "errors": 0,
+            "failures": 0,
+            "result": "PASS"
+        },
+        "gates": "All six PASS: documentation integrity, relationship integrity, classification consistency, traceability applicability, scope boundary completion, promoted predicate proof."
+    },
+    "negative_and_fail_closed_proof": {
+        "method": "Each mutation asserted to have landed before the guard was judged; strategy documents restored from pre-mutation copies and confirmed byte-identical by git.",
+        "mutations": [
+            "the delegated contract drops `A compatibility \\`eligible\\` field means \\`data_usable\\`` -> link 3 failed (landed, count=1)",
+            "the decision loses its Scope limit heading -> link 5 failed (landed, count=1)"
+        ],
+        "restoration_verified": "git reports no change under authority/strategy/; the suite re-executed green."
+    },
+    "guard_self_correction": {
+        "event": "The first full-suite run after the decision was written failed DualUseFactAndContractAlignmentTest: the decision record quoted the tradability misreading it exists to deny, and the guard read the quotation as an assertion.",
+        "resolution": "The sentence was rewritten to refer to the misreading rather than reproduce it. No exemption was added. This is the seventh occurrence of a guard flagging a document that is honouring the rule, and the rule for handling it has not changed: rewrite the document, never carve out the guard."
+    },
+    "traceability_effect": {
+        "rule": "MD-S020-R0067",
+        "before": "NOT_ASSESSED, no evidence, blocked by F-MD-B01-A003-001",
+        "after": "SATISFIED, bound to E-MD-B01-A016-001, governing_decision=D-MD-20260822-04 recorded in the row note",
+        "stage_coverage_before": "206/207",
+        "stage_coverage_after": "207/207",
+        "denominator": "unchanged at 207",
+        "other_rows_touched": 0,
+        "gate_locks_updated": "MarketDataScopeBoundaryCompletionGate and MarketDataPromotedPredicateProofGate carried a blocked-rule invariant requiring R0067 to stay NOT_ASSESSED. Both now require the opposite — that it stays SATISFIED and stays bound to E-MD-B01-A016-001 — so a regression or a misbinding fails closed. Both self-tests were updated and re-executed."
+    },
+    "residue_verdict": {
+        "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "checked": [
+            "No strategy byte changed; git reports authority/strategy/ clean after all mutations were restored.",
+            "No semantic requirement was duplicated into a non-owner document — the outcome the decision explicitly rejected.",
+            "No gate lock was left asserting the pre-decision state; both were inverted and mutation-proven.",
+            "The rule is bound to the attempt that proved it, not to the decision that unblocked it.",
+            "The decision record was rewritten rather than exempted when a guard flagged it."
+        ]
+    },
+    "open_findings_after": [
+        "F-MD-B00-A001-001 — PARTIALLY_RESOLVED; replacement-guard half of MD-DEP-0003",
+        "F-MD-B01-A001-001 — PARTIALLY_RESOLVED; 630 reference-only rows across 18 unopened stages",
+        "F-MD-B01-A008-001 — OPEN (P2); owner MD-B14",
+        "F-MD-B01-A014-001 — OPEN (P2); owner MD-B19"
+    ],
+    "relationship_requirements": {
+        "attempt_predecessor": "MD-B01-A015",
+        "baseline": "MD-B01-A016-BL001",
+        "change_impact": "CI-MD-B01-A016-001",
+        "governing_decision": "D-MD-20260822-04",
+        "closes_finding": "F-MD-B01-A003-001",
+        "resolves_dependency": "MD-DEP-0005",
+        "closure_manifest": "SC-MD-B01-A016-001"
+    },
+    "exact_resume_point": "MD-B01 closes at 207/207 with SC-MD-B01-A016-001. MD-B03 closes under D-MD-20260822-05 with SC-MD-B03-A003-001. The next executable stage is determined by the Stage Register once both closures are recorded.",
+    "supersedes": "Nothing. All prior MD-B01 evidence remains immutable and unedited.",
+    "artifact_hashes_sha256": {
+        "docs/market_data/records/decisions/D-MD-20260822-04_ELIGIBLE_ALIAS_OWNERSHIP_PRECEDENCE.md": "50bae5deda11918c2db54782e3dd02e2b333698cfd28416bf3363c4f756c724e",
+        "docs/market_data/records/decisions/D-MD-20260822-05_A001_TIMING_DEVIATION_ACCEPTED.md": "bd2423f1b401e0b06ad835e389cb9992654efeca322b2b056a97741ed8d2eac2",
+        "tests/Unit/MarketData/AliasMeaningOwnershipChainTest.php": "ab8b9c076efc2eef5979d2730537cf6120c728956f635537780dea6b71ce90db",
+        "tests/Unit/MarketData/TestPathBindingIntegrityTest.php": "8fe089cf94937a9a00702935557dd26f8ac05e2ddddc9b336bf553bf3979aa5f",
+        "docs/market_data/records/evidence/MD-B01-A016-BL001_WORK_BASELINE_LOCK.json": "cf54d735608b55e52d0d71db3cd3442a791652959eb376ff93296b62cdd7e101",
+        "docs/market_data/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv": "e62083258cef5afb416a858e70bd77ca506558626251e52b703045276aee4bfd",
+        "docs/market_data/development/implementation/CI-MD-B01-A016-001_ALIAS_OWNERSHIP_CHAIN_PROOF.md": "837c6f5ee8f7221a31ab2ce3811b4733e7052c7d93db56fef9492478f3edf60a",
+        "docs/market_data/records/evidence/SC-MD-B01-A016-001_STAGE_CLOSURE_MANIFEST.md": "6ebba0b5068d63c829985df0a8cd4cfbf16f176b6be08c3363e6d5316151959b",
+        "docs/market_data/records/evidence/SC-MD-B03-A003-001_STAGE_CLOSURE_MANIFEST.md": "8e33e2140a75ad0e3f27355dc75e17dc8c841e514e2be757c4e90525a074deac"
+    }
+}

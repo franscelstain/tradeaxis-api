@@ -119,6 +119,16 @@ function csvSet($path, $matchColumn, $matchNeedle, $setColumn, $value)
 $results = [];
 $failed = false;
 
+/** Mirrors the gate's own correlation rule; kept local so the self-test does not include the gate. */
+function selfTestCorrelationOf($id)
+{
+    if (preg_match('/^(?:[A-Z]{1,3}-)?MD-(B\d{2}-A\d{3})/', (string) $id, $m)) {
+        return 'MD-'.$m[1];
+    }
+
+    return '';
+}
+
 function record(&$results, &$failed, $name, $expected, $observed, $applied = true)
 {
     $ok = $applied && $expected === $observed;
@@ -203,12 +213,61 @@ file_put_contents($rel, $relBackup);
 // revised standard names.
 $relAll = file_get_contents($rel);
 $relLines = preg_split('/\R/', rtrim($relAll, "\r\n"));
-if (count($relLines) > 1) {
-    $dropped = implode("\n", array_slice($relLines, 0, count($relLines) - 1))."\n";
+
+/*
+ * Remove a row the completeness rule actually requires, not simply the last one.
+ *
+ * This dropped the final line, which worked only while the newest registered edge happened to be a
+ * required one. `MD-B05-A001` registered an attempt-internal correlation last, the gate correctly
+ * did not care that it was gone, and the self-test read that as the gate failing to react. The
+ * mutation now targets an edge a current record declares across a correlation boundary — the exact
+ * shape the completeness invariant exists to enforce — so the probe no longer depends on the order
+ * rows were appended in.
+ */
+$requiredEdge = null;
+foreach (array_slice($relLines, 1) as $line) {
+    $fields = str_getcsv($line);
+    if (count($fields) < 4 || $fields[0] === '') {
+        continue;
+    }
+    [$id, $source, $target] = [$fields[0], $fields[1], $fields[2]];
+    foreach (preg_split('/\R/', rtrim(file_get_contents($rec), "\r\n")) as $recordLine) {
+        $r = str_getcsv($recordLine);
+        if (count($r) < 13 || $r[0] !== $source) {
+            continue;
+        }
+        // related_findings, related_evidence, related_decisions, supersedes
+        $declared = [];
+        foreach ([8, 9, 10, 12] as $column) {
+            foreach (array_filter(array_map('trim', explode(';', (string) $r[$column]))) as $value) {
+                $declared[] = $value;
+            }
+        }
+        if (in_array($target, $declared, true) && selfTestCorrelationOf($source) !== selfTestCorrelationOf($target)) {
+            $requiredEdge = [$id, $line];
+            break 2;
+        }
+    }
+}
+
+if ($requiredEdge !== null) {
+    $dropped = implode("\n", array_values(array_filter($relLines, static function ($line) use ($requiredEdge) {
+        return $line !== $requiredEdge[1];
+    })))."\n";
     file_put_contents($rel, $dropped);
-    record($results, $failed, 'a required relationship row is removed', 1, runGate($relGate), $dropped !== $relAll);
+    record(
+        $results,
+        $failed,
+        'a required relationship row is removed ('.$requiredEdge[0].')',
+        1,
+        runGate($relGate),
+        $dropped !== $relAll && strpos($dropped, $requiredEdge[1]) === false
+    );
     file_put_contents($rel, $relAll);
 } else {
+    // No cross-correlation edge is declared anywhere, so the invariant has nothing to enforce and
+    // this probe cannot distinguish a working gate from a broken one. Reported as a failure rather
+    // than skipped, because a probe that cannot fire is the condition this self-test exists to catch.
     record($results, $failed, 'a required relationship row is removed', 1, 0, false);
 }
 

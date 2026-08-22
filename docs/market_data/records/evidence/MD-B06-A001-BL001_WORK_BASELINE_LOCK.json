@@ -1,0 +1,34 @@
+{
+    "baseline_id": "MD-B06-A001-BL001",
+    "stage_id": "MD-B06",
+    "attempt_id": "MD-B06-A001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260822-001",
+    "strategy_freeze_manifest_sha1": "B9EF92213352F66A8253FE033B3479E0916629AB",
+    "strategy_tree_fingerprint_sha1": "1516FF84486E658D928779EB76B5CEE901B6A33C",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "CB03B42ADBDD27258ACD0F42F205044CA9B869C0",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "5F69624640D70F276D1E132C60D683E2EA07FCC6",
+    "source_revision": "29208da1720298bfe2d6d463ed400a2d367edbde",
+    "source_revision_branch": "master",
+    "working_tree": "DIRTY+B312DB57618CC18273EBD7D85485AD60E76A2C77",
+    "app_code_fingerprint_sha1": "D52AF2AF1534CB6E2D3AC1BD2EE8B6A00A67B783",
+    "tests_fingerprint_sha1": "4E06F846D03D8AF95386B8A11D14930836F5408B",
+    "schema_config_identity": "schema:EFAC1C8E2438D039BBCC5662389375C661863039;config:CDA52E5CFA3414EF94B3C16A4D3C118A692D7165;migrations:49A47039C47EEB233218874643A27C0FF8724A92",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "PHP 7.4.33",
+    "external_dependency_contract_identity": {
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "registered": 7,
+        "open_blocking": []
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-08-22T11:49:46+02:00",
+    "issuance_note": "Issued at MD-B06-A001 entry after reading canonical current state and MD-B05 closure, before any MD-B06 matrix, schema, implementation, test, evidence, relationship, or current-state mutation."
+}

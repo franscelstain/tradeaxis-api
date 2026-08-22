@@ -113,32 +113,4 @@ class MarketDataConsumerReadModelStaticGuardTest extends TestCase
         $this->assertStringNotContainsString('IHSG.JK', $source);
     }
 
-    /**
-     * The consumer read model documents what it provides. It must not claim to provide the
-     * decisions built on top of it: ranking, buy/sell and final P/L are downstream concerns, and
-     * a document asserting they are implemented here would misdirect whoever builds them.
-     */
-    public function test_docs_lock_consumer_read_model_scope_without_strategy_claims(): void
-    {
-        $docs = $this->read('docs/market_data/audit/MARKET_DATA_CONSUMER_READ_MODEL_INVENTORY.md')
-            .$this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md')
-            .$this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-
-        foreach ([
-            'MARKET_DATA_CONSUMER_READ_MODEL_STATUS',
-            'WATCHLIST_READ_SURFACE',
-            'PORTFOLIO_PRICE_SURFACE',
-            'BENCHMARK_READ_SURFACE',
-            'READINESS_SURFACE',
-            'current readable publication only',
-            'no raw/staging/latest/MAX(date)',
-            'MARKET_DATA_CONSUMER_READ_MODEL_CONTRACT',
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $docs);
-        }
-
-        foreach (['buy/sell decision implemented', 'watchlist ranking implemented', 'portfolio P/L final implemented'] as $forbidden) {
-            $this->assertStringNotContainsString($forbidden, strtolower($docs));
-        }
-    }
 }

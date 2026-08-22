@@ -1,0 +1,187 @@
+{
+    "evidence_id": "E-MD-B05-A001-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B05",
+    "attempt_id": "MD-B05-A001",
+    "work_id": "MD-B05-A001",
+    "baseline_id": "MD-B05-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B05-A001-001",
+    "issued_at": "2026-08-22T23:40:00+07:00",
+    "title": "Temporal issuer/instrument/listing/symbol/provider identity and temporal sector membership proven at 117/117",
+    "attempt_outcome": "COMPLETE — three executable defects remediated and every current MD-B05 predicate proven by execution",
+    "authority_basis": {
+        "strategy": [
+            "authority/strategy/book/Tickers_and_Identity_Dependency_Contract_LOCKED.md",
+            "authority/strategy/book/Symbol_Lifecycle_and_Mapping_Contract.md",
+            "authority/strategy/book/Sector_Classification_Contract_LOCKED.md",
+            "authority/strategy/book/Domain_Boundary_Invariants_LOCKED.md",
+            "authority/strategy/registry/Platform_Config_Registry_LOCKED.md"
+        ],
+        "governance": [
+            "authority/governance/STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md",
+            "authority/governance/IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD.md",
+            "authority/governance/RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md",
+            "authority/governance/WORK_BASELINE_LOCK_STANDARD.md",
+            "authority/governance/CHANGE_IMPACT_DECLARATION_STANDARD.md",
+            "authority/governance/STAGE_CLOSURE_MANIFEST_STANDARD.md"
+        ],
+        "strategy_bytes_changed": 0,
+        "strategy_diff_check": "git diff --quiet -- docs/market_data/authority/strategy returned 0 for every file this attempt touched; the only tree difference is the pre-existing MD-B04-A002 correction authorised by D-MD-20260822-06"
+    },
+    "baseline": {
+        "record": "records/evidence/MD-B05-A001-BL001_WORK_BASELINE_LOCK.json",
+        "issued_before_material_change": true,
+        "pre_change_state": "MD-B05 NOT_STARTED with a provisional 78-row denominator: 2 MANDATORY, 76 transitional MANDATORY_OR_CONDITIONAL, 1 optional capability, 89 REFERENCE_ONLY, and 27 reference members reported inside mixed-classification runs."
+    },
+    "executable_defects_remediated": [
+        {
+            "defect": "Board and market segment were not effective-dated.",
+            "rules": ["MD-S057-R0031", "MD-S057-R0039", "MD-S055-R0017"],
+            "what_was_wrong": "md_listings.board_code and md_listings.market_segment were single mutable columns. A board move could only be recorded by overwriting one of them, which changed the answer for every historical date at once, and the universe query filtered on the current segment — so a listing that was Regular on T and moved afterwards silently left T's universe. That is the defect the is_active boundary describes, in two columns it does not name.",
+            "reproduced_before_fixing": "ListingBoardAndSegmentTemporalityTest was written first and run against the unmodified code: 1 failure and 7 errors, the first of them 'no such table: md_listing_boards'. The gap was not inferred from reading.",
+            "fix": "Additive migration 2026_08_22_000001 creates md_listing_boards with an effective interval, known time, retraction, provenance and change reason, and opens one interval per existing listing from the dates that listing already records. TemporalIdentityRepository resolves board and segment from that table, the legacy projection opens the interval, and two intervals covering one date raise LISTING_BOARD_CONTEXT_AMBIGUOUS. The columns on md_listings remain as the cached current-state projection MD-S057-R0017 permits, and nothing resolves history from them.",
+            "deployment": "php artisan migrate applied it to the reachable database: 977 listings, 977 intervals opened, 0 listings left without one, 0 intervals disagreeing with their listing dates."
+        },
+        {
+            "defect": "The conditional OPERATOR_ENTERED authority class was unconditional at resolution.",
+            "rules": ["MD-S052-R0012", "MD-S052-R0013"],
+            "what_was_wrong": "MD-S052-R0012 permits an operator-entered row to establish membership only with an explicit authoritative reference, a named operator, and a governed reason code. appendMembership() enforced that triple; the resolver did not, and operator_name and reason_code are nullable with no database constraint binding them to the class. A row arriving by any other route resolved as authoritative membership. The condition was checked exactly where it was already satisfied.",
+            "reproduced_before_fixing": "SectorSourceAuthorityClassResolutionTest inserted the rows directly and ran against the unmodified code: 2 failures. An ungoverned operator row established sector 'G', and — a second consequence the test found rather than predicted — a governed row covering the same date was reported as an overlap conflict because the ungoverned row was counted as a rival.",
+            "fix": "operatorGovernanceSatisfied() filters ungoverned operator rows out before supersession and coverage are computed, so such a row can neither resolve a sector nor supersede a row that can, and an otherwise uncovered date reports SECTOR_OPERATOR_GOVERNANCE_INCOMPLETE rather than a bare SECTOR_MEMBERSHIP_UNKNOWN.",
+            "production_data_effect": "None. The reachable database holds 971 DERIVED_REFERENCE and 721 EXCHANGE_AUTHORITATIVE membership rows and no OPERATOR_ENTERED rows, so the change closes the hole without altering any current resolution."
+        },
+        {
+            "defect": "A run without a config snapshot acquired with no context at all.",
+            "rules": ["MD-S055-R0002", "MD-S055-R0012", "MD-S055-R0023"],
+            "what_was_wrong": "MarketDataPipelineService chose between two acquisition calls on empty($run->config_snapshot_id). The fallback passed no context: no knowledge cutoff, no run identity, and no enforce_temporal_mapping, so provider symbols fell back to adapter suffix rendering and the universe resolved from current state. MD-S055-R0012 forbids exactly that substitution, and the branch had outlived its cause — every run created by EodRunRepository now resolves a config snapshot, so the branch only survived to degrade the runs that reached it.",
+            "fix": "The context is now unconditional; a run without a snapshot passes a null snapshot id rather than dropping the knowledge cutoff and the mapping requirement.",
+            "test_effect": "Five MarketDataPipelineServiceTest expectations pinned the two-argument call and now pin the four-argument one, including the enforcement flag itself. Pinning it is stronger proof than the shape they replaced."
+        }
+    ],
+    "traceability_normalization": {
+        "tool": "development/implementation/tests/MarketDataTemporalIdentityNormalization.php",
+        "spec": "development/implementation/tests/MarketDataTemporalIdentityTraceabilitySpec.php",
+        "gate": "development/implementation/tests/MarketDataTemporalIdentityTraceabilityGate.php",
+        "strategy_rows_reviewed": 166,
+        "reference_rows_after": 31,
+        "reference_rows_promoted_to_executable_semantics": 58,
+        "proof_owner_moves": 20,
+        "rows_bound_to_a_governing_parent": 71,
+        "current_b05_denominator": {
+            "owned_in_the_three_contracts": 115,
+            "imported": 2,
+            "total": 117,
+            "optional_capability": 0,
+            "conditional_pending": 0
+        },
+        "semantic_corrections": [
+            "The reference set was not derived from structure. It excluded hard prohibitions — 'no other classification system may be stored as IDX-IC', 'overlapping mappings to different instruments are invalid', and the whole failure-behavior list of the mapping contract — while including their siblings, and it excluded two of the three acceptance criteria while marking the third required.",
+            "Every remaining reference row is one of five structural classes: a colon-terminated introducer, a bare label, a table header, or a cross-contract pointer. The gate re-derives the class from the rule text, so a row whose text becomes a predicate can no longer stay excluded.",
+            "MD-S055-R0025, the historical replay rule, was OPTIONAL_CAPABILITY / OPTIONAL_NOT_REQUESTED. An as-known replay contract row cannot be an unrequested optional capability while MD-B18 exists as a mandatory stage to build it; it is now MANDATORY at MD-B18.",
+            "Twenty predicates name observations, publications, coverage, replay, or sector-derived measures. Naming them here does not make them provable here, so they moved to MD-B07, MD-B10, MD-B14, MD-B15, MD-B17, MD-B18, and MD-B21 with MD-B05 retained as supporting stage.",
+            "MD-B05 joined the classification gate's normalized-stage set; the pending mixed-classification backlog fell from 579 to 552."
+        ],
+        "fingerprint_integrity": "No immutable rule fingerprint or rule text changed. A row-by-row diff against the pre-normalization copy reports 135 changed rows, all inside the three owned documents, 0 fingerprint mismatches, 0 rule_text changes, and an unchanged 6490-row corpus."
+    },
+    "documented_interval_convention": {
+        "why": "MD-S057-R0013 and MD-S052-R0018 permit an exclusive or inclusive interval end and require the choice to be one documented convention. The convention was consistent in code and stated nowhere, which is the half of the requirement that was not met.",
+        "recorded_in": "development/implementation/db/DB_FIELDS_AND_METADATA.md, 'Temporal interval convention (MD-B05-A001)'",
+        "identity_records": "md_listing_symbols, md_listing_boards, md_provider_symbol_mappings — DATETIME, exclusive end.",
+        "sector_membership": "ticker_sector_memberships — DATE, inclusive end; a reclassification effective R closes the prior row at R-1.",
+        "asserted_by": "Both conventions are pinned on each side of a boundary by execution, so a change breaks a test rather than silently shifting historical answers by one session."
+    },
+    "proof": {
+        "gate": "development/implementation/tests/MarketDataTemporalIdentityProofGate.php",
+        "binder": "development/implementation/tests/MarketDataTemporalIdentityProofBinder.php",
+        "binding_is_atomic": "The binder refuses any count other than all 117 current MD-B05 predicates and refuses to annotate fewer than the four remediated rules.",
+        "families": {
+            "identity": "20 rules — the five layers as distinct records, the temporal field set, the exclusive interval convention, effective versus recorded time, the full point-in-time output, and the projection direction.",
+            "universe": "13 rules — as-of-T membership, the is_active boundary, fail-closed on missing temporal dependency, and the knowledge cutoff.",
+            "board": "3 rules — the effective-dated board and segment.",
+            "mapping": "31 rules — the mapping record shape, lifecycle, uniqueness and ambiguity, and the four failure behaviors.",
+            "alias": "9 rules — the compatibility alias, its equivalence, its non-propagation, and its retirement condition.",
+            "sector": "22 rules — scope, IDX-IC authority, the source authority classes, the membership record, and reclassification.",
+            "capability": "21 rules — what each contract proves and what it cannot, and the qualification rules that go with them."
+        },
+        "capability_boundary_shape": "Eleven forbidden claims, each paired with the sentence it must catch and each proven able to fire. Six of them are also proven not to fire on the same sentence denied, because the records that prove this stage state most of these claims in order to deny them."
+    },
+    "test_execution": {
+        "runner": "php vendor/bin/phpunit",
+        "new_suites": [
+            {"path": "tests/Unit/MarketData/TemporalIdentityLayerContractTest.php", "tests": 7, "assertions": 99},
+            {"path": "tests/Unit/MarketData/ListingBoardAndSegmentTemporalityTest.php", "tests": 8, "assertions": 28},
+            {"path": "tests/Unit/MarketData/SymbolMappingLifecycleAndFailureTest.php", "tests": 11, "assertions": 46},
+            {"path": "tests/Unit/MarketData/LegacyTickerAliasBoundaryTest.php", "tests": 10, "assertions": 30},
+            {"path": "tests/Unit/MarketData/SectorMembershipTemporalFactTest.php", "tests": 8, "assertions": 33},
+            {"path": "tests/Unit/MarketData/SectorSourceAuthorityClassResolutionTest.php", "tests": 5, "assertions": 19},
+            {"path": "tests/Unit/MarketData/IdentityAndMembershipCapabilityBoundaryTest.php", "tests": 5, "assertions": 31},
+            {"path": "tests/Unit/MarketData/TemporalIdentityTraceabilityGateTest.php", "tests": 9, "assertions": 0}
+        ],
+        "whole_suite": {"result": "recorded in the closure manifest after the final run"}
+    },
+    "negative_and_fail_closed_proof": {
+        "method": "Every mutation was asserted to have landed before the guard was judged, and every artifact was restored and re-verified.",
+        "implementation_mutations": [
+            "The board suite run against the unmodified repository: 1 failure, 7 errors. After the fix: 8 pass.",
+            "The sector authority suite run against the unmodified repository: 2 failures. After the fix: 5 pass.",
+            "A probe that made EquityProviderSymbolResolver fail closed by default was applied to measure blast radius — 22 tests — and reverted. It informed the fix rather than becoming it: the enforcement point chosen was the pipeline branch that dropped the context, not the isolated adapter preview the contract explicitly permits."
+        ],
+        "traceability_mutations": [
+            "MD-S052-R0046 demoted to REFERENCE_ONLY -> gate FAIL, 'required predicate lifecycle is not REQUIRED/MANDATORY' (landed, count=1).",
+            "MD-S057-R0031 proof owner moved to MD-B14 -> gate FAIL, 'proof owner MD-B14 != MD-B05' (landed, count=1).",
+            "MD-S057-R0003, a structural introducer, promoted to REQUIRED -> gate FAIL, 'structural row is not REFERENCE_ONLY' (landed, count=1)."
+        ],
+        "capability_mutation": "A forbidden claim appended to the Change Impact Declaration -> IdentityAndMembershipCapabilityBoundaryTest FAIL naming the rule, the file, and the matched text (landed, count=1); removed and re-verified at count=0.",
+        "runtime_fail_closed": [
+            "Two board intervals covering one date -> LISTING_BOARD_CONTEXT_AMBIGUOUS.",
+            "A listing with no board interval for the date -> excluded, never resolved from the cached column.",
+            "Two listings holding one symbol at one instant -> PROVIDER_SYMBOL_MAPPING_AMBIGUOUS.",
+            "A date outside mapping validity -> PROVIDER_SYMBOL_MAPPING_MISSING, with a covered date still resolving so the guard is not simply refusing everything.",
+            "An unknown symbol -> no listing, no symbol row, and no mapping row created.",
+            "An operator-entered row missing any one of reference, operator, or reason -> SECTOR_OPERATOR_GOVERNANCE_INCOMPLETE.",
+            "A foreign classification system or an unregistered sector code -> refused at the write boundary."
+        ]
+    },
+    "residue_verdict": {
+        "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+        "checked": [
+            "No strategy byte changed by this attempt.",
+            "The cached board and segment columns remain, and no resolution path reads them for a historical date.",
+            "No listing was left without a board interval, and none was given an invented one: the migration skips a listing whose segment is null rather than defaulting it.",
+            "No reader outside the market-data package depends on the legacy alias, and no table or column added since the V2 foundation keys on it.",
+            "The preview provider-symbol path still exists for isolated adapter tests and still declares itself non-canonical; the governed pipeline can no longer reach it.",
+            "Twenty moved predicates remain NOT_ASSESSED at their proof-owning stages. MD-B05 inherited none of their proof."
+        ],
+        "known_residual": "38 documentation pointers under docs/market_data/ are still written into docblocks at pre-refactor paths. Two of them were in this stage's own proof surface and were rebound here; the remaining 36 belong to F-MD-B00-A001-001, whose remediation is owned by MD-B03, MD-B19, and MD-B21. They are comments rather than executable bindings, which is why TestPathBindingIntegrityTest deliberately does not read them."
+    },
+    "runtime_artifact_boundary": {
+        "storage_inspected": false,
+        "storage_mutated": false,
+        "raw_artifacts_referenced": [],
+        "database_mutated": true,
+        "database_mutation": "php artisan migrate applied 2026_08_22_000001 to the reachable development database, creating md_listing_boards and opening 977 intervals derived from existing md_listings rows. The migration is additive, invents no value, and MigrationIntegrityAndDriftTest requires applied and present migrations to agree.",
+        "basis": "All behavioral proof runs against the in-repository SQLite mirror. No storage artifact, provider payload, replay, or backfill output is claimed or needed."
+    },
+    "open_items_after": {
+        "findings": [
+            "F-MD-B00-A001-001 — PARTIALLY_RESOLVED; replacement-guard half of MD-DEP-0003 plus the 36 remaining documentation pointers",
+            "F-MD-B01-A001-001 — PARTIALLY_RESOLVED; 552 mixed-classification reference members remain across 15 unopened stages",
+            "F-MD-B01-A008-001 — OPEN; owner MD-B14",
+            "F-MD-B01-A014-001 — OPEN; owner MD-B19"
+        ],
+        "dependency": "MD-DEP-0004 remains OPEN_NON_BLOCKING for unopened stages; its MD-B05 entry obligation is complete.",
+        "b05_blocker": "none"
+    },
+    "relationship_requirements": {
+        "baseline": "MD-B05-A001-BL001",
+        "change_impact": "CI-MD-B05-A001-001",
+        "stage_precondition": "SC-MD-B04-A002-001",
+        "dependency_scope": "MD-DEP-0004",
+        "closure_manifest": "SC-MD-B05-A001-001"
+    },
+    "exact_resume_point": "Issue and validate SC-MD-B05-A001-001 only after evidence, relationships, document registries, current state, and every gate are synchronized.",
+    "supersedes": "Nothing. No historical evidence or immutable baseline was edited."
+}

@@ -10,7 +10,7 @@ class LocalFileEodBarsAdapterTest extends \TestCase
     {
         @unlink(base_path('storage/framework/testing/manual-source-explicit.csv'));
         @unlink(base_path('storage/framework/testing/manual-source-explicit.txt'));
-        config()->set('market_data.source.local_input_file', null);
+        app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->set(null);
 
         parent::tearDown();
     }
@@ -27,7 +27,7 @@ class LocalFileEodBarsAdapterTest extends \TestCase
             'BBCA,2026-03-24,9000,9100,8900,9050,1000000,9050,MANUAL_RECOVERY,row-1,2026-03-24 17:00:00',
         ]));
 
-        config()->set('market_data.source.local_input_file', 'storage/framework/testing/manual-source-explicit.csv');
+        app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->set('storage/framework/testing/manual-source-explicit.csv');
 
         $rows = (new LocalFileEodBarsAdapter())->fetchOrLoadEodBars('2026-03-24', 'manual_file');
 
@@ -51,7 +51,7 @@ class LocalFileEodBarsAdapterTest extends \TestCase
             'BBRI,2026-03-25,4100,4150,4050,4120,2000000,4120,row-2,2026-03-25 17:00:00',
         ]));
 
-        config()->set('market_data.source.local_input_file', 'storage/framework/testing/manual-source-explicit.csv');
+        app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->set('storage/framework/testing/manual-source-explicit.csv');
 
         $adapter = new LocalFileEodBarsAdapter();
         $rows = $adapter->fetchOrLoadEodBars('2026-03-25', 'manual_file');
@@ -75,7 +75,7 @@ class LocalFileEodBarsAdapterTest extends \TestCase
         }
 
         file_put_contents($path, 'not-supported');
-        config()->set('market_data.source.local_input_file', 'storage/framework/testing/manual-source-explicit.txt');
+        app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->set('storage/framework/testing/manual-source-explicit.txt');
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Explicit local input file must use .json or .csv extension.');
@@ -92,7 +92,7 @@ class LocalFileEodBarsAdapterTest extends \TestCase
 
         file_put_contents($path, 'ticker_code,trade_date,open,high,low,close,volume,adj_close,source_name,source_row_ref,captured_at'."
 ");
-        config()->set('market_data.source.local_input_file', 'storage/framework/testing/manual-source-explicit.csv');
+        app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->set('storage/framework/testing/manual-source-explicit.csv');
 
         try {
             (new LocalFileEodBarsAdapter())->fetchOrLoadEodBars('2026-03-24', 'manual_file');

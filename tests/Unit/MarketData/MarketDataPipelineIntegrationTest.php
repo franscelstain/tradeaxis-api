@@ -516,7 +516,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'BBCA,2026-03-20,121,125,120,124,2000,124,2026-03-20T17:20:00+07:00',
         ]));
 
-        config()->set('market_data.source.local_input_file', 'storage/framework/testing/market_data_pipeline/manual-explicit-2026-03-20.csv');
+        app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->set('storage/framework/testing/market_data_pipeline/manual-explicit-2026-03-20.csv');
 
         $run = $this->makePipeline()->runDaily('2026-03-20', 'manual_file');
 

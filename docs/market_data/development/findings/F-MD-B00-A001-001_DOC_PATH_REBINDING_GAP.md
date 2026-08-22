@@ -76,3 +76,31 @@ The two runtime P0 breakages are closed with executed proof rather than path-res
 Fixing the migration path exposed a second, independent P0 that only execution could reveal: `hasIndex()` in `2026_06_04_000001_add_event_risk_source_context.php` called `getDoctrineSchemaManager()` and swallowed every Throwable as "index absent". `doctrine/dbal` is not a dependency of this project, so the guard always answered false and the migration re-added an index the clean-install base already creates. A second unguarded index block in `2026_08_08_000001` failed the same way. Both are fixed and the fix is proven by a full clean install. Detail in `E-MD-B03-A001-001`.
 
 The Class S half remains OPEN under `MD-DEP-0003`: 24 test files bind only to split-sealed composites and need a per-stage retire-or-rewrite decision. Repointing them at the `HISTORICAL_ONLY` extracts is still forbidden.
+
+## Class S binding half closed — MD-B03-A002
+
+The 24 test files that bound executable assertions to split-sealed composites no longer do. 71 test methods were removed under `CI-MD-B03-A002-001` with evidence `E-MD-B03-A002-001`.
+
+Removal was per method, not per file. `TestingDatabaseIsolationStaticGuardTest` failed one of six tests while the other five guard real bootstrap and artisan behaviour; retiring the file would have taken those with it. Twenty-two files kept their live tests. Two were retired outright — `AuditCrossReferenceIntegrityTest` and `AuditDocsSynchronizationStaticGuardTest` — because every test in each existed to check the internal consistency of the LUMEN audit ledger, which `START_HERE.md` classifies as supporting history and never current proof.
+
+**`tests/Unit/MarketData` went from 1740 tests with 4 errors and 67 failures to 1669 tests with none.** The arithmetic is exact — 1740 − 71 = 1669 — so nothing outside the removal set was lost and nothing else broke. The whole suite now passes at 1673 tests and 11373 assertions, the first green suite of the epoch; at this finding's own baseline it was 1488 tests with 26 errors and 108 failures.
+
+### The recurrence guard, and what it found immediately
+
+`TestPathBindingIntegrityTest` fails when any test binds to a `docs/market_data/**` path that does not resolve, or reads a sealed `LX-MD-*` extract as current proof. It distinguishes reading the history directory from excluding it — seven suites name that prefix to skip it, which is the contract being honoured.
+
+On its first execution it found a live defect this finding had not: `OPERATIONAL_RUNBOOK.md`, a current implementation document, still told operators to "execute and retain the gate defined in `docs/market_data/ops/OPS_ENVIRONMENT_BASELINE.md`" — a document `D-MD-20260820-02` removed. The existing guard passed because it only checked that the runbook *contained the string*, never that the path resolved. The clause now states the gate directly; the bounds and blocking reason codes were already in the runbook text.
+
+That is worth recording as a class: **Class R was measured over paths reachable from executable code. A dead path inside prose that a guard merely string-matches is neither Class R nor Class S, and this finding did not count it.**
+
+### What remains open
+
+Not a binding defect. Six operator-facing contracts that the removed inventories used to state now have **no current owner**: production validation, ops command-surface runtime matrix, scheduler cron deployment proof, environment baseline, read-side consumer sweep, and coverage-gate candidate scope. The guards asserting them are gone and their replacements need current authority that `MD-B19`, `MD-B15`, `MD-B17`, `MD-B21`, and `MD-B22` have not written.
+
+`MD-DEP-0003` stays `OPEN_NON_BLOCKING` with that obligation recorded per stage in its resume trigger. It blocks no stage today — the suite is green and no `MD-B01` row depends on those files — and becomes blocking for any stage that claims operational-readiness coverage before writing its replacement guard.
+
+### Do-not-repeat
+
+The removal tool damaged two files before the cause was found. Its docblock absorption used a regex anchored with `$` under `/s`, and `(?:(?!\*\/).)*` is greedy, so it began at the *first* docblock in the file and ran to the last `*/` before the target method, deleting the class's closing brace. An earlier version also located a helper's span in a `private`→`public` rewritten copy and applied those offsets to the original, which shifts by one byte per replacement.
+
+`php -l` across the whole test directory after each application is what caught both, before anything reached a suite run. A brace-balanced excision is safe for one method whose span is known and unsafe as a repeated rewrite over shifting offsets — so orphaned helpers are now reported rather than auto-deleted, and the manual pass verifies the parse after each single removal and reverts that one if it fails.

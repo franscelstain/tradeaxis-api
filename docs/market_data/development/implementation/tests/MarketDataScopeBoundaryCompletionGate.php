@@ -17,10 +17,11 @@ final class MarketDataScopeBoundaryCompletionGate
 
     /**
      * Stage-wide satisfied count once A013's 31 rows are bound: A012's 111 carry-forwards, A013's 31,
-     * and the two alias-cluster rules A014 promoted and then proved
-     * (`MD-S020-R0068`, `MD-S020-R0071`).
+     * the two alias-cluster rules A014 promoted and proved (`MD-S020-R0068`, `MD-S020-R0071`), and
+     * the 62 promoted predicates A015 proved. Only `MD-S020-R0067` remains, blocked by
+     * `F-MD-B01-A003-001`.
      */
-    public const SATISFIED_WHEN_BOUND = 144;
+    public const SATISFIED_WHEN_BOUND = 207;
 
     /** @return array<string,array{proofs:array<int,array{0:string,1:string}>,surfaces:array<int,string>}> */
     public static function proofMap(): array
@@ -276,13 +277,17 @@ final class MarketDataScopeBoundaryCompletionGate
             $errors[] = 'A013 binding must be atomic: '.$bound.' of 31 rows are bound';
         }
 
+        // MD-S020-R0067 was finding-blocked until D-MD-20260822-04 resolved MD-DEP-0005 and
+        // MD-B01-A016 bound it with executed proof over the ownership chain. The invariant is now the
+        // opposite: it must stay proven, and it must stay bound to the attempt that proved it.
         $blocked = $byId[self::BLOCKED_RULE] ?? null;
         if ($blocked === null
             || $blocked['primary_stage'] !== 'MD-B01'
             || $blocked['applicability'] !== 'CONDITIONAL_APPLICABLE'
-            || $blocked['coverage_status'] !== 'NOT_ASSESSED'
-            || trim($blocked['current_evidence_ids']) !== '') {
-            $errors[] = self::BLOCKED_RULE.': finding-blocked lifecycle was advanced or altered';
+            || $blocked['coverage_status'] !== 'SATISFIED'
+            || $blocked['current_evidence_ids'] !== 'E-MD-B01-A016-001'
+            || strpos($blocked['notes'], 'governing_decision=D-MD-20260822-04') === false) {
+            $errors[] = self::BLOCKED_RULE.': the resolved rule lost its proof, evidence, or governing decision';
         }
 
         $satisfied = 0;

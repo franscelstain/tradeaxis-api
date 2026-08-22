@@ -352,15 +352,24 @@ class MarketDataPipelineService
         }
 
         try {
-            $sourceRows = empty($run->config_snapshot_id)
-                ? $this->barsIngest->acquireSourceRows($input->requestedDate, $input->sourceMode)
-                : $this->barsIngest->acquireSourceRows(
-                    $input->requestedDate,
-                    $input->sourceMode,
-                    null,
-                    [
+            /*
+             * Acquisition context is unconditional.
+             *
+             * This was a ternary: a run whose config_snapshot_id was empty acquired with no context
+             * at all — no knowledge cutoff, no run identity, and no temporal mapping enforcement, so
+             * provider symbols fell back to adapter suffix rendering and the universe resolved from
+             * current state. Symbol_Lifecycle_and_Mapping_Contract.md forbids exactly that
+             * substitution, and the fallback had already outlived its cause: every run created by
+             * EodRunRepository now resolves a config snapshot, so the branch only survived to
+             * degrade the runs that reached it.
+             */
+            $sourceRows = $this->barsIngest->acquireSourceRows(
+                $input->requestedDate,
+                $input->sourceMode,
+                null,
+                [
                     'run_id' => (int) $run->run_id,
-                    'config_snapshot_id' => (int) $run->config_snapshot_id,
+                    'config_snapshot_id' => empty($run->config_snapshot_id) ? null : (int) $run->config_snapshot_id,
                     'source_mode' => $input->sourceMode === 'api' ? 'api_free' : $input->sourceMode,
                     'enforce_temporal_mapping' => $input->sourceMode === 'api',
                     /*
@@ -371,8 +380,8 @@ class MarketDataPipelineService
                      * This context key was read in two places and written in none.
                      */
                     'known_at' => $this->runs->resolveKnowledgeCutoff($run),
-                    ]
-                );
+                ]
+            );
             $sourceAcquisitionTelemetry = $this->barsIngest->consumeSourceAcquisitionTelemetry($input->sourceMode);
             return DB::transaction(function () use ($run, $input, $priorCurrent, $sourceRows, $sourceAcquisitionTelemetry) {
                 $result = $this->barsIngest->ingestAcquiredRows(
@@ -960,7 +969,7 @@ class MarketDataPipelineService
                     'hash_algorithm' => config('market_data.hash.algorithm', 'SHA-256'),
                     'hash_delimiter' => config('market_data.hash.delimiter', '|'),
                     'hash_line_separator' => config('market_data.hash.line_separator', "\n"),
-                    'hash_null_token' => config('market_data.hash.null_token', '[empty]'),
+                    'hash_null_token' => $this->hashes->nullToken(),
                     'canonical_ordering_rule' => 'trade_date ASC, ticker_id ASC plus DeterministicHashService canonical sort',
                 ]
             );
@@ -3726,7 +3735,7 @@ class MarketDataPipelineService
         }
 
         if (in_array($sourceMode, ['manual_file', 'manual_entry'], true)) {
-            $configuredInputFile = trim((string) config('market_data.source.local_input_file', ''));
+            $configuredInputFile = trim((string) app(ManualSourceInputContext::class)->path());
             if ($configuredInputFile !== '') {
                 $payload['input_file'] = $configuredInputFile;
             }
@@ -3742,7 +3751,7 @@ class MarketDataPipelineService
             return [];
         }
 
-        $configuredInputFile = trim((string) config('market_data.source.local_input_file', ''));
+        $configuredInputFile = trim((string) app(ManualSourceInputContext::class)->path());
         if ($configuredInputFile === '') {
             return [];
         }

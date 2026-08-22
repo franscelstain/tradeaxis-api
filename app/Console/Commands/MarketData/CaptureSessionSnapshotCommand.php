@@ -3,24 +3,25 @@
 namespace App\Console\Commands\MarketData;
 
 use App\Application\MarketData\Exceptions\NoReadablePublicationException;
+use App\Application\MarketData\Services\SessionSnapshotFeatureState;
 use App\Application\MarketData\Services\SessionSnapshotService;
 class CaptureSessionSnapshotCommand extends AbstractMarketDataCommand
 {
     protected $signature = 'market-data:session-snapshot {trade_date?} {snapshot_slot?} {--source_mode=manual_file} {--input_file=} {--output_dir=}';
     protected $description = 'Capture optional supplemental session snapshot aligned to readable effective trade date.';
 
-    public function handle(SessionSnapshotService $service)
+    public function handle(SessionSnapshotService $service, SessionSnapshotFeatureState $featureState)
     {
         /*
          * A disabled optional feature declines by name. Silence here would be indistinguishable
          * from a capture that ran and found nothing, which is exactly the "implied missing
          * feature" the stage 17 exit gate forbids.
          */
-        if (! config('market_data.session_snapshot.enabled', false)) {
+        if (! $featureState->isEnabled()) {
             $this->renderCommandBlocked(
                 'SESSION_SNAPSHOT_FEATURE_DISABLED',
                 'Session snapshot is an optional feature and is currently disabled; EOD readiness is unaffected by its absence.',
-                ['feature_state' => 'DISABLED']
+                ['feature_state' => $featureState->state()]
             );
 
             return 0;

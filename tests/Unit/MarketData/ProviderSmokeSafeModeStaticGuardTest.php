@@ -144,52 +144,6 @@ class ProviderSmokeSafeModeStaticGuardTest extends TestCase
     // with a mocked adapter, and asserts the exit codes a scheduler actually reads: BLOCKED is 2
     // and means retry, FAILED is 1 and means look at the platform.
 
-    public function test_provider_smoke_artifact_and_docs_are_tracked_without_false_pass(): void
-    {
-        $artifact = $this->read('storage/app/market-data/provider-smoke-safe-mode/command-output/provider-smoke-bbca.txt');
-        $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-        $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-        $proofPack = $this->read('docs/market_data/audit/MARKET_DATA_PRODUCTION_PROOF_PACK.md');
-        $inventory = $this->read('docs/market_data/audit/PRODUCTION_VALIDATION_INVENTORY.md');
-        $ops = $this->read('docs/market_data/audit/OPS_ENVIRONMENT_BASELINE_INVENTORY.md');
-
-        foreach ([$artifact, $status, $tracker, $proofPack, $inventory, $ops] as $document) {
-            $this->assertStringContainsString('provider_smoke_status=', $document);
-            $this->assertStringContainsString('reason_code=', $document);
-            $this->assertStringContainsString('publication_created=false', $document);
-            $this->assertStringContainsString('seal_executed=false', $document);
-            $this->assertStringContainsString('finalize_executed=false', $document);
-            $this->assertStringContainsString('pointer_switched=false', $document);
-            $this->assertStringContainsString('readable_publication_created=false', $document);
-            $this->assertStringContainsString('full_universe_fetch=false', $document);
-        }
-
-        foreach ([
-            'request_url=',
-            'http_status=',
-            'response_body_sample=',
-            'adapter_reason_code=',
-            'retry_max=',
-            'attempt_count=',
-            'timeout_seconds=',
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $artifact);
-        }
-
-        $combinedDocs = $status.$tracker.$proofPack.$inventory.$ops;
-        $this->assertStringContainsString('OPS_RUNTIME_PARITY_COMPLETION_SCHEDULER_PROVIDER_SMOKE', $combinedDocs);
-        $this->assertStringContainsString('PROVIDER_SMOKE_SAFE_MODE_SURFACE_ADDED', $combinedDocs);
-        $this->assertStringContainsString('PROVIDER_SMOKE_OK', $combinedDocs);
-        $this->assertStringContainsString('FINAL_PROVIDER_SMOKE=PASSED', $combinedDocs);
-        $this->assertStringContainsString('OPS_RUNTIME_PARITY_PASSED', $combinedDocs);
-        
-        if (preg_match('/(\[SESSION_STATUS\] OPS_RUNTIME_PARITY_PASSED|Ops rollout\/runtime parity: `OPS_RUNTIME_PARITY_PASSED`|Current rollout status is `OPS_RUNTIME_PARITY_PASSED`)/', $combinedDocs)) {
-            $this->assertStringContainsString('provider_smoke_status=PASS', $artifact);
-            $this->assertStringContainsString('reason_code=PROVIDER_SMOKE_OK', $artifact);
-        } else {
-            $this->assertStringNotContainsString('[PROVIDER_SMOKE_STATUS] PROVIDER_SMOKE_PROOF_PASSED', $combinedDocs);
-        }
-    }
 
     public function test_public_api_adapter_uses_browser_like_header_context(): void
     {

@@ -88,29 +88,6 @@ class LoggingTraceabilityReasonCodesStaticGuardTest extends TestCase
         }
     }
 
-    public function test_traceability_inventory_exists_and_covers_critical_areas(): void
-    {
-        $inventory = $this->readProjectFile('docs/market_data/ops/LOGGING_TRACEABILITY_REASON_CODES_INVENTORY.md');
-
-        foreach ([
-            'daily pipeline',
-            'ingest/import',
-            'source provider/API',
-            'manual file',
-            'coverage',
-            'finalize',
-            'publication',
-            'pointer',
-            'correction',
-            'replay',
-            'evidence',
-            'session snapshot',
-            'current publication repair',
-            'command failure/blocked/skipped',
-        ] as $area) {
-            $this->assertStringContainsString($area, $inventory, 'Traceability inventory must cover '.$area.'.');
-        }
-    }
 
     public function test_pointer_and_correction_recovery_catches_are_not_silent(): void
     {

@@ -2,6 +2,7 @@
 
 namespace App\Application\MarketData\Services;
 
+use App\Domain\MarketData\MarketDataSemanticBindings;
 use App\Domain\MarketData\MarketDataScope;
 
 /**
@@ -27,24 +28,12 @@ class AnalyticalProductIdentityService
 
     public function productVersion()
     {
-        $version = trim((string) config('market_data.indicators.price_product_version', 'structural_adjusted_v1'));
-
-        if ($version === '') {
-            throw new \RuntimeException('ANALYTICAL_PRICE_PRODUCT_VERSION_MISSING.');
-        }
-
-        return $version;
+        return MarketDataSemanticBindings::PRICE_PRODUCT_VERSION;
     }
 
     public function factorFormulaVersion()
     {
-        $version = trim((string) config('market_data.indicators.factor_formula_version', 'structural_factor_product_v1'));
-
-        if ($version === '') {
-            throw new \RuntimeException('ANALYTICAL_FACTOR_FORMULA_VERSION_MISSING.');
-        }
-
-        return $version;
+        return MarketDataSemanticBindings::FACTOR_FORMULA_VERSION;
     }
 
     /**

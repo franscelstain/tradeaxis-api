@@ -77,6 +77,18 @@ class CoverageDenominatorKnowledgeCutoffTest extends TestCase
             'created_at' => $recordedAt,
         ]);
 
+        // Board and market segment are effective-dated since 2026_08_22_000001; a listing without
+        // an interval covering the trade date is deliberately unresolvable.
+        DB::table('md_listing_boards')->insert([
+            'listing_id' => $listingId,
+            'market_segment' => 'REGULAR',
+            'board_code' => 'MAIN',
+            'effective_from' => '2023-01-02 00:00:00',
+            'effective_to' => null,
+            'recorded_at' => $recordedAt,
+            'change_reason' => 'LEGACY_MASTER_PROJECTION',
+        ]);
+
         DB::table('md_listing_symbols')->insert([
             'listing_id' => $listingId,
             'symbol' => 'AAA'.$n,

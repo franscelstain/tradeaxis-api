@@ -1,0 +1,128 @@
+{
+  "evidence_id": "E-MD-B04-A002-001",
+  "record_state": "ISSUED",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "stage_id": "MD-B04",
+  "attempt_id": "MD-B04-A002",
+  "work_id": "MD-B04-A002",
+  "baseline_id": "MD-B04-A002-BL001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260822-001",
+  "change_impact_declaration": "CI-MD-B04-A002-001",
+  "decision_id": "D-MD-20260822-06",
+  "finding_id": "F-MD-B04-A001-001",
+  "dependency_id": "MD-DEP-0007",
+  "issued_at": "2026-08-22T14:13:11+07:00",
+  "verdict": "PASS — current implementation proof supports 114/114 mandatory MD-B04 predicates; final stage closure remains subject to post-issuance integrity/relationship/full-suite checks and closure-manifest issuance",
+  "authority_decision": {
+    "canonical_null_token": "empty string (zero bytes)",
+    "semantic_owner": "MD-S005 Audit_Hash_and_Reproducibility_Contract_LOCKED.md",
+    "specialized_owner": "MD-S034 Hash_Number_Formatting_LOCKED.md",
+    "corrected_document": "MD-S082 Platform_Config_Registry_LOCKED.md",
+    "corrected_row": "market_data.hash.null_token: string; default empty string (zero bytes); environment input none; owner MD-S005",
+    "semantic_owner_bytes_changed": false,
+    "a001_baseline_or_evidence_modified": false
+  },
+  "implementation_proof": {
+    "resolved_config_value": "",
+    "environment_override_removed": true,
+    "registry_owner_default_environment_validation": "fail closed",
+    "serializer_non_empty_config_behavior": "rejected with HASH_NULL_TOKEN_NOT_LOCKED_EMPTY",
+    "snapshot_non_empty_config_behavior": "rejected with CONFIG_HASH_NULL_TOKEN_NOT_EMPTY",
+    "registry_override_reintroduction_behavior": "rejected with CONFIG_REGISTRY_HASH_NULL_TOKEN_AUTHORITY_MISMATCH",
+    "serializer_metadata": "DeterministicHashService::NULL_TOKEN remains the zero-byte empty string and existing metadata drift guard passed"
+  },
+  "executed_tests": [
+    {
+      "command": "php vendor/bin/phpunit tests/Unit/MarketData/PlatformConfigRegistryConformanceTest.php",
+      "result": "PASS",
+      "tests": 6,
+      "assertions": 15
+    },
+    {
+      "command": "php vendor/bin/phpunit tests/Unit/MarketData/DeterministicHashServiceTest.php",
+      "result": "PASS",
+      "tests": 14,
+      "assertions": 26
+    },
+    {
+      "command": "php vendor/bin/phpunit tests/Unit/MarketData/HashSealDatasetIntegrityStaticGuardTest.php",
+      "result": "PASS",
+      "tests": 6,
+      "assertions": 38
+    },
+    {
+      "command": "php vendor/bin/phpunit tests/Unit/MarketData/ConfigIdentityBindingTest.php",
+      "result": "PASS",
+      "tests": 7,
+      "assertions": 31
+    },
+    {
+      "command": "php vendor/bin/phpunit --filter /^(?!.*ConfigFoundationProofGateTest).*$/",
+      "result": "PASS",
+      "tests": 1711,
+      "assertions": 11519,
+      "note": "All application and governance tests except the proof gate that requires this issued evidence and its atomic traceability binding."
+    }
+  ],
+  "pre_issue_gates": [
+    {
+      "gate": "MarketDataDocumentationIntegrityGate",
+      "result": "PASS",
+      "scope": "successor strategy freeze and source-integrity traceability row; 91/91 freeze fingerprints matched"
+    },
+    {
+      "gate": "PHP lint",
+      "result": "PASS",
+      "scope": "all changed PHP implementation, test, proof-gate, and binder files"
+    },
+    {
+      "gate": "MarketDataConfigFoundationProofBinder dry-run/apply",
+      "result": "PASS",
+      "counts": {
+        "denominator": 114,
+        "satisfied": 114,
+        "blocked": 0
+      }
+    }
+  ],
+  "traceability": {
+    "denominator": 114,
+    "satisfied": 114,
+    "not_assessed": 0,
+    "conditional_pending": 0,
+    "transitional": 0,
+    "current_evidence_id": "E-MD-B04-A002-001",
+    "matrix_sha1_after_binding": "A6E92F316D15F2F92A7EA569EAFD0C6CC0D51B70",
+    "resolved_rule": "MD-S082-R0062",
+    "source_integrity_reference_row": "MD-S082-R0121 remains REFERENCE_ONLY"
+  },
+  "residue": {
+    "status": "CONFORMANT_NO_HARMFUL_EXECUTABLE_RESIDUE_FOUND",
+    "scope": "app/, config/, tests/, .env.example, .env.testing",
+    "result": "No executable MARKET_DATA_HASH_NULL_TOKEN or [empty] binding remains. Remaining [empty]/environment-token strings are mutation inputs and absence assertions in negative tests; historical governed records remain unchanged by design."
+  },
+  "change_impact_status": "CI-MD-B04-A002-001 COMPLETE FOR ISSUED IMPLEMENTATION PROOF; no schema/data/backfill/replay/API/raw-artifact impact",
+  "raw_runtime_artifacts": {
+    "status": "NOT_APPLICABLE",
+    "reason": "The proof is deterministic local configuration, serializer, registry, test, and governance execution; no external runtime artifact or storage path supports a claim."
+  },
+  "file_sha256": {
+    "config/market_data.php": "69d88309d3f06702e9a7812829da703e1fa26d27159f6c67bef543aa75bac19b",
+    ".env.example": "1652c2187faababa27a39ad1b6f67d715db6bbb7952069d1bcda160ed3d8ac91",
+    ".env.testing": "96bb2fd68fd86e9bdd9385fe27d547bcf128ec629ab3003dfcfb36f1adbe71db",
+    "app/Infrastructure/MarketData/Config/PlatformConfigRegistry.php": "4723b4ccf0a9d33154f360cff01bdc1090d6d103b92e74fa7907c301f2d14626",
+    "app/Application/MarketData/Services/DeterministicHashService.php": "120b5467feb67f42b6b1e72c8cac389d20ef62a449b5a1a5946bb9cee1f1874f",
+    "tests/Unit/MarketData/PlatformConfigRegistryConformanceTest.php": "094049e7f4ab1194d32d53e0dc5aa73354e7be4550b36fdba4965cb405885982",
+    "tests/Unit/MarketData/DeterministicHashServiceTest.php": "29727093a8a170316ffe60e0001ce39ca41d247ca25140b4b34be0ed8ec625dc",
+    "docs/market_data/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv": "c1814e4fef67c4746deac84946c44b2b44721617c85ec5c973dbb9d3e713941b"
+  },
+  "post_issue_required_for_stage_closure": [
+    "MarketDataConfigFoundationProofGate and mutation self-tests",
+    "complete PHPUnit suite including the proof-gate tests",
+    "classification/traceability/applicability gates",
+    "relationship integrity and completeness gate",
+    "documentation integrity gate after all new records are registered",
+    "current-state synchronization and stage closure manifest"
+  ],
+  "supersedes": "Nothing. E-MD-B04-A001-001 remains immutable evidence of the predecessor 113/114 boundary; this record is successor proof under a new baseline and freeze."
+}

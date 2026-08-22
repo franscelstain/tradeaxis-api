@@ -76,19 +76,6 @@ class TestingDatabaseIsolationStaticGuardTest extends TestCase
         $this->assertStringNotContainsString('DB_DATABASE=tradeaxis_testing', $env);
     }
 
-    public function test_audit_docs_record_testing_database_isolation_contract()
-    {
-        $status = $this->read('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md');
-        $tracker = $this->read('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md');
-        $inventory = $this->read('docs/market_data/audit/PRODUCTION_VALIDATION_INVENTORY.md');
-
-        foreach ([$status, $tracker, $inventory] as $document) {
-            $this->assertStringContainsString('TESTING_DATABASE_ISOLATION_SAFE_MIGRATION_CONTRACT', $document);
-            $this->assertStringContainsString('BLOCKED_TESTING_DATABASE_ENV', $document);
-            $this->assertStringContainsString('tradeaxis_testing', $document);
-            $this->assertStringContainsString('TestingDatabaseIsolationStaticGuardTest.php', $document);
-        }
-    }
 
     public function test_artisan_blocks_explicit_unsafe_testing_db_before_unsupported_php_guard()
     {

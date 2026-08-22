@@ -57,3 +57,14 @@
 - Governance result: proof identity is defined as the semantic predicate rather than a physical source line; non-self-contained fragments require deterministic parent/context binding and a normalized predicate; conditional applicability now has explicit pending/applicable/not-applicable lifecycle and denominator/closure rules; active stages must normalize transitional applicability/context before closure.
 - Downstream impact only (not executed by this authority patch): Agent AI must re-derive affected traceability rows, revalidate affected current `SATISFIED` states, recompute stage coverage/denominators, synchronize current stage/dependency/current-state records, and update implementation/tooling if required by the revised authority. Immutable historical evidence/baselines are not edited by this authority revision.
 
+## DOC-CHG-20260822-001 — Platform Config NULL-token owner alignment
+
+- Date: 2026-08-22
+- Finding: `F-MD-B04-A001-001`
+- Supporting evidence: `E-MD-B04-A001-001`
+- Reviewed decision: `D-MD-20260822-06`
+- Explicit authorization: user instruction `RESOLVE MD-DEP-0007 — NULL TOKEN AUTHORITY CONFLICT`, received 2026-08-22, authorises the bounded correction after the authority review established that condition.
+- Strategy impact: controlled correction to one resolved-key row in `MD-S082`; `MD-S005` and `MD-S034` remain byte-identical and retain canonical NULL-token ownership.
+- Result: `market_data.hash.null_token` now declares an explicit zero-byte empty-string default and no environment input. The former `[empty]`/`MARKET_DATA_HASH_NULL_TOKEN` lock contradicted the owner semantics and was not treated as undocumented notation.
+- Freeze impact: successor freeze `MD-STRATEGY-FREEZE-20260822-001`; only the registered `MD-S082` fingerprint changes.
+- Verification impact: `MD-B04-A001-BL001` and `E-MD-B04-A001-001` remain immutable at the 113/114 boundary. Current closure requires successor `MD-B04-A002`, a new pre-change Baseline Lock, early Change Impact Declaration, and revalidation of `MD-S082-R0062` plus all affected config/hash/serializer-metadata proof.

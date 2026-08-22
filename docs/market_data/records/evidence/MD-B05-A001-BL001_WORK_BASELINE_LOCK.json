@@ -1,0 +1,34 @@
+{
+    "baseline_id": "MD-B05-A001-BL001",
+    "stage_id": "MD-B05",
+    "attempt_id": "MD-B05-A001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260822-001",
+    "strategy_freeze_manifest_sha1": "B9EF92213352F66A8253FE033B3479E0916629AB",
+    "strategy_tree_fingerprint_sha1": "1516FF84486E658D928779EB76B5CEE901B6A33C",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "8D22849817B00E526499B1BC9320985250DA08FB",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "A6E92F316D15F2F92A7EA569EAFD0C6CC0D51B70",
+    "source_revision": "29208da1720298bfe2d6d463ed400a2d367edbde",
+    "source_revision_branch": "master",
+    "working_tree": "DIRTY+D7128E34DC1B5733461352AE813214080421CA76",
+    "app_code_fingerprint_sha1": "C4DC8233975D3D4C0FFC03958349D21E1CD38A05",
+    "tests_fingerprint_sha1": "DD6725974D71DF2BDF2D6112B6F0E0B853239502",
+    "schema_config_identity": "schema:EFAC1C8E2438D039BBCC5662389375C661863039;config:CDA52E5CFA3414EF94B3C16A4D3C118A692D7165;migrations:E6A74B4422B4292321938BB9A1B582F353107E70",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "PHP 7.4.33",
+    "external_dependency_contract_identity": {
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "registered": 7,
+        "open_blocking": []
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-08-22T10:26:54+02:00",
+    "issuance_note": "MD-B05 stage entry: temporal issuer/instrument/listing/symbol/provider mapping and temporal sector membership foundation. Pre-change state: NOT_STARTED, provisional 78-row denominator (2 MANDATORY, 76 transitional MANDATORY_OR_CONDITIONAL, 1 optional capability), 89 REFERENCE_ONLY rows, 27 mixed-classification reference members reported by the classification gate, MD-DEP-0004 entry obligation outstanding."
+}

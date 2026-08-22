@@ -1,0 +1,36 @@
+{
+    "baseline_id": "MD-B03-A003-BL001",
+    "stage_id": "MD-B03",
+    "attempt_id": "MD-B03-A003",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260820-001",
+    "strategy_freeze_manifest_sha1": "14CF5BE3AF96D7D0E936C414C1AFA28249243302",
+    "strategy_tree_fingerprint_sha1": "5A08CAD89469EDAF53067D6EBA8B608F13C0F618",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "2614658370FA4E8FB59A95ED0A6375FE94F11200",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "EC587686B94D3EF791459FF0F24F860316B07548",
+    "source_revision": "29208da1720298bfe2d6d463ed400a2d367edbde",
+    "source_revision_branch": "master",
+    "working_tree": "DIRTY+BFD61A950E716ADF4CB98075B2BA31F8CA96170F",
+    "app_code_fingerprint_sha1": "2F8D3FB7789D1CB991DEEA05A695799C5D64699D",
+    "tests_fingerprint_sha1": "A854713FF7C590E662864CDB8688ADD1CE3B1893",
+    "schema_config_identity": "schema:EFAC1C8E2438D039BBCC5662389375C661863039;config:AC6603B50E3FDC44C101A10A6CFCDD43491A2870;migrations:E6A74B4422B4292321938BB9A1B582F353107E70",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "PHP 7.4.33",
+    "external_dependency_contract_identity": {
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "registered": 5,
+        "open_blocking": [
+            "MD-DEP-0005"
+        ]
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-08-22T05:14:12+02:00",
+    "issuance_note": "Issued before any MD-B03-A003 material mutation. Predecessor attempt MD-B03-A002, predecessor baseline MD-B03-A002-BL001. Closure-evaluation attempt for MD-B03 while MD-B01 remains blocked by MD-DEP-0005. Pre-change state: MD-B03 shows strategy coverage 0/0 that no attempt has validated under the MD-DEP-0004 entry obligation; MD-B03-A001 was a material attempt with no correlated Change Impact Declaration; no SC-MD-B03 closure manifest exists. MariaDB 10.4.27 is reachable, so the stage deliverable proofs are executable rather than environment-blocked."
+}

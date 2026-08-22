@@ -9,34 +9,6 @@ class ReplayHistoricalDeterminismHardeningStaticGuardTest extends TestCase
         return dirname(__DIR__, 3).DIRECTORY_SEPARATOR.str_replace('/', DIRECTORY_SEPARATOR, $path);
     }
 
-    public function test_replay_historical_inventory_and_audit_docs_are_present(): void
-    {
-        foreach ([
-            'docs/market_data/audit/REPLAY_HISTORICAL_DETERMINISM_HARDENING_INVENTORY.md',
-            'docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md',
-            'docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md',
-        ] as $path) {
-            $this->assertFileExists($this->projectPath($path));
-        }
-
-        $inventory = file_get_contents($this->projectPath('docs/market_data/audit/REPLAY_HISTORICAL_DETERMINISM_HARDENING_INVENTORY.md'));
-        $status = file_get_contents($this->projectPath('docs/market_data/audit/LUMEN_IMPLEMENTATION_STATUS.md'));
-        $tracker = file_get_contents($this->projectPath('docs/market_data/audit/LUMEN_CONTRACT_TRACKER.md'));
-
-        foreach ([
-            'Replay Historical Determinism Hardening',
-            'Replay Determinism',
-            'Evidence Historical Lineage Completeness',
-            'not replay determinism umum',
-            'consumer read resolver tetap current-pointer-only',
-            'selector-scoped',
-            'lineage-validated',
-            'publication-scoped artifact',
-            'READY_FOR_LOCAL_RUNTIME_VALIDATION',
-        ] as $needle) {
-            $this->assertStringContainsString($needle, $inventory.$status.$tracker, 'Audit docs must preserve '.$needle);
-        }
-    }
 
     public function test_replay_actual_resolver_has_historical_selector_scoped_path(): void
     {

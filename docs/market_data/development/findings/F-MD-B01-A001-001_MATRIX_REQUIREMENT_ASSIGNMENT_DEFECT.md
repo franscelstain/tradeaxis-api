@@ -4,7 +4,7 @@
 - Severity: `P0` (predicate, ownership, and exclusion halves remediated for `MD-B01`; other stages validate classification and ownership at entry)
 - Stage / Attempt / Baseline / Epoch: `MD-B01` / `MD-B01-A001` / `MD-B01-A001-BL001` / `MD-REBASELINE-20260820-001`
 - Owning stage for remediation: governance / `MD-B01` revalidation — governance clarification issued as `DOC-CHG-20260821-001`; semantic matrix correction still required
-- Blocks: **63 `NOT_ASSESSED` rows of the corrected `MD-B01` denominator**, 62 of them promoted by `MD-B01-A014` and not yet proven. `MD-B01-A012` performed the successor applicability/context revalidation and moved 12 further predicates whose executable proof belongs to other stages. `MD-S020-R0067` remains separately blocked by `F-MD-B01-A003-001`, not by this assignment defect. Classification and ownership validation remain an entry obligation for each stage as it opens, covering 630 reference-only members still queued across 18 unopened stages.
+- Blocks: no remaining `MD-B01` or `MD-B02` predicate. Classification and ownership validation remain an entry obligation for each later stage as it opens, covering **629** reference-only mixed-run members queued across **17** unopened stages. The largest current queues are `MD-B10` (127), `MD-B14` (65), and `MD-B04` (50).
 - Dependency: `MD-DEP-0004`
 
 > Raised at `MD-B01` and initially scoped to it. A follow-on scan executed at the same attempt showed the same defect across the whole matrix, so the severity is `P0` and the scope is the `MD-B01..MD-B22` track rather than one stage. `E-MD-B01-A001-001` records the stage-scoped measurement it was issued with; the global measurement below supersedes its scope statement.
@@ -182,3 +182,9 @@ They are carried as an explicit per-stage `MD-DEP-0004` entry obligation, and th
 ### Do-not-repeat
 
 A remediation that measures one direction of a two-directional defect and reports the measured direction at zero will read as closed. State which direction a number covers, or the unmeasured half inherits the credibility of the measured one.
+
+## Successor execution — MD-B02-A001
+
+`E-MD-B02-A001-001` performs the same entry obligation for `MD-B02` without inheriting `MD-B01` proof. It reviews all 151 rows of the Yahoo bootstrap strategy, promotes 75 reference-only rows that carry executable semantics, keeps 34 structural/explanatory rows as reference context, resolves future-only applicability, and moves 20 predicates to their real proof-owning stages. The MD-B02 denominator is 86 mandatory rows, all 86 currently proven; six paid-provider trigger capabilities remain optional-not-requested and six future-transition predicates are explicitly not applicable.
+
+The classification gate now lists `MD-B02` as normalized and reports 629 mixed-run members across the 17 unopened stages. This finding remains `PARTIALLY_RESOLVED`; it does not block `MD-B02` closure, and it will not close globally until the remaining stages perform their entry obligation or a governed bulk decision validates their assignments.
