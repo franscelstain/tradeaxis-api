@@ -5,29 +5,29 @@
 ## Verification identity and coverage
 
 - Verification epoch: `MD-REBASELINE-20260820-001`
-- Required active traceability rows: **2392**
-- Coverage denominator: **2383** (PROVISIONAL)
-- SATISFIED: **602**
-- NOT_ASSESSED inside denominator: **1781**
+- Required active traceability rows: **2453**
+- Coverage denominator: **2444** (PROVISIONAL)
+- SATISFIED: **717**
+- NOT_ASSESSED inside denominator: **1727**
 - CONDITIONAL_NOT_APPLICABLE / NOT_APPLICABLE: **8 / 8**
 - CONDITIONAL_PENDING / APPLICABILITY_PENDING: **1 / 1**
-- Transitional MANDATORY_OR_CONDITIONAL: **1493**
-- Verified coverage: **25.26% PROVISIONAL**
+- Transitional MANDATORY_OR_CONDITIONAL: **1358**
+- Verified coverage: **29.34% PROVISIONAL**
 - Optional capability rules: **53**
 
 ## Current executable stage
 
 - Stage: `MD-B07`
-- Latest attempt / baseline: — / —
-- State / verdict: `NOT_STARTED` / —
-- Residue/rework: `NOT_ASSESSED`
-- Dependency: `MD-DEP-0004` at entry
-- Open finding: —
-- Change Impact Declaration: **missing**
-- Denominator: **142** (PROVISIONAL — transitional applicability unresolved)
-- SATISFIED / NOT_ASSESSED: **0 / 142**
-- Mandatory / conditional-applicable: **7 / 0**
-- Conditional-not-applicable / conditional-pending / transitional: **0 / 0 / 135**
+- Latest attempt / baseline: `MD-B07-A001` / `MD-B07-A001-BL001`
+- State / verdict: `IN_PROGRESS` / `PARTIAL`
+- Residue/rework: `CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_THE_B07_SURFACE`
+- Dependency: `MD-DEP-0004` B07 entry obligation complete
+- Open finding: none
+- Change Impact Declaration: `CI-MD-B07-A001-001` — ISSUED
+- Denominator: **115** (FINAL for every machine-checked criterion — no transitional applicability, no mixed-classification run)
+- SATISFIED / NOT_ASSESSED: **115 / 0**
+- Mandatory / conditional-applicable: **115 / 0**
+- Conditional-not-applicable / conditional-pending / transitional: **0 / 0 / 0**
 
 ## Stage state index
 
@@ -40,7 +40,7 @@
 | `MD-B04` | `DONE` | `PASS` | `MD-B04-A002` | `MD-B04-A002-BL001` | `PASS` (config-foundation proof/traceability + classification + relationship + documentation; mutation-proven) |
 | `MD-B05` | `DONE` | `PASS` | `MD-B05-A001` | `MD-B05-A001-BL001` | `PASS` (temporal-identity traceability/proof gates + classification + relationship + documentation; mutation-proven) |
 | `MD-B06` | `DONE` | `PASS` | `MD-B06-A001` | `MD-B06-A001-BL001` | `PASS` (calendar/status traceability + exact proof + classification + relationship + documentation; mutation-proven) |
-| `MD-B07` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
+| `MD-B07` | `IN_PROGRESS` | `PARTIAL` | `MD-B07-A001` | `MD-B07-A001-BL001` | `PASS` (B07 traceability + exact proof + classification + relationship + documentation) |
 | `MD-B08` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 | `MD-B09` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 | `MD-B10` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
@@ -61,11 +61,11 @@
 
 - Open findings across every stage: `F-MD-B00-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A008-001` — OPEN; `F-MD-B01-A014-001` — OPEN — total **4**
 - Open dependencies: `MD-DEP-0003` — OPEN_NON_BLOCKING; owner `owning stages MD-B03/B15/B17/B19/B21/B22`; `MD-DEP-0004` — OPEN_NON_BLOCKING; owner `each stage at entry`
-- Classification entry obligation (`MD-DEP-0004`), reference-only rows in mixed-classification runs by stage: `MD-B07` 25, `MD-B08` 18, `MD-B09` 45, `MD-B10` 127, `MD-B11` 38, `MD-B12` 6, `MD-B13` 10, `MD-B14` 65, `MD-B15` 37, `MD-B16` 17, `MD-B17` 41, `MD-B18` 43, `MD-B19` 46, `MD-B20` 9 — total **527**
-- Registered current work records: **109** (BASELINE_LOCK=27, CHANGE_IMPACT_DECLARATION=22, DECISION=6, EVIDENCE=32, FINDING=13, STAGE_CLOSURE_MANIFEST=9)
+- Classification entry obligation (`MD-DEP-0004`), reference-only rows in mixed-classification runs by stage: `MD-B08` 18, `MD-B09` 45, `MD-B10` 127, `MD-B11` 38, `MD-B12` 6, `MD-B13` 10, `MD-B14` 65, `MD-B15` 37, `MD-B16` 17, `MD-B17` 41, `MD-B18` 43, `MD-B19` 46, `MD-B20` 9 — total **502**
+- Registered current work records: **112** (BASELINE_LOCK=28, CHANGE_IMPACT_DECLARATION=23, DECISION=6, EVIDENCE=33, FINDING=13, STAGE_CLOSURE_MANIFEST=9)
 
 ## Exact resume
 
-- Single exact next executable resume point: open `MD-B07-A001` for `W07` immutable source observations and acquisition ports/adapters. Before any material mutation issue `MD-B07-A001-BL001`, then an early correlated Change Impact Declaration; discharge the `MD-DEP-0004` MD-B07 entry obligation, including the 25 mixed-classification reference members currently reported for MD-B07, before relying on its provisional denominator or binding any B07 proof.
+- Single exact next executable resume point: stay inside `MD-B07-A001`. With MariaDB reachable, run `php artisan migrate` to confirm `2026_08_22_000002` and `2026_08_22_000003` are applied, then re-run the full suite and expect it green with no reachability-forced skips. If both hold, issue `SC-MD-B07-A001-001` from the criteria already recorded in `E-MD-B07-A001-001`. Do not open `MD-B07-A002` and do not enter `MD-B08`.
 - Current stage source: `MD_IMPLEMENTATION_STAGE_REGISTER.md`
 - Pre-epoch W00..W22 verdicts: **historical-only**

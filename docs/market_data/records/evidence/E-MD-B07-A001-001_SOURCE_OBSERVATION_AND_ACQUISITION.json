@@ -1,0 +1,159 @@
+{
+    "evidence_id": "E-MD-B07-A001-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B07",
+    "attempt_id": "MD-B07-A001",
+    "work_id": "MD-B07-A001",
+    "baseline_id": "MD-B07-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "change_impact_declaration": "CI-MD-B07-A001-001",
+    "issued_at": "2026-08-23T10:40:00+07:00",
+    "title": "Immutable source observations and provider-neutral acquisition proven at 115/115; stage closure withheld on an environment blocker",
+    "attempt_outcome": "PARTIAL — every current MD-B07 predicate is proven by executed tests, and MD-B07 does not close in this session because deployed-schema drift verification is unavailable",
+    "attempt_continuity": {
+        "interrupted": true,
+        "interruption_point": "after implementation and stage-entry normalization, before proof execution and evidence binding",
+        "recovered_rather_than_restarted": "MD-B07-A001-BL001 and CI-MD-B07-A001-001 were both valid and registered, so this session continued the same attempt. No second baseline lock, no duplicate Change Impact Declaration, no MD-B07-A002, and no rollback of the landed normalization.",
+        "landed_before_the_cutoff": [
+            "MD-B07-A001-BL001 issued at source revision fffcc94 with a clean working tree, registered as a work record with a SC-MD-B06-A001-001 precondition relationship.",
+            "CI-MD-B07-A001-001 issued PRE_IMPLEMENTATION_ASSESSED and registered, with baseline and cross-stage relationships MD-REL-0152..0154.",
+            "B07 semantic normalization applied to the traceability matrix: 115 mandatory, 0 transitional, 52 reference, 88 predicates moved to downstream proof owners.",
+            "MD-B07 added to the classification gate's normalized-stage set; the global mixed-classification backlog stands at 502.",
+            "Implementation and tests committed as 2064857: SourceObservationRepository +376 lines, PublicApiEodBarsAdapter +420, EodBarsIngestService +154, two additive migrations, and the SQLite mirror extended by 106 lines.",
+            "Five B07 tooling files created but never registered in the document registries — the only synchronization defect the interruption left behind."
+        ],
+        "recovered_in_this_session": [
+            "Registered the five orphaned B07 tooling documents in DOCUMENT_ROLE_REGISTRY.csv and CURRENT_VERIFICATION_REGISTRY.csv, which cleared the documentation integrity gate and, with it, the relationship gate self-test that had been failing only on its own documentation control run.",
+            "Executed the full B07 proof surface, which the interrupted session had never run.",
+            "Verified that the SQLite mirror matches the two B07 migrations column for column, so the behavioral proof does not run against a schema the migration corpus does not declare."
+        ]
+    },
+    "authority_basis": {
+        "strategy": [
+            "authority/strategy/book/Source_Data_Acquisition_Contract_LOCKED.md",
+            "authority/strategy/book/Source_Mapping_Contract_LOCKED.md"
+        ],
+        "governance": [
+            "authority/governance/STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md",
+            "authority/governance/CHANGE_IMPACT_DECLARATION_STANDARD.md",
+            "authority/governance/WORK_BASELINE_LOCK_STANDARD.md",
+            "authority/governance/RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md",
+            "authority/governance/STAGE_EXECUTION_AND_REWORK_STANDARD.md"
+        ],
+        "strategy_bytes_changed": 0
+    },
+    "traceability_state": {
+        "gate": "development/implementation/tests/MarketDataSourceAcquisitionTraceabilityGate.php",
+        "status": "PASS",
+        "mandatory_b07": 115,
+        "moved_to_downstream_owners": 88,
+        "structural_reference": 51,
+        "context_bound_fragments": 162,
+        "reviewed_rows": 254,
+        "transitional_applicability": 0,
+        "mixed_classification_debt_for_b07": 0,
+        "note": "The normalization landed before the interruption and was re-validated rather than re-derived. Nothing in it was rolled back."
+    },
+    "proof": {
+        "gate": "development/implementation/tests/MarketDataSourceAcquisitionProofGate.php",
+        "binder": "development/implementation/tests/MarketDataSourceAcquisitionProofBinder.php",
+        "binding_is_atomic": "The binder refuses any count other than the full 115-row denominator and refuses unless exactly the 20 remediated rules receive their annotation.",
+        "surface": {
+            "files": 18,
+            "tests": 165,
+            "assertions": 824,
+            "result": "PASS",
+            "method": "Each of the 18 files carrying a mapped proof method was executed individually and reported OK. The proof gate independently verifies that every named surface file and every named method exists, so a map entry cannot point at a method nobody wrote."
+        },
+        "families": {
+            "boundary": "provider-neutral port and adapter isolation; acquisition cannot produce a readable publication",
+            "date_window": "requested date and range govern; the import strategy may window and retry without changing the requested scope",
+            "source_mode": "manual file stays controlled rescue transport and never becomes the default",
+            "observation": "immutable capture before parsing, payload/hash/length/source identity, redaction, fail-closed capture, rejected-row evidence, manifest movement",
+            "schema": "content type, container and quote cardinality, provider-symbol match, adapter schema version lock, empty-response refusal",
+            "divergence": "identical refetch confirms without a finding; changed refetch opens one with both values and the delta",
+            "canonical_handoff": "no placeholder, no adjusted-close fallback, no row without an observation, no latest-wins duplicate resolution",
+            "telemetry": "per-ticker dedup, retry telemetry, checkpoint identity, provider context in evidence and replay",
+            "sector_observation": "an acquired sector index bar follows the same acquisition rules as any other bar"
+        },
+        "remediated_rules": 20,
+        "remediated_rule_note": "Each of the 20 is annotated in its matrix row with the attempt that fixed it, so a regression reads as the defect returning rather than as a coverage difference."
+    },
+    "test_execution": {
+        "runner": "php vendor/bin/phpunit",
+        "b07_proof_surface": {"files": 18, "tests": 165, "assertions": 824, "errors": 0, "failures": 0, "result": "PASS"},
+        "whole_suite": {
+            "tests": 1819,
+            "assertions": 17126,
+            "errors": 2,
+            "failures": 0,
+            "skipped": 16,
+            "result": "NOT GREEN — see environment_blocker"
+        },
+        "gates": {
+            "MarketDataSourceAcquisitionTraceabilityGate": "PASS",
+            "MarketDataSourceAcquisitionProofGate": "PASS after binding",
+            "MarketDataClassificationConsistencyGate": "PASS — MD-B07 normalized, global backlog 502",
+            "MarketDataTraceabilityApplicabilityGate": "PASS",
+            "MarketDataScopeBoundaryCompletionGate": "PASS",
+            "MarketDataRelationshipIntegrityGate": "PASS",
+            "MarketDataRelationshipIntegrityGateSelfTest": "PASS after the tooling documents were registered",
+            "MarketDataDocumentationIntegrityGate": "PASS after the tooling documents were registered"
+        }
+    },
+    "environment_blocker": {
+        "condition": "The local MariaDB instance is not running. No mysql or mariadb service is registered on the host and no mysqld process is present, so the connection is refused rather than slow.",
+        "classification": "ENVIRONMENT_UNAVAILABLE, not an implementation failure. No finding, dependency, or successor attempt is raised for it, per the execution contract.",
+        "measured_effect": {
+            "errors": [
+                "OpsCommandSurfaceTest::test_current_publication_repair_apply_records_reason_and_pointer_before_after",
+                "StageThreeEligibilityProducerTest::test_producer_writes_explicit_facts_without_changing_the_decision"
+            ],
+            "errors_note": "Both reach the default mysql connection without a reachability guard, so they error where the 16 guarded tests skip. Neither is in the MD-B07 proof surface and both belong to other stages' surfaces. They were green in the previous session with the database up; they are not modified here, because editing another stage's test to survive an outage would manufacture a green suite.",
+            "skipped": 16,
+            "skipped_note": "Every skip is a test that gates itself on database reachability by design: migration drift in both directions, deployed-data invariants, the sector import advisory lock, and the deployed enum check."
+        },
+        "why_it_blocks_closure": "MigrationIntegrityAndDriftTest cannot run, so it cannot be shown that 2026_08_22_000002 and 2026_08_22_000003 are applied to the deployed schema. Those two migrations create the tables this stage's subject matter lives in. The Change Impact Declaration's closure boundary requires conformant actual schema, and every prior stage closed on a fully green suite. Closing here would lower that bar for this attempt alone.",
+        "what_was_verified_instead": "The SQLite mirror was compared against both migrations column by column: md_source_observation_rows 20/20, md_source_observation_revision_comparisons 19/19, md_source_observation_identity_bindings 8/8, md_source_observation_rejected_rows 16/16, and both columns the hardening migration adds to md_source_observations. No migration column is missing from the mirror, so the behavioral proof does not run against a schema the migration corpus does not declare. What remains unverified is deployment, not design."
+    },
+    "residue_verdict": {
+        "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_THE_B07_SURFACE",
+        "checked": [
+            "No strategy byte changed.",
+            "No issued observation is rewritten: a rerun appends, and an identical payload still produces a distinct observation.",
+            "No secret material reaches the stored envelope; the redaction covers both the bounded payload and the sanitized request identity.",
+            "Provider adjusted close remains observation metadata and does not reach the canonical row.",
+            "Conflicting duplicates are quarantined rather than resolved by capture time.",
+            "The 88 moved predicates remain NOT_ASSESSED at their proof-owning stages; MD-B07 inherits none of their proof."
+        ],
+        "known_residual": "Deployed-schema drift for this stage's two migrations is unverified this session. It is an open verification, not an accepted deviation."
+    },
+    "runtime_artifact_boundary": {
+        "storage_inspected": false,
+        "storage_mutated": false,
+        "raw_artifacts_referenced": [],
+        "database_mutated": false,
+        "basis": "All behavioral proof runs against the in-repository SQLite mirror. No storage artifact, provider payload, replay, or backfill output is claimed, and no recursive storage scan was performed."
+    },
+    "open_items_after": {
+        "findings": [
+            "F-MD-B00-A001-001 — PARTIALLY_RESOLVED",
+            "F-MD-B01-A001-001 — PARTIALLY_RESOLVED; 502 mixed-classification reference members across 13 unopened stages",
+            "F-MD-B01-A008-001 — OPEN; owner MD-B14",
+            "F-MD-B01-A014-001 — OPEN; owner MD-B19"
+        ],
+        "dependency": "MD-DEP-0004 B07 entry obligation is discharged and gate-proven; the dependency remains OPEN_NON_BLOCKING for unopened stages.",
+        "b07_blocker": "Deployed-schema drift verification requires a reachable database. Nothing else is outstanding."
+    },
+    "relationship_requirements": {
+        "baseline": "MD-B07-A001-BL001",
+        "change_impact": "CI-MD-B07-A001-001",
+        "stage_precondition": "SC-MD-B06-A001-001",
+        "dependency_scope": "MD-DEP-0004",
+        "closure_manifest": "NOT ISSUED — withheld on the environment blocker above"
+    },
+    "exact_resume_point": "Stay inside MD-B07-A001. With the database reachable, run php artisan migrate to confirm 2026_08_22_000002 and 2026_08_22_000003 are applied, then re-run the full suite and expect 1819 green with zero skips forced by reachability. If both hold, issue SC-MD-B07-A001-001 from the criteria in this record. Do not open MD-B07-A002 and do not enter MD-B08.",
+    "supersedes": "Nothing. No historical evidence or immutable baseline was edited."
+}

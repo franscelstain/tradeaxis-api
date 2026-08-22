@@ -5,7 +5,7 @@
 - Strategy freeze: `MD-STRATEGY-FREEZE-20260822-001`
 - Stage precondition: `SC-MD-B06-A001-001`
 - Dependencies: `MD-DEP-0004` stage-entry semantic normalization
-- Status: `PRE_IMPLEMENTATION_ASSESSED`
+- Status: `EXECUTED — CLOSURE WITHHELD ON AN ENVIRONMENT BLOCKER`
 - Strategy meaning change: `NO`
 
 ## Objective
@@ -40,3 +40,15 @@ Revalidate and, where required, remediate the immutable source-observation and a
 ## Closure boundary
 
 Closure requires a final B07 semantic denominator with zero transitional or pending applicability and no B07 mixed-classification debt; conformant actual schema/code/configuration; positive and fail-closed proof for every owned predicate; immutable observation and provenance guarantees; no harmful executable residue; current evidence; complete relationships; current Change Impact result; and all required integrity/governance gates.
+
+## Actual impact and result
+
+- **Attempt continuity**: A001 was interrupted after implementation and stage-entry normalization and before any proof ran. It was continued, not restarted. No second baseline lock, no duplicate declaration, no `MD-B07-A002`, and no rollback of the landed normalization.
+- **Traceability**: the provisional 142-row executable count (7 mandatory + 135 transitional) resolved to **115 mandatory**, zero transitional, 52 structural reference, and 88 predicates moved to their actual downstream proof owners. B07 mixed-classification debt is zero and the global backlog stands at 502 across 13 unopened stages.
+- **Implementation**: landed before the cutoff and re-validated here — `SourceObservationRepository` +376 lines, `PublicApiEodBarsAdapter` +420, `EodBarsIngestService` +154, two additive migrations creating four observation tables, and a 106-line extension of the SQLite mirror. Twenty predicates are annotated with the attempt that remediated them.
+- **Proof**: the entire B07 proof surface executed — **18 files, 165 tests, 824 assertions, zero failures** — and all 115 predicates are bound to `E-MD-B07-A001-001`. The proof gate independently confirms every named surface and method exists, so no map entry points at a method nobody wrote.
+- **Recovered synchronization**: five B07 tooling files were physical but unregistered, which failed the documentation gate and, through it, the relationship gate self-test's own control run. Registering them cleared both.
+- **Strategy changed**: **NO**.
+- **Storage**: not inspected, not mutated. No database was mutated in this session.
+- **Evidence**: `E-MD-B07-A001-001`, issued and registered. **Closure**: `SC-MD-B07-A001-001` **not issued**.
+- **Why closure is withheld**: MariaDB is unreachable on this host, so `MigrationIntegrityAndDriftTest` skips and the two migrations this attempt added cannot be shown to be applied to the deployed schema. This declaration's own closure boundary requires conformant actual schema. What was verified instead is that the SQLite mirror matches both migrations column for column, so the behavioural proof does not run against a schema the migration corpus does not declare — deployment is unproven, design is not. Classified `ENVIRONMENT_UNAVAILABLE`; no finding, dependency, or successor attempt was raised, and the two suite errors it causes belong to `MD-B19` and `MD-B16` surfaces that were green before the outage and were not edited to survive it.
