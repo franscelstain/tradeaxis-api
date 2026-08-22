@@ -3,33 +3,45 @@
 namespace App\Infrastructure\Persistence\MarketData;
 
 use App\Domain\MarketData\MarketDataScope;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Read-side boundary for the governed calendar revision set.
+ *
+ * It never manufactures completion from wall-clock time or from the compatibility calendar.
+ */
 class MarketCalendarRepository
 {
     public function assertCompletedRegularSession($tradeDate, $knownAt = null)
     {
         $context = $this->sessionContext($tradeDate, $knownAt);
 
-        // A projected row is an assumption about a date, not a governed session. Treating it as
-        // expected produces a missing-bar finding on every public holiday beyond the exchange's
-        // published horizon, and those failures read as provider faults rather than calendar
-        // assumptions. Owner: Market_Calendar_Requirements_Contract.md, provenance tiers.
         if ($context['provenance_tier'] !== 'VERIFIED') {
             throw new \RuntimeException(
                 'MARKET_CALENDAR_PROVENANCE_NOT_VERIFIED: '.$tradeDate.' resolves from a '
                 .($context['provenance_tier'] ?: 'UNKNOWN').' calendar row; bar expectation is UNKNOWN, never EXPECTED.'
             );
         }
-
+        foreach (['source_ref', 'source_version', 'reconciled_at', 'reconciliation_source_ref'] as $field) {
+            if (trim((string) ($context[$field] ?? '')) === '') {
+                throw new \RuntimeException('MARKET_CALENDAR_VERIFICATION_EVIDENCE_INCOMPLETE: '.$field.' is missing for '.$tradeDate.'.');
+            }
+        }
         if ($context['is_trading_day'] !== true) {
             throw new \RuntimeException('MARKET_CALENDAR_REQUIRES_REQUESTED_TRADING_DATE: requested date is not an IDX Regular-Market trading day.');
         }
-
         if ($context['session_state'] !== 'COMPLETED') {
             throw new \RuntimeException('MARKET_SESSION_NOT_COMPLETED: requested IDX Regular-Market session is '.$context['session_state'].'.');
+        }
+        foreach (['session_open_at', 'session_close_at', 'completed_at'] as $field) {
+            if (trim((string) ($context[$field] ?? '')) === '') {
+                throw new \RuntimeException('MARKET_SESSION_COMPLETION_EVIDENCE_INCOMPLETE: '.$field.' is missing for '.$tradeDate.'.');
+            }
+        }
+        if ((string) $context['completed_at'] < (string) $context['session_close_at']
+            || (string) $context['recorded_at'] < (string) $context['completed_at']) {
+            throw new \RuntimeException('MARKET_SESSION_COMPLETION_EVIDENCE_INCONSISTENT: completion chronology is invalid for '.$tradeDate.'.');
         }
 
         return $context;
@@ -38,168 +50,154 @@ class MarketCalendarRepository
     public function sessionContext($tradeDate, $knownAt = null)
     {
         $tradeDate = MarketDataScope::fromConfig()->assertRequestedDate($tradeDate);
-        $this->ensureRevision($tradeDate);
-        $query = DB::table('md_market_calendar_revisions')
-            ->where('market_code', config('market_data.scope.market_code', 'IDX'))
-            ->where('market_segment', config('market_data.scope.market_segment', 'REGULAR'))
-            ->where('cal_date', $tradeDate);
-
-        if ($knownAt !== null) {
-            $query->where('recorded_at', '<=', $knownAt);
+        $rows = $this->terminalRevisionRowsForDate($tradeDate, $knownAt);
+        if ($rows->isEmpty()) {
+            throw new \RuntimeException('MARKET_CALENDAR_EVIDENCE_MISSING: '.$tradeDate.'.');
+        }
+        if ($rows->count() !== 1) {
+            throw new \RuntimeException('MARKET_CALENDAR_REVISION_CONFLICT: '.$tradeDate.' has multiple active governed revisions.');
         }
 
-        $row = $query->orderByDesc('recorded_at')->first();
-        if (! $row) {
-            throw new \RuntimeException('MARKET_CALENDAR_EVIDENCE_MISSING: '.$tradeDate.'.');
+        $row = $rows->first();
+        $marketCode = (string) $row->market_code;
+        $marketSegment = (string) $row->market_segment;
+        $timezone = (string) $row->timezone;
+        if ($marketCode !== config('market_data.scope.market_code', 'IDX')
+            || $marketSegment !== config('market_data.scope.market_segment', 'REGULAR')
+            || $timezone !== config('market_data.platform.timezone', 'Asia/Jakarta')) {
+            throw new \RuntimeException('MARKET_CALENDAR_SCOPE_MISMATCH: calendar revision is outside the locked IDX Regular-Market Asia/Jakarta scope.');
         }
 
         return [
             'calendar_revision_id' => (int) $row->calendar_revision_id,
             'revision_uid' => (string) $row->revision_uid,
             'trade_date' => (string) $row->cal_date,
-            'market_code' => (string) $row->market_code,
-            'market_segment' => (string) $row->market_segment,
-            'timezone' => (string) $row->timezone,
+            'market_code' => $marketCode,
+            'market_segment' => $marketSegment,
+            'timezone' => $timezone,
             'is_trading_day' => (bool) $row->is_trading_day,
+            'is_half_day' => (bool) $row->is_half_day,
             'session_state' => (string) $row->session_state,
             'session_open_at' => $row->session_open_at,
             'session_close_at' => $row->session_close_at,
             'completed_at' => $row->completed_at,
             'recorded_at' => $row->recorded_at,
+            'source_observation_id' => $row->source_observation_id !== null ? (int) $row->source_observation_id : null,
             'source_ref' => $row->source_ref,
+            'source_version' => $row->source_version,
             'provenance_tier' => isset($row->provenance_tier) ? (string) $row->provenance_tier : '',
+            'reconciled_at' => $row->reconciled_at ?? null,
+            'reconciliation_source_ref' => $row->reconciliation_source_ref ?? null,
+            'prev_trading_day' => $this->nearestTradingDay($tradeDate, true, $knownAt),
+            'next_trading_day' => $this->nearestTradingDay($tradeDate, false, $knownAt),
         ];
     }
 
-    public function tradingDatesBetween($startDate, $endDate)
+    public function tradingDatesBetween($startDate, $endDate, $knownAt = null)
     {
         MarketDataScope::fromConfig()->assertRequestedRange($startDate, $endDate);
 
-        return DB::table('market_calendar')
-            ->whereBetween('cal_date', [$startDate, $endDate])
-            ->where('is_trading_day', 1)
-            ->orderBy('cal_date')
-            ->pluck('cal_date')
-            ->map(function ($value) {
-                return (string) $value;
-            })
-            ->values()
-            ->all();
+        return $this->resolvedTradingDates($startDate, $endDate, $knownAt);
     }
 
-    public function tradingDateWindowStart($endDate, $requiredTradingDates, $allowPartialWindow = true)
+    public function tradingDateWindowStart($endDate, $requiredTradingDates, $allowPartialWindow = true, $knownAt = null)
     {
         MarketDataScope::fromConfig()->assertRequestedDate($endDate);
         $requiredTradingDates = max(1, (int) $requiredTradingDates);
+        $dates = $this->resolvedTradingDates(
+            config('market_data.scope.dataset_start', '2023-01-02'),
+            $endDate,
+            $knownAt
+        );
 
-        $dates = DB::table('market_calendar')
-            ->where('cal_date', '<=', $endDate)
-            ->where('is_trading_day', 1)
-            ->orderBy('cal_date', 'desc')
-            ->limit($requiredTradingDates)
-            ->pluck('cal_date')
-            ->map(function ($value) {
-                return (string) $value;
-            })
-            ->values()
-            ->all();
-
-        if (empty($dates) || (string) $dates[0] !== (string) $endDate) {
-            throw new \RuntimeException('MARKET_CALENDAR_REQUIRES_REQUESTED_TRADING_DATE: requested date is not an active trading day in market_calendar.');
+        if ($dates === [] || (string) end($dates) !== (string) $endDate) {
+            throw new \RuntimeException('MARKET_CALENDAR_REQUIRES_REQUESTED_TRADING_DATE: requested date is not a verified active trading day in the governed calendar revision set.');
+        }
+        $window = array_slice($dates, -$requiredTradingDates);
+        if (count($window) < $requiredTradingDates && ! $allowPartialWindow) {
+            throw new \RuntimeException('MARKET_CALENDAR_INSUFFICIENT_TRADING_WINDOW: governed calendar does not contain enough prior verified trading dates for the requested indicator window.');
         }
 
-        if (count($dates) < $requiredTradingDates && ! $allowPartialWindow) {
-            throw new \RuntimeException('MARKET_CALENDAR_INSUFFICIENT_TRADING_WINDOW: market_calendar does not contain enough prior trading dates for the requested indicator window.');
-        }
-
-        return (string) $dates[count($dates) - 1];
+        return (string) $window[0];
     }
 
-    private function ensureRevision($tradeDate)
+    private function terminalRevisionRowsForDate($tradeDate, $knownAt)
     {
         if (! Schema::hasTable('md_market_calendar_revisions')) {
             throw new \RuntimeException('MARKET_CALENDAR_REVISION_FOUNDATION_MISSING.');
         }
 
-        $existing = DB::table('md_market_calendar_revisions')
-            ->where('market_code', config('market_data.scope.market_code', 'IDX'))
-            ->where('market_segment', config('market_data.scope.market_segment', 'REGULAR'))
-            ->where('cal_date', $tradeDate)
-            ->orderByDesc('recorded_at')
-            ->first();
+        $query = DB::table('md_market_calendar_revisions as revision')
+            ->leftJoin('md_market_calendar_revisions as newer', function ($join) use ($knownAt) {
+                $join->on('newer.supersedes_revision_id', '=', 'revision.calendar_revision_id');
+                if ($knownAt !== null && $knownAt !== '') {
+                    $join->where('newer.recorded_at', '<=', $knownAt);
+                }
+            })
+            ->whereNull('newer.calendar_revision_id')
+            ->where('revision.market_code', config('market_data.scope.market_code', 'IDX'))
+            ->where('revision.market_segment', config('market_data.scope.market_segment', 'REGULAR'))
+            ->where('revision.cal_date', $tradeDate);
+        if ($knownAt !== null && $knownAt !== '') {
+            $query->where('revision.recorded_at', '<=', $knownAt);
+        }
 
-        if ($existing) {
-            $timezone = config('market_data.platform.timezone', 'Asia/Jakarta');
-            $now = Carbon::now($timezone);
-            if ((string) $existing->session_state !== 'SCHEDULED'
-                || empty($existing->session_close_at)
-                || $now->lessThan(Carbon::parse($existing->session_close_at, $timezone))) {
-                return;
+        return $query->orderBy('revision.calendar_revision_id')->get(['revision.*']);
+    }
+
+    private function resolvedTradingDates($startDate, $endDate, $knownAt): array
+    {
+        if (! Schema::hasTable('md_market_calendar_revisions')) {
+            throw new \RuntimeException('MARKET_CALENDAR_REVISION_FOUNDATION_MISSING.');
+        }
+        $query = DB::table('md_market_calendar_revisions as revision')
+            ->leftJoin('md_market_calendar_revisions as newer', function ($join) use ($knownAt) {
+                $join->on('newer.supersedes_revision_id', '=', 'revision.calendar_revision_id');
+                if ($knownAt !== null && $knownAt !== '') {
+                    $join->where('newer.recorded_at', '<=', $knownAt);
+                }
+            })
+            ->whereNull('newer.calendar_revision_id')
+            ->where('revision.market_code', config('market_data.scope.market_code', 'IDX'))
+            ->where('revision.market_segment', config('market_data.scope.market_segment', 'REGULAR'))
+            ->whereBetween('revision.cal_date', [$startDate, $endDate]);
+        if ($knownAt !== null && $knownAt !== '') {
+            $query->where('revision.recorded_at', '<=', $knownAt);
+        }
+
+        $groups = $query->orderBy('revision.cal_date')->orderBy('revision.calendar_revision_id')
+            ->get(['revision.*'])->groupBy('cal_date');
+        $dates = [];
+        foreach ($groups as $date => $rows) {
+            if ($rows->count() !== 1) {
+                throw new \RuntimeException('MARKET_CALENDAR_REVISION_CONFLICT: '.$date.' has multiple active governed revisions.');
             }
-
-            DB::table('md_market_calendar_revisions')->insert([
-                'market_code' => (string) $existing->market_code,
-                'market_segment' => (string) $existing->market_segment,
-                'cal_date' => (string) $existing->cal_date,
-                'revision_uid' => hash('sha256', (string) $existing->revision_uid.'|COMPLETED|'.$now->toDateTimeString()),
-                'timezone' => (string) $existing->timezone,
-                'is_trading_day' => (int) $existing->is_trading_day,
-                'is_half_day' => (int) $existing->is_half_day,
-                'session_state' => 'COMPLETED',
-                'session_open_at' => $existing->session_open_at,
-                'session_close_at' => $existing->session_close_at,
-                'completed_at' => $existing->session_close_at,
-                'recorded_at' => $now->toDateTimeString(),
-                'source_observation_id' => $existing->source_observation_id,
-                'supersedes_revision_id' => $existing->calendar_revision_id,
-                'source_ref' => $existing->source_ref,
-                'source_version' => $existing->source_version,
-                'provenance_tier' => $existing->provenance_tier ?? null,
-                'reconciled_at' => $existing->reconciled_at ?? null,
-                'reconciliation_source_ref' => $existing->reconciliation_source_ref ?? null,
-            ]);
-
-            return;
+            $row = $rows->first();
+            if ((string) $row->provenance_tier === 'VERIFIED'
+                && (int) $row->is_trading_day === 1
+                && trim((string) ($row->source_ref ?? '')) !== ''
+                && trim((string) ($row->source_version ?? '')) !== ''
+                && trim((string) ($row->reconciled_at ?? '')) !== ''
+                && trim((string) ($row->reconciliation_source_ref ?? '')) !== '') {
+                $dates[] = (string) $date;
+            }
         }
+        sort($dates, SORT_STRING);
 
-        $legacy = DB::table('market_calendar')->where('cal_date', $tradeDate)->first();
-        if (! $legacy) {
-            throw new \RuntimeException('MARKET_CALENDAR_EVIDENCE_MISSING: '.$tradeDate.'.');
+        return $dates;
+    }
+
+    private function nearestTradingDay($tradeDate, bool $previous, $knownAt): ?string
+    {
+        $start = $previous
+            ? config('market_data.scope.dataset_start', '2023-01-02')
+            : date('Y-m-d', strtotime($tradeDate.' +1 day'));
+        $end = $previous ? date('Y-m-d', strtotime($tradeDate.' -1 day')) : '2100-12-31';
+        if ($start > $end) {
+            return null;
         }
+        $dates = $this->resolvedTradingDates($start, $end, $knownAt);
 
-        $timezone = config('market_data.platform.timezone', 'Asia/Jakarta');
-        $isTradingDay = (int) $legacy->is_trading_day === 1;
-        $sessionOpen = $legacy->session_open_time ? $tradeDate.' '.$legacy->session_open_time.':00' : null;
-        $sessionClose = $legacy->session_close_time ? $tradeDate.' '.$legacy->session_close_time.':00' : $tradeDate.' '.config('market_data.platform.cutoff_time', '17:15:00');
-        $now = Carbon::now($timezone);
-        $sessionState = ! $isTradingDay
-            ? 'CLOSED'
-            : ($now->greaterThanOrEqualTo(Carbon::parse($sessionClose, $timezone)) ? 'COMPLETED' : 'SCHEDULED');
-        $recordedAt = isset($legacy->updated_at) && $legacy->updated_at ? (string) $legacy->updated_at : $now->toDateTimeString();
-        $sourceRef = 'legacy_market_calendar:'.(string) ($legacy->source ?? 'unknown').':'.$tradeDate;
-
-        DB::table('md_market_calendar_revisions')->insert([
-            'market_code' => config('market_data.scope.market_code', 'IDX'),
-            'market_segment' => config('market_data.scope.market_segment', 'REGULAR'),
-            'cal_date' => $tradeDate,
-            'revision_uid' => hash('sha256', $sourceRef.'|'.$isTradingDay.'|'.$sessionState.'|'.$sessionOpen.'|'.$sessionClose),
-            'timezone' => $timezone,
-            'is_trading_day' => $isTradingDay ? 1 : 0,
-            'is_half_day' => 0,
-            'session_state' => $sessionState,
-            'session_open_at' => $sessionOpen,
-            'session_close_at' => $sessionClose,
-            'completed_at' => $sessionState === 'COMPLETED' ? $sessionClose : null,
-            'recorded_at' => $recordedAt,
-            'source_observation_id' => null,
-            'supersedes_revision_id' => null,
-            'provenance_tier' => isset($legacy->provenance_tier) && $legacy->provenance_tier !== null
-                ? (string) $legacy->provenance_tier
-                : 'PROJECTED',
-            'reconciled_at' => $legacy->reconciled_at ?? null,
-            'reconciliation_source_ref' => $legacy->reconciliation_source_ref ?? null,
-            'source_ref' => $sourceRef,
-            'source_version' => 'legacy_calendar_projection_v1',
-        ]);
+        return $dates === [] ? null : ($previous ? (string) end($dates) : (string) $dates[0]);
     }
 }

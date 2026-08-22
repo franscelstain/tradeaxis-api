@@ -54,10 +54,12 @@ class EodBarsIngestService
 
     public function acquireSourceRows($requestedDate, $sourceMode, array $tickerCodes = null, array $context = [])
     {
-        if (! empty($context['config_snapshot_id'])) {
-            $calendarContext = $this->calendar->assertCompletedRegularSession($requestedDate, $context['known_at'] ?? null);
-            $context['calendar_revision_id'] = $calendarContext['calendar_revision_id'];
-        }
+        // Calendar/session validity is an acquisition precondition, not an optional consequence of
+        // configuration already being bound. Every path carries the exact revision it used.
+        $calendarContext = $this->calendar->assertCompletedRegularSession($requestedDate, $context['known_at'] ?? null);
+        $context['calendar_revision_id'] = $calendarContext['calendar_revision_id'];
+        $context['calendar_revision_uid'] = $calendarContext['revision_uid'];
+        $context['calendar_source_version'] = $calendarContext['source_version'];
 
         return $this->fetchSourceRows($requestedDate, $sourceMode, $tickerCodes, $context);
     }

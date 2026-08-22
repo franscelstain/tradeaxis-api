@@ -36,7 +36,7 @@ class ImportTradingStatusEventsCommandTest extends TestCase
 
     public function test_dry_run_validates_canonical_trading_status_csv_without_writing_rows(): void
     {
-        $this->csvPath = $this->writeCsv("ticker_code,trade_date,event_type_code,source_ref\nBBCA,2026-05-19,UMA,idx\n");
+        $this->csvPath = $this->canonicalCsv('BBCA,2026-05-19,UMA,EXCHANGE_AUTHORITATIVE,https://www.idx.co.id/notice,'.str_repeat('a', 64));
 
         $tester = $this->executeCommand(['input_file' => $this->csvPath]);
         $display = $tester->getDisplay();
@@ -51,7 +51,7 @@ class ImportTradingStatusEventsCommandTest extends TestCase
 
     public function test_apply_imports_suspended_event_without_denormalized_boolean_columns(): void
     {
-        $this->csvPath = $this->writeCsv("ticker_code,trade_date,event_type_code,source_ref\nBBCA,2026-05-19,suspended,idx\n");
+        $this->csvPath = $this->canonicalCsv('BBCA,2026-05-19,suspended,EXCHANGE_AUTHORITATIVE,https://www.idx.co.id/notice,'.str_repeat('b', 64));
 
         $tester = $this->executeCommand([
             'input_file' => $this->csvPath,
@@ -70,6 +70,8 @@ class ImportTradingStatusEventsCommandTest extends TestCase
         $this->assertSame('2026-05-19', $row->trade_date);
         $this->assertSame('SUSPENDED', $row->event_type_code);
         $this->assertSame('manual_trading_status_csv', $row->source_name);
+        $this->assertSame('EXCHANGE_AUTHORITATIVE', $row->origin_authority_class);
+        $this->assertSame('TRANSPORT_ONLY', $row->transport_state);
         $this->assertFalse(property_exists($row, 'status_code'));
         $this->assertFalse(property_exists($row, 'is_suspended'));
         $this->assertFalse(property_exists($row, 'is_uma'));
@@ -77,7 +79,7 @@ class ImportTradingStatusEventsCommandTest extends TestCase
 
     public function test_apply_imports_unsuspended_event_type(): void
     {
-        $this->csvPath = $this->writeCsv("ticker_code,trade_date,event_type_code,source_ref\nBBCA,2026-05-20,unsuspended,idx\n");
+        $this->csvPath = $this->canonicalCsv('BBCA,2026-05-20,unsuspended,EXCHANGE_AUTHORITATIVE,https://www.idx.co.id/notice,'.str_repeat('c', 64));
 
         $tester = $this->executeCommand([
             'input_file' => $this->csvPath,
@@ -96,7 +98,7 @@ class ImportTradingStatusEventsCommandTest extends TestCase
 
     public function test_apply_imports_special_monitoring_start_as_canonical_event_type(): void
     {
-        $this->csvPath = $this->writeCsv("ticker_code,trade_date,event_type_code,source_ref\nBBCA,2026-05-21,special monitoring start,idx\n");
+        $this->csvPath = $this->canonicalCsv('BBCA,2026-05-21,special monitoring start,DERIVED_REFERENCE,https://reference.example/notice,'.str_repeat('d', 64));
 
         $tester = $this->executeCommand([
             'input_file' => $this->csvPath,
@@ -112,7 +114,7 @@ class ImportTradingStatusEventsCommandTest extends TestCase
 
     public function test_deprecated_boolean_headers_block_trading_status_apply(): void
     {
-        $this->csvPath = $this->writeCsv("ticker_code,trade_date,event_type_code,is_suspended\nBBCA,2026-05-19,UMA,1\n");
+        $this->csvPath = $this->writeCsv("ticker_code,trade_date,event_type_code,origin_authority_class,source_ref,source_hash,is_suspended\nBBCA,2026-05-19,UMA,EXCHANGE_AUTHORITATIVE,https://www.idx.co.id/notice,".str_repeat('e', 64).",1\n");
 
         $tester = $this->executeCommand([
             'input_file' => $this->csvPath,
@@ -128,7 +130,7 @@ class ImportTradingStatusEventsCommandTest extends TestCase
 
     public function test_unknown_event_type_code_blocks_apply(): void
     {
-        $this->csvPath = $this->writeCsv("ticker_code,trade_date,event_type_code\nBBCA,2026-05-19,ACTIVE\n");
+        $this->csvPath = $this->canonicalCsv('BBCA,2026-05-19,ACTIVE,EXCHANGE_AUTHORITATIVE,https://www.idx.co.id/notice,'.str_repeat('f', 64));
 
         $tester = $this->executeCommand([
             'input_file' => $this->csvPath,
@@ -139,6 +141,33 @@ class ImportTradingStatusEventsCommandTest extends TestCase
         $this->assertSame(1, $tester->getStatusCode());
         $this->assertStringContainsString('status=BLOCKED', $display);
         $this->assertStringContainsString('event_type_code ACTIVE is not registered in market_data_trading_status_event_types', $display);
+    }
+
+    public function test_missing_origin_metadata_is_rejected_before_transport_write(): void
+    {
+        $this->csvPath = $this->writeCsv("ticker_code,trade_date,event_type_code\nBBCA,2026-05-19,UMA\n");
+
+        $tester = $this->executeCommand(['input_file' => $this->csvPath, '--apply' => true]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString('CSV header must include origin_authority_class', $tester->getDisplay());
+        $this->assertSame(0, DB::table('market_data_trading_status_events')->count());
+    }
+
+    public function test_operator_entered_transport_requires_named_governed_authority_context(): void
+    {
+        $this->csvPath = $this->canonicalCsv(
+            'BBCA,2026-05-19,UMA,OPERATOR_ENTERED,https://www.idx.co.id/notice,'.str_repeat('9', 64)
+        );
+
+        $tester = $this->executeCommand(['input_file' => $this->csvPath, '--apply' => true]);
+
+        $this->assertSame(1, $tester->getStatusCode());
+        $this->assertStringContainsString(
+            'OPERATOR_ENTERED requires operator_name, governed_reason_code, and authoritative_source_ref',
+            $tester->getDisplay()
+        );
+        $this->assertSame(0, DB::table('market_data_trading_status_events')->count());
     }
 
     private function executeCommand(array $input): CommandTester
@@ -157,5 +186,13 @@ class ImportTradingStatusEventsCommandTest extends TestCase
         file_put_contents($path, $contents);
 
         return $path;
+    }
+
+    private function canonicalCsv(string $row): string
+    {
+        return $this->writeCsv(
+            "ticker_code,trade_date,event_type_code,origin_authority_class,source_ref,source_hash\n"
+            .$row."\n"
+        );
     }
 }

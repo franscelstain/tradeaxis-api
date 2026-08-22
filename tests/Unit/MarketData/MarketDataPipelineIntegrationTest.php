@@ -4905,22 +4905,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
     private function seedMarketCalendarRange(string $startDate, string $endDate): void
     {
-        $date = Carbon::parse($startDate);
-        $end = Carbon::parse($endDate);
-
-        while ($date->lessThanOrEqualTo($end)) {
-            DB::table('market_calendar')->updateOrInsert(
-                ['cal_date' => $date->toDateString()],
-                [
-                    'is_trading_day' => in_array($date->dayOfWeekIso, [6, 7], true) ? 0 : 1,
-                    'provenance_tier' => 'VERIFIED',
-                    'source' => 'test_fixture',
-                    'created_at' => Carbon::now()->toDateTimeString(),
-                    'updated_at' => Carbon::now()->toDateTimeString(),
-                ]
-            );
-            $date->addDay();
-        }
+        $this->seedVerifiedMarketCalendarRange($startDate, $endDate);
     }
 
     private function seedHistoricalBars(string $startDate, string $endDate, int $tickerId, float $startClose, int $startVolume): void

@@ -28,25 +28,17 @@ class CoverageDormantUniverseTest extends TestCase
     /** 80 consecutive weekday trading dates ending 2026-07-28. */
     private function seedCalendar(): void
     {
-        $rows = [];
         $date = strtotime('2026-07-28');
         $added = 0;
 
         while ($added < 90) {
             $dow = (int) date('N', $date);
             if ($dow <= 5) {
-                $rows[] = [
-                    'cal_date' => date('Y-m-d', $date),
-                    'is_trading_day' => 1, 'provenance_tier' => 'VERIFIED',
-                    'created_at' => '2026-01-01 00:00:00',
-                    'updated_at' => '2026-01-01 00:00:00',
-                ];
+                $this->seedVerifiedMarketCalendarDate(date('Y-m-d', $date));
                 $added++;
             }
             $date = strtotime('-1 day', $date);
         }
-
-        DB::table('market_calendar')->insert($rows);
     }
 
     private function seedTicker($tickerId, $code): void
@@ -72,7 +64,7 @@ class CoverageDormantUniverseTest extends TestCase
 
     private function tradingDates(): array
     {
-        return DB::table('market_calendar')->where('is_trading_day', 1)
+        return DB::table('md_market_calendar_revisions')->where('is_trading_day', 1)
             ->orderByDesc('cal_date')->pluck('cal_date')
             ->map(function ($v) { return (string) $v; })->all();
     }

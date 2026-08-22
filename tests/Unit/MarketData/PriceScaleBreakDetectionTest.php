@@ -146,12 +146,9 @@ class PriceScaleBreakDetectionTest extends TestCase
             'source_name' => 'idx_manual',
         ]);
 
-        $now = '2026-01-01 00:00:00';
-        DB::table('market_calendar')->insert([
-            ['cal_date' => '2026-07-14', 'is_trading_day' => 1, 'provenance_tier' => 'VERIFIED', 'created_at' => $now, 'updated_at' => $now],
-            ['cal_date' => '2026-07-15', 'is_trading_day' => 1, 'provenance_tier' => 'VERIFIED', 'created_at' => $now, 'updated_at' => $now],
-            ['cal_date' => '2026-07-16', 'is_trading_day' => 1, 'provenance_tier' => 'VERIFIED', 'created_at' => $now, 'updated_at' => $now],
-        ]);
+        $this->seedVerifiedMarketCalendarDate('2026-07-14');
+        $this->seedVerifiedMarketCalendarDate('2026-07-15');
+        $this->seedVerifiedMarketCalendarDate('2026-07-16');
 
         $result = $this->detect();
 

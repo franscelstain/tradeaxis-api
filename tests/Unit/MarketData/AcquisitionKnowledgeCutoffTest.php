@@ -32,6 +32,16 @@ class AcquisitionKnowledgeCutoffTest extends TestCase
     {
         parent::setUp();
         $this->bootMarketDataSqlite();
+        DB::table('md_market_calendar_revisions')->insert([
+            'market_code' => 'IDX', 'market_segment' => 'REGULAR', 'cal_date' => self::TRADE_DATE,
+            'revision_uid' => hash('sha256', 'calendar|'.self::TRADE_DATE), 'timezone' => 'Asia/Jakarta',
+            'is_trading_day' => 1, 'is_half_day' => 0, 'session_state' => 'COMPLETED',
+            'session_open_at' => self::TRADE_DATE.' 09:00:00', 'session_close_at' => self::TRADE_DATE.' 16:00:00',
+            'completed_at' => self::TRADE_DATE.' 16:00:00', 'recorded_at' => self::TRADE_DATE.' 17:00:00',
+            'source_ref' => 'https://www.idx.co.id/calendar', 'source_version' => 'idx-calendar-2026',
+            'provenance_tier' => 'VERIFIED', 'reconciled_at' => self::TRADE_DATE,
+            'reconciliation_source_ref' => 'https://www.idx.co.id/calendar',
+        ]);
     }
 
     protected function tearDown(): void
@@ -109,11 +119,11 @@ class AcquisitionKnowledgeCutoffTest extends TestCase
         foreach ([1, 2, 3] as $n) {
             $this->seedListing($n, '2026-03-01 00:00:00');
         }
-        $this->seedListing(4, '2026-03-20 00:00:00');
+        $this->seedListing(4, '2026-03-27 00:00:00');
 
         $this->assertSame(
             ['AAA1', 'AAA2', 'AAA3'],
-            $this->codesAcquiredAt('2026-03-10 00:00:00'),
+            $this->codesAcquiredAt('2026-03-25 00:00:00'),
             'acquisition asked the source for a listing the run could not yet know'
         );
     }
@@ -127,7 +137,7 @@ class AcquisitionKnowledgeCutoffTest extends TestCase
         foreach ([1, 2, 3] as $n) {
             $this->seedListing($n, '2026-03-01 00:00:00');
         }
-        $this->seedListing(4, '2026-03-20 00:00:00');
+        $this->seedListing(4, '2026-03-27 00:00:00');
 
         $this->assertSame(['AAA1', 'AAA2', 'AAA3', 'AAA4'], $this->codesAcquiredAt(null));
     }
@@ -140,8 +150,8 @@ class AcquisitionKnowledgeCutoffTest extends TestCase
         foreach ([1, 2, 3] as $n) {
             $this->seedListing($n, '2026-03-01 00:00:00');
         }
-        $this->seedListing(4, '2026-03-20 00:00:00');
+        $this->seedListing(4, '2026-03-27 00:00:00');
 
-        $this->assertSame(['AAA1', 'AAA2', 'AAA3', 'AAA4'], $this->codesAcquiredAt('2026-03-22 00:00:00'));
+        $this->assertSame(['AAA1', 'AAA2', 'AAA3', 'AAA4'], $this->codesAcquiredAt('2026-03-28 00:00:00'));
     }
 }

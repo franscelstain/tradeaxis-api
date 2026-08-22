@@ -124,7 +124,7 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
             throw new \RuntimeException('CSV file is empty.');
         }
 
-        foreach (['ticker_code', 'trade_date', 'event_type_code'] as $requiredHeader) {
+        foreach (['ticker_code', 'trade_date', 'event_type_code', 'origin_authority_class', 'source_ref', 'source_hash'] as $requiredHeader) {
             if (! in_array($requiredHeader, $headers, true)) {
                 throw new \RuntimeException('CSV header must include '.$requiredHeader.'.');
             }
@@ -163,6 +163,11 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
             $eventTypeCode = $this->normalizeCode($row['event_type_code'] ?? '');
             $sourceName = trim((string) ($row['source_name'] ?? $sourceNameDefault));
             $sourceRef = trim((string) ($row['source_ref'] ?? ''));
+            $originAuthorityClass = $this->normalizeCode($row['origin_authority_class'] ?? '');
+            $sourceHash = strtolower(trim((string) ($row['source_hash'] ?? '')));
+            $operatorName = trim((string) ($row['operator_name'] ?? ''));
+            $governedReasonCode = $this->normalizeCode($row['governed_reason_code'] ?? '');
+            $authoritativeSourceRef = trim((string) ($row['authoritative_source_ref'] ?? ''));
             $notes = trim((string) ($row['notes'] ?? ''));
 
             if ($tickerCode === '') {
@@ -194,6 +199,19 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
                 $errors[] = 'line '.$line.': source_name is required.';
                 continue;
             }
+            if (! in_array($originAuthorityClass, ['EXCHANGE_AUTHORITATIVE', 'DERIVED_REFERENCE', 'OPERATOR_ENTERED'], true)) {
+                $errors[] = 'line '.$line.': origin_authority_class is invalid.';
+                continue;
+            }
+            if ($sourceRef === '' || ! preg_match('/^[a-f0-9]{64}$/', $sourceHash)) {
+                $errors[] = 'line '.$line.': source_ref and a lowercase/uppercase SHA-256 source_hash are required.';
+                continue;
+            }
+            if ($originAuthorityClass === 'OPERATOR_ENTERED'
+                && ($operatorName === '' || $governedReasonCode === '' || $authoritativeSourceRef === '')) {
+                $errors[] = 'line '.$line.': OPERATOR_ENTERED requires operator_name, governed_reason_code, and authoritative_source_ref.';
+                continue;
+            }
 
             $identity = $tickerCode.'|'.$tradeDate.'|'.$eventTypeCode.'|'.$sourceName;
             if (isset($seen[$identity])) {
@@ -209,6 +227,14 @@ class ImportTradingStatusEventsCommand extends AbstractMarketDataCommand
                 'event_type_code' => $eventTypeCode,
                 'source_name' => $sourceName,
                 'source_ref' => $sourceRef !== '' ? substr($sourceRef, 0, 255) : null,
+                'origin_authority_class' => $originAuthorityClass,
+                'source_payload_hash' => $sourceHash,
+                'operator_name' => $operatorName !== '' ? substr($operatorName, 0, 128) : null,
+                'governed_reason_code' => $governedReasonCode !== '' ? $governedReasonCode : null,
+                'authoritative_source_ref' => $authoritativeSourceRef !== '' ? substr($authoritativeSourceRef, 0, 255) : null,
+                // This compatibility table is transport/event-risk context. Only an immutable,
+                // source-observation-bound V2 revision may establish bar expectation.
+                'transport_state' => 'TRANSPORT_ONLY',
                 'notes' => $notes !== '' ? substr($notes, 0, 255) : null,
                 'created_at' => $now,
                 'updated_at' => $now,

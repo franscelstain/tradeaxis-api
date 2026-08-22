@@ -8,6 +8,7 @@ use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
 use App\Infrastructure\MarketData\Source\SourceAcquisitionException;
 use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
+use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 use App\Infrastructure\Persistence\MarketData\SourceObservationRepository;
 use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
 use App\Models\EodRun;
@@ -22,6 +23,18 @@ class EodBarsIngestServiceTest extends TestCase
         $this->clearMarketDataConfig();
 
         parent::tearDown();
+    }
+
+    private function completedCalendar(): MarketCalendarRepository
+    {
+        $calendar = $this->createMock(MarketCalendarRepository::class);
+        $calendar->method('assertCompletedRegularSession')->willReturn([
+            'calendar_revision_id' => 7001,
+            'revision_uid' => hash('sha256', 'unit-test-calendar-revision'),
+            'source_version' => 'idx-unit-test-v1',
+        ]);
+
+        return $calendar;
     }
 
 
@@ -140,7 +153,7 @@ class EodBarsIngestServiceTest extends TestCase
         $observations->method('existsAccepted')->willReturn(true);
         $observations->method('manifestHashForRun')->willReturn('manifest-hash-test');
 
-        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations);
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations, $this->completedCalendar());
 
         $result = $service->ingest($run, '2026-03-24', 'api');
 
@@ -252,7 +265,7 @@ class EodBarsIngestServiceTest extends TestCase
         $observations->method('existsAccepted')->willReturn(true);
         $observations->method('manifestHashForRun')->willReturn('manifest-hash-test');
 
-        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations);
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations, $this->completedCalendar());
 
         $result = $service->ingestAcquiredRows($run, '2026-03-24', 'api', $sourceRows, [
             'source_acquisition_state' => 'SUCCESS',
@@ -348,7 +361,7 @@ class EodBarsIngestServiceTest extends TestCase
         $observations->method('existsAccepted')->willReturn(true);
         $observations->method('manifestHashForRun')->willReturn('manifest-hash-test');
 
-        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations);
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations, $this->completedCalendar());
 
         $result = $service->ingestAcquiredRows($run, '2026-03-24', 'manual_file', $sourceRows, [
             'source_acquisition_state' => 'SUCCESS',
@@ -440,7 +453,7 @@ class EodBarsIngestServiceTest extends TestCase
         $observations->method('existsAccepted')->willReturn(true);
         $observations->method('manifestHashForRun')->willReturn('manifest-hash-test');
 
-        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations);
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations, $this->completedCalendar());
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('mixed source_name rows');
@@ -540,7 +553,7 @@ class EodBarsIngestServiceTest extends TestCase
         $observations->method('existsAccepted')->willReturn(true);
         $observations->method('manifestHashForRun')->willReturn('manifest-hash-test');
 
-        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations);
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations, $this->completedCalendar());
 
         $result = $service->ingest($run, '2026-03-24', 'api');
 
@@ -663,7 +676,7 @@ class EodBarsIngestServiceTest extends TestCase
         $observations->method('existsAccepted')->willReturn(true);
         $observations->method('manifestHashForRun')->willReturn('manifest-hash-test');
 
-        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations);
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations, $this->completedCalendar());
 
         $result = $service->ingest($run, '2026-03-24', 'manual_file');
 
@@ -736,7 +749,7 @@ class EodBarsIngestServiceTest extends TestCase
         $observations->method('existsAccepted')->willReturn(true);
         $observations->method('manifestHashForRun')->willReturn('manifest-hash-test');
 
-        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations);
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations, $this->completedCalendar());
 
         try {
             $service->ingestAcquiredRows($run, '2026-06-09', 'api', $sourceRows, [

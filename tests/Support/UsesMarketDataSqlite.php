@@ -286,6 +286,12 @@ trait UsesMarketDataSqlite
             $table->string('event_type_code', 64);
             $table->string('source_name', 64)->default('manual_trading_status_csv');
             $table->string('source_ref', 255)->nullable();
+            $table->string('origin_authority_class', 32)->nullable();
+            $table->string('source_payload_hash', 64)->nullable();
+            $table->string('operator_name', 128)->nullable();
+            $table->string('governed_reason_code', 64)->nullable();
+            $table->string('authoritative_source_ref', 255)->nullable();
+            $table->string('transport_state', 32)->nullable();
             $table->dateTime('recorded_at')->nullable();
             $table->string('notes', 255)->nullable();
             $table->dateTime('created_at')->default(DB::raw('CURRENT_TIMESTAMP'));
@@ -1238,6 +1244,15 @@ trait UsesMarketDataSqlite
             $table->string('bar_expectation_state', 32);
             $table->string('board_code', 16)->nullable();
             $table->string('authority_class', 32)->nullable();
+            $table->string('status_event_uid', 64)->nullable();
+            $table->integer('instrument_id')->nullable();
+            $table->string('status_type_code', 64)->nullable();
+            $table->string('source_name', 64)->nullable();
+            $table->string('source_payload_hash', 64)->nullable();
+            $table->dateTime('announced_at')->nullable();
+            $table->string('operator_name', 128)->nullable();
+            $table->string('governed_reason_code', 64)->nullable();
+            $table->string('authoritative_source_ref', 255)->nullable();
             $table->boolean('full_session_verified')->default(false);
             $table->dateTime('effective_from');
             $table->dateTime('effective_to')->nullable();
@@ -1251,6 +1266,26 @@ trait UsesMarketDataSqlite
             $table->index(['listing_id', 'effective_from', 'effective_to'], 'idx_md_status_listing_effective');
             $table->index(['recorded_at', 'bar_expectation_state'], 'idx_md_status_known_expectation');
         });
+
+        $schema->create('md_trading_status_source_registry', function (Blueprint $table) {
+            $table->string('source_name', 64);
+            $table->string('status_type_code', 64)->default('*');
+            $table->string('authority_class', 32);
+            $table->integer('priority');
+            $table->boolean('active')->default(true);
+            $table->string('source_ref_pattern', 255)->nullable();
+            $table->dateTime('created_at');
+            $table->dateTime('updated_at');
+            $table->primary(['source_name', 'status_type_code'], 'pk_md_status_source_registry');
+            $table->index(['status_type_code', 'authority_class', 'priority'], 'idx_md_status_source_priority');
+        });
+
+        $statusRegistryNow = date('Y-m-d H:i:s');
+        DB::table('md_trading_status_source_registry')->insert([
+            ['source_name' => 'IDX_OFFICIAL', 'status_type_code' => '*', 'authority_class' => 'EXCHANGE_AUTHORITATIVE', 'priority' => 10, 'active' => 1, 'source_ref_pattern' => 'idx.co.id', 'created_at' => $statusRegistryNow, 'updated_at' => $statusRegistryNow],
+            ['source_name' => 'IDX_LONG_SUSPENSION_SNAPSHOT', 'status_type_code' => 'SUSPENSION_OBSERVED', 'authority_class' => 'EXCHANGE_AUTHORITATIVE', 'priority' => 10, 'active' => 1, 'source_ref_pattern' => 'block.idx.id', 'created_at' => $statusRegistryNow, 'updated_at' => $statusRegistryNow],
+            ['source_name' => 'GOVERNED_OPERATOR_ENTRY', 'status_type_code' => '*', 'authority_class' => 'OPERATOR_ENTERED', 'priority' => 100, 'active' => 1, 'source_ref_pattern' => null, 'created_at' => $statusRegistryNow, 'updated_at' => $statusRegistryNow],
+        ]);
 
         $schema->create('md_corporate_action_revisions', function (Blueprint $table) {
             $table->bigIncrements('corporate_action_revision_id');
@@ -1537,6 +1572,46 @@ trait UsesMarketDataSqlite
                     'updated_at' => $now,
                 ]);
             }
+        }
+    }
+
+    /** Seed a governed calendar revision; legacy market_calendar is intentionally not populated. */
+    protected function seedVerifiedMarketCalendarDate(string $date, bool $isTradingDay = true, array $overrides = []): void
+    {
+        $base = [
+            'market_code' => 'IDX',
+            'market_segment' => 'REGULAR',
+            'cal_date' => $date,
+            'revision_uid' => hash('sha256', 'test-calendar|'.$date.'|'.($isTradingDay ? 'TRADING' : 'CLOSED')),
+            'timezone' => 'Asia/Jakarta',
+            'is_trading_day' => $isTradingDay ? 1 : 0,
+            'is_half_day' => 0,
+            'session_state' => $isTradingDay ? 'COMPLETED' : 'CLOSED',
+            'session_open_at' => $isTradingDay ? $date.' 09:00:00' : null,
+            'session_close_at' => $isTradingDay ? $date.' 16:00:00' : null,
+            'completed_at' => $isTradingDay ? $date.' 16:00:00' : null,
+            'recorded_at' => $date.' 17:00:00',
+            'source_observation_id' => null,
+            'supersedes_revision_id' => null,
+            'source_ref' => 'https://www.idx.co.id/test-calendar/'.$date,
+            'source_version' => 'idx-test-calendar-v1',
+            'provenance_tier' => 'VERIFIED',
+            'reconciled_at' => $date.' 17:00:00',
+            'reconciliation_source_ref' => 'https://www.idx.co.id/test-calendar/'.$date,
+        ];
+        DB::table('md_market_calendar_revisions')->updateOrInsert(
+            ['market_code' => 'IDX', 'market_segment' => 'REGULAR', 'cal_date' => $date],
+            array_merge($base, $overrides)
+        );
+    }
+
+    protected function seedVerifiedMarketCalendarRange(string $startDate, string $endDate): void
+    {
+        $date = new \DateTimeImmutable($startDate);
+        $end = new \DateTimeImmutable($endDate);
+        while ($date <= $end) {
+            $this->seedVerifiedMarketCalendarDate($date->format('Y-m-d'), (int) $date->format('N') <= 5);
+            $date = $date->modify('+1 day');
         }
     }
 }

@@ -188,3 +188,9 @@ A remediation that measures one direction of a two-directional defect and report
 `E-MD-B02-A001-001` performs the same entry obligation for `MD-B02` without inheriting `MD-B01` proof. It reviews all 151 rows of the Yahoo bootstrap strategy, promotes 75 reference-only rows that carry executable semantics, keeps 34 structural/explanatory rows as reference context, resolves future-only applicability, and moves 20 predicates to their real proof-owning stages. The MD-B02 denominator is 86 mandatory rows, all 86 currently proven; six paid-provider trigger capabilities remain optional-not-requested and six future-transition predicates are explicitly not applicable.
 
 The classification gate now lists `MD-B02` as normalized and reports 629 mixed-run members across the 17 unopened stages. This finding remains `PARTIALLY_RESOLVED`; it does not block `MD-B02` closure, and it will not close globally until the remaining stages perform their entry obligation or a governed bulk decision validates their assignments.
+
+## Successor execution — MD-B06-A001
+
+`E-MD-B06-A001-001` discharges the MD-B06 entry obligation without inheriting a historical denominator. It reviewed all 158 rows in the calendar and trading-status owner contracts: 131 semantic predicates, 27 reference-only non-predicates, 68 parent-context bindings, 78 predicates owned and proven by B06, and 53 moved to their actual downstream proof owners with B06 retained as support. Transitional applicability, optional capability and mixed-classification debt are all zero inside MD-B06.
+
+The shared classification backlog moves from 552 to 527 and now covers 14 unopened stages. The finding and `MD-DEP-0004` remain `PARTIALLY_RESOLVED` / `OPEN_NON_BLOCKING`; neither blocks B06 closure after its own entry obligation is complete.

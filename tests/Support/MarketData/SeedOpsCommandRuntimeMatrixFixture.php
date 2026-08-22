@@ -27,13 +27,15 @@ $dates = [
     'stage_success' => '2026-05-13',
     'promote_success' => '2026-05-14',
     'lock_conflict' => '2026-05-15',
-    'held_partial' => '2026-05-16',
-    'failed_empty' => '2026-05-17',
-    'repair_invalid_pointer' => '2026-05-18',
+    'held_partial' => '2026-05-18',
+    'failed_empty' => '2026-05-19',
+    'repair_invalid_pointer' => '2026-05-20',
 ];
 
 $targetDates = array_values($dates);
-$historyDates = dateRange('2026-04-01', '2026-05-10');
+$historyDates = array_values(array_filter(dateRange('2026-04-01', '2026-05-10'), static function ($date) {
+    return (int) date('N', strtotime($date)) <= 5;
+}));
 $calendarDates = array_merge($historyDates, $targetDates);
 
 $tickers = DB::table(config('market_data.tickers.table', 'tickers'))
@@ -101,7 +103,7 @@ $manifest = [
         'rows_per_date' => count($tickers),
     ],
     'repair_invalid_pointer_fixture' => $repairIds,
-    'guard' => 'Only ops runtime matrix fixture dates 2026-05-11..2026-05-18 are cleaned before seeding.',
+    'guard' => 'Only ops runtime matrix fixture dates 2026-05-11..2026-05-20 are cleaned before seeding.',
 ];
 
 writeJson($runtimeRoot.'/fixture_manifest.json', $manifest);
@@ -157,17 +159,26 @@ function cleanupTargetDates(array $targetDates): void
 function seedCalendar(array $dates, string $now): void
 {
     foreach ($dates as $date) {
-        DB::table('market_calendar')->updateOrInsert(
-            ['cal_date' => $date],
+        $isTradingDay = (int) date('N', strtotime($date)) <= 5;
+        DB::table('md_market_calendar_revisions')->updateOrInsert(
+            ['market_code' => 'IDX', 'market_segment' => 'REGULAR', 'cal_date' => $date],
             [
-                'is_trading_day' => 1, 'provenance_tier' => 'VERIFIED',
-                'holiday_name' => null,
-                'session_open_time' => '09:00',
-                'session_close_time' => '15:00',
-                'breaks_json' => null,
-                'source' => 'ops_command_runtime_matrix_fixture',
-                'updated_at' => $now,
-                'created_at' => $now,
+                'revision_uid' => hash('sha256', 'ops-runtime-calendar|'.$date.'|'.($isTradingDay ? 'TRADING' : 'CLOSED')),
+                'timezone' => 'Asia/Jakarta',
+                'is_trading_day' => $isTradingDay ? 1 : 0,
+                'is_half_day' => 0,
+                'session_state' => $isTradingDay ? 'COMPLETED' : 'CLOSED',
+                'session_open_at' => $isTradingDay ? $date.' 09:00:00' : null,
+                'session_close_at' => $isTradingDay ? $date.' 16:00:00' : null,
+                'completed_at' => $isTradingDay ? $date.' 16:00:00' : null,
+                'recorded_at' => $now,
+                'source_observation_id' => null,
+                'supersedes_revision_id' => null,
+                'source_ref' => 'https://www.idx.co.id/ops-runtime-calendar/'.$date,
+                'source_version' => 'idx-ops-runtime-v1',
+                'provenance_tier' => 'VERIFIED',
+                'reconciled_at' => $now,
+                'reconciliation_source_ref' => 'https://www.idx.co.id/ops-runtime-calendar/'.$date,
             ]
         );
     }

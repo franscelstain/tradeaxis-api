@@ -183,7 +183,7 @@ class CanonicalScopeFrontierAndDecisionGradeTest extends TestCase
 
         $calendar = $this->read('app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php');
         $this->assertMatchesRegularExpression(
-            "/where\('recorded_at',\s*'<=',\s*\\\$knownAt\)/",
+            "/where\('(?:revision\\.)?recorded_at',\s*'<=',\s*\\\$knownAt\)/",
             $calendar,
             'calendar revisions must also resolve as-known'
         );

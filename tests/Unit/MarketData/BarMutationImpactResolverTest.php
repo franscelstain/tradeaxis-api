@@ -39,7 +39,6 @@ class BarMutationImpactResolverTest extends TestCase
             'ticker_id' => 1, 'ticker_code' => 'BBCA', 'company_name' => 'BBCA', 'is_active' => 1,
         ]);
 
-        $calendar = [];
         $bars = [];
         $date = strtotime('2026-01-05');
         $added = 0;
@@ -48,10 +47,7 @@ class BarMutationImpactResolverTest extends TestCase
             if ((int) date('N', $date) <= 5) {
                 $day = date('Y-m-d', $date);
 
-                $calendar[] = [
-                    'cal_date' => $day, 'is_trading_day' => 1, 'provenance_tier' => 'VERIFIED',
-                    'created_at' => '2026-01-01 00:00:00', 'updated_at' => '2026-01-01 00:00:00',
-                ];
+                $this->seedVerifiedMarketCalendarDate($day);
 
                 $bars[] = [
                     'trade_date' => $day, 'ticker_id' => 1,
@@ -68,10 +64,6 @@ class BarMutationImpactResolverTest extends TestCase
 
         // Chunked: SQLite caps a statement at 999 bound variables, and 120 bars across
         // twelve columns overruns it in a single insert.
-        foreach (array_chunk($calendar, 50) as $chunk) {
-            DB::table('market_calendar')->insert($chunk);
-        }
-
         foreach (array_chunk($bars, 50) as $chunk) {
             DB::table('eod_bars')->insert($chunk);
         }
@@ -79,7 +71,7 @@ class BarMutationImpactResolverTest extends TestCase
 
     private function tradingDates(): array
     {
-        return DB::table('market_calendar')->where('is_trading_day', 1)
+        return DB::table('md_market_calendar_revisions')->where('is_trading_day', 1)
             ->orderBy('cal_date')->pluck('cal_date')
             ->map(function ($v) { return (string) $v; })->all();
     }

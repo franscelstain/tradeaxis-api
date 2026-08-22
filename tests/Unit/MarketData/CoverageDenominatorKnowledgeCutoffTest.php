@@ -186,6 +186,7 @@ class CoverageDenominatorKnowledgeCutoffTest extends TestCase
         $cutoff = '2026-03-10 00:00:00';
         $before = $this->evaluateAt($cutoff);
 
+        $statusHash = str_repeat('a', 64);
         $sourceObservationId = DB::table('md_source_observations')->insertGetId([
             'observation_uid' => hash('sha256', 'stage-1-cutoff-status-fixture'),
             'attempt_uid' => hash('sha256', 'stage-1-cutoff-status-attempt'),
@@ -196,20 +197,31 @@ class CoverageDenominatorKnowledgeCutoffTest extends TestCase
             'sanitized_request_identity' => 'fixture://stage-1-cutoff-status',
             'acquired_at' => '2026-03-20 00:00:00',
             'adapter_version' => 'test-v2-status',
+            'payload_hash' => $statusHash,
             'outcome_state' => 'ACCEPTED',
             'validation_state' => 'PASSED',
             'created_at' => '2026-03-20 00:00:00',
         ]);
+        $listing = DB::table('md_listings')->where('legacy_ticker_id', 901)->first();
         DB::table('md_trading_status_revisions')->insert([
-            'listing_id' => (int) DB::table('md_listings')->where('legacy_ticker_id', 901)->value('listing_id'),
+            'listing_id' => (int) $listing->listing_id,
+            'instrument_id' => (int) $listing->instrument_id,
+            'status_event_uid' => hash('sha256', 'stage-1-cutoff-status-event'),
+            'status_type_code' => 'SUSPENSION_OBSERVED',
             'status_code' => 'SUSPENSION_OBSERVED',
             'bar_expectation_state' => 'BAR_NOT_EXPECTED',
+            'board_code' => 'MAIN',
             'authority_class' => 'EXCHANGE_AUTHORITATIVE',
+            'source_name' => 'IDX_OFFICIAL',
+            'source_payload_hash' => $statusHash,
             'full_session_verified' => 1,
             'effective_from' => self::TRADE_DATE.' 00:00:00',
             'recorded_at' => '2026-03-20 00:00:00',
             'source_observation_id' => $sourceObservationId,
+            'source_ref' => 'https://www.idx.co.id/status/2026-03-24',
             'verification_state' => 'VERIFIED',
+            'observed_at' => self::TRADE_DATE.' 00:00:00',
+            'announced_at' => self::TRADE_DATE.' 00:00:00',
         ]);
 
         $sameCutoff = $this->evaluateAt($cutoff);

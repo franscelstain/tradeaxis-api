@@ -48,7 +48,7 @@ class TradingWindowWarmupTest extends TestCase
     {
         $holidays = ['2026-03-18', '2026-03-19', '2026-03-20'];
 
-        $rows = [];
+        $revisions = [];
         $cursor = new DateTimeImmutable('2026-02-01');
         $end = new DateTimeImmutable('2026-03-31');
 
@@ -57,16 +57,26 @@ class TradingWindowWarmupTest extends TestCase
             $isWeekend = in_array($cursor->format('N'), ['6', '7'], true);
             $isHoliday = in_array($date, $holidays, true);
 
-            $rows[] = [
-                'cal_date' => $date,
-                'is_trading_day' => ($isWeekend || $isHoliday) ? 0 : 1,
-                'created_at' => $date.' 00:00:00',
+            $trading = ($isWeekend || $isHoliday) ? 0 : 1;
+            $revisions[] = [
+                'market_code' => 'IDX', 'market_segment' => 'REGULAR', 'cal_date' => $date,
+                'revision_uid' => hash('sha256', 'warmup|'.$date.'|'.$trading),
+                'timezone' => 'Asia/Jakarta', 'is_trading_day' => $trading, 'is_half_day' => 0,
+                'session_state' => $trading ? 'COMPLETED' : 'CLOSED',
+                'session_open_at' => $trading ? $date.' 09:00:00' : null,
+                'session_close_at' => $trading ? $date.' 16:00:00' : null,
+                'completed_at' => $trading ? $date.' 16:00:00' : null,
+                'recorded_at' => $date.' 17:00:00', 'source_ref' => 'https://www.idx.co.id/calendar',
+                'source_version' => 'idx-calendar-2026', 'provenance_tier' => 'VERIFIED',
+                'reconciled_at' => $date, 'reconciliation_source_ref' => 'https://www.idx.co.id/calendar',
             ];
 
             $cursor = $cursor->modify('+1 day');
         }
 
-        DB::table('market_calendar')->insert($rows);
+        foreach (array_chunk($revisions, 25) as $chunk) {
+            DB::table('md_market_calendar_revisions')->insert($chunk);
+        }
     }
 
     private function calendar(): MarketCalendarRepository
@@ -79,7 +89,7 @@ class TradingWindowWarmupTest extends TestCase
      */
     private function tradingDatesUpTo(string $endDate): array
     {
-        return DB::table('market_calendar')
+        return DB::table('md_market_calendar_revisions')
             ->where('cal_date', '<=', $endDate)
             ->where('is_trading_day', 1)
             ->orderBy('cal_date')

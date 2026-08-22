@@ -103,21 +103,14 @@ class MarketDataOrdersOneToFourFoundationTest extends TestCase
     public function test_calendar_and_trading_status_are_point_in_time_and_fail_safe_on_missing_evidence(): void
     {
         Carbon::setTestNow('2026-03-21 09:00:00');
-        DB::table('market_calendar')->insert([
-            'cal_date' => '2026-03-20',
-            'is_trading_day' => 1, 'provenance_tier' => 'VERIFIED',
-            'session_open_time' => '09:00',
-            'session_close_time' => '16:00',
-            'source' => 'operator_bootstrap',
-            'created_at' => '2026-03-01 00:00:00',
-            'updated_at' => '2026-03-01 00:00:00',
-        ]);
+        $this->seedCalendarRevision('COMPLETED');
         DB::table('tickers')->insert([
             'ticker_id' => 12,
             'ticker_code' => 'TLKM',
             'company_name' => 'Telkom',
             'listed_date' => '1995-11-14',
             'exchange_code' => 'IDX',
+            'board_code' => 'RG',
             'is_active' => 1,
             'created_at' => '2023-01-02 00:00:00',
             'updated_at' => '2023-01-02 00:00:00',
@@ -130,22 +123,30 @@ class MarketDataOrdersOneToFourFoundationTest extends TestCase
         $this->assertSame('COMPLETED', $calendar['session_state']);
         $this->assertSame('UNKNOWN', $statuses->resolveForListing($listing['listing_id'], '2026-03-20')['status_code']);
 
+        $hash = str_repeat('a', 64);
+        $observationId = $this->seedAcceptedObservation($hash);
         DB::table('md_trading_status_revisions')->insert([
             'listing_id' => $listing['listing_id'],
+            'instrument_id' => $listing['instrument_id'],
+            'status_event_uid' => hash('sha256', 'active|'.$listing['listing_id'].'|2026-03-20'),
+            'status_type_code' => 'UNSUSPENDED',
             'status_code' => 'ACTIVE',
             'bar_expectation_state' => 'BAR_EXPECTED',
             'board_code' => 'RG',
-            'authority_class' => 'EXCHANGE_OFFICIAL',
+            'authority_class' => 'EXCHANGE_AUTHORITATIVE',
+            'source_name' => 'IDX_OFFICIAL',
+            'source_payload_hash' => $hash,
             'full_session_verified' => 1,
             'effective_from' => '2026-03-20 00:00:00',
-            'effective_to' => null,
             'recorded_at' => '2026-03-20 17:00:00',
             'retracted_at' => null,
-            'source_observation_id' => null,
+            'source_observation_id' => $observationId,
             'supersedes_revision_id' => null,
-            'source_ref' => 'idx-status:2026-03-20',
+            'source_ref' => 'https://www.idx.co.id/status/2026-03-20',
             'verification_state' => 'VERIFIED',
             'observed_at' => '2026-03-20 16:00:00',
+            'announced_at' => '2026-03-20 16:00:00',
+            'effective_to' => '2026-03-21 00:00:00',
         ]);
 
         $this->assertSame('UNKNOWN', $statuses->resolveForListing($listing['listing_id'], '2026-03-20', '2026-03-20 16:59:59')['status_code']);
@@ -177,20 +178,32 @@ class MarketDataOrdersOneToFourFoundationTest extends TestCase
         $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $repository->manifestHashForRun(77));
     }
 
-    public function test_calendar_completion_appends_revision_instead_of_freezing_scheduled_state(): void
+    public function test_calendar_completion_requires_and_reads_an_explicit_successor_revision(): void
     {
-        DB::table('market_calendar')->insert([
-            'cal_date' => '2026-03-20', 'is_trading_day' => 1, 'provenance_tier' => 'VERIFIED',
-            'session_open_time' => '09:00', 'session_close_time' => '16:00',
-            'source' => 'operator_bootstrap', 'created_at' => '2026-03-01 00:00:00',
-            'updated_at' => '2026-03-01 00:00:00',
-        ]);
+        $scheduledId = $this->seedCalendarRevision('SCHEDULED');
         $calendar = new MarketCalendarRepository();
 
         Carbon::setTestNow('2026-03-20 15:00:00');
         $this->assertSame('SCHEDULED', $calendar->sessionContext('2026-03-20')['session_state']);
 
         Carbon::setTestNow('2026-03-20 17:00:00');
+        try {
+            $calendar->assertCompletedRegularSession('2026-03-20');
+            $this->fail('Wall-clock time must not manufacture completion evidence.');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('MARKET_SESSION_NOT_COMPLETED', $e->getMessage());
+        }
+        DB::table('md_market_calendar_revisions')->insert([
+            'market_code' => 'IDX', 'market_segment' => 'REGULAR', 'cal_date' => '2026-03-20',
+            'revision_uid' => hash('sha256', 'calendar|2026-03-20|COMPLETED'),
+            'timezone' => 'Asia/Jakarta', 'is_trading_day' => 1, 'is_half_day' => 0,
+            'session_state' => 'COMPLETED', 'session_open_at' => '2026-03-20 09:00:00',
+            'session_close_at' => '2026-03-20 16:00:00', 'completed_at' => '2026-03-20 16:00:00',
+            'recorded_at' => '2026-03-20 17:00:00', 'supersedes_revision_id' => $scheduledId,
+            'source_ref' => 'https://www.idx.co.id/calendar', 'source_version' => 'idx-calendar-2026',
+            'provenance_tier' => 'VERIFIED', 'reconciled_at' => '2026-03-20',
+            'reconciliation_source_ref' => 'https://www.idx.co.id/calendar',
+        ]);
         $completed = $calendar->assertCompletedRegularSession('2026-03-20');
 
         $this->assertSame('COMPLETED', $completed['session_state']);
@@ -244,5 +257,34 @@ class MarketDataOrdersOneToFourFoundationTest extends TestCase
         } catch (SourceAcquisitionException $e) {
             $this->assertSame('SOURCE_OBSERVATION_PERSISTENCE_FAILED', $e->reasonCode());
         }
+    }
+
+    private function seedCalendarRevision(string $state): int
+    {
+        return (int) DB::table('md_market_calendar_revisions')->insertGetId([
+            'market_code' => 'IDX', 'market_segment' => 'REGULAR', 'cal_date' => '2026-03-20',
+            'revision_uid' => hash('sha256', 'calendar|2026-03-20|'.$state),
+            'timezone' => 'Asia/Jakarta', 'is_trading_day' => 1, 'is_half_day' => 0,
+            'session_state' => $state, 'session_open_at' => '2026-03-20 09:00:00',
+            'session_close_at' => '2026-03-20 16:00:00',
+            'completed_at' => $state === 'COMPLETED' ? '2026-03-20 16:00:00' : null,
+            'recorded_at' => $state === 'COMPLETED' ? '2026-03-20 17:00:00' : '2026-03-01 00:00:00',
+            'source_ref' => 'https://www.idx.co.id/calendar', 'source_version' => 'idx-calendar-2026',
+            'provenance_tier' => 'VERIFIED', 'reconciled_at' => '2026-03-20',
+            'reconciliation_source_ref' => 'https://www.idx.co.id/calendar',
+        ]);
+    }
+
+    private function seedAcceptedObservation(string $hash): int
+    {
+        return (int) DB::table('md_source_observations')->insertGetId([
+            'observation_uid' => hash('sha256', 'order-foundation|'.$hash),
+            'attempt_uid' => 'order-foundation', 'requested_trade_date' => '2026-03-20',
+            'source_mode' => 'authority_document', 'source_name' => 'IDX', 'provider' => 'IDX',
+            'sanitized_request_identity' => 'https://www.idx.co.id/status/2026-03-20',
+            'response_status' => 200, 'content_type' => 'application/json',
+            'acquired_at' => '2026-03-20 17:00:00', 'adapter_version' => 'test-v1',
+            'payload_hash' => $hash, 'outcome_state' => 'ACCEPTED', 'created_at' => '2026-03-20 17:00:00',
+        ]);
     }
 }

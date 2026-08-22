@@ -69,6 +69,9 @@ class AuthoritativeTradingStatusSnapshotService
                 'AUTHORITATIVE_TRADING_STATUS_TRANSITIONS_VALIDATED',
                 $recordedAt
             );
+            $snapshotPayloadHash = (string) DB::table('md_source_observations')
+                ->where('source_observation_id', $snapshotObservationId)
+                ->value('payload_hash');
 
             $inserted = 0;
             $unchanged = 0;
@@ -82,10 +85,18 @@ class AuthoritativeTradingStatusSnapshotService
 
                 DB::table('md_trading_status_revisions')->insert([
                     'listing_id' => (int) $entry['listing_id'],
+                    'instrument_id' => (int) $entry['instrument_id'],
+                    'status_event_uid' => hash('sha256', implode('|', [
+                        'IDX_LONG_SUSPENSION_SNAPSHOT', (int) $entry['listing_id'],
+                        $prepared['snapshot_source']['observed_as_of'], 'SUSPENSION_OBSERVED',
+                    ])),
+                    'status_type_code' => 'SUSPENSION_OBSERVED',
                     'status_code' => 'SUSPENSION_OBSERVED',
                     'bar_expectation_state' => 'BAR_NOT_EXPECTED',
                     'board_code' => $entry['board_code'],
                     'authority_class' => 'EXCHANGE_AUTHORITATIVE',
+                    'source_name' => 'IDX_LONG_SUSPENSION_SNAPSHOT',
+                    'source_payload_hash' => $snapshotPayloadHash,
                     'full_session_verified' => 1,
                     // The monthly snapshot proves status on its as-of date. The older reported
                     // suspension date is retained in the evidence payload, never projected back
@@ -99,6 +110,10 @@ class AuthoritativeTradingStatusSnapshotService
                     'source_ref' => $prepared['snapshot_source']['document_url'],
                     'verification_state' => 'VERIFIED',
                     'observed_at' => $prepared['snapshot_source']['observed_as_of'].' 00:00:00',
+                    'announced_at' => $prepared['snapshot_source']['observed_as_of'].' 00:00:00',
+                    'operator_name' => null,
+                    'governed_reason_code' => null,
+                    'authoritative_source_ref' => null,
                 ]);
                 $inserted++;
             }
@@ -228,7 +243,7 @@ class AuthoritativeTradingStatusSnapshotService
             ->where(function ($query) use ($asOf) {
                 $query->whereNull('symbol.effective_to')->orWhere('symbol.effective_to', '>', $asOf.' 00:00:00');
             })
-            ->get(['symbol.symbol', 'listing.listing_id', 'listing.board_code']);
+            ->get(['symbol.symbol', 'listing.listing_id', 'listing.instrument_id', 'listing.board_code']);
 
         $byCode = [];
         foreach ($rows as $row) {
@@ -248,6 +263,7 @@ class AuthoritativeTradingStatusSnapshotService
 
             return $entry + [
                 'listing_id' => (int) $row->listing_id,
+                'instrument_id' => (int) $row->instrument_id,
                 'board_code' => $row->board_code === null ? null : (string) $row->board_code,
             ];
         }, $prepared['entries']);
@@ -296,10 +312,17 @@ class AuthoritativeTradingStatusSnapshotService
     {
         $expected = [
             'listing_id' => (int) $entry['listing_id'],
+            'instrument_id' => (int) $entry['instrument_id'],
+            'status_event_uid' => hash('sha256', implode('|', [
+                'IDX_LONG_SUSPENSION_SNAPSHOT', (int) $entry['listing_id'],
+                $prepared['snapshot_source']['observed_as_of'], 'SUSPENSION_OBSERVED',
+            ])),
+            'status_type_code' => 'SUSPENSION_OBSERVED',
             'status_code' => 'SUSPENSION_OBSERVED',
             'bar_expectation_state' => 'BAR_NOT_EXPECTED',
             'board_code' => $entry['board_code'],
             'authority_class' => 'EXCHANGE_AUTHORITATIVE',
+            'source_name' => 'IDX_LONG_SUSPENSION_SNAPSHOT',
             'full_session_verified' => 1,
             'effective_from' => $prepared['snapshot_source']['observed_as_of'].' 00:00:00',
             'effective_to' => null,
@@ -307,6 +330,7 @@ class AuthoritativeTradingStatusSnapshotService
             'source_ref' => $prepared['snapshot_source']['document_url'],
             'verification_state' => 'VERIFIED',
             'observed_at' => $prepared['snapshot_source']['observed_as_of'].' 00:00:00',
+            'announced_at' => $prepared['snapshot_source']['observed_as_of'].' 00:00:00',
         ];
         foreach ($expected as $field => $value) {
             if (($value === null && $row->{$field} !== null)
@@ -317,6 +341,14 @@ class AuthoritativeTradingStatusSnapshotService
         if ((int) $row->source_observation_id <= 0
             || ($expectedObservationId !== null && (int) $row->source_observation_id !== (int) $expectedObservationId)) {
             throw new \RuntimeException('STAGE8_STATUS_REVISION_EVIDENCE_INVALID: immutable revision has the wrong source observation.');
+        }
+        $payloadHash = (string) DB::table('md_source_observations')
+            ->where('source_observation_id', (int) $row->source_observation_id)
+            ->where('outcome_state', 'ACCEPTED')
+            ->value('payload_hash');
+        if (! preg_match('/^[a-f0-9]{64}$/', strtolower($payloadHash))
+            || strtolower($payloadHash) !== strtolower((string) $row->source_payload_hash)) {
+            throw new \RuntimeException('STAGE8_STATUS_REVISION_EVIDENCE_INVALID: immutable revision payload hash is not bound to accepted evidence.');
         }
     }
 

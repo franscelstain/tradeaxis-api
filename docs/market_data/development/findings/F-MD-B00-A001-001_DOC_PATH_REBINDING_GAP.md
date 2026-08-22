@@ -104,3 +104,9 @@ Not a binding defect. Six operator-facing contracts that the removed inventories
 The removal tool damaged two files before the cause was found. Its docblock absorption used a regex anchored with `$` under `/s`, and `(?:(?!\*\/).)*` is greedy, so it began at the *first* docblock in the file and ran to the last `*/` before the target method, deleting the class's closing brace. An earlier version also located a helper's span in a `private`→`public` rewritten copy and applied those offsets to the original, which shifts by one byte per replacement.
 
 `php -l` across the whole test directory after each application is what caught both, before anything reached a suite run. A brace-balanced excision is safe for one method whose span is known and unsafe as a repeated rewrite over shifting offsets — so orphaned helpers are now reported rather than auto-deleted, and the manual pass verifies the parse after each single removal and reverts that one if it fails.
+
+## MD-B06 operator-boundary discharge — MD-B06-A001
+
+`E-MD-B06-A001-001` closes the only B06 surface previously named in `MD-DEP-0003`: trading-status import remains transport-only, declared origin/reference/hash are mandatory, exchange authority is bound to an accepted exchange observation, and an `OPERATOR_ENTERED` fact resolves only with an authoritative reference, named operator and governed reason. Positive and negative behavioral tests pass inside the 1800-test green Market Data suite.
+
+This does not close the finding or dependency. The six replacement guards recorded above are different operator-facing contracts owned by `MD-B15`, `MD-B17`, `MD-B19`, `MD-B21`, and `MD-B22`. B06 is removed from the remaining dependency-owner list; no downstream guard is claimed or inherited here.

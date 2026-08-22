@@ -197,11 +197,19 @@ class AsKnownReplayBoundaryTest extends TestCase
      */
     public function test_a_status_revision_recorded_after_the_cutoff_is_invisible(): void
     {
+        $hash = str_repeat('a', 64);
+        $observationId = $this->seedStatusFoundation(5150, 6150, $hash);
         DB::table('md_trading_status_revisions')->insert([
             'listing_id' => 5150,
+            'instrument_id' => 6150,
+            'status_event_uid' => hash('sha256', 'status-5150'),
+            'status_type_code' => 'SUSPENDED',
             'status_code' => 'SUSPENSION',
             'bar_expectation_state' => 'BAR_NOT_EXPECTED',
+            'board_code' => 'RG',
             'authority_class' => 'EXCHANGE_AUTHORITATIVE',
+            'source_name' => 'IDX_OFFICIAL',
+            'source_payload_hash' => $hash,
             'verification_state' => 'VERIFIED',
             'full_session_verified' => 1,
             'effective_from' => '2026-03-01 00:00:00',
@@ -209,7 +217,10 @@ class AsKnownReplayBoundaryTest extends TestCase
             // Recorded two months after it took effect, which is ordinary: the exchange announces,
             // the platform records later. The cutoff must respect when it was recorded.
             'recorded_at' => '2026-05-02 00:00:00',
-            'source_ref' => 'test_fixture',
+            'source_observation_id' => $observationId,
+            'source_ref' => 'https://www.idx.co.id/notice',
+            'observed_at' => '2026-03-01 00:00:00',
+            'announced_at' => '2026-03-01 00:00:00',
         ]);
 
         $repository = new TemporalTradingStatusRepository();
@@ -229,21 +240,19 @@ class AsKnownReplayBoundaryTest extends TestCase
      */
     public function test_a_calendar_revision_recorded_after_the_cutoff_is_invisible(): void
     {
-        DB::table('market_calendar')->updateOrInsert(['cal_date' => '2026-03-24'], [
-            'is_trading_day' => 1,
-            'session_close_time' => '16:00',
-            'provenance_tier' => 'VERIFIED',
-            'source' => 'test_fixture',
-            'created_at' => '2023-01-01 00:00:00',
-            'updated_at' => '2023-01-01 00:00:00',
+        DB::table('md_market_calendar_revisions')->insert([
+            'market_code' => 'IDX', 'market_segment' => 'REGULAR', 'cal_date' => '2026-03-24',
+            'revision_uid' => hash('sha256', 'calendar-2026-03-24'), 'timezone' => 'Asia/Jakarta',
+            'is_trading_day' => 1, 'is_half_day' => 0, 'session_state' => 'COMPLETED',
+            'session_open_at' => '2026-03-24 09:00:00', 'session_close_at' => '2026-03-24 16:00:00',
+            'completed_at' => '2026-03-24 16:00:00', 'recorded_at' => '2026-06-01 00:00:00',
+            'source_ref' => 'https://www.idx.co.id/calendar', 'source_version' => 'idx-calendar-2026',
+            'provenance_tier' => 'VERIFIED', 'reconciled_at' => '2026-03-24',
+            'reconciliation_source_ref' => 'https://www.idx.co.id/calendar',
         ]);
 
         $repository = new MarketCalendarRepository();
         $repository->sessionContext('2026-03-24');
-
-        DB::table('md_market_calendar_revisions')->where('cal_date', '2026-03-24')->update([
-            'recorded_at' => '2026-06-01 00:00:00',
-        ]);
 
         $this->expectExceptionMessageMatches('/MARKET_CALENDAR_EVIDENCE_MISSING/');
         $repository->sessionContext('2026-03-24', self::CUTOFF);
@@ -320,6 +329,8 @@ class AsKnownReplayBoundaryTest extends TestCase
             [TemporalTradingStatusRepository::class, 'resolveForListing', 2],
             [MarketCalendarRepository::class, 'sessionContext', 1],
             [MarketCalendarRepository::class, 'assertCompletedRegularSession', 1],
+            [MarketCalendarRepository::class, 'tradingDatesBetween', 2],
+            [MarketCalendarRepository::class, 'tradingDateWindowStart', 3],
             [TickerMasterRepository::class, 'resolveTemporalContextsByCodes', 2],
             [TickerMasterRepository::class, 'getUniverseForTradeDate', 1],
             [TickerMasterRepository::class, 'getProjectedUniverseForTradeDate', 1],
@@ -400,6 +411,42 @@ class AsKnownReplayBoundaryTest extends TestCase
             'is_active' => 1,
             'listed_date' => $listedDate,
             'created_at' => $recordedAt,
+        ]);
+    }
+
+    private function seedStatusFoundation(int $listingId, int $instrumentId, string $hash): int
+    {
+        DB::table('md_issuers')->insert([
+            'issuer_id' => $instrumentId, 'issuer_uid' => 'issuer-'.$instrumentId,
+            'legal_name' => 'Issuer '.$instrumentId, 'recorded_at' => '2023-01-01 00:00:00',
+            'created_at' => '2023-01-01 00:00:00',
+        ]);
+        DB::table('md_instruments')->insert([
+            'instrument_id' => $instrumentId, 'instrument_uid' => 'instrument-'.$instrumentId,
+            'issuer_id' => $instrumentId, 'instrument_type' => 'EQUITY', 'currency_code' => 'IDR',
+            'recorded_at' => '2023-01-01 00:00:00', 'created_at' => '2023-01-01 00:00:00',
+        ]);
+        DB::table('md_listings')->insert([
+            'listing_id' => $listingId, 'listing_uid' => 'listing-'.$listingId,
+            'instrument_id' => $instrumentId, 'exchange_code' => 'IDX', 'market_segment' => 'REGULAR',
+            'board_code' => 'RG', 'listed_date' => '2023-01-02', 'listing_state' => 'LISTED',
+            'recorded_at' => '2023-01-02 00:00:00', 'created_at' => '2023-01-02 00:00:00',
+        ]);
+        DB::table('md_listing_boards')->insert([
+            'listing_id' => $listingId, 'market_segment' => 'REGULAR', 'board_code' => 'RG',
+            'effective_from' => '2023-01-02 00:00:00', 'effective_to' => null,
+            'recorded_at' => '2023-01-02 00:00:00', 'retracted_at' => null,
+            'source_ref' => 'idx', 'change_reason' => 'TEST_FIXTURE',
+        ]);
+
+        return (int) DB::table('md_source_observations')->insertGetId([
+            'observation_uid' => hash('sha256', 'status-observation-'.$listingId),
+            'attempt_uid' => 'as-known-test', 'requested_trade_date' => '2026-03-24',
+            'source_mode' => 'authority_document', 'source_name' => 'IDX', 'provider' => 'IDX',
+            'sanitized_request_identity' => 'https://www.idx.co.id/notice',
+            'response_status' => 200, 'content_type' => 'application/json',
+            'acquired_at' => '2026-05-02 00:00:00', 'adapter_version' => 'test-v1',
+            'payload_hash' => $hash, 'outcome_state' => 'ACCEPTED', 'created_at' => '2026-05-02 00:00:00',
         ]);
     }
 }

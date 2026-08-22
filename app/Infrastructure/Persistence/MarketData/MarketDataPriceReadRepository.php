@@ -7,10 +7,12 @@ use Illuminate\Support\Facades\DB;
 class MarketDataPriceReadRepository
 {
     private $publications;
+    private $calendar;
 
-    public function __construct(EodPublicationRepository $publications = null)
+    public function __construct(EodPublicationRepository $publications = null, MarketCalendarRepository $calendar = null)
     {
         $this->publications = $publications ?: new EodPublicationRepository();
+        $this->calendar = $calendar ?: new MarketCalendarRepository();
     }
 
     public function priceFactsForReadablePublication($publication, array $tickerCodes): array
@@ -61,7 +63,11 @@ class MarketDataPriceReadRepository
 
     private function previousRawClose($tradeDate, array $tickerCodes): array
     {
-        $previousDate = DB::table('market_calendar')->where('cal_date', '<', $tradeDate)->where('is_trading_day', 1)->orderByDesc('cal_date')->value('cal_date');
+        $end = date('Y-m-d', strtotime($tradeDate.' -1 day'));
+        $start = config('market_data.scope.dataset_start', '2023-01-02');
+        if ($end < $start) return [];
+        $dates = $this->calendar->tradingDatesBetween($start, $end);
+        $previousDate = $dates === [] ? null : (string) end($dates);
         if (! $previousDate) return [];
         $publication = $this->publications->resolveCurrentReadablePublicationForTradeDate((string) $previousDate);
         if (! $publication) return [];

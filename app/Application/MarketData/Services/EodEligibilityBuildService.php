@@ -15,19 +15,22 @@ class EodEligibilityBuildService
     private $publications;
     private $decisions;
     private $eventRiskSources;
+    private $expectations;
 
     public function __construct(
         TickerMasterRepository $tickers,
         EodArtifactRepository $artifacts,
         EodPublicationRepository $publications,
         EligibilityDecisionService $decisions,
-        EventRiskSourceRepository $eventRiskSources = null
+        EventRiskSourceRepository $eventRiskSources = null,
+        ExpectedBarDecisionService $expectations = null
     ) {
         $this->tickers = $tickers;
         $this->artifacts = $artifacts;
         $this->publications = $publications;
         $this->decisions = $decisions;
         $this->eventRiskSources = $eventRiskSources;
+        $this->expectations = $expectations ?: new ExpectedBarDecisionService();
     }
 
     public function build($run, $requestedDate, $correctionMode = false)
@@ -80,8 +83,13 @@ class EodEligibilityBuildService
             $bar = isset($bars[$tickerId]) ? $bars[$tickerId] : null;
             $indicator = isset($indicators[$tickerId]) ? $indicators[$tickerId] : null;
             $statusContext = $tradingStatusContexts[$tickerId] ?? [];
-            $isSuspended = (int) ($statusContext['is_suspended'] ?? 0) === 1
-                && (string) ($statusContext['bar_expectation_state'] ?? '') === 'BAR_NOT_EXPECTED';
+            $expectation = $this->expectations->decideForListing(
+                (int) ($ticker['listing_id'] ?? 0),
+                $requestedDate,
+                $knownAt
+            );
+            $isSuspended = (string) $expectation['bar_expectation_state'] === 'BAR_NOT_EXPECTED'
+                && strpos((string) ($expectation['trading_status_code'] ?? ''), 'SUSPENS') !== false;
             $decision = $this->decisions->decide($bar, $indicator);
             $reasonCode = $decision['reason_code'];
             $eligible = $decision['eligible'];
@@ -114,20 +122,18 @@ class EodEligibilityBuildService
                 // Recorded separately so a reader never has to infer one dimension from another.
                 // A single scalar reason cannot carry an ordered set, and the first reason written
                 // would silently erase every later one.
-                'bar_expectation_state' => $isSuspended ? 'BAR_NOT_EXPECTED' : 'BAR_EXPECTATION_UNKNOWN',
+                'bar_expectation_state' => (string) $expectation['bar_expectation_state'],
                 'delivery_state' => isset($deliveredTickerIds[$tickerId]) ? 'DELIVERED' : 'NOT_DELIVERED',
                 'canonical_quality_state' => $this->canonicalQualityState($bar, isset($deliveredTickerIds[$tickerId])),
                 // An observation, never an input to the usability decision: W16 proved the
                 // decision consults no liquidity preference, and this must not become one.
                 'liquidity_state' => isset($dormantTickerIds[$tickerId]) ? 'DORMANT' : 'ACTIVE',
-                'temporal_status_state' => $isSuspended
-                    ? (string) ($statusContext['trading_status_code'] ?? 'SUSPENSION_OBSERVED')
-                    : 'UNKNOWN',
-                'trading_status_revision_id' => $isSuspended
-                    ? (int) $statusContext['trading_status_revision_id']
+                'temporal_status_state' => (string) ($expectation['trading_status_code'] ?? 'UNKNOWN'),
+                'trading_status_revision_id' => count($expectation['trading_status_revision_ids'] ?? []) === 1
+                    ? (int) $expectation['trading_status_revision_ids'][0]
                     : null,
-                'trading_status_source_observation_id' => $isSuspended
-                    ? (int) $statusContext['trading_status_source_observation_id']
+                'trading_status_source_observation_id' => count($expectation['trading_status_source_observation_ids'] ?? []) === 1
+                    ? (int) $expectation['trading_status_source_observation_ids'][0]
                     : null,
                 // A factual projection of the indicator flag only. EligibilityDecisionService
                 // remains independent of event preference as required by the W16 owner contract.

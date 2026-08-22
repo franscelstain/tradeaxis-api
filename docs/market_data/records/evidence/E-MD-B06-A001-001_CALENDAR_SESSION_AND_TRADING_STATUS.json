@@ -1,0 +1,147 @@
+{
+  "evidence_id": "E-MD-B06-A001-001",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B06",
+  "attempt_id": "MD-B06-A001",
+  "work_id": "MD-B06-A001",
+  "baseline_id": "MD-B06-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "change_impact_declaration": "CI-MD-B06-A001-001",
+  "issued_at": "2026-08-22T17:46:00+07:00",
+  "title": "Governed calendar, completed-session and temporal trading-status expectation proof at 78/78",
+  "attempt_outcome": "COMPLETE — calendar/status authority is read from temporal governed revisions, legacy execution paths are removed, fail-closed behavior is executed, and the current MD-B06 denominator is fully proven",
+  "authority_basis": {
+    "strategy": [
+      "authority/strategy/book/Market_Calendar_Requirements_Contract.md",
+      "authority/strategy/book/Trading_Status_Source_Contract_LOCKED.md",
+      "authority/strategy/book/Tickers_and_Identity_Dependency_Contract_LOCKED.md"
+    ],
+    "governance": [
+      "authority/governance/STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md",
+      "authority/governance/IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD.md",
+      "authority/governance/WORK_BASELINE_LOCK_STANDARD.md",
+      "authority/governance/CHANGE_IMPACT_DECLARATION_STANDARD.md",
+      "authority/governance/RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md",
+      "authority/governance/STAGE_CLOSURE_MANIFEST_STANDARD.md"
+    ],
+    "strategy_bytes_changed_by_attempt": 0
+  },
+  "baseline": {
+    "record": "records/evidence/MD-B06-A001-BL001_WORK_BASELINE_LOCK.json",
+    "issued_before_material_change": true,
+    "pre_change_state": "MD-B06 NOT_STARTED at a provisional 64 mandatory plus one optional denominator, with 25 mixed-classification members and no current B06 proof."
+  },
+  "traceability_normalization": {
+    "strategy_rows_reviewed": 158,
+    "semantic_predicates": 131,
+    "reference_only_non_predicates": 27,
+    "current_b06_denominator": 78,
+    "moved_to_executable_owner_with_b06_support": 53,
+    "contextual_parent_bindings": 68,
+    "conditional_pending": 0,
+    "optional_capability": 0,
+    "classification_backlog_before": 552,
+    "classification_backlog_after": 527,
+    "b06_mixed_classification_members_after": 0,
+    "fingerprint_or_rule_text_changes": 0
+  },
+  "implementation_remediation": [
+    {
+      "surface": "calendar/session resolution",
+      "before": "Calendar reads could manufacture COMPLETED revisions from the compatibility market_calendar table after a wall-clock cutoff; trading windows also used that legacy table.",
+      "after": "MarketCalendarRepository reads only terminal md_market_calendar_revisions, resolves as-known successors, validates locked IDX/REGULAR/Asia-Jakarta scope and reconciliation metadata, rejects conflicts, and never writes on read. A VERIFIED label without source/reconciliation evidence cannot enter a trading window."
+    },
+    {
+      "surface": "temporal status authority",
+      "before": "Any VERIFIED status row could establish expectation without stable instrument/board binding, a governed type, registered authority class/priority, immutable accepted source observation, full-session proof, or operator authority context.",
+      "after": "TemporalTradingStatusRepository binds stable listing/instrument and the temporal board valid on T, governed status type and carry semantics, source registry authority/priority, accepted observation hash, exchange origin, operator triple, supersession, and as-known cutoff. Derived, incomplete, conflicting, ambiguous, or unsupported evidence yields explicit UNKNOWN."
+    },
+    {
+      "surface": "expected-bar decision and consumers",
+      "before": "No single explainable service combined completed calendar, temporal listing and status facts; eligibility and event-risk paths could reduce expectation through legacy projections or incomplete status context.",
+      "after": "ExpectedBarDecisionService emits EXPECTED/NOT_EXPECTED/UNKNOWN with calendar revision, source/version, status revision/evidence and reason. Eligibility, event-risk and acquisition boundaries consume the governed decision; half days remain normal sessions and provider absence/dormancy/volume cannot establish NOT_EXPECTED."
+    },
+    {
+      "surface": "status capture/import and schema",
+      "before": "Trading-status transport did not require declared origin/reference/hash and canonical status revisions lacked the stable/source/operator metadata required by current authority.",
+      "after": "The additive hardening migration adds immutable authority metadata and a governed source registry; authoritative snapshot capture binds source observations and stable IDs; import is TRANSPORT_ONLY and requires origin/reference/hash plus the operator triple when applicable. Unsupported legacy calendar claims receive appended PROJECTED/UNKNOWN successors rather than historical edits."
+    },
+    {
+      "surface": "legacy calendar residue",
+      "before": "MarketDataPriceReadRepository and PriceScaleBreakDetectionService still read market_calendar directly; multiple current test/runtime fixtures encoded the obsolete contract.",
+      "after": "Every application read routes through MarketCalendarRepository. Current fixtures issue canonical verified revision facts with complete reconciliation metadata; a targeted search finds no DB::table('market_calendar') execution in app, tests/Unit/MarketData or tests/Support."
+    }
+  ],
+  "positive_and_negative_proof": {
+    "calendar": [
+      "verified completed session resolves with tier/revision/source context",
+      "projected and unclassified dates never become expected",
+      "missing date, holiday, incomplete reconciliation, wall-clock-only completion and terminal revision conflict fail closed",
+      "PROJECTED-to-VERIFIED becomes visible only after its successor is known",
+      "trading windows count governed trading dates and exclude unsupported VERIFIED labels"
+    ],
+    "status": [
+      "authoritative snapshot binds stable listing/instrument, event UID and accepted observation hash",
+      "board mismatch, non-carry event without end, missing evidence, derived authority, invalid exchange observation and partial-session NOT_EXPECTED resolve UNKNOWN",
+      "current status does not leak backward; a successor replaces its predecessor; unresolved same-priority conflict holds",
+      "governed operator entry succeeds only with authoritative reference, named operator and governed reason",
+      "long suspension remains status rather than dormancy; half-day expected decision stays normal and explainable"
+    ],
+    "gate_mutation": "CalendarStatusTraceabilityGateTest verifies exact 78-row partition, proof-map method existence, contextual binding, misownership/demotion rejection and unbound-proof rejection."
+  },
+  "test_execution": {
+    "whole_market_data_suite": {
+      "command": "php vendor/bin/phpunit tests/Unit/MarketData",
+      "result": "PASS",
+      "tests": 1800,
+      "assertions": 15567,
+      "errors": 0,
+      "failures": 0
+    },
+    "calendar_status_behavior": "PASS — CalendarProvenanceAndStatusTest 20 tests / 46 assertions",
+    "calendar_status_gate_self_test": "PASS — CalendarStatusTraceabilityGateTest 6 tests / 1049 assertions",
+    "migration_status": "PASS — both 2026_08_22_000001_add_temporal_listing_board_intervals and 2026_08_22_000001_harden_calendar_and_trading_status_expectation are applied",
+    "migration_integrity": "PASS inside the full suite — migration drift, destructive guard and SQLite schema mirror assertions",
+    "supporting_behavior": [
+      "AsKnownReplayBoundaryTest 10/69",
+      "AuthoritativeTradingStatusSnapshotServiceTest 2/13",
+      "ImportTradingStatusEventsCommandTest 8/38",
+      "TradingWindowWarmupTest 12/26",
+      "CoverageDenominatorKnowledgeCutoffTest 13/37",
+      "MarketDataPipelineIntegrationTest 56/1252"
+    ]
+  },
+  "residue_verdict": {
+    "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+    "checked": [
+      "no application path reads the compatibility market_calendar table",
+      "no read path creates calendar completion or status authority",
+      "no current test fixture proves the obsolete legacy-calendar contract",
+      "no current status fallback uses ticker text, current is_active, dormancy, volume, provider absence, recency or majority",
+      "53 downstream predicates remain NOT_ASSESSED at their actual owners and inherit no B06 proof"
+    ]
+  },
+  "dependency_impact": {
+    "MD-DEP-0004": "The MD-B06 entry obligation is complete; the dependency remains OPEN_NON_BLOCKING for 14 unopened normalized owners with 527 reported members.",
+    "MD-DEP-0003": "The B06 trading-status import/operator surface is guarded under current authority. The dependency remains OPEN_NON_BLOCKING for the separate operator-facing contracts owned by MD-B15/B17/B19/B21/B22."
+  },
+  "runtime_artifact_boundary": {
+    "storage_inspected": false,
+    "storage_mutated": false,
+    "raw_artifacts_referenced": [],
+    "database_mutated": true,
+    "database_mutation": "The additive calendar/status hardening migration was applied to the reachable local database; migrate:status confirms both 2026-08-22 migrations applied.",
+    "basis": "Current closure is deterministic source/schema/database/test proof and references no retained storage artifact, replay output or provider payload."
+  },
+  "relationship_requirements": {
+    "baseline": "MD-B06-A001-BL001",
+    "change_impact": "CI-MD-B06-A001-001",
+    "stage_precondition": "SC-MD-B05-A001-001",
+    "dependency_scope": "MD-DEP-0003;MD-DEP-0004",
+    "closure_manifest": "SC-MD-B06-A001-001"
+  },
+  "exact_resume_point": "Bind all 78 current MD-B06 predicates atomically to E-MD-B06-A001-001, then issue SC-MD-B06-A001-001 only if relationship, traceability, documentation and closure gates remain clean.",
+  "supersedes": "Nothing. No historical evidence, historical status/calendar observation, or MD-B06-A001 baseline was edited."
+}

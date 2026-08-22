@@ -3,6 +3,7 @@
 namespace App\Application\MarketData\Services;
 
 use App\Infrastructure\Persistence\MarketData\PriceScaleBreakRepository;
+use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -21,10 +22,12 @@ class PriceScaleBreakDetectionService
     private const CANDIDATE_RATIOS = [2, 2.5, 3, 4, 5, 8, 10, 20, 25, 40, 50, 100];
 
     private $breaks;
+    private $calendar;
 
-    public function __construct(PriceScaleBreakRepository $breaks = null)
+    public function __construct(PriceScaleBreakRepository $breaks = null, MarketCalendarRepository $calendar = null)
     {
         $this->breaks = $breaks ?: new PriceScaleBreakRepository();
+        $this->calendar = $calendar ?: new MarketCalendarRepository();
     }
 
     /**
@@ -167,18 +170,10 @@ class PriceScaleBreakDetectionService
      */
     private function matchCorporateAction(int $tickerId, string $tradeDate, array $config): array
     {
-        $tradingDates = DB::table('market_calendar')
-            ->where('is_trading_day', 1)
-            ->whereBetween('cal_date', [
-                date('Y-m-d', strtotime($tradeDate.' -'.($config['action_match_trading_days'] * 3).' days')),
-                date('Y-m-d', strtotime($tradeDate.' +'.($config['action_match_trading_days'] * 3).' days')),
-            ])
-            ->orderBy('cal_date')
-            ->pluck('cal_date')
-            ->map(function ($value) {
-                return (string) $value;
-            })
-            ->all();
+        $tradingDates = $this->calendar->tradingDatesBetween(
+            date('Y-m-d', strtotime($tradeDate.' -'.($config['action_match_trading_days'] * 3).' days')),
+            date('Y-m-d', strtotime($tradeDate.' +'.($config['action_match_trading_days'] * 3).' days'))
+        );
 
         $position = array_search($tradeDate, $tradingDates, true);
 

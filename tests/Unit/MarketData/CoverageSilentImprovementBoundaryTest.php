@@ -257,14 +257,7 @@ class CoverageSilentImprovementBoundaryTest extends TestCase
      */
     private function seedUniverse(int $count, int $withBars): void
     {
-        DB::table('market_calendar')->updateOrInsert(['cal_date' => '2026-03-24'], [
-            'is_trading_day' => 1,
-            'session_close_time' => '16:00',
-            'provenance_tier' => 'VERIFIED',
-            'source' => 'test_fixture',
-            'created_at' => '2023-01-01 00:00:00',
-            'updated_at' => '2023-01-01 00:00:00',
-        ]);
+        $this->seedVerifiedMarketCalendarDate('2026-03-24');
 
         for ($i = 1; $i <= $count; $i++) {
             DB::table('tickers')->insert([
@@ -272,6 +265,7 @@ class CoverageSilentImprovementBoundaryTest extends TestCase
                 'ticker_code' => 'TST'.$i,
                 'company_name' => 'Test '.$i,
                 'is_active' => 1,
+                'board_code' => 'RG',
                 'listed_date' => '2023-01-02',
                 'created_at' => '2023-01-01 00:00:00',
             ]);
@@ -289,6 +283,7 @@ class CoverageSilentImprovementBoundaryTest extends TestCase
         }
 
         (new TemporalIdentityRepository())->ensureLegacyProjection();
+        $statusHash = hash('sha256', 'coverage-status-fixture-'.$count);
         $sourceObservationId = DB::table('md_source_observations')->insertGetId([
             'observation_uid' => hash('sha256', 'coverage-status-fixture-'.$count),
             'attempt_uid' => hash('sha256', 'coverage-status-attempt-'.$count),
@@ -299,6 +294,7 @@ class CoverageSilentImprovementBoundaryTest extends TestCase
             'sanitized_request_identity' => 'fixture://coverage-status/'.$count,
             'acquired_at' => '2026-03-24 00:00:00',
             'adapter_version' => 'test-v2-status',
+            'payload_hash' => $statusHash,
             'outcome_state' => 'ACCEPTED',
             'validation_state' => 'PASSED',
             'created_at' => '2026-03-24 00:00:00',
@@ -306,14 +302,24 @@ class CoverageSilentImprovementBoundaryTest extends TestCase
         foreach (DB::table('md_listings')->whereIn('legacy_ticker_id', range(1, $count))->get() as $listing) {
             DB::table('md_trading_status_revisions')->insert([
                 'listing_id' => (int) $listing->listing_id,
-                'status_code' => 'REGULAR_SESSION_EXPECTED',
+                'instrument_id' => (int) $listing->instrument_id,
+                'status_event_uid' => hash('sha256', 'coverage-active|'.$listing->listing_id),
+                'status_type_code' => 'UNSUSPENDED',
+                'status_code' => 'ACTIVE',
                 'bar_expectation_state' => 'BAR_EXPECTED',
+                'board_code' => 'RG',
                 'authority_class' => 'EXCHANGE_AUTHORITATIVE',
-                'full_session_verified' => 1,
+                'source_name' => 'IDX_OFFICIAL',
+                'source_payload_hash' => $statusHash,
+                'full_session_verified' => 0,
                 'effective_from' => '2026-03-24 00:00:00',
+                'effective_to' => '2026-03-25 00:00:00',
                 'recorded_at' => '2026-03-24 00:00:00',
                 'source_observation_id' => $sourceObservationId,
+                'source_ref' => 'https://www.idx.co.id/status/2026-03-24',
                 'verification_state' => 'VERIFIED',
+                'observed_at' => '2026-03-24 00:00:00',
+                'announced_at' => '2026-03-24 00:00:00',
             ]);
         }
     }
@@ -328,15 +334,24 @@ class CoverageSilentImprovementBoundaryTest extends TestCase
 
         DB::table('md_trading_status_revisions')->insert([
             'listing_id' => $listingId,
+            'instrument_id' => (int) $current->instrument_id,
+            'status_event_uid' => hash('sha256', 'coverage-supersede|'.$listingId.'|'.$statusCode),
+            'status_type_code' => $statusCode === 'SUSPENSION_OBSERVED' ? 'SUSPENSION_OBSERVED' : $statusCode,
             'status_code' => $statusCode,
             'bar_expectation_state' => $expectation,
+            'board_code' => 'RG',
             'authority_class' => 'EXCHANGE_AUTHORITATIVE',
+            'source_name' => 'IDX_OFFICIAL',
+            'source_payload_hash' => (string) $current->source_payload_hash,
             'full_session_verified' => $fullSession ? 1 : 0,
             'effective_from' => '2026-03-24 00:00:00',
             'recorded_at' => '2026-03-24 00:00:01',
             'source_observation_id' => (int) $current->source_observation_id,
             'supersedes_revision_id' => (int) $current->status_revision_id,
+            'source_ref' => 'https://www.idx.co.id/status/2026-03-24',
             'verification_state' => 'VERIFIED',
+            'observed_at' => '2026-03-24 00:00:00',
+            'announced_at' => '2026-03-24 00:00:00',
         ]);
     }
 }

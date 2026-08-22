@@ -729,7 +729,11 @@ class EventRiskSourceRepository
                     $now
                 ),
                 $row,
-                ['source_ref', 'notes']
+                [
+                    'source_ref', 'origin_authority_class', 'source_payload_hash',
+                    'operator_name', 'governed_reason_code', 'authoritative_source_ref',
+                    'transport_state', 'notes',
+                ]
             )
         );
     }
@@ -872,82 +876,27 @@ class EventRiskSourceRepository
      */
     private function verifiedStatusContextsForTickerIds(array $tickerIds, $tradeDate, $knownAt = null): array
     {
-        $query = DB::table('md_trading_status_revisions as revision')
-            ->join('md_listings as listing', 'listing.listing_id', '=', 'revision.listing_id')
-            ->leftJoin('md_trading_status_revisions as newer', function ($join) use ($knownAt) {
-                $join->on('newer.supersedes_revision_id', '=', 'revision.status_revision_id')
-                    ->whereNull('newer.retracted_at');
-                if ($knownAt !== null && $knownAt !== '') {
-                    $join->where('newer.recorded_at', '<=', $knownAt);
-                }
-            })
-            ->whereIn('listing.legacy_ticker_id', $tickerIds)
-            ->whereNull('newer.status_revision_id')
-            ->whereNull('revision.retracted_at')
-            ->where('revision.verification_state', 'VERIFIED')
-            ->where('revision.effective_from', '<=', $tradeDate.' 23:59:59')
-            ->where(function ($where) use ($tradeDate) {
-                $where->whereNull('revision.effective_to')
-                    ->orWhere('revision.effective_to', '>', $tradeDate.' 00:00:00');
-            });
-        if ($knownAt !== null && $knownAt !== '') {
-            $query->where('revision.recorded_at', '<=', $knownAt);
-        }
-
-        $rows = $query->orderBy('listing.legacy_ticker_id')
-            ->orderByDesc('revision.recorded_at')
-            ->orderByDesc('revision.status_revision_id')
-            ->get([
-                'listing.legacy_ticker_id as ticker_id', 'revision.status_revision_id',
-                'revision.status_code', 'revision.bar_expectation_state',
-                'revision.full_session_verified', 'revision.authority_class',
-                'revision.source_observation_id',
-            ])
-            ->groupBy('ticker_id');
-
+        $listings = DB::table('md_listings')
+            ->whereIn('legacy_ticker_id', $tickerIds)
+            ->get(['listing_id', 'legacy_ticker_id']);
+        $resolver = new TemporalTradingStatusRepository();
         $contexts = [];
-        foreach ($rows as $tickerId => $revisions) {
-            $states = $revisions->map(function ($row) {
-                return implode('|', [
-                    (string) $row->status_code,
-                    (string) $row->bar_expectation_state,
-                    (int) $row->full_session_verified,
-                    (string) $row->authority_class,
-                ]);
-            })->unique()->values();
-
-            if ($states->count() !== 1) {
-                $contexts[(int) $tickerId] = [
-                    'trading_status_code' => 'CONFLICTING',
-                    'bar_expectation_state' => 'BAR_EXPECTATION_UNKNOWN',
-                    'trading_status_revision_id' => null,
-                    'trading_status_source_observation_id' => null,
-                    'trading_status_authority_class' => null,
-                    'is_suspended' => null,
-                    'expectation_unknown' => 1,
-                ];
+        foreach ($listings as $listing) {
+            $resolved = $resolver->resolveForListing((int) $listing->listing_id, $tradeDate, $knownAt);
+            if (! ($resolved['had_records'] ?? false)) {
                 continue;
             }
-
-            $row = $revisions->first();
-            $expectation = (string) $row->bar_expectation_state;
+            $expectation = (string) $resolved['bar_expectation_state'];
+            $knownExpectation = in_array($expectation, ['BAR_EXPECTED', 'BAR_NOT_EXPECTED'], true);
+            $statusCode = strtoupper(trim((string) $resolved['status_code']));
             $isVerifiedNotExpected = $expectation === 'BAR_NOT_EXPECTED'
-                && (int) $row->full_session_verified === 1
-                && (string) $row->authority_class === 'EXCHANGE_AUTHORITATIVE'
-                && (int) $row->source_observation_id > 0;
-            if ($expectation === 'BAR_NOT_EXPECTED' && ! $isVerifiedNotExpected) {
-                $expectation = 'BAR_EXPECTATION_UNKNOWN';
-            }
-            $knownExpectation = in_array($expectation, ['BAR_EXPECTED', 'BAR_NOT_EXPECTED'], true)
-                && (int) $row->source_observation_id > 0;
-            $statusCode = strtoupper(trim((string) $row->status_code));
-
-            $contexts[(int) $tickerId] = [
+                && (bool) ($resolved['full_session_verified'] ?? false);
+            $contexts[(int) $listing->legacy_ticker_id] = [
                 'trading_status_code' => $statusCode,
                 'bar_expectation_state' => $expectation,
-                'trading_status_revision_id' => $knownExpectation ? (int) $row->status_revision_id : null,
-                'trading_status_source_observation_id' => $knownExpectation ? (int) $row->source_observation_id : null,
-                'trading_status_authority_class' => $knownExpectation ? (string) $row->authority_class : null,
+                'trading_status_revision_id' => $knownExpectation ? $resolved['status_revision_id'] : null,
+                'trading_status_source_observation_id' => $knownExpectation ? $resolved['source_observation_id'] : null,
+                'trading_status_authority_class' => $knownExpectation ? (string) $resolved['authority_class'] : null,
                 'is_suspended' => $isVerifiedNotExpected && strpos($statusCode, 'SUSPENS') !== false ? 1 : 0,
                 'expectation_unknown' => $knownExpectation ? 0 : 1,
             ];

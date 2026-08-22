@@ -186,13 +186,12 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
     public function test_load_bars_window_uses_market_calendar_trading_window_for_ma50_history(): void
     {
         $rows = [];
-        $calendarRows = [];
         $start = Carbon::parse('2026-01-01');
 
         for ($i = 0; $i < 60; $i++) {
             $date = $start->copy()->addDays($i * 2)->toDateString();
             $close = 100 + $i;
-            $calendarRows[] = $this->calendarRow($date, true);
+            $this->seedVerifiedMarketCalendarDate($date);
             $rows[] = [
                 'trade_date' => $date,
                 'ticker_id' => 1,
@@ -209,7 +208,6 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
             ];
         }
 
-        DB::table('market_calendar')->insert($calendarRows);
         DB::table('eod_bars')->insert($rows);
 
         $window = (new EodArtifactRepository())->loadBarsWindow($rows[59]['trade_date'], 60);
@@ -225,20 +223,16 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('MARKET_CALENDAR_REQUIRES_REQUESTED_TRADING_DATE');
 
-        DB::table('market_calendar')->insert([
-            $this->calendarRow('2026-01-01', true),
-            $this->calendarRow('2026-01-02', true),
-        ]);
+        $this->seedVerifiedMarketCalendarDate('2026-01-01');
+        $this->seedVerifiedMarketCalendarDate('2026-01-02');
 
         (new EodArtifactRepository())->loadBarsWindow('2026-01-03', 2);
     }
 
     public function test_load_bars_window_allows_partial_history_at_dataset_start(): void
     {
-        DB::table('market_calendar')->insert([
-            $this->calendarRow('2026-01-01', true),
-            $this->calendarRow('2026-01-02', true),
-        ]);
+        $this->seedVerifiedMarketCalendarDate('2026-01-01');
+        $this->seedVerifiedMarketCalendarDate('2026-01-02');
 
         DB::table('eod_bars')->insert([
             $this->barForDate(1, '2026-01-01', 100),
@@ -288,21 +282,6 @@ class EodArtifactRepositoryPartialUpsertTest extends TestCase
             'run_id' => 1,
             'publication_id' => 1,
             'created_at' => Carbon::now()->toDateTimeString(),
-        ];
-    }
-
-    private function calendarRow(string $date, bool $isTradingDay): array
-    {
-        return [
-            'cal_date' => $date,
-            'is_trading_day' => $isTradingDay, 'provenance_tier' => 'VERIFIED' ? 1 : 0,
-            'holiday_name' => $isTradingDay ? 'HARI BURSA' : 'AKHIR PEKAN',
-            'session_open_time' => null,
-            'session_close_time' => null,
-            'breaks_json' => null,
-            'source' => 'unit_test',
-            'created_at' => Carbon::now()->toDateTimeString(),
-            'updated_at' => Carbon::now()->toDateTimeString(),
         ];
     }
 
