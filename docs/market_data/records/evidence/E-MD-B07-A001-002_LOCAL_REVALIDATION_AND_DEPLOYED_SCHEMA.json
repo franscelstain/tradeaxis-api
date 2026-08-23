@@ -1,0 +1,226 @@
+{
+  "evidence_id": "E-MD-B07-A001-002",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B07",
+  "attempt_id": "MD-B07-A001",
+  "work_id": "MD-B07-A001",
+  "baseline_id": "MD-B07-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "change_impact_declaration": "CI-MD-B07-A001-001",
+  "issued_at": "2026-08-23T13:10:00+07:00",
+  "title": "Returned local proof revalidation and deployed-schema closure evidence for MD-B07-A001",
+  "attempt_outcome": "COMPLETE — the previously deferred deployed-MariaDB proof, hardened control-plane revalidation, exact B07 execution proof, and full-suite criterion all pass under the same A001 attempt.",
+  "evidence_lineage": {
+    "prior_evidence": "E-MD-B07-A001-001",
+    "relationship": "CARRIED_FROM_AND_REVALIDATED",
+    "prior_record_edited": false,
+    "note": "E-MD-B07-A001-001 remains immutable and historically accurate about the earlier environment blocker. This record admits the later returned execution needed to complete the same valid attempt."
+  },
+  "repository_identity": {
+    "expected_source_handoff_head": "4aa5679a2f60d2b3e393b17f0647c3526e90d5f4",
+    "actual_git_head_from_LOCAL_B07_001": "4aa5679a2f60d2b3e393b17f0647c3526e90d5f4",
+    "state_compatible": true,
+    "unexpected_tracked_mutation_after_testing": false,
+    "manual_proof_directory_is_external_raw_proof": true
+  },
+  "raw_artifact_package": {
+    "archive_name": "LOCAL-B07.zip",
+    "sha256": "F4C1D9E9BD4B3217BED85C116EAE497A029014197EF1E0F9D98588F0E9F80723",
+    "bytes": 26471,
+    "artifacts": [
+      {
+        "execution_id": "LOCAL-B07-001",
+        "path": "manual_proof/LOCAL-B07-001_migration_status.txt",
+        "sha256": "3A2F3FBE58F9A88AE6414444A3526465FD70B05DD43C358722220B74329C4028",
+        "bytes": 13632,
+        "verdict": "PASS",
+        "observed": "MariaDB reachable; HEAD 4aa5679a2f60d2b3e393b17f0647c3526e90d5f4; both B07 migrations already applied."
+      },
+      {
+        "execution_id": "LOCAL-B07-002",
+        "path": "manual_proof/LOCAL-B07-002_b07_migrate.txt",
+        "sha256": "AD3E14D14FA95F1D504823BD418E327AA1D9CEF6ED468CE10BFFB36B2C132413",
+        "bytes": 13612,
+        "verdict": "PASS",
+        "observed": "Exact B07 migration commands exit 0; Nothing to migrate; final ledger still shows both applied."
+      },
+      {
+        "execution_id": "LOCAL-B07-003",
+        "path": "manual_proof/LOCAL-B07-003_deployed_schema.json",
+        "sha256": "002AE83EB87191FA580AF5FD85854A81A10D7357E0DD9104F0CB9C81146FB281",
+        "bytes": 2051,
+        "verdict": "PASS",
+        "observed": "Read-only deployed-schema probe: MariaDB 10.4.27, tradeaxis, all required B07 columns and named indexes conform."
+      },
+      {
+        "execution_id": "LOCAL-B07-004",
+        "path": "manual_proof/LOCAL-B07-004_migration_integrity.txt",
+        "sha256": "3B1571D53E2C62ABBB8FA25BBE7C62F501D07624398C7B52AE68734BC7CEF0BC",
+        "bytes": 1420,
+        "verdict": "PASS",
+        "observed": "MigrationIntegrityAndDriftTest: 9 tests / 21 assertions; no skip; exit 0."
+      },
+      {
+        "execution_id": "LOCAL-B07-005",
+        "path": "manual_proof/LOCAL-B07-005_control_plane.txt",
+        "sha256": "00C5DF5D07EDDA4EE61413C3D07B84C4CC1D5A216E47C107DA2460B37DD5D36B",
+        "bytes": 17704,
+        "verdict": "PASS",
+        "observed": "Documentation 867/867 role/ID/current-verification; exact 23-stage register; relationship 112/157; 18 mutation/control checks all expected."
+      },
+      {
+        "execution_id": "LOCAL-B07-006",
+        "path": "manual_proof/LOCAL-B07-006_current_state_generator.txt",
+        "sha256": "BEAD37E5FD64393C00DBB0C67EC8A4F359322F9FCFC26FB3BE5CA5515BB179F9",
+        "bytes": 1064,
+        "verdict": "PASS",
+        "observed": "CURRENT_STATE pre-proof hash stable before/after two generator runs; both exits 0."
+      },
+      {
+        "execution_id": "LOCAL-B07-007",
+        "path": "manual_proof/LOCAL-B07-007_phpunit_B07.txt",
+        "sha256": "7306BB6AA44ECAB9F35C57C5ED49F45A1CB4FC09EA30678BBA4F78EAA10D6964",
+        "bytes": 10600,
+        "verdict": "PASS",
+        "observed": "All 18 B07 proof files executed; 165 tests / 824 assertions; every invocation exit 0."
+      },
+      {
+        "execution_id": "LOCAL-B07-008",
+        "path": "manual_proof/LOCAL-B07-008_governance_gates.txt",
+        "sha256": "C5A9F6AF8EDA55BE9E005AD9E41DBFCED41E949AF9D1466A084D4DA39B4ED381",
+        "bytes": 5778,
+        "verdict": "PASS",
+        "observed": "B07 traceability 115 denominator; proof 115/115; classification backlog 502/13; supporting gates exit 0."
+      },
+      {
+        "execution_id": "LOCAL-B07-009",
+        "path": "manual_proof/LOCAL-B07-009_phpunit_full.txt",
+        "sha256": "AF29FFD7AC95FF26E675AF5D55422AFA42986DB40478B15015A9611D5EBF3DE5",
+        "bytes": 5214,
+        "verdict": "PASS",
+        "observed": "Full suite 1819 tests / 17215 assertions; 0 failures/errors/skips; exit 0."
+      },
+      {
+        "execution_id": "REPOSITORY_STATUS",
+        "path": "manual_proof/HANDOFF_STATUS_AFTER_TEST.txt",
+        "sha256": "091B8E872741C1E4EBEC2E386B474BA240C64539FF35A25B7F79C8AC2D60C5E3",
+        "bytes": 861,
+        "verdict": "PASS",
+        "observed": "Only the expected prior A001 patch files plus manual_proof are dirty/untracked."
+      },
+      {
+        "execution_id": "REPOSITORY_DIFF",
+        "path": "manual_proof/HANDOFF_DIFF_AFTER_TEST.patch",
+        "sha256": "6BCD9854628B6637EB57EBD0068A3B7EDB23CD1105959F25AD8D71266BF317FA",
+        "bytes": 54512,
+        "verdict": "PASS",
+        "observed": "Tracked diff contains exactly the nine modified files from the prior A001 patch; no generator-created tracked drift."
+      }
+    ]
+  },
+  "deployed_schema_proof": {
+    "database_reachable": true,
+    "database_name": "tradeaxis",
+    "server_version": "10.4.27-MariaDB",
+    "migrations": {
+      "2026_08_22_000002_harden_source_observation_acquisition": "APPLIED",
+      "2026_08_22_000003_add_source_observation_rejected_rows": "APPLIED"
+    },
+    "column_checks": {
+      "md_source_observations": "PASS (2 B07-added columns)",
+      "md_source_observation_rows": "PASS (20 expected columns)",
+      "md_source_observation_identity_bindings": "PASS (8 expected columns)",
+      "md_source_observation_revision_comparisons": "PASS (19 expected columns)",
+      "md_source_observation_rejected_rows": "PASS (16 expected columns)"
+    },
+    "index_checks": {
+      "md_source_observations": "PASS (1 expected B07 index)",
+      "md_source_observation_rows": "PASS (3)",
+      "md_source_observation_identity_bindings": "PASS (2)",
+      "md_source_observation_revision_comparisons": "PASS (5)",
+      "md_source_observation_rejected_rows": "PASS (2)"
+    },
+    "migration_integrity": "PASS — 9 tests / 21 assertions, zero skip, exit 0",
+    "prior_environment_blocker": "DISCHARGED"
+  },
+  "control_plane_revalidation": {
+    "local_pre_issuance": {
+      "physical_documents": 867,
+      "document_role_rows": 867,
+      "document_id_rows": 867,
+      "current_verification_rows": 867,
+      "document_id_unique": true,
+      "stage_rows": 23,
+      "relationship_records": 112,
+      "relationships": 157,
+      "documentation_gate": "PASS",
+      "relationship_gate": "PASS",
+      "mutation_self_test": "PASS — 18 checks (14 FAILS_CLOSED, 4 controls)",
+      "current_state_idempotence": "PASS — FEDF7E7538F9CDD9D278918705769B2DA2D6053297FDC06652E1D970BBF2DB5D"
+    },
+    "dependency_state": "MD-DEP-0004 remains OPEN_NON_BLOCKING for 502 mixed-classification reference members across 13 unopened stages; B07 entry obligation is complete.",
+    "note": "Post-issuance document/work-record counts are re-gated statically after this evidence and the closure manifest are registered."
+  },
+  "b07_execution_revalidation": {
+    "proof_surface": {
+      "files": 18,
+      "tests": 165,
+      "assertions": 824,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "result": "PASS"
+    },
+    "traceability": {
+      "denominator": 115,
+      "satisfied": 115,
+      "unbound": 0,
+      "transitional": 0,
+      "conditional_pending": 0,
+      "mixed_classification_debt": 0,
+      "result": "PASS"
+    },
+    "semantic_binding": "The existing 115 matrix rows remain bound to E-MD-B07-A001-001; LOCAL-B07-007 and LOCAL-B07-008 re-executed and revalidated those bindings without invalidation. This additive closure evidence does not rewrite the earlier evidence identifier.",
+    "full_suite": {
+      "tests": 1819,
+      "assertions": 17215,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "result": "PASS"
+    }
+  },
+  "residue_revalidation": {
+    "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_THE_B07_SURFACE",
+    "basis": [
+      "No application/runtime source or migration changed during the post-comprehension control-plane patch.",
+      "The exact 18-file B07 behavioral surface re-executed green, including immutable observation, capture-before-parse, rejected-row, temporal mapping, duplicate-conflict, adjusted-close boundary, redaction and fail-closed tests.",
+      "A targeted post-proof source search found no application update/delete path for md_source_observations; the only direct update match is a test fixture outside the B07 canonical acquisition path.",
+      "EodBarsIngestService still writes canonical adj_close as null; provider adjusted close remains observation evidence.",
+      "The 88 moved predicates remain owned by downstream stages and are not claimed by B07."
+    ]
+  },
+  "findings_dependencies": {
+    "open_findings": [
+      "F-MD-B00-A001-001 PARTIALLY_RESOLVED",
+      "F-MD-B01-A001-001 PARTIALLY_RESOLVED",
+      "F-MD-B01-A008-001 OPEN (MD-B14)",
+      "F-MD-B01-A014-001 OPEN (MD-B19)"
+    ],
+    "b07_blocking_finding": "NONE",
+    "dependencies": [
+      "MD-DEP-0004 OPEN_NON_BLOCKING — B07 obligation complete; 502/13 downstream backlog",
+      "MD-DEP-0003 OPEN_NON_BLOCKING — unrelated downstream ownership"
+    ],
+    "b07_blocking_dependency": "NONE"
+  },
+  "closure_eligibility": {
+    "eligible": true,
+    "closure_manifest": "SC-MD-B07-A001-001",
+    "reason": "All current B07 denominator, positive/fail-closed execution, deployed schema, control plane, residue, relationship, and full-suite requirements are satisfied; no runtime-dependent proof remains pending."
+  },
+  "supersedes": "Nothing. E-MD-B07-A001-001 is retained unchanged."
+}

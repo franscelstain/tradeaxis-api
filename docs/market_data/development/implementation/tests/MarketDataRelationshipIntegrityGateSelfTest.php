@@ -116,6 +116,45 @@ function csvSet($path, $matchColumn, $matchNeedle, $setColumn, $value)
     return true;
 }
 
+/** Remove exactly one CSV row by column/substring; used to prove completeness gates fail closed. */
+function csvDropFirst($path, $matchColumn, $matchNeedle)
+{
+    $rows = [];
+    $f = fopen($path, 'r');
+    while (($r = fgetcsv($f)) !== false) {
+        $rows[] = $r;
+    }
+    fclose($f);
+    if (! $rows) {
+        return false;
+    }
+    $header = $rows[0];
+    $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', $header[0]);
+    $idx = array_flip($header);
+    if (! isset($idx[$matchColumn])) {
+        return false;
+    }
+    $hit = false;
+    $out = [$rows[0]];
+    foreach (array_slice($rows, 1) as $r) {
+        if (! $hit && isset($r[$idx[$matchColumn]]) && strpos($r[$idx[$matchColumn]], $matchNeedle) !== false) {
+            $hit = true;
+            continue;
+        }
+        $out[] = $r;
+    }
+    if (! $hit) {
+        return false;
+    }
+    $o = fopen($path, 'w');
+    foreach ($out as $r) {
+        fputcsv($o, $r);
+    }
+    fclose($o);
+
+    return true;
+}
+
 $results = [];
 $failed = false;
 
@@ -153,6 +192,23 @@ $stray = $work.'/development/implementation/SELF_TEST_UNREGISTERED.md';
 file_put_contents($stray, "stray\n");
 record($results, $failed, 'unregistered physical document added', 1, runGate($docGate), is_file($stray));
 @unlink($stray);
+
+$idRegistry = $work.'/authority/governance/DOCUMENT_ID_REGISTRY.csv';
+$idRegistryBackup = file_get_contents($idRegistry);
+$applied = csvDropFirst($idRegistry, 'document_path', 'development/implementation/tests/MarketDataDocumentationIntegrityGate.php');
+record($results, $failed, 'a physical document loses its Document ID registration', 1, runGate($docGate), $applied);
+file_put_contents($idRegistry, $idRegistryBackup);
+
+$applied = csvSet($idRegistry, 'document_path', 'development/implementation/tests/MarketDataRelationshipIntegrityGateSelfTest.php', 'document_id', 'MD-DOC-00211');
+record($results, $failed, 'two physical documents share one Document ID', 1, runGate($docGate), $applied);
+file_put_contents($idRegistry, $idRegistryBackup);
+
+$stageRegister = $work.'/development/implementation/MD_IMPLEMENTATION_STAGE_REGISTER.md';
+$stageRegisterBackup = file_get_contents($stageRegister);
+$stageMutated = preg_replace('/^\| `MD-B22` \|.*(?:\R|$)/m', '', $stageRegisterBackup, 1, $stageMutationCount);
+file_put_contents($stageRegister, $stageMutated);
+record($results, $failed, 'stage register loses the MD-B22 canonical row', 1, runGate($docGate), $stageMutationCount === 1 && $stageMutated !== $stageRegisterBackup);
+file_put_contents($stageRegister, $stageRegisterBackup);
 
 $frozen = $work.'/authority/strategy/book/EOD_Bars_Contract.md';
 $frozenBackup = file_get_contents($frozen);
