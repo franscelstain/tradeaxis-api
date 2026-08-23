@@ -164,6 +164,9 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
             'requested_trade_date' => $tradeDate,
             'source_mode' => 'manual_file',
             'source_name' => 'LOCAL_FILE',
+            'source_priority' => 'SECONDARY_CONTROLLED_RECOVERY',
+            'active_source_decision' => 'manual_file',
+            'retry_attempt_count' => 0,
             'provider' => null,
             'sanitized_request_identity' => 'local-file:'.hash('sha256', $resolvedPath),
             'content_type' => $format === 'csv' ? 'text/csv' : ($format === 'json' ? 'application/json' : null),
@@ -191,6 +194,9 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
         $this->lastAcquisitionTelemetry = array_merge([
             'source_mode' => 'manual_file',
             'source_name' => 'LOCAL_FILE',
+            'source_priority' => 'SECONDARY_CONTROLLED_RECOVERY',
+            'active_source_decision' => 'manual_file',
+            'retry_attempt_count' => 0,
             'provider' => null,
             'input_file' => $path,
             'source_input_file' => $path,
@@ -206,6 +212,7 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
             'trade_date' => $tradeDate,
             'source_final_status' => 'SUCCESS',
             'final_reason_code' => null,
+            'failure_class_summary' => [],
         ], $context);
     }
 
@@ -218,6 +225,9 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
         $this->lastAcquisitionTelemetry = array_merge([
             'source_mode' => 'manual_file',
             'source_name' => 'LOCAL_FILE',
+            'source_priority' => 'SECONDARY_CONTROLLED_RECOVERY',
+            'active_source_decision' => 'manual_file',
+            'retry_attempt_count' => 0,
             'provider' => null,
             'input_file' => $path,
             'source_input_file' => $path,
@@ -233,6 +243,7 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
             'trade_date' => $tradeDate,
             'source_final_status' => 'FAILED',
             'final_reason_code' => $reasonCode,
+            'failure_class_summary' => ['NON_TRANSIENT' => 1],
             'manual_file_empty_blocked' => true,
         ], $context);
     }
@@ -253,6 +264,10 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
         return new SourceAcquisitionException($message, $reasonCode, 0, null, array_merge([
             'source_mode' => 'manual_file',
             'source_name' => 'LOCAL_FILE',
+            'source_priority' => 'SECONDARY_CONTROLLED_RECOVERY',
+            'active_source_decision' => 'manual_file',
+            'retry_attempt_count' => 0,
+            'failure_class_summary' => ['NON_TRANSIENT' => 1],
             'provider' => null,
             'final_reason_code' => $reasonCode,
             'source_final_status' => 'FAILED',

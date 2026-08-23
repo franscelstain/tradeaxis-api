@@ -471,7 +471,7 @@ class PublicApiEodBarsAdapterTest extends TestCase
         $this->assertStringContainsString('"quote":[{}]', $telemetry['provider_error_sample']);
     }
 
-    public function test_api_adapter_caps_rate_limit_retry_budget_to_locked_maximum()
+    public function test_api_adapter_uses_the_registered_retry_budget_without_hidden_clamp()
     {
         $this->bindMarketDataConfig($this->config([
             'endpoint_template' => 'https://example.test/eod/{date}',
@@ -489,16 +489,16 @@ class PublicApiEodBarsAdapterTest extends TestCase
 
         try {
             $adapter->fetchOrLoadEodBars('2026-03-20', 'api');
-            $this->fail('Expected rate-limit exception after capped retry exhaustion.');
+            $this->fail('Expected rate-limit exception after configured retry exhaustion.');
         } catch (SourceAcquisitionException $e) {
             $context = $e->context();
 
             $this->assertSame('RUN_SOURCE_RATE_LIMIT', $e->reasonCode());
-            $this->assertSame(4, $calls);
-            $this->assertSame(3, $context['retry_max']);
-            $this->assertSame(4, $context['attempt_count']);
-            $this->assertCount(4, $context['attempts']);
-            $this->assertFalse($context['attempts'][3]['will_retry']);
+            $this->assertSame(6, $calls);
+            $this->assertSame(5, $context['retry_max']);
+            $this->assertSame(6, $context['attempt_count']);
+            $this->assertCount(6, $context['attempts']);
+            $this->assertFalse($context['attempts'][5]['will_retry']);
         }
     }
 
@@ -627,6 +627,10 @@ class PublicApiEodBarsAdapterTest extends TestCase
         $this->assertSame(2, $calls);
         $this->assertSame('generic', $telemetry['provider']);
         $this->assertSame('API_FREE', $telemetry['source_name']);
+        $this->assertSame('PRIMARY', $telemetry['source_priority']);
+        $this->assertSame('api_free', $telemetry['active_source_decision']);
+        $this->assertSame(1, $telemetry['retry_attempt_count']);
+        $this->assertSame(['TRANSIENT' => 1], $telemetry['failure_class_summary']);
         $this->assertSame(2, $telemetry['attempt_count']);
         $this->assertTrue($telemetry['success_after_retry']);
         $this->assertFalse($telemetry['retry_exhausted']);
@@ -1033,6 +1037,128 @@ class PublicApiEodBarsAdapterTest extends TestCase
             $this->assertSame('yahoo_chart_v2', $e->context()['active_adapter_version']);
             $this->assertSame('yahoo_chart_schema_unreviewed', $e->context()['active_schema_version']);
             $this->assertSame(0, $requests);
+        }
+    }
+
+    public function test_single_date_circuit_breaker_stops_fanout_and_preserves_registered_root_failure_reason()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'provider' => 'yahoo_finance',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}',
+            'source_name' => 'YAHOO_FINANCE',
+            'yahoo' => ['symbol_suffix' => '.JK', 'range' => '10d', 'interval' => '1d'],
+        ], 0, 0));
+
+        $requestedUrls = [];
+        $adapter = new PublicApiEodBarsAdapter(function ($url) use (&$requestedUrls) {
+            $requestedUrls[] = $url;
+
+            return [
+                'status' => 429,
+                'headers' => ['Content-Type' => 'application/json'],
+                'body' => '{"error":"rate limit"}',
+            ];
+        });
+
+        try {
+            $adapter->fetchOrLoadEodBars('2026-05-01', 'api', ['A001', 'A002', 'A003', 'A004', 'A005', 'A006', 'A007', 'A008', 'A009', 'A010']);
+            $this->fail('Circuit breaker must stop a wholesale failing fan-out.');
+        } catch (SourceAcquisitionException $e) {
+            $context = $e->context();
+            $this->assertSame('RUN_SOURCE_RATE_LIMIT', $e->reasonCode());
+            $this->assertSame('RUN_SOURCE_RATE_LIMIT', $context['final_reason_code']);
+            $this->assertTrue($context['circuit_breaker_open']);
+            $this->assertSame('CIRCUIT_OPEN', $context['source_protection_state']);
+            $this->assertSame('RUN_SOURCE_RATE_LIMIT', $context['circuit_breaker_trigger_reason_code']);
+            $this->assertSame(6, $context['attempted_ticker_count']);
+            $this->assertSame(4, $context['unattempted_ticker_count']);
+            $this->assertSame(6, count($requestedUrls));
+        }
+    }
+
+    public function test_range_circuit_breaker_protects_range_window_fanout()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'provider' => 'yahoo_finance',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}',
+            'source_name' => 'YAHOO_FINANCE',
+            'yahoo' => ['symbol_suffix' => '.JK', 'range' => '10d', 'interval' => '1d'],
+        ], 0, 0));
+
+        $requestedUrls = [];
+        $adapter = new PublicApiEodBarsAdapter(function ($url) use (&$requestedUrls) {
+            $requestedUrls[] = $url;
+
+            return [
+                'status' => 429,
+                'headers' => ['Content-Type' => 'application/json'],
+                'body' => '{"error":"rate limit"}',
+            ];
+        });
+
+        try {
+            $adapter->fetchOrLoadEodBarsRange(
+                '2026-05-01',
+                '2026-05-07',
+                'api',
+                ['A001', 'A002', 'A003', 'A004', 'A005', 'A006', 'A007', 'A008', 'A009', 'A010'],
+                ['2026-05-01'],
+                ['source_acquisition_batch_id' => 'B08_RANGE_BREAKER']
+            );
+            $this->fail('Range-window fan-out must stop once the breaker opens.');
+        } catch (SourceAcquisitionException $e) {
+            $context = $e->context();
+            $this->assertSame('RUN_SOURCE_RATE_LIMIT', $e->reasonCode());
+            $this->assertSame('SYSTEMIC_FAILED', $context['source_acquisition_state']);
+            $this->assertTrue($context['circuit_breaker_open']);
+            $this->assertSame('RUN_SOURCE_RATE_LIMIT', $context['circuit_breaker_trigger_reason_code']);
+            $this->assertSame(6, $context['attempted_ticker_count']);
+            $this->assertSame(4, $context['unattempted_ticker_count']);
+            $this->assertSame(6, count($requestedUrls));
+        }
+    }
+
+    public function test_benchmark_fanout_uses_the_same_circuit_breaker_and_root_reason_taxonomy()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'provider' => 'yahoo_finance',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}',
+            'source_name' => 'YAHOO_FINANCE',
+            'yahoo' => ['symbol_suffix' => '.JK', 'range' => '10d', 'interval' => '1d'],
+        ], 0, 0));
+
+        $requestedUrls = [];
+        $adapter = new PublicApiEodBarsAdapter(function ($url) use (&$requestedUrls) {
+            $requestedUrls[] = $url;
+
+            return [
+                'status' => 429,
+                'headers' => ['Content-Type' => 'application/json'],
+                'body' => '{"error":"rate limit"}',
+            ];
+        });
+
+        $benchmarks = [];
+        for ($i = 1; $i <= 10; $i++) {
+            $benchmarks[] = [
+                'benchmark_code' => 'B'.str_pad((string) $i, 2, '0', STR_PAD_LEFT),
+                'provider_symbol' => '^B'.str_pad((string) $i, 2, '0', STR_PAD_LEFT),
+                'instrument_type' => 'index',
+            ];
+        }
+
+        try {
+            $adapter->fetchOrLoadBenchmarkBars('2026-05-01', 'api', $benchmarks);
+            $this->fail('Benchmark fan-out must stop once the breaker opens.');
+        } catch (SourceAcquisitionException $e) {
+            $context = $e->context();
+            $this->assertSame('RUN_SOURCE_RATE_LIMIT', $e->reasonCode());
+            $this->assertSame('RUN_SOURCE_RATE_LIMIT', $context['final_reason_code']);
+            $this->assertTrue($context['circuit_breaker_open']);
+            $this->assertSame('RUN_SOURCE_RATE_LIMIT', $context['circuit_breaker_trigger_reason_code']);
+            $this->assertSame(6, $context['attempted_ticker_count']);
+            $this->assertSame(4, $context['unattempted_ticker_count']);
+            $this->assertSame(6, count($requestedUrls));
         }
     }
 

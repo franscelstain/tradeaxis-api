@@ -67,7 +67,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
             'supersedes_run_id' => null,
             'started_at' => '2026-04-21T17:00:00+07:00',
             'finished_at' => '2026-04-21T17:21:00+07:00',
-            'notes' => 'candidate_publication_id=1201; source_name=API_FREE; source_provider=generic; source_timeout_seconds=15; source_retry_max=3; source_attempt_count=2; source_success_after_retry=yes; source_final_http_status=200; source_final_reason_code=RUN_SOURCE_TIMEOUT; publication_reprocess_state=REPUBLISHED; publication_reprocess_republished_trade_date_count=1; publication_reprocess_republished_trade_dates=2026-05-09; publication_reprocess_candidate_trade_dates=2026-05-09; publication_reprocess_republication_mode=AUTOMATED_READABLE_CORRECTION; publication_reprocess_correction_ids=51; publication_reprocess_correction_id=51',
+            'notes' => 'candidate_publication_id=1201; source_name=API_FREE; source_provider=generic; source_timeout_seconds=15; source_retry_max=3; source_attempt_count=2; source_priority=PRIMARY; active_source_decision=api_free; source_retry_attempt_count=1; source_failure_class_summary_json={"TRANSIENT":1}; source_success_after_retry=yes; source_final_http_status=200; source_final_reason_code=RUN_SOURCE_TIMEOUT; publication_reprocess_state=REPUBLISHED; publication_reprocess_republished_trade_date_count=1; publication_reprocess_republished_trade_dates=2026-05-09; publication_reprocess_candidate_trade_dates=2026-05-09; publication_reprocess_republication_mode=AUTOMATED_READABLE_CORRECTION; publication_reprocess_correction_ids=51; publication_reprocess_correction_id=51',
         ];
         $publication = (object) [
             'publication_id' => 1201,
@@ -135,13 +135,40 @@ class MarketDataEvidenceExportServiceTest extends TestCase
             'event_type' => 'STAGE_COMPLETED',
             'provider' => 'generic',
             'source_name' => 'API_FREE',
+            'source_priority' => 'PRIMARY',
+            'active_source_decision' => 'api_free',
+            'retry_attempt_count' => 1,
+            'failure_class_summary' => ['TRANSIENT' => 1],
             'timeout_seconds' => 15,
             'retry_max' => 3,
             'attempt_count' => 2,
             'success_after_retry' => 'yes',
             'final_http_status' => 200,
             'final_reason_code' => 'RUN_SOURCE_TIMEOUT',
+            'circuit_breaker_open' => true,
+            'source_protection_state' => 'CIRCUIT_OPEN',
+            'circuit_breaker_threshold' => 0.5,
+            'circuit_breaker_failure_count' => 5,
+            'circuit_breaker_success_count' => 0,
+            'attempted_acquisition_unit_count' => 5,
+            'unattempted_acquisition_unit_count' => 95,
+            'circuit_breaker_trigger_reason_code' => 'RUN_SOURCE_TIMEOUT',
             'captured_at' => '2026-04-21T17:04:00+07:00',
+            'source_observation_audit' => [
+                'source_observation_count' => 2,
+                'source_observation_reference_manifest_hash' => str_repeat('c', 64),
+                'source_observation_reference_sample' => [[
+                    'source_observation_id' => 901,
+                    'payload_hash' => str_repeat('d', 64),
+                    'schema_fingerprint' => str_repeat('e', 64),
+                    'validation_state' => 'PASSED',
+                    'outcome_state' => 'ACCEPTED',
+                ]],
+                'source_observation_outcome_state_summary' => ['ACCEPTED' => 1, 'CAPTURED' => 1],
+                'schema_validation_state_summary' => ['PASSED' => 1, 'PENDING' => 1],
+                'source_observation_rejected_row_count' => 1,
+                'source_observation_rejection_reason_summary' => ['BAR_NON_POSITIVE_PRICE' => 1],
+            ],
             'attempts' => [
                 [
                     'attempt_number' => 1,
@@ -212,14 +239,39 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame(0.98, $summary['coverage']['coverage_min_threshold']);
         $this->assertSame([], $summary['coverage']['coverage_missing_sample']);
         $this->assertSame('API_FREE', $summary['source_context']['source_name']);
+        $this->assertSame('PRIMARY', $summary['source_context']['source_priority']);
+        $this->assertSame('api_free', $summary['source_context']['active_source_decision']);
+        $this->assertSame(1, $summary['source_context']['retry_attempt_count']);
+        $this->assertSame(['TRANSIENT' => 1], $summary['source_context']['failure_class_summary']);
+        $this->assertSame(2, $summary['source_context']['source_observation_count']);
+        $this->assertSame(str_repeat('c', 64), $summary['source_context']['source_observation_reference_manifest_hash']);
+        $this->assertSame(['PASSED' => 1, 'PENDING' => 1], $summary['source_context']['schema_validation_state_summary']);
+        $this->assertSame(['BAR_NON_POSITIVE_PRICE' => 1], $summary['source_context']['source_observation_rejection_reason_summary']);
         $this->assertSame(2, $summary['source_context']['attempt_count']);
         $this->assertSame('yes', $summary['source_context']['success_after_retry']);
         $this->assertSame(200, $summary['source_context']['final_http_status']);
         $this->assertSame('RUN_SOURCE_TIMEOUT', $summary['source_context']['final_reason_code']);
+        $this->assertTrue($summary['source_context']['circuit_breaker_open']);
+        $this->assertSame('CIRCUIT_OPEN', $summary['source_context']['source_protection_state']);
+        $this->assertSame(95, $summary['source_context']['unattempted_acquisition_unit_count']);
+        $this->assertSame('RUN_SOURCE_TIMEOUT', $summary['source_context']['circuit_breaker_trigger_reason_code']);
+        $this->assertStringContainsString('source_priority=PRIMARY', $summary['source_context']['source_summary']);
+        $this->assertStringContainsString('active_source_decision=api_free', $summary['source_context']['source_summary']);
+        $this->assertStringContainsString('retry_attempt_count=1', $summary['source_context']['source_summary']);
+        $this->assertStringContainsString('failure_class_summary={"TRANSIENT":1}', $summary['source_context']['source_summary']);
+        $this->assertStringContainsString('source_protection_state=CIRCUIT_OPEN', $summary['source_context']['source_summary']);
 
         $attemptTelemetry = json_decode(file_get_contents($dir.'/source_attempt_telemetry.json'), true);
         $this->assertSame('STAGE_COMPLETED', $attemptTelemetry['event_type']);
         $this->assertSame('API_FREE', $attemptTelemetry['source_name']);
+        $this->assertSame('PRIMARY', $attemptTelemetry['source_priority']);
+        $this->assertSame('api_free', $attemptTelemetry['active_source_decision']);
+        $this->assertSame(1, $attemptTelemetry['retry_attempt_count']);
+        $this->assertSame(['TRANSIENT' => 1], $attemptTelemetry['failure_class_summary']);
+        $this->assertTrue($attemptTelemetry['circuit_breaker_open']);
+        $this->assertSame('CIRCUIT_OPEN', $attemptTelemetry['source_protection_state']);
+        $this->assertSame(95, $attemptTelemetry['unattempted_acquisition_unit_count']);
+        $this->assertSame('RUN_SOURCE_TIMEOUT', $attemptTelemetry['circuit_breaker_trigger_reason_code']);
         $this->assertCount(2, $attemptTelemetry['attempts']);
         $this->assertTrue($attemptTelemetry['attempts'][0]['will_retry']);
         $this->assertFalse($attemptTelemetry['attempts'][1]['will_retry']);
@@ -258,6 +310,8 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame('RUN_SOURCE_TIMEOUT', $payload['run_summary']['source_context']['final_reason_code']);
         $this->assertSame('STAGE_COMPLETED', $payload['source_attempt_telemetry']['event_type']);
         $this->assertCount(2, $payload['source_attempt_telemetry']['attempts']);
+        $this->assertSame(2, $payload['source_observation_audit']['source_observation_count']);
+        $this->assertSame(str_repeat('c', 64), $payload['source_observation_audit']['source_observation_reference_manifest_hash']);
         $this->assertSame('COMPLETE', $payload['evidence_completeness']['evidence_completeness_state']);
         $this->assertFalse($payload['evidence_completeness']['database_lookup_required_after_export']);
         $this->assertSame(1201, $payload['publication_context']['publication_id']);
@@ -278,7 +332,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertTrue($payload['publication_resolution']['current_pointer_required']);
         $this->assertSame('PUBLICATION_SCOPED', $payload['publication_resolution']['artifact_scope']);
         $this->assertSame('LINEAGE_VERIFIED', $payload['publication_resolution']['lineage_verification_status']);
-        $this->assertSame('provider=generic | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT', $result['summary']['source_summary']);
+        $this->assertSame('provider=generic | source_priority=PRIMARY | active_source_decision=api_free | retry_attempt_count=1 | timeout_seconds=15 | retry_max=3 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | final_reason_code=RUN_SOURCE_TIMEOUT | failure_class_summary={"TRANSIENT":1} | source_protection_state=CIRCUIT_OPEN | circuit_breaker_open=yes | unattempted_acquisition_unit_count=95 | circuit_breaker_trigger_reason_code=RUN_SOURCE_TIMEOUT', $result['summary']['source_summary']);
         $this->assertSame('STAGE_COMPLETED', $result['summary']['source_attempt_event_type']);
         $this->assertSame(2, $result['summary']['source_attempt_count']);
     }

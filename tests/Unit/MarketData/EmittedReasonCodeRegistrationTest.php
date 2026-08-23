@@ -107,11 +107,43 @@ class EmittedReasonCodeRegistrationTest extends TestCase
             }
         }
 
+        // B08 source-resilience helpers may return a RUN_* root-cause code rather than
+        // assign it to a `reason_code` key. Scan only the source adapter where that semantic
+        // return is authoritative. A repository-wide RUN_* return scan incorrectly captures
+        // downstream publication/backfill state vocabulary owned by later stages.
+        $adapterPath = $this->projectRoot().DIRECTORY_SEPARATOR
+            .str_replace('/', DIRECTORY_SEPARATOR, 'app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php');
+        $adapterSource = file_get_contents($adapterPath);
+        $adapterRelative = str_replace($this->projectRoot().DIRECTORY_SEPARATOR, '', $adapterPath);
+
+        foreach ([
+            "/return '(RUN_[A-Z0-9_]{3,})'/",
+            "/\?\s*'(RUN_[A-Z0-9_]{3,})'/",
+        ] as $pattern) {
+            if (! preg_match_all($pattern, $adapterSource, $matches)) {
+                continue;
+            }
+
+            foreach ($matches[1] as $code) {
+                $found[$code][$adapterRelative] = true;
+            }
+        }
+
         ksort($found);
 
         return array_map(function ($files) {
             return array_keys($files);
         }, $found);
+    }
+
+    public function test_b08_source_adapter_returned_run_codes_are_scanned_without_widening_downstream_scope(): void
+    {
+        $emitted = $this->emittedReasonCodes();
+        $adapter = str_replace('/', DIRECTORY_SEPARATOR, 'app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php');
+
+        $this->assertArrayHasKey('RUN_SOURCE_TIMEOUT', $emitted);
+        $this->assertContains($adapter, $emitted['RUN_SOURCE_TIMEOUT']);
+        $this->assertArrayNotHasKey('RUN_SOURCE_CIRCUIT_BREAKER_OPEN', $emitted);
     }
 
     private function seedRegisteredCodes(): array

@@ -202,7 +202,7 @@ class DateDrivenCapabilityAndProviderAbstractionTest extends TestCase
         $this->assertGreaterThan(40, $scanned);
         $this->assertSame([], $appHits, 'transport parameter shape must not reach the application layer');
 
-        $quirks = '/(circuit_breaker|requestWithRetry|includePrePost)/i';
+        $quirks = '/(requestWithRetry|includePrePost|period1|period2)/i';
         $leaked = [];
         foreach (['app/Domain', 'app/Application'] as $dir) {
             $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->root().'/'.$dir, FilesystemIterator::SKIP_DOTS));
@@ -283,7 +283,7 @@ class DateDrivenCapabilityAndProviderAbstractionTest extends TestCase
                         $code .= $token;
                     }
                 }
-                if (preg_match('/period1|period2|circuit_breaker/i', $code)) {
+                if (preg_match('/period1|period2|requestWithRetry|includePrePost/i', $code)) {
                     $leaked[] = $file->getFilename();
                 }
             }

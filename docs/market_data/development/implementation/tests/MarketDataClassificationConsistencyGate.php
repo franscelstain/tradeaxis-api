@@ -37,7 +37,7 @@ final class MarketDataClassificationConsistencyGate
      * Stages that have performed the applicability/ownership entry obligation and are therefore held
      * to the invariants now. A stage joins this list when it opens, not when it becomes convenient.
      */
-    public const NORMALIZED_STAGES = ['MD-B00', 'MD-B01', 'MD-B02', 'MD-B04', 'MD-B05', 'MD-B06', 'MD-B07'];
+    public const NORMALIZED_STAGES = ['MD-B00', 'MD-B01', 'MD-B02', 'MD-B04', 'MD-B05', 'MD-B06', 'MD-B07', 'MD-B08'];
 
     /**
      * Floors that make a vacuous scan impossible. A scan that matches nothing must not be

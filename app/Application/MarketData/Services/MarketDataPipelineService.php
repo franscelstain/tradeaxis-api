@@ -2536,14 +2536,14 @@ class MarketDataPipelineService
             'final_outcome_note' => $hasFallback ? 'SOURCE_UNAVAILABLE_FALLBACK_HELD' : 'SOURCE_UNAVAILABLE_NO_BASELINE',
         ];
 
-        $exceptionContext = [];
+        $exceptionContext = $this->sourceFailureAuditContext($run->source ?? null, $reasonCode, []);
         if (method_exists($e, 'context')) {
             $context = $e->context();
             if (is_array($context) && ! empty($context)) {
-                $payload['exception_context'] = $context;
-                $exceptionContext = $context;
+                $exceptionContext = $this->sourceFailureAuditContext($run->source ?? null, $reasonCode, $context);
             }
         }
+        $payload['exception_context'] = $exceptionContext;
 
         if ($e instanceof \PDOException && $e->getCode()) {
             $payload['sqlstate'] = (string) $e->getCode();
@@ -2699,12 +2699,14 @@ class MarketDataPipelineService
             'exception_message' => $e->getMessage(),
         ];
 
+        $exceptionContext = $this->sourceFailureAuditContext($run->source ?? null, $reasonCode, []);
         if (method_exists($e, 'context')) {
             $context = $e->context();
             if (is_array($context) && ! empty($context)) {
-                $payload['exception_context'] = $context;
+                $exceptionContext = $this->sourceFailureAuditContext($run->source ?? null, $reasonCode, $context);
             }
         }
+        $payload['exception_context'] = $exceptionContext;
 
         if ($e instanceof \PDOException && $e->getCode()) {
             $payload['sqlstate'] = (string) $e->getCode();
@@ -2720,7 +2722,7 @@ class MarketDataPipelineService
                 ? $this->appendRunNotes($run->notes, $failureSourceNotes)
                 : $run->notes,
             'final_reason_code' => $reasonCode,
-        ], $this->sourceTelemetryColumns($run->source ?? null, null, isset($payload['exception_context']) && is_array($payload['exception_context']) ? $payload['exception_context'] : [], $reasonCode)));
+        ], $this->sourceTelemetryColumns($run->source ?? null, null, $exceptionContext, $reasonCode)));
 
         $this->runs->failStage($run, $stage, $reasonCode, $this->summarizeThrowable($e), $payload);
     }
@@ -3730,11 +3732,17 @@ class MarketDataPipelineService
         if ($sourceMode === 'api') {
             $payload['provider'] = strtolower((string) config('market_data.source.api.provider', 'generic'));
             $payload['timeout_seconds'] = max(1, (int) config('market_data.source.api.timeout_seconds', 20));
-            $payload['retry_max'] = min(3, max(0, (int) config('market_data.provider.api_retry_max', 0)));
+            $payload['retry_max'] = max(0, (int) config('market_data.provider.api_retry_max', 0));
             $payload['throttle_qps'] = max(1, (int) config('market_data.provider.api_throttle_qps', 1));
+            $payload['source_priority'] = 'PRIMARY';
+            $payload['active_source_decision'] = 'api_free';
         }
 
         if (in_array($sourceMode, ['manual_file', 'manual_entry'], true)) {
+            $payload['source_priority'] = 'SECONDARY_CONTROLLED_RECOVERY';
+            $payload['active_source_decision'] = 'manual_file';
+            $payload['retry_attempt_count'] = 0;
+            $payload['failure_class_summary'] = [];
             $configuredInputFile = trim((string) app(ManualSourceInputContext::class)->path());
             if ($configuredInputFile !== '') {
                 $payload['input_file'] = $configuredInputFile;
@@ -3794,6 +3802,16 @@ class MarketDataPipelineService
             'failed_ticker_count' => 'failed_ticker_count',
             'max_failed_allowed_for_coverage' => 'max_failed_allowed_for_coverage',
             'coverage_impossible' => 'coverage_impossible',
+            'source_protection_state' => 'source_protection_state',
+            'circuit_breaker_threshold' => 'source_circuit_breaker_threshold',
+            'circuit_breaker_failure_count' => 'source_circuit_breaker_failure_count',
+            'circuit_breaker_success_count' => 'source_circuit_breaker_success_count',
+            'attempted_acquisition_unit_count' => 'source_attempted_acquisition_unit_count',
+            'unattempted_acquisition_unit_count' => 'source_unattempted_acquisition_unit_count',
+            'circuit_breaker_trigger_reason_code' => 'source_circuit_breaker_trigger_reason_code',
+            'source_priority' => 'source_priority',
+            'active_source_decision' => 'active_source_decision',
+            'retry_attempt_count' => 'source_retry_attempt_count',
         ] as $field => $label) {
             if (array_key_exists($field, $sourceAcquisition) && $sourceAcquisition[$field] !== null && $sourceAcquisition[$field] !== '') {
                 $segments[] = $label.'='.(string) $sourceAcquisition[$field];
@@ -3840,6 +3858,14 @@ class MarketDataPipelineService
             $segments[] = 'source_retry_exhausted=yes';
         }
 
+        if (array_key_exists('circuit_breaker_open', $sourceAcquisition)) {
+            $segments[] = 'source_circuit_breaker_open='.($sourceAcquisition['circuit_breaker_open'] ? 'yes' : 'no');
+        }
+
+        if (isset($sourceAcquisition['failure_class_summary']) && is_array($sourceAcquisition['failure_class_summary'])) {
+            $segments[] = 'source_failure_class_summary_json='.json_encode($sourceAcquisition['failure_class_summary'], JSON_UNESCAPED_SLASHES);
+        }
+
         if (array_key_exists('final_http_status', $sourceAcquisition) && $sourceAcquisition['final_http_status'] !== null) {
             $segments[] = 'source_final_http_status='.(int) $sourceAcquisition['final_http_status'];
         }
@@ -3851,6 +3877,30 @@ class MarketDataPipelineService
         return $segments;
     }
 
+
+    private function sourceFailureAuditContext($sourceMode, $reasonCode, array $context)
+    {
+        $context = array_merge($this->sourceTelemetryPayload($sourceMode), $context);
+        if (! array_key_exists('retry_attempt_count', $context)) {
+            $retryAttempts = 0;
+            foreach ((array) ($context['attempts'] ?? []) as $attempt) {
+                if (is_array($attempt) && (int) ($attempt['attempt_number'] ?? 0) > 1) {
+                    $retryAttempts++;
+                }
+            }
+            $context['retry_attempt_count'] = $retryAttempts;
+        }
+        if (! isset($context['failure_class_summary']) || ! is_array($context['failure_class_summary'])) {
+            $context['failure_class_summary'] = [
+                in_array((string) $reasonCode, ['RUN_SOURCE_TIMEOUT', 'RUN_SOURCE_RATE_LIMIT'], true)
+                    ? 'TRANSIENT'
+                    : 'NON_TRANSIENT' => 1,
+            ];
+        }
+
+        return $context;
+    }
+
     private function sourceFailureNoteSegments($sourceMode, $reasonCode, array $payload)
     {
         $segments = [];
@@ -3858,6 +3908,12 @@ class MarketDataPipelineService
 
         if (($sourceTelemetry['source_name'] ?? '') !== '') {
             $segments[] = 'source_name='.(string) $sourceTelemetry['source_name'];
+        }
+        if (($sourceTelemetry['source_priority'] ?? '') !== '') {
+            $segments[] = 'source_priority='.(string) $sourceTelemetry['source_priority'];
+        }
+        if (($sourceTelemetry['active_source_decision'] ?? '') !== '') {
+            $segments[] = 'active_source_decision='.(string) $sourceTelemetry['active_source_decision'];
         }
 
         if (($sourceTelemetry['input_file'] ?? '') !== '') {
@@ -3886,6 +3942,12 @@ class MarketDataPipelineService
         if (array_key_exists('attempt_count', $exceptionContext)) {
             $segments[] = 'source_attempt_count='.(int) $exceptionContext['attempt_count'];
         }
+        if (array_key_exists('retry_attempt_count', $exceptionContext)) {
+            $segments[] = 'source_retry_attempt_count='.(int) $exceptionContext['retry_attempt_count'];
+        }
+        if (isset($exceptionContext['failure_class_summary']) && is_array($exceptionContext['failure_class_summary'])) {
+            $segments[] = 'source_failure_class_summary_json='.json_encode($exceptionContext['failure_class_summary'], JSON_UNESCAPED_SLASHES);
+        }
 
         if (! empty($exceptionContext['success_after_retry'])) {
             $segments[] = 'source_success_after_retry=yes';
@@ -3893,6 +3955,24 @@ class MarketDataPipelineService
 
         if (! empty($exceptionContext['retry_exhausted'])) {
             $segments[] = 'source_retry_exhausted=yes';
+        }
+
+        if (array_key_exists('circuit_breaker_open', $exceptionContext)) {
+            $segments[] = 'source_circuit_breaker_open='.($exceptionContext['circuit_breaker_open'] ? 'yes' : 'no');
+        }
+
+        foreach ([
+            'source_protection_state' => 'source_protection_state',
+            'circuit_breaker_threshold' => 'source_circuit_breaker_threshold',
+            'circuit_breaker_failure_count' => 'source_circuit_breaker_failure_count',
+            'circuit_breaker_success_count' => 'source_circuit_breaker_success_count',
+            'attempted_acquisition_unit_count' => 'source_attempted_acquisition_unit_count',
+            'unattempted_acquisition_unit_count' => 'source_unattempted_acquisition_unit_count',
+            'circuit_breaker_trigger_reason_code' => 'source_circuit_breaker_trigger_reason_code',
+        ] as $field => $label) {
+            if (array_key_exists($field, $exceptionContext) && $exceptionContext[$field] !== null && $exceptionContext[$field] !== '') {
+                $segments[] = $label.'='.(string) $exceptionContext[$field];
+            }
         }
 
         if (array_key_exists('final_http_status', $exceptionContext) && $exceptionContext['final_http_status'] !== null) {

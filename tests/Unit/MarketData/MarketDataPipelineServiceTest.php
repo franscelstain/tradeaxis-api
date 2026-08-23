@@ -169,7 +169,7 @@ class MarketDataPipelineServiceTest extends TestCase
                         && ($payload['source_name'] ?? null) === 'API_FREE'
                         && ($payload['provider'] ?? null) === 'generic'
                         && ($payload['timeout_seconds'] ?? null) === 9
-                        && ($payload['retry_max'] ?? null) === 3
+                        && ($payload['retry_max'] ?? null) === 4
                         && ($payload['throttle_qps'] ?? null) === 11
                         && ($payload['stage'] ?? null) === 'INGEST_BARS'
                         && array_key_exists('correction_id', $payload)
@@ -593,6 +593,14 @@ class MarketDataPipelineServiceTest extends TestCase
                     'attempt_count' => 4,
                     'retry_exhausted' => true,
                     'final_reason_code' => 'RUN_SOURCE_RATE_LIMIT',
+                    'circuit_breaker_open' => true,
+                    'source_protection_state' => 'CIRCUIT_OPEN',
+                    'circuit_breaker_threshold' => 0.5,
+                    'circuit_breaker_failure_count' => 5,
+                    'circuit_breaker_success_count' => 0,
+                    'attempted_acquisition_unit_count' => 5,
+                    'unattempted_acquisition_unit_count' => 95,
+                    'circuit_breaker_trigger_reason_code' => 'RUN_SOURCE_RATE_LIMIT',
                 ]
             ));
 
@@ -611,6 +619,10 @@ class MarketDataPipelineServiceTest extends TestCase
                     && isset($telemetry['notes'])
                     && strpos($telemetry['notes'], 'source_provider=yahoo_finance') !== false
                     && strpos($telemetry['notes'], 'source_retry_exhausted=yes') !== false
+                    && strpos($telemetry['notes'], 'source_circuit_breaker_open=yes') !== false
+                    && strpos($telemetry['notes'], 'source_protection_state=CIRCUIT_OPEN') !== false
+                    && strpos($telemetry['notes'], 'source_unattempted_acquisition_unit_count=95') !== false
+                    && strpos($telemetry['notes'], 'source_circuit_breaker_trigger_reason_code=RUN_SOURCE_RATE_LIMIT') !== false
                     && strpos($telemetry['notes'], 'fallback_trade_date=2026-03-16') !== false;
             }))
             ->andReturn($run);
@@ -631,7 +643,10 @@ class MarketDataPipelineServiceTest extends TestCase
                         && ($payload['fallback_trade_date'] ?? null) === '2026-03-16'
                         && is_array($payload['exception_context'] ?? null)
                         && ($payload['exception_context']['attempt_count'] ?? null) === 4
-                        && ($payload['exception_context']['retry_exhausted'] ?? null) === true;
+                        && ($payload['exception_context']['retry_exhausted'] ?? null) === true
+                        && ($payload['exception_context']['circuit_breaker_open'] ?? null) === true
+                        && ($payload['exception_context']['source_protection_state'] ?? null) === 'CIRCUIT_OPEN'
+                        && ($payload['exception_context']['unattempted_acquisition_unit_count'] ?? null) === 95;
                 })
             )
             ->andReturn($run);

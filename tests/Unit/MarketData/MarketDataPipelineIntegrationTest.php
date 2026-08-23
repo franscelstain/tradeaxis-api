@@ -527,8 +527,11 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
         $this->assertSame('LOCAL_FILE', $result['summary']['source_name']);
         $this->assertSame('manual-explicit-2026-03-20.csv', $result['summary']['source_input_file']);
-        $this->assertNull($result['summary']['source_summary']);
+        $this->assertSame('source_priority=SECONDARY_CONTROLLED_RECOVERY | active_source_decision=manual_file | retry_attempt_count=0 | attempt_count=0', $result['summary']['source_summary']);
         $this->assertSame('LOCAL_FILE', $summary['source_context']['source_name']);
+        $this->assertSame('SECONDARY_CONTROLLED_RECOVERY', $summary['source_context']['source_priority']);
+        $this->assertSame('manual_file', $summary['source_context']['active_source_decision']);
+        $this->assertSame(0, $summary['source_context']['retry_attempt_count']);
         $this->assertSame('manual-explicit-2026-03-20.csv', $summary['source_context']['source_input_file']);
         $this->assertSame('manual-explicit-2026-03-20.csv', $evidencePack['run_summary']['source_context']['source_input_file']);
 
@@ -584,12 +587,20 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $evidencePack = json_decode(file_get_contents($exportDir.'/evidence_pack.json'), true);
 
         $this->assertSame('API_FREE', $result['summary']['source_name']);
-        $this->assertSame('provider=generic | timeout_seconds=20 | retry_max=2 | attempt_count=2 | success_after_retry=yes | final_http_status=200', $result['summary']['source_summary']);
+        $this->assertSame('provider=generic | source_priority=PRIMARY | active_source_decision=api_free | retry_attempt_count=1 | timeout_seconds=20 | retry_max=2 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | failure_class_summary={"TRANSIENT":1}', $result['summary']['source_summary']);
         $this->assertSame('API_FREE', $summary['source_context']['source_name']);
+        $this->assertSame('PRIMARY', $summary['source_context']['source_priority']);
+        $this->assertSame('api_free', $summary['source_context']['active_source_decision']);
+        $this->assertSame(1, $summary['source_context']['retry_attempt_count']);
+        $this->assertSame(['TRANSIENT' => 1], $summary['source_context']['failure_class_summary']);
         $this->assertSame(2, $summary['source_context']['attempt_count']);
         $this->assertSame('yes', $summary['source_context']['success_after_retry']);
         $this->assertSame(200, $summary['source_context']['final_http_status']);
         $this->assertSame('API_FREE', $evidencePack['run_summary']['source_context']['source_name']);
+        $this->assertSame('PRIMARY', $evidencePack['run_summary']['source_context']['source_priority']);
+        $this->assertSame('api_free', $evidencePack['run_summary']['source_context']['active_source_decision']);
+        $this->assertSame(1, $evidencePack['run_summary']['source_context']['retry_attempt_count']);
+        $this->assertSame(['TRANSIENT' => 1], $evidencePack['run_summary']['source_context']['failure_class_summary']);
         $this->assertSame(2, $evidencePack['run_summary']['source_context']['attempt_count']);
 
         $runRow = DB::table('eod_runs')->where('run_id', $run->run_id)->first();
@@ -597,6 +608,10 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertStringContainsString('source_provider=generic', (string) $runRow->notes);
         $this->assertStringContainsString('source_timeout_seconds=20', (string) $runRow->notes);
         $this->assertStringContainsString('source_retry_max=2', (string) $runRow->notes);
+        $this->assertStringContainsString('source_priority=PRIMARY', (string) $runRow->notes);
+        $this->assertStringContainsString('active_source_decision=api_free', (string) $runRow->notes);
+        $this->assertStringContainsString('source_retry_attempt_count=1', (string) $runRow->notes);
+        $this->assertStringContainsString('source_failure_class_summary_json={"TRANSIENT":1}', (string) $runRow->notes);
         $this->assertStringContainsString('source_attempt_count=2', (string) $runRow->notes);
         $this->assertStringContainsString('source_success_after_retry=yes', (string) $runRow->notes);
         $this->assertStringContainsString('source_final_http_status=200', (string) $runRow->notes);
@@ -660,9 +675,9 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertTrue($summary['all_passed']);
         $this->assertCount(2, $summary['cases']);
         $this->assertSame('API_FREE', $summary['cases'][0]['source_name']);
-        $this->assertSame('provider=generic | timeout_seconds=20 | retry_max=2 | attempt_count=2 | success_after_retry=yes | final_http_status=200', $summary['cases'][0]['source_summary']);
+        $this->assertSame('provider=generic | source_priority=PRIMARY | active_source_decision=api_free | retry_attempt_count=1 | timeout_seconds=20 | retry_max=2 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | failure_class_summary={"TRANSIENT":1}', $summary['cases'][0]['source_summary']);
         $this->assertSame('API_FREE', $summaryFile['cases'][1]['source_name']);
-        $this->assertSame('provider=generic | timeout_seconds=20 | retry_max=2 | attempt_count=2 | success_after_retry=yes | final_http_status=200', $summaryFile['cases'][1]['source_summary']);
+        $this->assertSame('provider=generic | source_priority=PRIMARY | active_source_decision=api_free | retry_attempt_count=1 | timeout_seconds=20 | retry_max=2 | attempt_count=2 | success_after_retry=yes | final_http_status=200 | failure_class_summary={"TRANSIENT":1}', $summaryFile['cases'][1]['source_summary']);
         $this->assertSame(['2026-03-20' => 2, '2026-03-23' => 2], $attemptsByDate);
     }
 
@@ -690,7 +705,8 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
         $this->assertTrue($summary['all_passed']);
         $this->assertSame('LOCAL_FILE', $summary['cases'][0]['source_name']);
-        $this->assertArrayNotHasKey('source_summary', $summary['cases'][0]);
+        $this->assertArrayHasKey('source_summary', $summary['cases'][0]);
+        $this->assertStringContainsString('source_priority=SECONDARY_CONTROLLED_RECOVERY', (string) $summary['cases'][0]['source_summary']);
         $this->assertSame('LOCAL_FILE', $summaryFile['cases'][0]['source_name']);
         $this->assertArrayNotHasKey('source_input_file', $summaryFile['cases'][0]);
     }

@@ -1,6 +1,7 @@
 <?php
 
 use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
+use App\Infrastructure\MarketData\Source\SourceAcquisitionException;
 
 /**
  * W08 — resilience, retry/backoff/rate limit, and failure taxonomy, stage 5.
@@ -27,9 +28,9 @@ class SourceCircuitBreakerTest extends TestCase
     /**
      * A wholesale failure opens the breaker rather than marching through the remaining universe.
      */
-    public function test_the_breaker_opens_when_failures_dominate_a_material_sample(): void
+    public function test_the_breaker_opens_when_observed_failures_cross_the_configured_threshold(): void
     {
-        $this->assertSame('RUN_SOURCE_CIRCUIT_BREAKER_OPEN', $this->decide(90, 900, 10));
+        $this->assertTrue($this->decide(451, 900, 10));
     }
 
     /**
@@ -38,7 +39,7 @@ class SourceCircuitBreakerTest extends TestCase
      */
     public function test_the_breaker_stays_closed_while_most_requests_succeed(): void
     {
-        $this->assertNull($this->decide(10, 900, 890));
+        $this->assertFalse($this->decide(10, 900, 890));
     }
 
     /**
@@ -47,36 +48,42 @@ class SourceCircuitBreakerTest extends TestCase
      */
     public function test_the_breaker_stays_closed_exactly_at_the_threshold(): void
     {
-        $this->assertNull($this->decide(50, 900, 50));
+        $this->assertFalse($this->decide(450, 900, 450));
     }
 
     /**
-     * A single early failure is not a signal. Without a minimum sample the breaker would trip on
-     * the first transient error of every run and turn a retryable blip into a stopped date.
+     * The strategy owns only the configured failure-ratio threshold. A hidden sample floor would
+     * create a second unregistered threshold and allow a ratio already above the configured value
+     * to continue acquiring.
      */
-    public function test_an_early_isolated_failure_does_not_open_the_breaker(): void
+    public function test_the_breaker_has_no_implicit_minimum_sample_threshold(): void
     {
-        $this->assertNull($this->decide(1, 900, 0));
-        $this->assertNull($this->decide(3, 900, 0));
+        $this->assertFalse($this->decide(1, 900, 0));
+        $this->assertFalse($this->decide(1, 2, 0));
+        $this->assertTrue($this->decide(2, 3, 0));
     }
 
     /**
-     * Once the sample is material, a total failure opens immediately rather than waiting for the
-     * universe to be exhausted.
+     * An empty planned universe has no denominator and therefore nothing to trip the breaker.
      */
-    public function test_a_total_failure_opens_as_soon_as_the_sample_is_material(): void
+    public function test_the_breaker_stays_closed_before_any_acquisition_unit_is_attempted(): void
     {
-        $this->assertNull($this->decide(4, 900, 0), 'below the minimum sample');
-        $this->assertSame('RUN_SOURCE_CIRCUIT_BREAKER_OPEN', $this->decide(45, 900, 0));
+        $this->assertFalse($this->decide(0, 0, 0));
     }
 
-    /**
-     * A small universe still gets a floor of attempts, so a two-instrument backfill is not
-     * stopped by one failure.
-     */
-    public function test_a_small_universe_keeps_a_minimum_attempt_floor(): void
+    public function test_invalid_breaker_threshold_fails_closed_as_configuration_error(): void
     {
-        $this->assertNull($this->decide(1, 2, 0));
-        $this->assertNull($this->decide(2, 2, 0));
+        $original = config('market_data.provider.circuit_breaker_error_rate');
+        config(['market_data.provider.circuit_breaker_error_rate' => 1.0]);
+
+        try {
+            $this->decide(1, 10, 0);
+            $this->fail('Invalid breaker threshold must not silently disable source protection.');
+        } catch (SourceAcquisitionException $e) {
+            $this->assertSame('CONFIG_INVALID', $e->reasonCode());
+        } finally {
+            config(['market_data.provider.circuit_breaker_error_rate' => $original]);
+        }
     }
+
 }

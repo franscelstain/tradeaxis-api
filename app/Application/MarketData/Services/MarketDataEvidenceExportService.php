@@ -66,10 +66,16 @@ class MarketDataEvidenceExportService
         $manifest = $publication ? (array) $this->publications->buildManifestByPublicationId($publication->publication_id) : null;
         $runSummary = $this->buildRunSummary($run, $manifest);
         $sourceAttemptTelemetry = $this->buildSourceAttemptTelemetry($run, $runSummary['source_context'] ?? []);
+        $sourceObservationAudit = is_array($sourceAttemptTelemetry['source_observation_audit'] ?? null)
+            ? $sourceAttemptTelemetry['source_observation_audit']
+            : [];
         $runSummary['source_context'] = $this->normalizeSourceContextPaths(
-            $this->mergeSourceContextFromTelemetry(
-                is_array($runSummary['source_context'] ?? null) ? $runSummary['source_context'] : [],
-                $sourceAttemptTelemetry
+            $this->mergeSourceObservationAudit(
+                $this->mergeSourceContextFromTelemetry(
+                    is_array($runSummary['source_context'] ?? null) ? $runSummary['source_context'] : [],
+                    $sourceAttemptTelemetry
+                ),
+                is_array($sourceObservationAudit) ? $sourceObservationAudit : []
             )
         );
         $sourceAttemptTelemetry = $this->normalizeSourceAttemptTelemetryPaths($sourceAttemptTelemetry);
@@ -126,6 +132,7 @@ class MarketDataEvidenceExportService
                 'pointer_context' => $pointerContext,
             ],
             'source_attempt_telemetry' => $sourceAttemptTelemetry,
+            'source_observation_audit' => $sourceObservationAudit,
         ];
 
         $dir = $outputDir ?: $this->defaultRunOutputDir($run->run_id);
@@ -1354,7 +1361,47 @@ class MarketDataEvidenceExportService
             $telemetry['source_final_status'] = $sourceContext['source_final_status'];
         }
 
+        foreach ([
+            'source_priority',
+            'active_source_decision',
+            'retry_attempt_count',
+            'failure_class_summary',
+            'circuit_breaker_open',
+            'source_protection_state',
+            'circuit_breaker_threshold',
+            'circuit_breaker_failure_count',
+            'circuit_breaker_success_count',
+            'attempted_acquisition_unit_count',
+            'unattempted_acquisition_unit_count',
+            'circuit_breaker_trigger_reason_code',
+        ] as $field) {
+            if ((! array_key_exists($field, $telemetry) || $telemetry[$field] === null || $telemetry[$field] === '')
+                && array_key_exists($field, $sourceContext) && $sourceContext[$field] !== null && $sourceContext[$field] !== '') {
+                $telemetry[$field] = $sourceContext[$field];
+            }
+        }
+
         return $this->normalizeSourceAttemptTelemetryPaths($telemetry);
+    }
+
+
+    private function mergeSourceObservationAudit(array $sourceContext, array $audit)
+    {
+        foreach ([
+            'source_observation_count',
+            'source_observation_reference_manifest_hash',
+            'source_observation_reference_sample',
+            'source_observation_outcome_state_summary',
+            'schema_validation_state_summary',
+            'source_observation_rejected_row_count',
+            'source_observation_rejection_reason_summary',
+        ] as $field) {
+            if (array_key_exists($field, $audit)) {
+                $sourceContext[$field] = $audit[$field];
+            }
+        }
+
+        return $sourceContext;
     }
 
     private function buildSourceContext($record)
@@ -1382,6 +1429,12 @@ class MarketDataEvidenceExportService
             'source_mode' => $sourceMode,
             'source_name' => $sourceName,
             'source_identity' => $sourceIdentity !== '' ? $sourceIdentity : null,
+            'requested_trade_date' => $record->trade_date_requested ?? null,
+            'source_priority' => $notesMap['source_priority'] ?? ($sourceMode === 'api' ? 'PRIMARY' : (in_array($sourceMode, ['manual_file', 'manual_entry'], true) ? 'SECONDARY_CONTROLLED_RECOVERY' : null)),
+            'active_source_decision' => $notesMap['active_source_decision'] ?? ($sourceMode === 'api' ? 'api_free' : ($sourceMode === 'manual_entry' ? 'manual_file' : $sourceMode)),
+            'retry_attempt_count' => isset($notesMap['source_retry_attempt_count']) && $notesMap['source_retry_attempt_count'] !== '' ? (int) $notesMap['source_retry_attempt_count'] : 0,
+            'failure_class_summary' => $this->decodeJsonObject($notesMap['source_failure_class_summary_json'] ?? null),
+            'observation_manifest_hash' => $record->observation_manifest_hash ?? null,
             'source_provider' => $provider,
             'provider' => $provider,
             'source_input_file' => $sourceInputFile,
@@ -1421,6 +1474,14 @@ class MarketDataEvidenceExportService
             'failed_ticker_count' => isset($notesMap['failed_ticker_count']) && $notesMap['failed_ticker_count'] !== '' ? (int) $notesMap['failed_ticker_count'] : null,
             'max_failed_allowed_for_coverage' => isset($notesMap['max_failed_allowed_for_coverage']) && $notesMap['max_failed_allowed_for_coverage'] !== '' ? (int) $notesMap['max_failed_allowed_for_coverage'] : null,
             'coverage_impossible' => isset($notesMap['coverage_impossible']) && $notesMap['coverage_impossible'] !== '' ? (bool) $notesMap['coverage_impossible'] : null,
+            'circuit_breaker_open' => isset($notesMap['source_circuit_breaker_open']) ? $notesMap['source_circuit_breaker_open'] === 'yes' : null,
+            'source_protection_state' => $notesMap['source_protection_state'] ?? null,
+            'circuit_breaker_threshold' => isset($notesMap['source_circuit_breaker_threshold']) && $notesMap['source_circuit_breaker_threshold'] !== '' ? (float) $notesMap['source_circuit_breaker_threshold'] : null,
+            'circuit_breaker_failure_count' => isset($notesMap['source_circuit_breaker_failure_count']) && $notesMap['source_circuit_breaker_failure_count'] !== '' ? (int) $notesMap['source_circuit_breaker_failure_count'] : null,
+            'circuit_breaker_success_count' => isset($notesMap['source_circuit_breaker_success_count']) && $notesMap['source_circuit_breaker_success_count'] !== '' ? (int) $notesMap['source_circuit_breaker_success_count'] : null,
+            'attempted_acquisition_unit_count' => isset($notesMap['source_attempted_acquisition_unit_count']) && $notesMap['source_attempted_acquisition_unit_count'] !== '' ? (int) $notesMap['source_attempted_acquisition_unit_count'] : null,
+            'unattempted_acquisition_unit_count' => isset($notesMap['source_unattempted_acquisition_unit_count']) && $notesMap['source_unattempted_acquisition_unit_count'] !== '' ? (int) $notesMap['source_unattempted_acquisition_unit_count'] : null,
+            'circuit_breaker_trigger_reason_code' => $notesMap['source_circuit_breaker_trigger_reason_code'] ?? null,
         ];
     }
 
@@ -1448,6 +1509,10 @@ class MarketDataEvidenceExportService
         $fieldMap = [
             'source_mode' => 'source_mode',
             'source_name' => 'source_name',
+            'source_priority' => 'source_priority',
+            'active_source_decision' => 'active_source_decision',
+            'retry_attempt_count' => 'retry_attempt_count',
+            'failure_class_summary' => 'failure_class_summary',
             'source_input_file' => 'source_input_file',
             'provider' => 'provider',
             'source_provider' => 'provider',
@@ -1478,6 +1543,14 @@ class MarketDataEvidenceExportService
             'final_http_status' => 'final_http_status',
             'final_reason_code' => 'final_reason_code',
             'retry_exhausted' => 'retry_exhausted',
+            'circuit_breaker_open' => 'circuit_breaker_open',
+            'source_protection_state' => 'source_protection_state',
+            'circuit_breaker_threshold' => 'circuit_breaker_threshold',
+            'circuit_breaker_failure_count' => 'circuit_breaker_failure_count',
+            'circuit_breaker_success_count' => 'circuit_breaker_success_count',
+            'attempted_acquisition_unit_count' => 'attempted_acquisition_unit_count',
+            'unattempted_acquisition_unit_count' => 'unattempted_acquisition_unit_count',
+            'circuit_breaker_trigger_reason_code' => 'circuit_breaker_trigger_reason_code',
             'source_final_status' => 'source_final_status',
         ];
 
@@ -1567,6 +1640,16 @@ class MarketDataEvidenceExportService
             $summaryParts[] = 'provider='.(string) $sourceContext['provider'];
         }
 
+        foreach ([
+            'source_priority' => 'source_priority',
+            'active_source_decision' => 'active_source_decision',
+            'retry_attempt_count' => 'retry_attempt_count',
+        ] as $key => $label) {
+            if (array_key_exists($key, $sourceContext) && $sourceContext[$key] !== null && $sourceContext[$key] !== '') {
+                $summaryParts[] = $label.'='.(string) $sourceContext[$key];
+            }
+        }
+
         if (array_key_exists('timeout_seconds', $sourceContext) && $sourceContext['timeout_seconds'] !== null) {
             $summaryParts[] = 'timeout_seconds='.(string) $sourceContext['timeout_seconds'];
         }
@@ -1589,6 +1672,21 @@ class MarketDataEvidenceExportService
 
         if (($sourceContext['final_reason_code'] ?? '') !== '') {
             $summaryParts[] = 'final_reason_code='.(string) $sourceContext['final_reason_code'];
+        }
+
+        if (isset($sourceContext['failure_class_summary']) && is_array($sourceContext['failure_class_summary']) && $sourceContext['failure_class_summary'] !== []) {
+            $summaryParts[] = 'failure_class_summary='.json_encode($sourceContext['failure_class_summary'], JSON_UNESCAPED_SLASHES);
+        }
+
+        foreach ([
+            'source_protection_state' => 'source_protection_state',
+            'circuit_breaker_open' => 'circuit_breaker_open',
+            'unattempted_acquisition_unit_count' => 'unattempted_acquisition_unit_count',
+            'circuit_breaker_trigger_reason_code' => 'circuit_breaker_trigger_reason_code',
+        ] as $key => $label) {
+            if (array_key_exists($key, $sourceContext) && $sourceContext[$key] !== null && $sourceContext[$key] !== '') {
+                $summaryParts[] = $label.'='.(is_bool($sourceContext[$key]) ? ($sourceContext[$key] ? 'yes' : 'no') : (string) $sourceContext[$key]);
+            }
         }
 
         return $summaryParts === [] ? null : implode(' | ', $summaryParts);

@@ -90,6 +90,33 @@ class IngestSectorIndexBarsApiCommand extends AbstractMarketDataCommand
             if (! empty($case['source_acquisition_state'])) {
                 $parts[] = 'source_acquisition_state='.$case['source_acquisition_state'];
             }
+            if (! empty($case['source_priority'])) {
+                $parts[] = 'source_priority='.$case['source_priority'];
+            }
+            if (! empty($case['active_source_decision'])) {
+                $parts[] = 'active_source_decision='.$case['active_source_decision'];
+            }
+            if (array_key_exists('retry_attempt_count', $case) && $case['retry_attempt_count'] !== null) {
+                $parts[] = 'retry_attempt_count='.(int) $case['retry_attempt_count'];
+            }
+            if (isset($case['failure_class_summary']) && is_array($case['failure_class_summary']) && $case['failure_class_summary'] !== []) {
+                $parts[] = 'failure_class_summary='.json_encode($case['failure_class_summary'], JSON_UNESCAPED_SLASHES);
+            }
+            if (array_key_exists('circuit_breaker_open', $case)) {
+                $parts[] = 'circuit_breaker_open='.($case['circuit_breaker_open'] ? 'yes' : 'no');
+            }
+            if (! empty($case['source_protection_state'])) {
+                $parts[] = 'source_protection_state='.$case['source_protection_state'];
+            }
+            if (array_key_exists('attempted_acquisition_unit_count', $case)) {
+                $parts[] = 'attempted_acquisition_unit_count='.(int) $case['attempted_acquisition_unit_count'];
+            }
+            if (array_key_exists('unattempted_acquisition_unit_count', $case)) {
+                $parts[] = 'unattempted_acquisition_unit_count='.(int) $case['unattempted_acquisition_unit_count'];
+            }
+            if (! empty($case['circuit_breaker_trigger_reason_code'])) {
+                $parts[] = 'circuit_breaker_trigger_reason_code='.$case['circuit_breaker_trigger_reason_code'];
+            }
             if (! empty($case['missing_benchmark_codes'])) {
                 $parts[] = 'missing_benchmark_codes='.implode(',', (array) $case['missing_benchmark_codes']);
             }

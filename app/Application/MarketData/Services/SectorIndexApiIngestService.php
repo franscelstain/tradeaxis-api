@@ -109,7 +109,7 @@ class SectorIndexApiIngestService
                     'upserted_count' => 0,
                     'missing_benchmark_codes' => $missingCodes,
                     'source_acquisition_state' => $telemetry['source_acquisition_state'] ?? null,
-                ];
+                ] + $this->sourceProtectionTelemetry($telemetry);
             }
 
             if ($apply && ! empty($rows)) {
@@ -129,7 +129,7 @@ class SectorIndexApiIngestService
                 'source_acquisition_state' => $telemetry['source_acquisition_state'] ?? null,
                 'source_final_status' => $telemetry['source_final_status'] ?? null,
                 'source_final_reason_code' => $telemetry['final_reason_code'] ?? null,
-            ];
+            ] + $this->sourceProtectionTelemetry($telemetry);
         } catch (SourceAcquisitionException $e) {
             $context = $e->context();
 
@@ -144,7 +144,7 @@ class SectorIndexApiIngestService
                 'source_final_status' => $context['source_final_status'] ?? null,
                 'failed_benchmark_codes' => $context['failed_benchmark_codes'] ?? null,
                 'missing_benchmark_codes' => $context['missing_benchmark_codes'] ?? null,
-            ];
+            ] + $this->sourceProtectionTelemetry($context);
         } catch (\Throwable $e) {
             return [
                 'trade_date' => $tradeDate,
@@ -155,6 +155,31 @@ class SectorIndexApiIngestService
                 'upserted_count' => 0,
             ];
         }
+    }
+
+    private function sourceProtectionTelemetry(array $telemetry)
+    {
+        $result = [];
+        foreach ([
+            'source_priority',
+            'active_source_decision',
+            'retry_attempt_count',
+            'failure_class_summary',
+            'circuit_breaker_open',
+            'source_protection_state',
+            'circuit_breaker_threshold',
+            'circuit_breaker_failure_count',
+            'circuit_breaker_success_count',
+            'attempted_acquisition_unit_count',
+            'unattempted_acquisition_unit_count',
+            'circuit_breaker_trigger_reason_code',
+        ] as $field) {
+            if (array_key_exists($field, $telemetry) && $telemetry[$field] !== null && $telemetry[$field] !== '') {
+                $result[$field] = $telemetry[$field];
+            }
+        }
+
+        return $result;
     }
 
     private function rowsForStorage(array $sourceRows)

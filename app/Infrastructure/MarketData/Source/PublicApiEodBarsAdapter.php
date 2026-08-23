@@ -140,8 +140,17 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
         $rows = [];
         $requestTelemetry = [];
         $failureTelemetry = [];
+        $circuitBreakerTelemetry = null;
 
         foreach ($benchmarks as $benchmark) {
+            $circuitBreakerTelemetry = $this->circuitBreakerTelemetry(
+                $failureTelemetry,
+                count($benchmarks),
+                count($rows)
+            );
+            if ($circuitBreakerTelemetry !== null) {
+                break;
+            }
             $benchmark = (array) $benchmark;
             $benchmarkCode = $this->normalizeTickerCode($benchmark['benchmark_code'] ?? null);
             $providerSymbol = $this->benchmarkProviderSymbols->resolve(
@@ -192,13 +201,13 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
                     } else {
                         $this->rejectResponse($response, 'RUN_SOURCE_NO_VALID_DATA');
                     }
-                    $failureTelemetry[] = $lastBenchmarkRequestTelemetry + [
+                    $failureTelemetry[] = array_merge($lastBenchmarkRequestTelemetry, [
                         'benchmark_code' => $benchmarkCode,
                         'provider_symbol' => $providerSymbol,
                         'final_reason_code' => 'RUN_SOURCE_NO_VALID_DATA',
                         'source_final_status' => 'FAILED',
                         'trade_date_not_found_in_response' => true,
-                    ];
+                    ]);
                     continue;
                 }
 
@@ -217,12 +226,29 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
                     'source_final_status' => 'FAILED',
                 ];
 
-                throw $e->withContext($this->buildYahooBenchmarkAggregateTelemetry($tradeDate, $benchmarks, $rows, $requestTelemetry, $failureTelemetry, $apiConfig));
+                if (! $this->isYahooPartialTolerantFailure($e->reasonCode())) {
+                    $aggregate = $this->buildYahooBenchmarkAggregateTelemetry($tradeDate, $benchmarks, $rows, $requestTelemetry, $failureTelemetry, $apiConfig);
+                    $this->rememberAcquisitionTelemetry($aggregate);
+                    throw $e->withContext($aggregate);
+                }
             }
         }
 
         $aggregate = $this->buildYahooBenchmarkAggregateTelemetry($tradeDate, $benchmarks, $rows, $requestTelemetry, $failureTelemetry, $apiConfig);
+        if ($circuitBreakerTelemetry !== null) {
+            $aggregate = array_merge($aggregate, $circuitBreakerTelemetry);
+        }
         $this->rememberAcquisitionTelemetry($aggregate);
+
+        if (empty($rows) && ! empty($failureTelemetry)) {
+            throw new SourceAcquisitionException(
+                'Yahoo Finance benchmark acquisition failed for all requested benchmarks.',
+                $this->dominantYahooFailureReasonCode($failureTelemetry),
+                0,
+                null,
+                $aggregate
+            );
+        }
 
         if (empty($rows)) {
             throw new SourceAcquisitionException(
@@ -253,7 +279,7 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
             return $this->normalizeTickerCode($tickerCode);
         }, $tickerCodes))));
 
-        $circuitBreaker = null;
+        $circuitBreakerTelemetry = null;
 
         foreach ($uniqueTickerCodes as $tickerCode) {
             // Our own retry behaviour is the likeliest cause of losing access to an unofficial
@@ -264,17 +290,12 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
             //
             // Owner contract: docs/market_data/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md
             //                 — "Source access self-protection (LOCKED)"
-            $circuitBreaker = $this->openCircuitBreaker(count($failureTelemetry), count($uniqueTickerCodes), $index);
-            if ($circuitBreaker !== null) {
-                $failureTelemetry[] = $this->withTickerTelemetry([
-                    'trade_date' => $tradeDate,
-                    'final_reason_code' => $circuitBreaker,
-                    'circuit_breaker_open' => true,
-                    'circuit_breaker_threshold' => (float) config('market_data.provider.circuit_breaker_error_rate', 0.5),
-                    'attempted_ticker_count' => count($failureTelemetry) + $index,
-                    'unique_ticker_count' => count($uniqueTickerCodes),
-                    'accepted_row_count' => $index,
-                ], $tickerCode);
+            $circuitBreakerTelemetry = $this->circuitBreakerTelemetry(
+                $failureTelemetry,
+                count($uniqueTickerCodes),
+                $index
+            );
+            if ($circuitBreakerTelemetry !== null) {
                 break;
             }
 
@@ -385,6 +406,9 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
             $failureTelemetry,
             $apiConfig
         );
+        if ($circuitBreakerTelemetry !== null) {
+            $aggregate = array_merge($aggregate, $circuitBreakerTelemetry);
+        }
 
         $this->rememberAcquisitionTelemetry($aggregate);
 
@@ -436,12 +460,23 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
         $requestTelemetry = [];
         $failureTelemetry = [];
         $invalidOhlcvSkipped = 0;
+        $successfulTickerCount = 0;
+        $circuitBreakerTelemetry = null;
 
         $uniqueTickerCodes = array_values(array_unique(array_filter(array_map(function ($tickerCode) {
             return $this->normalizeTickerCode($tickerCode);
         }, $tickerCodes))));
 
         foreach ($uniqueTickerCodes as $tickerCode) {
+            $circuitBreakerTelemetry = $this->circuitBreakerTelemetry(
+                $failureTelemetry,
+                count($uniqueTickerCodes),
+                $successfulTickerCount
+            );
+            if ($circuitBreakerTelemetry !== null) {
+                break;
+            }
+
             $identitiesByDate = [];
             foreach ($tradingDates as $tradingDate) {
                 $identitiesByDate[$tradingDate] = $this->resolveEquityIdentity($tickerCode, $apiConfig, $tradingDate, $context);
@@ -531,6 +566,7 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
                     $rowsByDate[$rowDate][] = $row;
                     $rows[] = $row;
                 }
+                $successfulTickerCount++;
                 $invalidOhlcvSkipped += (int) ($parsed['invalid_ohlcv_skipped'] ?? 0);
             } catch (SourceAcquisitionException $e) {
                 if (is_array($response)) {
@@ -598,6 +634,9 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
             $context,
             $invalidOhlcvSkipped
         );
+        if ($circuitBreakerTelemetry !== null) {
+            $aggregate = array_merge($aggregate, $circuitBreakerTelemetry);
+        }
 
         $this->rememberAcquisitionTelemetry($aggregate);
 
@@ -1297,7 +1336,9 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
             'retry_max' => $this->retryMax(),
             'attempt_count' => $attemptCount,
             'attempts' => $attempts,
-            'final_reason_code' => empty($rows) ? 'RUN_SOURCE_NO_VALID_DATA' : (empty($failureTelemetry) ? null : 'RUN_SOURCE_PARTIAL_RESPONSE'),
+            'final_reason_code' => empty($rows)
+                ? (empty($failureTelemetry) ? 'RUN_SOURCE_NO_VALID_DATA' : $this->dominantYahooFailureReasonCode($failureTelemetry))
+                : (empty($failureTelemetry) ? null : 'RUN_SOURCE_PARTIAL_RESPONSE'),
             'final_http_status' => $lastHttpStatus,
             'url' => $lastUrl,
             'response_body_sample' => $lastResponseBodySample,
@@ -1345,7 +1386,73 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
 
     private function rememberAcquisitionTelemetry(array $telemetry)
     {
-        $this->lastAcquisitionTelemetry = $telemetry;
+        $this->lastAcquisitionTelemetry = $this->withResilienceAuditTelemetry($telemetry);
+    }
+
+    private function withResilienceAuditTelemetry(array $telemetry)
+    {
+        $sourceMode = strtolower(trim((string) ($telemetry['source_mode'] ?? 'api')));
+        $isPrimaryApiSource = in_array($sourceMode, ['api', 'api_free'], true);
+        $telemetry['source_priority'] = $telemetry['source_priority'] ?? ($isPrimaryApiSource ? 'PRIMARY' : 'SECONDARY_CONTROLLED_RECOVERY');
+        $telemetry['active_source_decision'] = $telemetry['active_source_decision'] ?? ($isPrimaryApiSource ? 'api_free' : $sourceMode);
+        $telemetry['retry_attempt_count'] = $this->retryAttemptCount($telemetry['attempts'] ?? []);
+        $telemetry['failure_class_summary'] = $this->failureClassSummary($telemetry);
+
+        return $telemetry;
+    }
+
+    private function retryAttemptCount($attempts)
+    {
+        if (! is_array($attempts)) {
+            return 0;
+        }
+
+        $count = 0;
+        foreach ($attempts as $attempt) {
+            if (is_array($attempt) && (int) ($attempt['attempt_number'] ?? 0) > 1) {
+                $count++;
+            }
+        }
+
+        return $count;
+    }
+
+    private function failureClassSummary(array $telemetry)
+    {
+        $reasonSummary = isset($telemetry['failure_reason_summary']) && is_array($telemetry['failure_reason_summary'])
+            ? $telemetry['failure_reason_summary']
+            : [];
+
+        if ($reasonSummary === [] && isset($telemetry['attempts']) && is_array($telemetry['attempts'])) {
+            foreach ($telemetry['attempts'] as $attempt) {
+                if (! is_array($attempt)) {
+                    continue;
+                }
+                $attemptReasonCode = trim((string) ($attempt['reason_code'] ?? ''));
+                if ($attemptReasonCode === '') {
+                    continue;
+                }
+                $reasonSummary[$attemptReasonCode] = ($reasonSummary[$attemptReasonCode] ?? 0) + 1;
+            }
+        }
+
+        if ($reasonSummary === [] && ! empty($telemetry['final_reason_code'])) {
+            $reasonSummary[(string) $telemetry['final_reason_code']] = 1;
+        }
+
+        $summary = [];
+        foreach ($reasonSummary as $reasonCode => $count) {
+            if ($reasonCode === null || trim((string) $reasonCode) === '') {
+                continue;
+            }
+            $class = in_array((string) $reasonCode, ['RUN_SOURCE_TIMEOUT', 'RUN_SOURCE_RATE_LIMIT'], true)
+                ? 'TRANSIENT'
+                : 'NON_TRANSIENT';
+            $summary[$class] = ($summary[$class] ?? 0) + max(0, (int) $count);
+        }
+
+        ksort($summary);
+        return $summary;
     }
 
     private function requestWithRetry($url, array $requestContext = [])
@@ -1972,7 +2079,9 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
 
     private function retryMax()
     {
-        return min(3, max(0, (int) config('market_data.provider.api_retry_max')));
+        // The locked resilience contract makes the registered config value the effective retry
+        // budget. A hidden implementation clamp would create a second, unregistered policy.
+        return max(0, (int) config('market_data.provider.api_retry_max'));
     }
 
     private function responseBodySample($body)
@@ -2110,30 +2219,56 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
     }
 
     /**
-     * Returns a reason code once the observed failure ratio crosses the configured breaker
-     * threshold, or null while acquisition may continue.
-     *
-     * The breaker only engages after a minimum number of attempts, because a single early
-     * failure is not a signal — with a one-instrument universe it would otherwise trip on the
-     * first transient error.
+     * Returns true once the observed failure ratio strictly crosses the configured breaker
+     * threshold, or false while acquisition may continue. The breaker is transport protection,
+     * not a reason-code source: terminal reason remains the registered underlying source failure.
      */
     private function openCircuitBreaker($failureCount, $universeCount, $successCount)
     {
         $threshold = (float) config('market_data.provider.circuit_breaker_error_rate', 0.5);
         if ($threshold <= 0 || $threshold >= 1) {
+            throw new SourceAcquisitionException(
+                'Configured source circuit-breaker error rate must be greater than 0 and less than 1.',
+                'CONFIG_INVALID'
+            );
+        }
+
+        if ($universeCount <= 0) {
+            return false;
+        }
+
+        // The locked contract is partial-tolerant and defines the breaker against the run's
+        // acquisition universe. Using attempts-so-far would make the first failed unit a 100%
+        // failure rate and silently reintroduce an effective one-sample breaker. The only
+        // threshold remains the registered configured ratio, applied strictly to failed planned
+        // acquisition units over the planned universe.
+        return ($failureCount / $universeCount) > $threshold;
+    }
+
+    private function circuitBreakerTelemetry(array $failureTelemetry, $universeCount, $successCount)
+    {
+        $failureCount = count($failureTelemetry);
+        if (! $this->openCircuitBreaker($failureCount, $universeCount, $successCount)) {
             return null;
         }
 
-        $attempts = $failureCount + $successCount;
-        $minimumAttempts = max(5, (int) ceil($universeCount * 0.05));
+        $attempted = $failureCount + $successCount;
 
-        if ($attempts < $minimumAttempts) {
-            return null;
-        }
-
-        return ($failureCount / $attempts) > $threshold
-            ? 'RUN_SOURCE_CIRCUIT_BREAKER_OPEN'
-            : null;
+        return [
+            'circuit_breaker_open' => true,
+            'source_protection_state' => 'CIRCUIT_OPEN',
+            'circuit_breaker_threshold' => (float) config('market_data.provider.circuit_breaker_error_rate', 0.5),
+            'circuit_breaker_failure_count' => $failureCount,
+            'circuit_breaker_success_count' => $successCount,
+            // Generic unit counts are the canonical audit-facing representation because this
+            // helper protects both ticker and benchmark fanout. The ticker aliases are retained
+            // for existing acquisition diagnostics that already consume them.
+            'attempted_acquisition_unit_count' => $attempted,
+            'unattempted_acquisition_unit_count' => max(0, $universeCount - $attempted),
+            'attempted_ticker_count' => $attempted,
+            'unattempted_ticker_count' => max(0, $universeCount - $attempted),
+            'circuit_breaker_trigger_reason_code' => $this->dominantYahooFailureReasonCode($failureTelemetry),
+        ];
     }
 
     private function normalizeTickerCode($value)

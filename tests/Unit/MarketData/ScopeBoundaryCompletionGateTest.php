@@ -48,10 +48,11 @@ class ScopeBoundaryCompletionGateTest extends TestCase
 
     public function test_gate_fails_closed_when_a_mapped_rule_disappears(): void
     {
-        $rows = array_values(array_filter($this->rows(), static function (array $row): bool {
+        $currentRows = $this->rows();
+        $rows = array_values(array_filter($currentRows, static function (array $row): bool {
             return $row['rule_id'] !== 'MD-S001-R0003';
         }));
-        $this->assertCount(6489, $rows, 'row-removal mutation must land');
+        $this->assertCount(count($currentRows) - 1, $rows, 'row-removal mutation must land');
 
         $result = MarketDataScopeBoundaryCompletionGate::validate($rows, $this->root());
         $this->assertNotSame([], $result['errors']);

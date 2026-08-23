@@ -1,0 +1,34 @@
+{
+    "baseline_id": "MD-B08-A001-BL001",
+    "stage_id": "MD-B08",
+    "attempt_id": "MD-B08-A001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260822-001",
+    "strategy_freeze_manifest_sha1": "B9EF92213352F66A8253FE033B3479E0916629AB",
+    "strategy_tree_fingerprint_sha1": "D8A198B4928CF9DE6405C0C7536B18D5BDC75915",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "0E3D8983D572F64A64A6581A45AC5CE7F8D3E4E9",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "FE8EB929C113DF3F125CC876BC43712C90C51E22",
+    "source_revision": "b3e8b6c772b38dcab96d09e96b17b8b7bcf67ffc",
+    "source_revision_branch": "UNKNOWN",
+    "working_tree": "CLEAN",
+    "app_code_fingerprint_sha1": "0455033CE958618F5DBEE769F36C9111135A3C85",
+    "tests_fingerprint_sha1": "A4070071F3D4DE0A04FD0DCFC746F37AAB91F875",
+    "schema_config_identity": "schema:EFAC1C8E2438D039BBCC5662389375C661863039;config:CDA52E5CFA3414EF94B3C16A4D3C118A692D7165;migrations:71FA39B414E3A4387B03C85261E2B88D8AA50CC1",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "B08 fresh local runtime proof pending; last returned local runtime proof used PHPUnit 9.6.34 on the committed predecessor state; static workspace PHP 8.4.23",
+    "external_dependency_contract_identity": {
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "registered": 7,
+        "open_blocking": []
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-08-23T06:42:11+00:00",
+    "issuance_note": "Pre-material MD-B08 lock. MD-B07 is closed by SC-MD-B07-A001-001; MD-DEP-0004 remains the per-stage entry normalization obligation."
+}

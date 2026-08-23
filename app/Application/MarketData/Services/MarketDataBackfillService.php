@@ -249,6 +249,10 @@ class MarketDataBackfillService
             'rejected_row_count' => $run->invalid_bar_count ?? (isset($notesMap['rejected_row_count']) && $notesMap['rejected_row_count'] !== '' ? (int) $notesMap['rejected_row_count'] : null),
             'invalid_row_count' => $run->invalid_bar_count ?? (isset($notesMap['invalid_row_count']) && $notesMap['invalid_row_count'] !== '' ? (int) $notesMap['invalid_row_count'] : null),
             'provider' => $run->source_provider ?? (($notesMap['source_provider'] ?? '') !== '' ? (string) $notesMap['source_provider'] : null),
+            'source_priority' => ($notesMap['source_priority'] ?? '') !== '' ? (string) $notesMap['source_priority'] : null,
+            'active_source_decision' => ($notesMap['active_source_decision'] ?? '') !== '' ? (string) $notesMap['active_source_decision'] : null,
+            'retry_attempt_count' => isset($notesMap['source_retry_attempt_count']) && $notesMap['source_retry_attempt_count'] !== '' ? (int) $notesMap['source_retry_attempt_count'] : null,
+            'failure_class_summary' => $this->decodeJsonObject($notesMap['source_failure_class_summary_json'] ?? null),
             'timeout_seconds' => $run->source_timeout_seconds ?? (isset($notesMap['source_timeout_seconds']) && $notesMap['source_timeout_seconds'] != '' ? (int) $notesMap['source_timeout_seconds'] : null),
             'retry_max' => $run->source_retry_max ?? (isset($notesMap['source_retry_max']) && $notesMap['source_retry_max'] != '' ? (int) $notesMap['source_retry_max'] : null),
             'attempt_count' => $run->source_attempt_count ?? (isset($notesMap['source_attempt_count']) && $notesMap['source_attempt_count'] != '' ? (int) $notesMap['source_attempt_count'] : null),
@@ -256,6 +260,14 @@ class MarketDataBackfillService
             'final_http_status' => $run->source_final_http_status ?? (isset($notesMap['source_final_http_status']) && $notesMap['source_final_http_status'] != '' ? (int) $notesMap['source_final_http_status'] : null),
             'final_reason_code' => $run->source_final_reason_code ?? (($notesMap['source_final_reason_code'] ?? '') !== '' ? (string) $notesMap['source_final_reason_code'] : null),
             'retry_exhausted' => array_key_exists('source_retry_exhausted', (array) $run) && $run->source_retry_exhausted !== null ? ($run->source_retry_exhausted ? 'yes' : 'no') : (($notesMap['source_retry_exhausted'] ?? '') !== '' ? (string) $notesMap['source_retry_exhausted'] : null),
+            'circuit_breaker_open' => isset($notesMap['source_circuit_breaker_open']) ? $notesMap['source_circuit_breaker_open'] === 'yes' : null,
+            'source_protection_state' => $notesMap['source_protection_state'] ?? null,
+            'circuit_breaker_threshold' => isset($notesMap['source_circuit_breaker_threshold']) && $notesMap['source_circuit_breaker_threshold'] !== '' ? (float) $notesMap['source_circuit_breaker_threshold'] : null,
+            'circuit_breaker_failure_count' => isset($notesMap['source_circuit_breaker_failure_count']) && $notesMap['source_circuit_breaker_failure_count'] !== '' ? (int) $notesMap['source_circuit_breaker_failure_count'] : null,
+            'circuit_breaker_success_count' => isset($notesMap['source_circuit_breaker_success_count']) && $notesMap['source_circuit_breaker_success_count'] !== '' ? (int) $notesMap['source_circuit_breaker_success_count'] : null,
+            'attempted_acquisition_unit_count' => isset($notesMap['source_attempted_acquisition_unit_count']) && $notesMap['source_attempted_acquisition_unit_count'] !== '' ? (int) $notesMap['source_attempted_acquisition_unit_count'] : null,
+            'unattempted_acquisition_unit_count' => isset($notesMap['source_unattempted_acquisition_unit_count']) && $notesMap['source_unattempted_acquisition_unit_count'] !== '' ? (int) $notesMap['source_unattempted_acquisition_unit_count'] : null,
+            'circuit_breaker_trigger_reason_code' => $notesMap['source_circuit_breaker_trigger_reason_code'] ?? null,
         ], $sourceAttemptTelemetry);
 
         $result = [];
@@ -327,6 +339,10 @@ class MarketDataBackfillService
             'source_file_size_bytes' => 'source_file_size_bytes',
             'source_file_row_count' => 'source_file_row_count',
             'provider' => 'provider',
+            'source_priority' => 'source_priority',
+            'active_source_decision' => 'active_source_decision',
+            'retry_attempt_count' => 'retry_attempt_count',
+            'failure_class_summary' => 'failure_class_summary',
             'timeout_seconds' => 'timeout_seconds',
             'retry_max' => 'retry_max',
             'attempt_count' => 'attempt_count',
@@ -334,6 +350,14 @@ class MarketDataBackfillService
             'final_http_status' => 'final_http_status',
             'final_reason_code' => 'final_reason_code',
             'retry_exhausted' => 'retry_exhausted',
+            'circuit_breaker_open' => 'circuit_breaker_open',
+            'source_protection_state' => 'source_protection_state',
+            'circuit_breaker_threshold' => 'circuit_breaker_threshold',
+            'circuit_breaker_failure_count' => 'circuit_breaker_failure_count',
+            'circuit_breaker_success_count' => 'circuit_breaker_success_count',
+            'attempted_acquisition_unit_count' => 'attempted_acquisition_unit_count',
+            'unattempted_acquisition_unit_count' => 'unattempted_acquisition_unit_count',
+            'circuit_breaker_trigger_reason_code' => 'circuit_breaker_trigger_reason_code',
         ];
 
         foreach ($fieldMap as $contextKey => $telemetryKey) {
@@ -403,6 +427,9 @@ class MarketDataBackfillService
 
         foreach ([
             'provider' => 'provider',
+            'source_priority' => 'source_priority',
+            'active_source_decision' => 'active_source_decision',
+            'retry_attempt_count' => 'retry_attempt_count',
             'timeout_seconds' => 'timeout_seconds',
             'retry_max' => 'retry_max',
             'attempt_count' => 'attempt_count',
@@ -410,6 +437,10 @@ class MarketDataBackfillService
             'final_http_status' => 'final_http_status',
             'final_reason_code' => 'final_reason_code',
             'retry_exhausted' => 'retry_exhausted',
+            'source_protection_state' => 'source_protection_state',
+            'circuit_breaker_open' => 'circuit_breaker_open',
+            'unattempted_acquisition_unit_count' => 'unattempted_acquisition_unit_count',
+            'circuit_breaker_trigger_reason_code' => 'circuit_breaker_trigger_reason_code',
         ] as $key => $label) {
             if (! array_key_exists($key, $sourceContext) || $sourceContext[$key] === null || $sourceContext[$key] === '') {
                 continue;
@@ -418,11 +449,26 @@ class MarketDataBackfillService
             $summaryParts[] = $label.'='.(string) $sourceContext[$key];
         }
 
+        if (isset($sourceContext['failure_class_summary']) && is_array($sourceContext['failure_class_summary']) && $sourceContext['failure_class_summary'] !== []) {
+            $summaryParts[] = 'failure_class_summary='.json_encode($sourceContext['failure_class_summary'], JSON_UNESCAPED_SLASHES);
+        }
+
         if ($summaryParts === []) {
             return null;
         }
 
         return implode(' | ', $summaryParts);
+    }
+
+    private function decodeJsonObject($value)
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return [];
+        }
+
+        $decoded = json_decode((string) $value, true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 
     private function parseRunNotes($notes)

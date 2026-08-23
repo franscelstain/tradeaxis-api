@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Persistence\MarketData;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class EodEvidenceRepository
 {
@@ -440,6 +441,96 @@ class EodEvidenceRepository
     }
 
 
+    public function exportRunSourceObservationAudit($runId)
+    {
+        if (! Schema::hasTable('md_source_observations')) {
+            return [];
+        }
+
+        $observations = DB::table('md_source_observations')
+            ->select(
+                'source_observation_id', 'observation_uid', 'parent_observation_id', 'requested_trade_date',
+                'source_mode', 'source_name', 'provider', 'provider_symbol', 'payload_hash', 'payload_ref',
+                'schema_fingerprint', 'provider_schema_version', 'outcome_state', 'validation_state',
+                'reason_code', 'acquired_at'
+            )
+            ->where('run_id', (int) $runId)
+            ->orderBy('source_observation_id')
+            ->get();
+
+        if ($observations->isEmpty()) {
+            return [];
+        }
+
+        $outcomeSummary = [];
+        $validationSummary = [];
+        $referenceLines = [];
+        $referenceSample = [];
+        $observationIds = [];
+
+        foreach ($observations as $row) {
+            $id = (int) $row->source_observation_id;
+            $observationIds[] = $id;
+            $outcome = strtoupper((string) ($row->outcome_state ?? 'UNKNOWN'));
+            $validation = strtoupper((string) ($row->validation_state ?? 'UNKNOWN'));
+            $outcomeSummary[$outcome] = ($outcomeSummary[$outcome] ?? 0) + 1;
+            $validationSummary[$validation] = ($validationSummary[$validation] ?? 0) + 1;
+
+            $reference = [
+                'source_observation_id' => $id,
+                'observation_uid' => (string) ($row->observation_uid ?? ''),
+                'parent_observation_id' => $row->parent_observation_id !== null ? (int) $row->parent_observation_id : null,
+                'requested_trade_date' => (string) ($row->requested_trade_date ?? ''),
+                'source_mode' => (string) ($row->source_mode ?? ''),
+                'source_name' => (string) ($row->source_name ?? ''),
+                'provider' => $row->provider !== null ? (string) $row->provider : null,
+                'provider_symbol' => $row->provider_symbol !== null ? (string) $row->provider_symbol : null,
+                'payload_hash' => $row->payload_hash !== null ? (string) $row->payload_hash : null,
+                'payload_ref' => $row->payload_ref !== null ? (string) $row->payload_ref : null,
+                'schema_fingerprint' => $row->schema_fingerprint !== null ? (string) $row->schema_fingerprint : null,
+                'provider_schema_version' => $row->provider_schema_version !== null ? (string) $row->provider_schema_version : null,
+                'outcome_state' => $outcome,
+                'validation_state' => $validation,
+                'reason_code' => $row->reason_code !== null ? (string) $row->reason_code : null,
+                'acquired_at' => (string) ($row->acquired_at ?? ''),
+            ];
+            $referenceLines[] = json_encode($reference, JSON_UNESCAPED_SLASHES);
+            if (count($referenceSample) < 25) {
+                $referenceSample[] = $reference;
+            }
+        }
+        ksort($outcomeSummary);
+        ksort($validationSummary);
+
+        $rejectionReasonSummary = [];
+        $rejectedRowCount = 0;
+        if (Schema::hasTable('md_source_observation_rejected_rows')) {
+            $rejectedRows = DB::table('md_source_observation_rejected_rows')
+                ->select('reason_code', DB::raw('COUNT(*) AS row_count'))
+                ->whereIn('source_observation_id', $observationIds)
+                ->groupBy('reason_code')
+                ->orderBy('reason_code')
+                ->get();
+            foreach ($rejectedRows as $row) {
+                $reason = (string) ($row->reason_code ?? 'UNKNOWN');
+                $count = (int) ($row->row_count ?? 0);
+                $rejectionReasonSummary[$reason] = $count;
+                $rejectedRowCount += $count;
+            }
+        }
+
+        return [
+            'source_observation_count' => count($observationIds),
+            'source_observation_reference_manifest_hash' => hash('sha256', implode("\n", $referenceLines)),
+            'source_observation_reference_sample' => $referenceSample,
+            'source_observation_outcome_state_summary' => $outcomeSummary,
+            'schema_validation_state_summary' => $validationSummary,
+            'source_observation_rejected_row_count' => $rejectedRowCount,
+            'source_observation_rejection_reason_summary' => $rejectionReasonSummary,
+        ];
+    }
+
+
     public function exportRunSourceAttemptTelemetry($runId)
     {
         $events = DB::table('eod_run_events')
@@ -465,9 +556,20 @@ class EodEvidenceRepository
                 $sourceAcquisition = $payload['exception_context'];
             }
 
-            if (! is_array($sourceAcquisition) || empty($sourceAcquisition['attempts']) || ! is_array($sourceAcquisition['attempts'])) {
+            if (! is_array($sourceAcquisition)) {
                 continue;
             }
+            $attempts = isset($sourceAcquisition['attempts']) && is_array($sourceAcquisition['attempts'])
+                ? $sourceAcquisition['attempts']
+                : [];
+            if ($attempts === []
+                && empty($sourceAcquisition['source_mode'])
+                && empty($sourceAcquisition['source_name'])
+                && empty($sourceAcquisition['final_reason_code'])
+                && empty($sourceAcquisition['source_final_status'])) {
+                continue;
+            }
+            $sourceAcquisition['attempts'] = $attempts;
 
             $selected = [
                 'event_id' => (int) $event->event_id,
@@ -480,16 +582,20 @@ class EodEvidenceRepository
             return [];
         }
 
-        return [
+        $telemetry = [
             'event_id' => $selected['event_id'],
             'event_time' => $selected['event_time'],
             'event_type' => $selected['event_type'],
             'provider' => isset($selected['provider']) && $selected['provider'] !== '' ? (string) $selected['provider'] : null,
             'source_name' => isset($selected['source_name']) && $selected['source_name'] !== '' ? (string) $selected['source_name'] : null,
             'source_name_resolved' => isset($selected['source_name_resolved']) && $selected['source_name_resolved'] !== '' ? (string) $selected['source_name_resolved'] : null,
+            'source_priority' => isset($selected['source_priority']) && $selected['source_priority'] !== '' ? (string) $selected['source_priority'] : null,
+            'active_source_decision' => isset($selected['active_source_decision']) && $selected['active_source_decision'] !== '' ? (string) $selected['active_source_decision'] : null,
+            'retry_attempt_count' => isset($selected['retry_attempt_count']) && $selected['retry_attempt_count'] !== null ? (int) $selected['retry_attempt_count'] : 0,
+            'failure_class_summary' => isset($selected['failure_class_summary']) && is_array($selected['failure_class_summary']) ? $selected['failure_class_summary'] : [],
             'timeout_seconds' => isset($selected['timeout_seconds']) && $selected['timeout_seconds'] !== null ? (int) $selected['timeout_seconds'] : null,
             'retry_max' => isset($selected['retry_max']) && $selected['retry_max'] !== null ? (int) $selected['retry_max'] : null,
-            'attempt_count' => isset($selected['attempt_count']) && $selected['attempt_count'] !== null ? (int) $selected['attempt_count'] : count($selected['attempts']),
+            'attempt_count' => isset($selected['attempt_count']) && $selected['attempt_count'] !== null ? (int) $selected['attempt_count'] : count($selected['attempts'] ?? []),
             'success_after_retry' => ! empty($selected['success_after_retry']) ? 'yes' : null,
             'final_http_status' => isset($selected['final_http_status']) && $selected['final_http_status'] !== null ? (int) $selected['final_http_status'] : null,
             'final_reason_code' => isset($selected['final_reason_code']) && $selected['final_reason_code'] !== '' ? (string) $selected['final_reason_code'] : null,
@@ -507,6 +613,14 @@ class EodEvidenceRepository
             'failed_ticker_count' => isset($selected['failed_ticker_count']) && $selected['failed_ticker_count'] !== null ? (int) $selected['failed_ticker_count'] : null,
             'max_failed_allowed_for_coverage' => isset($selected['max_failed_allowed_for_coverage']) && $selected['max_failed_allowed_for_coverage'] !== null ? (int) $selected['max_failed_allowed_for_coverage'] : null,
             'coverage_impossible' => isset($selected['coverage_impossible']) ? (bool) $selected['coverage_impossible'] : null,
+            'circuit_breaker_open' => isset($selected['circuit_breaker_open']) ? (bool) $selected['circuit_breaker_open'] : null,
+            'source_protection_state' => isset($selected['source_protection_state']) && $selected['source_protection_state'] !== '' ? (string) $selected['source_protection_state'] : null,
+            'circuit_breaker_threshold' => isset($selected['circuit_breaker_threshold']) && $selected['circuit_breaker_threshold'] !== null ? (float) $selected['circuit_breaker_threshold'] : null,
+            'circuit_breaker_failure_count' => isset($selected['circuit_breaker_failure_count']) && $selected['circuit_breaker_failure_count'] !== null ? (int) $selected['circuit_breaker_failure_count'] : null,
+            'circuit_breaker_success_count' => isset($selected['circuit_breaker_success_count']) && $selected['circuit_breaker_success_count'] !== null ? (int) $selected['circuit_breaker_success_count'] : null,
+            'attempted_acquisition_unit_count' => isset($selected['attempted_acquisition_unit_count']) && $selected['attempted_acquisition_unit_count'] !== null ? (int) $selected['attempted_acquisition_unit_count'] : (isset($selected['attempted_ticker_count']) && $selected['attempted_ticker_count'] !== null ? (int) $selected['attempted_ticker_count'] : null),
+            'unattempted_acquisition_unit_count' => isset($selected['unattempted_acquisition_unit_count']) && $selected['unattempted_acquisition_unit_count'] !== null ? (int) $selected['unattempted_acquisition_unit_count'] : (isset($selected['unattempted_ticker_count']) && $selected['unattempted_ticker_count'] !== null ? (int) $selected['unattempted_ticker_count'] : null),
+            'circuit_breaker_trigger_reason_code' => isset($selected['circuit_breaker_trigger_reason_code']) && $selected['circuit_breaker_trigger_reason_code'] !== '' ? (string) $selected['circuit_breaker_trigger_reason_code'] : null,
             'attempts' => array_values(array_map(function ($attempt) {
                 $attempt = is_array($attempt) ? $attempt : [];
 
@@ -520,6 +634,9 @@ class EodEvidenceRepository
                 ];
             }, $selected['attempts'])),
         ];
+        $telemetry['source_observation_audit'] = $this->exportRunSourceObservationAudit($runId);
+
+        return $telemetry;
     }
 
     public function findCorrectionById($correctionId)

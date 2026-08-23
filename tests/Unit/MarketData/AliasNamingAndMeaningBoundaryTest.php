@@ -197,6 +197,14 @@ class AliasNamingAndMeaningBoundaryTest extends TestCase
                 continue; // the matrix quotes strategy verbatim; it is source identity, not a contract
             }
             $body = (string) file_get_contents($path);
+            if (substr($relative, -5) === '.json') {
+                $decoded = json_decode($body, true);
+                if (is_array($decoded) && isset($decoded['closure_eligibility']) && is_array($decoded['closure_eligibility'])) {
+                    $closure = $decoded['closure_eligibility'];
+                    unset($decoded['closure_eligibility']);
+                    $body = json_encode($decoded, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                }
+            }
             if (! $this->usesAliasIdentifier($body)) {
                 continue;
             }
