@@ -1,0 +1,52 @@
+{
+  "baseline_id": "MD-B09-A001-BL001",
+  "stage_id": "MD-B09",
+  "attempt_id": "MD-B09-A001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260822-001",
+  "strategy_freeze_manifest_sha1": "B9EF92213352F66A8253FE033B3479E0916629AB",
+  "strategy_tree_fingerprint_sha1": "9DA998231D2588CDC8B93DFC6D66FEAAB6BD3F1D",
+  "strategy_document_count": 91,
+  "governance_fingerprint_sha1": "887B3F88DEABBEB87FBF5B0C63585B384E8B9B6C",
+  "governance_document_count": 43,
+  "traceability_matrix_sha1": "B23B7BFAAF35D1DE3A0FD515798C8458995E852B",
+  "source_revision": "b3e8b6c772b38dcab96d09e96b17b8b7bcf67ffc",
+  "source_revision_branch": "UNKNOWN",
+  "source_patch_lineage": "Current governed tree includes the completed MD-B08 parent/R1/R2/R3/postproof overlay ending at SC-MD-B08-A001-001; no later user commit was supplied in-chat.",
+  "working_tree": "CURRENT_GOVERNED_OVERLAY_RECONSTRUCTED; user-local Git cleanliness after B08 closure was not re-executed in this workspace; content fingerprints below lock the exact current tree.",
+  "app_code_fingerprint_sha1": "8BC15B01ECF70EE92F93FF7C04378843C1D4129A",
+  "tests_fingerprint_sha1": "2D5195906D6EDE6C481B3CE1B24702653EC77ED6",
+  "schema_config_identity": "schema_docs:B2C58862DAD029485B6D0A91D0D32688147E7DFF;config:E845C62D90FDA46371D71EBA72DF5670B9699517;migrations:DA23B5948FE4B8A37ED69A895940B0E6BFDEFC4E",
+  "dependency_identity": {
+    "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+    "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+  },
+  "toolchain_identity": "B09 fresh local runtime proof pending; latest verified predecessor runtime proof: MD-B08 R3 full suite 1833 tests / 17462 assertions, 0 failure/error/skip; static workspace PHP 8.4.23.",
+  "external_dependency_contract_identity": {
+    "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+    "registered": 7,
+    "open_blocking": [],
+    "open_non_blocking": [
+      "MD-DEP-0003",
+      "MD-DEP-0004"
+    ]
+  },
+  "stage_entry_normalization": {
+    "mandatory_denominator": 139,
+    "optional_capabilities": 12,
+    "moved_downstream": 46,
+    "full_document_reference_context_rows": 28,
+    "mixed_classification_debt": 0,
+    "global_md_dep_0004_remainder_members": 439,
+    "global_md_dep_0004_remainder_stages": 11,
+    "additive_strategy_extraction_rows": [
+      "MD-S008-R0087",
+      "MD-S036-R0033"
+    ]
+  },
+  "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; strategy tree binds the current freeze-manifest document path/hash set; plain SHA1 for single files.",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "created_at": "2026-08-23T22:31:00+07:00",
+  "issuance_note": "Issued after B09 stage-entry semantic normalization and before any MD-B09 application/runtime/test implementation mutation. Predecessor SC-MD-B08-A001-001 is a stage precondition only and contributes no inherited B09 predicate proof."
+}

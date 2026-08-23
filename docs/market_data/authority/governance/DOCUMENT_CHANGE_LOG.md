@@ -68,3 +68,16 @@
 - Result: `market_data.hash.null_token` now declares an explicit zero-byte empty-string default and no environment input. The former `[empty]`/`MARKET_DATA_HASH_NULL_TOKEN` lock contradicted the owner semantics and was not treated as undocumented notation.
 - Freeze impact: successor freeze `MD-STRATEGY-FREEZE-20260822-001`; only the registered `MD-S082` fingerprint changes.
 - Verification impact: `MD-B04-A001-BL001` and `E-MD-B04-A001-001` remain immutable at the 113/114 boundary. Current closure requires successor `MD-B04-A002`, a new pre-change Baseline Lock, early Change Impact Declaration, and revalidation of `MD-S082-R0062` plus all affected config/hash/serializer-metadata proof.
+
+## DOC-CHG-20260823-001 — Dedicated BAR reason code for zero-volume price movement
+
+- Date: 2026-08-23
+- Finding: `F-MD-B09-A001-001`
+- Supporting evidence: `E-MD-B09-A001-001`
+- Reviewed decision: `D-MD-20260823-01`
+- Explicit authorization: user instruction `AUTHORIZE D-MD-20260823-01 AND CONTINUE MD-B09`, received 2026-08-23, authorises only the bounded additive `BAR_ZERO_VOLUME_PRICE_MOVEMENT` vocabulary correction.
+- Strategy impact: controlled correction to `MD-S085` only; `MD-S023-R0044` and every other strategy document remain byte-identical.
+- Result: `BAR_ZERO_VOLUME_PRICE_MOVEMENT` is the canonical `BAR` / `HARD` reason for a source-backed EOD row with `volume = 0` and non-identical OHLC; the row is invalid/rejected evidence and never canonical. No existing reason code changes meaning.
+- Freeze impact: successor freeze `MD-STRATEGY-FREEZE-20260823-001`; only the registered `MD-S085` fingerprint changes.
+- Verification impact: `MD-B09-A001-BL001` and `E-MD-B09-A001-001` remain immutable partial records under the predecessor freeze. `MD-B09` resumes through `MD-B09-A002` with a new baseline/CI; reason-code seed/runtime behavior and affected exhaustive seed proof require fresh revalidation. No B00-B08 closure is rewritten.
+

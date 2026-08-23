@@ -13,7 +13,7 @@ final class MarketDataConfigFoundationTraceabilitySpec
         'MD-S034' => 27,
         'MD-S065' => 5,
         'MD-S082' => 227,
-        'MD-S085' => 463,
+        'MD-S085' => 464,
     ];
 
     /** @return array<string,array<int,string>> document => rule number => proof-owning stage */

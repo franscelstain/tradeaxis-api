@@ -133,7 +133,7 @@ class IngestSectorIndexBarsApiCommandTest extends TestCase
                                     'high' => [1230.0],
                                     'low' => [1190.0],
                                     'close' => [1225.0],
-                                    'volume' => [0],
+                                    'volume' => [1000],
                                 ]],
                                 'adjclose' => [[
                                     'adjclose' => [1225.0],

@@ -125,6 +125,7 @@ INSERT INTO eod_reason_codes (`code`, `category`, `description`, `severity`, `is
 ('BAR_INVALID_OHLC_ORDER', 'BAR', 'Received OHLC values violated canonical ordering rules.', 'HARD', 1),
 ('BAR_NON_POSITIVE_PRICE', 'BAR', 'Received price value was zero or negative in a field that must be positive.', 'HARD', 1),
 ('BAR_NEGATIVE_VOLUME', 'BAR', 'Received volume value was negative.', 'HARD', 1),
+('BAR_ZERO_VOLUME_PRICE_MOVEMENT', 'BAR', 'A source-backed EOD row reports volume 0 while open/high/low/close are not all identical; the row is invalid/rejected evidence and never canonical.', 'HARD', 1),
 ('BAR_MISSING_REQUIRED_FIELD', 'BAR', 'One or more mandatory source fields were missing.', 'HARD', 1),
 ('BAR_TICKER_MAPPING_MISSING', 'BAR', 'Source row ticker_code could not be resolved deterministically to ticker_id via the ticker master.', 'WARN', 1),
 ('SESSION_SNAPSHOT_FEATURE_DISABLED', 'COMMAND', 'Optional session-snapshot capture was requested while the feature is disabled; EOD readiness is unaffected.', 'INFO', 1),

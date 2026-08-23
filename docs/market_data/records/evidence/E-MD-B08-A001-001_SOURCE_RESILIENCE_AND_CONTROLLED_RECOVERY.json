@@ -1,0 +1,181 @@
+{
+  "evidence_id": "E-MD-B08-A001-001",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B08",
+  "attempt_id": "MD-B08-A001",
+  "work_id": "MD-B08-A001",
+  "baseline_id": "MD-B08-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "change_impact_declaration": "CI-MD-B08-A001-001",
+  "issued_at": "2026-08-23T21:55:00+07:00",
+  "title": "Current source-resilience, controlled-recovery, audit-telemetry and regression proof for MD-B08-A001",
+  "attempt_outcome": "COMPLETE — after two in-attempt remediation cycles and a final expectation-only R3 correction, the final source-resilience/evidence surface and the full PHPUnit suite execute green under the same MD-B08-A001 attempt.",
+  "authority_basis": {
+    "primary_strategy": "MD-S029 EOD Source Operational Resilience Contract",
+    "supporting_strategy": [
+      "MD-S040",
+      "MD-S053",
+      "MD-S058",
+      "MD-S059",
+      "MD-S067",
+      "MD-S085"
+    ],
+    "strategy_bytes_changed_by_attempt": 0,
+    "governance": [
+      "STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD",
+      "IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD",
+      "WORK_BASELINE_LOCK_STANDARD",
+      "CHANGE_IMPACT_DECLARATION_STANDARD",
+      "RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD",
+      "STAGE_CLOSURE_MANIFEST_STANDARD"
+    ]
+  },
+  "repository_identity": {
+    "source_revision": "b3e8b6c772b38dcab96d09e96b17b8b7bcf67ffc",
+    "source_revision_previously_proven_by": "LOCAL-B08-001_environment.txt",
+    "r3_repository_state_compatible": true,
+    "unexpected_tracked_mutation_after_testing": false,
+    "manual_proof_directory_is_external_raw_proof": true,
+    "note": "R3 changed only two stale test expectations over the already tested B08 implementation; HANDOFF_STATUS/DIFF show the expected accumulated A001 patch and no test-created tracked drift."
+  },
+  "raw_artifact_package": {
+    "archive_name": "LOCAL-B08-R3.zip",
+    "sha256": "F0920901FB67D056BC4869EADC8CEDA43B6827C5A0E87CD0930D09D3DA2ED16B",
+    "bytes": 214116,
+    "artifacts": [
+      {
+        "execution_id": "LOCAL-B08-R3-001",
+        "path": "manual_proof/LOCAL-B08-R3-001_evidence_runtime.txt",
+        "sha256": "3D30B0725F6A39370C145A09E19D2E479547DA3E2DA8C42131DE17BB16336BFC",
+        "bytes": 14886,
+        "verdict": "PASS",
+        "observed": "Targeted final R3 evidence/runtime proof: MarketDataEvidenceExportServiceTest 5 tests / 196 assertions and MarketDataPipelineIntegrationTest 56 tests / 1268 assertions; both exit 0; overall exit 0."
+      },
+      {
+        "execution_id": "LOCAL-B08-R3-002",
+        "path": "manual_proof/LOCAL-B08-R3-002_phpunit_full.txt",
+        "sha256": "809EBAC0922236631A17D993CAD7C7ED54EEDE354BA7119C44691B7AB949C942",
+        "bytes": 5430,
+        "verdict": "PASS",
+        "observed": "Full suite: 1833 tests / 17462 assertions; 0 failures/errors/skips; exit 0."
+      },
+      {
+        "execution_id": "REPOSITORY_DIFF",
+        "path": "manual_proof/HANDOFF_DIFF_AFTER_TEST.patch",
+        "sha256": "6FD70B346C3C97EAA50EBC280901E265B9C3034B578D1D35EE566FC3A8D77A4A",
+        "bytes": 1957084,
+        "verdict": "PASS",
+        "observed": "Tracked diff matches the expected accumulated MD-B08 A001 working-tree overlay; repository state remains reconstructible from the clean source revision plus issued patches."
+      },
+      {
+        "execution_id": "REPOSITORY_STATUS",
+        "path": "manual_proof/HANDOFF_STATUS_AFTER_TEST.txt",
+        "sha256": "78B15C341DB8D14B6C761BA631E12AE66B7F6B987C2E81CAC52B119E8B5F4C50",
+        "bytes": 3128,
+        "verdict": "PASS",
+        "observed": "Working tree contains only the expected accumulated MD-B08 A001 patch files; no unexpected test/generator-created tracked mutation is present."
+      }
+    ]
+  },
+  "proof_lineage": {
+    "attempt_restarted": false,
+    "prior_governed_b08_evidence": "NONE",
+    "failed_cycles_preserved_as_execution_history": true,
+    "summary": [
+      "Initial local proof exposed breaker denominator, benchmark reason preservation, stale telemetry expectations and static boundary defects; all were remediated inside A001.",
+      "R1 reduced remaining runtime failure to evidence source-context export; R2 corrected the executable projection and canonical PRIMARY/api_free semantics.",
+      "R2 then showed only two stale exact-string assertions; R3 changed those tests only, leaving application/runtime/tooling semantics unchanged.",
+      "Final R3 targeted and full-suite execution are green."
+    ]
+  },
+  "runtime_execution": {
+    "final_targeted_r3": {
+      "files": 2,
+      "tests": 61,
+      "assertions": 1464,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "result": "PASS"
+    },
+    "full_suite": {
+      "tests": 1833,
+      "assertions": 17462,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    "critical_semantics_revalidated": [
+      "api/api_free is PRIMARY with canonical active_source_decision=api_free",
+      "manual_file is SECONDARY_CONTROLLED_RECOVERY with explicit active_source_decision=manual_file",
+      "attempt_count remains total attempts while retry_attempt_count counts retries after the initial attempt",
+      "failure_class_summary retains transient failed attempts after eventual success",
+      "breaker uses the registered configured threshold against the planned acquisition universe with strict crossing and no hidden sample floor",
+      "registered retry budget is honored without hidden min(3) clamp",
+      "breaker state is telemetry while the registered underlying source failure remains the terminal reason",
+      "required resilience telemetry survives pipeline/run-event/recovery/evidence projections",
+      "immutable B07 source-observation truth is reused rather than duplicated"
+    ]
+  },
+  "traceability_pre_binding": {
+    "reviewed_rows": 326,
+    "denominator": 138,
+    "runtime_pending_before_binding": 138,
+    "premature_satisfied_before_binding": 0,
+    "moved_downstream": 90,
+    "reference_context": 98,
+    "b08_mixed_classification_debt": 0,
+    "global_dependency_backlog": "MD-DEP-0004 OPEN_NON_BLOCKING — 484 members across 12 unopened stages",
+    "binding_instruction": "Bind all 138 current B08 predicates atomically to E-MD-B08-A001-001 only after this evidence exists; any count/owner/context mismatch must fail closed."
+  },
+  "control_plane": {
+    "pre_binding_state": "PASS — final static B08 traceability/proof-readiness/classification/documentation/relationship/current-state cycle was green before R3 local execution.",
+    "post_binding_requirement": "B08 exact bound gate, classification, documentation, relationship, mutation/self-tests and deterministic CURRENT_STATE generation must pass after evidence binding and closure registration.",
+    "document_corpus_pre_issue": 878,
+    "work_records_pre_issue": 116,
+    "relationships_pre_issue": 169
+  },
+  "residue_assessment": {
+    "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_THE_B08_SURFACE",
+    "basis": [
+      "No hidden circuit-breaker sample floor remains; no attempts-so-far denominator regression remains.",
+      "No hidden retry-budget clamp remains.",
+      "Single-date, range and benchmark fanout retain required retry/throttle/source-protection coverage.",
+      "No RUN_SOURCE_CIRCUIT_BREAKER_OPEN terminal reason exists; breaker state is audit telemetry.",
+      "No synthetic market-data repair or B07 provenance bypass is introduced.",
+      "No second provenance schema or source of truth is introduced.",
+      "Provider-specific request mechanics remain below the adapter while provider-neutral resilience telemetry remains audit-visible.",
+      "Final full suite executes 1833 tests green with no failures, errors or skips."
+    ]
+  },
+  "findings_dependencies": {
+    "new_b08_finding": "NONE — executable defects were remediated inside the same A001 attempt before closure.",
+    "blocking_b08_finding": "NONE",
+    "dependencies": [
+      "MD-DEP-0004 OPEN_NON_BLOCKING — B08 entry obligation complete; 484/12 downstream backlog remains",
+      "MD-DEP-0003 OPEN_NON_BLOCKING — separate downstream ownership"
+    ],
+    "blocking_b08_dependency": "NONE"
+  },
+  "runtime_artifact_boundary": {
+    "storage_inspected": false,
+    "storage_mutated": false,
+    "raw_storage_artifacts_referenced": [],
+    "database_mutated_by_b08": false,
+    "migrations_changed_by_b08": false,
+    "note": "B08 closure uses repository source, returned PHPUnit execution and governed observation/run-event semantics; no broad storage artifact is required."
+  },
+  "relationship_requirements": {
+    "baseline": "MD-B08-A001-BL001",
+    "change_impact": "CI-MD-B08-A001-001",
+    "stage_precondition": "SC-MD-B07-A001-001",
+    "dependency_scope": "MD-DEP-0004",
+    "closure_manifest": "SC-MD-B08-A001-001"
+  },
+  "exact_resume_point": "Atomically bind all 138 B08 predicates to E-MD-B08-A001-001, rerun post-binding/current control-plane gates, then issue SC-MD-B08-A001-001 only if residue and all closure controls remain clean.",
+  "supersedes": "Nothing. This is the first issued governed evidence for MD-B08-A001."
+}

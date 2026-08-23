@@ -489,3 +489,12 @@ The following codes may appear in publication reprocess summaries or run events:
 | `PUBLICATION_REPROCESS_REPLAY_FAILED` | PUBLICATION_REPROCESS | HARD | Publication reprocess produced a readable run, but requested replay verification did not pass. |
 
 These codes do not permit silent mutation of already-readable dates. `AFFECTED_PUBLICATION_REQUIRES_CORRECTION` remains the required reason for readable/current affected dates.
+
+## Controlled correction 2026-08-23 — zero-volume price movement
+
+This additive canonical vocabulary row is authorised by `D-MD-20260823-01` and `DOC-CHG-20260823-001`. It does not change `MD-S023-R0044`; it supplies the dedicated reason-code identity that rule already requires.
+
+| Code | Domain | Severity | Meaning |
+|---|---|---:|---|
+| `BAR_ZERO_VOLUME_PRICE_MOVEMENT` | BAR | HARD | A source-backed EOD row reports `volume = 0` while `open`, `high`, `low`, and `close` are not all identical. The row is invalid/rejected evidence and must never become canonical. |
+

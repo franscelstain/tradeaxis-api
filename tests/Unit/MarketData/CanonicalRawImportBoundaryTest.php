@@ -169,6 +169,50 @@ class CanonicalRawImportBoundaryTest extends TestCase
      * Provider adjusted close stays in observation evidence. Letting it into the canonical row is
      * how an adjusted value silently becomes a raw one two columns later.
      */
+    public function test_flat_positive_zero_volume_row_remains_canonical(): void
+    {
+        $result = $this->ingest([$this->baseRow([
+            'open' => 100,
+            'high' => 100,
+            'low' => 100,
+            'close' => 100,
+            'volume' => 0,
+        ])], ['BBCA' => 1]);
+
+        $this->assertCount(1, $result['valid']);
+        $this->assertSame(0, $result['valid'][0]['volume']);
+        $this->assertSame([], $this->reasonCodes($result));
+    }
+
+    public function test_zero_volume_with_price_movement_is_rejected_with_dedicated_reason(): void
+    {
+        $result = $this->ingest([$this->baseRow([
+            'open' => 100,
+            'high' => 110,
+            'low' => 99,
+            'close' => 108,
+            'volume' => 0,
+        ])], ['BBCA' => 1]);
+
+        $this->assertCount(0, $result['valid']);
+        $this->assertContains('BAR_ZERO_VOLUME_PRICE_MOVEMENT', $this->reasonCodes($result));
+    }
+
+    public function test_zero_volume_rule_does_not_steal_invalid_ohlc_reason_precedence(): void
+    {
+        $result = $this->ingest([$this->baseRow([
+            'open' => 100,
+            'high' => 90,
+            'low' => 99,
+            'close' => 108,
+            'volume' => 0,
+        ])], ['BBCA' => 1]);
+
+        $this->assertCount(0, $result['valid']);
+        $this->assertContains('BAR_INVALID_OHLC_ORDER', $this->reasonCodes($result));
+        $this->assertNotContains('BAR_ZERO_VOLUME_PRICE_MOVEMENT', $this->reasonCodes($result));
+    }
+
     public function test_provider_adjusted_close_never_reaches_the_canonical_row(): void
     {
         $result = $this->ingest([$this->baseRow(['close' => 108, 'adj_close' => 104])], ['BBCA' => 1]);

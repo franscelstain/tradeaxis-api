@@ -928,6 +928,17 @@ class EodBarsIngestService
             return ['valid' => false, 'reason_code' => 'BAR_INVALID_OHLC_ORDER', 'note' => 'OHLC ordering invalid'];
         }
 
+        if ((int) $row['volume'] === 0
+            && ((float) $row['open'] !== (float) $row['high']
+                || (float) $row['open'] !== (float) $row['low']
+                || (float) $row['open'] !== (float) $row['close'])) {
+            return [
+                'valid' => false,
+                'reason_code' => 'BAR_ZERO_VOLUME_PRICE_MOVEMENT',
+                'note' => 'Zero volume cannot carry intra-session price movement',
+            ];
+        }
+
         return ['valid' => true, 'reason_code' => null, 'note' => null];
     }
 

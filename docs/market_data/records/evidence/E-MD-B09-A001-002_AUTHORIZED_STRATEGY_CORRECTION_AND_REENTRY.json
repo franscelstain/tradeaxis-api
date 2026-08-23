@@ -1,0 +1,52 @@
+{
+  "evidence_id": "E-MD-B09-A001-002",
+  "stage_id": "MD-B09",
+  "attempt_id": "MD-B09-A001",
+  "baseline_id": "MD-B09-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "evidence_type": "AUTHORIZED_STRATEGY_CORRECTION_AND_NON_PASS_ATTEMPT_DISPOSITION",
+  "status": "ISSUED",
+  "runtime_proof": "NOT_RUN_NOT_CLAIMED",
+  "decision_id": "D-MD-20260823-01",
+  "finding_id": "F-MD-B09-A001-001",
+  "dependency_id": "MD-DEP-0008",
+  "explicit_user_authorization": {
+    "received": true,
+    "date": "2026-08-23",
+    "scope": "Add only BAR_ZERO_VOLUME_PRICE_MOVEMENT to MD-S085 for existing MD-S023-R0044 semantics; no other strategy revision."
+  },
+  "document_change_id": "DOC-CHG-20260823-001",
+  "predecessor_strategy_freeze_id": "MD-STRATEGY-FREEZE-20260822-001",
+  "successor_strategy_freeze_id": "MD-STRATEGY-FREEZE-20260823-001",
+  "changed_strategy_ids": [
+    "MD-S085"
+  ],
+  "unchanged_strategy_semantics": [
+    "MD-S023-R0044"
+  ],
+  "strategy_correction": {
+    "reason_code": "BAR_ZERO_VOLUME_PRICE_MOVEMENT",
+    "category": "BAR",
+    "severity": "HARD",
+    "meaning": "volume = 0 with non-identical open/high/low/close is invalid/rejected evidence and never canonical"
+  },
+  "affected_current_verification": {
+    "md_b09_a001": "CANNOT_CLOSE_UNDER_PREDECESSOR_FREEZE; immutable partial baseline/evidence retained",
+    "md_b03_reason_seed_exhaustiveness": "REVALIDATION_REQUIRED_UNDER_SUCCESSOR_ATTEMPT; stage not automatically reopened",
+    "md_b00_to_b08_other_proof": "NO_IDENTIFIED_SEMANTIC_INVALIDATION"
+  },
+  "attempt_disposition": {
+    "attempt_id": "MD-B09-A001",
+    "verdict": "PARTIAL_REBASELINE_REQUIRED",
+    "terminal_pass": false,
+    "reason": "Strategy freeze changed through authorised controlled correction; successor attempt required before material executable remediation."
+  },
+  "traceability_impact": {
+    "mandatory_denominator": 139,
+    "new_structural_reference_row": "MD-S085-R0464",
+    "new_row_classification": "REFERENCE_ONLY",
+    "runtime_satisfied": 0
+  },
+  "issued_at": "2026-08-23T22:50:00+07:00",
+  "immutability": "IMMUTABLE_AFTER_ISSUE"
+}

@@ -19,7 +19,7 @@ class ConfigFoundationTraceabilityGateTest extends TestCase
 
         $this->assertSame([], $result['errors'], implode("\n", $result['errors']));
         $this->assertSame(
-            ['mandatory_b04' => 114, 'moved' => 181, 'reference' => 638],
+            ['mandatory_b04' => 114, 'moved' => 181, 'reference' => 639],
             $result['counts']
         );
     }

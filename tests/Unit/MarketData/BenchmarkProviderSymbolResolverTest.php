@@ -83,7 +83,7 @@ class BenchmarkProviderSymbolResolverTest extends TestCase
                                     'high' => [7100],
                                     'low' => [6950],
                                     'close' => [7050],
-                                    'volume' => [0],
+                                    'volume' => [1000],
                                 ]],
                                 'adjclose' => [['adjclose' => [7050]]],
                             ],

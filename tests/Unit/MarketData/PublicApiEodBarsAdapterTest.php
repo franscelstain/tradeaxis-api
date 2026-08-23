@@ -1252,4 +1252,33 @@ class PublicApiEodBarsAdapterTest extends TestCase
             ],
         ];
     }
+
+    public function test_provider_row_with_zero_volume_and_price_movement_is_rejected_with_canonical_reason()
+    {
+        $adapter = new PublicApiEodBarsAdapter(function () { return []; });
+        $method = new ReflectionMethod(PublicApiEodBarsAdapter::class, 'validateYahooOhlcvRow');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($adapter, [
+            'open' => 100, 'high' => 110, 'low' => 99, 'close' => 108, 'volume' => 0,
+        ]);
+
+        $this->assertFalse($result['valid']);
+        $this->assertSame('BAR_ZERO_VOLUME_PRICE_MOVEMENT', $result['reason_code']);
+    }
+
+    public function test_provider_row_with_flat_positive_ohlc_and_zero_volume_remains_valid()
+    {
+        $adapter = new PublicApiEodBarsAdapter(function () { return []; });
+        $method = new ReflectionMethod(PublicApiEodBarsAdapter::class, 'validateYahooOhlcvRow');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($adapter, [
+            'open' => 100, 'high' => 100, 'low' => 100, 'close' => 100, 'volume' => 0,
+        ]);
+
+        $this->assertTrue($result['valid']);
+        $this->assertNull($result['reason_code']);
+    }
+
 }

@@ -1,0 +1,72 @@
+{
+  "evidence_id": "E-MD-B09-A001-001",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B09",
+  "attempt_id": "MD-B09-A001",
+  "work_id": "MD-B09-A001",
+  "baseline_id": "MD-B09-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "change_impact_declaration": "CI-MD-B09-A001-001",
+  "issued_at": "2026-08-23T22:43:00+07:00",
+  "title": "MD-B09 stage-entry normalization and zero-volume reason-code authority contradiction — static proof",
+  "attempt_outcome": "PARTIAL_BLOCKED — B09 entry normalized to 139 mandatory predicates, but executable implementation is withheld at MD-S023-R0044 because the canonical reason-code owner has no dedicated code.",
+  "proof_class": "STATIC_PROOF_AND_AUTHORITY_INSPECTION_ONLY",
+  "local_runtime_claimed": false,
+  "authority_basis": {
+    "eod_rule": {
+      "path": "authority/strategy/book/EOD_Bars_Contract.md",
+      "rule_id": "MD-S023-R0044",
+      "source_line": 76,
+      "requirement": "volume=0 with intra-session price movement is invalid; reject with its own reason code; never canonical",
+      "sha256": "E0FA30B916E39A18927F3DC7DABEC2CC006A8125213644A530342D9F2B3EA49F"
+    },
+    "reason_registry": {
+      "path": "authority/strategy/registry/Reason_Codes_Registry.md",
+      "ownership": "canonical vocabulary including eod_invalid_bars.invalid_reason_code",
+      "sha256": "82A58F4C62C79AC2335D621E383CFEA62A38C15FE66CB1EF7BFE207DC9D01A3B",
+      "dedicated_zero_volume_price_movement_code_present": false
+    },
+    "governance": [
+      "authority/governance/DOCUMENT_CHANGE_POLICY.md",
+      "authority/governance/STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md",
+      "authority/governance/WORK_BASELINE_LOCK_STANDARD.md",
+      "authority/governance/CHANGE_IMPACT_DECLARATION_STANDARD.md"
+    ]
+  },
+  "stage_entry": {
+    "matrix_rows": 6494,
+    "mandatory_b09": 139,
+    "optional_b09": 12,
+    "moved_downstream": 46,
+    "reference_context_full_docs": 28,
+    "b09_mixed_classification_debt": 0,
+    "md_dep_0004_remaining_members": 439,
+    "md_dep_0004_remaining_stages": 11,
+    "additive_extraction_rows": [
+      "MD-S008-R0087",
+      "MD-S036-R0033"
+    ]
+  },
+  "implementation_state": {
+    "classification": "EXISTING_UNVERIFIED; MATERIAL_B09_APPLICATION_MUTATION_WITHHELD_AT_AUTHORITY_BOUNDARY",
+    "changed_application_files": [],
+    "blocked_rule": "MD-S023-R0044",
+    "existing_service_gap": "EodBarsIngestService does not currently reject volume=0 combined with price movement using a dedicated governed reason code."
+  },
+  "proof_binding": {
+    "satisfied": 0,
+    "not_assessed": 139,
+    "evidence_bound_predicates": 0,
+    "reason": "No runtime-dependent predicate is promoted from stage-entry/static authority proof."
+  },
+  "finding": "F-MD-B09-A001-001",
+  "dependency": "MD-DEP-0008",
+  "required_resolution": "Reviewed strategy decision + explicit user authorization + bounded reason-registry correction + change log + successor freeze + affected rebaseline/revalidation. No semantic workaround is permitted.",
+  "storage": {
+    "inspected": false,
+    "required": false,
+    "note": "No storage artifact is material to this authority contradiction."
+  }
+}

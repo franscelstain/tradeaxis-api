@@ -1272,6 +1272,12 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
             || (float) $row['low'] > min((float) $row['open'], (float) $row['high'], (float) $row['close'])) {
             return ['valid' => false, 'reason_code' => 'BAR_INVALID_OHLC_ORDER', 'note' => 'Provider OHLC values are internally inconsistent.'];
         }
+        if ((int) $row['volume'] === 0
+            && ((float) $row['open'] !== (float) $row['high']
+                || (float) $row['open'] !== (float) $row['low']
+                || (float) $row['open'] !== (float) $row['close'])) {
+            return ['valid' => false, 'reason_code' => 'BAR_ZERO_VOLUME_PRICE_MOVEMENT', 'note' => 'Provider reports price movement with zero volume.'];
+        }
 
         return ['valid' => true, 'reason_code' => null, 'note' => null];
     }

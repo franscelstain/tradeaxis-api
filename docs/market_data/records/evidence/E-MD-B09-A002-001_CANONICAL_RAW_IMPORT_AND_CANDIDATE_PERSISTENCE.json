@@ -1,0 +1,271 @@
+{
+  "evidence_id": "E-MD-B09-A002-001",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B09",
+  "attempt_id": "MD-B09-A002",
+  "work_id": "MD-B09-A002",
+  "baseline_id": "MD-B09-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze": "MD-STRATEGY-FREEZE-20260823-001",
+  "change_impact_declaration": "CI-MD-B09-A002-001",
+  "issued_at": "2026-08-24T00:05:00+07:00",
+  "title": "Current canonical RAW import, invalid-row, dedup/conflict, candidate-persistence and reason-dictionary proof for MD-B09-A002",
+  "attempt_outcome": "COMPLETE — the successor attempt revalidates the authorised strategy correction, canonical RAW import boundary, invalid-row separation, deterministic conflict behavior, import-only candidate persistence, deployed reason dictionary, affected predecessor guards and full regression suite.",
+  "authority_basis": {
+    "primary_strategy": [
+      "MD-S023 EOD Bars Contract",
+      "MD-S008 canonical RAW identity",
+      "MD-S036 import-only lifecycle"
+    ],
+    "supporting_strategy": [
+      "MD-S001",
+      "MD-S029",
+      "MD-S034",
+      "MD-S039",
+      "MD-S053",
+      "MD-S085"
+    ],
+    "reviewed_decision": "D-MD-20260823-01",
+    "controlled_revision": "DOC-CHG-20260823-001",
+    "strategy_freeze": "MD-STRATEGY-FREEZE-20260823-001",
+    "strategy_bytes_changed_inside_a002": 0,
+    "governance": [
+      "STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD",
+      "IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD",
+      "WORK_BASELINE_LOCK_STANDARD",
+      "CHANGE_IMPACT_DECLARATION_STANDARD",
+      "RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD",
+      "STAGE_CLOSURE_MANIFEST_STANDARD"
+    ]
+  },
+  "repository_identity": {
+    "source_revision": "b3e8b6c772b38dcab96d09e96b17b8b7bcf67ffc",
+    "patch_lineage": [
+      {
+        "patch": "market_data_update_MD-B09_A001.zip",
+        "sha256": "86BB461B1F2548E6017A1F3140B7A9D9D719D12854EF045C587DE7E7D1A6FA20"
+      },
+      {
+        "patch": "market_data_update_MD-B09_A002.zip",
+        "sha256": "0C9031515E005F3A289BDCB08A1BD8E31816FE3DE8E6E3473FCF8786AB7E2E0D"
+      },
+      {
+        "patch": "market_data_update_MD-B09_A002_R1.zip",
+        "sha256": "2B6297E1D437DA4A59EAD784525CA899AB59081693DAEC8BEE1E3D9BF4727314"
+      },
+      {
+        "patch": "market_data_update_MD-B09_A002_R2.zip",
+        "sha256": "F90EB49B9C61EF4F9542B46A45CFE863CA9188119169F1BC02833F7C04013829"
+      }
+    ],
+    "r2_repository_state_compatible": true,
+    "unexpected_tracked_mutation_after_testing": false,
+    "manual_proof_directory_is_external_raw_proof": true
+  },
+  "raw_artifact_packages": [
+    {
+      "archive_name": "LOCAL-B09-A002.zip",
+      "sha256": "B09E13F7DF35F01EBA54F0AAF1F630B9267FCB8C70796C1049E60D7EAE5EFC46",
+      "artifacts": [
+        {
+          "execution_id": "LOCAL-B09-A002-001",
+          "path": "manual_proof/LOCAL-B09-A002-001_reason_dictionary.txt",
+          "sha256": "3C38659D22CE3726A1B2A15721514A9936F79D5D48A4A30AA71A17060E5D9067",
+          "bytes": 15168,
+          "verdict": "PASS",
+          "observed": "MariaDB reachable; migrate status, reason seeder and read-only deployment probe all exit 0; deployed BAR_ZERO_VOLUME_PRICE_MOVEMENT is active BAR/HARD."
+        },
+        {
+          "execution_id": "LOCAL-B09-A002-002",
+          "path": "manual_proof/LOCAL-B09-A002-002_canonical_raw.txt",
+          "sha256": "DB7263CE4E89A26C33248174554E14837C5D6DF8C1A64F8E182293BA1993A8E7",
+          "bytes": 11406,
+          "verdict": "PASS",
+          "observed": "60 tests / 348 assertions across six canonical RAW/reason-code/fail-closed suites; all invocations exit 0."
+        },
+        {
+          "execution_id": "LOCAL-B09-A002-003",
+          "path": "manual_proof/LOCAL-B09-A002-003_import_integration.txt",
+          "sha256": "06CE0B033ABFEB7EA73715F5A7E7F571165647A2F8B5CD011C4339184070E722",
+          "bytes": 23938,
+          "verdict": "PASS",
+          "observed": "105 tests / 1617 assertions across import lifecycle, config identity, observation immutability and ownership suites; all invocations exit 0."
+        }
+      ]
+    },
+    {
+      "archive_name": "LOCAL-B09-A002-R1.zip",
+      "sha256": "474551419651A8C66AD78E7E136AA8FA8055D2019FD7C702831BF3C2BB940699",
+      "artifacts": [
+        {
+          "execution_id": "LOCAL-B09-A002-R1-002",
+          "path": "manual_proof/LOCAL-B09-A002-R1-002_control_plane.txt",
+          "sha256": "7BADA369CE0525535FF9BE8A879E96BABC92CF6A47D8CC1E09212CBCFD53A2D6",
+          "bytes": 23516,
+          "verdict": "PASS",
+          "observed": "B09 139/12/46 pre-binding control plane, B04 114/181/639, classification 439/11, docs 895, relationships 126/200 and deterministic CURRENT_STATE all pass."
+        }
+      ]
+    },
+    {
+      "archive_name": "LOCAL-B09-A002-R2.zip",
+      "sha256": "979D8CAC9934C3E69D21980F41AA6B9B0A01511BBB830909F580E8DA32014025",
+      "artifacts": [
+        {
+          "execution_id": "LOCAL-B09-A002-R2-001",
+          "path": "manual_proof/LOCAL-B09-A002-R2-001_b04_regression.txt",
+          "sha256": "5B5B6C24328F08AA11FD3E7A838A0C047D7F86E5B9F054B9EC936F4417FAB97D",
+          "bytes": 838,
+          "verdict": "PASS",
+          "observed": "Affected B04 exact-normalization regression: 4 tests / 9 assertions, exit 0."
+        },
+        {
+          "execution_id": "LOCAL-B09-A002-R2-002",
+          "path": "manual_proof/LOCAL-B09-A002-R2-002_phpunit_full.txt",
+          "sha256": "BF895161F28A9F162472FFE075F0B2A3DFF9C8FFB389D2CE3F0A0A5D9E4C1C52",
+          "bytes": 5440,
+          "verdict": "PASS",
+          "observed": "Full suite: 1838 tests / 17475 assertions; 0 failures/errors/skips; exit 0."
+        },
+        {
+          "execution_id": "REPOSITORY_STATUS",
+          "path": "manual_proof/HANDOFF_STATUS_AFTER_TEST.txt",
+          "sha256": "CD7DB826A243CCB29307E0985895568F1D4484F9D4080FDAE9876B37885C9D27",
+          "bytes": 3518,
+          "verdict": "PASS",
+          "observed": "25 expected modified tracked paths and 17 expected untracked governed B09/B08 paths; no unexpected test-created tracked mutation."
+        },
+        {
+          "execution_id": "REPOSITORY_DIFF",
+          "path": "manual_proof/HANDOFF_DIFF_AFTER_TEST.patch",
+          "sha256": "08BC9F529B66E3F84312DA6AD7E982EC64CE1B33CCC0DC4347130BE8EEBC5D1C",
+          "bytes": 7611464,
+          "verdict": "PASS",
+          "observed": "Tracked diff remains reconstructible from the source revision plus A001/A002/R1/R2 patch lineage."
+        }
+      ]
+    }
+  ],
+  "proof_lineage": {
+    "attempt_restarted": false,
+    "predecessor_attempt": "MD-B09-A001 PARTIAL_REBASELINE_REQUIRED",
+    "prior_a002_governed_evidence": "NONE",
+    "failed_cycles_preserved_as_execution_history": true,
+    "summary": [
+      "A002 initial runtime proof established the deployed reason dictionary, canonical RAW/fail-closed behavior and import/provenance semantics.",
+      "The initial control-plane/full-suite failures were traced to physically missing immutable B08 artifacts and strategy-change-affected test fixtures/count guards; R1 restored/corrected only those surfaces.",
+      "R1 then exposed one stale B04 exact-count assertion; R2 corrected that assertion only.",
+      "Final R2 affected regression and full suite are green with no remaining executable failure."
+    ]
+  },
+  "runtime_execution": {
+    "deployed_reason_dictionary": {
+      "result": "PASS",
+      "database_reachable": true,
+      "reason_code": "BAR_ZERO_VOLUME_PRICE_MOVEMENT",
+      "category": "BAR",
+      "severity": "HARD",
+      "active": 1
+    },
+    "canonical_raw_and_fail_closed": {
+      "tests": 60,
+      "assertions": 348,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "result": "PASS"
+    },
+    "import_provenance_integration": {
+      "tests": 105,
+      "assertions": 1617,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "result": "PASS"
+    },
+    "affected_b04_regression": {
+      "tests": 4,
+      "assertions": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "result": "PASS"
+    },
+    "full_suite": {
+      "tests": 1838,
+      "assertions": 17475,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "result": "PASS"
+    },
+    "critical_semantics_revalidated": [
+      "volume=0 with intra-session price movement is rejected with BAR_ZERO_VOLUME_PRICE_MOVEMENT and never becomes canonical",
+      "flat positive zero-volume OHLC remains admissible",
+      "existing invalid-OHLC and negative-volume reason precedence is preserved",
+      "provider-observation rejection uses the same canonical reason without bypassing the immutable B07 observation model",
+      "reason registry, seed and deployed MariaDB dictionary are synchronized",
+      "import-only creates a candidate without publication sealing, readability or current-pointer side effects",
+      "canonical lineage accepts only real accepted immutable source observations",
+      "affected B03 reason-seed execution and B04 strategy-corpus normalization remain green under the successor freeze"
+    ]
+  },
+  "traceability_pre_binding": {
+    "denominator": 139,
+    "runtime_pending_before_binding": 139,
+    "premature_satisfied_before_binding": 0,
+    "optional_capabilities": 12,
+    "moved_downstream": 46,
+    "applicability_pending": 0,
+    "b09_mixed_classification_debt": 0,
+    "global_dependency_backlog": "MD-DEP-0004 OPEN_NON_BLOCKING — 439 members across 11 unopened stages",
+    "binding_instruction": "Bind all 139 current B09 predicates atomically to E-MD-B09-A002-001 only after this evidence exists; any count/owner/context mismatch must fail closed."
+  },
+  "affected_predecessor_revalidation": {
+    "MD-B03": "PASS — ReasonCodeSeedExecutionTest participated in LOCAL-B09-A002-002 and the deployed dictionary probe confirms the authorised code is executable in MariaDB; B03 is not reopened.",
+    "MD-B04": "PASS — LOCAL-B09-A002-R2-001 proves the current exact normalization at 114 mandatory / 181 moved / 639 reference under the successor strategy corpus; B04 is not reopened."
+  },
+  "control_plane": {
+    "pre_binding": "PASS — B09 139/12/46, proof map 139, classification 439/11, documentation 895 and relationship 126/200 controls were green before final binding; R2 changed only a stale PHPUnit expectation.",
+    "post_binding_requirement": "Run exact bound B09 gate plus classification, documentation, relationship, mutation/self-tests and deterministic CURRENT_STATE generation after evidence binding and closure registration."
+  },
+  "residue_assessment": {
+    "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_THE_B09_SURFACE",
+    "basis": [
+      "No application-only reason vocabulary or second reason dictionary was introduced.",
+      "No schema/migration was required; existing invalid-row and reason-code persistence supports the dedicated code.",
+      "No publication/current-pointer/promotion side effect was added to import-only flow.",
+      "No B07 provenance rewrite or alternate source-of-truth path was introduced.",
+      "Flat zero-volume admissibility and unrelated invalid-reason precedence remain protected by executable tests.",
+      "Final full suite executes 1838 tests / 17475 assertions with zero failures, errors or skips."
+    ]
+  },
+  "findings_dependencies": {
+    "F-MD-B09-A001-001": "RESOLVED historically by reviewed decision, explicit authorization, controlled revision and successor freeze; not reopened.",
+    "MD-DEP-0008": "RESOLVED authority blocker; A002 runtime revalidation complete.",
+    "MD-DEP-0004": "OPEN_NON_BLOCKING — B09 entry obligation complete; 439/11 downstream backlog remains.",
+    "blocking_b09_finding": "NONE",
+    "blocking_b09_dependency": "NONE"
+  },
+  "runtime_artifact_boundary": {
+    "storage_inspected": false,
+    "storage_mutated": false,
+    "raw_storage_artifacts_referenced": [],
+    "database_mutated_by_a002_proof": "reason-code seeder executed as required; no schema migration changed by A002",
+    "note": "Returned manual proof archives are the retained external execution artifacts admitted by this record; no broad storage upload is required."
+  },
+  "relationship_requirements": {
+    "baseline": "MD-B09-A002-BL001",
+    "change_impact": "CI-MD-B09-A002-001",
+    "stage_precondition": "SC-MD-B08-A001-001",
+    "strategy_change_evidence": "E-MD-B09-A001-002",
+    "reviewed_decision": "D-MD-20260823-01",
+    "dependency_scope": "MD-DEP-0004;MD-DEP-0008",
+    "closure_manifest": "SC-MD-B09-A002-001"
+  },
+  "exact_resume_point": "Atomically bind all 139 B09 predicates to E-MD-B09-A002-001, run post-binding/current control-plane gates, then issue SC-MD-B09-A002-001 only if residue and all closure controls remain clean.",
+  "supersedes": "Nothing. This is the first issued governed runtime evidence for MD-B09-A002."
+}
