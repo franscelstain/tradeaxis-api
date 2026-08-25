@@ -6096,26 +6096,17 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'trade_date' => $tradeDate,
             'run_id' => 90,
             'publication_version' => 1,
-            'is_current' => 1,
+            'is_current' => 0,
             'supersedes_publication_id' => null,
-            'seal_state' => 'SEALED',
+            'seal_state' => 'UNSEALED',
             'bars_batch_hash' => 'bars-old',
             'indicators_batch_hash' => 'ind-old',
             'eligibility_batch_hash' => 'elig-old',
             'price_product_code' => 'STRUCTURAL_ADJUSTED',
             'price_product_version' => 'structural_adjusted_v1',
             'factor_set_hash' => $factorSetHash,
-            'sealed_at' => '2026-03-20 17:20:00',
+            'sealed_at' => null,
             'created_at' => '2026-03-20 17:00:00',
-            'updated_at' => '2026-03-20 17:20:00',
-        ]);
-
-        DB::table('eod_current_publication_pointer')->insert([
-            'trade_date' => $tradeDate,
-            'publication_id' => 1,
-            'run_id' => 90,
-            'publication_version' => 1,
-            'sealed_at' => '2026-03-20 17:20:00',
             'updated_at' => '2026-03-20 17:20:00',
         ]);
 
@@ -6175,6 +6166,26 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'run_id' => 90,
             'publication_id' => 1,
             'created_at' => '2026-03-20 17:00:00',
+        ]);
+
+        // Build the immutable baseline through the same legal pre-seal snapshot ordering that B10
+        // now enforces. A test fixture must not fabricate a SEALED publication with missing history.
+        (new EodArtifactRepository())->snapshotPublicationFromCurrentTables($tradeDate, 1, 90);
+
+        DB::table('eod_publications')->where('publication_id', 1)->update([
+            'is_current' => 1,
+            'seal_state' => 'SEALED',
+            'sealed_at' => '2026-03-20 17:20:00',
+            'updated_at' => '2026-03-20 17:20:00',
+        ]);
+
+        DB::table('eod_current_publication_pointer')->insert([
+            'trade_date' => $tradeDate,
+            'publication_id' => 1,
+            'run_id' => 90,
+            'publication_version' => 1,
+            'sealed_at' => '2026-03-20 17:20:00',
+            'updated_at' => '2026-03-20 17:20:00',
         ]);
     }
 
@@ -6273,6 +6284,8 @@ class ThrowingSealPublicationRepository extends EodPublicationRepository
 
     public function __construct(string $message)
     {
+        parent::__construct();
+
         $this->message = $message;
     }
 
@@ -6292,6 +6305,8 @@ class BaselineMismatchPromotionPublicationRepository extends EodPublicationRepos
 
     public function __construct(int $conflictingPublicationId, int $conflictingRunId, int $conflictingPublicationVersion)
     {
+        parent::__construct();
+
         $this->conflictingPublicationId = $conflictingPublicationId;
         $this->conflictingRunId = $conflictingRunId;
         $this->conflictingPublicationVersion = $conflictingPublicationVersion;
@@ -6317,6 +6332,8 @@ class ThrowingPromotionPublicationRepository extends EodPublicationRepository
 
     public function __construct(string $message)
     {
+        parent::__construct();
+
         $this->message = $message;
     }
 

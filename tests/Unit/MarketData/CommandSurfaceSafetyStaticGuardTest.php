@@ -89,6 +89,7 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
             'COMMAND_INVALID_PROMOTE_MODE',
             'COMMAND_CONFLICTING_OPTIONS',
             'COMMAND_DESTRUCTIVE_GUARD_REQUIRED',
+            'COMMAND_CONFLICTING_OPTIONS',
             'COMMAND_DRY_RUN_ONLY',
             'COMMAND_APPLY_CONFIRMED',
             'COMMAND_EXECUTION_FAILED',
@@ -131,6 +132,36 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
     }
 
 
+
+
+    public function test_projection_repair_is_exact_date_apply_guarded_and_rebuilds_only_from_immutable_history(): void
+    {
+        $command = file_get_contents($this->commandDir.'/RepairPublicationProjectionCommand.php');
+        $service = file_get_contents(base_path('app/Application/MarketData/Services/PublicationProjectionRepairService.php'));
+
+        foreach ([
+            'market-data:repair:publication-projection',
+            '{--trade_date=}',
+            '{--dry-run}',
+            '{--apply}',
+            '{--reason=}',
+            'COMMAND_DESTRUCTIVE_GUARD_REQUIRED',
+            'COMMAND_DRY_RUN_ONLY',
+            'COMMAND_APPLY_CONFIRMED',
+            'COMMAND_EXECUTION_FAILED',
+        ] as $needle) {
+            $this->assertStringContainsString($needle, $command);
+        }
+
+        $this->assertStringContainsString('resolveCurrentReadablePublicationForTradeDate', $service);
+        $this->assertStringContainsString('assertPublicationSnapshotComplete', $service);
+        $this->assertStringContainsString('PROJECTION_REPAIR_HISTORY_IDENTITY_INVALID', $service);
+        $this->assertStringContainsString('promotePublicationHistoryToCurrent', $service);
+        $this->assertStringContainsString('reconcileTradeDate', $service);
+        $this->assertStringNotContainsString("table('eod_bars_history')->update", $service);
+        $this->assertStringNotContainsString("table('eod_indicators_history')->update", $service);
+        $this->assertStringNotContainsString("table('eod_eligibility_history')->update", $service);
+    }
 
     public function test_recompute_current_indicators_is_current_bars_only_and_does_not_import_source(): void
     {

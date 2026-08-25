@@ -124,6 +124,67 @@ class DeterministicHashServiceTest extends TestCase
         );
     }
 
+
+    public function test_namespaced_event_risk_reasons_are_canonicalized_as_a_set()
+    {
+        $service = new DeterministicHashService();
+        $columns = ['trade_date', 'listing_id', 'event_risk_reasons'];
+
+        $left = [[
+            'trade_date' => '2026-03-10',
+            'listing_id' => 101,
+            'event_risk_reasons' => 'TRADING_STATUS:SPECIAL_MONITORING_START,UMA',
+        ]];
+        $right = [[
+            'trade_date' => '2026-03-10',
+            'listing_id' => 101,
+            'event_risk_reasons' => 'UMA,TRADING_STATUS:SPECIAL_MONITORING_START',
+        ]];
+
+        $this->assertSame($service->hashRows($left, $columns), $service->hashRows($right, $columns));
+        $this->assertSame(
+            '2026-03-10|101|["TRADING_STATUS:SPECIAL_MONITORING_START","UMA"]',
+            $service->serializeRows($left, $columns)
+        );
+    }
+
+    public function test_dated_corporate_action_reason_tokens_are_canonicalized_as_a_set()
+    {
+        $service = new DeterministicHashService();
+        $columns = ['trade_date', 'listing_id', 'corporate_action_window_reasons'];
+
+        $left = [[
+            'trade_date' => '2026-07-22',
+            'listing_id' => 101,
+            'corporate_action_window_reasons' => 'RIGHTS_ISSUE@2026-07-22,STOCK_SPLIT@2026-07-15',
+        ]];
+        $right = [[
+            'trade_date' => '2026-07-22',
+            'listing_id' => 101,
+            'corporate_action_window_reasons' => 'STOCK_SPLIT@2026-07-15,RIGHTS_ISSUE@2026-07-22',
+        ]];
+
+        $this->assertSame($service->hashRows($left, $columns), $service->hashRows($right, $columns));
+        $this->assertSame(
+            '2026-07-22|101|["RIGHTS_ISSUE@2026-07-22","STOCK_SPLIT@2026-07-15"]',
+            $service->serializeRows($left, $columns)
+        );
+    }
+
+    public function test_canonical_document_allows_exact_integer_leaves_without_weakening_row_numeric_ownership()
+    {
+        $service = new DeterministicHashService();
+
+        $this->assertSame(
+            $service->hashCanonicalDocument(['publication_version' => 2, 'counts' => ['bars' => 10]]),
+            $service->hashCanonicalDocument(['counts' => ['bars' => 10], 'publication_version' => 2])
+        );
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('HASH_NUMBER_FORMAT_UNOWNED_FIELD');
+        $service->hashRows([['unknown_metric' => 2]], ['unknown_metric']);
+    }
+
     public function test_locked_hash_controls_fail_closed_instead_of_silently_falling_back()
     {
         config()->set('market_data.hash.algorithm', 'md5');

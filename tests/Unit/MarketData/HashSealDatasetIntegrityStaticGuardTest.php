@@ -79,7 +79,7 @@ class HashSealDatasetIntegrityStaticGuardTest extends TestCase
 
         foreach ([
             'manifest_schema_version',
-            'market_data_dataset_integrity_manifest_v1',
+            'market_data_dataset_integrity_manifest_v2',
             'component_hashes',
             'component_row_counts',
             'component_column_contract',

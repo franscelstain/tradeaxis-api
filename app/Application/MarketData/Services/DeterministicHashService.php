@@ -12,6 +12,21 @@ class DeterministicHashService
         return hash($this->hashAlgorithm(), $this->serializeRows($rows, $columns));
     }
 
+    /**
+     * Hash a semantic document whose identity is not a row collection. Keys are sorted
+     * recursively, list members are canonicalized deterministically, and owned scalar field
+     * formats reuse the same normalization rules as artifact hashing.
+     */
+    public function hashCanonicalDocument(array $document)
+    {
+        return hash($this->hashAlgorithm(), $this->canonicalDocumentJson($document));
+    }
+
+    public function canonicalDocumentJson(array $document)
+    {
+        return $this->canonicalJson($document, 'canonical_document_json', true);
+    }
+
     public function serializeRows(iterable $rows, array $columns)
     {
         $serialized = [];
@@ -61,7 +76,9 @@ class DeterministicHashService
         if ($this->isJsonField($field) && is_string($value) && trim($value) !== '') {
             $decoded = json_decode($value, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
-                if (preg_match('/^[A-Z][A-Z0-9_]*(?:[,;][A-Z][A-Z0-9_]*)*$/', $value)) {
+                // Legacy *_reasons fields are canonical comma/semicolon-delimited sets, not JSON.
+                // Reason members may be namespaced (for example TRADING_STATUS:UMA).
+                if (preg_match('/^[A-Z][A-Z0-9_]*(?::[A-Z0-9_]+)*(?:@[0-9]{4}-[0-9]{2}-[0-9]{2})?(?:[,;][A-Z][A-Z0-9_]*(?::[A-Z0-9_]+)*(?:@[0-9]{4}-[0-9]{2}-[0-9]{2})?)*$/', $value)) {
                     return $this->canonicalJson(preg_split('/[,;]/', $value), $field);
                 }
                 throw new \RuntimeException(
@@ -328,9 +345,9 @@ class DeterministicHashService
         return $date !== false && $date->format('Y-m-d H:i:s') === $value;
     }
 
-    private function canonicalJson($value, string $field): string
+    private function canonicalJson($value, string $field, bool $documentMode = false): string
     {
-        $canonical = $this->canonicalizeCollection($value, $field);
+        $canonical = $this->canonicalizeCollection($value, $field, $documentMode);
         $json = json_encode($canonical, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         if ($json === false) {
             throw new \RuntimeException('HASH_CANONICAL_JSON_SERIALIZATION_FAILED: '.$field);
@@ -339,12 +356,18 @@ class DeterministicHashService
         return $json;
     }
 
-    private function canonicalizeCollection($value, string $field)
+    private function canonicalizeCollection($value, string $field, bool $documentMode = false)
     {
         if (is_object($value)) {
             $value = (array) $value;
         }
         if (! is_array($value)) {
+            // Semantic documents may contain integer counters/versions whose exact JSON
+            // representation is deterministic. Row hashing remains strict for unowned numbers.
+            if ($documentMode && is_int($value)) {
+                return $value;
+            }
+
             return $this->normalizeValue($value, $field);
         }
 
@@ -353,7 +376,7 @@ class DeterministicHashService
         foreach ($value as $key => $child) {
             // List members inherit set membership, not the outer *_json parser. Associative
             // members retain their owned field name so numeric formats remain explicit.
-            $canonical[$key] = $this->canonicalizeCollection($child, $isList ? '' : (string) $key);
+            $canonical[$key] = $this->canonicalizeCollection($child, $isList ? '' : (string) $key, $documentMode);
         }
         if ($isList) {
             usort($canonical, function ($left, $right) {

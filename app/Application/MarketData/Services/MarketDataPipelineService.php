@@ -284,11 +284,9 @@ class MarketDataPipelineService
         }
 
         if ($correction && in_array($input->stage, ['INGEST_BARS', 'PUBLISH_BARS'], true)) {
-            if (! $isRepairCandidate) {
-                $this->artifacts->snapshotPublicationFromCurrentTables(
-                    $input->requestedDate,
-                    $priorCurrent->publication_id,
-                    $priorCurrent->run_id
+            if (! $isRepairCandidate && ! $this->artifacts->historySnapshotExists($priorCurrent->publication_id)) {
+                throw new \RuntimeException(
+                    'DATASET_MANIFEST_INVALID: correction baseline is sealed but its immutable publication snapshot is incomplete; post-seal snapshot completion is forbidden.'
                 );
             }
 
@@ -854,9 +852,12 @@ class MarketDataPipelineService
                     $this->runs->resolveKnowledgeCutoff($run),
                     $run->run_id
                 );
+                $coverageGateState = CoverageGateStateNormalizer::normalize($coverage['coverage_gate_status'] ?? null);
+                $qualityGateState = $coverageGateState === 'PASS' ? 'PASS' : ($coverageGateState === 'FAIL' ? 'FAIL' : 'BLOCKED');
 
                 $run = $this->runs->updateTelemetry($run, [
                     'eligibility_rows_written' => $result['eligibility_rows_written'],
+                    'quality_gate_state' => $qualityGateState,
                     'hard_reject_count' => $result['blocked_rows'],
                     'coverage_universe_count' => $coverage['coverage_universe_count'],
                     'coverage_available_count' => $coverage['available_eod_count'],
@@ -869,7 +870,7 @@ class MarketDataPipelineService
                     'coverage_expectation_unknown_count' => $this->measuredCoverageCount($coverage, 'coverage_expectation_unknown_count'),
                     'coverage_ratio' => $coverage['coverage_ratio'],
                     'coverage_min_threshold' => $coverage['coverage_threshold_value'],
-                    'coverage_gate_state' => CoverageGateStateNormalizer::normalize($coverage['coverage_gate_status'] ?? null),
+                    'coverage_gate_state' => $coverageGateState,
                     'coverage_threshold_mode' => $coverage['coverage_threshold_mode'],
                     'coverage_universe_basis' => $coverage['coverage_universe_basis'] ?? (string) config('market_data.coverage_gate.universe_basis', 'ticker_master_active_on_trade_date'),
                     'coverage_contract_version' => $coverage['coverage_calibration_version'],
@@ -906,10 +907,13 @@ class MarketDataPipelineService
 
     public function completeHash(MarketDataStageInput $input)
     {
-        [$run] = $this->startStage($input);
+        [$run, $correction, $priorCurrent] = $this->startStage($input);
 
         try {
-            $candidatePublication = $this->publications->getOrCreateCandidatePublication($run);
+            $candidatePublication = $this->publications->getOrCreateCandidatePublication(
+                $run,
+                $correction && $priorCurrent ? $priorCurrent->publication_id : null
+            );
             $correctionMode = $input->correctionId !== null;
             $useHistory = $correctionMode
                 || (int) ($candidatePublication->publication_version ?? 1) > 1
@@ -988,10 +992,37 @@ class MarketDataPipelineService
         $hasMandatoryHashes = $run->bars_batch_hash && $run->indicators_batch_hash && $run->eligibility_batch_hash
             && ! empty($run->bars_rows_written) && ! empty($run->indicators_rows_written) && ! empty($run->eligibility_rows_written);
 
-        if (! $hasMandatoryHashes && ! $isRepairCandidate) {
-            $this->runs->appendEvent($run, $input->stage, 'SEAL_BLOCKED', 'ERROR', 'Seal blocked because one or more mandatory hashes are missing.', 'RUN_SEAL_PRECONDITION_FAILED');
-            $this->runs->failStage($run, $input->stage, 'RUN_SEAL_PRECONDITION_FAILED', 'Cannot seal dataset before all mandatory hashes exist.');
-            throw new \RuntimeException('Cannot seal dataset before all mandatory hashes exist.');
+        if (! $hasMandatoryHashes) {
+            $this->runs->appendEvent($run, $input->stage, 'SEAL_BLOCKED', 'ERROR', 'Seal blocked because one or more mandatory hashes or row-count preconditions are missing.', 'RUN_SEAL_PRECONDITION_FAILED');
+            $this->runs->failStage($run, $input->stage, 'RUN_SEAL_PRECONDITION_FAILED', 'Cannot seal dataset before all mandatory hashes and publication row counts exist.');
+            throw new \RuntimeException('RUN_SEAL_PRECONDITION_FAILED: cannot seal dataset before all mandatory hashes and publication row counts exist.');
+        }
+
+        $coverageGateState = strtoupper(trim((string) ($run->coverage_gate_state ?? '')));
+        if ($coverageGateState !== 'PASS') {
+            // Coverage FAIL/NOT_EVALUABLE is a governed non-readable outcome, not a seal-write
+            // exception. Keep the candidate unsealed/non-current and let FINALIZE derive HELD or
+            // FAILED from fallback availability without ever promoting the requested date.
+            $this->runs->appendEvent(
+                $run,
+                $input->stage,
+                'SEAL_SKIPPED',
+                'INFO',
+                'Dataset seal skipped because coverage gate did not PASS; FINALIZE owns the fail-closed non-readable outcome.',
+                null,
+                ['coverage_gate_state' => $coverageGateState]
+            );
+            $this->runs->appendEvent(
+                $run,
+                $input->stage,
+                'STAGE_COMPLETED',
+                'INFO',
+                'Seal stage completed without sealing a coverage-failing candidate.',
+                null,
+                ['sealed' => false, 'coverage_gate_state' => $coverageGateState]
+            );
+
+            return $run;
         }
 
         try {
@@ -1035,22 +1066,63 @@ class MarketDataPipelineService
                         }
                     }
 
-                    if ($isRepairCandidate && ! $hasMandatoryHashes) {
-                        $publication = $this->publications->sealCandidatePublicationPartial(
-                            $run,
-                            'system',
-                            'Partial repair candidate sealed without strict hash completeness requirements.'
-                        );
-                        $run = $this->runs->markSealed(
-                            $this->hydrateRunModel($run),
-                            'system',
-                            'Partial repair candidate sealed without strict hash completeness requirements.'
-                        );
-                    } else {
-                        $publication = $this->publications->sealCandidatePublication($run, 'system', 'Seal recorded after publication preconditions passed.');
-                        $run = $this->runs->markSealed($this->hydrateRunModel($run), 'system', 'Seal recorded after publication preconditions passed.');
-                        $this->artifacts->snapshotPublicationFromCurrentTables($input->requestedDate, $publication->publication_id, $run->run_id);
+                    $candidate = $this->publications->getOrCreateCandidatePublication(
+                        $run,
+                        $priorCurrent ? $priorCurrent->publication_id : null
+                    );
+
+                    // Assemble the complete immutable snapshot while the candidate is still
+                    // mutable. The outer transaction guarantees that any snapshot/hash/manifest
+                    // failure rolls back before a final SEALED state can become authoritative.
+                    $this->artifacts->snapshotPublicationFromCurrentTables(
+                        $input->requestedDate,
+                        $candidate->publication_id,
+                        $run->run_id
+                    );
+                    $this->artifacts->assertPublicationSnapshotComplete(
+                        $input->requestedDate,
+                        $candidate->publication_id,
+                        [
+                            'bars' => (int) $run->bars_rows_written,
+                            'indicators' => (int) $run->indicators_rows_written,
+                            'eligibility' => (int) $run->eligibility_rows_written,
+                        ]
+                    );
+
+                    $snapshotHashes = [
+                        'bars_batch_hash' => $this->hashForTable(
+                            'eod_bars_history', 'trade_date', $input->requestedDate, self::BARS_HASH_COLUMNS,
+                            ['publication_id' => $candidate->publication_id]
+                        ),
+                        'indicators_batch_hash' => $this->hashForTable(
+                            'eod_indicators_history', 'trade_date', $input->requestedDate, self::INDICATORS_HASH_COLUMNS,
+                            ['publication_id' => $candidate->publication_id]
+                        ),
+                        'eligibility_batch_hash' => $this->hashForTable(
+                            'eod_eligibility_history', 'trade_date', $input->requestedDate, self::ELIGIBILITY_HASH_COLUMNS,
+                            ['publication_id' => $candidate->publication_id]
+                        ),
+                    ];
+                    foreach ($snapshotHashes as $field => $snapshotHash) {
+                        if (! hash_equals((string) $run->{$field}, (string) $snapshotHash)) {
+                            throw new \RuntimeException(
+                                'DATASET_HASH_MISMATCH: immutable publication snapshot does not match '.$field.' computed before seal.'
+                            );
+                        }
                     }
+
+                    $this->publications->prepareCandidateManifestForSeal($run, $candidate->publication_id);
+                    $publication = $this->publications->sealCandidatePublication(
+                        $run,
+                        'system',
+                        'Seal recorded atomically after complete snapshot and deterministic publication manifest verification.'
+                    );
+                    $run = $this->runs->markSealed(
+                        $this->hydrateRunModel($run),
+                        'system',
+                        'Seal recorded atomically after complete snapshot and deterministic publication manifest verification.'
+                    );
+                    $this->publications->assertPublicationManifestHashValid($publication->publication_id);
 
                     if ($correction) {
                         $this->corrections->markResealed($correction->correction_id, $run->run_id, $publication ? $publication->publication_id : null);
@@ -1060,14 +1132,13 @@ class MarketDataPipelineService
                     throw $e;
                 }
 
-                $this->runs->appendEvent($run, $input->stage, 'STAGE_COMPLETED', 'INFO', $isRepairCandidate && ! $hasMandatoryHashes
-                    ? 'Partial repair candidate seal metadata recorded on eod_runs and eod_publications.'
-                    : 'Dataset seal metadata recorded on eod_runs and eod_publications.', null, [
+                $this->runs->appendEvent($run, $input->stage, 'STAGE_COMPLETED', 'INFO',
+                    'Dataset seal metadata recorded atomically after snapshot and manifest verification.', null, [
                     'sealed_at' => (string) $run->sealed_at,
                     'sealed_by' => $run->sealed_by,
                     'publication_id' => (int) $publication->publication_id,
                     'seal_state' => $publication->seal_state,
-                    'partial_candidate' => $isRepairCandidate && ! $hasMandatoryHashes,
+                    'partial_candidate' => false,
                 ]);
 
                 return $run;
@@ -1366,55 +1437,13 @@ class MarketDataPipelineService
                             $this->runs->syncCurrentPublicationMirror($input->requestedDate, $run->run_id);
 
                             /*
-                             * Treat the pointer resolver as the authoritative post-switch
-                             * source. The object returned by promoteCandidateToCurrent() is
-                             * only the candidate row; it is not enough proof that consumer
-                             * reads will resolve through the current-readable pointer contract.
+                             * EodPublicationRepository::promoteCandidateToCurrent() owns the
+                             * write-side pointer/publication/run integrity checks. Keep the exact
+                             * promoted object through this transitional phase; the stricter
+                             * consumer-readable resolver is exercised only after finalizeRunState()
+                             * commits the terminal READABLE/SUCCESS run state below.
                              */
-                            $candidateCurrent = $this->publications->resolveCurrentReadablePublicationForTradeDate($input->requestedDate);
-
-                            if (! $candidateCurrent) {
-                                throw new \RuntimeException('Current publication pointer resolution mismatch after finalize.');
-                            }
-
-                            if ($correction) {
-                                if ((int) $candidateCurrent->publication_id !== (int) $candidatePublication->publication_id
-                                    || (int) $candidateCurrent->publication_version !== (int) $candidatePublication->publication_version
-                                    || (int) $candidateCurrent->run_id !== (int) $run->run_id
-                                ) {
-                                    throw new \RuntimeException('Current publication pointer resolution mismatch after finalize.');
-                                }
-                            }
-
-                            if (
-                                ! $correction
-                                && (int) $candidateCurrent->publication_id !== (int) $candidatePublication->publication_id
-                            ) {
-                                throw new \RuntimeException('Current publication pointer resolution mismatch after finalize.');
-                            }
-
-                            if (
-                                ! $correction
-                                && isset($candidateCurrent->publication_version)
-                                && (int) $candidateCurrent->publication_version !== (int) $candidatePublication->publication_version
-                            ) {
-                                throw new \RuntimeException('Current publication version mismatch after finalize.');
-                            }
-
-                            if (
-                                ! $correction
-                                && isset($candidateCurrent->run_id)
-                                && (int) $candidateCurrent->run_id !== (int) $run->run_id
-                            ) {
-                                throw new \RuntimeException('Current publication run mismatch after finalize.');
-                            }
-
-                            if (
-                                isset($candidateCurrent->trade_date)
-                                && (string) $candidateCurrent->trade_date !== (string) $input->requestedDate
-                            ) {
-                                throw new \RuntimeException('Current publication trade date mismatch after finalize.');
-                            }
+                            $candidateCurrent = $promotedCurrent;
                         } catch (\Throwable $e) {
                             $message = $e->getMessage();
                             $isPointerIntegrityError = strpos($message, 'invalid current pointer state after switch') !== false
@@ -1545,12 +1574,6 @@ class MarketDataPipelineService
                     $promotionError,
                     $postFinalizeMismatchNote
                 );
-
-                if ($postFinalizeMismatchNote !== null && empty($outcome['trade_date_effective'])) {
-                    $outcome['trade_date_effective'] = ($fallback && ! empty($fallback->readable_trade_date))
-                        ? $fallback->readable_trade_date
-                        : null;
-                }
 
                 $run = $this->finalizeRunState($run, [
                     'trade_date_effective' => $outcome['trade_date_effective'],

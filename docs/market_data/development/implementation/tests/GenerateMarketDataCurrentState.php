@@ -158,7 +158,14 @@ if (preg_match('/\*\*Single exact next executable resume point:\*\*\s*([^\r\n]+)
     $resume = trim($match[1]);
 }
 $currentStage = 'UNRESOLVED';
-if (preg_match('/open `?(MD-B\d{2})-A\d{3}`?/', $resume, $match)) {
+if (preg_match('/`?(MD-B\d{2})-A\d{3}`?/', $resume, $match)) {
+    // Resume wording may say open/continue/run/apply. The governed attempt identity, not a verb,
+    // determines the current executable stage. Requiring the literal word 'open' made generated
+    // CURRENT_STATE silently omit an already-open stage after a proof-cycle handoff.
+    $currentStage = $match[1];
+} elseif (preg_match('/`?(MD-B\d{2})`?/', $resume, $match)) {
+    // A terminal closure can legitimately resume at an unopened successor stage before an
+    // Attempt/Baseline exists. Preserve that stage identity instead of reporting UNRESOLVED.
     $currentStage = $match[1];
 }
 

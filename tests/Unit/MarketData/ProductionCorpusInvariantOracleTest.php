@@ -266,7 +266,7 @@ class ProductionCorpusInvariantOracleTest extends TestCase
      */
     public function test_history_immutability_guards_are_deployed(): void
     {
-        $this->assertSame(6, $this->violations(
+        $this->assertSame(9, $this->violations(
             "SELECT COUNT(*) c FROM information_schema.TRIGGERS
              WHERE TRIGGER_SCHEMA = DATABASE() AND EVENT_OBJECT_TABLE LIKE 'eod%_history'"
         ));

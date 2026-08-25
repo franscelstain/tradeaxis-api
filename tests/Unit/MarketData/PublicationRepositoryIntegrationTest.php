@@ -90,9 +90,9 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'is_current' => 1,
             'supersedes_publication_id' => null,
             'seal_state' => 'SEALED',
-            'bars_batch_hash' => 'bars-old',
-            'indicators_batch_hash' => 'ind-old',
-            'eligibility_batch_hash' => 'elig-old',
+            'bars_batch_hash' => hash('sha256', 'bars-old'),
+            'indicators_batch_hash' => hash('sha256', 'ind-old'),
+            'eligibility_batch_hash' => hash('sha256', 'elig-old'),
             'price_product_code' => 'STRUCTURAL_ADJUSTED',
             'price_product_version' => 'structural_adjusted_v1',
             'factor_set_hash' => hash('sha256', 'publication-repository-old'),
@@ -354,9 +354,9 @@ class PublicationRepositoryIntegrationTest extends TestCase
         $this->assertSame(0, (int) $candidate->is_current);
 
         $repo->updateCandidateHashes($candidate->publication_id, [
-            'bars_batch_hash' => 'bars-new',
-            'indicators_batch_hash' => 'ind-new',
-            'eligibility_batch_hash' => 'elig-new',
+            'bars_batch_hash' => hash('sha256', 'bars-new'),
+            'indicators_batch_hash' => hash('sha256', 'ind-new'),
+            'eligibility_batch_hash' => hash('sha256', 'elig-new'),
         ]);
         $repo->bindCandidateAnalyticalProduct(
             $candidate->publication_id,
@@ -367,6 +367,7 @@ class PublicationRepositoryIntegrationTest extends TestCase
             1
         );
         $this->bindStageEightGovernance($candidate->publication_id, hash('sha256', 'publication-repository-new'));
+        $run = $run->fresh();
 
         $sealed = $repo->sealCandidatePublication($run, 'system');
         $this->assertSame('SEALED', $sealed->seal_state);
@@ -407,9 +408,9 @@ class PublicationRepositoryIntegrationTest extends TestCase
         $candidate = $repo->getOrCreateCandidatePublication($run, null);
 
         $repo->updateCandidateHashes($candidate->publication_id, [
-            'bars_batch_hash' => 'bars-new',
-            'indicators_batch_hash' => 'ind-new',
-            'eligibility_batch_hash' => 'elig-new',
+            'bars_batch_hash' => hash('sha256', 'bars-new'),
+            'indicators_batch_hash' => hash('sha256', 'ind-new'),
+            'eligibility_batch_hash' => hash('sha256', 'elig-new'),
         ]);
         $repo->bindCandidateAnalyticalProduct(
             $candidate->publication_id,
@@ -420,6 +421,7 @@ class PublicationRepositoryIntegrationTest extends TestCase
             1
         );
         $this->bindStageEightGovernance($candidate->publication_id, hash('sha256', 'publication-repository-new'));
+        $run = $run->fresh();
 
         $repo->sealCandidatePublication($run, 'system');
 
@@ -440,9 +442,9 @@ class PublicationRepositoryIntegrationTest extends TestCase
         $candidate = $repo->getOrCreateCandidatePublication($run, null);
 
         $repo->updateCandidateHashes($candidate->publication_id, [
-            'bars_batch_hash' => 'bars-force',
-            'indicators_batch_hash' => 'ind-force',
-            'eligibility_batch_hash' => 'elig-force',
+            'bars_batch_hash' => hash('sha256', 'bars-force'),
+            'indicators_batch_hash' => hash('sha256', 'ind-force'),
+            'eligibility_batch_hash' => hash('sha256', 'elig-force'),
         ]);
         $repo->bindCandidateAnalyticalProduct(
             $candidate->publication_id,
@@ -453,6 +455,7 @@ class PublicationRepositoryIntegrationTest extends TestCase
             1
         );
         $this->bindStageEightGovernance($candidate->publication_id, hash('sha256', 'publication-repository-new'));
+        $run = $run->fresh();
 
         $repo->sealCandidatePublication($run, 'system');
 
@@ -519,9 +522,9 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'is_current' => 0,
             'supersedes_publication_id' => 10,
             'seal_state' => 'SEALED',
-            'bars_batch_hash' => 'bars-new',
-            'indicators_batch_hash' => 'ind-new',
-            'eligibility_batch_hash' => 'elig-new',
+            'bars_batch_hash' => hash('sha256', 'bars-new'),
+            'indicators_batch_hash' => hash('sha256', 'ind-new'),
+            'eligibility_batch_hash' => hash('sha256', 'elig-new'),
             'sealed_at' => '2026-03-20 17:21:00',
             'created_at' => '2026-03-20 17:21:00',
             'updated_at' => '2026-03-20 17:21:00',
@@ -569,9 +572,9 @@ class PublicationRepositoryIntegrationTest extends TestCase
         $candidate = $repo->getOrCreateCandidatePublication($run, 10);
 
         $repo->updateCandidateHashes($candidate->publication_id, [
-            'bars_batch_hash' => 'bars-new',
-            'indicators_batch_hash' => 'ind-new',
-            'eligibility_batch_hash' => 'elig-new',
+            'bars_batch_hash' => hash('sha256', 'bars-new'),
+            'indicators_batch_hash' => hash('sha256', 'ind-new'),
+            'eligibility_batch_hash' => hash('sha256', 'elig-new'),
         ]);
         $repo->bindCandidateAnalyticalProduct(
             $candidate->publication_id,
@@ -582,15 +585,16 @@ class PublicationRepositoryIntegrationTest extends TestCase
             1
         );
         $this->bindStageEightGovernance($candidate->publication_id, hash('sha256', 'publication-repository-new'));
+        $run = $run->fresh();
         $repo->sealCandidatePublication($run, 'system', 'test seal');
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('SEALED_PUBLICATION_IMMUTABLE');
 
         $repo->updateCandidateHashes($candidate->publication_id, [
-            'bars_batch_hash' => 'bars-mutated',
-            'indicators_batch_hash' => 'ind-mutated',
-            'eligibility_batch_hash' => 'elig-mutated',
+            'bars_batch_hash' => hash('sha256', 'bars-mutated'),
+            'indicators_batch_hash' => hash('sha256', 'ind-mutated'),
+            'eligibility_batch_hash' => hash('sha256', 'elig-mutated'),
         ]);
     }
 
@@ -624,9 +628,9 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'hard_reject_count' => 0,
             'warning_count' => 0,
             'notes' => 'pointer-publication-version-mismatch-incident',
-            'bars_batch_hash' => 'bars-version-mismatch',
-            'indicators_batch_hash' => 'ind-version-mismatch',
-            'eligibility_batch_hash' => 'elig-version-mismatch',
+            'bars_batch_hash' => hash('sha256', 'bars-version-mismatch'),
+            'indicators_batch_hash' => hash('sha256', 'ind-version-mismatch'),
+            'eligibility_batch_hash' => hash('sha256', 'elig-version-mismatch'),
             'config_version' => 'v1',
             'publication_version' => 2,
             'publication_id' => 110,
@@ -720,7 +724,7 @@ class PublicationRepositoryIntegrationTest extends TestCase
                 'factor_set_uid' => $factorHash,
                 'price_product_code' => 'STRUCTURAL_ADJUSTED',
                 'factor_formula_version' => 'structural_factor_product_v1',
-                'config_snapshot_id' => 0,
+                'config_snapshot_id' => 1,
                 'state' => 'BOUND',
                 'content_hash' => $factorHash,
                 'recorded_at' => '2026-03-20 17:10:00',
@@ -731,17 +735,41 @@ class PublicationRepositoryIntegrationTest extends TestCase
         $sourceScaleHash = hash('sha256', 'test-source-scale');
         $marketStructureHash = hash('sha256', 'test-market-structure');
         $factorDecisionHash = hash('sha256', 'test-factor-decisions');
+        $observationManifestHash = hash('sha256', 'test-observation-manifest');
+        $configHash = hash('sha256', 'test-config-snapshot');
+
+        DB::table('md_config_snapshots')->updateOrInsert(
+            ['config_snapshot_id' => 1],
+            [
+                'snapshot_uid' => hash('sha256', 'publication-repository-config'),
+                'snapshot_schema_version' => 'market_data_config_snapshot_v1',
+                'serialization_version' => 'canonical_json_v1',
+                'resolved_config_json' => '{}',
+                'config_hash' => $configHash,
+                'registry_revision' => 'test-registry-revision',
+                'effective_at' => '2026-03-20 17:00:00',
+                'recorded_at' => '2026-03-20 17:00:00',
+                'build_id' => 'test-build',
+                'environment_profile' => 'testing',
+                'resolver_version' => 'test-resolver-v1',
+                'created_at' => '2026-03-20 17:00:00',
+            ]
+        );
+
+        $publication = DB::table('eod_publications')->where('publication_id', $publicationId)->first();
         DB::table('eod_publications')->where('publication_id', $publicationId)->update([
             'source_scale_assessment_set_hash' => $sourceScaleHash,
             'market_structure_revision_set_hash' => $marketStructureHash,
             'factor_decision_set_hash' => $factorDecisionHash,
+            'config_snapshot_id' => 1,
+            'observation_manifest_hash' => $observationManifestHash,
         ]);
         DB::table('md_publication_lineage_bindings')->updateOrInsert(
             ['publication_id' => $publicationId],
             [
-                'config_snapshot_id' => 0,
+                'config_snapshot_id' => 1,
                 'factor_set_id' => 1,
-                'observation_manifest_hash' => '',
+                'observation_manifest_hash' => $observationManifestHash,
                 'identity_revision_set_hash' => hash('sha256', 'test-identity'),
                 'calendar_revision_set_hash' => hash('sha256', 'test-calendar'),
                 'status_revision_set_hash' => hash('sha256', 'test-status'),
@@ -754,6 +782,35 @@ class PublicationRepositoryIntegrationTest extends TestCase
                 'read_model_version' => 'market_data_read_product_v1',
                 'created_at' => '2026-03-20 17:10:00',
             ]
+        );
+
+        DB::table('eod_runs')->where('run_id', $publication->run_id)->update([
+            'config_snapshot_id' => 1,
+            'observation_manifest_hash' => $observationManifestHash,
+            'bars_batch_hash' => $publication->bars_batch_hash,
+            'indicators_batch_hash' => $publication->indicators_batch_hash,
+            'eligibility_batch_hash' => $publication->eligibility_batch_hash,
+        ]);
+
+        DB::table('eod_bars_history')->updateOrInsert(
+            [
+                'publication_id' => $publicationId,
+                'trade_date' => $publication->trade_date,
+                'ticker_id' => 999999,
+            ],
+            [
+                'source' => 'MANUAL_FILE',
+                'run_id' => $publication->run_id,
+                'canonicalization_version' => 'eod_canonical_v1',
+                'price_product_code' => 'RAW',
+                'quality_state' => 'VALIDATED',
+                'created_at' => '2026-03-20 17:10:00',
+            ]
+        );
+
+        (new EodPublicationRepository())->prepareCandidateManifestForSeal(
+            EodRun::query()->findOrFail($publication->run_id),
+            $publicationId
         );
     }
 }

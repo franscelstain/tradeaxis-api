@@ -13,6 +13,13 @@ use App\Infrastructure\Persistence\MarketData\CorpusAdmissionRepository;
 
 class EodPublicationRepository
 {
+    private $hashes;
+
+    public function __construct(DeterministicHashService $hashes = null)
+    {
+        $this->hashes = $hashes ?: new DeterministicHashService();
+    }
+
     public function findRawCurrentPublicationStateForTradeDate($tradeDate)
     {
         return DB::table('eod_current_publication_pointer as ptr')
@@ -581,6 +588,13 @@ class EodPublicationRepository
                 ->max('publication_version');
 
             $now = Carbon::now(config('market_data.platform.timezone'));
+            $inheritedObservationManifestHash = null;
+            if (empty($run->observation_manifest_hash) && $supersedesPublicationId) {
+                $inheritedObservationManifestHash = DB::table('eod_publications')
+                    ->where('publication_id', (int) $supersedesPublicationId)
+                    ->value('observation_manifest_hash');
+            }
+
             $publicationId = DB::table('eod_publications')->insertGetId([
                 'trade_date' => $run->trade_date_requested,
                 'run_id' => $run->run_id,
@@ -600,12 +614,12 @@ class EodPublicationRepository
                 'config_snapshot_id' => $run->config_snapshot_id ?? null,
                 'factor_set_id' => null,
                 'factor_set_hash' => null,
-                'observation_manifest_hash' => $run->observation_manifest_hash ?? null,
+                'observation_manifest_hash' => $run->observation_manifest_hash ?? $inheritedObservationManifestHash,
                 'publication_manifest_hash' => null,
                 'price_product_code' => (string) config('market_data.indicators.price_product_default', 'STRUCTURAL_ADJUSTED'),
                 'price_product_version' => MarketDataSemanticBindings::PRICE_PRODUCT_VERSION,
                 'read_model_version' => 'market_data_read_product_v1',
-                'readiness_state' => 'NOT_READY',
+                'readiness_state' => 'BUILDING',
                 'sealed_at' => null,
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -692,7 +706,7 @@ class EodPublicationRepository
             'config_snapshot_id' => $configSnapshotId,
             'observation_manifest_hash' => $observationManifestHash,
             'read_model_version' => 'market_data_read_product_v1',
-            'readiness_state' => 'NOT_READY',
+            'readiness_state' => 'BUILDING',
             'updated_at' => $now,
         ]);
     }
@@ -744,6 +758,209 @@ class EodPublicationRepository
         });
     }
 
+    /**
+     * Materialize the deterministic semantic manifest hash before the seal transition.
+     * The hash intentionally excludes operational navigation/timestamps and is computed from
+     * the target SEALED semantic state, so the exact same payload verifies after sealed_at is set.
+     */
+    public function prepareCandidateManifestForSeal(EodRun $run, $publicationId)
+    {
+        return DB::transaction(function () use ($run, $publicationId) {
+            $publication = $this->assertPublicationMutable($publicationId);
+
+            if ((int) ($publication->run_id ?? 0) !== (int) $run->run_id) {
+                throw new \RuntimeException('DATASET_MANIFEST_INVALID: publication/run identity mismatch before seal.');
+            }
+
+            if ((string) ($run->coverage_gate_state ?? '') !== 'PASS') {
+                throw new \RuntimeException('RUN_SEAL_PRECONDITION_FAILED: coverage gate must PASS before a publication can seal.');
+            }
+
+            $context = $this->publicationManifestContext($publicationId);
+            $this->assertPublicationManifestContextComplete($context);
+            $hash = $this->hashes->hashCanonicalDocument($this->publicationManifestSemanticPayload($context, 'READABLE'));
+            $now = Carbon::now(config('market_data.platform.timezone'));
+
+            DB::table('eod_publications')
+                ->where('publication_id', $publicationId)
+                ->update([
+                    'publication_manifest_hash' => $hash,
+                    'readiness_state' => 'READABLE',
+                    'updated_at' => $now,
+                ]);
+
+            return DB::table('eod_publications')->where('publication_id', $publicationId)->first();
+        });
+    }
+
+    public function assertPublicationManifestHashValid($publicationId): bool
+    {
+        $context = $this->publicationManifestContext($publicationId);
+        if (! $context) {
+            throw new \RuntimeException('DATASET_MANIFEST_INVALID: publication manifest context not found.');
+        }
+
+        $this->assertPublicationManifestContextComplete($context);
+        $stored = strtolower(trim((string) ($context->publication_manifest_hash ?? '')));
+        if (! preg_match('/^[a-f0-9]{64}$/', $stored)) {
+            throw new \RuntimeException('DATASET_MANIFEST_INVALID: publication_manifest_hash is missing or malformed.');
+        }
+
+        $readiness = (string) ($context->readiness_state ?? '');
+        if ($readiness === '') {
+            throw new \RuntimeException('DATASET_MANIFEST_INVALID: readiness_state is missing.');
+        }
+
+        $expected = $this->hashes->hashCanonicalDocument(
+            $this->publicationManifestSemanticPayload($context, $readiness)
+        );
+
+        if (! hash_equals($stored, $expected)) {
+            throw new \RuntimeException('DATASET_MANIFEST_INVALID: publication_manifest_hash does not match canonical semantic manifest content.');
+        }
+
+        return true;
+    }
+
+    private function publicationManifestContext($publicationId)
+    {
+        return DB::table('eod_publications as pub')
+            ->join('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
+            ->leftJoin('md_publication_lineage_bindings as lineage', 'lineage.publication_id', '=', 'pub.publication_id')
+            ->leftJoin('md_config_snapshots as cfg', 'cfg.config_snapshot_id', '=', 'pub.config_snapshot_id')
+            ->where('pub.publication_id', $publicationId)
+            ->select([
+                'pub.*',
+                'run.trade_date_requested', 'run.trade_date_effective',
+                'run.config_version as config_identity', 'run.quality_gate_state',
+                'run.coverage_gate_state', 'run.coverage_ratio', 'run.freshness_state',
+                'run.bars_rows_written', 'run.indicators_rows_written', 'run.eligibility_rows_written',
+                'run.source as source_mode', 'run.source_name', 'run.source_provider',
+                'run.promote_mode', 'run.publish_target', 'run.correction_id', 'run.final_reason_code',
+                'run.coverage_universe_count', 'run.coverage_expected_count', 'run.coverage_available_count',
+                'run.coverage_missing_count', 'run.coverage_min_threshold', 'run.coverage_threshold_mode',
+                'run.coverage_universe_basis', 'run.coverage_contract_version',
+                'lineage.identity_revision_set_hash', 'lineage.calendar_revision_set_hash',
+                'lineage.status_revision_set_hash', 'lineage.event_revision_set_hash',
+                'lineage.formula_version as lineage_formula_version',
+                'lineage.build_id as lineage_build_id', 'lineage.read_model_version as lineage_read_model_version',
+                'cfg.config_hash as config_snapshot_hash', 'cfg.registry_revision as config_registry_revision'
+            ])
+            ->first();
+    }
+
+    private function assertPublicationManifestContextComplete($context): void
+    {
+        if (! $context) {
+            throw new \RuntimeException('DATASET_MANIFEST_INVALID: publication manifest context missing.');
+        }
+
+        $requiredHashes = [
+            'observation_manifest_hash', 'config_snapshot_hash', 'identity_revision_set_hash',
+            'calendar_revision_set_hash', 'status_revision_set_hash', 'event_revision_set_hash',
+            'factor_set_hash', 'bars_batch_hash', 'indicators_batch_hash', 'eligibility_batch_hash',
+            'source_scale_assessment_set_hash', 'market_structure_revision_set_hash', 'factor_decision_set_hash',
+        ];
+        $missing = [];
+        foreach ($requiredHashes as $field) {
+            if (! isset($context->{$field}) || ! preg_match('/^[a-f0-9]{64}$/', strtolower((string) $context->{$field}))) {
+                $missing[] = $field;
+            }
+        }
+
+        foreach ([
+            'config_snapshot_id', 'factor_set_id', 'price_product_code', 'price_product_version',
+            'lineage_formula_version', 'lineage_read_model_version', 'config_registry_revision',
+            'trade_date_requested',
+        ] as $field) {
+            if (! isset($context->{$field}) || trim((string) $context->{$field}) === '') {
+                $missing[] = $field;
+            }
+        }
+
+        $canonicalizationVersions = DB::table('eod_bars_history')
+            ->where('publication_id', (int) $context->publication_id)
+            ->whereNotNull('canonicalization_version')
+            ->where('canonicalization_version', '<>', '')
+            ->distinct()->pluck('canonicalization_version')->all();
+        if (count($canonicalizationVersions) !== 1) {
+            $missing[] = 'canonicalization_version';
+        }
+
+        if ($missing !== []) {
+            throw new \RuntimeException(
+                'DATASET_MANIFEST_INVALID: Candidate publication manifest context incomplete: '.implode(',', array_values(array_unique($missing)))
+            );
+        }
+    }
+
+    private function publicationManifestSemanticPayload($context, string $readinessState): array
+    {
+        $canonicalizationVersion = (string) DB::table('eod_bars_history')
+            ->where('publication_id', (int) $context->publication_id)
+            ->whereNotNull('canonicalization_version')
+            ->where('canonicalization_version', '<>', '')
+            ->distinct()->value('canonicalization_version');
+
+        $freshness = strtoupper(trim((string) ($context->freshness_state ?? '')));
+        if (! in_array($freshness, ['FRESH', 'STALE', 'DEGRADED', 'NOT_AVAILABLE'], true)) {
+            $freshness = 'NOT_AVAILABLE';
+        }
+
+        $temporalRevisionSetHash = $this->hashes->hashCanonicalDocument([
+            'trade_date' => (string) $context->trade_date,
+            'identity_revision_set_hash' => strtolower((string) $context->identity_revision_set_hash),
+            'calendar_revision_set_hash' => strtolower((string) $context->calendar_revision_set_hash),
+            'status_revision_set_hash' => strtolower((string) $context->status_revision_set_hash),
+        ]);
+
+        return [
+            'market_scope' => 'IDX_REGULAR_EOD',
+            'trade_date' => (string) $context->trade_date,
+            'trade_date_requested' => (string) $context->trade_date_requested,
+            'trade_date_effective' => (string) ($context->trade_date_effective ?: $context->trade_date),
+            'publication_version' => (string) $context->publication_version,
+            'supersedes_publication_id' => $context->supersedes_publication_id === null ? null : (int) $context->supersedes_publication_id,
+            'previous_publication_id' => $context->previous_publication_id === null ? null : (int) $context->previous_publication_id,
+            'replaced_publication_id' => $context->replaced_publication_id === null ? null : (int) $context->replaced_publication_id,
+            'observation_manifest_hash' => strtolower((string) $context->observation_manifest_hash),
+            'config_snapshot_hash' => strtolower((string) $context->config_snapshot_hash),
+            'config_registry_revision' => (string) $context->config_registry_revision,
+            'temporal_revision_set_hash' => $temporalRevisionSetHash,
+            'identity_revision_set_hash' => strtolower((string) $context->identity_revision_set_hash),
+            'calendar_revision_set_hash' => strtolower((string) $context->calendar_revision_set_hash),
+            'status_revision_set_hash' => strtolower((string) $context->status_revision_set_hash),
+            'event_revision_set_hash' => strtolower((string) $context->event_revision_set_hash),
+            'source_scale_assessment_set_hash' => strtolower((string) $context->source_scale_assessment_set_hash),
+            'market_structure_revision_set_hash' => strtolower((string) $context->market_structure_revision_set_hash),
+            'factor_decision_set_hash' => strtolower((string) $context->factor_decision_set_hash),
+            'factor_set_hash' => strtolower((string) $context->factor_set_hash),
+            'price_product_code' => (string) $context->price_product_code,
+            'price_product_version' => (string) $context->price_product_version,
+            'canonicalization_version' => $canonicalizationVersion,
+            'formula_version' => (string) $context->lineage_formula_version,
+            'read_model_version' => (string) $context->lineage_read_model_version,
+            'bars_batch_hash' => strtolower((string) $context->bars_batch_hash),
+            'indicators_batch_hash' => strtolower((string) $context->indicators_batch_hash),
+            'eligibility_batch_hash' => strtolower((string) $context->eligibility_batch_hash),
+            'bars_row_count' => (int) $context->bars_rows_written,
+            'indicators_row_count' => (int) $context->indicators_rows_written,
+            'eligibility_row_count' => (int) $context->eligibility_rows_written,
+            'quality_state' => strtoupper((string) ($context->quality_gate_state ?? '')),
+            'coverage_gate_state' => CoverageGateStateNormalizer::normalize($context->coverage_gate_state),
+            'coverage_ratio' => $context->coverage_ratio === null ? null : (string) $context->coverage_ratio,
+            'readiness_state' => $readinessState,
+            'freshness_state' => $freshness,
+            'seal_contract_version' => 'dataset_seal_v1',
+            'seal_hash_algorithm' => 'SHA-256',
+            'correction_lineage' => [
+                'correction_id' => $context->correction_id === null ? null : (int) $context->correction_id,
+                'promote_mode' => (string) ($context->promote_mode ?? ''),
+                'publish_target' => (string) ($context->publish_target ?? ''),
+            ],
+        ];
+    }
+
     public function sealCandidatePublication(EodRun $run, $sealedBy, $sealNote = null)
     {
         return DB::transaction(function () use ($run) {
@@ -754,6 +971,11 @@ class EodPublicationRepository
             }
 
             $this->assertPublicationIntegrityContextComplete($candidate, $run, false);
+
+            if (empty($candidate->publication_manifest_hash) || (string) ($candidate->readiness_state ?? '') !== 'READABLE') {
+                throw new \RuntimeException('DATASET_MANIFEST_INVALID: deterministic publication manifest must be prepared before seal.');
+            }
+            $this->assertPublicationManifestHashValid($candidate->publication_id);
 
             $now = Carbon::now(config('market_data.platform.timezone'));
 
@@ -779,31 +1001,17 @@ class EodPublicationRepository
     }
 
 
+    /**
+     * Legacy entry point retained for compatibility. A partial candidate without the locked
+     * seal preconditions is not a sealed dataset; callers must keep it non-readable/unsealed.
+     */
     public function sealCandidatePublicationPartial(EodRun $run, $sealedBy, $sealNote = null)
     {
-        return DB::transaction(function () use ($run) {
-            $candidate = $this->getOrCreateCandidatePublication($run, null);
-            $this->assertPublicationIntegrityContextComplete($candidate, $run, true);
-            $now = Carbon::now(config('market_data.platform.timezone'));
-
-            $this->assertPublicationMutable($candidate->publication_id);
-
-            DB::table('eod_publications')
-                ->where('publication_id', $candidate->publication_id)
-                ->update([
-                    'seal_state' => 'SEALED',
-                    'seal_provenance_scope' => $this->sealProvenanceScope($candidate, $run),
-                    'source_file_hash' => $run->source_file_hash ?? null,
-                    'source_file_hash_algorithm' => $run->source_file_hash_algorithm ?? null,
-                    'source_file_size_bytes' => $run->source_file_size_bytes ?? null,
-                    'source_file_row_count' => $run->source_file_row_count ?? null,
-                    'sealed_at' => $now,
-                    'updated_at' => $now,
-                ]);
-
-            return DB::table('eod_publications')->where('publication_id', $candidate->publication_id)->first();
-        });
+        throw new \RuntimeException(
+            'RUN_SEAL_PRECONDITION_FAILED: partial publication candidates cannot be sealed without complete hashes, snapshots, and manifest bindings.'
+        );
     }
+
 
     public function promoteCandidateToCurrent(EodRun $run, $priorPublicationId = null, $forceReplace = false)
     {
@@ -876,6 +1084,10 @@ class EodPublicationRepository
             }
 
             $this->assertSealedPublicationMatchesRunHashes($candidate, $freshRun);
+            $this->assertPublicationManifestHashValid($candidate->publication_id);
+            if ((string) ($candidate->readiness_state ?? '') !== 'READABLE') {
+                throw new \RuntimeException('POINTER_PUBLICATION_STATE_INVALID: sealed publication readiness_state must be READABLE before current-pointer promotion.');
+            }
 
             $now = Carbon::now(config('market_data.platform.timezone'));
 
@@ -1236,6 +1448,14 @@ class EodPublicationRepository
         if ((string) ($publication->seal_state ?? '') !== 'SEALED' || empty($publication->sealed_at)) {
             return false;
         }
+        if ((string) ($publication->readiness_state ?? '') !== 'READABLE' || empty($publication->publication_manifest_hash)) {
+            return false;
+        }
+        try {
+            $this->assertPublicationManifestHashValid($publication->publication_id);
+        } catch (\Throwable $e) {
+            return false;
+        }
 
         $run = DB::table('eod_runs')
             ->where('run_id', $runId)
@@ -1562,112 +1782,131 @@ class EodPublicationRepository
 
     public function buildManifestByPublicationId($publicationId)
     {
-        $row = DB::table('eod_publications as pub')
-            ->join('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
-            ->where('pub.publication_id', $publicationId)
-            ->select(
-                'pub.publication_id',
-                'pub.trade_date',
-                'pub.run_id',
-                'pub.publication_version',
-                'pub.is_current',
-                'pub.supersedes_publication_id',
-                'pub.previous_publication_id',
-                'pub.replaced_publication_id',
-                'pub.seal_state',
-                'pub.sealed_at',
-                'pub.price_product_code',
-                'pub.price_product_version',
-                'pub.factor_set_id',
-                'pub.factor_set_hash',
-                'pub.config_snapshot_id',
-                'run.config_version as config_identity',
-                'pub.bars_batch_hash',
-                'pub.indicators_batch_hash',
-                'pub.eligibility_batch_hash',
-                'run.bars_rows_written',
-                'run.indicators_rows_written',
-                'run.eligibility_rows_written',
-                'run.trade_date_requested',
-                'run.trade_date_effective',
-                'run.source as source_mode',
-                'run.source_name',
-                'run.source_provider',
-                'run.promote_mode',
-                'run.publish_target',
-                'run.coverage_universe_count',
-                'run.coverage_expected_count',
-                'run.coverage_available_count',
-                'run.coverage_missing_count',
-                'run.coverage_ratio',
-                'run.coverage_min_threshold',
-                'run.coverage_gate_state',
-                'run.coverage_threshold_mode',
-                'run.coverage_universe_basis',
-                'run.coverage_contract_version',
-                'pub.source_file_hash',
-                'pub.source_file_hash_algorithm',
-                'pub.source_file_size_bytes',
-                'pub.source_file_row_count'
-            )
-            ->first();
-
-        if (! $row) {
+        $context = $this->publicationManifestContext($publicationId);
+        if (! $context) {
             return null;
         }
 
-        $manifest = (array) $row;
-        $manifest['manifest_schema_version'] = 'market_data_dataset_integrity_manifest_v1';
-        $manifest['artifact_type'] = 'market_data_eod_publication';
-        $manifest['artifact_version'] = (int) $row->publication_version;
-        $manifest['dataset_scope'] = [
-            'bars' => 'eod_bars/eod_bars_history',
-            'indicators' => 'eod_indicators/eod_indicators_history',
-            'eligibility' => 'eod_eligibility/eod_eligibility_history',
+        $canonicalizationVersion = (string) DB::table('eod_bars_history')
+            ->where('publication_id', (int) $publicationId)
+            ->whereNotNull('canonicalization_version')
+            ->where('canonicalization_version', '<>', '')
+            ->distinct()->value('canonicalization_version');
+
+        $freshness = strtoupper(trim((string) ($context->freshness_state ?? '')));
+        if (! in_array($freshness, ['FRESH', 'STALE', 'DEGRADED', 'NOT_AVAILABLE'], true)) {
+            $freshness = 'NOT_AVAILABLE';
+        }
+
+        $temporalRevisionSetHash = null;
+        if (
+            preg_match('/^[a-f0-9]{64}$/', strtolower((string) ($context->identity_revision_set_hash ?? '')))
+            && preg_match('/^[a-f0-9]{64}$/', strtolower((string) ($context->calendar_revision_set_hash ?? '')))
+            && preg_match('/^[a-f0-9]{64}$/', strtolower((string) ($context->status_revision_set_hash ?? '')))
+        ) {
+            $temporalRevisionSetHash = $this->hashes->hashCanonicalDocument([
+                'trade_date' => (string) $context->trade_date,
+                'identity_revision_set_hash' => strtolower((string) $context->identity_revision_set_hash),
+                'calendar_revision_set_hash' => strtolower((string) $context->calendar_revision_set_hash),
+                'status_revision_set_hash' => strtolower((string) $context->status_revision_set_hash),
+            ]);
+        }
+
+        $manifest = [
+            'publication_id' => (int) $context->publication_id,
+            'trade_date' => (string) $context->trade_date,
+            'run_id' => (int) $context->run_id,
+            'publication_version' => (int) $context->publication_version,
+            'is_current' => (bool) $context->is_current,
+            'supersedes_publication_id' => $context->supersedes_publication_id === null ? null : (int) $context->supersedes_publication_id,
+            'previous_publication_id' => $context->previous_publication_id === null ? null : (int) $context->previous_publication_id,
+            'replaced_publication_id' => $context->replaced_publication_id === null ? null : (int) $context->replaced_publication_id,
+            'seal_state' => (string) $context->seal_state,
+            'sealed_at' => $context->sealed_at,
+            'market_scope' => 'IDX_REGULAR_EOD',
+            'observation_manifest_hash' => $context->observation_manifest_hash,
+            'config_snapshot_id' => $context->config_snapshot_id === null ? null : (int) $context->config_snapshot_id,
+            'config_snapshot_hash' => $context->config_snapshot_hash,
+            'config_registry_revision' => $context->config_registry_revision,
+            'temporal_revision_set_hash' => $temporalRevisionSetHash,
+            'identity_revision_set_hash' => $context->identity_revision_set_hash,
+            'calendar_revision_set_hash' => $context->calendar_revision_set_hash,
+            'status_revision_set_hash' => $context->status_revision_set_hash,
+            'event_revision_set_hash' => $context->event_revision_set_hash,
+            'source_scale_assessment_set_hash' => $context->source_scale_assessment_set_hash,
+            'market_structure_revision_set_hash' => $context->market_structure_revision_set_hash,
+            'factor_decision_set_hash' => $context->factor_decision_set_hash,
+            'factor_set_id' => $context->factor_set_id === null ? null : (int) $context->factor_set_id,
+            'factor_set_hash' => $context->factor_set_hash,
+            'price_product_code' => $context->price_product_code,
+            'price_product_version' => $context->price_product_version,
+            'canonicalization_version' => $canonicalizationVersion !== '' ? $canonicalizationVersion : null,
+            'formula_version' => $context->lineage_formula_version,
+            'read_model_version' => $context->lineage_read_model_version ?: $context->read_model_version,
+            'bars_batch_hash' => $context->bars_batch_hash,
+            'indicators_batch_hash' => $context->indicators_batch_hash,
+            'eligibility_batch_hash' => $context->eligibility_batch_hash,
+            'publication_manifest_hash' => $context->publication_manifest_hash,
+            'bars_rows_written' => $context->bars_rows_written === null ? null : (int) $context->bars_rows_written,
+            'indicators_rows_written' => $context->indicators_rows_written === null ? null : (int) $context->indicators_rows_written,
+            'eligibility_rows_written' => $context->eligibility_rows_written === null ? null : (int) $context->eligibility_rows_written,
+            'trade_date_requested' => $context->trade_date_requested,
+            'trade_date_effective' => $context->trade_date_effective ?: $context->trade_date,
+            'readiness_state' => $context->readiness_state,
+            'freshness_state' => $freshness,
+            'manifest_schema_version' => 'market_data_dataset_integrity_manifest_v2',
+            'artifact_type' => 'market_data_eod_publication',
+            'artifact_version' => (int) $context->publication_version,
+            'dataset_scope' => [
+                'bars' => 'eod_bars/eod_bars_history',
+                'indicators' => 'eod_indicators/eod_indicators_history',
+                'eligibility' => 'eod_eligibility/eod_eligibility_history',
+            ],
+            'hash_algorithm' => config('market_data.hash.algorithm', 'SHA-256'),
+            'hash_delimiter' => config('market_data.hash.delimiter', '|'),
+            'hash_line_separator' => config('market_data.hash.line_separator', "\n"),
+            'hash_null_token' => DeterministicHashService::NULL_TOKEN,
+            'canonical_ordering_rule' => 'trade_date ASC, ticker_id ASC; DeterministicHashService canonical ordering',
+            'component_hashes' => [
+                'bars_batch_hash' => $context->bars_batch_hash,
+                'indicators_batch_hash' => $context->indicators_batch_hash,
+                'eligibility_batch_hash' => $context->eligibility_batch_hash,
+            ],
+            'component_row_counts' => [
+                'bars_rows_written' => $context->bars_rows_written,
+                'indicators_rows_written' => $context->indicators_rows_written,
+                'eligibility_rows_written' => $context->eligibility_rows_written,
+            ],
+            'component_column_contract' => [
+                'bars' => \App\Application\MarketData\Services\MarketDataPipelineService::BARS_HASH_COLUMNS,
+                'indicators' => \App\Application\MarketData\Services\MarketDataPipelineService::INDICATORS_HASH_COLUMNS,
+                'eligibility' => \App\Application\MarketData\Services\MarketDataPipelineService::ELIGIBILITY_HASH_COLUMNS,
+            ],
+            'coverage_context' => [
+                'coverage_universe_count' => $context->coverage_universe_count,
+                'coverage_expected_count' => $context->coverage_expected_count,
+                'coverage_available_count' => $context->coverage_available_count,
+                'coverage_missing_count' => $context->coverage_missing_count,
+                'coverage_ratio' => $context->coverage_ratio,
+                'coverage_min_threshold' => $context->coverage_min_threshold,
+                'coverage_gate_state' => CoverageGateStateNormalizer::normalize($context->coverage_gate_state),
+                'legacy_coverage_gate_state_raw' => CoverageGateStateNormalizer::legacyRaw($context->coverage_gate_state),
+                'coverage_threshold_mode' => $context->coverage_threshold_mode,
+                'coverage_universe_basis' => $context->coverage_universe_basis,
+                'coverage_contract_version' => $context->coverage_contract_version,
+            ],
+            'source_context' => [
+                'source_mode' => $context->source_mode,
+                'source_name' => $context->source_name,
+                'source_provider' => $context->source_provider,
+                'source_file_hash' => $context->source_file_hash,
+                'source_file_hash_algorithm' => $context->source_file_hash_algorithm,
+                'source_file_size_bytes' => $context->source_file_size_bytes,
+                'source_file_row_count' => $context->source_file_row_count,
+            ],
+            'seal_verification_status' => $context->seal_state === 'SEALED' && $context->sealed_at ? 'VERIFIED_BY_STORED_HASH_CONTEXT' : 'NOT_VERIFIED_UNSEALED',
+            'seal_verification_reason_code' => $context->seal_state === 'SEALED' && $context->sealed_at ? 'DATASET_HASH_VERIFIED' : 'DATASET_SEAL_INVALID',
         ];
-        $manifest['hash_algorithm'] = config('market_data.hash.algorithm', 'SHA-256');
-        $manifest['hash_delimiter'] = config('market_data.hash.delimiter', '|');
-        $manifest['hash_line_separator'] = config('market_data.hash.line_separator', "\n");
-        $manifest['hash_null_token'] = DeterministicHashService::NULL_TOKEN;
-        $manifest['canonical_ordering_rule'] = 'trade_date ASC, ticker_id ASC; DeterministicHashService sorts canonical serialized rows before hashing';
-        $manifest['component_hashes'] = [
-            'bars_batch_hash' => $row->bars_batch_hash,
-            'indicators_batch_hash' => $row->indicators_batch_hash,
-            'eligibility_batch_hash' => $row->eligibility_batch_hash,
-        ];
-        $manifest['component_row_counts'] = [
-            'bars_rows_written' => $row->bars_rows_written,
-            'indicators_rows_written' => $row->indicators_rows_written,
-            'eligibility_rows_written' => $row->eligibility_rows_written,
-        ];
-        $manifest['component_column_contract'] = [
-            'bars' => \App\Application\MarketData\Services\MarketDataPipelineService::BARS_HASH_COLUMNS,
-            'indicators' => \App\Application\MarketData\Services\MarketDataPipelineService::INDICATORS_HASH_COLUMNS,
-            'eligibility' => \App\Application\MarketData\Services\MarketDataPipelineService::ELIGIBILITY_HASH_COLUMNS,
-        ];
-        $manifest['coverage_context'] = [
-            'coverage_universe_count' => $row->coverage_universe_count,
-            'coverage_available_count' => $row->coverage_available_count,
-            'coverage_missing_count' => $row->coverage_missing_count,
-            'coverage_ratio' => $row->coverage_ratio,
-            'coverage_min_threshold' => $row->coverage_min_threshold,
-            'coverage_gate_state' => CoverageGateStateNormalizer::normalize($row->coverage_gate_state),
-            'legacy_coverage_gate_state_raw' => CoverageGateStateNormalizer::legacyRaw($row->coverage_gate_state),
-            'coverage_threshold_mode' => $row->coverage_threshold_mode,
-            'coverage_universe_basis' => $row->coverage_universe_basis,
-            'coverage_contract_version' => $row->coverage_contract_version,
-        ];
-        $manifest['source_context'] = [
-            'source_mode' => $row->source_mode,
-            'source_name' => $row->source_name,
-            'source_provider' => $row->source_provider,
-            'source_file_hash' => $row->source_file_hash,
-            'source_file_hash_algorithm' => $row->source_file_hash_algorithm,
-            'source_file_size_bytes' => $row->source_file_size_bytes,
-            'source_file_row_count' => $row->source_file_row_count,
-        ];
-        $manifest['seal_verification_status'] = $row->seal_state === 'SEALED' && $row->sealed_at ? 'VERIFIED_BY_STORED_HASH_CONTEXT' : 'NOT_VERIFIED_UNSEALED';
-        $manifest['seal_verification_reason_code'] = $row->seal_state === 'SEALED' && $row->sealed_at ? 'DATASET_HASH_VERIFIED' : 'DATASET_SEAL_INVALID';
 
         return (object) $manifest;
     }

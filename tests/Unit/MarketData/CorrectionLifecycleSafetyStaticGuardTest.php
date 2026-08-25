@@ -25,7 +25,8 @@ class CorrectionLifecycleSafetyStaticGuardTest extends TestCase
         $this->assertStringContainsString("\$artifactComparison['decision'] !== 'CHANGED'", $method);
         $this->assertStringContainsString('promotePublicationHistoryToCurrent', $method);
         $this->assertStringContainsString('restorePriorCurrentPublication', $method);
-        $this->assertStringContainsString('resolveCurrentReadablePublicationForTradeDate($input->requestedDate)', $method);
+        $this->assertStringContainsString('promoteCandidateToCurrent', $method);
+        $this->assertStringContainsString('findPointerResolvedPublicationForTradeDate($input->requestedDate)', $method);
         $this->assertStringContainsString('Current publication pointer resolution mismatch after finalize.', $method);
     }
 

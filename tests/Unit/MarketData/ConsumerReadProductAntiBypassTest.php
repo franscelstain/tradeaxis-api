@@ -81,8 +81,9 @@ class ConsumerReadProductAntiBypassTest extends TestCase
     {
         $root = __DIR__.'/../../../app';
         $allowed = [
-            // The break detector is an internal market-data producer, not a downstream consumer.
+            // Internal producer/audit surfaces are not downstream consumer read gateways.
             'PriceScaleBreakDetectionService.php',
+            'PublicationProjectionReconciliationService.php',
         ];
 
         $offenders = [];

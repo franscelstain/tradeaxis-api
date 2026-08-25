@@ -1147,3 +1147,42 @@ CREATE TABLE IF NOT EXISTS md_replay_reason_code_counts (
   PRIMARY KEY (replay_id, trade_date, reason_code),
   KEY idx_replay_reason_code (replay_id, reason_code)
 ) ENGINE=InnoDB;
+
+-- MD-B10-A001: independent current-projection versus current-publication reconciliation evidence.
+-- Deployed canonically by 2026_08_24_000001_enforce_sealed_history_and_projection_reconciliation.php.
+CREATE TABLE IF NOT EXISTS md_publication_projection_reconciliations (
+  reconciliation_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  reconciliation_uid CHAR(64) NOT NULL,
+  trade_date DATE NOT NULL,
+  publication_id BIGINT UNSIGNED NULL,
+  run_id BIGINT UNSIGNED NULL,
+  publication_version INT UNSIGNED NULL,
+  pointer_state VARCHAR(32) NOT NULL,
+  reconciliation_state VARCHAR(32) NOT NULL,
+  bars_projection_count INT UNSIGNED NOT NULL DEFAULT 0,
+  bars_history_count INT UNSIGNED NOT NULL DEFAULT 0,
+  bars_missing_history_count INT UNSIGNED NOT NULL DEFAULT 0,
+  bars_missing_projection_count INT UNSIGNED NOT NULL DEFAULT 0,
+  bars_value_mismatch_count INT UNSIGNED NOT NULL DEFAULT 0,
+  indicators_projection_count INT UNSIGNED NOT NULL DEFAULT 0,
+  indicators_history_count INT UNSIGNED NOT NULL DEFAULT 0,
+  indicators_missing_history_count INT UNSIGNED NOT NULL DEFAULT 0,
+  indicators_missing_projection_count INT UNSIGNED NOT NULL DEFAULT 0,
+  indicators_value_mismatch_count INT UNSIGNED NOT NULL DEFAULT 0,
+  eligibility_projection_count INT UNSIGNED NOT NULL DEFAULT 0,
+  eligibility_history_count INT UNSIGNED NOT NULL DEFAULT 0,
+  eligibility_missing_history_count INT UNSIGNED NOT NULL DEFAULT 0,
+  eligibility_missing_projection_count INT UNSIGNED NOT NULL DEFAULT 0,
+  eligibility_value_mismatch_count INT UNSIGNED NOT NULL DEFAULT 0,
+  orphan_projection_row_count INT UNSIGNED NOT NULL DEFAULT 0,
+  mismatch_count INT UNSIGNED NOT NULL DEFAULT 0,
+  mismatch_sample_json LONGTEXT NULL,
+  reconciliation_hash CHAR(64) NOT NULL,
+  checked_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (reconciliation_id),
+  UNIQUE KEY uq_md_pub_proj_recon_uid (reconciliation_uid),
+  KEY idx_md_pub_proj_recon_date_state (trade_date, reconciliation_state),
+  KEY idx_md_pub_proj_recon_pub_checked (publication_id, checked_at),
+  KEY idx_md_pub_proj_recon_checked (checked_at)
+) ENGINE=InnoDB;

@@ -262,6 +262,8 @@ class EodArtifactRepository
             return;
         }
 
+        $this->assertHistorySnapshotMutable($publicationId);
+
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
         $bars = $this->applyStableArtifactOrder(
             DB::table('eod_bars')->where('trade_date', $tradeDate)
@@ -660,9 +662,47 @@ class EodArtifactRepository
             && DB::table('eod_eligibility_history')->where('publication_id', $publicationId)->exists();
     }
 
+    /**
+     * Prove that the immutable publication snapshot is complete before the seal transition.
+     * The run counts are the declared publication row counts; the history counts are the rows
+     * that will actually be frozen. A disagreement is a manifest/seal defect, not a condition
+     * that may be repaired after sealing.
+     */
+    public function assertPublicationSnapshotComplete($tradeDate, $publicationId, array $expectedCounts): array
+    {
+        $counts = [
+            'bars' => (int) DB::table('eod_bars_history')->where('publication_id', $publicationId)->where('trade_date', $tradeDate)->count(),
+            'indicators' => (int) DB::table('eod_indicators_history')->where('publication_id', $publicationId)->where('trade_date', $tradeDate)->count(),
+            'eligibility' => (int) DB::table('eod_eligibility_history')->where('publication_id', $publicationId)->where('trade_date', $tradeDate)->count(),
+        ];
+
+        foreach ($counts as $artifact => $actual) {
+            $expected = array_key_exists($artifact, $expectedCounts) && $expectedCounts[$artifact] !== null
+                ? (int) $expectedCounts[$artifact]
+                : null;
+
+            if ($actual <= 0 || $expected === null || $expected <= 0 || $actual !== $expected) {
+                throw new \RuntimeException(
+                    'DATASET_MANIFEST_INVALID: publication snapshot incomplete for '.$artifact
+                    .' publication_id='.(int) $publicationId
+                    .' trade_date='.(string) $tradeDate
+                    .' expected='.(string) ($expected === null ? 'null' : $expected)
+                    .' actual='.$actual
+                );
+            }
+        }
+
+        return $counts;
+    }
+
     public function snapshotPublicationFromCurrentTables($tradeDate, $publicationId, $runId)
     {
         return DB::transaction(function () use ($tradeDate, $publicationId, $runId) {
+            // A publication-bound snapshot is assembled while the publication is still a
+            // candidate and becomes frozen at seal. Never use this method as a post-seal
+            // completion/backfill path.
+            $this->assertHistorySnapshotMutable($publicationId);
+
             $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
 
         if (! DB::table('eod_bars_history')->where('publication_id', $publicationId)->exists()) {
@@ -922,7 +962,7 @@ class EodArtifactRepository
 
         if ((string) $sealState === 'SEALED') {
             throw new \RuntimeException(
-                'SEALED_SNAPSHOT_REWRITE_BLOCKED: publication '.$publicationId.' is sealed; its history snapshot set is frozen. '
+                'SEALED_PUBLICATION_IMMUTABLE: publication '.$publicationId.' is sealed; its history snapshot set is frozen. '
                 .'Produce a new corrected publication instead of rewriting this one.'
             );
         }
@@ -1128,6 +1168,7 @@ class EodArtifactRepository
             ['listing_id'],
             self::REQUIRED_ELIGIBILITY_WRITE_FIELDS,
             [
+                'trading_status_revision_id', 'trading_status_source_observation_id',
                 'config_snapshot_id', 'market_structure_resolution_state',
                 'price_band_revision_id', 'minimum_price_revision_id', 'tick_size_revision_id',
             ]

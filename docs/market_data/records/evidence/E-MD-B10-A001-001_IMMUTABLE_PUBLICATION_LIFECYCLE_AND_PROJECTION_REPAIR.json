@@ -1,0 +1,288 @@
+{
+  "evidence_id": "E-MD-B10-A001-001",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B10",
+  "attempt_id": "MD-B10-A001",
+  "work_id": "MD-B10-A001",
+  "baseline_id": "MD-B10-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze": "MD-STRATEGY-FREEZE-20260823-001",
+  "change_impact_declaration": "CI-MD-B10-A001-001",
+  "issued_at": "2026-08-25T11:05:00+07:00",
+  "title": "Current immutable publication lifecycle, sealed-history, manifest, pointer, correction, reconciliation and controlled projection-repair proof for MD-B10-A001",
+  "attempt_outcome": "COMPLETE — cumulative corrected local proof plus final rollback-safe deployed repair proof establish the current B10 publication lifecycle and fail-closed invariants without rewriting immutable history.",
+  "authority_basis": {
+    "primary_stage": "MD-B10 / W10 immutable publication state machine, manifest, seal, pointer, correction, supersession and no-in-place-rewrite",
+    "strategy_freeze": "MD-STRATEGY-FREEZE-20260823-001",
+    "strategy_bytes_changed_inside_attempt": 0,
+    "governance": [
+      "STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD",
+      "IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD",
+      "WORK_BASELINE_LOCK_STANDARD",
+      "CHANGE_IMPACT_DECLARATION_STANDARD",
+      "RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD",
+      "STAGE_CLOSURE_MANIFEST_STANDARD"
+    ]
+  },
+  "repository_identity": {
+    "source_revision": "b3e8b6c772b38dcab96d09e96b17b8b7bcf67ffc",
+    "patch_lineage": [
+      {
+        "patch": "market_data_update_MD-B10_A001_proof_tooling_sync.zip",
+        "sha256": "F4196D4B19E29CB60E2404B63752BF6A4748201A98B48C8D62AA1F744ADAEEC2"
+      },
+      {
+        "patch": "market_data_update_MD-B10_A001_local_proof_cycle1_remediation.zip",
+        "sha256": "2170611AE21C5ED4AE59E2DCB3A40AFDE9F6DCEEBE274935941C65FFA9B98CA6"
+      },
+      {
+        "patch": "market_data_update_MD-B10_A001_local_proof_R1_remediation_R2.zip",
+        "sha256": "3DBD5A4F5CBBF2F5406387BF80F0D816F53D4E808802D5CE6A1B5E8714C876A8"
+      },
+      {
+        "patch": "market_data_update_MD-B10_A001_local_proof_R2_remediation_R3.zip",
+        "sha256": "95A38FEB48822C64223AFC424C477590B727941BA3ABD47C6A000B9512C6DBB9"
+      },
+      {
+        "patch": "market_data_update_MD-B10_A001_local_proof_R3_remediation_R4.zip",
+        "sha256": "29396F855FE42F22469CA51E63CF21D7C377D54961705FC5D5BBDA48A7DE61C3"
+      },
+      {
+        "patch": "market_data_update_MD-B10_A001_local_proof_R4_gap_R5.zip",
+        "sha256": "2E988C90FABEE6746B41A350E4D9200FE625976353417CC9D84052EFD1FF901D"
+      }
+    ],
+    "r5_repository_state_compatible": true,
+    "unexpected_tracked_mutation_after_testing": false,
+    "manual_proof_directory_is_external_raw_proof": true
+  },
+  "raw_artifact_packages": [
+    {
+      "archive_name": "LOCAL-B10-A001.zip",
+      "sha256": "AC7B8D7A1CE6C8C7065883BA1D8029DDCD623A24AFEE2185CBD72E360F5C3B54",
+      "artifacts": [
+        {
+          "path": "manual_proof/LOCAL-B10-001_migrate.txt",
+          "sha256": "0B39E2ED3985E359B682A64B30D05F7959CD56B578782DFD74F332D7AEABF88D",
+          "bytes": 70,
+          "execution_id": "LOCAL-B10-001_migrate",
+          "verdict": "PASS",
+          "observed": "Migration command exit 0; deployment already current (`Nothing to migrate`)."
+        }
+      ]
+    },
+    {
+      "archive_name": "LOCAL-B10-A001-R1.zip",
+      "sha256": "03B3FD5EBBC3DD5C16E4386BBEC57FBE69E8E0F7D7BD9A4D3B9FF5DAD7C7AE5F",
+      "artifacts": [
+        {
+          "path": "manual_proof/LOCAL-B10-R1-001_trigger_cleanup.txt",
+          "sha256": "333D32F80970169CD1F247416D5EE123F190887E69A1AA9358276886971CC52D",
+          "bytes": 5268,
+          "execution_id": "LOCAL-B10-R1-001_trigger_cleanup",
+          "verdict": "PASS",
+          "observed": "Six unexpected legacy history triggers removed under controlled local/dev cleanup; unexpected_after empty."
+        },
+        {
+          "path": "manual_proof/LOCAL-B10-R1-002_deployed_schema_probe.txt",
+          "sha256": "E6F18019D31BC4A1317227BDBCD53EE2482F0DEDDBE98DFE830BEE64F5C8600B",
+          "bytes": 2014,
+          "execution_id": "LOCAL-B10-R1-002_deployed_schema_probe",
+          "verdict": "PASS",
+          "observed": "MariaDB migration applied; reconciliation table present; exact 9 governed triggers; 9/9 canonical direct INSERT/UPDATE/DELETE blocks; no unexpected triggers."
+        }
+      ]
+    },
+    {
+      "archive_name": "LOCAL-B10-A001-R3.zip",
+      "sha256": "F6AE9D5A5B6FDEAAFE91EB64D869C62376B3F5BB2FEEC8C0ACEC6BCF933B6F31",
+      "artifacts": [
+        {
+          "path": "manual_proof/LOCAL-B10-R3-002_projection_repair_dry_run.txt",
+          "sha256": "E7F282BAF1E4CB67DD8D7D2782A589EE5659E40933CC1EBE28CF5BBC0F642130",
+          "bytes": 11326,
+          "execution_id": "LOCAL-B10-R3-002_projection_repair_dry_run",
+          "verdict": "PASS",
+          "observed": "Dry-run resolved publication 73666/run 72941, validated complete immutable history, declared REPAIRABLE_FROM_IMMUTABLE_HISTORY, and localized 59 eligibility lineage mismatches."
+        }
+      ]
+    },
+    {
+      "archive_name": "LOCAL-B10-A001-R4.zip",
+      "sha256": "6ADEA513ECD8B1C955D98ADB261B9550DC2E2B00E3343ABED76409AB6461CB3D",
+      "artifacts": [
+        {
+          "path": "manual_proof/LOCAL-B10-R4-001_targeted_phpunit.txt",
+          "sha256": "784BFC404DE923CAD55DD3FB07608DF94134957658D354CC38A0597E5B55FE19",
+          "bytes": 6844,
+          "execution_id": "LOCAL-B10-R4-001_targeted_phpunit",
+          "verdict": "PASS",
+          "observed": "All 11 affected targeted B10 test files passed; MarketDataPipelineIntegrationTest 56 tests/1268 assertions and all invocations exit 0."
+        },
+        {
+          "path": "manual_proof/LOCAL-B10-R4-003_projection_reconciliation.txt",
+          "sha256": "0DA37FCA484238502E4FFB5B8E5A4C27C6E68E99F4BC1EA294AF397269F93039",
+          "bytes": 514,
+          "execution_id": "LOCAL-B10-R4-003_projection_reconciliation",
+          "verdict": "PASS",
+          "observed": "Independent reconciliation for 2026-07-28/publication 73666 returned mismatch_count=0, failed_count=0, status=PASS."
+        },
+        {
+          "path": "manual_proof/LOCAL-B10-R4-004_phpunit_full.txt",
+          "sha256": "EF3667D68E6E01EFBF38073C3C4AB4E9139FB1EF28A4D6AC20CC9C4BFF3EC309",
+          "bytes": 5378,
+          "execution_id": "LOCAL-B10-R4-004_phpunit_full",
+          "verdict": "PASS",
+          "observed": "Full PHPUnit suite 1866 tests/17723 assertions, zero failures/errors, exit 0."
+        }
+      ]
+    },
+    {
+      "archive_name": "LOCAL-B10-A001-R5.zip",
+      "sha256": "65C7F80AD7E544BAEC08CC6741CFCF8C61CA3A7933C0EACBD949D8E19C7D9B9A",
+      "artifacts": [
+        {
+          "path": "manual_proof/LOCAL-B10-R5-001_regression_phpunit.txt",
+          "sha256": "D1AD1F26C6EE956DCC761DA1DEF3FADFCD6B3BAC4EA2B803A83BD43EAFEA4606",
+          "bytes": 444,
+          "execution_id": "LOCAL-B10-R5-001_regression_phpunit",
+          "verdict": "PASS",
+          "observed": "Affected R5 proof-wiring regression 5 tests/30 assertions, exit 0."
+        },
+        {
+          "path": "manual_proof/LOCAL-B10-R5-002_deployed_projection_repair_probe.txt",
+          "sha256": "ED496E774B3ED563416E26F0D7CD6C59D12F9C867976DD7226FF76A498F9BAAD",
+          "bytes": 1582,
+          "execution_id": "LOCAL-B10-R5-002_deployed_projection_repair_probe",
+          "verdict": "PASS",
+          "observed": "Rollback-safe local MariaDB probe exercised baseline PASS/0, injected FAIL/1, actual REBUILT_AND_VERIFIED repair PASS/0, lineage restored, immutable history unchanged, rollback true, and post-rollback PASS/0."
+        },
+        {
+          "path": "manual_proof/HANDOFF_STATUS_AFTER_TEST.txt",
+          "sha256": "810CFB5A59C591CA77EAA6458EA6B97C58C0547DF67BF91DCC491D19787AE31D",
+          "bytes": 4286,
+          "execution_id": "HANDOFF_STATUS_AFTER_TEST",
+          "verdict": "PASS",
+          "observed": "Returned cumulative repository status matches expected B10 patch lineage; manual_proof remains external."
+        },
+        {
+          "path": "manual_proof/HANDOFF_DIFF_AFTER_TEST.patch",
+          "sha256": "C3C0686BF7986339684BE64CEA836D6D28B06477E758271537FF453F43934CC0",
+          "bytes": 7271920,
+          "execution_id": "HANDOFF_DIFF_AFTER_TEST",
+          "verdict": "PASS",
+          "observed": "Returned tracked diff remains reconstructible from source revision plus cumulative B10 patch lineage."
+        }
+      ]
+    }
+  ],
+  "failed_cycle_lineage": {
+    "preserved": true,
+    "summary": [
+      "Initial/R1/R2/R3 proof failures remain execution history and were not rewritten as PASS.",
+      "R3 dry-run proved immutable history was valid and isolated 59 eligibility lineage mismatches.",
+      "R4 executable remediation produced green targeted tests, clean independent reconciliation, and a green full suite; the R4 controlled apply returned NO_CHANGE and therefore did not prove the deployed repair branch.",
+      "R5 added proof-only transactional instrumentation and proved the missing deployed REBUILT_AND_VERIFIED branch without leaving database state changed."
+    ]
+  },
+  "runtime_execution": {
+    "migration_and_trigger_deployment": {
+      "result": "PASS",
+      "migration": "APPLIED/CURRENT",
+      "history_tables": 3,
+      "governed_triggers": 9,
+      "direct_mutation_attempts": 9,
+      "canonical_blocks": 9,
+      "unexpected_triggers": 0
+    },
+    "immutable_history_repairability_preflight": {
+      "result": "PASS",
+      "trade_date": "2026-07-28",
+      "publication_id": 73666,
+      "run_id": 72941,
+      "history_identity_valid": true,
+      "initial_mismatches": 59,
+      "localized_artifact": "eligibility",
+      "localized_fields": [
+        "trading_status_revision_id",
+        "trading_status_source_observation_id"
+      ]
+    },
+    "affected_targeted_runtime": {
+      "result": "PASS",
+      "files": 11,
+      "pipeline_integration_tests": 56,
+      "pipeline_integration_assertions": 1268,
+      "failures": 0,
+      "errors": 0
+    },
+    "independent_projection_reconciliation": {
+      "result": "PASS",
+      "trade_date": "2026-07-28",
+      "publication_id": 73666,
+      "mismatch_count": 0,
+      "failed_count": 0
+    },
+    "full_suite": {
+      "result": "PASS",
+      "tests": 1866,
+      "assertions": 17723,
+      "failures": 0,
+      "errors": 0,
+      "exit_code": 0
+    },
+    "r5_regression": {
+      "result": "PASS",
+      "tests": 5,
+      "assertions": 30,
+      "failures": 0,
+      "errors": 0,
+      "exit_code": 0
+    },
+    "deployed_projection_repair": {
+      "result": "PASS",
+      "trade_date": "2026-07-28",
+      "publication_id": 73666,
+      "run_id": 72941,
+      "ticker_id": 29,
+      "baseline_state": "PASS",
+      "baseline_mismatch_count": 0,
+      "injected_state": "FAIL",
+      "injected_mismatch_count": 1,
+      "repair_state": "REBUILT_AND_VERIFIED",
+      "repair_after_state": "PASS",
+      "repair_after_mismatch_count": 0,
+      "lineage_restored": true,
+      "history_unchanged": true,
+      "outer_transaction_rolled_back": true,
+      "post_rollback_state": "PASS",
+      "post_rollback_mismatch_count": 0
+    }
+  },
+  "proof_admission": {
+    "status": "PASS",
+    "mandatory_denominator": 1072,
+    "mandatory_satisfied": 1072,
+    "optional_not_requested": 1,
+    "moved_supporting": 1,
+    "reference_context": 239,
+    "applicability_pending": 0,
+    "b10_mixed_classification_debt": 0,
+    "admission_basis": "All 1072 current mandatory B10 predicates have an exact proof family and are eligible for one atomic binding to this evidence after current evidence/relationship registration; no historical PASS is inherited as predicate credit."
+  },
+  "residue": {
+    "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_THE_B10_SURFACE",
+    "publication_seal_atomicity_and_history_freeze_gaps": "CLOSED_BY_CURRENT_PROOF",
+    "projection_reconciliation_and_manifest_completeness": "CLOSED_BY_CURRENT_PROOF",
+    "note": "Current implementation plus negative/deployed proof shows sealed history cannot be rewritten, manifest/seal/pointer/correction semantics remain deterministic/fail-closed, projection drift is detectable, repairable only from immutable history, independently verified, and rollback-safe in proof."
+  },
+  "dependencies": {
+    "MD-DEP-0004": "OPEN_NON_BLOCKING — B10 entry obligation complete; 312 mixed members across 10 unopened stages remain downstream"
+  },
+  "findings": {
+    "blocking": "NONE"
+  },
+  "binding_instruction": "Atomically bind exactly 1072 mandatory MD-B10 predicates to E-MD-B10-A001-001 using the current B10 proof binder; any denominator, status, evidence, relationship, implementation or proof-family mismatch must fail closed."
+}

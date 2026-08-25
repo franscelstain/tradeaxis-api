@@ -132,8 +132,24 @@ class PublicationSealPointerLifecycleTest extends TestCase
             'publication_id' => 3, 'created_at' => '2026-03-24 18:10:00',
         ]];
 
-        $this->expectExceptionMessageMatches('/SEALED_SNAPSHOT_REWRITE_BLOCKED/');
+        $this->expectExceptionMessageMatches('/SEALED_PUBLICATION_IMMUTABLE/');
         (new EodArtifactRepository())->replaceBars('2026-03-24', 3, 103, $rows, [], true);
+    }
+
+    public function test_sealed_publication_cannot_be_completed_with_missing_history_rows_after_seal(): void
+    {
+        $this->publication(31, 'SEALED', 1);
+        DB::table('eod_bars')->insert([
+            'trade_date' => '2026-03-24', 'ticker_id' => 10, 'open' => 100, 'high' => 110,
+            'low' => 99, 'close' => 108, 'volume' => 1000, 'source' => 'YAHOO_FINANCE',
+            'run_id' => 131, 'publication_id' => 31, 'canonicalization_version' => 'eod_canonical_v1',
+            'price_product_code' => 'RAW', 'quality_state' => 'VALIDATED', 'created_at' => '2026-03-24 17:45:00',
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessageMatches('/SEALED_PUBLICATION_IMMUTABLE/');
+
+        (new EodArtifactRepository())->ensureBarsHistoryFromCurrentTradeDate('2026-03-24', 31, 131);
     }
 
     /**

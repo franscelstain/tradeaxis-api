@@ -36,10 +36,12 @@ use App\Console\Commands\MarketData\RequestCorrectionCommand;
 use App\Console\Commands\MarketData\RunCorrectionCommand;
 use App\Console\Commands\MarketData\ApproveCorrectionCommand;
 use App\Console\Commands\MarketData\RepairCurrentPublicationIntegrityCommand;
+use App\Console\Commands\MarketData\RepairPublicationProjectionCommand;
 use App\Console\Commands\MarketData\RecordAuthoritativeCorporateActionTermsCommand;
 use App\Console\Commands\MarketData\RecordAuthoritativeExchangeMarketStructureCommand;
 use App\Console\Commands\MarketData\RecordAuthoritativeTradingStatusSnapshotCommand;
 use App\Console\Commands\MarketData\ReconstructCurrentCorpusCommand;
+use App\Console\Commands\MarketData\ReconcilePublicationProjectionCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Laravel\Lumen\Console\Kernel as ConsoleKernel;
 
@@ -80,20 +82,34 @@ class Kernel extends ConsoleKernel
         RunCorrectionCommand::class,
         ApproveCorrectionCommand::class,
         RepairCurrentPublicationIntegrityCommand::class,
+        RepairPublicationProjectionCommand::class,
         RecordAuthoritativeCorporateActionTermsCommand::class,
         RecordAuthoritativeExchangeMarketStructureCommand::class,
         RecordAuthoritativeTradingStatusSnapshotCommand::class,
         ReconstructCurrentCorpusCommand::class,
+        ReconcilePublicationProjectionCommand::class,
     ];
 
     protected function schedule(Schedule $schedule)
     {
+        $timezone = (string) config('market_data.platform.timezone', 'Asia/Jakarta');
+        $outputPath = $this->scheduleOutputPath();
+
+        // Internal publication/projection reconciliation has its own cadence and remains
+        // independent of the daily pipeline. Scheduling policy reuses the canonical scheduler
+        // overlap control instead of introducing unregistered semantic config keys.
+        $reconciliation = $schedule->command('market-data:reconcile:publication-projection --latest')
+            ->hourly()
+            ->timezone($timezone)
+            ->withoutOverlapping((int) config('market_data.scheduler.without_overlapping_minutes', 120));
+
+        if ($outputPath !== '') {
+            $reconciliation->appendOutputTo($outputPath);
+        }
+
         if (! config('market_data.pipeline.daily_enabled')) {
             return;
         }
-
-        $timezone = (string) config('market_data.platform.timezone', 'Asia/Jakarta');
-        $outputPath = $this->scheduleOutputPath();
 
         $event = $schedule->command('market-data:daily --latest')
             ->dailyAt(substr(config('market_data.platform.cutoff_time'), 0, 5))

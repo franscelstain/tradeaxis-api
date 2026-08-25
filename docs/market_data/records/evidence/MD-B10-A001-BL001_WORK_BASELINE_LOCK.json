@@ -1,0 +1,34 @@
+{
+    "baseline_id": "MD-B10-A001-BL001",
+    "stage_id": "MD-B10",
+    "attempt_id": "MD-B10-A001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260823-001",
+    "strategy_freeze_manifest_sha1": "346300DB6E5356277EA7F97AF36E2F9AD46ADA60",
+    "strategy_tree_fingerprint_sha1": "CDF213A4CF07CAC0128E476BFDCFB8681ED864CF",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "B1685A3DA45BD04B917C3C094382F71AFC6FFFE7",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "13E7AAC634B516E6518E159F1E2916AA101AFC7A",
+    "source_revision": "b3e8b6c772b38dcab96d09e96b17b8b7bcf67ffc",
+    "source_revision_branch": "UNKNOWN",
+    "working_tree": "CURRENT_GOVERNED_B09_A002_POSTPROOF_PLUS_B10_STAGE_ENTRY_NORMALIZATION; no material B10 executable mutation yet",
+    "app_code_fingerprint_sha1": "25BE4AE164A18DF5304349A40DA9E1FAC3692ABA",
+    "tests_fingerprint_sha1": "663378BEAA29C12CFB18D0005B9F08E6615DE59D",
+    "schema_config_identity": "schema:EFAC1C8E2438D039BBCC5662389375C661863039;config:CDA52E5CFA3414EF94B3C16A4D3C118A692D7165;migrations:86496F6024D47EE209DBA9D416FC9EC528AA9A46",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "B10 fresh local runtime proof pending; latest verified predecessor B09 A002 full suite 1838 tests / 17475 assertions; static workspace PHP 8.4.23.",
+    "external_dependency_contract_identity": {
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "registered": 8,
+        "open_blocking": []
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-08-23T17:31:35+00:00",
+    "issuance_note": "Issued after SC-MD-B09-A002-001 and exact B10 stage-entry normalization at 1072 mandatory + 1 optional + 239 reference/context, mixed debt 0 and MD-DEP-0004 312/10; before any material MD-B10 application/runtime mutation."
+}

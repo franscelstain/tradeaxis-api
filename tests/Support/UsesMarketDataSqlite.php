@@ -1053,6 +1053,36 @@ trait UsesMarketDataSqlite
             $table->index(['run_id'], 'idx_eligibility_history_run');
         });
 
+        $schema->create('md_publication_projection_reconciliations', function (Blueprint $table) {
+            $table->bigIncrements('reconciliation_id');
+            $table->char('reconciliation_uid', 64)->unique();
+            $table->date('trade_date');
+            $table->unsignedBigInteger('publication_id')->nullable();
+            $table->unsignedBigInteger('run_id')->nullable();
+            $table->unsignedInteger('publication_version')->nullable();
+            $table->string('pointer_state', 32);
+            $table->string('reconciliation_state', 32);
+
+            foreach (['bars', 'indicators', 'eligibility'] as $artifact) {
+                $table->unsignedInteger($artifact.'_projection_count')->default(0);
+                $table->unsignedInteger($artifact.'_history_count')->default(0);
+                $table->unsignedInteger($artifact.'_missing_history_count')->default(0);
+                $table->unsignedInteger($artifact.'_missing_projection_count')->default(0);
+                $table->unsignedInteger($artifact.'_value_mismatch_count')->default(0);
+            }
+
+            $table->unsignedInteger('orphan_projection_row_count')->default(0);
+            $table->unsignedInteger('mismatch_count')->default(0);
+            $table->text('mismatch_sample_json')->nullable();
+            $table->char('reconciliation_hash', 64);
+            $table->dateTime('checked_at');
+            $table->dateTime('created_at');
+
+            $table->index(['trade_date', 'reconciliation_state'], 'idx_md_pub_proj_recon_date_state');
+            $table->index(['publication_id', 'checked_at'], 'idx_md_pub_proj_recon_pub_checked');
+            $table->index(['checked_at'], 'idx_md_pub_proj_recon_checked');
+        });
+
         $this->createMarketDataV2SqliteSchema($schema);
         $this->seedMarketDataSectorTaxonomy();
     }

@@ -58,11 +58,16 @@ class DailyScheduleRegistrationTest extends TestCase
      */
     private function dailyEvent(array $configOverride = []): Event
     {
-        $events = $this->marketDataEvents($this->buildSchedule(array_merge([
-            'market_data.pipeline.daily_enabled' => true,
-        ], $configOverride)));
+        $events = array_values(array_filter(
+            $this->marketDataEvents($this->buildSchedule(array_merge([
+                'market_data.pipeline.daily_enabled' => true,
+            ], $configOverride))),
+            function (Event $event) {
+                return strpos((string) $event->command, 'market-data:daily --latest') !== false;
+            }
+        ));
 
-        $this->assertCount(1, $events, 'Exactly one market-data command must be scheduled.');
+        $this->assertCount(1, $events, 'Exactly one daily market-data import must be scheduled.');
 
         return $events[0];
     }
@@ -135,18 +140,45 @@ class DailyScheduleRegistrationTest extends TestCase
      * nothing is registered at all — a disabled schedule that still registers a no-op event would
      * report as scheduled.
      */
-    public function test_nothing_is_scheduled_when_the_daily_pipeline_is_disabled(): void
+    public function test_daily_pipeline_can_be_disabled_without_disabling_independent_reconciliation(): void
     {
-        $this->assertSame([], $this->marketDataEvents($this->buildSchedule([
+        $events = $this->marketDataEvents($this->buildSchedule([
             'market_data.pipeline.daily_enabled' => false,
-        ])));
+        ]));
+
+        $this->assertCount(1, $events);
+        $this->assertStringContainsString('market-data:reconcile:publication-projection --latest', $events[0]->command);
+        $this->assertStringNotContainsString('market-data:daily --latest', $events[0]->command);
     }
 
-    public function test_the_schedule_is_registered_when_enabled(): void
+    public function test_daily_and_reconciliation_schedules_are_both_registered_when_daily_is_enabled(): void
     {
-        $this->assertCount(1, $this->marketDataEvents($this->buildSchedule([
+        $events = $this->marketDataEvents($this->buildSchedule([
             'market_data.pipeline.daily_enabled' => true,
-        ])));
+        ]));
+
+        $this->assertCount(2, $events);
+    }
+
+    public function test_reconciliation_has_independent_hourly_cadence_and_overlap_guard(): void
+    {
+        $events = array_values(array_filter(
+            $this->marketDataEvents($this->buildSchedule([
+                'market_data.pipeline.daily_enabled' => false,
+            ])),
+            function (Event $event) {
+                return strpos((string) $event->command, 'market-data:reconcile:publication-projection --latest') !== false;
+            }
+        ));
+
+        $this->assertCount(1, $events);
+        $this->assertSame('0 * * * *', $events[0]->expression);
+        $this->assertSame((string) config('market_data.platform.timezone', 'Asia/Jakarta'), (string) $events[0]->timezone);
+        $this->assertTrue($events[0]->withoutOverlapping);
+        $this->assertSame(
+            (int) config('market_data.scheduler.without_overlapping_minutes', 120),
+            $events[0]->expiresAt
+        );
     }
 
     /**

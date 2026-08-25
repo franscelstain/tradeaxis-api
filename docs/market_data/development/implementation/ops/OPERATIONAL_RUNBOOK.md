@@ -231,6 +231,8 @@ Logs distinguish `scheduler_status=SUCCESS` and `scheduler_status=FAILURE`; a fa
 - `market-data:dataset:seal`
 - `market-data:run:finalize`
 - `market-data:promote`
+- `market-data:reconcile:publication-projection`
+- `market-data:repair:publication-projection`
 - `market-data:backfill`
 - `market-data:backfill:lifecycle`
 - `market-data:backfill:missing-tickers`
@@ -260,6 +262,44 @@ Logs distinguish `scheduler_status=SUCCESS` and `scheduler_status=FAILURE`; a fa
 - `market-data:detect-price-scale-breaks`
 - `market-data:repair-price-scale-stretches` — registered P0 blocker; `--apply` must be removed/disabled.
 - `market-data:events:derive-corporate-actions` — registered P0 blocker when apply creates/verifies factors from prices.
+
+### Publication projection reconciliation flow
+
+`market-data:reconcile:publication-projection` is a privileged audit/reconciliation surface, not a
+consumer read gateway and not a repair command. Use exactly one scope:
+
+- `--latest` to reconcile the latest relevant current-projection date; or
+- `--start_date=<YYYY-MM-DD> --end_date=<YYYY-MM-DD>` for an explicit bounded range.
+
+The command compares current projection rows against the current publication's immutable history in
+both directions, persists counts/mismatch samples/hash, and exits non-zero when reconciliation is not
+`PASS`. It must not mutate projection/history to make the comparison pass. `NO_RELEVANT_TRADE_DATE`
+is an operationally valid no-op but is not sufficient publication-reconciliation proof for a stage
+that explicitly requires an exercised date.
+
+
+### Controlled publication projection repair
+
+`market-data:repair:publication-projection --trade_date=<YYYY-MM-DD> --dry-run` is the explicit
+operator preflight for the repair companion to reconciliation. Exact-date scope is mandatory. Safe default
+without `--apply` remains dry-run, but the explicit flag is provided so the mutating command surface has a
+discoverable preview mode; `--dry-run` and `--apply` are mutually exclusive. Dry-run resolves the current
+readable publication through the governed pointer, verifies immutable-history snapshot counts and that every
+publication-bound history row belongs to the owning run, then emits repair publication/run identity,
+artifact-level mismatch counts and a bounded mismatch sample. A mismatch is actionable only when the command
+returns `repairability_state=REPAIRABLE_FROM_IMMUTABLE_HISTORY`; inconsistent immutable history blocks with
+`PROJECTION_REPAIR_HISTORY_IDENTITY_INVALID` rather than guessing a repair source.
+
+Apply mode is exact-date and requires `--apply --reason="<operator reason>"`. It rebuilds only the
+non-authoritative `eod_bars` / `eod_indicators` / `eod_eligibility` projections from the validated immutable
+current-publication history and requires an independent post-rebuild reconciliation `PASS` before commit. It
+never edits immutable history, publication rows, pointer identity, or the owning run to manufacture agreement.
+If the post-rebuild comparison is not `PASS`, the transaction rolls back and emits mismatch diagnostics.
+
+Use projection repair only after a reconciliation mismatch has established current-projection drift and the
+explicit dry-run has proven the immutable current-publication history is a valid repair source. Preserve the
+preflight, pre-repair reconciliation, operator reason, repair result and independent post-repair reconciliation
+in execution evidence.
 
 ### Manual validation commands
 
