@@ -120,6 +120,22 @@ class EodIndicatorsComputeService
             $barsByTicker
         );
         $adjustmentFactorsByTicker = $factorContext['factors_by_ticker'];
+        // Event-risk contamination is resolved before the publication-bound factor set exists.
+        // Remove only the exact verified event revision that this candidate factor set actually
+        // applies; a legacy factor or a factor from another set cannot clear quarantine.
+        foreach ($adjustmentFactorsByTicker as $tickerId => $factorRows) {
+            $appliedRevisionIds = array_fill_keys(array_map(function (array $factor) {
+                return (int) ($factor['corporate_action_revision_id'] ?? 0);
+            }, $factorRows), true);
+            if (! isset($contaminationByTicker[(int) $tickerId])) continue;
+            $contaminationByTicker[(int) $tickerId] = array_values(array_filter(
+                $contaminationByTicker[(int) $tickerId],
+                function (array $event) use ($appliedRevisionIds) {
+                    $revisionId = (int) ($event['corporate_action_revision_id'] ?? 0);
+                    return $revisionId <= 0 || ! isset($appliedRevisionIds[$revisionId]);
+                }
+            ));
+        }
         foreach ($factorContext['held_events_by_ticker'] as $tickerId => $heldEvents) {
             $heldEvents = array_values(array_filter(array_map(function (array $event) use ($tradingDatesWindow) {
                 $depth = $this->tradingDayDepth($tradingDatesWindow, (string) ($event['action_date'] ?? ''));

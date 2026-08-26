@@ -1,4 +1,4 @@
-relationship_id,source_record_id,target_record_id,relationship_type,justification,reviewed_decision_id,issued_at,notes
+﻿relationship_id,source_record_id,target_record_id,relationship_type,justification,reviewed_decision_id,issued_at,notes
 MD-REL-0001,MD-B01-A002-BL001,MD-B01-A001-BL001,CARRIED_FROM,A002 baseline explicitly identifies A001 baseline as predecessor; carried coverage/proof context crosses baseline and attempt boundaries.,,2026-08-21T01:07:00+07:00,Registry synchronization required by DOC-CHG-20260821-001.
 MD-REL-0002,E-MD-B01-A002-001,F-MD-B01-A001-001,DEPENDS_ON,A002 evidence continues current revalidation under the matrix-assignment finding raised by A001.,,2026-08-21T01:07:00+07:00,Cross-attempt finding relationship already declared in WORK_RECORD_REGISTRY.
 MD-REL-0003,E-MD-B01-A002-001,E-MD-B01-A001-001,CARRIED_FROM,A002 evidence carries forward the current proof state established by A001.,,2026-08-21T01:07:00+07:00,Cross-attempt evidence relationship already declared in WORK_RECORD_REGISTRY.
@@ -222,3 +222,6 @@ MD-REL-0220,SC-MD-B10-A001-001,E-MD-B10-A001-001,DEPENDS_ON,Closure requires the
 MD-REL-0221,SC-MD-B10-A001-001,MD-B10-A001-BL001,DEPENDS_ON,Closure is measured against the immutable pre-material B10 A001 baseline.,,2026-08-25T11:06:00+07:00,Closure-to-baseline correlation.
 MD-REL-0222,SC-MD-B10-A001-001,CI-MD-B10-A001-001,DEPENDS_ON,Closure includes the full in-attempt B10 Change Impact scope and R1-R5 remediation/proof lineage.,,2026-08-25T11:06:00+07:00,Closure-to-change-impact correlation.
 MD-REL-0223,SC-MD-B10-A001-001,SC-MD-B09-A002-001,DEPENDS_ON,MD-B10 opened only after MD-B09 closed; B09 remains a predecessor-stage precondition and contributes no inherited B10 predicate proof.,,2026-08-25T11:06:00+07:00,Cross-stage closure precondition.
+MD-REL-0224,MD-B11-A001-BL001,SC-MD-B10-A001-001,CARRIED_FROM,B11 baseline opens only after immutable B10 closure and inherits no B10 predicate proof.,,2026-08-25T20:40:00+07:00,MD-B11-A001 stage-entry correlation.
+MD-REL-0225,CI-MD-B11-A001-001,MD-B11-A001-BL001,DEPENDS_ON,B11 material implementation/proof scope is measured against immutable A001 pre-material baseline.,,2026-08-25T20:41:00+07:00,MD-B11-A001 stage-entry correlation.
+MD-REL-0226,CI-MD-B11-A001-001,SC-MD-B10-A001-001,CARRIED_FROM,B11 uses B10 closure only as predecessor precondition; no B10 predicate proof is inherited.,,2026-08-25T20:41:00+07:00,Cross-stage precondition lineage.

@@ -42,6 +42,7 @@ use App\Console\Commands\MarketData\RecordAuthoritativeExchangeMarketStructureCo
 use App\Console\Commands\MarketData\RecordAuthoritativeTradingStatusSnapshotCommand;
 use App\Console\Commands\MarketData\ReconstructCurrentCorpusCommand;
 use App\Console\Commands\MarketData\ReconcilePublicationProjectionCommand;
+use App\Console\Commands\MarketData\ReconcileCorporateActionsCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Laravel\Lumen\Console\Kernel as ConsoleKernel;
 
@@ -88,6 +89,7 @@ class Kernel extends ConsoleKernel
         RecordAuthoritativeTradingStatusSnapshotCommand::class,
         ReconstructCurrentCorpusCommand::class,
         ReconcilePublicationProjectionCommand::class,
+        ReconcileCorporateActionsCommand::class,
     ];
 
     protected function schedule(Schedule $schedule)

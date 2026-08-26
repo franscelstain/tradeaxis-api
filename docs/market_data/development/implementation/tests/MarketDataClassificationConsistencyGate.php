@@ -37,7 +37,7 @@ final class MarketDataClassificationConsistencyGate
      * Stages that have performed the applicability/ownership entry obligation and are therefore held
      * to the invariants now. A stage joins this list when it opens, not when it becomes convenient.
      */
-    public const NORMALIZED_STAGES = ['MD-B00', 'MD-B01', 'MD-B02', 'MD-B04', 'MD-B05', 'MD-B06', 'MD-B07', 'MD-B08', 'MD-B09', 'MD-B10'];
+    public const NORMALIZED_STAGES = ['MD-B00', 'MD-B01', 'MD-B02', 'MD-B04', 'MD-B05', 'MD-B06', 'MD-B07', 'MD-B08', 'MD-B09', 'MD-B10', 'MD-B11'];
 
     /**
      * Floors that make a vacuous scan impossible. A scan that matches nothing must not be
@@ -240,6 +240,14 @@ final class MarketDataClassificationConsistencyGate
                 }
                 if (self::structuralClass($row['rule_text']) !== null) {
                     continue; // a genuine fragment inside a mixed list stays reference context
+                }
+                // A mixed list may legitimately contain semantic context owned by another stage or
+                // capability boundary, but only after explicit stage-entry review records both the
+                // exception and its owner basis. This is not a grammar exemption: an unreviewed
+                // sibling remains debt and fails a normalized stage exactly as before.
+                if (strpos((string) ($row['notes'] ?? ''), 'semantic_reference_exception=B11_REVIEWED') !== false
+                    && preg_match('/reference_owner_basis=(downstream_price_product|capability_limitation|exchange_market_structure_owner)/', (string) ($row['notes'] ?? ''))) {
+                    continue;
                 }
                 $counts['mixed_members']++;
                 $stage = $row['primary_stage'];

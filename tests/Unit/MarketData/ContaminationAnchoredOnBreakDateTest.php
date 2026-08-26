@@ -170,7 +170,7 @@ class ContaminationAnchoredOnBreakDateTest extends TestCase
      * A usable factor rescales the window in memory, so the series the calculation sees is
      * continuous and there is nothing left to quarantine.
      */
-    public function test_a_break_with_a_usable_adjustment_factor_is_not_quarantined(): void
+    public function test_legacy_adjustment_factor_does_not_release_quarantine_without_verified_v2_lineage(): void
     {
         $actionId = $this->seedCorporateAction(['price_adjustment_factor' => '25.0000000000']);
         $this->seedBreak([
@@ -179,7 +179,9 @@ class ContaminationAnchoredOnBreakDateTest extends TestCase
             'matched_action_type' => 'STOCK_SPLIT',
         ]);
 
-        $this->assertSame([], $this->contamination(), 'An adjusted window is already continuous.');
+        $entry = $this->contamination()[self::TICKER_ID][0];
+        $this->assertSame('LEGACY_UNVERIFIED', $entry['match_status']);
+        $this->assertSame('LEGACY_UNVERIFIED_QUARANTINE', $entry['continuity_verdict']);
     }
 
     /**
@@ -224,7 +226,7 @@ class ContaminationAnchoredOnBreakDateTest extends TestCase
      * reading STOCK_SPLIT@2026-07-15 tells an operator what happened and when; one reading
      * PRICE_SCALE_SCALE_SHIFT@2026-07-15 only says the price moved.
      */
-    public function test_the_explanation_is_carried_through_for_the_quarantine_token(): void
+    public function test_legacy_action_context_is_carried_only_as_unverified_diagnostic_context(): void
     {
         $actionId = $this->seedCorporateAction();
         $this->seedBreak([
@@ -235,7 +237,8 @@ class ContaminationAnchoredOnBreakDateTest extends TestCase
 
         $entry = $this->contamination()[self::TICKER_ID][0];
 
-        $this->assertSame('EXPLAINED', $entry['match_status']);
+        $this->assertSame('LEGACY_UNVERIFIED', $entry['match_status']);
+        $this->assertSame('LEGACY_UNVERIFIED_QUARANTINE', $entry['continuity_verdict']);
         $this->assertSame('STOCK_SPLIT', $entry['matched_action_type']);
     }
 

@@ -33,11 +33,15 @@ class AdjustmentFactorSetService
         $decisions = [];
 
         foreach ($events as $event) {
-            $terms = json_decode((string) $event->terms_json, true);
-            $ratioFrom = (float) ($terms['ratio']['from'] ?? 0);
-            $ratioTo = (float) ($terms['ratio']['to'] ?? 0);
-            if ($ratioFrom <= 0 || $ratioTo <= 0) {
-                throw new \RuntimeException('AUTHORITATIVE_FACTOR_TERMS_INCOMPLETE: ratio is missing for revision '.(int) $event->corporate_action_revision_id.'.');
+            $factorTerms = $this->factorTermsForEvent($event);
+            if ($factorTerms['factor_required'] === false) {
+                continue;
+            }
+            if ($factorTerms['price_factor'] === null) {
+                throw new \RuntimeException(
+                    'AUTHORITATIVE_FACTOR_TERMS_INCOMPLETE: verified revision '.(int) $event->corporate_action_revision_id
+                    .' has continuity-changing semantics but no complete governed factor terms.'
+                );
             }
 
             $assessment = $this->latestAssessment((int) $event->corporate_action_revision_id, 'YAHOO_FINANCE');
@@ -60,14 +64,15 @@ class AdjustmentFactorSetService
             $decisions[] = [
                 'listing_id' => (int) $event->listing_id,
                 'ticker_id' => (int) $event->legacy_ticker_id,
+                'action_type_code' => (string) $event->action_type_code,
                 'corporate_action_revision_id' => (int) $event->corporate_action_revision_id,
                 'source_scale_assessment_id' => (int) $assessment->source_scale_assessment_id,
                 'source_scale_state' => $sourceScaleState,
                 'decision_state' => $decisionState,
                 'reason_code' => $reasonCode,
                 'ex_date' => (string) $event->ex_date,
-                'price_factor' => $ratioFrom / $ratioTo,
-                'volume_factor' => $ratioTo / $ratioFrom,
+                'price_factor' => $factorTerms['price_factor'],
+                'volume_factor' => $factorTerms['volume_factor'],
             ];
         }
 
@@ -102,7 +107,7 @@ class AdjustmentFactorSetService
                         'source_scale_assessment_id' => $decision['source_scale_assessment_id'],
                         'decision_state' => $decision['decision_state'],
                         'candidate_price_factor' => $this->decimal($decision['price_factor']),
-                        'candidate_volume_factor' => $this->decimal($decision['volume_factor']),
+                        'candidate_volume_factor' => $decision['volume_factor'] === null ? null : $this->decimal($decision['volume_factor']),
                         'reason_code' => $decision['reason_code'],
                         'created_at' => $now,
                     ]);
@@ -114,7 +119,7 @@ class AdjustmentFactorSetService
                             'effective_from' => MarketDataScope::DATASET_START,
                             'effective_to' => Carbon::parse($decision['ex_date'])->subDay()->toDateString(),
                             'price_factor' => $this->decimal($decision['price_factor']),
-                            'volume_factor' => $this->decimal($decision['volume_factor']),
+                            'volume_factor' => $decision['volume_factor'] === null ? null : $this->decimal($decision['volume_factor']),
                             'corporate_action_revision_id' => $decision['corporate_action_revision_id'],
                             'created_at' => $now,
                         ]);
@@ -135,6 +140,7 @@ class AdjustmentFactorSetService
             if ($decision['decision_state'] === 'APPLIED') {
                 $factorsByTicker[$decision['ticker_id']][] = [
                     'listing_id' => $decision['listing_id'],
+                    'corporate_action_revision_id' => $decision['corporate_action_revision_id'],
                     'factor_revision_ref' => 'md-corporate-action-revision:'.$decision['corporate_action_revision_id'],
                     'ex_date' => $decision['ex_date'],
                     'price_factor' => $decision['price_factor'],
@@ -142,7 +148,7 @@ class AdjustmentFactorSetService
                 ];
             } else {
                 $heldByTicker[$decision['ticker_id']][] = [
-                    'action_type_code' => 'STOCK_SPLIT',
+                    'action_type_code' => $decision['action_type_code'],
                     'action_date' => $decision['ex_date'],
                     'breaks_price_continuity' => true,
                     'breaks_volume_continuity' => true,
@@ -168,9 +174,8 @@ class AdjustmentFactorSetService
     {
         $query = DB::table('md_corporate_action_revisions as revision')
             ->join('md_listings as listing', 'listing.listing_id', '=', 'revision.listing_id')
-            ->where('revision.verification_state', 'AUTHORITATIVE_VERIFIED')
+            ->whereIn('revision.verification_state', ['AUTHORITATIVE_VERIFIED', 'MANUAL_VERIFIED'])
             ->where('revision.lifecycle_state', 'EFFECTIVE')
-            ->where('revision.action_type_code', 'STOCK_SPLIT')
             ->whereNotNull('revision.ex_date')
             ->where('revision.ex_date', '<=', $requestedDate)
             ->whereNotExists(function ($sub) {
@@ -186,7 +191,59 @@ class AdjustmentFactorSetService
             $query->where('revision.recorded_at', '<=', $knownAt);
         }
 
-        return $query->get();
+        $rows = $query->get();
+        foreach ($rows as $row) {
+            if ((string) $row->verification_state === 'MANUAL_VERIFIED') {
+                $terms = json_decode((string) $row->terms_json, true);
+                $manual = is_array($terms) ? ($terms['manual_evidence'] ?? null) : null;
+                if ((int) $row->source_observation_id <= 0 || ! is_array($manual)
+                    || trim((string) ($manual['reviewer'] ?? '')) === ''
+                    || trim((string) ($manual['evidence_ref'] ?? '')) === '') {
+                    throw new \RuntimeException('MANUAL_VERIFIED_FACTOR_EVIDENCE_INCOMPLETE: revision '.(int) $row->corporate_action_revision_id.'.');
+                }
+            }
+        }
+
+        return $rows;
+    }
+
+    private function factorTermsForEvent($event): array
+    {
+        $type = DB::table('market_data_corporate_action_types')
+            ->where('action_type_code', (string) $event->action_type_code)->first();
+        if (! $type) {
+            throw new \RuntimeException('CORPORATE_ACTION_TYPE_UNMAPPED: '.(string) $event->action_type_code.'.');
+        }
+
+        $priceImpact = strtoupper((string) $type->price_continuity_impact);
+        $volumeImpact = strtoupper((string) $type->volume_continuity_impact);
+        if ($priceImpact === 'NONE' && $volumeImpact === 'NONE') {
+            return ['factor_required' => false, 'price_factor' => null, 'volume_factor' => null];
+        }
+
+        $terms = json_decode((string) $event->terms_json, true);
+        if (! is_array($terms)) $terms = [];
+        if (in_array((string) $event->action_type_code, ['STOCK_SPLIT', 'REVERSE_STOCK_SPLIT'], true)) {
+            $from = (float) ($terms['ratio']['from'] ?? 0);
+            $to = (float) ($terms['ratio']['to'] ?? 0);
+            if ($from <= 0 || $to <= 0) {
+                return ['factor_required' => true, 'price_factor' => null, 'volume_factor' => null];
+            }
+            return [
+                'factor_required' => true,
+                'price_factor' => $from / $to,
+                'volume_factor' => $to / $from,
+            ];
+        }
+
+        $price = isset($terms['adjustment']['price_factor']) ? (float) $terms['adjustment']['price_factor'] : 0.0;
+        $volume = array_key_exists('volume_factor', (array) ($terms['adjustment'] ?? []))
+            ? (float) $terms['adjustment']['volume_factor'] : null;
+        if ($price <= 0 || ($volume !== null && $volume <= 0)) {
+            return ['factor_required' => true, 'price_factor' => null, 'volume_factor' => null];
+        }
+
+        return ['factor_required' => true, 'price_factor' => $price, 'volume_factor' => $volume];
     }
 
     private function latestAssessment($corporateActionRevisionId, $provider)
@@ -285,7 +342,7 @@ class AdjustmentFactorSetService
                 'reason_code' => $decision['reason_code'],
                 'ex_date' => $decision['ex_date'],
                 'candidate_price_factor' => $this->decimal($decision['price_factor']),
-                'candidate_volume_factor' => $this->decimal($decision['volume_factor']),
+                'candidate_volume_factor' => $decision['volume_factor'] === null ? null : $this->decimal($decision['volume_factor']),
             ];
         }, $decisions);
 

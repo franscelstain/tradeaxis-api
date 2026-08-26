@@ -190,6 +190,84 @@ CREATE TABLE IF NOT EXISTS market_data_price_scale_breaks (
   KEY idx_md_price_scale_break_type (break_type)
 ) ENGINE=InnoDB;
 
+-- B11 append-only candidate/review evidence. These rows are diagnostic evidence only and
+-- never authorize a corporate action, ex-date, factor, or in-place RAW/history repair.
+CREATE TABLE IF NOT EXISTS md_price_scale_break_candidates (
+  candidate_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  candidate_uid CHAR(64) NOT NULL,
+  listing_id BIGINT UNSIGNED NOT NULL,
+  prior_trade_date DATE NOT NULL,
+  current_trade_date DATE NOT NULL,
+  prior_publication_id BIGINT UNSIGNED NULL,
+  current_publication_id BIGINT UNSIGNED NULL,
+  prior_source_observation_id BIGINT UNSIGNED NULL,
+  current_source_observation_id BIGINT UNSIGNED NULL,
+  prior_close DECIMAL(24,8) NOT NULL,
+  current_open DECIMAL(24,8) NOT NULL,
+  diagnostic_ratio DECIMAL(24,12) NOT NULL,
+  ratio_direction VARCHAR(32) NOT NULL,
+  inferred_ratio DECIMAL(24,12) NULL,
+  inferred_ratio_error_pct DECIMAL(18,8) NULL,
+  candidate_classification VARCHAR(64) NOT NULL,
+  continuity_verdict VARCHAR(64) NOT NULL,
+  market_calendar_adjacent TINYINT(1) NOT NULL DEFAULT 0,
+  detector_version VARCHAR(64) NOT NULL,
+  config_snapshot_id BIGINT UNSIGNED NULL,
+  linkage_state VARCHAR(64) NOT NULL DEFAULT 'NO_LINKAGE_CANDIDATE',
+  possible_corporate_action_revision_id BIGINT UNSIGNED NULL,
+  review_state VARCHAR(32) NOT NULL DEFAULT 'DETECTED',
+  detected_at DATETIME NOT NULL,
+  supersedes_candidate_id BIGINT UNSIGNED NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (candidate_id),
+  UNIQUE KEY uq_md_psbc_uid (candidate_uid),
+  KEY idx_md_psbc_listing_date (listing_id, current_trade_date, detected_at),
+  KEY idx_md_psbc_review_continuity (review_state, continuity_verdict),
+  KEY idx_md_psbc_action_revision (possible_corporate_action_revision_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS md_price_scale_break_candidate_reviews (
+  candidate_review_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  candidate_id BIGINT UNSIGNED NOT NULL,
+  revision_number INT UNSIGNED NOT NULL,
+  review_state VARCHAR(32) NOT NULL,
+  evidence_source_observation_id BIGINT UNSIGNED NULL,
+  corporate_action_revision_id BIGINT UNSIGNED NULL,
+  reviewer VARCHAR(128) NOT NULL,
+  review_note TEXT NOT NULL,
+  recorded_at DATETIME NOT NULL,
+  supersedes_review_id BIGINT UNSIGNED NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (candidate_review_id),
+  UNIQUE KEY uq_md_psbc_review_revision (candidate_id, revision_number),
+  KEY idx_md_psbc_review_known (candidate_id, recorded_at),
+  KEY idx_md_psbc_review_action_revision (corporate_action_revision_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS md_corporate_action_reconciliations (
+  reconciliation_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  reconciliation_uid CHAR(64) NOT NULL,
+  scope_start DATE NOT NULL,
+  scope_end DATE NOT NULL,
+  authority_name VARCHAR(128) NOT NULL,
+  authority_class VARCHAR(32) NOT NULL,
+  scope_complete TINYINT(1) NOT NULL DEFAULT 0,
+  manifest_sha256 CHAR(64) NOT NULL,
+  manifest_event_count INT UNSIGNED NOT NULL DEFAULT 0,
+  platform_event_count INT UNSIGNED NOT NULL DEFAULT 0,
+  missing_platform_count INT UNSIGNED NOT NULL DEFAULT 0,
+  unexpected_platform_count INT UNSIGNED NOT NULL DEFAULT 0,
+  mismatch_count INT UNSIGNED NOT NULL DEFAULT 0,
+  reconciliation_state VARCHAR(48) NOT NULL,
+  details_json LONGTEXT NOT NULL,
+  recorded_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL,
+  PRIMARY KEY (reconciliation_id),
+  UNIQUE KEY uq_md_action_recon_uid (reconciliation_uid),
+  KEY idx_md_action_recon_scope (scope_start, scope_end, authority_class),
+  KEY idx_md_action_recon_state (reconciliation_state, recorded_at)
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS market_data_corporate_action_types (
   action_type_code VARCHAR(64) NOT NULL,
   price_continuity_impact VARCHAR(32) NOT NULL,

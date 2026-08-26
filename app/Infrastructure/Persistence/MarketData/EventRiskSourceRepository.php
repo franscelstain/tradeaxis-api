@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Persistence\MarketData;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class EventRiskSourceRepository
 {
@@ -104,10 +105,9 @@ class EventRiskSourceRepository
      * Closed vocabulary for where an adjustment factor came from.
      *
      * The column existed with no declared vocabulary at all: only DERIVED_FROM_PRICE_SERIES was
-     * ever written, by the platform's own inference, and isAdjustable() refused exactly that. The
-     * result was a closed loop — the only factors the platform could produce were the ones it
-     * refused to use — and no free-text value would have been caught, because nothing defined what
-     * a valid value was.
+     * historically written by the platform's own inference. B11 keeps this vocabulary only for
+     * import validation and legacy evidence classification; no member of it can activate an
+     * analytical factor from the legacy table.
      *
      * DERIVED_FROM_PRICE_SERIES is listed here so it is a known member, not so it is usable. It is
      * deliberately absent from the authoritative set, and the importer refuses it outright: a
@@ -220,29 +220,67 @@ class EventRiskSourceRepository
         $verifiedStatusContexts = $this->verifiedStatusContextsForTickerIds($tickerIds, $tradeDate, $knownAt);
         $verifiedStatusTickerIds = array_keys($verifiedStatusContexts);
 
-        $corporateActions = $this->applyKnowledgeCutoff(
-            DB::table($this->corporateActionsTable())
-                ->select('ticker_id', 'action_type')
-                ->whereIn('ticker_id', $tickerIds)
-                ->where('action_date', $tradeDate),
-            $knownAt
-        )
-            ->orderBy('ticker_id')
-            ->orderBy('action_type')
-            ->get();
+        $v2CorporateActionTickerIds = [];
+        if (Schema::hasTable('md_corporate_action_revisions') && Schema::hasColumn('md_listings', 'legacy_ticker_id')) {
+            $revisionQuery = DB::table('md_corporate_action_revisions as revision')
+                ->join('md_listings as listing', 'listing.listing_id', '=', 'revision.listing_id')
+                ->leftJoin('md_corporate_action_revisions as newer', function ($join) use ($knownAt) {
+                    $join->on('newer.supersedes_revision_id', '=', 'revision.corporate_action_revision_id');
+                    if ($knownAt !== null && $knownAt !== '') $join->where('newer.recorded_at', '<=', $knownAt);
+                })
+                ->whereNull('newer.corporate_action_revision_id')
+                ->whereIn('listing.legacy_ticker_id', $tickerIds)
+                ->where('revision.ex_date', $tradeDate)
+                ->where('revision.lifecycle_state', '<>', 'CANCELLED');
+            if ($knownAt !== null && $knownAt !== '') $revisionQuery->where('revision.recorded_at', '<=', $knownAt);
+            $corporateActions = $revisionQuery->orderBy('listing.legacy_ticker_id')->orderBy('revision.action_type_code')
+                ->get(['listing.legacy_ticker_id as ticker_id', 'revision.corporate_action_revision_id', 'revision.action_type_code', 'revision.verification_state', 'revision.ex_date', 'revision.source_observation_id']);
 
-        foreach ($corporateActions as $row) {
+            foreach ($corporateActions as $row) {
+                $tickerId = (int) $row->ticker_id;
+                $v2CorporateActionTickerIds[$tickerId] = true;
+                $context = $contexts[$tickerId] ?? $this->emptyContext();
+                $actionType = $this->normalizeCode($row->action_type_code);
+                if ($actionType !== '') {
+                    $context['corporate_action_flag'] = 1;
+                    $context['_corporate_action_types'][$actionType] = true;
+                    $context['_event_risk_reasons']['CORPORATE_ACTION_REVISION:'.$actionType.':'.(int) $row->corporate_action_revision_id] = true;
+                    $context['event_risk_flag'] = 1;
+                    $context['_corporate_action_revision_ids'][(int) $row->corporate_action_revision_id] = true;
+                    $context['_corporate_action_verification_states'][(string) $row->verification_state] = true;
+                }
+                $contexts[$tickerId] = $context;
+            }
+        }
+
+        // Explicitly unverified compatibility rows may add risk only when no V2 revision exists
+        // for the listing/date. action_date is labelled legacy evidence; it is never promoted to
+        // verified ex-date and cannot release a quarantine or activate a factor.
+        $legacyQuery = $this->applyKnowledgeCutoff(
+            DB::table($this->corporateActionsTable())
+                ->select('ticker_id', 'action_type', 'action_date', 'ex_date')
+                ->whereIn('ticker_id', $tickerIds)
+                ->where(function ($query) use ($tradeDate) {
+                    $query->where('ex_date', $tradeDate)
+                        ->orWhere(function ($fallback) use ($tradeDate) {
+                            $fallback->whereNull('ex_date')->where('action_date', $tradeDate);
+                        });
+                }),
+            $knownAt
+        )->orderBy('ticker_id')->orderBy('action_type')->get();
+
+        foreach ($legacyQuery as $row) {
             $tickerId = (int) $row->ticker_id;
+            if (isset($v2CorporateActionTickerIds[$tickerId])) continue;
             $context = $contexts[$tickerId] ?? $this->emptyContext();
             $actionType = $this->normalizeCode($row->action_type);
-
             if ($actionType !== '') {
                 $context['corporate_action_flag'] = 1;
                 $context['_corporate_action_types'][$actionType] = true;
-                $context['_event_risk_reasons']['CORPORATE_ACTION:'.$actionType] = true;
+                $context['_event_risk_reasons']['CORPORATE_ACTION_LEGACY_UNVERIFIED:'.$actionType] = true;
+                $context['_corporate_action_verification_states']['LEGACY_UNVERIFIED'] = true;
                 $context['event_risk_flag'] = 1;
             }
-
             $contexts[$tickerId] = $context;
         }
 
@@ -355,102 +393,88 @@ class EventRiskSourceRepository
      */
     public function resolveCorporateActionContaminationForTickerIds(array $tickerIds, array $tradingDates, $knownAt = null): array
     {
-        $tickerIds = array_values(array_unique(array_map('intval', $tickerIds)));
-        $tickerIds = array_values(array_filter($tickerIds, function ($tickerId) {
-            return $tickerId > 0;
-        }));
-
+        $tickerIds = array_values(array_filter(array_unique(array_map('intval', $tickerIds))));
         $tradingDates = array_values(array_map('strval', $tradingDates));
-
-        if (empty($tickerIds) || empty($tradingDates)) {
-            return [];
-        }
-
-        $windowStart = $tradingDates[0];
-        $windowEnd = $tradingDates[count($tradingDates) - 1];
-
-        $rows = $this->applyKnowledgeCutoff(
-            DB::table($this->corporateActionsTable())
-                ->select(['ticker_id', 'action_date', 'ex_date', 'action_type', 'price_adjustment_factor', 'continuity_check_status', 'adjustment_source'])
-                ->whereIn('ticker_id', $tickerIds)
-                ->where('action_date', '>=', $windowStart)
-                ->where('action_date', '<=', $windowEnd),
-            $knownAt
-        )
-            ->orderBy('ticker_id')
-            ->orderBy('action_date')
-            ->orderBy('action_type')
-            ->get();
-
-        /*
-         * One event can be recorded twice: once as the platform's own price-series hypothesis, and
-         * again when the exchange terms arrive. The hypothesis is not adjustable and would keep
-         * quarantining a window that the authoritative factor now adjusts correctly — the series
-         * would be rescaled and then nulled anyway, which is the worst of both.
-         *
-         * A hypothesis about an event is answered once that event's terms are known. So a row that
-         * cannot adjust is set aside when another row for the same instrument, type and effective
-         * date can.
-         */
-        $coveredEvents = [];
-        foreach ($rows as $row) {
-            if ($this->isAdjustable($row)) {
-                $coveredEvents[$this->corporateActionEventKey($row)] = true;
-            }
-        }
-
+        if ($tickerIds === [] || $tradingDates === []) return [];
+        $start = $tradingDates[0];
+        $end = $tradingDates[count($tradingDates) - 1];
         $types = $this->corporateActionTypes();
         $contamination = [];
+        $covered = [];
 
-        foreach ($rows as $row) {
-            $actionTypeCode = $this->normalizeCode($row->action_type);
+        if (Schema::hasTable('md_corporate_action_revisions') && Schema::hasColumn('md_listings', 'legacy_ticker_id')) {
+            $query = DB::table('md_corporate_action_revisions as revision')
+                ->join('md_listings as listing', 'listing.listing_id', '=', 'revision.listing_id')
+                ->leftJoin('md_corporate_action_revisions as newer', function ($join) use ($knownAt) {
+                    $join->on('newer.supersedes_revision_id', '=', 'revision.corporate_action_revision_id');
+                    if ($knownAt !== null && $knownAt !== '') $join->where('newer.recorded_at', '<=', $knownAt);
+                })
+                ->whereNull('newer.corporate_action_revision_id')
+                ->whereIn('listing.legacy_ticker_id', $tickerIds)
+                ->whereNotNull('revision.ex_date')
+                ->whereBetween('revision.ex_date', [$start, $end])
+                ->where('revision.lifecycle_state', '<>', 'CANCELLED');
+            if ($knownAt !== null && $knownAt !== '') $query->where('revision.recorded_at', '<=', $knownAt);
+            $rows = $query->orderBy('listing.legacy_ticker_id')->orderBy('revision.ex_date')
+                ->get(['listing.legacy_ticker_id as ticker_id', 'revision.*']);
 
-            if ($actionTypeCode === '') {
-                continue;
+            foreach ($rows as $row) {
+                $tickerId = (int) $row->ticker_id;
+                $anchor = (string) $row->ex_date;
+                $depth = $this->tradingDayDepth($tradingDates, $anchor);
+                if ($depth === null) continue;
+                $typeCode = $this->normalizeCode($row->action_type_code);
+                $isUnmapped = ! isset($types[$typeCode]);
+                $impact = $isUnmapped ? self::UNMAPPED_CORPORATE_ACTION_IMPACT : $types[$typeCode];
+                $breaksPrice = $impact['price_continuity_impact'] !== 'NONE';
+                $breaksVolume = $impact['volume_continuity_impact'] !== 'NONE';
+                if (! $breaksPrice && ! $breaksVolume) continue;
+                $covered[$tickerId.'|'.$anchor.'|'.$typeCode] = true;
+                $contamination[$tickerId][] = [
+                    'corporate_action_revision_id' => (int) $row->corporate_action_revision_id,
+                    'action_type_code' => $typeCode,
+                    'verification_state' => (string) $row->verification_state,
+                    'ex_date' => $anchor,
+                    'action_date' => $anchor,
+                    'anchor_state' => 'VERIFIED_EX_DATE_REVISION',
+                    'depth' => $depth,
+                    'breaks_price_continuity' => $breaksPrice,
+                    'breaks_volume_continuity' => $breaksVolume,
+                    'is_unmapped_type' => $isUnmapped,
+                ];
             }
+        }
 
-            if (! $this->isAdjustable($row) && isset($coveredEvents[$this->corporateActionEventKey($row)])) {
-                continue;
-            }
-
-            // An event carrying a usable factor is adjusted in the indicator window, so the
-            // series is continuous and there is nothing left to quarantine. Recording the
-            // action alone never achieves this; only the factor does.
-            if ($this->isAdjustable($row)) {
-                continue;
-            }
-
-            // The series was checked and shows no material discontinuity at this event. The
-            // declared impact is an expectation; the observed series is evidence, and
-            // quarantining a demonstrably continuous window protects nothing.
-            //
-            // Only NO_MATERIAL_GAP releases. A release keyed on "the break detector found
-            // nothing" was tried and reverted: detection has a floor of min_ratio 1.7, about a
-            // 41% move, and every ambiguous action sits below it. Absence of a detection there is
-            // not evidence of absence — it is the detector not looking.
-            if (property_exists($row, 'continuity_check_status') && $row->continuity_check_status === 'NO_MATERIAL_GAP') {
-                continue;
-            }
-
-            $depth = $this->tradingDayDepth($tradingDates, (string) $row->action_date);
-
-            if ($depth === null) {
-                continue;
-            }
-
-            $isUnmapped = ! isset($types[$actionTypeCode]);
-            $impact = $isUnmapped ? self::UNMAPPED_CORPORATE_ACTION_IMPACT : $types[$actionTypeCode];
-
+        // Legacy rows only add conservative risk. Their factor/check fields cannot release it.
+        $legacy = $this->applyKnowledgeCutoff(
+            DB::table($this->corporateActionsTable())->whereIn('ticker_id', $tickerIds)
+                ->where(function ($query) use ($start, $end) {
+                    $query->whereBetween('ex_date', [$start, $end])
+                        ->orWhere(function ($fallback) use ($start, $end) {
+                            $fallback->whereNull('ex_date')->whereBetween('action_date', [$start, $end]);
+                        });
+                }),
+            $knownAt
+        )->orderBy('ticker_id')->orderBy('action_date')->get();
+        foreach ($legacy as $row) {
+            $tickerId = (int) $row->ticker_id;
+            $typeCode = $this->normalizeCode($row->action_type);
+            $anchor = (string) (($row->ex_date ?? null) ?: $row->action_date);
+            if (isset($covered[$tickerId.'|'.$anchor.'|'.$typeCode])) continue;
+            $depth = $this->tradingDayDepth($tradingDates, $anchor);
+            if ($depth === null || $typeCode === '') continue;
+            $isUnmapped = ! isset($types[$typeCode]);
+            $impact = $isUnmapped ? self::UNMAPPED_CORPORATE_ACTION_IMPACT : $types[$typeCode];
             $breaksPrice = $impact['price_continuity_impact'] !== 'NONE';
             $breaksVolume = $impact['volume_continuity_impact'] !== 'NONE';
-
-            if (! $breaksPrice && ! $breaksVolume) {
-                continue;
-            }
-
-            $contamination[(int) $row->ticker_id][] = [
-                'action_type_code' => $actionTypeCode,
-                'action_date' => (string) $row->action_date,
+            if (! $breaksPrice && ! $breaksVolume) continue;
+            $contamination[$tickerId][] = [
+                'corporate_action_revision_id' => null,
+                'action_type_code' => $typeCode,
+                'verification_state' => 'LEGACY_UNVERIFIED',
+                'ex_date' => $row->ex_date ?? null,
+                'action_date' => $anchor,
+                'anchor_state' => $row->ex_date ? 'LEGACY_EXPLICIT_EX_DATE' : 'LEGACY_ACTION_DATE_RISK_ONLY',
                 'depth' => $depth,
                 'breaks_price_continuity' => $breaksPrice,
                 'breaks_volume_continuity' => $breaksVolume,
@@ -459,7 +483,6 @@ class EventRiskSourceRepository
         }
 
         ksort($contamination);
-
         return $contamination;
     }
 
@@ -495,36 +518,18 @@ class EventRiskSourceRepository
      * only and may never become a verified event or factor.
      */
     /**
-     * Identity of the corporate event a row describes, independent of who recorded it.
+     * Legacy rows never become adjustment authority.
      *
-     * `ex_date` is what places the event on the timeline, with `action_date` as the fallback the
-     * adjustment path already uses for rows recorded before the quantitative payload existed.
+     * B11 keeps the legacy import surface only as compatibility/risk evidence. Even an attributed
+     * factor on `market_data_corporate_actions` cannot release quarantine; only a verified V2
+     * corporate-action revision bound through the publication factor-set lifecycle may do that.
+     *
+     * This private helper is retained only because historical tests probe the legacy boundary
+     * directly. Production analytical factor resolution no longer calls it.
      */
-    private function corporateActionEventKey($row): string
-    {
-        $effectiveDate = (string) (($row->ex_date ?? null) ?: ($row->action_date ?? ''));
-
-        return (int) $row->ticker_id.'|'.$this->normalizeCode($row->action_type).'|'.$effectiveDate;
-    }
-
     private function isAdjustable($row): bool
     {
-        if (! property_exists($row, 'price_adjustment_factor') || $row->price_adjustment_factor === null) {
-            return false;
-        }
-
-        // A positive allowlist, not merely an exclusion of the derived source. An unattributed
-        // factor — adjustment_source NULL or a value nobody declared — must not adjust published
-        // output either: excluding only the one known-bad value would let an unknown one through,
-        // and the platform cannot say where such a factor came from.
-        $source = $this->normalizeCode($row->adjustment_source ?? '');
-        if (! in_array($source, self::AUTHORITATIVE_ADJUSTMENT_SOURCES, true)) {
-            return false;
-        }
-
-        $factor = (float) $row->price_adjustment_factor;
-
-        return $factor > 0 && abs($factor - 1.0) > 1e-9;
+        return false;
     }
 
     public function corporateActionTypes(): array
@@ -764,6 +769,8 @@ class EventRiskSourceRepository
             'event_risk_flag' => null,
             'event_risk_reasons' => null,
             '_corporate_action_types' => [],
+            '_corporate_action_revision_ids' => [],
+            '_corporate_action_verification_states' => [],
             '_trading_status_codes' => [],
             '_trading_status_exact_codes' => [],
             '_event_risk_reasons' => [],
@@ -773,16 +780,22 @@ class EventRiskSourceRepository
     private function finalizeContext(array $context): array
     {
         $corporateActionTypes = array_keys($context['_corporate_action_types']);
+        $corporateActionRevisionIds = array_keys($context['_corporate_action_revision_ids']);
+        $corporateActionVerificationStates = array_keys($context['_corporate_action_verification_states']);
         $tradingStatusCodes = array_keys($context['_trading_status_codes']);
         $exactTradingStatusCodes = array_keys($context['_trading_status_exact_codes']);
         $eventRiskReasons = array_keys($context['_event_risk_reasons']);
 
         sort($corporateActionTypes);
+        sort($corporateActionRevisionIds, SORT_NUMERIC);
+        sort($corporateActionVerificationStates);
         sort($tradingStatusCodes);
         sort($exactTradingStatusCodes);
         sort($eventRiskReasons);
 
         $context['corporate_action_types'] = ! empty($corporateActionTypes) ? implode(',', $corporateActionTypes) : null;
+        $context['corporate_action_revision_ids'] = ! empty($corporateActionRevisionIds) ? implode(',', $corporateActionRevisionIds) : null;
+        $context['corporate_action_verification_states'] = ! empty($corporateActionVerificationStates) ? implode(',', $corporateActionVerificationStates) : null;
         $context['trading_status_code'] = $this->primaryTradingStatusCode($tradingStatusCodes, $exactTradingStatusCodes);
         $context['event_risk_reasons'] = ! empty($eventRiskReasons) ? implode(',', $eventRiskReasons) : null;
 
@@ -795,7 +808,7 @@ class EventRiskSourceRepository
             $context['event_risk_flag'] = 0;
         }
 
-        unset($context['_corporate_action_types'], $context['_trading_status_codes'], $context['_trading_status_exact_codes'], $context['_event_risk_reasons']);
+        unset($context['_corporate_action_types'], $context['_corporate_action_revision_ids'], $context['_corporate_action_verification_states'], $context['_trading_status_codes'], $context['_trading_status_exact_codes'], $context['_event_risk_reasons']);
 
         return $context;
     }

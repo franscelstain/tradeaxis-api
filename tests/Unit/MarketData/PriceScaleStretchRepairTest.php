@@ -15,11 +15,18 @@ class PriceScaleStretchRepairTest extends TestCase
         parent::setUp();
         $this->bootMarketDataSqlite();
         DB::table('tickers')->insert(['ticker_id' => 1, 'ticker_code' => 'RMKE', 'company_name' => 'RMKE', 'is_active' => 1]);
+        DB::table('md_listings')->insert([
+            'listing_id' => 1001, 'listing_uid' => 'listing-RMKE', 'legacy_ticker_id' => 1, 'instrument_id' => 5001,
+            'exchange_code' => 'IDX', 'market_segment' => 'REGULAR', 'board_code' => 'MAIN',
+            'listed_date' => '2020-01-01', 'delisted_date' => null, 'source_ref' => 'TEST',
+            'listing_state' => 'ACTIVE', 'recorded_at' => '2026-01-01 00:00:00', 'created_at' => '2026-01-01 00:00:00',
+        ]);
         foreach ([
             ['2025-10-03', 1810, 1855, 9189600],
             ['2025-10-06', 377, 462, 140453500],
             ['2025-10-08', 2450, 2510, 8000000],
         ] as $bar) {
+            $this->seedVerifiedMarketCalendarDate($bar[0]);
             $row = [
                 'trade_date' => $bar[0], 'ticker_id' => 1, 'open' => $bar[1],
                 'high' => max($bar[1], $bar[2]), 'low' => min($bar[1], $bar[2]),

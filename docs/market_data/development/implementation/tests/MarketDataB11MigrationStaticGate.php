@@ -1,0 +1,6 @@
+<?php
+final class MarketDataB11MigrationStaticGate
+{
+ public static function run(string $root): array {$m=$root.'/database/migrations/2026_08_25_000001_add_verified_corporate_action_candidate_and_reconciliation_state.php';$s=is_file($m)?file_get_contents($m):'';$errors=[];foreach(['md_price_scale_break_candidates','md_price_scale_break_candidate_reviews','md_corporate_action_reconciliations'] as $t){if(strpos($s,$t)===false)$errors[]='MISSING_TABLE:'.$t;}foreach(['candidate_uid','listing_id','prior_publication_id','current_source_observation_id','continuity_verdict','possible_corporate_action_revision_id','candidate_review_id','evidence_source_observation_id','scope_complete','manifest_sha256','missing_platform_count','unexpected_platform_count','reconciliation_state'] as $c){if(strpos($s,$c)===false)$errors[]='MISSING_COLUMN:'.$c;} if(strpos($s,'Schema::dropIfExists')===false)$errors[]='DOWN_PATH_MISSING'; return ['status'=>$errors===[]?'PASS':'FAIL','tables'=>3,'errors'=>$errors];}
+}
+if(realpath($_SERVER['SCRIPT_FILENAME']??'')===__FILE__){$r=MarketDataB11MigrationStaticGate::run(dirname(__DIR__,5));echo json_encode($r,JSON_PRETTY_PRINT).PHP_EOL;exit($r['status']==='PASS'?0:1);} 

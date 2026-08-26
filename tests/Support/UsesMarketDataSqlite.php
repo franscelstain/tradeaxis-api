@@ -1429,6 +1429,73 @@ trait UsesMarketDataSqlite
             $table->index(['verification_state', 'lifecycle_state'], 'idx_md_action_verification_lifecycle');
         });
 
+
+        $schema->create('md_price_scale_break_candidates', function (Blueprint $table) {
+            $table->bigIncrements('candidate_id');
+            $table->string('candidate_uid', 64)->unique();
+            $table->integer('listing_id');
+            $table->date('prior_trade_date');
+            $table->date('current_trade_date');
+            $table->integer('prior_publication_id')->nullable();
+            $table->integer('current_publication_id')->nullable();
+            $table->integer('prior_source_observation_id')->nullable();
+            $table->integer('current_source_observation_id')->nullable();
+            $table->decimal('prior_close', 24, 8);
+            $table->decimal('current_open', 24, 8);
+            $table->decimal('diagnostic_ratio', 24, 12);
+            $table->string('ratio_direction', 32);
+            $table->decimal('inferred_ratio', 24, 12)->nullable();
+            $table->decimal('inferred_ratio_error_pct', 18, 8)->nullable();
+            $table->string('candidate_classification', 64);
+            $table->string('continuity_verdict', 64);
+            $table->boolean('market_calendar_adjacent')->default(false);
+            $table->string('detector_version', 64);
+            $table->integer('config_snapshot_id')->nullable();
+            $table->string('linkage_state', 64)->default('NO_LINKAGE_CANDIDATE');
+            $table->integer('possible_corporate_action_revision_id')->nullable();
+            $table->string('review_state', 32)->default('DETECTED');
+            $table->dateTime('detected_at');
+            $table->integer('supersedes_candidate_id')->nullable();
+            $table->dateTime('created_at');
+            $table->index(['listing_id', 'current_trade_date', 'detected_at'], 'idx_md_psbc_listing_date');
+        });
+
+        $schema->create('md_price_scale_break_candidate_reviews', function (Blueprint $table) {
+            $table->bigIncrements('candidate_review_id');
+            $table->integer('candidate_id');
+            $table->integer('revision_number');
+            $table->string('review_state', 32);
+            $table->integer('evidence_source_observation_id')->nullable();
+            $table->integer('corporate_action_revision_id')->nullable();
+            $table->string('reviewer', 128);
+            $table->text('review_note');
+            $table->dateTime('recorded_at');
+            $table->integer('supersedes_review_id')->nullable();
+            $table->dateTime('created_at');
+            $table->unique(['candidate_id', 'revision_number'], 'uq_md_psbc_review_revision');
+        });
+
+        $schema->create('md_corporate_action_reconciliations', function (Blueprint $table) {
+            $table->bigIncrements('reconciliation_id');
+            $table->string('reconciliation_uid', 64)->unique();
+            $table->date('scope_start');
+            $table->date('scope_end');
+            $table->string('authority_name', 128);
+            $table->string('authority_class', 32);
+            $table->boolean('scope_complete')->default(false);
+            $table->string('manifest_sha256', 64);
+            $table->integer('manifest_event_count')->default(0);
+            $table->integer('platform_event_count')->default(0);
+            $table->integer('missing_platform_count')->default(0);
+            $table->integer('unexpected_platform_count')->default(0);
+            $table->integer('mismatch_count')->default(0);
+            $table->string('reconciliation_state', 48);
+            $table->text('details_json');
+            $table->dateTime('recorded_at');
+            $table->dateTime('created_at');
+            $table->index(['scope_start', 'scope_end', 'authority_class'], 'idx_md_action_recon_scope');
+        });
+
         $schema->create('md_exchange_market_structure_revisions', function (Blueprint $table) {
             $table->bigIncrements('market_structure_revision_id');
             $table->string('rule_uid', 64);

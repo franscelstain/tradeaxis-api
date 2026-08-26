@@ -134,6 +134,8 @@ Session snapshots are supplemental publication-bound context and cannot determin
 
 `market-data:sector-indexes:ingest-api`, `market-data:sector-indexes:import-bars`, `market-data:sectors:import-memberships`, `market-data:events:import-corporate-actions`, `market-data:events:record-authoritative-terms`, `market-data:market-structure:record-authoritative-rules`, `market-data:trading-status:record-authoritative-snapshot`, and `market-data:events:import-trading-status` create source/revision context only. They do not directly rewrite a readable publication.
 
+For `market-data:reconcile:corporate-actions`, pass an authoritative exchange/CSD corpus manifest and explicitly choose `--dry-run` or `--apply`. The command performs bidirectional reconciliation against current verified corporate-action revisions. An incomplete authority scope must remain `AUTHORITY_SCOPE_INCOMPLETE`/`PERIOD_NOT_ACTION_COMPLETE`; it must never be promoted to an action-complete claim. `--dry-run` is read-only, while `--apply` may append reconciliation evidence only and must not author events, factors, bars, publications, or pointer state.
+
 For `market-data:events:record-authoritative-terms`, run the default dry-run first and inspect the
 declared `scope_id`, entry count, KSEI document reference/hash/byte metadata, official lifecycle
 dates, and quantitative terms. Before a new insert, `--apply` fetches the exact KSEI HTTPS PDF and
@@ -243,6 +245,7 @@ Logs distinguish `scheduler_status=SUCCESS` and `scheduler_status=FAILURE`; a fa
 - `market-data:sectors:import-memberships`
 - `market-data:events:import-corporate-actions`
 - `market-data:events:record-authoritative-terms`
+- `market-data:reconcile:corporate-actions`
 - `market-data:market-structure:record-authoritative-rules`
 - `market-data:trading-status:record-authoritative-snapshot`
 - `market-data:corpus:admit-conformant-suffix`

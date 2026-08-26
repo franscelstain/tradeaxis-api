@@ -2,23 +2,19 @@
 
 namespace App\Application\MarketData\Services;
 
-use App\Infrastructure\Persistence\MarketData\PriceScaleBreakRepository;
 use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
+use App\Infrastructure\Persistence\MarketData\PriceScaleBreakRepository;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
- * Detect discontinuities in the canonical price series.
+ * Detect discontinuities in the canonical RAW price series.
  *
- * Owner contract: docs/market_data/registry/Price_Scale_Break_Detection_LOCKED.md
- *
- * This service reads bars and writes evidence. It never mutates a canonical bar.
+ * A detector finding is append-only candidate evidence. It never verifies an event, ex-date,
+ * action type or factor, and it never rewrites a canonical bar.
  */
 class PriceScaleBreakDetectionService
 {
-    /**
-     * Split ratios seen on IDX. Used only to name a detected break, never to decide
-     * whether one exists.
-     */
     private const CANDIDATE_RATIOS = [2, 2.5, 3, 4, 5, 8, 10, 20, 25, 40, 50, 100];
 
     private $breaks;
@@ -30,212 +26,222 @@ class PriceScaleBreakDetectionService
         $this->calendar = $calendar ?: new MarketCalendarRepository();
     }
 
-    /**
-     * @return array{detected: array, scanned_bars: int, skipped_below_min_price: int}
-     */
     public function detect($startDate = null, $endDate = null, $tickerCode = null, $apply = false): array
     {
         $config = $this->config();
-
         $tickerQuery = DB::table('tickers')->select(['ticker_id', 'ticker_code'])->orderBy('ticker_id');
-
         if ($tickerCode !== null && $tickerCode !== '') {
             $tickerQuery->where('ticker_code', strtoupper(trim($tickerCode)));
         }
 
-        $tickers = $tickerQuery->get();
-
         $detected = [];
         $scanned = 0;
         $skippedBelowMinPrice = 0;
+        $skippedIdentity = 0;
+        $skippedNonAdjacent = 0;
 
-        // One ticker at a time. Loading every bar at once exhausts memory on a dataset of
-        // this size, and the comparison never spans two tickers anyway.
-        foreach ($tickers as $ticker) {
+        foreach ($tickerQuery->get() as $ticker) {
             $tickerId = (int) $ticker->ticker_id;
+            $listingId = $this->listingIdForTicker($tickerId);
+            if ($listingId <= 0) {
+                $skippedIdentity++;
+                continue;
+            }
 
-            // The comparison needs the bar immediately before $startDate, and classification
-            // needs the bar immediately after $endDate, so the series is not date-bounded here.
             $series = DB::table('eod_bars')
                 ->where('ticker_id', $tickerId)
                 ->orderBy('trade_date')
-                ->get(['trade_date', 'open', 'close'])
-                ->map(function ($bar) use ($ticker) {
-                    $bar->ticker_code = $ticker->ticker_code;
-
-                    return $bar;
-                })
+                ->get(['trade_date', 'open', 'close', 'publication_id', 'source_observation_id', 'config_snapshot_id'])
                 ->all();
 
-            $count = count($series);
-
-            for ($i = 1; $i < $count; $i++) {
+            for ($i = 1, $count = count($series); $i < $count; $i++) {
                 $previous = $series[$i - 1];
                 $current = $series[$i];
                 $scanned++;
+                $currentDate = (string) $current->trade_date;
+                $previousDate = (string) $previous->trade_date;
 
-                if ($startDate !== null && (string) $current->trade_date < (string) $startDate) {
-                    continue;
-                }
+                if ($startDate !== null && $currentDate < (string) $startDate) continue;
+                if ($endDate !== null && $currentDate > (string) $endDate) continue;
 
-                if ($endDate !== null && (string) $current->trade_date > (string) $endDate) {
+                if (! $this->isVerifiedAdjacent($previousDate, $currentDate)) {
+                    $skippedNonAdjacent++;
                     continue;
                 }
 
                 $previousClose = (float) $previous->close;
                 $open = (float) $current->open;
-
-                if ($previousClose <= 0 || $open <= 0) {
-                    continue;
-                }
-
-                // At 1-2 IDR a single tick is a 100% move, so ratio alone cannot separate
-                // ordinary trading from a split. Guard on price, not on a higher ratio.
+                if ($previousClose <= 0 || $open <= 0) continue;
                 if ($previousClose < $config['min_price_idr'] || $open < $config['min_price_idr']) {
                     $skippedBelowMinPrice++;
                     continue;
                 }
 
-                $ratio = $previousClose / $open;
-                $direction = $ratio >= 1 ? 'PRICE_DECREASED' : 'PRICE_INCREASED';
-                $normalizedRatio = $ratio >= 1 ? $ratio : 1 / $ratio;
+                $rawRatio = $previousClose / $open;
+                $direction = $rawRatio >= 1 ? 'PRICE_DECREASED' : 'PRICE_INCREASED';
+                $ratio = $rawRatio >= 1 ? $rawRatio : 1 / $rawRatio;
+                if ($ratio < $config['min_ratio']) continue;
 
-                if ($normalizedRatio < $config['min_ratio']) {
-                    continue;
-                }
-
-                $inferred = $this->inferRatio($normalizedRatio, $config['ratio_tolerance']);
-                $breakType = $this->classifyPersistence($series, $i, $normalizedRatio, $direction);
-                $match = $this->matchCorporateAction($tickerId, (string) $current->trade_date, $config);
-
-                $row = [
-                    'ticker_id' => $tickerId,
-                    'ticker_code' => strtoupper(trim((string) $current->ticker_code)),
-                    'trade_date' => (string) $current->trade_date,
-                    'previous_close' => round($previousClose, 4),
-                    'open_price' => round($open, 4),
-                    'implied_ratio' => round($normalizedRatio, 10),
+                $inferred = $this->inferRatio($ratio, $config['ratio_tolerance']);
+                $classification = $this->classifyPersistence($series, $i, $ratio, $direction);
+                $linkage = $this->possibleCorporateActionLinkage($listingId, $currentDate, $config);
+                $now = date('Y-m-d H:i:s');
+                $candidate = [
+                    'listing_id' => $listingId,
+                    'prior_trade_date' => $previousDate,
+                    'current_trade_date' => $currentDate,
+                    'prior_publication_id' => $previous->publication_id !== null ? (int) $previous->publication_id : null,
+                    'current_publication_id' => $current->publication_id !== null ? (int) $current->publication_id : null,
+                    'prior_source_observation_id' => $previous->source_observation_id !== null ? (int) $previous->source_observation_id : null,
+                    'current_source_observation_id' => $current->source_observation_id !== null ? (int) $current->source_observation_id : null,
+                    'prior_close' => round($previousClose, 8),
+                    'current_open' => round($open, 8),
+                    'diagnostic_ratio' => round($ratio, 12),
                     'ratio_direction' => $direction,
                     'inferred_ratio' => $inferred['ratio'],
                     'inferred_ratio_error_pct' => $inferred['error_pct'],
-                    'break_type' => $breakType,
-                    'match_status' => $match['status'],
-                    'matched_corporate_action_id' => $match['corporate_action_id'],
-                    'matched_action_type' => $match['action_type'],
-                    'detection_contract_version' => $config['contract_version'],
-                    'detected_at' => date('Y-m-d H:i:s'),
+                    'candidate_classification' => $classification,
+                    'continuity_verdict' => 'UNRESOLVED_SCALE_BREAK_CANDIDATE',
+                    'market_calendar_adjacent' => true,
+                    'detector_version' => $config['contract_version'],
+                    'config_snapshot_id' => $current->config_snapshot_id !== null ? (int) $current->config_snapshot_id : null,
+                    'linkage_state' => $linkage['state'],
+                    'possible_corporate_action_revision_id' => $linkage['corporate_action_revision_id'],
+                    'review_state' => 'DETECTED',
+                    'detected_at' => $now,
+                    'created_at' => $now,
                 ];
 
-                $detected[] = $row;
+                $candidate['candidate_uid'] = $this->candidateUid($candidate);
+                $detected[] = $candidate + [
+                    'ticker_id' => $tickerId,
+                    'ticker_code' => strtoupper(trim((string) $ticker->ticker_code)),
+                ];
 
                 if ($apply) {
-                    $this->breaks->upsert($row);
+                    $this->breaks->recordCandidate($candidate);
+                    // Historical compatibility projection. It is explicitly non-authoritative
+                    // and is never allowed to verify linkage or release quarantine.
+                    $this->breaks->upsert([
+                        'ticker_id' => $tickerId,
+                        'ticker_code' => strtoupper(trim((string) $ticker->ticker_code)),
+                        'trade_date' => $currentDate,
+                        'previous_close' => round($previousClose, 4),
+                        'open_price' => round($open, 4),
+                        'implied_ratio' => round($ratio, 10),
+                        'ratio_direction' => $direction,
+                        'inferred_ratio' => $inferred['ratio'],
+                        'inferred_ratio_error_pct' => $inferred['error_pct'],
+                        'break_type' => $classification,
+                        'match_status' => $linkage['state'],
+                        'matched_corporate_action_id' => null,
+                        'matched_action_type' => $linkage['action_type_code'],
+                        'detection_contract_version' => $config['contract_version'],
+                        'detected_at' => $now,
+                    ]);
                 }
             }
         }
 
-        return [
-            'detected' => $detected,
+        return compact('detected', 'scanned', 'skippedBelowMinPrice', 'skippedIdentity', 'skippedNonAdjacent') + [
             'scanned_bars' => $scanned,
             'skipped_below_min_price' => $skippedBelowMinPrice,
+            'skipped_identity' => $skippedIdentity,
+            'skipped_non_adjacent' => $skippedNonAdjacent,
         ];
     }
 
-    /**
-     * A real split never reverts. If the next bar returns to the prior scale, the bar in
-     * between carries a different adjustment epoch than its neighbours.
-     */
+    private function listingIdForTicker(int $tickerId): int
+    {
+        if (! Schema::hasTable('md_listings') || ! Schema::hasColumn('md_listings', 'legacy_ticker_id')) return 0;
+        return (int) (DB::table('md_listings')->where('legacy_ticker_id', $tickerId)->value('listing_id') ?: 0);
+    }
+
+    private function isVerifiedAdjacent(string $previousDate, string $currentDate): bool
+    {
+        try {
+            $context = $this->calendar->sessionContext($currentDate);
+        } catch (\Throwable $e) {
+            return false;
+        }
+        return ($context['provenance_tier'] ?? null) === 'VERIFIED'
+            && ($context['is_trading_day'] ?? false) === true
+            && (string) ($context['prev_trading_day'] ?? '') === $previousDate;
+    }
+
+    private function possibleCorporateActionLinkage(int $listingId, string $tradeDate, array $config): array
+    {
+        if (! Schema::hasTable('md_corporate_action_revisions')) {
+            return ['state' => 'NO_LINKAGE_CANDIDATE', 'corporate_action_revision_id' => null, 'action_type_code' => null];
+        }
+
+        $windowStart = date('Y-m-d', strtotime($tradeDate.' -14 days'));
+        $windowEnd = date('Y-m-d', strtotime($tradeDate.' +14 days'));
+        try {
+            $dates = $this->calendar->tradingDatesBetween($windowStart, $windowEnd);
+            $position = array_search($tradeDate, $dates, true);
+            if ($position !== false) {
+                $low = max(0, $position - $config['action_match_trading_days']);
+                $high = min(count($dates) - 1, $position + $config['action_match_trading_days']);
+                $windowStart = $dates[$low];
+                $windowEnd = $dates[$high];
+            }
+        } catch (\Throwable $e) {
+            // Failure to resolve calendar scope cannot verify linkage. The candidate remains
+            // quarantining and the date-only fallback is diagnostic at most.
+        }
+
+        $row = DB::table('md_corporate_action_revisions as revision')
+            ->leftJoin('md_corporate_action_revisions as newer', 'newer.supersedes_revision_id', '=', 'revision.corporate_action_revision_id')
+            ->whereNull('newer.corporate_action_revision_id')
+            ->where('revision.listing_id', $listingId)
+            ->whereNotNull('revision.ex_date')
+            ->whereBetween('revision.ex_date', [$windowStart, $windowEnd])
+            ->where('revision.lifecycle_state', '<>', 'CANCELLED')
+            ->orderByRaw("CASE WHEN revision.verification_state IN ('AUTHORITATIVE_VERIFIED','MANUAL_VERIFIED') THEN 0 ELSE 1 END")
+            ->orderBy('revision.ex_date')
+            ->orderByDesc('revision.revision_number')
+            ->first(['revision.corporate_action_revision_id', 'revision.action_type_code', 'revision.verification_state']);
+
+        if (! $row) {
+            return ['state' => 'NO_LINKAGE_CANDIDATE', 'corporate_action_revision_id' => null, 'action_type_code' => null];
+        }
+
+        $verified = in_array((string) $row->verification_state, ['AUTHORITATIVE_VERIFIED', 'MANUAL_VERIFIED'], true);
+        return [
+            'state' => $verified ? 'VERIFIED_REVISION_LINKAGE_CANDIDATE' : 'REVISION_LINKAGE_CANDIDATE',
+            'corporate_action_revision_id' => (int) $row->corporate_action_revision_id,
+            'action_type_code' => (string) $row->action_type_code,
+        ];
+    }
+
+    private function candidateUid(array $candidate): string
+    {
+        $identity = [];
+        foreach (['listing_id','prior_trade_date','current_trade_date','prior_publication_id','current_publication_id','prior_source_observation_id','current_source_observation_id','diagnostic_ratio','ratio_direction','detector_version','config_snapshot_id'] as $key) {
+            $identity[$key] = $candidate[$key] ?? null;
+        }
+        return hash('sha256', json_encode($identity, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    }
+
     private function classifyPersistence(array $series, int $index, float $normalizedRatio, string $direction): string
     {
-        if (! isset($series[$index + 1])) {
-            return 'SCALE_SHIFT';
-        }
-
+        if (! isset($series[$index + 1])) return 'SCALE_SHIFT';
         $current = (float) $series[$index]->close;
         $next = (float) $series[$index + 1]->open;
-
-        if ($current <= 0 || $next <= 0) {
-            return 'SCALE_SHIFT';
-        }
-
-        $reversionRatio = $direction === 'PRICE_DECREASED' ? $next / $current : $current / $next;
-
-        // Reverting by a comparable magnitude means the scale went back to where it was.
-        return $reversionRatio >= ($normalizedRatio * 0.5) ? 'ISOLATED_ANOMALY' : 'SCALE_SHIFT';
+        if ($current <= 0 || $next <= 0) return 'SCALE_SHIFT';
+        $revertRatio = $direction === 'PRICE_DECREASED' ? $next / $current : $current / $next;
+        return $revertRatio >= max(1.5, $normalizedRatio * 0.75) ? 'ISOLATED_ANOMALY' : 'SCALE_SHIFT';
     }
 
-    /**
-     * Recorded action_date does not reliably equal the ex-date, so matching uses a window.
-     * RMKE's split is recorded on 2026-07-17 against a price break on 2026-07-15.
-     */
-    private function matchCorporateAction(int $tickerId, string $tradeDate, array $config): array
+    private function inferRatio(float $ratio, float $tolerance): array
     {
-        $tradingDates = $this->calendar->tradingDatesBetween(
-            date('Y-m-d', strtotime($tradeDate.' -'.($config['action_match_trading_days'] * 3).' days')),
-            date('Y-m-d', strtotime($tradeDate.' +'.($config['action_match_trading_days'] * 3).' days'))
-        );
-
-        $position = array_search($tradeDate, $tradingDates, true);
-
-        if ($position === false) {
-            $windowStart = date('Y-m-d', strtotime($tradeDate.' -'.$config['action_match_trading_days'].' days'));
-            $windowEnd = date('Y-m-d', strtotime($tradeDate.' +'.$config['action_match_trading_days'].' days'));
-        } else {
-            $lowIndex = max(0, $position - $config['action_match_trading_days']);
-            $highIndex = min(count($tradingDates) - 1, $position + $config['action_match_trading_days']);
-            $windowStart = $tradingDates[$lowIndex];
-            $windowEnd = $tradingDates[$highIndex];
-        }
-
-        $action = DB::table(config('market_data.event_risk.corporate_actions_table', 'market_data_corporate_actions').' as ca')
-            ->leftJoin(
-                config('market_data.event_risk.corporate_action_types_table', 'market_data_corporate_action_types').' as t',
-                't.action_type_code',
-                '=',
-                'ca.action_type'
-            )
-            ->where('ca.ticker_id', $tickerId)
-            ->whereBetween('ca.action_date', [$windowStart, $windowEnd])
-            ->where(function ($query) {
-                // An unmapped type is fail-safe treated as scale-breaking, matching the
-                // corporate action registry rule.
-                $query->whereNull('t.action_type_code')
-                    ->orWhere('t.price_continuity_impact', '<>', 'NONE')
-                    ->orWhere('t.volume_continuity_impact', '<>', 'NONE');
-            })
-            ->orderBy('ca.action_date')
-            ->select(['ca.corporate_action_id', 'ca.action_type'])
-            ->first();
-
-        if ($action === null) {
-            return ['status' => 'UNEXPLAINED', 'corporate_action_id' => null, 'action_type' => null];
-        }
-
-        return [
-            'status' => 'EXPLAINED',
-            'corporate_action_id' => (int) $action->corporate_action_id,
-            'action_type' => $action->action_type,
-        ];
-    }
-
-    private function inferRatio(float $normalizedRatio, float $tolerance): array
-    {
-        $best = null;
-        $bestError = null;
-
+        $best = null; $bestError = null;
         foreach (self::CANDIDATE_RATIOS as $candidate) {
-            $error = abs($normalizedRatio - $candidate) / $candidate;
-
-            if ($bestError === null || $error < $bestError) {
-                $bestError = $error;
-                $best = $candidate;
-            }
+            $error = abs($ratio - $candidate) / $candidate;
+            if ($bestError === null || $error < $bestError) { $bestError = $error; $best = $candidate; }
         }
-
-        if ($bestError === null || $bestError > $tolerance) {
-            return ['ratio' => null, 'error_pct' => null];
-        }
-
+        if ($bestError === null || $bestError > $tolerance) return ['ratio' => null, 'error_pct' => null];
         return ['ratio' => $best, 'error_pct' => round($bestError * 100, 6)];
     }
 

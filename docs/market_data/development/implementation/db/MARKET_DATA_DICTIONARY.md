@@ -228,3 +228,14 @@ Normal consumers read the versioned market-data gateway, whose minimum DTO binds
 ## Synchronization gate
 
 Update this dictionary with every semantic/migration change. Production relock additionally requires repositories and SQLite mirror to adopt every used field, followed by MariaDB clean-install/upgrade dumps and semantic negative tests. The current nullable V2 foundation is implementation progress, not closure.
+
+## B11 verified corporate-action lifecycle evidence
+
+### `md_price_scale_break_candidates`
+Append-only diagnostic discontinuity candidates bound to stable listing identity, adjacent verified calendar observations, publication/source-observation references, detector/config identity, and an explicit diagnostic linkage state. A row is **not** a verified corporate action, ex-date, action type, or factor.
+
+### `md_price_scale_break_candidate_reviews`
+Append-only operator review revisions. `DISMISSED` requires positive source evidence; `LINKED_VERIFIED_FACTOR` requires an explicit V2 corporate-action revision and only releases quarantine when a governed adjustment-factor row binds that exact revision.
+
+### `md_corporate_action_reconciliations`
+Bidirectional exchange/CSD reconciliation evidence for recorded verified corporate actions. `scope_complete=0` is a qualified incomplete check and may not support an action-complete historical claim. Full-scope qualification must begin at the intentional Market Data dataset start.

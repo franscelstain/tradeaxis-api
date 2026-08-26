@@ -155,7 +155,7 @@ class PriceAdjustmentTest extends TestCase
         $this->assertEqualsWithDelta(1000.0, $result[0]['volume'], 0.0001);
     }
 
-    public function test_an_action_carrying_a_factor_stops_contaminating(): void
+    public function test_legacy_action_factor_never_releases_quarantine_without_verified_v2_revision(): void
     {
         DB::table('tickers')->insert(['ticker_id' => 1, 'ticker_code' => 'RAJA', 'company_name' => 'RAJA Tbk', 'is_active' => 1]);
 
@@ -170,25 +170,24 @@ class PriceAdjustmentTest extends TestCase
             'source_name' => 'idx_manual',
         ]);
 
-        $this->assertArrayHasKey(
-            1,
-            $repository->resolveCorporateActionContaminationForTickerIds([1], $tradingDates),
-            'without a factor the action must still quarantine'
-        );
+        $before = $repository->resolveCorporateActionContaminationForTickerIds([1], $tradingDates);
+        $this->assertArrayHasKey(1, $before, 'an unverified legacy action must quarantine');
 
         DB::table('market_data_corporate_actions')->where('ticker_id', 1)->update([
             'ex_date' => '2026-07-15',
             'price_adjustment_factor' => 0.2,
             'volume_adjustment_factor' => 5,
-            // A factor alone no longer suppresses quarantine; it must also say where it came from.
             'adjustment_source' => 'EXCHANGE_ANNOUNCEMENT',
         ]);
 
-        $this->assertSame(
-            [],
-            $repository->resolveCorporateActionContaminationForTickerIds([1], $tradingDates),
-            'with a factor the window is adjusted, so nothing is left to quarantine'
+        $after = $repository->resolveCorporateActionContaminationForTickerIds([1], $tradingDates);
+        $this->assertArrayHasKey(
+            1,
+            $after,
+            'a factor stored on the legacy compatibility row must not release quarantine'
         );
+        $this->assertSame('LEGACY_UNVERIFIED', $after[1][0]['verification_state']);
+        $this->assertNull($after[1][0]['corporate_action_revision_id']);
     }
 
     /** A factor of exactly 1 adjusts nothing and must not suppress the quarantine. */
@@ -219,7 +218,15 @@ class PriceAdjustmentTest extends TestCase
     {
         DB::table('tickers')->insert(['ticker_id' => 3, 'ticker_code' => 'SCCO', 'company_name' => 'SCCO Tbk', 'is_active' => 1]);
 
+        DB::table('md_listings')->insert([
+            'listing_id' => 1003, 'listing_uid' => 'listing-SCCO', 'legacy_ticker_id' => 3, 'instrument_id' => 5003,
+            'exchange_code' => 'IDX', 'market_segment' => 'REGULAR', 'board_code' => 'MAIN',
+            'listed_date' => '2020-01-01', 'delisted_date' => null, 'source_ref' => 'TEST',
+            'listing_state' => 'ACTIVE', 'recorded_at' => '2026-01-01 00:00:00', 'created_at' => '2026-01-01 00:00:00',
+        ]);
+
         foreach ([['2024-01-31', 9900, 9975], ['2024-02-01', 2506, 2500], ['2024-02-02', 2510, 2520]] as $bar) {
+            $this->seedVerifiedMarketCalendarDate($bar[0]);
             DB::table('eod_bars')->insert([
                 'trade_date' => $bar[0], 'ticker_id' => 3,
                 'open' => $bar[1], 'high' => max($bar[1], $bar[2]), 'low' => min($bar[1], $bar[2]),
