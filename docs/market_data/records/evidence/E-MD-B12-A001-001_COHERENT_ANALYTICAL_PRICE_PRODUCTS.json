@@ -1,0 +1,155 @@
+{
+  "evidence_id": "E-MD-B12-A001-001",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B12",
+  "attempt_id": "MD-B12-A001",
+  "work_id": "MD-B12-A001",
+  "baseline_id": "MD-B12-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze": "MD-STRATEGY-FREEZE-20260823-001",
+  "change_impact_declaration": "CI-MD-B12-A001-001",
+  "issued_at": "2026-08-26T19:55:00+07:00",
+  "title": "Current coherent analytical price-product, deterministic factor lineage and fail-closed capability proof for MD-B12-A001",
+  "attempt_outcome": "COMPLETE — cumulative corrected local proof establishes the current B12 RAW/STRUCTURAL_ADJUSTED product boundary, deterministic verified-factor lineage, publication identity and explicit fail-closed TOTAL_RETURN capability boundary.",
+  "authority_basis": {
+    "primary_stage": "MD-B12",
+    "strategy_documents": [
+      "MD-S008",
+      "MD-S012",
+      "MD-S019",
+      "MD-S020",
+      "MD-S083"
+    ],
+    "predecessor_closure": "SC-MD-B11-A001-001",
+    "note": "B11 is a stage precondition supplying verified event/factor foundations only; no B11 predicate proof is inherited into B12."
+  },
+  "local_proof_archives": [
+    {
+      "archive_name": "LOCAL-B12-A001.zip",
+      "sha256": "DA3870C08A31C26A991D7A7225F01E092EC0F899C9817FCFDD35F6C9E7FD1A697",
+      "artifacts": [
+        {
+          "path": "manual_proof/MD-B12-A001/LOCAL-B12-A001-002_pipeline_publication_integration.txt",
+          "sha256": "0DB65A78329DBB4A9579BFCDCD7DC5C28D0F32AE6B0554F8057ACAF14DCA6CB3",
+          "bytes": 455,
+          "execution_id": "LOCAL-B12-A001-002",
+          "verdict": "PASS",
+          "observed": "Database-backed pipeline/publication integration proof: 1 test / 44 assertions, zero failures/errors, exit 0. This proof remained valid through R1/R2 test-only remediation because no application/runtime/publication/schema/config surface changed."
+        }
+      ]
+    },
+    {
+      "archive_name": "LOCAL-B12-A001-R3.zip",
+      "sha256": "AEE77968EB06FEE28341DD91865115D2AAF1A17A8D9FF64616B9FD8442C0BABE",
+      "artifacts": [
+        {
+          "path": "manual_proof/MD-B12-A001/LOCAL-B12-A001-R3-001_targeted_corrected.txt",
+          "sha256": "F8A179A0378000083A3FDFAE8053B09A206D30DE93EE36375F9968DD22B147CD",
+          "bytes": 464,
+          "execution_id": "LOCAL-B12-A001-R3-001",
+          "verdict": "PASS",
+          "observed": "Corrected targeted B12 proof: 48 tests / 161 assertions, zero failures/errors, exit 0."
+        },
+        {
+          "path": "manual_proof/MD-B12-A001/LOCAL-B12-A001-R3-003_full_suite.txt",
+          "sha256": "4C2254FE7B5BD8ABE92DCDD6FE780B31088AA4457AFDF8BF4260457BCE72F161",
+          "bytes": 5398,
+          "execution_id": "LOCAL-B12-A001-R3-003",
+          "verdict": "PASS",
+          "observed": "Full PHPUnit regression suite: 1891 tests / 17908 assertions, zero failures/errors, exit 0."
+        },
+        {
+          "path": "manual_proof/MD-B12-A001/HANDOFF_STATUS_AFTER_R3_TEST.txt",
+          "sha256": "8B8D87AF96690A08CA971081A9BA7999FA624FF606EDAAB31E65950A43E12F21",
+          "bytes": 2710,
+          "execution_id": "HANDOFF_STATUS_AFTER_R3_TEST",
+          "verdict": "PASS",
+          "observed": "Returned Git status matches the cumulative B12 patch lineage: 23 tracked B12 modifications plus 11 expected untracked B12 source/control files. Two returned LOCAL-B12 proof ZIPs are local/untracked proof artifacts, not repository source."
+        },
+        {
+          "path": "manual_proof/MD-B12-A001/HANDOFF_DIFF_AFTER_R3_TEST.patch",
+          "sha256": "9C56CE710D69C3A8B6FD7CC1D6A98DEBFA096A27E6AE2FF0659A20BBFDE2455C",
+          "bytes": 201489,
+          "execution_id": "HANDOFF_DIFF_AFTER_R3_TEST",
+          "verdict": "PASS",
+          "observed": "Returned tracked diff is reconstructible from the source repository plus the pre-local-proof, R1 and R2 remediation patches and shows no unexpected tracked local-test mutation."
+        }
+      ]
+    }
+  ],
+  "auxiliary_preflight": {
+    "execution_id": "LOCAL-B12-A001-R3-000",
+    "result": "INCOMPLETE_NON_BLOCKING",
+    "reason": "The requested R3 preflight file was absent from the returned archive and is not represented as PASS.",
+    "substitute_repository_admission": "The exact six R3 preflight SHA-256 values independently match the canonical repository reconstructed from the source ZIP plus the three issued B12 patches, while returned post-test status/diff match that same cumulative patch lineage. R3-000 is an auxiliary patch-admission helper and owns no B12 semantic predicate or runtime proof family."
+  },
+  "failed_cycle_lineage": {
+    "preserved": true,
+    "summary": [
+      "Initial R1 targeted/full-suite failures remain recorded as failures; R1 pipeline/publication proof remained valid.",
+      "R1 failures were stale test/fixture semantics: PRIVATE_PLACEMENT legacy volume expectation, missing analytical as-of on direct fixtures, and missing source-observation provenance in StageEight fixture.",
+      "R2 narrowed the remaining failure to one direct-fixture as-of helper defect; no application/runtime surface changed in R1 or R2 remediation.",
+      "R3 corrected targeted and full-suite proof both pass. Failed or missing auxiliary proof artifacts are not rewritten as PASS."
+    ]
+  },
+  "runtime_execution": {
+    "pipeline_publication_integration": {
+      "result": "PASS",
+      "tests": 1,
+      "assertions": 44,
+      "failures": 0,
+      "errors": 0,
+      "exit_code": 0
+    },
+    "corrected_targeted_runtime": {
+      "result": "PASS",
+      "tests": 48,
+      "assertions": 161,
+      "failures": 0,
+      "errors": 0,
+      "exit_code": 0
+    },
+    "full_suite": {
+      "result": "PASS",
+      "tests": 1891,
+      "assertions": 17908,
+      "failures": 0,
+      "errors": 0,
+      "exit_code": 0
+    }
+  },
+  "proof_admission": {
+    "status": "PASS",
+    "mandatory_denominator": 45,
+    "mandatory_satisfied": 45,
+    "reference_context": 78,
+    "applicability_pending": 0,
+    "b12_mixed_classification_debt": 0,
+    "proof_families": 8,
+    "admission_basis": "All 45 current mandatory B12 predicates have exact proof-family ownership and current targeted/pipeline/full-suite execution proof. Binding is atomic to this evidence; no historical PASS or B11 predicate proof is inherited as B12 predicate credit."
+  },
+  "required_semantics_proven": [
+    "RAW remains immutable raw_eod_v1 and provider adj_close cannot become the platform analytical fallback.",
+    "STRUCTURAL_ADJUSTED is a separately identified structural_adjusted_v2 product built from verified factor lineage with structural_factor_product_v2 semantics.",
+    "Verified factors obey the analytical as-of rule B < ex_date <= D; future factors and future bars fail closed.",
+    "OHLC and previous-close consumers use one coherent price basis; volume changes only when the locked action type and verified terms provide explicit volume mechanics.",
+    "Exact corporate-action revision/source-observation lineage and canonical payload hashes are required before factor authority is admitted.",
+    "Analytical product/factor/config identities and content hashes are deterministic and persisted through the runtime publication path.",
+    "TOTAL_RETURN remains a distinct explicit product capability and fails closed while no governed distribution/reinvestment formula is available; price gaps are never promoted into synthetic distribution terms."
+  ],
+  "residue": {
+    "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_THE_B12_SURFACE",
+    "total_return_boundary": "TOTAL_RETURN is intentionally unavailable under current strategy until verified distribution/reference terms and a governed formula exist. This is an explicit fail-closed capability boundary, not an implementation residue or synthetic fallback.",
+    "legacy_versioning": "Historical sealed structural_adjusted_v1 rows are not relabelled or rewritten; current new analytical construction uses structural_adjusted_v2.",
+    "note": "No provider-adj-close fallback, inferred generic inverse-volume factor, future-knowledge factor admission, mixed-basis analytical row, or in-place RAW rewrite remains in the B12 proof-owned surface."
+  },
+  "dependencies": {
+    "MD-DEP-0004": "OPEN_NON_BLOCKING — B12 entry obligation complete; 268 mixed members across 8 unopened stages remain downstream"
+  },
+  "findings": {
+    "blocking": "NONE"
+  },
+  "binding_instruction": "Atomically bind exactly 45 mandatory MD-B12 predicates to E-MD-B12-A001-001 using the current B12 proof binder; any denominator/status/proof-family mismatch must fail closed."
+}

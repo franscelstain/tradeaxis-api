@@ -13,8 +13,8 @@
             "check": "ONE_DOCUMENT_ONE_ROLE",
             "status": "PASS",
             "details": {
-                "physical": 921,
-                "registry": 921,
+                "physical": 932,
+                "registry": 932,
                 "duplicates": [],
                 "missing": [],
                 "extra": []
@@ -24,8 +24,8 @@
             "check": "DOCUMENT_ID_REGISTRY_INTEGRITY",
             "status": "PASS",
             "details": {
-                "physical": 921,
-                "registry": 921,
+                "physical": 932,
+                "registry": 932,
                 "errors": []
             }
         },
@@ -49,7 +49,7 @@
             "check": "CURRENT_VERIFICATION_REBASELINE",
             "status": "PASS",
             "details": {
-                "registry": 921,
+                "registry": 932,
                 "missing": [],
                 "extra": [],
                 "duplicates": [],
@@ -126,5 +126,5 @@
             }
         }
     ],
-    "generated_at": "2026-08-26T03:33:28+00:00"
+    "generated_at": "2026-08-26T12:57:56+00:00"
 }

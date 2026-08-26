@@ -224,7 +224,8 @@ class EodIndicatorsComputeService
                     $selectedPriceProductCode,
                     $priceProductVersion,
                     $factorSetHash,
-                    $factorSetId
+                    $factorSetId,
+                    $requestedDate
                 ),
                 $atrSeries
             );
@@ -315,7 +316,7 @@ class EodIndicatorsComputeService
      *
      * Owner contract: docs/market_data/registry/Price_Adjustment_Contract_LOCKED.md
      */
-    private function vectorConfig($benchmarkRoc20 = null, array $sectorContext = null, $sectorRoc20 = null, array $eventRiskContext = null, array $contamination = [], $atrContaminationHorizonDays = 0, array $priceScaleBreaks = [], array $adjustmentFactors = [], $listingId = null, $configSnapshotId = null, $selectedPriceProductCode = null, $priceProductVersion = null, $factorSetHash = null, $factorSetId = null)
+    private function vectorConfig($benchmarkRoc20 = null, array $sectorContext = null, $sectorRoc20 = null, array $eventRiskContext = null, array $contamination = [], $atrContaminationHorizonDays = 0, array $priceScaleBreaks = [], array $adjustmentFactors = [], $listingId = null, $configSnapshotId = null, $selectedPriceProductCode = null, $priceProductVersion = null, $factorSetHash = null, $factorSetId = null, $requestedDate = null)
     {
         return [
             'set_version' => config('market_data.indicators.set_version'),
@@ -326,6 +327,8 @@ class EodIndicatorsComputeService
             'price_product_version' => $priceProductVersion,
             'factor_set_id' => $factorSetId,
             'factor_set_hash' => $factorSetHash,
+            'analytical_as_of_date' => $requestedDate,
+            'require_analytical_identity' => true,
             'sector_code' => $sectorContext['sector_code'] ?? null,
             'sector_index_code' => $sectorContext['sector_index_code'] ?? null,
             'sector_membership_id' => $sectorContext['sector_membership_id'] ?? null,

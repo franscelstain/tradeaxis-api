@@ -26,9 +26,22 @@ class AnalyticalProductIdentityService
         return $selected;
     }
 
-    public function productVersion()
+    public function productVersion($productCode = null)
     {
-        return MarketDataSemanticBindings::PRICE_PRODUCT_VERSION;
+        $productCode = $productCode === null ? $this->selectedProductCode() : strtoupper(trim((string) $productCode));
+        $this->assertKnownProductCode($productCode);
+
+        if ($productCode === MarketDataScope::RAW_PRODUCT) return MarketDataSemanticBindings::RAW_PRODUCT_VERSION;
+        if ($productCode === MarketDataScope::TOTAL_RETURN_PRODUCT) return MarketDataSemanticBindings::TOTAL_RETURN_PRODUCT_VERSION;
+
+        return MarketDataSemanticBindings::STRUCTURAL_ADJUSTED_PRODUCT_VERSION;
+    }
+
+    public function assertKnownProductCode($productCode)
+    {
+        if (! in_array($productCode, [MarketDataScope::RAW_PRODUCT, MarketDataScope::STRUCTURAL_ADJUSTED_PRODUCT, MarketDataScope::TOTAL_RETURN_PRODUCT], true)) {
+            throw new \RuntimeException('ANALYTICAL_PRICE_PRODUCT_UNKNOWN: '.(string) $productCode.'.');
+        }
     }
 
     public function factorFormulaVersion()

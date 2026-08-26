@@ -24,7 +24,7 @@ class CoherentPriceProductBoundaryTest extends TestCase
             'set_version' => 'ind_v1',
             'price_adjustment_factors' => $factors,
             'selected_price_product_code' => 'STRUCTURAL_ADJUSTED',
-            'price_product_version' => 'structural_adjusted_v1',
+            'price_product_version' => 'structural_adjusted_v2',
             'price_basis_default' => 'close',
             'dv_window_days' => 20,
             'atr_window_days' => 14,
@@ -48,7 +48,24 @@ class CoherentPriceProductBoundaryTest extends TestCase
         $method = new ReflectionMethod($service, 'applyPriceAdjustment');
         $method->setAccessible(true);
 
-        return $method->invoke($service, $bars, $this->config($factors));
+        $config = $this->config($factors);
+        // Direct fixture helper: analytical as-of D must be no earlier than every input bar and may
+        // also need to reach a later verified factor date. This preserves the locked
+        // B < ex_date <= D rule without allowing either future bars or future factors.
+        $asOfDates = array_values(array_filter(array_map(function (array $factor) {
+            return $factor['ex_date'] ?? null;
+        }, $factors)));
+        foreach ($bars as $bar) {
+            if (! empty($bar['trade_date'])) {
+                $asOfDates[] = $bar['trade_date'];
+            }
+        }
+        if (! empty($asOfDates)) {
+            sort($asOfDates);
+            $config['analytical_as_of_date'] = $asOfDates[count($asOfDates) - 1];
+        }
+
+        return $method->invoke($service, $bars, $config);
     }
 
     private function bar(string $date, $close = 100, $adjClose = 77): array
@@ -131,7 +148,7 @@ class CoherentPriceProductBoundaryTest extends TestCase
 
         $this->assertArrayHasKey('price_product_code', $row);
         $this->assertSame('STRUCTURAL_ADJUSTED', $row['price_product_code']);
-        $this->assertSame('structural_adjusted_v1', $row['price_product_version']);
+        $this->assertSame('structural_adjusted_v2', $row['price_product_version']);
     }
 
     /**

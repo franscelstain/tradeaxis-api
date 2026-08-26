@@ -29,6 +29,19 @@ class StageEightGovernanceBindingTest extends TestCase
     {
         foreach ([1 => 'AS_TRADED', 2 => 'PROVIDER_BACK_ADJUSTED', 3 => null] as $listingId => $scaleState) {
             $this->seedListing($listingId, $listingId, 'MAIN', '2020-01-01 00:00:00');
+            $eventObservationId = DB::table('md_source_observations')->insertGetId([
+                'observation_uid' => hash('sha256', 'stage8-event-observation-'.$listingId),
+                'attempt_uid' => 'stage8-governance-binding',
+                'requested_trade_date' => '2026-07-1'.($listingId + 4),
+                'source_name' => 'IDX',
+                'provider' => 'IDX',
+                'sanitized_request_identity' => 'stage8-event-'.$listingId,
+                'acquired_at' => '2026-08-01 00:00:00',
+                'adapter_version' => 'stage8-fixture-v1',
+                'payload_hash' => hash('sha256', 'stage8-event-payload-'.$listingId),
+                'outcome_state' => 'ACCEPTED',
+                'created_at' => '2026-08-01 00:00:00',
+            ]);
             DB::table('md_corporate_action_revisions')->insert([
                 'corporate_action_revision_id' => $listingId,
                 'event_uid' => hash('sha256', 'event-'.$listingId),
@@ -39,6 +52,7 @@ class StageEightGovernanceBindingTest extends TestCase
                 'verification_state' => 'AUTHORITATIVE_VERIFIED',
                 'ex_date' => '2026-07-1'.($listingId + 4),
                 'terms_json' => json_encode(['ratio' => ['from' => 1, 'to' => 5]]),
+                'source_observation_id' => $eventObservationId,
                 'recorded_at' => '2026-08-01 00:00:00',
             ]);
 

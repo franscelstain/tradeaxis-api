@@ -104,7 +104,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame((int) $run->config_snapshot_id, (int) $publication->config_snapshot_id);
         $this->assertSame((string) $run->observation_manifest_hash, (string) $publication->observation_manifest_hash);
         $this->assertSame('STRUCTURAL_ADJUSTED', $publication->price_product_code);
-        $this->assertSame('structural_adjusted_v1', $publication->price_product_version);
+        $this->assertSame('structural_adjusted_v2', $publication->price_product_version);
         $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $publication->factor_set_hash);
 
         $pointer = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();

@@ -83,8 +83,8 @@ class ConfigIdentityBindingTest extends TestCase
         $snapshot = (new MarketDataConfigSnapshotRepository())->resolveForRun('2026-03-20');
         $payload = json_decode($snapshot['resolved_config_json'], true);
 
-        $this->assertSame('structural_adjusted_v1', $payload['semantic_bindings']['price_product_version']);
-        $this->assertSame('structural_factor_product_v1', $payload['semantic_bindings']['factor_formula_version']);
+        $this->assertSame('structural_adjusted_v2', $payload['semantic_bindings']['price_product_version']);
+        $this->assertSame('structural_factor_product_v2', $payload['semantic_bindings']['factor_formula_version']);
         $this->assertSame('DISABLED', $payload['semantic_bindings']['session_snapshot_feature_state']);
         $this->assertArrayNotHasKey('price_product_version', $payload['resolved_config']['indicators']);
         $this->assertArrayNotHasKey('factor_formula_version', $payload['resolved_config']['indicators']);

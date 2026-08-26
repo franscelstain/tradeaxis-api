@@ -12,9 +12,19 @@ class AnalyticalProductIdentityServiceTest extends TestCase
         $second = $service->factorSetHash([], '2026-01-01', '2026-03-20');
 
         $this->assertSame('STRUCTURAL_ADJUSTED', $service->selectedProductCode());
-        $this->assertSame('structural_adjusted_v1', $service->productVersion());
+        $this->assertSame('structural_adjusted_v2', $service->productVersion());
         $this->assertSame($first, $second);
         $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $first);
+    }
+
+    public function test_product_versions_are_explicit_and_unknown_products_fail_closed(): void
+    {
+        $service = new AnalyticalProductIdentityService();
+        $this->assertSame('raw_eod_v1', $service->productVersion('RAW'));
+        $this->assertSame('structural_adjusted_v2', $service->productVersion('STRUCTURAL_ADJUSTED'));
+        $this->assertSame('total_return_v1', $service->productVersion('TOTAL_RETURN'));
+        $this->expectExceptionMessage('ANALYTICAL_PRICE_PRODUCT_UNKNOWN');
+        $service->productVersion('PROVIDER_ADJ_CLOSE');
     }
 
     public function test_factor_hash_is_order_independent_but_revision_sensitive(): void

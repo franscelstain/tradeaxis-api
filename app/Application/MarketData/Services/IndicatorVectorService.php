@@ -30,6 +30,13 @@ class IndicatorVectorService
         'range_position_20_pct',
     ];
 
+    private $priceProducts;
+
+    public function __construct(AnalyticalPriceProductService $priceProducts = null)
+    {
+        $this->priceProducts = $priceProducts ?: new AnalyticalPriceProductService();
+    }
+
     public function buildRow($tickerId, array $bars, $requestedDate, $publicationId, $runId, $createdAt, array $config, array $atrSeries = null)
     {
         usort($bars, function ($a, $b) {
@@ -275,62 +282,18 @@ class IndicatorVectorService
      */
     private function applyPriceAdjustment(array $bars, array $config)
     {
-        $factors = isset($config['price_adjustment_factors']) && is_array($config['price_adjustment_factors'])
-            ? $config['price_adjustment_factors']
-            : [];
-
-        // The selected analytical product is run-wide. A cumulative factor of one describes the
-        // value transformation for this row; it never changes the product's identity back to RAW.
         $selectedProduct = strtoupper(trim((string) ($config['selected_price_product_code'] ?? MarketDataScope::STRUCTURAL_ADJUSTED_PRODUCT)));
-        if ($selectedProduct !== MarketDataScope::STRUCTURAL_ADJUSTED_PRODUCT) {
-            throw new \RuntimeException('ANALYTICAL_PRICE_PRODUCT_INVALID: expected STRUCTURAL_ADJUSTED.');
-        }
 
-        if (empty($factors) || empty($bars)) {
-            return ['bars' => $bars, 'price_product_code' => $selectedProduct];
-        }
-
-        foreach ($bars as $index => $bar) {
-            $barDate = (string) $bar['trade_date'];
-            $priceFactor = 1.0;
-            $volumeFactor = 1.0;
-
-            foreach ($factors as $factor) {
-                if ($barDate < $factor['ex_date']) {
-                    $priceFactor *= $factor['price_factor'];
-                    $volumeFactor *= $factor['volume_factor'];
-                }
-            }
-
-            if (abs($priceFactor - 1.0) < 1e-12 && abs($volumeFactor - 1.0) < 1e-12) {
-                continue;
-            }
-
-            /*
-             * open, high, low and close move together. Adjusting close alone would corrupt true
-             * range, which mixes high, low and the previous close.
-             *
-             * `adj_close` is deliberately excluded. It is a provider observation, not a platform
-             * product, so multiplying it by the platform's own structural factor yields a value
-             * that is neither: not what the provider reported, and not a product the platform
-             * defines. That hybrid sitting in the same vector as `close` is exactly the mixing the
-             * stage-11 exit gate forbids.
-             */
-            foreach (['open', 'high', 'low', 'close'] as $field) {
-                if (isset($bars[$index][$field]) && $bars[$index][$field] !== null) {
-                    $bars[$index][$field] = (float) $bars[$index][$field] * $priceFactor;
-                }
-            }
-
-            if (isset($bars[$index]['volume']) && $bars[$index]['volume'] !== null) {
-                $bars[$index]['volume'] = (float) $bars[$index]['volume'] * $volumeFactor;
-            }
-        }
-
-        return [
-            'bars' => $bars,
-            'price_product_code' => $selectedProduct,
-        ];
+        return $this->priceProducts->build($bars, $selectedProduct, [
+            'requested_date' => $config['analytical_as_of_date'] ?? $config['requested_date'] ?? null,
+            'price_adjustment_factors' => $config['price_adjustment_factors'] ?? [],
+            'factor_set_id' => $config['factor_set_id'] ?? null,
+            'factor_set_hash' => $config['factor_set_hash'] ?? null,
+            'formula_version' => $config['formula_version'] ?? $config['set_version'] ?? null,
+            'config_snapshot_id' => $config['config_snapshot_id'] ?? null,
+            'require_persisted_identity' => ! empty($config['require_analytical_identity']),
+            'require_factor_lineage' => ! empty($config['require_analytical_identity']),
+        ]);
     }
 
     /**

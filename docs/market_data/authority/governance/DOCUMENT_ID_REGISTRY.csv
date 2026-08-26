@@ -1,4 +1,4 @@
-document_id,document_path,document_role,legacy_source_id,strategy_authority_id
+﻿document_id,document_path,document_role,legacy_source_id,strategy_authority_id
 MD-DOC-00001,README.md,NAVIGATION,,
 MD-DOC-00002,START_HERE.md,NAVIGATION,,
 MD-DOC-00003,authority/README.md,NAVIGATION,,
@@ -920,3 +920,14 @@ MD-DOC-00963,development/implementation/tests/MarketDataB11DeployedSchemaProbe.p
 MD-DOC-00964,records/evidence/MD-B11-A001-BL001_WORK_BASELINE_LOCK.json,EVIDENCE,,
 MD-DOC-00965,records/evidence/E-MD-B11-A001-001_VERIFIED_CORPORATE_ACTION_LIFECYCLE_AND_EXTERNAL_RECONCILIATION.json,EVIDENCE,,
 MD-DOC-00966,records/evidence/SC-MD-B11-A001-001_STAGE_CLOSURE_MANIFEST.md,EVIDENCE,,
+MD-DOC-00967,records/evidence/MD-B12-A001-BL001_WORK_BASELINE_LOCK.json,EVIDENCE,,
+MD-DOC-00968,development/implementation/CI-MD-B12-A001-001_COHERENT_ANALYTICAL_PRICE_PRODUCTS.md,IMPLEMENTATION_GUIDANCE,,
+MD-DOC-00969,development/implementation/tests/MarketDataAnalyticalPriceProductTraceabilitySpec.php,IMPLEMENTATION_TEST,,
+MD-DOC-00970,development/implementation/tests/MarketDataAnalyticalPriceProductTraceabilityGate.php,IMPLEMENTATION_TEST,,
+MD-DOC-00971,development/implementation/tests/MarketDataAnalyticalPriceProductProofSpec.php,IMPLEMENTATION_TEST,,
+MD-DOC-00972,development/implementation/tests/MarketDataAnalyticalPriceProductProofGate.php,IMPLEMENTATION_TEST,,
+MD-DOC-00973,development/implementation/tests/MarketDataAnalyticalPriceProductProofBinder.php,IMPLEMENTATION_TEST,,
+MD-DOC-00974,development/implementation/tests/MarketDataAnalyticalPriceProductProofSelfTest.php,IMPLEMENTATION_TEST,,
+MD-DOC-00975,development/implementation/tests/MarketDataAnalyticalPriceProductStaticGate.php,IMPLEMENTATION_TEST,,
+MD-DOC-00976,records/evidence/E-MD-B12-A001-001_COHERENT_ANALYTICAL_PRICE_PRODUCTS.json,EVIDENCE,,
+MD-DOC-00977,records/evidence/SC-MD-B12-A001-001_STAGE_CLOSURE_MANIFEST.md,EVIDENCE,,

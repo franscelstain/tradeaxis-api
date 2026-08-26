@@ -66,6 +66,8 @@ class AdjustmentFactorSetService
                 'ticker_id' => (int) $event->legacy_ticker_id,
                 'action_type_code' => (string) $event->action_type_code,
                 'corporate_action_revision_id' => (int) $event->corporate_action_revision_id,
+                'source_observation_id' => (int) $event->source_observation_id,
+                'source_observation_hash' => (string) $event->source_observation_hash,
                 'source_scale_assessment_id' => (int) $assessment->source_scale_assessment_id,
                 'source_scale_state' => $sourceScaleState,
                 'decision_state' => $decisionState,
@@ -73,6 +75,9 @@ class AdjustmentFactorSetService
                 'ex_date' => (string) $event->ex_date,
                 'price_factor' => $factorTerms['price_factor'],
                 'volume_factor' => $factorTerms['volume_factor'],
+                'volume_factor_required' => $factorTerms['volume_factor_required'],
+                'breaks_price_continuity' => $factorTerms['breaks_price_continuity'],
+                'breaks_volume_continuity' => $factorTerms['breaks_volume_continuity'],
             ];
         }
 
@@ -145,13 +150,14 @@ class AdjustmentFactorSetService
                     'ex_date' => $decision['ex_date'],
                     'price_factor' => $decision['price_factor'],
                     'volume_factor' => $decision['volume_factor'],
+                    'volume_factor_required' => $decision['volume_factor_required'],
                 ];
             } else {
                 $heldByTicker[$decision['ticker_id']][] = [
                     'action_type_code' => $decision['action_type_code'],
                     'action_date' => $decision['ex_date'],
-                    'breaks_price_continuity' => true,
-                    'breaks_volume_continuity' => true,
+                    'breaks_price_continuity' => $decision['breaks_price_continuity'],
+                    'breaks_volume_continuity' => $decision['breaks_volume_continuity'],
                     'is_unmapped_type' => false,
                     'factor_hold_reason_code' => $decision['reason_code'],
                 ];
@@ -193,6 +199,19 @@ class AdjustmentFactorSetService
 
         $rows = $query->get();
         foreach ($rows as $row) {
+            $sourceObservationId = (int) $row->source_observation_id;
+            $sourceObservation = $sourceObservationId > 0
+                ? DB::table('md_source_observations')->where('source_observation_id', $sourceObservationId)
+                    ->where('outcome_state', 'ACCEPTED')->first()
+                : null;
+            $sourcePayloadHash = $sourceObservation ? strtolower(trim((string) $sourceObservation->payload_hash)) : '';
+            $sourceAttributed = $sourceObservation !== null
+                && preg_match('/^[a-f0-9]{64}$/', $sourcePayloadHash) === 1;
+            if (! $sourceAttributed) {
+                throw new \RuntimeException('AUTHORITATIVE_FACTOR_PROVENANCE_INCOMPLETE: revision '.(int) $row->corporate_action_revision_id.' has no accepted source observation with a canonical payload hash.');
+            }
+            $row->source_observation_hash = $sourcePayloadHash;
+
             if ((string) $row->verification_state === 'MANUAL_VERIFIED') {
                 $terms = json_decode((string) $row->terms_json, true);
                 $manual = is_array($terms) ? ($terms['manual_evidence'] ?? null) : null;
@@ -217,33 +236,62 @@ class AdjustmentFactorSetService
 
         $priceImpact = strtoupper((string) $type->price_continuity_impact);
         $volumeImpact = strtoupper((string) $type->volume_continuity_impact);
-        if ($priceImpact === 'NONE' && $volumeImpact === 'NONE') {
-            return ['factor_required' => false, 'price_factor' => null, 'volume_factor' => null];
+        $breaksPrice = $priceImpact !== 'NONE';
+        $breaksVolume = $volumeImpact !== 'NONE';
+
+        // Only an explicitly SCALED continuity contract is a structural-rescaling authority.
+        // GAP_UNKNOWN_MAGNITUDE (for example cash dividends) remains event-risk/contamination and
+        // belongs to TOTAL_RETURN rather than being manufactured into STRUCTURAL_ADJUSTED.
+        if ($priceImpact !== 'SCALED' && $volumeImpact !== 'SCALED') {
+            return [
+                'factor_required' => false, 'price_factor' => null, 'volume_factor' => null,
+                'volume_factor_required' => false,
+                'breaks_price_continuity' => $breaksPrice, 'breaks_volume_continuity' => $breaksVolume,
+            ];
         }
 
         $terms = json_decode((string) $event->terms_json, true);
         if (! is_array($terms)) $terms = [];
+        $volumeRequired = $volumeImpact === 'SCALED';
+
         if (in_array((string) $event->action_type_code, ['STOCK_SPLIT', 'REVERSE_STOCK_SPLIT'], true)) {
             $from = (float) ($terms['ratio']['from'] ?? 0);
             $to = (float) ($terms['ratio']['to'] ?? 0);
             if ($from <= 0 || $to <= 0) {
-                return ['factor_required' => true, 'price_factor' => null, 'volume_factor' => null];
+                return [
+                    'factor_required' => true, 'price_factor' => null, 'volume_factor' => null,
+                    'volume_factor_required' => true,
+                    'breaks_price_continuity' => true, 'breaks_volume_continuity' => true,
+                ];
             }
             return [
-                'factor_required' => true,
-                'price_factor' => $from / $to,
-                'volume_factor' => $to / $from,
+                'factor_required' => true, 'price_factor' => $from / $to, 'volume_factor' => $to / $from,
+                'volume_factor_required' => true,
+                'breaks_price_continuity' => true, 'breaks_volume_continuity' => true,
             ];
         }
 
-        $price = isset($terms['adjustment']['price_factor']) ? (float) $terms['adjustment']['price_factor'] : 0.0;
-        $volume = array_key_exists('volume_factor', (array) ($terms['adjustment'] ?? []))
-            ? (float) $terms['adjustment']['volume_factor'] : null;
-        if ($price <= 0 || ($volume !== null && $volume <= 0)) {
-            return ['factor_required' => true, 'price_factor' => null, 'volume_factor' => null];
+        // Rights/bonus/merger/etc. have action-specific mechanics. The authoritative event must
+        // carry explicit derived factors; a generic price ratio is deliberately not invented.
+        $adjustment = (array) ($terms['adjustment'] ?? []);
+        $price = $priceImpact === 'SCALED'
+            ? (array_key_exists('price_factor', $adjustment) ? (float) $adjustment['price_factor'] : 0.0)
+            : 1.0;
+        $volume = array_key_exists('volume_factor', $adjustment) && $adjustment['volume_factor'] !== null
+            ? (float) $adjustment['volume_factor'] : null;
+        if ($price <= 0 || ($volume !== null && $volume <= 0) || ($volumeRequired && $volume === null)) {
+            return [
+                'factor_required' => true, 'price_factor' => null, 'volume_factor' => null,
+                'volume_factor_required' => $volumeRequired,
+                'breaks_price_continuity' => $breaksPrice, 'breaks_volume_continuity' => $breaksVolume,
+            ];
         }
 
-        return ['factor_required' => true, 'price_factor' => $price, 'volume_factor' => $volume];
+        return [
+            'factor_required' => true, 'price_factor' => $price, 'volume_factor' => $volume,
+            'volume_factor_required' => $volumeRequired,
+            'breaks_price_continuity' => $breaksPrice, 'breaks_volume_continuity' => $breaksVolume,
+        ];
     }
 
     private function latestAssessment($corporateActionRevisionId, $provider)
@@ -336,6 +384,8 @@ class AdjustmentFactorSetService
             return [
                 'listing_id' => $decision['listing_id'],
                 'corporate_action_revision_id' => $decision['corporate_action_revision_id'],
+                'source_observation_id' => $decision['source_observation_id'],
+                'source_observation_hash' => $decision['source_observation_hash'],
                 'source_scale_assessment_id' => $decision['source_scale_assessment_id'],
                 'source_scale_state' => $decision['source_scale_state'],
                 'decision_state' => $decision['decision_state'],
@@ -347,7 +397,7 @@ class AdjustmentFactorSetService
         }, $decisions);
 
         return [
-            'schema_version' => 'adjustment-factor-decision-set/v1',
+            'schema_version' => 'adjustment-factor-decision-set/v2',
             'price_product_code' => MarketDataScope::STRUCTURAL_ADJUSTED_PRODUCT,
             'factor_formula_version' => self::FACTOR_FORMULA_VERSION,
             'config_snapshot_id' => (int) $run->config_snapshot_id,
