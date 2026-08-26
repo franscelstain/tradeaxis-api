@@ -1,0 +1,173 @@
+{
+  "evidence_id": "E-MD-B11-A001-001",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B11",
+  "attempt_id": "MD-B11-A001",
+  "work_id": "MD-B11-A001",
+  "baseline_id": "MD-B11-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze": "MD-STRATEGY-FREEZE-20260823-001",
+  "change_impact_declaration": "CI-MD-B11-A001-001",
+  "issued_at": "2026-08-26T10:31:00+07:00",
+  "title": "Current verified corporate-action lifecycle, anomaly-only detection and external completeness reconciliation proof for MD-B11-A001",
+  "attempt_outcome": "COMPLETE — cumulative corrected local proof establishes the current B11 verified-event/factor, anomaly-only quarantine, deployed schema and external-reconciliation fail-closed invariants.",
+  "authority_basis": {
+    "primary_stage": "MD-B11",
+    "strategy_documents": [
+      "MD-S008",
+      "MD-S010",
+      "MD-S011",
+      "MD-S023",
+      "MD-S059",
+      "MD-S079",
+      "MD-S080",
+      "MD-S084"
+    ],
+    "predecessor_closure": "SC-MD-B10-A001-001",
+    "note": "B10 is a stage precondition only; no B10 predicate proof is inherited."
+  },
+  "local_proof_archives": [
+    {
+      "archive_name": "LOCAL-B11-A001.zip",
+      "sha256": "FF500C40D45FEBE35EF897D865DEE8D5344EE5081184B43BE3AA1EB156085507",
+      "artifacts": [
+        {
+          "path": "manual_proof/LOCAL-B11-001_migrate.txt",
+          "sha256": "883B8A1ED4134605DED982132D6F62433C2679B7FE7D734D0E65C22EA86343C2",
+          "bytes": 430,
+          "execution_id": "LOCAL-B11-001_migrate",
+          "verdict": "PASS",
+          "observed": "B11 additive migration applied successfully; exit 0."
+        },
+        {
+          "path": "manual_proof/LOCAL-B11-002_deployed_schema_probe.txt",
+          "sha256": "CF554DCB8B1DF617B2B8B57106042C50F3F56A4FE9AA3CDF0599A52457A08D6D",
+          "bytes": 1270,
+          "execution_id": "LOCAL-B11-002_deployed_schema_probe",
+          "verdict": "PASS",
+          "observed": "MariaDB reachable, migration APPLIED, all three B11 evidence/control tables present with no missing columns."
+        }
+      ]
+    },
+    {
+      "archive_name": "LOCAL-B11-A001-R2.zip",
+      "sha256": "DA1720E9530411DC802BDBD5C5B148ED642CB6208B5096FB4C2F9C9E5E0F7858",
+      "artifacts": [
+        {
+          "path": "manual_proof/LOCAL-B11-R2-001_targeted_phpunit.txt",
+          "sha256": "BFF48BA482077DB2C9E324BF39BCB7C1480517D328F8BD3E7A9C7506BC22EC65",
+          "bytes": 2526,
+          "execution_id": "LOCAL-B11-R2-001_targeted_phpunit",
+          "verdict": "PASS",
+          "observed": "Corrected affected targeted proof: 26 tests / 83 assertions across four files, all exit 0."
+        },
+        {
+          "path": "manual_proof/LOCAL-B11-R2-002_external_reconciliation.txt",
+          "sha256": "62A0C3BD2C5971BE386939BCE39275B7E7C952F181AA4E469FD124746CFFC79D",
+          "bytes": 1414,
+          "execution_id": "LOCAL-B11-R2-002_external_reconciliation",
+          "verdict": "PASS",
+          "observed": "Destructive-guard negative path blocked as required; incomplete CSD scope dry-run returned AUTHORITY_SCOPE_INCOMPLETE, scope_complete=false, persisted=false, PERIOD_NOT_ACTION_COMPLETE, exit 0."
+        },
+        {
+          "path": "manual_proof/LOCAL-B11-R2-003_phpunit_full.txt",
+          "sha256": "1DA3A2AE9C4363529E3B436C7283492DB00A21E4D82F86D7B5C4E785FD6D0865",
+          "bytes": 5378,
+          "execution_id": "LOCAL-B11-R2-003_phpunit_full",
+          "verdict": "PASS",
+          "observed": "Full PHPUnit suite 1880 tests / 17868 assertions, zero failures/errors, exit 0."
+        },
+        {
+          "path": "manual_proof/HANDOFF_STATUS_AFTER_TEST.txt",
+          "sha256": "3CE971DC1D6B741F92CA8EE47236E0A9D1ED947D902479F7AA11423BA4C7BC3D",
+          "bytes": 3633,
+          "execution_id": "HANDOFF_STATUS_AFTER_TEST",
+          "verdict": "PASS",
+          "observed": "Returned repository status matches cumulative B11 patch lineage; proof archives remain external/untracked."
+        },
+        {
+          "path": "manual_proof/HANDOFF_DIFF_AFTER_TEST.patch",
+          "sha256": "254328199BBAF53352F4281586F8A849399389451E1F01EC197D181BC540D430",
+          "bytes": 8398891,
+          "execution_id": "HANDOFF_DIFF_AFTER_TEST",
+          "verdict": "PASS",
+          "observed": "Returned tracked diff remains reconstructible from the closed-B10 base plus cumulative B11 patches."
+        }
+      ]
+    }
+  ],
+  "failed_cycle_lineage": {
+    "preserved": true,
+    "summary": [
+      "Initial and R1 failed/partial local cycles remain execution history and are not rewritten as PASS.",
+      "Cycle 1 exposed missing Schema import, Windows path parsing, stale legacy factor/quarantine expectations and detector fixture prerequisites; R1 remediation reduced the full suite to two failures.",
+      "R1 exposed a dormant action_date fallback, UTF-8 BOM decoding on the authority manifest, and one remaining stale legacy-factor expectation; R2 removed those defects without changing strategy or schema."
+    ]
+  },
+  "runtime_execution": {
+    "migration_deployment": {
+      "result": "PASS",
+      "migration": "2026_08_25_000001_add_verified_corporate_action_candidate_and_reconciliation_state",
+      "exit_code": 0
+    },
+    "deployed_schema": {
+      "result": "PASS",
+      "migration": "APPLIED",
+      "tables": 3,
+      "missing_columns": 0
+    },
+    "corrected_targeted_runtime": {
+      "result": "PASS",
+      "tests": 26,
+      "assertions": 83,
+      "failures": 0,
+      "errors": 0,
+      "exit_code": 0
+    },
+    "external_reconciliation_fail_closed": {
+      "result": "PASS",
+      "negative_guard": "COMMAND_DESTRUCTIVE_GUARD_REQUIRED",
+      "operation_mode": "DRY_RUN",
+      "reconciliation_state": "AUTHORITY_SCOPE_INCOMPLETE",
+      "scope_complete": false,
+      "persisted": false,
+      "qualification": "PERIOD_NOT_ACTION_COMPLETE",
+      "platform_event_count": 3,
+      "manifest_event_count": 0,
+      "exit_code": 0
+    },
+    "full_suite": {
+      "result": "PASS",
+      "tests": 1880,
+      "assertions": 17868,
+      "failures": 0,
+      "errors": 0,
+      "exit_code": 0
+    }
+  },
+  "proof_admission": {
+    "status": "PASS",
+    "mandatory_denominator": 138,
+    "mandatory_satisfied": 138,
+    "reference_context": 273,
+    "applicability_pending": 0,
+    "b11_mixed_classification_debt": 0,
+    "proof_families": 8,
+    "admission_basis": "All 138 current mandatory B11 predicates have exact proof-family ownership and current deployed/runtime proof. Binding is atomic to this evidence; no historical PASS is inherited as predicate credit."
+  },
+  "residue": {
+    "verdict": "CONFORMANT_WITH_CONTROLLED_COMPATIBILITY",
+    "legacy_compatibility": "Legacy corporate-action/price-scale tables remain explicitly LEGACY_UNVERIFIED risk-only compatibility surfaces and cannot release quarantine or activate verified factors.",
+    "external_scope_qualification": "Current proof intentionally demonstrates an incomplete authoritative CSD scope is rejected as PERIOD_NOT_ACTION_COMPLETE. No historical action-complete claim is made until a complete authoritative exchange/CSD corpus is reconciled.",
+    "note": "No price-derived verified event/factor or in-place RAW repair path remains in the B11 proof-owned surface."
+  },
+  "dependencies": {
+    "MD-DEP-0004": "OPEN_NON_BLOCKING — B11 entry obligation complete; 274 mixed members across 9 unopened stages remain downstream"
+  },
+  "findings": {
+    "blocking": "NONE"
+  },
+  "binding_instruction": "Atomically bind exactly 138 mandatory MD-B11 predicates to E-MD-B11-A001-001 using the current B11 proof binder; any denominator/status/proof-family mismatch must fail closed."
+}

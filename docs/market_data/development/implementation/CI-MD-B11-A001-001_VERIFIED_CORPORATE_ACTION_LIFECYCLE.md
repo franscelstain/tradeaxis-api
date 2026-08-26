@@ -8,7 +8,7 @@
 - Verification epoch: `MD-REBASELINE-20260820-001`
 - Strategy freeze: `MD-STRATEGY-FREEZE-20260823-001`
 - Predecessor closure: `SC-MD-B10-A001-001`
-- Status: `ISSUED — LOCAL_CYCLE_1_PARTIAL; R1_REMEDIATION_COMPLETE; CORRECTED_LOCAL_PROOF_PENDING`
+- Status: `ISSUED — COMPLETE; LOCAL_R2_PROOF_PASS; EVIDENCE_BOUND; STAGE_CLOSED`
 
 ## Stage-entry normalization
 
@@ -127,3 +127,14 @@ R2 remediation does not alter strategy meaning or B11 schema. It removes the dea
 
 Cumulative `LOCAL-B11-001` migration and `LOCAL-B11-002` deployed-schema proof remain valid because R2 does not change migrations or deployed schema. No mandatory predicate is promoted until corrected R2 local proof returns.
 
+
+## Final R2 proof and closure — 2026-08-26
+
+Returned `LOCAL-B11-A001-R2` proof completed the declared B11 impact scope:
+
+- corrected affected targeted proof: **26 tests / 83 assertions PASS**;
+- external reconciliation: destructive guard blocked as required; incomplete CSD scope dry-run returned `AUTHORITY_SCOPE_INCOMPLETE`, `scope_complete=false`, `persisted=false`, `PERIOD_NOT_ACTION_COMPLETE`;
+- full PHPUnit suite: **1880 tests / 17868 assertions PASS**, zero failures/errors;
+- cumulative migration and deployed-schema proofs remain valid and were not mechanically rerun.
+
+The 138 mandatory predicates are admitted by `E-MD-B11-A001-001` and atomically bound under the current proof binder. Residue is `CONFORMANT_WITH_CONTROLLED_COMPATIBILITY`: legacy rows remain explicitly unverified/risk-only and no historical action-complete claim is made for an incomplete external authority scope. Stage closure is `SC-MD-B11-A001-001`.

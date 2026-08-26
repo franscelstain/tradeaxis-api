@@ -7,27 +7,27 @@
 - Verification epoch: `MD-REBASELINE-20260820-001`
 - Required active traceability rows: **3099**
 - Coverage denominator: **3090** (PROVISIONAL)
-- SATISFIED: **2066**
-- NOT_ASSESSED inside denominator: **1024**
+- SATISFIED: **2204**
+- NOT_ASSESSED inside denominator: **886**
 - CONDITIONAL_NOT_APPLICABLE / NOT_APPLICABLE: **8 / 8**
 - CONDITIONAL_PENDING / APPLICABILITY_PENDING: **1 / 1**
 - Transitional MANDATORY_OR_CONDITIONAL: **593**
-- Verified coverage: **66.86% PROVISIONAL**
+- Verified coverage: **71.33% PROVISIONAL**
 - Optional capability rules: **63**
 
 ## Current executable stage
 
-- Stage: `MD-B11`
-- Latest attempt / baseline: `MD-B11-A001` / `MD-B11-A001-BL001`
-- State / verdict: `IN_PROGRESS` / `PARTIAL`
-- Residue/rework: `INCONCLUSIVE_RESIDUE_EVIDENCE`
-- Dependency: `MD-DEP-0004` B11 entry complete; global `274 / 9 OPEN_NON_BLOCKING` downstream
-- Open finding: none
-- Change Impact Declaration: `CI-MD-B11-A001-001` — ISSUED
-- Denominator: **138** (FINAL for every machine-checked criterion — no transitional applicability, no mixed-classification run)
-- SATISFIED / NOT_ASSESSED: **0 / 138**
-- Mandatory / conditional-applicable: **138 / 0**
-- Conditional-not-applicable / conditional-pending / transitional: **0 / 0 / 0**
+- Stage: `MD-B12`
+- Latest attempt / baseline: — / —
+- State / verdict: `NOT_STARTED` / —
+- Residue/rework: `NOT_ASSESSED`
+- Dependency: —
+- Open finding: —
+- Change Impact Declaration: **missing**
+- Denominator: **40** (PROVISIONAL — transitional applicability unresolved)
+- SATISFIED / NOT_ASSESSED: **0 / 40**
+- Mandatory / conditional-applicable: **7 / 0**
+- Conditional-not-applicable / conditional-pending / transitional: **0 / 0 / 33**
 
 ## Stage state index
 
@@ -44,7 +44,7 @@
 | `MD-B08` | `DONE` | `PASS` | `MD-B08-A001` | `MD-B08-A001-BL001` | `PASS` (final R3 targeted runtime + exact 138 binding + B08 invariants + classification + documentation/relationship + full suite) |
 | `MD-B09` | `DONE` | `PASS` | `MD-B09-A002` | `MD-B09-A002-BL001` | `PASS` (deployed reason dictionary + canonical RAW/import runtime proof + affected B03/B04 revalidation + exact 139 binding + classification + documentation/relationship + full suite) |
 | `MD-B10` | `DONE` | `PASS` | `MD-B10-A001` | `MD-B10-A001-BL001` | `PASS` (exact 9-trigger deployed immutability + cumulative lifecycle/reconciliation/full-suite proof + rollback-safe deployed `REBUILT_AND_VERIFIED` repair + exact 1072 binding + post-binding controls) |
-| `MD-B11` | `IN_PROGRESS` | `PARTIAL` | `MD-B11-A001` | `MD-B11-A001-BL001` | `PASS` static readiness after R2 remediation: 138/138 proof plan, 8 families; cycle-1 migration/schema PASS retained; R1 full suite reduced to 2 failures; corrected R2 targeted/external/full-suite proof pending |
+| `MD-B11` | `DONE` | `PASS` | `MD-B11-A001` | `MD-B11-A001-BL001` | `PASS` (deployed B11 schema + corrected R2 targeted/external reconciliation/full-suite proof + exact 138 binding + post-binding controls) |
 | `MD-B12` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 | `MD-B13` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 | `MD-B14` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
@@ -62,10 +62,10 @@
 - Open findings across every stage: `F-MD-B00-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A008-001` — OPEN; `F-MD-B01-A014-001` — OPEN — total **4**
 - Open dependencies: `MD-DEP-0003` — OPEN_NON_BLOCKING; owner `owning stages MD-B03/B15/B17/B19/B21/B22`; `MD-DEP-0004` — OPEN_NON_BLOCKING; owner `each stage at entry`
 - Classification entry obligation (`MD-DEP-0004`), reference-only rows in mixed-classification runs by stage: `MD-B12` 6, `MD-B13` 10, `MD-B14` 65, `MD-B15` 37, `MD-B16` 17, `MD-B17` 41, `MD-B18` 43, `MD-B19` 46, `MD-B20` 9 — total **274**
-- Registered current work records: **134** (BASELINE_LOCK=33, CHANGE_IMPACT_DECLARATION=28, DECISION=7, EVIDENCE=39, FINDING=14, STAGE_CLOSURE_MANIFEST=13)
+- Registered current work records: **136** (BASELINE_LOCK=33, CHANGE_IMPACT_DECLARATION=28, DECISION=7, EVIDENCE=40, FINDING=14, STAGE_CLOSURE_MANIFEST=14)
 
 ## Exact resume
 
-- Single exact next executable resume point: apply the incremental `MD-B11-A001` R2 remediation patch to the repository that produced `LOCAL-B11-A001-R1`, then run minimal corrected proof `LOCAL-B11-R2` fail-fast; retain `LOCAL-B11-001` and `LOCAL-B11-002` as cumulative PASS and return R2 proof before evidence binding or B12 opening.
+- Single exact next executable resume point: begin MD-B12 stage-entry preflight; rederive current B12 applicability/ownership/classification from current authority and issue the first valid B12 Baseline Lock + Change Impact Declaration before any material B12 mutation; do not open B12 inside the MD-B11 closure work unit.
 - Current stage source: `MD_IMPLEMENTATION_STAGE_REGISTER.md`
 - Pre-epoch W00..W22 verdicts: **historical-only**

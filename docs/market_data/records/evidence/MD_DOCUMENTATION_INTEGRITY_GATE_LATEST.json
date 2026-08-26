@@ -13,8 +13,8 @@
             "check": "ONE_DOCUMENT_ONE_ROLE",
             "status": "PASS",
             "details": {
-                "physical": 919,
-                "registry": 919,
+                "physical": 921,
+                "registry": 921,
                 "duplicates": [],
                 "missing": [],
                 "extra": []
@@ -24,8 +24,8 @@
             "check": "DOCUMENT_ID_REGISTRY_INTEGRITY",
             "status": "PASS",
             "details": {
-                "physical": 919,
-                "registry": 919,
+                "physical": 921,
+                "registry": 921,
                 "errors": []
             }
         },
@@ -49,7 +49,7 @@
             "check": "CURRENT_VERIFICATION_REBASELINE",
             "status": "PASS",
             "details": {
-                "registry": 919,
+                "registry": 921,
                 "missing": [],
                 "extra": [],
                 "duplicates": [],
@@ -107,7 +107,7 @@
             "check": "WINDOWS_SAFE_PATHS",
             "status": "PASS",
             "details": {
-                "max_length": 102,
+                "max_length": 103,
                 "too_long": []
             }
         },
@@ -126,5 +126,5 @@
             }
         }
     ],
-    "generated_at": "2026-08-26T02:24:13+00:00"
+    "generated_at": "2026-08-26T03:33:28+00:00"
 }
