@@ -27,6 +27,28 @@
  *                     section 3 forbids treating such a row as proof-complete merely because the
  *                     referenced target exists.
  *
+ *   UNEXPLAINED_REFERENCE
+ *                     a non-structural REFERENCE_ONLY row must carry a recorded classification
+ *                     decision naming the attempt that made it and the stage that confirmed
+ *                     ownership. This exists because MIXED_RUN is blind to a row that is not part
+ *                     of an enumerated run at all: `MD-S066-R0002` and `MD-S067-R0010` are both
+ *                     standalone paragraphs stating executable obligations, both sat REFERENCE_ONLY
+ *                     with empty notes, and both survived every green gate until they were found by
+ *                     hand in MD-B07-A002 and MD-B08-A002.
+ *
+ *                     The check deliberately does NOT judge whether the sentence states an
+ *                     obligation. Grammatical mood stays out of this file. What it enforces is that
+ *                     somebody decided and the decision is attributable, which is what section 8.4
+ *                     of the traceability standard requires and what both defects lacked.
+ *
+ *                     A generated note proves a pass ran, not that a human thought. That is a real
+ *                     limit: this catches the row nobody looked at, not the row somebody looked at
+ *                     and misjudged. MD-S067-R0010 was the second kind, found only by reading the
+ *                     contract.
+ *
+ *   BINDING_COHERENCE a SATISFIED row carries evidence and an evidence-carrying row is SATISFIED.
+ *                     Half-cleared proof state is not a legible outcome.
+ *
  * Stages that have completed entry normalization fail on a violation. Unopened stages are reported
  * as an outstanding `MD-DEP-0004` entry obligation rather than silently excused, so the backlog is
  * visible instead of implied.
@@ -44,7 +66,23 @@ final class MarketDataClassificationConsistencyGate
      * indistinguishable from a corpus that is clean; this codebase has produced that shape three
      * times already.
      */
+    /**
+     * Stages whose reference population has been re-derived row by row, so every non-structural
+     * REFERENCE_ONLY row carries a recorded decision. This is a second, stricter list than
+     * NORMALIZED_STAGES: passing entry normalization only means the required side was resolved.
+     *
+     * A stage joins when its re-check lands, not when its backlog looks inconvenient. Stages absent
+     * from this list are counted and reported, never excused.
+     */
+    public const DECISION_RECORDED_STAGES = ['MD-B00', 'MD-B05', 'MD-B07', 'MD-B08', 'MD-B09', 'MD-B10', 'MD-B13'];
+
     public const MIN_ROWS = 6000;
+
+    /**
+     * A reference scan that matches nothing must not look like a clean corpus. The matrix holds
+     * thousands of reference rows; a handful means the filter broke, not that the debt vanished.
+     */
+    public const MIN_REFERENCE_ROWS = 2000;
 
     public const MIN_RUNS = 200;
 
@@ -70,6 +108,21 @@ final class MarketDataClassificationConsistencyGate
         $context = trim($match[1]);
 
         return $context !== '' && strtoupper($context) !== 'SELF' && strlen(trim($match[2])) >= 20;
+    }
+
+    /**
+     * Section 8.4: proof-owning-stage assignment must be confirmed for the stage. A reference
+     * classification is confirmed when the row records both what it was normalized to and which
+     * stage owns that call, so the decision can be challenged by whoever disagrees with it.
+     *
+     * @param  array<string,string>  $row
+     */
+    public static function hasRecordedReferenceDecision(array $row): bool
+    {
+        $notes = (string) ($row['notes'] ?? '');
+
+        return strpos($notes, 'applicability_normalized=REFERENCE_ONLY') !== false
+            && preg_match('/proof_owner_confirmed=MD-B\d{2}/', $notes) === 1;
     }
 
     /** @return array{headers:array<int,string>,rows:array<int,array<string,string>>} */
@@ -195,7 +248,10 @@ final class MarketDataClassificationConsistencyGate
     {
         $errors = [];
         $pending = [];
-        $counts = ['active_rows' => 0, 'required' => 0, 'reference_only' => 0, 'mixed_runs' => 0, 'mixed_members' => 0];
+        $counts = ['active_rows' => 0, 'required' => 0, 'reference_only' => 0, 'mixed_runs' => 0, 'mixed_members' => 0,
+            'reference_non_structural' => 0, 'reference_decision_recorded' => 0, 'reference_unexplained' => 0,
+            'binding_incoherent' => 0];
+        $unexplainedPending = [];
 
         foreach ($rows as $row) {
             if (strtoupper(trim($row['active'])) !== 'YES') {
@@ -217,6 +273,30 @@ final class MarketDataClassificationConsistencyGate
                 }
             } elseif ($row['coverage_requirement'] === 'REFERENCE_ONLY') {
                 $counts['reference_only']++;
+                if (self::structuralClass($row['rule_text']) === null) {
+                    $counts['reference_non_structural']++;
+                    if (self::hasRecordedReferenceDecision($row)) {
+                        $counts['reference_decision_recorded']++;
+                    } else {
+                        $counts['reference_unexplained']++;
+                        $stage = $row['primary_stage'];
+                        if (in_array($stage, self::DECISION_RECORDED_STAGES, true)) {
+                            $errors[] = 'UNEXPLAINED_REFERENCE '.$row['rule_id'].' ['.$stage.']: a non-structural '
+                                .'REFERENCE_ONLY row carries no recorded classification decision, so nothing '
+                                .'records that its obligation was considered and declined';
+                        } else {
+                            $unexplainedPending[$stage] = ($unexplainedPending[$stage] ?? 0) + 1;
+                        }
+                    }
+                }
+            }
+
+            $hasEvidence = trim((string) ($row['current_evidence_ids'] ?? '')) !== '';
+            $isSatisfied = $row['coverage_status'] === 'SATISFIED';
+            if ($hasEvidence !== $isSatisfied) {
+                $counts['binding_incoherent']++;
+                $errors[] = 'BINDING_COHERENCE '.$row['rule_id'].' ['.$row['primary_stage'].']: status is '
+                    .$row['coverage_status'].' while evidence is '.($hasEvidence ? 'present' : 'absent');
             }
         }
 
@@ -266,10 +346,21 @@ final class MarketDataClassificationConsistencyGate
         if (count($runs) < self::MIN_RUNS) {
             $errors[] = 'VACUOUS_SCAN: only '.count($runs).' enumerated runs were detected; run detection is not working';
         }
+        if ($counts['reference_only'] < self::MIN_REFERENCE_ROWS) {
+            $errors[] = 'VACUOUS_SCAN: only '.$counts['reference_only'].' reference rows were read; the reference '
+                .'filter is broken, not the corpus';
+        }
 
         ksort($pending);
+        ksort($unexplainedPending);
 
-        return ['errors' => $errors, 'pending' => $pending, 'counts' => $counts, 'runs' => count($runs)];
+        return [
+            'errors' => $errors,
+            'pending' => $pending,
+            'unexplained_reference_pending' => $unexplainedPending,
+            'counts' => $counts,
+            'runs' => count($runs),
+        ];
     }
 }
 
@@ -281,6 +372,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
     $result['gate'] = 'MarketDataClassificationConsistencyGate';
     $result['normalized_stages'] = MarketDataClassificationConsistencyGate::NORMALIZED_STAGES;
     $result['pending_total'] = array_sum($result['pending']);
+    $result['decision_recorded_stages'] = MarketDataClassificationConsistencyGate::DECISION_RECORDED_STAGES;
+    $result['unexplained_reference_pending_total'] = array_sum($result['unexplained_reference_pending']);
     $result['status'] = $result['errors'] === [] ? 'PASS' : 'FAIL';
     $result['note'] = 'Unopened stages are reported as pending, not excused: each carries the MD-DEP-0004 '
         .'entry obligation to resolve its own classification before claiming coverage.';

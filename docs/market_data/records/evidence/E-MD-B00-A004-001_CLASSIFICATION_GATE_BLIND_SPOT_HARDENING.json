@@ -1,0 +1,81 @@
+{
+  "evidence_id": "E-MD-B00-A004-001",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B00",
+  "attempt_id": "MD-B00-A004",
+  "work_id": "MD-B00-A004",
+  "baseline_id": "MD-B00-A004-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "change_impact_declaration": "CI-MD-B00-A004-001",
+  "issued_at": "2026-08-27T17:05:00+07:00",
+  "title": "The classification gate can now see the defect shape that twice escaped it, and the backlog it was blind to is counted",
+  "attempt_outcome": "COMPLETE — two new invariants land green on the six stages that earned them, 1644 previously invisible rows are reported as pending, and both checks are demonstrated to fail when removed.",
+  "authority_basis": [
+    "STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md section 8.4: proof-owning-stage assignment must be confirmed for the stage.",
+    "STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md section 2: the classes that are never executable predicates, which the gate already encodes as structuralClass().",
+    "The gate's own contract: 'Grammatical mood is deliberately absent. Encoding \"has a modal\" here would rebuild the defect this gate exists to detect.'"
+  ],
+  "blind_spot_closed": {
+    "what_mixed_run_cannot_see": "MIXED_RUN fires only inside a contiguous enumerated run holding both classes. A uniformly reference run has nothing to mix, and a paragraph has no list marker so detectRuns never groups it into a run at all.",
+    "the_two_escapes": "MD-S066-R0002 and MD-S067-R0010 are both standalone paragraphs stating executable obligations. Each sat REFERENCE_ONLY with empty notes across two attempts and every green gate, and each was found only by reading the contract by hand.",
+    "why_not_a_semantic_check": "Detecting 'this sentence states an obligation' means encoding grammatical mood, which the gate explicitly forbids because that is the defect it exists to catch. The deontic regex used during the audit was deliberately not carried into the gate.",
+    "what_is_enforceable_instead": "Whether a decision was made and attributed. Both defects lacked exactly that: empty notes, no attempt, no confirmed owner."
+  },
+  "checks_added": {
+    "UNEXPLAINED_REFERENCE": "In a stage listed in DECISION_RECORDED_STAGES, every active non-structural REFERENCE_ONLY row must record applicability_normalized=REFERENCE_ONLY and a proof_owner_confirmed=MD-Bxx. Stages outside the list are counted per stage and reported, never excused.",
+    "BINDING_COHERENCE": "A SATISFIED row carries evidence and an evidence-carrying row is SATISFIED. Half-cleared proof state is not a legible outcome.",
+    "MIN_REFERENCE_ROWS": "A reference scan matching fewer than 2000 rows fails as vacuous, so a broken filter cannot look like a clean corpus."
+  },
+  "enabling_change": "The MD-B07 and MD-B08 normalizations previously erased notes from reference rows, which is why a reference row with empty notes was indistinguishable from one nobody examined. Both now record the decision. That is what makes those two stages eligible for the allowlist; no denominator, binding, or evidence changed.",
+  "gate_result": {
+    "status": "PASS",
+    "active_rows": 6495,
+    "reference_only": 3297,
+    "reference_non_structural": 1819,
+    "reference_decision_recorded": 175,
+    "reference_unexplained": 1644,
+    "binding_incoherent": 0,
+    "decision_recorded_stages": ["MD-B00", "MD-B05", "MD-B07", "MD-B08", "MD-B10", "MD-B13"],
+    "unexplained_reference_pending": {
+      "MD-B01": 160, "MD-B02": 17, "MD-B04": 28, "MD-B06": 1, "MD-B09": 5,
+      "MD-B11": 201, "MD-B12": 54, "MD-B14": 198, "MD-B15": 131, "MD-B16": 53,
+      "MD-B17": 140, "MD-B18": 79, "MD-B19": 538, "MD-B20": 39
+    }
+  },
+  "falsifiability_proof": {
+    "method": "Both new error emissions were disabled behind a false guard and the self-test re-run.",
+    "result": "Exactly the three new fail-closed cases turned red: test_a_standalone_obligation_paragraph_cannot_hide_as_unexplained_reference, test_gate_fails_closed_when_a_recorded_reference_decision_is_erased, test_gate_fails_closed_when_proof_state_is_half_cleared. Restoring the gate returned 12/12.",
+    "regression_case": "The first of those restores MD-S066-R0002 to its exact pre-MD-B07-A002 state — REFERENCE_ONLY, no evidence, empty notes — and asserts the gate now names it. The defect that started this cannot recur silently."
+  },
+  "honest_limit": "A generated note proves a pass ran, not that a human thought. This check catches the row nobody looked at; it does not catch the row somebody looked at and misjudged. MD-S067-R0010 was the second kind and would still have required a human reading the contract. The limit is recorded in the gate docblock rather than left for a later reader to discover.",
+  "test_execution": {
+    "gate_self_test": "12 tests, 46 assertions, exit 0",
+    "full_suite": "1951 tests, 18238 assertions, 0 failures, 0 errors, exit 0",
+    "full_suite_before": "1947 tests, 18219 assertions"
+  },
+  "residue_verdict": {
+    "scope": "The classification consistency gate, its self-test, and the two normalizations that record reference decisions.",
+    "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_THE_CONTROL_PLANE_SURFACE",
+    "basis": "No strategy byte, schema, migration, configuration, application source, stage denominator, or issued evidence was changed. No stored row was touched."
+  },
+  "runtime_artifact_boundary": {
+    "storage_inspected": false,
+    "storage_mutated": false,
+    "database_mutated": false
+  },
+  "open_items_after": [
+    "1644 non-structural reference rows across 14 stages carry no recorded decision. They are now counted per stage instead of invisible, but they are not resolved.",
+    "MD-B09 (5), MD-B11 (201) and MD-B12 (54) are closed stages still outside DECISION_RECORDED_STAGES; the remaining eleven are unopened and will resolve theirs at entry.",
+    "No governance gate yet verifies that a closed stage still holds the predicate count its closure manifest claimed. BINDING_COHERENCE catches half-cleared state but not a fully cleared pair, which is the shape MD-B07-A002 produced. Closing that needs a governed count source per closed stage.",
+    "Only the MD-B07 and MD-B08 normalizations preserve another stage's proof state; every other stage normalization still carries the unguarded clearing code."
+  ],
+  "relationship_requirements": [
+    "MD-B00-A004-BL001 -> SC-MD-B00-A003-001 (stage precondition)",
+    "CI-MD-B00-A004-001 -> MD-B00-A004-BL001 (declaration bound to baseline)",
+    "E-MD-B00-A004-001 -> MD-B00-A004-BL001 and CI-MD-B00-A004-001 (evidence correlation)",
+    "E-MD-B00-A004-001 -> SC-MD-B07-A002-001 and SC-MD-B08-A002-001 (the two hand corrections that motivated the check)"
+  ],
+  "supersedes": "Nothing. No prior evidence or closure is edited."
+}

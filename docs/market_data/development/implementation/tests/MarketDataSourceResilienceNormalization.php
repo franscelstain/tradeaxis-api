@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__.'/MarketDataSourceResilienceTraceabilitySpec.php';
+require_once __DIR__.'/MarketDataClassificationConsistencyGate.php';
 
 /** Governed MD-B08-A001 matrix normalization. Usage: php this-file.php [--apply]. */
 $root = dirname(__DIR__, 5);
@@ -184,7 +185,18 @@ foreach ($rows as &$row) {
         $row['coverage_requirement'] = 'REFERENCE_ONLY';
         $row['applicability'] = 'REFERENCE_ONLY';
         $row['coverage_status'] = 'REFERENCE_ONLY';
-        $row['notes'] = b08ReplaceAttemptNote($row['notes'], null);
+        // Record the decision instead of erasing it. A reference row with empty notes is
+        // indistinguishable from a row nobody examined, which is exactly how MD-S066-R0002 and
+        // MD-S067-R0010 survived. The note asserts that this pass considered the row and
+        // assigned it no proof obligation; it does not assert that the judgement is correct.
+        $row['notes'] = b08ReplaceAttemptNote(
+            $row['notes'],
+            MarketDataSourceResilienceTraceabilitySpec::REMEDIATION_ATTEMPT
+            .': applicability_normalized=REFERENCE_ONLY'
+            .'; proof_owner_confirmed=MD-B08'
+            .'; reference_basis='.(MarketDataClassificationConsistencyGate::structuralClass($row['rule_text']) ?? 'CONTEXT_ONLY')
+            .'; stage_entry_review=re-derived against traceability standard sections 2 and 3; no executable proof obligation assigned'
+        );
         $counts['reference']++;
         continue;
     }

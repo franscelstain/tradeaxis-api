@@ -2,7 +2,7 @@
 require_once __DIR__.'/MarketDataAnalyticalPriceProductTraceabilitySpec.php';
 final class MarketDataAnalyticalPriceProductProofSpec
 {
-    public const STAGE='MD-B12'; public const ATTEMPT='MD-B12-A001'; public const BASELINE='MD-B12-A001-BL001'; public const CI='CI-MD-B12-A001-001'; public const EXPECTED_DENOMINATOR=45;
+    public const STAGE='MD-B12'; public const ATTEMPT='MD-B12-A001'; public const BASELINE='MD-B12-A001-BL001'; public const CI='CI-MD-B12-A001-001'; public const EXPECTED_DENOMINATOR=60;
     private static function f($owner,$impl,$positive,$negative){return ['owner'=>$owner,'implementation'=>$impl,'positive'=>$positive,'negative'=>$negative,'runtime_required'=>true];}
     public static function families(): array { return [
         'product_boundary'=>self::f('MD-B12:product-boundary',['app/Application/MarketData/Services/AnalyticalPriceProductService.php','app/Application/MarketData/Services/AnalyticalProductIdentityService.php'],['tests/Unit/MarketData/AnalyticalPriceProductServiceTest.php','test_raw_is_immutable_pass_through_and_provider_adj_close_is_not_selected'],['tests/Unit/MarketData/AnalyticalPriceProductServiceTest.php','test_total_return_is_distinct_and_unavailable_without_governed_distribution_formula']),
@@ -13,15 +13,24 @@ final class MarketDataAnalyticalPriceProductProofSpec
         'action_specific_volume'=>self::f('MD-B12:action-specific-volume',['app/Application/MarketData/Services/AdjustmentFactorSetService.php'],['tests/Unit/MarketData/AdjustmentFactorSetB11Test.php','test_volume_scaled_action_requires_explicit_action_specific_volume_factor'],['tests/Unit/MarketData/AdjustmentFactorSetB11Test.php','test_gap_unknown_cash_distribution_is_not_manufactured_into_structural_factor']),
         'determinism'=>self::f('MD-B12:determinism',['app/Application/MarketData/Services/AnalyticalPriceProductService.php','app/Domain/MarketData/MarketDataSemanticBindings.php'],['tests/Unit/MarketData/AnalyticalPriceProductServiceTest.php','test_factor_lineage_and_persisted_identity_are_fail_closed_and_hash_is_deterministic'],['tests/Unit/MarketData/AnalyticalProductIdentityServiceTest.php','test_factor_hash_is_order_independent_but_revision_sensitive']),
         'publication_contract'=>self::f('MD-B12:publication-contract',['app/Application/MarketData/Services/EodIndicatorsComputeService.php','app/Application/MarketData/Services/IndicatorVectorService.php'],['tests/Unit/MarketData/CoherentPriceProductBoundaryTest.php','test_the_persisted_vector_carries_its_price_product_code'],['tests/Unit/MarketData/BarPriceProductIdentityTest.php','test_the_read_gateway_withholds_unrecorded_or_non_raw_canonical_bar_identity']),
+        'adjustment_eligibility'=>self::f('MD-B12:adjustment-eligibility',['app/Application/MarketData/Services/AdjustmentFactorSetService.php'],['tests/Unit/MarketData/AdjustmentFactorSetB11Test.php','test_only_authoritative_or_manual_verified_revisions_are_adjustment_active'],['tests/Unit/MarketData/AdjustmentFactorSetB11Test.php','test_authoritative_factor_revision_requires_accepted_source_payload_hash']),
+        'sealed_immutability'=>self::f('MD-B12:sealed-immutability',['app/Application/MarketData/Services/AnalyticalPriceProductService.php','app/Application/MarketData/Services/CorporateActionRevisionService.php'],['tests/Unit/MarketData/AnalyticalPriceProductServiceTest.php','test_raw_is_immutable_pass_through_and_provider_adj_close_is_not_selected'],['tests/Unit/MarketData/CorporateActionRevisionServiceTest.php','test_revision_is_append_only_and_supersession_preserves_event_identity']),
+        'contamination_integrity'=>self::f('MD-B12:contamination-integrity',['app/Application/MarketData/Services/EodIndicatorsComputeService.php','app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php'],['tests/Unit/MarketData/ContaminationAnchoredOnBreakDateTest.php','test_a_neutral_factor_does_not_excuse_a_detected_break'],['tests/Unit/MarketData/ContaminationAnchoredOnBreakDateTest.php','test_an_unexplained_break_still_contaminates']),
+        'actual_versus_proxy_naming'=>self::f('MD-B12:actual-versus-proxy-naming',['app/Application/MarketData/Services/IndicatorVectorService.php'],['tests/Unit/MarketData/ActualVersusProxyMetricBoundaryTest.php','test_the_proxy_is_raw_close_times_raw_volume'],['tests/Unit/MarketData/ActualVersusProxyMetricBoundaryTest.php','test_the_actual_traded_value_is_null_rather_than_filled_with_the_proxy']),
     ]; }
     public static function familyFor(array $r): string {
         $rid=(string)$r['rule_id'];
         if(in_array($rid,['MD-S008-R0006','MD-S012-R0002','MD-S012-R0003','MD-S012-R0004','MD-S012-R0005','MD-S012-R0006','MD-S083-R0002','MD-S083-R0004','MD-S083-R0005'],true)) return 'product_boundary';
         if(in_array($rid,['MD-S012-R0008','MD-S019-R0047','MD-S019-R0048','MD-S083-R0015','MD-S083-R0041','MD-S083-R0063','MD-S083-R0069'],true)) return 'fail_closed_basis';
         if(in_array($rid,['MD-S012-R0011','MD-S012-R0012','MD-S012-R0013','MD-S012-R0014','MD-S012-R0015','MD-S012-R0016','MD-S012-R0017','MD-S012-R0019','MD-S012-R0020','MD-S012-R0021','MD-S019-R0043','MD-S019-R0045'],true)) return 'persisted_identity';
-        if(in_array($rid,['MD-S012-R0028','MD-S019-R0046','MD-S083-R0003','MD-S083-R0039'],true)) return 'coherent_vector';
+        if(in_array($rid,['MD-S012-R0028','MD-S019-R0046','MD-S083-R0003','MD-S083-R0039','MD-S083-R0057','MD-S083-R0058'],true)) return 'coherent_vector';
+        // MD-B12-A002 promotions: Eligibility for adjustment (LOCKED) and Forbidden behavior (LOCKED).
+        if(in_array($rid,['MD-S083-R0032','MD-S083-R0033','MD-S083-R0034','MD-S083-R0035','MD-S083-R0036','MD-S083-R0037','MD-S083-R0056'],true)) return 'adjustment_eligibility';
+        if(in_array($rid,['MD-S083-R0054','MD-S083-R0060'],true)) return 'sealed_immutability';
+        if($rid==='MD-S083-R0061') return 'contamination_integrity';
+        if($rid==='MD-S083-R0062') return 'actual_versus_proxy_naming';
         if(in_array($rid,['MD-S083-R0023','MD-S083-R0024','MD-S083-R0025','MD-S083-R0026','MD-S083-R0027','MD-S083-R0028','MD-S083-R0029'],true)) return 'factor_lineage';
-        if($rid==='MD-S083-R0040') return 'action_specific_volume';
+        if(in_array($rid,['MD-S083-R0040','MD-S083-R0055','MD-S083-R0059'],true)) return 'action_specific_volume';
         if(in_array($rid,['MD-S020-R0009','MD-S083-R0053'],true)) return 'determinism';
         if(in_array($rid,['MD-S012-R0035','MD-S012-R0036','MD-S083-R0068'],true)) return 'publication_contract';
         throw new RuntimeException('No proof family for '.$rid);

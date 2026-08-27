@@ -14,7 +14,7 @@ final class MarketDataAnalyticalPriceProductTraceabilityGate
         foreach ($mandatory as $r) {
             $evidence = trim((string) ($r['current_evidence_ids'] ?? ''));
             if ($bound) {
-                if (($r['coverage_status'] ?? '') !== 'SATISFIED' || ! preg_match('/^E-MD-B12-A001-\d{3}$/', $evidence)) {
+                if (($r['coverage_status'] ?? '') !== 'SATISFIED' || ! preg_match('/^E-MD-B12-A00[12]-\d{3}$/', $evidence)) {
                     $invalid[] = $r['rule_id'];
                 }
             } elseif (($r['coverage_status'] ?? '') !== 'NOT_ASSESSED' || $evidence !== '') {
@@ -22,10 +22,10 @@ final class MarketDataAnalyticalPriceProductTraceabilityGate
             }
         }
         $errors = [];
-        if (count($mandatory) !== 45) {
+        if (count($mandatory) !== MarketDataAnalyticalPriceProductTraceabilitySpec::EXPECTED_DENOMINATOR) {
             $errors[] = 'MANDATORY_DENOMINATOR_MISMATCH';
         }
-        if (count($reference) !== 78) {
+        if (count($reference) !== MarketDataAnalyticalPriceProductTraceabilitySpec::EXPECTED_REFERENCE) {
             $errors[] = 'REFERENCE_COUNT_MISMATCH';
         }
         if (count($pending) !== 0) {

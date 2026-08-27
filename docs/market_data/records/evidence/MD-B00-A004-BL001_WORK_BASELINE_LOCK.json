@@ -1,0 +1,34 @@
+{
+    "baseline_id": "MD-B00-A004-BL001",
+    "stage_id": "MD-B00",
+    "attempt_id": "MD-B00-A004",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260823-001",
+    "strategy_freeze_manifest_sha1": "346300DB6E5356277EA7F97AF36E2F9AD46ADA60",
+    "strategy_tree_fingerprint_sha1": "0AD24570E7127FBB7F1CC1648B0F8EBC7BAC02F7",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "A6D4F1BF7C6EB974F39C0635F1F5805702A2A64B",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "DF415BF77C3C971E23F83EBEA95D239B55133AC2",
+    "source_revision": "0e3bb96b547056feaddc8da39129635d528b1983",
+    "source_revision_branch": "master",
+    "working_tree": "DIRTY+B704644AE07D97BB3DFCE47B3AA9EA4EE5DCB12C",
+    "app_code_fingerprint_sha1": "34C1CD6CB7AA7814F021AA0B79B9345CBB97C68D",
+    "tests_fingerprint_sha1": "8DBFB35FE6930B4E3DC839C97B804592E5644618",
+    "schema_config_identity": "schema:370A6ED06E098C3090473B03CAE9A87BD4A1CF4E;config:CDA52E5CFA3414EF94B3C16A4D3C118A692D7165;migrations:64B362C0E04B06582FEA9921F55BEDA64AD58BAA",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "B00-A004 control-plane gate hardening; predecessors MD-B07-A002 116/116 and MD-B08-A002 139/139 closed; local runtime PHP 7.4.33",
+    "external_dependency_contract_identity": {
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "registered": 8,
+        "open_blocking": []
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-08-27T14:12:57+07:00",
+    "issuance_note": "Issued before hardening MarketDataClassificationConsistencyGate. Two stage corrections found by hand exposed a blind spot the gate could not see: MIXED_RUN only inspects enumerated runs, so a standalone obligation-bearing paragraph filed as REFERENCE_ONLY is invisible to it. No strategy, schema, application or storage change is in scope."
+}

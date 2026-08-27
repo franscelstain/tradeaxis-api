@@ -1,0 +1,34 @@
+{
+    "baseline_id": "MD-B09-A003-BL001",
+    "stage_id": "MD-B09",
+    "attempt_id": "MD-B09-A003",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260823-001",
+    "strategy_freeze_manifest_sha1": "346300DB6E5356277EA7F97AF36E2F9AD46ADA60",
+    "strategy_tree_fingerprint_sha1": "0AD24570E7127FBB7F1CC1648B0F8EBC7BAC02F7",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "CD4FD3360369479628B645F8278E6C3BD8C7F776",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "CB172D98A04A8A479F014E49D902184C9F867672",
+    "source_revision": "0e3bb96b547056feaddc8da39129635d528b1983",
+    "source_revision_branch": "master",
+    "working_tree": "DIRTY+3728AA527366E741DDBE65F7881E7D19233E40F4",
+    "app_code_fingerprint_sha1": "34C1CD6CB7AA7814F021AA0B79B9345CBB97C68D",
+    "tests_fingerprint_sha1": "EEDE82FD2A33B2BAFF953CB334399DE73683A5F1",
+    "schema_config_identity": "schema:370A6ED06E098C3090473B03CAE9A87BD4A1CF4E;config:CDA52E5CFA3414EF94B3C16A4D3C118A692D7165;migrations:64B362C0E04B06582FEA9921F55BEDA64AD58BAA",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "B09-A003 reference-population re-check; MD-B00-A004 gate hardening in force; local runtime PHP 7.4.33",
+    "external_dependency_contract_identity": {
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "registered": 8,
+        "open_blocking": []
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-08-27T14:56:25+07:00",
+    "issuance_note": "Issued after the MD-B09-A003 reference-population re-check at 140 mandatory. Promotes MD-S008-R0018 and records the decision on the four reference rows the hardened gate reported. First stage re-check driven by the gate rather than by a hand search."
+}

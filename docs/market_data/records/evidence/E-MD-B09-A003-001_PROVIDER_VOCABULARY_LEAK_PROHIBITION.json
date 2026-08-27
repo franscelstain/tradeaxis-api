@@ -1,0 +1,86 @@
+{
+  "evidence_id": "E-MD-B09-A003-001",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B09",
+  "attempt_id": "MD-B09-A003",
+  "work_id": "MD-B09-A003",
+  "baseline_id": "MD-B09-A003-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "change_impact_declaration": "CI-MD-B09-A003-001",
+  "issued_at": "2026-08-27T18:05:00+07:00",
+  "title": "The provider-vocabulary leak prohibition is bound at 140/140, and the first gate-driven stage re-check closes MD-B09 at zero unexplained reference rows",
+  "attempt_outcome": "COMPLETE — MD-S008-R0018 is promoted, bound and proven; the four remaining reference rows carry recorded decisions; MD-B09 joins DECISION_RECORDED_STAGES.",
+  "authority_basis": [
+    "MD-S008 Canonicalization Contract, Source field mapping targets (LOCKED): 'Future adapters map their payloads into these same normalized semantics and may not leak source JSON paths, suffix rules, or proprietary status codes into consumer contracts.'",
+    "MD-S008-R0017, the immediately preceding paragraph, is REQUIRED and SATISFIED and states a prohibition of the same form.",
+    "STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md section 8.4 and section 9."
+  ],
+  "defect_corrected": {
+    "rule": "MD-S008-R0018",
+    "prior_state": "REFERENCE_ONLY / REFERENCE_ONLY / REFERENCE_ONLY with empty notes",
+    "corrected_state": "REQUIRED / MANDATORY / SATISFIED bound to E-MD-B09-A003-001",
+    "shape": "Third instance of the standalone-paragraph shape, after MD-S066-R0002 (MD-B07-A002) and MD-S067-R0010 (MD-B08-A002). No enumerated-run invariant can reach any of them.",
+    "how_it_was_found": "By UNEXPLAINED_REFERENCE, added in MD-B00-A004. The gate named five rows; the two prior instances were found by reading whole contracts by hand."
+  },
+  "reference_decisions_recorded": {
+    "MD-S023-R0045": "explanatory prose contrasting the zero-volume rule with the zero-price rule; the executable predicate is MD-S023-R0044 (rule 10), REQUIRED and SATISFIED",
+    "MD-S036-R0001": "document status and historical guard marker recording a past docs-review run; states no obligation on implementation",
+    "MD-S036-R0032": "capability boundary disclaimer declaring the contract produces no verdict, state, flag or signal",
+    "MD-S039-R0005": "capability boundary disclaimer of the same form as MD-S036-R0032"
+  },
+  "traceability_state": {
+    "b09_denominator_before": 139,
+    "b09_denominator_after": 140,
+    "b09_optional_capability": 12,
+    "b09_non_structural_reference_unexplained_before": 5,
+    "b09_non_structural_reference_unexplained_after": 0,
+    "rows_bound_to_E-MD-B09-A002-001": 139,
+    "rows_bound_to_E-MD-B09-A003-001": 1
+  },
+  "proof": {
+    "predicate": "Consumer-facing contracts carry no provider payload vocabulary: no provider name, no concrete adapter type, no symbol-suffix rule, and no source JSON path.",
+    "family": "canonical_raw",
+    "guard": "ProviderNeutralBoundaryTest::test_downstream_contracts_never_name_the_concrete_adapter_or_provider",
+    "guard_gap_closed": "The rule names three leak classes. The existing guard covered the provider name, the concrete adapter class and the .JK suffix rule, which addresses suffix rules but not source JSON paths. The guard now also rejects adjclose, exchangeTimezoneName, chart.result, period1 and period2 across the six downstream files. Those tokens exist 24 times inside the adapter and zero times downstream, so the invariant held but was unguarded for that class.",
+    "falsifiability_proof": "A provider payload path was injected into MarketDataReadProductService.php and the guard failed, naming both adjclose and chart.result. The file was restored from git and verified byte-identical to HEAD."
+  },
+  "review_pass_guards": {
+    "completeness": "MarketDataCanonicalRawImportReferenceReview.php aborts when any non-structural B09 reference row is neither promoted nor explicitly decided. Proven by removing MD-S039-R0005 from REFERENCE_DECISIONS.",
+    "foreign_row_isolation": "The pass aborts if it alters any row owned by another stage. Proven by injecting a mutation on MD-S011-R0023, a MD-B11 row.",
+    "why_both": "MD-B07-A002 unbound 30 closed predicates owned by other stages while every gate stayed green. A narrow pass gets the same guards as a wide one."
+  },
+  "binder_defect_corrected": {
+    "what": "MarketDataCanonicalRawImportProofBinder appended a proof_binding note on every run without stripping the previous one, so a re-run stacked duplicate binding lines on all 139 rows.",
+    "correction": "It now strips MD-B09-A002 and MD-B09-A003 binding lines before appending, and binds the A003 predicate to the A003 evidence while the other 139 keep A002.",
+    "note": "Not observed in the matrix; the binder had not been re-run since A002 closed."
+  },
+  "test_execution": {
+    "b09_proof_surface_sample": "37 tests, 153 assertions, 0 failures, exit 0",
+    "full_suite": "recorded in SC-MD-B09-A003-001"
+  },
+  "residue_verdict": {
+    "scope": "The provider-vocabulary prohibition, the B09 reference population, and the B09 review/binder tooling.",
+    "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_THE_CORRECTED_B09_SURFACE",
+    "basis": "No application source, migration, configuration, or stored row was altered. The executable changes are one extended guard and two new review guards, all demonstrated falsifiable."
+  },
+  "runtime_artifact_boundary": {
+    "storage_inspected": false,
+    "storage_mutated": false,
+    "database_mutated": false
+  },
+  "open_items_after": [
+    "MD-B11 (201) and MD-B12 (54) are the remaining closed stages outside DECISION_RECORDED_STAGES; eleven unopened stages carry 1384 between them.",
+    "The gate catches the row nobody recorded a decision about. It does not catch a recorded decision that is wrong, which remains a reading task.",
+    "Every stage normalization other than MD-B07 and MD-B08 still carries the unguarded clearing code that can unbind another stage's proof."
+  ],
+  "relationship_requirements": [
+    "MD-B09-A003-BL001 -> SC-MD-B09-A002-001 (stage precondition)",
+    "CI-MD-B09-A003-001 -> MD-B09-A003-BL001 (declaration bound to baseline)",
+    "E-MD-B09-A003-001 -> MD-B09-A003-BL001 and CI-MD-B09-A003-001 (evidence correlation)",
+    "E-MD-B09-A003-001 -> E-MD-B09-A002-001 (additive lineage; no supersession)",
+    "E-MD-B09-A003-001 -> SC-MD-B00-A004-001 (the gate that found the defect)"
+  ],
+  "supersedes": "Nothing. E-MD-B09-A002-001 is not edited and its 139 bindings stand. This record adds the 140th."
+}

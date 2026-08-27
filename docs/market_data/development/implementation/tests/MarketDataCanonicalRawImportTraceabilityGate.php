@@ -16,7 +16,7 @@ final class MarketDataCanonicalRawImportTraceabilityGate
             return $r['active'] === 'YES' && $r['primary_stage'] === 'MD-B09' && in_array($r['applicability'], ['MANDATORY_OR_CONDITIONAL', 'CONDITIONAL_PENDING', 'APPLICABILITY_PENDING'], true);
         });
         $errors = [];
-        if (count($mandatory) !== 139) $errors[] = 'mandatory denominator must be 139';
+        if (count($mandatory) !== MarketDataCanonicalRawImportTraceabilitySpec::EXPECTED_DENOMINATOR) $errors[] = 'mandatory denominator must be '.MarketDataCanonicalRawImportTraceabilitySpec::EXPECTED_DENOMINATOR;
         if (count($optional) !== 12) $errors[] = 'optional capability count must be 12';
         if (count($moved) !== 46) $errors[] = 'moved downstream count must be 46';
         if (count($pending) !== 0) $errors[] = 'B09 applicability pending must be zero';

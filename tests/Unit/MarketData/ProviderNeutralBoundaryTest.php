@@ -61,6 +61,19 @@ class ProviderNeutralBoundaryTest extends TestCase
             if (strpos($source, '.JK') !== false) {
                 $violations[] = $relative.' carries a provider symbol-rendering rule';
             }
+
+            /*
+             * MD-S008-R0018 names three leak classes, not one: source JSON paths, suffix rules, and
+             * proprietary status codes. The provider name, adapter class and suffix checks above
+             * cover the second; these cover the first. Every token here is payload vocabulary that
+             * exists only inside the Yahoo response shape, so a downstream file naming one has been
+             * written against the provider rather than against the canonical target.
+             */
+            foreach (['adjclose', 'exchangeTimezoneName', 'chart.result', 'period1', 'period2'] as $payloadPath) {
+                if (stripos($source, $payloadPath) !== false) {
+                    $violations[] = $relative.' carries the provider payload path '.$payloadPath;
+                }
+            }
         }
 
         $this->assertSame([], $violations, 'downstream contracts must survive an adapter swap unchanged');

@@ -56,6 +56,52 @@ class AdjustmentFactorSetB11Test extends TestCase
         $this->assertCount(1,$rows); $this->assertSame($hash,$rows[0]->source_observation_hash);
     }
 
+    /**
+     * MD-S083-R0032 and MD-S011-R0023: a factor is adjustment-active only when its event revision is
+     * `AUTHORITATIVE_VERIFIED` or governed `MANUAL_VERIFIED`.
+     *
+     * The filter at AdjustmentFactorSetService::authoritativeEventsThrough() has always implemented
+     * this, and until MD-B12-A002 nothing asserted it: widening the whereIn to admit
+     * `PROVIDER_REPORTED` passed the entire suite. Both rules sat REFERENCE_ONLY at the time, so no
+     * traceability row claimed the invariant either.
+     */
+    public function test_only_authoritative_or_manual_verified_revisions_are_adjustment_active(): void
+    {
+        $this->seedAuthoritativeRevisionWithObservation(str_repeat('a', 64));
+
+        $observationId = DB::table('md_source_observations')->insertGetId([
+            'observation_uid' => str_repeat('c', 64), 'attempt_uid' => 'b12-noneligible',
+            'requested_trade_date' => '2026-02-01', 'source_name' => 'IDX', 'provider' => 'IDX',
+            'sanitized_request_identity' => 'b12-noneligible', 'acquired_at' => '2026-02-01 10:00:00',
+            'adapter_version' => 'test-v1', 'payload_hash' => str_repeat('d', 64),
+            'outcome_state' => 'ACCEPTED', 'created_at' => '2026-02-01 10:00:00',
+        ]);
+
+        $nonEligible = ['PROVIDER_REPORTED' => 702, 'SYNTHETIC_CANDIDATE' => 703, 'REJECTED' => 704];
+        foreach ($nonEligible as $state => $revisionId) {
+            DB::table('md_corporate_action_revisions')->insert([
+                'corporate_action_revision_id' => $revisionId, 'event_uid' => 'evt-b12x-'.strtolower($state),
+                'revision_number' => 1, 'listing_id' => 501, 'action_type_code' => 'STOCK_SPLIT',
+                'lifecycle_state' => 'EFFECTIVE', 'verification_state' => $state, 'ex_date' => '2026-02-01',
+                'terms_json' => json_encode(['ratio' => ['from' => 1, 'to' => 2]]),
+                'source_observation_id' => $observationId, 'recorded_at' => '2026-02-01 11:00:00',
+            ]);
+        }
+
+        $service = new AdjustmentFactorSetService();
+        $method = new ReflectionMethod($service, 'authoritativeEventsThrough');
+        $method->setAccessible(true);
+        $rows = $method->invoke($service, '2026-02-02', '2026-02-02 00:00:00');
+
+        $states = array_values(array_unique(array_map(static function ($row) {
+            return $row->verification_state;
+        }, is_array($rows) ? $rows : iterator_to_array($rows))));
+        sort($states);
+
+        $this->assertSame(['AUTHORITATIVE_VERIFIED'], $states, 'only verified revisions may be adjustment-active');
+        $this->assertCount(1, $rows, 'the three non-eligible revisions must not reach the factor set');
+    }
+
     public function test_verified_split_ratio_maps_deterministically_to_price_and_volume_factors(): void
     {
         $terms=$this->factorTerms('STOCK_SPLIT',['ratio'=>['from'=>1,'to'=>5]]);

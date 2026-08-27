@@ -1,0 +1,94 @@
+{
+  "evidence_id": "E-MD-B12-A002-001",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B12",
+  "attempt_id": "MD-B12-A002",
+  "work_id": "MD-B12-A002",
+  "baseline_id": "MD-B12-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "change_impact_declaration": "CI-MD-B12-A002-001",
+  "issued_at": "2026-08-27T19:20:00+07:00",
+  "title": "Two whole LOCKED blocks that carried no proof obligation are bound at 60/60, including the adjustment-authority invariant the audit proved unguarded",
+  "attempt_outcome": "COMPLETE FOR ITS DECLARED SCOPE - the Forbidden behavior and Eligibility for adjustment blocks are promoted and bound. MD-B12 is deliberately not admitted to DECISION_RECORDED_STAGES: 39 non-structural reference rows remain for MD-B12-A003.",
+  "scope_is_partial_on_purpose": {
+    "in_scope": "MD-S083 Forbidden behavior (LOCKED) 9 rows and Eligibility for adjustment (LOCKED) 6 rows.",
+    "deferred_to_a003": "MD-S083 Contamination behavior (5), MD-S012 Version/change rule (5), MD-S083 factor formula, append-only factor and provenance rows (5), plus the 24 rows that stay reference and need their decision recorded.",
+    "why": "The B12 reference population is 54 rows against 5 in MD-B09. Binding 30 predicates in one pass without checking that each guard actually covers its predicate is the over-claiming this track exists to prevent. The split was requested, and the partial state is machine-visible: the review pass reports what it leaves behind, and the classification gate still counts MD-B12 as pending."
+  },
+  "authority_basis": [
+    "MD-S083 Price Adjustment Contract, Forbidden behavior (LOCKED): nine prohibitions, none of which any REQUIRED row claimed.",
+    "MD-S083 Eligibility for adjustment (LOCKED): a factor is adjustment-active only when five stated conditions hold, plus the exclusion sentence naming PROVIDER_REPORTED, SYNTHETIC_CANDIDATE, unmapped, conflicting, missing-term and missing-date events.",
+    "STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md sections 2, 3, 8.4 and 9."
+  ],
+  "why_the_gate_could_not_see_these": "Both blocks are uniformly REFERENCE_ONLY enumerated runs. MIXED_RUN fires only when a run holds both classes, so a run with nothing required in it has no mixture to detect. They surfaced through UNEXPLAINED_REFERENCE, added in MD-B00-A004, which is also how MD-S008-R0018 surfaced in MD-B09-A003.",
+  "headline_finding_closed": {
+    "rule": "MD-S083-R0032",
+    "text": "the event revision is AUTHORITATIVE_VERIFIED or governed MANUAL_VERIFIED",
+    "relationship": "This is the MD-B12-side twin of MD-S011-R0023, the invariant the reference-population audit demonstrated was enforced by exactly one line of code and protected by nothing.",
+    "audit_demonstration": "Widening the whereIn at AdjustmentFactorSetService::authoritativeEventsThrough() to admit PROVIDER_REPORTED passed the entire 1946-test suite. Both rules were REFERENCE_ONLY at the time, so no traceability row claimed the invariant either.",
+    "guard_written": "AdjustmentFactorSetB11Test::test_only_authoritative_or_manual_verified_revisions_are_adjustment_active seeds one AUTHORITATIVE_VERIFIED revision alongside PROVIDER_REPORTED, SYNTHETIC_CANDIDATE and REJECTED, and requires only the first to reach the factor set.",
+    "falsifiability_proof": "The exact audit mutation now fails the new guard, reporting that only verified revisions may be adjustment-active. The application file was restored from git and verified byte-identical to HEAD."
+  },
+  "a_guard_i_expected_to_write_and_did_not": {
+    "rule": "MD-S083-R0061",
+    "text": "treating factor 1 or absent factor as proof the window is clean",
+    "initial_finding": "Reported as having no test at all, based on a search for the phrase clean window.",
+    "correction": "That search used the wrong strings. ContaminationAnchoredOnBreakDateTest::test_a_neutral_factor_does_not_excuse_a_detected_break covers the factor-1.0 half verbatim, and test_an_unexplained_break_still_contaminates covers the absent-factor half. Contamination is resolved from the event-risk repository, never from factor arithmetic. No new guard was needed and none was written."
+  },
+  "traceability_state": {
+    "b12_denominator_before": 45,
+    "b12_denominator_after": 60,
+    "promoted": 15,
+    "b12_reference_before": 78,
+    "b12_reference_after": 63,
+    "non_structural_reference_unexplained_remaining": 39,
+    "rows_bound_to_E-MD-B12-A001-001": 45,
+    "rows_bound_to_E-MD-B12-A002-001": 15
+  },
+  "proof_families_added": {
+    "adjustment_eligibility": "MD-S083-R0032 to R0037 and R0056 - AdjustmentFactorSetB11Test eligibility and provenance guards.",
+    "sealed_immutability": "MD-S083-R0054 and R0060 - RAW immutability plus append-only corporate-action revision.",
+    "contamination_integrity": "MD-S083-R0061 - neutral factor and unexplained break both still contaminate.",
+    "actual_versus_proxy_naming": "MD-S083-R0062 - the proxy is RAW close times RAW volume and the actual stays NULL rather than filled with it."
+  },
+  "existing_families_extended": {
+    "coherent_vector": "MD-S083-R0057 and R0058",
+    "action_specific_volume": "MD-S083-R0055 and R0059"
+  },
+  "review_pass_guards": {
+    "named_rules_reached": "The pass aborts when a named rule is never reached. Proven by renaming MD-S083-R0061 to a non-existent id.",
+    "start_state_verified": "The pass aborts when a named rule was not REFERENCE_ONLY to begin with, so a typo cannot silently no-op. Proven by inverting the start-state check.",
+    "foreign_row_isolation": "The pass aborts if it alters any row owned by another stage. Proven by injecting a mutation on MD-S011-R0023, a MD-B11 row.",
+    "why": "MD-B07-A002 unbound 30 closed predicates owned by other stages while every gate stayed green."
+  },
+  "binder_change": "MarketDataAnalyticalPriceProductProofBinder required the whole denominator to be pristine NOT_ASSESSED, which would have forced this attempt to unbind the 45 closed A001 predicates in order to rebind them. It now binds only the rules belonging to the attempt whose evidence id is passed, and leaves the rest exactly as issued.",
+  "test_execution": {
+    "b12_proof_surface": "46 tests, 118 assertions, 0 failures, exit 0",
+    "full_suite": "recorded in SC-MD-B12-A002-001"
+  },
+  "residue_verdict": {
+    "scope": "The two promoted blocks and the B12 review and binder tooling.",
+    "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_THE_CORRECTED_B12_SURFACE",
+    "basis": "No application source, migration, configuration, or stored row was altered. The only executable addition is one behavioural guard; the review-pass and binder changes are tooling."
+  },
+  "runtime_artifact_boundary": {
+    "storage_inspected": false,
+    "storage_mutated": false,
+    "database_mutated": false
+  },
+  "open_items_after": [
+    "MD-B12-A003 owns the remaining 39 non-structural reference rows: Contamination behavior, Version/change rule, the factor formula and provenance rows to promote, and the reference decisions to record.",
+    "MD-B11 remains at 201 and is the last closed stage after MD-B12.",
+    "MD-S012 coherence bullets R0023 to R0027 are deliberately NOT promotion candidates: MD-S083-R0039 and MD-S012-R0028 already own that obligation as REQUIRED rows, and promoting them would duplicate closure ownership contrary to section 7."
+  ],
+  "relationship_requirements": [
+    "MD-B12-A002-BL001 -> SC-MD-B12-A001-001 (stage precondition)",
+    "CI-MD-B12-A002-001 -> MD-B12-A002-BL001 (declaration bound to baseline)",
+    "E-MD-B12-A002-001 -> MD-B12-A002-BL001 and CI-MD-B12-A002-001 (evidence correlation)",
+    "E-MD-B12-A002-001 -> E-MD-B12-A001-001 (additive lineage; no supersession)",
+    "E-MD-B12-A002-001 -> SC-MD-B00-A004-001 (the gate that surfaced both blocks)"
+  ],
+  "supersedes": "Nothing. E-MD-B12-A001-001 is not edited and its 45 bindings stand. This record adds the 15 the two LOCKED blocks were owed."
+}

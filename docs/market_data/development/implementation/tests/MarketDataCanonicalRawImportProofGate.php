@@ -5,8 +5,8 @@ final class MarketDataCanonicalRawImportProofGate
     public static function validate(string $root, bool $bound=false): array
     {
         $den=MarketDataCanonicalRawImportTraceabilitySpec::denominator($root); $map=MarketDataCanonicalRawImportProofSpec::map($root); $families=MarketDataCanonicalRawImportProofSpec::families(); $errors=[];
-        if(count($den)!==139)$errors[]='mandatory denominator must be 139';
-        if(count($map)!==139)$errors[]='proof map must contain 139 rows';
+        if(count($den)!==MarketDataCanonicalRawImportTraceabilitySpec::EXPECTED_DENOMINATOR)$errors[]='mandatory denominator must be '.MarketDataCanonicalRawImportTraceabilitySpec::EXPECTED_DENOMINATOR;
+        if(count($map)!==MarketDataCanonicalRawImportTraceabilitySpec::EXPECTED_DENOMINATOR)$errors[]='proof map must contain '.MarketDataCanonicalRawImportTraceabilitySpec::EXPECTED_DENOMINATOR.' rows';
         foreach($den as $r){
             $expected=$bound?'SATISFIED':'NOT_ASSESSED'; if($r['coverage_status']!==$expected)$errors[]=$r['rule_id'].' status='.$r['coverage_status'].' expected='.$expected;
             if(!isset($map[$r['rule_id']],$families[$map[$r['rule_id']]])){$errors[]='missing proof family '.$r['rule_id'];continue;}
