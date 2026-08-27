@@ -12,8 +12,15 @@ foreach ($argv as $arg) {
         $evidenceId = trim(substr($arg, strlen('--evidence-id=')));
     }
 }
-if ($evidenceId === null || ! preg_match('/^E-MD-B08-A001-\d{3}$/', $evidenceId)) {
-    throw new RuntimeException('Usage: php '.basename(__FILE__).' --evidence-id=E-MD-B08-A001-NNN [--apply]');
+if ($evidenceId === null || ! preg_match('/^E-MD-B08-A00[12]-\d{3}$/', $evidenceId)) {
+    throw new RuntimeException('Usage: php '.basename(__FILE__).' --evidence-id=E-MD-B08-A00[1|2]-NNN [--apply]');
+}
+// A predicate first bound by the A002 correction carries the A002 pair; the rest keep A001.
+$remediationEvidenceId = 'E-MD-B08-A002-001';
+$remediationRules = array_keys(MarketDataSourceResilienceTraceabilitySpec::REMEDIATED_RULES);
+$remediationMatches = glob($root.'/docs/market_data/records/evidence/'.$remediationEvidenceId.'_*');
+if (! is_array($remediationMatches) || count($remediationMatches) !== 1) {
+    throw new RuntimeException('Exactly one governed evidence file must exist before binding '.$remediationEvidenceId);
 }
 $evidenceMatches = glob($root.'/docs/market_data/records/evidence/'.$evidenceId.'_*');
 if (! is_array($evidenceMatches) || count($evidenceMatches) !== 1) {
@@ -38,11 +45,22 @@ foreach ($rows as &$row) {
     }
     $seen++;
     $parts = array_values(array_filter(array_map('trim', explode(' | ', $row['notes'])), static function ($part) {
-        return $part !== '' && strpos($part, 'MD-B08-A001: proof_binding=') !== 0;
+        if ($part === '') {
+            return false;
+        }
+        foreach (['MD-B08-A001', 'MD-B08-A002'] as $attempt) {
+            if (strpos($part, $attempt.': proof_binding=') === 0) {
+                return false;
+            }
+        }
+
+        return true;
     }));
+    $boundAttempt = in_array($row['rule_id'], $remediationRules, true) ? 'MD-B08-A002' : 'MD-B08-A001';
+    $boundEvidence = $boundAttempt === 'MD-B08-A002' ? $remediationEvidenceId : $evidenceId;
     $row['coverage_status'] = 'SATISFIED';
-    $row['current_evidence_ids'] = $evidenceId;
-    $parts[] = 'MD-B08-A001: proof_binding='.$evidenceId
+    $row['current_evidence_ids'] = $boundEvidence;
+    $parts[] = $boundAttempt.': proof_binding='.$boundEvidence
         .'; proof_family='.$families[$row['rule_id']]
         .'; proof_chain=current authority -> actual source-resilience implementation -> positive/fail-closed runtime tests -> audit-visible telemetry -> residue -> governed evidence';
     $row['notes'] = implode(' | ', $parts);

@@ -1210,6 +1210,81 @@ class PublicApiEodBarsAdapterTest extends TestCase
         ]);
     }
 
+    /**
+     * MD-S067-R0010: "All reason codes are retained. A primary reason is routing compatibility only."
+     *
+     * Before MD-B08-A002 nothing exercised this. The only test naming `failure_reason_summary`
+     * asserted the string appears in the adapter source, which stays green while the behaviour is
+     * gone: collapsing the retained map to its most frequent entry passed the whole suite.
+     */
+    public function test_every_distinct_failure_reason_is_retained_and_the_primary_reason_does_not_replace_them()
+    {
+        $this->bindMarketDataConfig($this->config([
+            'provider' => 'yahoo_finance',
+            'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}',
+            'source_name' => 'YAHOO_FINANCE',
+            'yahoo' => [
+                'symbol_suffix' => '.JK',
+                'range' => '10d',
+                'interval' => '1d',
+            ],
+        ], 0, 0));
+
+        // Two tickers fail for genuinely different reasons; one succeeds so the run is partial
+        // rather than a single-cause total failure.
+        $adapter = new PublicApiEodBarsAdapter(function ($url) {
+            if (strpos($url, 'BBCA.JK') !== false) {
+                return ['status' => 429, 'headers' => ['Content-Type' => 'application/json'], 'body' => '{"error":"rate limited"}'];
+            }
+            if (strpos($url, 'BBRI.JK') !== false) {
+                return ['status' => 500, 'headers' => ['Content-Type' => 'application/json'], 'body' => '{"error":"upstream"}'];
+            }
+
+            return [
+                'status' => 200,
+                'headers' => ['Content-Type' => 'application/json'],
+                'body' => json_encode([
+                    'chart' => [
+                        'result' => [[
+                            'meta' => ['exchangeTimezoneName' => 'Asia/Jakarta'],
+                            'timestamp' => [1773828000],
+                            'indicators' => [
+                                'quote' => [[
+                                    'open' => [100], 'high' => [110], 'low' => [99],
+                                    'close' => [108], 'volume' => [100000],
+                                ]],
+                                'adjclose' => [['adjclose' => [108]]],
+                            ],
+                        ]],
+                    ],
+                ]),
+            ];
+        });
+
+        $adapter->fetchOrLoadEodBars('2026-03-18', 'api', ['tlkm', 'bbca', 'bbri']);
+        $telemetry = $adapter->consumeLastAcquisitionTelemetry();
+        $summary = $telemetry['failure_reason_summary'] ?? [];
+
+        // Retained: both distinct causes survive, each with its own count.
+        $this->assertArrayHasKey('RUN_SOURCE_RATE_LIMIT', $summary, 'the rate-limit cause was dropped from the retained set');
+        $this->assertArrayHasKey('RUN_SOURCE_TIMEOUT', $summary, 'the transient-server cause was dropped from the retained set');
+        $this->assertCount(2, $summary, 'distinct reason codes must not be collapsed into one');
+        $this->assertSame(1, $summary['RUN_SOURCE_RATE_LIMIT']);
+        $this->assertSame(1, $summary['RUN_SOURCE_TIMEOUT']);
+
+        // Routing compatibility only. The published primary reason here is the routing label
+        // RUN_SOURCE_PARTIAL_RESPONSE, which is not itself one of the two causes -- exactly why the
+        // contract forbids reading it as the reason. It must never become the sole record.
+        $this->assertArrayHasKey('final_reason_code', $telemetry);
+        $this->assertNotSame('', (string) $telemetry['final_reason_code']);
+        $this->assertNotSame(
+            [(string) $telemetry['final_reason_code']],
+            array_keys($summary),
+            'the retained set must not be reduced to the single routing reason'
+        );
+        $this->assertGreaterThan(1, count($summary), 'the primary reason must not replace the retained set');
+    }
+
     private function config(array $apiSource = [], $retryMax = 3, $backoffMs = 0)
     {
         return [

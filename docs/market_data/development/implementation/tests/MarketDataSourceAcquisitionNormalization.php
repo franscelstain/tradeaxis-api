@@ -48,8 +48,17 @@ function b07PredicateText(string $text): string
 function b07ReplaceAttemptNote(string $raw, ?string $replacement): string
 {
     $parts = array_values(array_filter(array_map('trim', explode(' | ', $raw)), static function ($part) {
-        return $part !== '' && strpos($part, MarketDataSourceAcquisitionTraceabilitySpec::ATTEMPT
-            .': applicability_normalized=') !== 0;
+        if ($part === '') {
+            return false;
+        }
+        foreach ([MarketDataSourceAcquisitionTraceabilitySpec::ATTEMPT,
+            MarketDataSourceAcquisitionTraceabilitySpec::REMEDIATION_ATTEMPT] as $attempt) {
+            if (strpos($part, $attempt.': applicability_normalized=') === 0) {
+                return false;
+            }
+        }
+
+        return true;
     }));
     if ($replacement !== null) {
         $parts[] = $replacement;
@@ -69,11 +78,29 @@ foreach ($rows as $row) {
 }
 
 $seen = [];
+$b07Owned = [];
+$skipped = [];
+$preserved = [];
+$priorSatisfied = [];
+foreach ($rows as $row) {
+    if ($row['coverage_status'] === 'SATISFIED' && $row['primary_stage'] !== MarketDataSourceAcquisitionTraceabilitySpec::STAGE) {
+        $priorSatisfied[$row['rule_id']] = $row['primary_stage'];
+    }
+}
+unset($row);
+foreach ($rows as $row) {
+    if (strtoupper(trim($row['active'])) === 'YES'
+        && $row['primary_stage'] === MarketDataSourceAcquisitionTraceabilitySpec::STAGE) {
+        $b07Owned[$row['rule_id']] = true;
+    }
+}
+unset($row);
 $counts = ['reviewed' => 0, 'reference' => 0, 'required' => 0, 'mandatory_b07' => 0, 'moved' => 0, 'contextual' => 0];
 foreach ($rows as &$row) {
     $document = $row['strategy_document_id'];
     $isSourceDocument = isset(MarketDataSourceAcquisitionTraceabilitySpec::SOURCE_DOCUMENT_COUNTS[$document]);
     if (! $isSourceDocument && ! isset($external[$row['rule_id']])) {
+        $skipped[$row['rule_id']] = true;
         continue;
     }
 
@@ -83,6 +110,12 @@ foreach ($rows as &$row) {
         $seen[$document][$number] = true;
     }
     $owner = $owners[$document][$number] ?? null;
+    // A stage normalization owns its own rows. For a row whose proof owner is another stage the
+    // pass may set ownership, but it must not touch that stage's closed proof state: clearing it
+    // silently unbinds predicates a different attempt already proved. Recorded as the reason the
+    // A002 re-run stripped 30 bindings from MD-B08, MD-B09 and MD-B10.
+    $priorStatus = $row['coverage_status'];
+    $priorEvidence = $row['current_evidence_ids'];
     $row['current_evidence_ids'] = '';
 
     if ($owner === null) {
@@ -105,6 +138,11 @@ foreach ($rows as &$row) {
             $row['supporting_stages'],
             MarketDataSourceAcquisitionTraceabilitySpec::STAGE
         );
+        $row['coverage_status'] = $priorStatus;
+        $row['current_evidence_ids'] = $priorEvidence;
+        if ($priorStatus === 'SATISFIED') {
+            $preserved[$row['rule_id']] = $priorEvidence;
+        }
         $counts['moved']++;
     }
 
@@ -119,14 +157,19 @@ foreach ($rows as &$row) {
     if ($parentRule !== null) {
         $counts['contextual']++;
     }
+    $remediation = MarketDataSourceAcquisitionTraceabilitySpec::REMEDIATED_RULES[$row['rule_id']] ?? null;
+    $attempt = $remediation === null
+        ? MarketDataSourceAcquisitionTraceabilitySpec::ATTEMPT
+        : MarketDataSourceAcquisitionTraceabilitySpec::REMEDIATION_ATTEMPT;
     $row['notes'] = b07ReplaceAttemptNote(
         $row['notes'],
-        MarketDataSourceAcquisitionTraceabilitySpec::ATTEMPT
+        $attempt
         .': applicability_normalized=MANDATORY; predicate_context='.$context
         .'; normalized_predicate='.$normalized
         .'; applicability_basis=always_applicable: the acquisition/import/backfill branch must implement the obligation whenever invoked and is not an optional capability; '
         .'proof_owner_confirmed='.$owner
         .'; proof_owner_basis=executable responsibility under the current build sequence'
+        .($remediation === null ? '' : '; '.$remediation)
     );
     $counts['required']++;
 }
@@ -138,6 +181,35 @@ foreach (MarketDataSourceAcquisitionTraceabilitySpec::SOURCE_DOCUMENT_COUNTS as 
         throw new RuntimeException($document.' corpus changed: '.$actual.' != '.$expected);
     }
 }
+// A normalization that selects its own scope can silently omit a row and still report success.
+// MD-B07-A001 did exactly that. Every row the matrix assigns to this stage must be examined by
+// this pass, or the pass is not an entry review of the stage — it is a review of a subset.
+// A stage pass must not unbind another stage's closed proof. Every row that arrived SATISFIED
+// under a different proof owner must still be SATISFIED when this pass finishes.
+$statusNow = [];
+foreach ($rows as $row) {
+    $statusNow[$row['rule_id']] = $row['coverage_status'];
+}
+unset($row);
+$unbound = [];
+foreach ($priorSatisfied as $rule => $stage) {
+    if (($statusNow[$rule] ?? null) !== 'SATISFIED') {
+        $unbound[] = $rule.' ('.$stage.')';
+    }
+}
+if ($unbound !== []) {
+    throw new RuntimeException('this pass unbound closed proof owned by another stage: '
+        .implode(', ', $unbound));
+}
+$counts['foreign_bindings_preserved'] = count($preserved);
+
+$unexamined = array_keys(array_intersect_key($b07Owned, $skipped));
+if ($unexamined !== []) {
+    throw new RuntimeException('B07-owned rows never examined by this normalization: '
+        .implode(', ', $unexamined));
+}
+$counts['b07_owned_examined'] = count($b07Owned);
+
 if ($counts['mandatory_b07'] !== MarketDataSourceAcquisitionTraceabilitySpec::EXPECTED_B07_DENOMINATOR) {
     throw new RuntimeException('B07 denominator mismatch: '.$counts['mandatory_b07']);
 }

@@ -5,7 +5,23 @@ final class MarketDataSourceResilienceTraceabilitySpec
 {
     public const ATTEMPT = 'MD-B08-A001';
     public const STAGE = 'MD-B08';
-    public const EXPECTED_B08_DENOMINATOR = 138;
+
+    /**
+     * MD-B08-A002 remediation. MD-S067-R0010 is a standalone paragraph closing the 'Independent
+     * dimensions' section, so it carries no list marker and the classification gate MIXED_RUN
+     * invariant can never group it with its siblings. A001 left it REFERENCE_ONLY with empty notes
+     * while it states two executable obligations, and nothing in the suite exercised either:
+     * collapsing the retained reason map to its most frequent entry passed all 1946 tests.
+     */
+    public const REMEDIATION_ATTEMPT = 'MD-B08-A002';
+
+    /** Rules whose classification MD-B08-A002 corrected, and the basis for each correction. */
+    public const REMEDIATED_RULES = [
+        'MD-S067-R0010' => 'a002_correction=promoted from REFERENCE_ONLY; a standalone paragraph '
+            .'stating that every reason code is retained and that a primary reason carries routing '
+            .'compatibility only, both objectively testable and neither previously exercised',
+    ];
+    public const EXPECTED_B08_DENOMINATOR = 139;
 
     public const SOURCE_DOCUMENT_COUNTS = [
         'MD-S029' => 208,
@@ -99,7 +115,7 @@ final class MarketDataSourceResilienceTraceabilitySpec
 
         // MD-S067 — B08 owns retry classification only. Publication/read/run lifecycle rows
         // are moved to the stage that can execute and prove them.
-        $assign('MD-S067', [20], 'MD-B08');
+        $assign('MD-S067', [10, 20], 'MD-B08');
         $assign('MD-S067', [13, 14, 15], 'MD-B10');
         $assign('MD-S067', [12, 18], 'MD-B17');
         $assign('MD-S067', [16, 17], 'MD-B19');

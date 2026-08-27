@@ -1,0 +1,34 @@
+{
+    "baseline_id": "MD-B08-A002-BL001",
+    "stage_id": "MD-B08",
+    "attempt_id": "MD-B08-A002",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260823-001",
+    "strategy_freeze_manifest_sha1": "346300DB6E5356277EA7F97AF36E2F9AD46ADA60",
+    "strategy_tree_fingerprint_sha1": "0AD24570E7127FBB7F1CC1648B0F8EBC7BAC02F7",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "246B766F76197BAD9E88EEA48D6815F3694CA354",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "41884B841256065B1BEA25ADA63F3D3AA8AB79A0",
+    "source_revision": "1b11d43f8f4185ccf2a23d386de2a00699c2f149",
+    "source_revision_branch": "master",
+    "working_tree": "DIRTY+3C59A3563527369B1EEE8BF302E2FC98087FEB5F",
+    "app_code_fingerprint_sha1": "34C1CD6CB7AA7814F021AA0B79B9345CBB97C68D",
+    "tests_fingerprint_sha1": "E85391B5C5ABEC3E4FACBC4D7E9AFC945E33DFFC",
+    "schema_config_identity": "schema:370A6ED06E098C3090473B03CAE9A87BD4A1CF4E;config:CDA52E5CFA3414EF94B3C16A4D3C118A692D7165;migrations:64B362C0E04B06582FEA9921F55BEDA64AD58BAA",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "B08-A002 traceability-correction attempt; predecessor MD-B07-A002 closed at 116/116; local runtime PHP 7.4.33",
+    "external_dependency_contract_identity": {
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "registered": 8,
+        "open_blocking": []
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-08-27T13:56:13+07:00",
+    "issuance_note": "Issued after MD-B08-A002 stage-entry re-review at 139 mandatory + 96 reference/context (A001 closed at 138+97). Corrects MD-S067-R0010, a standalone paragraph the classification gate cannot group into any run. Unlike MD-B07-A002 the obligation was genuinely unproven: collapsing the retained reason map passed all 1946 tests, so this attempt adds a behavioural guard."
+}

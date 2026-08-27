@@ -25,15 +25,29 @@ foreach ($rows as &$row) {
     }
     $seen++;
     $parts = array_values(array_filter(array_map('trim', explode(' | ', $row['notes'])), static function ($part) {
-        return $part !== '' && strpos($part, 'MD-B07-A001: proof_binding=') !== 0;
+        if ($part === '') {
+            return false;
+        }
+        foreach (['MD-B07-A001', 'MD-B07-A002'] as $attempt) {
+            if (strpos($part, $attempt.': proof_binding=') === 0) {
+                return false;
+            }
+        }
+
+        return true;
     }));
+    // A predicate first bound by the A002 correction carries the A002 pair; the rest stay on A001.
+    $boundAttempt = MarketDataSourceAcquisitionProofGate::REMEDIATION_EVIDENCE_RULES[$row['rule_id']] ?? 'MD-B07-A001';
+    $boundEvidence = $boundAttempt === 'MD-B07-A001'
+        ? MarketDataSourceAcquisitionProofGate::EVIDENCE
+        : MarketDataSourceAcquisitionProofGate::REMEDIATION_EVIDENCE;
     $row['coverage_status'] = 'SATISFIED';
-    $row['current_evidence_ids'] = MarketDataSourceAcquisitionProofGate::EVIDENCE;
-    $binding = 'MD-B07-A001: proof_binding='.MarketDataSourceAcquisitionProofGate::EVIDENCE
+    $row['current_evidence_ids'] = $boundEvidence;
+    $binding = $boundAttempt.': proof_binding='.$boundEvidence
         .'; proof_family='.MarketDataSourceAcquisitionProofGate::familyAssignment()[$row['rule_id']]
         .'; proof_chain=current authority -> actual implementation -> positive and fail-closed tests -> compatibility/residue check -> governed evidence';
     if (isset(MarketDataSourceAcquisitionProofGate::REMEDIATED_RULES[$row['rule_id']])) {
-        $binding .= '; remediated_at=MD-B07-A001 ('.MarketDataSourceAcquisitionProofGate::REMEDIATED_RULES[$row['rule_id']].')';
+        $binding .= '; remediated_at='.$boundAttempt.' ('.MarketDataSourceAcquisitionProofGate::REMEDIATED_RULES[$row['rule_id']].')';
         $remediated++;
     }
     $parts[] = $binding;

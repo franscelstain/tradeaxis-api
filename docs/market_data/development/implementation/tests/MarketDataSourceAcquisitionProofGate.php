@@ -7,6 +7,14 @@ final class MarketDataSourceAcquisitionProofGate
 {
     public const EVIDENCE = 'E-MD-B07-A001-001';
 
+    /** MD-B07-A002 evidence for the predicate the A001 entry review never examined. */
+    public const REMEDIATION_EVIDENCE = 'E-MD-B07-A002-001';
+
+    /** rule id => the attempt/evidence that binds it, when it is not the A001 pair. */
+    public const REMEDIATION_EVIDENCE_RULES = [
+        'MD-S066-R0002' => 'MD-B07-A002',
+    ];
+
     public const REMEDIATED_RULES = [
         'MD-S053-R0004' => 'raw, accepted, rejected, failure, and canonical lineage now share immutable observation identities',
         'MD-S053-R0064' => 'observation envelopes now persist run, batch, checkpoint, and requested scope',
@@ -28,6 +36,8 @@ final class MarketDataSourceAcquisitionProofGate
         'MD-S054-R0018' => 'conflicting duplicates are quarantined without captured-at/latest-wins selection',
         'MD-S055-R0024' => 'canonical rows preserve stable listing plus exact observation and mapping revision linkage',
         'MD-S066-R0001' => 'request and payload evidence redact secret query and authorization material',
+        'MD-S066-R0002' => 'token, cookie, and key material is masked in the stored observation envelope '
+            .'and in the persisted acquisition checkpoint cache',
     ];
 
     /** @return array<string,array{surfaces:array<int,string>,methods:array<int,array{0:string,1:string}>}> */
@@ -95,6 +105,7 @@ final class MarketDataSourceAcquisitionProofGate
                     ['tests/Unit/MarketData/SourceObservationImmutabilityTest.php', 'test_the_run_manifest_hash_moves_when_an_observation_is_added'],
                     ['tests/Unit/MarketData/MarketDataOrdersOneToFourFoundationTest.php', 'test_source_observation_is_append_only_redacted_and_manifest_bound'],
                     ['tests/Unit/MarketData/MarketDataOrdersOneToFourFoundationTest.php', 'test_acquisition_fails_closed_when_raw_observation_cannot_be_persisted'],
+                    ['tests/Unit/MarketData/ApiBackfillLifecycleStaticGuardTest.php', 'test_source_acquisition_cache_is_slim_valid_json_and_sanitized'],
                 ],
             ],
             'schema' => [
@@ -205,7 +216,7 @@ final class MarketDataSourceAcquisitionProofGate
         $bind('MD-S054', [12, 19], 'date_window');
         $bind('MD-S054', [13, 14, 15, 16, 17, 18], 'canonical_handoff');
 
-        foreach (['MD-S020-R0010', 'MD-S058-R0048', 'MD-S066-R0001'] as $rule) {
+        foreach (['MD-S020-R0010', 'MD-S058-R0048', 'MD-S066-R0001', 'MD-S066-R0002'] as $rule) {
             [$document, $number] = MarketDataSourceAcquisitionTraceabilitySpec::splitRule($rule);
             $bind($document, [$number], 'observation');
         }
@@ -254,14 +265,16 @@ final class MarketDataSourceAcquisitionProofGate
             }
             $row = $required[$rule];
             $counts['denominator']++;
-            if ($row['coverage_status'] !== 'SATISFIED' || $row['current_evidence_ids'] !== self::EVIDENCE) {
-                $errors[] = $rule.': current A001 proof binding is not exact';
+            $boundAttempt = self::REMEDIATION_EVIDENCE_RULES[$rule] ?? 'MD-B07-A001';
+            $boundEvidence = $boundAttempt === 'MD-B07-A001' ? self::EVIDENCE : self::REMEDIATION_EVIDENCE;
+            if ($row['coverage_status'] !== 'SATISFIED' || $row['current_evidence_ids'] !== $boundEvidence) {
+                $errors[] = $rule.': current '.$boundAttempt.' proof binding is not exact';
                 $counts['unbound']++;
             } else {
                 $counts['satisfied']++;
             }
-            if (isset(self::REMEDIATED_RULES[$rule]) && strpos($row['notes'], 'remediated_at=MD-B07-A001') === false) {
-                $errors[] = $rule.': remediated rule does not record MD-B07-A001';
+            if (isset(self::REMEDIATED_RULES[$rule]) && strpos($row['notes'], 'remediated_at='.$boundAttempt) === false) {
+                $errors[] = $rule.': remediated rule does not record '.$boundAttempt;
             }
             foreach ($proof['surfaces'] as $surface) {
                 if (! file_exists($root.'/'.$surface)) {
@@ -286,9 +299,20 @@ final class MarketDataSourceAcquisitionProofGate
             $errors[] = 'EVIDENCE: issued proof record is missing, malformed, or miscorrelated';
         }
 
+        $remediationPath = $root.'/docs/market_data/records/evidence/'.self::REMEDIATION_EVIDENCE
+            .'_CREDENTIAL_MASKING_ACROSS_ACQUISITION_SURFACES.json';
+        $remediationEvidence = file_exists($remediationPath)
+            ? json_decode(file_get_contents($remediationPath), true) : null;
+        if (! is_array($remediationEvidence)
+            || ($remediationEvidence['evidence_id'] ?? null) !== self::REMEDIATION_EVIDENCE
+            || ($remediationEvidence['baseline_id'] ?? null) !== 'MD-B07-A002-BL001'
+            || ($remediationEvidence['change_impact_declaration'] ?? null) !== 'CI-MD-B07-A002-001') {
+            $errors[] = 'EVIDENCE: issued A002 proof record is missing, malformed, or miscorrelated';
+        }
+
         $expected = MarketDataSourceAcquisitionTraceabilitySpec::EXPECTED_B07_DENOMINATOR;
         if ($counts !== ['denominator' => $expected, 'satisfied' => $expected, 'unbound' => 0]) {
-            $errors[] = 'COUNTS: expected exact A001 closure proof at '.$expected.'/'.$expected;
+            $errors[] = 'COUNTS: expected exact A001+A002 closure proof at '.$expected.'/'.$expected;
         }
 
         return ['errors' => $errors, 'counts' => $counts, 'status' => $errors === [] ? 'PASS' : 'FAIL'];

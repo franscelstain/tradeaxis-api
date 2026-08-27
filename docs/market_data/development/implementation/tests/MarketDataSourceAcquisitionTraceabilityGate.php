@@ -61,7 +61,10 @@ final class MarketDataSourceAcquisitionTraceabilityGate
             if ($expectedContext !== 'SELF_CONTAINED') {
                 $counts['contextual']++;
             }
-            if (strpos($row['notes'], MarketDataSourceAcquisitionTraceabilitySpec::ATTEMPT
+            $expectedAttempt = isset(MarketDataSourceAcquisitionTraceabilitySpec::REMEDIATED_RULES[$row['rule_id']])
+                ? MarketDataSourceAcquisitionTraceabilitySpec::REMEDIATION_ATTEMPT
+                : MarketDataSourceAcquisitionTraceabilitySpec::ATTEMPT;
+            if (strpos($row['notes'], $expectedAttempt
                 .': applicability_normalized=MANDATORY') === false
                 || strpos($row['notes'], 'predicate_context='.$expectedContext) === false
                 || strpos($row['notes'], 'normalized_predicate=') === false

@@ -1,0 +1,34 @@
+{
+    "baseline_id": "MD-B07-A002-BL001",
+    "stage_id": "MD-B07",
+    "attempt_id": "MD-B07-A002",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260823-001",
+    "strategy_freeze_manifest_sha1": "346300DB6E5356277EA7F97AF36E2F9AD46ADA60",
+    "strategy_tree_fingerprint_sha1": "0AD24570E7127FBB7F1CC1648B0F8EBC7BAC02F7",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "A459DC24761B1655950DEC35D5679AEB9903DB8E",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "CDFB574FA099E6F789516CE96EFAB2D69A18E50D",
+    "source_revision": "1b11d43f8f4185ccf2a23d386de2a00699c2f149",
+    "source_revision_branch": "master",
+    "working_tree": "DIRTY+5C870CEDCED29A691B8733EED4D4246E61031404",
+    "app_code_fingerprint_sha1": "34C1CD6CB7AA7814F021AA0B79B9345CBB97C68D",
+    "tests_fingerprint_sha1": "C4BA31440FB9B645BC88A8D25711F693F0199C86",
+    "schema_config_identity": "schema:370A6ED06E098C3090473B03CAE9A87BD4A1CF4E;config:CDA52E5CFA3414EF94B3C16A4D3C118A692D7165;migrations:64B362C0E04B06582FEA9921F55BEDA64AD58BAA",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "B07-A002 traceability-correction attempt; predecessor B13 closed; local runtime PHP 7.4.33",
+    "external_dependency_contract_identity": {
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "registered": 8,
+        "open_blocking": []
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-08-27T13:17:51+07:00",
+    "issuance_note": "Issued after MD-B07-A002 stage-entry re-review at 116 mandatory + 51 reference/context (A001 closed at 115+52). Corrects MD-S066-R0002, the single B07-owned row the A001 normalization never examined because MD-S066 is not a source document and the rule was absent from EXTERNAL_RULES. No application or runtime mutation is required: the masking behaviour is already implemented and guarded; only the proof binding was missing."
+}

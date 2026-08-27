@@ -83,7 +83,7 @@ final class MarketDataSourceResilienceTraceabilityGate
             if ($expectedContext !== 'SELF_CONTAINED') {
                 $counts['contextual']++;
             }
-            if (strpos($row['notes'], MarketDataSourceResilienceTraceabilitySpec::ATTEMPT
+            if (strpos($row['notes'], (isset(MarketDataSourceResilienceTraceabilitySpec::REMEDIATED_RULES[$row['rule_id']]) ? MarketDataSourceResilienceTraceabilitySpec::REMEDIATION_ATTEMPT : MarketDataSourceResilienceTraceabilitySpec::ATTEMPT)
                 .': applicability_normalized=MANDATORY') === false
                 || strpos($row['notes'], 'predicate_context='.$expectedContext) === false
                 || strpos($row['notes'], 'normalized_predicate=') === false

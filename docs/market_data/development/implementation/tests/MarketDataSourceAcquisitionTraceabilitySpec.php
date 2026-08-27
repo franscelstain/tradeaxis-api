@@ -7,7 +7,24 @@ final class MarketDataSourceAcquisitionTraceabilitySpec
 
     public const STAGE = 'MD-B07';
 
-    public const EXPECTED_B07_DENOMINATOR = 115;
+    /**
+     * MD-B07-A002 remediation. The A001 review drove itself from SOURCE_DOCUMENT_COUNTS plus a
+     * hand-curated EXTERNAL_RULES list and never proved those two lists covered every row the
+     * matrix assigns to this stage. MD-S066-R0002 fell through the gap: a two-sentence LOCKED
+     * contract had its first sentence bound as a mandatory predicate and its second skipped
+     * entirely, so a credential-masking obligation carried no proof obligation at all.
+     */
+    public const REMEDIATION_ATTEMPT = 'MD-B07-A002';
+
+    /** Rules whose classification MD-B07-A002 corrected, and the basis for each correction. */
+    public const REMEDIATED_RULES = [
+        'MD-S066-R0002' => 'a002_correction=promoted from REFERENCE_ONLY; the A001 entry review never '
+            .'examined this row because MD-S066 is not a source document and the rule was absent from '
+            .'EXTERNAL_RULES; it is an imperative obligation indistinguishable in form from its bound '
+            .'sibling MD-S066-R0001',
+    ];
+
+    public const EXPECTED_B07_DENOMINATOR = 116;
 
     public const SOURCE_DOCUMENT_COUNTS = [
         'MD-S053' => 226,
@@ -24,6 +41,7 @@ final class MarketDataSourceAcquisitionTraceabilitySpec
         'MD-S058-R0048',
         'MD-S059-R0040',
         'MD-S066-R0001',
+        'MD-S066-R0002',
     ];
 
     public static function ruleId(string $document, int $number): string

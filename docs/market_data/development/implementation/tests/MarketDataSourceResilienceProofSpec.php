@@ -34,7 +34,7 @@ final class MarketDataSourceResilienceProofSpec
         $bind('MD-S059', [44], 'source_recovery');
         $bind('MD-S059', [76], 'source_protection');
         $bind('MD-S059', [141], 'telemetry_traceability');
-        $bind('MD-S067', [20], 'failure_taxonomy');
+        $bind('MD-S067', [10, 20], 'failure_taxonomy');
         $bind('MD-S085', [447], 'failure_taxonomy');
 
         ksort($assignment, SORT_STRING);
@@ -109,6 +109,7 @@ final class MarketDataSourceResilienceProofSpec
                     ['tests/Unit/MarketData/EmittedReasonCodeRegistrationTest.php', 'test_b08_source_adapter_returned_run_codes_are_scanned_without_widening_downstream_scope'],
                     ['tests/Unit/MarketData/EventRiskSourceRepositoryTest.php', 'test_repository_rejects_unknown_event_type_code'],
                     ['tests/Unit/MarketData/DerivationFillsRecordedActionTest.php', 'test_unexplained_price_break_never_creates_a_synthetic_action'],
+                    ['tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php', 'test_every_distinct_failure_reason_is_retained_and_the_primary_reason_does_not_replace_them'],
                 ],
             ],
             'telemetry_traceability' => [

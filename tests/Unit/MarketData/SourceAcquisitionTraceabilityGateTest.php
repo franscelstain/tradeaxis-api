@@ -33,10 +33,10 @@ class SourceAcquisitionTraceabilityGateTest extends TestCase
         $result = MarketDataSourceAcquisitionTraceabilityGate::validate($this->rows());
 
         $this->assertSame([], $result['errors'], implode("\n", $result['errors']));
-        $this->assertSame(115, $result['counts']['b07_denominator']);
+        $this->assertSame(116, $result['counts']['b07_denominator']);
         $this->assertSame(88, $result['counts']['moved']);
         $this->assertSame(51, $result['counts']['reference']);
-        $this->assertSame(254, $result['counts']['reviewed']);
+        $this->assertSame(255, $result['counts']['reviewed']);
     }
 
     public function test_a_mixed_member_cannot_be_demoted_again(): void
@@ -104,7 +104,7 @@ class SourceAcquisitionTraceabilityGateTest extends TestCase
         $actual = array_keys(MarketDataSourceAcquisitionProofGate::proofMap());
 
         $this->assertSame($expected, $actual);
-        $this->assertCount(115, $actual);
+        $this->assertCount(116, $actual);
     }
 
     public function test_the_proof_map_names_only_existing_behavior_methods(): void

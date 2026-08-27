@@ -1,0 +1,88 @@
+{
+  "evidence_id": "E-MD-B08-A002-001",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B08",
+  "attempt_id": "MD-B08-A002",
+  "work_id": "MD-B08-A002",
+  "baseline_id": "MD-B08-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "change_impact_declaration": "CI-MD-B08-A002-001",
+  "issued_at": "2026-08-27T16:10:00+07:00",
+  "title": "Reason-code retention bound and proven as an executable MD-B08 predicate at 139/139, with the first behavioural guard the obligation has ever had",
+  "attempt_outcome": "COMPLETE — MD-S067-R0010 is promoted, bound, and proven by a new behavioural test; the B08 denominator is 139/139 with zero unbound; no application source, schema, configuration, or storage was changed.",
+  "authority_basis": [
+    "MD-S067 Error Taxonomy and Run-Status Decision Table: 'All reason codes are retained. A primary reason is routing compatibility only.'",
+    "STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md section 2: a row states an executable predicate when it can be objectively proven true or false; this row states two.",
+    "STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md section 9: correcting a classification defect is permitted without a strategy byte change when strategy meaning is unchanged."
+  ],
+  "defect_corrected": {
+    "rule": "MD-S067-R0010",
+    "prior_state": "REFERENCE_ONLY / REFERENCE_ONLY / REFERENCE_ONLY with empty notes",
+    "corrected_state": "REQUIRED / MANDATORY / SATISFIED bound to E-MD-B08-A002-001",
+    "why_prior_was_defective": "The row is the standalone paragraph closing the 'Independent dimensions' section and states two objectively testable obligations: every distinct reason code survives, and a primary reason is a routing label only.",
+    "detectability_before": "None. The row carries no list marker, so detectRuns never groups it with the eight dimension bullets above it and MIXED_RUN cannot fire. Same shape as MD-S066-R0002 in MD-B07-A002.",
+    "scope_was_not_the_cause": "Unlike MD-B07-A001, the B08 normalization examines all 233 rows the matrix assigns to the stage. This rule was examined and misclassified, not skipped."
+  },
+  "why_this_differs_from_b07": {
+    "b07": "MD-B07-A002 bound proof that already existed and was merely unclaimed; the masking guard was live and failed under mutation immediately.",
+    "b08": "This obligation was genuinely unproven. The only test naming failure_reason_summary asserted the string appears in the adapter source, which stays green while the behaviour is gone.",
+    "demonstrated": "Collapsing summarizeYahooFailureReasons() to its single most frequent entry passed the entire 1946-test suite, 18210 assertions, exit 0.",
+    "pattern": "This is the third reason-code defect in this package that a static guard failed to catch."
+  },
+  "traceability_state": {
+    "b08_denominator_before": 138,
+    "b08_denominator_after": 139,
+    "b08_reference_before": 95,
+    "b08_reference_after": 94,
+    "b08_owned_rows": 233,
+    "b08_owned_examined_by_normalization": 233,
+    "unbound": 0,
+    "rows_bound_to_E-MD-B08-A001-001": 138,
+    "rows_bound_to_E-MD-B08-A002-001": 1
+  },
+  "proof": {
+    "predicate": "A run retains every distinct reason code rather than collapsing them, and the published primary reason is a routing label that never becomes the sole record of why the run failed.",
+    "family": "failure_taxonomy",
+    "new_test": "PublicApiEodBarsAdapterTest::test_every_distinct_failure_reason_is_retained_and_the_primary_reason_does_not_replace_them",
+    "test_design": "One run over three tickers where two fail for genuinely different reasons (HTTP 429 to RUN_SOURCE_RATE_LIMIT, HTTP 500 to RUN_SOURCE_TIMEOUT) and one succeeds, so the run is partial rather than a single-cause total failure. The successful ticker is ordered first so circuit-breaker fan-out protection does not suppress it.",
+    "assertions": "Both distinct causes are present in failure_reason_summary with their own counts; the map holds exactly two entries; final_reason_code is published and non-empty; and the retained set is never reduced to the single routing reason.",
+    "falsifiability_proof": "summarizeYahooFailureReasons() was collapsed to its most frequent entry — the exact mutation that previously passed all 1946 tests — and the new test failed with 'the transient-server cause was dropped from the retained set'. The application file was restored from git and verified byte-identical to HEAD."
+  },
+  "correction_to_the_first_draft": {
+    "what": "The first draft asserted final_reason_code would be one of the two retained causes. It is not: for a partial run the adapter publishes the routing label RUN_SOURCE_PARTIAL_RESPONSE.",
+    "why_it_matters": "That is the contract working as written, not a defect. A primary reason that is not itself one of the causes is precisely why the contract forbids reading it as the reason. The assertion was corrected to what the contract states — the retained set is never reduced to the routing label — rather than to what the first draft assumed."
+  },
+  "latent_hazard_closed": {
+    "what": "The B08 normalization carried the same unguarded clearing code that unbound 30 closed predicates during MD-B07-A002: it cleared coverage_status and current_evidence_ids for every row it examined, including rows owned by other stages.",
+    "measure": "foreign_bindings_preserved reports 41 rows whose closed proof would have been unbound by a re-run.",
+    "correction": "Prior proof state is captured and restored for any row this stage does not own, with an assertion that no row arriving SATISFIED under another owner leaves the pass unbound. The scope-completeness assertion from MD-B07-A002 was added as well; it reports 233 of 233."
+  },
+  "test_execution": {
+    "b08_failure_taxonomy_surface": "75 tests, 335 assertions, 0 failures, exit 0",
+    "new_test_alone": "1 test, 9 assertions, exit 0"
+  },
+  "residue_verdict": {
+    "scope": "The reason-retention predicate and the B08 normalization scope/binding mechanism.",
+    "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_THE_CORRECTED_B08_SURFACE",
+    "basis": "No application source, migration, configuration, or stored row was altered. The executable additions are one behavioural test and two normalization guards, all demonstrated falsifiable."
+  },
+  "runtime_artifact_boundary": {
+    "storage_inspected": false,
+    "storage_mutated": false,
+    "database_mutated": false
+  },
+  "open_items_after": [
+    "MD-B09, MD-B11 and MD-B12 still carry obligation-shaped reference rows with no recorded decision: 2, 15 and 5 respectively.",
+    "The classification consistency gate still cannot see an obligation-bearing paragraph row filed as reference outside a mixed enumerated run. Two stages have now been corrected by hand for defects of exactly this shape.",
+    "No governance gate verifies that a closed stage still holds its proof bindings. Only the MD-B07 and MD-B08 normalizations now guard against unbinding another stage; the remaining stage normalizations carry the same code."
+  ],
+  "relationship_requirements": [
+    "MD-B08-A002-BL001 -> SC-MD-B08-A001-001 (stage precondition)",
+    "CI-MD-B08-A002-001 -> MD-B08-A002-BL001 (declaration bound to baseline)",
+    "E-MD-B08-A002-001 -> MD-B08-A002-BL001 and CI-MD-B08-A002-001 (evidence correlation)",
+    "E-MD-B08-A002-001 -> E-MD-B08-A001-001 (additive lineage; no supersession)"
+  ],
+  "supersedes": "Nothing. E-MD-B08-A001-001 is not edited and its 138 bindings stand unchanged. This record adds the 139th."
+}
