@@ -120,6 +120,12 @@ class IndicatorVectorService
             'factor_set_hash' => $config['factor_set_hash'] ?? null,
             'price_product_version' => (string) ($config['price_product_version'] ?? MarketDataSemanticBindings::PRICE_PRODUCT_VERSION),
             /*
+             * The liquidity metrics carry their own formula identity, separate from the operator's
+             * indicator set version. Their label resolves on this, so keying it to a configurable
+             * set version would make the actual-versus-proxy marker resolvable only by coincidence.
+             */
+            'liquidity_formula_version' => MarketDataSemanticBindings::LIQUIDITY_FORMULA_VERSION,
+            /*
              * The vector must state which price product it was computed on. Without it a consumer
              * cannot tell an adjusted series from an unadjusted one, and the two are not
              * comparable: a split-affected window differs by the split ratio, not by a few

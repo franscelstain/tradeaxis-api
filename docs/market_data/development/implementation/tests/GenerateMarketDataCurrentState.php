@@ -158,14 +158,20 @@ if (preg_match('/\*\*Single exact next executable resume point:\*\*\s*([^\r\n]+)
     $resume = trim($match[1]);
 }
 $currentStage = 'UNRESOLVED';
-if (preg_match('/`?(MD-B\d{2})-A\d{3}`?/', $resume, $match)) {
-    // Resume wording may say open/continue/run/apply. The governed attempt identity, not a verb,
-    // determines the current executable stage. Requiring the literal word 'open' made generated
-    // CURRENT_STATE silently omit an already-open stage after a proof-cycle handoff.
-    $currentStage = $match[1];
-} elseif (preg_match('/`?(MD-B\d{2})`?/', $resume, $match)) {
+/*
+ * Resume wording may say open/continue/run/apply, so the governed stage identity rather than a verb
+ * determines the current executable stage. Requiring the literal word 'open' once made generated
+ * CURRENT_STATE silently omit an already-open stage after a proof-cycle handoff.
+ *
+ * The left-hand boundary is load-bearing. Record identifiers embed stage-attempt-shaped substrings —
+ * `F-MD-B01-A008-001` contains `MD-B01-A008` — so an unanchored search finds the finding a resume
+ * sentence merely cites instead of the stage it actually names. That is a silent wrong answer, not a
+ * failure: MD-B13 closure produced a CURRENT_STATE reporting MD-B01 as current because the resume
+ * point cited a finding. A stage token is only a stage token when nothing identifier-like precedes it.
+ */
+if (preg_match('/(?<![A-Za-z0-9-])(MD-B\d{2})(-A\d{3})?/', $resume, $match)) {
     // A terminal closure can legitimately resume at an unopened successor stage before an
-    // Attempt/Baseline exists. Preserve that stage identity instead of reporting UNRESOLVED.
+    // Attempt/Baseline exists, so the attempt suffix is optional rather than required.
     $currentStage = $match[1];
 }
 

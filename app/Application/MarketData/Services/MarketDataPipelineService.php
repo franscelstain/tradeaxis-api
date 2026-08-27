@@ -3,6 +3,7 @@
 namespace App\Application\MarketData\Services;
 
 use App\Application\MarketData\DTOs\MarketDataStageInput;
+use App\Domain\MarketData\LiquidityMetricLabelRegistry;
 use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
 use App\Infrastructure\Persistence\MarketData\EodCorrectionRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
@@ -111,6 +112,7 @@ class MarketDataPipelineService
         'factor_set_hash',
         'price_product_code',
         'price_product_version',
+        'liquidity_formula_version',
         'adv20_traded_value_idr_actual',
         'adv20_close_volume_proxy_idr',
         'atr14',
@@ -157,6 +159,8 @@ class MarketDataPipelineService
     private $impactReprocess;
     private $governanceBindings;
 
+    private $liquidityLabels;
+
     public function __construct(
         EodRunRepository $runs,
         EodBarsIngestService $barsIngest,
@@ -172,7 +176,8 @@ class MarketDataPipelineService
         CoverageGateEvaluator $coverageGateEvaluator,
         BenchmarkBarsIngestService $benchmarkBarsIngest = null,
         MarketDataImpactReprocessExecutor $impactReprocess = null,
-        PublicationGovernanceBindingService $governanceBindings = null
+        PublicationGovernanceBindingService $governanceBindings = null,
+        LiquidityMetricLabelService $liquidityLabels = null
     ) {
         $this->runs = $runs;
         $this->barsIngest = $barsIngest;
@@ -189,6 +194,7 @@ class MarketDataPipelineService
         $this->benchmarkBarsIngest = $benchmarkBarsIngest;
         $this->impactReprocess = $impactReprocess;
         $this->governanceBindings = $governanceBindings ?: app(PublicationGovernanceBindingService::class);
+        $this->liquidityLabels = $liquidityLabels ?: new LiquidityMetricLabelService();
     }
 
     public function startStage(MarketDataStageInput $input)
@@ -985,6 +991,63 @@ class MarketDataPipelineService
         }
     }
 
+    /**
+     * Refuse to seal a candidate carrying a liquidity metric with no persisted actual-versus-proxy
+     * marker.
+     *
+     * The contract states the consequence directly: an unlabelled liquidity metric may not be
+     * published, and an absent marker does not mean proxy. Placing the check at seal rather than at
+     * write is deliberate — the prohibition is on publication, and a candidate that never becomes
+     * readable has published nothing.
+     */
+    private function assertLiquidityMetricsLabelled($run, MarketDataStageInput $input): void
+    {
+        $unlabelled = array_merge(
+            $this->liquidityLabels->unlabelledPublishedMetrics(
+                'eod_indicators',
+                'trade_date',
+                $input->requestedDate,
+                LiquidityMetricLabelRegistry::SCOPE_INDICATOR_ROW,
+                'liquidity_formula_version',
+                ['run_id' => $run->run_id]
+            ),
+            $this->liquidityLabels->unlabelledPublishedMetrics(
+                'eod_bars',
+                'trade_date',
+                $input->requestedDate,
+                LiquidityMetricLabelRegistry::SCOPE_BAR_ROW,
+                null,
+                ['run_id' => $run->run_id]
+            )
+        );
+
+        if ($unlabelled === []) {
+            return;
+        }
+
+        $detail = implode(', ', $unlabelled);
+        $this->runs->appendEvent(
+            $run,
+            $input->stage,
+            'SEAL_BLOCKED',
+            'ERROR',
+            'Seal blocked because a populated liquidity metric carries no persisted actual-versus-proxy marker.',
+            'RUN_SEAL_UNLABELLED_LIQUIDITY_METRIC',
+            ['unlabelled_liquidity_metrics' => $unlabelled]
+        );
+        $this->runs->failStage(
+            $run,
+            $input->stage,
+            'RUN_SEAL_UNLABELLED_LIQUIDITY_METRIC',
+            'Cannot seal a dataset whose liquidity metrics are unlabelled: '.$detail
+        );
+
+        throw new \RuntimeException(
+            'RUN_SEAL_UNLABELLED_LIQUIDITY_METRIC: '.$detail
+            .' carry a value with no persisted actual-versus-proxy marker; an unlabelled liquidity metric may not be published.'
+        );
+    }
+
     public function completeSeal(MarketDataStageInput $input)
     {
         [$run, $correction, $priorCurrent] = $this->startStage($input);
@@ -997,6 +1060,8 @@ class MarketDataPipelineService
             $this->runs->failStage($run, $input->stage, 'RUN_SEAL_PRECONDITION_FAILED', 'Cannot seal dataset before all mandatory hashes and publication row counts exist.');
             throw new \RuntimeException('RUN_SEAL_PRECONDITION_FAILED: cannot seal dataset before all mandatory hashes and publication row counts exist.');
         }
+
+        $this->assertLiquidityMetricsLabelled($run, $input);
 
         $coverageGateState = strtoupper(trim((string) ($run->coverage_gate_state ?? '')));
         if ($coverageGateState !== 'PASS') {

@@ -1382,6 +1382,14 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
             'provides_ohlcv' => true,
             'provides_provider_adjusted_close_as_evidence_only' => true,
             'provides_actual_traded_value' => false,
+            /*
+             * Volume unit identity is a mandatory declaration, not a default. Yahoo's chart series
+             * reports `volume` in traded share units for IDX equities, so no lot multiplier applies
+             * and the normalization factor is 1. Declaring it here is what lets the platform record
+             * the evidence the contract requires instead of assuming the unit.
+             */
+            'volume_unit' => \App\Domain\MarketData\MarketDataSemanticBindings::CANONICAL_VOLUME_UNIT_CODE,
+            'volume_unit_evidence_ref' => 'yahoo_finance:chart_v8:indicators.quote.volume=traded_share_units',
             'provides_official_board_or_trading_status' => false,
             'provides_authoritative_corporate_actions' => false,
             'supports_point_in_time_identity_without_internal_mapping' => false,

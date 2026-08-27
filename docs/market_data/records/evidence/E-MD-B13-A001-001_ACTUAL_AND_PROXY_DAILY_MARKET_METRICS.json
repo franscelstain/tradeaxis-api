@@ -1,0 +1,213 @@
+{
+  "evidence_id": "E-MD-B13-A001-001",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B13",
+  "attempt_id": "MD-B13-A001",
+  "work_id": "MD-B13-A001",
+  "baseline_id": "MD-B13-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze": "MD-STRATEGY-FREEZE-20260823-001",
+  "change_impact_declaration": "CI-MD-B13-A001-001",
+  "issued_at": "2026-08-27T09:25:00+07:00",
+  "title": "Persisted actual-versus-proxy liquidity labelling, evidenced volume-unit identity and aggregate-capability applicability proof for MD-B13-A001",
+  "attempt_outcome": "COMPLETE — the actual-versus-proxy marker is a stored, queryable property of every published liquidity metric; volume unit identity is evidenced rather than assumed; the actual traded-value required-field set is enforced on the populated path; and the optional aggregate dataset is evidenced as not requested rather than presumed either way.",
+  "authority_basis": {
+    "primary_stage": "MD-B13",
+    "strategy_documents": [
+      "MD-S042",
+      "MD-S086"
+    ],
+    "predecessor_closure": "SC-MD-B12-A001-001",
+    "note": "MD-B12 is a stage precondition supplying the coherent RAW/STRUCTURAL_ADJUSTED product boundary the proxy basis rules depend on. No B12 predicate proof is inherited into B13."
+  },
+  "execution_environment": {
+    "execution_mode": "IN_SESSION_LOCAL_EXECUTION",
+    "php_version": "7.4.33",
+    "phpunit_version": "9.6.34",
+    "database_engine": "10.4.27-MariaDB",
+    "primary_database": "tradeaxis",
+    "test_database": "tradeaxis_testing",
+    "applied_migration_count": 80,
+    "applied_migration_head": "2026_08_27_000001_add_liquidity_metric_labelling_and_volume_unit_identity",
+    "schema_drift_state": "CLOSED_BY_FORWARD_MIGRATION",
+    "schema_drift_note": "tradeaxis_testing was four migrations behind at attempt entry and was brought forward by applying the outstanding forward migrations. No deployed database was edited to match code and no mirror was edited to match a stale deployment."
+  },
+  "raw_artifact_manifest": {
+    "manifest_path": "storage/app/market-data/evidence/MD-B13-A001/MANIFEST.json",
+    "manifest_sha256": "516A0FAA9B9E1CC3F80DB65E78C6B1A8980F38A681688BA319B0D02AEAFAB259",
+    "artifact_count": 6
+  },
+  "executed_proof": [
+    {
+      "execution_id": "MD-B13-A001-001",
+      "kind": "TARGETED_RUNTIME",
+      "command": "php vendor/bin/phpunit --filter \"LiquidityMetricLabellingTest|VolumeUnitAndTurnoverBoundaryTest|UnlabelledLiquidityMetricPublicationTest|ActualAndProxyLiquiditySemanticsTest|ActualTradedValueProvenanceTest\"",
+      "verdict": "PASS",
+      "tests": 55,
+      "assertions": 198,
+      "failures": 0,
+      "errors": 0,
+      "exit_code": 0,
+      "artifact_path": "storage/app/market-data/evidence/MD-B13-A001/MD-B13-A001-001_targeted_liquidity_proof.txt",
+      "sha256": "FA4E478105675206866014C0CD48BCCBC5EB006DB4DBB4D7E144541F7DAD87B4",
+      "supports": "All eleven B13 proof families: positive and fail-closed behaviour for labelling, unit identity, actual traded-value provenance, proxy construction and the metric domain boundary."
+    },
+    {
+      "execution_id": "MD-B13-A001-002",
+      "kind": "FULL_REGRESSION",
+      "command": "php vendor/bin/phpunit",
+      "verdict": "PASS",
+      "tests": 1946,
+      "assertions": 18130,
+      "failures": 0,
+      "errors": 0,
+      "exit_code": 0,
+      "artifact_path": "storage/app/market-data/evidence/MD-B13-A001/MD-B13-A001-002_full_suite.txt",
+      "sha256": "810AC0D52D7319CD4902D2F6CBCB657C8ED1143CE17201DAA1DFAFCBAC3E6F5D",
+      "supports": "No B00..B12 surface regressed under the B13 labelling, unit-identity, hash-composition and read-product changes. Predecessor baseline was 1891 tests / 17908 assertions at SC-MD-B12-A001-001."
+    },
+    {
+      "execution_id": "MD-B13-A001-003",
+      "kind": "PROOF_MUTATION_SELF_TEST",
+      "command": "php docs/market_data/development/implementation/tests/MarketDataLiquidityMetricProofSelfTest.php",
+      "verdict": "PASS",
+      "checks": 12,
+      "control_failed": [],
+      "exit_code": 0,
+      "artifact_path": "storage/app/market-data/evidence/MD-B13-A001/MD-B13-A001-003_proof_mutation_self_test.json",
+      "sha256": "66C7141B8F4068A041828D8F758C9EB99AE09A4AC4E60BA4404A2831F7F239C9",
+      "supports": "Both control entries passed before any mutation verdict was read, so each of the ten mutation FAIL verdicts is attributable to its mutation rather than to a gate that was already failing."
+    },
+    {
+      "execution_id": "MD-B13-A001-004",
+      "kind": "STATIC_INVARIANT_GATE",
+      "command": "php docs/market_data/development/implementation/tests/MarketDataLiquidityMetricStaticGate.php",
+      "verdict": "PASS",
+      "scanned_files": 230,
+      "aggregate_capability_state": "NOT_REQUESTED_NO_SURFACE",
+      "exit_code": 0,
+      "artifact_path": "storage/app/market-data/evidence/MD-B13-A001/MD-B13-A001-004_static_invariant_gate.json",
+      "sha256": "0E42F9461742D5B4A53121F595DC0C6BC81F0CEFFF7BF7A6098DD5293ADCB9A7",
+      "supports": "The dv* naming prohibition, the lot-size boundary, the adjusted-price-times-raw-volume prohibition, and the evidenced absence of any aggregate market-metrics surface."
+    },
+    {
+      "execution_id": "MD-B13-A001-005",
+      "kind": "TRACEABILITY_GATE",
+      "command": "php docs/market_data/development/implementation/tests/MarketDataLiquidityMetricTraceabilityGate.php",
+      "verdict": "PASS",
+      "mode": "PRE_RUNTIME",
+      "exit_code": 0,
+      "artifact_path": "storage/app/market-data/evidence/MD-B13-A001/MD-B13-A001-005_traceability_gate_pre_runtime.json",
+      "sha256": "8E6576EAFEC97CF7A1591DDBDA878825293ED3B4700F23F4313DB9313FB86880",
+      "supports": "Entry partition of 33 mandatory / 14 conditional-pending / 13 reference-context with zero transitional applicability, captured before binding."
+    },
+    {
+      "execution_id": "MD-B13-A001-006",
+      "kind": "PROOF_READINESS_GATE",
+      "command": "php docs/market_data/development/implementation/tests/MarketDataLiquidityMetricProofGate.php",
+      "verdict": "PASS",
+      "denominator": 33,
+      "proof_map_count": 33,
+      "proof_families_used": 11,
+      "exit_code": 0,
+      "artifact_path": "storage/app/market-data/evidence/MD-B13-A001/MD-B13-A001-006_proof_readiness_gate.json",
+      "sha256": "04B8E9153B38168AAB81FDAAB5E8929132274C0346E899E3D2D179668083667F",
+      "supports": "Exactly 33 mandatory predicates mapped to 11 proof families, each with an existing implementation surface and both a positive and a fail-closed proof method."
+    },
+    {
+      "execution_id": "MD-B13-A001-007",
+      "kind": "PHP_SYNTAX_CONTROL",
+      "command": "php -l across app/, tests/, database/migrations/, config/ and the Market Data implementation tooling",
+      "verdict": "PASS",
+      "checked": 537,
+      "failed": 0,
+      "supports": "No syntax defect was introduced across the surfaces this attempt touched."
+    }
+  ],
+  "required_semantics_proven": [
+    "RAW volume stores source-reported traded share units only after verified unit normalization, and provider unit identity plus normalization evidence are recorded on the observation that carried the volume.",
+    "No lot multiplier is applied when the source unit is shares; a lot-reporting or undeclared source fails closed rather than being converted, because market-data owns no position-sizing configuration.",
+    "Zero volume is preserved as a real source-backed value, distinct from a missing volume and from a missing bar, and it lowers the proxy rather than being skipped.",
+    "Structural-adjusted volume remains a separate analytical field and never overwrites raw volume.",
+    "traded_value_idr_actual is populated only from a source field representing actual Regular-Market traded value, with source, currency, market segment, observed date and quality state required on the populated path; an unavailable value is NULL and a proxy-derived value is refused.",
+    "Trade count is source-backed and separately nullable from the traded value in both directions.",
+    "The close-volume proxy is RAW close multiplied by RAW volume from the raw series only, and remains so when every other indicator runs on the structural-adjusted series.",
+    "Formula version, price basis, window length and an explicit actual-versus-proxy marker are queryable fields resolvable from the same publication context as the metric they label.",
+    "A populated liquidity metric with no persisted marker is unlabelled rather than presumed a proxy, and the seal stage refuses to publish it.",
+    "The dv20_idr alias declares its target field and an explicit retirement condition; the explicitly named proxy field exists in its own right and the alias does not stand in for it; no new artifact, column or field is named dv* or otherwise implies traded value without stating its basis.",
+    "Source precision is preserved with rounding only at the locked two-decimal storage boundary, and no raw volume or historical value is rewritten to repair a proxy.",
+    "Every declared liquidity metric states its kind, units, market basis, window and quality-state pointer, and no metric surface owned by this stage carries a market-timing, buy/sell, ranking or portfolio-recommendation semantic."
+  ],
+  "applicability_decisions": [
+    {
+      "decision": "MD-S042 aggregate market-metrics predicates are CONDITIONAL_NOT_APPLICABLE for the current verification scope",
+      "rules": [
+        "MD-S042-R0002",
+        "MD-S042-R0003",
+        "MD-S042-R0004",
+        "MD-S042-R0005",
+        "MD-S042-R0006",
+        "MD-S042-R0007",
+        "MD-S042-R0008",
+        "MD-S042-R0009",
+        "MD-S042-R0010",
+        "MD-S042-R0011",
+        "MD-S042-R0012",
+        "MD-S042-R0013",
+        "MD-S042-R0014",
+        "MD-S042-R0016"
+      ],
+      "condition": "The market_daily_metrics aggregate publication is requested by current strategy scope.",
+      "condition_state": "FALSE",
+      "evidence": [
+        "MD-S042 itself declares the aggregate context optional in its Purpose statement.",
+        "Downstream_Consumer_Read_Model_Contract_LOCKED.md requires daily aggregate completeness/partialness state only \"where aggregates are requested\"; that is the sole aggregate obligation the consumer contract states, and it is expressly conditional.",
+        "Domain_Boundary_Invariants_LOCKED.md places factual benchmark context inside market-data ownership only as \"required by the consumer contract\", and the consumer contract does not require it.",
+        "LAYER_ACTIVATION_RULE.md permits an optional capability declared by frozen strategy to remain not requested without blocking unrelated core stages.",
+        "MD-B13-A001-004 scanned 230 PHP files across app/, database/migrations/ and config/ and found no market_daily_metrics table, model, repository, configuration key, read surface, total_traded_value_idr_actual field or total_close_volume_proxy_idr field."
+      ],
+      "fail_closed_guard": "MarketDataLiquidityMetricStaticGate reports aggregate_capability_state=SURFACE_PRESENT and lists the hits the moment any aggregate identifier appears in the scanned trees. The condition is therefore re-evaluated wherever it could become true, not only where it is already false.",
+      "not_a_pass": "NOT_APPLICABLE is recorded as a terminal applicability outcome with an evidenced false condition. It is not a claim that any aggregate predicate was proven, and it does not enter the coverage numerator or denominator."
+    },
+    {
+      "decision": "MD-S086-R0025 proof ownership reassigned to MD-B17",
+      "rules": [
+        "MD-S086-R0025"
+      ],
+      "basis": "The retirement the clause requires is executed \"through a versioned read-model change\", and demonstrating that no reader outside this package depends on the alias requires the same consumer read-surface versioning. MD-B13 can own neither, so under STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD section 7 the predicate belongs to the stage that can close it. MD-S020-R0069, the identical retirement clause for the eligible compatibility alias meaning data_usable, is already owned by MD-B17 and remains CONDITIONAL_PENDING there.",
+      "retained_by_b13": "MD-S086-R0024, R0026, R0027 and R0028 remain mandatory B13 alias-governance predicates and are proven by this evidence. The obligation is relocated, not reduced."
+    }
+  ],
+  "coverage": {
+    "mandatory_denominator": 33,
+    "mandatory_satisfied": 33,
+    "conditional_not_applicable": 14,
+    "conditional_pending": 0,
+    "reference_context": 13,
+    "transitional": 0,
+    "stage_rows": 60,
+    "binding": "All 33 current B13 mandatory predicates are atomically bound to E-MD-B13-A001-001 by MarketDataLiquidityMetricProofBinder after the fourteen conditional rows were resolved."
+  },
+  "defects_found_and_remediated_in_attempt": [
+    "The first labelling design keyed each label to the indicator row's formula_version, which is an operator-configured set version. In production no metric would ever have resolved a label and no candidate could ever have sealed. Corrected by giving the liquidity metrics their own platform-controlled liquidity_formula_version.",
+    "The seal guard first scanned every row sharing the trade date, so an unlabelled row from a prior publication blocked a new candidate. Corrected to scope the scan to the sealing run's own rows: the prohibition is on what this publication makes readable.",
+    "The read product first resolved labels from the current declaration rather than from the row, which would have stamped a marker onto pre-B13 rows that never carried one. Corrected to resolve per row and to return no label when the row states no liquidity formula version."
+  ],
+  "residue": {
+    "state": "CONFORMANT_WITH_DECLARED_HISTORICAL_GAP",
+    "notes": [
+      "Indicator rows published before this attempt carry no liquidity_formula_version and therefore resolve no label. They are not rewritten: MD-S086 forbids rewriting historical values to repair a proxy, and back-stamping a marker onto rows whose formula identity was never recorded would assert a fact that was never true. The read product reports no label for them rather than an inferred one, so the gap is visible instead of disguised.",
+      "The actual traded-value fields remain NULL because the current provider reports no traded value. That is the contract's required value, not a gap, and the required-field enforcement now runs on the populated path so a future reporting source is validated on its first row.",
+      "TOTAL_RETURN and aggregate market metrics remain outside this stage; neither is a hidden fallback."
+    ]
+  },
+  "findings_and_dependencies": {
+    "blocking_finding": "none",
+    "new_findings": "none",
+    "MD-DEP-0004": "B13 entry obligation complete; remains OPEN_NON_BLOCKING at 258 / 7 unopened downstream stages.",
+    "MD-DEP-0003": "not owned by MD-B13."
+  },
+  "no_inheritance_statement": "No predicate credit is inherited from MD-B12 or from any pre-epoch W13 work. No prior evidence, baseline or closure record was rewritten by this attempt."
+}

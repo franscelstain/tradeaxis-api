@@ -1,0 +1,34 @@
+{
+    "baseline_id": "MD-B13-A001-BL001",
+    "stage_id": "MD-B13",
+    "attempt_id": "MD-B13-A001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260823-001",
+    "strategy_freeze_manifest_sha1": "346300DB6E5356277EA7F97AF36E2F9AD46ADA60",
+    "strategy_tree_fingerprint_sha1": "0AD24570E7127FBB7F1CC1648B0F8EBC7BAC02F7",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "C090B39F78BB0B57C46E1D74236A470543CCE6F9",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "B562AD518C756EB67C6C7BE318928606F133DA5E",
+    "source_revision": "f01cb0b078bb16cd82ac5b0a26acac19d5d097c4",
+    "source_revision_branch": "master",
+    "working_tree": "CURRENT_GOVERNED_B12_CLOSED_PLUS_B13_STAGE_ENTRY_NORMALIZATION; 33 mandatory + 15 conditional-pending + 13 reference/context over 61 active B13 rows; zero transitional MANDATORY_OR_CONDITIONAL; no material B13 application/runtime/schema mutation yet",
+    "app_code_fingerprint_sha1": "7EFA54516AB576A2ED1746F78D6422BC0CB299B1",
+    "tests_fingerprint_sha1": "FC4C2B2557A6108AD56DCE6FDFF8FB015A3D446D",
+    "schema_config_identity": "schema:854C5D4C55C6A677E1D292A2BFDAFA776789FB45;config:CDA52E5CFA3414EF94B3C16A4D3C118A692D7165;migrations:3B1A3566CD90C0A75B49B232C99738C6060191DC",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "B13 runtime proof pending; predecessor B12 closed at 45/45; static workspace PHP 7.4.33",
+    "external_dependency_contract_identity": {
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "registered": 8,
+        "open_blocking": []
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-08-27T08:21:23+07:00",
+    "issuance_note": "Issued after SC-MD-B12-A001-001 and the MD-B13 stage-entry semantic revalidation of all 61 active rows (MD-S042 16, MD-S086 45). Entry state: 33 MANDATORY / 15 CONDITIONAL_PENDING / 13 REFERENCE_ONLY, transitional 0, B13 mixed-classification debt 0, MD-DEP-0004 reduced to 258/7. Issued before any material MD-B13 application/runtime/schema mutation."
+}

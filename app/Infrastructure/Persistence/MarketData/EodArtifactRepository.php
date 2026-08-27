@@ -1228,7 +1228,7 @@ class EodArtifactRepository
         foreach ([
             'listing_id', 'formula_version', 'config_snapshot_id', 'factor_set_id',
             'factor_set_hash', 'price_product_code', 'price_product_version',
-            'sector_membership_id', 'adv20_traded_value_idr_actual',
+            'sector_membership_id', 'liquidity_formula_version', 'adv20_traded_value_idr_actual',
             'adv20_close_volume_proxy_idr', 'atr14', 'atr_state_ref', 'null_reasons_json',
         ] as $field) {
             $lineage[$field] = array_key_exists($field, $source) ? $source[$field] : null;

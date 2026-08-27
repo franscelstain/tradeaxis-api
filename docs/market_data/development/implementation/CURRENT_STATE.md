@@ -5,29 +5,29 @@
 ## Verification identity and coverage
 
 - Verification epoch: `MD-REBASELINE-20260820-001`
-- Required active traceability rows: **3104**
-- Coverage denominator: **3095** (PROVISIONAL)
-- SATISFIED: **2249**
-- NOT_ASSESSED inside denominator: **846**
-- CONDITIONAL_NOT_APPLICABLE / NOT_APPLICABLE: **8 / 8**
-- CONDITIONAL_PENDING / APPLICABILITY_PENDING: **1 / 1**
-- Transitional MANDATORY_OR_CONDITIONAL: **560**
-- Verified coverage: **72.67% PROVISIONAL**
+- Required active traceability rows: **3133**
+- Coverage denominator: **3109** (PROVISIONAL)
+- SATISFIED: **2282**
+- NOT_ASSESSED inside denominator: **827**
+- CONDITIONAL_NOT_APPLICABLE / NOT_APPLICABLE: **22 / 22**
+- CONDITIONAL_PENDING / APPLICABILITY_PENDING: **2 / 2**
+- Transitional MANDATORY_OR_CONDITIONAL: **541**
+- Verified coverage: **73.4% PROVISIONAL**
 - Optional capability rules: **63**
 
 ## Current executable stage
 
-- Stage: `MD-B13`
+- Stage: `MD-B14`
 - Latest attempt / baseline: — / —
 - State / verdict: `NOT_STARTED` / —
 - Residue/rework: `NOT_ASSESSED`
-- Dependency: —
-- Open finding: —
+- Dependency: `MD-DEP-0004` at entry
+- Open finding: `F-MD-B01-A008-001` (P2; six rules)
 - Change Impact Declaration: **missing**
-- Denominator: **19** (PROVISIONAL — transitional applicability unresolved)
-- SATISFIED / NOT_ASSESSED: **0 / 19**
-- Mandatory / conditional-applicable: **0 / 0**
-- Conditional-not-applicable / conditional-pending / transitional: **0 / 0 / 19**
+- Denominator: **100** (PROVISIONAL — transitional applicability unresolved)
+- SATISFIED / NOT_ASSESSED: **0 / 100**
+- Mandatory / conditional-applicable: **27 / 0**
+- Conditional-not-applicable / conditional-pending / transitional: **0 / 0 / 73**
 
 ## Stage state index
 
@@ -46,7 +46,7 @@
 | `MD-B10` | `DONE` | `PASS` | `MD-B10-A001` | `MD-B10-A001-BL001` | `PASS` (exact 9-trigger deployed immutability + cumulative lifecycle/reconciliation/full-suite proof + rollback-safe deployed `REBUILT_AND_VERIFIED` repair + exact 1072 binding + post-binding controls) |
 | `MD-B11` | `DONE` | `PASS` | `MD-B11-A001` | `MD-B11-A001-BL001` | `PASS` (deployed B11 schema + corrected R2 targeted/external reconciliation/full-suite proof + exact 138 binding + post-binding controls) |
 | `MD-B12` | `DONE` | `PASS` | `MD-B12-A001` | `MD-B12-A001-BL001` | `PASS` (cumulative pipeline integration + corrected R3 targeted/full-suite proof + exact 45 binding + post-binding controls) |
-| `MD-B13` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
+| `MD-B13` | `DONE` | `PASS` | `MD-B13-A001` | `MD-B13-A001-BL001` | `PASS` (in-session deployed-MariaDB targeted/full-suite proof + exact 33 binding + evidenced aggregate applicability + post-binding controls) |
 | `MD-B14` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 | `MD-B15` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 | `MD-B16` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
@@ -61,11 +61,11 @@
 
 - Open findings across every stage: `F-MD-B00-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A008-001` — OPEN; `F-MD-B01-A014-001` — OPEN — total **4**
 - Open dependencies: `MD-DEP-0003` — OPEN_NON_BLOCKING; owner `owning stages MD-B03/B15/B17/B19/B21/B22`; `MD-DEP-0004` — OPEN_NON_BLOCKING; owner `each stage at entry`
-- Classification entry obligation (`MD-DEP-0004`), reference-only rows in mixed-classification runs by stage: `MD-B13` 10, `MD-B14` 65, `MD-B15` 37, `MD-B16` 17, `MD-B17` 41, `MD-B18` 43, `MD-B19` 46, `MD-B20` 9 — total **268**
-- Registered current work records: **140** (BASELINE_LOCK=34, CHANGE_IMPACT_DECLARATION=29, DECISION=7, EVIDENCE=41, FINDING=14, STAGE_CLOSURE_MANIFEST=15)
+- Classification entry obligation (`MD-DEP-0004`), reference-only rows in mixed-classification runs by stage: `MD-B14` 65, `MD-B15` 37, `MD-B16` 17, `MD-B17` 41, `MD-B18` 43, `MD-B19` 46, `MD-B20` 9 — total **258**
+- Registered current work records: **144** (BASELINE_LOCK=35, CHANGE_IMPACT_DECLARATION=30, DECISION=7, EVIDENCE=42, FINDING=14, STAGE_CLOSURE_MANIFEST=16)
 
 ## Exact resume
 
-- Single exact next executable resume point: begin `MD-B13` stage-entry preflight; rederive current B13 applicability/ownership/classification from current authority and issue the first valid B13 Baseline Lock + Change Impact Declaration before any material B13 mutation.
+- Single exact next executable resume point: begin `MD-B14` stage-entry preflight; rederive current B14 applicability/ownership/classification from current authority, including the 65 mixed-classification members and the six transferred horizon predicates of `F-MD-B01-A008-001`, and issue the first valid B14 Baseline Lock + Change Impact Declaration before any material B14 mutation.
 - Current stage source: `MD_IMPLEMENTATION_STAGE_REGISTER.md`
 - Pre-epoch W00..W22 verdicts: **historical-only**

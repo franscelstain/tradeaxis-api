@@ -2,6 +2,7 @@
 
 namespace App\Infrastructure\Persistence\MarketData;
 
+use App\Application\MarketData\Services\LiquidityMetricLabelService;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -12,6 +13,16 @@ use Illuminate\Support\Facades\DB;
  */
 class MarketDataReadProductRepository
 {
+    private $liquidityLabels;
+
+    /** @var array<string,array<string,array<string,mixed>>> */
+    private $liquidityLabelCache = [];
+
+    public function __construct(LiquidityMetricLabelService $liquidityLabels = null)
+    {
+        $this->liquidityLabels = $liquidityLabels ?: new LiquidityMetricLabelService();
+    }
+
     public function rowsForReadablePublication($publication): array
     {
         $tickersTable = config('market_data.tickers.table', 'tickers');
@@ -64,7 +75,7 @@ class MarketDataReadProductRepository
                 'ind.sector_roc20', 'ind.rs_20_vs_sector', 'ind.sector_rs_20_vs_ihsg',
                 'ind.corporate_action_flag', 'ind.corporate_action_types', 'ind.trading_status_code',
                 'ind.is_suspended', 'ind.is_uma', 'ind.event_risk_flag', 'ind.event_risk_reasons',
-                'ind.indicator_set_version', 'ind.formula_version', 'ind.null_reasons_json',
+                'ind.indicator_set_version', 'ind.formula_version', 'ind.liquidity_formula_version', 'ind.null_reasons_json',
             ])
             ->orderBy('tick.'.$tickerCode)
             ->get()
@@ -99,9 +110,58 @@ class MarketDataReadProductRepository
 
                 unset($result['roc5'], $result['roc10'], $result['roc20'], $result['dv20_idr'], $result['data_usability_reason_code']);
 
+                $result['liquidity_metric_labels'] = $this->liquidityLabelsFor($row->liquidity_formula_version);
+
                 return $result;
             })
             ->all();
+    }
+
+    /**
+     * The persisted actual-versus-proxy labelling for the liquidity metrics this response exposes,
+     * keyed by the field name the consumer actually receives.
+     *
+     * The contract requires a consumer to distinguish an actual value from a proxy "without
+     * consulting a document and without parsing a column name". Shipping the label beside the value
+     * is what makes that true of the response rather than only of the database.
+     *
+     * Resolution follows the row's own liquidity formula version, not the current declaration. A
+     * row written before the labelling existed states no version and therefore resolves nothing:
+     * reporting the current label for it would assert a marker that row never carried, which is a
+     * worse failure than reporting none.
+     *
+     * @return array<string,array<string,mixed>>
+     */
+    private function liquidityLabelsFor($liquidityFormulaVersion): array
+    {
+        $version = trim((string) $liquidityFormulaVersion);
+        if ($version === '') {
+            return [];
+        }
+
+        if (array_key_exists($version, $this->liquidityLabelCache)) {
+            return $this->liquidityLabelCache[$version];
+        }
+
+        $exposedAs = [
+            'dv20_idr' => 'dv20idr',
+            'adv20_close_volume_proxy_idr' => 'adv20_close_volume_proxy_idr',
+            'adv20_traded_value_idr_actual' => 'adv20_traded_value_idr_actual',
+        ];
+
+        $labels = [];
+        foreach ($exposedAs as $storedField => $exposedField) {
+            $label = $this->liquidityLabels->resolve($storedField, $version);
+            if ($label === null) {
+                continue;
+            }
+            $label['stored_metric_field'] = $storedField;
+            $labels[$exposedField] = $label;
+        }
+
+        $this->liquidityLabelCache[$version] = $labels;
+
+        return $labels;
     }
 
     private function decimalOrNull($value): ?float

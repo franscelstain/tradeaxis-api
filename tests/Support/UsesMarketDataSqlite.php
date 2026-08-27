@@ -707,6 +707,7 @@ trait UsesMarketDataSqlite
             $table->string('factor_set_hash', 64)->nullable();
             $table->string('price_product_code', 32)->nullable();
             $table->string('price_product_version', 64)->nullable();
+            $table->string('liquidity_formula_version', 64)->nullable();
             $table->integer('sector_membership_id')->nullable();
             $table->decimal('adv20_traded_value_idr_actual', 24, 2)->nullable();
             $table->decimal('adv20_close_volume_proxy_idr', 24, 2)->nullable();
@@ -1007,6 +1008,7 @@ trait UsesMarketDataSqlite
             $table->string('factor_set_hash', 64)->nullable();
             $table->string('price_product_code', 32)->nullable();
             $table->string('price_product_version', 64)->nullable();
+            $table->string('liquidity_formula_version', 64)->nullable();
             $table->integer('sector_membership_id')->nullable();
             $table->decimal('adv20_traded_value_idr_actual', 24, 2)->nullable();
             $table->decimal('adv20_close_volume_proxy_idr', 24, 2)->nullable();
@@ -1140,6 +1142,10 @@ trait UsesMarketDataSqlite
             $table->string('outcome_state', 32);
             $table->string('validation_state', 32)->nullable();
             $table->string('reason_code', 64)->nullable();
+            $table->string('source_volume_unit_code', 32)->nullable();
+            $table->decimal('volume_unit_normalization_factor', 18, 8)->nullable();
+            $table->string('volume_unit_normalization_state', 32)->nullable();
+            $table->string('volume_unit_evidence_ref', 255)->nullable();
             $table->integer('supersedes_observation_id')->nullable();
             $table->dateTime('created_at');
             $table->index(['run_id', 'requested_trade_date'], 'idx_md_obs_run_date');
@@ -1496,6 +1502,32 @@ trait UsesMarketDataSqlite
             $table->index(['scope_start', 'scope_end', 'authority_class'], 'idx_md_action_recon_scope');
         });
 
+        $schema->create('md_liquidity_metric_labels', function (Blueprint $table) {
+            $table->bigIncrements('liquidity_metric_label_id');
+            $table->string('metric_field', 64);
+            $table->string('metric_scope', 32);
+            $table->string('formula_version', 64);
+            $table->string('metric_kind', 16);
+            $table->string('price_basis', 32);
+            $table->integer('window_sessions')->nullable();
+            $table->string('unit_code', 16);
+            $table->string('market_scope', 32);
+            $table->string('quality_state_field', 64)->nullable();
+            $table->boolean('is_compatibility_alias')->default(false);
+            $table->string('aliases_metric_field', 64)->nullable();
+            $table->text('retirement_condition')->nullable();
+            $table->integer('config_snapshot_id')->nullable();
+            $table->dateTime('created_at');
+            $table->unique(['metric_field', 'formula_version'], 'uq_md_lml_field_version');
+            $table->index(['metric_kind', 'metric_scope'], 'idx_md_lml_kind_scope');
+            $table->index('aliases_metric_field', 'idx_md_lml_alias_target');
+        });
+
+        // The migration seeds the declared labels on clean install, so the mirror does too. A
+        // mirrored database that starts unlabelled would make every publication test fail closed
+        // for a reason the deployed schema does not have.
+        $this->seedDeclaredLiquidityMetricLabels();
+
         $schema->create('md_exchange_market_structure_revisions', function (Blueprint $table) {
             $table->bigIncrements('market_structure_revision_id');
             $table->string('rule_uid', 64);
@@ -1790,6 +1822,28 @@ trait UsesMarketDataSqlite
             ['market_code' => 'IDX', 'market_segment' => 'REGULAR', 'cal_date' => $date],
             array_merge($base, $overrides)
         );
+    }
+
+    protected function seedDeclaredLiquidityMetricLabels(): void
+    {
+        $now = '2026-01-01 00:00:00';
+        foreach (\App\Domain\MarketData\LiquidityMetricLabelRegistry::declared() as $label) {
+            DB::table('md_liquidity_metric_labels')->insert([
+                'metric_field' => $label['metric_field'],
+                'metric_scope' => $label['metric_scope'],
+                'formula_version' => $label['formula_version'],
+                'metric_kind' => $label['metric_kind'],
+                'price_basis' => $label['price_basis'],
+                'window_sessions' => $label['window_sessions'],
+                'unit_code' => $label['unit_code'],
+                'market_scope' => $label['market_scope'],
+                'quality_state_field' => $label['quality_state_field'],
+                'is_compatibility_alias' => $label['is_compatibility_alias'] ? 1 : 0,
+                'aliases_metric_field' => $label['aliases_metric_field'],
+                'retirement_condition' => $label['retirement_condition'],
+                'created_at' => $now,
+            ]);
+        }
     }
 
     protected function seedVerifiedMarketCalendarRange(string $startDate, string $endDate): void

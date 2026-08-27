@@ -23,6 +23,7 @@ class EodBarsIngestService
     private $impactResolver;
     private $observations;
     private $calendar;
+    private $actualTradedValues;
 
     public function __construct(
         ManualEodBarsSource $localSourceAdapter,
@@ -32,7 +33,8 @@ class EodBarsIngestService
         EodPublicationRepository $publications,
         EodBarsMutationImpactResolver $impactResolver = null,
         SourceObservationRepository $observations = null,
-        MarketCalendarRepository $calendar = null
+        MarketCalendarRepository $calendar = null,
+        ActualTradedValueFactService $actualTradedValues = null
     ) {
         $this->localSourceAdapter = $localSourceAdapter;
         $this->apiSourceAdapter = $apiSourceAdapter;
@@ -42,6 +44,32 @@ class EodBarsIngestService
         $this->impactResolver = $impactResolver;
         $this->observations = $observations ?: new SourceObservationRepository();
         $this->calendar = $calendar ?: new MarketCalendarRepository();
+        $this->actualTradedValues = $actualTradedValues ?: new ActualTradedValueFactService();
+    }
+
+    /**
+     * The actual traded-value fact carried by one canonical source row.
+     *
+     * The current adapter supplies no traded value, so the fact resolves to NULL and the required
+     * field set is not asserted — the contract's own answer for an unavailable value. Everything a
+     * populated value would need is assembled here regardless, so a source that starts reporting
+     * one is validated on its first row rather than on a later discovery.
+     *
+     * @param  array<string,mixed>  $row
+     * @return array<string,mixed>
+     */
+    private function actualTradedValueFact(array $row, $requestedDate): array
+    {
+        return [
+            'traded_value_idr_actual' => array_key_exists('traded_value_idr_actual', $row) ? $row['traded_value_idr_actual'] : null,
+            'trade_count_actual' => array_key_exists('trade_count_actual', $row) ? $row['trade_count_actual'] : null,
+            'source' => $this->canonicalSourceForRow($row),
+            'currency_code' => ActualTradedValueFactService::CURRENCY,
+            'market_segment' => ActualTradedValueFactService::MARKET_SEGMENT,
+            'observed_date' => $requestedDate,
+            'quality_state' => 'VALIDATED',
+            'value_origin' => $row['traded_value_origin'] ?? null,
+        ];
     }
 
     public function ingest($run, $requestedDate, $sourceMode, $priorCurrentPublication = null)
@@ -227,6 +255,8 @@ class EodBarsIngestService
                     continue;
                 }
 
+                $actualTradedValue = $this->actualTradedValues->normalize($this->actualTradedValueFact($row, $requestedDate));
+
                 $validRows[] = [
                     'trade_date' => $requestedDate,
                     'ticker_id' => $row['ticker_id'],
@@ -249,8 +279,15 @@ class EodBarsIngestService
                     'listing_id' => (int) $row['listing_id'],
                     'source_observation_id' => (int) $row['source_observation_id'],
                     'previous_close' => null,
-                    'traded_value_idr_actual' => null,
-                    'trade_count_actual' => null,
+                    /*
+                     * The current adapter reports no traded value, so both stay NULL. They are
+                     * routed through the fact service rather than hard-coded so the required
+                     * source/currency/segment/observed-date/quality-state set is enforced on the
+                     * populated path the day a source supplies one, instead of being discovered
+                     * missing at that point.
+                     */
+                    'traded_value_idr_actual' => $actualTradedValue['traded_value_idr_actual'],
+                    'trade_count_actual' => $actualTradedValue['trade_count_actual'],
                     'board_code' => $row['resolved_board_code'] ?? null,
                     'session_code' => 'REGULAR',
                     'source_timestamp' => $row['source_timestamp'] ?? null,
@@ -493,6 +530,8 @@ class EodBarsIngestService
                     continue;
                 }
 
+                $actualTradedValue = $this->actualTradedValues->normalize($this->actualTradedValueFact($row, $requestedDate));
+
                 $validRows[] = [
                     'trade_date' => $requestedDate,
                     'ticker_id' => $row['ticker_id'],
@@ -507,8 +546,15 @@ class EodBarsIngestService
                     'listing_id' => (int) $row['listing_id'],
                     'source_observation_id' => (int) $row['source_observation_id'],
                     'previous_close' => null,
-                    'traded_value_idr_actual' => null,
-                    'trade_count_actual' => null,
+                    /*
+                     * The current adapter reports no traded value, so both stay NULL. They are
+                     * routed through the fact service rather than hard-coded so the required
+                     * source/currency/segment/observed-date/quality-state set is enforced on the
+                     * populated path the day a source supplies one, instead of being discovered
+                     * missing at that point.
+                     */
+                    'traded_value_idr_actual' => $actualTradedValue['traded_value_idr_actual'],
+                    'trade_count_actual' => $actualTradedValue['trade_count_actual'],
                     'board_code' => $row['resolved_board_code'] ?? null,
                     'session_code' => 'REGULAR',
                     'source_timestamp' => $row['source_timestamp'] ?? null,

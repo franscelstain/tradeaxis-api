@@ -370,6 +370,12 @@ class SourceObservationRepository implements SourceObservationRecorder
             'outcome_state' => $source['outcome_state'] ?? 'CAPTURED',
             'validation_state' => $source['validation_state'] ?? 'PENDING',
             'reason_code' => $source['reason_code'] ?? null,
+            // Provider unit identity travels with the observation that carried the volume, so a
+            // stored volume can always be traced to the declaration that made its unit knowable.
+            'source_volume_unit_code' => $source['source_volume_unit_code'] ?? null,
+            'volume_unit_normalization_factor' => $source['volume_unit_normalization_factor'] ?? null,
+            'volume_unit_normalization_state' => $source['volume_unit_normalization_state'] ?? null,
+            'volume_unit_evidence_ref' => $source['volume_unit_evidence_ref'] ?? null,
             'supersedes_observation_id' => $source['supersedes_observation_id'] ?? null,
             'created_at' => $source['created_at'] ?? Carbon::now(config('market_data.platform.timezone', 'Asia/Jakarta'))->toDateTimeString(),
         ], $overrides);
