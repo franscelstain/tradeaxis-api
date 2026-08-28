@@ -1,0 +1,103 @@
+{
+  "evidence_id": "E-MD-B11-A002-001",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B11",
+  "attempt_id": "MD-B11-A002",
+  "work_id": "MD-B11-A002",
+  "baseline_id": "MD-B11-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "change_impact_declaration": "CI-MD-B11-A002-001",
+  "issued_at": "2026-08-28T03:05:00+07:00",
+  "title": "The last four whole prohibition sections in the package are bound at 172/172, and the remaining unbound copy of the adjustment-authority invariant is closed",
+  "attempt_outcome": "COMPLETE FOR ITS DECLARED SCOPE - 34 predicates promoted and bound. MD-B11 is not admitted to DECISION_RECORDED_STAGES: 167 non-structural reference rows remain for MD-B11-A003.",
+  "authority_basis": [
+    "MD-S011 Corporate Action verification hierarchy, effective-date hierarchy and Forbidden behavior (LOCKED).",
+    "MD-S079 Corporate Action Type Registry, Forbidden behavior (LOCKED).",
+    "MD-S080 Prohibited use (LOCKED).",
+    "MD-S084 Forbidden behavior.",
+    "STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md sections 2, 3, 8.4 and 9."
+  ],
+  "what_was_corrected": {
+    "scope": "34 rows: MD-S011 R0023 and R0044 to R0048 and R0061 to R0072 (18), MD-S079 R0129, R0130, R0131, R0135 (4), MD-S080 R0046 to R0050 (5), MD-S084 R0046 to R0052 (7).",
+    "denominator": "138 to 172; reference 273 to 239.",
+    "why_the_gate_could_not_see_them": "All four are uniformly REFERENCE_ONLY enumerated runs. MIXED_RUN fires only when a run holds both classes, so a run with nothing required in it has no mixture to detect. They were reported by UNEXPLAINED_REFERENCE, added in MD-B00-A004.",
+    "fragments_excluded": "MD-S079-R0132, R0133 and R0134 are continuation lines of the wrapped sentence headed by R0131 and stay reference; the composed predicate is recorded on R0131."
+  },
+  "headline_finding_fully_closed": {
+    "rule": "MD-S011-R0023",
+    "text": "Only AUTHORITATIVE_VERIFIED or governed MANUAL_VERIFIED revisions with complete applicable terms may be adjustment-active.",
+    "history": "This is the rule the reference-population audit used to demonstrate the whole problem: it is enforced by one line at AdjustmentFactorSetService::authoritativeEventsThrough(), and widening that filter to admit PROVIDER_REPORTED passed all 1946 tests. Because the rule was REFERENCE_ONLY, no traceability row claimed the invariant either.",
+    "status_now": "Its MD-B12 twin MD-S083-R0032 was bound in MD-B12-A002 with a new behavioural guard. This attempt binds the MD-B11 copy to the same guard. Both copies of the invariant are now claimed and protected.",
+    "guard": "AdjustmentFactorSetB11Test::test_only_authoritative_or_manual_verified_revisions_are_adjustment_active"
+  },
+  "the_gap_that_turned_out_not_to_be_one": {
+    "rules": "MD-S011-R0070 and MD-S011-R0071",
+    "expectation": "Reported as the two genuinely unguarded rules: GAP_BEYOND_EXCHANGE_BAND appeared in zero tests and GAP_AMBIGUOUS only as a fixture value.",
+    "what_the_check_found": "continuity_check_status, observed_gap_pct, GAP_BEYOND_EXCHANGE_BAND and GAP_AMBIGUOUS appear in zero files under app, config and routes. They exist only in the migration that declares the column diagnostic only, the SQLite test mirror, and three test files.",
+    "conclusion": "Both are prohibitions satisfied by construction: the diagnostic cannot justify an adjustment or clear an ambiguity because no application code reads it at all. The correct proof is a structural invariant pinning that, not a behavioural branch that does not exist.",
+    "guard_written": "CorporateActionLifecycleB11RegressionTest::test_the_continuity_diagnostic_never_reaches_an_authority_decision walks the whole app tree, asserts the scan reached more than 100 files so it cannot pass vacuously, and requires zero references to the diagnostic vocabulary.",
+    "falsifiability_proof": "A reference to continuity_check_status and GAP_BEYOND_EXCHANGE_BAND was injected into AdjustmentFactorSetService and the guard failed, naming both. The file was restored from git and verified byte-identical to HEAD."
+  },
+  "guard_coverage_verified_before_binding": {
+    "method": "Every promoted rule was mapped to a proof family and the family guard was checked to exist before any promotion was applied, rather than assumed from the family name.",
+    "existing_guards_confirmed": [
+      "MD-S011-R0063 - test_event_risk_has_no_silent_action_date_to_ex_date_promotion",
+      "MD-S011-R0061 and MD-S011-R0048 and MD-S084-R0047 - test_detector_is_candidate_only_and_uses_v2_ex_date_linkage",
+      "MD-S011-R0065 and MD-S084-R0048 - test_direct_price_derived_event_and_bar_repair_commands_are_non_mutating",
+      "MD-S011-R0064 - test_revision_is_append_only_and_supersession_preserves_event_identity",
+      "MD-S011-R0067 - test_only_unresolved_candidates_feed_indicator_quarantine",
+      "MD-S011-R0072 and MD-S084-R0051 - test_dismissal_requires_positive_evidence_and_is_append_only",
+      "MD-S011-R0062 - test_unexplained_price_break_never_creates_a_synthetic_action"
+    ],
+    "new_family": "continuity_diagnostic_boundary, with a per-rule override so MD-S011-R0070 and R0071 are not bound to verified_event_lifecycle guards that do not prove them. Family is otherwise assigned per document in this stage, which is correct for the other 170 predicates."
+  },
+  "traceability_state": {
+    "b11_denominator_before": 138,
+    "b11_denominator_after": 172,
+    "promoted": 34,
+    "b11_reference_before": 273,
+    "b11_reference_after": 239,
+    "non_structural_reference_unexplained_remaining": 167,
+    "rows_bound_to_E-MD-B11-A001-001": 138,
+    "rows_bound_to_E-MD-B11-A002-001": 34,
+    "whole_prohibition_sections_remaining_in_package": 0
+  },
+  "review_pass_guards": {
+    "named_rules_reached": "The pass aborts when a named rule is never reached. Proven by renaming MD-S011-R0070 to a non-existent id.",
+    "start_state_verified": "The pass aborts when a named rule was not REFERENCE_ONLY to begin with, so a typo cannot silently no-op.",
+    "foreign_row_isolation": "The pass aborts if it alters any row owned by another stage. Proven by injecting a mutation on MD-S083-R0032, a MD-B12 row.",
+    "why": "MD-B07-A002 unbound 30 closed predicates owned by other stages while every gate stayed green."
+  },
+  "binder_change": "MarketDataCorporateActionProofBinder accepted only A001 evidence and required the whole denominator pristine, which would have forced this attempt to unbind the 138 closed A001 predicates in order to rebind them. It now binds only the rules belonging to the attempt whose evidence id is passed.",
+  "test_execution": {
+    "b11_proof_surface": "41 tests, 146 assertions, 0 failures, exit 0",
+    "full_suite": "recorded in SC-MD-B11-A002-001"
+  },
+  "residue_verdict": {
+    "scope": "The four prohibition sections, the two date hierarchies, and the B11 review and binder tooling.",
+    "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_THE_CORRECTED_B11_SURFACE",
+    "basis": "No application source, migration, configuration, or stored row was altered. The only executable addition is one structural guard; the review-pass and binder changes are tooling."
+  },
+  "runtime_artifact_boundary": {
+    "storage_inspected": false,
+    "storage_mutated": false,
+    "database_mutated": false
+  },
+  "open_items_after": [
+    "MD-B11-A003 owns 167 non-structural reference rows: MD-S079 lifecycle semantics and modelling-gap sections, MD-S080 authority scope and auto-rejection band, and the remaining capability boundaries.",
+    "MD-B12-A003 owns 39. Those two are the last closed-stage backlogs.",
+    "GlobalConvergenceClosureTest::test_no_test_expects_a_synthetic_verified_factor ends with assertTrue(true) and passes vacuously when no source matches its filter. Out of scope here, recorded as a weak guard.",
+    "Every stage normalization other than MD-B07 and MD-B08 still carries the unguarded clearing code that can unbind another stage proof."
+  ],
+  "relationship_requirements": [
+    "MD-B11-A002-BL001 -> SC-MD-B11-A001-001 (stage precondition)",
+    "CI-MD-B11-A002-001 -> MD-B11-A002-BL001 (declaration bound to baseline)",
+    "E-MD-B11-A002-001 -> MD-B11-A002-BL001 and CI-MD-B11-A002-001 (evidence correlation)",
+    "E-MD-B11-A002-001 -> E-MD-B11-A001-001 (additive lineage; no supersession)",
+    "E-MD-B11-A002-001 -> E-MD-B12-A002-001 (the twin invariant, guarded there first)",
+    "E-MD-B11-A002-001 -> SC-MD-B00-A004-001 (the gate that surfaced these sections)"
+  ],
+  "supersedes": "Nothing. E-MD-B11-A001-001 is not edited and its 138 bindings stand. This record adds the 34 the four prohibition sections and two hierarchies were owed."
+}

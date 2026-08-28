@@ -2,8 +2,18 @@
 require_once __DIR__.'/MarketDataCorporateActionTraceabilitySpec.php';
 final class MarketDataCorporateActionProofSpec
 {
- public const STAGE='MD-B11'; public const ATTEMPT='MD-B11-A001'; public const BASELINE='MD-B11-A001-BL001'; public const CI='CI-MD-B11-A001-001'; public const EXPECTED_DENOMINATOR=138;
+ public const STAGE='MD-B11'; public const ATTEMPT='MD-B11-A001'; public const BASELINE='MD-B11-A001-BL001'; public const CI='CI-MD-B11-A001-001'; public const EXPECTED_DENOMINATOR=172;
  public static function documentFamilyMap(): array {return ['MD-S008'=>'price_scale_validation','MD-S010'=>'impact_flags','MD-S011'=>'verified_event_lifecycle','MD-S023'=>'raw_immutability','MD-S059'=>'source_observation_boundary','MD-S079'=>'event_type_semantics','MD-S080'=>'market_structure_diagnostics','MD-S084'=>'anomaly_only_detector'];}
+ /**
+  * MD-B11-A002: family is assigned per document, which is right for 170 of the 172 predicates.
+  * MD-S011-R0070 and R0071 are the exception: they prohibit a continuity-check diagnostic from
+  * justifying an adjustment or clearing an ambiguity, and verified_event_lifecycle guards do not
+  * prove that. Binding them there would have claimed proof the family does not carry.
+  */
+ public static function ruleFamilyOverride(): array {return [
+  'MD-S011-R0070'=>'continuity_diagnostic_boundary',
+  'MD-S011-R0071'=>'continuity_diagnostic_boundary',
+ ];}
  public static function expectedFamilyForDocument(string $id){$m=self::documentFamilyMap();return $m[$id]??null;}
  private static function f($owner,$impl,$pos,$neg,$runtime=[]){return ['owner'=>$owner,'implementation'=>$impl,'positive'=>$pos,'negative'=>$neg,'runtime_scripts'=>$runtime,'runtime_required'=>true];}
  public static function families(): array {return [
@@ -15,6 +25,7 @@ final class MarketDataCorporateActionProofSpec
   'event_type_semantics'=>self::f('MD-B11:event-type-semantics',['app/Application/MarketData/Services/AdjustmentFactorSetService.php'],['tests/Unit/MarketData/AdjustmentFactorSetB11Test.php','test_verified_split_ratio_maps_deterministically_to_price_and_volume_factors'],['tests/Unit/MarketData/AdjustmentFactorSetB11Test.php','test_non_adjusting_registry_type_requires_no_factor']),
   'market_structure_diagnostics'=>self::f('MD-B11:market-structure-diagnostics',['app/Application/MarketData/Services/PriceScaleBreakDetectionService.php'],['tests/Unit/MarketData/CorporateActionLifecycleB11RegressionTest.php','test_detector_is_candidate_only_and_uses_v2_ex_date_linkage'],['tests/Unit/MarketData/CorporateActionLifecycleB11RegressionTest.php','test_detector_is_candidate_only_and_uses_v2_ex_date_linkage']),
   'anomaly_only_detector'=>self::f('MD-B11:anomaly-only-detector',['app/Application/MarketData/Services/PriceScaleBreakDetectionService.php','app/Infrastructure/Persistence/MarketData/PriceScaleBreakRepository.php'],['tests/Unit/MarketData/PriceScaleBreakDetectionTest.php','test_only_unresolved_candidates_feed_indicator_quarantine'],['tests/Unit/MarketData/PriceScaleBreakDetectionTest.php','test_dismissal_requires_positive_evidence_and_is_append_only']),
+  'continuity_diagnostic_boundary'=>self::f('MD-B11:continuity-diagnostic-boundary',['app/Application/MarketData/Services/AdjustmentFactorSetService.php','app/Application/MarketData/Services/PriceScaleBreakDetectionService.php'],['tests/Unit/MarketData/CorporateActionLifecycleB11RegressionTest.php','test_the_continuity_diagnostic_never_reaches_an_authority_decision'],['tests/Unit/MarketData/PriceScaleBreakDetectionTest.php','test_dismissal_requires_positive_evidence_and_is_append_only']),
  ];}
- public static function entries(string $root): array {$out=[];foreach(MarketDataCorporateActionTraceabilitySpec::mandatory($root) as $r){$family=self::expectedFamilyForDocument((string)$r['strategy_document_id']);$out[]=['rule_id'=>$r['rule_id'],'strategy_document_id'=>$r['strategy_document_id'],'family'=>$family];}return $out;}
+ public static function entries(string $root): array {$out=[];foreach(MarketDataCorporateActionTraceabilitySpec::mandatory($root) as $r){$family=self::ruleFamilyOverride()[(string)$r['rule_id']]??self::expectedFamilyForDocument((string)$r['strategy_document_id']);$out[]=['rule_id'=>$r['rule_id'],'strategy_document_id'=>$r['strategy_document_id'],'family'=>$family];}return $out;}
 }

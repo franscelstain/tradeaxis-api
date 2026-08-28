@@ -33,6 +33,45 @@ class CorporateActionLifecycleB11RegressionTest extends TestCase
         $this->assertStringContainsString('MarketDataScope::DATASET_START',$source);
     }
 
+    /**
+     * MD-S011-R0070 and MD-S011-R0071: a continuity-check diagnostic may never justify an
+     * adjustment-active factor, and `GAP_AMBIGUOUS` may never be cleared using evidence derived
+     * from the price series -- including the absence of a detected break.
+     *
+     * The migration that adds `continuity_check_status` calls it diagnostic only. The current proof
+     * of both prohibitions is stronger than an enforcement branch: no application code reads the
+     * column at all, so the diagnostic cannot reach any decision. That is worth pinning, because the
+     * cheapest way to violate either rule is to start consuming the column somewhere in the
+     * adjustment or verification path and never notice that a diagnostic became an authority.
+     *
+     * If a future change needs to consume it, this test is the place that forces the prohibition to
+     * be proven properly rather than quietly wired in.
+     */
+    public function test_the_continuity_diagnostic_never_reaches_an_authority_decision(): void
+    {
+        $diagnostic = ['continuity_check_status', 'observed_gap_pct', 'GAP_BEYOND_EXCHANGE_BAND', 'GAP_AMBIGUOUS'];
+
+        $scanned = 0;
+        $violations = [];
+        $directory = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(base_path('app')));
+        foreach ($directory as $file) {
+            if (! $file->isFile() || $file->getExtension() !== 'php') {
+                continue;
+            }
+            $scanned++;
+            $source = (string) file_get_contents($file->getPathname());
+            foreach ($diagnostic as $needle) {
+                if (strpos($source, $needle) !== false) {
+                    $violations[] = str_replace(base_path().DIRECTORY_SEPARATOR, '', $file->getPathname()).' reads '.$needle;
+                }
+            }
+        }
+
+        // A scan that reaches nothing is indistinguishable from a clean tree.
+        $this->assertGreaterThan(100, $scanned, 'the application scan did not reach the codebase');
+        $this->assertSame([], $violations, 'the continuity diagnostic must stay diagnostic');
+    }
+
     public function test_event_risk_has_no_silent_action_date_to_ex_date_promotion(): void
     {
         $source=file_get_contents(base_path('app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php'));
