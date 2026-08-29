@@ -1,0 +1,114 @@
+{
+  "evidence_id": "E-MD-B11-A003-001",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B11",
+  "attempt_id": "MD-B11-A003",
+  "work_id": "MD-B11-A003",
+  "baseline_id": "MD-B11-A003-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "change_impact_declaration": "CI-MD-B11-A003-001",
+  "issued_at": "2026-08-29T11:30:00+07:00",
+  "title": "MD-B11 reference population completed at 202/202, emptying the last closed-stage backlog in the package",
+  "attempt_outcome": "COMPLETE - the 167 rows MD-B11-A002 left behind are resolved: 30 promoted and bound, 137 recorded as reference with their basis. MD-B11 carries zero non-structural reference rows without a recorded decision, and no closed stage in the package does.",
+  "authority_basis": [
+    "MD-S010 Corporate Action Impact Flags Contract: Flag semantics and Acceptance criterion.",
+    "MD-S011 Corporate Action and Adjustment Policy: Core safety rule (LOCKED), Resolving GAP_AMBIGUOUS (LOCKED), Candidate-break linkage (LOCKED).",
+    "MD-S080 Exchange Market Structure: Auto-rejection band, Minimum Regular-Market price, Tick/price fraction ladder, Recorded authority scope, Consumers, Acceptance criterion (LOCKED).",
+    "MD-S084 Price Scale Break Detection: Detector-only boundary (LOCKED), Candidate classifications, Quarantine behavior, No-repair rule (LOCKED), Idempotency.",
+    "STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md sections 2, 3, 7, 8.4 and 9."
+  ],
+  "what_this_completes": {
+    "a002_left_behind": "MD-B11-A002 took the four prohibition sections and the two date hierarchies, 34 rows, and recorded 167 as outstanding rather than implying the stage was finished.",
+    "a003_scope": "All 167. Denominator 172 to 202; reference 239 to 209.",
+    "promotions": 30,
+    "reference_decisions_recorded": 137,
+    "non_structural_reference_without_a_recorded_decision": 0
+  },
+  "promotions_by_document": {
+    "MD-S010 (5)": "R0017 flags are factual context and never a buy/sell, ranking or avoidance recommendation; R0018 an adjustment-active event may restore continuity while staying disclosed; R0019 an unresolved event blocks affected eligibility under governed reasons; R0020 absence of an event row is no evidence, not proof of no risk; R0025 the acceptance criterion that any blocked or released row is explainable.",
+    "MD-S011 (7)": "R0003 the core safety rule that a discontinuity is evidence of a possible event and not proof of an action, type, ex-date or factor; R0037 and R0038 what may resolve GAP_AMBIGUOUS; R0040, R0041 and R0042 what may not - detection silence, a small gap, or the passage of time; R0055 candidate-break linkage, where a break with missing verification stays quarantining and no command may mark it repaired because bars were rewritten.",
+    "MD-S080 (8)": "R0010, R0011, R0012 band tier storage requirements; R0026 the price floor and R0028 the tick ladder storage requirements; R0032 FAIL_CLOSED on missing or unrecognized board identity; R0045 a consumer may cite these facts but not own, hardcode or copy them; R0061 the acceptance criterion that no unsourced constant reaches a published output.",
+    "MD-S084 (10)": "R0002 and R0004 to R0007 the detector-only boundary and what it may not establish; R0030 classifications stay diagnostic; R0031 nothing promotes a candidate automatically; R0036 quarantine behaviour; R0042 the no-repair rule; R0045 idempotency."
+  },
+  "why_MD_S079_contributes_zero_promotions": {
+    "share_of_the_population": "90 of the 137 reference decisions.",
+    "reason": "MD-S079 already carries 36 REQUIRED rows covering its operative obligations: the unknown-action-type policy (R0111 to R0118), the forbidden-behaviour list promoted in MD-B11-A002, the dictionary table contract, the capability boundary, and the current event-lifecycle corrections (R0154 to R0160).",
+    "what_remains": "Hard-wrapped narrative and enum vocabulary. The document wraps at roughly 100 characters, so most rows are continuation lines whose predicates complete in a REQUIRED sibling - for example R0109 opens the unknown-type rule and R0111 to R0113 carry it, and those are REQUIRED.",
+    "this_is_not_convenience": "The obligations are genuinely already owned. Promoting the fragments would duplicate a closure obligation contrary to section 7, and would bind predicates to text that does not state them."
+  },
+  "guard_coverage_verified_before_promoting": {
+    "method": "All 28 guard methods across the 14 proof families were checked to exist by name before any promotion was applied, and every rule-family override was checked to resolve to a defined family.",
+    "result": "28 guard methods checked, 0 missing, 0 orphan overrides.",
+    "why_five_new_families_were_needed": "MD-B11 assigns proof families per document. Four of the five promoted groups would have inherited a family whose guards do not prove them: MD-S080 rows would have inherited detector-only guards, MD-S010 rows would have inherited window-contamination guards, and the MD-S084 detector-authority and idempotency rules needed their own. Binding them to the document default would have claimed proof those families do not carry.",
+    "families_added": {
+      "event_risk_flag_semantics": "MD-S010 R0017 to R0025 - the eligibility decision consults no preference input, and contamination maps to its own reason code.",
+      "detector_authority_boundary": "MD-S011-R0003 and MD-S084 R0002, R0004 to R0007 - the detector is candidate-only, and an unexplained break never creates a synthetic action.",
+      "exchange_market_structure_authority": "MD-S080 R0010 to R0061 - effective-dated tiers with evidence recorded without touching output, and incomplete scope or board drift rejected.",
+      "dual_use_fact_boundary": "MD-S080-R0045 - each dual-use fact carries only its market-data half.",
+      "detector_idempotency": "MD-S084-R0045 - detection is idempotent and dry run is non-mutating."
+    },
+    "existing_families_reused": "continuity_diagnostic_boundary for the five GAP_AMBIGUOUS resolution rules, raw_immutability for MD-S011-R0055 and MD-S084-R0042, anomaly_only_detector for MD-S084 R0030, R0031 and R0036."
+  },
+  "the_gap_ambiguous_rules_are_satisfied_by_construction": {
+    "rules": "MD-S011-R0037, R0038, R0040, R0041, R0042",
+    "finding": "MD-B11-A002 established that continuity_check_status, observed_gap_pct, GAP_BEYOND_EXCHANGE_BAND and GAP_AMBIGUOUS appear in zero files under app, config and routes.",
+    "consequence": "No code path resolves GAP_AMBIGUOUS by any means, correct or incorrect. Both the permissions and the prohibitions hold by construction, and the structural guard written in A002 is what pins that. This is recorded plainly rather than presented as behavioural proof of a branch that does not exist."
+  },
+  "traceability_state": {
+    "b11_denominator_before": 172,
+    "b11_denominator_after": 202,
+    "b11_reference_before": 239,
+    "b11_reference_after": 209,
+    "non_structural_reference_unexplained_remaining": 0,
+    "rows_bound_to_E-MD-B11-A001-001": 138,
+    "rows_bound_to_E-MD-B11-A002-001": 34,
+    "rows_bound_to_E-MD-B11-A003-001": 30,
+    "admitted_to_decision_recorded_stages": true,
+    "closed_stage_backlog_remaining_in_package": 0
+  },
+  "review_pass_guards": {
+    "completeness_re_scanned_after_the_pass": "The pass re-scans MD-B11 after writing and aborts if any non-structural reference row is still undecided. Checking before the pass would only confirm the input; checking after confirms the claim that admits the stage.",
+    "falsifiability_completeness": "Suppressing the recording for MD-S079 made the pass abort reporting MD-S079-R0001 undecided.",
+    "falsifiability_named_promotions": "Renaming MD-S084-R0045 to a non-existent id made the pass abort naming it.",
+    "falsifiability_foreign_rows": "Injecting a mutation on MD-S083-R0032, a MD-B12 row, made the pass abort naming the row and its owning stage.",
+    "start_state_verified": "A promoted rule must have been REFERENCE_ONLY beforehand, so a no-op cannot look like work."
+  },
+  "reference_decision_form": {
+    "what": "The 137 decisions are generated from a section-level basis rather than 137 hand-written strings.",
+    "why": "Rows inside one section are the same kind of text - a wrapped sentence, an enum definition, a capability disclaimer. A per-row string would repeat rather than inform.",
+    "attribution": "Each basis names the document and section it was derived from, so the call stays attributable and can be challenged at the level it was actually made.",
+    "honest_limit": "A generated basis proves a pass considered the section, not that a human weighed every sentence. That limit is the same one recorded in the classification gate docblock at MD-B00-A004."
+  },
+  "test_execution": {
+    "b11_proof_surface": "93 tests, 480 assertions, 0 failures, exit 0",
+    "full_suite": "recorded in SC-MD-B11-A003-001",
+    "database": "MariaDB 10.4.27 reachable; tradeaxis and tradeaxis_testing both at 80 migrations and 73 tables"
+  },
+  "residue_verdict": {
+    "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+    "verdict_vocabulary": "One of the five states enumerated by IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD.md; scope is a separate field.",
+    "scope": "The MD-S010 flag semantics, MD-S011 safety and linkage rules, MD-S080 market-structure authority, MD-S084 detector boundary, and the MD-B11 review and proof tooling.",
+    "basis": "No application source, migration, configuration, or stored business row was altered. No new guard was written: every promoted predicate is proven by a guard that already existed and was verified to exist by name."
+  },
+  "runtime_artifact_boundary": {
+    "storage_inspected": false,
+    "storage_mutated": false,
+    "database_mutated": false
+  },
+  "open_items_after": [
+    "1384 rows remain across eleven unopened stages, to be resolved at each stage entry under MD-DEP-0004. No closed stage carries a backlog.",
+    "The residue-vocabulary deviation reported in E-MD-B11-A002-001 is unchanged and no gate validates the vocabulary.",
+    "GlobalConvergenceClosureTest::test_no_test_expects_a_synthetic_verified_factor still ends with assertTrue(true) and can pass vacuously.",
+    "Every stage normalization other than MD-B07 and MD-B08 still carries the unguarded clearing code that can unbind another stage proof."
+  ],
+  "relationship_requirements": [
+    "MD-B11-A003-BL001 -> SC-MD-B11-A002-001 (stage precondition)",
+    "CI-MD-B11-A003-001 -> MD-B11-A003-BL001 (declaration bound to baseline)",
+    "E-MD-B11-A003-001 -> MD-B11-A003-BL001 and CI-MD-B11-A003-001 (evidence correlation)",
+    "E-MD-B11-A003-001 -> E-MD-B11-A002-001 (additive lineage; completes the population A002 left partial)",
+    "E-MD-B11-A003-001 -> SC-MD-B00-A004-001 (the gate whose closed-stage count this attempt drives to zero)"
+  ],
+  "supersedes": "Nothing. E-MD-B11-A001-001, E-MD-B11-A002-001 and E-MD-B11-A002-002 are not edited; their bindings stand. This record adds the final 30."
+}

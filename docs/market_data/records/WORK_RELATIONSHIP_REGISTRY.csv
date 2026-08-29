@@ -311,3 +311,11 @@ MD-REL-0309,E-MD-B12-A003-001,CI-MD-B12-A003-001,DEPENDS_ON,The evidence admits 
 MD-REL-0310,E-MD-B12-A003-001,E-MD-B12-A002-001,DERIVED_FROM,Completes the population A002 left partial; the 45 and 15 prior bindings stand unedited.,,2026-08-29T09:55:00+07:00,MD-B12-A003 completion correlation.
 MD-REL-0311,E-MD-B12-A003-001,SC-MD-B00-A004-001,DERIVED_FROM,UNEXPLAINED_REFERENCE counted this population; this attempt drives its MD-B12 count to zero.,,2026-08-29T09:55:00+07:00,MD-B12-A003 completion correlation.
 MD-REL-0312,SC-MD-B12-A003-001,E-MD-B12-A003-001,CARRIED_FROM,Closure rests on the executed A003 evidence.,,2026-08-29T09:55:00+07:00,MD-B12-A003 completion correlation.
+MD-REL-0313,MD-B11-A003-BL001,SC-MD-B11-A002-001,CARRIED_FROM,The A003 baseline opens against the immutable A002 closure; no A002 proof is re-derived.,,2026-08-29T11:45:00+07:00,MD-B11-A003 completion correlation.
+MD-REL-0314,CI-MD-B11-A003-001,MD-B11-A003-BL001,DEPENDS_ON,The declared scope is measured against the immutable A003 baseline.,,2026-08-29T11:45:00+07:00,MD-B11-A003 completion correlation.
+MD-REL-0315,CI-MD-B11-A003-001,SC-MD-B11-A002-001,CARRIED_FROM,The declaration names the immutable A002 closure as its stage precondition.,,2026-08-29T11:45:00+07:00,MD-B11-A003 completion correlation.
+MD-REL-0316,E-MD-B11-A003-001,MD-B11-A003-BL001,DEPENDS_ON,The 202/202 binding and the falsifiability proofs are valid only against the immutable A003 baseline.,,2026-08-29T11:45:00+07:00,MD-B11-A003 completion correlation.
+MD-REL-0317,E-MD-B11-A003-001,CI-MD-B11-A003-001,DEPENDS_ON,The evidence admits exactly the scope the declaration set.,,2026-08-29T11:45:00+07:00,MD-B11-A003 completion correlation.
+MD-REL-0318,E-MD-B11-A003-001,E-MD-B11-A002-001,DERIVED_FROM,Completes the population A002 left at 167 rows; the 138 and 34 prior bindings stand unedited.,,2026-08-29T11:45:00+07:00,MD-B11-A003 completion correlation.
+MD-REL-0319,E-MD-B11-A003-001,SC-MD-B00-A004-001,DERIVED_FROM,UNEXPLAINED_REFERENCE counted this population and MIXED_RUN reported the eight exception rows once the stage was enforced.,,2026-08-29T11:45:00+07:00,MD-B11-A003 completion correlation.
+MD-REL-0320,SC-MD-B11-A003-001,E-MD-B11-A003-001,CARRIED_FROM,Closure rests on the executed A003 evidence.,,2026-08-29T11:45:00+07:00,MD-B11-A003 completion correlation.
