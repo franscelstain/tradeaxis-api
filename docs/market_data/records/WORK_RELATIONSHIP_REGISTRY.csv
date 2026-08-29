@@ -290,3 +290,16 @@ MD-REL-0288,E-MD-B12-A002-001,CI-MD-B12-A002-001,DEPENDS_ON,The evidence admits 
 MD-REL-0289,E-MD-B12-A002-001,E-MD-B12-A001-001,DERIVED_FROM,The 45 A001 bindings remain current and unedited; this record adds 15.,,2026-08-27T19:30:00+07:00,MD-B12-A002 scoped re-check correlation.
 MD-REL-0290,E-MD-B12-A002-001,SC-MD-B00-A004-001,DERIVED_FROM,UNEXPLAINED_REFERENCE surfaced both promoted blocks.,,2026-08-27T19:30:00+07:00,MD-B12-A002 scoped re-check correlation.
 MD-REL-0291,SC-MD-B12-A002-001,E-MD-B12-A002-001,CARRIED_FROM,Closure rests on the executed A002 evidence.,,2026-08-27T19:30:00+07:00,MD-B12-A002 scoped re-check correlation.
+MD-REL-0292,MD-B11-A002-BL001,SC-MD-B11-A001-001,CARRIED_FROM,The A002 baseline opens against the immutable A001 closure; no A001 proof is re-derived.,,2026-08-28T03:20:00+07:00,MD-B11-A002 re-check correlation.
+MD-REL-0293,CI-MD-B11-A002-001,MD-B11-A002-BL001,DEPENDS_ON,The declared scope is measured against the immutable A002 baseline.,,2026-08-28T03:20:00+07:00,MD-B11-A002 re-check correlation.
+MD-REL-0294,CI-MD-B11-A002-001,SC-MD-B11-A001-001,CARRIED_FROM,The declaration names the immutable A001 closure as its stage precondition.,,2026-08-28T03:20:00+07:00,MD-B11-A002 re-check correlation.
+MD-REL-0295,E-MD-B11-A002-001,MD-B11-A002-BL001,DEPENDS_ON,The 172/172 binding and the falsifiability proofs are valid only against the immutable A002 baseline.,,2026-08-28T03:20:00+07:00,MD-B11-A002 re-check correlation.
+MD-REL-0296,E-MD-B11-A002-001,CI-MD-B11-A002-001,DEPENDS_ON,The evidence admits exactly the scope the declaration set.,,2026-08-28T03:20:00+07:00,MD-B11-A002 re-check correlation.
+MD-REL-0297,E-MD-B11-A002-001,E-MD-B11-A001-001,DERIVED_FROM,The 138 A001 bindings remain current and unedited; this record adds 34.,,2026-08-28T03:20:00+07:00,MD-B11-A002 re-check correlation.
+MD-REL-0298,E-MD-B11-A002-001,E-MD-B12-A002-001,DERIVED_FROM,MD-S011-R0023 and MD-S083-R0032 are the same invariant in two contracts; the guard was written there first.,,2026-08-28T03:20:00+07:00,MD-B11-A002 re-check correlation.
+MD-REL-0299,E-MD-B11-A002-001,SC-MD-B00-A004-001,DERIVED_FROM,UNEXPLAINED_REFERENCE surfaced all four prohibition sections.,,2026-08-28T03:20:00+07:00,MD-B11-A002 re-check correlation.
+MD-REL-0300,SC-MD-B11-A002-001,E-MD-B11-A002-001,CARRIED_FROM,Closure rests on the executed A002 evidence.,,2026-08-28T03:20:00+07:00,MD-B11-A002 re-check correlation.
+MD-REL-0301,E-MD-B11-A002-002,MD-B11-A002-BL001,DEPENDS_ON,The re-executed proof is valid only against the immutable A002 baseline.,,2026-08-28T16:05:00+07:00,MD-B11-A002 environment discharge correlation.
+MD-REL-0302,E-MD-B11-A002-002,CI-MD-B11-A002-001,DEPENDS_ON,The discharge stays inside the impact scope the declaration set.,,2026-08-28T16:05:00+07:00,MD-B11-A002 environment discharge correlation.
+MD-REL-0303,E-MD-B11-A002-002,E-MD-B11-A002-001,DERIVED_FROM,Additive lineage; the first evidence record is not edited.,,2026-08-28T16:05:00+07:00,MD-B11-A002 environment discharge correlation.
+MD-REL-0304,E-MD-B11-A002-002,SC-MD-B11-A002-001,DERIVED_FROM,Discharges the ENVIRONMENT_UNAVAILABLE control that closure recorded.,,2026-08-28T16:05:00+07:00,MD-B11-A002 environment discharge correlation.

@@ -1,0 +1,81 @@
+{
+  "evidence_id": "E-MD-B11-A002-002",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B11",
+  "attempt_id": "MD-B11-A002",
+  "work_id": "MD-B11-A002",
+  "baseline_id": "MD-B11-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "change_impact_declaration": "CI-MD-B11-A002-001",
+  "issued_at": "2026-08-28T16:05:00+07:00",
+  "title": "The MD-B11-A002 environment-blocked full-suite control is discharged by an executed clean run against restored MariaDB",
+  "attempt_outcome": "COMPLETE - the deferred execution ran and passed. MD-B11-A002 no longer carries an ENVIRONMENT_UNAVAILABLE control.",
+  "why_this_record_exists": {
+    "standard": "RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md section 4 requires the deferred proof to actually run when an environment-blocked execution becomes available again.",
+    "blocked_state": "SC-MD-B11-A002-001 recorded the full-suite regression control as ENVIRONMENT_UNAVAILABLE: 1953 tests, 18154 assertions, 2 errors, 16 skipped, with both errors identified as SQLSTATE[HY000] [2002] connection refusals in OpsCommandSurfaceTest and StageThreeEligibilityProducerTest.",
+    "form": "Additive evidence, following the E-MD-B07-A001-002 precedent. E-MD-B11-A002-001 and SC-MD-B11-A002-001 are immutable and are not edited; the closure verdict was already valid on its own terms because this attempt changed no schema, configuration or application source."
+  },
+  "executed_proof": {
+    "full_suite": "1953 tests, 18244 assertions, 0 failures, 0 errors, 0 skipped, exit 0",
+    "comparison_to_blocked_run": "Same 1953 tests. Assertions rose 18154 to 18244 because the 16 database-dependent tests that were skipped during the outage now execute; both prior errors are gone.",
+    "b11_proof_surface": "51 tests, 161 assertions, 0 failures, exit 0",
+    "b11_deployed_schema_probe": "PASS - database_reachable true, migration APPLIED, all three B11 tables present with no missing columns: md_price_scale_break_candidates, md_price_scale_break_candidate_reviews, md_corporate_action_reconciliations",
+    "b11_migration_static_gate": "PASS - 3 tables, 0 errors",
+    "migration_integrity_and_drift": "9 tests, 21 assertions, 0 skipped - matching the documented healthy figure rather than the outage figure"
+  },
+  "raw_artifact_admission": {
+    "standard": "RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md section 6.",
+    "stage_id": "MD-B11",
+    "attempt_work_id": "MD-B11-A002",
+    "baseline_id": "MD-B11-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "execution_identity": "php vendor/bin/phpunit (full suite); MarketDataB11DeployedSchemaProbe.php; MarketDataB11MigrationStaticGate.php; phpunit --filter MigrationIntegrityAndDriftTest; phpunit over the eight B11 proof-surface classes",
+    "artifact_manifest_path": "storage/app/market-data/b11-a002-database-restored-proof/MANIFEST.json",
+    "artifact_manifest_sha256": "6CC4025DBA9037EF1DF39D778B8714230DC78CD9133BACF166431EF4370CC51E",
+    "artifact_files": [
+      {"path": "storage/app/market-data/b11-a002-database-restored-proof/phpunit-full-suite.txt", "sha256_prefix": "1334DE7DB3D88057D2A436F3"},
+      {"path": "storage/app/market-data/b11-a002-database-restored-proof/b11-proof-surface.txt", "sha256_prefix": "C002933E3549F8BD3AD11EB6"},
+      {"path": "storage/app/market-data/b11-a002-database-restored-proof/b11-deployed-schema-probe.json", "sha256_prefix": "E3522E3EF31EF385B7F9B909"},
+      {"path": "storage/app/market-data/b11-a002-database-restored-proof/b11-migration-static-gate.json", "sha256_prefix": "BC722C89E615552941BC1466"},
+      {"path": "storage/app/market-data/b11-a002-database-restored-proof/migration-integrity-and-drift.txt", "sha256_prefix": "D01F19CFAB1605F3D1674C4A"},
+      {"path": "storage/app/market-data/b11-a002-database-restored-proof/environment.json", "sha256_prefix": "68AC467F9B4A69826DFFE35A"}
+    ],
+    "result_state": "exit 0 on every named execution",
+    "requirement_supported": "Discharges the ENVIRONMENT_UNAVAILABLE full-suite regression control recorded in SC-MD-B11-A002-001, and supplies the deployed-schema verification for MD-B11 that could not run during the outage.",
+    "retention_note": "The manifest deterministically inventories the material files with SHA-256. Raw output stays in the runtime artifact layer per section 9 and is not copied into docs."
+  },
+  "environment_identity": {
+    "database_server": "10.4.27-MariaDB at 127.0.0.1:3306",
+    "databases": "tradeaxis and tradeaxis_testing, both at 80 migrations and 73 tables, both ending at 2026_08_27_000001_add_liquidity_metric_labelling_and_volume_unit_identity, zero pending",
+    "why_both_were_checked": "PHPUnit runs against tradeaxis_testing while the application uses tradeaxis. A migration applied to only one of them surfaces as a code-shaped test failure, so both were confirmed in step before any suite run.",
+    "git_head": "d8b2284abc9152a8bbee2f9921fdbb2a95c381c6",
+    "php_version": "7.4.33",
+    "clock_note": "The captured_at field in environment.json carries the host offset +02:00. Governed record timestamps in this package use +07:00. The discrepancy is in the host clock, not in the records."
+  },
+  "what_this_does_not_change": {
+    "closure_verdict": "SC-MD-B11-A002-001 already closed MD-B11 DONE / PASS at 172/172 and that verdict is unchanged. This record removes the qualification on its regression control, nothing else.",
+    "traceability": "No matrix row, denominator, binding or applicability value is altered. MD-B11 remains 172 mandatory / 172 SATISFIED with 239 reference.",
+    "backlog": "MD-B11 stays outside DECISION_RECORDED_STAGES with 167 non-structural reference rows for MD-B11-A003.",
+    "application_surface": "No application source, migration, configuration or stored business row was altered by this verification. Only proof artifacts were written, under the runtime artifact layer."
+  },
+  "residue_verdict": {
+    "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+    "scope": "The re-executed verification surface and the proof artifacts it produced.",
+    "basis": "The run is read-only with respect to governed business data; it executes the existing suite and probes. No reachable behaviour contradicting current authority was found."
+  },
+  "open_items_after": [
+    "MD-B11-A003 owns 167 non-structural reference rows; MD-B12-A003 owns 39.",
+    "The residue-vocabulary deviation reported in E-MD-B11-A002-001 is unchanged: issued records across the package use scope-suffixed verdicts outside the five states the standard enumerates, and no gate validates the vocabulary.",
+    "GlobalConvergenceClosureTest::test_no_test_expects_a_synthetic_verified_factor still ends with assertTrue(true) and can pass vacuously.",
+    "Every stage normalization other than MD-B07 and MD-B08 still carries the unguarded clearing code that can unbind another stage proof."
+  ],
+  "relationship_requirements": [
+    "E-MD-B11-A002-002 -> MD-B11-A002-BL001 (evidence bound to the immutable attempt baseline)",
+    "E-MD-B11-A002-002 -> CI-MD-B11-A002-001 (evidence correlated to the declaration)",
+    "E-MD-B11-A002-002 -> E-MD-B11-A002-001 (additive lineage; the first record is not edited)",
+    "E-MD-B11-A002-002 -> SC-MD-B11-A002-001 (discharges the environment condition that closure recorded)"
+  ],
+  "supersedes": "Nothing. E-MD-B11-A002-001 and SC-MD-B11-A002-001 remain immutable and unedited. This record is additive."
+}

@@ -10,6 +10,8 @@
   "verification_epoch": "MD-REBASELINE-20260820-001",
   "change_impact_declaration": "CI-MD-B11-A002-001",
   "issued_at": "2026-08-28T03:05:00+07:00",
+  "amended_at": "2026-08-28T03:40:00+07:00",
+  "amendment_note": "Amended after this file was committed but before it was registered in WORK_RECORD_REGISTRY.csv, and before closure. The original residue verdict read CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_THE_CORRECTED_B11_SURFACE, which is not one of the five states IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD.md enumerates. It now carries the enumerated token with scope recorded as a separate field, and the deviation found across existing records is recorded below. The amendment is disclosed rather than silent because the file had already been committed.",
   "title": "The last four whole prohibition sections in the package are bound at 172/172, and the remaining unbound copy of the adjustment-authority invariant is closed",
   "attempt_outcome": "COMPLETE FOR ITS DECLARED SCOPE - 34 predicates promoted and bound. MD-B11 is not admitted to DECISION_RECORDED_STAGES: 167 non-structural reference rows remain for MD-B11-A003.",
   "authority_basis": [
@@ -76,9 +78,11 @@
     "full_suite": "recorded in SC-MD-B11-A002-001"
   },
   "residue_verdict": {
-    "scope": "The four prohibition sections, the two date hierarchies, and the B11 review and binder tooling.",
-    "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_THE_CORRECTED_B11_SURFACE",
-    "basis": "No application source, migration, configuration, or stored row was altered. The only executable addition is one structural guard; the review-pass and binder changes are tooling."
+    "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+    "verdict_vocabulary": "One of the five states enumerated by IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD.md. Scope is recorded separately rather than appended to the verdict token.",
+    "scope": "The four prohibition sections, the two date hierarchies, and the MD-B11 review, binder and gate tooling.",
+    "basis": "No application source, migration, configuration, or stored row was altered. The only executable addition is one structural guard, demonstrated to fail when the prohibition it pins is violated. No reachable behaviour contradicts current authority in the searched surface.",
+    "sequence": "implement/revalidate -> functional tests -> negative/fail-safe tests -> residue check -> evidence -> closure, per the standard."
   },
   "runtime_artifact_boundary": {
     "storage_inspected": false,
@@ -99,5 +103,11 @@
     "E-MD-B11-A002-001 -> E-MD-B12-A002-001 (the twin invariant, guarded there first)",
     "E-MD-B11-A002-001 -> SC-MD-B00-A004-001 (the gate that surfaced these sections)"
   ],
-  "supersedes": "Nothing. E-MD-B11-A001-001 is not edited and its 138 bindings stand. This record adds the 34 the four prohibition sections and two hierarchies were owed."
+  "supersedes": "Nothing. E-MD-B11-A001-001 is not edited and its 138 bindings stand. This record adds the 34 the four prohibition sections and two hierarchies were owed.",
+  "deviation_found_in_existing_records": {
+    "what": "IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD.md enumerates exactly five residue states. Issued records across the package use scope-suffixed variants that are not among them.",
+    "measured": "11 occurrences of CONFORMANT_NO_HARMFUL_RESIDUE_FOUND_IN_THE_B*, 5 of ..._IN_A*, 2 of CONFORMANT_WITH_DECLARED_HISTORICAL_GAP, 2 of CONFORMANT_NO_HARMFUL_EXECUTABLE_RESIDUE_FOUND, against 31 uses of the enumerated token.",
+    "my_own_contribution": "9 of the suffixed occurrences were written earlier in this same work unit, for MD-B07-A002, MD-B08-A002, MD-B09-A003 and MD-B12-A002. This attempt uses the enumerated token; the earlier records are immutable and are not edited.",
+    "status": "Reported, not remediated here. The verdicts are readable and their meaning is not in doubt, but a state machine whose values are invented per attempt cannot be checked mechanically. No gate currently validates the residue vocabulary."
+  }
 }
