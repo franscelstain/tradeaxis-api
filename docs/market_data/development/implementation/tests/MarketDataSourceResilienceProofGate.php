@@ -3,9 +3,99 @@
 require_once __DIR__.'/MarketDataSourceResilienceTraceabilityGate.php';
 require_once __DIR__.'/MarketDataSourceResilienceProofSpec.php';
 
-/** MD-B08-A001 proof-readiness gate. Runtime proof binding is intentionally forbidden pre-evidence. */
+/**
+ * MD-B08 proof gate. Two modes, and they must not agree with each other.
+ *
+ *   (no flag)  readiness: the stage has not yet returned local runtime proof, so every predicate
+ *              must still be NOT_ASSESSED with no evidence.
+ *   --bound    closed: every predicate must be SATISFIED and bound to the exact governed evidence
+ *              of the attempt that proved it.
+ *
+ * The entrypoint previously called readiness unconditionally and never read `$argv`, so `--bound`
+ * was accepted and ignored and the gate reported `premature_satisfied: 139` against the legitimately
+ * closed stage. `validateBound()` existed but nothing called it, and it took a single evidence id,
+ * which cannot express the real closed state: `MD-B08-A002` re-proved one predicate, so the stage is
+ * bound to two governed records. A gate that can only ever report FAIL detects no regression.
+ */
 final class MarketDataSourceResilienceProofGate
 {
+    /** Any governed MD-B08 evidence id. A bound row must name one of these and nothing else. */
+    public const EVIDENCE_PATTERN = '/^E-MD-B08-A\\d{3}-\\d{3}$/';
+
+    public const PRIMARY_EVIDENCE = 'E-MD-B08-A001-001';
+
+    public const REMEDIATION_EVIDENCE = 'E-MD-B08-A002-001';
+
+    /**
+     * Which governed evidence each predicate must be bound to, derived from the traceability spec
+     * rather than read back from the matrix. Reading the expectation out of the thing being checked
+     * is how a gate agrees with whatever it finds.
+     *
+     * @return array<string,string>
+     */
+    public static function expectedBindings(array $map = null): array
+    {
+        $map = $map ?? MarketDataSourceResilienceProofSpec::proofMap();
+        $remediated = MarketDataSourceResilienceTraceabilitySpec::REMEDIATED_RULES;
+
+        $expected = [];
+        foreach (array_keys($map) as $rule) {
+            $expected[$rule] = isset($remediated[$rule])
+                ? self::REMEDIATION_EVIDENCE
+                : self::PRIMARY_EVIDENCE;
+        }
+
+        return $expected;
+    }
+
+    /**
+     * Proof surfaces and methods named by the map must exist in both modes. A bound predicate whose
+     * guard method no longer exists is a false claim, not a historical one.
+     *
+     * @param array<string,array{surfaces:array<int,string>,methods:array<int,array<int,string>>}> $map
+     * @return array{surface_missing:int,method_missing:int,errors:array<int,string>}
+     */
+    private static function validateProofSurfaces(array $map, string $root): array
+    {
+        $errors = [];
+        $surfaceMissing = 0;
+        $methodMissing = 0;
+        $seenSurfaces = [];
+        $seenMethods = [];
+
+        foreach ($map as $rule => $proof) {
+            foreach ($proof['surfaces'] as $relative) {
+                if (isset($seenSurfaces[$relative])) {
+                    continue;
+                }
+                $seenSurfaces[$relative] = true;
+                if (! is_file($root.'/'.$relative)) {
+                    $surfaceMissing++;
+                    $errors[] = $rule.': missing implementation surface '.$relative;
+                }
+            }
+            foreach ($proof['methods'] as [$relative, $method]) {
+                $key = $relative.'::'.$method;
+                if (isset($seenMethods[$key])) {
+                    continue;
+                }
+                $seenMethods[$key] = true;
+                $path = $root.'/'.$relative;
+                if (! is_file($path)) {
+                    $methodMissing++;
+                    $errors[] = $rule.': missing proof test file '.$relative;
+                    continue;
+                }
+                if (strpos((string) file_get_contents($path), 'function '.$method.'(') === false) {
+                    $methodMissing++;
+                    $errors[] = $rule.': missing proof method '.$key;
+                }
+            }
+        }
+
+        return ['surface_missing' => $surfaceMissing, 'method_missing' => $methodMissing, 'errors' => $errors];
+    }
+
     /** @param array<int,array<string,string>> $rows */
     public static function validateReadiness(array $rows, string $root, array $map = null): array
     {
@@ -63,40 +153,15 @@ final class MarketDataSourceResilienceProofGate
             }
         }
 
-        $seenSurfaces = [];
-        $seenMethods = [];
-        foreach ($map as $rule => $proof) {
-            foreach ($proof['surfaces'] as $relative) {
-                if (isset($seenSurfaces[$relative])) {
-                    continue;
-                }
-                $seenSurfaces[$relative] = true;
-                if (! is_file($root.'/'.$relative)) {
-                    $counts['surface_missing']++;
-                    $errors[] = $rule.': missing implementation surface '.$relative;
-                }
-            }
-            foreach ($proof['methods'] as [$relative, $method]) {
-                $key = $relative.'::'.$method;
-                if (isset($seenMethods[$key])) {
-                    continue;
-                }
-                $seenMethods[$key] = true;
-                $path = $root.'/'.$relative;
-                if (! is_file($path)) {
-                    $counts['method_missing']++;
-                    $errors[] = $rule.': missing proof test file '.$relative;
-                    continue;
-                }
-                $source = (string) file_get_contents($path);
-                if (strpos($source, 'function '.$method.'(') === false) {
-                    $counts['method_missing']++;
-                    $errors[] = $rule.': missing proof method '.$key;
-                }
-            }
+        $surfaces = self::validateProofSurfaces($map, $root);
+        $counts['surface_missing'] = $surfaces['surface_missing'];
+        $counts['method_missing'] = $surfaces['method_missing'];
+        foreach ($surfaces['errors'] as $error) {
+            $errors[] = $error;
         }
 
-        return ['status' => $errors === [] ? 'PASS' : 'FAIL', 'counts' => $counts, 'errors' => $errors];
+        return ['status' => $errors === [] ? 'PASS' : 'FAIL', 'mode' => 'READINESS',
+            'counts' => $counts, 'errors' => $errors];
     }
 
     /**
@@ -297,44 +362,122 @@ final class MarketDataSourceResilienceProofGate
         ];
     }
 
-    /** @param array<int,array<string,string>> $rows */
-    public static function validateBound(array $rows, string $root, string $evidenceId, array $map = null): array
+    /**
+     * Closed-stage mode. Every predicate must be SATISFIED and bound to the exact governed evidence
+     * of the attempt that proved it, and the static invariants the proof rests on must still hold.
+     *
+     * @param  array<int,array<string,string>>  $rows
+     * @param  array<string,string>|null  $expected  rule id => required evidence id
+     */
+    public static function validateBound(array $rows, string $root, array $expected = null, array $map = null): array
     {
         $map = $map ?? MarketDataSourceResilienceProofSpec::proofMap();
+        $expected = $expected ?? self::expectedBindings($map);
         $errors = [];
-        $counts = ['denominator' => 0, 'satisfied' => 0, 'unbound' => 0];
+        $counts = [
+            'denominator' => 0,
+            'proof_map_count' => count($map),
+            'satisfied' => 0,
+            'unbound' => 0,
+            'wrong_evidence' => 0,
+            'surface_missing' => 0,
+            'method_missing' => 0,
+            'reason_code_scope_errors' => 0,
+            'implementation_invariant_errors' => 0,
+        ];
+
+        $boundIds = [];
         foreach ($rows as $row) {
             if (! isset($map[$row['rule_id']])) {
                 continue;
             }
             $counts['denominator']++;
+            $rule = $row['rule_id'];
+            $evidence = trim((string) $row['current_evidence_ids']);
+
             if ($row['primary_stage'] !== MarketDataSourceResilienceTraceabilitySpec::STAGE
-                || $row['coverage_requirement'] !== 'REQUIRED'
-                || $row['coverage_status'] !== 'SATISFIED'
-                || trim((string) $row['current_evidence_ids']) !== $evidenceId) {
+                || $row['coverage_requirement'] !== 'REQUIRED') {
                 $counts['unbound']++;
-                $errors[] = $row['rule_id'].': exact current B08 evidence binding missing';
-            } else {
-                $counts['satisfied']++;
+                $errors[] = $rule.': mapped predicate is not an active MD-B08 required rule';
+                continue;
+            }
+            if ($row['coverage_status'] !== 'SATISFIED') {
+                $counts['unbound']++;
+                $errors[] = $rule.': closed-stage predicate is '.$row['coverage_status'].', expected SATISFIED';
+                continue;
+            }
+            if ($evidence !== $expected[$rule]) {
+                $counts['wrong_evidence']++;
+                $errors[] = $rule.': bound to '.($evidence === '' ? '(none)' : $evidence)
+                    .', expected '.$expected[$rule];
+                continue;
+            }
+            $boundIds[$evidence] = true;
+            $counts['satisfied']++;
+        }
+
+        if ($counts['denominator'] !== MarketDataSourceResilienceTraceabilitySpec::EXPECTED_B08_DENOMINATOR) {
+            $errors[] = 'BOUND_DENOMINATOR: expected '
+                .MarketDataSourceResilienceTraceabilitySpec::EXPECTED_B08_DENOMINATOR
+                .' got '.$counts['denominator'];
+        }
+        if (count($map) !== MarketDataSourceResilienceTraceabilitySpec::EXPECTED_B08_DENOMINATOR) {
+            $errors[] = 'PROOF_MAP: map must exactly cover the current MD-B08 denominator';
+        }
+
+        // Every distinct evidence id must be a governed MD-B08 record that actually exists. A
+        // binding to an id nobody issued is worse than an unbound row: it reads as proven.
+        foreach (array_keys($boundIds) as $evidenceId) {
+            if (preg_match(self::EVIDENCE_PATTERN, $evidenceId) !== 1) {
+                $errors[] = 'EVIDENCE: '.$evidenceId.' is not a governed MD-B08 evidence id';
+                continue;
+            }
+            $matches = glob($root.'/docs/market_data/records/evidence/'.$evidenceId.'_*');
+            if (! is_array($matches) || count($matches) !== 1) {
+                $errors[] = 'EVIDENCE: expected exactly one governed evidence file for '.$evidenceId;
             }
         }
-        if ($counts['denominator'] !== MarketDataSourceResilienceTraceabilitySpec::EXPECTED_B08_DENOMINATOR) {
-            $errors[] = 'BOUND_DENOMINATOR: expected '.MarketDataSourceResilienceTraceabilitySpec::EXPECTED_B08_DENOMINATOR.' got '.$counts['denominator'];
+        $counts['evidence_records'] = count($boundIds);
+
+        $surfaces = self::validateProofSurfaces($map, $root);
+        $counts['surface_missing'] = $surfaces['surface_missing'];
+        $counts['method_missing'] = $surfaces['method_missing'];
+        foreach ($surfaces['errors'] as $error) {
+            $errors[] = $error;
         }
 
-        $evidenceMatches = glob($root.'/docs/market_data/records/evidence/'.$evidenceId.'_*');
-        if (! is_array($evidenceMatches) || count($evidenceMatches) !== 1) {
-            $errors[] = 'EVIDENCE: expected exactly one governed evidence file for '.$evidenceId;
+        // The static invariants are not historical facts. They must still hold, or the closed
+        // proof is describing an implementation that no longer exists.
+        $reasonScope = self::validateB08ReasonCodeScope($root);
+        if ($reasonScope['status'] !== 'PASS') {
+            $counts['reason_code_scope_errors'] = count($reasonScope['errors']);
+            foreach ($reasonScope['errors'] as $error) {
+                $errors[] = 'B08_REASON_SCOPE: '.$error;
+            }
+        }
+        $implementation = self::validateImplementationInvariants($root);
+        if ($implementation['status'] !== 'PASS') {
+            $counts['implementation_invariant_errors'] = count($implementation['errors']);
+            foreach ($implementation['errors'] as $error) {
+                $errors[] = 'B08_IMPLEMENTATION: '.$error;
+            }
         }
 
-        return ['status' => $errors === [] ? 'PASS' : 'FAIL', 'counts' => $counts, 'errors' => $errors];
+        return ['status' => $errors === [] ? 'PASS' : 'FAIL', 'mode' => 'BOUND',
+            'counts' => $counts, 'errors' => $errors];
     }
 }
 
 if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
     $root = dirname(__DIR__, 5);
     $matrix = MarketDataClassificationConsistencyGate::readMatrix($root.'/docs/market_data/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv');
-    $result = MarketDataSourceResilienceProofGate::validateReadiness($matrix['rows'], $root);
+    $bound = in_array('--bound', $argv, true);
+    $result = $bound
+        ? MarketDataSourceResilienceProofGate::validateBound($matrix['rows'], $root)
+        : MarketDataSourceResilienceProofGate::validateReadiness($matrix['rows'], $root);
+    $result['gate'] = 'MarketDataSourceResilienceProofGate';
+    $result['stage_id'] = MarketDataSourceResilienceTraceabilitySpec::STAGE;
+    $result['generated_at'] = date(DATE_ATOM);
     echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL;
     exit($result['status'] === 'PASS' ? 0 : 1);
 }

@@ -2,7 +2,21 @@
 
 require_once __DIR__.'/MarketDataSourceResilienceProofGate.php';
 
-/** Standalone mutation self-test for MD-B08 traceability/proof-readiness fail-closed behavior. */
+/**
+ * Standalone mutation self-test for MD-B08 traceability and proof fail-closed behaviour.
+ *
+ * Two defects were repaired here alongside the gate itself.
+ *
+ * The gate entrypoint never read `$argv`, so `--bound` was accepted and ignored and readiness
+ * semantics were applied to a stage closed weeks earlier, giving `premature_satisfied: 139` and a
+ * verdict that could never be anything but FAIL.
+ *
+ * This self-test had the matching defect: `baseline_proof_readiness` ran readiness against the
+ * current closed rows, so the control was already red, and the two readiness mutations below it were
+ * passing vacuously — the gate was FAIL before the mutation and FAIL after it, which demonstrates
+ * nothing. Readiness is now exercised against a reconstruction of the pre-proof state, so its
+ * control is green and its mutations mean what they claim.
+ */
 final class MarketDataSourceResilienceProofSelfTest
 {
     private static function mutate(array $rows, string $rule, callable $mutation): array
@@ -24,11 +38,27 @@ final class MarketDataSourceResilienceProofSelfTest
         $rows = $matrix['rows'];
         $checks = [];
 
+        // Readiness describes the stage before it returned local runtime proof. MD-B08 is closed,
+        // so that state has to be reconstructed rather than read: judging a closed stage by
+        // pre-proof rules is the defect this file exists to stop repeating.
+        $proofMap = MarketDataSourceResilienceProofSpec::proofMap();
+        $preProof = [];
+        foreach ($rows as $row) {
+            if (isset($proofMap[$row['rule_id']])) {
+                $row['coverage_status'] = 'NOT_ASSESSED';
+                $row['current_evidence_ids'] = '';
+            }
+            $preProof[] = $row;
+        }
+
         $baselineTrace = MarketDataSourceResilienceTraceabilityGate::validate($rows);
         $checks['baseline_traceability'] = $baselineTrace['status'] === 'PASS' ? 'CONTROL_OK' : 'CONTROL_FAILED';
 
-        $baselineProof = MarketDataSourceResilienceProofGate::validateReadiness($rows, $root);
+        $baselineProof = MarketDataSourceResilienceProofGate::validateReadiness($preProof, $root);
         $checks['baseline_proof_readiness'] = $baselineProof['status'] === 'PASS' ? 'CONTROL_OK' : 'CONTROL_FAILED';
+
+        $baselineBound = MarketDataSourceResilienceProofGate::validateBound($rows, $root);
+        $checks['baseline_proof_bound'] = $baselineBound['status'] === 'PASS' ? 'CONTROL_OK' : 'CONTROL_FAILED';
 
         $baselineImplementation = MarketDataSourceResilienceProofGate::validateImplementationInvariants($root);
         $checks['baseline_implementation_invariants'] = $baselineImplementation['status'] === 'PASS' ? 'CONTROL_OK' : 'CONTROL_FAILED';
@@ -56,12 +86,19 @@ final class MarketDataSourceResilienceProofSelfTest
         $checks['traceability_context_drift'] = MarketDataSourceResilienceTraceabilityGate::validate($mutated)['status'] === 'FAIL'
             ? 'FAILS_CLOSED' : 'MUTATION_ESCAPED';
 
-        $mutated = self::mutate($rows, 'MD-S029-R0197', static function ($row) {
+        $mutated = self::mutate($preProof, 'MD-S029-R0197', static function ($row) {
             $row['coverage_status'] = 'SATISFIED';
             $row['current_evidence_ids'] = 'E-MD-B08-A001-999';
             return $row;
         });
         $checks['premature_runtime_satisfaction'] = MarketDataSourceResilienceProofGate::validateReadiness($mutated, $root)['status'] === 'FAIL'
+            ? 'FAILS_CLOSED' : 'MUTATION_ESCAPED';
+
+        $mutated = self::mutate($preProof, 'MD-S029-R0197', static function ($row) {
+            $row['current_evidence_ids'] = MarketDataSourceResilienceProofGate::PRIMARY_EVIDENCE;
+            return $row;
+        });
+        $checks['premature_evidence_without_satisfied_status'] = MarketDataSourceResilienceProofGate::validateReadiness($mutated, $root)['status'] === 'FAIL'
             ? 'FAILS_CLOSED' : 'MUTATION_ESCAPED';
 
         $adapterPath = $root.'/app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php';
@@ -128,10 +165,105 @@ final class MarketDataSourceResilienceProofSelfTest
             $backfillRelative => $telemetryBypass,
         ])['status'] === 'FAIL' ? 'FAILS_CLOSED' : 'MUTATION_ESCAPED';
 
-        $map = MarketDataSourceResilienceProofSpec::proofMap();
+        $map = $proofMap;
         unset($map['MD-S029-R0197']);
-        $checks['missing_proof_map_rule'] = MarketDataSourceResilienceProofGate::validateReadiness($rows, $root, $map)['status'] === 'FAIL'
+        $checks['missing_proof_map_rule'] = MarketDataSourceResilienceProofGate::validateReadiness($preProof, $root, $map)['status'] === 'FAIL'
             ? 'FAILS_CLOSED' : 'MUTATION_ESCAPED';
+
+        // ---- bound mode. The two modes must disagree about the same state, or the flag is decoration.
+        $bound = static function (array $mutatedRows) use ($root) {
+            return MarketDataSourceResilienceProofGate::validateBound($mutatedRows, $root)['status'] === 'FAIL'
+                ? 'FAILS_CLOSED' : 'MUTATION_ESCAPED';
+        };
+
+        $checks['modes_disagree_about_the_closed_state'] =
+            (MarketDataSourceResilienceProofGate::validateReadiness($rows, $root)['status'] === 'FAIL'
+                && MarketDataSourceResilienceProofGate::validateBound($rows, $root)['status'] === 'PASS')
+                ? 'FAILS_CLOSED' : 'MUTATION_ESCAPED';
+
+        $checks['modes_disagree_about_the_pre_proof_state'] =
+            (MarketDataSourceResilienceProofGate::validateReadiness($preProof, $root)['status'] === 'PASS'
+                && MarketDataSourceResilienceProofGate::validateBound($preProof, $root)['status'] === 'FAIL')
+                ? 'FAILS_CLOSED' : 'MUTATION_ESCAPED';
+
+        $primaryRule = 'MD-S029-R0197';
+        $remediatedRule = array_keys(MarketDataSourceResilienceTraceabilitySpec::REMEDIATED_RULES)[0];
+
+        $checks['bound_rejects_a_non_satisfied_predicate'] = $bound(self::mutate($rows, $primaryRule,
+            static function ($row) {
+                $row['coverage_status'] = 'NOT_ASSESSED';
+                return $row;
+            }));
+
+        $checks['bound_rejects_missing_evidence'] = $bound(self::mutate($rows, $primaryRule,
+            static function ($row) {
+                $row['current_evidence_ids'] = '';
+                return $row;
+            }));
+
+        $checks['bound_rejects_another_stage_evidence'] = $bound(self::mutate($rows, $primaryRule,
+            static function ($row) {
+                $row['current_evidence_ids'] = 'E-MD-B09-A001-001';
+                return $row;
+            }));
+
+        $checks['bound_rejects_an_evidence_id_with_no_governed_record'] = $bound(self::mutate($rows, $primaryRule,
+            static function ($row) {
+                $row['current_evidence_ids'] = 'E-MD-B08-A009-999';
+                return $row;
+            }));
+
+        // MD-B08-A002 re-proved one predicate. Accepting the primary evidence on that row would be
+        // the gate agreeing the remediation attempt never happened.
+        $checks['bound_rejects_the_remediated_rule_bound_to_primary_evidence'] = $bound(self::mutate($rows, $remediatedRule,
+            static function ($row) {
+                $row['current_evidence_ids'] = MarketDataSourceResilienceProofGate::PRIMARY_EVIDENCE;
+                return $row;
+            }));
+
+        $checks['bound_rejects_a_primary_rule_bound_to_remediation_evidence'] = $bound(self::mutate($rows, $primaryRule,
+            static function ($row) {
+                $row['current_evidence_ids'] = MarketDataSourceResilienceProofGate::REMEDIATION_EVIDENCE;
+                return $row;
+            }));
+
+        $checks['bound_rejects_a_predicate_reassigned_to_another_stage'] = $bound(self::mutate($rows, $primaryRule,
+            static function ($row) {
+                $row['primary_stage'] = 'MD-B09';
+                return $row;
+            }));
+
+        $checks['bound_rejects_a_predicate_downgraded_from_required'] = $bound(self::mutate($rows, $primaryRule,
+            static function ($row) {
+                $row['coverage_requirement'] = 'REFERENCE_ONLY';
+                return $row;
+            }));
+
+        $shortDenominator = [];
+        foreach ($rows as $row) {
+            if ($row['rule_id'] !== $primaryRule) {
+                $shortDenominator[] = $row;
+            }
+        }
+        $checks['bound_rejects_a_shrunken_denominator'] = $bound($shortDenominator);
+
+        $checks['bound_rejects_a_shrunken_proof_map'] =
+            MarketDataSourceResilienceProofGate::validateBound($rows, $root, null, $map)['status'] === 'FAIL'
+                ? 'FAILS_CLOSED' : 'MUTATION_ESCAPED';
+
+        // A bound predicate whose named guard no longer exists is a false claim, not a historical one.
+        $brokenMap = $proofMap;
+        $brokenMap[$primaryRule]['methods'][] = [
+            $proofMap[$primaryRule]['methods'][0][0], 'test_a_method_nobody_ever_wrote',
+        ];
+        $checks['bound_rejects_a_named_guard_that_does_not_exist'] =
+            MarketDataSourceResilienceProofGate::validateBound($rows, $root, null, $brokenMap)['status'] === 'FAIL'
+                ? 'FAILS_CLOSED' : 'MUTATION_ESCAPED';
+
+        $checks['bound_rejects_a_corrupted_implementation_surface'] =
+            MarketDataSourceResilienceProofGate::validateImplementationInvariants($root, [
+                'app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php' => '<?php // emptied by the self-test',
+            ])['status'] === 'FAIL' ? 'FAILS_CLOSED' : 'MUTATION_ESCAPED';
 
         $failed = array_filter($checks, static function ($verdict) {
             return ! in_array($verdict, ['CONTROL_OK', 'FAILS_CLOSED'], true);

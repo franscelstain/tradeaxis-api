@@ -66,6 +66,7 @@ class IndicatorVectorService
             'dv20_idr' => null,
             'adv20_close_volume_proxy_idr' => null,
             'adv20_traded_value_idr_actual' => null,
+            'atr14' => null,
             'atr14_pct' => null,
             'vol_ratio' => null,
             'sector_code' => $sectorCode,
@@ -93,6 +94,7 @@ class IndicatorVectorService
 
         $quarantine = $this->applyCorporateActionQuarantine($values, $config);
         $values = $quarantine['values'];
+        $nullReasons = $this->fieldNullReasons($values, $bars, $index, $config, $quarantine['field_reasons']);
 
         // Contamination is a known, explainable cause. Reporting it as insufficient history
         // would misdescribe it and strip the operator's ability to find affected tickers by
@@ -138,6 +140,7 @@ class IndicatorVectorService
             'dv20_idr' => $values['dv20_idr'],
             'adv20_close_volume_proxy_idr' => $values['adv20_close_volume_proxy_idr'],
             'adv20_traded_value_idr_actual' => $values['adv20_traded_value_idr_actual'],
+            'atr14' => $values['atr14'],
             'atr14_pct' => $values['atr14_pct'],
             'vol_ratio' => $values['vol_ratio'],
             'roc5' => $values['roc5'],
@@ -166,10 +169,106 @@ class IndicatorVectorService
             'event_risk_flag' => $values['event_risk_flag'],
             'event_risk_reasons' => $values['event_risk_reasons'],
             'corporate_action_window_reasons' => $quarantine['tokens'],
+            /*
+             * Retained even when `invalid_reason_code` is set. The primary reason is a
+             * compatibility projection of this set and must never replace it.
+             */
+            'null_reasons_json' => $nullReasons === [] ? null : json_encode($nullReasons, JSON_UNESCAPED_SLASHES),
             'run_id' => $runId,
             'publication_id' => $publicationId,
             'created_at' => $createdAt,
         ];
+    }
+
+    /**
+     * Field-level null reason sets, retained alongside the compatibility primary reason.
+     *
+     * The row already carried `invalid_reason_code`, which the nullability contract calls the
+     * compatibility primary reason, and nothing else. That is the exact state the contract
+     * forbids: a single primary reason standing in for the field-level sets. `null_reasons_json`
+     * existed as a column, travelled through the pipeline column list and was selected by the read
+     * repository, but no code ever wrote a value into it.
+     *
+     * The four causes the contract requires to stay distinct map to the four registered INDICATOR
+     * codes: warm-up not yet met, a required trading-date dependency absent, an unresolved
+     * corporate action, and an unexplained price-scale break. A field is described by every cause
+     * that applies to it, not by the first one found, because a contaminated window inside a short
+     * history is both.
+     *
+     * Fields whose only reason for being NULL is an absent optional source fact — the sector and
+     * benchmark relatives, and the actual traded value the provider does not supply — carry no
+     * code, because the registered vocabulary has none for that state and inventing one here would
+     * be a reason-code registry change made by the implementation. See `F-MD-B14-A001-001`.
+     *
+     * @param  array<string,mixed>  $values
+     * @param  array<int,array<string,mixed>>  $bars
+     * @param  array<string,array<int,string>>  $quarantineReasons
+     * @return array<string,array<int,string>>
+     */
+    private function fieldNullReasons(array $values, array $bars, $index, array $config, array $quarantineReasons)
+    {
+        $reasons = [];
+
+        foreach ($this->contaminationHorizons($config) as $field => $horizon) {
+            if (! array_key_exists($field, $values) || $values[$field] !== null) {
+                continue;
+            }
+
+            $codes = isset($quarantineReasons[$field]) ? $quarantineReasons[$field] : [];
+            $windowDays = (int) $horizon[0];
+
+            if ($windowDays > 0) {
+                if (($index + 1) < $windowDays) {
+                    $codes[] = 'IND_INSUFFICIENT_HISTORY';
+                } elseif ($this->windowHasMissingDependency($bars, $index, $windowDays)) {
+                    $codes[] = 'IND_MISSING_DEPENDENCY_BAR';
+                }
+            }
+
+            if ($codes === []) {
+                continue;
+            }
+
+            $codes = array_values(array_unique($codes));
+            sort($codes);
+            $reasons[$field] = $codes;
+        }
+
+        ksort($reasons);
+
+        return $reasons;
+    }
+
+    /**
+     * A fixed window requires its exact trading-date dependencies, so an absent bar or an absent
+     * required input inside the span is a missing dependency rather than a shorter window.
+     *
+     * Like every other windowed function here it refuses to answer before its own history
+     * exists: whether a dependency is missing from a window that has not been reached yet is not
+     * a question with a true or false answer, it is the insufficient-history case, and the caller
+     * resolves that first.
+     *
+     * @param  array<int,array<string,mixed>>  $bars
+     * @return bool|null
+     */
+    private function windowHasMissingDependency(array $bars, $index, $windowDays)
+    {
+        if ($index < 0 || ($index + 1) < $windowDays) {
+            return null;
+        }
+
+        for ($i = max(0, $index - $windowDays + 1); $i <= $index; $i++) {
+            if (! isset($bars[$i])) {
+                return true;
+            }
+            foreach (['open', 'high', 'low', 'close', 'volume'] as $field) {
+                if (! isset($bars[$i][$field]) || $bars[$i][$field] === null) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public function resolveInvalidReason(array $bars, $index, array $config)
@@ -245,6 +344,12 @@ class IndicatorVectorService
             'dv20_idr' => $dv20Idr,
             'adv20_close_volume_proxy_idr' => $dv20Idr,
             'adv20_traded_value_idr_actual' => null,
+            /*
+             * `atr14` is a required baseline field under the indicator registry. The recursion
+             * already produced it; only the ratio was ever published, so the registered level
+             * was permanently NULL in a column the artifact hash already knew the scale of.
+             */
+            'atr14' => $atr !== null ? round($atr, 10) : null,
             'atr14_pct' => $atr !== null && $priceBasisCurrent > 0 ? round($atr / $priceBasisCurrent, 10) : null,
             'vol_ratio' => $priorVolAverage !== null
                 && $priorVolAverage > 0
@@ -350,6 +455,7 @@ class IndicatorVectorService
             return [
                 'values' => $values,
                 'tokens' => null,
+                'field_reasons' => [],
                 'mandatory_contaminated' => false,
                 'price_scale_contaminated' => false,
                 'corporate_action_contaminated' => false,
@@ -357,6 +463,7 @@ class IndicatorVectorService
         }
 
         $tokens = [];
+        $fieldReasons = [];
         $mandatoryContaminated = false;
         $priceScaleContaminated = false;
         $corporateActionContaminated = false;
@@ -381,6 +488,9 @@ class IndicatorVectorService
                 }
 
                 $values[$field] = null;
+                $fieldReasons[$field][] = empty($entry['is_price_scale_break'])
+                    ? 'IND_CORPORATE_ACTION_DISCONTINUITY'
+                    : 'IND_PRICE_SCALE_DISCONTINUITY';
                 $tokens[$entry['action_type_code'].'@'.$entry['action_date']] = true;
 
                 if (in_array($field, self::MANDATORY_BASELINE_INDICATORS, true)) {
@@ -401,6 +511,7 @@ class IndicatorVectorService
         return [
             'values' => $values,
             'tokens' => empty($tokenList) ? null : $this->joinContaminationTokens($tokenList),
+            'field_reasons' => $fieldReasons,
             'mandatory_contaminated' => $mandatoryContaminated,
             'price_scale_contaminated' => $priceScaleContaminated,
             'corporate_action_contaminated' => $corporateActionContaminated,
@@ -416,6 +527,274 @@ class IndicatorVectorService
      *
      * Tuple shape: [horizon_days, price_scale_sensitive, volume_scale_sensitive]
      */
+    /**
+     * The three horizon roles locked by Terminology_and_Scope.md, measured against the declared
+     * Weekly Swing decision horizon of 5 IDX trading days.
+     *
+     * MD-S056-R0022 and MD-S056-R0129 forbid a dependency window entering the baseline field set
+     * without a declared role, because spanning beyond the horizon is legitimate for a context
+     * window and illegitimate for a decision window. Deriving the role from the span is not the
+     * same as declaring it, so the manifest declares it.
+     */
+    public const HORIZON_ROLE_DECISION = 'decision_window';
+
+    public const HORIZON_ROLE_CONTEXT = 'context_window';
+
+    public const HORIZON_ROLE_STATE = 'state_window';
+
+    public const HORIZON_ROLES = [
+        self::HORIZON_ROLE_DECISION,
+        self::HORIZON_ROLE_CONTEXT,
+        self::HORIZON_ROLE_STATE,
+    ];
+
+    /** Weekly Swing decision horizon, in IDX trading days, per Terminology_and_Scope.md. */
+    public const DECISION_HORIZON_TRADING_DAYS = 5;
+
+    /**
+     * Declared horizon role for every window in the published field set.
+     *
+     * `roc5` spans exactly the horizon and is consumed for the decision itself. Every other fixed
+     * window deliberately spans beyond it and supplies regime background. ATR has no fixed span
+     * because it carries recursive state, which the contract names as its own example.
+     */
+    private static function horizonRoles(): array
+    {
+        return [
+            'roc5' => self::HORIZON_ROLE_DECISION,
+            'atr14_pct' => self::HORIZON_ROLE_STATE,
+            'atr14' => self::HORIZON_ROLE_STATE,
+            'dv20_idr' => self::HORIZON_ROLE_CONTEXT,
+            'adv20_close_volume_proxy_idr' => self::HORIZON_ROLE_CONTEXT,
+            'vol_ratio' => self::HORIZON_ROLE_CONTEXT,
+            'roc10' => self::HORIZON_ROLE_CONTEXT,
+            'roc20' => self::HORIZON_ROLE_CONTEXT,
+            'hh20' => self::HORIZON_ROLE_CONTEXT,
+            'll20' => self::HORIZON_ROLE_CONTEXT,
+            'ma20' => self::HORIZON_ROLE_CONTEXT,
+            'ma50' => self::HORIZON_ROLE_CONTEXT,
+            'close_to_hh20_pct' => self::HORIZON_ROLE_CONTEXT,
+            'close_to_ll20_pct' => self::HORIZON_ROLE_CONTEXT,
+            'range_20_pct' => self::HORIZON_ROLE_CONTEXT,
+            'range_position_20_pct' => self::HORIZON_ROLE_CONTEXT,
+            'close_vs_ma20_pct' => self::HORIZON_ROLE_CONTEXT,
+            'close_vs_ma50_pct' => self::HORIZON_ROLE_CONTEXT,
+            'ma20_slope_pct' => self::HORIZON_ROLE_CONTEXT,
+            'rs_20_vs_ihsg' => self::HORIZON_ROLE_CONTEXT,
+            'rs_20_vs_sector' => self::HORIZON_ROLE_CONTEXT,
+        ];
+    }
+
+    /** Registered null reason codes, all owned by `Reason_Codes_Registry.md`. */
+    public const NULL_REASON_INSUFFICIENT_HISTORY = 'IND_INSUFFICIENT_HISTORY';
+
+    public const NULL_REASON_MISSING_DEPENDENCY = 'IND_MISSING_DEPENDENCY_BAR';
+
+    public const NULL_REASON_CORPORATE_ACTION = 'IND_CORPORATE_ACTION_DISCONTINUITY';
+
+    public const NULL_REASON_PRICE_SCALE = 'IND_PRICE_SCALE_DISCONTINUITY';
+
+    /** The declarations `Indicator_Registry_Baseline_LOCKED.md` requires of every registry entry. */
+    public const REGISTRY_ENTRY_KEYS = [
+        'status',
+        'dependency_fields',
+        'window_rule',
+        'basis',
+        'unit',
+        'warm_up_rule',
+        'precision',
+        'null_reason_codes',
+        'formula_version',
+        'registry_version',
+    ];
+
+    /**
+     * The versioned per-field registry entry the indicator registry baseline requires.
+     *
+     * The registry names the declarations every registered field must carry, and the
+     * implementation published none of them: the dependency manifest carried a window length and
+     * a horizon role, and precision lived only in the schema, the hash serializer and the
+     * migration, agreeing with each other by inspection rather than by any check.
+     *
+     * The window rule is read from the same horizon map the quarantine and the manifest use, so a
+     * changed window cannot leave this entry describing the old one. Precision is declared here
+     * and proven equal to both the deployed schema and the hash serializer, which is the
+     * disagreement that would otherwise round one way on write and another way into the hash.
+     *
+     * @return array<string,array<string,mixed>>
+     */
+    public function fieldRegistry(array $config): array
+    {
+        $windows = $this->contaminationHorizons($config);
+        $roles = self::horizonRoles();
+        $formulaVersion = (string) (isset($config['formula_version']) && $config['formula_version'] !== null
+            ? $config['formula_version']
+            : (isset($config['set_version']) ? $config['set_version'] : ''));
+        if ($formulaVersion === '') {
+            throw new \RuntimeException('INDICATOR_REGISTRY_FORMULA_VERSION_UNDECLARED');
+        }
+        $registryVersion = (string) (isset($config['set_version']) ? $config['set_version'] : '');
+        if ($registryVersion === '') {
+            throw new \RuntimeException('INDICATOR_REGISTRY_VERSION_UNDECLARED');
+        }
+
+        $numeric = [
+            'dv20_idr' => ['optional', 'close,volume', 'RAW', 'IDR', 2, 'dv_window_days sessions of RAW close and volume', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'adv20_close_volume_proxy_idr' => ['required', 'close,volume', 'RAW', 'IDR', 2, 'dv_window_days sessions of RAW close and volume', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'adv20_traded_value_idr_actual' => ['optional', 'source_traded_value', 'SOURCE_FACT', 'IDR', 2, 'dv_window_days sessions of source-backed traded value', []],
+            'atr14' => ['required', 'high,low,close', 'STRUCTURAL_ADJUSTED', 'IDR', 10, 'stable Wilder seed from the first atr_window_days valid true ranges after the later of dataset start and listing', [self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'atr14_pct' => ['required', 'high,low,close', 'STRUCTURAL_ADJUSTED', 'RATIO', 10, 'stable Wilder seed from the first atr_window_days valid true ranges after the later of dataset start and listing', [self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'vol_ratio' => ['required', 'volume', 'RAW', 'RATIO', 10, 'vol_ratio_lookback_days prior sessions plus the requested date', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'roc5' => ['required', 'close', 'STRUCTURAL_ADJUSTED', 'RATIO', 10, '5 prior sessions plus the requested date', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'roc10' => ['required', 'close', 'STRUCTURAL_ADJUSTED', 'RATIO', 10, '10 prior sessions plus the requested date', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'roc20' => ['required', 'close', 'STRUCTURAL_ADJUSTED', 'RATIO', 10, 'roc_lookback_days prior sessions plus the requested date', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'hh20' => ['required', 'high', 'STRUCTURAL_ADJUSTED', 'IDR', 4, 'hh_window_days sessions', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'll20' => ['required', 'low', 'STRUCTURAL_ADJUSTED', 'IDR', 4, 'hh_window_days sessions', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'ma20' => ['required', 'close', 'STRUCTURAL_ADJUSTED', 'IDR', 4, '20 valid closes', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'ma50' => ['required', 'close', 'STRUCTURAL_ADJUSTED', 'IDR', 4, '50 valid closes', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'close_to_hh20_pct' => ['required', 'close,high', 'STRUCTURAL_ADJUSTED', 'PCT', 10, 'hh_window_days sessions', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'close_to_ll20_pct' => ['required', 'close,low', 'STRUCTURAL_ADJUSTED', 'PCT', 10, 'hh_window_days sessions', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'range_20_pct' => ['required', 'high,low', 'STRUCTURAL_ADJUSTED', 'PCT', 10, 'hh_window_days sessions', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'range_position_20_pct' => ['required', 'close,high,low', 'STRUCTURAL_ADJUSTED', 'PCT', 10, 'hh_window_days sessions', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'close_vs_ma20_pct' => ['required', 'close', 'STRUCTURAL_ADJUSTED', 'PCT', 10, '20 valid closes', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'close_vs_ma50_pct' => ['required', 'close', 'STRUCTURAL_ADJUSTED', 'PCT', 10, '50 valid closes', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'ma20_slope_pct' => ['required', 'close', 'STRUCTURAL_ADJUSTED', 'PCT', 10, '20 valid closes at the requested date and at D[-5], spanning 25 sessions', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'rs_20_vs_ihsg' => ['optional', 'close,benchmark_roc20_pct', 'STRUCTURAL_ADJUSTED', 'PCT', 10, 'roc_lookback_days sessions plus a resolved benchmark return', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'sector_roc20' => ['optional', 'sector_roc20_pct', 'SOURCE_FACT', 'PCT', 10, 'a resolved sector benchmark return for the requested date', []],
+            'rs_20_vs_sector' => ['optional', 'close,sector_roc20_pct', 'STRUCTURAL_ADJUSTED', 'PCT', 10, 'roc_lookback_days sessions plus a resolved sector return', [self::NULL_REASON_INSUFFICIENT_HISTORY, self::NULL_REASON_MISSING_DEPENDENCY, self::NULL_REASON_CORPORATE_ACTION, self::NULL_REASON_PRICE_SCALE]],
+            'sector_rs_20_vs_ihsg' => ['optional', 'sector_roc20_pct,benchmark_roc20_pct', 'SOURCE_FACT', 'PCT', 10, 'a resolved sector return and benchmark return for the requested date', []],
+        ];
+
+        $entries = [];
+        foreach ($numeric as $field => $d) {
+            $entries[$field] = [
+                'status' => $d[0],
+                'dependency_fields' => explode(',', $d[1]),
+                'window_rule' => isset($windows[$field])
+                    ? ($roles[$field] === self::HORIZON_ROLE_STATE
+                        ? 'recursive state, no fixed span'
+                        : 'exact trading-date window of '.((int) $windows[$field][0]).' sessions')
+                    : 'point-in-time source fact, no window',
+                'basis' => $d[2],
+                'unit' => $d[3],
+                'warm_up_rule' => $d[5],
+                'precision' => [
+                    'scale' => $d[4],
+                    'rounding' => 'at the storage boundary only, never on an intermediate step',
+                    'serialization' => 'fixed-point decimal text, no exponent, no separator',
+                ],
+                'null_reason_codes' => $d[6],
+                'formula_version' => $formulaVersion,
+                'registry_version' => $registryVersion,
+            ];
+        }
+
+        $context = [
+            'sector_code' => ['optional', 'sector membership revision', 'CODE'],
+            'corporate_action_flag' => ['optional', 'verified event revision', 'FLAG'],
+            'corporate_action_types' => ['optional', 'verified event revision', 'CODE_SET'],
+            'trading_status_code' => ['optional', 'trading status event revision', 'CODE'],
+            'is_suspended' => ['optional', 'trading status event revision', 'FLAG'],
+            'is_uma' => ['optional', 'trading status event revision', 'FLAG'],
+            'event_risk_flag' => ['optional', 'event risk source revision', 'FLAG'],
+            'event_risk_reasons' => ['optional', 'event risk source revision', 'CODE_SET'],
+        ];
+        foreach ($context as $field => $d) {
+            $entries[$field] = [
+                'status' => $d[0],
+                'dependency_fields' => [$d[1]],
+                'window_rule' => 'as-of the governed knowledge cutoff, no window',
+                'basis' => 'SOURCE_FACT',
+                'unit' => $d[2],
+                'warm_up_rule' => 'none; the fact is present or the field is null',
+                'precision' => [
+                    'scale' => null,
+                    'rounding' => 'not applicable',
+                    'serialization' => 'verbatim source token',
+                ],
+                'null_reason_codes' => [],
+                'formula_version' => $formulaVersion,
+                'registry_version' => $registryVersion,
+            ];
+        }
+
+        foreach ($entries as $field => $entry) {
+            $missing = array_values(array_diff(self::REGISTRY_ENTRY_KEYS, array_keys($entry)));
+            if ($missing !== []) {
+                throw new \RuntimeException('INDICATOR_REGISTRY_ENTRY_INCOMPLETE: '.$field
+                    .' is missing '.implode(', ', $missing));
+            }
+        }
+
+        $unregistered = array_keys(array_diff_key($windows, $entries));
+        if ($unregistered !== []) {
+            throw new \RuntimeException('INDICATOR_REGISTRY_FIELD_UNREGISTERED: '.implode(', ', $unregistered));
+        }
+
+        ksort($entries);
+
+        return $entries;
+    }
+
+    /**
+     * The dependency manifest MD-S081-R0026 requires the registry and implementation to publish,
+     * now carrying the horizon role MD-S056-R0129 requires before a window may enter the set.
+     *
+     * A field present in the horizon map but absent from the window map, or the reverse, is a
+     * defect rather than a default: the manifest fails closed instead of inventing a role.
+     *
+     * @return array<string,array{window_days:int,price_sensitive:bool,volume_sensitive:bool,horizon_role:string}>
+     */
+    public function dependencyManifest(array $config): array
+    {
+        $windows = $this->contaminationHorizons($config);
+        $roles = self::horizonRoles();
+
+        $undeclared = array_keys(array_diff_key($windows, $roles));
+        if ($undeclared !== []) {
+            throw new \RuntimeException('INDICATOR_HORIZON_ROLE_UNDECLARED: '.implode(', ', $undeclared));
+        }
+        $orphaned = array_keys(array_diff_key($roles, $windows));
+        if ($orphaned !== []) {
+            throw new \RuntimeException('INDICATOR_HORIZON_ROLE_ORPHANED: '.implode(', ', $orphaned));
+        }
+
+        $manifest = [];
+        foreach ($windows as $field => $window) {
+            $role = $roles[$field];
+            if (! in_array($role, self::HORIZON_ROLES, true)) {
+                throw new \RuntimeException('INDICATOR_HORIZON_ROLE_INVALID: '.$field.' => '.$role);
+            }
+            $manifest[$field] = [
+                'window_days' => (int) $window[0],
+                'price_sensitive' => (bool) $window[1],
+                'volume_sensitive' => (bool) $window[2],
+                'horizon_role' => $role,
+            ];
+        }
+
+        return $manifest;
+    }
+
+    /**
+     * MD-S056-R0024 requires the contamination radius to be published as a number: it equals the
+     * longest dependency window in the published field set. ATR is excluded from the fixed-window
+     * radius because its state window has no fixed span and contaminates the entire remaining
+     * chain, which MD-S081-R0034 states separately.
+     */
+    public function fixedWindowContaminationRadius(array $config): int
+    {
+        $radius = 0;
+        foreach ($this->dependencyManifest($config) as $entry) {
+            if ($entry['horizon_role'] === self::HORIZON_ROLE_STATE) {
+                continue;
+            }
+            $radius = max($radius, $entry['window_days']);
+        }
+
+        return $radius;
+    }
+
     private function contaminationHorizons(array $config)
     {
         $dvWindow = (int) $config['dv_window_days'];
@@ -435,6 +814,10 @@ class IndicatorVectorService
             // window readable through its clearer name.
             'adv20_close_volume_proxy_idr' => [$dvWindow, true, true],
             'atr14_pct' => [$atrHorizon, true, false],
+            // The level and the ratio come from the same recursive state, so a window that
+            // contaminates one contaminates both. Omitting the level here would leave a
+            // quarantined ATR readable in absolute IDR.
+            'atr14' => [$atrHorizon, true, false],
             'vol_ratio' => [$volLookback + 1, false, true],
             'roc5' => [6, true, false],
             'roc10' => [11, true, false],

@@ -1,6 +1,7 @@
 # F-MD-B01-A008-001 — No dependency window in the baseline field set declares its horizon role
 
-- Status: `OPEN`
+- Status: `RESOLVED`
+- Resolved by: `MD-B14-A001` / `E-MD-B14-A001-001` on 2026-08-29
 - Severity: `P2`
 - Stage / Attempt / Baseline / Epoch: `MD-B01` / `MD-B01-A008` / `MD-B01-A008-BL001` / `MD-REBASELINE-20260820-001`
 - Owning stage for remediation: `MD-B14` — the indicator dependency manifest is the surface that must carry the role
@@ -53,3 +54,20 @@ So `MD-B01` owns the horizon and the obligation, and the indicator owner contrac
 When `MD-B14` opens, the indicator dependency manifest must carry a `horizon_role` for every window in the published field set, drawn from the three locked roles, and a guard must assert that no field enters the baseline set without one. At that point `MD-S056-R0019`–`R0022`, `R0024`, and `R0129` become provable, and `MD-S056-R0129` in particular becomes enforceable rather than merely stated.
 
 `MD-B01-A012` normalized all six predicates to `MD-B14` with `MD-B01` retained as a supporting stage. Until remediation, the six rules remain `NOT_ASSESSED`. They are not claimed on the strength of the roles being derivable — deriving a role is not declaring one, and the contract requires the declaration.
+
+## Resolution — `MD-B14-A001`
+
+`IndicatorVectorService::dependencyManifest()` now declares a `horizon_role` for every one of the 21
+windows in the published field set, drawn from the three roles locked by `Terminology_and_Scope.md`,
+and fails closed on an undeclared or orphaned one rather than defaulting. `roc5` is the decision
+window, ATR the state window, and every other fixed window a context window. The contamination
+radius is published as fifty sessions and equals the longest fixed dependency window, which is the
+same number `MD-S081-R0034` states from the other side.
+
+`IndicatorHorizonRoleManifestTest` carries the guard the remediation clause required. Probe 05 in
+`MD-B14-A001-006_fail_closed_probes.txt` removes a role from a published window and records the
+guard turning red, so the assertion is falsifiable rather than merely present.
+
+`MD-S056-R0019`, `R0020`, `R0021`, `R0022`, `R0024` and `R0129` are `SATISFIED` and bound to
+`E-MD-B14-A001-001`. The predicates were not claimed on the strength of the roles being derivable —
+the manifest declares them.

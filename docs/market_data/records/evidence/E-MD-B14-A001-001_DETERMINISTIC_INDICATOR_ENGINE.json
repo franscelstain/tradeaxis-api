@@ -1,0 +1,229 @@
+{
+    "evidence_id": "E-MD-B14-A001-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B14",
+    "attempt_id": "MD-B14-A001",
+    "work_id": "MD-B14-A001",
+    "baseline_id": "MD-B14-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze": "MD-STRATEGY-FREEZE-20260823-001",
+    "change_impact_declaration": "CI-MD-B14-A001-001",
+    "issued_at": "2026-08-29T13:55:00+07:00",
+    "title": "Deterministic indicator engine and correction dependency graph: published ATR level, per-field null reason sets, and a versioned field registry",
+    "attempt_outcome": "COMPLETE - all 147 MD-B14 mandatory predicates are proven by executed guards. Three executable gaps were found and closed rather than described: the registered baseline field atr14 was never computed despite owning a column, a hash scale and a pipeline slot; null_reasons_json was a column the pipeline carried and the read repository selected that nothing ever wrote, leaving the compatibility primary reason standing alone in the state the nullability contract forbids; and no versioned per-field registry existed, so precision lived in the schema, the hash serializer and the migration agreeing by inspection only.",
+    "authority_basis": {
+        "primary_stage": "MD-B14",
+        "strategy_documents": [
+            "authority/strategy/registry/Indicator_Registry_Baseline_LOCKED.md",
+            "authority/strategy/indicators/EOD_Indicators_Formula_Spec.md",
+            "authority/strategy/indicators/Indicator_Computation_Specification.md",
+            "authority/strategy/book/Current_Indicator_Recompute_Command_Contract.md",
+            "authority/strategy/book/Indicator_Recompute_Source_Scope_Contract.md",
+            "authority/strategy/book/Indicator_Nullability_And_OHLCV_Gap_Contract.md",
+            "authority/strategy/book/EOD_Indicators_Contract.md",
+            "authority/strategy/book/Hash_Number_Formatting_LOCKED.md",
+            "authority/strategy/book/Terminology_and_Scope.md"
+        ],
+        "predecessor_closure": "SC-MD-B13-A001-001",
+        "note": "MD-B13 closure is a stage precondition only. No MD-B13 predicate proof is inherited: every one of the 147 predicates bound here was proven by a guard executed during this attempt, recorded in artifact MD-B14-A001-001."
+    },
+    "execution_environment": {
+        "execution_mode": "IN_SESSION_LOCAL_EXECUTION",
+        "php_version": "7.4.33",
+        "phpunit_version": "9.6.34",
+        "database_engine": "10.4.27-MariaDB",
+        "primary_database": "tradeaxis",
+        "test_database": "tradeaxis_testing",
+        "applied_migration_count": 80,
+        "applied_migration_head": "2026_08_27_000001_add_liquidity_metric_labelling_and_volume_unit_identity",
+        "schema_drift_state": "NONE",
+        "schema_drift_note": "tradeaxis and tradeaxis_testing both report 80 applied migrations at the same head. This attempt added no migration: the three remediations are computation and declaration changes over columns the schema already carried."
+    },
+    "raw_artifact_manifest": {
+        "manifest_path": "storage/app/market-data/evidence/MD-B14-A001/MANIFEST.json",
+        "manifest_sha256": "C5DC95DAE883BCD98DEAD5E9057632C70B990EA7EF877992310EBAC09305122A",
+        "artifact_count": 6
+    },
+    "executed_proof": [
+        {
+            "execution_id": "MD-B14-A001-001",
+            "kind": "TARGETED_RUNTIME",
+            "command": "php vendor/bin/phpunit --filter \"<the 48 guard methods named by MarketDataIndicatorEngineProofSpec::families()>\"",
+            "verdict": "PASS",
+            "tests": 51,
+            "assertions": 1026,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0,
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B14-A001/MD-B14-A001-001_targeted_indicator_engine_proof.txt",
+            "sha256": "8E18C2BFE60C703271298FA9FEA0B2B6E0854F1ADFB0B35F47A8094D42687D17",
+            "supports": "Every positive and fail-closed guard named by the proof map, executed by name. 51 executions cover the 48 distinct method names across 20 classes; the surplus is three names that exist in more than one class and were all run."
+        },
+        {
+            "execution_id": "MD-B14-A001-002",
+            "kind": "TARGETED_RUNTIME",
+            "command": "php vendor/bin/phpunit --filter \"IndicatorFieldRegistryAndNullReasonsTest|IndicatorEngineBoundaryB14Test|IndicatorHorizonRoleManifestTest\"",
+            "verdict": "PASS",
+            "tests": 19,
+            "assertions": 1044,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0,
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B14-A001/MD-B14-A001-002_remediation_guards.txt",
+            "sha256": "A17364420E9120A8AA45730CB50EF8A979727F004BF6ED27AE80D3B31ED8AA16",
+            "supports": "The three remediations built by this attempt, plus the horizon-role manifest that discharges F-MD-B01-A008-001."
+        },
+        {
+            "execution_id": "MD-B14-A001-003",
+            "kind": "FULL_REGRESSION",
+            "command": "php vendor/bin/phpunit",
+            "verdict": "PASS",
+            "tests": 1972,
+            "assertions": 19298,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0,
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B14-A001/MD-B14-A001-003_full_suite.txt",
+            "sha256": "2F78B3EA99156FB48810E93E463187000A5FF3D74D0018835868B5CDFCED3880",
+            "supports": "No regression from publishing atr14, emitting null_reasons_json, or adding the field registry. An earlier run of this same command failed on FindingRecordConsistencyTest because F-MD-B14-A001-001 had been raised but not yet regenerated into CURRENT_STATE.md; the finding-visibility guard caught it and the state was regenerated before this run."
+        },
+        {
+            "execution_id": "MD-B14-A001-004",
+            "kind": "GOVERNED_GATE",
+            "command": "php MarketDataIndicatorEngineProofGate.php ; php MarketDataIndicatorEngineProofSelfTest.php",
+            "verdict": "PASS",
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B14-A001/MD-B14-A001-004_proof_gate_and_self_test.txt",
+            "sha256": "C282FA5CAFC6E8C04E4A133A209108A10138A0CEC6128B3A34F27EDF6B174166",
+            "supports": "The proof gate validates the whole map: 147 predicates, 147 entries, 25 families, no duplicate, orphan or unmapped rule, every implementation surface present, and every named guard method verified to exist. The self-test reports a green control plus ten mutations the gate must catch, including a guard method that does not exist and a family whose positive and negative guard are the same method."
+        },
+        {
+            "execution_id": "MD-B14-A001-005",
+            "kind": "GOVERNED_GATE",
+            "command": "php <documentation|relationship|classification|traceability-applicability> gates and the relationship gate self-test",
+            "verdict": "PASS",
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B14-A001/MD-B14-A001-005_governance_gates.txt",
+            "sha256": "588A9C1F9AD7CC27C535324E0C6E3B471A7A1C6C97299BBE1AD47D8089D6D1B7",
+            "supports": "All five governance gates exit zero on the package state this evidence is issued against."
+        },
+        {
+            "execution_id": "MD-B14-A001-006",
+            "kind": "FAIL_CLOSED_MUTATION_PROBE",
+            "command": "scripted probe harness: inject one defect, run the owning guard, restore from a byte copy",
+            "verdict": "PASS",
+            "probes": 10,
+            "caught": 10,
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B14-A001/MD-B14-A001-006_fail_closed_probes.txt",
+            "sha256": "A31E634093B4726A8AC7FBF8392D86D9EFA0BAD71814DE7F0070CFB30EFE83A8",
+            "supports": "Falsifiability of the guards this attempt relies on. A control run precedes and follows the probes, both green, so the restores are proven complete rather than assumed. Probes cover: atr14 unpublished; a precision scale disagreeing with the schema and hash serializer; the field-level reason set suppressed; a price-scale break reported under the corporate-action code; a horizon role removed; a write to the read-only eod_bars table; the engine reading the shortened-session flag; replay leaving the governed calendar; a technical-only mode introduced; and an alignment contract no longer named."
+        }
+    ],
+    "required_semantics_proven": [
+        "Recompute reads immutable source and master revisions and writes none of them, and dispatches no source or import command.",
+        "Every registered baseline field carries a versioned registry entry declaring status, dependencies and window rule, basis and unit, warm-up rule, precision and serialization rule, allowed null reason codes, and formula and registry version.",
+        "Declared precision equals both the deployed schema scale and the hash serializer scale for every numeric field, checked across at least twenty fields.",
+        "Nullability is per field and reason-coded, and the compatibility primary reason is retained beside the field-level sets rather than replacing them.",
+        "The four null causes stay distinct: warm-up, a missing required trading-date dependency, an unresolved corporate action, and an unexplained price-scale break.",
+        "The registered ATR level atr14 is published, agrees with the ratio it shares a recursion with, and is quarantined by the same windows.",
+        "ATR uses a stable Wilder seed and is never reseeded from the first row of a sliding load window.",
+        "Fixed windows load exact trading-date dependencies; a gap nulls the dependent field rather than shortening the window.",
+        "Every published dependency window declares one of the three locked horizon roles, and the manifest fails closed on an undeclared or orphaned one.",
+        "The fixed-window contamination radius is published as fifty sessions and equals the longest fixed dependency window.",
+        "A non-null value is not treated as evidence of a clean window: an unexplained break contaminates and a neutral factor does not excuse a detected one.",
+        "The actual traded value and the close-volume proxy are separately named, and the actual stays null rather than being filled from the proxy.",
+        "No liquidity or volatility measure normalises, excludes or reweights a shortened session, while the calendar still records the fact.",
+        "Indicator, benchmark, mutation-impact, replay and API warm-up windows all resolve through the governed calendar.",
+        "The hash and number-format contract's three named alignment targets resolve to current documents and none contradicts the locked format rule.",
+        "Zero-price OHLC placeholders are never canonical, and a zero volume with valid price is a distinct state from missing data."
+    ],
+    "applicability_decisions": [
+        {
+            "decision": "MD-S038-R0028 is CONDITIONAL_NOT_APPLICABLE for the current verification scope.",
+            "rules": [
+                "MD-S038-R0028"
+            ],
+            "condition": "A technical-only recompute mode exists as an accepted production command.",
+            "condition_state": "FALSE",
+            "evidence": [
+                "Indicator_Recompute_Source_Scope_Contract.md states the mode does not currently exist as an accepted production command.",
+                "The signature of market-data:eod-indicators:recompute-current carries no technical-only option.",
+                "No command under app/Console/Commands/MarketData mentions a technical-only mode."
+            ],
+            "fail_closed_guard": "IndicatorEngineBoundaryB14Test::test_no_technical_only_recompute_mode_exists_to_carry_the_conditional_obligation reads the command signature and scans the whole MarketData console surface. It fails the day the mode is introduced, returning the predicate to applicable with its own obligation to prove. Probe 09 confirms it fires.",
+            "not_a_pass": "NOT_APPLICABLE is a terminal applicability outcome with an evidenced false condition and a standing guard on that condition. It is not a proof of the obligation and is not counted in the mandatory denominator."
+        }
+    ],
+    "coverage": {
+        "mandatory_denominator": 147,
+        "mandatory_satisfied": 147,
+        "conditional_not_applicable": 1,
+        "conditional_pending": 0,
+        "optional_not_requested": 6,
+        "reference_context": 229,
+        "transitional": 0,
+        "stage_rows": 383,
+        "binding": "All 147 MD-B14 mandatory predicates are atomically bound to E-MD-B14-A001-001 by MarketDataIndicatorEngineProofBinder, after the single conditional row was resolved and every named guard was executed. The binder refuses a partial binding: a coverage figure no single execution established is the defect this package has recorded before."
+    },
+    "defects_found_and_remediated_in_attempt": [
+        {
+            "defect": "The registered baseline field atr14 was never computed.",
+            "detail": "eod_indicators.atr14 exists as DECIMAL(20,10), DeterministicHashService declares its scale, and MarketDataPipelineService carries it in the column list. wilderAtr() produced the value and buildRow() published only atr14_pct, discarding the level. The column was permanently NULL.",
+            "remediation": "buildRow() publishes atr14, and the level joins the contamination horizon map so a window that quarantines the ratio cannot leave the level readable.",
+            "guard": "IndicatorFieldRegistryAndNullReasonsTest::test_the_registered_atr_level_is_published_and_not_permanently_null, probe 01."
+        },
+        {
+            "defect": "Field-level null reason sets were never written.",
+            "detail": "null_reasons_json was carried by the pipeline column list and selected by MarketDataReadProductRepository, and no code ever wrote a value into it. Rows carried only invalid_reason_code, which the nullability contract calls the compatibility primary reason and forbids from erasing the field-level sets. With nothing else emitted, it had erased them.",
+            "remediation": "fieldNullReasons() derives a per-field reason set from each field's own dependency window and the quarantine that nulled it; buildRow() emits it beside the primary reason.",
+            "guard": "Three tests in IndicatorFieldRegistryAndNullReasonsTest, probes 03 and 04."
+        },
+        {
+            "defect": "No versioned per-field registry existed.",
+            "detail": "Indicator_Registry_Baseline_LOCKED.md requires seven declarations per registered field. None was published. Precision in particular lived in three places - the schema, the hash serializer and the migration - which agreed by inspection with nothing asserting it.",
+            "remediation": "fieldRegistry() publishes all declarations for 24 numeric and 8 context fields, reading the window rule from the same horizon map the quarantine uses, and fails closed on an incomplete entry or an unregistered published window.",
+            "guard": "Four tests in IndicatorFieldRegistryAndNullReasonsTest, probes 02 and 05."
+        },
+        {
+            "defect": "A probe restore discarded uncommitted implementation work.",
+            "detail": "A mutation-probe helper restored its target with git checkout --, which reverted IndicatorVectorService.php to HEAD and discarded every uncommitted change to it, not merely the injected defect. Detected immediately by a git diff --stat that reported no change where 383 added lines were expected.",
+            "remediation": "Restored from a byte copy taken after the three remediations, verified by marker count, CRLF check, php -l and a full green suite. The probe harness recorded as artifact MD-B14-A001-006 uses shutil.copyfile for every restore and never git, and runs a control after the probes to prove the restores were complete.",
+            "guard": "The post-probe control entry in MD-B14-A001-006, plus a byte comparison against the pre-probe copy."
+        },
+        {
+            "defect": "An invalid relationship row was written and rejected by the gate.",
+            "detail": "A CI-MD-B14-A001-001 -> MD-DEP-0004 DISCHARGES row was appended. DISCHARGES is not an allowed relationship type and MD-DEP-0004 is not a work record, so the relationship integrity gate reported it unresolved.",
+            "remediation": "The row was removed. The dependency discharge was already recorded in the work record registry's dependency column, so the relationship was both invalid and redundant.",
+            "guard": "MarketDataRelationshipIntegrityGate, which caught it before any evidence was issued."
+        }
+    ],
+    "residue": {
+        "state": "CONFORMANT_WITH_DECLARED_FINDING",
+        "scope": "The indicator computation, recompute command, nullability and reason surface, dependency manifest and field registry.",
+        "notes": [
+            "F-MD-B14-A001-001 (P3, OPEN): the registered INDICATOR reason vocabulary has no code for a field nulled by an absent optional source fact. Five fields - the three sector relatives, rs_20_vs_ihsg with an unresolved benchmark, and adv20_traded_value_idr_actual - are null and absent from the reason map rather than null with a wrong reason. Remediation is a strategy change to Reason_Codes_Registry.md and is not available to an implementation attempt. No predicate in the MD-B14 denominator is left unprovable by it.",
+            "Indicator rows published before this attempt carry no atr14 value and no null_reasons_json. They are not back-stamped: writing a level or a reason set onto rows whose computation never produced one would assert a fact that was never true. A recompute under the correction-current lifecycle is the governed way to populate them.",
+            "The absolute atr14 now participates in the artifact hash where it previously contributed a constant NULL. Any republication of an affected date is an ordinary correction under the version rule, not a silent change."
+        ]
+    },
+    "findings_and_dependencies": {
+        "findings_opened": [
+            "F-MD-B14-A001-001"
+        ],
+        "findings_discharged": [
+            "F-MD-B01-A008-001"
+        ],
+        "findings_discharge_basis": "F-MD-B01-A008-001 required the indicator dependency manifest to carry a horizon_role for every window in the published field set, drawn from the three locked roles, with a guard asserting no field enters the baseline set without one. The manifest declares a role for all 21 published windows, the guard exists in IndicatorHorizonRoleManifestTest, and probe 05 proves it fails when a role is removed. MD-S056-R0019, R0020, R0021, R0022, R0024 and R0129 are bound by this evidence.",
+        "dependencies_discharged": [
+            "MD-DEP-0004"
+        ],
+        "dependencies_opened": []
+    },
+    "no_inheritance_statement": "No predicate is claimed on historical material. Every one of the 147 was proven by a guard executed in this attempt and recorded in artifact MD-B14-A001-001, and every guard the attempt relies on was shown to fail under an injected defect in artifact MD-B14-A001-006. W14 material predating this attempt is supporting context only."
+}

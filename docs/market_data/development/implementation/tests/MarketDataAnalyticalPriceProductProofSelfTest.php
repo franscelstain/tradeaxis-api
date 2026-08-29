@@ -7,7 +7,7 @@ $mandatory = MarketDataAnalyticalPriceProductTraceabilitySpec::mandatory($root);
 $bound = $mandatory !== [];
 foreach ($mandatory as $r) {
     if (($r['coverage_status'] ?? '') !== 'SATISFIED'
-        || ! preg_match('/^E-MD-B12-A001-\d{3}$/', trim((string) ($r['current_evidence_ids'] ?? '')))) {
+        || ! preg_match('/^E-MD-B12-A\d{3}-\d{3}$/', trim((string) ($r['current_evidence_ids'] ?? '')))) {
         $bound = false;
         break;
     }

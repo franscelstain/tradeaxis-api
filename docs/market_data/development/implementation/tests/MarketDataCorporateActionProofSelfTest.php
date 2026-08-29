@@ -6,7 +6,7 @@ $families=MarketDataCorporateActionProofSpec::families();
 $rows=MarketDataCorporateActionTraceabilitySpec::rows($root);
 $mandatory=MarketDataCorporateActionTraceabilitySpec::mandatory($root);
 $bound=$mandatory!==[];
-foreach($mandatory as $r){if(($r['coverage_status']??'')!=='SATISFIED'||!preg_match('/^E-MD-B11-A001-\\d{3}$/',trim((string)($r['current_evidence_ids']??'')))){$bound=false;break;}}
+foreach($mandatory as $r){if(($r['coverage_status']??'')!=='SATISFIED'||!preg_match('/^E-MD-B11-A\\d{3}-\\d{3}$/',trim((string)($r['current_evidence_ids']??'')))){$bound=false;break;}}
 $checks=[];
 $checks[$bound?'control_bound':'control_prebinding']=MarketDataCorporateActionProofGate::validate($root,$bound)['status']==='PASS';
 function b11fails($root,$overrides,$bound){return MarketDataCorporateActionProofGate::validate($root,$bound,$overrides)['status']==='FAIL';}
