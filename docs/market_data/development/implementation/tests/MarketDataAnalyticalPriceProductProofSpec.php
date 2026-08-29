@@ -2,7 +2,7 @@
 require_once __DIR__.'/MarketDataAnalyticalPriceProductTraceabilitySpec.php';
 final class MarketDataAnalyticalPriceProductProofSpec
 {
-    public const STAGE='MD-B12'; public const ATTEMPT='MD-B12-A001'; public const BASELINE='MD-B12-A001-BL001'; public const CI='CI-MD-B12-A001-001'; public const EXPECTED_DENOMINATOR=60;
+    public const STAGE='MD-B12'; public const ATTEMPT='MD-B12-A001'; public const BASELINE='MD-B12-A001-BL001'; public const CI='CI-MD-B12-A001-001'; public const EXPECTED_DENOMINATOR=75;
     private static function f($owner,$impl,$positive,$negative){return ['owner'=>$owner,'implementation'=>$impl,'positive'=>$positive,'negative'=>$negative,'runtime_required'=>true];}
     public static function families(): array { return [
         'product_boundary'=>self::f('MD-B12:product-boundary',['app/Application/MarketData/Services/AnalyticalPriceProductService.php','app/Application/MarketData/Services/AnalyticalProductIdentityService.php'],['tests/Unit/MarketData/AnalyticalPriceProductServiceTest.php','test_raw_is_immutable_pass_through_and_provider_adj_close_is_not_selected'],['tests/Unit/MarketData/AnalyticalPriceProductServiceTest.php','test_total_return_is_distinct_and_unavailable_without_governed_distribution_formula']),
@@ -17,6 +17,11 @@ final class MarketDataAnalyticalPriceProductProofSpec
         'sealed_immutability'=>self::f('MD-B12:sealed-immutability',['app/Application/MarketData/Services/AnalyticalPriceProductService.php','app/Application/MarketData/Services/CorporateActionRevisionService.php'],['tests/Unit/MarketData/AnalyticalPriceProductServiceTest.php','test_raw_is_immutable_pass_through_and_provider_adj_close_is_not_selected'],['tests/Unit/MarketData/CorporateActionRevisionServiceTest.php','test_revision_is_append_only_and_supersession_preserves_event_identity']),
         'contamination_integrity'=>self::f('MD-B12:contamination-integrity',['app/Application/MarketData/Services/EodIndicatorsComputeService.php','app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php'],['tests/Unit/MarketData/ContaminationAnchoredOnBreakDateTest.php','test_a_neutral_factor_does_not_excuse_a_detected_break'],['tests/Unit/MarketData/ContaminationAnchoredOnBreakDateTest.php','test_an_unexplained_break_still_contaminates']),
         'actual_versus_proxy_naming'=>self::f('MD-B12:actual-versus-proxy-naming',['app/Application/MarketData/Services/IndicatorVectorService.php'],['tests/Unit/MarketData/ActualVersusProxyMetricBoundaryTest.php','test_the_proxy_is_raw_close_times_raw_volume'],['tests/Unit/MarketData/ActualVersusProxyMetricBoundaryTest.php','test_the_actual_traded_value_is_null_rather_than_filled_with_the_proxy']),
+        'correction_recompute_lineage'=>self::f('MD-B12:correction-recompute-lineage',['app/Application/MarketData/Services/AnalyticalPriceProductService.php','app/Application/MarketData/Services/EodIndicatorsComputeService.php'],['tests/Unit/MarketData/CorrectionCommandsTest.php','test_run_correction_command_executes_pipeline_for_approved_request_and_renders_final_status'],['tests/Unit/MarketData/CorrectionCommandsTest.php','test_run_correction_command_renders_resealed_status_when_finalize_result_is_held_conflict']),
+        'deterministic_oracle'=>self::f('MD-B12:deterministic-oracle',['app/Application/MarketData/Services/IndicatorVectorService.php','app/Application/MarketData/Services/AnalyticalPriceProductService.php'],['tests/Unit/MarketData/IndicatorIndependentOracleTest.php','test_correction_oracle_propagates_by_exactly_the_expected_amount'],['tests/Unit/MarketData/AnalyticalProductIdentityServiceTest.php','test_factor_hash_is_order_independent_but_revision_sensitive']),
+        'factor_provenance_vocabulary'=>self::f('MD-B12:factor-provenance-vocabulary',['app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php','app/Console/Commands/MarketData/ImportCorporateActionsCommand.php'],['tests/Unit/MarketData/ImportCorporateActionsCommandTest.php','test_unattributed_and_platform_derived_factors_are_refused'],['tests/Unit/MarketData/CorporateActionCandidateBoundaryTest.php','test_a_price_derived_factor_never_reaches_the_adjustment_path']),
+        'structural_adjustment_formula'=>self::f('MD-B12:structural-adjustment-formula',['app/Application/MarketData/Services/AnalyticalPriceProductService.php'],['tests/Unit/MarketData/AnalyticalPriceProductServiceTest.php','test_structural_product_compounds_price_and_explicit_volume_factors_coherently'],['tests/Unit/MarketData/AnalyticalPriceProductServiceTest.php','test_future_factor_is_not_admitted_to_earlier_as_of_and_future_bar_fails_closed']),
+        'candidate_quarantine_boundary'=>self::f('MD-B12:candidate-quarantine-boundary',['app/Application/MarketData/Services/AdjustmentFactorSetService.php','app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php'],['tests/Unit/MarketData/CorporateActionCandidateBoundaryTest.php','test_an_unattributed_factor_does_not_adjust'],['tests/Unit/MarketData/CorporateActionCandidateBoundaryTest.php','test_a_price_derived_action_does_not_suppress_contamination']),
     ]; }
     public static function familyFor(array $r): string {
         $rid=(string)$r['rule_id'];
@@ -29,6 +34,17 @@ final class MarketDataAnalyticalPriceProductProofSpec
         if(in_array($rid,['MD-S083-R0054','MD-S083-R0060'],true)) return 'sealed_immutability';
         if($rid==='MD-S083-R0061') return 'contamination_integrity';
         if($rid==='MD-S083-R0062') return 'actual_versus_proxy_naming';
+        // MD-B12-A003 promotions.
+        if($rid==='MD-S012-R0030') return 'persisted_identity';
+        if($rid==='MD-S012-R0031') return 'determinism';
+        if(in_array($rid,['MD-S012-R0032','MD-S012-R0033','MD-S083-R0051','MD-S083-R0052'],true)) return 'correction_recompute_lineage';
+        if($rid==='MD-S012-R0034') return 'deterministic_oracle';
+        if(in_array($rid,['MD-S083-R0006','MD-S083-R0019'],true)) return 'factor_provenance_vocabulary';
+        if($rid==='MD-S083-R0017') return 'contamination_integrity';
+        if($rid==='MD-S083-R0030') return 'sealed_immutability';
+        if($rid==='MD-S083-R0038') return 'structural_adjustment_formula';
+        if($rid==='MD-S083-R0048') return 'coherent_vector';
+        if(in_array($rid,['MD-S083-R0049','MD-S083-R0050'],true)) return 'candidate_quarantine_boundary';
         if(in_array($rid,['MD-S083-R0023','MD-S083-R0024','MD-S083-R0025','MD-S083-R0026','MD-S083-R0027','MD-S083-R0028','MD-S083-R0029'],true)) return 'factor_lineage';
         if(in_array($rid,['MD-S083-R0040','MD-S083-R0055','MD-S083-R0059'],true)) return 'action_specific_volume';
         if(in_array($rid,['MD-S020-R0009','MD-S083-R0053'],true)) return 'determinism';

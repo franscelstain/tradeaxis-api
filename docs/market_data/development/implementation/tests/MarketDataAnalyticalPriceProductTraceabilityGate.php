@@ -14,7 +14,7 @@ final class MarketDataAnalyticalPriceProductTraceabilityGate
         foreach ($mandatory as $r) {
             $evidence = trim((string) ($r['current_evidence_ids'] ?? ''));
             if ($bound) {
-                if (($r['coverage_status'] ?? '') !== 'SATISFIED' || ! preg_match('/^E-MD-B12-A00[12]-\d{3}$/', $evidence)) {
+                if (($r['coverage_status'] ?? '') !== 'SATISFIED' || ! preg_match('/^E-MD-B12-A00[123]-\d{3}$/', $evidence)) {
                     $invalid[] = $r['rule_id'];
                 }
             } elseif (($r['coverage_status'] ?? '') !== 'NOT_ASSESSED' || $evidence !== '') {

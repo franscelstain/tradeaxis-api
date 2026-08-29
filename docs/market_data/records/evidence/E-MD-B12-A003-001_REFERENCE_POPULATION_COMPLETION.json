@@ -1,0 +1,112 @@
+{
+  "evidence_id": "E-MD-B12-A003-001",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B12",
+  "attempt_id": "MD-B12-A003",
+  "work_id": "MD-B12-A003",
+  "baseline_id": "MD-B12-A003-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "change_impact_declaration": "CI-MD-B12-A003-001",
+  "issued_at": "2026-08-29T09:40:00+07:00",
+  "title": "MD-B12 reference population completed at 75/75 with every remaining row promoted or decided, admitting the stage to DECISION_RECORDED_STAGES",
+  "attempt_outcome": "COMPLETE - the 39 rows MD-B12-A002 deliberately left behind are resolved: 15 promoted and bound, 24 recorded as reference with their basis. MD-B12 now carries zero non-structural reference rows without a recorded decision.",
+  "authority_basis": [
+    "MD-S012 Corporate Action and Adjustment Policy Selected Defaults (LOCKED): Version/change rule, Coherence rule, One-basis-per-run, Persistence of the binding, Acceptance criterion, Capability boundary scope.",
+    "MD-S083 Price Adjustment Contract (LOCKED): Factor provenance vocabulary, Factor revision model, Structural-adjustment formula, Contamination behavior, Price-break detector boundary, Capability boundary.",
+    "STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md sections 2, 3, 7, 8.4 and 9.",
+    "STAGE_CLOSURE_MANIFEST_STANDARD.md traceability semantic/applicability effect."
+  ],
+  "what_this_completes": {
+    "a002_left_behind": "MD-B12-A002 took Forbidden behavior (LOCKED) and Eligibility for adjustment (LOCKED) only, 15 rows, and recorded 39 as outstanding rather than implying the stage was finished.",
+    "a003_scope": "All 39. Denominator 60 to 75; reference 63 to 48.",
+    "promotions": 15,
+    "reference_decisions_recorded": 24,
+    "non_structural_reference_without_a_recorded_decision": 0
+  },
+  "promotions": {
+    "MD-S012 Version/change rule": "R0030 to R0034 - an output-affecting change requires a new product/formula/config version, new hashes, recomputation of every affected date from the stable dependency boundary, new publication/correction lineage where prior output was sealed, and long-chain deterministic oracle proof.",
+    "MD-S083 Factor provenance vocabulary": "R0006 closed vocabulary mirrored in EventRiskSourceRepository::ADJUSTMENT_SOURCES; R0017 a refused factor still contaminates; R0019 DERIVED_FROM_PRICE_SERIES is refused outright by the importer.",
+    "MD-S083 Factor revision model": "R0030 factor rows are append-only and a factor used by a sealed publication cannot be mutated.",
+    "MD-S083 Structural-adjustment formula": "R0038 the ordered product of verified structural factor revisions over B < ex_date <= D.",
+    "MD-S083 Contamination behavior": "R0048 to R0052 - compute and disclose on a verified active factor, quarantine on incomplete factor/date, quarantine and do not adjust on unverified or synthetic candidates, hold on conflicting revisions, and new artifacts plus publication lineage on factor correction."
+  },
+  "guard_coverage_verified_before_promoting": {
+    "method": "Every one of the 34 family guard methods across all 17 families was checked to exist by name before any promotion was applied.",
+    "a_guess_that_was_wrong": "The deterministic_oracle family initially named IndicatorIndependentOracleTest::test_indicator_vector_matches_the_independent_oracle, which does not exist. The check caught it and the family now names test_correction_oracle_propagates_by_exactly_the_expected_amount, a real method. Without the check this attempt would have bound a predicate to a guard nobody wrote.",
+    "result": "34 guard methods checked, 0 missing."
+  },
+  "proof_families_added": {
+    "correction_recompute_lineage": "MD-S012-R0032, MD-S012-R0033, MD-S083-R0051, MD-S083-R0052 - correction pipeline execution and the held-conflict path.",
+    "deterministic_oracle": "MD-S012-R0034 - independent oracle propagation plus revision-sensitive factor hashing.",
+    "factor_provenance_vocabulary": "MD-S083-R0006 and R0019 - the importer refuses unattributed and platform-derived provenance, and a price-derived factor never reaches the adjustment path.",
+    "structural_adjustment_formula": "MD-S083-R0038 - coherent compounding, with the future-factor exclusion proving the ex_date <= D bound.",
+    "candidate_quarantine_boundary": "MD-S083-R0049 and R0050 - an unattributed factor does not adjust, and a price-derived action does not suppress contamination."
+  },
+  "existing_families_reused": {
+    "persisted_identity": "MD-S012-R0030",
+    "determinism": "MD-S012-R0031",
+    "contamination_integrity": "MD-S083-R0017",
+    "sealed_immutability": "MD-S083-R0030",
+    "coherent_vector": "MD-S083-R0048"
+  },
+  "rows_that_are_deliberately_not_promotions": {
+    "principle": "Section 7 forbids duplicating a closure obligation a REQUIRED row already owns. Several rows read like strong candidates and are not.",
+    "MD-S012 coherence bullets R0023 to R0027": "The coherence obligation is owned by the REQUIRED MD-S083-R0039 and MD-S012-R0028. R0027 raw immutability is owned by MD-S083-R0054, promoted in MD-B12-A002.",
+    "MD-S012-R0007 and R0009": "The binding components and the stored-state requirement are owned by the REQUIRED MD-S012-R0011 to R0017.",
+    "MD-S012-R0038": "Acceptance criterion restating obligations owned by the REQUIRED MD-S083-R0069 and MD-S083-R0053.",
+    "wrapped fragments": "MD-S083-R0014, R0016, R0018, R0020, R0021 are continuation lines of sentences whose heads are REQUIRED or promoted here.",
+    "capability and enumeration rows": "MD-S083-R0043 to R0047 enumerate what the detector may emit and state its limit; MD-S083-R0065 to R0067 are what the product cannot prove, and R0067 says outright it is a restatement of a prohibition already owned."
+  },
+  "review_pass_guards": {
+    "completeness_is_absolute_here": "Unlike A002 this pass is not partial, so it aborts if any non-structural MD-B12 reference row is left neither promoted nor decided. That is the condition for admitting the stage to DECISION_RECORDED_STAGES, checked in the pass rather than assumed at admission.",
+    "falsifiability_completeness": "Removing MD-S083-R0067 from A003_REFERENCE_DECISIONS made the pass abort with that row reported unaccounted for.",
+    "falsifiability_foreign_rows": "Injecting a mutation on MD-S011-R0023, a MD-B11 row, made the pass abort naming it and its owning stage.",
+    "named_rules_reached": "The pass aborts when a named promotion or decision is never reached, so a typo cannot silently shrink the scope.",
+    "start_state_verified": "A promoted rule must have been REFERENCE_ONLY beforehand, so a no-op cannot look like work."
+  },
+  "traceability_state": {
+    "b12_denominator_before": 60,
+    "b12_denominator_after": 75,
+    "b12_reference_before": 63,
+    "b12_reference_after": 48,
+    "non_structural_reference_unexplained_remaining": 0,
+    "rows_bound_to_E-MD-B12-A001-001": 45,
+    "rows_bound_to_E-MD-B12-A002-001": 15,
+    "rows_bound_to_E-MD-B12-A003-001": 15,
+    "admitted_to_decision_recorded_stages": true
+  },
+  "test_execution": {
+    "b12_proof_surface": "78 tests, 247 assertions, 0 failures, exit 0",
+    "full_suite": "recorded in SC-MD-B12-A003-001",
+    "database": "MariaDB 10.4.27 reachable; tradeaxis and tradeaxis_testing both at 80 migrations and 73 tables"
+  },
+  "residue_verdict": {
+    "verdict": "CONFORMANT_NO_HARMFUL_RESIDUE_FOUND",
+    "verdict_vocabulary": "One of the five states enumerated by IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD.md; scope is a separate field.",
+    "scope": "The MD-S012 version/change rule, the MD-S083 provenance, revision, formula and contamination sections, and the MD-B12 review and proof tooling.",
+    "basis": "No application source, migration, configuration, or stored business row was altered. No new guard was needed: every promoted predicate is proven by a guard that already existed and was verified to exist by name."
+  },
+  "runtime_artifact_boundary": {
+    "storage_inspected": false,
+    "storage_mutated": false,
+    "database_mutated": false,
+    "note": "The database is reachable and the suite exercises it, but this attempt writes no business row and requires no external raw artifact of its own."
+  },
+  "open_items_after": [
+    "MD-B11-A003 owns 167 non-structural reference rows and is the last closed-stage backlog.",
+    "1384 rows remain across eleven unopened stages, to be resolved at each stage entry under MD-DEP-0004.",
+    "The residue-vocabulary deviation reported in E-MD-B11-A002-001 is unchanged and no gate validates the vocabulary.",
+    "GlobalConvergenceClosureTest::test_no_test_expects_a_synthetic_verified_factor still ends with assertTrue(true) and can pass vacuously.",
+    "Every stage normalization other than MD-B07 and MD-B08 still carries the unguarded clearing code that can unbind another stage proof."
+  ],
+  "relationship_requirements": [
+    "MD-B12-A003-BL001 -> SC-MD-B12-A002-001 (stage precondition)",
+    "CI-MD-B12-A003-001 -> MD-B12-A003-BL001 (declaration bound to baseline)",
+    "E-MD-B12-A003-001 -> MD-B12-A003-BL001 and CI-MD-B12-A003-001 (evidence correlation)",
+    "E-MD-B12-A003-001 -> E-MD-B12-A002-001 (additive lineage; completes the population A002 left partial)",
+    "E-MD-B12-A003-001 -> SC-MD-B00-A004-001 (the gate whose count this attempt drives to zero for MD-B12)"
+  ],
+  "supersedes": "Nothing. E-MD-B12-A001-001 and E-MD-B12-A002-001 are not edited; their 45 and 15 bindings stand. This record adds the final 15."
+}

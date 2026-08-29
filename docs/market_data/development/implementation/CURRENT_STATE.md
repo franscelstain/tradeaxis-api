@@ -5,14 +5,14 @@
 ## Verification identity and coverage
 
 - Verification epoch: `MD-REBASELINE-20260820-001`
-- Required active traceability rows: **3185**
-- Coverage denominator: **3161** (PROVISIONAL)
-- SATISFIED: **2334**
+- Required active traceability rows: **3200**
+- Coverage denominator: **3176** (PROVISIONAL)
+- SATISFIED: **2349**
 - NOT_ASSESSED inside denominator: **827**
 - CONDITIONAL_NOT_APPLICABLE / NOT_APPLICABLE: **22 / 22**
 - CONDITIONAL_PENDING / APPLICABILITY_PENDING: **2 / 2**
 - Transitional MANDATORY_OR_CONDITIONAL: **541**
-- Verified coverage: **73.84% PROVISIONAL**
+- Verified coverage: **73.96% PROVISIONAL**
 - Optional capability rules: **63**
 
 ## Current executable stage
@@ -45,7 +45,7 @@
 | `MD-B09` | `DONE` | `PASS` | `MD-B09-A003` | `MD-B09-A003-BL001` | `PASS` (B09 traceability + proof gates, all four governance gates, full suite 1951/18239; the source-JSON-path guard gap closed and mutation-proven) |
 | `MD-B10` | `DONE` | `PASS` | `MD-B10-A001` | `MD-B10-A001-BL001` | `PASS` (exact 9-trigger deployed immutability + cumulative lifecycle/reconciliation/full-suite proof + rollback-safe deployed `REBUILT_AND_VERIFIED` repair + exact 1072 binding + post-binding controls) |
 | `MD-B11` | `DONE` | `PASS` | `MD-B11-A002` | `MD-B11-A002-BL001` | `PASS` (B11 proof/traceability gates bound, all four governance gates, B11 surface 51/161; full suite 1953/18244 exit 0 with zero skips against restored MariaDB 10.4.27, discharged by `E-MD-B11-A002-002`; B11 deployed-schema probe PASS) |
-| `MD-B12` | `DONE` | `PASS` | `MD-B12-A002` | `MD-B12-A002-BL001` | `PASS` (B12 proof/traceability/static gates bound, all four governance gates, full suite 1952/18241; the adjustment-authority invariant from the audit now mutation-proven) |
+| `MD-B12` | `DONE` | `PASS` | `MD-B12-A003` | `MD-B12-A003-BL001` | `PASS` (B12 proof/traceability/static gates bound, all four governance gates, B12 surface 78/247, full suite 1953/18247 exit 0 against reachable MariaDB) |
 | `MD-B13` | `DONE` | `PASS` | `MD-B13-A001` | `MD-B13-A001-BL001` | `PASS` (in-session deployed-MariaDB targeted/full-suite proof + exact 33 binding + evidenced aggregate applicability + post-binding controls) |
 | `MD-B14` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 | `MD-B15` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
@@ -62,10 +62,10 @@
 - Open findings across every stage: `F-MD-B00-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A008-001` — OPEN; `F-MD-B01-A014-001` — OPEN — total **4**
 - Open dependencies: `MD-DEP-0003` — OPEN_NON_BLOCKING; owner `owning stages MD-B03/B15/B17/B19/B21/B22`; `MD-DEP-0004` — OPEN_NON_BLOCKING; owner `each stage at entry`
 - Classification entry obligation (`MD-DEP-0004`), reference-only rows in mixed-classification runs by stage: `MD-B14` 65, `MD-B15` 37, `MD-B16` 17, `MD-B17` 41, `MD-B18` 43, `MD-B19` 46, `MD-B20` 9 — total **258**
-- Registered current work records: **169** (BASELINE_LOCK=41, CHANGE_IMPACT_DECLARATION=36, DECISION=7, EVIDENCE=49, FINDING=14, STAGE_CLOSURE_MANIFEST=22)
+- Registered current work records: **173** (BASELINE_LOCK=42, CHANGE_IMPACT_DECLARATION=37, DECISION=7, EVIDENCE=50, FINDING=14, STAGE_CLOSURE_MANIFEST=23)
 
 ## Exact resume
 
-- Single exact next executable resume point: begin `MD-B11-A003` — the remaining 167 non-structural reference rows of this stage — and issue its Baseline Lock + Change Impact Declaration before any material change. `MD-B12-A003` at 39 follows. The `MD-B11-A002` full-suite control is no longer deferred: it was re-executed clean against restored MariaDB and discharged by `E-MD-B11-A002-002`.
+- Single exact next executable resume point: begin `MD-B11-A003` — the remaining 167 non-structural reference rows of that stage, now the last closed-stage backlog in the package — and issue its Baseline Lock + Change Impact Declaration before any material change.
 - Current stage source: `MD_IMPLEMENTATION_STAGE_REGISTER.md`
 - Pre-epoch W00..W22 verdicts: **historical-only**

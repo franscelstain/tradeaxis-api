@@ -303,3 +303,11 @@ MD-REL-0301,E-MD-B11-A002-002,MD-B11-A002-BL001,DEPENDS_ON,The re-executed proof
 MD-REL-0302,E-MD-B11-A002-002,CI-MD-B11-A002-001,DEPENDS_ON,The discharge stays inside the impact scope the declaration set.,,2026-08-28T16:05:00+07:00,MD-B11-A002 environment discharge correlation.
 MD-REL-0303,E-MD-B11-A002-002,E-MD-B11-A002-001,DERIVED_FROM,Additive lineage; the first evidence record is not edited.,,2026-08-28T16:05:00+07:00,MD-B11-A002 environment discharge correlation.
 MD-REL-0304,E-MD-B11-A002-002,SC-MD-B11-A002-001,DERIVED_FROM,Discharges the ENVIRONMENT_UNAVAILABLE control that closure recorded.,,2026-08-28T16:05:00+07:00,MD-B11-A002 environment discharge correlation.
+MD-REL-0305,MD-B12-A003-BL001,SC-MD-B12-A002-001,CARRIED_FROM,The A003 baseline opens against the immutable A002 closure; no A002 proof is re-derived.,,2026-08-29T09:55:00+07:00,MD-B12-A003 completion correlation.
+MD-REL-0306,CI-MD-B12-A003-001,MD-B12-A003-BL001,DEPENDS_ON,The declared scope is measured against the immutable A003 baseline.,,2026-08-29T09:55:00+07:00,MD-B12-A003 completion correlation.
+MD-REL-0307,CI-MD-B12-A003-001,SC-MD-B12-A002-001,CARRIED_FROM,The declaration names the immutable A002 closure as its stage precondition.,,2026-08-29T09:55:00+07:00,MD-B12-A003 completion correlation.
+MD-REL-0308,E-MD-B12-A003-001,MD-B12-A003-BL001,DEPENDS_ON,The 75/75 binding and the falsifiability proofs are valid only against the immutable A003 baseline.,,2026-08-29T09:55:00+07:00,MD-B12-A003 completion correlation.
+MD-REL-0309,E-MD-B12-A003-001,CI-MD-B12-A003-001,DEPENDS_ON,The evidence admits exactly the scope the declaration set.,,2026-08-29T09:55:00+07:00,MD-B12-A003 completion correlation.
+MD-REL-0310,E-MD-B12-A003-001,E-MD-B12-A002-001,DERIVED_FROM,Completes the population A002 left partial; the 45 and 15 prior bindings stand unedited.,,2026-08-29T09:55:00+07:00,MD-B12-A003 completion correlation.
+MD-REL-0311,E-MD-B12-A003-001,SC-MD-B00-A004-001,DERIVED_FROM,UNEXPLAINED_REFERENCE counted this population; this attempt drives its MD-B12 count to zero.,,2026-08-29T09:55:00+07:00,MD-B12-A003 completion correlation.
+MD-REL-0312,SC-MD-B12-A003-001,E-MD-B12-A003-001,CARRIED_FROM,Closure rests on the executed A003 evidence.,,2026-08-29T09:55:00+07:00,MD-B12-A003 completion correlation.

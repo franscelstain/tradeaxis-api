@@ -74,7 +74,7 @@ final class MarketDataClassificationConsistencyGate
      * A stage joins when its re-check lands, not when its backlog looks inconvenient. Stages absent
      * from this list are counted and reported, never excused.
      */
-    public const DECISION_RECORDED_STAGES = ['MD-B00', 'MD-B05', 'MD-B07', 'MD-B08', 'MD-B09', 'MD-B10', 'MD-B13'];
+    public const DECISION_RECORDED_STAGES = ['MD-B00', 'MD-B05', 'MD-B07', 'MD-B08', 'MD-B09', 'MD-B10', 'MD-B12', 'MD-B13'];
 
     public const MIN_ROWS = 6000;
 
