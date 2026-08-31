@@ -61,6 +61,8 @@ class MarketDataReadProductRepository
                 'elig.canonical_quality_state', 'elig.liquidity_state', 'elig.temporal_status_state',
                 'elig.trading_status_revision_id', 'elig.trading_status_source_observation_id',
                 'elig.event_risk_state', 'elig.eligibility_reasons_json',
+                'elig.source_provenance_state', 'elig.price_basis_state', 'elig.contamination_state',
+                'elig.indicator_state',
                 'tick.'.$tickerId.' as ticker_id', 'tick.'.$tickerCode.' as ticker_code',
                 'tick.company_name as ticker_name', 'bar.close as close_price', 'bar.volume', 'bar.source',
                 'bar.listing_id', 'bar.price_product_code as canonical_price_product_code', 'bar.quality_state as bar_quality_state',

@@ -138,6 +138,10 @@ class PublicationProjectionReconciliationServiceTest extends TestCase
             'liquidity_state' => 'PASS', 'temporal_status_state' => 'ACTIVE',
             'trading_status_revision_id' => 701, 'trading_status_source_observation_id' => 702,
             'event_risk_state' => 'CLEAR', 'eligibility_reasons_json' => '[]', 'config_snapshot_id' => 7,
+            'source_provenance_state' => 'SOURCE_TRACEABLE',
+            'price_basis_state' => 'RAW',
+            'contamination_state' => 'NO_CONTAMINATION_DETECTED',
+            'indicator_state' => 'VALID',
             'created_at' => '2026-03-20 17:20:00',
         ];
     }

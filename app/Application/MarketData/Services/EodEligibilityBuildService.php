@@ -138,6 +138,15 @@ class EodEligibilityBuildService
                 // A factual projection of the indicator flag only. EligibilityDecisionService
                 // remains independent of event preference as required by the W16 owner contract.
                 'event_risk_state' => $this->eventRiskState($indicator),
+                /*
+                 * The three dimensions the snapshot contract enumerates and the row did not carry.
+                 * Every input was already in memory; the row simply did not persist them, which the
+                 * contract calls a defect against itself rather than a licence to widen reason_code.
+                 */
+                'source_provenance_state' => $this->sourceProvenanceState($bar),
+                'price_basis_state' => $this->priceBasisState($indicator),
+                'contamination_state' => $this->contaminationState($indicator),
+                'indicator_state' => $this->indicatorState($indicator),
                 'eligibility_reasons_json' => json_encode(array_values(array_unique($reasons))),
                 'run_id' => $run->run_id,
                 'publication_id' => $candidatePublication->publication_id,
@@ -172,6 +181,92 @@ class EodEligibilityBuildService
         return $qualityState === null || trim((string) $qualityState) === ''
             ? 'UNKNOWN'
             : (string) $qualityState;
+    }
+
+    /**
+     * Whether a delivered observation is traceable to accepted source evidence.
+     *
+     * The acceptance criterion requires a consumer to inspect this without reading internal tables,
+     * so the eligibility row states it rather than pointing at the bar.
+     */
+    private function sourceProvenanceState($bar): string
+    {
+        if ($bar === null) {
+            return 'NO_OBSERVATION';
+        }
+        $observationId = isset($bar['source_observation_id']) ? (int) $bar['source_observation_id'] : 0;
+        if ($observationId <= 0) {
+            // A bar with no source observation is untraceable, which is a different fact from an
+            // absent bar and must not be reported as the same thing.
+            return 'UNTRACEABLE';
+        }
+
+        return 'SOURCE_TRACEABLE';
+    }
+
+    /**
+     * The analytical price basis the row was computed on.
+     *
+     * Basis and contamination are two columns rather than one delimited value. Packing two facts
+     * into a single string is a smaller version of the overloading this contract exists to forbid,
+     * and the deterministic hash service refuses a delimiter inside a hashed field for the same
+     * reason — it caught the first draft of this method.
+     */
+    private function priceBasisState($indicator): string
+    {
+        if ($indicator === null) {
+            return 'UNKNOWN';
+        }
+
+        $basis = trim((string) ($indicator['price_product_code'] ?? ''));
+
+        // An indicator row that never recorded its price product cannot be read as clean: the
+        // basis is what makes the number comparable at all.
+        return $basis === '' ? 'BASIS_UNRECORDED' : $basis;
+    }
+
+    /** Whether the dependency window carried a recorded contamination reason. */
+    private function contaminationState($indicator): string
+    {
+        if ($indicator === null) {
+            return 'UNKNOWN';
+        }
+
+        $reasons = trim((string) ($indicator['corporate_action_window_reasons'] ?? ''));
+
+        // An empty reason set records what was detected, not what occurred. CLEAN here means no
+        // contamination was detected, which the indicator registry is explicit is a weaker claim.
+        return $reasons === '' ? 'NO_CONTAMINATION_DETECTED' : 'CONTAMINATED';
+    }
+
+    /**
+     * Indicator validity together with warm-up and nullability, which the partial-data contract
+     * requires to be explicit rather than inferred from the absence of a value.
+     *
+     * `null_reasons_json` exists because `MD-B14-A001` found the row carrying only a compatibility
+     * primary reason. Reading it here is what makes "warm-up state and reasons explicit" true on
+     * the row that exists to explain the instrument.
+     */
+    private function indicatorState($indicator): string
+    {
+        if ($indicator === null) {
+            return 'NO_INDICATOR_ROW';
+        }
+
+        $valid = isset($indicator['is_valid']) ? (int) $indicator['is_valid'] : 0;
+        $nullReasons = trim((string) ($indicator['null_reasons_json'] ?? ''));
+        $hasFieldReasons = $nullReasons !== '' && $nullReasons !== 'null' && $nullReasons !== '[]' && $nullReasons !== '{}';
+
+        if ($valid !== 1) {
+            // The specific invalid reason already travels in the ordered reason set; this column
+            // states the dimension, and packing the code in here would delimit a hashed field.
+            return 'INVALID';
+        }
+
+        // A valid row may still carry per-field nulls. The contract wants that visible, because a
+        // consumer must be able to see why a usable row is usable rather than only that nothing
+        // objected to it.
+        return $hasFieldReasons ? 'VALID_WITH_FIELD_NULLS' : 'VALID';
     }
 
     private function eventRiskState($indicator): string

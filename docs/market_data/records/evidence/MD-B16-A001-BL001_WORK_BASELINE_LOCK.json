@@ -1,0 +1,34 @@
+{
+    "baseline_id": "MD-B16-A001-BL001",
+    "stage_id": "MD-B16",
+    "attempt_id": "MD-B16-A001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260823-001",
+    "strategy_freeze_manifest_sha1": "346300DB6E5356277EA7F97AF36E2F9AD46ADA60",
+    "strategy_tree_fingerprint_sha1": "0AD24570E7127FBB7F1CC1648B0F8EBC7BAC02F7",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "618B99337376399A8AF67B60D4D694AFECB68C02",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "4CE48AC17FC1A3C685D2605C99F1F329E70D047A",
+    "source_revision": "3089c0edade7bdf1fc9877bb5c0130384a71fdf7",
+    "source_revision_branch": "master",
+    "working_tree": "DIRTY+12FCDAF5014B3D969E49354A4E966B322E4D7CCB",
+    "app_code_fingerprint_sha1": "BA5CB1762989D916E10C47338D423A5D1C685E77",
+    "tests_fingerprint_sha1": "ED5D17895E3DE33C31BD729C759F843929F0C3AC",
+    "schema_config_identity": "schema:370A6ED06E098C3090473B03CAE9A87BD4A1CF4E;config:CDA52E5CFA3414EF94B3C16A4D3C118A692D7165;migrations:64B362C0E04B06582FEA9921F55BEDA64AD58BAA",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "PHP 7.4.33",
+    "external_dependency_contract_identity": {
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "registered": 8,
+        "open_blocking": []
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-08-31T02:59:45+02:00",
+    "issuance_note": "Issued after exact MD-B16 stage-entry normalization at 75 mandatory predicates: 102 active rows examined, 26 transitional resolved, 41 promoted from mixed-run and undecided-reference, 14 recorded as reference with a stated basis, zero transitional survivors, zero conditional-pending, zero unexplained reference, zero foreign rows altered. Issued before any material MD-B16 change."
+}

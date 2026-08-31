@@ -743,6 +743,10 @@ trait UsesMarketDataSqlite
             $table->integer('trading_status_revision_id')->nullable();
             $table->integer('trading_status_source_observation_id')->nullable();
             $table->string('event_risk_state', 32)->nullable();
+            $table->string('source_provenance_state', 32)->nullable();
+            $table->string('price_basis_state', 32)->nullable();
+            $table->string('contamination_state', 32)->nullable();
+            $table->string('indicator_state', 32)->nullable();
             $table->text('eligibility_reasons_json')->nullable();
             $table->string('market_structure_resolution_state', 48)->nullable();
             $table->integer('price_band_revision_id')->nullable();
@@ -1042,6 +1046,10 @@ trait UsesMarketDataSqlite
             $table->integer('trading_status_revision_id')->nullable();
             $table->integer('trading_status_source_observation_id')->nullable();
             $table->string('event_risk_state', 32)->nullable();
+            $table->string('source_provenance_state', 32)->nullable();
+            $table->string('price_basis_state', 32)->nullable();
+            $table->string('contamination_state', 32)->nullable();
+            $table->string('indicator_state', 32)->nullable();
             $table->text('eligibility_reasons_json')->nullable();
             $table->string('market_structure_resolution_state', 48)->nullable();
             $table->integer('price_band_revision_id')->nullable();

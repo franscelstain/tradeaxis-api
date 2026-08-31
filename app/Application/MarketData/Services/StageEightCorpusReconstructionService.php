@@ -256,6 +256,7 @@ class StageEightCorpusReconstructionService
                     'universe_membership_state', 'bar_expectation_state', 'delivery_state',
                     'canonical_quality_state', 'liquidity_state', 'temporal_status_state',
                     'event_risk_state', 'eligibility_reasons_json',
+                    'source_provenance_state', 'price_basis_state', 'contamination_state', 'indicator_state',
                     'market_structure_resolution_state',
                 ] as $field) {
                     $query->orWhereNull('eligibility.'.$field);

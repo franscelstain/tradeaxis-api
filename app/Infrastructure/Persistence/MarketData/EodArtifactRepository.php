@@ -24,6 +24,10 @@ class EodArtifactRepository
         'liquidity_state',
         'temporal_status_state',
         'event_risk_state',
+        'source_provenance_state',
+        'price_basis_state',
+        'contamination_state',
+        'indicator_state',
         'eligibility_reasons_json',
     ];
 
