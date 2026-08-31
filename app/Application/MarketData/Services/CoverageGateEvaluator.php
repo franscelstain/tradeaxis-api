@@ -4,22 +4,85 @@ namespace App\Application\MarketData\Services;
 
 use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
 use App\Infrastructure\Persistence\MarketData\EventRiskSourceRepository;
+use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
 
 class CoverageGateEvaluator
 {
+    /**
+     * Identifies the implementation that resolved the temporal universe, not the basis it applied.
+     *
+     * `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md` requires coverage evidence to bind the universe
+     * resolver version alongside the contract version, and generalises the reason: evidence binds
+     * the version of every component its correctness depends on, not only the version of the
+     * contract that produced it. `coverage_universe_basis` names the basis; two records produced by
+     * different resolver behaviour under the same basis were indistinguishable without this.
+     *
+     * Bump this whenever universe resolution, the `NOT_EXPECTED` exclusion, or the `UNKNOWN`
+     * determination changes in a way that can move the denominator.
+     */
+    public const UNIVERSE_RESOLVER_VERSION = 'coverage_universe_resolver_v1';
+
     protected TickerMasterRepository $tickerMasterRepository;
     protected EodArtifactRepository $eodArtifactRepository;
     protected ?EventRiskSourceRepository $eventRiskSourceRepository;
+    protected ?MarketCalendarRepository $marketCalendarRepository;
 
     public function __construct(
         TickerMasterRepository $tickerMasterRepository,
         EodArtifactRepository $eodArtifactRepository,
-        EventRiskSourceRepository $eventRiskSourceRepository = null
+        EventRiskSourceRepository $eventRiskSourceRepository = null,
+        MarketCalendarRepository $marketCalendarRepository = null
     ) {
         $this->tickerMasterRepository = $tickerMasterRepository;
         $this->eodArtifactRepository = $eodArtifactRepository;
         $this->eventRiskSourceRepository = $eventRiskSourceRepository;
+        $this->marketCalendarRepository = $marketCalendarRepository;
+    }
+
+    /**
+     * The component identities every coverage evidence record must bind.
+     *
+     * Emitted on every result, including `NOT_EVALUABLE`. A non-evaluable record is still a
+     * coverage evidence record, and the reason it could not be evaluated is as version-dependent as
+     * any ratio.
+     *
+     * @return array<string,mixed>
+     */
+    private function componentIdentity($tradeDate, array $tickerIds = [], $knownAt = null): array
+    {
+        $calendarRevisionId = null;
+        $calendarRevisionUid = null;
+
+        if ($this->marketCalendarRepository instanceof MarketCalendarRepository) {
+            try {
+                $session = $this->marketCalendarRepository->sessionContext($tradeDate, $knownAt);
+                $calendarRevisionId = isset($session['calendar_revision_id']) ? (int) $session['calendar_revision_id'] : null;
+                $calendarRevisionUid = isset($session['revision_uid']) ? (string) $session['revision_uid'] : null;
+            } catch (\Throwable $unresolved) {
+                // An unresolvable calendar leaves the identity null and visible. It is never
+                // defaulted: a coverage record claiming a revision it did not use would be worse
+                // than one admitting it has none.
+                $calendarRevisionId = null;
+                $calendarRevisionUid = null;
+            }
+        }
+
+        $statusRevisionIds = [];
+        if ($tickerIds !== [] && $this->eventRiskSourceRepository instanceof EventRiskSourceRepository) {
+            $statusRevisionIds = $this->eventRiskSourceRepository->expectationStatusRevisionIdsAsOf(
+                $tickerIds,
+                $tradeDate,
+                $knownAt
+            );
+        }
+
+        return [
+            'coverage_universe_resolver_version' => self::UNIVERSE_RESOLVER_VERSION,
+            'coverage_calendar_revision_id' => $calendarRevisionId,
+            'coverage_calendar_revision_uid' => $calendarRevisionUid,
+            'coverage_trading_status_revision_ids' => $statusRevisionIds,
+        ];
     }
 
     /**
@@ -63,7 +126,9 @@ class CoverageGateEvaluator
                     'coverage_gate_enabled' => false,
                     'coverage_zero_universe_blocked' => $blockedOnZeroUniverse,
                     'canonical_bar_evidence_required' => $requireCanonicalBarEvidence,
-                ]
+                ],
+                $tradeDate,
+                $knownAt
             );
         }
 
@@ -81,13 +146,29 @@ class CoverageGateEvaluator
                     'coverage_gate_enabled' => true,
                     'coverage_zero_universe_blocked' => $blockedOnZeroUniverse,
                     'canonical_bar_evidence_required' => false,
-                ]
+                ],
+                $tradeDate,
+                $knownAt
             );
         }
 
         $rawUniverse = $this->tickerMasterRepository->getUniverseForTradeDate($tradeDate, $knownAt);
         $coverageUniverseCount = count($rawUniverse);
         $universe = $this->filterSuspendedUniverseRows($rawUniverse, $tradeDate, $knownAt);
+
+        /*
+         * The raw universe, not the filtered one. The status revisions worth binding are exactly
+         * the ones that produced a NOT_EXPECTED exclusion, and those listings are the ones the
+         * filter has already removed. Reading the filtered set would bind every revision except
+         * the ones that moved the denominator — and on a date where every listing was excluded it
+         * would bind none at all, which is the case where the identity matters most.
+         */
+        $identityTickerIds = [];
+        foreach ($rawUniverse as $rawRow) {
+            if (isset($rawRow['ticker_id'])) {
+                $identityTickerIds[] = (int) $rawRow['ticker_id'];
+            }
+        }
         $coverageBarNotExpectedCount = max(0, $coverageUniverseCount - count($universe));
 
         /*
@@ -152,7 +233,10 @@ class CoverageGateEvaluator
                     'coverage_bar_not_expected_count' => $coverageBarNotExpectedCount,
                     'coverage_expectation_unknown_count' => $expectationUnknownCount,
                     'coverage_bar_required_count' => 0,
-                ]
+                ],
+                $tradeDate,
+                $knownAt,
+                $identityTickerIds
             );
         }
 
@@ -204,7 +288,7 @@ class CoverageGateEvaluator
 
         $reasonCodes = [$reasonCode, $coverageReasonCode];
 
-        return [
+        return $this->componentIdentity($tradeDate, $identityTickerIds, $knownAt) + [
             'expected_universe_count' => $expectedUniverseCount,
             'coverage_universe_count' => $coverageUniverseCount,
             'coverage_bar_not_expected_count' => $coverageBarNotExpectedCount,
@@ -257,9 +341,15 @@ class CoverageGateEvaluator
         $coverageBasisPublicationId,
         $reasonCode,
         array $reasonCodes,
-        array $policy = []
+        array $policy = [],
+        $tradeDate = null,
+        $knownAt = null,
+        array $identityTickerIds = []
     ) {
-        return $policy + [
+        // A non-evaluable record is still a coverage evidence record. It binds the same component
+        // identities, because the reason it could not be evaluated is as version-dependent as any
+        // ratio would have been.
+        return $policy + $this->componentIdentity($tradeDate, $identityTickerIds, $knownAt) + [
             'expected_universe_count' => 0,
             'coverage_universe_count' => 0,
             'coverage_bar_not_expected_count' => 0,

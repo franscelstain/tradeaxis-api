@@ -177,6 +177,34 @@ class EventRiskSourceRepository
     }
 
     /**
+     * The trading-status revisions that informed the expectation decision for these listings.
+     *
+     * `EOD_COVERAGE_GATE_CONTRACT_LOCKED.md` requires every coverage evidence record to bind the
+     * calendar and trading-status revision identities used to resolve expectation, because a stored
+     * coverage result is otherwise indistinguishable from one produced by a revision since found
+     * defective. The revision id was already resolved per listing and then discarded.
+     *
+     * @param  array<int,int|string>  $tickerIds
+     * @return array<int,int> sorted, distinct
+     */
+    public function expectationStatusRevisionIdsAsOf(array $tickerIds, $tradeDate, $knownAt = null): array
+    {
+        $revisions = [];
+
+        foreach ($this->resolveEventRiskContextForTickerIds($tickerIds, $tradeDate, $knownAt) as $context) {
+            $revisionId = (int) ($context['trading_status_revision_id'] ?? 0);
+            if ($revisionId > 0) {
+                $revisions[$revisionId] = true;
+            }
+        }
+
+        $ids = array_keys($revisions);
+        sort($ids, SORT_NUMERIC);
+
+        return $ids;
+    }
+
+    /**
      * Listings whose expectation evidence is incomplete or conflicting on the date.
      *
      * `Coverage_Universe_Definition_LOCKED.md:52` requires the `UNKNOWN` count to be recorded

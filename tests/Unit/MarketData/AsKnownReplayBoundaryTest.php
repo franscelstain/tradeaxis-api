@@ -341,6 +341,7 @@ class AsKnownReplayBoundaryTest extends TestCase
             [EventRiskSourceRepository::class, 'resolveAdjustmentFactorsForTickerIds', 3],
             [EventRiskSourceRepository::class, 'suspendedTickerIdsAsOf', 2],
             [EventRiskSourceRepository::class, 'expectationUnknownTickerIdsAsOf', 2],
+            [EventRiskSourceRepository::class, 'expectationStatusRevisionIdsAsOf', 2],
             [CorpusAdmissionRepository::class, 'historyStartDateFor', 1],
         ];
     }

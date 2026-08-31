@@ -5,29 +5,29 @@
 ## Verification identity and coverage
 
 - Verification epoch: `MD-REBASELINE-20260820-001`
-- Required active traceability rows: **3278**
-- Coverage denominator: **3253** (PROVISIONAL)
-- SATISFIED: **2526**
-- NOT_ASSESSED inside denominator: **727**
+- Required active traceability rows: **3379**
+- Coverage denominator: **3354** (PROVISIONAL)
+- SATISFIED: **2747**
+- NOT_ASSESSED inside denominator: **607**
 - CONDITIONAL_NOT_APPLICABLE / NOT_APPLICABLE: **23 / 23**
 - CONDITIONAL_PENDING / APPLICABILITY_PENDING: **2 / 2**
-- Transitional MANDATORY_OR_CONDITIONAL: **468**
-- Verified coverage: **77.65% PROVISIONAL**
+- Transitional MANDATORY_OR_CONDITIONAL: **379**
+- Verified coverage: **81.9% PROVISIONAL**
 - Optional capability rules: **63**
 
 ## Current executable stage
 
-- Stage: `MD-B15`
+- Stage: `MD-B16`
 - Latest attempt / baseline: — / —
 - State / verdict: `NOT_STARTED` / —
 - Residue/rework: `NOT_ASSESSED`
 - Dependency: —
 - Open finding: —
 - Change Impact Declaration: **missing**
-- Denominator: **120** (PROVISIONAL — transitional applicability unresolved)
-- SATISFIED / NOT_ASSESSED: **0 / 120**
-- Mandatory / conditional-applicable: **31 / 0**
-- Conditional-not-applicable / conditional-pending / transitional: **0 / 0 / 89**
+- Denominator: **36** (PROVISIONAL — transitional applicability unresolved)
+- SATISFIED / NOT_ASSESSED: **0 / 36**
+- Mandatory / conditional-applicable: **8 / 0**
+- Conditional-not-applicable / conditional-pending / transitional: **0 / 0 / 28**
 
 ## Stage state index
 
@@ -48,7 +48,7 @@
 | `MD-B12` | `DONE` | `PASS` | `MD-B12-A003` | `MD-B12-A003-BL001` | `PASS` (B12 proof/traceability/static gates bound, all four governance gates, B12 surface 78/247, full suite 1953/18247 exit 0 against reachable MariaDB) |
 | `MD-B13` | `DONE` | `PASS` | `MD-B13-A001` | `MD-B13-A001-BL001` | `PASS` (in-session deployed-MariaDB targeted/full-suite proof + exact 33 binding + evidenced aggregate applicability + post-binding controls) |
 | `MD-B14` | `DONE` | `PASS` | `MD-B14-A001` | `MD-B14-A001-BL001` | `PASS` — proof gate bound, self-test 11/11, 10 fail-closed probes and 8 closure-condition probes all caught |
-| `MD-B15` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
+| `MD-B15` | `DONE` | `PASS` | `MD-B15-A001` | `MD-B15-A001-BL001` | `PASS` — proof gate bound, self-test 11/11, 6 fail-closed probes and 8 closure-condition probes all caught |
 | `MD-B16` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 | `MD-B17` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 | `MD-B18` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
@@ -61,11 +61,11 @@
 
 - Open findings across every stage: `F-MD-B00-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A014-001` — OPEN; `F-MD-B14-A001-001` — OPEN — total **4**
 - Open dependencies: `MD-DEP-0003` — OPEN_NON_BLOCKING; owner `owning stages MD-B03/B15/B17/B19/B21/B22`; `MD-DEP-0004` — OPEN_NON_BLOCKING; owner `each stage at entry`
-- Classification entry obligation (`MD-DEP-0004`), reference-only rows in mixed-classification runs by stage: `MD-B15` 37, `MD-B16` 17, `MD-B17` 41, `MD-B18` 43, `MD-B19` 46, `MD-B20` 9 — total **193**
-- Registered current work records: **183** (BASELINE_LOCK=44, CHANGE_IMPACT_DECLARATION=39, DECISION=7, EVIDENCE=52, FINDING=16, STAGE_CLOSURE=1, STAGE_CLOSURE_MANIFEST=24)
+- Classification entry obligation (`MD-DEP-0004`), reference-only rows in mixed-classification runs by stage: `MD-B16` 17, `MD-B17` 41, `MD-B18` 43, `MD-B19` 46, `MD-B20` 9 — total **156**
+- Registered current work records: **187** (BASELINE_LOCK=45, CHANGE_IMPACT_DECLARATION=40, DECISION=7, EVIDENCE=53, FINDING=16, STAGE_CLOSURE=2, STAGE_CLOSURE_MANIFEST=24)
 
 ## Exact resume
 
-- Single exact next executable resume point: begin **`MD-B15` stage-entry preflight**. Rederive current `MD-B15` applicability, ownership and classification from current authority — including its 37 mixed-classification members and 131 undecided reference rows — and issue the first valid `MD-B15` Baseline Lock and Change Impact Declaration before any material mutation. No `MD-B14` predicate proof is inheritable.
+- Single exact next executable resume point: begin **`MD-B16` stage-entry preflight**. Rederive current `MD-B16` applicability, ownership and classification from current authority — including its 17 mixed-classification members and 53 undecided reference rows — and issue the first valid `MD-B16` Baseline Lock and Change Impact Declaration before any material mutation. No `MD-B15` predicate proof is inheritable.
 - Current stage source: `MD_IMPLEMENTATION_STAGE_REGISTER.md`
 - Pre-epoch W00..W22 verdicts: **historical-only**
