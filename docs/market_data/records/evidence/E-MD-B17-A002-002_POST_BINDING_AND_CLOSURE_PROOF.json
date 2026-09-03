@@ -1,0 +1,107 @@
+{
+  "evidence_id": "E-MD-B17-A002-002",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B17",
+  "attempt_id": "MD-B17-A002",
+  "work_id": "MD-B17-A002",
+  "baseline_id": "MD-B17-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze": "MD-STRATEGY-FREEZE-20260903-001",
+  "change_impact_declaration": "CI-MD-B17-A002-001",
+  "issued_at": "2026-09-03T22:35:00+07:00",
+  "title": "Atomic 246-predicate binding and terminal closure proof",
+  "outcome": "PASS_ELIGIBLE_FOR_STAGE_CLOSURE",
+  "pre_binding_evidence": "E-MD-B17-A002-001",
+  "no_inheritance_statement": "All 245 predecessor bindings were invalidated before A002 proof. The A002 binder accepted only E-MD-B17-A002-NNN and refused E-MD-B17-A001-001. The resulting 246 rows are bound to E-MD-B17-A002-001, whose guards and raw artifacts were freshly executed under A002.",
+  "raw_artifact_manifest": {
+    "manifest_path": "storage/app/market-data/evidence/MD-B17-A002/MANIFEST-POSTBIND.json",
+    "manifest_sha256": "DFD78253E49DEAC68A358A86AE7C3BB6A5F60CB557EBE96F6D2B94333351C3E3",
+    "artifact_count": 4
+  },
+  "executed_proof": [
+    {
+      "execution_id": "MD-B17-A002-008",
+      "kind": "POST_BINDING_GATE_SWEEP",
+      "verdict": "PASS",
+      "exit_code": 0,
+      "artifact_path": "storage/app/market-data/evidence/MD-B17-A002/MD-B17-A002-008_postbinding_gate_sweep.txt",
+      "sha256": "962514FE259CDDF32E942D3F10C4FDA7A513CDC64A2E9F1ACC7ED421544C4231",
+      "observed": "Bound proof gate 246/246 across 28 families with runtime_pending=0; proof self-test 11/11; all eight closure conditions; documentation, relationship, classification and affected B04 gates passed."
+    },
+    {
+      "execution_id": "MD-B17-A002-009",
+      "kind": "POST_BINDING_FULL_REGRESSION",
+      "verdict": "PASS",
+      "tests": 2013,
+      "assertions": 20376,
+      "failures": 0,
+      "errors": 0,
+      "exit_code": 0,
+      "artifact_path": "storage/app/market-data/evidence/MD-B17-A002/MD-B17-A002-009_postbinding_full_suite.txt",
+      "sha256": "D98E1732F3C36D22585A825F34525D56AD15271ABA984B2D640B4C4D7D8A2F9E"
+    },
+    {
+      "execution_id": "MD-B17-A002-010",
+      "kind": "CLOSURE_CONDITION_FAIL_CLOSED_PROBES",
+      "verdict": "PASS",
+      "probes": 8,
+      "caught": 8,
+      "controls": "PASS_BEFORE_AND_AFTER",
+      "artifact_path": "storage/app/market-data/evidence/MD-B17-A002/MD-B17-A002-010_closure_condition_probes.txt",
+      "sha256": "09B8EFDC75ED4316607A3A23A19517B79E9D3682DEF41FD29808982BB204CBCF",
+      "supports": "Each traceability, applicability, context, foreign-proof, artifact-integrity and governed-evidence closure condition was independently made false in an isolated temporary tree and detected."
+    },
+    {
+      "execution_id": "MD-B17-A002-011",
+      "kind": "INDEPENDENT_BINDING_REDERIVATION",
+      "verdict": "PASS",
+      "artifact_path": "storage/app/market-data/evidence/MD-B17-A002/MD-B17-A002-011_binding_rederivation.txt",
+      "sha256": "A829314F477ACFCEB7EA162064B1945F3669FE350F03791E768FDFCEAABA2C04",
+      "observed": "246 mandatory rows SATISFIED and exactly bound to E-MD-B17-A002-001; zero missing/wrong evidence, zero NOT_ASSESSED, two guarded conditional N/A, 66 reference-only, zero foreign A002 binding or marker."
+    }
+  ],
+  "binder_execution": {
+    "dry_run": "PASS: denominator=246, bound=246, not_assessed=0, foreign_rows_altered=0, bound_validation=PASS",
+    "apply": "PASS: atomically wrote exactly the same 246 targets with not_assessed=0 and foreign_rows_altered=0",
+    "evidence_id": "E-MD-B17-A002-001",
+    "stale_evidence_probe": "PASS: E-MD-B17-A001-001 rejected with exit 255 before any write"
+  },
+  "coverage": {
+    "stage_rows": 315,
+    "mandatory_denominator": 246,
+    "mandatory_satisfied": 246,
+    "conditional_not_applicable": 2,
+    "conditional_pending": 0,
+    "optional_capability": 1,
+    "reference_context": 66,
+    "transitional": 0,
+    "foreign_rows_altered": 0
+  },
+  "closure_conditions": {
+    "no_transitional_applicability": "MET",
+    "no_pending_applicability": "MET",
+    "denominator_fully_satisfied": "MET_246_OF_246",
+    "not_applicable_rows_are_evidenced": "MET_2_OF_2",
+    "context_binding_and_normalized_predicate": "MET_246_OF_246",
+    "no_invalidated_proof_still_counted": "MET_ZERO_FOREIGN",
+    "raw_artifact_integrity": "MET_7_PREBIND_PLUS_4_POSTBIND_ARTIFACTS",
+    "governed_evidence_reachable": "MET"
+  },
+  "change_impact_result": {
+    "status": "COMPLETED_WITHIN_DECLARED_SCOPE",
+    "implementation": "Six typed config keys, immutable snapshot-only resolution, pipeline identity binding, audit-visible output and fail-closed validation implemented.",
+    "affected_b04": "PASS_114_OF_114_DENOMINATOR_UNCHANGED",
+    "schema_migration": "NONE",
+    "historical_snapshot_rewrite": "NONE",
+    "backfill": "NONE",
+    "compatibility_break": "NONE"
+  },
+  "finding_residue_dependency": {
+    "blocking_finding": "NONE; F-MD-B17-A001-001 is resolved and retained as historical cause.",
+    "residue": "CONFORMANT_WITH_FAIL_CLOSED_LEGACY_SNAPSHOT_BOUNDARY; an old snapshot without the new subtree is preserved and rejected rather than rewritten or defaulted.",
+    "dependency": "MD-DEP-0004 discharged for B17; no new dependency."
+  },
+  "next_exact_action": "Issue SC-MD-B17-A002-001, mark B17 DONE/PASS, regenerate CURRENT_STATE, and begin MD-B18 stage-entry preflight only in the next governed work unit."
+}

@@ -1,8 +1,8 @@
 {
-  "freeze_id": "MD-STRATEGY-FREEZE-20260823-001",
-  "created_at": "2026-08-23T22:49:00+07:00",
+  "freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "created_at": "2026-09-03T21:01:04+07:00",
   "strategy_document_count": 91,
-  "rule": "The 91 registered documents are the current strategy freeze. Unchanged documents retain prior fingerprints; MD-S082 retains DOC-CHG-20260822-001 and MD-S085 carries the bounded, user-authorised BAR_ZERO_VOLUME_PRICE_MOVEMENT correction recorded by DOC-CHG-20260823-001 and D-MD-20260823-01.",
+  "rule": "The 91 registered documents are the current strategy freeze. Unchanged documents retain prior fingerprints; MD-S082 retains DOC-CHG-20260822-001 and carries the bounded six-key date-level anomaly configuration correction recorded by DOC-CHG-20260903-001 / D-MD-B17-A001-001; MD-S085 retains the bounded BAR_ZERO_VOLUME_PRICE_MOVEMENT correction recorded by DOC-CHG-20260823-001 / D-MD-20260823-01.",
   "documents": [
     {
       "strategy_id": "MD-S001",
@@ -737,10 +737,10 @@
       "strategy_id": "MD-S082",
       "source_path_before_refactor": "registry/Platform_Config_Registry_LOCKED.md",
       "current_path": "authority/strategy/registry/Platform_Config_Registry_LOCKED.md",
-      "sha1": "8324B44D4259889659E56E1F543C59E55BB16E12",
+      "sha1": "FA493CD1EFED5668102D53E1E648AA80DCC4F737",
       "authority_status": "CURRENT_STRATEGY_AUTHORITY",
-      "semantic_change": "CONTROLLED_CORRECTION_DOC-CHG-20260822-001",
-      "notes": "D-MD-20260822-06 corrects only market_data.hash.null_token to an explicit zero-byte empty-string default with no environment input; MD-S005/MD-S034 owner semantics are unchanged."
+      "semantic_change": "CONTROLLED_CORRECTION_DOC-CHG-20260903-001",
+      "notes": "MD-S082 retains the DOC-CHG-20260822-001 zero-byte hash NULL-token correction. D-MD-B17-A001-001 / DOC-CHG-20260903-001 add only the six typed market_data.quality_gates.date_level_anomaly.* resolved-key rows required by unchanged MD-S051-R0070; no other configuration or owner semantic changes."
     },
     {
       "strategy_id": "MD-S083",

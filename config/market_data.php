@@ -56,6 +56,16 @@ return [
         // only as the snapshotted compatibility alias named by the locked config registry.
         'dormant_absence_trading_days' => (int) env('MARKET_DATA_COVERAGE_DORMANT_ABSENCE_TRADING_DAYS', 60),
     ],
+    'quality_gates' => [
+        'date_level_anomaly' => [
+            'zero_volume_share_max' => (float) env('MARKET_DATA_DATE_LEVEL_ANOMALY_ZERO_VOLUME_SHARE_MAX', 0.30),
+            'flat_bar_share_max' => (float) env('MARKET_DATA_DATE_LEVEL_ANOMALY_FLAT_BAR_SHARE_MAX', 0.20),
+            'cross_field_contradiction_max' => (int) env('MARKET_DATA_DATE_LEVEL_ANOMALY_CROSS_FIELD_CONTRADICTION_MAX', 0),
+            'neighbour_trading_days' => (int) env('MARKET_DATA_DATE_LEVEL_ANOMALY_NEIGHBOUR_TRADING_DAYS', 5),
+            'neighbour_elevation_factor' => (float) env('MARKET_DATA_DATE_LEVEL_ANOMALY_NEIGHBOUR_ELEVATION_FACTOR', 2.0),
+            'minimum_rows' => (int) env('MARKET_DATA_DATE_LEVEL_ANOMALY_MINIMUM_ROWS', 20),
+        ],
+    ],
     'indicators' => [
         'set_version' => env('MARKET_DATA_INDICATOR_SET_VERSION', 'v1'),
         'price_product_default' => env('MARKET_DATA_INDICATOR_PRICE_PRODUCT_DEFAULT', 'STRUCTURAL_ADJUSTED'),

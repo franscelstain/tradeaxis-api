@@ -302,3 +302,21 @@ Before seal, validation proves:
 7. secrets are absent from snapshots, logs, observations, and manifests.
 
 Until schema constraints and executed fixtures prove these properties, this registry is strategy-locked but configuration governance is not production-relocked.
+
+## Controlled correction 2026-09-03 — date-level anomaly configuration
+
+The following additive keys complete the resolved-key representation required by
+`Run_Status_and_Quality_Gates_LOCKED.md`. The correction does not change the three date-level
+measures, their non-destructive finding behavior, or any readiness/publishability semantic.
+
+| Config key | Type | Resolved default | Environment input | Owner contract |
+|---|---|---|---|---|
+| `market_data.quality_gates.date_level_anomaly.zero_volume_share_max` | float | `0.30` | `MARKET_DATA_DATE_LEVEL_ANOMALY_ZERO_VOLUME_SHARE_MAX` | `../book/Run_Status_and_Quality_Gates_LOCKED.md` |
+| `market_data.quality_gates.date_level_anomaly.flat_bar_share_max` | float | `0.20` | `MARKET_DATA_DATE_LEVEL_ANOMALY_FLAT_BAR_SHARE_MAX` | `../book/Run_Status_and_Quality_Gates_LOCKED.md` |
+| `market_data.quality_gates.date_level_anomaly.cross_field_contradiction_max` | int | `0` | `MARKET_DATA_DATE_LEVEL_ANOMALY_CROSS_FIELD_CONTRADICTION_MAX` | `../book/Run_Status_and_Quality_Gates_LOCKED.md` |
+| `market_data.quality_gates.date_level_anomaly.neighbour_trading_days` | int | `5` | `MARKET_DATA_DATE_LEVEL_ANOMALY_NEIGHBOUR_TRADING_DAYS` | `../book/Run_Status_and_Quality_Gates_LOCKED.md` |
+| `market_data.quality_gates.date_level_anomaly.neighbour_elevation_factor` | float | `2.0` | `MARKET_DATA_DATE_LEVEL_ANOMALY_NEIGHBOUR_ELEVATION_FACTOR` | `../book/Run_Status_and_Quality_Gates_LOCKED.md` |
+| `market_data.quality_gates.date_level_anomaly.minimum_rows` | int | `20` | `MARKET_DATA_DATE_LEVEL_ANOMALY_MINIMUM_ROWS` | `../book/Run_Status_and_Quality_Gates_LOCKED.md` |
+
+This bounded additive correction is authorised by `D-MD-B17-A001-001` and
+`DOC-CHG-20260903-001`. No other strategy row or threshold is changed.

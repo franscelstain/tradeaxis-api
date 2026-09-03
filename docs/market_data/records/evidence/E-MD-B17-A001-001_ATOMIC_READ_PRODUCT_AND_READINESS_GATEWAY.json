@@ -1,0 +1,266 @@
+{
+    "evidence_id": "E-MD-B17-A001-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B17",
+    "attempt_id": "MD-B17-A001",
+    "work_id": "MD-B17-A001",
+    "baseline_id": "MD-B17-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze": "MD-STRATEGY-FREEZE-20260823-001",
+    "change_impact_declaration": "CI-MD-B17-A001-001",
+    "issued_at": "2026-08-31T11:30:00+07:00",
+    "title": "Atomic read product and readiness gateway: date-level anomaly checks built, threshold binding blocked",
+    "attempt_outcome": "PARTIAL - 245 of the 246 MD-B17 mandatory predicates are proven by executed guards and bound here. MD-S051-R0070 is not, and this evidence does not claim it. The stage does not close on this attempt.",
+    "authority_basis": {
+        "primary_stage": "MD-B17",
+        "strategy_documents": [
+            "authority/strategy/book/Run_Status_and_Quality_Gates_LOCKED.md",
+            "authority/strategy/book/Downstream_Consumer_Read_Model_Contract_LOCKED.md",
+            "authority/strategy/book/Downstream_Data_Readiness_Guarantee_LOCKED.md",
+            "authority/strategy/book/CONSUMER_READ_CONTRACT_LOCKED.md",
+            "authority/strategy/book/Read_Side_Enforcement_Anti_Bypass_Contract_LOCKED.md",
+            "authority/strategy/book/Consumer_Readability_Decision_Table_LOCKED.md",
+            "authority/strategy/book/Effective_Trade_Date_Contract_LOCKED.md"
+        ],
+        "predecessor_closure": "SC-MD-B16-A001-001",
+        "note": "MD-B16 closure is a stage precondition only. No MD-B16 predicate proof is inherited: every one of the 245 predicates bound here was proven by a guard executed during this attempt."
+    },
+    "execution_environment": {
+        "execution_mode": "IN_SESSION_LOCAL_EXECUTION",
+        "php_version": "7.4.33",
+        "phpunit_version": "9.6.34",
+        "database_engine": "10.4.27-MariaDB",
+        "primary_database": "tradeaxis",
+        "test_database": "tradeaxis_testing",
+        "applied_migration_count": 81,
+        "schema_drift_state": "NONE",
+        "schema_drift_note": "Both databases at 81 applied migrations. This attempt added no migration."
+    },
+    "raw_artifact_manifest": {
+        "manifest_path": "storage/app/market-data/evidence/MD-B17-A001/MANIFEST.json",
+        "manifest_sha256": "8395232673EA234DAD69EF318D2388F79CD24B9F2B3F7658AB03014576402296",
+        "artifact_count": 7,
+        "note": "Covers the seven artifacts that established the predicates. The two post-binding artifacts are carried by a separate manifest, because one of them records a closure-gate run that reads this manifest's artifact count."
+    },
+    "post_binding_manifest": {
+        "manifest_path": "storage/app/market-data/evidence/MD-B17-A001/MANIFEST-POSTBIND.json",
+        "manifest_sha256": "7ECC8DEC10A958400EB5AE281EECEA580554DBB030DFA7F0328B37093B266742",
+        "artifact_count": 2
+    },
+    "executed_proof": [
+        {
+            "execution_id": "MD-B17-A001-001",
+            "kind": "TARGETED_RUNTIME",
+            "command": "php vendor/bin/phpunit --filter \"<the 53 guard methods named by MarketDataReadProductProofSpec::families()>\"",
+            "verdict": "PASS",
+            "tests": 94,
+            "assertions": 1046,
+            "failures": 0,
+            "errors": 0,
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B17-A001/MD-B17-A001-001_targeted_read_product_proof.txt",
+            "sha256": "1BA59AF595572EED5C247E29B253162252376927C17D004F5C239BB80434BE74",
+            "supports": "Every positive and fail-closed guard named by the proof map, executed by name across 28 families."
+        },
+        {
+            "execution_id": "MD-B17-A001-002",
+            "kind": "TARGETED_RUNTIME",
+            "command": "php vendor/bin/phpunit --filter \"DateLevelAnomalyCheckB17Test|ReadProductAliasRetirementBoundaryB17Test\"",
+            "verdict": "PASS",
+            "tests": 11,
+            "assertions": 50,
+            "failures": 0,
+            "errors": 0,
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B17-A001/MD-B17-A001-002_remediation_guards.txt",
+            "sha256": "BE715696EF17DE2FE9F012EBFBA8499470FE4D2CF570B366FF88062D9D430228",
+            "supports": "The date-level anomaly checks built by this attempt and the standing guard on the two alias-retirement conditions."
+        },
+        {
+            "execution_id": "MD-B17-A001-003",
+            "kind": "FULL_REGRESSION",
+            "command": "php vendor/bin/phpunit",
+            "verdict": "PASS",
+            "tests": 2006,
+            "assertions": 20331,
+            "failures": 0,
+            "errors": 0,
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B17-A001/MD-B17-A001-003_full_suite.txt",
+            "sha256": "F46C46BABE7AADFE6B2F1DA60F334AC9ACB2F911E5242BD2DBA700534BFC7702",
+            "supports": "No regression from the new service or the promote hook. An earlier run of this command failed with six errors because the hook used DTO property names the stage input does not have; the property names were corrected before this run."
+        },
+        {
+            "execution_id": "MD-B17-A001-004",
+            "kind": "GOVERNED_GATE",
+            "command": "php MarketDataReadProductProofGate.php ; php MarketDataReadProductProofSelfTest.php",
+            "verdict": "PASS",
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B17-A001/MD-B17-A001-004_proof_gate_and_self_test.txt",
+            "sha256": "02B3F18EAC9F470F998E90757010CF73E1F7F43D74705D7FC13E55B3663691A6",
+            "supports": "The proof gate validates 246 denominator rows against 245 map entries and asserts the finding-blocked rule stays in the denominator and stays unbound. The self-test reports a green control plus the mutations the gate must catch."
+        },
+        {
+            "execution_id": "MD-B17-A001-005",
+            "kind": "GOVERNED_GATE",
+            "command": "php <documentation|relationship|classification|traceability-applicability|scope-boundary> gates",
+            "verdict": "PASS",
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B17-A001/MD-B17-A001-005_governance_gates.txt",
+            "sha256": "AB00450495259894FADD6D1CB81BC1241E342398D254B330BD8957E346A396BB",
+            "supports": "All governance gates exit zero on the package state this evidence is issued against."
+        },
+        {
+            "execution_id": "MD-B17-A001-006",
+            "kind": "FAIL_CLOSED_MUTATION_PROBE",
+            "command": "scripted probe harness: inject one defect, run the owning guard, restore from a byte copy",
+            "verdict": "PASS",
+            "probes": 9,
+            "caught": 9,
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B17-A001/MD-B17-A001-006_fail_closed_probes.txt",
+            "sha256": "BF70E16FB9BF6F46471402B03DBB47F841C0BD074F7F007082B01C41D6F83335",
+            "supports": "Falsifiability of the guards this attempt relies on, with a control before and after. Probe 09 initially escaped: the alias guard was satisfied by the alias surviving in either the current or the history table. It now requires both."
+        },
+        {
+            "execution_id": "MD-B17-A001-007",
+            "kind": "FAIL_CLOSED_MUTATION_PROBE",
+            "command": "scripted probe harness against the proof binder, run without --apply so no probe can write the matrix",
+            "verdict": "PASS",
+            "probes": 4,
+            "caught": 4,
+            "reason_recognised": 4,
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B17-A001/MD-B17-A001-007_binder_fail_closed_probes.txt",
+            "sha256": "9C3C335FF951831BA340DE8BAE99C8D80775C2E8AB3768FCA20C8894E4048DD3",
+            "supports": "Falsifiability of the blocked-rule exclusion the binder learned in this attempt. It refuses to run if the blocked predicate is already bound, if it is downgraded or deactivated out of the denominator, or if it is given a family and bound as though provable. An earlier form of the fourth probe was caught only because the spec has no family for the rule, which proved nothing about the count assertion; it now supplies a family so the assertion is the thing under test."
+        },
+        {
+            "execution_id": "MD-B17-A001-008",
+            "kind": "GOVERNED_GATE",
+            "command": "post-binding sweep: five governance gates, the proof gate and self-test in bound mode, and the closure gate",
+            "verdict": "PASS_WITH_EXPECTED_CLOSURE_FAILURE",
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B17-A001/MD-B17-A001-008_post_binding_gate_sweep.txt",
+            "sha256": "FCCCB56EF4AFB64DD484D581DDA70393EC2A5B548BB60AF7E05A602D44716485",
+            "supports": "The state after binding. Every governance gate passes, the proof gate passes in bound mode, and the self-test reports BOUND_CLOSURE with a green control and all ten mutations caught. The closure gate FAILS, which is the correct reading: MD-S051-R0070 is unsatisfied, so the stage does not close. The artifact also records the self-test refusing a requested mode that contradicts the matrix."
+        },
+        {
+            "execution_id": "MD-B17-A001-009",
+            "kind": "FULL_REGRESSION",
+            "command": "php vendor/bin/phpunit, after the binding was written",
+            "verdict": "PASS",
+            "tests": 2006,
+            "assertions": 20334,
+            "failures": 0,
+            "errors": 0,
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B17-A001/MD-B17-A001-009_post_binding_full_suite.txt",
+            "sha256": "0F6081CF1821E5A7F52E6B5AAC6CD921C1CB36ED07E5EA6A021928022B23813E",
+            "supports": "The binding wrote 245 matrix rows; the suite reads the matrix in several guards. Nothing regressed."
+        }
+    ],
+    "required_semantics_proven": [
+        "Import produces canonical bars, invalid rows and telemetry only; it never grants readable success or creates a seal.",
+        "Promote owns coverage validation, indicators, eligibility, hash, seal, finalize, terminal status and publishability.",
+        "Terminal status is SUCCESS, HELD or FAILED, and READABLE requires every promote precondition.",
+        "Coverage PASS alone never yields SUCCESS; a failing or non-evaluable gate makes the date non-readable.",
+        "A partial import never reads as success because some tickers imported.",
+        "Date-level anomaly checks measure zero-volume share, flat-bar share and cross-field contradictions across the date, which no row-level rule can see.",
+        "The neighbour comparison resolves governed trading days rather than calendar days, and an unresolvable calendar leaves the comparison absent rather than fabricated.",
+        "A date-level finding is quality evidence: it records and alters no row.",
+        "Too few delivered rows is NOT_EVALUABLE rather than CLEAN, because a share over a handful of rows is noise.",
+        "The read product resolves through the publication pointer and never from the newest row, run or timestamp.",
+        "Every artifact join binds publication and run, so one response cannot mix publications.",
+        "Readiness states are derived from publication and freshness facts rather than guessed, and an unready date returns an explicit empty payload rather than older rows.",
+        "Requested and effective dates are distinct fields, and a prior-date result is never relabelled as the requested date.",
+        "Exactly one publication is current for a trade date, and the pointer table structurally refuses a second.",
+        "A sealed publication cannot be discarded or rewritten, and a superseded one remains queryable and unchanged.",
+        "Neither compatibility alias is retired without the demonstration its contract requires, and each still stands for a distinct canonical field."
+    ],
+    "applicability_decisions": [
+        {
+            "decision": "MD-S020-R0069 and MD-S086-R0025 are CONDITIONAL_NOT_APPLICABLE.",
+            "rules": [
+                "MD-S020-R0069",
+                "MD-S086-R0025"
+            ],
+            "condition": "No consumer outside this package reads the alias, demonstrated rather than assumed.",
+            "condition_state": "FALSE",
+            "evidence": [
+                "No consumer surface is exposed, which the read-side contract states of itself.",
+                "No alias-retirement demonstration record exists under docs/market_data/records/decisions."
+            ],
+            "fail_closed_guard": "ReadProductAliasRetirementBoundaryB17Test::test_neither_compatibility_alias_is_retired_without_the_demonstration_the_contract_requires asserts both aliases survive in the current and history tables and that no demonstration is recorded. Probe 09 confirms it fires.",
+            "not_a_pass": "A terminal applicability outcome with an evidenced false condition and a standing guard on that condition."
+        }
+    ],
+    "coverage": {
+        "mandatory_denominator": 246,
+        "mandatory_satisfied": 245,
+        "mandatory_blocked_by_finding": 1,
+        "blocked_rule": "MD-S051-R0070",
+        "blocking_finding": "F-MD-B17-A001-001",
+        "conditional_not_applicable": 2,
+        "conditional_pending": 0,
+        "optional_capability": 1,
+        "reference_context": 60,
+        "transitional": 0,
+        "stage_rows": 309,
+        "binding": "245 predicates are atomically bound to E-MD-B17-A001-001. MD-S051-R0070 stays in the denominator and stays NOT_ASSESSED, which the proof gate asserts in both modes. The stage therefore does not satisfy the closure condition that every mandatory row be SATISFIED, and no closure is claimed."
+    },
+    "defects_found_and_remediated_in_attempt": [
+        {
+            "defect": "The date-level anomaly checks did not exist.",
+            "detail": "Run_Status_and_Quality_Gates_LOCKED.md owns three measures - zero-volume share, flat-bar share, cross-field contradiction count - because row-level validation cannot see a pattern across rows. None of the three existed anywhere in the platform, so a broken acquisition date presented as many individually admissible rows and nothing looked at the shape of the date.",
+            "remediation": "DateLevelAnomalyCheckService computes all three, compares against neighbouring dates resolved through the governed calendar, reports CLEAN, FINDING or NOT_EVALUABLE, and alters no row. Promote runs it and records the result on the audit-visible stage event.",
+            "guard": "DateLevelAnomalyCheckB17Test, nine tests, eight probes."
+        },
+        {
+            "defect": "The promote hook used DTO property names the stage input does not have.",
+            "detail": "The first wiring read $input->tradeDate and $input->knownAt. MarketDataStageInput carries requestedDate, and the knowledge cutoff is resolved from the run. Six integration tests errored on the undefined property.",
+            "remediation": "Corrected to the property names the surrounding promote path already uses.",
+            "guard": "MarketDataPipelineIntegrationTest, plus a wiring assertion in DateLevelAnomalyCheckB17Test and probe 08."
+        },
+        {
+            "defect": "A generated document was hand-edited, and the two copies of the resume point diverged.",
+            "detail": "CURRENT_STATE.md is produced by GenerateMarketDataCurrentState.php from the stage register. Editing both by hand left the register's resume sentence and the generated one differing, and ScopeBoundaryAndOrchestrationCompletionTest::test_governed_execution_is_sequential_with_one_resume_and_distinct_authoritative_roles requires them to be identical. It failed. The same edit also put a coverage restatement in the register's residue-state column, which the generator then copied into the generated document.",
+            "remediation": "The register is the canonical source and was corrected there; CURRENT_STATE.md was regenerated rather than edited. The residue column carries a residue state again.",
+            "guard": "The equality check that caught it. It is recorded here because the post-binding artifacts were first captured before these edits, so the artifact set was re-captured against the final state rather than left describing an earlier one."
+        },
+        {
+            "defect": "The proof self-test silently ran in the wrong mode against a bound matrix.",
+            "detail": "Its mode detector required every mandatory row to be SATISFIED with evidence. MD-S051-R0070 is deliberately NOT_ASSESSED, so a fully bound matrix read as pre-binding: the run labelled itself PRE_RUNTIME and its control went red. The red control was the safe direction, but the label was false, and had the blocked row ever been bound the detector would have flipped modes with nothing said. This is the same silent-fallback shape found earlier in the MD-B11 and MD-B12 self-tests.",
+            "remediation": "The detector excludes the blocked rule as the gate does, an explicit --bound or --pre-binding flag is honoured, and a requested mode that contradicts the matrix is fatal rather than ignored. The two matrix mutations now target an ordinary predicate by identity instead of by position, so neither can land on the blocked row and report a catch it never made.",
+            "guard": "Recorded in MD-B17-A001-008: the bound run reports BOUND_CLOSURE with an empty mode_errors and a green control, and the --pre-binding run against the same matrix fails with MODE_CONTRADICTS_MATRIX."
+        },
+        {
+            "defect": "The alias-retirement guard was satisfied by half the evidence.",
+            "detail": "It matched the alias anywhere in the schema. Each alias exists in both a current table and its history twin, so removing it from one left the guard green. Probe 09 escaped and exposed it.",
+            "remediation": "The guard now counts both occurrences. An alias retired from history is retired.",
+            "guard": "ReadProductAliasRetirementBoundaryB17Test, probe 09."
+        }
+    ],
+    "residue": {
+        "state": "CONFORMANT_WITH_DECLARED_FINDING",
+        "scope": "The promote decision path, readiness resolution, read product surface, pointer lifecycle and the quality-gate surface.",
+        "notes": [
+            "F-MD-B17-A001-001 (P2, OPEN): the date-level anomaly thresholds are declared constants rather than configuration bound to the run's configuration snapshot, because registering the six keys is a controlled correction to Platform_Config_Registry_LOCKED.md (MD-S082). Every result carries date_level_anomaly_threshold_binding = DECLARED_PENDING_CONFIG_REGISTRATION and a guard asserts both that state and that the keys remain unregistered.",
+            "MD-S051-R0070 remains NOT_ASSESSED. It is in the denominator, absent from the proof map, and asserted unbound by the proof gate.",
+            "F-MD-B01-A014-001 remains open, owned by MD-B19. F-MD-B14-A001-001 remains open, a reason-code vocabulary matter. Neither is owned by MD-B17."
+        ]
+    },
+    "findings_and_dependencies": {
+        "findings_opened": [
+            "F-MD-B17-A001-001"
+        ],
+        "findings_discharged": [],
+        "dependencies_discharged": [
+            "MD-DEP-0004"
+        ],
+        "dependencies_opened": []
+    },
+    "no_inheritance_statement": "No predicate is claimed on historical material. Every one of the 245 bound predicates was proven by a guard executed in this attempt, and every guard relied on was shown to fail under an injected defect. The 246th is not claimed at all."
+}

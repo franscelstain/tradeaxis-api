@@ -1,0 +1,162 @@
+{
+  "evidence_id": "E-MD-B17-A002-001",
+  "record_type": "EVIDENCE",
+  "role_scope": "ISSUED_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B17",
+  "attempt_id": "MD-B17-A002",
+  "work_id": "MD-B17-A002",
+  "baseline_id": "MD-B17-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze": "MD-STRATEGY-FREEZE-20260903-001",
+  "change_impact_declaration": "CI-MD-B17-A002-001",
+  "issued_at": "2026-09-03T21:47:00+07:00",
+  "title": "Fresh A002 runtime proof for snapshot-bound date-level anomaly thresholds and the complete B17 proof map",
+  "attempt_outcome": "RUNTIME_PROOF_COMPLETE_BINDING_PENDING: all 246 mandatory predicates have a current A002 proof-map entry backed by freshly executed guards; this record does not claim matrix binding or stage closure before the atomic binder runs.",
+  "authority_basis": {
+    "primary_stage": "MD-B17",
+    "strategy_documents": [
+      "authority/strategy/book/Run_Status_and_Quality_Gates_LOCKED.md",
+      "authority/strategy/book/Downstream_Consumer_Read_Model_Contract_LOCKED.md",
+      "authority/strategy/book/Downstream_Data_Readiness_Guarantee_LOCKED.md",
+      "authority/strategy/book/CONSUMER_READ_CONTRACT_LOCKED.md",
+      "authority/strategy/book/Read_Side_Enforcement_Anti_Bypass_Contract_LOCKED.md",
+      "authority/strategy/book/Consumer_Readability_Decision_Table_LOCKED.md",
+      "authority/strategy/book/Effective_Trade_Date_Contract_LOCKED.md",
+      "authority/strategy/registry/Platform_Config_Registry_LOCKED.md"
+    ],
+    "controlled_correction": "DOC-CHG-20260903-001",
+    "reviewed_decision": "D-MD-B17-A001-001",
+    "authorization_evidence": "E-MD-B17-A001-002",
+    "predecessor_closure": "SC-MD-B16-A001-001",
+    "no_inheritance": "The successor rebaseline cleared all 245 A001 bindings and retained the one already-unbound rule. Every proof admitted here was executed after the A002 implementation; no A001 predicate verdict or raw artifact is current proof."
+  },
+  "execution_environment": {
+    "execution_mode": "IN_SESSION_LOCAL_EXECUTION",
+    "php_version": "7.4.33",
+    "phpunit_version": "9.6.34",
+    "database_engine": "10.4.27-MariaDB",
+    "primary_database": "tradeaxis",
+    "schema_migration_impact": "NONE",
+    "historical_snapshot_rewrite": "NONE",
+    "backfill": "NOT_REQUIRED_AND_NOT_AUTHORIZED"
+  },
+  "raw_artifact_manifest": {
+    "manifest_path": "storage/app/market-data/evidence/MD-B17-A002/MANIFEST.json",
+    "manifest_sha256": "1AC76F425EEA2FFA0A35DC9DBDB063043252632FA10A2A6CEAA01AD309BCFF47",
+    "artifact_count": 7
+  },
+  "executed_proof": [
+    {
+      "execution_id": "MD-B17-A002-001",
+      "kind": "TARGETED_RUNTIME",
+      "verdict": "PASS",
+      "tests": 94,
+      "assertions": 1042,
+      "exit_code": 0,
+      "artifact_path": "storage/app/market-data/evidence/MD-B17-A002/MD-B17-A002-001_targeted_read_product_proof.txt",
+      "sha256": "084A9E1E1CEEB18C66F8C3D12F551F2DCCAF94113E1C357A64245D4BB220F0EE",
+      "supports": "All 53 distinct positive/fail-closed guard methods named by the 28-family B17 proof map, producing 94 test cases."
+    },
+    {
+      "execution_id": "MD-B17-A002-002",
+      "kind": "AFFECTED_PREDECESSOR_AND_REMEDIATION_RUNTIME",
+      "verdict": "PASS",
+      "tests": 56,
+      "assertions": 233,
+      "exit_code": 0,
+      "artifact_path": "storage/app/market-data/evidence/MD-B17-A002/MD-B17-A002-002_affected_config_snapshot_guards.txt",
+      "sha256": "14AAB746EC68818FEA4F2EB4CB72A5C5E6D6BBF438C3AE02D8EB2F58ECB5F41F",
+      "supports": "The complete anomaly guard plus affected B04 registry, environment, config identity, immutable snapshot, replay identity, as-known binding, normalization and alias-retirement guards."
+    },
+    {
+      "execution_id": "MD-B17-A002-003",
+      "kind": "FULL_REGRESSION",
+      "verdict": "PASS",
+      "tests": 2013,
+      "assertions": 20373,
+      "failures": 0,
+      "errors": 0,
+      "exit_code": 0,
+      "artifact_path": "storage/app/market-data/evidence/MD-B17-A002/MD-B17-A002-003_full_suite.txt",
+      "sha256": "904257453A566E2CC61399B1E81A821C1C0D2259C7651876E0EF404FCBB7D8B5"
+    },
+    {
+      "execution_id": "MD-B17-A002-004",
+      "kind": "PRE_BINDING_PROOF_GATES",
+      "verdict": "PASS",
+      "exit_code": 0,
+      "artifact_path": "storage/app/market-data/evidence/MD-B17-A002/MD-B17-A002-004_prebinding_proof_gates.txt",
+      "sha256": "E975CAFCE8D1F2B9B668603FCB59CFE98B394E3566D4201538C4EC8C875FC85C",
+      "supports": "Proof gate 246/246 across 28 families, self-test 11/11 and pristine binder validation."
+    },
+    {
+      "execution_id": "MD-B17-A002-005",
+      "kind": "GOVERNANCE_AND_AFFECTED_B04_GATES",
+      "verdict": "PASS",
+      "exit_code": 0,
+      "artifact_path": "storage/app/market-data/evidence/MD-B17-A002/MD-B17-A002-005_governance_and_affected_b04_gates.txt",
+      "sha256": "0E0BDE3FF8B205C44023E4F68D9B78A63682ED9E1B984868FE65B73187228ACE",
+      "supports": "Documentation, relationship, relationship mutation, classification, applicability, scope-boundary, B04 traceability and B04 proof gates."
+    },
+    {
+      "execution_id": "MD-B17-A002-006",
+      "kind": "FAIL_CLOSED_RUNTIME_PROOF",
+      "verdict": "PASS",
+      "tests": 7,
+      "assertions": 17,
+      "exit_code": 0,
+      "artifact_path": "storage/app/market-data/evidence/MD-B17-A002/MD-B17-A002-006_snapshot_fail_closed_proof.txt",
+      "sha256": "52E88A6455219C46E49D888338641C3477F78BD119C3C4F720427BE6A89FEA18",
+      "supports": "Current-config drift cannot change a run-bound evaluation; missing binding, run hash mismatch, modified bytes, missing subtree, wrong type and invalid range all fail closed."
+    },
+    {
+      "execution_id": "MD-B17-A002-007",
+      "kind": "BINDER_FAIL_CLOSED_PROBE",
+      "verdict": "PASS",
+      "probes": 1,
+      "caught": 1,
+      "exit_code": 0,
+      "artifact_path": "storage/app/market-data/evidence/MD-B17-A002/MD-B17-A002-007_binder_stale_evidence_probe.txt",
+      "sha256": "65D86E1092E22F3B188C8B0270AAA69F91A420857A4305FE877BA4BBD0D4ED8D",
+      "supports": "The A002 binder accepts pristine validation and refuses an A001 evidence identifier before any write."
+    }
+  ],
+  "actual_implementation": [
+    "Six typed environment-backed keys now exist under market_data.quality_gates.date_level_anomaly with the authorised defaults.",
+    "Run creation captures those resolved values in the existing immutable, content-addressed configuration snapshot.",
+    "DateLevelAnomalyCheckService requires the owning run snapshot ID and config hash, verifies ID/hash/content identity, reads only the six-key snapshot subtree and rejects missing, extra, wrong-type, non-finite or incoherent values.",
+    "The promote coverage stage passes the owning run snapshot identity and records the binding identity, thresholds and anomaly result on its audit-visible event.",
+    "Historical snapshots are not rewritten. A legacy snapshot lacking the new subtree fails closed if asked to perform this evaluation."
+  ],
+  "semantic_proof": [
+    "MD-S051-R0070 is now semantically identical to its proof: thresholds are configured values actually used from the immutable owning-run snapshot, never current process config or implicit constants.",
+    "The existing three date-level measures, governed-neighbour comparison, NOT_EVALUABLE behavior and non-destructive finding behavior remain proven.",
+    "Atomic versioned read-product, pointer-only resolution, readiness/freshness, requested/effective-date distinction, seal immutability and alias-retirement boundaries are freshly re-executed under A002."
+  ],
+  "applicability": {
+    "mandatory_denominator": 246,
+    "proof_map_entries": 246,
+    "conditional_not_applicable": 2,
+    "conditional_pending": 0,
+    "transitional": 0,
+    "optional_capability": 1,
+    "reference_context": 66,
+    "conditional_guard": "ReadProductAliasRetirementBoundaryB17Test keeps MD-S020-R0069 and MD-S086-R0025 not applicable because no external-reader retirement demonstration exists; both aliases remain in current and history tables.",
+    "binding_state_at_issue": "PENDING_ATOMIC_BINDER"
+  },
+  "change_impact_result": {
+    "status": "IMPLEMENTED_AND_PREBIND_PROVEN",
+    "affected_b04_denominator": "UNCHANGED_114_OF_114",
+    "affected_b04_corpus": "MD-S082 increased from 227 to 233 only through six B17-owned REFERENCE_ONLY rows",
+    "schema_migration": "NONE",
+    "backfill": "NONE",
+    "compatibility_break": "NONE"
+  },
+  "finding_residue_dependency": {
+    "finding": "F-MD-B17-A001-001 remains RESOLVED; this evidence completes the successor runtime portion without changing its historical lifecycle.",
+    "residue": "CONFORMANT_WITH_FAIL_CLOSED_LEGACY_SNAPSHOT_BOUNDARY: old immutable snapshots are preserved and cannot silently supply absent keys.",
+    "dependency": "MD-DEP-0004 remains discharged for B17; no new dependency opened."
+  },
+  "next_exact_action": "Run MarketDataReadProductProofBinder first as a dry-run and then with --apply for E-MD-B17-A002-001; only after exact 246-row binding succeeds may bound proof, closure, governance and regression execution proceed."
+}

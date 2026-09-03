@@ -1,0 +1,34 @@
+{
+    "baseline_id": "MD-B17-A001-BL001",
+    "stage_id": "MD-B17",
+    "attempt_id": "MD-B17-A001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260823-001",
+    "strategy_freeze_manifest_sha1": "346300DB6E5356277EA7F97AF36E2F9AD46ADA60",
+    "strategy_tree_fingerprint_sha1": "0AD24570E7127FBB7F1CC1648B0F8EBC7BAC02F7",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "7438D069254678BEF89DEEFEC54F8A859996E28E",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "3F9FD342909AF400C80F234FB63BCA9632A883EB",
+    "source_revision": "743dc1a38895676285ba38df02da0d3d41d4163b",
+    "source_revision_branch": "master",
+    "working_tree": "DIRTY+FA4305557D79B7CDEB88316F16FA13FACF18115A",
+    "app_code_fingerprint_sha1": "D6A997836CA48AF986C52FB361EC8DA40033527E",
+    "tests_fingerprint_sha1": "448C605C01949FC9E31E0642EEA70014B1C5472C",
+    "schema_config_identity": "schema:7A33AA01F6F24DFAF48B2968C6AA7C03B56BE925;config:CDA52E5CFA3414EF94B3C16A4D3C118A692D7165;migrations:48F6FA169798066832A85DCF76BC2644E667D2AF",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "PHP 7.4.33",
+    "external_dependency_contract_identity": {
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "registered": 8,
+        "open_blocking": []
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-08-31T03:48:40+02:00",
+    "issuance_note": "Issued after exact MD-B17 stage-entry normalization at 246 mandatory predicates: 309 active rows examined, 97 transitional resolved, 116 promoted from mixed-run and undecided-reference, 29 recorded as reference with a stated basis, 2 alias-retirement rows resolved to CONDITIONAL_NOT_APPLICABLE behind a standing guard, zero transitional survivors, zero conditional-pending, zero unexplained reference, zero foreign rows altered. Issued before any material MD-B17 change."
+}

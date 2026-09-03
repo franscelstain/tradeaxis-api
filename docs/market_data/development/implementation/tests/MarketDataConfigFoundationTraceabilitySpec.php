@@ -12,7 +12,8 @@ final class MarketDataConfigFoundationTraceabilitySpec
         'MD-S019' => 106,
         'MD-S034' => 27,
         'MD-S065' => 5,
-        'MD-S082' => 227,
+        // DOC-CHG-20260903-001 added six B17-owned structural registry rows R0228..R0233.
+        'MD-S082' => 233,
         'MD-S085' => 464,
     ];
 

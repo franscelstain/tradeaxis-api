@@ -1,0 +1,76 @@
+{
+  "evidence_id": "E-MD-B17-A001-002",
+  "stage_id": "MD-B17",
+  "attempt_id": "MD-B17-A001",
+  "baseline_id": "MD-B17-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "evidence_type": "AUTHORIZED_STRATEGY_CORRECTION_AND_NON_PASS_ATTEMPT_DISPOSITION",
+  "status": "ISSUED",
+  "runtime_proof": "NOT_RUN_NOT_CLAIMED",
+  "decision_id": "D-MD-B17-A001-001",
+  "finding_id": "F-MD-B17-A001-001",
+  "explicit_user_authorization": {
+    "received": true,
+    "date": "2026-09-03",
+    "user_instruction": "oke saya setujui pembaruan yang akan dilakukan",
+    "context": "Direct response to the bounded strategy, reason, and impact explanation for D-MD-B17-A001-001.",
+    "scope": "Add exactly six market_data.quality_gates.date_level_anomaly.* resolved-key rows to MD-S082 with the types, defaults, environment inputs, and MD-S051 ownership fixed by D-MD-B17-A001-001; no other strategy revision."
+  },
+  "document_change_id": "DOC-CHG-20260903-001",
+  "predecessor_strategy_freeze_id": "MD-STRATEGY-FREEZE-20260823-001",
+  "successor_strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "successor_strategy_freeze_manifest_sha1": "F7F41FB2C9AB006C77FC048DC3CFD68BE76D467D",
+  "changed_strategy_ids": [
+    "MD-S082"
+  ],
+  "strategy_correction": {
+    "predecessor_md_s082_sha1": "8324B44D4259889659E56E1F543C59E55BB16E12",
+    "successor_md_s082_sha1": "FA493CD1EFED5668102D53E1E648AA80DCC4F737",
+    "added_keys": [
+      "market_data.quality_gates.date_level_anomaly.zero_volume_share_max",
+      "market_data.quality_gates.date_level_anomaly.flat_bar_share_max",
+      "market_data.quality_gates.date_level_anomaly.cross_field_contradiction_max",
+      "market_data.quality_gates.date_level_anomaly.neighbour_trading_days",
+      "market_data.quality_gates.date_level_anomaly.neighbour_elevation_factor",
+      "market_data.quality_gates.date_level_anomaly.minimum_rows"
+    ],
+    "unchanged_owner_predicate": "MD-S051-R0070",
+    "scope_check": "Only MD-S082 changed in the strategy tree; the documentation integrity gate reports 91 registered documents and zero freeze mismatches."
+  },
+  "traceability_impact": {
+    "matrix_sha1": "211DF1C6A47AF5F4E25C80A08F9E0F7B1C7D2476",
+    "active_rows": 6501,
+    "new_rows": [
+      "MD-S082-R0228",
+      "MD-S082-R0229",
+      "MD-S082-R0230",
+      "MD-S082-R0231",
+      "MD-S082-R0232",
+      "MD-S082-R0233"
+    ],
+    "new_row_classification": "REFERENCE_ONLY",
+    "b17_mandatory_denominator": 246,
+    "runtime_satisfied_by_this_evidence": 0
+  },
+  "affected_current_verification": {
+    "md_b17_a001": "CANNOT_CLOSE_UNDER_PREDECESSOR_FREEZE; immutable partial baseline and E-MD-B17-A001-001 retained",
+    "md_b17_a002": "SUCCESSOR_BASELINE_AND_FRESH_246_PREDICATE_REVALIDATION_REQUIRED",
+    "md_b04_config_foundation": "AFFECTED_PREDECESSOR_REVALIDATION_REQUIRED for exhaustive registry and snapshot inclusion invariants; stage not automatically reopened",
+    "other_closed_stages": "NO_IDENTIFIED_SEMANTIC_INVALIDATION; full-suite and impact-driven checks still required"
+  },
+  "attempt_disposition": {
+    "attempt_id": "MD-B17-A001",
+    "verdict": "PARTIAL_REBASELINE_REQUIRED",
+    "terminal_pass": false,
+    "satisfied_predicates_retained_as_historical_current_epoch_facts": 245,
+    "inherited_predicate_satisfaction_into_successor": 0,
+    "reason": "The strategy freeze changed through the authorised controlled correction; a successor attempt and fresh proof are required before executable remediation or closure."
+  },
+  "governance_checks": {
+    "documentation_integrity": "PASS; 1028/1028 documents registered before this evidence document is added, 91 strategy fingerprints valid, 6501 traceability rows valid, zero broken links",
+    "classification_consistency": "PASS; 6501 active rows, 3592 required, 2909 reference-only, zero binding incoherence",
+    "storage_artifacts": "NOT_APPLICABLE; this evidence records authorization, source fingerprints, and governance disposition rather than runtime execution"
+  },
+  "issued_at": "2026-09-03T21:03:12+07:00",
+  "immutability": "IMMUTABLE_AFTER_ISSUE"
+}

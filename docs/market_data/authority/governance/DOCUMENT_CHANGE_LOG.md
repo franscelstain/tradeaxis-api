@@ -81,3 +81,15 @@
 - Freeze impact: successor freeze `MD-STRATEGY-FREEZE-20260823-001`; only the registered `MD-S085` fingerprint changes.
 - Verification impact: `MD-B09-A001-BL001` and `E-MD-B09-A001-001` remain immutable partial records under the predecessor freeze. `MD-B09` resumes through `MD-B09-A002` with a new baseline/CI; reason-code seed/runtime behavior and affected exhaustive seed proof require fresh revalidation. No B00-B08 closure is rewritten.
 
+## DOC-CHG-20260903-001 — Date-level anomaly configuration registration
+
+- Date: 2026-09-03
+- Finding: `F-MD-B17-A001-001`
+- Supporting evidence: `E-MD-B17-A001-001`
+- Reviewed decision: `D-MD-B17-A001-001`
+- Explicit authorization: user instruction `oke saya setujui pembaruan yang akan dilakukan`, received 2026-09-03 in direct response to the bounded decision impact explanation, authorises exactly the six-key correction recorded by `D-MD-B17-A001-001`.
+- Strategy impact: six additive resolved-key rows in `MD-S082` only; `MD-S051` and every other strategy document remain byte-identical.
+- Result: the zero-volume share, flat-bar share, cross-field contradiction count, neighbouring-trading-day window, neighbour elevation factor, and minimum-row thresholds now have typed configuration identities with explicit defaults and environment inputs owned by `MD-S051`.
+- Scope limit: no other key, default, threshold, finding behavior, readiness rule, publishability rule, or strategy semantic is authorised to change.
+- Freeze impact: successor freeze `MD-STRATEGY-FREEZE-20260903-001`; only the registered `MD-S082` fingerprint changes.
+- Verification impact: `MD-B17-A001-BL001` and both A001 evidence records remain immutable/non-PASS under the predecessor freeze. `MD-B17` resumes only through `MD-B17-A002` with a new baseline/CI, fresh 246-predicate proof, and explicit affected-proof revalidation of the changed B04 exhaustive configuration/snapshot invariants.

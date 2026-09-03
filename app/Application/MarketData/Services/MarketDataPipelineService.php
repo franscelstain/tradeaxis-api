@@ -779,6 +779,21 @@ class MarketDataPipelineService
                 );
 
                 $coverageGateState = CoverageGateStateNormalizer::normalize($coverage['coverage_gate_status'] ?? 'NOT_EVALUABLE');
+
+                /*
+                 * Date-level anomaly checks, owned by Run_Status_and_Quality_Gates_LOCKED.md.
+                 * Row-level validation cannot see a pattern across rows: a defect affecting many
+                 * instruments on one acquisition date presents as many individually admissible
+                 * rows. The measures run in promote alongside coverage and their result travels as
+                 * quality evidence on the run.
+                 */
+                $anomaly = app(DateLevelAnomalyCheckService::class)->evaluate(
+                    $input->requestedDate,
+                    $coverageBasisPublicationId,
+                    $this->runs->resolveKnowledgeCutoff($run),
+                    $run->config_snapshot_id,
+                    $run->config_hash
+                );
                 $qualityGateState = $coverageGateState === 'PASS' ? 'PASS' : ($coverageGateState === 'FAIL' ? 'FAIL' : 'BLOCKED');
 
                 $coverageTelemetry = [
@@ -833,6 +848,7 @@ class MarketDataPipelineService
                     $coverageGateState === 'PASS' ? null : ($coverageGateState === 'FAIL' ? 'RUN_COVERAGE_LOW' : 'RUN_COVERAGE_NOT_EVALUABLE'),
                     [
                         'coverage' => $coverage,
+                        'date_level_anomaly' => $anomaly,
                         'coverage_basis' => $coverage['coverage_basis'] ?? null,
                         'coverage_basis_publication_id' => $coverageBasisPublicationId,
                         'candidate_publication_id' => $coverageBasisPublicationId,
