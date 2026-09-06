@@ -59,7 +59,7 @@ final class MarketDataClassificationConsistencyGate
      * Stages that have performed the applicability/ownership entry obligation and are therefore held
      * to the invariants now. A stage joins this list when it opens, not when it becomes convenient.
      */
-    public const NORMALIZED_STAGES = ['MD-B00', 'MD-B01', 'MD-B02', 'MD-B04', 'MD-B05', 'MD-B06', 'MD-B07', 'MD-B08', 'MD-B09', 'MD-B10', 'MD-B11', 'MD-B12', 'MD-B13'];
+    public const NORMALIZED_STAGES = ['MD-B00', 'MD-B01', 'MD-B02', 'MD-B04', 'MD-B05', 'MD-B06', 'MD-B07', 'MD-B08', 'MD-B09', 'MD-B10', 'MD-B11', 'MD-B12', 'MD-B13', 'MD-B14', 'MD-B15', 'MD-B16', 'MD-B17', 'MD-B18'];
 
     /**
      * Floors that make a vacuous scan impossible. A scan that matches nothing must not be
@@ -74,7 +74,7 @@ final class MarketDataClassificationConsistencyGate
      * A stage joins when its re-check lands, not when its backlog looks inconvenient. Stages absent
      * from this list are counted and reported, never excused.
      */
-    public const DECISION_RECORDED_STAGES = ['MD-B00', 'MD-B05', 'MD-B07', 'MD-B08', 'MD-B09', 'MD-B10', 'MD-B11', 'MD-B12', 'MD-B13'];
+    public const DECISION_RECORDED_STAGES = ['MD-B00', 'MD-B05', 'MD-B07', 'MD-B08', 'MD-B09', 'MD-B10', 'MD-B11', 'MD-B12', 'MD-B13', 'MD-B14', 'MD-B15', 'MD-B16', 'MD-B17', 'MD-B18'];
 
     public const MIN_ROWS = 6000;
 
@@ -325,8 +325,13 @@ final class MarketDataClassificationConsistencyGate
                 // capability boundary, but only after explicit stage-entry review records both the
                 // exception and its owner basis. This is not a grammar exemption: an unreviewed
                 // sibling remains debt and fails a normalized stage exactly as before.
-                if (strpos((string) ($row['notes'] ?? ''), 'semantic_reference_exception=B11_REVIEWED') !== false
-                    && preg_match('/reference_owner_basis=(downstream_price_product|capability_limitation|exchange_market_structure_owner)/', (string) ($row['notes'] ?? ''))) {
+                $notes = (string) ($row['notes'] ?? '');
+                $legacyReviewedException = strpos($notes, 'semantic_reference_exception=B11_REVIEWED') !== false
+                    && preg_match('/reference_owner_basis=(downstream_price_product|capability_limitation|exchange_market_structure_owner)/', $notes);
+                $stageReviewedCapabilityLimit = strpos($notes, 'semantic_reference_exception='.$row['primary_stage'].'_REVIEWED') !== false
+                    && strpos($notes, 'reference_owner_basis=capability_limitation') !== false
+                    && self::hasRecordedReferenceDecision($row);
+                if ($legacyReviewedException || $stageReviewedCapabilityLimit) {
                     continue;
                 }
                 $counts['mixed_members']++;

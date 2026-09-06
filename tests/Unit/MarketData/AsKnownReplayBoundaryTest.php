@@ -5,6 +5,7 @@ use App\Infrastructure\Persistence\MarketData\CorpusAdmissionRepository;
 use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 use App\Infrastructure\Persistence\MarketData\MarketDataConfigSnapshotRepository;
 use App\Infrastructure\Persistence\MarketData\SectorClassificationRepository;
+use App\Infrastructure\Persistence\MarketData\SourceObservationRepository;
 use App\Infrastructure\Persistence\MarketData\TemporalIdentityRepository;
 use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
 use App\Infrastructure\Persistence\MarketData\TemporalTradingStatusRepository;
@@ -342,6 +343,10 @@ class AsKnownReplayBoundaryTest extends TestCase
             [EventRiskSourceRepository::class, 'suspendedTickerIdsAsOf', 2],
             [EventRiskSourceRepository::class, 'expectationUnknownTickerIdsAsOf', 2],
             [EventRiskSourceRepository::class, 'expectationStatusRevisionIdsAsOf', 2],
+            [SourceObservationRepository::class, 'normalizedRowsAsKnown', 1],
+            [SourceObservationRepository::class, 'observationManifestAsKnown', 1],
+            [SourceObservationRepository::class, 'acquisitionRowsAsKnown', 1],
+            [SourceObservationRepository::class, 'normalizedRowsManifestAsKnown', 1],
             [CorpusAdmissionRepository::class, 'historyStartDateFor', 1],
         ];
     }

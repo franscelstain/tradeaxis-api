@@ -56,6 +56,7 @@ class EodBarsIngestServiceTest extends TestCase
         $run = new EodRun([
             'run_id' => 56,
             'trade_date_requested' => '2026-03-24',
+            'knowledge_cutoff_at' => '2026-03-24 18:00:00',
         ]);
 
         $publications->expects($this->once())
@@ -191,6 +192,7 @@ class EodBarsIngestServiceTest extends TestCase
         $run = new EodRun([
             'run_id' => 59,
             'trade_date_requested' => '2026-03-24',
+            'knowledge_cutoff_at' => '2026-03-24 18:00:00',
         ]);
 
         $sourceRows = [
@@ -303,6 +305,7 @@ class EodBarsIngestServiceTest extends TestCase
         $run = new EodRun([
             'run_id' => 60,
             'trade_date_requested' => '2026-03-24',
+            'knowledge_cutoff_at' => '2026-03-24 18:00:00',
         ]);
 
         $sourceRows = [[
@@ -399,6 +402,7 @@ class EodBarsIngestServiceTest extends TestCase
         $run = new EodRun([
             'run_id' => 58,
             'trade_date_requested' => '2026-03-24',
+            'knowledge_cutoff_at' => '2026-03-24 18:00:00',
         ]);
 
         $publications->expects($this->once())
@@ -489,6 +493,7 @@ class EodBarsIngestServiceTest extends TestCase
         $run = new EodRun([
             'run_id' => 57,
             'trade_date_requested' => '2026-03-24',
+            'knowledge_cutoff_at' => '2026-03-24 18:00:00',
         ]);
 
         $publications->expects($this->once())
@@ -591,6 +596,7 @@ class EodBarsIngestServiceTest extends TestCase
         $run = new EodRun([
             'run_id' => 55,
             'trade_date_requested' => '2026-03-24',
+            'knowledge_cutoff_at' => '2026-03-24 18:00:00',
         ]);
 
         $sourceRows = [
@@ -714,6 +720,7 @@ class EodBarsIngestServiceTest extends TestCase
         $run = new EodRun([
             'run_id' => 61,
             'trade_date_requested' => '2026-06-09',
+            'knowledge_cutoff_at' => '2026-06-09 18:00:00',
         ]);
 
         $sourceRows = [[
@@ -798,7 +805,7 @@ class EodBarsIngestServiceTest extends TestCase
         $artifacts = $this->createMock(EodArtifactRepository::class);
         $publications = $this->createMock(EodPublicationRepository::class);
         $observations = $this->createMock(SourceObservationRepository::class);
-        $run = new EodRun(['run_id' => 62, 'trade_date_requested' => '2026-06-09']);
+        $run = new EodRun(['run_id' => 62, 'trade_date_requested' => '2026-06-09', 'knowledge_cutoff_at' => '2026-06-09 18:00:00']);
 
         $base = [
             'ticker_code' => 'BBCA', 'trade_date' => '2026-06-09',

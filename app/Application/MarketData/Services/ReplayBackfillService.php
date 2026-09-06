@@ -31,9 +31,8 @@ class ReplayBackfillService
         $this->guardDateRange($startDate, $endDate);
 
         $fixtureRoot = $fixtureRoot ?: storage_path('app/market_data/replay-fixtures');
-        $fixturePath = rtrim($fixtureRoot, '/').'/'.$fixtureCase;
-        if (! is_dir($fixturePath)) {
-            throw new \RuntimeException('Replay backfill fixture case not found: '.$fixturePath);
+        if (! is_dir($fixtureRoot)) {
+            throw new \RuntimeException('REPLAY_INDEPENDENT_FIXTURE_ROOT_REQUIRED: '.$fixtureRoot);
         }
 
         $dates = $this->calendar->tradingDatesBetween($startDate, $endDate);
@@ -57,7 +56,11 @@ class ReplayBackfillService
                     throw new NoReadablePublicationException($tradeDate, 'Replay backfill');
                 }
 
-                $result = $this->replays->verifyRunAgainstFixture((int) $publication->run_id, $fixturePath);
+                $fixturePath = rtrim($fixtureRoot, '/\\').'/'.$tradeDate.'/publication_'.(int) $publication->publication_id;
+                if (! is_dir($fixturePath)) {
+                    throw new \RuntimeException('REPLAY_INDEPENDENT_FIXTURE_MISSING: '.$fixturePath);
+                }
+                $result = $this->replays->verifyRunAgainstFixture((int) $publication->run_id, $fixturePath, null, (int) $publication->publication_id);
                 $evidence = $this->evidence->exportReplayEvidence($result['replay_id'], $result['trade_date'], rtrim($outputDir, '/').'/'.$tradeDate);
 
                 $observedOutcome = $result['comparison_result'];
@@ -74,6 +77,7 @@ class ReplayBackfillService
                     'replay_status' => $result['replay_status'] ?? null,
                     'comparison_note' => $result['comparison_note'],
                     'fixture_case' => $fixtureCase,
+                    'fixture_path' => $this->normalizePathForDisplay($fixturePath),
                     'passed' => $passed,
                     'evidence_output_dir' => $this->normalizePathForDisplay($evidence['output_dir']),
                     'evidence_files' => $evidence['files'],
@@ -117,7 +121,7 @@ class ReplayBackfillService
             ],
             'fixture_case' => $fixtureCase,
             'fixture_root' => $this->normalizePathForDisplay($fixtureRoot),
-            'fixture_path' => $this->normalizePathForDisplay($fixturePath),
+            'fixture_path' => null,
             'expected_outcome' => $expectedOutcome,
             'trading_dates' => $dates,
             'all_passed' => $allPassed,

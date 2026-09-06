@@ -20,6 +20,12 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
 
         $repo->upsertMetric([
             'replay_id' => 3001,
+            'replay_mode' => 'PUBLICATION_EXACT',
+            'fixture_manifest_hash' => str_repeat('a', 64),
+            'config_snapshot_hash' => str_repeat('b', 64),
+            'serialization_version' => 'replay-v2',
+            'executable_build_identity' => 'test-build',
+            'bound_input_context_json' => json_encode(['publication_id' => 44]),
             'trade_date' => '2026-03-20',
             'trade_date_effective' => '2026-03-20',
             'source' => 'fixture',
@@ -59,6 +65,7 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
         ]);
 
         $metric = DB::table('md_replay_daily_metrics')->where('replay_id', 3001)->where('trade_date', '2026-03-20')->first();
+        $this->assertSame('PUBLICATION_EXACT', $metric->replay_mode);
         $this->assertSame('MATCH', $metric->comparison_result);
         $this->assertSame('PASS', $metric->replay_status);
         $this->assertSame('READABLE', $metric->publishability_state);

@@ -22,6 +22,7 @@ class BackfillMissingTickersCommand extends AbstractMarketDataCommand
         {--skip-publication-reprocess}
         {--with-evidence}
         {--with-replay}
+        {--replay-fixture-root=}
         {--no-replay}';
 
     protected $description = 'Backfill only missing ticker/date bars through lifecycle promote, evidence, and replay using current bars plus API/manual source rows.';
@@ -63,6 +64,7 @@ class BackfillMissingTickersCommand extends AbstractMarketDataCommand
                     'skip_publication_reprocess' => (bool) $this->option('skip-publication-reprocess'),
                     'with_evidence' => (bool) $this->option('with-evidence'),
                     'with_replay' => (bool) $this->option('with-replay'),
+                    'replay_fixture_root' => $this->option('replay-fixture-root') ?: null,
                     'no_replay' => (bool) $this->option('no-replay'),
                 ]
             );

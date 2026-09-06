@@ -117,11 +117,13 @@ class EodArtifactRepository
                 : $baseTable;
     }
 
-    public function replaceBars($tradeDate, $publicationId, $runId, array $validRows, array $invalidRows, $useHistory = false)
+    public function replaceBars($tradeDate, $publicationId, $runId, array $validRows, array $invalidRows, $useHistory = false, $replayIsolation = false)
     {
-        return DB::transaction(function () use ($tradeDate, $publicationId, $runId, $validRows, $invalidRows, $useHistory) {
-            if (! $useHistory) {
+        return DB::transaction(function () use ($tradeDate, $publicationId, $runId, $validRows, $invalidRows, $useHistory, $replayIsolation) {
+            if (! $useHistory && ! $replayIsolation) {
                 $this->assertLiveArtifactMutationAllowed($tradeDate, $publicationId, 'eod_bars');
+            } elseif ($replayIsolation) {
+                $this->assertReplayIsolationCandidate($publicationId, $runId);
             } else {
                 $this->assertHistorySnapshotMutable($publicationId);
             }
@@ -237,6 +239,37 @@ class EodArtifactRepository
         });
     }
 
+    public function loadReplayIsolationBarsForRun($tradeDate, $runId, array $columns): array
+    {
+        $rows = DB::table('eod_bars')
+            ->where('trade_date', (string) $tradeDate)
+            ->where('run_id', (int) $runId)
+            ->orderBy('ticker_id')
+            ->get($columns);
+
+        return array_map(function ($row) {
+            return (array) $row;
+        }, $rows->all());
+    }
+
+    public function loadReplayIsolationInvalidReasonCountsForRun($tradeDate, $runId): array
+    {
+        $rows = DB::table('eod_invalid_bars')
+            ->where('trade_date', (string) $tradeDate)
+            ->where('run_id', (int) $runId)
+            ->select('invalid_reason_code', DB::raw('COUNT(*) as total'))
+            ->groupBy('invalid_reason_code')
+            ->orderBy('invalid_reason_code')
+            ->get();
+
+        $counts = [];
+        foreach ($rows as $row) {
+            $counts[(string) $row->invalid_reason_code] = (int) $row->total;
+        }
+
+        return $counts;
+    }
+
     public function loadAvailableBarTradeDatesOnOrAfter($startDate)
     {
         return DB::table('eod_bars')
@@ -295,6 +328,26 @@ class EodArtifactRepository
 
         if (! empty($insert)) {
             DB::table('eod_bars_history')->insert($insert);
+        }
+    }
+
+    private function assertReplayIsolationCandidate($publicationId, $runId): void
+    {
+        if (DB::transactionLevel() <= 0) {
+            throw new \RuntimeException('REPLAY_ISOLATION_TRANSACTION_REQUIRED: replay projection mutation must be enclosed by an outer rollback transaction.');
+        }
+
+        $candidate = DB::table('eod_publications as publication')
+            ->join('eod_runs as run', 'run.run_id', '=', 'publication.run_id')
+            ->where('publication.publication_id', (int) $publicationId)
+            ->where('publication.run_id', (int) $runId)
+            ->where('publication.is_current', 0)
+            ->where('publication.seal_state', 'UNSEALED')
+            ->where('run.request_mode', 'replay_verify')
+            ->first();
+
+        if (! $candidate) {
+            throw new \RuntimeException('REPLAY_ISOLATION_CONTEXT_INVALID: only an unsealed non-current replay_verify candidate may replace the transient live projection.');
         }
     }
 

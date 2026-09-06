@@ -75,10 +75,15 @@ class TemporalIdentityRepository
             ->where(function ($q) use ($tradeDate) {
                 $q->whereNull('pm.effective_to')->orWhere('pm.effective_to', '>', $tradeDate.' 00:00:00');
             })
-            ->whereNull('pm.retracted_at');
+            ;
 
-        if ($knownAt !== null) {
-            $query->where('pm.recorded_at', '<=', $knownAt);
+        if ($knownAt !== null && $knownAt !== '') {
+            $query->where('pm.recorded_at', '<=', $knownAt)
+                ->where(function ($q) use ($knownAt) {
+                    $q->whereNull('pm.retracted_at')->orWhere('pm.retracted_at', '>', $knownAt);
+                });
+        } else {
+            $query->whereNull('pm.retracted_at');
         }
 
         $rows = $query
@@ -144,22 +149,34 @@ class TemporalIdentityRepository
         $query = DB::table('md_listings as l')
             ->join('md_instruments as i', 'i.instrument_id', '=', 'l.instrument_id')
             ->join('md_issuers as iss', 'iss.issuer_id', '=', 'i.issuer_id')
-            ->join('md_listing_symbols as ls', function ($join) use ($tradeDate) {
+            ->join('md_listing_symbols as ls', function ($join) use ($tradeDate, $knownAt) {
                 $join->on('ls.listing_id', '=', 'l.listing_id')
                     ->where('ls.symbol_type', '=', 'EXCHANGE')
                     ->where('ls.effective_from', '<=', $tradeDate.' 23:59:59')
                     ->where(function ($q) use ($tradeDate) {
                         $q->whereNull('ls.effective_to')->orWhere('ls.effective_to', '>', $tradeDate.' 00:00:00');
-                    })
-                    ->whereNull('ls.retracted_at');
+                    });
+                if ($knownAt !== null && $knownAt !== '') {
+                    $join->where(function ($q) use ($knownAt) {
+                        $q->whereNull('ls.retracted_at')->orWhere('ls.retracted_at', '>', $knownAt);
+                    });
+                } else {
+                    $join->whereNull('ls.retracted_at');
+                }
             })
-            ->join('md_listing_boards as lb', function ($join) use ($tradeDate) {
+            ->join('md_listing_boards as lb', function ($join) use ($tradeDate, $knownAt) {
                 $join->on('lb.listing_id', '=', 'l.listing_id')
                     ->where('lb.effective_from', '<=', $tradeDate.' 23:59:59')
                     ->where(function ($q) use ($tradeDate) {
                         $q->whereNull('lb.effective_to')->orWhere('lb.effective_to', '>', $tradeDate.' 00:00:00');
-                    })
-                    ->whereNull('lb.retracted_at');
+                    });
+                if ($knownAt !== null && $knownAt !== '') {
+                    $join->where(function ($q) use ($knownAt) {
+                        $q->whereNull('lb.retracted_at')->orWhere('lb.retracted_at', '>', $knownAt);
+                    });
+                } else {
+                    $join->whereNull('lb.retracted_at');
+                }
             })
             ->where('l.exchange_code', config('market_data.scope.market_code', 'IDX'))
             ->where('lb.market_segment', config('market_data.scope.market_segment', 'REGULAR'))

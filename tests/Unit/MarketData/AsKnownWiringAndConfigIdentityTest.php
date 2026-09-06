@@ -50,7 +50,7 @@ class AsKnownWiringAndConfigIdentityTest extends TestCase
         );
 
         $this->assertStringContainsString(
-            '$knownAt = $run->started_at',
+            '$knownAt = ! empty($run->knowledge_cutoff_at)',
             $source,
             'the compute path must derive a cutoff from the run'
         );
@@ -70,9 +70,9 @@ class AsKnownWiringAndConfigIdentityTest extends TestCase
             __DIR__.'/../../../app/Application/MarketData/Services/AdjustmentFactorSetService.php'
         );
         $this->assertStringContainsString(
-            '$run->started_at ?? $run->created_at',
+            '$run->knowledge_cutoff_at',
             $factorSource,
-            'the publication factor-set builder must resolve authoritative revisions as known when the run started'
+            'the publication factor-set builder must resolve authoritative revisions using the immutable run knowledge cutoff'
         );
 
         // The private helpers must forward it rather than accepting and dropping it.

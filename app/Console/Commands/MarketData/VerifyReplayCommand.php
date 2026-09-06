@@ -4,10 +4,11 @@ namespace App\Console\Commands\MarketData;
 
 use App\Application\MarketData\Services\MarketDataEvidenceExportService;
 use App\Application\MarketData\Services\ReplayVerificationService;
+use App\Application\MarketData\Services\ReplayMode;
 
 class VerifyReplayCommand extends AbstractMarketDataCommand
 {
-    protected $signature = 'market-data:replay:verify {run_id?} {fixture_path?} {--replay_id=} {--output_dir=}';
+    protected $signature = 'market-data:replay:verify {run_id?} {fixture_path?} {--mode=} {--publication_id=} {--knowledge_cutoff=} {--replay_id=} {--output_dir=}';
 
     protected $description = 'Verify one executed market-data run against a replay fixture package and persist replay proof rows.';
 
@@ -32,11 +33,31 @@ class VerifyReplayCommand extends AbstractMarketDataCommand
         }
 
         try {
-            $result = app(ReplayVerificationService::class)->verifyRunAgainstFixture(
-                $runId,
-                $this->argument('fixture_path'),
-                $this->option('replay_id') ? (int) $this->option('replay_id') : null
-            );
+            $mode = ReplayMode::normalize($this->option('mode'));
+            $replayId = $this->option('replay_id') ? (int) $this->option('replay_id') : null;
+            if ($mode === ReplayMode::PUBLICATION_EXACT) {
+                $publicationId = (int) $this->option('publication_id');
+                if ($publicationId <= 0) {
+                    throw new \RuntimeException('REPLAY_EXPLICIT_PUBLICATION_REQUIRED: --publication_id must be a positive integer for PUBLICATION_EXACT.');
+                }
+                $result = app(ReplayVerificationService::class)->verifyRunAgainstFixture(
+                    $runId,
+                    $this->argument('fixture_path'),
+                    $replayId,
+                    $publicationId
+                );
+            } else {
+                $cutoff = trim((string) $this->option('knowledge_cutoff'));
+                if ($cutoff === '') {
+                    throw new \RuntimeException('REPLAY_KNOWLEDGE_CUTOFF_REQUIRED: --knowledge_cutoff is required for AS_KNOWN.');
+                }
+                $result = app(ReplayVerificationService::class)->verifyAsKnownAgainstFixture(
+                    $runId,
+                    $this->argument('fixture_path'),
+                    $cutoff,
+                    $replayId
+                );
+            }
         } catch (\Throwable $e) {
             $this->renderCommandBlocked($this->reasonCodeFromException($e), $e->getMessage(), [
                 'replay_status' => 'BLOCKED',
@@ -47,6 +68,8 @@ class VerifyReplayCommand extends AbstractMarketDataCommand
             return 1;
         }
 
+        $this->line('replay_mode='.(string) ($result['replay_mode'] ?? ''));
+        $this->line('knowledge_cutoff='.(string) ($result['knowledge_cutoff_at'] ?? ''));
         $this->info('replay_id='.$result['replay_id']);
         $this->line('replay_suite='.(string) ($result['replay_suite'] ?? $result['fixture_family'] ?? ''));
         $this->line('replay_case='.(string) ($result['replay_case'] ?? $result['fixture_id'] ?? ''));

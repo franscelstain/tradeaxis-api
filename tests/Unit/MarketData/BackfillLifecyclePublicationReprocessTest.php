@@ -27,7 +27,7 @@ class BackfillLifecyclePublicationReprocessTest extends TestCase
 
     public function test_lifecycle_publication_reprocess_promotes_non_readable_affected_dates(): void
     {
-        [$orchestrator, $runs, $pipeline, $evidence, $replay] = $this->makeOrchestrator();
+        [$orchestrator, $runs, $pipeline, $evidence, $replay, $corrections, $publications] = $this->makeOrchestrator();
 
         $seedRun = (object) [
             'run_id' => 201,
@@ -63,13 +63,14 @@ class BackfillLifecyclePublicationReprocessTest extends TestCase
                 return strpos((string) $path, 'publication_reprocess') !== false
                     && strpos((string) $path, '2026-05-08') !== false;
             }));
-        $replay->shouldReceive('generateFixtureFromRun')
+        $publications->shouldReceive('findByRunId')
             ->once()
-            ->with(202, m::type('string'), 'valid_case', null)
-            ->andReturn(['fixture_path' => 'fixture.json']);
+            ->with(202)
+            ->andReturn((object) ['publication_id' => 3002, 'trade_date' => '2026-05-08']);
+        $fixturePath = $this->prepareReplayFixture('2026-05-08', 3002);
         $replay->shouldReceive('verifyRunAgainstFixture')
             ->once()
-            ->with(202, 'fixture.json')
+            ->with(202, $fixturePath, null, 3002)
             ->andReturn(['replay_status' => 'PASS']);
 
         $result = $this->invokePublicationReprocess($orchestrator, [
@@ -147,13 +148,14 @@ class BackfillLifecyclePublicationReprocessTest extends TestCase
         $evidence->shouldReceive('exportRunEvidence')
             ->once()
             ->with(302, m::type('string'));
-        $replay->shouldReceive('generateFixtureFromRun')
+        $publications->shouldReceive('findByRunId')
             ->once()
-            ->with(302, m::type('string'), 'valid_case', null)
-            ->andReturn(['fixture_path' => 'fixture.json']);
+            ->with(302)
+            ->andReturn((object) ['publication_id' => 4002, 'trade_date' => '2026-05-08']);
+        $fixturePath = $this->prepareReplayFixture('2026-05-08', 4002);
         $replay->shouldReceive('verifyRunAgainstFixture')
             ->once()
-            ->with(302, 'fixture.json')
+            ->with(302, $fixturePath, null, 4002)
             ->andReturn(['replay_status' => 'PASS']);
 
         $result = $this->invokePublicationReprocess($orchestrator, [
@@ -487,6 +489,29 @@ class BackfillLifecyclePublicationReprocessTest extends TestCase
         $method = new ReflectionMethod($orchestrator, 'executePublicationReprocessForCase');
         $method->setAccessible(true);
 
-        return $method->invoke($orchestrator, $case, 'api', $withEvidence, $withReplay, __DIR__.DIRECTORY_SEPARATOR.'tmp', $skipRequestedDate);
+        return $method->invoke(
+            $orchestrator,
+            $case,
+            'api',
+            $withEvidence,
+            $withReplay,
+            __DIR__.DIRECTORY_SEPARATOR.'tmp',
+            $skipRequestedDate,
+            $withReplay ? $this->replayFixtureRoot() : null
+        );
+    }
+
+    private function replayFixtureRoot(): string
+    {
+        return __DIR__.DIRECTORY_SEPARATOR.'tmp'.DIRECTORY_SEPARATOR.'independent-replay-fixtures';
+    }
+
+    private function prepareReplayFixture(string $tradeDate, int $publicationId): string
+    {
+        $path = $this->replayFixtureRoot().DIRECTORY_SEPARATOR.$tradeDate.DIRECTORY_SEPARATOR.'publication_'.$publicationId;
+        if (! is_dir($path)) {
+            mkdir($path, 0777, true);
+        }
+        return $path;
     }
 }

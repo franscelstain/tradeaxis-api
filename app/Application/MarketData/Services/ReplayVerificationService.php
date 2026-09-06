@@ -11,6 +11,8 @@ class ReplayVerificationService
     private $evidence;
     private $publications;
     private $replays;
+    private $asKnownSnapshots;
+    private $asKnownExecution;
 
     private $deterministicFieldsChecked = [];
 
@@ -28,14 +30,18 @@ class ReplayVerificationService
     public function __construct(
         EodEvidenceRepository $evidence,
         EodPublicationRepository $publications,
-        ReplayResultRepository $replays
+        ReplayResultRepository $replays,
+        AsKnownReplaySnapshotService $asKnownSnapshots = null,
+        AsKnownReplayExecutionService $asKnownExecution = null
     ) {
         $this->evidence = $evidence;
         $this->publications = $publications;
         $this->replays = $replays;
+        $this->asKnownSnapshots = $asKnownSnapshots ?: new AsKnownReplaySnapshotService();
+        $this->asKnownExecution = $asKnownExecution;
     }
 
-    public function verifyRunAgainstFixture($runId, $fixturePath, $replayId = null)
+    public function verifyRunAgainstFixture($runId, $fixturePath, $replayId = null, $publicationId = null)
     {
         $fixture = $this->loadFixturePackage($fixturePath);
         $run = $this->evidence->findRunById($runId);
@@ -43,9 +49,22 @@ class ReplayVerificationService
             throw new \RuntimeException('REPLAY_ACTUAL_PROOF_INCOMPLETE: Run not found for replay verification.');
         }
 
+        $declaredMode = ReplayMode::normalize($fixture['manifest']['replay_mode'] ?? ReplayMode::PUBLICATION_EXACT);
+        if ($declaredMode !== ReplayMode::PUBLICATION_EXACT) {
+            throw new \RuntimeException('REPLAY_MODE_MISMATCH: verifyRunAgainstFixture is the PUBLICATION_EXACT execution path.');
+        }
+
         $correction = $this->findCorrectionForRun($run->run_id);
         $expectedContext = $this->buildExpectedContext($fixture);
-        $publication = $this->resolvePublicationForReplayActualState($run, $expectedContext, $correction);
+        $explicitPublicationId = $publicationId !== null ? (int) $publicationId : (int) ($fixture['manifest']['publication_id'] ?? ($expectedContext['expected_publication_id'] ?? 0));
+        $isReadableExpected = (($expectedContext['expected_publishability_state'] ?? null) === 'READABLE')
+            || (($run->publishability_state ?? null) === 'READABLE');
+        if ($isReadableExpected && $explicitPublicationId <= 0) {
+            throw new \RuntimeException('REPLAY_EXPLICIT_PUBLICATION_REQUIRED: PUBLICATION_EXACT requires explicit immutable publication_id.');
+        }
+        $publication = $explicitPublicationId > 0
+            ? $this->resolveExplicitFixturePublication($run, $explicitPublicationId)
+            : $this->resolvePublicationForReplayActualState($run, $expectedContext, $correction);
         $actual = $this->buildActualReplayState($run, $publication, $correction, $expectedContext);
         $comparison = $this->compareExpectedAndActual($fixture, $actual, $expectedContext);
         $replayStatus = $this->replayStatusForComparison($comparison['comparison_result']);
@@ -68,6 +87,31 @@ class ReplayVerificationService
             'fixture_schema_version' => $manifest['fixture_schema_version'] ?? null,
             'fixture_source' => $manifest['fixture_source'] ?? null,
             'fixture_created_at' => $manifest['fixture_created_at'] ?? null,
+            'replay_mode' => ReplayMode::PUBLICATION_EXACT,
+            'knowledge_cutoff_at' => null,
+            'fixture_manifest_hash' => $this->canonicalHash($manifest),
+            'source_observation_manifest_hash' => (string) ($run->observation_manifest_hash ?? ''),
+            'canonical_raw_input_hash' => (string) ($run->bars_batch_hash ?? ''),
+            'temporal_identity_hash' => (string) ($publication->temporal_identity_hash ?? ($run->temporal_identity_hash ?? '')),
+            'calendar_status_hash' => (string) ($publication->calendar_status_hash ?? ($run->calendar_status_hash ?? '')),
+            'event_factor_hash' => (string) ($publication->factor_set_hash ?? ($run->factor_set_hash ?? '')),
+            'config_snapshot_id' => ! empty($run->config_snapshot_id) ? (int) $run->config_snapshot_id : (! empty($publication->config_snapshot_id ?? null) ? (int) $publication->config_snapshot_id : null),
+            'config_snapshot_hash' => $this->configIdentityForRun($run),
+            'formula_registry_hash' => $this->canonicalHash($this->configValue('market_data.indicators', [])),
+            'reason_registry_hash' => $this->canonicalHash(['coverage' => ['PASS','FAIL','NOT_EVALUATED'], 'replay' => ['PASS','FAIL','BLOCKED']]),
+            'read_model_version' => (string) $this->configValue('market_data.governance.read_model_version', 'market_data_read_model_v1'),
+            'serialization_version' => (string) $this->configValue('market_data.governance.config_serialization_version', 'canonical_json_v1'),
+            'executable_build_identity' => (string) $this->configValue('market_data.governance.build_id', 'development-worktree'),
+            'admission_state' => $admissibility === null ? 'ADMISSIBLE' : 'NOT_ADMISSIBLE',
+            'bound_input_context_json' => json_encode([
+                'mode' => ReplayMode::PUBLICATION_EXACT,
+                'publication_id' => $explicitPublicationId > 0 ? $explicitPublicationId : null,
+                'run_id' => (int) $run->run_id,
+                'fixture_manifest_hash' => $this->canonicalHash($manifest),
+                'config_identity' => $this->configIdentityForRun($run),
+                'observation_manifest_hash' => (string) ($run->observation_manifest_hash ?? ''),
+                'factor_set_hash' => (string) ($publication->factor_set_hash ?? ($run->factor_set_hash ?? '')),
+            ], JSON_UNESCAPED_SLASHES),
             'trade_date' => $actual['trade_date'],
             'trade_date_effective' => $actual['trade_date_effective'],
             'source' => $actual['source'],
@@ -203,6 +247,168 @@ class ReplayVerificationService
         ];
     }
 
+    public function verifyAsKnownAgainstFixture($runId, $fixturePath, $knowledgeCutoff, $replayId = null)
+    {
+        $run = $this->evidence->findRunById($runId);
+        if (! $run) {
+            throw new \RuntimeException('REPLAY_ACTUAL_PROOF_INCOMPLETE: Run not found for AS_KNOWN replay verification.');
+        }
+        $knowledgeCutoff = trim((string) $knowledgeCutoff);
+        if ($knowledgeCutoff === '') {
+            throw new \RuntimeException('REPLAY_KNOWLEDGE_CUTOFF_REQUIRED: AS_KNOWN replay requires knowledge_cutoff.');
+        }
+
+        $fixturePath = rtrim((string) $fixturePath, '/\\');
+        $manifest = $this->readJsonFile($fixturePath.'/manifest.json');
+        $mode = ReplayMode::normalize($manifest['replay_mode'] ?? null);
+        if ($mode !== ReplayMode::AS_KNOWN) {
+            throw new \RuntimeException('REPLAY_MODE_MISMATCH: AS_KNOWN verifier requires an AS_KNOWN fixture.');
+        }
+        if (strtoupper(trim((string) ($manifest['assertion_scope'] ?? ''))) !== AsKnownReplayExecutionService::EXECUTION_SCOPE) {
+            throw new \RuntimeException('REPLAY_AS_KNOWN_SCOPE_REQUIRED: AS_KNOWN fixture must explicitly bind CANONICAL_RAW assertion_scope.');
+        }
+
+        $expectedSnapshot = $this->readJsonFile($fixturePath.'/expected/as_known_snapshot.json', 'REPLAY_EXPECTED_PROOF_INCOMPLETE');
+        $expectedExecution = $this->readJsonFile($fixturePath.'/expected/as_known_execution.json', 'REPLAY_EXPECTED_PROOF_INCOMPLETE');
+        $tradeDate = (string) ($expectedSnapshot['trade_date'] ?? ($manifest['trade_date'] ?? ($run->trade_date_requested ?? '')));
+        if ($tradeDate === '') {
+            throw new \RuntimeException('REPLAY_EXPECTED_PROOF_INCOMPLETE: AS_KNOWN fixture must bind trade_date.');
+        }
+        $fixtureCutoff = trim((string) ($expectedSnapshot['knowledge_cutoff'] ?? ($manifest['knowledge_cutoff'] ?? '')));
+        if ($fixtureCutoff === '' || $fixtureCutoff !== $knowledgeCutoff) {
+            throw new \RuntimeException('REPLAY_KNOWLEDGE_CUTOFF_MISMATCH: command and fixture knowledge_cutoff must match exactly.');
+        }
+
+        $actualSnapshot = $this->asKnownSnapshots->capture($tradeDate, $knowledgeCutoff);
+        $expectedSnapshotHash = (string) ($expectedSnapshot['snapshot_hash'] ?? '');
+        if ($expectedSnapshotHash === '') {
+            throw new \RuntimeException('REPLAY_EXPECTED_PROOF_INCOMPLETE: AS_KNOWN fixture must bind snapshot_hash.');
+        }
+        $executionService = $this->asKnownExecution ?: app(AsKnownReplayExecutionService::class);
+        $actualExecution = $executionService->execute($tradeDate, $knowledgeCutoff, $actualSnapshot);
+        if ((string) ($expectedExecution['execution_scope'] ?? '') !== AsKnownReplayExecutionService::EXECUTION_SCOPE) {
+            throw new \RuntimeException('REPLAY_EXPECTED_PROOF_INCOMPLETE: AS_KNOWN expected execution must bind CANONICAL_RAW scope.');
+        }
+
+        $mismatches = [];
+        if (! hash_equals($expectedSnapshotHash, (string) $actualSnapshot['snapshot_hash'])) {
+            $mismatches[] = [
+                'field' => 'as_known_snapshot_hash',
+                'expected' => $expectedSnapshotHash,
+                'actual' => $actualSnapshot['snapshot_hash'],
+                'reason_code' => 'REPLAY_LINEAGE_MISMATCH',
+            ];
+        }
+        foreach (['execution_scope','execution_state','canonical_row_count','invalid_row_count','canonical_output_hash','reason_code_counts'] as $field) {
+            $expectedValue = array_key_exists($field, $expectedExecution) ? $expectedExecution[$field] : null;
+            $actualValue = array_key_exists($field, $actualExecution) ? $actualExecution[$field] : null;
+            if ($this->canonicalHash(['value' => $expectedValue]) !== $this->canonicalHash(['value' => $actualValue])) {
+                $mismatches[] = [
+                    'field' => 'as_known_execution.'.$field,
+                    'expected' => $expectedValue,
+                    'actual' => $actualValue,
+                    'reason_code' => 'REPLAY_ARTIFACT_HASH_MISMATCH',
+                ];
+            }
+        }
+
+        $comparisonResult = $mismatches === [] ? 'MATCH' : 'MISMATCH';
+        $replayStatus = $comparisonResult === 'MATCH' ? 'PASS' : 'FAIL';
+        $replayId = $replayId ?: $this->replays->nextReplayId();
+        $manifestHash = $this->canonicalHash($manifest);
+        $actualExecutionState = strtoupper((string) ($actualExecution['execution_state'] ?? 'BLOCKED'));
+        $metricStatus = $actualExecutionState === 'SUCCESS' ? 'SUCCESS' : 'HELD';
+        $reasonCodeCounts = (array) ($actualExecution['reason_code_counts'] ?? []);
+        $actualContext = [
+            'bound_inputs' => $actualSnapshot,
+            'executed_replay' => $actualExecution,
+        ];
+        $expectedContext = [
+            'bound_inputs' => $expectedSnapshot,
+            'executed_replay' => $expectedExecution,
+        ];
+
+        $metric = [
+            'replay_id' => $replayId,
+            'trade_date' => $tradeDate,
+            'trade_date_effective' => $tradeDate,
+            'replay_suite' => $manifest['fixture_family'] ?? 'as_known_replay',
+            'replay_case' => $manifest['fixture_id'] ?? null,
+            'fixture_id' => $manifest['fixture_id'] ?? null,
+            'fixture_version' => $manifest['fixture_version'] ?? ($manifest['version'] ?? null),
+            'fixture_schema_version' => $manifest['fixture_schema_version'] ?? null,
+            'fixture_source' => $manifest['fixture_source'] ?? null,
+            'fixture_created_at' => $manifest['fixture_created_at'] ?? null,
+            'replay_mode' => ReplayMode::AS_KNOWN,
+            'knowledge_cutoff_at' => $knowledgeCutoff,
+            'fixture_manifest_hash' => $manifestHash,
+            'source_observation_manifest_hash' => $actualSnapshot['source_observation_manifest_hash'],
+            'canonical_raw_input_hash' => $actualSnapshot['canonical_raw_input_hash'],
+            'temporal_identity_hash' => $actualSnapshot['temporal_identity_hash'],
+            'calendar_status_hash' => $actualSnapshot['calendar_status_hash'],
+            'event_factor_hash' => $actualSnapshot['event_factor_hash'],
+            'config_snapshot_id' => $actualSnapshot['config_snapshot_id'],
+            'config_snapshot_hash' => $actualSnapshot['config_snapshot_hash'],
+            'formula_registry_hash' => $actualSnapshot['formula_registry_hash'],
+            'reason_registry_hash' => $actualSnapshot['reason_registry_hash'],
+            'read_model_version' => $actualSnapshot['read_model_version'],
+            'serialization_version' => $actualSnapshot['serialization_version'],
+            'executable_build_identity' => $actualSnapshot['executable_build_identity'],
+            'admission_state' => 'ADMISSIBLE',
+            'bound_input_context_json' => json_encode($actualContext, JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION),
+            'source' => 'as_known_replay',
+            'source_mode' => (string) ($actualExecution['source_mode'] ?? 'as_known_replay'),
+            'source_name' => 'IMMUTABLE_OBSERVATIONS',
+            'status' => $metricStatus,
+            'publishability_state' => 'NOT_READABLE',
+            'publication_id' => null,
+            'publication_run_id' => null,
+            'comparison_result' => $comparisonResult,
+            'replay_status' => $replayStatus,
+            'comparison_note' => $comparisonResult === 'MATCH'
+                ? 'AS_KNOWN bound inputs and executed CANONICAL_RAW production path matched the independent fixture.'
+                : 'AS_KNOWN bound inputs or executed CANONICAL_RAW production path diverged from the independent fixture.',
+            'artifact_changed_scope' => $comparisonResult === 'MATCH' ? 'none' : 'as_known_canonical_raw',
+            'config_identity' => $actualSnapshot['config_snapshot_hash'],
+            'publication_version' => null,
+            'is_current_publication' => false,
+            'coverage_gate_state' => null,
+            'bars_rows_written' => (int) ($actualExecution['canonical_row_count'] ?? 0),
+            'invalid_bar_count' => (int) ($actualExecution['invalid_row_count'] ?? 0),
+            'bars_batch_hash' => $actualExecution['canonical_output_hash'] ?? null,
+            'indicators_batch_hash' => null,
+            'eligibility_batch_hash' => null,
+            'seal_state' => 'UNSEALED',
+            'expected_status' => strtoupper((string) ($expectedExecution['execution_state'] ?? 'SUCCESS')) === 'SUCCESS' ? 'SUCCESS' : 'HELD',
+            'expected_publishability_state' => 'NOT_READABLE',
+            'expected_trade_date_effective' => $tradeDate,
+            'expected_seal_state' => 'UNSEALED',
+            'expected_config_identity' => (string) ($expectedSnapshot['config_snapshot_hash'] ?? $actualSnapshot['config_snapshot_hash']),
+            'expected_bars_batch_hash' => $expectedExecution['canonical_output_hash'] ?? null,
+            'expected_reason_code_counts_json' => json_encode((array) ($expectedExecution['reason_code_counts'] ?? []), JSON_UNESCAPED_SLASHES),
+            'mismatch_summary' => $comparisonResult === 'MATCH' ? null : 'AS_KNOWN snapshot/executed canonical output mismatch.',
+            'mismatch_count' => count($mismatches),
+            'mismatch_reason_codes_json' => json_encode(array_values(array_unique(array_column($mismatches, 'reason_code'))), JSON_UNESCAPED_SLASHES),
+            'mismatches_json' => json_encode($mismatches, JSON_UNESCAPED_SLASHES),
+            'expected_context_json' => json_encode($expectedContext, JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION),
+            'actual_context_json' => json_encode($actualContext, JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION),
+            'ignored_volatile_fields_json' => json_encode($this->ignoredVolatileFields, JSON_UNESCAPED_SLASHES),
+            'deterministic_fields_checked_json' => json_encode(['as_known_snapshot_hash','canonical_output_hash','canonical_row_count','invalid_row_count','reason_code_counts'], JSON_UNESCAPED_SLASHES),
+            'final_reason_code' => $comparisonResult === 'MATCH' ? null : (string) ($mismatches[0]['reason_code'] ?? 'REPLAY_MISMATCH'),
+        ];
+
+        $this->replays->upsertMetric($metric);
+        $this->replays->replaceReasonCodeCounts($replayId, $tradeDate, $reasonCodeCounts);
+
+        return $metric + [
+            'fixture_family' => $manifest['fixture_family'] ?? 'as_known_replay',
+            'mismatches' => $mismatches,
+            'mismatch_reason_codes' => array_values(array_unique(array_column($mismatches, 'reason_code'))),
+            'actual_context' => $actualContext,
+            'expected_context' => $expectedContext,
+        ];
+    }
+
     public function generateFixtureFromRun($runId, $fixturePath, $caseName = 'valid_case', $publicationId = null)
     {
         $run = $this->evidence->findRunById($runId);
@@ -227,7 +433,9 @@ class ReplayVerificationService
 
         $manifest = [
             'fixture_id' => $caseName,
-            'fixture_family' => 'runtime_generated_valid_case',
+            'fixture_family' => 'runtime_generated_diagnostic_case',
+            'replay_mode' => ReplayMode::PUBLICATION_EXACT,
+            'publication_id' => $publication ? (int) $publication->publication_id : null,
             'fixture_version' => 'generated-v1',
             'fixture_schema_version' => 'replay_fixture_v2',
             'fixture_created_at' => date(DATE_ATOM),
@@ -1434,7 +1642,6 @@ class ReplayVerificationService
 
         $selector = [
             'type' => 'replay_fixture_explicit_publication',
-            'run_id' => $run->run_id,
             'publication_id' => $publicationId,
             'trade_date' => $run->trade_date_requested,
         ];
@@ -1830,7 +2037,7 @@ class ReplayVerificationService
     private function replayAdmissibility($run, $publication, array $fixture)
     {
         $family = (string) ($fixture['manifest']['fixture_family'] ?? '');
-        if ($family === 'runtime_generated_valid_case') {
+        if (in_array($family, ['runtime_generated_diagnostic_case', 'runtime_generated_valid_case'], true)) {
             return [
                 'reason' => 'REPLAY_FIXTURE_SELF_GENERATED: expectation was derived from the run under verification; a match proves only that the run equals itself.',
             ];
@@ -1873,6 +2080,15 @@ class ReplayVerificationService
      * neither compared nor reported missing. The marker keeps the gap legible, and it is a state to
      * be closed by binding config identity on the run, not by this method inventing one.
      */
+    private function configValue($key, $default = null)
+    {
+        try {
+            return config($key, $default);
+        } catch (\Throwable $e) {
+            return $default;
+        }
+    }
+
     private function configIdentityForRun($run)
     {
         $hash = trim((string) ($run->config_hash ?? ''));
@@ -1899,6 +2115,25 @@ class ReplayVerificationService
         }
 
         return 'BLOCKED';
+    }
+
+    private function canonicalHash($value): string
+    {
+        $value = $this->canonicalizeForHash($value);
+        $json = json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
+        if ($json === false) {
+            throw new \RuntimeException('REPLAY_BOUND_INPUT_SERIALIZATION_FAILED: replay identity cannot be serialized.');
+        }
+        return hash('sha256', $json);
+    }
+
+    private function canonicalizeForHash($value)
+    {
+        if (! is_array($value)) return $value;
+        $isList = $value === [] || array_keys($value) === range(0, count($value) - 1);
+        if (! $isList) ksort($value, SORT_STRING);
+        foreach ($value as $key => $child) $value[$key] = $this->canonicalizeForHash($child);
+        return $value;
     }
 
     private function parseNotes($notes)

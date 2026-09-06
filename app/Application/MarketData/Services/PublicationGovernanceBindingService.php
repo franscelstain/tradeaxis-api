@@ -29,11 +29,15 @@ class PublicationGovernanceBindingService
             (string) $tradeDate
         );
 
+        $knownAt = $run->knowledge_cutoff_at ?? null;
+        if ($knownAt === null || $knownAt === '') {
+            throw new \RuntimeException('RUN_KNOWLEDGE_CUTOFF_MISSING: publication governance binding requires immutable run knowledge_cutoff_at.');
+        }
         $bindings = $this->bindMarketStructure(
             (int) $publication->publication_id,
             (string) $tradeDate,
             $eligibilityRows,
-            $run->started_at ?? $run->created_at ?? null
+            $knownAt
         );
 
         $factorDecisions = DB::table('md_adjustment_factor_decisions')
@@ -62,7 +66,7 @@ class PublicationGovernanceBindingService
 
         $marketStructureHash = $this->hashRows('market-structure-resolution-set/v1', $bindings);
         $identityHash = $this->identityRevisionSetHash($bindings);
-        $calendarHash = $this->calendarRevisionSetHash($tradeDate);
+        $calendarHash = $this->calendarRevisionSetHash($tradeDate, $knownAt);
         $statusHash = $this->statusRevisionSetHash($eligibilityRows);
         $eventHash = $this->hashRows('event-revision-set/v1', array_map(function ($row) {
             return (int) $row->corporate_action_revision_id;
@@ -213,10 +217,13 @@ class PublicationGovernanceBindingService
             ->where(function ($query) use ($tradeDate) {
                 $query->whereNull('revision.effective_to')->orWhere('revision.effective_to', '>=', $tradeDate);
             })
-            ->whereNotExists(function ($sub) {
+            ->whereNotExists(function ($sub) use ($knownAt) {
                 $sub->select(DB::raw(1))
                     ->from('md_exchange_market_structure_revisions as newer')
                     ->whereColumn('newer.supersedes_revision_id', 'revision.market_structure_revision_id');
+                if ($knownAt !== null && $knownAt !== '') {
+                    $sub->where('newer.recorded_at', '<=', $knownAt);
+                }
             })
             ->orderBy('revision.rule_type')
             ->when($knownAt !== null && $knownAt !== '', function ($query) use ($knownAt) {
@@ -263,14 +270,16 @@ class PublicationGovernanceBindingService
         }, $bindings));
     }
 
-    private function calendarRevisionSetHash($tradeDate): string
+    private function calendarRevisionSetHash($tradeDate, $knownAt): string
     {
         $rows = DB::table('md_market_calendar_revisions as revision')
             ->where('revision.cal_date', $tradeDate)
-            ->whereNotExists(function ($sub) {
+            ->where('revision.recorded_at', '<=', $knownAt)
+            ->whereNotExists(function ($sub) use ($knownAt) {
                 $sub->select(DB::raw(1))
                     ->from('md_market_calendar_revisions as newer')
-                    ->whereColumn('newer.supersedes_revision_id', 'revision.calendar_revision_id');
+                    ->whereColumn('newer.supersedes_revision_id', 'revision.calendar_revision_id')
+                    ->where('newer.recorded_at', '<=', $knownAt);
             })
             ->orderBy('revision.calendar_revision_id')
             ->get()

@@ -25,7 +25,7 @@ class ReplaySmokeSuiteServiceTest extends TestCase
         $verify = m::mock(ReplayVerificationService::class);
         $evidence = m::mock(MarketDataEvidenceExportService::class);
 
-        $verify->shouldReceive('verifyRunAgainstFixture')->once()->with(28, $fixtureRoot.'/valid_case')->andReturn([
+        $verify->shouldReceive('verifyRunAgainstFixture')->once()->with(28, $fixtureRoot.'/valid_case', null, 44)->andReturn([
             'replay_id' => 101,
             'trade_date' => '2026-03-20',
             'comparison_result' => 'MATCH',
@@ -37,7 +37,7 @@ class ReplaySmokeSuiteServiceTest extends TestCase
             'files' => ['replay_result.json'],
         ]);
 
-        $verify->shouldReceive('verifyRunAgainstFixture')->once()->with(28, $fixtureRoot.'/reason_code_mismatch_case')->andReturn([
+        $verify->shouldReceive('verifyRunAgainstFixture')->once()->with(28, $fixtureRoot.'/reason_code_mismatch_case', null, 44)->andReturn([
             'replay_id' => 102,
             'trade_date' => '2026-03-20',
             'comparison_result' => 'MISMATCH',
@@ -49,14 +49,16 @@ class ReplaySmokeSuiteServiceTest extends TestCase
             'files' => ['replay_result.json'],
         ]);
 
-        $verify->shouldReceive('verifyRunAgainstFixture')->once()->with(28, $fixtureRoot.'/broken_manifest_case')->andThrow(new RuntimeException('manifest missing field'));
-        $verify->shouldReceive('verifyRunAgainstFixture')->once()->with(28, $fixtureRoot.'/missing_file_case')->andThrow(new RuntimeException('missing file'));
+        $verify->shouldReceive('verifyRunAgainstFixture')->once()->with(28, $fixtureRoot.'/broken_manifest_case', null, 44)->andThrow(new RuntimeException('manifest missing field'));
+        $verify->shouldReceive('verifyRunAgainstFixture')->once()->with(28, $fixtureRoot.'/missing_file_case', null, 44)->andThrow(new RuntimeException('missing file'));
 
         $service = new ReplaySmokeSuiteService($verify, $evidence);
-        $summary = $service->execute(28, $fixtureRoot, $outputDir);
+        $summary = $service->execute(28, 44, $fixtureRoot, $outputDir);
 
         $this->assertTrue($summary['all_passed']);
         $this->assertSame('replay_smoke_minimum', $summary['suite']);
+        $this->assertSame(44, $summary['publication_id']);
+        $this->assertFalse($summary['runtime_valid_fixture_generated']);
         $this->assertCount(4, $summary['cases']);
         $this->assertFileExists($outputDir.'/replay_smoke_suite_summary.json');
 

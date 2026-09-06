@@ -58,7 +58,10 @@ class EodIndicatorsComputeService
             );
         }
 
-        $knownAt = $run->started_at ?? $run->created_at ?? null;
+        $knownAt = ! empty($run->knowledge_cutoff_at) ? (string) $run->knowledge_cutoff_at : null;
+        if ($knownAt === null) {
+            throw new \RuntimeException('RUN_KNOWLEDGE_CUTOFF_MISSING: temporal computation requires the immutable run knowledge cutoff.');
+        }
         $historyStartDate = $this->corpusAdmissions->historyStartDateFor($requestedDate, $knownAt)
             ?: MarketDataScope::DATASET_START;
 

@@ -74,7 +74,13 @@ class EodBarsIngestService
 
     public function ingest($run, $requestedDate, $sourceMode, $priorCurrentPublication = null)
     {
+        $knowledgeCutoff = ! empty($run->knowledge_cutoff_at) ? (string) $run->knowledge_cutoff_at : null;
+        if ($knowledgeCutoff === null) {
+            throw new \RuntimeException('RUN_KNOWLEDGE_CUTOFF_MISSING: ingest requires the immutable run knowledge cutoff.');
+        }
+
         $sourceRows = $this->acquireSourceRows($requestedDate, $sourceMode, null, [
+            'known_at' => $knowledgeCutoff,
             'run_id' => ! empty($run->run_id) ? (int) $run->run_id : null,
             'config_snapshot_id' => ! empty($run->config_snapshot_id) ? (int) $run->config_snapshot_id : null,
         ]);
@@ -98,13 +104,18 @@ class EodBarsIngestService
         return $this->fetchSourceRows($requestedDate, $sourceMode, $tickerCodes, $context);
     }
 
-    public function ingestAcquiredRows($run, $requestedDate, $sourceMode, array $sourceRows, array $sourceAcquisition = null, $priorCurrentPublication = null)
+    public function ingestAcquiredRows($run, $requestedDate, $sourceMode, array $sourceRows, array $sourceAcquisition = null, $priorCurrentPublication = null, $replayIsolation = false)
     {
+        $replayIsolation = (bool) $replayIsolation;
+        if ($replayIsolation && (string) ($run->request_mode ?? '') !== 'replay_verify') {
+            throw new \RuntimeException('REPLAY_ISOLATION_CONTEXT_INVALID: canonical ingest isolation is reserved for replay_verify runs.');
+        }
+
         if ($priorCurrentPublication && (int) $priorCurrentPublication->publication_id === (int) ($run->publication_id ?? 0)) {
             throw new \RuntimeException('Correction candidate publication cannot equal prior current publication.');
         }
 
-        if (! $priorCurrentPublication && $this->publications->findCurrentPublicationForTradeDate($requestedDate)) {
+        if (! $replayIsolation && ! $priorCurrentPublication && $this->publications->findCurrentPublicationForTradeDate($requestedDate)) {
             throw new \RuntimeException('Trade date '.$requestedDate.' sudah punya current publication. Correction/reseal wajib dipakai.');
         }
 
@@ -134,6 +145,10 @@ class EodBarsIngestService
         }
 
         $this->assertSingleDaySourceBoundary($requestedDate, $sourceMode, $sourceRows);
+        $knowledgeCutoff = ! empty($run->knowledge_cutoff_at) ? (string) $run->knowledge_cutoff_at : null;
+        if ($knowledgeCutoff === null) {
+            throw new \RuntimeException('RUN_KNOWLEDGE_CUTOFF_MISSING: canonical ingest requires the immutable run knowledge cutoff.');
+        }
         $tickerMap = $this->tickers->resolveTickerIdsByCodes(array_column($sourceRows, 'ticker_code'));
         /*
          * Traceability and configuration binding are two obligations, and making the first
@@ -150,7 +165,7 @@ class EodBarsIngestService
          * sealing and consumer readability, not import.
          */
         $configSnapshotId = ! empty($run->config_snapshot_id) ? (int) $run->config_snapshot_id : null;
-        $identityContexts = $this->tickers->resolveTemporalContextsByCodes(array_column($sourceRows, 'ticker_code'), $requestedDate);
+        $identityContexts = $this->tickers->resolveTemporalContextsByCodes(array_column($sourceRows, 'ticker_code'), $requestedDate, $knowledgeCutoff);
 
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
         $deduped = [];
@@ -236,7 +251,7 @@ class EodBarsIngestService
         }
 
         $validRows = [];
-        $useHistory = $priorCurrentPublication !== null;
+        $useHistory = ! $replayIsolation && $priorCurrentPublication !== null;
 
         foreach (array_values($deduped) as $row) {
             $validation = $this->validateCanonicalRow($row, $requestedDate);
@@ -364,7 +379,7 @@ class EodBarsIngestService
             return $row;
         }, $validRows);
 
-        $barMutationSummary = $this->artifacts->replaceBars($requestedDate, $candidatePublication->publication_id, $run->run_id, $validRows, $invalidRows, $useHistory);
+        $barMutationSummary = $this->artifacts->replaceBars($requestedDate, $candidatePublication->publication_id, $run->run_id, $validRows, $invalidRows, $useHistory, $replayIsolation);
         // The manifest hash describes which observations produced this candidate, so it is bound
         // whether or not a config snapshot exists. Withholding it alongside the config binding was
         // the same conflation: it left the candidate unable to state its own acquisition set.
@@ -430,8 +445,12 @@ class EodBarsIngestService
         }
 
         $this->assertSingleDaySourceBoundary($requestedDate, $sourceMode, $sourceRows);
+        $knowledgeCutoff = ! empty($run->knowledge_cutoff_at) ? (string) $run->knowledge_cutoff_at : null;
+        if ($knowledgeCutoff === null) {
+            throw new \RuntimeException('RUN_KNOWLEDGE_CUTOFF_MISSING: recovered canonical ingest requires the immutable run knowledge cutoff.');
+        }
         $tickerMap = $this->tickers->resolveTickerIdsByCodes(array_column($sourceRows, 'ticker_code'));
-        $identityContexts = $this->tickers->resolveTemporalContextsByCodes(array_column($sourceRows, 'ticker_code'), $requestedDate);
+        $identityContexts = $this->tickers->resolveTemporalContextsByCodes(array_column($sourceRows, 'ticker_code'), $requestedDate, $knowledgeCutoff);
         $configSnapshotId = ! empty($run->config_snapshot_id) ? (int) $run->config_snapshot_id : null;
 
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();

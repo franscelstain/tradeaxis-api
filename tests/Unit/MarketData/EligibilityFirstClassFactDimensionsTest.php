@@ -65,6 +65,7 @@ class EligibilityFirstClassFactDimensionsTest extends TestCase
 
         $run = new EodRun();
         $run->run_id = 12;
+        $run->knowledge_cutoff_at = '2026-08-12 18:00:00';
 
         (new EodEligibilityBuildService($tickers, $artifacts, $publications, $decisionService))
             ->build($run, '2026-08-12');

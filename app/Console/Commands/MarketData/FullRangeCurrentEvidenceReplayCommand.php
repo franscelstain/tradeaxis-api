@@ -6,9 +6,9 @@ use App\Application\MarketData\Services\FullRangeCurrentEvidenceReplayService;
 
 class FullRangeCurrentEvidenceReplayCommand extends AbstractMarketDataCommand
 {
-    protected $signature = 'market-data:evidence-replay:full-range-current {start_date?} {end_date?} {--fixture_case=valid_case} {--output_dir=} {--continue_on_error} {--max_dates=}';
+    protected $signature = 'market-data:evidence-replay:full-range-current {start_date?} {end_date?} {--fixture_case=valid_case} {--fixture_root=} {--output_dir=} {--continue_on_error} {--max_dates=}';
 
-    protected $description = 'Export run evidence, generate replay fixtures, verify replay, and export replay evidence for every current readable publication in a date range.';
+    protected $description = 'Export run evidence, verify against independent replay fixtures, and export replay evidence for every current readable publication in a date range.';
 
     public function handle()
     {
@@ -54,6 +54,7 @@ class FullRangeCurrentEvidenceReplayCommand extends AbstractMarketDataCommand
                 $endDate ?: null,
                 [
                     'fixture_case' => $fixtureCase,
+                    'fixture_root' => $this->option('fixture_root') ?: null,
                     'output_dir' => $this->option('output_dir') ?: null,
                     'continue_on_error' => (bool) $this->option('continue_on_error'),
                     'max_dates' => $maxDates,

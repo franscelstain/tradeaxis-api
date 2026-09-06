@@ -164,6 +164,71 @@ class EodRunRepository
     }
 
 
+    /**
+     * Create an isolated replay run at an explicit historical knowledge coordinate.
+     *
+     * Unlike a production run, this never resolves or creates today's configuration. The caller
+     * must execute it inside a transaction that is rolled back after deterministic replay output
+     * is captured; only the replay-result record is persisted outside that transaction.
+     */
+    public function createAsKnownReplayRun($requestedDate, $knowledgeCutoff, $sourceMode = 'api')
+    {
+        $scope = MarketDataScope::fromConfig();
+        $requestedDate = $scope->assertRequestedDate($requestedDate);
+        $knowledgeCutoff = trim((string) $knowledgeCutoff);
+        if ($knowledgeCutoff === '') {
+            throw new \RuntimeException('REPLAY_KNOWLEDGE_CUTOFF_REQUIRED: isolated replay run requires knowledge_cutoff.');
+        }
+        $snapshot = $this->configSnapshots->resolveForRun($requestedDate, $knowledgeCutoff);
+        $now = Carbon::now($scope->timezone())->toDateTimeString();
+
+        $run = EodRun::query()->create([
+            'trade_date_requested' => $requestedDate,
+            'trade_date_effective' => null,
+            'lifecycle_state' => 'PENDING',
+            'terminal_status' => null,
+            'quality_gate_state' => 'PENDING',
+            'publishability_state' => 'NOT_READABLE',
+            'stage' => 'INGEST_BARS',
+            'source' => (string) $sourceMode,
+            'request_mode' => 'replay_verify',
+            'knowledge_cutoff_at' => $knowledgeCutoff,
+            'config_version' => config('market_data.indicators.set_version'),
+            'config_hash' => $snapshot['config_hash'],
+            'config_snapshot_ref' => $snapshot['snapshot_uid'],
+            'config_snapshot_id' => $snapshot['config_snapshot_id'],
+            'operational_start_date' => $scope->operationalStartDate(),
+            'freshness_state' => $scope->operationalStartDate() ? 'NOT_EVALUATED' : 'DEVELOPMENT_NOT_OPERATIONAL',
+            'is_current_publication' => 0,
+            'notes' => 'replay_mode=AS_KNOWN;replay_isolation=true',
+            'started_at' => $now,
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        $this->appendEvent(
+            $run,
+            'INGEST_BARS',
+            'RUN_CREATED',
+            'INFO',
+            'Isolated AS_KNOWN replay run created at explicit historical cutoff.',
+            null,
+            [
+                'run_id' => (int) $run->run_id,
+                'trade_date_requested' => $requestedDate,
+                'knowledge_cutoff_at' => $knowledgeCutoff,
+                'source_mode' => (string) $sourceMode,
+                'request_mode' => 'replay_verify',
+                'config_snapshot_id' => (int) $snapshot['config_snapshot_id'],
+                'config_hash' => (string) $snapshot['config_hash'],
+                'replay_isolation' => true,
+            ]
+        );
+
+        return $run;
+    }
+
+
     public function createPromoteRunFromSeed(EodRun $seedRun, $stage, array $overrides = [])
     {
         if (array_key_exists('knowledge_cutoff_at', $overrides)) {

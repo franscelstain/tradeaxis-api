@@ -36,7 +36,7 @@ class ReplayBackfillServiceTest extends TestCase
         $replays = m::mock(ReplayVerificationService::class);
         $evidence = m::mock(MarketDataEvidenceExportService::class);
         $fixtureRoot = sys_get_temp_dir().'/replay_backfill_root_'.uniqid();
-        mkdir($fixtureRoot.'/valid_case', 0777, true);
+        mkdir($fixtureRoot, 0777, true);
         $outputDir = sys_get_temp_dir().'/replay_backfill_output_'.uniqid();
 
         $calendar->shouldReceive('tradingDatesBetween')->once()->with('2026-03-18', '2026-03-20')->andReturn([
@@ -51,7 +51,9 @@ class ReplayBackfillServiceTest extends TestCase
             '2026-03-20' => (object) ['publication_id' => 28, 'run_id' => 28],
         ] as $date => $publication) {
             $publications->shouldReceive('findCurrentPublicationForTradeDate')->once()->with($date)->andReturn($publication);
-            $replays->shouldReceive('verifyRunAgainstFixture')->once()->with($publication->run_id, $fixtureRoot.'/valid_case')->andReturn([
+            $fixturePath = $fixtureRoot.'/'.$date.'/publication_'.$publication->publication_id;
+            mkdir($fixturePath, 0777, true);
+            $replays->shouldReceive('verifyRunAgainstFixture')->once()->with($publication->run_id, $fixturePath, null, $publication->publication_id)->andReturn([
                 'replay_id' => $publication->run_id + 100,
                 'trade_date' => $date,
                 'comparison_result' => 'MATCH',
@@ -68,7 +70,7 @@ class ReplayBackfillServiceTest extends TestCase
 
         $this->assertTrue($summary['all_passed']);
         $this->assertSame(str_replace('\\', '/', $fixtureRoot), $summary['fixture_root']);
-        $this->assertSame(str_replace('\\', '/', $fixtureRoot.'/valid_case'), $summary['fixture_path']);
+        $this->assertNull($summary['fixture_path']);
         $this->assertSame(str_replace('\\', '/', $outputDir.'/2026-03-18'), $summary['cases'][0]['evidence_output_dir']);
         $this->assertCount(3, $summary['cases']);
         $this->assertFileExists($outputDir.'/market_data_replay_backfill_summary.json');
@@ -81,7 +83,7 @@ class ReplayBackfillServiceTest extends TestCase
         $replays = m::mock(ReplayVerificationService::class);
         $evidence = m::mock(MarketDataEvidenceExportService::class);
         $fixtureRoot = sys_get_temp_dir().'/replay_backfill_root_'.uniqid();
-        mkdir($fixtureRoot.'/valid_case', 0777, true);
+        mkdir($fixtureRoot, 0777, true);
         $outputDir = sys_get_temp_dir().'/replay_backfill_output_'.uniqid();
 
         $calendar->shouldReceive('tradingDatesBetween')->once()->andReturn(['2026-03-18', '2026-03-19']);

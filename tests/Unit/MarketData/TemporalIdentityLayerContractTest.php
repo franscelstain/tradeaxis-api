@@ -201,6 +201,39 @@ class TemporalIdentityLayerContractTest extends TestCase
         }
     }
 
+    /** A correction/retraction learned after cutoff must not erase the record from historical replay. */
+    public function test_retraction_after_cutoff_does_not_erase_symbol_board_or_provider_mapping_from_as_known_history(): void
+    {
+        $listingId = $this->seedListing(88);
+        $this->seedSymbol($listingId, 'CUTOLD', '2023-01-02 00:00:00', null, '2023-01-02 00:00:00');
+        $this->seedBoard($listingId, 'MAIN', '2023-01-02 00:00:00', null, '2023-01-02 00:00:00');
+        $this->seedMapping($listingId, 'CUTOLD.JK', '2023-01-02 00:00:00', null);
+
+        DB::table('md_listing_symbols')->where('listing_id', $listingId)->update(['retracted_at' => '2026-03-05 12:00:00']);
+        DB::table('md_listing_boards')->where('listing_id', $listingId)->update(['retracted_at' => '2026-03-05 12:00:00']);
+        DB::table('md_provider_symbol_mappings')->where('listing_id', $listingId)->update(['retracted_at' => '2026-03-05 12:00:00']);
+
+        $repo = new TemporalIdentityRepository();
+        $universe = $repo->readProjectedUniverseAsOf('2025-06-02', '2026-03-01 00:00:00');
+        $this->assertCount(1, $universe, 'a later retraction cannot rewrite the earlier-known universe');
+        $this->assertSame('CUTOLD', $universe[0]['ticker_code']);
+        $this->assertSame('CUTOLD.JK', $repo->resolveProviderContext('CUTOLD', 'yahoo_finance', '2025-06-02', '2026-03-01 00:00:00')['provider_symbol']);
+    }
+
+    /** The same retracted record is absent from a current read, proving the cutoff changes the answer. */
+    public function test_current_identity_read_hides_a_retracted_record_while_prior_as_known_cutoff_keeps_it(): void
+    {
+        $listingId = $this->seedListing(89);
+        $this->seedSymbol($listingId, 'CUTNOW', '2023-01-02 00:00:00', null, '2023-01-02 00:00:00');
+        $this->seedBoard($listingId, 'MAIN', '2023-01-02 00:00:00', null, '2023-01-02 00:00:00');
+        DB::table('md_listing_symbols')->where('listing_id', $listingId)->update(['retracted_at' => '2026-03-05 12:00:00']);
+        DB::table('md_listing_boards')->where('listing_id', $listingId)->update(['retracted_at' => '2026-03-05 12:00:00']);
+
+        $repo = new TemporalIdentityRepository();
+        $this->assertCount(1, $repo->readProjectedUniverseAsOf('2025-06-02', '2026-03-01 00:00:00'));
+        $this->assertSame([], $repo->readProjectedUniverseAsOf('2025-06-02'));
+    }
+
     private function identityOn(string $tradeDate): array
     {
         $rows = (new TemporalIdentityRepository())->readProjectedUniverseAsOf($tradeDate);

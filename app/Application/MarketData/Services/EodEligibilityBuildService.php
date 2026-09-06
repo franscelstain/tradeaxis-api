@@ -53,7 +53,10 @@ class EodEligibilityBuildService
          * per temporal listing with status persisted separately, which is the opposite of dropping
          * the row and keeping nothing.
          */
-        $knownAt = $run->started_at ?? $run->created_at ?? null;
+        $knownAt = ! empty($run->knowledge_cutoff_at) ? (string) $run->knowledge_cutoff_at : null;
+        if ($knownAt === null) {
+            throw new \RuntimeException('RUN_KNOWLEDGE_CUTOFF_MISSING: temporal computation requires the immutable run knowledge cutoff.');
+        }
         $universe = $this->tickers->getUniverseForTradeDate($requestedDate, $knownAt);
         $tradingStatusContexts = $this->tradingStatusContexts($universe, $requestedDate, $knownAt);
 

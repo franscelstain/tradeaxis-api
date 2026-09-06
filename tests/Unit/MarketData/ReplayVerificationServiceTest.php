@@ -88,7 +88,12 @@ class ReplayVerificationServiceTest extends TestCase
         $replays = m::mock(ReplayResultRepository::class);
 
         $evidence->shouldReceive('findRunById')->once()->with(91)->andReturn((object) $run);
-        $publications->shouldReceive('findReadableCurrentPublicationForRun')->once()->with(91, '2026-03-20')->andReturn($publication);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
+            return $selector['type'] === 'replay_fixture_explicit_publication'
+                && ! array_key_exists('run_id', $selector)
+                && $selector['publication_id'] === 44
+                && $selector['trade_date'] === '2026-03-20';
+        }))->andReturn($publication);
         $evidence->shouldReceive('dominantReasonCodes')->once()->with(91, '2026-03-20', 44)->andReturn([
             ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'count' => 3],
         ]);
@@ -272,7 +277,12 @@ class ReplayVerificationServiceTest extends TestCase
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
         $evidence->shouldReceive('findRunById')->once()->with(93)->andReturn($run);
-        $publications->shouldReceive('findReadableCurrentPublicationForRun')->once()->with(93, '2026-03-20')->andReturn($publication);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
+            return $selector['type'] === 'replay_fixture_explicit_publication'
+                && ! array_key_exists('run_id', $selector)
+                && $selector['publication_id'] === 45
+                && $selector['trade_date'] === '2026-03-20';
+        }))->andReturn($publication);
         $evidence->shouldReceive('dominantReasonCodes')->once()->with(93, '2026-03-20', 45)->andReturn([
             ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'count' => 3],
         ]);
@@ -362,7 +372,12 @@ class ReplayVerificationServiceTest extends TestCase
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
         $evidence->shouldReceive('findRunById')->once()->with(94)->andReturn($run);
-        $publications->shouldReceive('findReadableCurrentPublicationForRun')->once()->with(94, '2026-03-20')->andReturn($publication);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
+            return $selector['type'] === 'replay_fixture_explicit_publication'
+                && ! array_key_exists('run_id', $selector)
+                && $selector['publication_id'] === 46
+                && $selector['trade_date'] === '2026-03-20';
+        }))->andReturn($publication);
         $evidence->shouldReceive('dominantReasonCodes')->once()->with(94, '2026-03-20', 46)->andReturn([]);
         $evidence->shouldReceive('exportEligibilityRows')->once()->with('2026-03-20', 46)->andReturn([['eligible' => 1]]);
         $replays->shouldReceive('nextReplayId')->once()->andReturn(3005);
@@ -408,7 +423,12 @@ class ReplayVerificationServiceTest extends TestCase
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
         $evidence->shouldReceive('findRunById')->once()->with(95)->andReturn($run);
-        $publications->shouldReceive('findReadableCurrentPublicationForRun')->once()->with(95, '2026-03-20')->andReturn($publication);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
+            return $selector['type'] === 'replay_fixture_explicit_publication'
+                && ! array_key_exists('run_id', $selector)
+                && $selector['publication_id'] === 47
+                && $selector['trade_date'] === '2026-03-20';
+        }))->andReturn($publication);
         $evidence->shouldReceive('dominantReasonCodes')->once()->with(95, '2026-03-20', 47)->andReturn([]);
         $evidence->shouldReceive('exportEligibilityRows')->once()->with('2026-03-20', 47)->andReturn([['eligible' => 1]]);
         $replays->shouldReceive('nextReplayId')->once()->andReturn(3006);
@@ -421,7 +441,7 @@ class ReplayVerificationServiceTest extends TestCase
         $replays->shouldReceive('replaceReasonCodeCounts')->once()->with(3006, '2026-03-20', []);
 
         $service = new ReplayVerificationService($evidence, $publications, $replays);
-        $result = $service->verifyRunAgainstFixture(95, $fixtureDir);
+        $result = $service->verifyRunAgainstFixture(95, $fixtureDir, null, 47);
 
         $this->assertSame('MISMATCH', $result['comparison_result']);
         $this->assertContains('REPLAY_EXPECTED_PROOF_INCOMPLETE', $result['mismatch_reason_codes']);
@@ -517,8 +537,8 @@ class ReplayVerificationServiceTest extends TestCase
 
         $evidence->shouldReceive('findRunById')->once()->with(191)->andReturn($run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
-            return $selector['type'] === 'replay_historical_actual_state'
-                && $selector['run_id'] === 191
+            return $selector['type'] === 'replay_fixture_explicit_publication'
+                && ! array_key_exists('run_id', $selector)
                 && $selector['publication_id'] === 144
                 && $selector['trade_date'] === '2026-03-20';
         }))->andReturn($historicalPublication);
@@ -662,8 +682,8 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence->shouldReceive('findRunById')->once()->with(408)->andReturn($run);
         $evidence->shouldReceive('findCorrectionByRunId')->once()->with(408)->andReturn($correction);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
-            return $selector['type'] === 'replay_unchanged_correction_actual_state'
-                && $selector['run_id'] === 306
+            return $selector['type'] === 'replay_fixture_explicit_publication'
+                && ! array_key_exists('run_id', $selector)
                 && $selector['publication_id'] === 305
                 && $selector['trade_date'] === '2026-02-18';
         }))->andReturn($baselinePublication);
@@ -880,7 +900,12 @@ class ReplayVerificationServiceTest extends TestCase
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
         $evidence->shouldReceive('findRunById')->once()->with(103)->andReturn($run);
-        $publications->shouldReceive('findReadableCurrentPublicationForRun')->once()->with(103, '2026-03-20')->andReturn($publication);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
+            return $selector['type'] === 'replay_fixture_explicit_publication'
+                && ! array_key_exists('run_id', $selector)
+                && $selector['publication_id'] === 55
+                && $selector['trade_date'] === '2026-03-20';
+        }))->andReturn($publication);
         $evidence->shouldReceive('dominantReasonCodes')->once()->with(103, '2026-03-20', 55)->andReturn([]);
         $evidence->shouldReceive('exportEligibilityRows')->once()->with('2026-03-20', 55)->andReturn([]);
         $replays->shouldReceive('nextReplayId')->once()->andReturn(3301);
@@ -1110,6 +1135,13 @@ class ReplayVerificationServiceTest extends TestCase
             $files['expected/expected_reason_code_counts.json'] = [];
         }
         $files['manifest'] = $this->manifest($fixtureId, $manifestFiles);
+        $expectedReplay = $files['expected/expected_replay_result.json'] ?? null;
+        $explicitPublicationId = is_array($expectedReplay)
+            ? ($expectedReplay['expected_publication_context']['publication_id'] ?? null)
+            : null;
+        if ($explicitPublicationId !== null && $explicitPublicationId !== '') {
+            $files['manifest']['publication_id'] = (int) $explicitPublicationId;
+        }
         return $files;
     }
 

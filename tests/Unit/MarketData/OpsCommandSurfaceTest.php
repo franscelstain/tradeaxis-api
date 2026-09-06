@@ -230,7 +230,8 @@ class OpsCommandSurfaceTest extends TestCase
                 return ($options['input_file'] ?? null) === 'storage\\app\\market_data\\operator\\manual-multi-date.csv'
                     && app(\App\Application\MarketData\Services\ManualSourceInputContext::class)->path() === 'storage\\app\\market_data\\operator\\manual-multi-date.csv'
                     && ! empty($options['with_evidence'])
-                    && ! empty($options['with_replay']);
+                    && ! empty($options['with_replay'])
+                    && ($options['replay_fixture_root'] ?? null) === 'C:\\tmp\\independent-replay-fixtures';
             }))
             ->andReturn([
                 'suite' => 'market_data_backfill_lifecycle',
@@ -269,6 +270,7 @@ class OpsCommandSurfaceTest extends TestCase
             '--output_dir' => 'C:\\tmp\\lifecycle',
             '--with-evidence' => true,
             '--with-replay' => true,
+            '--replay-fixture-root' => 'C:\\tmp\\independent-replay-fixtures',
         ]);
 
         $display = $tester->getDisplay();
@@ -598,16 +600,18 @@ class OpsCommandSurfaceTest extends TestCase
         $service = m::mock(ReplaySmokeSuiteService::class);
         $service->shouldReceive('execute')
             ->once()
-            ->with(41, '/tmp/fixtures', 'C:\\tmp\\replay-smoke')
+            ->with(41, 71, '/tmp/fixtures', 'C:\\tmp\\replay-smoke')
             ->andReturn([
                 'suite' => 'replay_smoke_minimum',
                 'run_id' => 41,
+                'publication_id' => 71,
                 'fixture_root' => 'C:\\tmp\\fixtures',
                 'all_passed' => true,
                 'output_dir' => 'C:\\tmp\\replay-smoke',
                 'cases' => [
                     [
                         'fixture_case' => 'valid_case',
+                        'fixture_path' => 'C:\\tmp\\fixtures\\valid_case',
                         'expected_outcome' => 'MATCH',
                         'observed_outcome' => 'MATCH',
                         'passed' => true,
@@ -617,6 +621,7 @@ class OpsCommandSurfaceTest extends TestCase
                     ],
                     [
                         'fixture_case' => 'missing_file_case',
+                        'fixture_path' => 'C:\\tmp\\fixtures\\missing_file_case',
                         'expected_outcome' => 'ERROR',
                         'observed_outcome' => 'ERROR',
                         'passed' => true,
@@ -626,74 +631,43 @@ class OpsCommandSurfaceTest extends TestCase
             ]);
 
         $this->app->instance(ReplaySmokeSuiteService::class, $service);
-
         $command = new ReplaySmokeSuiteCommand();
         $command->setLaravel($this->app);
         $tester = new CommandTester($command);
 
         $exitCode = $tester->execute([
             'run_id' => 41,
+            '--publication_id' => 71,
             '--fixture_root' => '/tmp/fixtures',
             '--output_dir' => 'C:\\tmp\\replay-smoke',
         ]);
 
         $display = $tester->getDisplay();
-
         $this->assertSame(0, $exitCode);
         $this->assertStringContainsString('suite=replay_smoke_minimum', $display);
         $this->assertStringContainsString('run_id=41', $display);
         $this->assertStringContainsString('fixture_root=C:/tmp/fixtures', $display);
         $this->assertStringContainsString('all_passed=1', $display);
         $this->assertStringContainsString('fixture_case=valid_case | expected=MATCH | observed=MATCH | passed=1 | fixture_path=C:/tmp/fixtures/valid_case | trade_date=2026-03-17 | replay_id=3001 | evidence_output_dir=C:/tmp/replay-smoke/valid_case', $display);
-        $this->assertStringContainsString('fixture_case=missing_file_case | expected=ERROR | observed=ERROR | passed=1 | error=Fixture file declared in manifest is missing.', $display);
+        $this->assertStringContainsString('fixture_case=missing_file_case | expected=ERROR | observed=ERROR | passed=1 | fixture_path=C:/tmp/fixtures/missing_file_case | error=Fixture file declared in manifest is missing.', $display);
     }
 
-    public function test_replay_smoke_command_can_generate_runtime_valid_case(): void
+    public function test_replay_smoke_command_blocks_missing_explicit_publication_before_service(): void
     {
         $service = m::mock(ReplaySmokeSuiteService::class);
-        $service->shouldReceive('executeWithGeneratedValidCase')
-            ->once()
-            ->with(41, null, 'C:\\tmp\\replay-smoke')
-            ->andReturn([
-                'suite' => 'replay_smoke_minimum',
-                'run_id' => 41,
-                'fixture_root' => '/tmp/default-fixtures',
-                'all_passed' => true,
-                'output_dir' => 'C:\\tmp\\replay-smoke',
-                'runtime_valid_fixture_generated' => true,
-                'generated_valid_fixture_path' => 'C:\\tmp\\replay-smoke\\generated-fixtures\\valid_case',
-                'cases' => [
-                    [
-                        'fixture_case' => 'valid_case',
-                        'fixture_path' => 'C:\\tmp\\replay-smoke\\generated-fixtures\\valid_case',
-                        'expected_outcome' => 'MATCH',
-                        'observed_outcome' => 'MATCH',
-                        'passed' => true,
-                        'trade_date' => '2026-03-17',
-                        'replay_id' => 3001,
-                        'evidence_output_dir' => 'C:\\tmp\\replay-smoke\\valid_case',
-                    ],
-                ],
-            ]);
-
+        $service->shouldNotReceive('execute');
         $this->app->instance(ReplaySmokeSuiteService::class, $service);
 
         $command = new ReplaySmokeSuiteCommand();
         $command->setLaravel($this->app);
         $tester = new CommandTester($command);
-
-        $exitCode = $tester->execute([
-            'run_id' => 41,
-            '--output_dir' => 'C:\\tmp\\replay-smoke',
-            '--generate_runtime_valid_case' => true,
-        ]);
-
+        $exitCode = $tester->execute(['run_id' => 41, '--fixture_root' => '/tmp/fixtures']);
         $display = $tester->getDisplay();
 
-        $this->assertSame(0, $exitCode);
-        $this->assertStringContainsString('runtime_valid_fixture_generated=1', $display);
-        $this->assertStringContainsString('generated_valid_fixture_path=C:/tmp/replay-smoke/generated-fixtures/valid_case', $display);
-        $this->assertStringContainsString('fixture_case=valid_case | expected=MATCH | observed=MATCH | passed=1 | fixture_path=C:/tmp/replay-smoke/generated-fixtures/valid_case | trade_date=2026-03-17 | replay_id=3001 | evidence_output_dir=C:/tmp/replay-smoke/valid_case', $display);
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('status=BLOCKED', $display);
+        $this->assertStringContainsString('reason_code=REPLAY_FAIL_SAFE_CONTEXT_MISSING', $display);
+        $this->assertStringContainsString('REPLAY_EXPLICIT_PUBLICATION_REQUIRED', $display);
     }
 
     public function test_replay_smoke_command_returns_failure_when_any_case_deviates_from_expected_outcome(): void
@@ -701,59 +675,52 @@ class OpsCommandSurfaceTest extends TestCase
         $service = m::mock(ReplaySmokeSuiteService::class);
         $service->shouldReceive('execute')
             ->once()
-            ->with(41, null, null)
+            ->with(41, 71, '/tmp/default-fixtures', null)
             ->andReturn([
                 'suite' => 'replay_smoke_minimum',
                 'run_id' => 41,
+                'publication_id' => 71,
                 'fixture_root' => '/tmp/default-fixtures',
                 'all_passed' => false,
                 'output_dir' => '/tmp/replay-smoke',
-                'cases' => [
-                    [
-                        'fixture_case' => 'valid_case',
-                        'expected_outcome' => 'MATCH',
-                        'observed_outcome' => 'MISMATCH',
-                        'passed' => false,
-                        'trade_date' => '2026-03-17',
-                        'replay_id' => 3001,
-                    ],
-                ],
+                'cases' => [[
+                    'fixture_case' => 'valid_case',
+                    'fixture_path' => '/tmp/default-fixtures/valid_case',
+                    'expected_outcome' => 'MATCH',
+                    'observed_outcome' => 'MISMATCH',
+                    'passed' => false,
+                    'trade_date' => '2026-03-17',
+                    'replay_id' => 3001,
+                ]],
             ]);
 
         $this->app->instance(ReplaySmokeSuiteService::class, $service);
-
         $command = new ReplaySmokeSuiteCommand();
         $command->setLaravel($this->app);
         $tester = new CommandTester($command);
-
         $exitCode = $tester->execute([
             'run_id' => 41,
+            '--publication_id' => 71,
+            '--fixture_root' => '/tmp/default-fixtures',
         ]);
-
         $display = $tester->getDisplay();
 
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString('fixture_root=/tmp/default-fixtures', $display);
         $this->assertStringContainsString('all_passed=0', $display);
-        $this->assertStringContainsString('fixture_case=valid_case | expected=MATCH | observed=MISMATCH | passed=0 | trade_date=2026-03-17 | replay_id=3001', $display);
+        $this->assertStringContainsString('fixture_case=valid_case | expected=MATCH | observed=MISMATCH | passed=0 | fixture_path=/tmp/default-fixtures/valid_case | trade_date=2026-03-17 | replay_id=3001', $display);
     }
 
     public function test_replay_smoke_command_blocks_invalid_run_id_before_service(): void
     {
         $service = m::mock(ReplaySmokeSuiteService::class);
         $service->shouldNotReceive('execute');
-        $service->shouldNotReceive('executeWithGeneratedValidCase');
-
         $this->app->instance(ReplaySmokeSuiteService::class, $service);
 
         $command = new ReplaySmokeSuiteCommand();
         $command->setLaravel($this->app);
         $tester = new CommandTester($command);
-
-        $exitCode = $tester->execute([
-            'run_id' => '0',
-        ]);
-
+        $exitCode = $tester->execute(['run_id' => '0', '--publication_id' => 71]);
         $display = $tester->getDisplay();
 
         $this->assertSame(1, $exitCode);
@@ -768,8 +735,8 @@ class OpsCommandSurfaceTest extends TestCase
         $service = m::mock(ReplaySmokeSuiteService::class);
         $service->shouldReceive('execute')
             ->once()
-            ->with(41, null, null)
-            ->andThrow(new RuntimeException('Replay smoke fixture root not found: /tmp/missing-fixtures'));
+            ->with(41, 71, '/tmp/missing-fixtures', null)
+            ->andThrow(new RuntimeException('REPLAY_INDEPENDENT_FIXTURE_ROOT_REQUIRED: /tmp/missing-fixtures'));
 
         $this->app->instance(ReplaySmokeSuiteService::class, $service);
 
@@ -779,13 +746,15 @@ class OpsCommandSurfaceTest extends TestCase
 
         $exitCode = $tester->execute([
             'run_id' => 41,
+            '--publication_id' => 71,
+            '--fixture_root' => '/tmp/missing-fixtures',
         ]);
 
         $display = $tester->getDisplay();
 
         $this->assertSame(1, $exitCode);
         $this->assertStringContainsString('status=BLOCKED', $display);
-        $this->assertStringContainsString('reason_code=COMMAND_EXECUTION_FAILED', $display);
+        $this->assertStringContainsString('reason_code=REPLAY_INDEPENDENT_FIXTURE_ROOT_REQUIRED', $display);
         $this->assertStringContainsString('replay_status=BLOCKED', $display);
         $this->assertStringContainsString('run_id=41', $display);
     }
@@ -1090,11 +1059,11 @@ class OpsCommandSurfaceTest extends TestCase
         $verification = m::mock(ReplayVerificationService::class);
         $verification->shouldReceive('generateFixtureFromRun')
             ->once()
-            ->with(41, 'C:\\tmp\\generated-valid-run-41', 'valid_case', null)
+            ->with(41, 'C:\\tmp\\generated-valid-run-41', 'valid_case', 4)
             ->andReturn([
                 'run_id' => 41,
                 'fixture_id' => 'valid_case',
-                'fixture_family' => 'runtime_generated_valid_case',
+                'fixture_family' => 'runtime_generated_diagnostic_case',
                 'expected_result' => 'MATCH',
                 'trade_date' => '2026-03-17',
                 'trade_date_effective' => '2026-03-17',
@@ -1124,15 +1093,16 @@ class OpsCommandSurfaceTest extends TestCase
             'run_id' => 41,
             '--case' => 'valid_case',
             '--output_dir' => 'C:\\tmp\\generated-valid-run-41',
+            '--publication_id' => '4',
         ]);
 
         $display = $tester->getDisplay();
 
         $this->assertSame(0, $exitCode);
         $this->assertStringContainsString('fixture_generated=1', $display);
-        $this->assertStringContainsString('expected_result=MATCH', $display);
+        $this->assertStringContainsString('admission_state=NOT_ADMISSIBLE', $display);
+        $this->assertStringContainsString('proof_use=DIAGNOSTIC_ONLY_SELF_GENERATED_ORACLE', $display);
         $this->assertStringContainsString('fixture_path=C:/tmp/generated-valid-run-41', $display);
-        $this->assertStringContainsString('next_command=php artisan market-data:replay:verify 41 C:/tmp/generated-valid-run-41 --output_dir=storage/app/market-data/replay', $display);
     }
 
     public function test_replay_fixture_generate_command_accepts_explicit_publication_id_for_historical_fixture(): void
@@ -1144,7 +1114,7 @@ class OpsCommandSurfaceTest extends TestCase
             ->andReturn([
                 'run_id' => 41,
                 'fixture_id' => 'historical_case',
-                'fixture_family' => 'runtime_generated_valid_case',
+                'fixture_family' => 'runtime_generated_diagnostic_case',
                 'expected_result' => 'MATCH',
                 'trade_date' => '2026-03-17',
                 'trade_date_effective' => '2026-03-17',
@@ -1191,7 +1161,7 @@ class OpsCommandSurfaceTest extends TestCase
         $verification = m::mock(ReplayVerificationService::class);
         $verification->shouldReceive('verifyRunAgainstFixture')
             ->once()
-            ->with(41, 'storage/app/market_data/replay-fixtures/valid_case', 3001)
+            ->with(41, 'storage/app/market_data/replay-fixtures/valid_case', 3001, 4)
             ->andReturn([
                 'replay_id' => 3001,
                 'trade_date' => '2026-03-17',
@@ -1243,7 +1213,7 @@ class OpsCommandSurfaceTest extends TestCase
         $verification = m::mock(ReplayVerificationService::class);
         $verification->shouldReceive('verifyRunAgainstFixture')
             ->once()
-            ->with(41, 'storage/app/market_data/replay-fixtures/reason_code_mismatch_case', null)
+            ->with(41, 'storage/app/market_data/replay-fixtures/reason_code_mismatch_case', null, 4)
             ->andReturn([
                 'replay_id' => 3002,
                 'trade_date' => '2026-03-17',

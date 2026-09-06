@@ -1102,6 +1102,23 @@ CREATE TABLE IF NOT EXISTS md_replay_daily_metrics (
   fixture_schema_version VARCHAR(64) NULL,
   fixture_source VARCHAR(128) NULL,
   fixture_created_at VARCHAR(64) NULL,
+  replay_mode VARCHAR(32) NULL,
+  knowledge_cutoff_at DATETIME NULL,
+  fixture_manifest_hash CHAR(64) NULL,
+  source_observation_manifest_hash CHAR(64) NULL,
+  canonical_raw_input_hash CHAR(64) NULL,
+  temporal_identity_hash CHAR(64) NULL,
+  calendar_status_hash CHAR(64) NULL,
+  event_factor_hash CHAR(64) NULL,
+  config_snapshot_id BIGINT UNSIGNED NULL,
+  config_snapshot_hash CHAR(64) NULL,
+  formula_registry_hash CHAR(64) NULL,
+  reason_registry_hash CHAR(64) NULL,
+  read_model_version VARCHAR(64) NULL,
+  serialization_version VARCHAR(64) NULL,
+  executable_build_identity VARCHAR(128) NULL,
+  admission_state VARCHAR(32) NULL,
+  bound_input_context_json LONGTEXT NULL,
   source VARCHAR(32) NOT NULL,
   source_mode VARCHAR(32) NULL,
   source_name VARCHAR(64) NULL,
@@ -1224,7 +1241,9 @@ CREATE TABLE IF NOT EXISTS md_replay_daily_metrics (
   KEY idx_replay_daily_coverage_gate (replay_id, coverage_gate_state),
   KEY idx_replay_daily_artifact_scope (replay_id, artifact_changed_scope),
   KEY idx_replay_daily_publication_version (replay_id, publication_version),
-  KEY idx_replay_daily_config_identity (replay_id, config_identity)
+  KEY idx_replay_daily_config_identity (replay_id, config_identity),
+  KEY idx_replay_daily_mode (replay_id, replay_mode),
+  KEY idx_replay_daily_cutoff (replay_mode, knowledge_cutoff_at)
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS md_replay_reason_code_counts (

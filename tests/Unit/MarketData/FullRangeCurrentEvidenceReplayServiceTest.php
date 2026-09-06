@@ -36,6 +36,8 @@ class FullRangeCurrentEvidenceReplayServiceTest extends TestCase
         $evidence = m::mock(MarketDataEvidenceExportService::class);
         $replays = m::mock(ReplayVerificationService::class);
         $outputDir = sys_get_temp_dir().'/full_range_current_evidence_replay_'.uniqid();
+        $fixtureRoot = sys_get_temp_dir().'/full_range_independent_replay_'.uniqid();
+        mkdir($fixtureRoot, 0777, true);
 
         $calendar->shouldReceive('tradingDatesBetween')->once()->with('2026-03-18', '2026-03-19')->andReturn([
             '2026-03-18',
@@ -47,7 +49,8 @@ class FullRangeCurrentEvidenceReplayServiceTest extends TestCase
             '2026-03-19' => (object) ['publication_id' => 24, 'publication_version' => 1, 'run_id' => 124],
         ] as $date => $publication) {
             $caseDir = $outputDir.'/dates/'.$date.'/run_'.$publication->run_id.'_publication_'.$publication->publication_id;
-            $fixturePath = $caseDir.'/fixture';
+            $fixturePath = $fixtureRoot.'/'.$date.'/publication_'.$publication->publication_id;
+            mkdir($fixturePath, 0777, true);
 
             $publications->shouldReceive('findCurrentPublicationForTradeDate')->once()->with($date)->andReturn($publication);
             $evidence->shouldReceive('exportRunEvidence')->once()->with($publication->run_id, $caseDir.'/run-evidence')->andReturn([
@@ -59,10 +62,7 @@ class FullRangeCurrentEvidenceReplayServiceTest extends TestCase
                 'file_count' => 10,
                 'files' => ['run_summary.json'],
             ]);
-            $replays->shouldReceive('generateFixtureFromRun')->once()->with($publication->run_id, $fixturePath, 'valid_case', $publication->publication_id)->andReturn([
-                'fixture_path' => $fixturePath,
-            ]);
-            $replays->shouldReceive('verifyRunAgainstFixture')->once()->with($publication->run_id, $fixturePath)->andReturn([
+            $replays->shouldReceive('verifyRunAgainstFixture')->once()->with($publication->run_id, $fixturePath, null, $publication->publication_id)->andReturn([
                 'replay_id' => $publication->run_id + 1000,
                 'trade_date' => $date,
                 'comparison_result' => 'MATCH',
@@ -82,6 +82,7 @@ class FullRangeCurrentEvidenceReplayServiceTest extends TestCase
         $service = new FullRangeCurrentEvidenceReplayService($calendar, $publications, $evidence, $replays);
         $summary = $service->execute('2026-03-18', '2026-03-19', [
             'fixture_case' => 'valid_case',
+            'fixture_root' => $fixtureRoot,
             'output_dir' => $outputDir,
         ]);
 
@@ -101,15 +102,17 @@ class FullRangeCurrentEvidenceReplayServiceTest extends TestCase
         $evidence = m::mock(MarketDataEvidenceExportService::class);
         $replays = m::mock(ReplayVerificationService::class);
         $outputDir = sys_get_temp_dir().'/full_range_current_evidence_replay_'.uniqid();
+        $fixtureRoot = sys_get_temp_dir().'/full_range_independent_replay_'.uniqid();
+        mkdir($fixtureRoot, 0777, true);
 
         $calendar->shouldReceive('tradingDatesBetween')->once()->andReturn(['2026-03-18', '2026-03-19']);
         $publications->shouldReceive('findCurrentPublicationForTradeDate')->once()->with('2026-03-18')->andReturn(null);
         $evidence->shouldNotReceive('exportRunEvidence');
-        $replays->shouldNotReceive('generateFixtureFromRun');
-        $replays->shouldNotReceive('verifyRunAgainstFixture');
+                $replays->shouldNotReceive('verifyRunAgainstFixture');
 
         $service = new FullRangeCurrentEvidenceReplayService($calendar, $publications, $evidence, $replays);
         $summary = $service->execute('2026-03-18', '2026-03-19', [
+            'fixture_root' => $fixtureRoot,
             'output_dir' => $outputDir,
         ]);
 

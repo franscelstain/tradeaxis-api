@@ -95,6 +95,7 @@ class StageEightGovernanceBindingTest extends TestCase
             'run_id' => 77,
             'config_snapshot_id' => 1,
             'started_at' => '2026-08-13 11:00:00',
+            'knowledge_cutoff_at' => '2026-08-13 11:00:00',
         ];
         $bars = [
             1 => [['source_observation_id' => 101]],
@@ -140,6 +141,7 @@ class StageEightGovernanceBindingTest extends TestCase
             'run_id' => 1,
             'config_snapshot_id' => 1,
             'started_at' => '2026-08-13 11:00:00',
+            'knowledge_cutoff_at' => '2026-08-13 11:00:00',
         ], 1, '2026-07-28', []);
 
         $this->assertSame([], $result['decisions']);
@@ -201,6 +203,7 @@ class StageEightGovernanceBindingTest extends TestCase
         $result = (new PublicationGovernanceBindingService())->bind((object) [
             'config_snapshot_id' => 1,
             'started_at' => '2026-08-13 11:00:00',
+            'knowledge_cutoff_at' => '2026-08-13 11:00:00',
         ], $publication, '2026-07-28');
 
         $resolved = DB::table('md_publication_market_structure_bindings')->where('listing_id', 1)->first();

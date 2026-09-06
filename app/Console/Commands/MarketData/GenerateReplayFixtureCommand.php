@@ -8,7 +8,7 @@ class GenerateReplayFixtureCommand extends AbstractMarketDataCommand
 {
     protected $signature = 'market-data:replay:fixture:generate {run_id?} {--case=valid_case} {--output_dir=} {--publication_id=}';
 
-    protected $description = 'Generate a deterministic replay fixture package from one executed run for runtime MATCH proof.';
+    protected $description = 'Generate a same-run diagnostic replay fixture. The output is intentionally NOT_ADMISSIBLE as positive replay proof.';
 
     public function handle()
     {
@@ -33,8 +33,8 @@ class GenerateReplayFixtureCommand extends AbstractMarketDataCommand
             ? (int) $this->option('publication_id')
             : null;
 
-        if ($publicationId !== null && $publicationId <= 0) {
-            $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'publication_id must be a positive integer when provided.', [
+        if ($publicationId === null || $publicationId <= 0) {
+            $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'publication_id is required and must be a positive integer for diagnostic fixture generation.', [
                 'run_id' => $runId,
                 'publication_id' => $this->option('publication_id'),
             ]);
@@ -61,6 +61,8 @@ class GenerateReplayFixtureCommand extends AbstractMarketDataCommand
         }
 
         $this->info('fixture_generated=1');
+        $this->line('admission_state=NOT_ADMISSIBLE');
+        $this->line('proof_use=DIAGNOSTIC_ONLY_SELF_GENERATED_ORACLE');
         $this->line('run_id='.$result['run_id']);
         $this->line('fixture_id='.$result['fixture_id']);
         $this->line('fixture_family='.$result['fixture_family']);

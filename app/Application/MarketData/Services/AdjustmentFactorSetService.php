@@ -29,7 +29,11 @@ class AdjustmentFactorSetService
 
     public function ensureForPublication($run, $publicationId, $requestedDate, array $barsByTicker): array
     {
-        $events = $this->authoritativeEventsThrough($requestedDate, $run->started_at ?? $run->created_at ?? null);
+        $knownAt = $run->knowledge_cutoff_at ?? null;
+        if ($knownAt === null || $knownAt === '') {
+            throw new \RuntimeException('RUN_KNOWLEDGE_CUTOFF_MISSING: adjustment factor binding requires immutable run knowledge_cutoff_at.');
+        }
+        $events = $this->authoritativeEventsThrough($requestedDate, $knownAt);
         $decisions = [];
 
         foreach ($events as $event) {
@@ -44,7 +48,7 @@ class AdjustmentFactorSetService
                 );
             }
 
-            $assessment = $this->latestAssessment((int) $event->corporate_action_revision_id, 'YAHOO_FINANCE');
+            $assessment = $this->latestAssessment((int) $event->corporate_action_revision_id, 'YAHOO_FINANCE', $knownAt);
             if (! $assessment) {
                 $assessment = $this->recordUnknownAssessment($event, $barsByTicker[(int) $event->legacy_ticker_id] ?? []);
             }
@@ -184,10 +188,13 @@ class AdjustmentFactorSetService
             ->where('revision.lifecycle_state', 'EFFECTIVE')
             ->whereNotNull('revision.ex_date')
             ->where('revision.ex_date', '<=', $requestedDate)
-            ->whereNotExists(function ($sub) {
+            ->whereNotExists(function ($sub) use ($knownAt) {
                 $sub->select(DB::raw(1))
                     ->from('md_corporate_action_revisions as newer')
                     ->whereColumn('newer.supersedes_revision_id', 'revision.corporate_action_revision_id');
+                if ($knownAt !== null && $knownAt !== '') {
+                    $sub->where('newer.recorded_at', '<=', $knownAt);
+                }
             })
             ->select('revision.*', 'listing.legacy_ticker_id')
             ->orderBy('revision.ex_date')
@@ -294,18 +301,23 @@ class AdjustmentFactorSetService
         ];
     }
 
-    private function latestAssessment($corporateActionRevisionId, $provider)
+    private function latestAssessment($corporateActionRevisionId, $provider, $knownAt = null)
     {
-        return DB::table('md_source_scale_assessments')
+        $query = DB::table('md_source_scale_assessments')
             ->where('corporate_action_revision_id', $corporateActionRevisionId)
             ->where('provider', $provider)
-            ->whereNotExists(function ($sub) {
+            ->whereNotExists(function ($sub) use ($knownAt) {
                 $sub->select(DB::raw(1))
                     ->from('md_source_scale_assessments as newer')
                     ->whereColumn('newer.supersedes_assessment_id', 'md_source_scale_assessments.source_scale_assessment_id');
-            })
-            ->orderByDesc('revision_number')
-            ->first();
+                if ($knownAt !== null && $knownAt !== '') {
+                    $sub->where('newer.recorded_at', '<=', $knownAt);
+                }
+            });
+        if ($knownAt !== null && $knownAt !== '') {
+            $query->where('recorded_at', '<=', $knownAt);
+        }
+        return $query->orderByDesc('revision_number')->first();
     }
 
     private function recordUnknownAssessment($event, array $bars)

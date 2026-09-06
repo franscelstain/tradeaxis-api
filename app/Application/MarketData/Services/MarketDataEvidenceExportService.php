@@ -905,6 +905,9 @@ class MarketDataEvidenceExportService
         $replayStatus = $this->field($metric, 'replay_status') ?: $this->replayStatusForComparison($metric->comparison_result ?? null);
         $summary = [
             'replay_id' => (int) $metric->replay_id,
+            'replay_mode' => $this->field($metric, 'replay_mode'),
+            'knowledge_cutoff_at' => $this->field($metric, 'knowledge_cutoff_at'),
+            'admission_state' => $this->field($metric, 'admission_state'),
             'trade_date' => $metric->trade_date,
             'comparison_result' => $metric->comparison_result,
             'replay_status' => $replayStatus,
@@ -913,19 +916,32 @@ class MarketDataEvidenceExportService
             'reason_code_count' => count($reasonCodes),
         ];
         $replayAdmissionMissing = [];
+        $mode = (string) $this->field($metric, 'replay_mode');
+        $this->markMissingSection($replayAdmissionMissing, 'replay_mode', $mode);
         $this->markMissingSection($replayAdmissionMissing, 'replay_result', $metric->replay_id ?? null);
         $this->markMissingSection($replayAdmissionMissing, 'expected_state', $expectedState['status'] ?? ($expectedState['publication_context']['publication_state'] ?? null));
         $this->markMissingSection($replayAdmissionMissing, 'actual_state', $actualState['status'] ?? ($actualState['publication_context']['publication_state'] ?? null));
-        $admission = $this->buildEvidenceAdmission('replay', (int) $metric->replay_id, [
-            'replay_result',
-            'expected_state',
-            'actual_state',
-            'reason_code_counts',
-            'publication_context',
-            'pointer_context',
-            'coverage_comparison',
-            'hash_seal_comparison',
-        ], $replayAdmissionMissing, $this->evidenceCreatedAtFromRecord($metric));
+        $this->markMissingSection($replayAdmissionMissing, 'fixture_manifest_hash', $this->field($metric, 'fixture_manifest_hash'));
+        $this->markMissingSection($replayAdmissionMissing, 'bound_input_context', $this->field($metric, 'bound_input_context_json'));
+        $this->markMissingSection($replayAdmissionMissing, 'serialization_version', $this->field($metric, 'serialization_version'));
+        $this->markMissingSection($replayAdmissionMissing, 'executable_build_identity', $this->field($metric, 'executable_build_identity'));
+
+        $requiredSections = [
+            'replay_mode', 'replay_result', 'expected_state', 'actual_state', 'reason_code_counts',
+            'fixture_manifest_hash', 'bound_input_context', 'serialization_version', 'executable_build_identity',
+        ];
+        if ($mode === 'PUBLICATION_EXACT') {
+            $requiredSections = array_merge($requiredSections, ['publication_context', 'pointer_context', 'coverage_comparison', 'hash_seal_comparison']);
+            $this->markMissingSection($replayAdmissionMissing, 'publication_context', $this->field($metric, 'publication_id'));
+        } elseif ($mode === 'AS_KNOWN') {
+            foreach (['knowledge_cutoff_at', 'source_observation_manifest_hash', 'canonical_raw_input_hash', 'temporal_identity_hash', 'calendar_status_hash', 'event_factor_hash', 'config_snapshot_hash', 'formula_registry_hash', 'reason_registry_hash'] as $field) {
+                $requiredSections[] = $field;
+                $this->markMissingSection($replayAdmissionMissing, $field, $this->field($metric, $field));
+            }
+        } else {
+            $replayAdmissionMissing[] = 'replay_mode_invalid_or_historical_unclassified';
+        }
+        $admission = $this->buildEvidenceAdmission('replay', (int) $metric->replay_id, $requiredSections, $replayAdmissionMissing, $this->evidenceCreatedAtFromRecord($metric));
         $summary['evidence_admission_state'] = $admission['evidence_admission_state'];
         $payload = [
             'evidence_admission' => $admission,
@@ -1755,6 +1771,25 @@ class MarketDataEvidenceExportService
     {
         return [
             'replay_id' => (int) $metric->replay_id,
+            'replay_mode' => $this->field($metric, 'replay_mode'),
+            'knowledge_cutoff_at' => $this->field($metric, 'knowledge_cutoff_at'),
+            'admission_state' => $this->field($metric, 'admission_state'),
+            'fixture_manifest_hash' => $this->field($metric, 'fixture_manifest_hash'),
+            'bound_inputs' => [
+                'source_observation_manifest_hash' => $this->field($metric, 'source_observation_manifest_hash'),
+                'canonical_raw_input_hash' => $this->field($metric, 'canonical_raw_input_hash'),
+                'temporal_identity_hash' => $this->field($metric, 'temporal_identity_hash'),
+                'calendar_status_hash' => $this->field($metric, 'calendar_status_hash'),
+                'event_factor_hash' => $this->field($metric, 'event_factor_hash'),
+                'config_snapshot_id' => $this->field($metric, 'config_snapshot_id'),
+                'config_snapshot_hash' => $this->field($metric, 'config_snapshot_hash'),
+                'formula_registry_hash' => $this->field($metric, 'formula_registry_hash'),
+                'reason_registry_hash' => $this->field($metric, 'reason_registry_hash'),
+                'read_model_version' => $this->field($metric, 'read_model_version'),
+                'serialization_version' => $this->field($metric, 'serialization_version'),
+                'executable_build_identity' => $this->field($metric, 'executable_build_identity'),
+                'context' => $this->decodeJsonObject($this->field($metric, 'bound_input_context_json')),
+            ],
             'replay_suite' => $this->field($metric, 'replay_suite'),
             'replay_case' => $this->field($metric, 'replay_case'),
             'fixture_id' => $this->field($metric, 'fixture_id'),

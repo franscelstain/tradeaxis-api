@@ -7,29 +7,22 @@ class ReplaySmokeSuiteService
     private $replays;
     private $evidence;
 
-    public function __construct(
-        ReplayVerificationService $replays,
-        MarketDataEvidenceExportService $evidence
-    ) {
+    public function __construct(ReplayVerificationService $replays, MarketDataEvidenceExportService $evidence)
+    {
         $this->replays = $replays;
         $this->evidence = $evidence;
     }
 
-    public function execute($runId, $fixtureRoot = null, $outputDir = null)
+    public function execute($runId, $publicationId, $fixtureRoot = null, $outputDir = null)
     {
-        return $this->executeInternal($runId, $fixtureRoot, $outputDir, false);
-    }
+        $runId = (int) $runId;
+        $publicationId = (int) $publicationId;
+        if ($runId <= 0 || $publicationId <= 0) {
+            throw new \RuntimeException('REPLAY_EXPLICIT_PUBLICATION_REQUIRED: smoke replay requires positive run_id and publication_id.');
+        }
 
-    public function executeWithGeneratedValidCase($runId, $fixtureRoot = null, $outputDir = null)
-    {
-        return $this->executeInternal($runId, $fixtureRoot, $outputDir, true);
-    }
-
-    private function executeInternal($runId, $fixtureRoot = null, $outputDir = null, $generateRuntimeValidCase = false)
-    {
         $fixtureRoot = $fixtureRoot ?: storage_path('app/market_data/replay-fixtures');
-        $outputDir = $outputDir ?: storage_path('app/market_data/evidence/replay_smoke_suites/run_'.$runId.'_'.date('Ymd_His'));
-
+        $outputDir = $outputDir ?: storage_path('app/market_data/evidence/replay_smoke_suites/run_'.$runId.'_publication_'.$publicationId.'_'.date('Ymd_His'));
         $cases = [
             'valid_case' => 'MATCH',
             'reason_code_mismatch_case' => 'MISMATCH',
@@ -38,49 +31,32 @@ class ReplaySmokeSuiteService
         ];
 
         if (! is_dir($fixtureRoot)) {
-            throw new \RuntimeException('Replay smoke fixture root not found: '.$fixtureRoot);
+            throw new \RuntimeException('REPLAY_INDEPENDENT_FIXTURE_ROOT_REQUIRED: '.$fixtureRoot);
         }
-
         if (! is_dir($outputDir) && ! mkdir($outputDir, 0777, true) && ! is_dir($outputDir)) {
             throw new \RuntimeException('Unable to create replay smoke output directory: '.$outputDir);
         }
 
-        $generatedValidFixture = null;
-        if ($generateRuntimeValidCase) {
-            $generatedValidFixture = $this->replays->generateFixtureFromRun(
-                $runId,
-                rtrim($outputDir, '/').'/generated-fixtures/valid_case',
-                'valid_case'
-            );
-        }
-
         $results = [];
         $allPassed = true;
-
         foreach ($cases as $caseName => $expectedOutcome) {
-            $fixturePath = $generateRuntimeValidCase && $caseName === 'valid_case'
-                ? $generatedValidFixture['fixture_path']
-                : rtrim($fixtureRoot, '/').'/'.$caseName;
-            $caseOutputDir = rtrim($outputDir, '/').'/'.$caseName;
+            $fixturePath = rtrim($fixtureRoot, '/\\').'/'.$caseName;
             $record = [
                 'fixture_case' => $caseName,
                 'fixture_path' => $this->normalizePathForDisplay($fixturePath),
                 'expected_outcome' => $expectedOutcome,
                 'passed' => false,
             ];
-
             try {
-                $result = $this->replays->verifyRunAgainstFixture($runId, $fixturePath);
+                $result = $this->replays->verifyRunAgainstFixture($runId, $fixturePath, null, $publicationId);
                 $record['observed_outcome'] = $result['comparison_result'];
                 $record['replay_status'] = $result['replay_status'] ?? null;
                 $record['replay_id'] = $result['replay_id'];
                 $record['trade_date'] = $result['trade_date'];
-                $record['fixture_family'] = $result['fixture_family'];
-                $record['comparison_note'] = $result['comparison_note'];
+                $record['comparison_note'] = $result['comparison_note'] ?? null;
                 $record['passed'] = $result['comparison_result'] === $expectedOutcome;
-
                 if ($record['passed']) {
-                    $export = $this->evidence->exportReplayEvidence($result['replay_id'], $result['trade_date'], $caseOutputDir);
+                    $export = $this->evidence->exportReplayEvidence($result['replay_id'], $result['trade_date'], rtrim($outputDir, '/\\').'/'.$caseName);
                     $record['evidence_output_dir'] = $this->normalizePathForDisplay($export['output_dir']);
                     $record['evidence_files'] = $export['files'];
                 }
@@ -90,25 +66,29 @@ class ReplaySmokeSuiteService
                 $record['error'] = $e->getMessage();
                 $record['passed'] = $expectedOutcome === 'ERROR';
             }
-
             $allPassed = $allPassed && $record['passed'];
             $results[] = $record;
         }
 
         $summary = [
-            'run_id' => (int) $runId,
+            'run_id' => $runId,
+            'publication_id' => $publicationId,
+            'replay_mode' => ReplayMode::PUBLICATION_EXACT,
             'fixture_root' => $this->normalizePathForDisplay($fixtureRoot),
             'suite' => 'replay_smoke_minimum',
             'all_passed' => $allPassed,
             'executed_at' => date(DATE_ATOM),
-            'runtime_valid_fixture_generated' => $generateRuntimeValidCase,
-            'generated_valid_fixture_path' => $generatedValidFixture ? $this->normalizePathForDisplay($generatedValidFixture['fixture_path']) : null,
+            'runtime_valid_fixture_generated' => false,
             'cases' => $results,
         ];
-
-        file_put_contents(rtrim($outputDir, '/').'/replay_smoke_suite_summary.json', json_encode($summary, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        file_put_contents(rtrim($outputDir, '/\\').'/replay_smoke_suite_summary.json', json_encode($summary, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
         return $summary + ['output_dir' => $outputDir];
+    }
+
+    public function executeWithGeneratedValidCase($runId, $fixtureRoot = null, $outputDir = null)
+    {
+        throw new \RuntimeException('REPLAY_FIXTURE_SELF_GENERATED: same-run generated fixture is diagnostic-only and cannot be used as a successful smoke oracle.');
     }
 
     private function normalizePathForDisplay($path)

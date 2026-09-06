@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Persistence\MarketData;
 
 use App\Application\MarketData\Services\CoverageGateStateNormalizer;
+use App\Application\MarketData\Services\ReplayMode;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -16,6 +17,8 @@ class ReplayResultRepository
     public function upsertMetric(array $metric)
     {
         $now = Carbon::now(config('market_data.platform.timezone'));
+        $metric['replay_mode'] = ReplayMode::normalize($metric['replay_mode'] ?? null);
+        $this->assertModeInputs($metric);
 
         $payload = [
             'replay_suite' => $metric['replay_suite'] ?? null,
@@ -25,6 +28,23 @@ class ReplayResultRepository
             'fixture_schema_version' => $metric['fixture_schema_version'] ?? null,
             'fixture_source' => $metric['fixture_source'] ?? null,
             'fixture_created_at' => $metric['fixture_created_at'] ?? null,
+            'replay_mode' => $metric['replay_mode'],
+            'knowledge_cutoff_at' => $metric['knowledge_cutoff_at'] ?? null,
+            'fixture_manifest_hash' => $metric['fixture_manifest_hash'] ?? null,
+            'source_observation_manifest_hash' => $metric['source_observation_manifest_hash'] ?? null,
+            'canonical_raw_input_hash' => $metric['canonical_raw_input_hash'] ?? null,
+            'temporal_identity_hash' => $metric['temporal_identity_hash'] ?? null,
+            'calendar_status_hash' => $metric['calendar_status_hash'] ?? null,
+            'event_factor_hash' => $metric['event_factor_hash'] ?? null,
+            'config_snapshot_id' => $metric['config_snapshot_id'] ?? null,
+            'config_snapshot_hash' => $metric['config_snapshot_hash'] ?? null,
+            'formula_registry_hash' => $metric['formula_registry_hash'] ?? null,
+            'reason_registry_hash' => $metric['reason_registry_hash'] ?? null,
+            'read_model_version' => $metric['read_model_version'] ?? null,
+            'serialization_version' => $metric['serialization_version'] ?? null,
+            'executable_build_identity' => $metric['executable_build_identity'] ?? null,
+            'admission_state' => $metric['admission_state'] ?? null,
+            'bound_input_context_json' => $metric['bound_input_context_json'] ?? null,
             'trade_date_effective' => $metric['trade_date_effective'] ?? null,
             'source' => $metric['source'],
             'source_mode' => $metric['source_mode'] ?? ($metric['source'] ?? null),
@@ -144,6 +164,34 @@ class ReplayResultRepository
             ],
             $payload
         );
+    }
+
+    private function assertModeInputs(array $metric): void
+    {
+        $mode = $metric['replay_mode'];
+        if ($mode === ReplayMode::PUBLICATION_EXACT && empty($metric['publication_id'])) {
+            throw new \RuntimeException('REPLAY_EXPLICIT_PUBLICATION_REQUIRED: PUBLICATION_EXACT result requires publication_id.');
+        }
+        if ($mode === ReplayMode::AS_KNOWN && empty($metric['knowledge_cutoff_at'])) {
+            throw new \RuntimeException('REPLAY_KNOWLEDGE_CUTOFF_REQUIRED: AS_KNOWN result requires knowledge_cutoff_at.');
+        }
+
+        $comparisonResult = array_key_exists('comparison_result', $metric) ? $metric['comparison_result'] : null;
+        $status = array_key_exists('replay_status', $metric) ? $metric['replay_status'] : $this->replayStatusForComparison($comparisonResult);
+        if ($status === 'BLOCKED') return;
+
+        foreach (['fixture_manifest_hash', 'config_snapshot_hash', 'serialization_version', 'executable_build_identity'] as $field) {
+            if (empty($metric[$field])) {
+                throw new \RuntimeException('REPLAY_BOUND_INPUT_INCOMPLETE: non-BLOCKED replay result is missing '.$field.'.');
+            }
+        }
+        if ($mode === ReplayMode::AS_KNOWN) {
+            foreach (['source_observation_manifest_hash', 'canonical_raw_input_hash', 'temporal_identity_hash', 'calendar_status_hash', 'event_factor_hash', 'formula_registry_hash', 'reason_registry_hash'] as $field) {
+                if (empty($metric[$field])) {
+                    throw new \RuntimeException('REPLAY_BOUND_INPUT_INCOMPLETE: AS_KNOWN result is missing '.$field.'.');
+                }
+            }
+        }
     }
 
     private function replayStatusForComparison($comparisonResult)

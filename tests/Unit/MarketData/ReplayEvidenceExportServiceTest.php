@@ -164,10 +164,10 @@ class ReplayEvidenceExportServiceTest extends TestCase
         $admission = json_decode(file_get_contents($dir.'/evidence_admission.json'), true);
         $this->assertSame('replay', $admission['selector_type']);
         $this->assertSame(3001, $admission['selector_id']);
-        $this->assertSame('ADMITTED_COMPLETE', $admission['evidence_admission_state']);
+        $this->assertSame('ADMITTED_INCOMPLETE', $admission['evidence_admission_state']);
 
         $payload = json_decode(file_get_contents($dir.'/replay_evidence_pack.json'), true);
-        $this->assertSame('ADMITTED_COMPLETE', $payload['evidence_admission']['evidence_admission_state']);
+        $this->assertSame('ADMITTED_INCOMPLETE', $payload['evidence_admission']['evidence_admission_state']);
         $this->assertSame('PASS', $payload['summary']['replay_status']);
         $this->assertSame('PASS', $payload['replay_result']['replay_status']);
         $this->assertSame('HELD', $payload['replay_result']['status']);

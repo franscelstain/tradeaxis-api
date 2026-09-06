@@ -120,7 +120,7 @@ class CanonicalRawImportBoundaryTest extends TestCase
             return null;
         });
 
-        $run = new EodRun(['run_id' => 91, 'trade_date_requested' => '2026-03-24']);
+        $run = new EodRun(['run_id' => 91, 'trade_date_requested' => '2026-03-24', 'knowledge_cutoff_at' => '2026-03-24 18:00:00']);
         $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations);
 
         try {

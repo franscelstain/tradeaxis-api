@@ -502,6 +502,7 @@ class BackfillMissingTickerLifecycleTest extends TestCase
             'max_dates_per_run' => 5,
             'with_evidence' => true,
             'with_replay' => true,
+            'replay_fixture_root' => __DIR__.DIRECTORY_SEPARATOR.'tmp'.DIRECTORY_SEPARATOR.'independent-replay-fixtures',
         ]);
 
         $this->assertSame('BLOCKED', $summary['status']);

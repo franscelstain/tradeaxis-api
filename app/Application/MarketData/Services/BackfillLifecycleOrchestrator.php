@@ -77,6 +77,10 @@ class BackfillLifecycleOrchestrator
         $mode = $this->resolveErrorPolicy($options);
         $withEvidence = ! empty($options['with_evidence']) || ! empty($options['with_replay']);
         $withReplay = ! empty($options['with_replay']) && empty($options['no_replay']);
+        $replayFixtureRoot = $options['replay_fixture_root'] ?? null;
+        if ($withReplay && (! is_string($replayFixtureRoot) || trim($replayFixtureRoot) === '')) {
+            throw new \RuntimeException('REPLAY_INDEPENDENT_FIXTURE_ROOT_REQUIRED: --with-replay requires replay_fixture_root containing independent publication fixtures.');
+        }
         $skipPublicationReprocess = ! empty($options['skip_publication_reprocess']);
         $resume = ! empty($options['resume']);
         $onlyFailed = ! empty($options['only_failed']);
@@ -116,6 +120,7 @@ class BackfillLifecycleOrchestrator
             'mode' => $mode,
             'with_evidence' => $withEvidence,
             'with_replay' => $withReplay,
+            'replay_fixture_root' => $replayFixtureRoot === null ? null : $this->normalizePathForDisplay($replayFixtureRoot),
             'skip_publication_reprocess' => $skipPublicationReprocess,
             'resume' => $resume,
             'only_failed' => $onlyFailed,
@@ -207,7 +212,7 @@ class BackfillLifecycleOrchestrator
             }
 
             if ($resume && $onlyFailed) {
-                $summary = $this->applyOnlyFailedRecoveredRows($summary, $acquired, $sourceMode, $outputDir, $withEvidence, $withReplay);
+                $summary = $this->applyOnlyFailedRecoveredRows($summary, $acquired, $sourceMode, $outputDir, $withEvidence, $withReplay, $replayFixtureRoot);
                 $this->writeSummary($outputDir, $summary);
                 return $summary;
             }
@@ -225,7 +230,7 @@ class BackfillLifecycleOrchestrator
                 continue;
             }
 
-            $case = $this->processDate($requestedDate, $sourceMode, $acquired, $withEvidence, $withReplay, $outputDir);
+            $case = $this->processDate($requestedDate, $sourceMode, $acquired, $withEvidence, $withReplay, $outputDir, $replayFixtureRoot);
             $summary['cases'][] = $case;
             $processed[$requestedDate] = $case;
 
@@ -271,6 +276,10 @@ class BackfillLifecycleOrchestrator
         $mode = $this->resolveErrorPolicy($options);
         $withEvidence = ! empty($options['with_evidence']) || ! empty($options['with_replay']);
         $withReplay = ! empty($options['with_replay']) && empty($options['no_replay']);
+        $replayFixtureRoot = $options['replay_fixture_root'] ?? null;
+        if ($withReplay && (! is_string($replayFixtureRoot) || trim($replayFixtureRoot) === '')) {
+            throw new \RuntimeException('REPLAY_INDEPENDENT_FIXTURE_ROOT_REQUIRED: --with-replay requires replay_fixture_root containing independent publication fixtures.');
+        }
         $skipPublicationReprocess = ! empty($options['skip_publication_reprocess']);
         $resume = ! empty($options['resume']);
 
@@ -314,6 +323,7 @@ class BackfillLifecycleOrchestrator
             'mode' => $mode,
             'with_evidence' => $withEvidence,
             'with_replay' => $withReplay,
+            'replay_fixture_root' => $replayFixtureRoot === null ? null : $this->normalizePathForDisplay($replayFixtureRoot),
             'skip_publication_reprocess' => $skipPublicationReprocess,
             'resume' => $resume,
             'input_file' => $this->sourceModeIsManualFile($sourceMode) ? ($options['input_file'] ?? null) : null,
@@ -442,7 +452,8 @@ class BackfillLifecycleOrchestrator
                 $withEvidence,
                 $withReplay,
                 $outputDir,
-                $skipPublicationReprocess
+                $skipPublicationReprocess,
+                $replayFixtureRoot
             );
             $summary['cases'][] = $case;
             $checkpoint = $this->mergeCheckpoint($checkpoint, $requestedDate, $case);
@@ -510,7 +521,7 @@ class BackfillLifecycleOrchestrator
         return $cases;
     }
 
-    private function processDate($requestedDate, $sourceMode, $acquired, $withEvidence, $withReplay, $outputDir)
+    private function processDate($requestedDate, $sourceMode, $acquired, $withEvidence, $withReplay, $outputDir, $replayFixtureRoot = null)
     {
         $case = [
             'requested_date' => $requestedDate,
@@ -575,7 +586,7 @@ class BackfillLifecycleOrchestrator
         }
 
         $skipRequestedDate = ($case['promote_status'] ?? null) === 'SUCCESS' && ! empty($case['readable']);
-        $case = $this->executePublicationReprocessForCase($case, $sourceMode, $withEvidence, $withReplay, $outputDir, $skipRequestedDate);
+        $case = $this->executePublicationReprocessForCase($case, $sourceMode, $withEvidence, $withReplay, $outputDir, $skipRequestedDate, $replayFixtureRoot);
 
         if ($withEvidence && $run) {
             try {
@@ -596,12 +607,12 @@ class BackfillLifecycleOrchestrator
 
         if ($withReplay && $run && $this->isReplayEligible($run, $case)) {
             try {
-                $fixtureDir = rtrim($outputDir, '/\\').'/dates/'.$requestedDate.'/run_'.$run->run_id.'/fixture';
-                $fixture = $this->replay->generateFixtureFromRun($run->run_id, $fixtureDir, 'valid_case', null);
-                $case['fixture_status'] = 'GENERATED';
-                $case['fixture_path'] = $this->normalizePathForDisplay($fixture['fixture_path']);
+                $publication = $this->requirePublicationForReplayRun($run->run_id, $requestedDate);
+                $fixturePath = $this->requireIndependentReplayFixture($replayFixtureRoot, $requestedDate, (int) $publication->publication_id);
+                $case['fixture_status'] = 'INDEPENDENT';
+                $case['fixture_path'] = $this->normalizePathForDisplay($fixturePath);
 
-                $replay = $this->replay->verifyRunAgainstFixture($run->run_id, $fixture['fixture_path']);
+                $replay = $this->replay->verifyRunAgainstFixture($run->run_id, $fixturePath, null, (int) $publication->publication_id);
                 $case['replay_status'] = ($replay['replay_status'] ?? null) === 'PASS' ? 'VERIFIED' : 'FAILED';
                 $case['replay_id'] = $replay['replay_id'] ?? null;
             } catch (\Throwable $e) {
@@ -628,7 +639,7 @@ class BackfillLifecycleOrchestrator
         return $case;
     }
 
-    private function processMissingTickerDate($requestedDate, $sourceMode, array $acquired, array $missingCodes, array $universeRows, $withEvidence, $withReplay, $outputDir, $skipPublicationReprocess = false)
+    private function processMissingTickerDate($requestedDate, $sourceMode, array $acquired, array $missingCodes, array $universeRows, $withEvidence, $withReplay, $outputDir, $skipPublicationReprocess = false, $replayFixtureRoot = null)
     {
         $case = [
             'requested_date' => $requestedDate,
@@ -703,12 +714,12 @@ class BackfillLifecycleOrchestrator
         if ($skipPublicationReprocess) {
             if (! $skipRequestedDate && $this->publicationReprocessIncludesRequestedDate($case)) {
                 $case = $this->keepOnlyRequestedDatePublicationReprocess($case);
-                $case = $this->executePublicationReprocessForCase($case, $sourceMode, $withEvidence, $withReplay, $outputDir, false);
+                $case = $this->executePublicationReprocessForCase($case, $sourceMode, $withEvidence, $withReplay, $outputDir, false, $replayFixtureRoot);
             } else {
                 $case = $this->skipPublicationReprocessForCase($case, 'SKIPPED_BY_OPTION');
             }
         } else {
-            $case = $this->executePublicationReprocessForCase($case, $sourceMode, $withEvidence, $withReplay, $outputDir, $skipRequestedDate);
+            $case = $this->executePublicationReprocessForCase($case, $sourceMode, $withEvidence, $withReplay, $outputDir, $skipRequestedDate, $replayFixtureRoot);
         }
 
         if ($withEvidence && $run) {
@@ -730,12 +741,12 @@ class BackfillLifecycleOrchestrator
 
         if ($withReplay && $run && $this->isReplayEligible($run, $case)) {
             try {
-                $fixtureDir = rtrim($outputDir, '/\\').'/dates/'.$requestedDate.'/run_'.$run->run_id.'/fixture';
-                $fixture = $this->replay->generateFixtureFromRun($run->run_id, $fixtureDir, 'valid_case', null);
-                $case['fixture_status'] = 'GENERATED';
-                $case['fixture_path'] = $this->normalizePathForDisplay($fixture['fixture_path']);
+                $publication = $this->requirePublicationForReplayRun($run->run_id, $requestedDate);
+                $fixturePath = $this->requireIndependentReplayFixture($replayFixtureRoot, $requestedDate, (int) $publication->publication_id);
+                $case['fixture_status'] = 'INDEPENDENT';
+                $case['fixture_path'] = $this->normalizePathForDisplay($fixturePath);
 
-                $replay = $this->replay->verifyRunAgainstFixture($run->run_id, $fixture['fixture_path']);
+                $replay = $this->replay->verifyRunAgainstFixture($run->run_id, $fixturePath, null, (int) $publication->publication_id);
                 $case['replay_status'] = ($replay['replay_status'] ?? null) === 'PASS' ? 'VERIFIED' : 'FAILED';
                 $case['replay_id'] = $replay['replay_id'] ?? null;
             } catch (\Throwable $e) {
@@ -762,7 +773,7 @@ class BackfillLifecycleOrchestrator
         return $case;
     }
 
-    private function applyOnlyFailedRecoveredRows(array $summary, array $acquired, $sourceMode, $outputDir, $withEvidence, $withReplay)
+    private function applyOnlyFailedRecoveredRows(array $summary, array $acquired, $sourceMode, $outputDir, $withEvidence, $withReplay, $replayFixtureRoot = null)
     {
         $summary = $this->finalizeOnlyFailedSourceRetrySummary($summary, $acquired);
         $rowsByDate = $acquired['rows_by_trade_date'] ?? [];
@@ -826,7 +837,7 @@ class BackfillLifecycleOrchestrator
                 $case['run_id'] = (int) $run->run_id;
                 $case['import_status'] = $this->runFailedOrHeld($run) ? (string) $run->terminal_status : 'SUCCESS';
                 $case = array_merge($case, $this->mutationImpactCaseFields($run));
-                $case = $this->executePublicationReprocessForCase($case, $sourceMode, $withEvidence, $withReplay, $outputDir, false);
+                $case = $this->executePublicationReprocessForCase($case, $sourceMode, $withEvidence, $withReplay, $outputDir, false, $replayFixtureRoot);
 
                 $recoveredRowCount += count($rows);
                 $changedBarCount += (int) ($case['bar_mutation_changed_count'] ?? 0);
@@ -904,7 +915,7 @@ class BackfillLifecycleOrchestrator
         return $summary;
     }
 
-    private function executePublicationReprocessForCase(array $case, $sourceMode, $withEvidence, $withReplay, $outputDir, $skipRequestedDate)
+    private function executePublicationReprocessForCase(array $case, $sourceMode, $withEvidence, $withReplay, $outputDir, $skipRequestedDate, $replayFixtureRoot = null)
     {
         if (($case['import_status'] ?? null) === 'FAILED') {
             return $this->skipPublicationReprocessForCase($case, 'PRIMARY_IMPORT_FAILED', 'PRIMARY_IMPORT_REQUIRED');
@@ -1028,10 +1039,10 @@ class BackfillLifecycleOrchestrator
                 }
 
                 if ($withReplay) {
-                    $fixtureDir = rtrim($outputDir, '/\\').'/publication_reprocess/dates/'.$tradeDate.'/run_'.$promotedRun->run_id.'/fixture';
-                    $fixture = $this->replay->generateFixtureFromRun($promotedRun->run_id, $fixtureDir, 'valid_case', null);
+                    $publication = $this->requirePublicationForReplayRun($promotedRun->run_id, $tradeDate);
+                    $fixturePath = $this->requireIndependentReplayFixture($replayFixtureRoot, $tradeDate, (int) $publication->publication_id);
                     $fixturesGenerated++;
-                    $replay = $this->replay->verifyRunAgainstFixture($promotedRun->run_id, $fixture['fixture_path']);
+                    $replay = $this->replay->verifyRunAgainstFixture($promotedRun->run_id, $fixturePath, null, (int) $publication->publication_id);
                     if (($replay['replay_status'] ?? null) === 'PASS') {
                         $replayVerified++;
                     } else {
@@ -3906,6 +3917,34 @@ class BackfillLifecycleOrchestrator
         if (! is_dir($dir)) {
             mkdir($dir, 0775, true);
         }
+    }
+
+    private function requirePublicationForReplayRun($runId, $tradeDate)
+    {
+        if (! $this->publications) {
+            throw new \RuntimeException('REPLAY_PUBLICATION_REPOSITORY_REQUIRED: lifecycle replay requires publication repository.');
+        }
+
+        $publication = $this->publications->findByRunId((int) $runId);
+        if (! $publication || (string) ($publication->trade_date ?? '') !== (string) $tradeDate) {
+            throw new \RuntimeException('REPLAY_EXPLICIT_PUBLICATION_REQUIRED: readable publication for replay run/date is missing.');
+        }
+
+        return $publication;
+    }
+
+    private function requireIndependentReplayFixture($root, $tradeDate, $publicationId)
+    {
+        if (! is_string($root) || trim($root) === '') {
+            throw new \RuntimeException('REPLAY_INDEPENDENT_FIXTURE_ROOT_REQUIRED: replay_fixture_root is required.');
+        }
+
+        $path = rtrim($root, '/\\').DIRECTORY_SEPARATOR.$tradeDate.DIRECTORY_SEPARATOR.'publication_'.(int) $publicationId;
+        if (! is_dir($path)) {
+            throw new \RuntimeException('REPLAY_INDEPENDENT_FIXTURE_MISSING: expected independent fixture directory '.$path.'.');
+        }
+
+        return $path;
     }
 
     private function normalizePathForDisplay($path)

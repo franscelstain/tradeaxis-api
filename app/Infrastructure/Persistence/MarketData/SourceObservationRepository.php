@@ -265,6 +265,146 @@ class SourceObservationRepository implements SourceObservationRecorder
         return (int) DB::table('md_source_observation_identity_bindings')->insertGetId($binding);
     }
 
+    /**
+     * Return immutable normalized source rows that were both acquired and identity-bound by a
+     * declared knowledge cutoff. Current universe state is deliberately absent from this query:
+     * provider outages and securities that later become inactive must remain visible when they
+     * were facts the platform knew at the cutoff.
+     */
+    public function normalizedRowsAsKnown($tradeDate, $knownAt): array
+    {
+        if ($knownAt === null || trim((string) $knownAt) === '') {
+            throw new \RuntimeException('REPLAY_KNOWLEDGE_CUTOFF_REQUIRED: source observation replay requires knowledge_cutoff.');
+        }
+
+        $rows = DB::table('md_source_observation_rows as row')
+            ->join('md_source_observations as obs', 'obs.source_observation_id', '=', 'row.source_observation_id')
+            ->join('md_source_observation_identity_bindings as binding', 'binding.source_observation_row_id', '=', 'row.source_observation_row_id')
+            ->where('row.trade_date', (string) $tradeDate)
+            ->where('obs.acquired_at', '<=', (string) $knownAt)
+            ->where('binding.recorded_at', '<=', (string) $knownAt)
+            ->orderBy('binding.listing_id')
+            ->orderBy('row.source_observation_row_id')
+            ->select([
+                'row.source_observation_row_id', 'row.source_observation_id', 'row.source_row_ref',
+                'binding.listing_id', 'binding.provider_mapping_id', 'binding.mapping_revision',
+                'binding.effective_trade_date', 'binding.recorded_at as identity_binding_recorded_at',
+                'row.provider', 'row.provider_symbol', 'row.ticker_code', 'row.trade_date',
+                'row.source_timestamp', 'row.open_value', 'row.high_value', 'row.low_value',
+                'row.close_value', 'row.volume_value', 'row.adj_close_value', 'row.row_fingerprint',
+                'obs.observation_uid', 'obs.source_mode', 'obs.source_name',
+                'obs.adapter_version', 'obs.provider_schema_version', 'obs.payload_hash',
+                'obs.schema_fingerprint', 'obs.acquired_at', 'obs.outcome_state', 'obs.reason_code',
+            ])
+            ->get();
+
+        return array_map(function ($row) {
+            return (array) $row;
+        }, $rows->all());
+    }
+
+    /**
+     * Immutable acquisition envelopes known by the cutoff, including zero-row/provider-outage
+     * outcomes. This deliberately does not join current universe state: an outage is itself an
+     * historical fact and must remain visible even when no normalized row exists.
+     */
+    public function observationManifestAsKnown($tradeDate, $knownAt): array
+    {
+        if ($knownAt === null || trim((string) $knownAt) === '') {
+            throw new \RuntimeException('REPLAY_KNOWLEDGE_CUTOFF_REQUIRED: source observation replay requires knowledge_cutoff.');
+        }
+
+        $rows = DB::table('md_source_observations')
+            ->where('requested_trade_date', (string) $tradeDate)
+            ->where('acquired_at', '<=', (string) $knownAt)
+            ->orderBy('observation_uid')
+            ->select([
+                'source_observation_id', 'observation_uid', 'parent_observation_id', 'run_id',
+                'acquisition_batch_id', 'attempt_uid', 'requested_trade_date', 'source_mode',
+                'source_name', 'provider', 'provider_symbol', 'provider_mapping_id',
+                'sanitized_request_identity', 'payload_hash', 'payload_ref', 'payload_byte_length',
+                'schema_fingerprint', 'adapter_version', 'provider_schema_version', 'acquired_at',
+                'outcome_state', 'reason_code'
+            ])
+            ->get();
+
+        $canonical = array_map(function ($row) {
+            $row = (array) $row;
+            ksort($row, SORT_STRING);
+            return $row;
+        }, $rows->all());
+        $json = json_encode($canonical, JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
+        if ($json === false) {
+            throw new \RuntimeException('REPLAY_SOURCE_MANIFEST_SERIALIZATION_FAILED: source observations cannot be serialized.');
+        }
+
+        return [
+            'trade_date' => (string) $tradeDate,
+            'knowledge_cutoff' => (string) $knownAt,
+            'observation_count' => count($canonical),
+            'observations' => $canonical,
+            'manifest_hash' => hash('sha256', $json),
+        ];
+    }
+
+    /**
+     * Convert immutable normalized observations to the same row contract consumed by the
+     * production EOD canonicalizer. No provider/network call and no current-state lookup occurs
+     * here; identity was frozen on the observation row and is revalidated by ingest at cutoff.
+     */
+    public function acquisitionRowsAsKnown($tradeDate, $knownAt): array
+    {
+        return array_map(function (array $row) {
+            return [
+                'ticker_code' => $row['ticker_code'],
+                'trade_date' => $row['trade_date'],
+                'open' => $row['open_value'],
+                'high' => $row['high_value'],
+                'low' => $row['low_value'],
+                'close' => $row['close_value'],
+                'volume' => $row['volume_value'],
+                'adj_close' => $row['adj_close_value'],
+                'listing_id' => $row['listing_id'],
+                'provider_mapping_id' => $row['provider_mapping_id'],
+                'mapping_revision' => $row['mapping_revision'],
+                'provider' => $row['provider'],
+                'provider_symbol' => $row['provider_symbol'],
+                'source_name' => $row['source_name'],
+                'source_mode' => $row['source_mode'],
+                'source_timestamp' => $row['source_timestamp'],
+                'captured_at' => $row['acquired_at'],
+                'source_observation_id' => $row['source_observation_id'],
+                'source_observation_persisted' => true,
+                'source_row_ref' => $row['source_row_ref'],
+                'adapter_version' => $row['adapter_version'],
+                'provider_schema_version' => $row['provider_schema_version'],
+                'payload_hash' => $row['payload_hash'],
+                'schema_fingerprint' => $row['schema_fingerprint'],
+            ];
+        }, $this->normalizedRowsAsKnown($tradeDate, $knownAt));
+    }
+
+    public function normalizedRowsManifestAsKnown($tradeDate, $knownAt): array
+    {
+        $rows = $this->normalizedRowsAsKnown($tradeDate, $knownAt);
+        $canonical = array_map(function (array $row) {
+            ksort($row, SORT_STRING);
+            return $row;
+        }, $rows);
+        $json = json_encode($canonical, JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION);
+        if ($json === false) {
+            throw new \RuntimeException('REPLAY_SOURCE_MANIFEST_SERIALIZATION_FAILED: normalized source rows cannot be serialized.');
+        }
+
+        return [
+            'trade_date' => (string) $tradeDate,
+            'knowledge_cutoff' => (string) $knownAt,
+            'row_count' => count($canonical),
+            'rows' => $canonical,
+            'manifest_hash' => hash('sha256', $json),
+        ];
+    }
+
     public function manifestHashForRun($runId)
     {
         $rows = DB::table('md_source_observations')

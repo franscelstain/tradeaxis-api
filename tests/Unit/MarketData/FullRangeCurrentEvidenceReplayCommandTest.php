@@ -19,6 +19,7 @@ class FullRangeCurrentEvidenceReplayCommandTest extends TestCase
         $service = m::mock(FullRangeCurrentEvidenceReplayService::class);
         $service->shouldReceive('execute')->once()->with('2026-03-18', '2026-03-19', m::on(function ($options) {
             return $options['fixture_case'] === 'valid_case'
+                && $options['fixture_root'] === 'C:\\tmp\\independent-fixtures'
                 && $options['output_dir'] === 'C:\\tmp\\full-range'
                 && $options['continue_on_error'] === true
                 && $options['max_dates'] === '2';
@@ -61,6 +62,7 @@ class FullRangeCurrentEvidenceReplayCommandTest extends TestCase
         $exitCode = $tester->execute([
             'start_date' => '2026-03-18',
             'end_date' => '2026-03-19',
+            '--fixture_root' => 'C:\\tmp\\independent-fixtures',
             '--output_dir' => 'C:\\tmp\\full-range',
             '--continue_on_error' => true,
             '--max_dates' => '2',

@@ -23,6 +23,7 @@ class BackfillLifecycleCommand extends AbstractMarketDataCommand
         {--max-dates-per-run=}
         {--with-evidence}
         {--with-replay}
+        {--replay-fixture-root=}
         {--no-replay}
         {--diagnose-source}';
 
@@ -73,6 +74,7 @@ class BackfillLifecycleCommand extends AbstractMarketDataCommand
                         : null,
                     'with_evidence' => (bool) $this->option('with-evidence'),
                     'with_replay' => (bool) $this->option('with-replay'),
+                    'replay_fixture_root' => $this->option('replay-fixture-root') ?: null,
                     'no_replay' => (bool) $this->option('no-replay'),
                     'diagnose_source' => (bool) $this->option('diagnose-source'),
                 ]

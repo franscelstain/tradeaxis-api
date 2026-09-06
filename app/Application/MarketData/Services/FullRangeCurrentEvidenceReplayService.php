@@ -33,6 +33,10 @@ class FullRangeCurrentEvidenceReplayService
         $this->guardDateRange($startDate, $endDate);
 
         $fixtureCase = (string) ($options['fixture_case'] ?? 'valid_case');
+        $fixtureRoot = $options['fixture_root'] ?? null;
+        if (! is_string($fixtureRoot) || trim($fixtureRoot) === '') {
+            throw new \RuntimeException('REPLAY_INDEPENDENT_FIXTURE_ROOT_REQUIRED: full-range replay requires fixture_root.');
+        }
         $outputDir = $options['output_dir'] ?? $this->defaultOutputDir($startDate, $endDate);
         $continueOnError = ! empty($options['continue_on_error']);
         $maxDates = isset($options['max_dates']) && $options['max_dates'] !== null && $options['max_dates'] !== ''
@@ -56,6 +60,7 @@ class FullRangeCurrentEvidenceReplayService
             'start_date' => $startDate,
             'end_date' => $endDate,
             'fixture_case' => $fixtureCase,
+            'fixture_root' => $this->normalizePathForDisplay($fixtureRoot),
             'trading_date_count' => count($dates),
             'continue_on_error' => $continueOnError,
             'max_dates' => $maxDates,
@@ -71,7 +76,7 @@ class FullRangeCurrentEvidenceReplayService
         ];
 
         foreach ($dates as $tradeDate) {
-            $case = $this->processTradeDate($tradeDate, $fixtureCase, $outputDir);
+            $case = $this->processTradeDate($tradeDate, $fixtureCase, $fixtureRoot, $outputDir);
             $summary['cases'][] = $case;
             $summary = $this->refreshCounters($summary);
             $this->writeSummary($outputDir, $summary);
@@ -91,7 +96,7 @@ class FullRangeCurrentEvidenceReplayService
         return $summary;
     }
 
-    private function processTradeDate($tradeDate, $fixtureCase, $outputDir)
+    private function processTradeDate($tradeDate, $fixtureCase, $fixtureRoot, $outputDir)
     {
         try {
             $publication = $this->publications->findCurrentPublicationForTradeDate($tradeDate);
@@ -104,8 +109,11 @@ class FullRangeCurrentEvidenceReplayService
             $caseDir = rtrim($outputDir, '/\\').'/dates/'.$tradeDate.'/run_'.$runId.'_publication_'.$publicationId;
 
             $runEvidence = $this->evidence->exportRunEvidence($runId, $caseDir.'/run-evidence');
-            $fixture = $this->replays->generateFixtureFromRun($runId, $caseDir.'/fixture', $fixtureCase, $publicationId);
-            $replay = $this->replays->verifyRunAgainstFixture($runId, $fixture['fixture_path']);
+            $fixturePath = rtrim($fixtureRoot, '/\\').'/'.$tradeDate.'/publication_'.$publicationId;
+            if (! is_dir($fixturePath)) {
+                throw new \RuntimeException('REPLAY_INDEPENDENT_FIXTURE_MISSING: '.$fixturePath);
+            }
+            $replay = $this->replays->verifyRunAgainstFixture($runId, $fixturePath, null, $publicationId);
             $replayEvidence = $this->evidence->exportReplayEvidence(
                 $replay['replay_id'],
                 $tradeDate,
@@ -125,8 +133,8 @@ class FullRangeCurrentEvidenceReplayService
                 'run_evidence_completeness_state' => $runEvidence['summary']['evidence_completeness_state'] ?? null,
                 'run_evidence_output_dir' => $this->normalizePathForDisplay($runEvidence['output_dir'] ?? null),
                 'run_evidence_file_count' => (int) ($runEvidence['file_count'] ?? count($runEvidence['files'] ?? [])),
-                'fixture_status' => 'GENERATED',
-                'fixture_path' => $this->normalizePathForDisplay($fixture['fixture_path'] ?? null),
+                'fixture_status' => 'INDEPENDENT',
+                'fixture_path' => $this->normalizePathForDisplay($fixturePath),
                 'replay_id' => (int) $replay['replay_id'],
                 'comparison_result' => $replay['comparison_result'] ?? null,
                 'replay_status' => $replay['replay_status'] ?? null,
