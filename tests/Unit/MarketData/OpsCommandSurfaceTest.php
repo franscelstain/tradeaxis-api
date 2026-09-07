@@ -1191,6 +1191,8 @@ class OpsCommandSurfaceTest extends TestCase
         $exitCode = $tester->execute([
             'run_id' => 41,
             'fixture_path' => 'storage/app/market_data/replay-fixtures/valid_case',
+            '--mode' => 'PUBLICATION_EXACT',
+            '--publication_id' => 4,
             '--replay_id' => 3001,
             '--output_dir' => 'C:\\tmp\\replay-verify',
         ]);
@@ -1237,6 +1239,8 @@ class OpsCommandSurfaceTest extends TestCase
         $exitCode = $tester->execute([
             'run_id' => 41,
             'fixture_path' => 'storage/app/market_data/replay-fixtures/reason_code_mismatch_case',
+            '--mode' => 'PUBLICATION_EXACT',
+            '--publication_id' => 4,
         ]);
 
         $display = $tester->getDisplay();
@@ -2754,6 +2758,72 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('status=BLOCKED', $display);
         $this->assertStringContainsString('reason_code=COMMAND_INVALID_REQUEST_MODE', $display);
         $this->assertStringContainsString('request_mode=teleport', $display);
+    }
+
+    /**
+     * `MD-B18` mode admission, proven by running the command rather than by reading its source.
+     *
+     * `B18ReplayContractStaticGuardTest` asserts that the strings `REPLAY_MODE_REQUIRED`,
+     * `REPLAY_EXPLICIT_PUBLICATION_REQUIRED` and `REPLAY_KNOWLEDGE_CUTOFF_REQUIRED` appear in the
+     * command and service source. A string can appear in a comment, a dead constant or a log line,
+     * so that assertion cannot distinguish an enforced admission rule from a mentioned one. These
+     * cases execute the operator boundary and require that no verification is attempted at all.
+     *
+     * @dataProvider inadmissibleReplayInvocations
+     *
+     * @param  array<string,mixed>  $options
+     */
+    public function test_replay_verify_refuses_an_inadmissible_mode_without_attempting_verification(
+        array $options,
+        string $reasonCode
+    ): void {
+        $verification = m::mock(ReplayVerificationService::class);
+        $verification->shouldNotReceive('verifyRunAgainstFixture');
+        $verification->shouldNotReceive('verifyAsKnownAgainstFixture');
+
+        $evidence = m::mock(MarketDataEvidenceExportService::class);
+        $evidence->shouldNotReceive('exportReplayEvidence');
+
+        $this->app->instance(ReplayVerificationService::class, $verification);
+        $this->app->instance(MarketDataEvidenceExportService::class, $evidence);
+
+        $command = new VerifyReplayCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $exitCode = $tester->execute(array_merge([
+            'run_id' => 41,
+            'fixture_path' => 'storage/app/market_data/replay-fixtures/valid_case',
+        ], $options));
+
+        $display = $tester->getDisplay();
+
+        $this->assertSame(1, $exitCode, 'an inadmissible replay invocation must not exit zero');
+        $this->assertStringContainsString('status=BLOCKED', $display);
+        $this->assertStringContainsString('reason_code='.$reasonCode, $display);
+        $this->assertStringNotContainsString('replay_status=PASS', $display);
+    }
+
+    /** @return array<string,array{0:array<string,mixed>,1:string}> */
+    public function inadmissibleReplayInvocations(): array
+    {
+        return [
+            'no mode at all' => [[], 'REPLAY_MODE_REQUIRED'],
+            'empty mode' => [['--mode' => ''], 'REPLAY_MODE_REQUIRED'],
+            'unknown mode' => [['--mode' => 'LATEST'], 'REPLAY_MODE_UNSUPPORTED'],
+            'exact without a publication' => [
+                ['--mode' => 'PUBLICATION_EXACT'],
+                'REPLAY_EXPLICIT_PUBLICATION_REQUIRED',
+            ],
+            'exact with a non-positive publication' => [
+                ['--mode' => 'PUBLICATION_EXACT', '--publication_id' => 0],
+                'REPLAY_EXPLICIT_PUBLICATION_REQUIRED',
+            ],
+            'as-known without a cutoff' => [
+                ['--mode' => 'AS_KNOWN'],
+                'REPLAY_KNOWLEDGE_CUTOFF_REQUIRED',
+            ],
+        ];
     }
 
 }

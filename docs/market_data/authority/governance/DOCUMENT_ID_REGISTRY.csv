@@ -1043,3 +1043,4 @@ MD-DOC-01086,development/implementation/tests/MarketDataReplayVerificationProofG
 MD-DOC-01087,development/implementation/tests/MarketDataReplayVerificationProofReadinessGate.php,IMPLEMENTATION_TEST,,
 MD-DOC-01088,development/implementation/tests/MarketDataReplayVerificationProofBinder.php,IMPLEMENTATION_TEST,,
 MD-DOC-01089,development/implementation/tests/MarketDataReplayVerificationProofSelfTest.php,IMPLEMENTATION_TEST,,
+MD-DOC-01090,development/findings/F-MD-B18-A001-001_REPLAY_PROOF_SURFACE_NOT_ADMISSIBLE.md,FINDING,,

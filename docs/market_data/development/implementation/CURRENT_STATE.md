@@ -22,7 +22,7 @@
 - State / verdict: `IN_PROGRESS` / `PARTIAL`
 - Residue/rework: `EXISTING_UNVERIFIED_REQUIRES_CORRECTED_CURRENT_RUNTIME_PROOF`
 - Dependency: `MD-DEP-0004` B18 entry obligation complete; global `55 / 2 OPEN_NON_BLOCKING` downstream
-- Open finding: none
+- Open finding: **`F-MD-B18-A001-001` (P1)** — proof surface was not admissible; remediated, binding still outstanding
 - Change Impact Declaration: `CI-MD-B18-A001-001` — ISSUED
 - Denominator: **121** (FINAL for every machine-checked criterion — no transitional applicability, no mixed-classification run)
 - SATISFIED / NOT_ASSESSED: **0 / 121**
@@ -51,7 +51,7 @@
 | `MD-B15` | `DONE` | `PASS` | `MD-B15-A001` | `MD-B15-A001-BL001` | `PASS` — proof gate bound, self-test 11/11, 6 fail-closed probes and 8 closure-condition probes all caught |
 | `MD-B16` | `DONE` | `PASS` | `MD-B16-A001` | `MD-B16-A001-BL001` | `PASS` — proof gate bound, self-test 11/11, 8 fail-closed and 8 closure-condition probes all caught |
 | `MD-B17` | `DONE` | `PASS` | `MD-B17-A002` | `MD-B17-A002-BL001` | `PASS` — 246-entry proof map, atomic binding, self-test 11/11, 7 snapshot fail-closed guards, 8 closure-condition probes, affected B04 gates and post-binding full suite all pass |
-| `MD-B18` | `IN_PROGRESS` | `PARTIAL` | `MD-B18-A001` | `MD-B18-A001-BL001` | `PASS` pre-proof (121/121 proof map + readiness gate + mutation self-test); LP-001 PASS; LP-002 migration PASS; R1 full suite returned 2040 tests / 37 errors / 13 failures / exit 2; **R2 CORRECTED LOCAL_RUNTIME_PROOF_REQUIRED** |
+| `MD-B18` | `IN_PROGRESS` | `PARTIAL` | `MD-B18-A001` | `MD-B18-A001-BL001` | `PASS` pre-proof (121/121 explicit reviewed map across 11 families + hardened readiness gate + self-test 11/11 with green control); LP-001 PASS; LP-002 migration PASS; R1 returned 37 errors / 13 failures, R2 re-entry 19 errors / 2 failures, all fixed; **proof surface rebuilt under `F-MD-B18-A001-001`; LP-003-R2/LP-004-R2 and binding outstanding** |
 | `MD-B19` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 | `MD-B20` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 | `MD-B21` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
@@ -59,13 +59,13 @@
 
 ## Open dependencies and work records
 
-- Open findings across every stage: `F-MD-B00-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A014-001` — OPEN; `F-MD-B14-A001-001` — OPEN — total **4**
+- Open findings across every stage: `F-MD-B00-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A014-001` — OPEN; `F-MD-B14-A001-001` — OPEN; `F-MD-B18-A001-001` — OPEN — total **5**
 - Open dependencies: `MD-DEP-0003` — OPEN_NON_BLOCKING; owner `owning stages MD-B03/B15/B17/B19/B21/B22`; `MD-DEP-0004` — OPEN_NON_BLOCKING; owner `each stage at entry`
 - Classification entry obligation (`MD-DEP-0004`), reference-only rows in mixed-classification runs by stage: `MD-B19` 46, `MD-B20` 9 — total **55**
-- Registered current work records: **204** (BASELINE_LOCK=49, CHANGE_IMPACT_DECLARATION=44, DECISION=8, EVIDENCE=58, FINDING=17, STAGE_CLOSURE=4, STAGE_CLOSURE_MANIFEST=24)
+- Registered current work records: **205** (BASELINE_LOCK=49, CHANGE_IMPACT_DECLARATION=44, DECISION=8, EVIDENCE=58, FINDING=18, STAGE_CLOSURE=4, STAGE_CLOSURE_MANIFEST=24)
 
 ## Exact resume
 
-- Single exact next executable resume point: apply incremental `MD-B18-A001-R2` over the already-applied pre-proof + R1 patch lineage, execute `B18-LP-003-R2` in fail-fast order, and only if it passes execute fresh `B18-LP-004-R2`; return those exact proof outputs plus repository-state-after-test files. Do not rerun LP-001/LP-002, bind predicates, issue B18 runtime evidence/closure, or open `MD-B19` until corrected runtime proof is verified.
+- Single exact next executable resume point: rebuild the `MD-B18` proof surface so it can carry a binding, then bind. The R2 suite defects are fixed and the suite is green; the explicit 121-row `RULE_FAMILIES` map, eleven behavioural families and the hardened gate/self-test are in place. What remains inside `MD-B18-A001` is to execute `B18-LP-003-R2` over the eleven families' named guards, then a fresh full `B18-LP-004-R2`, issue `E-MD-B18-A001-001` from those transcripts, bind the 121 predicates atomically, run the post-binding controls, and only then evaluate closure. `MD-B19` stays unopened.
 - Current stage source: `MD_IMPLEMENTATION_STAGE_REGISTER.md`
 - Pre-epoch W00..W22 verdicts: **historical-only**

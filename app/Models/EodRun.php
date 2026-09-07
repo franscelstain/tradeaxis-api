@@ -12,6 +12,19 @@ class EodRun extends Model
 
     public $timestamps = false;
 
+    /**
+     * Pinned so date attributes serialize without resolving a connection.
+     *
+     * `knowledge_cutoff_at` is an immutable run fact that MD-B18 hashes into replay
+     * bound-input identity. Leaving the format to whichever query grammar happens to be
+     * resolved makes a hashed value depend on the connection, and it also forces a database
+     * lookup merely to set the attribute. This is the value the base grammar already
+     * returns for both MariaDB and SQLite, so runtime behaviour is unchanged.
+     *
+     * @var string
+     */
+    protected $dateFormat = 'Y-m-d H:i:s';
+
     protected $guarded = [];
 
     protected $casts = [
