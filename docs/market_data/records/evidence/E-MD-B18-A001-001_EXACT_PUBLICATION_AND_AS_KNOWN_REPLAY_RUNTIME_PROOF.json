@@ -1,0 +1,210 @@
+{
+    "evidence_id": "E-MD-B18-A001-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "ISSUED_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A001",
+    "work_id": "MD-B18-A001",
+    "baseline_id": "MD-B18-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze": "MD-STRATEGY-FREEZE-20260903-001",
+    "change_impact_declaration": "CI-MD-B18-A001-001",
+    "issued_at": "2026-09-07T09:40:00+07:00",
+    "verdict": "PASS",
+    "title": "Exact-publication and as-known replay: rebuilt proof surface and current runtime proof",
+    "attempt_outcome": "All 121 MD-B18 required predicates are proven by guards executed in this attempt and bound to this evidence. The proof surface they rest on was rebuilt during the attempt: the map that existed at entry attributed families by keyword accident and proved 103 of 121 predicates by reading source text. See F-MD-B18-A001-001.",
+    "authority_basis": {
+        "primary_stage": "MD-B18",
+        "strategy_documents": [
+            "authority/strategy/book/Replay_Verification_Contract_LOCKED.md",
+            "authority/strategy/backtest/Historical_Replay_and_Data_Quality_Backtest.md",
+            "authority/strategy/backtest/Point_In_Time_Backtest_Input_Contract_LOCKED.md",
+            "authority/strategy/backtest/Backtest_Metrics_and_Acceptance_Criteria_LOCKED.md",
+            "authority/strategy/book/Domain_Boundary_Invariants_LOCKED.md",
+            "authority/strategy/registry/Platform_Config_Registry_LOCKED.md"
+        ],
+        "predecessor_closure": "SC-MD-B17-A002-001",
+        "note": "MD-B17 closure is a stage precondition only. No MD-B17 predicate proof is inherited: every one of the 121 predicates bound here was proven by a guard executed during this attempt."
+    },
+    "execution_environment": {
+        "execution_mode": "IN_SESSION_LOCAL_EXECUTION",
+        "php_version": "7.4.33",
+        "phpunit_version": "9.6.34",
+        "database_engine": "10.4.27-MariaDB",
+        "primary_database": "tradeaxis",
+        "test_database": "tradeaxis_testing",
+        "schema_drift_state": "NONE",
+        "schema_drift_note": "The replay-v2 bound-input migration was applied and confirmed under B18-LP-002 and is unchanged by this proof cycle."
+    },
+    "raw_artifact_manifest": {
+        "manifest_path": "storage/app/market-data/evidence/MD-B18-A001/MANIFEST.json",
+        "manifest_sha256": "1E2E452C7CD0612E1A74C78C2550C10EB3C97CBA5D3BCD83FFA12B8B51812B2D",
+        "artifact_count": 6
+    },
+    "executed_proof": [
+        {
+            "execution_id": "B18-LP-003-R2",
+            "kind": "TARGETED_RUNTIME",
+            "command": "php vendor/bin/phpunit --filter \"<the 22 guard methods named by the eleven proof families>\"",
+            "verdict": "PASS",
+            "tests": 32,
+            "assertions": 191,
+            "failures": 0,
+            "errors": 0,
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B18-A001/MD-B18-A001-LP003-R2_targeted_family_guards.txt",
+            "sha256": "61983AC95B08B69C6C5015DA5BFA135FA93DB40201BC46820D4389C390FD169B",
+            "supports": "Every positive and negative guard named by the reviewed proof map, executed by name."
+        },
+        {
+            "execution_id": "B18-LP-004-R2",
+            "kind": "FULL_REGRESSION",
+            "command": "php vendor/bin/phpunit",
+            "verdict": "PASS",
+            "tests": 2057,
+            "assertions": 20592,
+            "failures": 0,
+            "errors": 0,
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B18-A001/MD-B18-A001-LP004-R2_full_suite.txt",
+            "sha256": "6209588FF4FB4E99A5F02B0D08B65558BD522CD8CFEDF3AF3DE572E77F34B585",
+            "supports": "No regression. The R1 cycle returned 37 errors and 13 failures and the state at re-entry was 19 errors and 2 failures; both root causes are fixed and recorded below rather than reinterpreted."
+        },
+        {
+            "execution_id": "B18-LP-005-R2",
+            "kind": "FAIL_CLOSED_MUTATION_PROBE",
+            "command": "scripted probe harness: one defect per proof family, run that family's own guard, restore from a byte copy",
+            "verdict": "PASS",
+            "probes": 11,
+            "caught": 11,
+            "control_before": true,
+            "control_after": true,
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B18-A001/MD-B18-A001-LP005-R2_family_fail_closed_probes.txt",
+            "sha256": "2B4D3EFF0B1DAA5E3E7A0C51472908D0CD38D4A6E594F9F69F289870F663235F",
+            "supports": "Falsifiability of all eleven families. Three probes escaped on the first run. Two were defective probes and were corrected: one mutated a call the guard never reaches, the other removed a loop-body stop while the exercised path leaves through the catch block. The third was a real gap and is recorded as a remediated defect below."
+        },
+        {
+            "execution_id": "B18-LP-006-R2",
+            "kind": "GOVERNED_GATE",
+            "command": "php MarketDataReplayVerificationProofReadinessGate.php ; php MarketDataReplayVerificationProofSelfTest.php",
+            "verdict": "PASS",
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B18-A001/MD-B18-A001-LP006-R2_proof_gate_and_self_test.txt",
+            "sha256": "CA6D9C6DC96FC09C1941A0AEEB5C79993D32F50F8EA3AD2AE4B315AA8A806DCB",
+            "supports": "The readiness gate validates 121 required rows against a 121-entry reviewed map across eleven families with declared per-family counts. The self-test reports a green control plus ten mutations the gate must catch, five of them added for the assertions this attempt introduced."
+        },
+        {
+            "execution_id": "B18-LP-007-R2",
+            "kind": "GOVERNED_GATE",
+            "command": "php <documentation|relationship|classification|traceability-applicability|scope-boundary> gates",
+            "verdict": "PASS",
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B18-A001/MD-B18-A001-LP007-R2_governance_gates.txt",
+            "sha256": "AA5CE6EB530929C0CC8A2D83E6AE2A41526EF16C3491970CAE36F4F69C8B6295",
+            "supports": "All five governance gates exit zero on the package state this evidence is issued against."
+        },
+        {
+            "execution_id": "B18-LP-008-R2",
+            "kind": "FAIL_CLOSED_MUTATION_PROBE",
+            "command": "scripted probe harness against the proof binder, run without --apply so no probe can write the matrix",
+            "verdict": "PASS",
+            "probes": 5,
+            "caught": 5,
+            "reason_recognised": 5,
+            "exit_code": 0,
+            "artifact_path": "storage/app/market-data/evidence/MD-B18-A001/MD-B18-A001-LP008-R2_binder_fail_closed_probes.txt",
+            "sha256": "6E7DB48C0ED7B973AF9EC73AAC0956F5DE52E4B56563BB2B7881D03EFEB6E03A",
+            "supports": "Falsifiability of the rebuilt binder. It refuses an already-bound predicate, an absent governed evidence file, evidence that does not carry a PASS verdict, a map that no longer reaches the denominator, and a binder that would alter a row owned by another stage. The first probe is stopped by the pre-bind gate before the binder's own pristine check is reached; both refuse the same state and the pristine check stands behind the gate rather than instead of it."
+        }
+    ],
+    "required_semantics_proven": [
+        "Replay mode is mandatory and explicit at the operator boundary; a missing mode is REPLAY_MODE_REQUIRED and an unknown one REPLAY_MODE_UNSUPPORTED, and neither reaches verification.",
+        "Publication replay resolves an explicit immutable publication and never a current or latest pointer, and an unsealed historical publication is a reason-coded failure rather than a pass.",
+        "As-known replay resolves only what was recorded by the declared cutoff; a config, status, calendar, identity or corporate-action fact recorded later is invisible, and an unresolvable configuration is refused rather than invented.",
+        "A fact retracted after the cutoff stays visible when reconstructing the earlier state, while the current read hides it.",
+        "The as-known source-observation manifest binds observations and identity known by the cutoff, and a zero-row provider outage stays in it rather than disappearing through current-universe filtering.",
+        "Every replay result carries its bound inputs as first-class fields, and an incomplete non-BLOCKED set is refused rather than persisted; a BLOCKED result remains storable with the reduced set the contract allows it.",
+        "A self-generated fixture is diagnostic only; a relabelled one is still refused, and an inadmissible verdict is never counted as a pass.",
+        "The provider adjusted close does not reach the canonical row, and analytical factor-set identity drift is detected by replay.",
+        "PASS, FAIL and BLOCKED are distinct outcomes; a missing expected value is reported rather than skipped, and evidence export carries the result and its reason-code summary.",
+        "No active document or application surface cites a replay verdict as evidence of data correctness, event completeness, or factor validity, and BLOCKED is never converted to a pass.",
+        "Replay backfill stops on a missing publication when told to, rather than continuing past it."
+    ],
+    "coverage": {
+        "required_denominator": 121,
+        "mandatory": 117,
+        "conditional_applicable": 4,
+        "satisfied": 121,
+        "not_assessed": 0,
+        "optional_capability": 2,
+        "reference_context": 32,
+        "transitional": 0,
+        "conditional_pending": 0,
+        "proof_families": 11,
+        "positive_proofs_that_execute_behaviour": 106,
+        "positive_proofs_that_are_corpus_assertions": 15,
+        "corpus_proof_note": "The fifteen admissibility-boundary predicates are about what may be claimed, so a corpus assertion is the matching instrument rather than a weaker one. Every other predicate is proven by executed behaviour."
+    },
+    "defects_found_and_remediated_in_attempt": [
+        {
+            "defect": "The proof map attributed families by substring matching on rule text.",
+            "detail": "MarketDataReplayVerificationProofSpec::familyFor() used a cascading strpos chain ending in an unconditional catch-all. Measured over the real 121 rows, 23 predicates reached a family with no keyword match at all - all 15 of exact_publication, 7 of mode_admission and the single independent_oracle row - and earlier branches stole predicates from later ones. MD-S050-R0028, a bitemporal as-known resolution rule, was filed under evidence because its sentence contains 'pass'.",
+            "remediation": "An explicit reviewed rule_id => family table covering all 121 rows across eleven families, with per-family expected counts declared separately. An unmapped rule now throws instead of defaulting.",
+            "guard": "The readiness gate compares the reviewed map against the rule ids the matrix carries and each family's size against its declared count, both independent of the map itself. Self-test mutations reviewed_map_lost_a_rule, reviewed_map_carries_a_foreign_rule, silent_rebucketing_keeps_the_total and family_without_a_declared_count all fire."
+        },
+        {
+            "defect": "103 of 121 positive proofs were source-text greps.",
+            "detail": "Eight of nine families named B18ReplayContractStaticGuardTest as both positive and negative proof. That class reads source files and asserts substrings. A probe removed the real DB::rollBack() from AsKnownReplayExecutionService and left the identical text in a comment: the static guard stayed green while the runtime guard went red, so the isolated replay would have committed its projection mutation with its owning guard reporting success.",
+            "remediation": "Ten families now name guards that execute. The eleventh, admissibility_boundary, is deliberately corpus-based because its predicates are about what may be claimed, and the gate records that choice as a declared proof kind.",
+            "guard": "Self-test mutation behavioural_family_repointed_at_the_static_guard fires, and all eleven families are mutation-proven in B18-LP-005-R2."
+        },
+        {
+            "defect": "The bound-input refusal was enforced by code no test reached.",
+            "detail": "ReplayResultRepository::assertModeInputs() raises REPLAY_EXPLICIT_PUBLICATION_REQUIRED, REPLAY_KNOWLEDGE_CUTOFF_REQUIRED and REPLAY_BOUND_INPUT_INCOMPLETE. Deleting its entire body left the suite green, because the only test touching it supplies a complete metric.",
+            "remediation": "test_an_incomplete_bound_input_set_is_refused_rather_than_persisted removes exactly one required input per case and asserts both the refusal and that no row was written. test_a_blocked_result_is_storable_with_the_reduced_input_set holds the other side, so the refusal cannot be tightened into one that rejects the BLOCKED outcome MD-S050-R0031 requires to be recorded.",
+            "guard": "The bound_inputs family's negative proof, mutation-proven in B18-LP-005-R2."
+        },
+        {
+            "defect": "Setting the mandatory knowledge cutoff broke nineteen pure-unit tests.",
+            "detail": "EodRun casts knowledge_cutoff_at as datetime, so assigning it made Eloquent resolve a database connection purely to obtain a date format, while InteractsWithMarketDataConfig had replaced the global container with a bare one. The failure was not the mandatory cutoff, which the contract requires.",
+            "remediation": "EodRun pins $dateFormat to the value the base query grammar already returns for MariaDB and SQLite. Runtime behaviour is unchanged, and a timestamp hashed into replay bound-input identity should not have its serialization depend on which grammar happens to be resolved.",
+            "guard": "CanonicalRawImportBoundaryTest and EodBarsIngestServiceTest, 19 tests."
+        },
+        {
+            "defect": "Two operator tests still expressed the retired unmoded replay contract.",
+            "detail": "The command correctly blocked with REPLAY_MODE_REQUIRED; the tests had not been updated. Their service mocks already expected the moded signature with publication 4, so only the invocation was stale.",
+            "remediation": "Both invocations supply the explicit mode. Six behavioural mode-admission cases were added because that contract was otherwise proven only by a text assertion; one of them corrected an assumption - an unknown mode is REPLAY_MODE_UNSUPPORTED, distinct from a missing one.",
+            "guard": "OpsCommandSurfaceTest, 64 tests, and the mode_admission probe."
+        },
+        {
+            "defect": "The proof binder could write an unverifiable binding.",
+            "detail": "It wrote the matrix on invocation with no dry run, no check that the rows it overwrote were pristine, no assertion that it had reached the expected 121, and no check that rows outside MD-B18 were untouched. It recorded only the evidence id, so a bound row named the evidence but not the guard.",
+            "remediation": "Rebuilt to the pattern the other stages use: --validate-only, a dry run by default, an evidence-id pattern and admissibility check, a pristine check per row, atomic all-or-nothing on 121, foreign-row isolation, the proof family and both guard names written into the row notes, and BOM-preserving output.",
+            "guard": "The binder refuses before writing; its dry run and applied run are both recorded."
+        }
+    ],
+    "residue": {
+        "state": "CONFORMANT",
+        "scope": "The replay contract surface: mode admission, exact-publication resolution, as-known cutoff isolation, temporal identity, source observations, bound-input persistence, oracle admissibility, result and evidence export, the citation boundary, and the operator backfill paths.",
+        "notes": [
+            "F-MD-B18-A001-001 is remediated by this attempt and is discharged at binding.",
+            "B18ReplayContractStaticGuardTest remains in the suite as a cheap wiring check. It is no longer proof for any predicate, and the readiness gate now rejects re-pointing a behavioural family at it.",
+            "F-MD-B01-A014-001 remains open and is owned by MD-B19. It is not owned by MD-B18."
+        ]
+    },
+    "findings_and_dependencies": {
+        "findings_opened": [
+            "F-MD-B18-A001-001"
+        ],
+        "findings_discharged": [
+            "F-MD-B18-A001-001"
+        ],
+        "dependencies_discharged": [
+            "MD-DEP-0004"
+        ],
+        "dependencies_opened": []
+    },
+    "no_inheritance_statement": "No predicate is claimed on historical material. Every one of the 121 bound predicates was proven by a guard executed in this attempt, and every family was shown to fail under an injected defect with a green control before and after."
+}

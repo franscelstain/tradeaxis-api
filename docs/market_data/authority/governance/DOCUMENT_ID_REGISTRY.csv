@@ -1044,3 +1044,5 @@ MD-DOC-01087,development/implementation/tests/MarketDataReplayVerificationProofR
 MD-DOC-01088,development/implementation/tests/MarketDataReplayVerificationProofBinder.php,IMPLEMENTATION_TEST,,
 MD-DOC-01089,development/implementation/tests/MarketDataReplayVerificationProofSelfTest.php,IMPLEMENTATION_TEST,,
 MD-DOC-01090,development/findings/F-MD-B18-A001-001_REPLAY_PROOF_SURFACE_NOT_ADMISSIBLE.md,FINDING,,
+MD-DOC-01091,development/implementation/tests/MarketDataReplayVerificationClosureGate.php,IMPLEMENTATION_TEST,,
+MD-DOC-01092,records/evidence/E-MD-B18-A001-001_EXACT_PUBLICATION_AND_AS_KNOWN_REPLAY_RUNTIME_PROOF.json,EVIDENCE,,

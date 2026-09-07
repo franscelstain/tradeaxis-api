@@ -242,7 +242,7 @@ final class MarketDataReplayVerificationProofSpec
                     'database/migrations/2026_09_04_000001_add_replay_v2_bound_input_context.php',
                 ],
                 'positive' => ['tests/Unit/MarketData/ReplayResultRepositoryIntegrationTest.php', 'test_replay_result_repository_persists_metric_and_reason_code_counts'],
-                'negative' => ['tests/Unit/MarketData/ReplayConfigIdentityVariesWithConfigTest.php', 'test_a_run_without_config_identity_is_marked_rather_than_silently_skipped'],
+                'negative' => ['tests/Unit/MarketData/ReplayResultRepositoryIntegrationTest.php', 'test_an_incomplete_bound_input_set_is_refused_rather_than_persisted'],
             ],
             'temporal_identity' => [
                 'owner' => 'MD-B18:temporal-identity',
