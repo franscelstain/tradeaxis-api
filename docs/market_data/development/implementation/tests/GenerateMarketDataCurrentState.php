@@ -93,8 +93,45 @@ function classificationPending(array $rows): array
     return MarketDataClassificationConsistencyGate::validate($rows, [])['pending'];
 }
 
+/**
+ * Reference rows for a stage that carry no recorded stage-entry decision.
+ *
+ * The two signals below cannot see a uniform REFERENCE_ONLY run: the mixed-run detector fires only
+ * where a section holds both required and reference rows, so a section classified entirely as
+ * reference is invisible to it. MD-B19 reached "FINAL for every machine-checked criterion" with 515
+ * reference rows nobody had examined, which is the reassuring falsehood this counts away.
+ *
+ * @param  array<int,array<string,string>>  $rows
+ */
+function undecidedReferenceRows(array $rows, string $stage): int
+{
+    $markers = ['stage_entry_review', 'reviewed reference decision', 'applicability_basis',
+        'reference_owner_basis', 'applicability_normalized'];
+    $undecided = 0;
+    foreach ($rows as $row) {
+        if (($row['primary_stage'] ?? '') !== $stage
+            || strtoupper(trim($row['active'] ?? '')) !== 'YES'
+            || ($row['coverage_requirement'] ?? '') === 'REQUIRED') {
+            continue;
+        }
+        $notes = strtolower((string) ($row['notes'] ?? ''));
+        $decided = false;
+        foreach ($markers as $marker) {
+            if (strpos($notes, $marker) !== false) {
+                $decided = true;
+                break;
+            }
+        }
+        if (! $decided) {
+            $undecided++;
+        }
+    }
+
+    return $undecided;
+}
+
 /** @param array<string,int> $pending */
-function denominatorQualifier(array $counts, string $stage, array $pending): string
+function denominatorQualifier(array $counts, string $stage, array $pending, int $undecidedReference = 0): string
 {
     if ($counts['transitional'] > 0) {
         return 'PROVISIONAL — transitional applicability unresolved';
@@ -102,8 +139,12 @@ function denominatorQualifier(array $counts, string $stage, array $pending): str
     if (($pending[$stage] ?? 0) > 0) {
         return 'PROVISIONAL — '.$pending[$stage].' reference-only rows sit in mixed-classification runs';
     }
+    if ($undecidedReference > 0) {
+        return 'PROVISIONAL — '.$undecidedReference.' reference-only rows carry no recorded stage-entry '
+            .'decision, so an obligation may still be filed as reference and the denominator can only grow';
+    }
 
-    return 'FINAL for every machine-checked criterion — no transitional applicability, no mixed-classification run';
+    return 'FINAL for every machine-checked criterion — no transitional applicability, no mixed-classification run, every reference row decided';
 }
 
 /**
@@ -253,7 +294,7 @@ if ($current !== null) {
 
         $text .= '- Change Impact Declaration: '.($currentChangeImpacts === [] ? '**missing**' : implode('; ', $currentChangeImpacts))."\n";
     }
-    $text .= '- Denominator: **'.$current['denominator'].'** ('.denominatorQualifier($current, $currentStage, $classificationPending).")\n";
+    $text .= '- Denominator: **'.$current['denominator'].'** ('.denominatorQualifier($current, $currentStage, $classificationPending, undecidedReferenceRows($matrix, $currentStage)).")\n";
     $text .= '- SATISFIED / NOT_ASSESSED: **'.$current['satisfied'].' / '.$current['not_assessed']."**\n";
     $text .= '- Mandatory / conditional-applicable: **'.$current['mandatory'].' / '.$current['conditional_applicable']."**\n";
     $text .= '- Conditional-not-applicable / conditional-pending / transitional: **'.$current['conditional_not_applicable'].' / '.$current['conditional_pending'].' / '.$current['transitional']."**\n";

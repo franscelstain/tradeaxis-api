@@ -1,0 +1,48 @@
+{
+    "baseline_id": "MD-B19-A001-BL001",
+    "stage_id": "MD-B19",
+    "attempt_id": "MD-B19-A001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+    "strategy_tree_fingerprint_sha1": "70B450639159F1C6CDF105976618B079CD297E39",
+    "strategy_document_count": 92,
+    "governance_fingerprint_sha1": "E7B985F8005B0077B1ABF24D48C30C75B1DA6E54",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "6EF2EC67B7FABD4CC9EC4637ECCC03486C3BBD56",
+    "source_revision": "GIT:2865eb89c441f338a6607c1a5df7d685a9a96a92",
+    "source_revision_branch": "master",
+    "working_tree": "GIT_CLEAN",
+    "uncommitted_paths_at_issue": [],
+    "app_code_fingerprint_sha1": "D14429AD6373E95397D93C7895777F936EE2FD1C",
+    "tests_fingerprint_sha1": "9FD42D475F610489B1ACE670F77CE26D0EE5BC31",
+    "schema_config_identity": "config:53311538AE03B41B8F9C5250C37A19F4813166F0;migrations:72E282166B1582224B8CCE65A0CCBD36301B29F9",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "PHP 7.4.33; PHPUnit 9.6.34; MariaDB 10.4.27 at 127.0.0.1:3306 (tradeaxis, tradeaxis_testing)",
+    "predecessor_closure": "SC-MD-B18-A001-001",
+    "stage_entry_measurement": {
+        "note": "Measured before any MD-B19 mutation. These are the numbers normalization must resolve, not the numbers the stage will close on.",
+        "active_rows": 936,
+        "required_rows": 290,
+        "applicability": {
+            "MANDATORY": 67,
+            "MANDATORY_OR_CONDITIONAL": 222,
+            "OPTIONAL_CAPABILITY": 1,
+            "REFERENCE_ONLY": 646
+        },
+        "coverage_status": {
+            "NOT_ASSESSED": 289,
+            "REFERENCE_ONLY": 646,
+            "OPTIONAL_NOT_REQUESTED": 1
+        },
+        "denominator_state": "NOT_YET_KNOWABLE",
+        "denominator_reason": "222 of the 290 required rows carry transitional MANDATORY_OR_CONDITIONAL. The executable denominator cannot be stated until each is resolved to MANDATORY, CONDITIONAL_APPLICABLE or CONDITIONAL_NOT_APPLICABLE against its own predicate. The register's 224 figure is provisional and is not carried forward as fact.",
+        "reference_population_note": "646 REFERENCE_ONLY rows are the largest such population in the package. A reference row can carry an executable obligation that no gate sees, so stage-entry normalization must examine them rather than accept the classification."
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-09-09T11:00:00+07:00",
+    "issuance_note": "Issued at MD-B19 stage entry, before any material MD-B19 normalization, code, schema, test, tooling, proof, binding or evidence mutation. SC-MD-B18-A001-001 is a stage precondition only: no MD-B18 predicate proof is inherited. MD-DEP-0003 and MD-DEP-0004 are open at entry and are discharged by this stage's own work, not by predecessor closure."
+}

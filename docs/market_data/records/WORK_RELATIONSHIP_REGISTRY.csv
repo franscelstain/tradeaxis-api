@@ -407,3 +407,6 @@ MD-REL-0405,SC-MD-B18-A001-001,E-MD-B18-A001-001,DEPENDS_ON,"Closure rests on th
 MD-REL-0406,SC-MD-B18-A001-001,CI-MD-B18-A001-001,DERIVED_FROM,"Closure discharges the impact envelope the declaration set, including the post-binding controls it required before closure could be evaluated.",,2026-09-09T10:00:00+07:00,MD-B18-A001 stage closure.
 MD-REL-0407,SC-MD-B18-A001-001,F-MD-B18-A001-001,REMEDIATES,The proof surface the finding rejected was rebuilt before any binding; the finding is discharged by this closure.,,2026-09-09T10:00:00+07:00,MD-B18-A001 stage closure.
 MD-REL-0408,SC-MD-B18-A001-001,SC-MD-B17-A002-001,CARRIED_FROM,B17 closure is the stage precondition only; no B17 predicate proof is inherited.,,2026-09-09T10:00:00+07:00,MD-B18-A001 stage closure.
+MD-REL-0409,MD-B19-A001-BL001,SC-MD-B18-A001-001,CARRIED_FROM,"B19 opens only after immutable B18 closure and inherits no B18 predicate proof.",,2026-09-09T11:15:00+07:00,MD-B19-A001 stage entry.
+MD-REL-0410,CI-MD-B19-A001-001,MD-B19-A001-BL001,DEPENDS_ON,"B19 impact and proof scope are measured against the immutable pre-material baseline.",,2026-09-09T11:15:00+07:00,MD-B19-A001 stage entry.
+MD-REL-0411,CI-MD-B19-A001-001,SC-MD-B18-A001-001,CARRIED_FROM,"B18 closure is the stage precondition only; no B18 predicate proof is inherited.",,2026-09-09T11:15:00+07:00,MD-B19-A001 stage entry.

@@ -5,29 +5,29 @@
 ## Verification identity and coverage
 
 - Verification epoch: `MD-REBASELINE-20260820-001`
-- Required active traceability rows: **3585**
-- Coverage denominator: **3560** (PROVISIONAL)
+- Required active traceability rows: **3716**
+- Coverage denominator: **3691** (FINAL)
 - SATISFIED: **3189**
-- NOT_ASSESSED inside denominator: **371**
+- NOT_ASSESSED inside denominator: **502**
 - CONDITIONAL_NOT_APPLICABLE / NOT_APPLICABLE: **25 / 25**
 - CONDITIONAL_PENDING / APPLICABILITY_PENDING: **0 / 0**
-- Transitional MANDATORY_OR_CONDITIONAL: **222**
-- Verified coverage: **89.58% PROVISIONAL**
+- Transitional MANDATORY_OR_CONDITIONAL: **0**
+- Verified coverage: **86.4% FINAL**
 - Optional capability rules: **63**
 
 ## Current executable stage
 
 - Stage: `MD-B19`
-- Latest attempt / baseline: — / —
-- State / verdict: `NOT_STARTED` / —
+- Latest attempt / baseline: `MD-B19-A001` / `MD-B19-A001-BL001`
+- State / verdict: `IN_PROGRESS` / —
 - Residue/rework: `NOT_ASSESSED`
-- Dependency: `MD-DEP-0003`; `MD-DEP-0004` at entry
-- Open finding: `F-MD-B00-A001-001` (Class S half)
-- Change Impact Declaration: **missing**
-- Denominator: **289** (PROVISIONAL — transitional applicability unresolved)
-- SATISFIED / NOT_ASSESSED: **0 / 289**
-- Mandatory / conditional-applicable: **67 / 0**
-- Conditional-not-applicable / conditional-pending / transitional: **0 / 0 / 222**
+- Dependency: `MD-DEP-0003`; `MD-DEP-0004` in progress
+- Open finding: `F-MD-B00-A001-001` (Class S half); `MD-B19` owns `F-MD-B01-A014-001`
+- Change Impact Declaration: `CI-MD-B19-A001-001` — ISSUED
+- Denominator: **420** (PROVISIONAL — 450 reference-only rows carry no recorded stage-entry decision, so an obligation may still be filed as reference and the denominator can only grow)
+- SATISFIED / NOT_ASSESSED: **0 / 420**
+- Mandatory / conditional-applicable: **420 / 0**
+- Conditional-not-applicable / conditional-pending / transitional: **0 / 0 / 0**
 
 ## Stage state index
 
@@ -52,7 +52,7 @@
 | `MD-B16` | `DONE` | `PASS` | `MD-B16-A001` | `MD-B16-A001-BL001` | `PASS` — proof gate bound, self-test 11/11, 8 fail-closed and 8 closure-condition probes all caught |
 | `MD-B17` | `DONE` | `PASS` | `MD-B17-A002` | `MD-B17-A002-BL001` | `PASS` — 246-entry proof map, atomic binding, self-test 11/11, 7 snapshot fail-closed guards, 8 closure-condition probes, affected B04 gates and post-binding full suite all pass |
 | `MD-B18` | `DONE` | `PASS` | `MD-B18-A001` | `MD-B18-A001-BL001` | `PASS` — 121/121 reviewed map across 11 families, hardened readiness gate, self-test 11/11 in `BOUND_CLOSURE`, LP-003-R2 32/191, bound proof gate `runtime_pending=0`, closure gate 8/8 conditions met and each independently mutation-proven, post-binding sweep 8 exit zero plus the deliberately fatal `--pre-binding` run, post-binding regression 2057/20596; 24 fail-closed probes caught (11 family + 5 binder + 8 closure), controls green either side |
-| `MD-B19` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
+| `MD-B19` | `IN_PROGRESS` | — | `MD-B19-A001` | `MD-B19-A001-BL001` | `NOT_RUN` — no proof surface yet |
 | `MD-B20` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 | `MD-B21` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 | `MD-B22` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
@@ -61,11 +61,11 @@
 
 - Open findings across every stage: `F-MD-B00-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A014-001` — OPEN; `F-MD-B14-A001-001` — OPEN — total **4**
 - Open dependencies: `MD-DEP-0003` — OPEN_NON_BLOCKING; owner `owning stages MD-B03/B15/B17/B19/B21/B22`; `MD-DEP-0004` — OPEN_NON_BLOCKING; owner `each stage at entry`
-- Classification entry obligation (`MD-DEP-0004`), reference-only rows in mixed-classification runs by stage: `MD-B19` 46, `MD-B20` 9 — total **55**
-- Registered current work records: **207** (BASELINE_LOCK=49, CHANGE_IMPACT_DECLARATION=44, DECISION=8, EVIDENCE=59, FINDING=18, STAGE_CLOSURE=5, STAGE_CLOSURE_MANIFEST=24)
+- Classification entry obligation (`MD-DEP-0004`), reference-only rows in mixed-classification runs by stage: `MD-B20` 9 — total **9**
+- Registered current work records: **209** (BASELINE_LOCK=50, CHANGE_IMPACT_DECLARATION=45, DECISION=8, EVIDENCE=59, FINDING=18, STAGE_CLOSURE=5, STAGE_CLOSURE_MANIFEST=24)
 
 ## Exact resume
 
-- Single exact next executable resume point: open `MD-B19` — rebaseline before any material mutation, then normalize its stage entry under `MD-DEP-0004`. The register carries `289` provisional rows with `222` still transitional `MANDATORY_OR_CONDITIONAL`, so the denominator is not yet knowable and must be resolved at entry before any proof surface is designed. `F-MD-B01-A014-001` is owned by `MD-B19` and is discharged there. `MD-B19` has no Change Impact Declaration yet; one must exist early enough to direct the attempt rather than be written afterwards.
+- Single exact next executable resume point: `MD-B19` stage-entry normalization is partially complete and must finish before any proof surface is designed. 417 rows across 67 verified parent sections are normalized; **519 rows across 68 unverified sections remain**, the largest being `MD-S075` "Minimum fields" (195), `MD-S063` "Minimum example shape" (59) and the three `MD-S053` API range-window addenda (41). For each remaining section, read the parent in the owner contract, decide the whole section rather than a subset, hold structural list headers back as `REFERENCE_ONLY`, and record the parent sentence as the basis. Do not state a denominator until every section is decided: the current 420 is partial and will only grow.
 - Current stage source: `MD_IMPLEMENTATION_STAGE_REGISTER.md`
 - Pre-epoch W00..W22 verdicts: **historical-only**
