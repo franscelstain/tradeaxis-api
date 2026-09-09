@@ -4,9 +4,9 @@
 - Stage / Attempt / Baseline: `MD-B18` / `MD-B18-A001` / `MD-B18-A001-BL001`
 - Raised at: 2026-09-07T09:10:00+07:00
 - Severity: `P1`
-- Status: `OPEN`
+- Status: `RESOLVED`
 - Class: `PROOF_SURFACE_NOT_ADMISSIBLE`
-- Blocks: binding of the 121 `MD-B18` required predicates, and therefore `MD-B18` closure
+- Blocked: binding of the 121 `MD-B18` required predicates. Remediated and discharged by `E-MD-B18-A001-001` in the same attempt that raised it.
 - Blocks strategy change: `NO` — no strategy authority is implicated
 
 ## Statement
@@ -112,3 +112,14 @@ predicate.
 No predicate is bound. No `MD-B18` runtime evidence is issued. The denominator is unchanged at 121;
 this finding is about how proof is attributed, not about how many obligations exist. No strategy or
 governance authority is touched, and no predicate text is reinterpreted to fit an existing guard.
+
+## Resolution
+
+Remediated inside `MD-B18-A001` and discharged by `E-MD-B18-A001-001`.
+
+1. `RULE_FAMILIES` is now an explicit reviewed 121-row table across eleven families, with per-family expected counts declared separately. `familyFor()` throws on an unmapped rule; there is no default.
+2. Ten families name guards that execute. `admissibility_boundary` stays a corpus assertion because its fifteen predicates are about what may be claimed, and the gate records that as a declared proof kind rather than leaving it implicit.
+3. The readiness gate compares the reviewed map against the rule ids the matrix carries and each family's size against its declared count -- both independent of the map -- and rejects a behavioural family re-pointed at the retired static guard. Self-test 11/11, five mutations added for these assertions.
+4. All eleven families are mutation-proven: one defect per family, each caught by that family's own guard, green controls either side.
+
+Two further defects were found while proving the above and fixed in the same attempt: the bound-input refusal in `ReplayResultRepository` had no test reaching it, and the binder could write an unverifiable binding. Both are recorded in the evidence.

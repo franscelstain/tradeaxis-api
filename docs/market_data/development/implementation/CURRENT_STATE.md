@@ -7,27 +7,27 @@
 - Verification epoch: `MD-REBASELINE-20260820-001`
 - Required active traceability rows: **3585**
 - Coverage denominator: **3560** (PROVISIONAL)
-- SATISFIED: **3068**
-- NOT_ASSESSED inside denominator: **492**
+- SATISFIED: **3189**
+- NOT_ASSESSED inside denominator: **371**
 - CONDITIONAL_NOT_APPLICABLE / NOT_APPLICABLE: **25 / 25**
 - CONDITIONAL_PENDING / APPLICABILITY_PENDING: **0 / 0**
 - Transitional MANDATORY_OR_CONDITIONAL: **222**
-- Verified coverage: **86.18% PROVISIONAL**
+- Verified coverage: **89.58% PROVISIONAL**
 - Optional capability rules: **63**
 
 ## Current executable stage
 
-- Stage: `MD-B18`
-- Latest attempt / baseline: `MD-B18-A001` / `MD-B18-A001-BL001`
-- State / verdict: `IN_PROGRESS` / `PARTIAL`
-- Residue/rework: `EXISTING_UNVERIFIED_REQUIRES_CORRECTED_CURRENT_RUNTIME_PROOF`
-- Dependency: `MD-DEP-0004` B18 entry obligation complete; global `55 / 2 OPEN_NON_BLOCKING` downstream
-- Open finding: **`F-MD-B18-A001-001` (P1)** — proof surface was not admissible; remediated, binding still outstanding
-- Change Impact Declaration: `CI-MD-B18-A001-001` — ISSUED
-- Denominator: **121** (FINAL for every machine-checked criterion — no transitional applicability, no mixed-classification run)
-- SATISFIED / NOT_ASSESSED: **0 / 121**
-- Mandatory / conditional-applicable: **117 / 4**
-- Conditional-not-applicable / conditional-pending / transitional: **0 / 0 / 0**
+- Stage: `MD-B19`
+- Latest attempt / baseline: — / —
+- State / verdict: `NOT_STARTED` / —
+- Residue/rework: `NOT_ASSESSED`
+- Dependency: `MD-DEP-0003`; `MD-DEP-0004` at entry
+- Open finding: `F-MD-B00-A001-001` (Class S half)
+- Change Impact Declaration: **missing**
+- Denominator: **289** (PROVISIONAL — transitional applicability unresolved)
+- SATISFIED / NOT_ASSESSED: **0 / 289**
+- Mandatory / conditional-applicable: **67 / 0**
+- Conditional-not-applicable / conditional-pending / transitional: **0 / 0 / 222**
 
 ## Stage state index
 
@@ -51,7 +51,7 @@
 | `MD-B15` | `DONE` | `PASS` | `MD-B15-A001` | `MD-B15-A001-BL001` | `PASS` — proof gate bound, self-test 11/11, 6 fail-closed probes and 8 closure-condition probes all caught |
 | `MD-B16` | `DONE` | `PASS` | `MD-B16-A001` | `MD-B16-A001-BL001` | `PASS` — proof gate bound, self-test 11/11, 8 fail-closed and 8 closure-condition probes all caught |
 | `MD-B17` | `DONE` | `PASS` | `MD-B17-A002` | `MD-B17-A002-BL001` | `PASS` — 246-entry proof map, atomic binding, self-test 11/11, 7 snapshot fail-closed guards, 8 closure-condition probes, affected B04 gates and post-binding full suite all pass |
-| `MD-B18` | `IN_PROGRESS` | `PARTIAL` | `MD-B18-A001` | `MD-B18-A001-BL001` | `PASS` pre-proof (121/121 explicit reviewed map across 11 families + hardened readiness gate + self-test 11/11 with green control); LP-001 PASS; LP-002 migration PASS; R1 returned 37 errors / 13 failures, R2 re-entry 19 errors / 2 failures, all fixed; **proof surface rebuilt under `F-MD-B18-A001-001`; LP-003-R2/LP-004-R2 and binding outstanding** |
+| `MD-B18` | `DONE` | `PASS` | `MD-B18-A001` | `MD-B18-A001-BL001` | `PASS` — 121/121 reviewed map across 11 families, hardened readiness gate, self-test 11/11 in `BOUND_CLOSURE`, LP-003-R2 32/191, bound proof gate `runtime_pending=0`, closure gate 8/8 conditions met and each independently mutation-proven, post-binding sweep 8 exit zero plus the deliberately fatal `--pre-binding` run, post-binding regression 2057/20596; 24 fail-closed probes caught (11 family + 5 binder + 8 closure), controls green either side |
 | `MD-B19` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 | `MD-B20` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 | `MD-B21` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
@@ -59,13 +59,13 @@
 
 ## Open dependencies and work records
 
-- Open findings across every stage: `F-MD-B00-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A014-001` — OPEN; `F-MD-B14-A001-001` — OPEN; `F-MD-B18-A001-001` — OPEN — total **5**
+- Open findings across every stage: `F-MD-B00-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A014-001` — OPEN; `F-MD-B14-A001-001` — OPEN — total **4**
 - Open dependencies: `MD-DEP-0003` — OPEN_NON_BLOCKING; owner `owning stages MD-B03/B15/B17/B19/B21/B22`; `MD-DEP-0004` — OPEN_NON_BLOCKING; owner `each stage at entry`
 - Classification entry obligation (`MD-DEP-0004`), reference-only rows in mixed-classification runs by stage: `MD-B19` 46, `MD-B20` 9 — total **55**
-- Registered current work records: **205** (BASELINE_LOCK=49, CHANGE_IMPACT_DECLARATION=44, DECISION=8, EVIDENCE=58, FINDING=18, STAGE_CLOSURE=4, STAGE_CLOSURE_MANIFEST=24)
+- Registered current work records: **207** (BASELINE_LOCK=49, CHANGE_IMPACT_DECLARATION=44, DECISION=8, EVIDENCE=59, FINDING=18, STAGE_CLOSURE=5, STAGE_CLOSURE_MANIFEST=24)
 
 ## Exact resume
 
-- Single exact next executable resume point: rebuild the `MD-B18` proof surface so it can carry a binding, then bind. The R2 suite defects are fixed and the suite is green; the explicit 121-row `RULE_FAMILIES` map, eleven behavioural families and the hardened gate/self-test are in place. What remains inside `MD-B18-A001` is to execute `B18-LP-003-R2` over the eleven families' named guards, then a fresh full `B18-LP-004-R2`, issue `E-MD-B18-A001-001` from those transcripts, bind the 121 predicates atomically, run the post-binding controls, and only then evaluate closure. `MD-B19` stays unopened.
+- Single exact next executable resume point: open `MD-B19` — rebaseline before any material mutation, then normalize its stage entry under `MD-DEP-0004`. The register carries `289` provisional rows with `222` still transitional `MANDATORY_OR_CONDITIONAL`, so the denominator is not yet knowable and must be resolved at entry before any proof surface is designed. `F-MD-B01-A014-001` is owned by `MD-B19` and is discharged there. `MD-B19` has no Change Impact Declaration yet; one must exist early enough to direct the attempt rather than be written afterwards.
 - Current stage source: `MD_IMPLEMENTATION_STAGE_REGISTER.md`
 - Pre-epoch W00..W22 verdicts: **historical-only**

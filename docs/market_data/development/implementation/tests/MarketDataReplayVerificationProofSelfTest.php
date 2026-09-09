@@ -22,9 +22,43 @@ $families = $spec::families();
 $map = $spec::RULE_FAMILIES;
 $counts = $spec::FAMILY_EXPECTED_COUNTS;
 
+/**
+ * Which mode the matrix is actually in.
+ *
+ * The baseline runs the gate against the live matrix. Once the 121 predicates were bound, running it
+ * in pre-binding mode made the control red and every mutation after it meaningless -- the same
+ * silent-fallback shape found in the MD-B08, MD-B11, MD-B12 and MD-B17 self-tests. The mode is now
+ * detected, an explicit flag is honoured, and a requested mode that contradicts the matrix is fatal.
+ */
+$modeErrors = [];
+$bound = $base !== [];
+foreach ($base as $row) {
+    $ev = trim((string) (isset($row['current_evidence_ids']) ? $row['current_evidence_ids'] : ''));
+    if ((isset($row['coverage_status']) ? $row['coverage_status'] : '') !== 'SATISFIED'
+        || preg_match(MarketDataReplayVerificationProofGate::EVIDENCE_PATTERN, $ev) !== 1) {
+        $bound = false;
+        break;
+    }
+}
+
+$requested = null;
+if (in_array('--bound', $argv, true)) {
+    $requested = true;
+}
+if (in_array('--pre-binding', $argv, true)) {
+    if ($requested === true) {
+        $modeErrors[] = 'CONTRADICTORY_MODE_FLAGS';
+    }
+    $requested = false;
+}
+if ($requested !== null && $requested !== $bound && $modeErrors === []) {
+    $modeErrors[] = 'MODE_CONTRADICTS_MATRIX:requested='.($requested ? 'BOUND' : 'PRE_RUNTIME')
+        .',actual='.($bound ? 'BOUND' : 'PRE_RUNTIME');
+}
+
 $tests = [];
-$run = function ($name, array $overrides, $expectPass, $expectError = null) use (&$tests, $root) {
-    $r = MarketDataReplayVerificationProofGate::validate($root, false, $overrides);
+$run = function ($name, array $overrides, $expectPass, $expectError = null) use (&$tests, $root, $bound) {
+    $r = MarketDataReplayVerificationProofGate::validate($root, $bound, $overrides);
     $ok = ($r['status'] === 'PASS') === $expectPass;
     $matched = true;
     if ($expectError !== null) {
@@ -54,8 +88,15 @@ $run('baseline', $all, true);
 $x = $all; array_pop($x['required']);
 $run('denominator_missing', $x, false, 'DENOMINATOR_MISMATCH');
 
-$x = $all; $x['required'][0]['coverage_status'] = 'SATISFIED'; $x['required'][0]['current_evidence_ids'] = 'E-MD-B18-A001-999';
-$run('premature_satisfied', $x, false, 'PREMATURE_BINDING');
+$x = $all;
+if ($bound) {
+    $x['required'][0]['current_evidence_ids'] = '';
+    $run('satisfied_without_evidence', $x, false, 'BOUND_STATE_INVALID');
+} else {
+    $x['required'][0]['coverage_status'] = 'SATISFIED';
+    $x['required'][0]['current_evidence_ids'] = 'E-MD-B18-A001-999';
+    $run('premature_satisfied', $x, false, 'PREMATURE_BINDING');
+}
 
 $x = $all; $x['entries'][0]['family'] = 'not_a_family';
 $run('wrong_family', $x, false, 'WRONG_FAMILY');
@@ -99,7 +140,9 @@ $result = [
     'gate' => 'MarketDataReplayVerificationProofSelfTest',
     'stage_id' => $spec::STAGE,
     'attempt_id' => $spec::ATTEMPT,
-    'status' => $failed === [] ? 'PASS' : 'FAIL',
+    'mode' => $bound ? 'BOUND_CLOSURE' : 'PRE_RUNTIME',
+    'mode_errors' => $modeErrors,
+    'status' => ($failed === [] && $modeErrors === []) ? 'PASS' : 'FAIL',
     'total' => count($tests),
     'failed' => array_column($failed, 'name'),
     'tests' => $tests,
