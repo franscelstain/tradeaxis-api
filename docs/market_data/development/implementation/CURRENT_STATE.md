@@ -5,28 +5,28 @@
 ## Verification identity and coverage
 
 - Verification epoch: `MD-REBASELINE-20260820-001`
-- Required active traceability rows: **3716**
-- Coverage denominator: **3691** (FINAL)
-- SATISFIED: **3189**
-- NOT_ASSESSED inside denominator: **502**
+- Required active traceability rows: **4039**
+- Coverage denominator: **4014** (FINAL)
+- SATISFIED: **3068**
+- NOT_ASSESSED inside denominator: **946**
 - CONDITIONAL_NOT_APPLICABLE / NOT_APPLICABLE: **25 / 25**
 - CONDITIONAL_PENDING / APPLICABILITY_PENDING: **0 / 0**
 - Transitional MANDATORY_OR_CONDITIONAL: **0**
-- Verified coverage: **86.4% FINAL**
+- Verified coverage: **76.43% FINAL**
 - Optional capability rules: **63**
 
 ## Current executable stage
 
-- Stage: `MD-B19`
-- Latest attempt / baseline: `MD-B19-A001` / `MD-B19-A001-BL001`
-- State / verdict: `IN_PROGRESS` / —
-- Residue/rework: `NOT_ASSESSED`
-- Dependency: `MD-DEP-0003`; `MD-DEP-0004` in progress
-- Open finding: `F-MD-B00-A001-001` (Class S half); `MD-B19` owns `F-MD-B01-A014-001`
-- Change Impact Declaration: `CI-MD-B19-A001-001` — ISSUED
-- Denominator: **420** (PROVISIONAL — 450 reference-only rows carry no recorded stage-entry decision, so an obligation may still be filed as reference and the denominator can only grow)
-- SATISFIED / NOT_ASSESSED: **0 / 420**
-- Mandatory / conditional-applicable: **420 / 0**
+- Stage: `MD-B18`
+- Latest attempt / baseline: `MD-B18-A002` / `MD-B18-A002-BL001`
+- State / verdict: `IN_PROGRESS` / `WITHDRAWN — see F-MD-B19-A001-002`
+- Residue/rework: `CONFORMANT`
+- Dependency: **`MD-DEP-0009`** — `MD-B18` is the active remediation stage for it; `MD-DEP-0004` B18 entry obligation complete
+- Open finding: `F-MD-B18-A001-001` (P1) — RESOLVED; `F-MD-B18-A002-001` (P1) — RESOLVED; `F-MD-B18-A002-002` (P2) — RESOLVED, both gaps closed by implementation: `md_listings.delisted_recorded_at` gives a delisting a knowledge time of its own, and `EodEvidenceRepository::resolvePublicationAsKnownAt()` resolves a publication as known at a cutoff by the declared supersession chain rather than by recency; **`F-MD-B18-A002-003` (P2) — OPEN**, the SQLite mirror disables foreign keys globally and mirrors nullability loosely, so referential integrity is enforced by production and by nothing in the mirror
+- Change Impact Declaration: `CI-MD-B18-A002-001` — ISSUED
+- Denominator: **121** (FINAL for every machine-checked criterion — no transitional applicability, no mixed-classification run, every reference row decided)
+- SATISFIED / NOT_ASSESSED: **0 / 121**
+- Mandatory / conditional-applicable: **117 / 4**
 - Conditional-not-applicable / conditional-pending / transitional: **0 / 0 / 0**
 
 ## Stage state index
@@ -51,21 +51,21 @@
 | `MD-B15` | `DONE` | `PASS` | `MD-B15-A001` | `MD-B15-A001-BL001` | `PASS` — proof gate bound, self-test 11/11, 6 fail-closed probes and 8 closure-condition probes all caught |
 | `MD-B16` | `DONE` | `PASS` | `MD-B16-A001` | `MD-B16-A001-BL001` | `PASS` — proof gate bound, self-test 11/11, 8 fail-closed and 8 closure-condition probes all caught |
 | `MD-B17` | `DONE` | `PASS` | `MD-B17-A002` | `MD-B17-A002-BL001` | `PASS` — 246-entry proof map, atomic binding, self-test 11/11, 7 snapshot fail-closed guards, 8 closure-condition probes, affected B04 gates and post-binding full suite all pass |
-| `MD-B18` | `DONE` | `PASS` | `MD-B18-A001` | `MD-B18-A001-BL001` | `PASS` — 121/121 reviewed map across 11 families, hardened readiness gate, self-test 11/11 in `BOUND_CLOSURE`, LP-003-R2 32/191, bound proof gate `runtime_pending=0`, closure gate 8/8 conditions met and each independently mutation-proven, post-binding sweep 8 exit zero plus the deliberately fatal `--pre-binding` run, post-binding regression 2057/20596; 24 fail-closed probes caught (11 family + 5 binder + 8 closure), controls green either side |
-| `MD-B19` | `IN_PROGRESS` | — | `MD-B19-A001` | `MD-B19-A001-BL001` | `NOT_RUN` — no proof surface yet |
+| `MD-B18` | `IN_PROGRESS` | `WITHDRAWN — see F-MD-B19-A001-002` | `MD-B18-A002` | `MD-B18-A002-BL001` | `PARTIAL` — `MD-B18-A002` in progress. **118/121** predicates carry a reviewed per-predicate proof basis; the closure gate reports the other 3 by name and both remaining conditions (`denominator_fully_satisfied`, `every_predicate_has_a_reviewed_proof_basis`) are unmet. Full market-data suite green at each step; every guard class named in the proof basis passes. The `MD-B18-A001` `PASS` recorded here previously was the **withdrawn** closure and is not inheritable proof — it is retained only in the withdrawal note in this row |
+| `MD-B19` | `IN_PROGRESS` | — | `MD-B19-A001` | `MD-B19-A001-BL001` | `PARTIAL` — proof map validated at 743/743 across 37 families, zero structural errors; **no family may now be called proven**: `F-MD-B19-A001-002` measured that a family-level guard assignment does not establish its members, and the three families previously recorded as proven carry one guard pair each for 52, 13 and 8 predicates. The gate now requires a reviewed per-predicate proof basis and reports **743/743 predicates without one**; 34/37 families also carry no guard at all |
 | `MD-B20` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 | `MD-B21` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 | `MD-B22` | `NOT_STARTED` | — | — | — | `NOT_RUN` |
 
 ## Open dependencies and work records
 
-- Open findings across every stage: `F-MD-B00-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A014-001` — OPEN; `F-MD-B14-A001-001` — OPEN — total **4**
+- Open findings across every stage: `F-MD-B00-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A014-001` — OPEN; `F-MD-B14-A001-001` — OPEN; `F-MD-B18-A002-003` — OPEN; `F-MD-B19-A001-002` — OPEN — total **6**
 - Open dependencies: `MD-DEP-0003` — OPEN_NON_BLOCKING; owner `owning stages MD-B03/B15/B17/B19/B21/B22`; `MD-DEP-0004` — OPEN_NON_BLOCKING; owner `each stage at entry`
 - Classification entry obligation (`MD-DEP-0004`), reference-only rows in mixed-classification runs by stage: `MD-B20` 9 — total **9**
-- Registered current work records: **209** (BASELINE_LOCK=50, CHANGE_IMPACT_DECLARATION=45, DECISION=8, EVIDENCE=59, FINDING=18, STAGE_CLOSURE=5, STAGE_CLOSURE_MANIFEST=24)
+- Registered current work records: **213** (BASELINE_LOCK=51, CHANGE_IMPACT_DECLARATION=46, DECISION=8, EVIDENCE=59, FINDING=20, STAGE_CLOSURE=5, STAGE_CLOSURE_MANIFEST=24)
 
 ## Exact resume
 
-- Single exact next executable resume point: `MD-B19` stage-entry normalization is partially complete and must finish before any proof surface is designed. 417 rows across 67 verified parent sections are normalized; **519 rows across 68 unverified sections remain**, the largest being `MD-S075` "Minimum fields" (195), `MD-S063` "Minimum example shape" (59) and the three `MD-S053` API range-window addenda (41). For each remaining section, read the parent in the owner contract, decide the whole section rather than a subset, hold structural list headers back as `REFERENCE_ONLY`, and record the parent sentence as the basis. Do not state a denominator until every section is decided: the current 420 is partial and will only grow.
+- Single exact next executable resume point: continue `MD-B18-A002` — **118 of 121** predicates carry a reviewed per-predicate proof basis, **3 remain**, named by `MarketDataReplayVerificationProofBasis::outstanding()` and counted by closure condition 7. All three now need an ownership decision rather than a guard, and none is blocked on a missing surface this attempt can build. `MD-S002-R0004` (deterministic output across runtime/locale/concurrency) needs more than one runtime; it is recorded as an explicit gap in `B18ReleaseCandidateCriteriaTest`, with a guard that fails if a corpus is quietly added for it. `MD-S050-R0040` is **bound**: `F-MD-B18-A002-002` is resolved by implementation rather than carried as a capability gap. Migration `AddListingDelistingKnowledgeTime` gives a delisting its own knowledge time on `md_listings` — one column rather than a listing revision series, because `listing_id` is the primary key and a superseding revision would fracture the very identity the anti-survivorship corpus exists to keep intact — and `EodEvidenceRepository::resolvePublicationAsKnownAt()` answers which publication a reader had at a cutoff. That selector resolves by the declared supersession chain, not by recency: a first version ordered by `publication_id` and `ReadPathShortcutProhibitionTest` refused it, so it was rewritten rather than exempted, and two sealed publications that do not name each other are refused with `EVIDENCE_AS_KNOWN_PUBLICATION_AMBIGUOUS`. The classification the row asserts is now checkable: each of the eight contract cases is bound to the guard that decides it by a cutoff and to the resolver that guard drives, with the cutoff's argument position asserted — every one of these resolvers answers the effective-time question too, so naming the method alone would have let a row be repointed at the effective-time fixture beside it and stay green. `MD-S050-R0056` (production relock on the actual production path) and `MD-S004-R0007` (simulated execution choosing realistic executable prices, which reads as backtest scope rather than MD-B18) both need a scope decision before anything is built. The MariaDB substrate added for `MD-S003-R0025` is available to `MD-S050-R0056` if that decision goes ahead: `UsesMarketDataMariaDb` runs the migrated `tradeaxis_testing` schema inside a rolled-back transaction and skips when MariaDB is unreachable. Phase 3 — bind the 117 to `E-MD-B18-A002-001`, build the self-test, probe the closure conditions, issue evidence and a closure manifest, discharge `MD-DEP-0009`, return to `MD-B19-A001` — cannot start until the denominator is complete, because closure condition `denominator_fully_satisfied` requires 121/121. Two governance decisions remain open and are recorded rather than taken: whether the now runtime-proven AS_KNOWN capability discharges the `CONDITIONAL_APPLICABLE` condition on `MD-S050-R0040` and `MD-S050-R0041` (which would reduce the denominator to 119), and how to resolve **`F-MD-B18-A002-003`** — the mirror disables foreign keys globally, so referential integrity across all 91 DB-backed guards is enforced by production only.
 - Current stage source: `MD_IMPLEMENTATION_STAGE_REGISTER.md`
 - Pre-epoch W00..W22 verdicts: **historical-only**

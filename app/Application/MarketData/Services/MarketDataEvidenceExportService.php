@@ -1080,6 +1080,39 @@ class MarketDataEvidenceExportService
             'config_version' => $this->field($run, 'config_version'),
             'config_hash' => $this->field($run, 'config_hash'),
             'config_snapshot_ref' => $this->field($run, 'config_snapshot_ref'),
+
+            /*
+             * V2 semantic bindings named by the corrected-strategy binding rule in
+             * `Run_Artifacts_Format_LOCKED.md`. Each mirrors a column persisted on `eod_runs`
+             * and keeps that persisted name, as the locked rules require of run-summary fields
+             * that mirror run state. Nothing here is derived or invented: a run that never
+             * recorded one of these exports it as null rather than as a computed stand-in.
+             */
+            'observation_manifest_hash' => $this->field($run, 'observation_manifest_hash'),
+            /*
+             * The remaining bindings are assembled from the publication manifest, which is the
+             * artifact that already resolves them: the repository reads them from
+             * `eod_publications` and its lineage, derives `canonicalization_version` from the
+             * bars history, and composes `temporal_revision_set_hash` from the identity,
+             * calendar and status revision sets through the deterministic canonical-document
+             * hash. Nothing is computed here. A run with no resolved publication exports them
+             * as null rather than as a stand-in.
+             */
+            'publication_manifest_hash' => $manifest['publication_manifest_hash'] ?? null,
+            'config_snapshot_hash' => $manifest['config_snapshot_hash'] ?? null,
+            'temporal_revision_set_hash' => $manifest['temporal_revision_set_hash'] ?? null,
+            'factor_set_id' => isset($manifest['factor_set_id']) && $manifest['factor_set_id'] !== null
+                ? (int) $manifest['factor_set_id']
+                : null,
+            'canonicalization_version' => $manifest['canonicalization_version'] ?? null,
+            'formula_version' => $manifest['formula_version'] ?? null,
+            'read_model_version' => $manifest['read_model_version'] ?? null,
+            'config_snapshot_id' => $this->field($run, 'config_snapshot_id') !== null
+                ? (int) $this->field($run, 'config_snapshot_id')
+                : null,
+            'factor_set_hash' => $this->field($run, 'factor_set_hash'),
+            'price_product_code' => $this->field($run, 'price_product_code'),
+            'freshness_state' => $this->field($run, 'freshness_state'),
             'publication_id' => $publicationId,
             'publication_version' => $publicationVersion,
             'is_current_publication' => $isCurrentPublication,

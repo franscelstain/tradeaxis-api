@@ -134,6 +134,14 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
     public function incompleteBoundInputSets(): array
     {
         return [
+            'no replay mode' => [
+                ['replay_mode' => null],
+                'REPLAY_MODE_REQUIRED',
+            ],
+            'unsupported replay mode' => [
+                ['replay_mode' => 'HISTORICAL_DEFAULT'],
+                'REPLAY_MODE_UNSUPPORTED',
+            ],
             'exact without a publication' => [
                 ['publication_id' => null],
                 'REPLAY_EXPLICIT_PUBLICATION_REQUIRED',

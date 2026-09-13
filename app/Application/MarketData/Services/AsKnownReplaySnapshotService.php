@@ -62,20 +62,26 @@ final class AsKnownReplaySnapshotService
 
         $calendar = $this->calendar->sessionContext($tradeDate, $knowledgeCutoff);
         $config = $this->configSnapshots->resolveForRun($tradeDate, $knowledgeCutoff);
+        $configPayload = $this->resolvedConfigPayload($config);
+        $resolvedConfig = $configPayload['resolved_config'];
         $sourceManifest = $this->observations->observationManifestAsKnown($tradeDate, $knowledgeCutoff);
         $normalizedRowsManifest = $this->observations->normalizedRowsManifestAsKnown($tradeDate, $knowledgeCutoff);
         $eventsAndFactors = $this->eventFactorContext($tradeDate, $knowledgeCutoff);
 
         $formulaIdentity = [
-            'indicator_config' => config('market_data.indicators', []),
-            'quality_gates' => config('market_data.quality_gates', []),
-            'coverage' => config('market_data.coverage', []),
-            'eligibility' => config('market_data.eligibility', []),
+            'indicator_config' => isset($resolvedConfig['indicators']) ? $resolvedConfig['indicators'] : [],
+            'quality_gates' => isset($resolvedConfig['quality_gates']) ? $resolvedConfig['quality_gates'] : [],
+            'coverage' => isset($resolvedConfig['coverage']) ? $resolvedConfig['coverage'] : [],
+            'eligibility' => isset($resolvedConfig['eligibility']) ? $resolvedConfig['eligibility'] : [],
+            'semantic_bindings' => $configPayload['semantic_bindings'],
         ];
+        $governanceConfig = isset($resolvedConfig['governance']) && is_array($resolvedConfig['governance'])
+            ? $resolvedConfig['governance'] : [];
         $reasonIdentity = [
             'coverage_states' => ['PASS', 'FAIL', 'NOT_EVALUATED'],
             'replay_states' => ['PASS', 'FAIL', 'BLOCKED'],
-            'build_reason_registry_revision' => (string) config('market_data.governance.reason_registry_revision', 'reason_registry_v1'),
+            'build_reason_registry_revision' => (string) (isset($governanceConfig['reason_registry_revision'])
+                ? $governanceConfig['reason_registry_revision'] : ''),
         ];
 
         $context = [
@@ -96,8 +102,10 @@ final class AsKnownReplaySnapshotService
             'event_factor_context' => $eventsAndFactors,
             'formula_registry_identity' => $formulaIdentity,
             'reason_registry_identity' => $reasonIdentity,
-            'read_model_version' => (string) config('market_data.governance.read_model_version', 'market_data_read_model_v1'),
-            'serialization_version' => (string) config('market_data.governance.config_serialization_version', 'canonical_json_v1'),
+            'read_model_version' => (string) (isset($governanceConfig['read_model_version'])
+                ? $governanceConfig['read_model_version'] : ''),
+            'serialization_version' => (string) (isset($config['serialization_version'])
+                ? $config['serialization_version'] : ''),
             'executable_build_identity' => (string) config('market_data.governance.build_id', 'development-worktree'),
         ];
 
@@ -141,6 +149,33 @@ final class AsKnownReplaySnapshotService
             'factor_sets' => array_map(function ($row) { return (array) $row; }, $sets->all()),
             'factors' => array_map(function ($row) { return (array) $row; }, $factors->all()),
         ];
+    }
+
+    /**
+     * Decode the configuration selected by the knowledge cutoff.
+     *
+     * Reading formula/registry identity from the live configuration here would reintroduce the
+     * exact future-state leak that resolveForRun(..., $knowledgeCutoff) prevents. A malformed
+     * historical snapshot is therefore a blocking input defect, never permission to fall back to
+     * config() and manufacture an as-known identity.
+     */
+    private function resolvedConfigPayload(array $config): array
+    {
+        $json = isset($config['resolved_config_json']) ? (string) $config['resolved_config_json'] : '';
+        $payload = $json !== '' ? json_decode($json, true) : null;
+
+        if (! is_array($payload)
+            || ! isset($payload['resolved_config'])
+            || ! is_array($payload['resolved_config'])
+            || ! isset($payload['semantic_bindings'])
+            || ! is_array($payload['semantic_bindings'])) {
+            throw new \RuntimeException(
+                'REPLAY_CONFIG_SNAPSHOT_PAYLOAD_INVALID: as-known replay requires the complete '
+                .'resolved configuration and semantic bindings recorded in its selected snapshot.'
+            );
+        }
+
+        return $payload;
     }
 
     private function only(array $row, array $keys): array

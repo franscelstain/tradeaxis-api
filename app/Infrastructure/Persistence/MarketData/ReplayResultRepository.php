@@ -17,6 +17,11 @@ class ReplayResultRepository
     public function upsertMetric(array $metric)
     {
         $now = Carbon::now(config('market_data.platform.timezone'));
+        // No default. MD-S050-R0035 makes the mode a first-class field of every persisted result:
+        // a corpus in which publication and as-known outcomes are indistinguishable does not satisfy
+        // the mandatory-mode rule regardless of what the invoking command intended, and defaulting a
+        // missing mode to PUBLICATION_EXACT is exactly how they become indistinguishable.
+        // ReplayMode::normalize(null) raises REPLAY_MODE_REQUIRED, which is the intended behaviour.
         $metric['replay_mode'] = ReplayMode::normalize($metric['replay_mode'] ?? null);
         $this->assertModeInputs($metric);
 

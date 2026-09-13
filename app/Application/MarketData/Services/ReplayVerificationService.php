@@ -8,6 +8,25 @@ use App\Infrastructure\Persistence\MarketData\ReplayResultRepository;
 
 class ReplayVerificationService
 {
+    /**
+     * The frozen inputs `MD-S050` requires publication replay to use exactly, in the order the
+     * contract names them. One list so the block that records them and the loop that compares them
+     * cannot cover different sets.
+     */
+    private const BOUND_INPUT_FIELDS = [
+        'source_observation_manifest_hash',
+        'canonical_raw_input_hash',
+        'temporal_identity_hash',
+        'calendar_status_hash',
+        'event_factor_hash',
+        'config_snapshot_hash',
+        'formula_registry_hash',
+        'reason_registry_hash',
+        'read_model_version',
+        'serialization_version',
+        'executable_build_identity',
+    ];
+
     private $evidence;
     private $publications;
     private $replays;
@@ -90,18 +109,20 @@ class ReplayVerificationService
             'replay_mode' => ReplayMode::PUBLICATION_EXACT,
             'knowledge_cutoff_at' => null,
             'fixture_manifest_hash' => $this->canonicalHash($manifest),
-            'source_observation_manifest_hash' => (string) ($run->observation_manifest_hash ?? ''),
-            'canonical_raw_input_hash' => (string) ($run->bars_batch_hash ?? ''),
-            'temporal_identity_hash' => (string) ($publication->temporal_identity_hash ?? ($run->temporal_identity_hash ?? '')),
-            'calendar_status_hash' => (string) ($publication->calendar_status_hash ?? ($run->calendar_status_hash ?? '')),
-            'event_factor_hash' => (string) ($publication->factor_set_hash ?? ($run->factor_set_hash ?? '')),
+            // The frozen inputs come from the same block the comparison reads, so the identity this
+            // result records is the identity that was checked.
+            'source_observation_manifest_hash' => $actual['context']['actual_bound_input_context']['source_observation_manifest_hash'],
+            'canonical_raw_input_hash' => $actual['context']['actual_bound_input_context']['canonical_raw_input_hash'],
+            'temporal_identity_hash' => $actual['context']['actual_bound_input_context']['temporal_identity_hash'],
+            'calendar_status_hash' => $actual['context']['actual_bound_input_context']['calendar_status_hash'],
+            'event_factor_hash' => $actual['context']['actual_bound_input_context']['event_factor_hash'],
             'config_snapshot_id' => ! empty($run->config_snapshot_id) ? (int) $run->config_snapshot_id : (! empty($publication->config_snapshot_id ?? null) ? (int) $publication->config_snapshot_id : null),
-            'config_snapshot_hash' => $this->configIdentityForRun($run),
-            'formula_registry_hash' => $this->canonicalHash($this->configValue('market_data.indicators', [])),
-            'reason_registry_hash' => $this->canonicalHash(['coverage' => ['PASS','FAIL','NOT_EVALUATED'], 'replay' => ['PASS','FAIL','BLOCKED']]),
-            'read_model_version' => (string) $this->configValue('market_data.governance.read_model_version', 'market_data_read_model_v1'),
-            'serialization_version' => (string) $this->configValue('market_data.governance.config_serialization_version', 'canonical_json_v1'),
-            'executable_build_identity' => (string) $this->configValue('market_data.governance.build_id', 'development-worktree'),
+            'config_snapshot_hash' => $actual['context']['actual_bound_input_context']['config_snapshot_hash'],
+            'formula_registry_hash' => $actual['context']['actual_bound_input_context']['formula_registry_hash'],
+            'reason_registry_hash' => $actual['context']['actual_bound_input_context']['reason_registry_hash'],
+            'read_model_version' => $actual['context']['actual_bound_input_context']['read_model_version'],
+            'serialization_version' => $actual['context']['actual_bound_input_context']['serialization_version'],
+            'executable_build_identity' => $actual['context']['actual_bound_input_context']['executable_build_identity'],
             'admission_state' => $admissibility === null ? 'ADMISSIBLE' : 'NOT_ADMISSIBLE',
             'bound_input_context_json' => json_encode([
                 'mode' => ReplayMode::PUBLICATION_EXACT,
@@ -978,9 +999,43 @@ class ReplayVerificationService
                 'final_reason_code' => $finalReasonCode,
             ],
             'actual_lineage' => $lineage,
+            'actual_bound_input_context' => $this->actualBoundInputContext($run, $publication),
         ];
 
         return $actual;
+    }
+
+    /**
+     * The frozen inputs `MD-S050` says publication replay must use *exactly*.
+     *
+     * These identities were already computed at metric-assembly time and written into the stored
+     * result, so the corpus recorded which inputs a replay ran against. Nothing compared them: the
+     * expectation side did not exist and `compareExpectedAndActual()` never looked. A replay that
+     * resolved today's indicator registry, today's build, or a different temporal identity than the
+     * one frozen with the publication therefore reported MATCH, because the comparison ran over
+     * values and states while the inputs that produced them went unchecked. That is the difference
+     * between "reproduces the publication" and "agrees with the fixture about the output".
+     *
+     * Assembling them here rather than inline in the metric gives the recorded value and the
+     * compared value one source, so the two cannot drift apart.
+     *
+     * @return array<string,mixed>
+     */
+    private function actualBoundInputContext($run, $publication = null)
+    {
+        return [
+            'source_observation_manifest_hash' => (string) ($run->observation_manifest_hash ?? ''),
+            'canonical_raw_input_hash' => (string) ($run->bars_batch_hash ?? ''),
+            'temporal_identity_hash' => (string) ($publication->temporal_identity_hash ?? ($run->temporal_identity_hash ?? '')),
+            'calendar_status_hash' => (string) ($publication->calendar_status_hash ?? ($run->calendar_status_hash ?? '')),
+            'event_factor_hash' => (string) ($publication->factor_set_hash ?? ($run->factor_set_hash ?? '')),
+            'config_snapshot_hash' => $this->configIdentityForRun($run),
+            'formula_registry_hash' => $this->canonicalHash($this->configValue('market_data.indicators', [])),
+            'reason_registry_hash' => $this->canonicalHash(['coverage' => ['PASS', 'FAIL', 'NOT_EVALUATED'], 'replay' => ['PASS', 'FAIL', 'BLOCKED']]),
+            'read_model_version' => (string) $this->configValue('market_data.governance.read_model_version', 'market_data_read_model_v1'),
+            'serialization_version' => (string) $this->configValue('market_data.governance.config_serialization_version', 'canonical_json_v1'),
+            'executable_build_identity' => (string) $this->configValue('market_data.governance.build_id', 'development-worktree'),
+        ];
     }
 
     private function actualReasonCodeCounts($run, $resolvedTradeDate, $publication, $correction = null)
@@ -1072,6 +1127,21 @@ class ReplayVerificationService
             $this->compareFieldAllowNull($mismatches, $field, $expectedBool, $actualBool);
         }
         $this->appendManualFilePolicyMismatches($mismatches, $expectedContext['expected_source_context'], $actual);
+        $this->appendImportPromotionPolicyMismatches($mismatches, $expectedContext['expected_run_context'], $actual);
+
+        // MD-S050 publication replay: "using exactly the observations, temporal master revisions,
+        // calendar/status revisions, event/factor revisions, configuration snapshot,
+        // formulas/registries, build/adapter versions, serialization rules, and publication
+        // manifest frozen with it." Each is compared as its own field so a divergence names the
+        // input that moved rather than reporting a generic mismatch.
+        foreach (self::BOUND_INPUT_FIELDS as $field) {
+            $this->compareField(
+                $mismatches,
+                'bound_input_'.$field,
+                $this->ctx($expectedContext, 'expected_bound_input_context.'.$field),
+                $actual['context']['actual_bound_input_context'][$field] ?? null
+            );
+        }
 
         foreach (['coverage_universe_count', 'coverage_expected_count', 'coverage_available_count', 'coverage_missing_count', 'expected_bar_count', 'available_bar_count', 'missing_bar_count', 'coverage_gate_state', 'coverage_reason_code', 'coverage_threshold_mode', 'coverage_universe_basis', 'coverage_contract_version'] as $field) {
             $this->compareFieldAllowNull($mismatches, $field, $this->ctx($expectedContext, 'expected_coverage_context.'.$field), $actual['context']['actual_coverage_context'][$field] ?? null);
@@ -1252,6 +1322,25 @@ class ReplayVerificationService
         $expectedLineage = $r['expected_lineage'] ?? [];
         $expectedReplayResolution = $r['expected_replay_resolution_context'] ?? [];
 
+        // The frozen inputs. A fixture is the record of what was frozen with the publication, so a
+        // fixture that names one of these is asserting the replay must run against that exact
+        // input. Fixtures predating the block name none, and a null expectation is skipped rather
+        // than compared, so adding this does not retroactively fail the existing corpus -- it makes
+        // the declaration load-bearing for any fixture that carries one.
+        $expectedBoundInputs = $this->mergeMissing($r['expected_bound_input_context'] ?? [], [
+            'source_observation_manifest_hash' => $r['expected_source_observation_manifest_hash'] ?? null,
+            'canonical_raw_input_hash' => $r['expected_canonical_raw_input_hash'] ?? null,
+            'temporal_identity_hash' => $r['expected_temporal_identity_hash'] ?? null,
+            'calendar_status_hash' => $r['expected_calendar_status_hash'] ?? null,
+            'event_factor_hash' => $r['expected_event_factor_hash'] ?? null,
+            'config_snapshot_hash' => $r['expected_config_snapshot_hash'] ?? null,
+            'formula_registry_hash' => $r['expected_formula_registry_hash'] ?? null,
+            'reason_registry_hash' => $r['expected_reason_registry_hash'] ?? null,
+            'read_model_version' => $r['expected_read_model_version'] ?? null,
+            'serialization_version' => $r['expected_serialization_version'] ?? null,
+            'executable_build_identity' => $r['expected_executable_build_identity'] ?? null,
+        ]);
+
         $expectedRun = $this->mergeMissing($expectedRun, [
             'run_id' => $r['expected_run_id'] ?? ($r['run_id'] ?? null),
             'trade_date_requested' => $r['expected_trade_date_requested'] ?? ($r['trade_date_requested'] ?? null),
@@ -1384,6 +1473,7 @@ class ReplayVerificationService
             'expected_final_state' => $expectedFinal,
             'expected_reason_code' => $r['expected_reason_code'] ?? ($expectedFinal['final_reason_code'] ?? null),
             'expected_lineage' => $expectedLineage,
+            'expected_bound_input_context' => $expectedBoundInputs,
         ];
     }
 
@@ -1410,6 +1500,63 @@ class ReplayVerificationService
         }
         if ($actualManual && (string) ($actual['publishability_state'] ?? '') === 'READABLE' && strtoupper((string) ($actual['coverage_gate_state'] ?? '')) !== 'PASS') {
             $this->appendMismatch($mismatches, 'manual_file_readable_coverage_policy', 'coverage_gate_state=PASS before READABLE', $actual['coverage_gate_state'] ?? null, 'REPLAY_COVERAGE_STATE_MISMATCH');
+        }
+    }
+
+    /**
+     * An import-only expectation may not be satisfied by a run that promoted.
+     *
+     * `Import_Promote_Separation_Contract` (`MD-S036`) requires replay to compare expected against
+     * actual import status, promote status and pointer state, and states the consequence directly:
+     * unexpected import promotion must be a replay mismatch, not a silent pass. The generic field
+     * comparison cannot carry that rule, because `compareField()` skips a null expectation and the
+     * fixture schema leaves `import_status`, `promote_status`, `promoted` and `pointer_switched`
+     * optional -- so a fixture that declared `request_mode: import_only` and omitted the rest had
+     * its promotion checked by nothing. `REPLAY_IMPORT_PROMOTE_MISMATCH` was already a registered
+     * reason code with no path that could emit it.
+     *
+     * Declaring the request mode is therefore enough to make the promotion state load-bearing: the
+     * three actual promotion signals are each compared against what that mode permits.
+     */
+    private function appendImportPromotionPolicyMismatches(array &$mismatches, array $expectedRunContext, array $actual)
+    {
+        $expectedMode = strtolower(trim((string) ($expectedRunContext['request_mode'] ?? '')));
+        if ($expectedMode !== 'import_only') {
+            return;
+        }
+
+        $importPromote = $actual['context']['actual_import_promote_context'] ?? [];
+
+        if ((string) ($importPromote['promote_status'] ?? '') === 'PROMOTED') {
+            $this->appendMismatch(
+                $mismatches,
+                'import_only_promote_status_policy',
+                'NOT_PROMOTED',
+                $importPromote['promote_status'] ?? null,
+                'REPLAY_IMPORT_PROMOTE_MISMATCH'
+            );
+        }
+
+        if (! empty($importPromote['promoted'])) {
+            $this->appendMismatch(
+                $mismatches,
+                'import_only_promoted_policy',
+                false,
+                $importPromote['promoted'],
+                'REPLAY_IMPORT_PROMOTE_MISMATCH'
+            );
+        }
+
+        // The pointer is the observable half: a promotion nobody declared still shows up as the
+        // current-publication pointer having moved onto this run.
+        if (! empty($importPromote['pointer_switched'])) {
+            $this->appendMismatch(
+                $mismatches,
+                'import_only_pointer_switch_policy',
+                false,
+                $importPromote['pointer_switched'],
+                'REPLAY_IMPORT_PROMOTE_MISMATCH'
+            );
         }
     }
 
@@ -1598,7 +1745,13 @@ class ReplayVerificationService
         if ($field === 'lineage') return 'REPLAY_LINEAGE_MISMATCH';
         // A replay run under different configuration is explainable and fixable. Reporting it as
         // non-deterministic output sends the operator looking for instability in the computation.
-        if ($field === 'config_identity') return 'REPLAY_CONFIG_IDENTITY_MISMATCH';
+        if ($field === 'config_identity' || $field === 'bound_input_config_snapshot_hash') return 'REPLAY_CONFIG_IDENTITY_MISMATCH';
+        // The remaining frozen inputs fall through to REPLAY_NON_DETERMINISTIC_OUTPUT, which the
+        // registry defines as "a deterministic-field mismatch not covered by a more specific replay
+        // reason code" -- and the mismatch entry still names the input in its `field`, so an
+        // operator reads which frozen input moved. A dedicated code would need a governed revision
+        // of Reason_Codes_Registry.md, which is STRATEGY/CONTROLLED_REVISION; it is not something to
+        // add so that an implementation change can emit it.
         return 'REPLAY_NON_DETERMINISTIC_OUTPUT';
     }
 

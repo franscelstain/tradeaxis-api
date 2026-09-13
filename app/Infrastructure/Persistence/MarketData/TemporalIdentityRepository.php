@@ -181,8 +181,26 @@ class TemporalIdentityRepository
             ->where('l.exchange_code', config('market_data.scope.market_code', 'IDX'))
             ->where('lb.market_segment', config('market_data.scope.market_segment', 'REGULAR'))
             ->where('l.listed_date', '<=', $tradeDate)
-            ->where(function ($q) use ($tradeDate) {
+            ->where(function ($q) use ($tradeDate, $knownAt) {
+                /*
+                 * A delisting removes the listing from the universe only once it is *known*.
+                 *
+                 * Without the knowledge-time clause a replay reading as of a moment before the
+                 * delisting was recorded still loses the company, which is survivorship bias
+                 * introduced by the query itself: the universe would be rebuilt from a fact the
+                 * platform had not yet learned. `delisted_recorded_at` carries when the delisting
+                 * entered the record; a NULL there means it was never learned at all, so it can
+                 * never be visible to a bounded read.
+                 *
+                 * `F-MD-B18-A002-002` records why this exists: `MD-S050` classifies the eight
+                 * anti-survivorship fixtures as as-known fixtures, and this one could not be while
+                 * a delisting had no knowledge time.
+                 */
                 $q->whereNull('l.delisted_date')->orWhere('l.delisted_date', '>', $tradeDate);
+                if ($knownAt !== null && $knownAt !== '') {
+                    $q->orWhereNull('l.delisted_recorded_at')
+                        ->orWhere('l.delisted_recorded_at', '>', $knownAt);
+                }
             })
             ->select([
                 'l.listing_id', 'l.legacy_ticker_id as ticker_id', 'l.exchange_code',

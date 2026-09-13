@@ -53,6 +53,10 @@ class PublicationRepositoryIntegrationTest extends TestCase
             'run_id' => 27,
             'trade_date_requested' => '2026-03-20',
             'trade_date_effective' => '2026-03-20',
+            // Sealing requires the immutable run knowledge cutoff: without it an as-known replay
+            // of the sealed publication has no boundary to resolve revisions against. Every
+            // production path into seal already refuses a run that lacks one.
+            'knowledge_cutoff_at' => '2026-03-20 18:00:00',
             'lifecycle_state' => 'COMPLETED',
             'quality_gate_state' => 'PASS',
             'stage' => 'FINALIZE',

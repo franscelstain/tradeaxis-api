@@ -17,7 +17,8 @@ require_once __DIR__.'/MarketDataReplayVerificationProofSpec.php';
  */
 final class MarketDataReplayVerificationProofGate
 {
-    public const EVIDENCE_PATTERN = '/^E-MD-B18-A001-\d{3}$/';
+    // A002 evidence only. Binding to `E-MD-B18-A001-001` would cite the withdrawn closure.
+    public const EVIDENCE_PATTERN = '/^E-MD-B18-A002-\d{3}$/';
 
     /** Families whose predicates are about what may be claimed, where a corpus assertion is right. */
     public const CORPUS_PROOF_FAMILIES = ['admissibility_boundary'];

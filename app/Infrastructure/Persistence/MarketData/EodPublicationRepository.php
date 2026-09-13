@@ -976,6 +976,7 @@ class EodPublicationRepository
                 throw new \RuntimeException('DATASET_MANIFEST_INVALID: deterministic publication manifest must be prepared before seal.');
             }
             $this->assertPublicationManifestHashValid($candidate->publication_id);
+            $this->assertReplayDeterminismBeforeSeal($candidate, $run);
 
             $now = Carbon::now(config('market_data.platform.timezone'));
 
@@ -1314,6 +1315,56 @@ class EodPublicationRepository
         return (string) ($run->promote_mode ?? '') === 'analytical_remediation_current'
             ? 'ANALYTICAL_ONLY'
             : 'FULL';
+    }
+
+    /**
+     * Before-seal validation, item 6 of `Platform_Config_Registry_LOCKED.md` "Validation and
+     * acceptance proof": as-known replay cannot see later revisions.
+     *
+     * A publication whose frozen configuration was recorded *after* the run's own knowledge cutoff
+     * contains a revision an as-known replay bounded by that cutoff can never see. Such a
+     * publication is unreproducible the moment it is sealed: `resolveAsKnown()` at that cutoff will
+     * either resolve an older snapshot -- silently a different configuration than the one frozen --
+     * or refuse with `CONFIG_SNAPSHOT_NOT_KNOWN_AT_CUTOFF`. Nothing compared the two values
+     * anywhere, and this is the last moment the publication can still be corrected: afterwards the
+     * artifact is immutable.
+     *
+     * The state is ordinary rather than exotic. A run whose cutoff is 18:00 but which resolves its
+     * configuration at 18:05 produces it.
+     *
+     * Item 5 of the same list -- current environment drift cannot change publication replay -- is
+     * deliberately *not* re-checked here. It is already enforced before seal:
+     * `PublicationGovernanceBindingService` refuses with `CONFIG_SNAPSHOT_NOT_FOUND` when the run's
+     * snapshot does not exist, that service is the only writer of the lineage binding, and
+     * `assertPublicationIntegrityContextComplete()` makes the lineage binding mandatory and requires
+     * the publication and run configuration identities to agree. A second null check here would be
+     * unreachable in production and would read to a later maintainer as the enforcement.
+     */
+    private function assertReplayDeterminismBeforeSeal($publication, EodRun $run): void
+    {
+        // Preconditions of the comparison rather than enforcement in their own right: both are
+        // already guaranteed by the governance binding this publication must carry to reach seal.
+        $configSnapshotId = (int) ($publication->config_snapshot_id ?? 0);
+        $knowledgeCutoff = trim((string) ($run->knowledge_cutoff_at ?? ''));
+        if ($configSnapshotId <= 0 || $knowledgeCutoff === '') {
+            return;
+        }
+
+        $snapshot = DB::table('md_config_snapshots')
+            ->where('config_snapshot_id', $configSnapshotId)
+            ->first();
+        if (! $snapshot) {
+            return;
+        }
+
+        if (strtotime((string) $snapshot->recorded_at) > strtotime($knowledgeCutoff)) {
+            throw new \RuntimeException(
+                'RUN_SEAL_PRECONDITION_FAILED: the configuration frozen with publication '
+                .($publication->publication_id ?? '?').' was recorded at '.$snapshot->recorded_at
+                .', after the run knowledge cutoff '.$knowledgeCutoff.'. An as-known replay bounded '
+                .'by that cutoff cannot see it, so this publication could never be reproduced.'
+            );
+        }
     }
 
     private function assertPublicationIntegrityContextComplete($publication, EodRun $run, $allowPartial = false): void

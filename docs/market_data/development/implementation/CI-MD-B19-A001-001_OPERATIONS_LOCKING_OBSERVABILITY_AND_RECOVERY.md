@@ -87,10 +87,13 @@ in the package and `MD-S066-R0002` survived two attempts inside one exactly like
 
 ## 4. Known entry-state facts this attempt inherits and does not assume away
 
-- `MD-DEP-0003` — six operator-facing contracts whose replacement guards need authority that
-  `MD-B19`, `MD-B15`, `MD-B17`, `MD-B21` and `MD-B22` have not written. The `MD-B19` share is owed
-  here.
-- `MD-DEP-0004` — stage-entry semantic normalization, discharged for this stage by the work above.
+- `MD-DEP-0003` — `OPEN_NON_BLOCKING`, owned by stages `MD-B03/B15/B17/B19/B21/B22`. The registry
+  names the `MD-B19` share exactly: **production-validation, ops-command-surface, scheduler, and
+  environment-baseline contracts**. That is what is owed here, and it is not discharged by the
+  normalization above.
+- `MD-DEP-0004` — stage-entry semantic normalization. Discharged for `MD-B19` by the work above and
+  recorded in `MD_DEPENDENCY_REGISTRY.csv`, whose per-stage chain now runs through
+  `MD-B19-A001-BL001`. The global dependency stays `OPEN_NON_BLOCKING` for `MD-B20`.
 - `F-MD-B01-A014-001` — the eligibility-export non-conformance raised in `MD-B01-A014` and handed to
   its owning stage. `MD-B19` owns it and it is discharged here or it is not discharged.
 - `F-MD-B00-A001-001` (Class S half) is carried in the register against this stage and is
@@ -131,5 +134,36 @@ until legitimate `MD-B19` closure.
 
 - **Baseline**: `MD-B19-A001-BL001` issued before any material mutation, recording the measured entry
   state above and the fingerprints it was measured against.
-- **Normalization**: in progress under this declaration.
-- **Denominator**: not yet stated. No coverage figure is quotable until normalization completes.
+- **Normalization**: complete. All 936 active rows carry a recorded decision traced to their parent
+  section in the owner contract. 682 rows changed applicability:
+
+  | Transition | Rows |
+  |---|---|
+  | `REFERENCE_ONLY` → `MANDATORY` | **424** |
+  | `MANDATORY_OR_CONDITIONAL` → `MANDATORY` | 216 |
+  | `REFERENCE_ONLY` → `CONDITIONAL_APPLICABLE` | 36 |
+  | `MANDATORY_OR_CONDITIONAL` → `REFERENCE_ONLY` | 6 |
+
+  **424 obligations had been filed as reference** and were invisible to every gate, because the
+  mixed-run detector only fires where a section holds required and reference rows together and these
+  sat in sections classified entirely as reference.
+
+- **Denominator**: **743** — 707 `MANDATORY` plus 36 `CONDITIONAL_APPLICABLE`, with 192
+  `REFERENCE_ONLY`, 1 `OPTIONAL_CAPABILITY`, zero transitional and zero undecided reference rows.
+  The register carried `0/224 provisional` at entry; the real figure is 3.3 times that.
+
+- **Three over-claims caught and corrected during the pass**, each by tabulating every applicability
+  transition after applying rather than by re-reading the corpus:
+  1. the first pass scoped normalization to the transitional subset, leaving `MD-S063-R0070..R0071`
+     `MANDATORY` while `R0072..R0079` — the same numbered list under the same parent — stayed
+     `REFERENCE_ONLY`. Re-scoped to whole sections.
+  2. the section rule promoted `MD-S075-R0139` out of `OPTIONAL_CAPABILITY` although its own text
+     declares the projection optional. Restored with a recorded basis.
+  3. the section rule read `MD-S075`'s artifact-list header "At minimum … must be reconstructable"
+     across items 7–11, which actually sit under "Where applicable, the following should also be
+     available". Those five became `CONDITIONAL_APPLICABLE` with the condition named.
+
+- **A reporting defect fixed**: `GenerateMarketDataCurrentState.php` printed "FINAL for every
+  machine-checked criterion" while 515 reference rows had never been examined. Both of its signals
+  are blind to a section classified entirely as reference. A third signal now counts reference rows
+  carrying no recorded stage-entry decision, and reports `PROVISIONAL` while any remain.

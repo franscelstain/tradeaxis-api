@@ -135,6 +135,9 @@ class SourceFailureResilienceTest extends TestCase
         $this->assertSame('HELD', $decision['terminal_status']);
         $this->assertSame('NOT_READABLE', $decision['publishability_state']);
         $this->assertSame('2026-07-27', $decision['trade_date_effective']);
+        $this->assertSame('FAIL', $decision['quality_gate_state']);
+        $this->assertSame('RUN_PARTIAL_DATA', $decision['reason_code']);
+        $this->assertSame('FAIL', $decision['coverage_summary']['coverage_gate_status']);
         $this->assertSame(self::UNIVERSE, $decision['coverage_summary']['expected_universe_count']);
     }
 

@@ -23,9 +23,15 @@ require_once __DIR__.'/MarketDataReplayVerificationTraceabilitySpec.php';
 final class MarketDataReplayVerificationProofSpec
 {
     public const STAGE = 'MD-B18';
-    public const ATTEMPT = 'MD-B18-A001';
-    public const BASELINE = 'MD-B18-A001-BL001';
-    public const CI = 'CI-MD-B18-A001-001';
+
+    /**
+     * The current attempt, not the withdrawn one. `MD-B18-A001` closed against eleven guard pairs
+     * standing in for 121 predicates and was withdrawn by `F-MD-B19-A001-002`; a binder still
+     * pointed at it would write that withdrawn proof into the authority matrix.
+     */
+    public const ATTEMPT = 'MD-B18-A002';
+    public const BASELINE = 'MD-B18-A002-BL001';
+    public const CI = 'CI-MD-B18-A002-001';
     public const EXPECTED_DENOMINATOR = 121;
 
     /**

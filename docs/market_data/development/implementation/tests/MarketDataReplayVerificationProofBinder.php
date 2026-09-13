@@ -1,11 +1,12 @@
 <?php
 require_once __DIR__.'/MarketDataReplayVerificationProofGate.php';
+require_once __DIR__.'/MarketDataReplayVerificationProofBasis.php';
 
 /**
  * Governed `MD-B18` proof binder.
  *
  *   --validate-only                      report the pre-bind state and exit
- *   --evidence-id=E-MD-B18-A001-NNN      bind every required predicate to that evidence
+ *   --evidence-id=E-MD-B18-A002-NNN      bind every required predicate to that evidence
  *   --apply                              write the matrix; without it nothing is persisted
  *
  * The earlier version of this file wrote the matrix the moment it was invoked, with no dry run, no
@@ -18,6 +19,14 @@ require_once __DIR__.'/MarketDataReplayVerificationProofGate.php';
  * The binding is atomic by construction. Any predicate that is not pristine stops the whole run
  * before a byte is written, because a partial binding leaves the stage claiming a coverage figure
  * that no single execution established.
+ *
+ * `MD-B18-A002` adds the constraint the withdrawal was about. The `MD-B18-A001` binder recorded
+ * the **family's** guard pair against every predicate in that family -- eleven pairs for 121
+ * predicates -- which is what `F-MD-B19-A001-002` measured as not establishing the members. This
+ * binder reads `MarketDataReplayVerificationProofBasis`, refuses any predicate that carries no
+ * reviewed basis, and writes that predicate's **own** guard pair. A predicate with no basis is
+ * not bound and stops the run, so the matrix cannot record a coverage figure the proof basis
+ * does not support.
  */
 $root = dirname(__DIR__, 5);
 $spec = 'MarketDataReplayVerificationProofSpec';
@@ -35,21 +44,38 @@ foreach ($argv as $argument) {
 
 if ($validateOnly) {
     $result = $gate::validate($root, false);
+
+    // The gate validates the family map, which is complete by construction. It says nothing
+    // about whether each predicate has a reviewed basis, and reporting PASS on that alone is
+    // the misleading green this mode exists to avoid: the caller runs --validate-only first
+    // and would read it as "ready to bind".
+    $withoutBasis = MarketDataReplayVerificationProofBasis::outstanding();
+    $errors = $result['errors'];
+    $status = $result['status'];
+    if ($withoutBasis !== []) {
+        $status = 'BLOCKED';
+        $errors[] = 'B18_PREDICATES_WITHOUT_REVIEWED_BASIS: '.count($withoutBasis).' of '
+            .$spec::EXPECTED_DENOMINATOR.' - '.implode(', ', $withoutBasis);
+    }
+
     echo json_encode([
         'mode' => 'VALIDATE_ONLY',
-        'status' => $result['status'],
+        'status' => $status,
+        'attempt_id' => $spec::ATTEMPT,
+        'predicates_with_reviewed_basis' => count(MarketDataReplayVerificationProofBasis::PROVEN),
+        'predicates_without_reviewed_basis' => $withoutBasis,
         'denominator' => $result['denominator'],
         'proof_map_count' => $result['proof_map_count'],
         'proof_families_used' => $result['proof_families_used'],
         'reviewed_map_size' => $result['reviewed_map_size'],
         'runtime_pending' => $result['runtime_pending'],
-        'errors' => $result['errors'],
+        'errors' => $errors,
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL;
-    exit($result['status'] === 'PASS' ? 0 : 1);
+    exit($status === 'PASS' ? 0 : 1);
 }
 
 if ($evidence === null || preg_match($gate::EVIDENCE_PATTERN, $evidence) !== 1) {
-    throw new RuntimeException('Use --validate-only, or --evidence-id=E-MD-B18-A001-NNN [--apply].');
+    throw new RuntimeException('Use --validate-only, or --evidence-id=E-MD-B18-A002-NNN [--apply].');
 }
 
 $matches = glob($root.'/docs/market_data/records/evidence/'.$evidence.'_*');
@@ -62,7 +88,7 @@ if (! is_array($payload)
     || (isset($payload['attempt_id']) ? $payload['attempt_id'] : '') !== $spec::ATTEMPT
     || (isset($payload['verdict']) ? $payload['verdict'] : '') !== 'PASS') {
     throw new RuntimeException('B18_RUNTIME_EVIDENCE_NOT_ADMISSIBLE: '.$evidence
-        .' must be MD-B18-A001 evidence carrying verdict PASS.');
+        .' must be '.$spec::ATTEMPT.' evidence carrying verdict PASS.');
 }
 
 $pre = $gate::validate($root, false);
@@ -147,11 +173,22 @@ foreach ($rows as &$row) {
     }
 
     $family = $families[$targets[$row['rule_id']]];
+
+    // The predicate's own reviewed basis, not its family's. Without this the binder writes
+    // eleven guard pairs across 121 rows, which is the shape `F-MD-B19-A001-002` withdrew the
+    // MD-B18-A001 closure for.
+    $basis = MarketDataReplayVerificationProofBasis::PROVEN[$row['rule_id']] ?? null;
+    if ($basis === null) {
+        throw new RuntimeException($row['rule_id'].': no reviewed per-predicate proof basis. '
+            .'Binding it would record the family guard pair as though it established this '
+            .'predicate. Establish the basis first, or the coverage figure is not supported.');
+    }
+
     $row['coverage_status'] = 'SATISFIED';
     $row['current_evidence_ids'] = $evidence;
     $row['notes'] = trim($row['notes']).' | '.$spec::ATTEMPT.': proof_family='.$targets[$row['rule_id']]
-        .'; positive='.basename($family['positive'][0], '.php').'::'.$family['positive'][1]
-        .'; negative='.basename($family['negative'][0], '.php').'::'.$family['negative'][1]
+        .'; positive='.$basis['positive']
+        .'; negative='.$basis['negative']
         .'; implementation_surface='.implode(',', $family['implementation']);
 
     $bound++;
@@ -197,6 +234,8 @@ echo json_encode([
     'denominator' => $seen,
     'bound' => $bound,
     'foreign_rows_altered' => 0,
+    'predicates_with_reviewed_basis' => count(MarketDataReplayVerificationProofBasis::PROVEN),
+    'predicates_without_reviewed_basis' => count(MarketDataReplayVerificationProofBasis::outstanding()),
     'bound_validation' => $check['status'],
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL;
 

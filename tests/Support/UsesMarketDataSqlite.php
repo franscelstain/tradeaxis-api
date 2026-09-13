@@ -1301,6 +1301,8 @@ trait UsesMarketDataSqlite
             $table->string('board_code', 16)->nullable();
             $table->date('listed_date');
             $table->date('delisted_date')->nullable();
+            // Knowledge time of the delisting itself; see F-MD-B18-A002-002.
+            $table->dateTime('delisted_recorded_at')->nullable();
             $table->string('source_ref', 255)->nullable();
             $table->string('listing_state', 32)->nullable();
             $table->dateTime('recorded_at');

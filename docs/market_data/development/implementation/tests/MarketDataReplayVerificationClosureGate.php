@@ -130,7 +130,16 @@ final class MarketDataReplayVerificationClosureGate
                     break;
                 }
             }
-            if (! $decided || strpos($note, strtolower($spec::ATTEMPT)) === false) {
+            /*
+             * Attributed to an attempt of this stage, not necessarily to the one now closing.
+             * These are stage-entry applicability decisions: `MD-B18-A001` made them, and
+             * `F-MD-B19-A001-002` withdrew that attempt's **proof**, not its classification work.
+             * Requiring the current attempt id would report 66 reference rows as undecided the
+             * moment a remediation attempt opened, and the only way to clear that would be to
+             * re-stamp decisions nobody re-made -- which is worse than the gap it claims to close.
+             */
+            $attributed = strpos($note, strtolower($spec::STAGE).'-a') !== false;
+            if (! $decided || ! $attributed) {
                 $undecided[] = $row['rule_id'];
             }
         }
@@ -161,7 +170,73 @@ final class MarketDataReplayVerificationClosureGate
             'offenders' => array_slice($unattributed, 0, 10),
         ];
 
-        // ---- condition 6: no foreign row carries this stage's evidence.
+        /*
+         * ---- condition 6: deterministic parent/context binding and a normalized predicate.
+         *
+         * `STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md` section 3 requires a required row whose
+         * `rule_text` is not a self-contained predicate to record the governing parent rule ID(s) and
+         * the composed testable statement, and section 8 makes that a precondition of closure rather
+         * than a later tidy-up. `STAGE_EXECUTION_AND_REWORK_STANDARD.md` section 7 says the same in
+         * the stage-entry direction.
+         *
+         * This condition was absent when this gate was first written, so `MD-B18` closed while 85 of
+         * its 121 denominator rows carried an applicability basis but no canonical binding. The peer
+         * gates of earlier stages -- `MarketDataCoverageGateClosureGate` among them -- have enforced
+         * it all along, which is why those stages are complete on this axis and this one is not.
+         * `predicate_context=SELF` / `SELF_CONTAINED` is the recorded form for a row that governs
+         * itself, so a self-contained predicate is still an explicit decision, not an omission.
+         */
+        $unbound = [];
+        foreach ($stageRows as $row) {
+            if ($row['coverage_requirement'] !== 'REQUIRED'
+                || ! in_array($row['applicability'], ['MANDATORY', 'CONDITIONAL_APPLICABLE'], true)) {
+                continue;
+            }
+            $note = (string) $row['notes'];
+            if (strpos($note, 'predicate_context=') === false
+                || strpos($note, 'normalized_predicate=') === false
+                || trim((string) $row['section']) === '') {
+                $unbound[] = $row['rule_id'];
+            }
+        }
+        $conditions['context_binding_and_normalized_predicate'] = [
+            'required' => 'every required denominator row carries deterministic parent/context binding and a normalized predicate',
+            'denominator' => count($denominator),
+            'unbound' => count($unbound),
+            'met' => $unbound === [],
+            'offenders' => array_slice($unbound, 0, 10),
+        ];
+
+        /*
+         * ---- condition 7: every denominator row carries a reviewed per-predicate proof basis.
+         *
+         * `F-MD-B19-A001-002` measured `MD-B18-A001` closing 121 predicates against 11 guard pairs,
+         * one per family, with 58 of 85 re-checked predicates established by a different obligation
+         * or by a proper subset. Family membership is a review grouping, not proof of a member. A
+         * row counts only once a guard has been written or verified for that predicate, executed,
+         * and shown able to fail -- and the one-line basis saying how is what makes that reviewable.
+         */
+        $basisFile = __DIR__.'/MarketDataReplayVerificationProofBasis.php';
+        $outstanding = [];
+        $foreignBasis = [];
+        if (is_file($basisFile)) {
+            require_once $basisFile;
+            $outstanding = MarketDataReplayVerificationProofBasis::outstanding();
+            $foreignBasis = MarketDataReplayVerificationProofBasis::foreign();
+        } else {
+            $errors[] = 'PROOF_BASIS_FILE_MISSING';
+        }
+        $conditions['every_predicate_has_a_reviewed_proof_basis'] = [
+            'required' => 'every denominator row names a guard written or verified for that predicate, with a reviewed one-line basis',
+            'denominator' => count($denominator),
+            'with_a_basis' => count($denominator) - count($outstanding),
+            'outstanding' => count($outstanding),
+            'foreign_basis_entries' => $foreignBasis,
+            'met' => $outstanding === [] && $foreignBasis === [],
+            'offenders' => array_slice($outstanding, 0, 10),
+        ];
+
+        // ---- condition 8: no foreign row carries this stage's evidence.
         $foreign = [];
         $path = $root.'/docs/market_data/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv';
         $handle = fopen($path, 'rb');

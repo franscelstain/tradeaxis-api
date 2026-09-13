@@ -47,6 +47,86 @@ class EodEvidenceRepository
     }
 
 
+    /**
+     * The publication that stood for a trade date **as known at** a moment.
+     *
+     * `MD-S050` classifies the eight anti-survivorship fixtures as as-known fixtures, and "an
+     * original and corrected immutable publication" could not be one: every resolution path here
+     * selects by explicit id or by the current pointer, and neither has a knowledge-time dimension.
+     * A replay could ask "which publication is current now" or "this exact publication", never
+     * "which publication would I have been reading on that date" -- so a correction sealed later
+     * silently became the answer for a moment that predated it, which is the same future-state leak
+     * the identity and calendar roots are guarded against. `F-MD-B18-A002-002` records it.
+     *
+     * A publication's knowledge time is its seal: before it was sealed it was a candidate and no
+     * reader could resolve it. So the candidates are the publications for the date sealed at or
+     * before the cutoff, and the answer among them is the one nothing sealed by then had yet
+     * superseded. A correction sealed after the cutoff is invisible, and the original it supersedes
+     * is still unsuperseded at that moment -- which is what the reader actually had.
+     *
+     * Resolution is by the declared supersession chain, never by recency.
+     * `ReadPathShortcutProhibitionTest` bans `ORDER BY publication_id DESC` from the consumer read
+     * repositories because "the newest row wins" is a guess dressed as an answer, and that reasoning
+     * does not weaken just because the question acquired a knowledge-time bound. Two sealed
+     * publications that do not name each other are an unresolved supersession, so this throws
+     * rather than picking one: a replay reading the wrong half of a correction pair is worse than a
+     * replay that stops.
+     *
+     * Returns null when nothing was sealed for the date by then. That is a real state, not an
+     * error: the date had no readable publication at that moment.
+     */
+    public function resolvePublicationAsKnownAt($tradeDate, $knowledgeCutoff)
+    {
+        $tradeDate = trim((string) $tradeDate);
+        $knowledgeCutoff = trim((string) $knowledgeCutoff);
+
+        if ($tradeDate === '' || $knowledgeCutoff === '') {
+            throw new \RuntimeException(
+                'EVIDENCE_SELECTOR_MISSING: as-known publication resolution requires both a trade '
+                .'date and a knowledge cutoff; without the cutoff this is a current-pointer read.'
+            );
+        }
+
+        $knownByCutoff = DB::table('eod_publications')
+            ->where('trade_date', $tradeDate)
+            ->where('seal_state', 'SEALED')
+            ->whereNotNull('sealed_at')
+            ->where('sealed_at', '<=', $knowledgeCutoff)
+            ->get();
+
+        if ($knownByCutoff->isEmpty()) {
+            return null;
+        }
+
+        $supersededByCutoff = [];
+        foreach ($knownByCutoff as $publication) {
+            foreach (['supersedes_publication_id', 'previous_publication_id', 'replaced_publication_id'] as $link) {
+                $supersededId = isset($publication->{$link}) ? (int) $publication->{$link} : 0;
+                if ($supersededId > 0) {
+                    $supersededByCutoff[$supersededId] = true;
+                }
+            }
+        }
+
+        $standing = [];
+        foreach ($knownByCutoff as $publication) {
+            if (! isset($supersededByCutoff[(int) $publication->publication_id])) {
+                $standing[] = $publication;
+            }
+        }
+
+        if (count($standing) !== 1) {
+            throw new \RuntimeException(
+                'EVIDENCE_AS_KNOWN_PUBLICATION_AMBIGUOUS: trade date '.$tradeDate.' has '
+                .count($standing).' publications sealed at or before '.$knowledgeCutoff
+                .' that nothing sealed by then supersedes; as-known resolution follows the declared '
+                .'supersession chain and will not fall back to the newest row.'
+            );
+        }
+
+        return $standing[0];
+    }
+
     public function resolvePublicationForEvidenceAudit(array $selector)
     {
         $selectorType = isset($selector['type']) ? (string) $selector['type'] : 'run_id';

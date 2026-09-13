@@ -253,9 +253,29 @@ class DeterministicHashService
         return substr($field, -5) === '_json' || substr($field, -8) === '_reasons';
     }
 
+    /**
+     * A float rendered with a decimal point, whatever the operating system's locale calls one.
+     *
+     * `%g` is one of the locale-aware conversions: under a comma-decimal locale `sprintf('%.17g',
+     * 1.5)` returns `1,5`, which the parser below then refuses as `HASH_NUMBER_INVALID`. That made
+     * every artifact hash containing a float a function of the host's locale rather than of the
+     * data -- on a platform whose whole determinism claim is that identical facts produce identical
+     * identities. `%F` is the documented locale-independent conversion but renders in fixed
+     * notation, which would change the token for values `%g` writes in exponent form and therefore
+     * change hashes already sealed. Normalizing the separator keeps the rendering byte-identical to
+     * what a C-locale host has always produced and makes every other host agree with it.
+     */
+    private function floatLiteral(float $value): string
+    {
+        $rendered = sprintf('%.17g', $value);
+        $convention = localeconv();
+        $point = isset($convention['decimal_point']) ? (string) $convention['decimal_point'] : '.';
+
+        return $point === '' || $point === '.' ? $rendered : str_replace($point, '.', $rendered);
+    }
     private function fixedDecimal($value, int $scale): string
     {
-        $raw = is_float($value) ? sprintf('%.17g', $value) : trim((string) $value);
+        $raw = is_float($value) ? $this->floatLiteral($value) : trim((string) $value);
         if (! preg_match('/^(?<sign>[+-]?)(?<integer>\d+)(?:\.(?<fraction>\d*))?(?:[eE](?<exponent>[+-]?\d+))?$/', $raw, $match)) {
             throw new \RuntimeException('HASH_NUMBER_INVALID');
         }

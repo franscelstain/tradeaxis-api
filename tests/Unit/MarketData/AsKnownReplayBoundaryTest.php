@@ -196,6 +196,47 @@ class AsKnownReplayBoundaryTest extends TestCase
      * A suspension recorded after the cutoff cannot describe an earlier replay. Knowing about it
      * would let a backtest avoid a loss it had no way to foresee.
      */
+    public function test_status_revision_selection_applies_both_effective_and_knowledge_time(): void
+    {
+        $hash = str_repeat('e', 64);
+        $observationId = $this->seedStatusFoundation(5149, 6149, $hash);
+        DB::table('md_source_observations')->where('source_observation_id', $observationId)->update([
+            'acquired_at' => '2026-03-10 00:00:00',
+            'created_at' => '2026-03-10 00:00:00',
+        ]);
+        DB::table('md_trading_status_revisions')->insert([
+            'listing_id' => 5149,
+            'instrument_id' => 6149,
+            'status_event_uid' => hash('sha256', 'future-effective-status-5149'),
+            'status_type_code' => 'SUSPENDED',
+            'status_code' => 'SUSPENSION',
+            'bar_expectation_state' => 'BAR_NOT_EXPECTED',
+            'board_code' => 'RG',
+            'authority_class' => 'EXCHANGE_AUTHORITATIVE',
+            'source_name' => 'IDX_OFFICIAL',
+            'source_payload_hash' => $hash,
+            'verification_state' => 'VERIFIED',
+            'full_session_verified' => 1,
+            'effective_from' => '2026-04-01 00:00:00',
+            'effective_to' => null,
+            'recorded_at' => '2026-03-15 00:00:00',
+            'source_observation_id' => $observationId,
+            'source_ref' => 'https://www.idx.co.id/notice',
+            'observed_at' => '2026-03-15 00:00:00',
+            'announced_at' => '2026-03-15 00:00:00',
+        ]);
+
+        $repository = new TemporalTradingStatusRepository();
+        $beforeEffective = $repository->resolveForListing(5149, '2026-03-24', self::CUTOFF);
+        $afterEffective = $repository->resolveForListing(5149, '2026-04-02', self::CUTOFF);
+
+        $this->assertSame('UNKNOWN', $beforeEffective['status_code'],
+            'a revision known at the cutoff must remain invisible before its effective time');
+        $this->assertSame('TRADING_STATUS_NO_EVIDENCE', $beforeEffective['reason_code']);
+        $this->assertSame('SUSPENSION', $afterEffective['status_code'], json_encode($afterEffective));
+        $this->assertSame('BAR_NOT_EXPECTED', $afterEffective['bar_expectation_state']);
+    }
+
     public function test_a_status_revision_recorded_after_the_cutoff_is_invisible(): void
     {
         $hash = str_repeat('a', 64);
