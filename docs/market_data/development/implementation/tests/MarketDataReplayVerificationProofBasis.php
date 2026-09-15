@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__.'/MarketDataReplayVerificationPredicateMap.php';
+require_once __DIR__.'/MarketDataReplayVerificationTraceabilitySpec.php';
 
 /**
  * `MD-B18-A002` accumulating proof basis — one entry per predicate this attempt has established.
@@ -33,11 +34,6 @@ final class MarketDataReplayVerificationProofBasis
             'negative' => 'B18ReplayEvidencePreservationContractTest::test_a_failing_coverage_gate_still_exports_the_threshold_it_failed_against',
             'basis' => 'coverage_gate_state is asserted in both the actual and expected coverage blocks of the exported replay_result.json',
         ],
-        'MD-S040-R0071' => [
-            'positive' => 'B18ReplayEvidencePreservationContractTest::test_every_preserved_item_survives_the_real_export',
-            'negative' => 'B18ReplayEvidencePreservationContractTest::test_a_failing_coverage_gate_still_exports_the_threshold_it_failed_against',
-            'basis' => 'the exported coverage reason code is asserted; it is derived from the normalized gate state because no coverage reason code is persisted on the replay metric, and the fixture proves the derivation rather than an echo',
-        ],
         'MD-S040-R0072' => [
             'positive' => 'B18ReplayEvidencePreservationContractTest::test_every_preserved_item_survives_the_real_export',
             'negative' => 'B18ReplayEvidencePreservationContractTest::test_a_failing_coverage_gate_still_exports_the_threshold_it_failed_against',
@@ -63,11 +59,6 @@ final class MarketDataReplayVerificationProofBasis
             'negative' => 'B18ReplayEvidencePreservationContractTest::test_a_failing_coverage_gate_still_exports_the_threshold_it_failed_against',
             'basis' => 'publishability_state is asserted in the exported replay result',
         ],
-        'MD-S040-R0077' => [
-            'positive' => 'B18ReplayEvidencePreservationContractTest::test_every_preserved_item_survives_the_real_export',
-            'negative' => 'B18ReplayEvidencePreservationContractTest::test_a_failing_coverage_gate_still_exports_the_threshold_it_failed_against',
-            'basis' => 'final_reason_code is a persisted column and is asserted to survive the export verbatim, unlike the derived coverage reason code',
-        ],
         'MD-S040-R0078' => [
             'positive' => 'B18ReplayEvidencePreservationContractTest::test_every_preserved_item_survives_the_real_export',
             'negative' => 'B18ReplayEvidencePreservationContractTest::test_a_failing_coverage_gate_still_exports_the_threshold_it_failed_against',
@@ -90,16 +81,6 @@ final class MarketDataReplayVerificationProofBasis
             'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
             'basis' => 'replay mode, fixture id and version, requested and effective date and the knowledge cutoff are each asserted present in the exported replay result',
         ],
-        'MD-S050-R0008' => [
-            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
-            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
-            'basis' => 'the temporal identity hash carrying dataset boundary and universe/listing/symbol/provider mappings is asserted bound and record-derived',
-        ],
-        'MD-S050-R0009' => [
-            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
-            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
-            'basis' => 'the calendar/status revision hash is asserted bound and record-derived',
-        ],
         'MD-S050-R0010' => [
             'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
             'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
@@ -110,20 +91,10 @@ final class MarketDataReplayVerificationProofBasis
             'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
             'basis' => 'the canonical RAW input hash is asserted bound and record-derived',
         ],
-        'MD-S050-R0012' => [
-            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
-            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
-            'basis' => 'the event/factor revision hash covering verification states and factor-set revisions is asserted bound and record-derived',
-        ],
         'MD-S050-R0013' => [
             'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
             'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
             'basis' => 'config snapshot id and hash are both asserted bound and record-derived',
-        ],
-        'MD-S050-R0014' => [
-            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
-            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
-            'basis' => 'formula registry, reason registry, read-model, serialization and executable build identities are each asserted bound and record-derived',
         ],
         'MD-S050-R0015' => [
             'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
@@ -135,30 +106,10 @@ final class MarketDataReplayVerificationProofBasis
             'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
             'basis' => 'the immutable source-observation manifest is asserted bound into the replay result and read from the record; the reproducibility consequent this antecedent serves is MD-S019-R0073 and remains outstanding',
         ],
-        'MD-S019-R0067' => [
-            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
-            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
-            'basis' => 'temporal issuer/instrument/listing/symbol and provider-mapping identity is asserted bound and record-derived; the consequent MD-S019-R0073 remains outstanding',
-        ],
-        'MD-S019-R0068' => [
-            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
-            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
-            'basis' => 'calendar/session/status revisions are asserted bound and record-derived; the consequent MD-S019-R0073 remains outstanding',
-        ],
-        'MD-S019-R0069' => [
-            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
-            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
-            'basis' => 'corporate-action event and factor-set revisions are asserted bound and record-derived; the consequent MD-S019-R0073 remains outstanding',
-        ],
         'MD-S019-R0070' => [
             'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
             'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
             'basis' => 'the full configuration snapshot id and hash are asserted bound and record-derived; the consequent MD-S019-R0073 remains outstanding',
-        ],
-        'MD-S019-R0071' => [
-            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
-            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
-            'basis' => 'price-product and formula/registry versions are asserted bound through the formula and reason registry hashes and the read-model version; the consequent MD-S019-R0073 remains outstanding',
         ],
         'MD-S019-R0072' => [
             'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
@@ -172,75 +123,15 @@ final class MarketDataReplayVerificationProofBasis
         // proven under a withdrawn closure is not inheritable. Thirteen of these are citation
         // prohibitions carried by the declared corpus guard, which legitimately covers many
         // predicates: it scans every active surface for the claims they forbid.
-        'MD-S002-R0009' => [
-            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
-            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
-            'basis' => 'BLOCKED-never-a-pass is exactly a citation prohibition the corpus guard scans for',
-        ],
-        'MD-S002-R0010' => [
-            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
-            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
-            'basis' => 'pass-rate-cannot-compensate is a citation prohibition in scope of the corpus guard',
-        ],
         'MD-S002-R0016' => [
             'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
             'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
             'basis' => 'citation boundary for a metric set',
         ],
-        'MD-S003-R0002' => [
-            'positive' => 'ReplayVerificationServiceTest::test_verify_replay_resolves_historical_publication_without_current_pointer_fallback',
-            'negative' => 'ReplayVerificationServiceTest::test_verify_replay_maps_unsealed_historical_publication_to_reason_coded_failure',
-            'basis' => 'resolving an explicit immutable publication without current-pointer fallback is the subject of the guard',
-        ],
-        'MD-S003-R0005' => [
-            'positive' => 'SourceObservationAsKnownBoundaryTest::test_as_known_rows_require_both_observation_and_identity_binding_to_be_known_by_cutoff',
-            'negative' => 'SourceObservationAsKnownBoundaryTest::test_zero_row_provider_outage_remains_in_as_known_observation_manifest',
-            'basis' => 'the negative guard keeps a zero-row provider outage in the manifest, so the denominator cannot shrink',
-        ],
-        'MD-S003-R0009' => [
-            'positive' => 'TemporalIdentityLayerContractTest::test_point_in_time_resolution_returns_the_full_identity_for_the_trade_date',
-            'negative' => 'TemporalIdentityLayerContractTest::test_retraction_after_cutoff_does_not_erase_symbol_board_or_provider_mapping_from_as_known_history',
-            'basis' => 'inactive-now/active-then listing remaining in the historical universe is asserted',
-        ],
-        'MD-S003-R0010' => [
-            'positive' => 'TemporalIdentityLayerContractTest::test_point_in_time_resolution_returns_the_full_identity_for_the_trade_date',
-            'negative' => 'TemporalIdentityLayerContractTest::test_retraction_after_cutoff_does_not_erase_symbol_board_or_provider_mapping_from_as_known_history',
-            'basis' => 'symbol change and reuse resolving through stable listing identity is asserted',
-        ],
-        'MD-S003-R0014' => [
-            'positive' => 'ReplayVerificationServiceTest::test_replay_detects_analytical_factor_set_identity_drift',
-            'negative' => 'CanonicalRawImportBoundaryTest::test_provider_adjusted_close_never_reaches_the_canonical_row',
-            'basis' => 'the negative guard proves provider adjusted close never reaches the canonical row',
-        ],
-        'MD-S003-R0011' => [
-            'positive' => 'AsKnownReplayBoundaryTest::test_status_revision_selection_applies_both_effective_and_knowledge_time',
-            'negative' => 'AsKnownReplayBoundaryTest::test_a_calendar_revision_recorded_after_the_cutoff_is_invisible',
-            'basis' => 'status selection is asserted on both sides of effective_from while holding knowledge time fixed, and separate status/calendar cutoff guards exclude revisions recorded after knowledge_cutoff; deleting each effective/recorded predicate made its guard fail',
-        ],
-        'MD-S003-R0021' => [
-            'positive' => 'B18AsKnownSnapshotIsolationTest::test_every_later_revision_kind_is_bound_to_an_executing_guard',
-            'negative' => 'B18AsKnownSnapshotIsolationTest::test_an_incomplete_historical_config_snapshot_is_refused_instead_of_using_live_config',
-            'basis' => 'the contract-derived seven-kind map binds master, event, status, calendar, config, formula and factor to executed cutoff guards; deleting the factor mapping failed the map, and replacing the selected historical formula config with live config failed the snapshot corpus',
-        ],
         'MD-S003-R0022' => [
             'positive' => 'B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot',
             'negative' => 'B18AsKnownSnapshotIsolationTest::test_every_later_revision_kind_is_bound_to_an_executing_guard',
             'basis' => 'one corpus asserts that a declared later cutoff exposes distinct master, status, calendar, config/formula, event and factor revisions while a rerun at the earlier cutoff retains its byte-identical hash and performs no bound-input writes',
-        ],
-        'MD-S005-R0096' => [
-            'positive' => 'B18AsKnownSnapshotIsolationTest::test_every_later_revision_kind_is_bound_to_an_executing_guard',
-            'negative' => 'B18AsKnownSnapshotIsolationTest::test_an_incomplete_historical_config_snapshot_is_refused_instead_of_using_live_config',
-            'basis' => 'the contract-derived seven-root corpus executes exclusion guards for every later revision named by MD-S003; substituting live formula config and removing a root mapping each turned the corpus red',
-        ],
-        'MD-S041-R0032' => [
-            'positive' => 'AsKnownReplayBoundaryTest::test_a_calendar_revision_recorded_after_the_cutoff_is_invisible',
-            'negative' => 'CalendarProvenanceAndStatusTest::test_calendar_revision_conflict_and_incomplete_verification_both_fail_closed',
-            'basis' => 'a future-recorded calendar correction is unavailable at the earlier cutoff, and competing terminal revisions fail closed; widening recorded_at to a future sentinel and bypassing the conflict count each made the guards fail',
-        ],
-        'MD-S050-R0028' => [
-            'positive' => 'AsKnownReplayBoundaryTest::test_status_revision_selection_applies_both_effective_and_knowledge_time',
-            'negative' => 'CalendarProvenanceAndStatusTest::test_same_priority_authoritative_conflict_holds_instead_of_using_recency',
-            'basis' => 'effective_from and recorded_at are independently exercised, a superseding correction deterministically replaces its predecessor, and same-priority status or calendar ambiguity fails closed; deleting either time predicate or either conflict branch made the corresponding guard fail',
         ],
         'MD-S003-R0024' => [
             'positive' => 'ReplayAdmissibilityVerdictStorabilityTest::test_a_relabelled_self_generated_fixture_is_still_refused',
@@ -257,90 +148,20 @@ final class MarketDataReplayVerificationProofBasis
             'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
             'basis' => 'capability-boundary statement about what may be claimed',
         ],
-        'MD-S020-R0014' => [
-            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
-            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
-            'basis' => 'admitting market-data readiness only from qualifying market-data evidence is a citation rule the corpus admissibility guard scans for',
-        ],
-        'MD-S036-R0012' => [
-            'positive' => 'ReplayModeContractTest::test_only_the_two_locked_replay_modes_are_accepted',
-            'negative' => 'OpsCommandSurfaceTest::test_replay_verify_refuses_an_inadmissible_mode_without_attempting_verification',
-            'basis' => 'replay_verify as an allowed request mode is established by the mode guard and its command-surface refusal counterpart',
-        ],
         'MD-S050-R0001' => [
             'positive' => 'ReplayModeContractTest::test_only_the_two_locked_replay_modes_are_accepted',
             'negative' => 'OpsCommandSurfaceTest::test_replay_verify_refuses_an_inadmissible_mode_without_attempting_verification',
             'basis' => 'only the two locked modes accepted is the subject of the guard',
-        ],
-        'MD-S050-R0027' => [
-            'positive' => 'ReplayVerificationServiceTest::test_verify_replay_resolves_historical_publication_without_current_pointer_fallback',
-            'negative' => 'ReplayVerificationServiceTest::test_verify_replay_maps_unsealed_historical_publication_to_reason_coded_failure',
-            'basis' => 'starting from explicit publication identity and never latest/current is exactly what the guard asserts',
-        ],
-        'MD-S050-R0030' => [
-            'positive' => 'ReplayEvidenceExportServiceTest::test_export_replay_evidence_writes_replay_result_and_reason_code_summary',
-            'negative' => 'ReplayComparisonDetectsDivergenceTest::test_missing_expected_proof_is_reported_rather_than_ignored',
-            'basis' => 'the divergence guard executes a comparison that diverges and reports FAIL',
-        ],
-        'MD-S050-R0031' => [
-            'positive' => 'ReplayEvidenceExportServiceTest::test_export_replay_evidence_writes_replay_result_and_reason_code_summary',
-            'negative' => 'ReplayComparisonDetectsDivergenceTest::test_missing_expected_proof_is_reported_rather_than_ignored',
-            'basis' => 'missing expected proof is reported rather than ignored, which is the BLOCKED semantics',
-        ],
-        'MD-S050-R0033' => [
-            'positive' => 'ReplayAdmissibilityVerdictStorabilityTest::test_a_relabelled_self_generated_fixture_is_still_refused',
-            'negative' => 'ReplayAdmissibilityVerdictStorabilityTest::test_the_inadmissible_verdict_is_never_counted_as_a_pass',
-            'basis' => 'exit status or row counts alone is not replay proof; the inadmissible verdict is never counted as a pass',
-        ],
-        'MD-S050-R0036' => [
-            'positive' => 'ReplayModeContractTest::test_only_the_two_locked_replay_modes_are_accepted',
-            'negative' => 'OpsCommandSurfaceTest::test_replay_verify_refuses_an_inadmissible_mode_without_attempting_verification',
-            'basis' => 'an unmoded result is refused rather than defaulted, which the mode guard establishes',
-        ],
-        'MD-S050-R0038' => [
-            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
-            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
-            'basis' => 'citation boundary for publication-replay results',
-        ],
-        'MD-S050-R0039' => [
-            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
-            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
-            'basis' => 'citation boundary: volume of PASS does not substitute',
         ],
         'MD-S050-R0045' => [
             'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
             'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
             'basis' => 'capability boundary: replay cannot prove value correctness',
         ],
-        'MD-S050-R0046' => [
-            'positive' => 'SourceObservationAsKnownBoundaryTest::test_as_known_rows_require_both_observation_and_identity_binding_to_be_known_by_cutoff',
-            'negative' => 'SourceObservationAsKnownBoundaryTest::test_zero_row_provider_outage_remains_in_as_known_observation_manifest',
-            'basis' => 'that replay cannot prove source faithfulness is a capability boundary the observation guard framing establishes',
-        ],
         'MD-S050-R0050' => [
             'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
             'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
             'basis' => 'explicit admissibility rule for a replay PASS',
-        ],
-        'MD-S050-R0051' => [
-            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
-            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
-            'basis' => 'explicit prohibition on what a PASS may close',
-        ],
-        'MD-S050-R0052' => [
-            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
-            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
-            'basis' => 'names the admissible alternative evidence; the corpus guard forbids the substitution',
-        ],
-        'MD-S050-R0053' => [
-            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
-            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
-            'basis' => 'BLOCKED is not a weaker PASS - a citation rule',
-        ],
-        'MD-S055-R0025' => [
-            'positive' => 'AsKnownReplayBoundaryTest::test_identity_recorded_after_the_cutoff_is_invisible',
-            'negative' => 'AsKnownReplayBoundaryTest::test_an_as_known_config_resolution_refuses_rather_than_inventing_one',
-            'basis' => 'the mapping effective on T with as-known limited to revisions known by the cutoff is exactly what the identity-cutoff guard asserts',
         ],
 
         // ---- MD-S050 "Required fixtures include" -- the eight named anti-survivorship cases.
@@ -364,25 +185,10 @@ final class MarketDataReplayVerificationProofBasis
             'negative' => 'B18AntiSurvivorshipFixtureCorpusTest::test_every_named_fixture_guard_exists_and_is_executable',
             'basis' => 'the same symbol text resolves to two different listings on either side of the handover, asserted through both the provider mapping and the projected universe so the symbol effective interval is load-bearing, with exactly one listing holding the text on each date',
         ],
-        'MD-S050-R0022' => [
-            'positive' => 'AsKnownReplayBoundaryTest::test_a_calendar_revision_recorded_after_the_cutoff_is_invisible',
-            'negative' => 'B18AntiSurvivorshipFixtureCorpusTest::test_every_named_fixture_guard_exists_and_is_executable',
-            'basis' => 'a calendar fact recorded after the cutoff is asserted invisible to the as-known read and visible without one, and the corpus guard asserts this fixture still exists',
-        ],
-        'MD-S050-R0023' => [
-            'positive' => 'AsKnownReplayBoundaryTest::test_a_corporate_action_recorded_after_the_cutoff_is_invisible',
-            'negative' => 'B18AntiSurvivorshipFixtureCorpusTest::test_every_named_fixture_guard_exists_and_is_executable',
-            'basis' => 'a corporate action recorded after the cutoff is asserted invisible to the as-known read, with a second assertion proving the row exists so a filter hiding everything cannot masquerade as a pass',
-        ],
         'MD-S050-R0024' => [
             'positive' => 'AsKnownReplayBoundaryTest::test_a_configuration_recorded_after_the_cutoff_is_invisible_and_none_is_created',
             'negative' => 'B18AntiSurvivorshipFixtureCorpusTest::test_every_named_fixture_guard_exists_and_is_executable',
             'basis' => 'a configuration recorded after the cutoff is asserted invisible and no snapshot is invented in its place',
-        ],
-        'MD-S050-R0025' => [
-            'positive' => 'ReplayVerificationServiceTest::test_verify_replay_resolves_historical_publication_without_current_pointer_fallback',
-            'negative' => 'B18AntiSurvivorshipFixtureCorpusTest::test_every_named_fixture_guard_exists_and_is_executable',
-            'basis' => 'publication 144 version 4 is replayed while it is not the current publication, and the result records HISTORICAL_PUBLICATION_AUDIT with current_pointer_required false, so the original is resolved rather than the corrected current one',
         ],
         'MD-S050-R0026' => [
             'positive' => 'SourceObservationAsKnownBoundaryTest::test_zero_row_provider_outage_remains_in_as_known_observation_manifest',
@@ -396,21 +202,6 @@ final class MarketDataReplayVerificationProofBasis
         // clock gives equal fields and different bytes, and it is the bytes that get hashed.
         // Probes: injecting microtime into the replay result turned it red, and neutralising the
         // changed-input fixture turned the negative guard red.
-        'MD-S019-R0073' => [
-            'positive' => 'B18ReplayRerunDeterminismTest::test_an_unchanged_rerun_produces_byte_identical_artifacts',
-            'negative' => 'B18ReplayRerunDeterminismTest::test_a_changed_bound_input_changes_the_bytes',
-            'basis' => 'the consequent of the MD-S019 bound-input conditional: two exports of the same replay are asserted byte-identical across every artifact by sha256, and the negative guard asserts replay_result.json changes when a bound input changes, so constant output cannot satisfy it',
-        ],
-        'MD-S003-R0004' => [
-            'positive' => 'B18ReplayRerunDeterminismTest::test_an_unchanged_rerun_produces_byte_identical_artifacts',
-            'negative' => 'B18ReplayRerunDeterminismTest::test_a_changed_bound_input_changes_the_bytes',
-            'basis' => 'an unchanged rerun is asserted byte-identical, and a separate test passes the publication and correction repositories as mocks with no expectations so any write to either fails - the fake-correction half of the predicate',
-        ],
-        'MD-S005-R0095' => [
-            'positive' => 'B18ReplayRerunDeterminismTest::test_an_unchanged_rerun_produces_byte_identical_artifacts',
-            'negative' => 'B18ReplayRerunDeterminismTest::test_a_changed_bound_input_changes_the_bytes',
-            'basis' => 'exact publication replay is asserted to reproduce the same hashes: the artifacts carrying bars, indicators and eligibility batch hashes are byte-identical across two runs of the same fixture',
-        ],
 
         // ---- MD-S003 "Required scenario families" / degraded acquisition. These are MD-B18's
         // own replay-suite obligations: the heading makes the obligation "a scenario proving it
@@ -486,26 +277,6 @@ final class MarketDataReplayVerificationProofBasis
         // ---- Replay comparison exhaustiveness and mode/import-promote policy. Two of these are code
         // changes rather than guards: appendImportPromotionPolicyMismatches() had no implementation at all,
         // and upsertMetric was defaulting a missing replay mode.
-        'MD-S050-R0029' => [
-            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_named_assertion_class_denies_pass',
-            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_the_unperturbed_fixture_passes',
-            'basis' => 'new. One baseline fixture that matches, then one perturbation per class the contract names -- a value (bars_rows_written), a null reason (final_reason_code), a state (publishability, terminal, coverage gate), a lineage (publishing run, publication version), a content hash (all three batch hashes) and the seal -- each asserted to turn PASS into a reason-coded MISMATCH, so a class that is not compared shows up as a perturbation that still passes. A separate test asserts the perturbation table covers every class MD-S050-R0029 lists, so exhaustiveness is not proven over whatever subset happened to be written down; the manifest half is a fixture whose manifest declares a file it does not carry, refused outright. The negative guard is the unperturbed control, without which each perturbation could be failing for an unrelated reason.',
-        ],
-        'MD-S036-R0007' => [
-            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_an_import_only_expectation_is_not_satisfied_by_a_run_that_promoted',
-            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_an_import_only_expectation_against_an_unpromoted_run_raises_no_promotion_mismatch',
-            'basis' => 'request mode, source mode and publication state are each proven load-bearing by the perturbation table, and import status, promote status and pointer switch status by the import-only fixture: a fixture declaring request_mode import_only against a run that promoted is asserted to raise REPLAY_IMPORT_PROMOTE_MISMATCH naming import_only_promote_status_policy and import_only_pointer_switch_policy. The negative guard runs the same import-only expectation against a run that did not promote and asserts no promotion mismatch, so the rule is not satisfied by failing every import-only fixture.',
-        ],
-        'MD-S036-R0031' => [
-            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_an_import_only_expectation_is_not_satisfied_by_a_run_that_promoted',
-            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_an_import_only_expectation_against_an_unpromoted_run_raises_no_promotion_mismatch',
-            'basis' => 'code change, not only a guard. The contract sentence is unexpected import promotion must be a replay mismatch, not a silent pass, and it had no implementation: compareField() skips a null expectation and the fixture schema leaves import_status, promote_status, promoted and pointer_switched optional, so a fixture declaring request_mode import_only had its promotion state checked by nothing. REPLAY_IMPORT_PROMOTE_MISMATCH was a registered reason code with no path able to emit it. ReplayVerificationService::appendImportPromotionPolicyMismatches() was added so that declaring the request mode makes all three promotion signals load-bearing. Probe: removing the call turned the positive red while everything else stayed green.',
-        ],
-        'MD-S040-R0080' => [
-            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_manual_file_run_readable_without_a_coverage_pass_is_a_mismatch',
-            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_the_unperturbed_fixture_passes',
-            'basis' => 'the prohibition rather than the exhibit: a manual_file run whose import succeeded and which claims READABLE while its coverage gate did not pass is asserted to raise manual_file_readable_coverage_policy and a FAIL verdict, so import success alone cannot produce readability. The negative guard is the same manual_file fixture with a passing coverage gate reaching PASS, so the rule is not satisfied by refusing every manual_file run. Probe: disabling the readability policy condition in appendManualFilePolicyMismatches turned the positive red.',
-        ],
         'MD-S085-R0452' => [
             'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_manual_file_run_readable_without_a_coverage_pass_is_a_mismatch',
             'negative' => 'B18ReplayComparisonExhaustivenessTest::test_the_unperturbed_fixture_passes',
@@ -527,11 +298,6 @@ final class MarketDataReplayVerificationProofBasis
 
         // ---- Blocked-not-passed. Both rest on the same admissibility refusal, asserted from two sides:
         // the verdict it produces and the fallback it declines to make.
-        'MD-S050-R0016' => [
-            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_publication_with_no_configuration_snapshot_is_blocked_rather_than_passed',
-            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_a_blocked_replay_does_not_fall_back_to_the_current_publication',
-            'basis' => 'both halves executed against the real ReplayVerificationService. A run and publication carrying no config snapshot are asserted to yield replay_status BLOCKED with comparison_result NOT_ADMISSIBLE and a summary naming REPLAY_CONFIG_UNBOUND -- BLOCKED rather than FAIL, since FAIL would say the comparison ran and disagreed. The second half is the one the predicate is really about: the evidence repository is asserted to be asked only for replay_fixture_explicit_publication and never for a current-pointer resolution, so a missing input is a refusal to proceed rather than permission to answer from latest state. A third guard asserts the blocked outcome is still persisted with admission_state NOT_ADMISSIBLE and its mode, so a block cannot vanish from the corpus. Probe: disabling the CONFIG_UNBOUND admissibility rule turned all three red.',
-        ],
         'MD-S082-R0015' => [
             'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_publication_with_no_configuration_snapshot_is_blocked_rather_than_passed',
             'negative' => 'B18ReplayComparisonExhaustivenessTest::test_the_unperturbed_fixture_passes',
@@ -540,29 +306,9 @@ final class MarketDataReplayVerificationProofBasis
 
         // ---- MD-S050-R0002 and what it unlocked. The frozen-input comparison did not exist: the identities
         // were recorded into every result and compared by nothing.
-        'MD-S050-R0002' => [
-            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass',
-            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_a_fixture_declaring_every_frozen_input_correctly_still_passes',
-            'basis' => 'code change, not only a guard. None of the eleven frozen-input identities was compared: verifyRunAgainstFixture wrote them into the stored result and compareExpectedAndActual never looked, and the fixture schema had no expected side at all, so a replay resolving today\'s indicator registry, today\'s build identity, or a different temporal identity than the one frozen with the publication reported MATCH. Added ReplayVerificationService::actualBoundInputContext() as the single source for the recorded and the compared value, an expected_bound_input_context block read from the fixture, and a per-field comparison over BOUND_INPUT_FIELDS. The guard declares all eleven at the values the replay resolved and perturbs one at a time, asserting the verdict is denied and the mismatch names bound_input_<field>; a companion test parses the MD-S050 publication-replay sentence and asserts the reviewed map covers exactly the inputs it names, so an input added to the contract with no field behind it fails. The negative guard declares all eleven correctly and still reaches PASS, so the rule is not satisfied by rejecting any fixture that carries the block. Reason codes are the registry as it stands -- config identity has its own, the rest fall through to REPLAY_NON_DETERMINISTIC_OUTPUT, which the registry defines as a deterministic-field mismatch with no more specific code; a dedicated REPLAY_BOUND_INPUT_MISMATCH was written and then reverted because Reason_Codes_Registry.md is STRATEGY/CONTROLLED_REVISION and adding vocabulary so an implementation change can emit it is not an implementation decision. Probe: comparing an empty field list turned exactly the eleven perturbations red and nothing else.',
-        ],
-        'MD-S003-R0003' => [
-            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_the_exact_verification_map_names_exactly_what_the_contract_names',
-            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_every_guard_the_exact_verification_map_names_exists',
-            'basis' => 'the eleven items MD-S003 names for exact publication verification -- frozen observations, temporal revisions, config, factors, formulas, artifacts, hashes, manifest, seal, reasons, terminal state -- are each mapped to an executing guard in this class, and the map is checked against the contract line parsed from the document rather than transcribed, so an item added with nothing verifying it fails. Observations, temporal revisions, config, factors and formulas are covered by the frozen-input perturbations added for MD-S050-R0002; artifacts, hashes, seal, reasons and terminal state by the assertion-class perturbations; manifest by the fixture whose manifest declares a file it does not carry, which is refused outright. The negative guard asserts every guard the map names still exists, so a rename empties nothing silently. Probe: removing seal from the map turned the positive red.',
-        ],
-        'MD-S019-R0074' => [
-            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass',
-            'negative' => 'B18AsKnownTemporalSequenceTest::test_a_suspension_lifted_later_is_still_suspended_as_known_before_the_lift_was_recorded',
-            'basis' => 'the predicate has three clauses and each is executed. Publication replay freezes the exact identities: the eleven frozen inputs are now compared field by field, so a replay running against any identity other than the one the fixture records as frozen is denied -- that is the clause that had no enforcement at all before MD-S050-R0002. As-known replay resolves only revisions known by the declared cutoff: the negative guard reads one trade date at two cutoffs and with none, and the answer changes as knowledge accrues rather than being fixed or walled off. Current state must not leak into either mode: in publication replay a divergence toward the current registry, build or serialization identity is exactly what the frozen-input comparison catches, and in as-known mode the same guard asserts the current answer and the as-known answer genuinely differ on the fixture, so a current-state substitution is detectable rather than coincidentally right.',
-        ],
 
         // ---- MD-S050-R0017, the anti-future list. Two of its nine items were covered only by a reflection
         // check that a cutoff parameter exists, which an ignored parameter passes.
-        'MD-S050-R0017' => [
-            'positive' => 'B18AntiFutureResolutionTest::test_the_anti_future_map_names_exactly_what_the_contract_names',
-            'negative' => 'B18AntiFutureResolutionTest::test_every_anti_future_guard_exists_and_is_executable',
-            'basis' => 'the nine items the anti-future sentence names are each bound to a guard that executes the prohibition, and the map is checked against the sentence parsed from Replay_Verification_Contract_LOCKED.md rather than transcribed, so an item added with nothing behind it fails. Seven already had executing guards across B18AntiSurvivorshipFixtureCorpusTest, AsKnownReplayBoundaryTest and B18AsKnownSnapshotIsolationTest. Two did not and are new: current sector and latest provider mapping were covered only by test_every_temporal_root_accepts_a_knowledge_cutoff, which reflects over the method signature -- a cutoff parameter that is accepted and ignored passes it. Both now run against real repositories: a sector reclassification effective from the dataset start but recorded in May resolves A1 at an April cutoff and B2 without one; a provider remapping modelled as the schema expects, by retracting the original when the replacement is learned, resolves ANTIF.JK at the April cutoff and ANTIF.KL without one, exercising both the recorded_at and retracted_at knowledge-time filters. Two live mappings over one trade date was the fixture\'s first shape and the resolver refused it as PROVIDER_SYMBOL_MAPPING_AMBIGUOUS, which is the fail-closed rule rather than a fixture error. Probes: dropping the sector recorded_at filter turned the sector guard red; widening the provider mapping recorded_at bound turned the mapping guard red, failing closed on ambiguity rather than silently serving the later mapping.',
-        ],
 
         // ---- MD-S050-R0032. The pre-existing evidence guard only ever exported replays that matched, so the
         // mismatch and distribution halves of the sentence had nothing to survive.
@@ -581,90 +327,25 @@ final class MarketDataReplayVerificationProofBasis
         ],
 
         // ---- MD-S019-R0009. Invariant 1 is a conjunction over three hashes; the rerun guard perturbed one.
-        'MD-S019-R0009' => [
-            'positive' => 'B18ReplayRerunDeterminismTest::test_each_batch_hash_is_individually_load_bearing_across_a_rerun',
-            'negative' => 'B18ReplayRerunDeterminismTest::test_an_unchanged_rerun_produces_byte_identical_artifacts',
-            'basis' => 'the antecedent is Invariant 1 -- identical semantic content and bindings imply bars_batch_hash, indicators_batch_hash AND eligibility_batch_hash are each identical -- and R0009 adds that it holds across reruns and replay. The pre-existing rerun guard proves the identical direction for the whole artifact set at once and perturbs only bars_batch_hash, so it does not establish that the three are individually load-bearing, which is what makes the conjunction a claim rather than a list. Each of the three is now perturbed separately across a real double export and asserted to move replay_result.json, with the table checked against the Invariant 1 block parsed from Determinism_Invariants_LOCKED.md so a fourth hash added there fails rather than going unchecked. The negative guard is the unchanged rerun asserting byte-identical artifacts by sha256, so the pair is not satisfied by an exporter whose output varies freely. Probe: the eligibility hash reaches replay_result.json by four independent paths -- the top-level field, the replay-metric publication artifact lineage, the run-derived lineage, and the resolution-context lineage -- and neutering fewer than all four left the guard green; constanting all four turned exactly the eligibility data set red. Dropping indicators from the reviewed table turned the contract-map guard red.',
-        ],
 
         // ---- MD-S003-R0023, the per-run recording obligation.
-        'MD-S003-R0023' => [
-            'positive' => 'B18ReplayEvidenceSelfExplanationTest::test_every_item_the_contract_requires_recording_is_present',
-            'negative' => 'B18ReplayEvidenceSelfExplanationTest::test_every_frozen_identity_is_recorded_individually',
-            'basis' => 'the ten items of the MD-S003 per-run evidence line are each mapped to the exported path that records them, with the map checked against the line parsed from the document so an item added there fails rather than going unrecorded. Nine are asserted on a real export of a failed publication replay; the knowledge cutoff is asserted on an AS_KNOWN export instead, because a PUBLICATION_EXACT result records it as null by design -- it is pinned to an immutable publication rather than to a moment of knowledge, which is the contract\'s own two-mode split rather than a gap. The negative guard is the one that makes all in all frozen revision/snapshot IDs load-bearing: the twelve identities are asserted present and non-empty individually, so a bound-input block carrying one identity cannot satisfy a check that the block exists. Probes: removing formula_registry_hash from the recorded block turned the individual-identity guard red; dropping the knowledge cutoff from the reviewed map turned the contract-map guard red.',
-        ],
 
         // ---- MD-S004 point-in-time input contract. Both rows were PARTIAL because one member of each list
         // had a guard and the binding was filed as though that settled the rest.
-        'MD-S004-R0003' => [
-            'positive' => 'B18PointInTimeInputContractTest::test_the_no_backfill_map_names_exactly_what_the_contract_names',
-            'negative' => 'B18PointInTimeInputContractTest::test_every_guard_both_maps_name_exists_and_is_executable',
-            'basis' => 'the five things today may not backfill into an earlier decision are each bound to a guard that executes the prohibition against a real surface: universe and symbol to the anti-survivorship corpus, sector to the knowledge-time reclassification guard added for MD-S050-R0017, action verification to the as-known corporate-action boundary, and current publication to the blocked replay that is asserted to resolve only the fixture-named publication and never a current-pointer selector. The map is checked against the sentence parsed from Point_In_Time_Backtest_Input_Contract_LOCKED.md rather than transcribed, so a member added there fails. The recorded basis for this row was that no-backfill was asserted for identity only; the other four now execute. A further guard asserts the eight members across this row and MD-S004-R0005 resolve to at least five distinct guards, so a family cannot be bound as though it were a predicate. Probes: dropping sector from the map turned the contract-map guard red; renaming a named guard turned the existence guard red.',
-        ],
-        'MD-S004-R0005' => [
-            'positive' => 'B18PointInTimeInputContractTest::test_the_survivorship_map_names_exactly_what_the_contract_names',
-            'negative' => 'B18PointInTimeInputContractTest::test_the_members_are_not_all_bound_to_a_single_guard',
-            'basis' => 'three claims, parsed as three sentences rather than a comma list, each bound to an executing guard: inactive/delisted securities remaining present to the delisted-listing universe fixture, symbol changes and reuse resolving through listing IDs to the reused-symbol-text fixture, and late corrections producing a distinct later-known dataset without rewriting the earlier one to the as-known snapshot guard, which asserts the earlier cutoff still produces a byte-identical snapshot hash after a later cutoff has exposed new revisions. The negative guard is the anti-collapse check: eight members across this row and MD-S004-R0003 must resolve to at least five distinct guards, which is the shape F-MD-B19-A001-002 records and the reason this row was PARTIAL. Probe: renaming a named guard turned the existence guard red.',
-        ],
 
         // ---- MD-S004-R0002, the cutoff-bounded input set.
-        'MD-S004-R0002' => [
-            'positive' => 'B18PointInTimeInputContractTest::test_the_cutoff_bounded_input_map_names_exactly_what_the_contract_names',
-            'negative' => 'B18PointInTimeInputContractTest::test_every_cutoff_bounded_input_guard_exists',
-            'basis' => 'the eight input kinds a decision may contain -- observations, identity, calendar, status, event, factor, config, formula -- are each bound to a guard that executes the cutoff bound against a real repository, and the map is checked against the knowledge-time sentence parsed from Point_In_Time_Backtest_Input_Contract_LOCKED.md so a kind added there fails. The recorded basis for this row was that cutoff-bounded inputs were asserted for identity only; calendar and status are now the knowledge-time sequence guards written for MD-S041-R0032 and MD-S058-R0069, which prove the cutoff is a filter rather than a wall in both directions, and factor and formula are the as-known snapshot guard, which was rewritten to use real repositories under F-MD-B18-A002-001 after its mocks were found to be making the cutoff decision themselves. A cutoff honoured by seven of eight kinds leaks, which is why the existence guard is the negative rather than a convenience. Probe: dropping status from the map turned the contract-map guard red.',
-        ],
 
         // ---- MD-S004-R0004, what every row and export binds.
-        'MD-S004-R0004' => [
-            'positive' => 'B18ReplayEvidenceSelfExplanationTest::test_every_required_binding_is_present_in_the_export',
-            'negative' => 'B18ReplayEvidenceSelfExplanationTest::test_the_availability_timestamp_is_a_separate_field_from_the_trade_date',
-            'basis' => 'the eight bindings the required-input-identity sentence names are each mapped to an exported path and asserted present in a real export, with the map checked against the sentence parsed from Point_In_Time_Backtest_Input_Contract_LOCKED.md so a binding added there fails. The recorded basis for this row was that listing identity, effective date and read-model binding were not enforced: listing identity is now the temporal identity hash in the bound-input block, the effective date is trade_date_effective, and read_model_version is asserted individually rather than as part of a block. The knowledge cutoff is taken from an AS_KNOWN export for the same reason as MD-S003-R0023 -- a publication replay is pinned to an immutable publication rather than a moment of knowledge and records it null by design. The negative guard is the final clause of the predicate rather than a convenience: the availability timestamp and the market trade date must be separate fields, since collapsing them is how a backtest silently gains foresight. Probes: removing read_model_version from the export turned the binding guard red; dropping lineage from the reviewed map turned the contract-map guard red.',
-        ],
 
         // ---- MD-S002 release-candidate criteria. These are family-level claims, so a family-level corpus
         // guard is semantically identical to the predicate -- the opposite of the case F-MD-B19-A001-002
         // records, where the predicate was one behaviour. MD-S002-R0004 is deliberately not here: runtime,
         // locale and concurrency determinism needs more than one runtime and this environment has one.
-        'MD-S002-R0003' => [
-            'positive' => 'B18ReleaseCandidateCriteriaTest::test_the_exact_publication_mismatch_corpus_is_complete',
-            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_the_unperturbed_fixture_passes',
-            'basis' => 'the eight mismatch classes the criterion names -- value, null-reason, lineage, config, factor, hash, seal, publication -- are each perturbed individually against a real publication fixture and asserted to deny PASS, by the exhaustiveness table built for MD-S050-R0029 and MD-S050-R0002, and a companion test asserts the table covers every class the contract names. This criterion is a family-level claim, so a family-level corpus guard is semantically identical to it, which is the distinction F-MD-B19-A001-002 turns on: a family guard is not proof when the predicate is one behaviour, and is proof when the predicate is the family. The negative guard is the unperturbed fixture reaching PASS, so zero unexplained mismatches is not satisfied by a comparison that fails everything. Probe: renaming a named guard turned the per-criterion corpus test red on its own, not only the shared existence test.',
-        ],
-        'MD-S002-R0005' => [
-            'positive' => 'B18ReleaseCandidateCriteriaTest::test_the_anti_survivorship_and_as_known_isolation_corpus_is_complete',
-            'negative' => 'B18ReleaseCandidateCriteriaTest::test_every_guard_named_by_any_criterion_exists',
-            'basis' => 'both corpora the criterion names are enumerated from their own contracts and asserted complete and executable: the eight MD-S050 anti-survivorship fixtures through their contract-parsed map, the seven MD-S003 later-revision kinds through theirs, and the nine MD-S050 anti-future items through the map added for MD-S050-R0017. The recorded basis for this row was that the guard executed identity-cutoff invisibility only; the corpus now spans identity, symbol, symbol reuse, calendar, status, event, factor, config, sector and provider mapping. That every member is green is established by the suite run recorded with the stage evidence rather than by a test asserting it about itself, which would be circular. Probe: rewording a criterion away from the contract turned the map guard red; renaming a member guard turned both the corpus test and the existence test red.',
-        ],
-        'MD-S002-R0006' => [
-            'positive' => 'B18ReleaseCandidateCriteriaTest::test_the_degraded_and_negative_corpus_is_complete',
-            'negative' => 'EmptyDatasetFailSafeTest::test_no_fallback_fails_the_run_outright',
-            'basis' => 'the degraded corpus is enumerated and asserted executable: the four MD-S003 observation defects with the outcome each proves, the held-versus-failed pair that produces the expected states through the real FinalizeDecisionService, and the provider outage that must remain in the as-known observation manifest -- which is the denominator-shrinkage half, since an outage that vanished would shrink the expected count rather than being reported. The recorded basis was that one degraded case was proven to stop with an error; the corpus now covers held, failed and unavailable outcomes and both permitted defect outcomes. The negative guard fails a run outright when no fallback exists, so producing expected states is not satisfied by an implementation that always holds. Probe: renaming a member guard turned the corpus test red.',
-        ],
-        'MD-S002-R0007' => [
-            'positive' => 'B18ReleaseCandidateCriteriaTest::test_the_independent_oracle_corpus_is_complete',
-            'negative' => 'B18LongChainWilderAtrOracleTest::test_the_fixture_true_range_is_not_constant',
-            'basis' => 'both halves of the criterion now have executed oracle comparisons. The long-chain ATR half is the 200-session varied-true-range chain compared against a recursion transcribed from EOD_Indicators_Formula_Spec.md, plus the correction thirty sessions back asserted at its exact Wilder-decayed magnitude -- written for MD-S003-R0015 because the pre-existing ATR oracle ran on a constant-true-range ramp and could not detect a wrong recursion. The corporate-action half is the verified-revision factor activation and the structural OHLC coherence guards written for MD-S003-R0012 and R0013. The negative guard asserts the ATR fixture\'s true range genuinely varies, which is what makes the long chain an oracle comparison rather than a restatement of the constant case. Probe: renaming an oracle guard turned the corpus test red independently of the shared existence test.',
-        ],
-        'MD-S002-R0008' => [
-            'positive' => 'B18ReleaseCandidateCriteriaTest::test_the_corrected_publication_corpus_is_complete',
-            'negative' => 'PublicationSealPointerLifecycleTest::test_the_pointer_table_structurally_refuses_a_second_current_row',
-            'basis' => 'preserving predecessors is the superseded publication keeping its own rows unchanged and being refused for discard with SEALED_PUBLICATION_IMMUTABLE, on a fixture carrying two sealed publications for one date. Switching atomically is the pointer table refusing a second current row for a date by primary key, so no window exists in which two publications are current, together with the read path returning nothing rather than stale rows when the projection disagrees with the pointer -- a partial switch is therefore visible as a refusal instead of as whichever version a reader reached first. Probe: renaming a member guard turned the corpus test red.',
-        ],
 
         // ---- MD-S004-R0008, the acceptance fixture floor.
-        'MD-S004-R0008' => [
-            'positive' => 'B18PointInTimeInputContractTest::test_the_acceptance_fixture_map_names_exactly_what_the_contract_names',
-            'negative' => 'B18PointInTimeInputContractTest::test_every_acceptance_fixture_guard_exists_and_they_are_distinct',
-            'basis' => 'the seven acceptance fixtures the contract requires at minimum are each bound to a guard that executes that scenario against a real surface: the delisted-listing universe fixture, the reused-symbol-text fixture, the as-known corporate-action boundary, the knowledge-time suspension sequence, the no-fallback run that fails outright, the fallback run that holds with the prior effective date, and the two-publication read-path fixture. The map is parsed from the acceptance-fixtures sentence rather than transcribed, so a fixture added there fails. The recorded basis was that the guard executed none of the seven as fixtures. The negative guard is the anti-collapse check as well as the existence check: at minimum prove is a floor over seven distinct scenarios, so they are asserted to resolve to at least six distinct guards -- a binding pointing them all at one test would satisfy the map while proving one of them. Probe: dropping explicit stale fallback from the map turned the contract-map guard red.',
-        ],
 
         // ---- MD-S082-R0218. Two sentences, one guard each; the registry-leak half only became provable
         // once the frozen-input comparison existed.
-        'MD-S082-R0218' => [
-            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass',
-            'negative' => 'B18AsKnownModeIsolationTest::test_an_as_known_result_claims_no_publication_and_records_its_own_mode',
-            'basis' => 'two sentences, one guard each. Current registry state must never leak into historical replay: formula_registry_hash and reason_registry_hash are two of the eleven frozen inputs now compared field by field, so a publication replay resolving today\'s indicator registry or today\'s reason registry instead of the one frozen with the publication is denied and the mismatch names which registry moved. That comparison did not exist before MD-S050-R0002 -- the identities were written into every stored result and compared by nothing -- which is why this row\'s recorded basis said registry state generally was not asserted. Alternate-scenario runs are explicitly labeled and cannot impersonate the historical publication: an as-known result is asserted end to end to record AS_KNOWN and its cutoff, to carry a null publication_id, and to leave the sealed publication, its pointer and its history rows byte-identical while producing a replay row of its own. Probes: comparing an empty frozen-input list turned the registry perturbations red along with the other nine; making the as-known metric carry the run publication id turned the labelling guard red.',
-        ],
 
         // ---- MD-S082-R0216/R0217. Both carry the same lead sentence about operational config selection and
         // differ only in which replay-mode bullet follows; the lead sentence had no guard on either row.
@@ -681,25 +362,44 @@ final class MarketDataReplayVerificationProofBasis
 
         // ---- MD-S065-R0003. The rerun rule is the effective-time selection proven for MD-S082-R0216; the
         // contract-change rule is a distinct identity for a changed configuration and an untouched old one.
-        'MD-S065-R0003' => [
-            'positive' => 'B18ConfigEffectiveTimeSelectionTest::test_an_output_affecting_change_produces_a_new_configuration_identity',
-            'negative' => 'B18ConfigEffectiveTimeSelectionTest::test_an_unchanged_configuration_does_not_mint_a_new_contract',
-            'basis' => 'two claims, both executed against the real MarketDataConfigSnapshotRepository. An output-affecting config change is treated as a contract change: changing the ROC lookback, which changes a published indicator value, is asserted to produce a distinct config_hash and a new snapshot id, and the previous snapshot row is asserted byte-identical afterwards -- so anything already citing the old identity still means what it meant rather than silently acquiring the new semantics. Reruns use the registry version effective for the requested trade date: that is the effective-time selection proven for MD-S082-R0216, where two approved configurations govern from 1 March and 1 April and a run for 24 March selects the March one rather than the newest. The negative guard is the one that makes the identity claim mean anything: resolving twice without changing the configuration reuses the governing snapshot rather than minting a contract per run, so a new identity signals that the configuration changed and not that a run happened. Probe: making the resolver reuse the governing snapshot regardless of hash turned the positive red.',
-        ],
 
         // ---- MD-S082-R0224/R0225, before-seal validation items 5 and 6. They were not in the same state:
         // item 5 was already enforced by a chain and needed proving, item 6 was enforced by nothing.
-        'MD-S082-R0224' => [
-            'positive' => 'B18BeforeSealValidationTest::test_a_candidate_without_its_lineage_binding_cannot_seal',
-            'negative' => 'B18BeforeSealValidationTest::test_a_completely_bound_candidate_seals',
-            'basis' => 'the property is enforced before seal by a chain, and the guard proves the chain rather than adding a check to it. The load-bearing link is asserted directly: deleting the publication lineage binding makes sealCandidatePublication refuse with DATASET_MANIFEST_INVALID naming publication_lineage_binding, and the candidate stays UNSEALED and therefore correctable. The other end is asserted too: PublicationGovernanceBindingService, the only writer of that binding, refuses with CONFIG_SNAPSHOT_NOT_FOUND for a run whose configuration snapshot does not exist, so the binding cannot come into being for an unbound configuration. A sealed publication therefore always carries a frozen configuration and its replay never asks the live environment what the configuration was. A separate guard shows why before seal is the operative word: after sealing, assertPublicationMutable refuses with SEALED_PUBLICATION_IMMUTABLE, so a binding missing at seal can never be added. The negative guard is the completely bound candidate sealing, so the refusals are caused by the one thing each test removes rather than by an incomplete fixture. A null check was written into the seal path first and then removed: its red state could only be produced by hand-writing a lineage row that production cannot emit, and a guard whose failure mode is unreachable proves nothing.',
-        ],
         'MD-S082-R0225' => [
             'positive' => 'B18BeforeSealValidationTest::test_a_configuration_recorded_after_the_run_cutoff_is_refused_before_seal',
             'negative' => 'B18BeforeSealValidationTest::test_a_configuration_recorded_exactly_at_the_cutoff_still_seals',
             'basis' => 'code change. Nothing anywhere compared the frozen configuration\'s recorded_at against the run\'s knowledge_cutoff_at, so a publication could freeze a configuration recorded after its own knowledge boundary -- an ordinary outcome for a run whose cutoff is 18:00 that resolves configuration at 18:05. As-known replay at that cutoff can never see it: resolveAsKnown either resolves an older snapshot, silently a different configuration than the one frozen, or refuses with CONFIG_SNAPSHOT_NOT_KNOWN_AT_CUTOFF, so the publication is unreproducible the moment it is sealed. EodPublicationRepository::assertReplayDeterminismBeforeSeal() was added for that one comparison and runs inside sealCandidatePublication(); the refusal names both the revision time and the cutoff it was measured against, and the candidate stays UNSEALED. The negative guard pins the boundary as inclusive -- a configuration recorded exactly at the cutoff was knowable and seals -- so the rule is not satisfied by refusing anything recorded near the cutoff. The other way the boundary goes missing, a run with no cutoff at all, is asserted at its real enforcement point: the lineage binder refuses with RUN_KNOWLEDGE_CUTOFF_MISSING. Probes: removing the call from the seal path turned the positive red; changing the comparison to >= turned the negative red.',
         ],
 
+
+        // ---- MD-S003-R0025. The mirror half was proven and the MariaDB half by nothing: every DB-backed
+        // guard swaps to an in-memory SQLite connection. Both substrates now run the six required families.
+
+
+
+        // ---- MD-S050-R0056, under D-MD-B18-A002-003: MD-B18 primary, MD-B22 supporting for the relock act.
+        'MD-S050-R0056' => [
+            'positive' => 'B18ProductionPathReplayFixturesTest::test_the_whole_production_path_corpus_executes_and_passes_on_mariadb',
+            'negative' => 'B18ProductionPathReplayFixturesTest::test_the_corpus_harness_refuses_every_way_a_fixture_can_fail_to_count',
+            'basis' => 'scoped by D-MD-B18-A002-003: executed publication and as-known fixtures, including all eight anti-survivorship cases, on the MariaDB production engine, through the App\Infrastructure\Persistence\MarketData repositories, against the repository-migrated schema -- not the production deployment and not production data. The aggregate derives its nine members from MD-S050 through the reviewed map plus the publication fixture, runs every member in-process inside a rolled-back savepoint on the production-engine connection, and counts only a member that completes with at least one assertion. It asserts driver, MariaDB version, database identity and zero pending repository migrations, and it fails rather than skips when the engine is unavailable. The negative drives the same harness with bodies that throw, fail an assertion, skip, go incomplete, assert nothing or do not exist, beside a passing control and a savepoint-isolation check. Probes on 2026-09-14 against the clean XAMPP-template instance each landed once, with controls green either side and byte restore: the F-008 exception at publication-fixture entry is reported THREW; a skip in the calendar case SKIPPED; an early return in the outage case NO_ASSERTIONS; the corporate-action case removed from the map MISSING; a falsified calendar expectation FAILED; a nonexistent test database fails the aggregate while the other twelve tests skip. The previous pair stayed green under the same F-008 exception (E-MD-B18-A002-006); it remains as supporting guards, not as this basis. The relock act itself belongs to MD-B22 and is neither performed nor authorized here.',
+        ],
+
+    ];
+
+    // Withdrawn from PROVEN on 2026-09-14: these four rows are CONDITIONAL_NOT_APPLICABLE under
+    // D-MD-B18-A002-002 with false-condition evidence E-MD-B18-A002-008, so they are outside the 115-row
+    // denominator and no proof is claimed for them. Kept verbatim for audit; never read as a basis.
+    public const WITHDRAWN_NOT_APPLICABLE = [
+        'MD-S050-R0038' => [
+            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
+            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
+            'basis' => 'citation boundary for publication-replay results',
+        ],
+        'MD-S050-R0039' => [
+            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
+            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
+            'basis' => 'citation boundary: volume of PASS does not substitute',
+        ],
         // ---- MD-S050-R0041. The citation rule is enforceable at the evidence pack, where a claim citing
         // replay evidence is materialised. MD-S050-R0040 was held back here while F-MD-B18-A002-002 stood;
         // that finding is resolved and R0040 is bound at the end of this map.
@@ -708,15 +408,6 @@ final class MarketDataReplayVerificationProofBasis
             'negative' => 'B18ReplayEvidenceSelfExplanationTest::test_an_unmoded_result_is_not_admitted_as_citable_evidence',
             'basis' => 'the exported evidence pack is where a claim citing replay evidence is actually materialised, so it is where the citation rule is enforceable, and both halves are asserted against a real export. A publication pack and an as-known pack are asserted to require disjoint section sets: the as-known pack must account for the knowledge cutoff and the nine revision identities resolved under it, the publication pack for publication and pointer context and neither is required to account for the other\'s -- so a publication pack has never been examined for the property a point-in-time claim rests on, and citing it for one cites evidence that was not assessed against the question. The negative guard is the unmoded half: MD-S050-R0035 made the mode mandatory on write, and this is the read side for a corpus predating that constraint -- an unmoded result exports as ADMITTED_INCOMPLETE with EVIDENCE_ADMISSION_INCOMPLETE and a missing section naming the unclassified state, rather than quietly defaulting the pack to publication replay. A third guard asserts every admitted pack both requires and carries its mode. Probes: removing the unclassified marker turned the negative red; adding knowledge_cutoff_at to the publication pack\'s required sections turned the positive red with the interchangeability message.',
         ],
-
-        // ---- MD-S003-R0025. The mirror half was proven and the MariaDB half by nothing: every DB-backed
-        // guard swaps to an in-memory SQLite connection. Both substrates now run the six required families.
-        'MD-S003-R0025' => [
-            'positive' => 'B18ScenarioFamiliesOnMariaDbTest::test_the_family_map_names_exactly_the_families_the_contract_requires',
-            'negative' => 'B18ScenarioFamiliesOnMariaDbTest::test_these_scenarios_really_run_on_mariadb',
-            'basis' => 'new substrate. The mirror half was already true -- every DB-backed market-data guard runs on the SQLite mirror -- and the MariaDB half was true of nothing: all 91 of those guards swap database.default to an in-memory SQLite connection, so no family had ever been resolved against the engine production uses. UsesMarketDataMariaDb was added: it points at the migrated tradeaxis_testing schema rather than a hand-maintained mirror definition, wraps each test in a transaction it rolls back so the shared database keeps no residue, and skips rather than fails when MariaDB is unreachable, because an unavailable environment is not a proof failure. All six MD-S003 required scenario families now execute against MariaDB through the same repositories and services the mirror guards use, and the family map is parsed from the contract headings so a family added to MD-S003 with nothing exercising it on MariaDB fails rather than leaving all required scenario families meaning whichever six were written down. The negative guard asserts the substrate itself -- driver mysql, version containing MariaDB, and the expected database name -- because a class that silently ran on the mirror would prove the opposite of what it claims. Two production constraints the mirror cannot enforce surfaced while writing the fixtures and are recorded rather than absorbed: eod_current_publication_pointer.updated_at is NOT NULL with no default on MariaDB, and the pointer carries a foreign key to eod_publications which the mirror creates with foreign_key_constraints disabled, so referential integrity in the pointer/publication chain is enforced by production and by nothing in the mirror. Probes: pointing the trait at SQLite makes all nine tests skip rather than pass, so the class cannot silently claim MariaDB; removing the knowledge-time bound from the status supersession join turned the temporal identity family red on MariaDB, and removing it from the calendar query turned the as-known isolation family red, so the scenarios exercise the behaviour rather than merely connecting. One pending additive migration, AddReplayV2BoundInputContext, was applied to tradeaxis_testing to bring its schema current; a family proven against a stale schema would be proven against the wrong tables, which the trait now refuses by skipping.',
-        ],
-
         // ---- MD-S050-R0040. The classification the row opens with, made checkable: the eight contract cases
         // are each bound to a cutoff-decided fixture and to the resolver it drives. F-MD-B18-A002-002 named the
         // two that could not be as-known fixtures; both were closed here rather than carried as a capability gap.
@@ -725,7 +416,408 @@ final class MarketDataReplayVerificationProofBasis
             'negative' => 'B18CorrectionReadPathScenarioTest::test_two_sealed_publications_with_no_supersession_link_are_refused',
             'basis' => 'schema change plus code change. The row opens with a classification -- the eight anti-survivorship fixtures required below are as-known fixtures -- and six of the eight were; F-MD-B18-A002-002 recorded the other two as unable to be, because the facts they turn on carried no knowledge time at all. Both were closed rather than left as a capability gap. Fixture 1, a listing active at historical T but inactive today: md_listings.delisted_date was a mutable column with no recorded_at of its own, so a cutoff could not tell delisted from delisted-but-not-yet-known, which is survivorship bias reintroduced by the query. Migration AddListingDelistingKnowledgeTime adds a nullable delisted_recorded_at with an index and backfills existing delisted rows from their recorded_at, and TemporalIdentityRepository::baseIdentityQuery now applies the delisting only when it was recorded at or before the cutoff. One column rather than a revision series was deliberate: listing_id is the primary key and listing_uid is unique, so a superseding listing revision would fracture listing identity, which is the thing the anti-survivorship corpus exists to keep intact. Fixture 7, an original and corrected immutable publication: every publication resolver took an explicit id or the current pointer, so which publication would I have been reading at T was not expressible and a correction sealed later silently became the answer for a moment that predated it. EodEvidenceRepository::resolvePublicationAsKnownAt() was added and resolves by the declared supersession chain -- the candidates are the publications sealed at or before the cutoff, the answer is the one nothing sealed by then supersedes. It is not ordered by recency: ReadPathShortcutProhibitionTest bans ORDER BY publication_id DESC from the consumer read repositories because the newest row wins is a guess dressed as an answer, and a first version of this method that carried that ordering as a tiebreaker was rejected by that guard and rewritten rather than exempted. Two sealed publications that do not name each other are refused with EVIDENCE_AS_KNOWN_PUBLICATION_AMBIGUOUS, which is the negative guard: a replay reading the wrong half of a correction pair is worse than a replay that stops. The classification itself is now checkable rather than asserted. A reviewed map binds each of the eight contract cases, parsed from MD-S050 rather than transcribed, to the guard that decides it by a cutoff and to the cutoff-bounded runtime resolver that guard drives, and asserts the guard exists, the resolver exists, and the guard calls it with the argument the cutoff occupies. The arity is load-bearing because every one of these resolvers answers both questions -- readProjectedUniverseAsOf(tradeDate) is the effective-time read and readProjectedUniverseAsOf(tradeDate, knownAt) the as-known one -- so naming the method would have let the map be repointed at the effective-time fixture sitting beside it and stay green. Probes: repointing case 1 at the effective-time fixture turns the classification guard red naming the missing cutoff argument; removing the knowledge-time clause from the delisting filter turns both new listing fixtures red; on the publication resolver, dropping the sealed_at bound makes the correction visible to the earlier cutoff and makes a pre-seal cutoff resolve a row, dropping the seal-state filter admits an unsealed candidate, dropping the mandatory-cutoff half of the guard removes the EVIDENCE_SELECTOR_MISSING refusal, and replacing the ambiguity refusal with a fallback turns the negative red. Every probe was reverted by byte copy and the files verified identical by md5. Residue: F-MD-B18-A002-003 stands unchanged -- the SQLite mirror creates its schema with foreign key constraints disabled and mirrors nullability loosely, so the mirror is weaker than production for the pointer and publication chain these fixtures read.',
         ],
+    ];
 
+    // F-MD-B18-A002-008 remediation moved R0056 to PROVEN. F-MD-B18-A002-013 then moved eight bases here:
+    // each guard proves the exporter passes an identity through, not that the identity binds what
+    // the contract names. They return only with the remediation and composition guards. R0056 moved to
+    // PROVEN only after the aggregate executed on the clean instance and every D003 probe was caught.
+    public const INCOMPLETE = [
+        // F-MD-B18-A002-013: publication-mode temporal identity is always empty (no eod_publications/eod_runs column, no writer) and the dataset boundary is unbound in publication mode.
+        'MD-S050-R0008' => [
+            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
+            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
+            'basis' => 'the temporal identity hash carrying dataset boundary and universe/listing/symbol/provider mappings is asserted bound and record-derived',
+        ],
+        // F-MD-B18-A002-013: publication-mode calendar/status identity is always empty (no eod_publications/eod_runs column, no writer).
+        'MD-S050-R0009' => [
+            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
+            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
+            'basis' => 'the calendar/status revision hash is asserted bound and record-derived',
+        ],
+        // F-MD-B18-A002-013: publication mode binds only factor_set_hash; event revisions and verification states are unbound, contamination decisions are never an input.
+        'MD-S050-R0012' => [
+            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
+            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
+            'basis' => 'the event/factor revision hash covering verification states and factor-set revisions is asserted bound and record-derived',
+        ],
+        // F-MD-B18-A002-013: reason_registry_hash hashes constant state names in both modes; price-product, coverage and eligibility versions are unbound in publication mode.
+        'MD-S050-R0014' => [
+            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
+            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
+            'basis' => 'formula registry, reason registry, read-model, serialization and executable build identities are each asserted bound and record-derived',
+        ],
+        // F-MD-B18-A002-013: publication-mode temporal identity is always empty (as MD-S050-R0008).
+        'MD-S019-R0067' => [
+            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
+            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
+            'basis' => 'temporal issuer/instrument/listing/symbol and provider-mapping identity is asserted bound and record-derived; the consequent MD-S019-R0073 remains outstanding',
+        ],
+        // F-MD-B18-A002-013: publication-mode calendar/status identity is always empty (as MD-S050-R0009).
+        'MD-S019-R0068' => [
+            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
+            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
+            'basis' => 'calendar/session/status revisions are asserted bound and record-derived; the consequent MD-S019-R0073 remains outstanding',
+        ],
+        // F-MD-B18-A002-013: publication mode binds only factor_set_hash; event revisions are unbound (as MD-S050-R0012).
+        'MD-S019-R0069' => [
+            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
+            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
+            'basis' => 'corporate-action event and factor-set revisions are asserted bound and record-derived; the consequent MD-S019-R0073 remains outstanding',
+        ],
+        // F-MD-B18-A002-013: reason registry nominal and publication-mode price-product/coverage/eligibility versions unbound (as MD-S050-R0014).
+        'MD-S019-R0071' => [
+            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
+            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
+            'basis' => 'price-product and formula/registry versions are asserted bound through the formula and reason registry hashes and the read-model version; the consequent MD-S019-R0073 remains outstanding',
+        ],
+        // F-MD-B18-A002-013: the comparison guard diverges fabricated run-row temporal/calendar identities that production never persists.
+        'MD-S050-R0002' => [
+            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass',
+            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_a_fixture_declaring_every_frozen_input_correctly_still_passes',
+            'basis' => 'code change, not only a guard. None of the eleven frozen-input identities was compared: verifyRunAgainstFixture wrote them into the stored result and compareExpectedAndActual never looked, and the fixture schema had no expected side at all, so a replay resolving today\'s indicator registry, today\'s build identity, or a different temporal identity than the one frozen with the publication reported MATCH. Added ReplayVerificationService::actualBoundInputContext() as the single source for the recorded and the compared value, an expected_bound_input_context block read from the fixture, and a per-field comparison over BOUND_INPUT_FIELDS. The guard declares all eleven at the values the replay resolved and perturbs one at a time, asserting the verdict is denied and the mismatch names bound_input_<field>; a companion test parses the MD-S050 publication-replay sentence and asserts the reviewed map covers exactly the inputs it names, so an input added to the contract with no field behind it fails. The negative guard declares all eleven correctly and still reaches PASS, so the rule is not satisfied by rejecting any fixture that carries the block. Reason codes are the registry as it stands -- config identity has its own, the rest fall through to REPLAY_NON_DETERMINISTIC_OUTPUT, which the registry defines as a deterministic-field mismatch with no more specific code; a dedicated REPLAY_BOUND_INPUT_MISMATCH was written and then reverted because Reason_Codes_Registry.md is STRATEGY/CONTROLLED_REVISION and adding vocabulary so an implementation change can emit it is not an implementation decision. Probe: comparing an empty field list turned exactly the eleven perturbations red and nothing else.',
+        ],
+        // F-MD-B18-A002-013: temporal revisions are mapped to the same fabricated frozen-input perturbation.
+        'MD-S003-R0003' => [
+            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_the_exact_verification_map_names_exactly_what_the_contract_names',
+            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_every_guard_the_exact_verification_map_names_exists',
+            'basis' => 'the eleven items MD-S003 names for exact publication verification -- frozen observations, temporal revisions, config, factors, formulas, artifacts, hashes, manifest, seal, reasons, terminal state -- are each mapped to an executing guard in this class, and the map is checked against the contract line parsed from the document rather than transcribed, so an item added with nothing verifying it fails. Observations, temporal revisions, config, factors and formulas are covered by the frozen-input perturbations added for MD-S050-R0002; artifacts, hashes, seal, reasons and terminal state by the assertion-class perturbations; manifest by the fixture whose manifest declares a file it does not carry, which is refused outright. The negative guard asserts every guard the map names still exists, so a rename empties nothing silently. Probe: removing seal from the map turned the positive red.',
+        ],
+        // F-MD-B18-A002-014: the guard re-exports one stored replay record; no replay is rerun, so reproduction of outputs and hashes is not shown.
+        'MD-S019-R0073' => [
+            'positive' => 'B18ReplayRerunDeterminismTest::test_an_unchanged_rerun_produces_byte_identical_artifacts',
+            'negative' => 'B18ReplayRerunDeterminismTest::test_a_changed_bound_input_changes_the_bytes',
+            'basis' => 'the consequent of the MD-S019 bound-input conditional: two exports of the same replay are asserted byte-identical across every artifact by sha256, and the negative guard asserts replay_result.json changes when a bound input changes, so constant output cannot satisfy it',
+        ],
+        // F-MD-B18-A002-014: the guard re-exports one stored replay record; no unchanged rebuild is run, so byte identity and the absence of a fake correction are not shown.
+        'MD-S003-R0004' => [
+            'positive' => 'B18ReplayRerunDeterminismTest::test_an_unchanged_rerun_produces_byte_identical_artifacts',
+            'negative' => 'B18ReplayRerunDeterminismTest::test_a_changed_bound_input_changes_the_bytes',
+            'basis' => 'an unchanged rerun is asserted byte-identical, and a separate test passes the publication and correction repositories as mocks with no expectations so any write to either fails - the fake-correction half of the predicate',
+        ],
+        // F-MD-B18-A002-014: the guard re-exports one stored replay record; exact publication replay reproducing hashes is not shown.
+        'MD-S005-R0095' => [
+            'positive' => 'B18ReplayRerunDeterminismTest::test_an_unchanged_rerun_produces_byte_identical_artifacts',
+            'negative' => 'B18ReplayRerunDeterminismTest::test_a_changed_bound_input_changes_the_bytes',
+            'basis' => 'exact publication replay is asserted to reproduce the same hashes: the artifacts carrying bars, indicators and eligibility batch hashes are byte-identical across two runs of the same fixture',
+        ],
+        // F-MD-B18-A002-014: each batch hash is shown carried into the export, not identical across reruns and replay.
+        'MD-S019-R0009' => [
+            'positive' => 'B18ReplayRerunDeterminismTest::test_each_batch_hash_is_individually_load_bearing_across_a_rerun',
+            'negative' => 'B18ReplayRerunDeterminismTest::test_an_unchanged_rerun_produces_byte_identical_artifacts',
+            'basis' => 'the antecedent is Invariant 1 -- identical semantic content and bindings imply bars_batch_hash, indicators_batch_hash AND eligibility_batch_hash are each identical -- and R0009 adds that it holds across reruns and replay. The pre-existing rerun guard proves the identical direction for the whole artifact set at once and perturbs only bars_batch_hash, so it does not establish that the three are individually load-bearing, which is what makes the conjunction a claim rather than a list. Each of the three is now perturbed separately across a real double export and asserted to move replay_result.json, with the table checked against the Invariant 1 block parsed from Determinism_Invariants_LOCKED.md so a fourth hash added there fails rather than going unchecked. The negative guard is the unchanged rerun asserting byte-identical artifacts by sha256, so the pair is not satisfied by an exporter whose output varies freely. Probe: the eligibility hash reaches replay_result.json by four independent paths -- the top-level field, the replay-metric publication artifact lineage, the run-derived lineage, and the resolution-context lineage -- and neutering fewer than all four left the guard green; constanting all four turned exactly the eligibility data set red. Dropping indicators from the reviewed table turned the contract-map guard red.',
+        ],
+        // F-MD-B18-A002-015: the corpus guard sees prose only; no guard stops code from using a replay PASS to close a finding, release a quarantine, dismiss a candidate or satisfy a continuity check.
+        'MD-S050-R0051' => [
+            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
+            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
+            'basis' => 'explicit prohibition on what a PASS may close',
+        ],
+        // F-MD-B18-A002-015: no pattern of its own in forbidden(); a correctness claim resting on a replay verdict is not caught.
+        'MD-S050-R0052' => [
+            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
+            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
+            'basis' => 'names the admissible alternative evidence; the corpus guard forbids the substitution',
+        ],
+        // F-MD-B18-A002-015: executable, ReplayBackfillService counts an unknown fixture case as passed whatever the outcome, BLOCKED included.
+        'MD-S050-R0053' => [
+            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
+            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
+            'basis' => 'BLOCKED is not a weaker PASS - a citation rule',
+        ],
+        // F-MD-B18-A002-015: executable, ReplayBackfillService converts BLOCKED to passed for an unknown fixture case.
+        'MD-S002-R0009' => [
+            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
+            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
+            'basis' => 'BLOCKED-never-a-pass is exactly a citation prohibition the corpus guard scans for',
+        ],
+        // F-MD-B18-A002-015: executable, ReplayBackfillService lets a MISMATCH pass for an unknown fixture case; no acceptance guard.
+        'MD-S002-R0010' => [
+            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
+            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
+            'basis' => 'pass-rate-cannot-compensate is a citation prohibition in scope of the corpus guard',
+        ],
+        // F-MD-B18-A002-015: readiness admission rule; the guard forbids one sentence shape, and the admission owner (MD-B17/MD-B22) is a user decision.
+        'MD-S020-R0014' => [
+            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
+            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
+            'basis' => 'admitting market-data readiness only from qualifying market-data evidence is a citation rule the corpus admissibility guard scans for',
+        ],
+        // F-MD-B18-A002-015: executable, the coverage reason code is never persisted and the export synthesizes it from the gate state, collapsing distinct evaluator reasons.
+        'MD-S040-R0071' => [
+            'positive' => 'B18ReplayEvidencePreservationContractTest::test_every_preserved_item_survives_the_real_export',
+            'negative' => 'B18ReplayEvidencePreservationContractTest::test_a_failing_coverage_gate_still_exports_the_threshold_it_failed_against',
+            'basis' => 'the exported coverage reason code is asserted; it is derived from the normalized gate state because no coverage reason code is persisted on the replay metric, and the fixture proves the derivation rather than an echo',
+        ],
+        // F-MD-B18-A002-015: only the PASS path is asserted; on mismatch the run final reason survives in actual_context unguarded.
+        'MD-S040-R0077' => [
+            'positive' => 'B18ReplayEvidencePreservationContractTest::test_every_preserved_item_survives_the_real_export',
+            'negative' => 'B18ReplayEvidencePreservationContractTest::test_a_failing_coverage_gate_still_exports_the_threshold_it_failed_against',
+            'basis' => 'final_reason_code is a persisted column and is asserted to survive the export verbatim, unlike the derived coverage reason code',
+        ],
+        // F-MD-B18-A002-015: the basis names the replay-mode guard; the replay_verify request mode has no guard.
+        'MD-S036-R0012' => [
+            'positive' => 'ReplayModeContractTest::test_only_the_two_locked_replay_modes_are_accepted',
+            'negative' => 'OpsCommandSurfaceTest::test_replay_verify_refuses_an_inadmissible_mode_without_attempting_verification',
+            'basis' => 'replay_verify as an allowed request mode is established by the mode guard and its command-surface refusal counterpart',
+        ],
+        // F-MD-B18-A002-015: the basis concerns command invocation; rebind to the unmoded-admission guard and probe.
+        'MD-S050-R0036' => [
+            'positive' => 'ReplayModeContractTest::test_only_the_two_locked_replay_modes_are_accepted',
+            'negative' => 'OpsCommandSurfaceTest::test_replay_verify_refuses_an_inadmissible_mode_without_attempting_verification',
+            'basis' => 'an unmoded result is refused rather than defaulted, which the mode guard establishes',
+        ],
+        // F-MD-B18-A002-015: the positive checks mapped guard methods exist; rebind to the executing snapshot test and probe each root.
+        'MD-S003-R0021' => [
+            'positive' => 'B18AsKnownSnapshotIsolationTest::test_every_later_revision_kind_is_bound_to_an_executing_guard',
+            'negative' => 'B18AsKnownSnapshotIsolationTest::test_an_incomplete_historical_config_snapshot_is_refused_instead_of_using_live_config',
+            'basis' => 'the contract-derived seven-kind map binds master, event, status, calendar, config, formula and factor to executed cutoff guards; deleting the factor mapping failed the map, and replacing the selected historical formula config with live config failed the snapshot corpus',
+        ],
+        // F-MD-B18-A002-015: the positive checks mapped guard methods exist; rebind to the executing snapshot test and probe.
+        'MD-S005-R0096' => [
+            'positive' => 'B18AsKnownSnapshotIsolationTest::test_every_later_revision_kind_is_bound_to_an_executing_guard',
+            'negative' => 'B18AsKnownSnapshotIsolationTest::test_an_incomplete_historical_config_snapshot_is_refused_instead_of_using_live_config',
+            'basis' => 'the contract-derived seven-root corpus executes exclusion guards for every later revision named by MD-S003; substituting live formula config and removing a root mapping each turned the corpus red',
+        ],
+        // F-MD-B18-A002-015: the positive exports a PASS record; rebind to an executed-divergence FAIL guard and probe.
+        'MD-S050-R0030' => [
+            'positive' => 'ReplayEvidenceExportServiceTest::test_export_replay_evidence_writes_replay_result_and_reason_code_summary',
+            'negative' => 'ReplayComparisonDetectsDivergenceTest::test_missing_expected_proof_is_reported_rather_than_ignored',
+            'basis' => 'the divergence guard executes a comparison that diverges and reports FAIL',
+        ],
+        // F-MD-B18-A002-015: executable, a missing expected-proof section is reported as a mismatch (FAIL) instead of BLOCKED.
+        'MD-S050-R0031' => [
+            'positive' => 'ReplayEvidenceExportServiceTest::test_export_replay_evidence_writes_replay_result_and_reason_code_summary',
+            'negative' => 'ReplayComparisonDetectsDivergenceTest::test_missing_expected_proof_is_reported_rather_than_ignored',
+            'basis' => 'missing expected proof is reported rather than ignored, which is the BLOCKED semantics',
+        ],
+        // F-MD-B18-A002-015: the negative is a text check; rebind to the hash-only divergence perturbation and probe.
+        'MD-S050-R0033' => [
+            'positive' => 'ReplayAdmissibilityVerdictStorabilityTest::test_a_relabelled_self_generated_fixture_is_still_refused',
+            'negative' => 'ReplayAdmissibilityVerdictStorabilityTest::test_the_inadmissible_verdict_is_never_counted_as_a_pass',
+            'basis' => 'exit status or row counts alone is not replay proof; the inadmissible verdict is never counted as a pass',
+        ],
+        // F-MD-B18-A002-016: import status comparison and the export record of request mode, import status and promote status are unguarded (G09 probes not caught); only the import-only promotion policy is proven.
+        'MD-S036-R0007' => [
+            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_an_import_only_expectation_is_not_satisfied_by_a_run_that_promoted',
+            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_an_import_only_expectation_against_an_unpromoted_run_raises_no_promotion_mismatch',
+            'basis' => 'request mode, source mode and publication state are each proven load-bearing by the perturbation table, and import status, promote status and pointer switch status by the import-only fixture: a fixture declaring request_mode import_only against a run that promoted is asserted to raise REPLAY_IMPORT_PROMOTE_MISMATCH naming import_only_promote_status_policy and import_only_pointer_switch_policy. The negative guard runs the same import-only expectation against a run that did not promote and asserts no promotion mismatch, so the rule is not satisfied by failing every import-only fixture.',
+        ],
+        // F-MD-B18-A002-016: the export clause (import-only versus promoted without DB inspection) and import status comparison are unguarded; the unexpected-promotion clause is proven.
+        'MD-S036-R0031' => [
+            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_an_import_only_expectation_is_not_satisfied_by_a_run_that_promoted',
+            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_an_import_only_expectation_against_an_unpromoted_run_raises_no_promotion_mismatch',
+            'basis' => 'code change, not only a guard. The contract sentence is unexpected import promotion must be a replay mismatch, not a silent pass, and it had no implementation: compareField() skips a null expectation and the fixture schema leaves import_status, promote_status, promoted and pointer_switched optional, so a fixture declaring request_mode import_only had its promotion state checked by nothing. REPLAY_IMPORT_PROMOTE_MISMATCH was a registered reason code with no path able to emit it. ReplayVerificationService::appendImportPromotionPolicyMismatches() was added so that declaring the request mode makes all three promotion signals load-bearing. Probe: removing the call turned the positive red while everything else stayed green.',
+        ],
+        // F-MD-B18-A002-016: the replay half is proven; the evidence half, the coverage clause of the export readability check, is unguarded.
+        'MD-S040-R0080' => [
+            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_manual_file_run_readable_without_a_coverage_pass_is_a_mismatch',
+            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_the_unperturbed_fixture_passes',
+            'basis' => 'the prohibition rather than the exhibit: a manual_file run whose import succeeded and which claims READABLE while its coverage gate did not pass is asserted to raise manual_file_readable_coverage_policy and a FAIL verdict, so import success alone cannot produce readability. The negative guard is the same manual_file fixture with a passing coverage gate reaching PASS, so the rule is not satisfied by refusing every manual_file run. Probe: disabling the readability policy condition in appendManualFilePolicyMismatches turned the positive red.',
+        ],
+        // F-MD-B18-A002-016: the basis never seeds a delisted listing; rebind to the anti-survivorship delisting fixture, which caught the probe the basis missed.
+        'MD-S003-R0009' => [
+            'positive' => 'TemporalIdentityLayerContractTest::test_point_in_time_resolution_returns_the_full_identity_for_the_trade_date',
+            'negative' => 'TemporalIdentityLayerContractTest::test_retraction_after_cutoff_does_not_erase_symbol_board_or_provider_mapping_from_as_known_history',
+            'basis' => 'inactive-now/active-then listing remaining in the historical universe is asserted',
+        ],
+        // F-MD-B18-A002-016: the basis has one symbol and one mapping per listing; rebind to the symbol-change and symbol-reuse fixtures, which caught both interval probes.
+        'MD-S003-R0010' => [
+            'positive' => 'TemporalIdentityLayerContractTest::test_point_in_time_resolution_returns_the_full_identity_for_the_trade_date',
+            'negative' => 'TemporalIdentityLayerContractTest::test_retraction_after_cutoff_does_not_erase_symbol_board_or_provider_mapping_from_as_known_history',
+            'basis' => 'symbol change and reuse resolving through stable listing identity is asserted',
+        ],
+        // F-MD-B18-A002-016: the basis checks the observation manifest, never the denominator; the SourceFailureResilience candidate passes expected_universe_count through.
+        'MD-S003-R0005' => [
+            'positive' => 'SourceObservationAsKnownBoundaryTest::test_as_known_rows_require_both_observation_and_identity_binding_to_be_known_by_cutoff',
+            'negative' => 'SourceObservationAsKnownBoundaryTest::test_zero_row_provider_outage_remains_in_as_known_observation_manifest',
+            'basis' => 'the negative guard keeps a zero-row provider outage in the manifest, so the denominator cannot shrink',
+        ],
+        // F-MD-B18-A002-016: capability boundary; the basis is the source-observation pair; rebind to the corpus guard whose own pattern named the injected claim.
+        'MD-S050-R0046' => [
+            'positive' => 'SourceObservationAsKnownBoundaryTest::test_as_known_rows_require_both_observation_and_identity_binding_to_be_known_by_cutoff',
+            'negative' => 'SourceObservationAsKnownBoundaryTest::test_zero_row_provider_outage_remains_in_as_known_observation_manifest',
+            'basis' => 'that replay cannot prove source faithfulness is a capability boundary the observation guard framing establishes',
+        ],
+        // F-MD-B18-A002-016: executable, replay backfill selects each publication from the current pointer; the service refusal of an unpinned readable replay is guarded by a string check only.
+        'MD-S050-R0027' => [
+            'positive' => 'ReplayVerificationServiceTest::test_verify_replay_resolves_historical_publication_without_current_pointer_fallback',
+            'negative' => 'ReplayVerificationServiceTest::test_verify_replay_maps_unsealed_historical_publication_to_reason_coded_failure',
+            'basis' => 'starting from explicit publication identity and never latest/current is exactly what the guard asserts',
+        ],
+        // F-MD-B18-A002-013 carry-forward via F-MD-B18-A002-016: the positive is the fabricated frozen-input perturbation; the as-known clause is shown for the status root only, through the repository.
+        'MD-S019-R0074' => [
+            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass',
+            'negative' => 'B18AsKnownTemporalSequenceTest::test_a_suspension_lifted_later_is_still_suspended_as_known_before_the_lift_was_recorded',
+            'basis' => 'the predicate has three clauses and each is executed. Publication replay freezes the exact identities: the eleven frozen inputs are now compared field by field, so a replay running against any identity other than the one the fixture records as frozen is denied -- that is the clause that had no enforcement at all before MD-S050-R0002. As-known replay resolves only revisions known by the declared cutoff: the negative guard reads one trade date at two cutoffs and with none, and the answer changes as knowledge accrues rather than being fixed or walled off. Current state must not leak into either mode: in publication replay a divergence toward the current registry, build or serialization identity is exactly what the frozen-input comparison catches, and in as-known mode the same guard asserts the current answer and the as-known answer genuinely differ on the fixture, so a current-state substitution is detectable rather than coincidentally right.',
+        ],
+        // F-MD-B18-A002-016: the recorded pair is structural (map and method existence); rebind to the nine executing guards with one probe each.
+        'MD-S050-R0017' => [
+            'positive' => 'B18AntiFutureResolutionTest::test_the_anti_future_map_names_exactly_what_the_contract_names',
+            'negative' => 'B18AntiFutureResolutionTest::test_every_anti_future_guard_exists_and_is_executable',
+            'basis' => 'the nine items the anti-future sentence names are each bound to a guard that executes the prohibition, and the map is checked against the sentence parsed from Replay_Verification_Contract_LOCKED.md rather than transcribed, so an item added with nothing behind it fails. Seven already had executing guards across B18AntiSurvivorshipFixtureCorpusTest, AsKnownReplayBoundaryTest and B18AsKnownSnapshotIsolationTest. Two did not and are new: current sector and latest provider mapping were covered only by test_every_temporal_root_accepts_a_knowledge_cutoff, which reflects over the method signature -- a cutoff parameter that is accepted and ignored passes it. Both now run against real repositories: a sector reclassification effective from the dataset start but recorded in May resolves A1 at an April cutoff and B2 without one; a provider remapping modelled as the schema expects, by retracting the original when the replacement is learned, resolves ANTIF.JK at the April cutoff and ANTIF.KL without one, exercising both the recorded_at and retracted_at knowledge-time filters. Two live mappings over one trade date was the fixture\'s first shape and the resolver refused it as PROVIDER_SYMBOL_MAPPING_AMBIGUOUS, which is the fail-closed rule rather than a fixture error. Probes: dropping the sector recorded_at filter turned the sector guard red; widening the provider mapping recorded_at bound turned the mapping guard red, failing closed on ambiguity rather than silently serving the later mapping.',
+        ],
+        // F-MD-B18-A002-016: the service refusal that keeps an unpinned readable replay off the current publication is guarded by a string check only.
+        'MD-S003-R0002' => [
+            'positive' => 'ReplayVerificationServiceTest::test_verify_replay_resolves_historical_publication_without_current_pointer_fallback',
+            'negative' => 'ReplayVerificationServiceTest::test_verify_replay_maps_unsealed_historical_publication_to_reason_coded_failure',
+            'basis' => 'resolving an explicit immutable publication without current-pointer fallback is the subject of the guard',
+        ],
+        // F-MD-B18-A002-013 carry-forward via F-MD-B18-A002-017: the individual-identity guard asserts non-empty values on a hand-built metric; production publication mode stores temporal and calendar identity empty.
+        'MD-S003-R0023' => [
+            'positive' => 'B18ReplayEvidenceSelfExplanationTest::test_every_item_the_contract_requires_recording_is_present',
+            'negative' => 'B18ReplayEvidenceSelfExplanationTest::test_every_frozen_identity_is_recorded_individually',
+            'basis' => 'the ten items of the MD-S003 per-run evidence line are each mapped to the exported path that records them, with the map checked against the line parsed from the document so an item added there fails rather than going unrecorded. Nine are asserted on a real export of a failed publication replay; the knowledge cutoff is asserted on an AS_KNOWN export instead, because a PUBLICATION_EXACT result records it as null by design -- it is pinned to an immutable publication rather than to a moment of knowledge, which is the contract\'s own two-mode split rather than a gap. The negative guard is the one that makes all in all frozen revision/snapshot IDs load-bearing: the twelve identities are asserted present and non-empty individually, so a bound-input block carrying one identity cannot satisfy a check that the block exists. Probes: removing formula_registry_hash from the recorded block turned the individual-identity guard red; dropping the knowledge cutoff from the reviewed map turned the contract-map guard red.',
+        ],
+        // F-MD-B18-A002-017: the recorded pair parses the list and checks method names; a survivorship defect the member caught left it green.
+        'MD-S004-R0003' => [
+            'positive' => 'B18PointInTimeInputContractTest::test_the_no_backfill_map_names_exactly_what_the_contract_names',
+            'negative' => 'B18PointInTimeInputContractTest::test_every_guard_both_maps_name_exists_and_is_executable',
+            'basis' => 'the five things today may not backfill into an earlier decision are each bound to a guard that executes the prohibition against a real surface: universe and symbol to the anti-survivorship corpus, sector to the knowledge-time reclassification guard added for MD-S050-R0017, action verification to the as-known corporate-action boundary, and current publication to the blocked replay that is asserted to resolve only the fixture-named publication and never a current-pointer selector. The map is checked against the sentence parsed from Point_In_Time_Backtest_Input_Contract_LOCKED.md rather than transcribed, so a member added there fails. The recorded basis for this row was that no-backfill was asserted for identity only; the other four now execute. A further guard asserts the eight members across this row and MD-S004-R0005 resolve to at least five distinct guards, so a family cannot be bound as though it were a predicate. Probes: dropping sector from the map turned the contract-map guard red; renaming a named guard turned the existence guard red.',
+        ],
+        // F-MD-B18-A002-017: the recorded pair parses the list and counts distinct guards; a survivorship defect the member caught left it green.
+        'MD-S004-R0005' => [
+            'positive' => 'B18PointInTimeInputContractTest::test_the_survivorship_map_names_exactly_what_the_contract_names',
+            'negative' => 'B18PointInTimeInputContractTest::test_the_members_are_not_all_bound_to_a_single_guard',
+            'basis' => 'three claims, parsed as three sentences rather than a comma list, each bound to an executing guard: inactive/delisted securities remaining present to the delisted-listing universe fixture, symbol changes and reuse resolving through listing IDs to the reused-symbol-text fixture, and late corrections producing a distinct later-known dataset without rewriting the earlier one to the as-known snapshot guard, which asserts the earlier cutoff still produces a byte-identical snapshot hash after a later cutoff has exposed new revisions. The negative guard is the anti-collapse check: eight members across this row and MD-S004-R0003 must resolve to at least five distinct guards, which is the shape F-MD-B19-A001-002 records and the reason this row was PARTIAL. Probe: renaming a named guard turned the existence guard red.',
+        ],
+        // F-MD-B18-A002-017: structural pair; a calendar knowledge-time defect the member caught left it green.
+        'MD-S004-R0002' => [
+            'positive' => 'B18PointInTimeInputContractTest::test_the_cutoff_bounded_input_map_names_exactly_what_the_contract_names',
+            'negative' => 'B18PointInTimeInputContractTest::test_every_cutoff_bounded_input_guard_exists',
+            'basis' => 'the eight input kinds a decision may contain -- observations, identity, calendar, status, event, factor, config, formula -- are each bound to a guard that executes the cutoff bound against a real repository, and the map is checked against the knowledge-time sentence parsed from Point_In_Time_Backtest_Input_Contract_LOCKED.md so a kind added there fails. The recorded basis for this row was that cutoff-bounded inputs were asserted for identity only; calendar and status are now the knowledge-time sequence guards written for MD-S041-R0032 and MD-S058-R0069, which prove the cutoff is a filter rather than a wall in both directions, and factor and formula are the as-known snapshot guard, which was rewritten to use real repositories under F-MD-B18-A002-001 after its mocks were found to be making the cutoff decision themselves. A cutoff honoured by seven of eight kinds leaks, which is why the existence guard is the negative rather than a convenience. Probe: dropping status from the map turned the contract-map guard red.',
+        ],
+        // F-MD-B18-A002-017: the corpus test checks method names only, and the denominator clause rests on an outage manifest test that never touches the denominator.
+        'MD-S002-R0006' => [
+            'positive' => 'B18ReleaseCandidateCriteriaTest::test_the_degraded_and_negative_corpus_is_complete',
+            'negative' => 'EmptyDatasetFailSafeTest::test_no_fallback_fails_the_run_outright',
+            'basis' => 'the degraded corpus is enumerated and asserted executable: the four MD-S003 observation defects with the outcome each proves, the held-versus-failed pair that produces the expected states through the real FinalizeDecisionService, and the provider outage that must remain in the as-known observation manifest -- which is the denominator-shrinkage half, since an outage that vanished would shrink the expected count rather than being reported. The recorded basis was that one degraded case was proven to stop with an error; the corpus now covers held, failed and unavailable outcomes and both permitted defect outcomes. The negative guard fails a run outright when no fallback exists, so producing expected states is not satisfied by an implementation that always holds. Probe: renaming a member guard turned the corpus test red.',
+        ],
+        // F-MD-B18-A002-013 carry-forward via F-MD-B18-A002-017: listing identity maps to temporal_identity_hash, empty in production publication mode; formula identity is read from current config.
+        'MD-S004-R0004' => [
+            'positive' => 'B18ReplayEvidenceSelfExplanationTest::test_every_required_binding_is_present_in_the_export',
+            'negative' => 'B18ReplayEvidenceSelfExplanationTest::test_the_availability_timestamp_is_a_separate_field_from_the_trade_date',
+            'basis' => 'the eight bindings the required-input-identity sentence names are each mapped to an exported path and asserted present in a real export, with the map checked against the sentence parsed from Point_In_Time_Backtest_Input_Contract_LOCKED.md so a binding added there fails. The recorded basis for this row was that listing identity, effective date and read-model binding were not enforced: listing identity is now the temporal identity hash in the bound-input block, the effective date is trade_date_effective, and read_model_version is asserted individually rather than as part of a block. The knowledge cutoff is taken from an AS_KNOWN export for the same reason as MD-S003-R0023 -- a publication replay is pinned to an immutable publication rather than a moment of knowledge and records it null by design. The negative guard is the final clause of the predicate rather than a convenience: the availability timestamp and the market trade date must be separate fields, since collapsing them is how a backtest silently gains foresight. Probes: removing read_model_version from the export turned the binding guard red; dropping lineage from the reviewed map turned the contract-map guard red.',
+        ],
+        // F-MD-B18-A002-017: the named corpus has no config or factor mismatch class; disabling config comparison left all 16 corpus tests green.
+        'MD-S002-R0003' => [
+            'positive' => 'B18ReleaseCandidateCriteriaTest::test_the_exact_publication_mismatch_corpus_is_complete',
+            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_the_unperturbed_fixture_passes',
+            'basis' => 'the eight mismatch classes the criterion names -- value, null-reason, lineage, config, factor, hash, seal, publication -- are each perturbed individually against a real publication fixture and asserted to deny PASS, by the exhaustiveness table built for MD-S050-R0029 and MD-S050-R0002, and a companion test asserts the table covers every class the contract names. This criterion is a family-level claim, so a family-level corpus guard is semantically identical to it, which is the distinction F-MD-B19-A001-002 turns on: a family guard is not proof when the predicate is one behaviour, and is proof when the predicate is the family. The negative guard is the unperturbed fixture reaching PASS, so zero unexplained mismatches is not satisfied by a comparison that fails everything. Probe: renaming a named guard turned the per-criterion corpus test red on its own, not only the shared existence test.',
+        ],
+        // F-MD-B18-A002-017: the corpus test and its four members are structural; a survivorship defect left all of them green.
+        'MD-S002-R0005' => [
+            'positive' => 'B18ReleaseCandidateCriteriaTest::test_the_anti_survivorship_and_as_known_isolation_corpus_is_complete',
+            'negative' => 'B18ReleaseCandidateCriteriaTest::test_every_guard_named_by_any_criterion_exists',
+            'basis' => 'both corpora the criterion names are enumerated from their own contracts and asserted complete and executable: the eight MD-S050 anti-survivorship fixtures through their contract-parsed map, the seven MD-S003 later-revision kinds through theirs, and the nine MD-S050 anti-future items through the map added for MD-S050-R0017. The recorded basis for this row was that the guard executed identity-cutoff invisibility only; the corpus now spans identity, symbol, symbol reuse, calendar, status, event, factor, config, sector and provider mapping. That every member is green is established by the suite run recorded with the stage evidence rather than by a test asserting it about itself, which would be circular. Probe: rewording a criterion away from the contract turned the map guard red; renaming a member guard turned both the corpus test and the existence test red.',
+        ],
+        // F-MD-B18-A002-017 with F-MD-B18-A002-013, executable: only a missing config snapshot is BLOCKED; empty temporal, calendar and observation identities replay PASS.
+        'MD-S050-R0016' => [
+            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_publication_with_no_configuration_snapshot_is_blocked_rather_than_passed',
+            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_a_blocked_replay_does_not_fall_back_to_the_current_publication',
+            'basis' => 'both halves executed against the real ReplayVerificationService. A run and publication carrying no config snapshot are asserted to yield replay_status BLOCKED with comparison_result NOT_ADMISSIBLE and a summary naming REPLAY_CONFIG_UNBOUND -- BLOCKED rather than FAIL, since FAIL would say the comparison ran and disagreed. The second half is the one the predicate is really about: the evidence repository is asserted to be asked only for replay_fixture_explicit_publication and never for a current-pointer resolution, so a missing input is a refusal to proceed rather than permission to answer from latest state. A third guard asserts the blocked outcome is still persisted with admission_state NOT_ADMISSIBLE and its mode, so a block cannot vanish from the corpus. Probe: disabling the CONFIG_UNBOUND admissibility rule turned all three red.',
+        ],
+        // F-MD-B18-A002-017: the corpus test checks method names only, the helper three probes showed executes nothing; rebind to the executing oracle guards.
+        'MD-S002-R0007' => [
+            'positive' => 'B18ReleaseCandidateCriteriaTest::test_the_independent_oracle_corpus_is_complete',
+            'negative' => 'B18LongChainWilderAtrOracleTest::test_the_fixture_true_range_is_not_constant',
+            'basis' => 'both halves of the criterion now have executed oracle comparisons. The long-chain ATR half is the 200-session varied-true-range chain compared against a recursion transcribed from EOD_Indicators_Formula_Spec.md, plus the correction thirty sessions back asserted at its exact Wilder-decayed magnitude -- written for MD-S003-R0015 because the pre-existing ATR oracle ran on a constant-true-range ramp and could not detect a wrong recursion. The corporate-action half is the verified-revision factor activation and the structural OHLC coherence guards written for MD-S003-R0012 and R0013. The negative guard asserts the ATR fixture\'s true range genuinely varies, which is what makes the long chain an oracle comparison rather than a restatement of the constant case. Probe: renaming an oracle guard turned the corpus test red independently of the shared existence test.',
+        ],
+        // F-MD-B18-A002-017: structural corpus test; disabling sealed-publication immutability left it green while the member went red.
+        'MD-S002-R0008' => [
+            'positive' => 'B18ReleaseCandidateCriteriaTest::test_the_corrected_publication_corpus_is_complete',
+            'negative' => 'PublicationSealPointerLifecycleTest::test_the_pointer_table_structurally_refuses_a_second_current_row',
+            'basis' => 'preserving predecessors is the superseded publication keeping its own rows unchanged and being refused for discard with SEALED_PUBLICATION_IMMUTABLE, on a fixture carrying two sealed publications for one date. Switching atomically is the pointer table refusing a second current row for a date by primary key, so no window exists in which two publications are current, together with the read path returning nothing rather than stale rows when the projection disagrees with the pointer -- a partial switch is therefore visible as a refusal instead of as whichever version a reader reached first. Probe: renaming a member guard turned the corpus test red.',
+        ],
+        // F-MD-B18-A002-017: structural pair; a survivorship defect the acceptance member caught left it green.
+        'MD-S004-R0008' => [
+            'positive' => 'B18PointInTimeInputContractTest::test_the_acceptance_fixture_map_names_exactly_what_the_contract_names',
+            'negative' => 'B18PointInTimeInputContractTest::test_every_acceptance_fixture_guard_exists_and_they_are_distinct',
+            'basis' => 'the seven acceptance fixtures the contract requires at minimum are each bound to a guard that executes that scenario against a real surface: the delisted-listing universe fixture, the reused-symbol-text fixture, the as-known corporate-action boundary, the knowledge-time suspension sequence, the no-fallback run that fails outright, the fallback run that holds with the prior effective date, and the two-publication read-path fixture. The map is parsed from the acceptance-fixtures sentence rather than transcribed, so a fixture added there fails. The recorded basis was that the guard executed none of the seven as fixtures. The negative guard is the anti-collapse check as well as the existence check: at minimum prove is a floor over seven distinct scenarios, so they are asserted to resolve to at least six distinct guards -- a binding pointing them all at one test would satisfy the map while proving one of them. Probe: dropping explicit stale fallback from the map turned the contract-map guard red.',
+        ],
+        // F-MD-B18-A002-013 carry-forward via F-MD-B18-A002-017: formula and reason registry identities are read from current config or a constant at replay time.
+        'MD-S082-R0218' => [
+            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass',
+            'negative' => 'B18AsKnownModeIsolationTest::test_an_as_known_result_claims_no_publication_and_records_its_own_mode',
+            'basis' => 'two sentences, one guard each. Current registry state must never leak into historical replay: formula_registry_hash and reason_registry_hash are two of the eleven frozen inputs now compared field by field, so a publication replay resolving today\'s indicator registry or today\'s reason registry instead of the one frozen with the publication is denied and the mismatch names which registry moved. That comparison did not exist before MD-S050-R0002 -- the identities were written into every stored result and compared by nothing -- which is why this row\'s recorded basis said registry state generally was not asserted. Alternate-scenario runs are explicitly labeled and cannot impersonate the historical publication: an as-known result is asserted end to end to record AS_KNOWN and its cutoff, to carry a null publication_id, and to leave the sealed publication, its pointer and its history rows byte-identical while producing a replay row of its own. Probes: comparing an empty frozen-input list turned the registry perturbations red along with the other nine; making the as-known metric carry the run publication id turned the labelling guard red.',
+        ],
+        // F-MD-B18-A002-013 carry-forward via F-MD-B18-A002-017: formula, read-model, serialization and build identities come from the environment at replay time.
+        'MD-S082-R0224' => [
+            'positive' => 'B18BeforeSealValidationTest::test_a_candidate_without_its_lineage_binding_cannot_seal',
+            'negative' => 'B18BeforeSealValidationTest::test_a_completely_bound_candidate_seals',
+            'basis' => 'the property is enforced before seal by a chain, and the guard proves the chain rather than adding a check to it. The load-bearing link is asserted directly: deleting the publication lineage binding makes sealCandidatePublication refuse with DATASET_MANIFEST_INVALID naming publication_lineage_binding, and the candidate stays UNSEALED and therefore correctable. The other end is asserted too: PublicationGovernanceBindingService, the only writer of that binding, refuses with CONFIG_SNAPSHOT_NOT_FOUND for a run whose configuration snapshot does not exist, so the binding cannot come into being for an unbound configuration. A sealed publication therefore always carries a frozen configuration and its replay never asks the live environment what the configuration was. A separate guard shows why before seal is the operative word: after sealing, assertPublicationMutable refuses with SEALED_PUBLICATION_IMMUTABLE, so a binding missing at seal can never be added. The negative guard is the completely bound candidate sealing, so the refusals are caused by the one thing each test removes rather than by an incomplete fixture. A null check was written into the seal path first and then removed: its red state could only be produced by hand-writing a lineage row that production cannot emit, and a guard whose failure mode is unreachable proves nothing.',
+        ],
+        // F-MD-B18-A002-017: the pair tests identity minting, not the rerun rule; rebind to the effective-time selection guard, which caught the probe the pair missed.
+        'MD-S065-R0003' => [
+            'positive' => 'B18ConfigEffectiveTimeSelectionTest::test_an_output_affecting_change_produces_a_new_configuration_identity',
+            'negative' => 'B18ConfigEffectiveTimeSelectionTest::test_an_unchanged_configuration_does_not_mint_a_new_contract',
+            'basis' => 'two claims, both executed against the real MarketDataConfigSnapshotRepository. An output-affecting config change is treated as a contract change: changing the ROC lookback, which changes a published indicator value, is asserted to produce a distinct config_hash and a new snapshot id, and the previous snapshot row is asserted byte-identical afterwards -- so anything already citing the old identity still means what it meant rather than silently acquiring the new semantics. Reruns use the registry version effective for the requested trade date: that is the effective-time selection proven for MD-S082-R0216, where two approved configurations govern from 1 March and 1 April and a run for 24 March selects the March one rather than the newest. The negative guard is the one that makes the identity claim mean anything: resolving twice without changing the configuration reuses the governing snapshot rather than minting a contract per run, so a new identity signals that the configuration changed and not that a run happened. Probe: making the resolver reuse the governing snapshot regardless of hash turned the positive red.',
+        ],
+        // F-MD-B18-A002-017: the recorded pair is a map parse and a substrate check; the exact-publication family runs a test-written query that a repository defect left green; member scenarios remain INCOMPLETE.
+        'MD-S003-R0025' => [
+            'positive' => 'B18ScenarioFamiliesOnMariaDbTest::test_the_family_map_names_exactly_the_families_the_contract_requires',
+            'negative' => 'B18ScenarioFamiliesOnMariaDbTest::test_these_scenarios_really_run_on_mariadb',
+            'basis' => 'new substrate. The mirror half was already true -- every DB-backed market-data guard runs on the SQLite mirror -- and the MariaDB half was true of nothing: all 91 of those guards swap database.default to an in-memory SQLite connection, so no family had ever been resolved against the engine production uses. UsesMarketDataMariaDb was added: it points at the migrated tradeaxis_testing schema rather than a hand-maintained mirror definition, wraps each test in a transaction it rolls back so the shared database keeps no residue, and skips rather than fails when MariaDB is unreachable, because an unavailable environment is not a proof failure. All six MD-S003 required scenario families now execute against MariaDB through the same repositories and services the mirror guards use, and the family map is parsed from the contract headings so a family added to MD-S003 with nothing exercising it on MariaDB fails rather than leaving all required scenario families meaning whichever six were written down. The negative guard asserts the substrate itself -- driver mysql, version containing MariaDB, and the expected database name -- because a class that silently ran on the mirror would prove the opposite of what it claims. Two production constraints the mirror cannot enforce surfaced while writing the fixtures and are recorded rather than absorbed: eod_current_publication_pointer.updated_at is NOT NULL with no default on MariaDB, and the pointer carries a foreign key to eod_publications which the mirror creates with foreign_key_constraints disabled, so referential integrity in the pointer/publication chain is enforced by production and by nothing in the mirror. Probes: pointing the trait at SQLite makes all nine tests skip rather than pass, so the class cannot silently claim MariaDB; removing the knowledge-time bound from the status supersession join turned the temporal identity family red on MariaDB, and removing it from the calendar query turned the as-known isolation family red, so the scenarios exercise the behaviour rather than merely connecting. One pending additive migration, AddReplayV2BoundInputContext, was applied to tradeaxis_testing to bring its schema current; a family proven against a stale schema would be proven against the wrong tables, which the trait now refuses by skipping.',
+        ],
+        // F-MD-B18-A002-018: the positive tests factor-set identity drift in replay; a canonical row keeping provider adj_close left it green while the negative went red.
+        'MD-S003-R0014' => [
+            'positive' => 'ReplayVerificationServiceTest::test_replay_detects_analytical_factor_set_identity_drift',
+            'negative' => 'CanonicalRawImportBoundaryTest::test_provider_adjusted_close_never_reaches_the_canonical_row',
+            'basis' => 'the negative guard proves provider adjusted close never reaches the canonical row',
+        ],
+        // F-MD-B18-A002-018: the pair varies effective time only; removing the status knowledge-time bound left it green.
+        'MD-S003-R0011' => [
+            'positive' => 'AsKnownReplayBoundaryTest::test_status_revision_selection_applies_both_effective_and_knowledge_time',
+            'negative' => 'AsKnownReplayBoundaryTest::test_a_calendar_revision_recorded_after_the_cutoff_is_invisible',
+            'basis' => 'status selection is asserted on both sides of effective_from while holding knowledge time fixed, and separate status/calendar cutoff guards exclude revisions recorded after knowledge_cutoff; deleting each effective/recorded predicate made its guard fail',
+        ],
+        // F-MD-B18-A002-018 with F-MD-B18-A002-013: the positive passes against a calendar wall that refuses every cutoff read; publication-mode calendar identity is unbound.
+        'MD-S041-R0032' => [
+            'positive' => 'AsKnownReplayBoundaryTest::test_a_calendar_revision_recorded_after_the_cutoff_is_invisible',
+            'negative' => 'CalendarProvenanceAndStatusTest::test_calendar_revision_conflict_and_incomplete_verification_both_fail_closed',
+            'basis' => 'a future-recorded calendar correction is unavailable at the earlier cutoff, and competing terminal revisions fail closed; widening recorded_at to a future sentinel and bypassing the conflict count each made the guards fail',
+        ],
+        // F-MD-B18-A002-018: the pair covers the status root and effective time only; removing the status or the config knowledge-time bound left it green.
+        'MD-S050-R0028' => [
+            'positive' => 'AsKnownReplayBoundaryTest::test_status_revision_selection_applies_both_effective_and_knowledge_time',
+            'negative' => 'CalendarProvenanceAndStatusTest::test_same_priority_authoritative_conflict_holds_instead_of_using_recency',
+            'basis' => 'effective_from and recorded_at are independently exercised, a superseding correction deterministically replaces its predecessor, and same-priority status or calendar ambiguity fails closed; deleting either time predicate or either conflict branch made the corresponding guard fail',
+        ],
+        // F-MD-B18-A002-018 with F-MD-B18-A002-013: the negative tests config refusal, not mapping; publication-mode mapping identity is unbound.
+        'MD-S055-R0025' => [
+            'positive' => 'AsKnownReplayBoundaryTest::test_identity_recorded_after_the_cutoff_is_invisible',
+            'negative' => 'AsKnownReplayBoundaryTest::test_an_as_known_config_resolution_refuses_rather_than_inventing_one',
+            'basis' => 'the mapping effective on T with as-known limited to revisions known by the cutoff is exactly what the identity-cutoff guard asserts',
+        ],
+        // F-MD-B18-A002-018: the positive passes against a calendar wall and seeds one late fact rather than a correction.
+        'MD-S050-R0022' => [
+            'positive' => 'AsKnownReplayBoundaryTest::test_a_calendar_revision_recorded_after_the_cutoff_is_invisible',
+            'negative' => 'B18AntiSurvivorshipFixtureCorpusTest::test_every_named_fixture_guard_exists_and_is_executable',
+            'basis' => 'a calendar fact recorded after the cutoff is asserted invisible to the as-known read and visible without one, and the corpus guard asserts this fixture still exists',
+        ],
+        // F-MD-B18-A002-018: the positive passes against a corporate-action wall that hides everything under a cutoff.
+        'MD-S050-R0023' => [
+            'positive' => 'AsKnownReplayBoundaryTest::test_a_corporate_action_recorded_after_the_cutoff_is_invisible',
+            'negative' => 'B18AntiSurvivorshipFixtureCorpusTest::test_every_named_fixture_guard_exists_and_is_executable',
+            'basis' => 'a corporate action recorded after the cutoff is asserted invisible to the as-known read, with a second assertion proving the row exists so a filter hiding everything cannot masquerade as a pass',
+        ],
+        // F-MD-B18-A002-018: no corrected publication in the fixture; removing the as-known seal bound left it green while the correction read-path guard went red.
+        'MD-S050-R0025' => [
+            'positive' => 'ReplayVerificationServiceTest::test_verify_replay_resolves_historical_publication_without_current_pointer_fallback',
+            'negative' => 'B18AntiSurvivorshipFixtureCorpusTest::test_every_named_fixture_guard_exists_and_is_executable',
+            'basis' => 'publication 144 version 4 is replayed while it is not the current publication, and the result records HISTORICAL_PUBLICATION_AUDIT with current_pointer_required false, so the original is resolved rather than the corrected current one',
+        ],
+        // F-MD-B18-A002-018: the null-reason class is not compared (reason-count comparison disabled, table green) and the table asserts only that some mismatch occurs.
+        'MD-S050-R0029' => [
+            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_named_assertion_class_denies_pass',
+            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_the_unperturbed_fixture_passes',
+            'basis' => 'new. One baseline fixture that matches, then one perturbation per class the contract names -- a value (bars_rows_written), a null reason (final_reason_code), a state (publishability, terminal, coverage gate), a lineage (publishing run, publication version), a content hash (all three batch hashes) and the seal -- each asserted to turn PASS into a reason-coded MISMATCH, so a class that is not compared shows up as a perturbation that still passes. A separate test asserts the perturbation table covers every class MD-S050-R0029 lists, so exhaustiveness is not proven over whatever subset happened to be written down; the manifest half is a fixture whose manifest declares a file it does not carry, refused outright. The negative guard is the unperturbed control, without which each perturbation could be failing for an unrelated reason.',
+        ],
+    ];
+
+    // Audit only, never read as a basis: the R0056 entry as it stood when F-008 measured that the
+    // mapped pair stays green with one publication fixture made non-executable.
+    public const SUPERSEDED = [
         // ---- MD-S050-R0056. The corpus MD-S050 requires, executed on the engine and repositories production
         // runs rather than on the mirror. The half this does not reach - the production deployment itself, and
         // a gate that refuses a relock lacking the corpus - is named in the basis rather than assumed.
@@ -737,10 +829,14 @@ final class MarketDataReplayVerificationProofBasis
     ];
 
     /** @return array<int,string> denominator rows this attempt has not yet established */
-    public static function outstanding(): array
+    public static function outstanding(?string $root = null): array
     {
         $out = [];
-        foreach (MarketDataReplayVerificationPredicateMap::PREDICATES as $id => $_entry) {
+        // PredicateMap preserves the original 121-row invalidation audit. It is not today's
+        // denominator: D001/D002 move two obligations and evidence excludes four siblings.
+        $root = $root ?? dirname(__DIR__, 5);
+        foreach (MarketDataReplayVerificationTraceabilitySpec::required($root) as $row) {
+            $id = $row['rule_id'];
             if (! isset(self::PROVEN[$id])) {
                 $out[] = $id;
             }
@@ -749,7 +845,7 @@ final class MarketDataReplayVerificationProofBasis
         return $out;
     }
 
-    /** @return array<int,string> entries naming a row this stage does not own */
+    /** @return array<int,string> entries absent from the original reviewed predicate lineage */
     public static function foreign(): array
     {
         $out = [];

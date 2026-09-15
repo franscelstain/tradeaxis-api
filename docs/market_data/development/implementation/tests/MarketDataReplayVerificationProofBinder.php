@@ -62,7 +62,7 @@ if ($validateOnly) {
         'mode' => 'VALIDATE_ONLY',
         'status' => $status,
         'attempt_id' => $spec::ATTEMPT,
-        'predicates_with_reviewed_basis' => count(MarketDataReplayVerificationProofBasis::PROVEN),
+        'predicates_with_reviewed_basis' => $result['predicates_with_reviewed_basis'],
         'predicates_without_reviewed_basis' => $withoutBasis,
         'denominator' => $result['denominator'],
         'proof_map_count' => $result['proof_map_count'],
@@ -234,7 +234,7 @@ echo json_encode([
     'denominator' => $seen,
     'bound' => $bound,
     'foreign_rows_altered' => 0,
-    'predicates_with_reviewed_basis' => count(MarketDataReplayVerificationProofBasis::PROVEN),
+    'predicates_with_reviewed_basis' => $check['predicates_with_reviewed_basis'],
     'predicates_without_reviewed_basis' => count(MarketDataReplayVerificationProofBasis::outstanding()),
     'bound_validation' => $check['status'],
 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL;

@@ -6,6 +6,10 @@ use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 use App\Infrastructure\Persistence\MarketData\MarketDataConfigSnapshotRepository;
 use App\Infrastructure\Persistence\MarketData\SourceObservationRepository;
 use App\Infrastructure\Persistence\MarketData\TemporalIdentityRepository;
+use PHPUnit\Framework\Assert;
+use PHPUnit\Framework\AssertionFailedError;
+use PHPUnit\Framework\IncompleteTest;
+use PHPUnit\Framework\SkippedTest;
 use Tests\Support\UsesMarketDataMariaDb;
 
 /**
@@ -50,10 +54,28 @@ class B18ProductionPathReplayFixturesTest extends TestCase
     /** A date with no observations in the shared testing database, so the manifest is only ours. */
     private const OBSERVATION_DATE = '2027-02-15';
 
+    /** The executed publication fixture `MD-S050-R0056` names beside the anti-survivorship cases. */
+    private const PUBLICATION_FIXTURE = 'test_an_explicit_publication_resolves_to_itself_on_mariadb';
+
+    /** The one test in this class that may not skip; see its docblock. */
+    private const AGGREGATE_GUARD = 'test_the_whole_production_path_corpus_executes_and_passes_on_mariadb';
+
     protected function setUp(): void
     {
         parent::setUp();
-        $this->bootMarketDataMariaDb();
+
+        try {
+            $this->bootMarketDataMariaDb();
+        } catch (SkippedTest $unavailable) {
+            // The individual fixtures keep the suite's convention: an unavailable engine is a skip,
+            // not a proof failure. The aggregate cannot follow it, because what it asserts is that
+            // the corpus was executed, and a corpus that never ran was not.
+            if ($this->getName(false) === self::AGGREGATE_GUARD) {
+                $this->fail('MD-S050-R0056 cannot count the production-path corpus as executed: '
+                    .$unavailable->getMessage());
+            }
+            throw $unavailable;
+        }
 
         config()->set('market_data.tickers.table', 'tickers');
         config()->set('market_data.tickers.id_column', 'ticker_id');
@@ -168,6 +190,194 @@ class B18ProductionPathReplayFixturesTest extends TestCase
             config('database.connections.'.$this->marketDataMariaDbConnection.'.database'),
             $this->marketDataMariaDb()->getDatabaseName()
         );
+    }
+
+    // ---- the executed-corpus guard ----------------------------------------------------------------
+
+    /**
+     * `MD-S050-R0056`, as `D-MD-B18-A002-003` scopes it: the publication fixture and every
+     * anti-survivorship case, executed and passing on the production engine, through the production
+     * repositories, against the migrated schema.
+     *
+     * The two guards above cannot establish that. `F-MD-B18-A002-008` made the publication fixture
+     * throw on entry and both stayed green, because one compares a text map and the other reads
+     * the driver name. This one executes every member of the corpus itself and counts only a
+     * member that ran to completion and asserted something. The corpus is derived from `MD-S050`
+     * through the reviewed map, never listed here, so a contract case with no fixture is reported
+     * as missing rather than silently not counted.
+     *
+     * It does not perform or authorize a relock, and nothing here touches production data. The
+     * relock act belongs to `MD-B22`.
+     */
+    public function test_the_whole_production_path_corpus_executes_and_passes_on_mariadb(): void
+    {
+        $db = $this->marketDataMariaDb();
+
+        $this->assertSame('mysql', $db->getDriverName(), 'the corpus is not running on the production engine');
+        $this->assertStringContainsStringIgnoringCase('mariadb', $db->select('select version() as v')[0]->v,
+            'the connection is MySQL-family but not MariaDB, so this is not the production engine');
+        $this->assertSame(
+            config('database.connections.'.$this->marketDataMariaDbConnection.'.database'),
+            $db->getDatabaseName()
+        );
+
+        // "Migrated schema" means every migration the repository ships, not the handful of columns
+        // the trait checks before it lets a test run.
+        $migrations = array_map(function (string $path): string {
+            return basename($path, '.php');
+        }, glob(database_path('migrations').'/*.php'));
+        $this->assertNotEmpty($migrations, 'no repository migrations were found, so the schema cannot be called migrated');
+        $pending = array_values(array_diff($migrations, $db->table('migrations')->pluck('migration')->all()));
+        $this->assertSame([], $pending, 'these repository migrations are not applied to the production-path database');
+
+        $corpus = $this->requiredCorpus();
+        $this->assertCount(9, $corpus, 'MD-S050 names eight anti-survivorship cases and one publication fixture');
+
+        $notCounted = [];
+        foreach ($corpus as $member => $method) {
+            $result = $this->executeCorpusMember($method);
+            if ($result['outcome'] !== 'PASS') {
+                $notCounted[] = $member.' -> '.$method.': '.$result['outcome']
+                    .($result['detail'] !== '' ? ' ('.$result['detail'].')' : '');
+            }
+        }
+
+        $this->assertSame([], $notCounted,
+            'MD-S050-R0056 requires executed publication and as-known fixtures, including all '
+                .'anti-survivorship cases, on the actual production path; these members did not execute and pass');
+    }
+
+    /**
+     * The harness above is only as good as its classification. Each way a member can fail to count
+     * is driven through it with a body written to end exactly that way, beside a control that must
+     * count, and the savepoint that keeps members apart is shown to roll back what a member wrote.
+     */
+    public function test_the_corpus_harness_refuses_every_way_a_fixture_can_fail_to_count(): void
+    {
+        $expected = [
+            'corpusProbePasses' => 'PASS',
+            'corpusProbeThrows' => 'THREW',
+            'corpusProbeFailsAnAssertion' => 'FAILED',
+            'corpusProbeSkips' => 'SKIPPED',
+            'corpusProbeIsIncomplete' => 'INCOMPLETE',
+            'corpusProbeAssertsNothing' => 'NO_ASSERTIONS',
+            'corpusProbeThatWasNeverWritten' => 'MISSING',
+        ];
+
+        foreach ($expected as $method => $outcome) {
+            $this->assertSame($outcome, $this->executeCorpusMember($method)['outcome'],
+                'the corpus harness misclassified '.$method);
+        }
+
+        $this->assertSame('PASS', $this->executeCorpusMember('corpusProbeWritesARow')['outcome']);
+        $this->assertSame(0, $this->marketDataMariaDb()->table('md_issuers')
+            ->where('issuer_uid', 'PP-HARNESS-ISOLATION')->count(),
+            'a member\'s writes survived its savepoint, so two members seeding the same identities would collide');
+
+        $this->assertTrue(method_exists($this, self::AGGREGATE_GUARD),
+            'setUp refuses to let the aggregate skip by naming it; renaming it would silently restore the skip');
+    }
+
+    /** @return array<string,string> contract wording => fixture method, plus the publication fixture */
+    private function requiredCorpus(): array
+    {
+        $map = $this->productionPathMap();
+        $corpus = [];
+        foreach ($this->contractCases() as $case) {
+            $corpus[$case] = $map[$case] ?? '(no production-path fixture is mapped for this case)';
+        }
+        $corpus['executed publication fixture'] = self::PUBLICATION_FIXTURE;
+
+        return $corpus;
+    }
+
+    /**
+     * Run one member inside a savepoint on the production-engine connection and say how it ended.
+     *
+     * Only `PASS` counts, and `PASS` requires at least one assertion: a body that returns early has
+     * not been executed in any sense the relock prerequisite means.
+     *
+     * @return array{outcome:string,assertions:int,detail:string}
+     */
+    private function executeCorpusMember(string $method): array
+    {
+        if (! method_exists($this, $method)) {
+            return ['outcome' => 'MISSING', 'assertions' => 0, 'detail' => 'no method '.$method];
+        }
+
+        $db = $this->marketDataMariaDb();
+        $level = $db->transactionLevel();
+        $before = Assert::getCount();
+        $outcome = 'PASS';
+        $detail = '';
+
+        $db->beginTransaction();
+        try {
+            $this->{$method}();
+        } catch (SkippedTest $e) {
+            $outcome = 'SKIPPED';
+            $detail = $e->getMessage();
+        } catch (IncompleteTest $e) {
+            $outcome = 'INCOMPLETE';
+            $detail = $e->getMessage();
+        } catch (AssertionFailedError $e) {
+            $outcome = 'FAILED';
+            $detail = $e->getMessage();
+        } catch (\Throwable $e) {
+            $outcome = 'THREW';
+            $detail = get_class($e).': '.$e->getMessage();
+        } finally {
+            while ($db->transactionLevel() > $level) {
+                $db->rollBack();
+            }
+        }
+
+        $assertions = Assert::getCount() - $before;
+        if ($outcome === 'PASS' && $assertions < 1) {
+            $outcome = 'NO_ASSERTIONS';
+        }
+
+        return ['outcome' => $outcome, 'assertions' => $assertions, 'detail' => $detail];
+    }
+
+    private function corpusProbePasses(): void
+    {
+        $this->assertTrue(true);
+    }
+
+    private function corpusProbeThrows(): void
+    {
+        throw new \RuntimeException('harness probe');
+    }
+
+    private function corpusProbeFailsAnAssertion(): void
+    {
+        $this->assertSame(1, 2, 'harness probe');
+    }
+
+    private function corpusProbeSkips(): void
+    {
+        $this->markTestSkipped('harness probe');
+    }
+
+    private function corpusProbeIsIncomplete(): void
+    {
+        $this->markTestIncomplete('harness probe');
+    }
+
+    private function corpusProbeAssertsNothing(): void
+    {
+    }
+
+    private function corpusProbeWritesARow(): void
+    {
+        $this->marketDataMariaDb()->table('md_issuers')->insert([
+            'issuer_uid' => 'PP-HARNESS-ISOLATION', 'legal_name' => 'Harness isolation probe',
+            'source_ref' => 'fixture', 'recorded_at' => '2023-01-01 00:00:00',
+            'created_at' => '2023-01-01 00:00:00',
+        ]);
+        $this->assertSame(1, $this->marketDataMariaDb()->table('md_issuers')
+            ->where('issuer_uid', 'PP-HARNESS-ISOLATION')->count());
     }
 
     // ---- the executed publication fixture ---------------------------------------------------------

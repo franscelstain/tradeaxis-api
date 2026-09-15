@@ -1,0 +1,222 @@
+{
+  "evidence_id": "E-MD-B18-A002-007",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-14T08:32:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "evidence_scope": "STOPPED_STATE_REVALIDATION_AT_MD-DEP-0014_NOT_CLOSURE",
+  "related_findings": [
+    "F-MD-B18-A002-008",
+    "F-MD-B18-A002-009",
+    "F-MD-B18-A002-010"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-006"
+  ],
+  "dependencies": [
+    "MD-DEP-0009",
+    "MD-DEP-0014",
+    "MD-DEP-0015"
+  ],
+  "ci_id": "CI-MD-B18-A002-001",
+  "execution_id": "MD-B18-A002-STOPPED-STATE-20260914",
+  "environment": "Windows 11; PHP 7.4.33; PHPUnit 9.6.34; MariaDB 10.4.27 (XAMPP, D:/xampp/mysql) reachable before the full suite and crashed during it.",
+  "raw_artifact_manifest": {
+    "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/stopped-state-20260914/DIAGNOSTIC_MANIFEST.json",
+    "manifest_sha256": "5824BE1CABED66DFB7464FBE6DE9BE3C54D896BCEC3E3542F2401C593001FAE4",
+    "artifact_count": 19
+  },
+  "resume_reconciliation": {
+    "e006_raw_artifacts_rehashed": 7,
+    "e006_raw_artifacts_matching": 7,
+    "r0056_fixture_restored_sha256_matches": true,
+    "last_stage_gate_outputs_before_this_run": "storage/app/market-data/evidence/MD-B18-A002/complete-parent-20260913-2246/*-final.json at 2026-09-13 23:10",
+    "f008_validation_journal_before_this_run": "EMPTY",
+    "unrecorded_residue_found": "F-MD-B18-A002-009 existed physically with no DOCUMENT_ID, DOCUMENT_ROLE, CURRENT_VERIFICATION or WORK_RECORD registration and no relationship rows; the documentation gate had written FAIL to MD_DOCUMENTATION_INTEGRITY_GATE_LATEST.json at 2026-09-14T03:11:45+02:00 without a record."
+  },
+  "checks": [
+    {
+      "command": "read-only PDO migration comparison, tradeaxis and tradeaxis_testing",
+      "status": "PASS",
+      "observed": "both 10.4.27-MariaDB; 72 of 72 repository migrations applied; 0 pending",
+      "limit": "Availability at that moment only."
+    },
+    {
+      "command": "php vendor/bin/phpunit --testdox --filter '(B18|AsKnown|Replay|ClassificationConsistencyGate|TraceabilityApplicabilityGate)' tests/Unit/MarketData",
+      "status": "PASS",
+      "tests": 351,
+      "assertions": 1522,
+      "skipped": 0,
+      "production_path_fixtures_on_mariadb": "11 of 11 pass",
+      "limit": "Execution observation; not per-predicate proof and not a binding."
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataReplayVerificationNormalization.php",
+      "status": "PASS",
+      "denominator": 115,
+      "conditional_na": 4,
+      "conditional_na_evidence": "E-MD-B18-A002-005"
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofGate.php",
+      "status": "FAIL",
+      "errors": ["PREDICATE_WITHOUT_REVIEWED_BASIS:MD-S050-R0056"],
+      "predicates_with_reviewed_basis": 114
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofReadinessGate.php",
+      "status": "FAIL",
+      "errors": ["PREDICATE_WITHOUT_REVIEWED_BASIS:MD-S050-R0056"]
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBinder.php --validate-only",
+      "status": "BLOCKED",
+      "errors": ["PREDICATE_WITHOUT_REVIEWED_BASIS:MD-S050-R0056"],
+      "matrix_written": false
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataReplayVerificationClosureGate.php",
+      "status": "FAIL",
+      "conditions_met": 6,
+      "conditions_unmet": [
+        "denominator_fully_satisfied",
+        "every_predicate_has_a_reviewed_proof_basis",
+        "raw_artifact_integrity",
+        "governed_evidence_reachable"
+      ],
+      "limit": "Missing A002 manifest is the correct fail-closed pre-evidence state for F-MD-B18-A002-005, not proof of its positive branch."
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofSelfTest.php --pre-binding",
+      "status": "FAIL",
+      "control": "FAIL",
+      "control_errors": ["PREDICATE_WITHOUT_REVIEWED_BASIS:MD-S050-R0056"],
+      "negative_outcomes_recognised": 10,
+      "admitted_mutation_proofs": 0,
+      "limit": "A red control makes every mutation verdict after it non-probative."
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataDocumentationIntegrityGate.php",
+      "status": "FAIL",
+      "failed_checks": ["ONE_DOCUMENT_ONE_ROLE", "DOCUMENT_ID_REGISTRY_INTEGRITY", "CURRENT_VERIFICATION_REBASELINE"],
+      "cause": "physical 1076 / registered 1075; missing development/findings/F-MD-B18-A002-009_CLASSIFICATION_GATE_REJECTS_EVIDENCED_NOT_APPLICABLE.md"
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataRelationshipIntegrityGateSelfTest.php",
+      "status": "FAIL",
+      "cause": "control 'unmutated documentation gate' observed FAIL (GATE_DID_NOT_REACT) because of the unregistered F009; all 14 negative mutations observed FAIL",
+      "limit": "Dependency failure of the control, not of the relationship gate."
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataRelationshipIntegrityGate.php",
+      "status": "PASS",
+      "records": 228,
+      "relationships": 453
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataClassificationConsistencyGate.php",
+      "status": "PASS"
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataTraceabilityApplicabilityGate.php",
+      "status": "PASS",
+      "scope": "Built-in MD-B01 only; not B18 applicability acceptance."
+    },
+    {
+      "command": "append-only registration of F-MD-B18-A002-009",
+      "status": "APPLIED",
+      "document_id": "MD-DOC-01121",
+      "rows_appended": {
+        "DOCUMENT_ID_REGISTRY.csv": 1,
+        "DOCUMENT_ROLE_REGISTRY.csv": 1,
+        "CURRENT_VERIFICATION_REGISTRY.csv": 1,
+        "WORK_RECORD_REGISTRY.csv": 1,
+        "WORK_RELATIONSHIP_REGISTRY.csv": 3
+      },
+      "relationship_ids": ["MD-REL-0454", "MD-REL-0455", "MD-REL-0456"],
+      "pre_write_prefix_byte_identical": true,
+      "crlf_preserved": true,
+      "status_registered": "OPEN — finding lifecycle unchanged; its corrective evidence is still owed"
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataDocumentationIntegrityGate.php (after registration)",
+      "status": "PASS",
+      "checks": 15
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataRelationshipIntegrityGate.php (after registration)",
+      "status": "PASS",
+      "records": 229,
+      "relationships": 456
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataRelationshipIntegrityGateSelfTest.php (after registration)",
+      "status": "PASS",
+      "controls_ok": 4,
+      "fails_closed": 14,
+      "total": 18
+    },
+    {
+      "command": "php vendor/bin/phpunit",
+      "status": "ERRORS",
+      "exit": 2,
+      "tests": 2256,
+      "assertions": 21347,
+      "errors": 3,
+      "failures": 1,
+      "skipped": 16,
+      "causes": {
+        "errors": [
+          "LocalFileEodBarsAdapterTest::test_fetch_or_load_eod_bars_prefers_explicit_manual_input_file_override — SQLSTATE[HY000] 2006 MySQL server has gone away",
+          "OpsCommandSurfaceTest::test_current_publication_repair_apply_records_reason_and_pointer_before_after — SQLSTATE[HY000] [2002] actively refused",
+          "StageThreeEligibilityProducerTest::test_producer_writes_explicit_facts_without_changing_the_decision — SQLSTATE[HY000] [2002] actively refused"
+        ],
+        "failures": [
+          "FindingRecordConsistencyTest::test_every_open_finding_reaches_the_canonical_current_state — F-MD-B18-A002-009 (OPEN) absent from generated navigation"
+        ],
+        "skipped": "16 MariaDB-dependent skips, the same count E-MD-B18-A002-003 observed during the prior outage; skip reasons not printed without --verbose"
+      },
+      "limit": "Not PASS. Database-caused results are environment evidence, not code verdicts; the navigation failure is repaired by the generator and must be re-run."
+    }
+  ],
+  "environment_observations": {
+    "observed_at": "2026-09-14 08:24-08:25 +07:00",
+    "port_3306_listener": false,
+    "mysqld_or_mariadbd_process": false,
+    "source_log": "D:/xampp/mysql/data/mysql_error.log",
+    "source_log_last_entry": "2026-09-14 07:45:48 Server socket created",
+    "startup_future_lsn_spaces": [0, 233, 316, 318],
+    "startup_example": "space 0 page 307 LSN 52524230841 against system LSN 701721",
+    "windows_application_log": [
+      "08:18:16 MariaDB: future LSN on space 172 pages 8-11 against system LSN 812315",
+      "08:19:08 MariaDB: read of 16384 bytes at offset 32768 returned 0; OS error 203; 'read' returned OS error 403, cannot continue",
+      "08:19:09 Application Error 1000: mysqld.exe 10.4.27.0 exception 0x80000003",
+      "08:19:13 Windows Error Reporting 1001: APPCRASH"
+    ],
+    "underlying_cause": "NOT_ESTABLISHED",
+    "page_integrity": "NOT_CERTIFIED",
+    "database_recovery_actions_performed": []
+  },
+  "decision_inputs_for_md_dep_0014": {
+    "f008_claim_independently_confirmed": "B18ProductionPathReplayFixturesTest.php:132 compares the contract case list with a text map and method-name existence; :158 checks driver, version and database name. Neither executes or aggregates the corpus.",
+    "relock_admission_operations_in_app_config_routes_database": 0,
+    "matrix_precedent_subject_stage_owns_relock_prerequisite": [
+      "MD-S049-R0015 MD-B17 SATISFIED",
+      "MD-S021-R0042 MD-B17 SATISFIED",
+      "MD-S007-R0073 MD-B10 SATISFIED"
+    ],
+    "matrix_precedent_b22_owns_operational_or_final_relock": [
+      "MD-S029-R0002 MD-B22 primary, MD-B08 supporting",
+      "MD-S059-R0037 MD-B22 primary, MD-B02 supporting; proof_owner_basis=production/decision-grade non-claim and final relock"
+    ],
+    "precedent_caveat": "MD-S049-R0015 binds five named evidence kinds to one guard pair covering static search and the gateway entry point; it supports ownership precedent only, not a proof standard.",
+    "not_a_decision": true
+  },
+  "proof_limit": "Stopped-state revalidation only. No predicate is satisfied, no binding written, no applicability or ownership changed, no closure claimed. The database crash makes every MariaDB-backed proof unavailable until MD-DEP-0015 resolves.",
+  "next": "Same MD-B18-A002 at MD-DEP-0014 (user owner/relock decision). MD-DEP-0015 must be resolved by the database owner before any runtime proof, full-suite PASS, E001 or SC. Return to MD-B19-A001 only after valid B18 closure and MD-DEP-0009 resolution."
+}

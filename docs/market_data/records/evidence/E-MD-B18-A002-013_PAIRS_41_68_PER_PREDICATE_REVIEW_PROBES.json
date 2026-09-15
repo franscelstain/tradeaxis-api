@@ -1,0 +1,105 @@
+{
+    "evidence_id": "E-MD-B18-A002-013",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+    "issued_at": "2026-09-15T00:29:04+07:00",
+    "issued_at_source": "system clock at file write",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "BLOCKED",
+    "evidence_scope": "PAIRS_41_TO_68_PER_PREDICATE_REVIEW_PROBES_REVIEW_COMPLETE_NOT_BINDING_OR_CLOSURE",
+    "related_findings": [
+        "F-MD-B18-A002-018",
+        "F-MD-B18-A002-013",
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-012",
+        "E-MD-B18-A002-011",
+        "E-MD-B18-A002-009"
+    ],
+    "dependencies": [
+        "MD-DEP-0017",
+        "MD-DEP-0015"
+    ],
+    "ci_id": "CI-MD-B18-A002-001",
+    "review_ledger": {
+        "path": "storage/app/market-data/evidence/MD-B18-A002/predicate-review-20260914/06-pairs-41-68.md",
+        "sha256": "FD98C59B54C0CA7458D53D9E96DFDB9FEB258FB1D89BAF2F84DDB1031B07FD23"
+    },
+    "raw_artifact_manifests": [
+        {
+            "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/predicate-review-20260914/pairs-41-68-probes/MANIFEST.json",
+            "manifest_sha256": "DCBAF2EC068C866719BE01CA6C46BDBA35C892210588F342F0BA8165CE083E56",
+            "artifact_count": 153
+        }
+    ],
+    "runtime": {
+        "server": "10.4.27-MariaDB, owner-rebuilt instance, PID 7648 started 2026-09-14 13:24:15, not restarted or stopped by this work",
+        "error_log": "212 lines, none after the 13:24:15 start",
+        "data_260914": "UNTOUCHED"
+    },
+    "probe_rule": "each probe landed exactly once (anchor unique; CRLF-aware for IndicatorVectorService.php), controls green before and after, byte restore hash-equal; a vacuity probe replaces the rule with a wall that refuses or hides everything under a cutoff",
+    "reused_probe_evidence": [
+        "E-MD-B18-A002-011 P11-R0009 / P11-R0010-SYM / P11-R0010-MAP: behaviour probes of the MD-S050-R0019, R0020 and R0021 positives",
+        "E-MD-B18-A002-012 P35-SNAPSHOT-FREEZE: behaviour probe of the MD-S003-R0022 positive"
+    ],
+    "harness_output": "P41-PRIOR                    pos_S003R0019            control_before=0(OK (1 test, 17 assertions)) landed=1 probe=1(Tests: 1, Assertions: 17, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 17 assertions))\nP41-POINTER                  pos_S003R0019            control_before=0(OK (1 test, 17 assertions)) landed=1 probe=2(Tests: 1, Assertions: 4, Errors: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 17 assertions))\nP41-POINTER                  pos_S003R0018            control_before=0(OK (1 test, 18 assertions)) landed=1 probe=1(Tests: 1, Assertions: 2, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 18 assertions))\nP41-NEG-PK                   neg_S003R0019            control_before=0(OK (1 test, 1 assertion)) landed=1 probe=1(Tests: 1, Assertions: 1, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 1 assertion))\nP42-SUPERSESSION             pos_S058R0069            control_before=0(OK (1 test, 4 assertions)) landed=1 probe=1(Tests: 1, Assertions: 1, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 4 assertions))\nP42-SUPERSESSION             neg_S058R0069            control_before=0(OK (1 test, 2 assertions)) landed=1 probe=1(Tests: 1, Assertions: 1, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 2 assertions))\nP45-STATUS-KNOWN             basis_S003R0011          control_before=0(OK (2 tests, 5 assertions)) landed=1 probe=0(OK (2 tests, 5 assertions)) result=NOT_CAUGHT expected=NOT_CAUGHT AS_EXPECTED restored=YES control_after=0(OK (2 tests, 5 assertions))\nP45-STATUS-KNOWN             basis_S050R0028          control_before=0(OK (2 tests, 7 assertions)) landed=1 probe=0(OK (2 tests, 7 assertions)) result=NOT_CAUGHT expected=NOT_CAUGHT AS_EXPECTED restored=YES control_after=0(OK (2 tests, 7 assertions))\nP45-STATUS-KNOWN             target                   control_before=0(OK (1 test, 3 assertions)) landed=1 probe=1(Tests: 1, Assertions: 1, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 3 assertions))\nP48-CONFIG-KNOWN             basis_S050R0028          control_before=0(OK (2 tests, 7 assertions)) landed=1 probe=0(OK (2 tests, 7 assertions)) result=NOT_CAUGHT expected=NOT_CAUGHT AS_EXPECTED restored=YES control_after=0(OK (2 tests, 7 assertions))\nP48-CONFIG-KNOWN             pos_S050R0024            control_before=0(OK (1 test, 3 assertions)) landed=1 probe=1(Tests: 1, Assertions: 1, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 3 assertions))\nP43-CONFIG-WALL              vacuity_S050R0024        control_before=0(OK (1 test, 3 assertions)) landed=1 probe=2(Tests: 1, Assertions: 0, Errors: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 3 assertions))\nP5X-CALENDAR-WALL            basis_S050R0022          control_before=0(OK (2 tests, 2 assertions)) landed=1 probe=0(OK (2 tests, 2 assertions)) result=NOT_CAUGHT expected=NOT_CAUGHT AS_EXPECTED restored=YES control_after=0(OK (2 tests, 2 assertions))\nP5X-CALENDAR-WALL            basis_S041R0032          control_before=0(OK (2 tests, 3 assertions)) landed=1 probe=0(OK (2 tests, 3 assertions)) result=NOT_CAUGHT expected=NOT_CAUGHT AS_EXPECTED restored=YES control_after=0(OK (2 tests, 3 assertions))\nP5X-CALENDAR-WALL            target                   control_before=0(OK (1 test, 2 assertions)) landed=1 probe=2(Tests: 1, Assertions: 0, Errors: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 2 assertions))\nP5X-CALENDAR-WALL            control_S003R0022        control_before=0(OK (1 test, 20 assertions)) landed=1 probe=2(Tests: 1, Assertions: 0, Errors: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 20 assertions))\nP54-EVENT-WALL               basis_S050R0023          control_before=0(OK (1 test, 2 assertions)) landed=1 probe=0(OK (1 test, 2 assertions)) result=NOT_CAUGHT expected=NOT_CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 2 assertions))\nP55-ASKNOWN-PUBLICATION      basis_S050R0025          control_before=0(OK (1 test, 4 assertions)) landed=1 probe=0(OK (1 test, 4 assertions)) result=NOT_CAUGHT expected=NOT_CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 4 assertions))\nP55-ASKNOWN-PUBLICATION      target                   control_before=0(OK (1 test, 6 assertions)) landed=1 probe=1(Tests: 1, Assertions: 3, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 6 assertions))\nP5X-UNIVERSE-EMPTY           vacuity_S050R0019        control_before=0(OK (1 test, 4 assertions)) landed=1 probe=1(Tests: 1, Assertions: 1, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 4 assertions))\nP5X-UNIVERSE-EMPTY           vacuity_S050R0021        control_before=0(OK (1 test, 9 assertions)) landed=1 probe=1(Tests: 1, Assertions: 6, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 9 assertions))\nP5X-MAPPING-MISSING          vacuity_S050R0020        control_before=0(OK (1 test, 8 assertions)) landed=1 probe=2(Tests: 1, Assertions: 0, Errors: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 8 assertions))\nP56-MODE-DEFAULT             pos_S050R0035            control_before=0(OK (8 tests, 24 assertions)) landed=1 probe=1(Tests: 8, Assertions: 22, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (8 tests, 24 assertions))\nP56-MODE-REFUSE-ALL          neg_S050R0035            control_before=0(OK (1 test, 16 assertions)) landed=1 probe=2(Tests: 1, Assertions: 0, Errors: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 16 assertions))\nP57-OUTAGE-DROPPED           pos_S050R0026            control_before=0(OK (1 test, 3 assertions)) landed=1 probe=1(Tests: 1, Assertions: 2, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 3 assertions))\nP58-UNKNOWN-AS-NOT-EXPECTED  pos_S003R0006            control_before=0(OK (1 test, 3 assertions)) landed=1 probe=1(Tests: 1, Assertions: 2, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 3 assertions))\nP58-SUSPENSION-EXPIRES       neg_S003R0006            control_before=0(OK (1 test, 3 assertions)) landed=1 probe=1(Tests: 1, Assertions: 1, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 3 assertions))\nP59-FALLBACK-DATE-DROPPED    pos_S003R0008            control_before=0(OK (1 test, 3 assertions)) landed=1 probe=1(Tests: 1, Assertions: 3, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 3 assertions))\nP59-ALWAYS-HOLD              neg_S003R0008_S003R0020  control_before=0(OK (1 test, 3 assertions)) landed=0 probe=1(Tests: 1, Assertions: 1, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 3 assertions))\nP67-BASE-FALLBACK-DATE       pos_S003R0020            control_before=0(OK (1 test, 7 assertions)) landed=1 probe=1(Tests: 1, Assertions: 3, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 7 assertions))\nP60-STALE-ACCEPTED           pos_S003R0007            control_before=0(OK (1 test, 4 assertions)) landed=1 probe=1(Tests: 1, Assertions: 1, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 4 assertions))\nP60-STALE-WIDENED            neg_S003R0007            control_before=0(OK (1 test, 3 assertions)) landed=1 probe=2(Tests: 1, Assertions: 0, Errors: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 3 assertions))\nP60-ZERO-PRICE               member_zero_price        control_before=0(OK (1 test, 2 assertions)) landed=1 probe=1(Tests: 1, Assertions: 2, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 2 assertions))\nP60-SCHEMA-INVALID           member_schema_invalid    control_before=0(OK (1 test, 4 assertions)) landed=1 probe=1(Tests: 1, Assertions: 3, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 4 assertions))\nP61-SYNTHETIC-ADMITTED       pos_S003R0012            control_before=0(OK (1 test, 2 assertions)) landed=1 probe=1(Tests: 1, Assertions: 1, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 2 assertions))\nP61-ADMIT-NOTHING            vacuity_S003R0012        control_before=0(OK (1 test, 2 assertions)) landed=1 probe=1(Tests: 1, Assertions: 1, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 2 assertions))\nP62-HIGH-NOT-SCALED          pos_S003R0013            control_before=0(OK (1 test, 5 assertions)) landed=1 probe=1(Tests: 1, Assertions: 2, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 5 assertions))\nP62-ADJ-CLOSE-SCALED         neg_S003R0013            control_before=0(OK (1 test, 2 assertions)) landed=1 probe=1(Tests: 1, Assertions: 2, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 2 assertions))\nP63-COEFFICIENT              pos_S003R0015            control_before=0(OK (1 test, 4 assertions)) landed=1 probe=1(Tests: 1, Assertions: 3, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 4 assertions))\nP63-COEFFICIENT              neg_S003R0015            control_before=0(OK (1 test, 7 assertions)) landed=1 probe=1(Tests: 1, Assertions: 4, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 7 assertions))\nP63-TRUNCATED-CHAIN          ANCHOR_COUNT=0 NOT_RUN\nP64-PROXY-ADMITTED           pos_S003R0016            control_before=0(OK (1 test, 2 assertions)) landed=1 probe=1(Tests: 1, Assertions: 1, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 2 assertions))\nP64-PROXY-INTO-ACTUAL        ANCHOR_COUNT=0 NOT_RUN\nP65-HISTORICAL-DENIED        pos_S003R0017            control_before=0(OK (1 test, 14 assertions)) landed=1 probe=0(OK (1 test, 14 assertions)) result=NOT_CAUGHT expected=CAUGHT UNEXPECTED restored=YES control_after=0(OK (1 test, 14 assertions))\nP65-SEALED-GUARD-OFF         neg_S003R0017            control_before=0(OK (1 test, 2 assertions)) landed=1 probe=1(Tests: 1, Assertions: 1, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 2 assertions))\nP66-CANDIDATE-BORN-CURRENT   neg_S003R0018            control_before=0(OK (1 test, 30 assertions)) landed=1 probe=1(Tests: 1, Assertions: 22, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 30 assertions))\nP44-ADJ-CLOSE-CANONICAL      basis_pos_S003R0014      control_before=0(OK (1 test, 3 assertions)) landed=1 probe=0(OK (1 test, 3 assertions)) result=NOT_CAUGHT expected=NOT_CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 3 assertions))\nP44-ADJ-CLOSE-CANONICAL      basis_neg_S003R0014      control_before=0(OK (1 test, 3 assertions)) landed=1 probe=1(Tests: 1, Assertions: 2, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 3 assertions))\nP68-REASON-COUNTS-OFF        basis_S050R0029          control_before=0(OK (15 tests, 59 assertions)) landed=1 probe=0(OK (15 tests, 59 assertions)) result=NOT_CAUGHT expected=NOT_CAUGHT AS_EXPECTED restored=YES control_after=0(OK (15 tests, 59 assertions))\nP68-SEAL-COMPARE-OFF         pos_S050R0029            control_before=0(OK (14 tests, 56 assertions)) landed=1 probe=0(OK (14 tests, 56 assertions)) result=NOT_CAUGHT expected=CAUGHT UNEXPECTED restored=YES control_after=0(OK (14 tests, 56 assertions))\nHARNESS_DONE exit=0\n",
+    "followup_output": "P63-TRUNCATED-CHAIN            neg_S003R0015  eol=CRLF control_before=0(OK (1 test, 7 assertions)) landed=1 probe=1(Tests: 1, Assertions: 4, Failures: 1.) result=CAUGHT expected=CAUGHT restored=YES control_after=0(OK (1 test, 7 assertions))\nP64-PROXY-INTO-ACTUAL          neg_S003R0016  eol=CRLF control_before=0(OK (1 test, 2 assertions)) landed=1 probe=1(Tests: 1, Assertions: 2, Failures: 1.) result=CAUGHT expected=CAUGHT restored=YES control_after=0(OK (1 test, 2 assertions))\nP65-HISTORICAL-DENIED-SUMMARY  pos_S003R0017  eol=LF control_before=0(OK (1 test, 14 assertions)) landed=1 probe=1(Tests: 1, Assertions: 7, Failures: 1.) result=CAUGHT expected=CAUGHT restored=YES control_after=0(OK (1 test, 14 assertions))\n",
+    "harness_notes": [
+        "P59-ALWAYS-HOLD printed landed=0 because the replacement block already exists once at FinalizeDecisionService:150-152; the anchor was unique, exactly one replacement was made and the file hash changed, verified from the backup",
+        "P63-TRUNCATED-CHAIN and P64-PROXY-INTO-ACTUAL were NOT_RUN in the first harness because IndicatorVectorService.php is CRLF; rerun CRLF-aware in the follow-up",
+        "P65-HISTORICAL-DENIED probed MarketDataEvidenceExportService:621, which the test does not read; the follow-up probes :230, the line that feeds publication_context",
+        "P68-SEAL-COMPARE-OFF stayed green because the seal class is compared twice (seal_state and publication_seal_state); the table asserts that some mismatch occurs, not that the named comparison fired"
+    ],
+    "review_verdicts": {
+        "reviewed": 28,
+        "kept_proven": [
+            "MD-S003-R0019",
+            "MD-S058-R0069",
+            "MD-S050-R0024",
+            "MD-S003-R0022",
+            "MD-S050-R0019",
+            "MD-S050-R0020",
+            "MD-S050-R0021",
+            "MD-S050-R0035",
+            "MD-S050-R0026",
+            "MD-S003-R0006",
+            "MD-S003-R0008",
+            "MD-S003-R0007",
+            "MD-S003-R0012",
+            "MD-S003-R0013",
+            "MD-S003-R0015",
+            "MD-S003-R0016",
+            "MD-S003-R0017",
+            "MD-S003-R0018",
+            "MD-S003-R0020"
+        ],
+        "moved_incomplete": [
+            "MD-S003-R0014",
+            "MD-S003-R0011",
+            "MD-S041-R0032",
+            "MD-S050-R0028",
+            "MD-S055-R0025",
+            "MD-S050-R0022",
+            "MD-S050-R0023",
+            "MD-S050-R0025",
+            "MD-S050-R0029"
+        ],
+        "finding": "F-MD-B18-A002-018",
+        "pair_69": "MD-S050-R0056 PROVEN by the executed-corpus aggregate (E-MD-B18-A002-009)"
+    },
+    "review_complete": "all 69 pairs / 115 predicates of 00-review-plan.txt reviewed",
+    "not_claimed": [
+        "no predicate bound",
+        "no closure",
+        "no application or test code changed",
+        "no production relock",
+        "no large data load",
+        "no action on data_260914"
+    ],
+    "next": "Draft the consolidated remediation package (F-013 to F-018) under MD-DEP-0017 and present it for user review before any application or test change."
+}

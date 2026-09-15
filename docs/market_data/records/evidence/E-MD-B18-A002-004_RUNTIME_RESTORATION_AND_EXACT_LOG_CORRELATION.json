@@ -1,0 +1,106 @@
+{
+  "evidence_id": "E-MD-B18-A002-004",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-13T14:58:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "execution_id": "APPROVAL-SCOPE-20260913-RECOVERY-RECHECK",
+  "supersedes": "E-MD-B18-A002-003",
+  "supersession_scope": "Current runtime availability and navigation validation only; predecessor failure observations and all predecessor artifact bytes remain valid as issued. This is not a stage acceptance or final applicability record.",
+  "finding_ids": [
+    "F-MD-B18-A002-006",
+    "F-MD-B18-A002-007"
+  ],
+  "dependency_status": {
+    "MD-DEP-0012": "BLOCKING",
+    "MD-DEP-0013": "RESOLVED_RUNTIME_AVAILABILITY_BY_EXECUTION"
+  },
+  "raw_artifacts": [
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/approval-scope-20260913/mariadb-20260913-144633.txt",
+      "sha256": "ed880a8e2c80a0b70efbafc7973e65c2204fe5317cd4485ca6eae4649efb0108",
+      "bytes": 367,
+      "modified_at": "2026-09-13T14:55:17.9193883+07:00"
+    },
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/approval-scope-20260913/database-readiness.txt",
+      "sha256": "f4255d18e3142871f8cc2b5d526d79470d88f98ff6809f9ea7734d1a79bbd20e",
+      "bytes": 16388,
+      "modified_at": "2026-09-13T14:55:20.9991960+07:00"
+    },
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/approval-scope-20260913/navigation-targeted-after-outage-record.txt",
+      "sha256": "6dd2daa94c944207e71b57fe31fdc811ba907cb27c06fbd78d7a36cf07c6c5be",
+      "bytes": 209,
+      "modified_at": "2026-09-13T14:50:41.8337174+07:00"
+    },
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/approval-scope-20260913/full-suite-after-records.txt",
+      "sha256": "3edd1045458047d98002e502e1a9e413effdcb8cdca1b2519e966fafba24b4e2",
+      "bytes": 3167,
+      "modified_at": "2026-09-13T14:57:43.3882173+07:00"
+    }
+  ],
+  "raw_link_correction": {
+    "predecessor": "E-MD-B18-A002-003",
+    "issue": "The live log advanced between diagnosis and tail capture. Its retained mariadb-error-excerpt.txt is the later 14:46:57 startup, whereas the four abort/LSN observations were read from 14:46:33. The original thirteen-artifact manifest is preserved unchanged.",
+    "corrective_artifact": "storage/app/market-data/evidence/MD-B18-A002/approval-scope-20260913/mariadb-20260913-144633.txt",
+    "selection": "Exactly four source lines beginning 2026-09-13 14:46:33 and containing page number=307, mysql.plugin, initialize plugins or Aborting.",
+    "retained_line_count": 4,
+    "page_lsn": 52524230841,
+    "system_lsn": 456145
+  },
+  "observations": {
+    "runtime": "PHP 7.4.33 / PHPUnit 9.6.34 / MariaDB 10.4.27",
+    "restoration": "A listener with mysqld PID 25244 appeared without any process-start/stop or data-recovery action by this work. Who or what restored it is not established.",
+    "databases": [
+      {
+        "name": "tradeaxis",
+        "migrations_applied": 72,
+        "pending": 0,
+        "migrate_status_exit": 0
+      },
+      {
+        "name": "tradeaxis_testing",
+        "migrations_applied": 72,
+        "pending": 0,
+        "migrate_status_exit": 0
+      }
+    ],
+    "database_commands": "Read-only SELECT DATABASE(), VERSION(), then php artisan migrate:status --database=mysql --no-interaction with the existing mysql connection's database selected per process. No migration executed.",
+    "navigation": {
+      "command": "php docs/market_data/development/implementation/tests/GenerateMarketDataCurrentState.php; php vendor/bin/phpunit --filter 'FindingRecordConsistencyTest|ScopeBoundaryAndOrchestrationCompletionTest'",
+      "tests": 11,
+      "assertions": 86,
+      "status": "PASS",
+      "previous_failures": 2,
+      "current_failures": 0
+    },
+    "full_suite": {
+      "command": "php vendor/bin/phpunit",
+      "status": "PASS",
+      "exit": 0,
+      "tests": 2248,
+      "assertions": 21399,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "duration": "05:32.972",
+      "raw_path": "storage/app/market-data/evidence/MD-B18-A002/approval-scope-20260913/full-suite-after-records.txt"
+    },
+    "limits": "Recovered connection/schema-test execution does not prove every stored page is uncorrupted or establish the cause of the prior LSN warning. No repair was performed or authorized; original incident retained for the database owner."
+  },
+  "coverage": {
+    "live_denominator": 115,
+    "satisfied": 0,
+    "conditional_pending": 4,
+    "final_denominator": false,
+    "new_satisfied_or_terminal_na_bindings": 0
+  },
+  "remaining": "Same MD-B18-A002 at MD-DEP-0012; user decision on omitted R0038/R0039, then final whole-parent applicability and fresh per-predicate proof. No SC issued and no B19 return."
+}

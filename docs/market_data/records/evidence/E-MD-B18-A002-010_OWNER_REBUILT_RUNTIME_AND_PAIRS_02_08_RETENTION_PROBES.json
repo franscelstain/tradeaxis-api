@@ -1,0 +1,161 @@
+{
+    "evidence_id": "E-MD-B18-A002-010",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+    "issued_at": "2026-09-14T14:07:54+07:00",
+    "issued_at_source": "system clock at file write",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "BLOCKED",
+    "evidence_scope": "OWNER_REBUILT_RUNTIME_F011A_EXECUTION_AND_PAIRS_02_TO_08_RETENTION_PROBES_NOT_BINDING_OR_CLOSURE",
+    "related_findings": [
+        "F-MD-B18-A002-010",
+        "F-MD-B18-A002-011",
+        "F-MD-B18-A002-012",
+        "F-MD-B18-A002-015"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-003",
+        "D-MD-B18-A002-004"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-009"
+    ],
+    "dependencies": [
+        "MD-DEP-0015",
+        "MD-DEP-0016",
+        "MD-DEP-0017"
+    ],
+    "ci_id": "CI-MD-B18-A002-001",
+    "raw_artifact_manifests": [
+        {
+            "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/clean-runtime-20260914b/MANIFEST.json",
+            "manifest_sha256": "D9CC532196C1B5A16A2D0F67B5D90F020533343098EB4B2F55CAD1DFA2D4BB00",
+            "artifact_count": 8
+        },
+        {
+            "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/predicate-review-20260914/retention-probes/MANIFEST.json",
+            "manifest_sha256": "93214F596AEFE611184EAF4930FE4D9D8E19D36993D7FE542444664E2CBEB09C",
+            "artifact_count": 33
+        },
+        {
+            "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/f011a-orphan-subset-20260914/MANIFEST.json",
+            "manifest_sha256": "1EE3ECEA12E0937EB941E45EEAD3CC0980CF6C23022C58E311CF47D21AFD7873",
+            "artifact_count": 7
+        }
+    ],
+    "owner_health_report": {
+        "path": "D:/xampp/mysql/health_audit_20260914/XAMPP_MARIADB_HEALTH_REPORT.md",
+        "sha256": "2B76096D743BA4F5EF300FDF80194FE31E8599380AC9619B5C37F3219CA65481",
+        "read_in_full": true,
+        "superseding_status": "HEALTHY after mysql_install_db rebuild and repeated graceful lifecycle; XAMPP Stop FORCED; large load NOT validated; data_260914 UNTOUCHED"
+    },
+    "runtime_verification_read_only": {
+        "server": "10.4.27-MariaDB",
+        "pid": 7648,
+        "started": "2026-09-14 13:24:15",
+        "datadir": "D:\\xampp\\mysql\\data\\",
+        "innodb_force_recovery": 0,
+        "lsn": "61497 flushed, pages flushed 61497, checkpoint 61488, dirty pages 0",
+        "system_databases_only_before_rebuild": [
+            "information_schema",
+            "mysql",
+            "performance_schema",
+            "test"
+        ],
+        "mysql_db": "Aria, 2 rows (read by SELECT; CHECK TABLE on system tables deliberately not run)",
+        "log_since_current_start": "no error and no fail-safe pattern; the only historical hits are the 13:18:03 A0 path-isolation crash boilerplate the owner documented",
+        "windows_events": "errors only at 13:00:06-13:00:38 (old datadir Aria Bad file descriptor and mysql.db corrupt) and 13:18:03-04 (A0); none after"
+    },
+    "database_rebuild": {
+        "create": "CREATE DATABASE tradeaxis and tradeaxis_testing (utf8mb4_unicode_ci), no IF NOT EXISTS",
+        "each": "72/72 migrations, 0 pending, 0 ledger extras, 62 tables, 9 triggers, CHECK TABLE 0 non-OK, eod_reason_codes 437",
+        "new_log_failsafe_or_error_lines": 0
+    },
+    "runtime_proof": {
+        "targeted": {
+            "filter": "(B18|AsKnown|Replay|ClassificationConsistencyGate|TraceabilityApplicabilityGate|FindingRecordConsistency|ScopeBoundaryAndOrchestrationCompletion|MigrationIntegrityAndDrift)",
+            "tests": 373,
+            "assertions": 1686,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0,
+            "mariadb_guards": "B18ProductionPathReplayFixturesTest 13/13 including the R0056 aggregate; B18ScenarioFamiliesOnMariaDbTest green"
+        },
+        "full_suite": {
+            "tests": 2258,
+            "assertions": 21556,
+            "errors": 0,
+            "skipped": 0,
+            "failures": 7,
+            "failures_all": "ProductionCorpusInvariantOracleTest population controls (F-MD-B18-A002-011 (b)); the orphan assertion corrected under D-MD-B18-A002-004 now passes",
+            "new_log_failsafe_or_error_lines": 0
+        }
+    },
+    "f011a_execution": {
+        "test": "MigrationIntegrityAndDriftTest::test_no_applied_migration_has_lost_its_file",
+        "control": "2 tests / 3 assertions green before and after each probe",
+        "probes": [
+            "undeclared watchlist-like orphan injected: red",
+            "in-scope orphan injected: red",
+            "declared watchlist orphan injected: green (subset semantics)"
+        ],
+        "file_sha256_after_restore": "432BC2CCCC0DEA303270F65B91C49A28159A2EF54750BCFF8DFF516C3790950F"
+    },
+    "retention_probes": {
+        "rule": "each probe landed once, control green before and after, byte restore hash-equal",
+        "results": [
+            "MD-S040-R0070 coverage gate state nulled: caught",
+            "MD-S040-R0072 coverage ratio nulled: caught",
+            "MD-S040-R0073 min threshold nulled: caught",
+            "MD-S040-R0074 missing count nulled: caught",
+            "MD-S040-R0075 terminal status nulled: caught",
+            "MD-S040-R0076 publishability nulled: caught",
+            "MD-S040-R0078 effective date nulled: caught",
+            "MD-S040-R0079 publication version nulled: caught",
+            "MD-S050-R0001 normalize(empty) defaulting: caught (2 of 6 command cases red)",
+            "MD-S003-R0024 fixture_source run check disabled: caught",
+            "MD-S050-R0045, MD-S050-R0050, MD-S002-R0016, MD-S003-R0031, MD-S004-R0011: an injected temporary claim document was named by rule; file removed"
+        ]
+    },
+    "review_verdicts_pairs_02_to_08": {
+        "reviewed": 30,
+        "kept_proven": 15,
+        "moved_incomplete": 15,
+        "incomplete_ids": [
+            "MD-S050-R0051",
+            "MD-S050-R0052",
+            "MD-S050-R0053",
+            "MD-S002-R0009",
+            "MD-S002-R0010",
+            "MD-S020-R0014",
+            "MD-S040-R0071",
+            "MD-S040-R0077",
+            "MD-S036-R0012",
+            "MD-S050-R0036",
+            "MD-S003-R0021",
+            "MD-S005-R0096",
+            "MD-S050-R0030",
+            "MD-S050-R0031",
+            "MD-S050-R0033"
+        ],
+        "finding": "F-MD-B18-A002-015"
+    },
+    "lifecycle_effects": {
+        "F-MD-B18-A002-012": "RESOLVED: owner-rebuilt instance verified; historical trigger not certified; SOP binding",
+        "F-MD-B18-A002-010": "RESOLVED: runtime restored; full-suite criterion carried by MD-DEP-0015",
+        "MD-DEP-0015": "stays BLOCKING: its only unmet D-MD-B18-A002-003 criterion is the full suite, which now fails only on the corpus oracle awaiting MD-DEP-0016 recovery"
+    },
+    "not_claimed": [
+        "no predicate bound",
+        "no closure",
+        "no production relock",
+        "no large data load",
+        "no action on data_260914",
+        "F-013 and F-014 unaffected by the environment recovery"
+    ],
+    "next": "MD-B18-A002 per-predicate review from PAIR 09 in plan order; consolidated remediation package (F-013, F-014, F-015) under MD-DEP-0017 after review."
+}

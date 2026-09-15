@@ -2,7 +2,7 @@
 
 - ID: `F-MD-B18-A002-004`
 - Raised by: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001`
-- Owner stage: **`MD-B18`**
+- Owner stage: **`MD-B22`** for remaining release validation; originating attempt `MD-B18-A002` supplies supporting guards
 - Raised at: 2026-09-10T20:10:00+07:00
 - Severity: `P1`
 - Status: `PARTIALLY_RESOLVED`
@@ -89,6 +89,18 @@ asserts an empty corpus — it asserts that the corpus exists, that no guard in 
 dimension, and that the guard recording why is still present.
 
 ## What closing this needs
+
+### Approved owner correction — 2026-09-13
+
+D-MD-B18-A002-001 assigns MD-S002-R0004 to MD-B22, with MD-B18 supporting, under MD-DEP-0011.
+The complete predicate remains MANDATORY / NOT_ASSESSED. No interpreter installation or PHP
+support narrowing is authorized. Locale and order-independence guards remain useful support;
+single-process ordering does not establish actual concurrent execution under every supported
+condition. MD-B22 must review the supported runtime/locale/concurrency corpus and compare real
+outputs across those conditions before release acceptance. Add explicit relationship to this
+finding at B22 baseline/CI entry. This decision does not open B22 or mark this finding resolved.
+
+### Original environment options (not executed here)
 
 Either a second supported interpreter available to CI — the two dimensions above then re-execute
 under each and the hashes are compared across them — or an owner decision narrowing the declared

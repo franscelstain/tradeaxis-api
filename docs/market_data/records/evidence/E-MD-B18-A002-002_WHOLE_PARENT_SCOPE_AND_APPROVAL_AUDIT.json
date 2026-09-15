@@ -1,0 +1,56 @@
+{
+  "evidence_id": "E-MD-B18-A002-002",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-13T11:00:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "evidence_scope": "DOCUMENT_ONLY_PARENT_SCOPE_AND_APPROVAL_AUDIT_NOT_RUNTIME_OR_CLOSURE_PROOF",
+  "finding_id": "F-MD-B18-A002-006",
+  "decision_id": "D-MD-B18-A002-001",
+  "dependency_ids": ["MD-DEP-0009", "MD-DEP-0010", "MD-DEP-0011", "MD-DEP-0012"],
+  "source": {
+    "path": "docs/market_data/authority/strategy/book/Replay_Verification_Contract_LOCKED.md",
+    "parent_rule_id": "MD-S050-R0037",
+    "parent_line": 75,
+    "condition": "Where as-known replay is not implemented",
+    "section": "While only one mode exists (LOCKED)",
+    "child_lines": [77, 78, 79, 80],
+    "child_rule_ids": ["MD-S050-R0038", "MD-S050-R0039", "MD-S050-R0040", "MD-S050-R0041"],
+    "next_section_line": 82,
+    "population": 4,
+    "previous_recommendation_population": 2,
+    "omitted_rule_ids": ["MD-S050-R0038", "MD-S050-R0039"]
+  },
+  "approval": {
+    "user_message": "Saya menyetujui paket rekomendasi yang anda sarankan",
+    "approved_applicability_rows": ["MD-S050-R0040", "MD-S050-R0041"],
+    "approved_primary_owner": {"MD-S002-R0004": "MD-B22"},
+    "approved_supporting_owner": {"MD-S002-R0004": "MD-B18"},
+    "approved_reference_decision": "MD-S004-R0007 is downstream backtest signal/execution/cashflow policy",
+    "approved_mirror_deferral": "F-MD-B18-A002-003 to MD-B21; MariaDB required for constraint-bearing claims",
+    "not_authorized": ["frozen strategy changes", "silent applicability decision for the two omitted siblings", "runtime support narrowing", "MD-B21 or MD-B22 stage entry"]
+  },
+  "observed_matrix_write": {
+    "before_backup": "C:/Users/prais/AppData/Local/Temp/tradeaxis-md-b18-a002-approval-20260913-1058/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv",
+    "changed_rule_ids": ["MD-S002-R0004", "MD-S004-R0007", "MD-S050-R0038", "MD-S050-R0039", "MD-S050-R0040", "MD-S050-R0041"],
+    "change_count": 6,
+    "terminal_satisfaction_or_na_bindings": 0,
+    "sibling_transitions": {
+      "MD-S050-R0037": "REFERENCE_ONLY -> REFERENCE_ONLY (unchanged parent context)",
+      "MD-S050-R0038": "CONDITIONAL_APPLICABLE -> CONDITIONAL_PENDING",
+      "MD-S050-R0039": "CONDITIONAL_APPLICABLE -> CONDITIONAL_PENDING",
+      "MD-S050-R0040": "CONDITIONAL_PENDING -> CONDITIONAL_PENDING (normalized parent condition added)",
+      "MD-S050-R0041": "CONDITIONAL_PENDING -> CONDITIONAL_PENDING (normalized parent condition added)"
+    }
+  },
+  "current_proof_limit": "This records source semantics, authorization bounds and a stopped matrix state only. It does not admit prior AS_KNOWN tests or old PASS as fresh runtime evidence. Proof/gate/full-suite execution must be recorded separately when claimed.",
+  "raw_artifacts_required": false,
+  "raw_artifact_basis": "RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD section 5: document-only interpretation, classification and orchestration audit.",
+  "resume": "MD-B18-A002 at MD-DEP-0012: decide the two omitted siblings; then prove current capability and normalize the complete parent before proof binding.",
+  "return_to": "MD-B19-A001 only after valid MD-B18 closure and MD-DEP-0009 resolution"
+}

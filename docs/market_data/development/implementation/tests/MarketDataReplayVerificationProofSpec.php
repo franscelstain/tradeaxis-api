@@ -32,7 +32,9 @@ final class MarketDataReplayVerificationProofSpec
     public const ATTEMPT = 'MD-B18-A002';
     public const BASELINE = 'MD-B18-A002-BL001';
     public const CI = 'CI-MD-B18-A002-001';
-    public const EXPECTED_DENOMINATOR = 121;
+    // Exactly six exclusions under D001/D002; E005 proves all four conditional exclusions.
+    // This changes the owned set, not the proof status of its 115 retained predicates.
+    public const EXPECTED_DENOMINATOR = 115;
 
     /**
      * Explicit `rule_id => family`. Every required row appears exactly once; an unmapped row is a
@@ -47,7 +49,6 @@ final class MarketDataReplayVerificationProofSpec
         'MD-S050-R0001' => 'mode_admission',
         'MD-S050-R0035' => 'mode_admission',
         'MD-S050-R0036' => 'mode_admission',
-        'MD-S050-R0041' => 'mode_admission',
 
         // -- exact_publication: an explicit immutable publication, never latest/current, with the
         //    correction lifecycle and single-publication read that depend on it.
@@ -169,12 +170,8 @@ final class MarketDataReplayVerificationProofSpec
         'MD-S002-R0010' => 'admissibility_boundary',
         'MD-S002-R0016' => 'admissibility_boundary',
         'MD-S003-R0031' => 'admissibility_boundary',
-        'MD-S004-R0007' => 'admissibility_boundary',
         'MD-S004-R0011' => 'admissibility_boundary',
         'MD-S020-R0014' => 'admissibility_boundary',
-        'MD-S050-R0038' => 'admissibility_boundary',
-        'MD-S050-R0039' => 'admissibility_boundary',
-        'MD-S050-R0040' => 'admissibility_boundary',
         'MD-S050-R0045' => 'admissibility_boundary',
         'MD-S050-R0050' => 'admissibility_boundary',
         'MD-S050-R0051' => 'admissibility_boundary',
@@ -182,7 +179,6 @@ final class MarketDataReplayVerificationProofSpec
         'MD-S050-R0053' => 'admissibility_boundary',
 
         // -- determinism_and_operations: repeatability across environments and the operator paths.
-        'MD-S002-R0004' => 'determinism_and_operations',
         'MD-S002-R0006' => 'determinism_and_operations',
         'MD-S003-R0025' => 'determinism_and_operations',
         'MD-S050-R0056' => 'determinism_and_operations',
@@ -196,7 +192,7 @@ final class MarketDataReplayVerificationProofSpec
      * @var array<string,int>
      */
     public const FAMILY_EXPECTED_COUNTS = [
-        'mode_admission' => 5,
+        'mode_admission' => 4,
         'exact_publication' => 14,
         'as_known_isolation' => 26,
         'bound_inputs' => 21,
@@ -205,8 +201,8 @@ final class MarketDataReplayVerificationProofSpec
         'independent_oracle' => 4,
         'corporate_action_and_indicator' => 4,
         'result_and_evidence' => 19,
-        'admissibility_boundary' => 15,
-        'determinism_and_operations' => 5,
+        'admissibility_boundary' => 11,
+        'determinism_and_operations' => 4,
     ];
 
     /** @return array<string,array<string,mixed>> */

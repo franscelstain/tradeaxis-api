@@ -2,10 +2,10 @@
 
 - ID: `F-MD-B18-A002-003`
 - Raised by: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001`
-- Owner stage: **`MD-B18`**
+- Owner stage: **`MD-B21`** (approved deferral; originating attempt remains `MD-B18-A002`)
 - Raised at: 2026-09-10T17:40:00+07:00
 - Severity: `P2`
-- Status: `OPEN`
+- Status: `OPEN — GOVERNED_DEFERRAL_TO_MD-B21`
 - Class: `PROOF_SURFACE_WEAKER_THAN_PRODUCTION`
 - Blocks: nothing currently bound; it bounds what the mirror can be cited for
 - Blocks strategy change: `NO`
@@ -38,6 +38,17 @@ Not by reading the mirror definition. By writing fixtures for `B18ScenarioFamili
 having them refused twice by constraints no mirror test had ever met.
 
 ## Remediation options
+
+### Approved disposition — 2026-09-13
+
+D-MD-B18-A002-001 records user approval of deferral to MD-B21 under MD-DEP-0010. No mirror
+constraint is fixed or waived by that decision. Until constraint hardening is executed there,
+SQLite is behavioral support only; referential-integrity and production-nullability claims need
+current MariaDB proof for the exact predicate. A missing B18 constraint proof still blocks B18.
+MD-B21 must read this finding at its recorded entry and add an explicit cross-stage baseline/CI
+relationship before remediation. This does not open MD-B21 or add an executable resume point.
+
+### Original options (preserved as rationale)
 
 Not taken here; both are scope decisions.
 

@@ -1,0 +1,116 @@
+{
+    "evidence_id": "E-MD-B18-A002-011",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+    "issued_at": "2026-09-14T16:03:59+07:00",
+    "issued_at_source": "system clock at file write",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "BLOCKED",
+    "evidence_scope": "PAIRS_09_TO_13_AND_16_TO_19_PER_PREDICATE_REVIEW_PROBES_NOT_BINDING_OR_CLOSURE",
+    "related_findings": [
+        "F-MD-B18-A002-016",
+        "F-MD-B18-A002-013",
+        "F-MD-B18-A002-015"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-010"
+    ],
+    "dependencies": [
+        "MD-DEP-0017",
+        "MD-DEP-0015"
+    ],
+    "ci_id": "CI-MD-B18-A002-001",
+    "review_ledger": {
+        "path": "storage/app/market-data/evidence/MD-B18-A002/predicate-review-20260914/04-pairs-09-13-16-19.md",
+        "sha256": "6C4B1F279A5B44A7FDA827AF7CA9DFA0F5FC3858E78BED4894911CCC21E5DFDC"
+    },
+    "raw_artifact_manifests": [
+        {
+            "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/predicate-review-20260914/pairs-09-10-probes/MANIFEST.json",
+            "manifest_sha256": "C5E5C8203CB44B6E233E054850BDDB9000118B2F0BE2A7C5037C04D341657A7A",
+            "artifact_count": 28
+        },
+        {
+            "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/predicate-review-20260914/pairs-11-13-probes/MANIFEST.json",
+            "manifest_sha256": "A6B91ECE218D59F8665F5B69B91CE8D732356962265641593517EA885804DC71",
+            "artifact_count": 33
+        },
+        {
+            "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/predicate-review-20260914/pairs-16-19-probes/MANIFEST.json",
+            "manifest_sha256": "6ADBC6CE363B213C5B8124A9F304392EB877D087DD73F07243CB0635CFB1BE0C",
+            "artifact_count": 45
+        }
+    ],
+    "runtime": {
+        "server": "10.4.27-MariaDB, owner-rebuilt instance, PID 7648 started 2026-09-14 13:24:15, not restarted or stopped by this work",
+        "error_log_since_start": "no error and no fail-safe pattern",
+        "data_260914": "UNTOUCHED"
+    },
+    "probe_rule": "each probe landed exactly once in an LF file, controls green before and after, byte restore hash-equal; gap probes compare the failing-test set of the whole tests/Unit/MarketData run (2257 tests) against the control, which carries the seven known corpus-oracle failures",
+    "targeted_probes_caught": [
+        "P09-POS import-only promotion policy call removed",
+        "P09-NEG policy made unconditional",
+        "P10-POS manual_file readable-without-coverage policy disabled",
+        "P10-NEG policy made unconditional for manual_file",
+        "P10-R0452 publication write injected into the replay path (both guards)",
+        "P13-POS explicit publication resolution bypassed",
+        "P13-NEG unsealed-historical reason mapping degraded",
+        "P18 x8 each MD-S050-R0032 item nulled in the exporter",
+        "P18-NEG mismatch block blanked on MATCH",
+        "P19-IMPERSONATE as-known metric carries the run publication id",
+        "P19-NEG snapshot-hash comparison disabled",
+        "P19-SURFACE seal_state added to compared fields",
+        "P19-MUTATE publication write injected into the as-known path"
+    ],
+    "gap_probes_not_caught": [
+        "G09-IMPORT-CMP import_status comparison disabled",
+        "G09-EXP-STATUS export import/promote status blanked",
+        "G09-EXP-MODE export request_mode blanked",
+        "G09-EXP-PROMOTED export promoted forced false",
+        "G10-EVID-READABLE coverage clause removed from the export readability check"
+    ],
+    "gap13": "rs_sha256_before=83EDE95F891503FAE41D42642BEEE3D4CA670C52CF46F4F91C5077F033C4B5C8\nG13-REFUSE anchor=1 landed=1 probe_exit=1(Tests: 2257, Assertions: 21685, Failures: 7.) new_failures=0 caught=NO restored=YES secs=323.5\nG13-control-after exit=1 (Tests: 2257, Assertions: 21686, Failures: 7.) fails=7 same_as_control=YES secs=326.4",
+    "discriminating_probes": [
+        "P11-R0009 delisted listings removed: recorded basis green, delisting fixture red",
+        "P11-R0010-SYM symbol interval end ignored: basis green, change/reuse fixtures red",
+        "P11-R0010-MAP mapping interval end ignored: basis green, change/reuse fixtures red",
+        "P12-R0046 injected claim document: source-observation basis green, corpus guard red naming MD-S050-R0046; file removed",
+        "P17-R0017-SECTOR sector knowledge-time filter unbounded: structural pair green, executing sector guard red"
+    ],
+    "gap_controls": "control before and after identical failure set (7 corpus-oracle controls); assertion count grows by one per run because ProductionValidationRuntimeProofStaticGuardTest asserts each .txt under storage/app/market-data",
+    "review_verdicts": {
+        "reviewed": 14,
+        "kept_proven": [
+            "MD-S085-R0452",
+            "MD-S050-R0032",
+            "MD-S050-R0005"
+        ],
+        "moved_incomplete": [
+            "MD-S036-R0007",
+            "MD-S036-R0031",
+            "MD-S040-R0080",
+            "MD-S003-R0009",
+            "MD-S003-R0010",
+            "MD-S003-R0005",
+            "MD-S050-R0046",
+            "MD-S050-R0027",
+            "MD-S019-R0074",
+            "MD-S050-R0017",
+            "MD-S003-R0002"
+        ],
+        "finding": "F-MD-B18-A002-016"
+    },
+    "not_claimed": [
+        "no predicate bound",
+        "no closure",
+        "no application or test code changed",
+        "no production relock",
+        "no large data load",
+        "no action on data_260914"
+    ],
+    "next": "MD-B18-A002 per-predicate review from PAIR 21 in plan order; consolidated remediation package (F-013, F-014, F-015, F-016) under MD-DEP-0017 after review."
+}

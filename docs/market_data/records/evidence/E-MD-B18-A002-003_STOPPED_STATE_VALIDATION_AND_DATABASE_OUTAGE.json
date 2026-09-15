@@ -1,0 +1,153 @@
+{
+  "evidence_id": "E-MD-B18-A002-003",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-13T14:49:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "related_findings": [
+    "F-MD-B18-A002-006",
+    "F-MD-B18-A002-007"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-001"
+  ],
+  "dependencies": [
+    "MD-DEP-0012",
+    "MD-DEP-0013"
+  ],
+  "execution_id": "APPROVAL-SCOPE-20260913",
+  "environment": "Windows; PHP 7.4.33; PHPUnit 9.6.34. Targeted MariaDB tests passed earlier; full suite later could not connect to port 3306. The intended test database is tradeaxis_testing.",
+  "raw_artifact_manifest": {
+    "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/approval-scope-20260913/DIAGNOSTIC_MANIFEST.json",
+    "manifest_sha256": "86afc2091c464ec00dfcb741ad68132a3ac61a6617c0c4fb61d91bb886160db2",
+    "artifact_count": 13
+  },
+  "checks": [
+    {
+      "command": "php vendor/bin/phpunit --filter 'B18ReleaseCandidateCriteriaTest|B18DeterminismAcrossConditionsTest|B18ProductionPathReplayFixturesTest'",
+      "status": "PASS",
+      "tests": 24,
+      "assertions": 81,
+      "skipped": 0,
+      "limit": "Execution observation only; no per-predicate proof binding or current availability inference."
+    },
+    {
+      "command": "php vendor/bin/phpunit --filter 'ClassificationConsistencyGateTest|TraceabilityApplicabilityGateTest'",
+      "status": "PASS",
+      "tests": 23,
+      "assertions": 77
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofGate.php --pre-binding",
+      "status": "FAIL",
+      "denominator": 115,
+      "reviewed_map_size": 121,
+      "errors": 8
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofReadinessGate.php --pre-binding",
+      "status": "FAIL",
+      "readiness_state": "NOT_READY"
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataReplayVerificationClosureGate.php",
+      "status": "FAIL",
+      "conditions_met": 5,
+      "conditions_unmet": 5,
+      "pending": 4,
+      "satisfied": 0,
+      "limit": "Original predicate map produces a stale 113 basis subtotal; direct live intersection has 115 entries. Neither count is current proof. No stage PASS manifest or E001 exists."
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofSelfTest.php --pre-binding",
+      "status": "FAIL",
+      "control": "FAIL",
+      "negative_outcomes": 10,
+      "admitted_mutation_proofs": 0
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataDocumentationIntegrityGate.php",
+      "status": "PASS",
+      "checks_pass": 15,
+      "checks_fail": 0,
+      "physical_documents": 1068,
+      "registered_documents": 1068,
+      "strategy_documents": 91,
+      "strategy_mismatches": 0
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataRelationshipIntegrityGate.php",
+      "status": "PASS",
+      "validity": "PASS",
+      "completeness": "PASS",
+      "records": 221,
+      "relationships": 435
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataClassificationConsistencyGate.php",
+      "status": "PASS",
+      "errors": 0,
+      "prior_error": "UNEXPLAINED_REFERENCE MD-S004-R0007",
+      "fix": "Added required applicability_normalized and proof_owner_confirmed markers to exactly one already-approved reference row. No gate change."
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataTraceabilityApplicabilityGate.php",
+      "status": "PASS",
+      "scope": "Built-in MD-B01 only; NOT B18 applicability acceptance."
+    },
+    {
+      "command": "php docs/market_data/development/implementation/tests/MarketDataRelationshipIntegrityGateSelfTest.php",
+      "status": "PASS",
+      "controls_before": 2,
+      "controls_after": 2,
+      "negative_mutations": 14,
+      "all_mutations_applied": true,
+      "all_negative_observed": "FAIL",
+      "method": "Temporary copy; file bytes restored from saved content; repository never mutated by self-test."
+    },
+    {
+      "command": "php vendor/bin/phpunit",
+      "status": "ERRORS",
+      "exit": 2,
+      "tests": 2248,
+      "assertions": 21249,
+      "errors": 6,
+      "failures": 2,
+      "skipped": 16,
+      "duration": "04:54.550",
+      "causes": {
+        "errors": "All six are SQLSTATE[HY000] [2002] connection refused",
+        "failures": [
+          "FindingRecordConsistencyTest::test_every_open_finding_reaches_the_canonical_current_state",
+          "ScopeBoundaryAndOrchestrationCompletionTest::test_governed_execution_is_sequential_with_one_resume_and_distinct_authoritative_roles"
+        ],
+        "failure_remediation": "Regenerate CURRENT_STATE then targeted and full-suite revalidation; not claimed executed in this immutable evidence."
+      }
+    }
+  ],
+  "environment_observations": {
+    "port_3306_listener": false,
+    "mysqld_or_mariadbd_process": false,
+    "windows_service_registered": false,
+    "existing_executable": "D:/xampp/mysql/bin/mysqld.exe",
+    "existing_configuration": "D:/xampp/mysql/bin/my.ini",
+    "source_log": "D:/xampp/mysql/data/mysql_error.log",
+    "source_log_event_time": "2026-09-13 14:46:33",
+    "page_lsn": 52524230841,
+    "system_lsn": 456145,
+    "last_errors": [
+      "Could not open mysql.plugin table",
+      "Failed to initialize plugins",
+      "Aborting"
+    ],
+    "underlying_file_mismatch_cause": "NOT_ESTABLISHED",
+    "database_recovery_actions_performed": []
+  },
+  "proof_limit": "Diagnostic evidence only. No full-suite PASS, terminal applicability, replay acceptance, production integrity or closure is claimed. Original failed artifacts are retained and must not be overwritten on retry.",
+  "next": "Same MD-B18-A002; resolve MD-DEP-0012 applicability decision and MD-DEP-0013 database recovery authority/availability. Restore navigation through generator and validate stopped state; no stage switch."
+}

@@ -46,8 +46,10 @@
  *                     and misjudged. MD-S067-R0010 was the second kind, found only by reading the
  *                     contract.
  *
- *   BINDING_COHERENCE a SATISFIED row carries evidence and an evidence-carrying row is SATISFIED.
- *                     Half-cleared proof state is not a legible outcome.
+ *   BINDING_COHERENCE a SATISFIED row carries evidence. Evidence may also prove the false condition
+ *                     of REQUIRED / CONDITIONAL_NOT_APPLICABLE / NOT_APPLICABLE (sections 4-6).
+ *                     Other half-cleared proof states remain invalid. This structural check does
+ *                     not certify the evidence or rationale; the owning stage's proof gates do.
  *
  * Stages that have completed entry normalization fail on a violation. Unopened stages are reported
  * as an outstanding `MD-DEP-0004` entry obligation rather than silently excused, so the backlog is
@@ -293,7 +295,10 @@ final class MarketDataClassificationConsistencyGate
 
             $hasEvidence = trim((string) ($row['current_evidence_ids'] ?? '')) !== '';
             $isSatisfied = $row['coverage_status'] === 'SATISFIED';
-            if ($hasEvidence !== $isSatisfied) {
+            $isConditionalNa = $row['coverage_requirement'] === 'REQUIRED'
+                && ($row['applicability'] ?? '') === 'CONDITIONAL_NOT_APPLICABLE'
+                && $row['coverage_status'] === 'NOT_APPLICABLE';
+            if ($hasEvidence !== $isSatisfied && ! ($hasEvidence && $isConditionalNa)) {
                 $counts['binding_incoherent']++;
                 $errors[] = 'BINDING_COHERENCE '.$row['rule_id'].' ['.$row['primary_stage'].']: status is '
                     .$row['coverage_status'].' while evidence is '.($hasEvidence ? 'present' : 'absent');

@@ -1,0 +1,146 @@
+{
+  "evidence_id": "E-MD-B18-A002-009",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-14T10:58:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "evidence_scope": "R0056_PREDICATE_BASIS_F009_REPROBE_AND_CLEAN_RUNTIME_NOT_DENOMINATOR_BINDING_OR_CLOSURE",
+  "related_findings": [
+    "F-MD-B18-A002-008",
+    "F-MD-B18-A002-009",
+    "F-MD-B18-A002-010",
+    "F-MD-B18-A002-011"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-003"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-007",
+    "E-MD-B18-A002-008"
+  ],
+  "dependencies": [
+    "MD-DEP-0009",
+    "MD-DEP-0014",
+    "MD-DEP-0015",
+    "MD-DEP-0016"
+  ],
+  "ci_id": "CI-MD-B18-A002-001",
+  "execution_id": "MD-B18-A002-CLEAN-RUNTIME-20260914",
+  "raw_artifact_manifests": [
+    {
+      "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/clean-runtime-20260914/MANIFEST.json",
+      "manifest_sha256": "3BA187FE0A27B378EF65704D09560C6BF5E6ECB74996DB9CB235931FF4881225",
+      "artifact_count": 32
+    },
+    {
+      "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/r0056-aggregate-20260914/MANIFEST.json",
+      "manifest_sha256": "E0ACCF05AB38A3BD2C64A824060A90BEBDC6B0A8A4E63ED8EB855A37E2470007",
+      "artifact_count": 2
+    },
+    {
+      "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/f009-reprobe-20260914/MANIFEST.json",
+      "manifest_sha256": "DD0AD4EFA7981AAE614A62D4A1A7F6332005F984036CF39693DE912CA111AFBE",
+      "artifact_count": 6
+    }
+  ],
+  "clean_runtime": {
+    "availability": {
+      "server": "10.4.27-MariaDB, mariadb.org binary distribution",
+      "datadir": "D:/xampp/mysql/data",
+      "innodb_force_recovery": 0,
+      "started": "2026-09-14 10:08:21 by the user, not by this work",
+      "startup_log": "clean; crash-recovery pass from checkpoint LSN 300288, redo resized 2x5 MB to 2x512 MB per my.ini; no future-LSN or corruption warning"
+    },
+    "integrity": {
+      "template_provenance": "file tree identical to D:/xampp/mysql/backup (137 files plus mysql.pid and mysql_error.log); 59 mysql system files byte-identical, 28 unhashable only because the running server locks them",
+      "application_databases_before_create": "none (information_schema, mysql, performance_schema, phpmyadmin, test)",
+      "create": "CREATE DATABASE without IF NOT EXISTS for tradeaxis and tradeaxis_testing, utf8mb4 / utf8mb4_unicode_ci as the old db.opt files declared",
+      "migrations_each": "72 of 72 applied, 0 pending, 0 ledger rows without a file",
+      "seed_each": "DatabaseSeeder -> MarketDataReasonCodesSeeder, eod_reason_codes 437",
+      "schema_each": "62 base tables, 9 triggers, every UsesMarketDataMariaDb required column present",
+      "check_table_each": "0 non-OK results across all 62 tables",
+      "old_data_directory_access": "read-only directory and file-size listing of D:/xampp/mysql/data_260914 only; nothing copied, modified, repaired or started"
+    },
+    "runtime_proof": {
+      "targeted": {
+        "command": "php vendor/bin/phpunit --testdox --filter '(B18|AsKnown|Replay|ClassificationConsistencyGate|TraceabilityApplicabilityGate|FindingRecordConsistency|ScopeBoundaryAndOrchestrationCompletion)' tests/Unit/MarketData",
+        "tests": 364,
+        "assertions": 1665,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "full_suite": {
+        "command": "php vendor/bin/phpunit",
+        "tests": 2258,
+        "assertions": 21529,
+        "errors": 0,
+        "failures": 8,
+        "skipped": 0,
+        "exit": 1,
+        "causes": [
+          "MigrationIntegrityAndDriftTest::test_no_applied_migration_has_lost_its_file asserts the exact eleven out-of-scope watchlist orphan migrations of the old deployed ledger; the clean ledger has none",
+          "ProductionCorpusInvariantOracleTest: seven population controls require the deployed corpus in tradeaxis, which exists only in the isolated old data directory"
+        ],
+        "classification": "environment-coupled guards, recorded as F-MD-B18-A002-011; no application defect and no test changed"
+      }
+    }
+  },
+  "r0056_predicate_basis": {
+    "rule_id": "MD-S050-R0056",
+    "decision": "D-MD-B18-A002-003",
+    "positive": "B18ProductionPathReplayFixturesTest::test_the_whole_production_path_corpus_executes_and_passes_on_mariadb",
+    "negative": "B18ProductionPathReplayFixturesTest::test_the_corpus_harness_refuses_every_way_a_fixture_can_fail_to_count",
+    "guard_file_sha256": "3D761B6E0EC7F88D17BC37DCB58C530B1BCCEA22ACAE6136B362C4C12FD53494",
+    "class_run": "13 tests / 100 assertions, 0 skipped, on the clean instance",
+    "control": "aggregate alone 1 test / 44 assertions, green before every probe and after every restore",
+    "probes": [
+      {"id": "P1", "mutation": "F-008 exception at publication fixture entry", "landed": 1, "observed": "FAIL, classified THREW", "restored_hash_equal": true},
+      {"id": "P2", "mutation": "markTestSkipped inside the calendar case", "landed": 1, "observed": "FAIL, classified SKIPPED", "restored_hash_equal": true},
+      {"id": "P3", "mutation": "early return in the provider-outage case", "landed": 1, "observed": "FAIL, classified NO_ASSERTIONS", "restored_hash_equal": true},
+      {"id": "P4", "mutation": "corporate-action case removed from productionPathMap", "landed": 1, "observed": "FAIL, classified MISSING", "restored_hash_equal": true},
+      {"id": "P5", "mutation": "calendar expectation falsified", "landed": 1, "observed": "FAIL, classified FAILED", "restored_hash_equal": true},
+      {"id": "P6", "mutation": "MARKET_DATA_MARIADB_TEST_DATABASE set to a nonexistent database, no file change", "observed": "aggregate FAILS with 'cannot count the production-path corpus as executed'; the other twelve tests skip", "control_after": "13 tests / 100 assertions"}
+    ],
+    "limits": "Does not perform or authorize a relock and touches no production data. R0056 stays NOT_ASSESSED until the stage binds its denominator."
+  },
+  "proof_basis_changes": {
+    "r0056": "INCOMPLETE -> PROVEN; the substrate-only entry kept under SUPERSEDED for audit",
+    "withdrawn_not_applicable": "MD-S050-R0038..R0041 moved out of PROVEN into WITHDRAWN_NOT_APPLICABLE: they are CONDITIONAL_NOT_APPLICABLE and outside the denominator, so no proof is claimed for them",
+    "counts_after": {"PROVEN": 115, "INCOMPLETE": 0, "WITHDRAWN_NOT_APPLICABLE": 4, "SUPERSEDED": 1},
+    "review_state": "115 bases present; only R0056 is re-reviewed and probed in this continuation. 73 bases carry no recorded probe; the other 114 await per-predicate review against their guard bodies."
+  },
+  "f009_reprobe": {
+    "gate_sha256": "80C96361FB8153637F8D45D51CE06C8DEB60A46102CFF5614ACD4512D11C610D",
+    "control": "ClassificationConsistencyGateTest 20 tests / 96 assertions, green before and after each probe",
+    "probes": [
+      {"id": "reject", "mutation": "condition reverted to hasEvidence !== isSatisfied", "landed": 1, "observed": "20 tests, 10 failures", "restored_hash_equal": true},
+      {"id": "overbroad", "mutation": "isConditionalNa forced true", "landed": 1, "observed": "20 tests, 7 failures (all non-terminal/misclassified data sets)", "restored_hash_equal": true}
+    ]
+  },
+  "gates_after": {
+    "normalization": "PASS on E-MD-B18-A002-008; probes: clearing R0038 evidence -> FALSE_CONDITION_BINDING_INVALID, staling a tested source -> CONDITION_EXECUTION_STALE; controls green either side",
+    "proof_gate_pre_binding": "PASS",
+    "readiness": "PASS",
+    "binder_validate_only": "PASS",
+    "proof_self_test_pre_binding": "PASS 11/11 with a green control",
+    "closure": "FAIL on denominator_fully_satisfied, raw_artifact_integrity, governed_evidence_reachable; every_predicate_has_a_reviewed_proof_basis met, foreign entries 0",
+    "documentation": "PASS",
+    "relationship": "PASS",
+    "relationship_self_test": "PASS 4 controls, 14 fail closed",
+    "classification": "PASS",
+    "applicability": "PASS (MD-B01 scope only)"
+  },
+  "record_hygiene_disclosed": [
+    "D-MD-B18-A002-003 carries issued_at 10:25; the file was created 10:17:26 and last written 10:19:10 (+07:00).",
+    "E-MD-B18-A002-008 carries issued_at 11:05; the file was created 10:36:43 (+07:00).",
+    "E-MD-B18-A002-007 and D-MD-B18-A002-003 were written with CRLF line endings against the repository's LF convention; both are immutable and left as issued. Mutable files carrying the same defect were normalized back to LF with content unchanged."
+  ],
+  "proof_limit": "No predicate is bound, no closure is claimed, no production relock is performed. The full suite is not green on the clean instance; MD-DEP-0015 stays BLOCKING against its D003 criterion until F-MD-B18-A002-011 is decided.",
+  "next": "Same MD-B18-A002: per-predicate review of the 114 non-R0056 bases from PAIR 01 of storage/app/market-data/evidence/MD-B18-A002/predicate-review-20260914/00-review-plan.txt, while the user decides F-MD-B18-A002-011."
+}

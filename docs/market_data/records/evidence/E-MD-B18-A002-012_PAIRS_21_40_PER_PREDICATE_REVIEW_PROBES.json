@@ -1,0 +1,98 @@
+{
+    "evidence_id": "E-MD-B18-A002-012",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+    "issued_at": "2026-09-14T23:51:55+07:00",
+    "issued_at_source": "system clock at file write",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "BLOCKED",
+    "evidence_scope": "PAIRS_21_TO_40_PER_PREDICATE_REVIEW_PROBES_NOT_BINDING_OR_CLOSURE",
+    "related_findings": [
+        "F-MD-B18-A002-017",
+        "F-MD-B18-A002-013",
+        "F-MD-B18-A002-016"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-011"
+    ],
+    "dependencies": [
+        "MD-DEP-0017",
+        "MD-DEP-0015"
+    ],
+    "ci_id": "CI-MD-B18-A002-001",
+    "review_ledger": {
+        "path": "storage/app/market-data/evidence/MD-B18-A002/predicate-review-20260914/05-pairs-21-40.md",
+        "sha256": "7074BE702D4C78DA83560202D5426FFF1ED3E38CC11504E829841AAB0AEA92FD"
+    },
+    "raw_artifact_manifests": [
+        {
+            "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/predicate-review-20260914/pairs-21-32-probes/MANIFEST.json",
+            "manifest_sha256": "4FCA45A02A91340E358371CE63ACB9CFF04A6E4DB8BDCE515EFD7B589FDC89A2",
+            "artifact_count": 40
+        },
+        {
+            "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/predicate-review-20260914/pairs-33-40-probes/MANIFEST.json",
+            "manifest_sha256": "31873FD857D70AB4F685992D5D5FB6A7B94402AC3DD7CE9A29C803AAB9B5B6A9",
+            "artifact_count": 36
+        }
+    ],
+    "runtime": {
+        "server": "10.4.27-MariaDB, owner-rebuilt instance, PID 7648 started 2026-09-14 13:24:15, not restarted or stopped by this work",
+        "error_log": "no line after the 13:24:15 start; the only pattern hit is the documented 13:18:03 A0 crash boilerplate (line 15)",
+        "data_260914": "UNTOUCHED"
+    },
+    "probe_rule": "each probe landed exactly once in an LF file, controls green before and after, byte restore hash-equal; skipped MariaDB tests would be reported as SKIP_NOT_PASS and none were",
+    "demonstration": {
+        "file": "storage/app/market-data/evidence/MD-B18-A002/predicate-review-20260914/pairs-21-32-probes/R0016-missing-identity-demo.txt",
+        "result": "all identities present PASS; temporal, calendar and observation identities empty PASS (ADMISSIBLE); fixture declaring a temporal identity with actual empty FAIL; config snapshot missing BLOCKED"
+    },
+    "probes_2132": [
+        "P2X-T199-DELISTED: basis pairs of MD-S004-R0003, R0005, R0008 and MD-S002-R0005 and the four MD-S002-R0005 corpus members green; delisting member red",
+        "P24-CALENDAR-CUTOFF: MD-S004-R0002 pair green; calendar member red",
+        "P27-CONFIG-IDENTITY: MD-S002-R0003 pair and 16 corpus tests green; ReplayComparisonDetectsDivergenceTest red",
+        "P31-SEALED-IMMUTABLE: MD-S002-R0008 corpus test green; superseded-publication member red"
+    ],
+    "probes_3340_file": "storage/app/market-data/evidence/MD-B18-A002/predicate-review-20260914/pairs-33-40-probes",
+    "probes_3340_summary": "P34-CFG-EFFECTIVE    pos_S082R0216     control_before=0(OK (1 test, 3 assertions)) landed=1 probe=1(Tests: 1, Assertions: 1, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 3 assertions))\nP34-CFG-EFFECTIVE    basis_S065R0003   control_before=0(OK (2 tests, 5 assertions)) landed=1 probe=0(OK (2 tests, 5 assertions)) result=NOT_CAUGHT expected=NOT_CAUGHT AS_EXPECTED restored=YES control_after=0(OK (2 tests, 5 assertions))\nP34-CFG-EFFECTIVE    basis_S003R0025   control_before=0(OK (2 tests, 6 assertions)) landed=1 probe=0(OK (2 tests, 6 assertions)) result=NOT_CAUGHT expected=NOT_CAUGHT AS_EXPECTED restored=YES control_after=0(OK (2 tests, 6 assertions))\nP34-CFG-EFFECTIVE    family_S003R0025  control_before=0(OK (1 test, 2 assertions)) landed=1 probe=0(OK (1 test, 2 assertions)) result=NOT_CAUGHT expected=NOT_CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 2 assertions))\nP34-CFG-COMPARE      neg_S082R0216     control_before=0(OK (11 tests, 66 assertions)) landed=1 probe=1(Tests: 11, Assertions: 63, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (11 tests, 66 assertions))\nP35-CFG-ASKNOWN      pos_S082R0217     control_before=0(OK (1 test, 2 assertions)) landed=1 probe=1(Tests: 1, Assertions: 1, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 2 assertions))\nP35-CFG-RECORDED     neg_S082R0217     control_before=0(OK (1 test, 3 assertions)) landed=1 probe=1(Tests: 1, Assertions: 2, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 3 assertions))\nP35-SNAPSHOT-FREEZE  freeze_S082R0217  control_before=0(OK (1 test, 20 assertions)) landed=1 probe=1(Tests: 1, Assertions: 18, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 20 assertions))\nP38-SEAL-CALL        pos_S082R0225     control_before=0(OK (1 test, 4 assertions)) landed=1 probe=1(Tests: 1, Assertions: 2, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 4 assertions))\nP38-SEAL-BOUNDARY    neg_S082R0225     control_before=0(OK (1 test, 1 assertion)) landed=1 probe=2(Tests: 1, Assertions: 0, Errors: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 1 assertion))\nP40-UNBOUND-OFF      pos_S082R0015     control_before=0(OK (1 test, 3 assertions)) landed=1 probe=1(Tests: 1, Assertions: 1, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 3 assertions))\nP40-UNBOUND-ALWAYS   neg_S082R0015     control_before=0(OK (1 test, 3 assertions)) landed=1 probe=1(Tests: 1, Assertions: 1, Failures: 1.) result=CAUGHT expected=CAUGHT AS_EXPECTED restored=YES control_after=0(OK (1 test, 3 assertions))\n",
+    "review_verdicts": {
+        "reviewed": 20,
+        "kept_proven": [
+            "MD-S082-R0216",
+            "MD-S082-R0217",
+            "MD-S082-R0225",
+            "MD-S082-R0015"
+        ],
+        "moved_incomplete": [
+            "MD-S003-R0023",
+            "MD-S004-R0003",
+            "MD-S004-R0005",
+            "MD-S004-R0002",
+            "MD-S002-R0006",
+            "MD-S004-R0004",
+            "MD-S002-R0003",
+            "MD-S002-R0005",
+            "MD-S050-R0016",
+            "MD-S002-R0007",
+            "MD-S002-R0008",
+            "MD-S004-R0008",
+            "MD-S082-R0218",
+            "MD-S082-R0224",
+            "MD-S065-R0003",
+            "MD-S003-R0025"
+        ],
+        "finding": "F-MD-B18-A002-017"
+    },
+    "not_claimed": [
+        "no predicate bound",
+        "no closure",
+        "no application or test code changed",
+        "no production relock",
+        "no large data load",
+        "no action on data_260914"
+    ],
+    "next": "MD-B18-A002 per-predicate review from PAIR 41 in plan order; consolidated remediation package (F-013 to F-017) under MD-DEP-0017 after review."
+}

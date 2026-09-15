@@ -1,8 +1,94 @@
 <?php
 require_once __DIR__.'/MarketDataReplayVerificationTraceabilitySpec.php';
-$root=dirname(__DIR__,5);$rows=MarketDataReplayVerificationTraceabilitySpec::required($root);$all=[];$h=fopen($root.'/docs/market_data/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv','rb');$head=fgetcsv($h);while(($v=fgetcsv($h))!==false){$r=array_combine($head,$v);if(($r['active']??'')==='YES'&&($r['primary_stage']??'')==='MD-B18')$all[]=$r;}fclose($h);
-$c=array_count_values(array_column($all,'applicability'));$errors=[];
-foreach($all as $r)if(in_array($r['applicability'],['MANDATORY_OR_CONDITIONAL','CONDITIONAL_PENDING'],true))$errors[]='UNNORMALIZED:'.$r['rule_id'];
-if(count($rows)!==121)$errors[]='DENOMINATOR_MISMATCH:'.count($rows);
-if(($c['MANDATORY']??0)!==117)$errors[]='MANDATORY_MISMATCH';if(($c['CONDITIONAL_APPLICABLE']??0)!==4)$errors[]='CONDITIONAL_MISMATCH';if(($c['REFERENCE_ONLY']??0)!==32)$errors[]='REFERENCE_MISMATCH';if(($c['OPTIONAL_CAPABILITY']??0)!==2)$errors[]='OPTIONAL_MISMATCH';
-$result=['gate'=>'MarketDataReplayVerificationNormalization','stage_id'=>'MD-B18','status'=>$errors?'FAIL':'PASS','counts'=>$c,'denominator'=>count($rows),'errors'=>$errors,'generated_at'=>date(DATE_ATOM)];echo json_encode($result,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES).PHP_EOL;exit($result['status']==='PASS'?0:1);
+
+// D001/D002 correct ownership and the complete parent, not the required predicates' meaning.
+// E005 is false-condition proof only. Never derive N/A from capability names or a missing test.
+// E008 re-executes E005's proof after the R0056 guard changed one tested source; it supersedes
+// E005 for execution identity only, and every check below applies to it unchanged.
+$root = dirname(__DIR__, 5);
+$path = $root.'/docs/market_data/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv';
+$all = [];
+$errors = [];
+$h = fopen($path, 'rb');
+if (! $h) { throw new RuntimeException('TRACEABILITY_MATRIX_UNREADABLE'); }
+$header = fgetcsv($h);
+$header[0] = preg_replace('/^\xEF\xBB\xBF/', '', $header[0]);
+while (($v = fgetcsv($h)) !== false) {
+    if (count($v) !== count($header)) { $errors[] = 'MALFORMED_MATRIX_ROW'; continue; }
+    $row = array_combine($header, $v);
+    if ($row['active'] === 'YES' && $row['primary_stage'] === 'MD-B18') { $all[] = $row; }
+}
+fclose($h);
+$counts = array_count_values(array_column($all, 'applicability'));
+$expected = ['MANDATORY' => 115, 'CONDITIONAL_NOT_APPLICABLE' => 4, 'REFERENCE_ONLY' => 33, 'OPTIONAL_CAPABILITY' => 2];
+foreach ($expected as $class => $count) {
+    if (($counts[$class] ?? 0) !== $count) { $errors[] = 'POPULATION_MISMATCH:'.$class; }
+}
+foreach ($counts as $class => $count) {
+    if (! isset($expected[$class])) { $errors[] = 'UNEXPECTED_APPLICABILITY:'.$class; }
+}
+if (count($all) !== 154) { $errors[] = 'STAGE_POPULATION_MISMATCH'; }
+$required = MarketDataReplayVerificationTraceabilitySpec::required($root);
+if (count($required) !== MarketDataReplayVerificationTraceabilitySpec::EXPECTED_DENOMINATOR) {
+    $errors[] = 'DENOMINATOR_MISMATCH:'.count($required);
+}
+
+$siblings = ['MD-S050-R0038', 'MD-S050-R0039', 'MD-S050-R0040', 'MD-S050-R0041'];
+$evidenceId = 'E-MD-B18-A002-008';
+$evidenceFile = 'E-MD-B18-A002-008_FALSE_CONDITION_REEXECUTION_AFTER_R0056_GUARD.json';
+$found = [];
+foreach ($all as $row) {
+    if (! in_array($row['rule_id'], $siblings, true)) { continue; }
+    $found[] = $row['rule_id'];
+    if ($row['applicability'] !== 'CONDITIONAL_NOT_APPLICABLE'
+        || $row['coverage_status'] !== 'NOT_APPLICABLE'
+        || $row['current_evidence_ids'] !== $evidenceId
+        || strpos($row['notes'], 'predicate_context=MD-S050-R0037;') === false
+        || strpos($row['notes'], 'normalized_predicate=Where as-known replay is not implemented:') === false
+        || strpos($row['notes'], 'current_applicability_decision=D-MD-B18-A002-002;') === false) {
+        $errors[] = 'FALSE_CONDITION_BINDING_INVALID:'.$row['rule_id'];
+    }
+}
+sort($found);
+if ($found !== $siblings) { $errors[] = 'WHOLE_PARENT_POPULATION_MISMATCH'; }
+
+$evidencePath = $root.'/docs/market_data/records/evidence/'.$evidenceFile;
+$e = is_file($evidencePath) ? json_decode((string) file_get_contents($evidencePath), true) : null;
+foreach (['evidence_id' => $evidenceId, 'stage_id' => 'MD-B18', 'attempt_id' => 'MD-B18-A002',
+    'baseline_id' => 'MD-B18-A002-BL001', 'verification_epoch' => 'MD-REBASELINE-20260820-001',
+    'decision_id' => 'D-MD-B18-A002-002', 'verdict' => 'NOT_APPLICABLE', 'condition_proof_result' => 'PASS'] as $key => $value) {
+    if (($e[$key] ?? null) !== $value) { $errors[] = 'CONDITION_EVIDENCE_IDENTITY_INVALID:'.$key; }
+}
+if (($e['source']['condition_observed'] ?? null) !== false
+    || ($e['source']['child_population'] ?? null) !== 4
+    || array_column($e['applicability_proof'] ?? [], 'rule_id') !== $siblings
+    || ($e['controls']['mutation']['landed_count'] ?? null) !== 1
+    || ($e['controls']['mutation']['caught'] ?? null) !== true) {
+    $errors[] = 'FALSE_CONDITION_PROOF_INCOMPLETE';
+}
+$links = $e['raw_artifacts'] ?? [];
+if (count($links) !== 4) { $errors[] = 'CONDITION_ARTIFACT_POPULATION_MISMATCH'; }
+foreach ($links as $link) {
+    $file = $root.'/'.($link['path'] ?? '');
+    if (! is_file($file) || ! hash_equals(strtolower($link['sha256'] ?? ''), hash_file('sha256', $file))) {
+        $errors[] = 'CONDITION_ARTIFACT_INVALID:'.($link['path'] ?? '');
+    }
+}
+$sources = $e['tested_source_sha256'] ?? [];
+if (count($sources) !== 7) { $errors[] = 'CONDITION_SOURCE_POPULATION_MISMATCH'; }
+foreach ($sources as $file => $hash) {
+    if (! is_file($root.'/'.$file) || ! hash_equals(strtolower($hash), hash_file('sha256', $root.'/'.$file))) {
+        $errors[] = 'CONDITION_EXECUTION_STALE:'.$file;
+    }
+}
+$source = $e['source'] ?? [];
+if (! is_file($root.'/'.($source['path'] ?? ''))
+    || ! hash_equals(strtolower($source['sha256'] ?? ''), hash_file('sha256', $root.'/'.$source['path']))) {
+    $errors[] = 'CONDITION_AUTHORITY_IDENTITY_INVALID';
+}
+$result = ['gate' => 'MarketDataReplayVerificationNormalization', 'stage_id' => 'MD-B18',
+    'status' => $errors ? 'FAIL' : 'PASS', 'counts' => $counts, 'denominator' => count($required),
+    'conditional_na_evidence' => $evidenceId, 'whole_parent_population' => count($found),
+    'errors' => $errors, 'generated_at' => date(DATE_ATOM)];
+echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL;
+exit($result['status'] === 'PASS' ? 0 : 1);

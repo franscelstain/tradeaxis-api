@@ -1,0 +1,155 @@
+{
+  "evidence_id": "E-MD-B18-A002-005",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-13T22:51:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "NOT_APPLICABLE",
+  "condition_proof_result": "PASS",
+  "evidence_scope": "FALSE_EXTERNAL_CONDITION_ONLY_NOT_DENOMINATOR_SATISFACTION_OR_STAGE_CLOSURE",
+  "finding_id": "F-MD-B18-A002-006",
+  "decision_id": "D-MD-B18-A002-002",
+  "prior_evidence_id": "E-MD-B18-A002-002",
+  "dependency_ids": [
+    "MD-DEP-0012"
+  ],
+  "ci_id": "CI-MD-B18-A002-001",
+  "execution_id": "MD-B18-A002-complete-parent-20260913-2246",
+  "source": {
+    "path": "docs/market_data/authority/strategy/book/Replay_Verification_Contract_LOCKED.md",
+    "sha256": "CDE2D1A83088B67026A4BAC54CAB5A9970D838122270CA8B5D75B5D492DF68D1",
+    "parent_rule_id": "MD-S050-R0037",
+    "parent_line": 75,
+    "child_lines": [
+      77,
+      78,
+      79,
+      80
+    ],
+    "next_section_line": 82,
+    "child_population": 4,
+    "condition": "Where as-known replay is not implemented",
+    "condition_observed": false
+  },
+  "applicability_proof": [
+    {
+      "rule_id": "MD-S050-R0038",
+      "predicate_context": "MD-S050-R0037",
+      "applicability": "CONDITIONAL_NOT_APPLICABLE",
+      "coverage_status": "NOT_APPLICABLE",
+      "basis": "The complete frozen parent limits this child to absence of AS_KNOWN implementation. Current real snapshot + canonicalizer + verifier + persisted own-mode result execution establishes capability; temporal snapshot reads expose only cutoff-known revisions and all eight MariaDB corpus fixtures execute. Removing AS_KNOWN execution once breaks the capability guards; byte restoration restores green. The parent's external absence condition is false, not the child's general subject waived."
+    },
+    {
+      "rule_id": "MD-S050-R0039",
+      "predicate_context": "MD-S050-R0037",
+      "applicability": "CONDITIONAL_NOT_APPLICABLE",
+      "coverage_status": "NOT_APPLICABLE",
+      "basis": "The complete frozen parent limits this child to absence of AS_KNOWN implementation. Current real snapshot + canonicalizer + verifier + persisted own-mode result execution establishes capability; temporal snapshot reads expose only cutoff-known revisions and all eight MariaDB corpus fixtures execute. Removing AS_KNOWN execution once breaks the capability guards; byte restoration restores green. The parent's external absence condition is false, not the child's general subject waived."
+    },
+    {
+      "rule_id": "MD-S050-R0040",
+      "predicate_context": "MD-S050-R0037",
+      "applicability": "CONDITIONAL_NOT_APPLICABLE",
+      "coverage_status": "NOT_APPLICABLE",
+      "basis": "The complete frozen parent limits this child to absence of AS_KNOWN implementation. Current real snapshot + canonicalizer + verifier + persisted own-mode result execution establishes capability; temporal snapshot reads expose only cutoff-known revisions and all eight MariaDB corpus fixtures execute. Removing AS_KNOWN execution once breaks the capability guards; byte restoration restores green. The parent's external absence condition is false, not the child's general subject waived."
+    },
+    {
+      "rule_id": "MD-S050-R0041",
+      "predicate_context": "MD-S050-R0037",
+      "applicability": "CONDITIONAL_NOT_APPLICABLE",
+      "coverage_status": "NOT_APPLICABLE",
+      "basis": "The complete frozen parent limits this child to absence of AS_KNOWN implementation. Current real snapshot + canonicalizer + verifier + persisted own-mode result execution establishes capability; temporal snapshot reads expose only cutoff-known revisions and all eight MariaDB corpus fixtures execute. Removing AS_KNOWN execution once breaks the capability guards; byte restoration restores green. The parent's external absence condition is false, not the child's general subject waived."
+    }
+  ],
+  "controls": {
+    "before": {
+      "command": "php vendor/bin/phpunit --filter 'AsKnownReplayExecutionServiceTest|B18AsKnownModeIsolationTest|B18AsKnownSnapshotIsolationTest|B18ProductionPathReplayFixturesTest' --testdox",
+      "tests": 20,
+      "assertions": 100,
+      "errors": 0,
+      "failures": 0,
+      "skips": 0
+    },
+    "mutation": {
+      "path": "app/Application/MarketData/Services/AsKnownReplayExecutionService.php",
+      "anchor_count": 1,
+      "landed_count": 1,
+      "injection": "throw new RuntimeException('PROBE_AS_KNOWN_CAPABILITY_UNAVAILABLE') at execute entry",
+      "command": "php vendor/bin/phpunit --filter 'AsKnownReplayExecutionServiceTest|B18AsKnownModeIsolationTest' --testdox",
+      "tests": 6,
+      "assertions": 3,
+      "errors": 5,
+      "failures": 1,
+      "skips": 0,
+      "phpunit_exit": 2,
+      "caught": true,
+      "restored_from_byte_copy": true,
+      "restored_sha256": "0DE6DF364AD7912E8742477CAE2EA6C0C77DA033407946979E6547511D2402F8",
+      "backup": "C:/Users/prais/AppData/Local/Temp/tradeaxis-md-b18-a002-parent-20260913-2245/AsKnownReplayExecutionService.php"
+    },
+    "after": {
+      "same_command_as_before": true,
+      "tests": 20,
+      "assertions": 100,
+      "errors": 0,
+      "failures": 0,
+      "skips": 0,
+      "phpunit_exit": 0
+    }
+  },
+  "environment": {
+    "php": "7.4.33",
+    "phpunit": "9.6.34",
+    "mariadb": "10.4.27",
+    "databases": [
+      "tradeaxis",
+      "tradeaxis_testing"
+    ],
+    "current_repository_migrations": 72,
+    "applied_current_migrations_each": 72,
+    "pending_each": 0,
+    "migration_ledger_rows_each": 83,
+    "ledger_names_not_in_current_repository_each": 11,
+    "database_changes_performed": false
+  },
+  "raw_artifacts": [
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/complete-parent-20260913-2246/capability-control-before.txt",
+      "sha256": "E9DDFE4299E57A2F551F48AD2AAADC992256B4E992B7C1BE2746C04A3452FC8A"
+    },
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/complete-parent-20260913-2246/capability-unavailable-probe.txt",
+      "sha256": "4348A2FF969B1036430880D41D387C80ABB14DC923E24549FF63469649330208"
+    },
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/complete-parent-20260913-2246/capability-control-after.txt",
+      "sha256": "A632649C7A28F67666650498161AE85EED6B72EBACB494466920F8C7061F91C7"
+    },
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/complete-parent-20260913-2246/runtime-readiness-scoped.json",
+      "sha256": "B2F38E22E444F3B549D0D4BC2AF2A638F02B375AE6C728AC5EA1F8F902B8B8A2"
+    }
+  ],
+  "tested_source_sha256": {
+    "app/Application/MarketData/Services/AsKnownReplayExecutionService.php": "0DE6DF364AD7912E8742477CAE2EA6C0C77DA033407946979E6547511D2402F8",
+    "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php": "1C00BD93D5CCAC5F1339DC59F33D562C0AE166D14E76DF0286AA2F9C63C53C0B",
+    "app/Application/MarketData/Services/ReplayVerificationService.php": "83EDE95F891503FAE41D42642BEEE3D4CA670C52CF46F4F91C5077F033C4B5C8",
+    "tests/Unit/MarketData/AsKnownReplayExecutionServiceTest.php": "2178875CB6C02F4F030B1675939986407B2C13CB431659800626A6568B950B01",
+    "tests/Unit/MarketData/B18AsKnownModeIsolationTest.php": "FB166F8F750609C0F069F9D64F72995A5BB4D5B4A3A9D158809F3035B69ED70E",
+    "tests/Unit/MarketData/B18AsKnownSnapshotIsolationTest.php": "7633A0403B49DCA3A99C3118DC236E7C990A62C9C6F327C6F7877FB533EA37E1",
+    "tests/Unit/MarketData/B18ProductionPathReplayFixturesTest.php": "0A73E09FE9A5BFFE77D575DCEBC077125CFBAB04F7E184B48A76DAF1B5A988B9"
+  },
+  "limits": [
+    "This establishes capability existence, not correctness of every replay predicate or an independent canonical-output oracle.",
+    "SQLite runs are behavior-only; no SQLite foreign-key/nullability claim is admitted. MariaDB corpus runs use migrated tradeaxis_testing and rollback.",
+    "No production deployment or relock was executed or authorized. R0056 requires its own proof.",
+    "No matrix write is asserted by this record issued before normalization. Verify the exact four-row delta after applying.",
+    "NOT_APPLICABLE is deliberately not a generic PASS admissible by the denominator binder; satisfaction_eligible_rule_ids is empty."
+  ],
+  "satisfaction_eligible_rule_ids": [],
+  "approved_next_action": "Counted normalization of exactly four children under D-MD-B18-A002-002; retain all 115 denominator predicates NOT_ASSESSED."
+}

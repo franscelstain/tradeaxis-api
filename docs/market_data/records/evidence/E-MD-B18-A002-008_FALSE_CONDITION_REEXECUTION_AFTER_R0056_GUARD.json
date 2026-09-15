@@ -1,0 +1,161 @@
+{
+  "evidence_id": "E-MD-B18-A002-008",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-14T11:05:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "NOT_APPLICABLE",
+  "condition_proof_result": "PASS",
+  "evidence_scope": "FALSE_EXTERNAL_CONDITION_REEXECUTION_ONLY_NOT_DENOMINATOR_SATISFACTION_OR_STAGE_CLOSURE",
+  "supersedes_evidence_id": "E-MD-B18-A002-005",
+  "supersession_scope": "Execution identity only. The R0056 aggregate guard changed tests/Unit/MarketData/B18ProductionPathReplayFixturesTest.php, one of E005's seven tested sources, so the normalization gate reported CONDITION_EXECUTION_STALE. E005 stays immutable and historically true; its decision authority D-MD-B18-A002-002, the four children, the condition and the frozen source are unchanged.",
+  "finding_id": "F-MD-B18-A002-006",
+  "decision_id": "D-MD-B18-A002-002",
+  "related_decision_ids": [
+    "D-MD-B18-A002-003"
+  ],
+  "prior_evidence_id": "E-MD-B18-A002-005",
+  "dependency_ids": [
+    "MD-DEP-0012"
+  ],
+  "ci_id": "CI-MD-B18-A002-001",
+  "execution_id": "MD-B18-A002-false-condition-revalidation-20260914",
+  "source": {
+    "path": "docs/market_data/authority/strategy/book/Replay_Verification_Contract_LOCKED.md",
+    "sha256": "CDE2D1A83088B67026A4BAC54CAB5A9970D838122270CA8B5D75B5D492DF68D1",
+    "parent_rule_id": "MD-S050-R0037",
+    "parent_line": 75,
+    "child_lines": [
+      77,
+      78,
+      79,
+      80
+    ],
+    "next_section_line": 82,
+    "child_population": 4,
+    "condition": "Where as-known replay is not implemented",
+    "condition_observed": false
+  },
+  "applicability_proof": [
+    {
+      "rule_id": "MD-S050-R0038",
+      "predicate_context": "MD-S050-R0037",
+      "applicability": "CONDITIONAL_NOT_APPLICABLE",
+      "coverage_status": "NOT_APPLICABLE",
+      "basis": "Re-executed on the clean instance: AS_KNOWN execution, snapshot isolation, mode isolation and the MariaDB production-path corpus pass; removing AS_KNOWN execution once breaks the capability guards; byte restoration restores green. The parent's external absence condition is false."
+    },
+    {
+      "rule_id": "MD-S050-R0039",
+      "predicate_context": "MD-S050-R0037",
+      "applicability": "CONDITIONAL_NOT_APPLICABLE",
+      "coverage_status": "NOT_APPLICABLE",
+      "basis": "Re-executed on the clean instance: AS_KNOWN execution, snapshot isolation, mode isolation and the MariaDB production-path corpus pass; removing AS_KNOWN execution once breaks the capability guards; byte restoration restores green. The parent's external absence condition is false."
+    },
+    {
+      "rule_id": "MD-S050-R0040",
+      "predicate_context": "MD-S050-R0037",
+      "applicability": "CONDITIONAL_NOT_APPLICABLE",
+      "coverage_status": "NOT_APPLICABLE",
+      "basis": "Re-executed on the clean instance: AS_KNOWN execution, snapshot isolation, mode isolation and the MariaDB production-path corpus pass; removing AS_KNOWN execution once breaks the capability guards; byte restoration restores green. The parent's external absence condition is false."
+    },
+    {
+      "rule_id": "MD-S050-R0041",
+      "predicate_context": "MD-S050-R0037",
+      "applicability": "CONDITIONAL_NOT_APPLICABLE",
+      "coverage_status": "NOT_APPLICABLE",
+      "basis": "Re-executed on the clean instance: AS_KNOWN execution, snapshot isolation, mode isolation and the MariaDB production-path corpus pass; removing AS_KNOWN execution once breaks the capability guards; byte restoration restores green. The parent's external absence condition is false."
+    }
+  ],
+  "controls": {
+    "before": {
+      "command": "php vendor/bin/phpunit --filter \"AsKnownReplayExecutionServiceTest|B18AsKnownModeIsolationTest|B18AsKnownSnapshotIsolationTest|B18ProductionPathReplayFixturesTest\" --testdox",
+      "tests": 22,
+      "assertions": 157,
+      "errors": 0,
+      "failures": 0,
+      "skips": 0,
+      "phpunit_exit": 0,
+      "note": "E005 counted 20 tests / 100 assertions; the two new R0056 guard methods account for the difference."
+    },
+    "mutation": {
+      "path": "app/Application/MarketData/Services/AsKnownReplayExecutionService.php",
+      "anchor_count": 1,
+      "landed_count": 1,
+      "injection": "throw new \\RuntimeException('PROBE_AS_KNOWN_CAPABILITY_UNAVAILABLE') at execute entry",
+      "command": "php vendor/bin/phpunit --filter \"AsKnownReplayExecutionServiceTest|B18AsKnownModeIsolationTest\" --testdox",
+      "tests": 6,
+      "assertions": 3,
+      "errors": 5,
+      "failures": 1,
+      "skips": 0,
+      "phpunit_exit": 2,
+      "caught": true,
+      "restored_from_byte_copy": true,
+      "restored_sha256": "0DE6DF364AD7912E8742477CAE2EA6C0C77DA033407946979E6547511D2402F8"
+    },
+    "after": {
+      "same_command_as_before": true,
+      "tests": 22,
+      "assertions": 157,
+      "errors": 0,
+      "failures": 0,
+      "skips": 0,
+      "phpunit_exit": 0
+    }
+  },
+  "environment": {
+    "php": "7.4.33",
+    "phpunit": "9.6.34",
+    "mariadb": "10.4.27",
+    "instance": "clean XAMPP-template data directory D:/xampp/mysql/data, databases rebuilt by repository migrations and DatabaseSeeder on 2026-09-14",
+    "databases": [
+      "tradeaxis",
+      "tradeaxis_testing"
+    ],
+    "current_repository_migrations": 72,
+    "applied_current_migrations_each": 72,
+    "pending_each": 0,
+    "migration_ledger_rows_each": 72,
+    "ledger_names_not_in_current_repository_each": 0,
+    "database_changes_performed_by_this_execution": false
+  },
+  "raw_artifacts": [
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/false-condition-revalidation-20260914/capability-control-before.txt",
+      "sha256": "CC703B6B4B462AE7253796C6049485E1746562104E9EB7A1178A395C8945DDF8"
+    },
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/false-condition-revalidation-20260914/capability-unavailable-probe.txt",
+      "sha256": "007C87C5F3C44F7B415186FCE3CAA4AAF7ECC48CB2165D317C937FC84978D843"
+    },
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/false-condition-revalidation-20260914/capability-control-after.txt",
+      "sha256": "634CDCCA24FBBBE9A89D3FA852BFBA9262ED21E413BBD3989CC2F99A51F469A5"
+    },
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/false-condition-revalidation-20260914/runtime-readiness-scoped.json",
+      "sha256": "53C63C3EEC87C212088C11464B1E795BFD93CA545D681F79097F076687E464F4"
+    }
+  ],
+  "tested_source_sha256": {
+    "app/Application/MarketData/Services/AsKnownReplayExecutionService.php": "0DE6DF364AD7912E8742477CAE2EA6C0C77DA033407946979E6547511D2402F8",
+    "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php": "1C00BD93D5CCAC5F1339DC59F33D562C0AE166D14E76DF0286AA2F9C63C53C0B",
+    "app/Application/MarketData/Services/ReplayVerificationService.php": "83EDE95F891503FAE41D42642BEEE3D4CA670C52CF46F4F91C5077F033C4B5C8",
+    "tests/Unit/MarketData/AsKnownReplayExecutionServiceTest.php": "2178875CB6C02F4F030B1675939986407B2C13CB431659800626A6568B950B01",
+    "tests/Unit/MarketData/B18AsKnownModeIsolationTest.php": "FB166F8F750609C0F069F9D64F72995A5BB4D5B4A3A9D158809F3035B69ED70E",
+    "tests/Unit/MarketData/B18AsKnownSnapshotIsolationTest.php": "7633A0403B49DCA3A99C3118DC236E7C990A62C9C6F327C6F7877FB533EA37E1",
+    "tests/Unit/MarketData/B18ProductionPathReplayFixturesTest.php": "3D761B6E0EC7F88D17BC37DCB58C530B1BCCEA22ACAE6136B362C4C12FD53494"
+  },
+  "limits": [
+    "This re-establishes capability existence for the unchanged false condition, not correctness of any replay predicate.",
+    "Six of the seven tested sources are byte-identical to E005; only the R0056 guard file changed.",
+    "No production deployment or relock was executed or authorized.",
+    "NOT_APPLICABLE is not a generic PASS admissible by the denominator binder; satisfaction_eligible_rule_ids is empty."
+  ],
+  "satisfaction_eligible_rule_ids": [],
+  "approved_next_action": "Point the normalization gate and R0038-R0041 current_evidence_ids at this record with a counted four-row delta; retain the 115 denominator predicates unchanged."
+}

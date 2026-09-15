@@ -1,0 +1,143 @@
+{
+  "evidence_id": "E-MD-B18-A002-006",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-13T23:00:16+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "evidence_scope": "COUNTED_PARENT_NORMALIZATION_AND_R0056_PROOF_COUNTEREXAMPLE_NOT_CLOSURE",
+  "finding_ids": [
+    "F-MD-B18-A002-006",
+    "F-MD-B18-A002-008"
+  ],
+  "decision_ids": [
+    "D-MD-B18-A002-002"
+  ],
+  "related_evidence_ids": [
+    "E-MD-B18-A002-005"
+  ],
+  "dependency_ids": [
+    "MD-DEP-0012",
+    "MD-DEP-0014"
+  ],
+  "ci_id": "CI-MD-B18-A002-001",
+  "execution_id": "MD-B18-A002-complete-parent-20260913-2246",
+  "matrix_write": {
+    "backup": "C:/Users/prais/AppData/Local/Temp/tradeaxis-md-b18-a002-parent-20260913-2245/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv",
+    "matrix_population_before": 6501,
+    "matrix_population_after": 6501,
+    "changed_count": 4,
+    "changed_rule_ids": [
+      "MD-S050-R0038",
+      "MD-S050-R0039",
+      "MD-S050-R0040",
+      "MD-S050-R0041"
+    ],
+    "transition": "CONDITIONAL_PENDING/APPLICABILITY_PENDING -> CONDITIONAL_NOT_APPLICABLE/NOT_APPLICABLE",
+    "source_and_owner_changes": 0,
+    "all_other_rows_unchanged": true,
+    "after_sha256": "9ED1406BCFA0A93EC007849F14BBA5DFC64F20D79F769E4114A47785EE61F507",
+    "b18_population": 154,
+    "b18_denominator": 115,
+    "satisfied": 0,
+    "not_assessed": 115,
+    "conditional_na": 4,
+    "pending": 0,
+    "reference": 33,
+    "optional": 2,
+    "final_owner_review_still_required": "MD-S050-R0056 under MD-DEP-0014"
+  },
+  "normalization_probe": {
+    "control_before": "PASS",
+    "changed_count": 1,
+    "rule_id": "MD-S050-R0038",
+    "mutation": "clear current_evidence_ids on one N/A sibling",
+    "observed": "FAIL",
+    "caught_error": "FALSE_CONDITION_BINDING_INVALID:MD-S050-R0038",
+    "gate_exit": 1,
+    "byte_restore_hash_equal": true,
+    "control_after": "PASS",
+    "coverage": "all 154 active rows; exact four siblings; E005 identity; 4 raw artifact hashes; 7 tested source hashes; frozen parent source hash"
+  },
+  "predicate_counterexample": {
+    "rule_id": "MD-S050-R0056",
+    "frozen_source": "docs/market_data/authority/strategy/book/Replay_Verification_Contract_LOCKED.md:109",
+    "normalized_predicate": "Production relock requires executed publication and as-known fixtures, including all anti-survivorship cases above, on the actual production path.",
+    "missing_scope": "Mapped pair validates corpus method registration and database substrate only. It neither executes/aggregates the fixture corpus nor enforces corpus-dependent relock acceptance.",
+    "mutation_file": "tests/Unit/MarketData/B18ProductionPathReplayFixturesTest.php",
+    "mutation": "one exception at publication fixture entry: PROBE_PUBLICATION_FIXTURE_NOT_EXECUTABLE",
+    "anchor_count": 1,
+    "landed_count": 1,
+    "mapped_guard_pair": {
+      "result": "PASS",
+      "tests": 2,
+      "assertions": 8,
+      "caught": false
+    },
+    "actual_fixture": {
+      "result": "ERROR",
+      "tests": 1,
+      "assertions": 0,
+      "errors": 1,
+      "exit": 2
+    },
+    "before_control": {
+      "tests": 20,
+      "assertions": 100,
+      "errors": 0,
+      "failures": 0,
+      "skips": 0
+    },
+    "after_control": {
+      "tests": 11,
+      "assertions": 43,
+      "errors": 0,
+      "failures": 0,
+      "skips": 0
+    },
+    "restored_sha256": "0A73E09FE9A5BFFE77D575DCEBC077125CFBAB04F7E184B48A76DAF1B5A988B9",
+    "basis_action": "Moved R0056 from PROVEN to INCOMPLETE; matrix remains MANDATORY/NOT_ASSESSED owned by MD-B18.",
+    "basis_count_live": 114,
+    "incomplete_basis_ids": [
+      "MD-S050-R0056"
+    ],
+    "other_candidate_bases_not_all_rereviewed_this_continuation": 114
+  },
+  "raw_artifacts": [
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/complete-parent-20260913-2246/matrix-delta.json",
+      "sha256": "5CE4857B1D83CC930BC75F4EA7F55C5BC7315A19244A3F3C334F7A4615E05AAB"
+    },
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/complete-parent-20260913-2246/capability-control-after.txt",
+      "sha256": "A632649C7A28F67666650498161AE85EED6B72EBACB494466920F8C7061F91C7"
+    },
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/complete-parent-20260913-2246/relock-pair-gap-probe.txt",
+      "sha256": "E1DC6A9FE95C61B84726491615AB32DE0314BA34066D759008C074599360785F"
+    },
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/complete-parent-20260913-2246/relock-control-after.txt",
+      "sha256": "E8EAFC32BDA21E54A45BC5B6901EA2F5FF384EB500CD1512E16C09127E931436"
+    },
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/complete-parent-20260913-2246/normalization-control-before.json",
+      "sha256": "D4BADBA9B3FB42B2113057FB4D33A9F59E8F5EECB1216D51124DD594145D8362"
+    },
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/complete-parent-20260913-2246/normalization-single-row-probe.txt",
+      "sha256": "5FB15C0ACF33A704C1400C81D6A3E08DDF285E022C646D7316EBB8BFDA72E2F6"
+    },
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/complete-parent-20260913-2246/normalization-control-after.json",
+      "sha256": "58DEAD759AC8F7DED1E740D113859B773264763E8175B26372201DD640198912"
+    }
+  ],
+  "validation_limit": "This immutable issue records completed targeted capability/corpus checks, counted normalization and probes. Post-issue stage/governance/full-suite validation is not claimed here; its actual results will be recorded in the open F008 journal.",
+  "resume": "MD-B18-A002 at MD-DEP-0014: user decides complete R0056 proof ownership/relock scope. Recommended B22 primary and B18 supporting, preserving MANDATORY/NOT_ASSESSED and unchanged predicate. No transfer applied.",
+  "return_to": "MD-B19-A001 only after valid B18 closure and MD-DEP-0009 resolution"
+}

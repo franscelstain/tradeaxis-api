@@ -3,7 +3,9 @@
 final class MarketDataReplayVerificationTraceabilitySpec
 {
     public const STAGE = 'MD-B18';
-    public const EXPECTED_DENOMINATOR = 121;
+    // D001 owner/reference corrections and D002/E005 whole-parent false-condition proof.
+    // R0056 stays required until its separate ownership decision is issued.
+    public const EXPECTED_DENOMINATOR = 115;
 
     public static function required(string $root): array
     {

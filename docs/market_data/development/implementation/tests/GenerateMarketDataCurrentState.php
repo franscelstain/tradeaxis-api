@@ -67,7 +67,8 @@ function traceabilityCounts(array $rows, $stage = null)
 
     $counts['denominator'] = $counts['mandatory'] + $counts['conditional_applicable'] + $counts['transitional'];
     $counts['coverage_percent'] = $counts['denominator'] > 0 ? round($counts['satisfied'] * 100 / $counts['denominator'], 2) : 100;
-    $counts['coverage_state'] = $counts['transitional'] > 0 ? 'PROVISIONAL' : 'FINAL';
+    $counts['coverage_state'] = ($counts['transitional'] > 0 || $counts['conditional_pending'] > 0
+        || $counts['applicability_pending'] > 0) ? 'PROVISIONAL' : 'FINAL';
 
     return $counts;
 }
@@ -135,6 +136,9 @@ function denominatorQualifier(array $counts, string $stage, array $pending, int 
 {
     if ($counts['transitional'] > 0) {
         return 'PROVISIONAL — transitional applicability unresolved';
+    }
+    if ($counts['conditional_pending'] > 0 || $counts['applicability_pending'] > 0) {
+        return 'PROVISIONAL — '.$counts['conditional_pending'].' conditional applicability decisions pending';
     }
     if (($pending[$stage] ?? 0) > 0) {
         return 'PROVISIONAL — '.$pending[$stage].' reference-only rows sit in mixed-classification runs';
@@ -221,7 +225,7 @@ $current = $currentStage === 'UNRESOLVED' ? null : traceabilityCounts($matrix, $
 
 $openDependencies = [];
 foreach ($dependencies as $dependency) {
-    if (strpos($dependency['status'], 'OPEN') === 0) {
+    if (! in_array($dependency['status'], ['RESOLVED', 'CLOSED'], true)) {
         $openDependencies[] = '`'.$dependency['dependency_id'].'` — '.$dependency['status'].'; owner `'.$dependency['owner'].'`';
     }
 }

@@ -16,9 +16,13 @@ require_once __DIR__.'/MarketDataReplayVerificationProofGate.php';
  */
 final class MarketDataReplayVerificationClosureGate
 {
-    public const EVIDENCE = 'E-MD-B18-A001-001';
+    public const EVIDENCE = 'E-MD-B18-A002-001';
 
-    public const ARTIFACT_DIR = 'storage/app/market-data/evidence/MD-B18-A001';
+    public const ARTIFACT_DIR = 'storage/app/market-data/evidence/MD-B18-A002';
+
+    public const BASELINE = 'MD-B18-A002-BL001';
+
+    public const EPOCH = 'MD-REBASELINE-20260820-001';
 
     /** Every active row owned by this stage, whatever its applicability. */
     public static function stageRows(string $root): array
@@ -221,7 +225,7 @@ final class MarketDataReplayVerificationClosureGate
         $foreignBasis = [];
         if (is_file($basisFile)) {
             require_once $basisFile;
-            $outstanding = MarketDataReplayVerificationProofBasis::outstanding();
+            $outstanding = MarketDataReplayVerificationProofBasis::outstanding($root);
             $foreignBasis = MarketDataReplayVerificationProofBasis::foreign();
         } else {
             $errors[] = 'PROOF_BASIS_FILE_MISSING';
@@ -272,9 +276,25 @@ final class MarketDataReplayVerificationClosureGate
             $artifact['met'] = false;
         } else {
             $manifest = json_decode((string) file_get_contents($manifestPath), true);
+            $identityMismatched = [];
+            foreach ([
+                'stage_id' => $spec::STAGE,
+                'attempt_id' => $spec::ATTEMPT,
+                'baseline_id' => self::BASELINE,
+                'verification_epoch' => self::EPOCH,
+            ] as $field => $expected) {
+                if (! is_array($manifest) || (isset($manifest[$field]) ? $manifest[$field] : null) !== $expected) {
+                    $identityMismatched[] = $field;
+                }
+            }
             $mismatched = [];
             $unreadable = [];
-            foreach (isset($manifest['artifacts']) ? $manifest['artifacts'] : [] as $entry) {
+            $outOfScope = [];
+            foreach (is_array($manifest) && isset($manifest['artifacts']) ? $manifest['artifacts'] : [] as $entry) {
+                if (strpos((string) (isset($entry['path']) ? $entry['path'] : ''), self::ARTIFACT_DIR.'/') !== 0) {
+                    $outOfScope[] = isset($entry['path']) ? $entry['path'] : '';
+                    continue;
+                }
                 $entryPath = $root.'/'.$entry['path'];
                 if (! is_file($entryPath) || ! is_readable($entryPath)) {
                     $unreadable[] = $entry['path'];
@@ -285,11 +305,15 @@ final class MarketDataReplayVerificationClosureGate
                     $mismatched[] = $entry['path'];
                 }
             }
-            $artifact['artifact_count'] = isset($manifest['artifact_count']) ? $manifest['artifact_count'] : 0;
+            $artifact['identity_mismatched'] = $identityMismatched;
+            $artifact['artifact_count'] = is_array($manifest) && isset($manifest['artifact_count']) ? $manifest['artifact_count'] : 0;
             $artifact['unreadable'] = $unreadable;
             $artifact['hash_mismatched'] = $mismatched;
-            $artifact['met'] = $unreadable === [] && $mismatched === []
+            $artifact['out_of_scope'] = $outOfScope;
+            $artifact['met'] = $identityMismatched === [] && $unreadable === [] && $mismatched === [] && $outOfScope === []
                 && $artifact['artifact_count'] > 0
+                && is_array($manifest)
+                && isset($manifest['artifacts'])
                 && count($manifest['artifacts']) === $artifact['artifact_count'];
         }
         $conditions['raw_artifact_integrity'] = $artifact + [
@@ -305,13 +329,34 @@ final class MarketDataReplayVerificationClosureGate
         ];
         if (count($evidenceMatches) === 1) {
             $record = json_decode((string) file_get_contents($evidenceMatches[0]), true);
-            $linked = isset($record['raw_artifact_manifest']['manifest_path'])
+            $identityMismatched = [];
+            foreach ([
+                'evidence_id' => self::EVIDENCE,
+                'stage_id' => $spec::STAGE,
+                'attempt_id' => $spec::ATTEMPT,
+                'baseline_id' => self::BASELINE,
+                'verification_epoch' => self::EPOCH,
+                'verdict' => 'PASS',
+            ] as $field => $expected) {
+                if (! is_array($record) || (isset($record[$field]) ? $record[$field] : null) !== $expected) {
+                    $identityMismatched[] = $field;
+                }
+            }
+            $linked = is_array($record) && isset($record['raw_artifact_manifest']['manifest_path'])
                 ? $record['raw_artifact_manifest']['manifest_path'] : '';
+            $linkedHash = is_array($record) && isset($record['raw_artifact_manifest']['manifest_sha256'])
+                ? strtolower((string) $record['raw_artifact_manifest']['manifest_sha256']) : '';
+            $actualHash = is_file($manifestPath) ? strtolower(hash_file('sha256', $manifestPath)) : '';
+            $conditions['governed_evidence_reachable']['identity_mismatched'] = $identityMismatched;
             $conditions['governed_evidence_reachable']['manifest_linked'] = $linked;
+            $conditions['governed_evidence_reachable']['manifest_hash_matches'] =
+                $linkedHash !== '' && $actualHash !== '' && $linkedHash === $actualHash;
             $conditions['governed_evidence_reachable']['met'] =
                 $conditions['governed_evidence_reachable']['met']
-                && $linked !== ''
-                && is_file($root.'/'.$linked);
+                && $identityMismatched === []
+                && $linked === self::ARTIFACT_DIR.'/MANIFEST.json'
+                && is_file($root.'/'.$linked)
+                && $conditions['governed_evidence_reachable']['manifest_hash_matches'];
         }
 
         foreach ($conditions as $name => $condition) {

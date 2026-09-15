@@ -175,23 +175,30 @@ class MigrationIntegrityAndDriftTest extends TestCase
             'schema drift: market-data migrations applied to the database with no file to reproduce them on a clean install'
         );
 
-        // Explicit result for the out-of-scope direction, per the sync contract.
+        // Explicit result for the out-of-scope direction, per the sync contract. The declared set is a
+        // ceiling, not a census (D-MD-B18-A002-004): a clean install carries none of these orphans and
+        // is not drift, while an orphan outside the declared set must still be classified deliberately.
         $this->assertSame(
-            ['2026_06_09_000001_create_watchlist_backtest_oos_schema',
-             '2026_06_09_000002_add_stop_rr_to_watchlist_bt_param_grid',
-             '2026_06_09_000003_version_watchlist_bt_eval_identity',
-             '2026_06_09_000004_version_watchlist_bt_oos_identity',
-             '2026_06_10_000001_add_watchlist_backtest_catalog_identity_and_r2_entry_quality',
-             '2026_07_24_000001_create_watchlist_runtime_paramset_and_plan_schema',
-             '2026_07_25_000001_version_watchlist_official_backtest_evidence_and_paramset_identity',
-             '2026_07_27_000001_widen_watchlist_backtest_universe_vol_ratio_precision',
-             '2026_07_27_000002_add_c171_real_is_remediation_catalog_bounds',
-             '2026_07_28_000001_add_c171_low_price_execution_quality_catalog_fields',
-             '2026_07_28_000002_version_c171_tick_risk_evidence_pipeline'],
-            $outOfScope,
-            'the known out-of-scope orphan set changed; a new orphan must be classified deliberately rather than absorbed'
+            [],
+            array_values(array_diff($outOfScope, self::DECLARED_OUT_OF_SCOPE_ORPHANS)),
+            'an undeclared out-of-scope orphan appeared; a new orphan must be classified deliberately rather than absorbed'
         );
     }
+
+    /** Watchlist migrations whose files live in another package; see the out-of-scope branch above. */
+    private const DECLARED_OUT_OF_SCOPE_ORPHANS = [
+        '2026_06_09_000001_create_watchlist_backtest_oos_schema',
+        '2026_06_09_000002_add_stop_rr_to_watchlist_bt_param_grid',
+        '2026_06_09_000003_version_watchlist_bt_eval_identity',
+        '2026_06_09_000004_version_watchlist_bt_oos_identity',
+        '2026_06_10_000001_add_watchlist_backtest_catalog_identity_and_r2_entry_quality',
+        '2026_07_24_000001_create_watchlist_runtime_paramset_and_plan_schema',
+        '2026_07_25_000001_version_watchlist_official_backtest_evidence_and_paramset_identity',
+        '2026_07_27_000001_widen_watchlist_backtest_universe_vol_ratio_precision',
+        '2026_07_27_000002_add_c171_real_is_remediation_catalog_bounds',
+        '2026_07_28_000001_add_c171_low_price_execution_quality_catalog_fields',
+        '2026_07_28_000002_version_c171_tick_risk_evidence_pipeline',
+    ];
 
     /** @return array<int,string>|null */
     private function appliedMigrations(): ?array

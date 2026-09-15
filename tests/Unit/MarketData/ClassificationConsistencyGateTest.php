@@ -197,6 +197,54 @@ class ClassificationConsistencyGateTest extends TestCase
         }
     }
 
+    public function test_conditional_na_can_carry_false_condition_evidence_without_becoming_satisfied(): void
+    {
+        $rows = $this->rows();
+        $matches = array_keys(array_filter($rows, fn ($row) => $row['rule_id'] === 'MD-S050-R0038'));
+        $this->assertCount(1, $matches, 'the checked population must contain exactly one target');
+        $row = $rows[$matches[0]];
+        $this->assertSame('REQUIRED', $row['coverage_requirement']);
+        $this->assertSame('CONDITIONAL_NOT_APPLICABLE', $row['applicability']);
+        $this->assertSame('NOT_APPLICABLE', $row['coverage_status']);
+        $this->assertSame('E-MD-B18-A002-008', $row['current_evidence_ids']);
+        $this->assertSame([], MarketDataClassificationConsistencyGate::validate($rows)['errors']);
+
+        // The general classification gate retains rationale-only N/A support. It cannot certify
+        // that this row's evidence may be erased: B18's normalization gate separately refuses it.
+        $rows[$matches[0]]['current_evidence_ids'] = '';
+        $this->assertSame([], MarketDataClassificationConsistencyGate::validate($rows)['errors']);
+    }
+
+    /** @dataProvider invalidNaEvidenceStates */
+    public function test_one_nonterminal_or_misclassified_row_cannot_use_the_na_evidence_exception(string $field, string $value): void
+    {
+        $rows = $this->rows();
+        $this->assertSame([], MarketDataClassificationConsistencyGate::validate($rows)['errors']);
+        $index = $this->indexOf($rows, 'MD-S050-R0038');
+        $before = $rows;
+        $this->assertNotSame($value, $rows[$index][$field]);
+        $rows[$index][$field] = $value;
+        $changed = 0;
+        foreach ($rows as $i => $row) { if ($row !== $before[$i]) { $changed++; } }
+        $this->assertSame(1, $changed, 'only one instance is corrupted');
+        $errors = MarketDataClassificationConsistencyGate::validate($rows)['errors'];
+        $this->assertStringContainsString('BINDING_COHERENCE MD-S050-R0038', implode(' ', $errors));
+        $this->assertSame([], MarketDataClassificationConsistencyGate::validate($before)['errors']);
+    }
+
+    public function invalidNaEvidenceStates(): array
+    {
+        return [
+            'unassessed' => ['coverage_status', 'NOT_ASSESSED'],
+            'pending status' => ['coverage_status', 'APPLICABILITY_PENDING'],
+            'reference status' => ['coverage_status', 'REFERENCE_ONLY'],
+            'mandatory' => ['applicability', 'MANDATORY'],
+            'applicable condition' => ['applicability', 'CONDITIONAL_APPLICABLE'],
+            'pending condition' => ['applicability', 'CONDITIONAL_PENDING'],
+            'reference classification' => ['coverage_requirement', 'REFERENCE_ONLY'],
+        ];
+    }
+
     /** @param array<int,array<string,string>> $rows */
     private function indexOf(array $rows, string $id): int
     {

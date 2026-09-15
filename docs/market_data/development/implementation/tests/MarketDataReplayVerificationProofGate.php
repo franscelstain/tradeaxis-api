@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__.'/MarketDataReplayVerificationProofSpec.php';
+require_once __DIR__.'/MarketDataReplayVerificationProofBasis.php';
 
 /**
  * `MD-B18` proof gate.
@@ -39,9 +40,26 @@ final class MarketDataReplayVerificationProofGate
         $errors = [];
         $by = [];
         $used = [];
+        $withoutBasis = [];
 
         foreach ($rows as $row) {
             $by[$row['rule_id']] = $row;
+            // Family membership is not predicate proof (F-MD-B19-A001-002). A basis that admits
+            // an unproved half belongs in INCOMPLETE, not PROVEN (F-MD-B18-A002-008).
+            $basis = MarketDataReplayVerificationProofBasis::PROVEN[$row['rule_id']] ?? null;
+            if ($basis === null || trim((string) ($basis['basis'] ?? '')) === '') {
+                $withoutBasis[] = $row['rule_id'];
+                $errors[] = 'PREDICATE_WITHOUT_REVIEWED_BASIS:'.$row['rule_id'];
+            } else {
+                foreach (['positive', 'negative'] as $kind) {
+                    $parts = explode('::', (string) ($basis[$kind] ?? ''));
+                    $file = $root.'/tests/Unit/MarketData/'.($parts[0] ?? '').'.php';
+                    if (count($parts) !== 2 || ! is_file($file)
+                        || strpos((string) file_get_contents($file), 'function '.$parts[1].'(') === false) {
+                        $errors[] = 'PREDICATE_GUARD_MISSING:'.$row['rule_id'].':'.$kind;
+                    }
+                }
+            }
             $ev = trim((string) (isset($row['current_evidence_ids']) ? $row['current_evidence_ids'] : ''));
             if ($bound) {
                 if ((isset($row['coverage_status']) ? $row['coverage_status'] : '') !== 'SATISFIED'
@@ -169,6 +187,8 @@ final class MarketDataReplayVerificationProofGate
             'corpus_proof_families' => self::CORPUS_PROOF_FAMILIES,
             'bound' => $bound,
             'runtime_pending' => $bound ? 0 : count($rows),
+            'predicates_with_reviewed_basis' => count($rows) - count($withoutBasis),
+            'predicates_without_reviewed_basis' => $withoutBasis,
             'errors' => array_values(array_unique($errors)),
         ];
     }
