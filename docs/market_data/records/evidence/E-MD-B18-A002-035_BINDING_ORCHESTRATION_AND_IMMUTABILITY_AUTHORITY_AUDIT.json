@@ -1,0 +1,70 @@
+{
+  "evidence_id": "E-MD-B18-A002-035",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-21T04:21:47.465306+00:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS",
+  "evidence_scope": "C1_BINDING_ORCHESTRATION_AND_IMMUTABILITY_AUTHORITY_AUDIT",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-034"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "No code changed and no test run in this evidence; document-only authority audit against the C1 contract, D-005, CI-MD-B18-A002-001, the consolidated remediation package, the existing V1 seal lifecycle source, and E031-E034.",
+  "probes": [],
+  "tested_source_sha256": {},
+  "schema_changed": false,
+  "root_cause_and_implementation": "Two open questions surfaced by E034's own 'next' field (when/whether to wire Binding into the live pipeline; whether sealed V2 columns need DB-level protection) are resolved here by re-reading existing authority precisely, not by choosing a preference. QUESTION 1 (orchestration) -- ALREADY_DECIDED / IMPLEMENTATION_DERIVABLE, not genuinely open. Basis: (a) the C1 contract's own Sec2 names the exact existing call site the remediation targets -- 'MarketDataPipelineService::completeHash calls PublicationGovernanceBindingService::bind after ingest, indicators and eligibility'; grep confirms this call is real, at MarketDataPipelineService.php:960, immediately before batch-hash computation. (b) The consolidated remediation package Sec5 step 3 fixes the sequence as one interdependent unit in the same attempt: 'C1 capture->binding->seal->reader->admission ... Unit perbaikan saling bergantung dalam attempt yang sama.' (c) The C1 contract Sec6 step 3 (Seal) names the real, existing repository methods verbatim -- 'sealCandidatePublication and its partial route enforce the same V2 completeness. prepareCandidateManifestForSeal, integrity-context checks and promotion cannot bypass it' -- and EodPublicationRepository::sealCandidatePublication already has the exact precondition-check idiom to extend, at line 969: 'if (! $candidate->bars_batch_hash || ! $candidate->indicators_batch_hash || ! $candidate->eligibility_batch_hash) throw ...'. Conclusion: Binding is part of pipeline completion (the HASH stage, alongside V1's existing bind() call), and it is Seal's prerequisite in the sense that Seal must verify/enforce it already happened (a precondition check reading bound_input_context_hash, matching the exact style already used for the three existing batch-hash checks) -- not a fully detached, manually-triggered-only operation, and not something Seal computes for the first time. No new approval or requirement was invented; this is the existing text read precisely against the existing code it names. QUESTION 2 (DB-level immutability) -- ALREADY_DECIDED, not genuinely open, and not merely a Seal-scoped nice-to-have. Basis: the C1 contract Sec4.2 states, verbatim, 'Sealed binding insert/update/delete and attempt to replace/reset the V2 discriminator must be rejected through both repository path and tested database protections' -- an explicit dual-layer requirement (application AND database), with a narrow escape clause: 'If existing owner constraints prevent lawful implementation of these protections, record the concrete blocker before widening scope.' An independent, earlier authority source (the consolidated remediation package Sec4, C1) states the same substance in different words: 'Lindungi immutability di aplikasi dan schema yang diklaim. Guard scan mencakup base SQL dan seluruh migrations, dengan population assertion dan satu instance rusak per probe.' Two independent documents agree. The escape clause's condition (an actual owner constraint preventing lawful implementation) was checked and not found to be satisfied: the identical mechanism (a BEFORE UPDATE/DELETE trigger raising SIGNAL SQLSTATE '45000') was already successfully added for md_run_input_captures in the same C1 foundation migration (2026_09_16_000001_add_producer_bound_input_captures.php), proving it is technically and procedurally available in this exact codebase/environment (MariaDB and SQLite both), so nothing currently on record shows the escape clause applies. E034's own framing -- treating the absence of a DB trigger as an established, acceptable, application-only precedent inherited from V1's pre-existing hash columns, and deferring the decision to Seal's own work unit -- is corrected here: V1 predating this contract is not itself an authority for what the NEW V2 columns must do; the contract's Sec4.2 explicitly describes the schema FOR BINDING'S OWN persisted columns (bound_input_schema_version/bound_input_context_json/bound_input_context_hash/bound_input_capture_manifest_json), so the missing DB-level protection is a Binding-scoped completeness gap, not something to newly decide when Seal begins. The trigger's condition only needs eod_publications.seal_state, a column that already exists and is already meaningfully set by the existing V1 seal mechanism, so this gap can be closed independently of implementing any new Seal V2-enforcement logic. No new migration/trigger was added in this evidence (audit only, no code changed, per instruction not to start Seal or otherwise implement this turn).",
+  "scope_result": {
+    "question_1_orchestration": {
+      "classification": "IMPLEMENTATION_DERIVABLE",
+      "decision": "Binding runs as part of pipeline completion, at the HASH stage (MarketDataPipelineService::completeHash), immediately alongside/after the existing V1 PublicationGovernanceBindingService::bind() call at line 960. Seal (EodPublicationRepository::sealCandidatePublication) enforces it as a precondition gate -- verifying bound_input_context_hash is already set, in the same style as the three existing batch-hash precondition checks at line 969 -- rather than invoking Binding for the first time itself. It is not a fully detached, manually/CLI-triggered-only operation.",
+      "authority_basis": ["C1 contract Sec2 (names the exact completeHash call site)", "C1 contract Sec6 step 2 and step 3 (phase ordering; Seal enforces V2 completeness; names sealCandidatePublication/prepareCandidateManifestForSeal verbatim)", "Consolidated remediation package Sec5 step 3 (capture->binding->seal->reader->admission as one interdependent unit, same attempt)", "MarketDataPipelineService.php:960 and EodPublicationRepository.php:964-972 (the real, existing code these documents name)"],
+      "owner_decision_needed": false
+    },
+    "question_2_immutability": {
+      "classification": "ALREADY_DECIDED",
+      "decision": "Sealed V2 bound_input_* columns require BOTH application-level and DB-level (schema) immutability protection. Application-level is already implemented (PublicationInputBindingService's own sealed/conflict checks, E034). DB-level protection (a trigger analogous to trg_md_input_no_update/trg_md_input_no_delete on md_run_input_captures, scoped to reject UPDATE/DELETE of bound_input_* columns once eod_publications.seal_state = SEALED) is REQUIRED and currently MISSING -- this is a Binding-scoped completeness gap (Sec4.2 describes it as part of Binding's own schema), not a new decision deferred to Seal, and the contract's own escape clause (owner constraints preventing lawful implementation) was checked and found not to apply, since the identical trigger mechanism already exists for md_run_input_captures in the same foundation migration.",
+      "authority_basis": ["C1 contract Sec4.2 (verbatim dual-layer requirement plus escape clause)", "Consolidated remediation package Sec4/C1 (independent earlier statement of the same substance: 'Lindungi immutability di aplikasi dan schema yang diklaim')", "database/migrations/2026_09_16_000001_add_producer_bound_input_captures.php (proves the identical mechanism is already implemented and working for md_run_input_captures)", "tests/Unit/MarketData/B18ProducerInputCaptureMariaDbTest.php::test_schema_has_exact_protections_on_the_actual_capture_table (existing precedent test pattern to model a new one after)"],
+      "distinction": {
+        "semantic_immutability": "Stated by the contract (sealed binding must not change); this is the norm being enforced.",
+        "application_enforced_immutability": "Implemented in E034 (PublicationInputBindingService checks seal_state and existing bound_input_context_hash before any write).",
+        "db_enforced_immutability": "NOT yet implemented for md_publication_lineage_bindings; REQUIRED by Sec4.2's explicit 'both ... and' language; not satisfied by application-level alone."
+      },
+      "owner_decision_needed": false
+    },
+    "genuinely_unresolved_items": []
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "slices_complete": ["capture", "binding"],
+    "slices_remaining": ["seal", "reader", "admission"],
+    "incomplete_bases": 64,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [],
+    "clarification": "This audit changes no proof, coverage, or SATISFIED/denominator numbers. It identifies one Binding-scoped completeness gap (DB-level sealed-immutability trigger) to close before or independently of Seal, and confirms Binding's orchestration point without implementing it."
+  },
+  "full_suite": {
+    "status": "NOT_RUN_FOR_THIS_AUDIT",
+    "reason": "Document-only authority audit; no code changed, nothing to regression-test. E034's own test results (64/64, 6004 assertions) stand unaffected.",
+    "prior_baseline": "E024/E031/E033 seven ProductionCorpusInvariantOracleTest failures; not touched."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "MD-B18-A002: close the one identified Binding-scoped completeness gap before implementing Seal -- add a migration giving md_publication_lineage_bindings a BEFORE UPDATE/DELETE trigger (mirroring trg_md_input_no_update/trg_md_input_no_delete's exact mechanism) that rejects any write to bound_input_* columns once the owning publication's seal_state = SEALED, on both MariaDB and SQLite, with a targeted test modeled on B18ProducerInputCaptureMariaDbTest::test_schema_has_exact_protections_on_the_actual_capture_table plus a direct-SQL negative probe (attempt UPDATE/DELETE against a sealed row and confirm rejection with the exact immutability message). Only after that gap closes, wire PublicationInputBindingService::bind() into MarketDataPipelineService::completeHash (alongside the existing governanceBindings->bind() call) and add the bound_input_context_hash precondition check into EodPublicationRepository::sealCandidatePublication, then implement Seal's own V2-completeness verification (C1 contract Sec6 step 3) as its own governed work unit. Preserve E021-E035 and valid P51-P93; do not repeat C02-C09, whole-C1-completeness, or Binding proof already established. No Reader or Admission before Seal. No data_260914 action, new attempt, strategy change or relock."
+}
