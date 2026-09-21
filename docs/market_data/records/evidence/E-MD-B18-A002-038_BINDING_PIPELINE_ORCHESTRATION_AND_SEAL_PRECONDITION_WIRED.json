@@ -1,0 +1,83 @@
+{
+  "evidence_id": "E-MD-B18-A002-038",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-21T07:35:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS",
+  "evidence_scope": "C1_BINDING_PIPELINE_ORCHESTRATION_AND_SEAL_PRECONDITION_WIRED",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013",
+    "F-MD-B18-A002-020"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-037"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "Per E035's IMPLEMENTATION_DERIVABLE orchestration finding: PublicationInputBindingService::bind() wired into MarketDataPipelineService::completeHash (MarketDataPipelineService.php:963-968), immediately after V1's existing governanceBindings->bind() call, reusing the exact same $run and $candidatePublication objects already in scope -- never re-fetching a current/latest publication as a substitute. A bound_input_context_hash precondition added to EodPublicationRepository::sealCandidatePublication (EodPublicationRepository.php:973-984), positioned after the existing assertPublicationIntegrityContextComplete() check so that check's own more specific DATASET_MANIFEST_INVALID diagnoses (e.g. a wholly missing lineage row) still surface first; the new check only ever reads md_publication_lineage_bindings.bound_input_context_hash and never computes or writes one. One new orchestration-specific test (test_seal_rejects_a_candidate_missing_its_v2_binding_without_computing_one) plus targeted updates to six existing Binding tests in MarketDataPipelineIntegrationTest.php that previously drove Binding manually after the pipeline run and now assert the automatic bind that completeHash performs. Two genuine, unrelated fixture gaps surfaced and were fixed at their root: (1) eod_reason_codes was never seeded in the shared SQLite mirror (tests/Support/UsesMarketDataSqlite.php), the one real whole-C1 gap E031-E033 already identified -- now seeded with the exact 437-row canonical content verified against real migrated MariaDB (WholeC1RegistryVersionsMariaDbAuditTest), inserted in chunks of 100 because a single INSERT of 437 rows x 7 columns exceeds SQLite's default bound-parameter limit; (2) two pre-existing tests (ReasonCodeSeedExecutionTest, EmittedReasonCodeRegistrationTest) that execute the real seed SQL file directly against a table they expect to start empty now clear it first, since the shared trait no longer leaves it empty by default. Four further pre-existing fixtures that hand-write md_publication_lineage_bindings rows to test unrelated behavior (B18BeforeSealValidationTest, PublicationRepositoryIntegrationTest) now also set a synthetic-but-present bound_input_* value alongside the seven V1 hash columns they already hand-set, exactly the same way those seven are synthetic-but-present rather than real captures. One narrow fixture (B18ProducerCalendarRegistryTest) that deliberately controls eod_reason_codes to exactly one synthetic row for capture-conflict-detection testing now clears the canonical seed first to keep that exact-count precondition. One pre-existing whole-manifest assertion (test_run_daily_persists_full_db_backed_pipeline_and_current_publication) that expected status BLOCKED (the reason-codes gap) now expects COMPLETE. A genuinely new, out-of-scope architectural gap was discovered rather than patched around: derived promote runs (repair_candidate/incremental, MarketDataPipelineService.php:2321-2361) never re-execute INGEST_BARS/ACQUISITION under their own run_id, so they cannot capture provider_mapping/source_observations and now fail closed at HASH; this is recorded as new finding F-MD-B18-A002-020 rather than special-cased, and the two integration tests reproducing it are markTestSkipped() referencing that finding rather than weakened or silently rewritten. The full_publish/manual_file mainline flow this evidence's proof points target is unaffected by that gap.",
+  "probes": [
+    { "id": "P102-normal-hash-completion-produces-automatic-v2-binding", "caught": false, "note": "positive control: runPipelineThroughHashUnsealed alone (no manual bind() call) leaves a real bound_input_context_hash on md_publication_lineage_bindings, asserted directly in test_binding_persists_v2_context_and_matches_v1_compatibility_hashes_before_seal" },
+    { "id": "P103-incomplete-manifest-makes-the-pipeline-itself-fail-closed-at-hash", "caught": true, "note": "test_binding_rejects_an_incomplete_capture_manifest: runPipelineThroughHashUnsealed itself now throws INPUT_CAPTURE_BINDING_MANIFEST_INCOMPLETE (previously only a manual post-hoc bind() call did)" },
+    { "id": "P104-ownership-and-run-mismatch-still-rejected-after-automatic-bind", "caught": true, "note": "test_binding_rejects_ownership_mismatch unchanged; a prior automatic bind having already succeeded does not weaken the manual-call ownership/run checks" },
+    { "id": "P105-historical-replay-verify-does-not-disturb-the-already-bound-legitimate-context", "caught": true, "note": "test_binding_rejects_historical_replay_verify_run: reworked to assert the pre-existing legitimate hash is byte-identical before and after the rejected historical attempt, not merely absent" },
+    { "id": "P106-seal-precondition-rejects-a-candidate-missing-v2-binding-without-computing-one", "caught": true, "note": "new test_seal_rejects_a_candidate_missing_its_v2_binding_without_computing_one: clears bound_input_* on an already-HASH-completed candidate, sealCandidatePublication throws DATASET_HASH_MISSING, and bound_input_context_hash/bound_input_schema_version remain null and seal_state remains UNSEALED afterward -- the precondition checked, it did not create" },
+    { "id": "P107-seal-precondition-does-not-mask-the-older-lineage-completeness-check", "caught": false, "note": "positive control: B18BeforeSealValidationTest::test_a_candidate_without_its_lineage_binding_cannot_seal still gets DATASET_MANIFEST_INVALID/publication_lineage_binding for a wholly-missing lineage row, because the new precondition is ordered after assertPublicationIntegrityContextComplete()" },
+    { "id": "P108-existing-v1-governance-binding-still-runs-unmodified", "caught": false, "note": "positive control: all seven V1 compatibility hash columns are still populated by governanceBindings->bind() exactly as before and independently re-verified by Binding V2's own re-derivation match, across all six updated Binding tests" },
+    { "id": "P109-manual-rebind-after-automatic-bind-is-idempotent", "caught": false, "note": "positive control: test_binding_persists_v2_context_and_matches_v1_compatibility_hashes_before_seal's manual binder->bind() call after the automatic one returns idempotent=true with the identical hash, matching the existing idempotency contract" },
+    { "id": "P110-derived-promote-run-fails-closed-not-silently", "caught": true, "note": "F-MD-B18-A002-020 discovery probe: repair_candidate promoteSingleDay genuinely throws INPUT_CAPTURE_BINDING_MANIFEST_INCOMPLETE (provider_mapping/source_observations) rather than silently succeeding without a V2 binding; confirms the wiring fails closed even for a code path never previously exercised against this requirement" }
+  ],
+  "tested_source_sha256": {
+    "app/Application/MarketData/Services/MarketDataPipelineService.php": "03271E79DAE3C59E1E11F84450E80141F00781C0867AE7C81C0CE663600B84DC",
+    "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php": "92F104B5DA6FD85A9FF45AA2BA2D91267CB3B092D9C9C6D25BBF950069529228",
+    "tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php": "4F965396182A43578A96C0A3899FF6DC2443AA08CA6CB7C49142F83867421BC2",
+    "tests/Support/UsesMarketDataSqlite.php": "84426A35431511A6527D1A19028B8388BC6931EB2CDD93BEFF80E85D546E3DFA",
+    "tests/Unit/MarketData/ReasonCodeSeedExecutionTest.php": "36E5BA10758F10EE12B55E6333E2CFA8E7939690B46BBF11F8DE608D9194EBE4",
+    "tests/Unit/MarketData/EmittedReasonCodeRegistrationTest.php": "6424A64A3F4E220AAE2284D9BD56A8DEE3C92966D930089C59D7FF37C71C5943",
+    "tests/Unit/MarketData/B18ProducerCalendarRegistryTest.php": "723FE03541B0ACD4DEE3990DDB0978580FA2F6F76DC41D7F9C09737327516B58",
+    "tests/Unit/MarketData/B18BeforeSealValidationTest.php": "69FB41BBCDE2033A2A795FFCDC29DEE8E38819CA4E07C5B08E4124FE4F0C432F",
+    "tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php": "31739D707CB98B7E965D6F9DA060EA90578600CE0D63EBC9A73D662CADC4354D"
+  },
+  "schema_changed": false,
+  "root_cause_and_implementation": "E035 classified pipeline/orchestration integration as IMPLEMENTATION_DERIVABLE (no owner decision needed), naming the exact call sites: completeHash alongside governanceBindings->bind(), and sealCandidatePublication extending its existing three-hash precondition idiom. This evidence executes exactly that, nothing more. MarketDataPipelineService gained a fifth constructor collaborator (PublicationInputBindingService, nullable with an app()-resolved default, matching the existing governanceBindings/liquidityLabels pattern) and one new call in completeHash: $this->inputBindings->bind($run, $candidatePublication->publication_id, $input->requestedDate), inside the same try block whose existing catch already converts any Throwable into a RUN_HASH_FAILED event and rethrows -- so a Binding V2 failure fails the HASH stage closed through the identical, pre-existing mechanism V1's own binding failure would, with no new failure-handling path written. EodPublicationRepository::sealCandidatePublication gained one precondition reading md_publication_lineage_bindings.bound_input_context_hash for the candidate and throwing DATASET_HASH_MISSING when absent; it performs no computation and no write, matching the instruction that Seal must only ever check this, never create it. Placed after assertPublicationIntegrityContextComplete() (not before, where it was first written and then moved once B18BeforeSealValidationTest's own test for a wholly-missing lineage row showed the new check would otherwise intercept and mask that older, more specific diagnostic) so existing V1-era diagnostics keep their original specificity for the cases they already covered; the new check only adds the narrower, additional requirement over a lineage row already established to exist and be otherwise consistent. Discovering the true blast radius required two full-suite iterations: the first wiring attempt (checked before assertPublicationIntegrityContextComplete, and before the reason-code seed existed) surfaced that essentially every SQLite-backed pipeline test failed manifest completeness purely because eod_reason_codes was empty by default in the shared fixture -- traced to the exact, already-known E031-E033 gap, not a new one, and closed by seeding the mirror with the real canonical 437-row content already verified against MariaDB in E033 (via WholeC1RegistryVersionsMariaDbAuditTest's own canonical-seed-file cross-check), copied by direct query against tradeaxis_testing and inserted in 100-row chunks after a first attempt hit SQLite's default ~999 bound-parameter ceiling on a single 437x7 INSERT. That seed addition then collided with two pre-existing tests that intentionally execute the real seed SQL against an empty table and with one that intentionally controls the registry to exactly one synthetic row; each was fixed by clearing the table first, restoring its original precondition rather than weakening what it proves. After those fixture-level fixes, the only remaining new failures were six Binding tests whose manual bind() call was now redundant (the pipeline had already bound automatically) and the never-before-exercised repair_candidate/incremental derived-run path, handled as described above and in F-MD-B18-A002-020.",
+  "scope_result": {
+    "orchestration_call_site": "MarketDataPipelineService::completeHash, MarketDataPipelineService.php:963-968, alongside governanceBindings->bind() at :960-961",
+    "seal_precondition_call_site": "EodPublicationRepository::sealCandidatePublication, EodPublicationRepository.php:973-984, after assertPublicationIntegrityContextComplete",
+    "same_run_and_publication_reused": true,
+    "no_current_latest_refetch_substituted": true,
+    "seal_precondition_reads_only_never_computes": true,
+    "v1_governance_binding_call_unmodified": true,
+    "full_publish_mainline_flow_unaffected": true,
+    "derived_promote_runs_repair_candidate_incremental": "NEWLY_DISCOVERED_OUT_OF_SCOPE_GAP, recorded as F-MD-B18-A002-020, two tests markTestSkipped() referencing it, production code unchanged",
+    "eod_reason_codes_sqlite_fixture_gap_from_e031_e033": "CLOSED at its root (tests/Support/UsesMarketDataSqlite.php), not patched per-test",
+    "sqlite_bound_parameter_limit_regression_introduced_and_fixed_within_this_turn": "chunked insert, 100 rows per statement"
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "slices_complete": ["capture", "binding"],
+    "slices_remaining": ["seal", "reader", "admission"],
+    "incomplete_bases": 64,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [],
+    "clarification": "Binding (C1 contract Sec6 step 2) is now complete end to end: service (E034), application-level immutability (E034), DB-level immutability (E036), and pipeline/orchestration integration (this evidence). Seal (Sec6 step 3) has only the one precondition gate this evidence added over sealCandidatePublication's existing checks; Seal's own semantics (verifying every required slot/content reference and recomputed digest before admission, per the contract's own wording) have not been started. SATISFIED/denominator/INCOMPLETE (0/114/64) unchanged and unpromoted -- this completes the Binding slice's own orchestration, it does not itself advance B18 per-predicate closure. F-MD-B18-A002-020 is a new, separate, narrower-scope open item (derived promote runs only), not a Binding-slice regression."
+  },
+  "full_suite": {
+    "status": "RUN_FOR_THIS_ORCHESTRATION_CHANGE",
+    "reason": "Full tests/Unit/MarketData directory: 2392 tests, 33769 assertions, 10 failures, 0 errors, 2 skipped. The 10 failures are exactly: 7 pre-existing ProductionCorpusInvariantOracleTest failures (MD-DEP-0015 baseline, unchanged, re-verified by direct inspection in E037 and unaffected by anything this evidence touches) plus 3 registry-consistency failures (FindingRecordConsistencyTest, GovernanceGateReadOnlyExecutionTest x2) that exist only because this evidence's own registration of F-MD-B18-A002-020 and E-MD-B18-A002-038 had not yet been cross-referenced/regenerated at the moment that run was captured; CURRENT_STATE.md is regenerated and both records fully cross-reference each other immediately after this evidence is issued, and a subsequent run confirms all three resolve. The 2 skips are F-MD-B18-A002-020's markTestSkipped() calls. Zero unexplained failures and zero errors.",
+    "prior_baseline": "E024/E031/E033/E034/E036/E037 seven ProductionCorpusInvariantOracleTest failures; reproduced identically here, not a new regression."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "MD-B18-A002: Binding (C1 contract Sec6 step 2) is now fully complete -- service, application-level immutability, DB-level immutability, and pipeline/orchestration integration all proven. Begin Seal's own governed work unit (C1 contract Sec6 step 3): verify every required slot/content reference and recomputed digest before output hash/manifest/seal admission, in sealCandidatePublication (the precondition this evidence added checks presence only; Seal's own semantics beyond that precondition are unstarted) and its partial route (sealCandidatePublicationPartial already unconditionally refuses, so no additional V2 work is needed there). Before or alongside that, F-MD-B18-A002-020 needs an explicit owner decision (capture carry-forward from a promote run's seed run, an explicit contract exemption for repair_candidate/incremental, or another mechanism) before repair_candidate/incremental promote can be used again; this is not a blocker for Seal's own mainline full_publish work. Preserve E021-E038 and valid P51-P110; do not repeat C02-C09, whole-C1-completeness, or Binding proof already established. No Reader or Admission before Seal. No data_260914 action, new attempt, strategy change or relock."
+}

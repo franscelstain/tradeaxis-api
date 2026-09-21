@@ -162,6 +162,9 @@ class EmittedReasonCodeRegistrationTest extends TestCase
             $sql = substr($sql, 0, $tail);
         }
 
+        // The shared SQLite trait now seeds eod_reason_codes canonically by default; this method
+        // executes the seed file itself against a table it expects to start empty.
+        DB::table('eod_reason_codes')->delete();
         DB::unprepared(rtrim(trim(str_replace('`', '"', $sql)), ",; \t\n\r").';');
 
         return DB::table('eod_reason_codes')->pluck('code')->all();

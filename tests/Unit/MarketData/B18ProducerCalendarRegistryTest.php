@@ -18,6 +18,10 @@ class B18ProducerCalendarRegistryTest extends TestCase
         \Carbon\Carbon::setTestNow('2026-03-25 10:30:00');
         foreach (['2026-03-19', '2026-03-20', '2026-03-23', '2026-03-24'] as $date) $this->seedVerifiedMarketCalendarDate($date);
         $this->seedVerifiedMarketCalendarDate('2026-03-21', false);
+        // This file deliberately controls the exact reason-registry population to test capture
+        // conflict-detection against a single, synthetic row; the shared trait's canonical
+        // default population would defeat that exact-count precondition, so it is cleared first.
+        DB::table('eod_reason_codes')->delete();
         DB::table('eod_reason_codes')->insert([
             'code' => 'C1_TEST_REASON', 'category' => 'TEST', 'description' => 'Explicit fixture reason registry',
             'severity' => 'INFO', 'is_active' => 1,

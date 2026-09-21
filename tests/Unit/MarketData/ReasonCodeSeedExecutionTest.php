@@ -21,6 +21,10 @@ class ReasonCodeSeedExecutionTest extends TestCase
     {
         parent::setUp();
         $this->bootMarketDataSqlite();
+        // The shared SQLite mirror now seeds eod_reason_codes canonically by default (closing a
+        // whole-C1 fixture gap), but this file proves the seed FILE itself executes correctly
+        // against an empty table, so it must start from the same empty precondition it always has.
+        DB::table('eod_reason_codes')->delete();
     }
 
     protected function tearDown(): void

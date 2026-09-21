@@ -180,7 +180,10 @@ class MarketDataPipelineIntegrationTest extends TestCase
             $payload = json_decode($capture['semantic_payload_json'], true);
             $capturedInputs[$payload['selection_context']['operation']] = $payload;
         }
-        $this->assertSame('BLOCKED', $capturedInputs['input-completion-manifest/v1']['rows'][0]['status']);
+        // The SQLite mirror's eod_reason_codes is now seeded with the same canonical content as
+        // deployed MariaDB (the whole-C1 fixture gap E031-E033 found is closed), so the manifest
+        // this run captured is genuinely complete rather than BLOCKED on that one remaining gap.
+        $this->assertSame('COMPLETE', $capturedInputs['input-completion-manifest/v1']['rows'][0]['status']);
         $this->assertSame([], (new \App\Infrastructure\Persistence\MarketData\ProducerSourceObservationCompleteness())->missing($captures, new \App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository()), 'Whole C06 requires content and cross-capture membership, not slot count.');
         $this->assertSame([], array_values(array_filter($capturedInputs['input-completion-manifest/v1']['rows'][0]['missing_paths'], static function ($path) {
             return strpos($path, 'universe_identity.') === 0 || strpos($path, 'provider_mapping.') === 0 || strpos($path, 'status_expectation.') === 0 || strpos($path, 'raw_history.') === 0 || strpos($path, 'event_factor.') === 0 || strpos($path, 'ancillary.') === 0 || strpos($path, 'completion.producer_scope.') === 0;
@@ -4697,7 +4700,15 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertNull(DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first());
     }
 
-    public function test_promote_single_day_repair_candidate_first_execution_marks_metadata_and_keeps_current_publication_non_current(): void
+    /**
+     * F-MD-B18-A002-020: a repair_candidate promote derives its run via createPromoteRunFromSeed,
+     * which never re-executes INGEST_BARS/ACQUISITION, so it structurally cannot capture
+     * provider_mapping/source_observations under its own run_id. This is the current, correct,
+     * C1-contract-required interim behavior (Sec5: "existing flows without complete producer
+     * evidence fail closed"), not a generic pipeline defect -- so this test proves the specific
+     * missing-producer-evidence reason fires, not merely that something fails.
+     */
+    public function test_promote_single_day_repair_candidate_fails_closed_on_incomplete_producer_evidence(): void
     {
         $this->seedTicker(1, 'BBCA');
         $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
@@ -4721,35 +4732,52 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
         $pipeline = $this->makePipeline();
         $importRun = $pipeline->importSingleDay('2026-03-20', 'manual_file');
-        $repairRun = $pipeline->promoteSingleDay('2026-03-20', 'manual_file', $importRun->run_id, $approved->correction_id, 'repair_candidate');
+
+        try {
+            $pipeline->promoteSingleDay('2026-03-20', 'manual_file', $importRun->run_id, $approved->correction_id, 'repair_candidate');
+            $this->fail('repair_candidate promote completed despite incomplete producer-bound input capture (provider_mapping/source_observations never captured for a derived run).');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_BINDING_MANIFEST_INCOMPLETE', $e->getMessage(),
+                'The refusal must name incomplete producer-bound capture, not a generic pipeline failure.');
+            $this->assertStringContainsString('provider_mapping', $e->getMessage());
+            $this->assertStringContainsString('source_observations', $e->getMessage());
+        }
+
+        $repairRun = DB::table('eod_runs')->where('trade_date_requested', '2026-03-20')->orderByDesc('run_id')->first();
+        $this->assertNotSame((int) $importRun->run_id, (int) $repairRun->run_id, 'The derived promote run must be a distinct run from its seed.');
+        $this->assertSame('FAILED', $repairRun->terminal_status);
+        $this->assertSame('NOT_READABLE', $repairRun->publishability_state);
+        $this->assertSame('RUN_HASH_FAILED', $repairRun->final_reason_code);
 
         $correctionRow = DB::table('eod_dataset_corrections')->where('correction_id', $approved->correction_id)->first();
-        $candidatePublication = DB::table('eod_publications')->where('run_id', $repairRun->run_id)->first();
-        $pointer = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
-        $finalizedEvent = DB::table('eod_run_events')
-            ->where('run_id', $repairRun->run_id)
-            ->where('event_type', 'RUN_FINALIZED')
-            ->first();
-        $payload = json_decode((string) $finalizedEvent->event_payload_json, true);
+        $this->assertNotSame('REPAIR_EXECUTED', $correctionRow->status, 'A failed-closed repair attempt must not be recorded as an executed repair.');
 
-        $this->assertSame('SUCCESS', $repairRun->terminal_status);
-        $this->assertSame('NOT_READABLE', $repairRun->publishability_state);
-        $this->assertSame('repair_candidate', $repairRun->promote_mode);
-        $this->assertSame('repair_candidate', $repairRun->publish_target);
-        $this->assertSame('REPAIR_EXECUTED', $correctionRow->status);
-        $this->assertSame(1, (int) $correctionRow->execution_count);
-        $this->assertSame((int) $repairRun->run_id, (int) $correctionRow->new_run_id);
-        $this->assertNotNull($correctionRow->last_executed_at);
-        $this->assertNull($correctionRow->current_consumed_at);
-        $this->assertNotNull($candidatePublication);
-        $this->assertSame(0, (int) $candidatePublication->is_current);
+        $stageFailedEvent = DB::table('eod_run_events')
+            ->where('run_id', $repairRun->run_id)
+            ->where('event_type', 'STAGE_FAILED')
+            ->orderByDesc('event_id')
+            ->first();
+        $this->assertNotNull($stageFailedEvent);
+        $this->assertSame('RUN_HASH_FAILED', $stageFailedEvent->reason_code);
+        $this->assertStringContainsString('INPUT_CAPTURE_BINDING_MANIFEST_INCOMPLETE', (string) $stageFailedEvent->message);
+
+        $candidatePublication = DB::table('eod_publications')->where('run_id', $repairRun->run_id)->first();
+        if ($candidatePublication !== null) {
+            $this->assertSame(0, (int) $candidatePublication->is_current);
+            $this->assertSame('UNSEALED', (string) $candidatePublication->seal_state);
+        }
+        $pointer = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
         $this->assertNotNull($pointer);
-        $this->assertSame(1, (int) $pointer->publication_id);
-        $this->assertSame('RUN_REPAIR_CANDIDATE_PARTIAL', $finalizedEvent->reason_code);
-        $this->assertSame('REPAIR_CANDIDATE', $payload['correction_outcome']);
+        $this->assertSame(1, (int) $pointer->publication_id, 'The pre-existing current pointer must be preserved, exactly as a failed repair candidate always required.');
     }
 
-    public function test_promote_single_day_repair_candidate_rerun_increments_execution_count_and_preserves_current_pointer(): void
+    /**
+     * F-MD-B18-A002-020: `incremental` is a literal internal alias for `repair_candidate`
+     * (`MarketDataPipelineService::resolvePromoteContext()` maps `'incremental' => 'repair_candidate'`
+     * before any other logic runs), so it must fail exactly the same way, for exactly the same
+     * reason, not merely "also fail" for some unrelated cause.
+     */
+    public function test_promote_single_day_incremental_fails_closed_identically_to_repair_candidate(): void
     {
         $this->seedTicker(1, 'BBCA');
         $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
@@ -4773,7 +4801,13 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
         $pipeline = $this->makePipeline();
         $firstImportRun = $pipeline->importSingleDay('2026-03-20', 'manual_file');
-        $firstRepairRun = $pipeline->promoteSingleDay('2026-03-20', 'manual_file', $firstImportRun->run_id, $approved->correction_id, 'repair_candidate');
+        $firstMessage = null;
+        try {
+            $pipeline->promoteSingleDay('2026-03-20', 'manual_file', $firstImportRun->run_id, $approved->correction_id, 'repair_candidate');
+            $this->fail('repair_candidate promote completed despite incomplete producer-bound input capture.');
+        } catch (\RuntimeException $e) {
+            $firstMessage = $e->getMessage();
+        }
 
         $this->writeBarsFixture('2026-03-20', [[
             'ticker_code' => 'BBCA',
@@ -4788,28 +4822,45 @@ class MarketDataPipelineIntegrationTest extends TestCase
         ]]);
 
         $secondImportRun = $pipeline->importSingleDay('2026-03-20', 'manual_file');
-        $secondRepairRun = $pipeline->promoteSingleDay('2026-03-20', 'manual_file', $secondImportRun->run_id, $approved->correction_id, 'incremental');
+        $secondMessage = null;
+        try {
+            $pipeline->promoteSingleDay('2026-03-20', 'manual_file', $secondImportRun->run_id, $approved->correction_id, 'incremental');
+            $this->fail('incremental promote completed despite incomplete producer-bound input capture.');
+        } catch (\RuntimeException $e) {
+            $secondMessage = $e->getMessage();
+        }
+
+        // Same reason, both halves of the same underlying capture gap named identically, for both
+        // the legacy name and its alias.
+        $this->assertStringContainsString('INPUT_CAPTURE_BINDING_MANIFEST_INCOMPLETE', $firstMessage);
+        $this->assertStringContainsString('INPUT_CAPTURE_BINDING_MANIFEST_INCOMPLETE', $secondMessage);
+        $this->assertStringContainsString('provider_mapping', $firstMessage);
+        $this->assertStringContainsString('provider_mapping', $secondMessage);
+        $this->assertStringContainsString('source_observations', $firstMessage);
+        $this->assertStringContainsString('source_observations', $secondMessage);
+
+        $firstRepairRun = DB::table('eod_runs')->where('run_id', '>', $firstImportRun->run_id)
+            ->where('run_id', '<', $secondImportRun->run_id)->orderByDesc('run_id')->first();
+        $secondRepairRun = DB::table('eod_runs')->where('run_id', '>', $secondImportRun->run_id)->orderByDesc('run_id')->first();
+        $this->assertNotNull($firstRepairRun, 'The first derived repair_candidate run must still have been created before failing.');
+        $this->assertNotNull($secondRepairRun, 'The second derived incremental run must still have been created before failing.');
+        $this->assertNotSame((int) $firstRepairRun->run_id, (int) $secondRepairRun->run_id);
+        $this->assertSame('FAILED', $firstRepairRun->terminal_status);
+        $this->assertSame('FAILED', $secondRepairRun->terminal_status);
+        // Recorded promote_mode/publish_target are normalized through the same alias resolution
+        // regardless of which name was requested -- both runs read back as repair_candidate.
+        $this->assertSame('repair_candidate', $firstRepairRun->promote_mode);
+        $this->assertSame('repair_candidate', $secondRepairRun->promote_mode);
 
         $correctionRow = DB::table('eod_dataset_corrections')->where('correction_id', $approved->correction_id)->first();
-        $firstCandidate = DB::table('eod_publications')->where('run_id', $firstRepairRun->run_id)->first();
-        $secondCandidate = DB::table('eod_publications')->where('run_id', $secondRepairRun->run_id)->first();
-        $pointer = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
-
-        $this->assertSame('SUCCESS', $firstRepairRun->terminal_status);
-        $this->assertSame('SUCCESS', $secondRepairRun->terminal_status);
-        $this->assertSame('NOT_READABLE', $secondRepairRun->publishability_state);
-        $this->assertSame('repair_candidate', $secondRepairRun->promote_mode);
-        $this->assertSame('repair_candidate', $secondRepairRun->publish_target);
-        $this->assertSame('REPAIR_EXECUTED', $correctionRow->status);
+        $this->assertNotSame('REPAIR_EXECUTED', $correctionRow->status, 'Neither failed-closed attempt may be recorded as an executed repair.');
+        // execution_count records attempts started, independent of outcome, so it correctly reaches
+        // 2 here (one per failed-closed try) -- this is not evidence either attempt succeeded.
         $this->assertSame(2, (int) $correctionRow->execution_count);
-        $this->assertSame((int) $secondRepairRun->run_id, (int) $correctionRow->new_run_id);
-        $this->assertNotNull($correctionRow->last_executed_at);
-        $this->assertNull($correctionRow->current_consumed_at);
-        $this->assertNotNull($firstCandidate);
-        $this->assertNotNull($secondCandidate);
-        $this->assertSame(0, (int) $firstCandidate->is_current);
-        $this->assertSame(0, (int) $secondCandidate->is_current);
-        $this->assertNotSame((int) $firstRepairRun->run_id, (int) $secondRepairRun->run_id);
+
+        // A failed-closed repair attempt -- by either name -- must never touch the pre-existing
+        // current pointer.
+        $pointer = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
         $this->assertNotNull($pointer);
         $this->assertSame(1, (int) $pointer->publication_id);
     }
@@ -5000,12 +5051,12 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame([], array_values(array_filter($result['missing_paths'], static function ($p) {
             return strpos($p, 'ancillary.') === 0;
         })), 'A valid real C09 capture must have no ancillary gap.');
-        // Whole-C1, all optional producers engaged: the only remaining gap is the pre-existing,
-        // C09-independent registry_versions.reason_registry.entries (C1 contract C10 row / S7 fail-closed
-        // rule) -- eod_reason_codes has zero rows in this SQLite mirror (unlike deployed MariaDB, which
-        // seeds it via migration), so the gate correctly reports BLOCKED rather than an implementation gap.
-        $this->assertSame(['registry_versions.reason_registry.entries'], $result['missing_paths'],
-            'Whole-C1 with every optional ancillary producer engaged has exactly one remaining, pre-existing, C09-independent gap.');
+        // Whole-C1, all optional producers engaged: the SQLite mirror's eod_reason_codes is now
+        // seeded with the same canonical content as deployed MariaDB (MD-B18-A002 Binding
+        // orchestration wiring closed the fixture gap E031-E033 found), so the manifest is
+        // genuinely complete rather than BLOCKED on that one remaining pre-existing gap.
+        $this->assertSame([], $result['missing_paths'],
+            'Whole-C1 with every optional ancillary producer engaged and canonical reason codes seeded has zero remaining gaps.');
 
         // Mutation: damaging one consumed field must be independently caught, in memory only (the real
         // run is already sealed, so no post-seal capture write is attempted).
@@ -5017,18 +5068,6 @@ class MarketDataPipelineIntegrationTest extends TestCase
             $this->fail('Damaged sector context accepted');
         } catch (RuntimeException $e) {
             $this->assertStringContainsString('INPUT_CAPTURE_ANCILLARY_SECTOR_CONTEXTS_MISMATCH', $e->getMessage());
-        }
-    }
-
-    /** Local, test-only reason codes: not the shared SQLite trait, just enough for a genuinely complete manifest. */
-    private function seedMinimalReasonCodesForBindingTest(): void
-    {
-        $now = '2020-01-01 00:00:00';
-        foreach (['ELIG_MISSING_BAR', 'ELIG_TRADING_SUSPENDED', 'COVERAGE_OK'] as $code) {
-            DB::table('eod_reason_codes')->insert([
-                'code' => $code, 'category' => 'ELIGIBILITY', 'description' => $code, 'severity' => 'INFO',
-                'is_active' => 1, 'created_at' => $now, 'updated_at' => $now,
-            ]);
         }
     }
 
@@ -5054,7 +5093,6 @@ class MarketDataPipelineIntegrationTest extends TestCase
     public function test_binding_persists_v2_context_and_matches_v1_compatibility_hashes_before_seal(): void
     {
         $this->seedTicker(1, 'BBCA');
-        $this->seedMinimalReasonCodesForBindingTest();
         $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
         $listingId = (int) DB::table('md_listings')->where('legacy_ticker_id', 1)->value('listing_id');
         DB::table('ticker_sector_memberships')->insert([
@@ -5070,6 +5108,9 @@ class MarketDataPipelineIntegrationTest extends TestCase
         ]]);
 
         $pipeline = $this->makePipelineWithAncillaryEngaged();
+        // Binding V2 is now wired directly into completeHash, on the same lifecycle as V1's
+        // governance binding, so a genuinely complete manifest must already be bound by the time
+        // the pipeline returns from HASH -- no separate manual bind() call is needed to produce it.
         $run = $this->runPipelineThroughHashUnsealed($pipeline, '2026-03-20');
         $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
         $this->assertSame('UNSEALED', $publication->seal_state, 'Binding must be exercised before seal.');
@@ -5079,15 +5120,9 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $manifest = $validator->inspect($run, $repository);
         $this->assertSame([], $manifest['missing_paths'], 'Precondition: the manifest must be genuinely complete before Binding is exercised.');
 
-        $binder = new \App\Application\MarketData\Services\PublicationInputBindingService();
-        $result = $binder->bind($run, (int) $publication->publication_id, '2026-03-20');
-        $this->assertFalse($result['idempotent']);
-        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $result['bound_input_context_hash']);
-        $this->assertNotEmpty($result['derived_compatibility_hashes']);
-
         $lineage = DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->first();
-        $this->assertSame('md_publication_inputs_v2', $lineage->bound_input_schema_version);
-        $this->assertSame($result['bound_input_context_hash'], $lineage->bound_input_context_hash);
+        $this->assertSame('md_publication_inputs_v2', $lineage->bound_input_schema_version, 'HASH must have bound V2 context automatically.');
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $lineage->bound_input_context_hash);
         $context = json_decode($lineage->bound_input_context_json, true);
         $this->assertSame('md_publication_inputs_v2', $context['schema_version']);
         $this->assertNotEmpty($context['components']);
@@ -5095,9 +5130,15 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $manifestJson = json_decode($lineage->bound_input_capture_manifest_json, true);
         $this->assertNotEmpty($manifestJson['actual_components']);
 
-        // The independently re-derived compatibility hashes must match what V1's existing binder
-        // already computed via live queries -- proving V1's hashes were actually consistent with
-        // the captured population, not merely self-consistent with themselves.
+        // A manual re-bind against the same candidate must independently re-derive the same
+        // compatibility hashes V1's existing binder already computed via live queries -- proving
+        // V1's hashes were actually consistent with the captured population, not merely
+        // self-consistent with themselves -- and must be a safe, idempotent no-op.
+        $binder = new \App\Application\MarketData\Services\PublicationInputBindingService();
+        $result = $binder->bind($run, (int) $publication->publication_id, '2026-03-20');
+        $this->assertTrue($result['idempotent'], 'HASH already bound this publication; a manual re-bind of identical content must be idempotent.');
+        $this->assertSame($lineage->bound_input_context_hash, $result['bound_input_context_hash']);
+        $this->assertNotEmpty($result['derived_compatibility_hashes']);
         foreach ($result['derived_compatibility_hashes'] as $field => $hash) {
             $this->assertSame($lineage->$field, $hash, $field.' must match the existing V1 compatibility hash.');
         }
@@ -5108,18 +5149,11 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertArrayHasKey('event_revision_set_hash', $result['derived_compatibility_hashes']);
         $this->assertArrayHasKey('source_scale_assessment_set_hash', $result['derived_compatibility_hashes']);
         $this->assertArrayHasKey('factor_decision_set_hash', $result['derived_compatibility_hashes']);
-
-        // Idempotent re-bind: same captures, same bytes, no error, no change.
-        $again = $binder->bind($run, (int) $publication->publication_id, '2026-03-20');
-        $this->assertTrue($again['idempotent']);
-        $this->assertSame($result['bound_input_context_hash'], $again['bound_input_context_hash']);
-
     }
 
     public function test_binding_rejects_ownership_mismatch(): void
     {
         $this->seedTicker(1, 'BBCA');
-        $this->seedMinimalReasonCodesForBindingTest();
         $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
         $this->writeBarsFixture('2026-03-20', [[
             'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20', 'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124, 'volume' => 2000,
@@ -5149,15 +5183,18 @@ class MarketDataPipelineIntegrationTest extends TestCase
     public function test_binding_rejects_historical_replay_verify_run(): void
     {
         $this->seedTicker(1, 'BBCA');
-        $this->seedMinimalReasonCodesForBindingTest();
         $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
         $this->writeBarsFixture('2026-03-20', [[
             'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20', 'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124, 'volume' => 2000,
             'captured_at' => '2026-03-20T17:20:00+07:00',
         ]]);
         $pipeline = $this->makePipelineWithAncillaryEngaged();
+        // Binding V2 is wired into completeHash, so this run already binds a real, legitimate
+        // context while its request_mode is genuinely 'full_publish'.
         $run = $this->runPipelineThroughHashUnsealed($pipeline, '2026-03-20');
         $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
+        $legitimateHash = DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->value('bound_input_context_hash');
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $legitimateHash, 'Precondition: HASH must have already bound a real context.');
         $run->request_mode = 'replay_verify';
 
         $binder = new \App\Application\MarketData\Services\PublicationInputBindingService();
@@ -5167,38 +5204,43 @@ class MarketDataPipelineIntegrationTest extends TestCase
         } catch (RuntimeException $e) {
             $this->assertStringContainsString('INPUT_CAPTURE_BINDING_HISTORICAL_NOT_PERMITTED', $e->getMessage());
         }
-        $this->assertNull(DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->value('bound_input_context_hash'));
+        // The already-legitimate context from the real run must be left exactly as it was --
+        // a historical-mode attempt must neither fabricate a new one nor disturb the real one.
+        $this->assertSame($legitimateHash, DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->value('bound_input_context_hash'));
     }
 
     public function test_binding_rejects_an_incomplete_capture_manifest(): void
     {
         $this->seedTicker(1, 'BBCA');
-        // Deliberately NOT seeding eod_reason_codes: reproduces the one real, pre-existing whole-C1
-        // gap E032/E033 found (registry_versions.reason_registry.entries) as an incomplete-manifest
+        // Deliberately emptying eod_reason_codes (normally seeded canonically by the shared SQLite
+        // trait, matching real MariaDB) reproduces the one real, pre-existing whole-C1 gap
+        // E032/E033 found (registry_versions.reason_registry.entries) as an incomplete-manifest
         // fixture for Binding, rather than inventing an artificial one.
+        DB::table('eod_reason_codes')->delete();
         $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
         $this->writeBarsFixture('2026-03-20', [[
             'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20', 'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124, 'volume' => 2000,
             'captured_at' => '2026-03-20T17:20:00+07:00',
         ]]);
         $pipeline = $this->makePipelineWithAncillaryEngaged();
-        $run = $this->runPipelineThroughHashUnsealed($pipeline, '2026-03-20');
-        $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
 
-        $binder = new \App\Application\MarketData\Services\PublicationInputBindingService();
+        // Binding V2 is now wired directly into completeHash (MarketDataPipelineService::completeHash),
+        // on the same lifecycle as V1's governance binding, so an incomplete manifest must fail the
+        // pipeline itself closed at the HASH stage, not merely a manual post-hoc bind() call.
         try {
-            $binder->bind($run, (int) $publication->publication_id, '2026-03-20');
-            $this->fail('Binding proceeded on an incomplete capture manifest.');
+            $this->runPipelineThroughHashUnsealed($pipeline, '2026-03-20');
+            $this->fail('Pipeline HASH stage completed despite an incomplete producer-input capture manifest.');
         } catch (RuntimeException $e) {
             $this->assertStringContainsString('INPUT_CAPTURE_BINDING_MANIFEST_INCOMPLETE', $e->getMessage());
         }
+        $runRow = DB::table('eod_runs')->where('trade_date_requested', '2026-03-20')->orderByDesc('run_id')->first();
+        $publication = DB::table('eod_publications')->where('run_id', $runRow->run_id)->first();
         $this->assertNull(DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->value('bound_input_context_hash'));
     }
 
     public function test_binding_detects_a_compatibility_hash_inconsistent_with_the_captured_population(): void
     {
         $this->seedTicker(1, 'BBCA');
-        $this->seedMinimalReasonCodesForBindingTest();
         $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
         $listingId = (int) DB::table('md_listings')->where('legacy_ticker_id', 1)->value('listing_id');
         DB::table('ticker_sector_memberships')->insert([
@@ -5212,8 +5254,12 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'captured_at' => '2026-03-20T17:20:00+07:00',
         ]]);
         $pipeline = $this->makePipelineWithAncillaryEngaged();
+        // Binding V2 is wired into completeHash, so this run already bound a legitimate context
+        // against V1's (still-uncorrupted) compatibility hashes.
         $run = $this->runPipelineThroughHashUnsealed($pipeline, '2026-03-20');
         $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
+        $legitimateHash = DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->value('bound_input_context_hash');
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $legitimateHash, 'Precondition: HASH must have already bound a real context.');
 
         // Corrupt V1's already-stored compatibility hash, as if it had drifted from the true
         // captured population (the exact class of defect C1 exists to catch).
@@ -5228,13 +5274,14 @@ class MarketDataPipelineIntegrationTest extends TestCase
             $this->assertStringContainsString('INPUT_CAPTURE_BINDING_COMPATIBILITY_HASH_MISMATCH', $e->getMessage());
             $this->assertStringContainsString('calendar_revision_set_hash', $e->getMessage());
         }
-        $this->assertNull(DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->value('bound_input_context_hash'));
+        // The rejected re-bind attempt must not disturb the already-legitimate context recorded
+        // before the corruption.
+        $this->assertSame($legitimateHash, DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->value('bound_input_context_hash'));
     }
 
     public function test_binding_rejects_a_conflicting_context_and_a_sealed_mismatch_but_allows_a_sealed_match(): void
     {
         $this->seedTicker(1, 'BBCA');
-        $this->seedMinimalReasonCodesForBindingTest();
         $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
         $listingId = (int) DB::table('md_listings')->where('legacy_ticker_id', 1)->value('listing_id');
         DB::table('ticker_sector_memberships')->insert([
@@ -5286,7 +5333,6 @@ class MarketDataPipelineIntegrationTest extends TestCase
     public function test_binding_detects_a_pre_seal_corrupted_context_once_sealed_and_the_database_then_protects_it(): void
     {
         $this->seedTicker(1, 'BBCA');
-        $this->seedMinimalReasonCodesForBindingTest();
         $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
         $listingId = (int) DB::table('md_listings')->where('legacy_ticker_id', 1)->value('listing_id');
         DB::table('ticker_sector_memberships')->insert([
@@ -5327,6 +5373,59 @@ class MarketDataPipelineIntegrationTest extends TestCase
         } catch (\Illuminate\Database\QueryException $e) {
             $this->assertStringContainsString('INPUT_CAPTURE_BINDING_SEALED_IMMUTABLE', $e->getMessage());
         }
+    }
+
+    /**
+     * Orchestration proof: completeHash binds V2 automatically (already proven above by every
+     * other Binding test's precondition assertion), and separately, sealCandidatePublication's own
+     * bound_input_context_hash precondition rejects a candidate lacking it without itself
+     * computing or creating one -- a real state a publication predating this wiring could carry.
+     */
+    public function test_seal_rejects_a_candidate_missing_its_v2_binding_without_computing_one(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $listingId = (int) DB::table('md_listings')->where('legacy_ticker_id', 1)->value('listing_id');
+        DB::table('ticker_sector_memberships')->insert([
+            'ticker_id' => 1, 'listing_id' => $listingId, 'sector_code' => 'G', 'classification_system' => 'IDX-IC',
+            'effective_from' => '2020-01-01', 'effective_to' => null, 'source_name' => 'idx', 'source_ref' => 'idx-membership-ref',
+            'source_authority_class' => 'EXCHANGE_AUTHORITATIVE', 'recorded_at' => '2026-01-01 00:00:00',
+            'created_at' => '2026-01-01 00:00:00', 'updated_at' => '2026-01-01 00:00:00',
+        ]);
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20', 'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124, 'volume' => 2000,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+        $pipeline = $this->makePipelineWithAncillaryEngaged();
+        // Binding V2 is wired into completeHash, so this run already bound a real V2 context.
+        $run = $this->runPipelineThroughHashUnsealed($pipeline, '2026-03-20');
+        $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', DB::table('md_publication_lineage_bindings')
+            ->where('publication_id', $publication->publication_id)->value('bound_input_context_hash'));
+
+        // Simulate a publication that reached HASH before this wiring existed: its V1 lineage row
+        // is complete, but it never carries a V2 bound input context.
+        DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)
+            ->update([
+                'bound_input_schema_version' => null, 'bound_input_context_json' => null,
+                'bound_input_context_hash' => null, 'bound_input_capture_manifest_json' => null,
+            ]);
+
+        try {
+            (new \App\Infrastructure\Persistence\MarketData\EodPublicationRepository())
+                ->sealCandidatePublication($run, 'operator');
+            $this->fail('A candidate publication missing its V2 bound input context was sealed.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('DATASET_HASH_MISSING', $e->getMessage());
+            $this->assertStringContainsString('producer-bound input context', $e->getMessage());
+        }
+
+        // The precondition must only have checked, never computed or created one: it is still null,
+        // and the publication never reached SEALED.
+        $lineageAfter = DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->first();
+        $this->assertNull($lineageAfter->bound_input_context_hash);
+        $this->assertNull($lineageAfter->bound_input_schema_version);
+        $this->assertSame('UNSEALED', (string) DB::table('eod_publications')->where('publication_id', $publication->publication_id)->value('seal_state'));
     }
 
     private function makePipelineWithAncillaryEngaged(): MarketDataPipelineService

@@ -345,6 +345,15 @@ class B18BeforeSealValidationTest extends TestCase
                 'formula_version' => 'eod_indicators_v1',
                 'build_id' => 'test-build',
                 'read_model_version' => 'market_data_read_product_v1',
+                // This class is about the items-5/6 before-seal checks, not C1 Binding (V2) itself,
+                // so the V2 columns are hand-set here exactly like the seven V1 hash columns above:
+                // a synthetic-but-present value, not a real capture. That is what
+                // EodPublicationRepository::sealCandidatePublication's precondition reads and checks
+                // for, and never itself computes or creates.
+                'bound_input_schema_version' => 'md_publication_inputs_v2',
+                'bound_input_context_json' => '{}',
+                'bound_input_context_hash' => hash('sha256', 'before-seal-bound-input-context'),
+                'bound_input_capture_manifest_json' => '{}',
                 'created_at' => '2026-03-20 17:10:00',
             ]
         );

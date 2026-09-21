@@ -162,6 +162,7 @@ class MarketDataPipelineService
     private $benchmarkBarsIngest;
     private $impactReprocess;
     private $governanceBindings;
+    private $inputBindings;
 
     private $liquidityLabels;
 
@@ -181,7 +182,8 @@ class MarketDataPipelineService
         BenchmarkBarsIngestService $benchmarkBarsIngest = null,
         MarketDataImpactReprocessExecutor $impactReprocess = null,
         PublicationGovernanceBindingService $governanceBindings = null,
-        LiquidityMetricLabelService $liquidityLabels = null
+        LiquidityMetricLabelService $liquidityLabels = null,
+        PublicationInputBindingService $inputBindings = null
     ) {
         $this->runs = $runs;
         $this->barsIngest = $barsIngest;
@@ -199,6 +201,7 @@ class MarketDataPipelineService
         $this->impactReprocess = $impactReprocess;
         $this->governanceBindings = $governanceBindings ?: app(PublicationGovernanceBindingService::class);
         $this->liquidityLabels = $liquidityLabels ?: new LiquidityMetricLabelService();
+        $this->inputBindings = $inputBindings ?: app(PublicationInputBindingService::class);
     }
 
     public function startStage(MarketDataStageInput $input)
@@ -959,6 +962,12 @@ class MarketDataPipelineService
             // bindings are artifact content and must be materialized before hashing/sealing.
             $this->governanceBindings->bind($run, $candidatePublication, $input->requestedDate);
             $candidatePublication = $this->publications->findByRunId($run->run_id);
+
+            // C1 producer-bound input capture (V2): binds the same candidate publication and
+            // owning run to their canonicalized captured-input context. A binding failure must
+            // fail this stage closed exactly like the V1 governance binding above — it is not a
+            // secondary or best-effort step.
+            $this->inputBindings->bind($run, $candidatePublication->publication_id, $input->requestedDate);
 
             $hashes = [
                 'bars_batch_hash' => $this->hashForTable(
