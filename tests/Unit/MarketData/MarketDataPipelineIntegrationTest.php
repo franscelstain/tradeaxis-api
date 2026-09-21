@@ -4701,14 +4701,15 @@ class MarketDataPipelineIntegrationTest extends TestCase
     }
 
     /**
-     * F-MD-B18-A002-020: a repair_candidate promote derives its run via createPromoteRunFromSeed,
-     * which never re-executes INGEST_BARS/ACQUISITION, so it structurally cannot capture
-     * provider_mapping/source_observations under its own run_id. This is the current, correct,
-     * C1-contract-required interim behavior (Sec5: "existing flows without complete producer
-     * evidence fail closed"), not a generic pipeline defect -- so this test proves the specific
-     * missing-producer-evidence reason fires, not merely that something fails.
+     * F-MD-B18-A002-020 resolved: a repair_candidate promote derives its run via
+     * createPromoteRunFromSeed, which never re-executes INGEST_BARS/ACQUISITION, so it can never
+     * capture its own provider_mapping/source_observations -- there is no new acquisition event.
+     * ProducerInputCompletionManifest now proves those two domains satisfied by an immutable
+     * reference to the seed run's own already-captured, already-verified rows (never a copy, never
+     * a recompute, never current/latest state), so the promote can reach the SUCCESS/SEALED
+     * lifecycle LOCKED authority (Finalize_Lock_And_Pointer_Behavior_LOCKED.md Sec3) requires.
      */
-    public function test_promote_single_day_repair_candidate_fails_closed_on_incomplete_producer_evidence(): void
+    public function test_promote_single_day_repair_candidate_completes_via_referenced_seed_run_capture(): void
     {
         $this->seedTicker(1, 'BBCA');
         $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
@@ -4732,52 +4733,227 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
         $pipeline = $this->makePipeline();
         $importRun = $pipeline->importSingleDay('2026-03-20', 'manual_file');
-
-        try {
-            $pipeline->promoteSingleDay('2026-03-20', 'manual_file', $importRun->run_id, $approved->correction_id, 'repair_candidate');
-            $this->fail('repair_candidate promote completed despite incomplete producer-bound input capture (provider_mapping/source_observations never captured for a derived run).');
-        } catch (\RuntimeException $e) {
-            $this->assertStringContainsString('INPUT_CAPTURE_BINDING_MANIFEST_INCOMPLETE', $e->getMessage(),
-                'The refusal must name incomplete producer-bound capture, not a generic pipeline failure.');
-            $this->assertStringContainsString('provider_mapping', $e->getMessage());
-            $this->assertStringContainsString('source_observations', $e->getMessage());
-        }
-
-        $repairRun = DB::table('eod_runs')->where('trade_date_requested', '2026-03-20')->orderByDesc('run_id')->first();
-        $this->assertNotSame((int) $importRun->run_id, (int) $repairRun->run_id, 'The derived promote run must be a distinct run from its seed.');
-        $this->assertSame('FAILED', $repairRun->terminal_status);
-        $this->assertSame('NOT_READABLE', $repairRun->publishability_state);
-        $this->assertSame('RUN_HASH_FAILED', $repairRun->final_reason_code);
+        $repairRun = $pipeline->promoteSingleDay('2026-03-20', 'manual_file', $importRun->run_id, $approved->correction_id, 'repair_candidate');
 
         $correctionRow = DB::table('eod_dataset_corrections')->where('correction_id', $approved->correction_id)->first();
-        $this->assertNotSame('REPAIR_EXECUTED', $correctionRow->status, 'A failed-closed repair attempt must not be recorded as an executed repair.');
-
-        $stageFailedEvent = DB::table('eod_run_events')
-            ->where('run_id', $repairRun->run_id)
-            ->where('event_type', 'STAGE_FAILED')
-            ->orderByDesc('event_id')
-            ->first();
-        $this->assertNotNull($stageFailedEvent);
-        $this->assertSame('RUN_HASH_FAILED', $stageFailedEvent->reason_code);
-        $this->assertStringContainsString('INPUT_CAPTURE_BINDING_MANIFEST_INCOMPLETE', (string) $stageFailedEvent->message);
-
         $candidatePublication = DB::table('eod_publications')->where('run_id', $repairRun->run_id)->first();
-        if ($candidatePublication !== null) {
-            $this->assertSame(0, (int) $candidatePublication->is_current);
-            $this->assertSame('UNSEALED', (string) $candidatePublication->seal_state);
-        }
         $pointer = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
+        $finalizedEvent = DB::table('eod_run_events')
+            ->where('run_id', $repairRun->run_id)
+            ->where('event_type', 'RUN_FINALIZED')
+            ->first();
+        $payload = json_decode((string) $finalizedEvent->event_payload_json, true);
+
+        $this->assertNotSame((int) $importRun->run_id, (int) $repairRun->run_id, 'The derived promote run must be a distinct run from its seed.');
+        $this->assertSame('SUCCESS', $repairRun->terminal_status, 'LOCKED authority requires this scenario reach SUCCESS or HELD, never be unconditionally blocked.');
+        $this->assertSame('NOT_READABLE', $repairRun->publishability_state);
+        $this->assertSame('repair_candidate', $repairRun->promote_mode);
+        $this->assertSame('repair_candidate', $repairRun->publish_target);
+        $this->assertSame('REPAIR_EXECUTED', $correctionRow->status);
+        $this->assertSame(1, (int) $correctionRow->execution_count);
+        $this->assertSame((int) $repairRun->run_id, (int) $correctionRow->new_run_id);
+        $this->assertNotNull($correctionRow->last_executed_at);
+        $this->assertNull($correctionRow->current_consumed_at);
+        $this->assertNotNull($candidatePublication);
+        $this->assertSame(0, (int) $candidatePublication->is_current, 'Current pointer preserved -- no in-place content repair implied.');
+        $this->assertSame('SEALED', (string) $candidatePublication->seal_state);
         $this->assertNotNull($pointer);
-        $this->assertSame(1, (int) $pointer->publication_id, 'The pre-existing current pointer must be preserved, exactly as a failed repair candidate always required.');
+        $this->assertSame(1, (int) $pointer->publication_id, 'The pre-existing current publication must be untouched.');
+        $this->assertSame('RUN_REPAIR_CANDIDATE_PARTIAL', $finalizedEvent->reason_code);
+        $this->assertSame('REPAIR_CANDIDATE', $payload['correction_outcome']);
+
+        // Binding V2 completed too (not merely V1) -- the Seal precondition wired in E038 is
+        // satisfied, and satisfied honestly, not by weakening it.
+        $lineage = DB::table('md_publication_lineage_bindings')->where('publication_id', $candidatePublication->publication_id)->first();
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', (string) $lineage->bound_input_context_hash);
+
+        // Provenance: the bound bundle's provider_mapping/source_observations components must name
+        // the seed run as their true source, never the derived run pretending to have captured them
+        // itself, and every other component must still be tagged as the derived run's own.
+        $context = json_decode((string) $lineage->bound_input_context_json, true);
+        $referencedKeys = ['provider_mapping', 'source_observations'];
+        $sawReferenced = ['provider_mapping' => false, 'source_observations' => false];
+        foreach ($context['components'] as $component) {
+            if (in_array($component['component_key'], $referencedKeys, true)) {
+                $this->assertSame((int) $importRun->run_id, (int) $component['source_run_id'],
+                    $component['component_key'].' must be provenance-tagged to the exact seed run, not the derived run or any other.');
+                $sawReferenced[$component['component_key']] = true;
+            } else {
+                $this->assertSame((int) $repairRun->run_id, (int) $component['source_run_id'],
+                    $component['component_key'].' was actually captured by the derived run itself and must be tagged as such.');
+            }
+        }
+        $this->assertTrue($sawReferenced['provider_mapping'], 'Expected at least one referenced provider_mapping component.');
+        $this->assertTrue($sawReferenced['source_observations'], 'Expected at least one referenced source_observations component.');
+
+        // Binding V2 remains deterministic/idempotent with referenced components in the bundle:
+        // re-binding the same, already-sealed publication is a safe no-op with the identical hash.
+        $binder = new \App\Application\MarketData\Services\PublicationInputBindingService();
+        $again = $binder->bind($this->hydrateRunForRebind($repairRun->run_id), (int) $candidatePublication->publication_id, '2026-03-20');
+        $this->assertTrue($again['idempotent']);
+        $this->assertSame($lineage->bound_input_context_hash, $again['bound_input_context_hash']);
     }
 
     /**
-     * F-MD-B18-A002-020: `incremental` is a literal internal alias for `repair_candidate`
-     * (`MarketDataPipelineService::resolvePromoteContext()` maps `'incremental' => 'repair_candidate'`
-     * before any other logic runs), so it must fail exactly the same way, for exactly the same
-     * reason, not merely "also fail" for some unrelated cause.
+     * Current/latest database state must never be read to fill in what a derived run inherits: the
+     * seed run's own immutable capture content is what gets referenced, unaffected by whatever the
+     * live reference tables look like by the time the repair runs.
      */
-    public function test_promote_single_day_incremental_fails_closed_identically_to_repair_candidate(): void
+    public function test_repair_candidate_referenced_capture_is_unaffected_by_later_live_data_changes(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->seedCurrentPublicationBaselineForTradeDate('2026-03-20', 1, 120.0);
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20', 'open' => 131, 'high' => 135, 'low' => 130, 'close' => 134,
+            'volume' => 2400, 'adj_close' => 134, 'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+
+        $corrections = new EodCorrectionRepository();
+        $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'repair-live-data-immunity', 'system');
+        $approved = $corrections->approve($request->correction_id, 'reviewer');
+
+        $pipeline = $this->makePipeline();
+        $importRun = $pipeline->importSingleDay('2026-03-20', 'manual_file');
+
+        // Capture exactly what the seed run's own provider_mapping/source_observations rows contain
+        // before anything downstream runs.
+        $seedCapturesBefore = (new \App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository())->forRun((int) $importRun->run_id);
+        $seedProviderMappingHashesBefore = array_values(array_unique(array_map(function ($row) {
+            return $row['payload_hash'];
+        }, array_filter($seedCapturesBefore, function ($row) { return $row['component_key'] === 'provider_mapping'; }))));
+        $this->assertNotEmpty($seedProviderMappingHashesBefore);
+
+        // Mutate the live reference tables the original capture was drawn from, after capture.
+        DB::table('md_provider_symbol_mappings')->update(['provider_symbol' => 'MUTATED_AFTER_CAPTURE']);
+
+        $repairRun = $pipeline->promoteSingleDay('2026-03-20', 'manual_file', $importRun->run_id, $approved->correction_id, 'repair_candidate');
+        $this->assertSame('SUCCESS', $repairRun->terminal_status);
+
+        $candidatePublication = DB::table('eod_publications')->where('run_id', $repairRun->run_id)->first();
+        $lineage = DB::table('md_publication_lineage_bindings')->where('publication_id', $candidatePublication->publication_id)->first();
+        $context = json_decode((string) $lineage->bound_input_context_json, true);
+        $referencedProviderMappingHashes = array_values(array_unique(array_map(function ($c) {
+            return $c['payload_hash'];
+        }, array_filter($context['components'], function ($c) { return $c['component_key'] === 'provider_mapping'; }))));
+
+        sort($seedProviderMappingHashesBefore); sort($referencedProviderMappingHashes);
+        $this->assertSame($seedProviderMappingHashesBefore, $referencedProviderMappingHashes,
+            'The referenced provider_mapping content must be byte-identical to what the seed run actually captured, unaffected by the later live-table mutation.');
+    }
+
+    /**
+     * A tampered or vanished seed-run capture must still fail closed -- the reference is proven
+     * fresh each time by re-verifying the seed run's own recorded content, not merely assumed
+     * present because it once was.
+     */
+    /**
+     * `md_run_input_captures` is unconditionally append-only (the C1 foundation migration's own
+     * immutability trigger rejects any UPDATE/DELETE outright, proven directly here rather than
+     * assumed), so an already-written seed capture can never be corrupted in place -- confirming
+     * the reference this mechanism relies on is tamper-proof by construction, not merely by
+     * convention. What a broken/incomplete reference can still look like is a `seed_run_id` that
+     * resolves to no run at all, or to a real run whose own captures do not actually satisfy
+     * C03/C06 -- both are proven to fail closed below, without needing to defeat that immutability.
+     */
+    public function test_repair_candidate_fails_closed_when_the_referenced_seed_run_cannot_prove_the_domain(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->seedCurrentPublicationBaselineForTradeDate('2026-03-20', 1, 120.0);
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20', 'open' => 131, 'high' => 135, 'low' => 130, 'close' => 134,
+            'volume' => 2400, 'adj_close' => 134, 'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+
+        $corrections = new EodCorrectionRepository();
+        $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'repair-tampered-reference', 'system');
+        $approved = $corrections->approve($request->correction_id, 'reviewer');
+
+        $pipeline = $this->makePipeline();
+        $importRun = $pipeline->importSingleDay('2026-03-20', 'manual_file');
+
+        // Confirm the immutability guarantee this whole mechanism leans on is real, not assumed:
+        // direct SQL tampering with an already-written seed capture is itself rejected by the
+        // database.
+        try {
+            DB::table('md_run_input_captures')
+                ->where('run_id', $importRun->run_id)
+                ->where('component_key', 'provider_mapping')
+                ->update(['payload_hash' => str_repeat('f', 64)]);
+            $this->fail('Direct SQL tampering of an immutable producer capture was accepted by the database.');
+        } catch (\Illuminate\Database\QueryException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_IMMUTABLE', $e->getMessage());
+        }
+
+        $repairRun = $pipeline->promoteSingleDay('2026-03-20', 'manual_file', $importRun->run_id, $approved->correction_id, 'repair_candidate');
+        $this->assertSame('SUCCESS', $repairRun->terminal_status, 'The untampered seed capture must still let repair_candidate complete normally.');
+
+        $repository = new \App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository();
+        $validator = new \App\Infrastructure\Persistence\MarketData\ProducerInputCompletionManifest();
+
+        // A recorded seed_run_id that resolves to no run at all must fail closed.
+        $bareRunA = $this->createBareRunWithSeedLink('2026-03-21', 999999999);
+        $resultA = $validator->inspect(\App\Models\EodRun::query()->findOrFail($bareRunA), $repository);
+        $missingA = array_values(array_filter($resultA['missing_paths'], function ($p) {
+            return strpos($p, 'provider_mapping.') === 0 || strpos($p, 'source_observations.') === 0;
+        }));
+        $this->assertNotEmpty($missingA, 'An unresolvable seed_run_id must leave provider_mapping/source_observations genuinely missing.');
+
+        // A recorded seed_run_id that resolves to a real run whose own captures do not satisfy
+        // C03/C06 (e.g. it never ingested anything itself) must also fail closed, not be treated as
+        // satisfied just because *some* run exists at that id.
+        $emptyRunId = $this->createBareRunWithSeedLink('2026-03-22', null);
+        $bareRunB = $this->createBareRunWithSeedLink('2026-03-23', $emptyRunId);
+        $resultB = $validator->inspect(\App\Models\EodRun::query()->findOrFail($bareRunB), $repository);
+        $missingB = array_values(array_filter($resultB['missing_paths'], function ($p) {
+            return strpos($p, 'provider_mapping.') === 0 || strpos($p, 'source_observations.') === 0;
+        }));
+        $this->assertNotEmpty($missingB, 'A seed run that itself never captured provider_mapping/source_observations cannot satisfy the reference.');
+
+        $pointer = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
+        $this->assertSame(1, (int) $pointer->publication_id);
+    }
+
+    /** A minimal, otherwise-real run row with a RUN_CREATED event carrying an explicit seed_run_id. */
+    private function createBareRunWithSeedLink(string $tradeDate, ?int $seedRunId): int
+    {
+        $now = '2026-01-01 00:00:00';
+        $runId = DB::table('eod_runs')->insertGetId([
+            'trade_date_requested' => $tradeDate,
+            'source' => 'manual_file',
+            'request_mode' => 'promote',
+            'knowledge_cutoff_at' => $now,
+            'lifecycle_state' => 'PENDING',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+        DB::table('eod_run_events')->insert([
+            'run_id' => $runId,
+            'trade_date_requested' => $tradeDate,
+            'event_time' => $now,
+            'stage' => 'PUBLISH_BARS',
+            'event_type' => 'RUN_CREATED',
+            'severity' => 'INFO',
+            'event_payload_json' => json_encode(['run_id' => $runId, 'seed_run_id' => $seedRunId]),
+            'created_at' => $now,
+        ]);
+        return (int) $runId;
+    }
+
+    private function hydrateRunForRebind(int $runId)
+    {
+        return \App\Models\EodRun::query()->findOrFail($runId);
+    }
+
+    /**
+     * F-MD-B18-A002-020 resolved: `incremental` is a literal internal alias for `repair_candidate`
+     * (`MarketDataPipelineService::resolvePromoteContext()` maps `'incremental' => 'repair_candidate'`
+     * before any other logic runs), so once repair_candidate can complete via referenced seed-run
+     * capture, incremental must complete identically -- same lifecycle, same reference mechanism,
+     * proven by actually rerunning the repair-and-correction lifecycle a second time.
+     */
+    public function test_promote_single_day_incremental_completes_identically_to_repair_candidate(): void
     {
         $this->seedTicker(1, 'BBCA');
         $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
@@ -4801,13 +4977,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
         $pipeline = $this->makePipeline();
         $firstImportRun = $pipeline->importSingleDay('2026-03-20', 'manual_file');
-        $firstMessage = null;
-        try {
-            $pipeline->promoteSingleDay('2026-03-20', 'manual_file', $firstImportRun->run_id, $approved->correction_id, 'repair_candidate');
-            $this->fail('repair_candidate promote completed despite incomplete producer-bound input capture.');
-        } catch (\RuntimeException $e) {
-            $firstMessage = $e->getMessage();
-        }
+        $firstRepairRun = $pipeline->promoteSingleDay('2026-03-20', 'manual_file', $firstImportRun->run_id, $approved->correction_id, 'repair_candidate');
 
         $this->writeBarsFixture('2026-03-20', [[
             'ticker_code' => 'BBCA',
@@ -4822,47 +4992,49 @@ class MarketDataPipelineIntegrationTest extends TestCase
         ]]);
 
         $secondImportRun = $pipeline->importSingleDay('2026-03-20', 'manual_file');
-        $secondMessage = null;
-        try {
-            $pipeline->promoteSingleDay('2026-03-20', 'manual_file', $secondImportRun->run_id, $approved->correction_id, 'incremental');
-            $this->fail('incremental promote completed despite incomplete producer-bound input capture.');
-        } catch (\RuntimeException $e) {
-            $secondMessage = $e->getMessage();
-        }
-
-        // Same reason, both halves of the same underlying capture gap named identically, for both
-        // the legacy name and its alias.
-        $this->assertStringContainsString('INPUT_CAPTURE_BINDING_MANIFEST_INCOMPLETE', $firstMessage);
-        $this->assertStringContainsString('INPUT_CAPTURE_BINDING_MANIFEST_INCOMPLETE', $secondMessage);
-        $this->assertStringContainsString('provider_mapping', $firstMessage);
-        $this->assertStringContainsString('provider_mapping', $secondMessage);
-        $this->assertStringContainsString('source_observations', $firstMessage);
-        $this->assertStringContainsString('source_observations', $secondMessage);
-
-        $firstRepairRun = DB::table('eod_runs')->where('run_id', '>', $firstImportRun->run_id)
-            ->where('run_id', '<', $secondImportRun->run_id)->orderByDesc('run_id')->first();
-        $secondRepairRun = DB::table('eod_runs')->where('run_id', '>', $secondImportRun->run_id)->orderByDesc('run_id')->first();
-        $this->assertNotNull($firstRepairRun, 'The first derived repair_candidate run must still have been created before failing.');
-        $this->assertNotNull($secondRepairRun, 'The second derived incremental run must still have been created before failing.');
-        $this->assertNotSame((int) $firstRepairRun->run_id, (int) $secondRepairRun->run_id);
-        $this->assertSame('FAILED', $firstRepairRun->terminal_status);
-        $this->assertSame('FAILED', $secondRepairRun->terminal_status);
-        // Recorded promote_mode/publish_target are normalized through the same alias resolution
-        // regardless of which name was requested -- both runs read back as repair_candidate.
-        $this->assertSame('repair_candidate', $firstRepairRun->promote_mode);
-        $this->assertSame('repair_candidate', $secondRepairRun->promote_mode);
+        // 'incremental' resolves to 'repair_candidate' before any other logic runs
+        // (resolvePromoteContext()); this is the alias spelling, not a different lifecycle.
+        $secondRepairRun = $pipeline->promoteSingleDay('2026-03-20', 'manual_file', $secondImportRun->run_id, $approved->correction_id, 'incremental');
 
         $correctionRow = DB::table('eod_dataset_corrections')->where('correction_id', $approved->correction_id)->first();
-        $this->assertNotSame('REPAIR_EXECUTED', $correctionRow->status, 'Neither failed-closed attempt may be recorded as an executed repair.');
-        // execution_count records attempts started, independent of outcome, so it correctly reaches
-        // 2 here (one per failed-closed try) -- this is not evidence either attempt succeeded.
-        $this->assertSame(2, (int) $correctionRow->execution_count);
-
-        // A failed-closed repair attempt -- by either name -- must never touch the pre-existing
-        // current pointer.
+        $firstCandidate = DB::table('eod_publications')->where('run_id', $firstRepairRun->run_id)->first();
+        $secondCandidate = DB::table('eod_publications')->where('run_id', $secondRepairRun->run_id)->first();
         $pointer = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
+
+        $this->assertSame('SUCCESS', $firstRepairRun->terminal_status);
+        $this->assertSame('SUCCESS', $secondRepairRun->terminal_status);
+        $this->assertSame('NOT_READABLE', $secondRepairRun->publishability_state);
+        // Recorded promote_mode/publish_target are normalized through the same alias resolution
+        // regardless of which name was requested -- both runs read back as repair_candidate.
+        $this->assertSame('repair_candidate', $secondRepairRun->promote_mode);
+        $this->assertSame('repair_candidate', $secondRepairRun->publish_target);
+        $this->assertSame('REPAIR_EXECUTED', $correctionRow->status);
+        $this->assertSame(2, (int) $correctionRow->execution_count);
+        $this->assertSame((int) $secondRepairRun->run_id, (int) $correctionRow->new_run_id);
+        $this->assertNotNull($correctionRow->last_executed_at);
+        $this->assertNull($correctionRow->current_consumed_at);
+        $this->assertNotNull($firstCandidate);
+        $this->assertNotNull($secondCandidate);
+        $this->assertSame(0, (int) $firstCandidate->is_current);
+        $this->assertSame(0, (int) $secondCandidate->is_current);
+        $this->assertSame('SEALED', (string) $firstCandidate->seal_state);
+        $this->assertSame('SEALED', (string) $secondCandidate->seal_state);
+        $this->assertNotSame((int) $firstRepairRun->run_id, (int) $secondRepairRun->run_id);
         $this->assertNotNull($pointer);
         $this->assertSame(1, (int) $pointer->publication_id);
+
+        // Both candidates bound V2 successfully, each referencing its own distinct seed run.
+        $firstLineage = DB::table('md_publication_lineage_bindings')->where('publication_id', $firstCandidate->publication_id)->first();
+        $secondLineage = DB::table('md_publication_lineage_bindings')->where('publication_id', $secondCandidate->publication_id)->first();
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', (string) $firstLineage->bound_input_context_hash);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', (string) $secondLineage->bound_input_context_hash);
+        $secondContext = json_decode((string) $secondLineage->bound_input_context_json, true);
+        foreach ($secondContext['components'] as $component) {
+            if ($component['component_key'] === 'provider_mapping' || $component['component_key'] === 'source_observations') {
+                $this->assertSame((int) $secondImportRun->run_id, (int) $component['source_run_id'],
+                    'The second (incremental) candidate must reference its own second import as its seed, not the first.');
+            }
+        }
     }
 
     private function capturedOperation(array $captures, string $operation): array

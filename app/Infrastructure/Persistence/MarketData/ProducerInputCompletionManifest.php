@@ -19,7 +19,10 @@ final class ProducerInputCompletionManifest
         'market_structure' => ['market-structure-consumed-inputs/v1'],
     ];
 
-    public function inspect($run, RunInputCaptureRepository $repository): array
+    /** Component domains a derived promote run may satisfy by immutable reference to its seed run. */
+    private const SEED_REFERENCEABLE_PREFIXES = ['provider_mapping.', 'source_observations.'];
+
+    public function inspect($run, RunInputCaptureRepository $repository, array $visitedRunIds = []): array
     {
         $missing = []; $operations = []; $slots = []; $dates = []; $requiredDates = [(string) $run->trade_date_requested => true];
         $calendarScopes = []; $calendarManifests = []; $registry = null;
@@ -182,10 +185,59 @@ final class ProducerInputCompletionManifest
             }
         }
         $missing = array_values(array_unique($missing)); sort($missing, SORT_STRING);
+
+        // F-MD-B18-A002-020: a derived promote run (EodRunRepository::createPromoteRunFromSeed)
+        // never re-executes INGEST_BARS/ACQUISITION, so it can structurally never produce its own
+        // provider_mapping/source_observations captures -- there is no new acquisition event to
+        // recompute from. Per the C1 contract's own Sec3.1/Sec5 text ("immutable source references
+        // sufficient to verify the content"; "carry contents or verifiable immutable references"),
+        // these two domains only may be satisfied by an immutable reference to the recorded seed
+        // run's own captures, never by copying/duplicating them under this run's own run_id and
+        // never by recomputing or reading current/latest state. The reference is proven, not
+        // assumed: it recurses into the seed run's own inspection (the exact same validation this
+        // method already performs for a mainline run -- hash/population/ingress-provenance checks
+        // included), so a missing, tampered, or wrong-domain seed capture still fails closed here.
+        $referencedComponents = [];
+        $referenceable = array_values(array_filter($missing, static function ($path) {
+            foreach (self::SEED_REFERENCEABLE_PREFIXES as $prefix) if (strpos($path, $prefix) === 0) return true;
+            return false;
+        }));
+        if ($referenceable !== [] && ! in_array((int) $run->run_id, $visitedRunIds, true)) {
+            $seedRunId = $repository->resolveSeedRunId((int) $run->run_id);
+            if ($seedRunId !== null) {
+                try {
+                    $seedRun = $repository->owningRun($seedRunId);
+                    $seedResult = $this->inspect($seedRun, $repository, array_merge($visitedRunIds, [(int) $run->run_id]));
+                    $seedMissingRelevant = array_values(array_filter($seedResult['missing_paths'], static function ($path) {
+                        foreach (self::SEED_REFERENCEABLE_PREFIXES as $prefix) if (strpos($path, $prefix) === 0) return true;
+                        return false;
+                    }));
+                    $satisfiedByReference = array_diff($referenceable, $seedMissingRelevant);
+                    if ($satisfiedByReference !== []) {
+                        $missing = array_values(array_diff($missing, $satisfiedByReference));
+                        foreach ($seedResult['actual_slots'] as $slot) {
+                            if (! in_array($slot['component_key'], ['provider_mapping', 'source_observations'], true)) continue;
+                            $slot['source_run_id'] = $seedRunId;
+                            $referencedComponents[] = $slot;
+                        }
+                        foreach (($seedResult['referenced_components'] ?? []) as $slot) {
+                            if (in_array($slot['component_key'], ['provider_mapping', 'source_observations'], true)) {
+                                $referencedComponents[] = $slot;
+                            }
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // Seed run unresolvable, deleted, or its own captures fail verification: the
+                    // reference cannot be proven, so $missing is left exactly as computed above --
+                    // fail closed, never a silent pass.
+                }
+            }
+        }
+
         $requiredDates = array_keys($requiredDates); sort($requiredDates, SORT_STRING);
         return ['schema_version' => 'producer_completion_manifest_v1', 'status' => $missing === [] ? 'COMPLETE' : 'BLOCKED',
             'required_operations' => self::REQUIRED_OPERATIONS, 'required_calendar_dates' => $requiredDates,
-            'actual_slots' => $slots, 'missing_paths' => $missing,
+            'actual_slots' => $slots, 'missing_paths' => $missing, 'referenced_components' => $referencedComponents,
             'scope' => 'PRODUCER_CAPTURE_COMPLETENESS_ONLY_NOT_REPLAY_OR_STAGE_ACCEPTANCE'];
     }
 

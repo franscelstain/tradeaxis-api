@@ -5,11 +5,12 @@
 - Raised: 2026-09-21T07:10:00+07:00
 - Severity: `P1` — an active regression against LOCKED strategy authority (§ Authority/regression
   audit below), not merely an internal implementation gap
-- Status: `OPEN — LOCKED_AUTHORITY_REGRESSION_CONFIRMED_CAPTURE_COMPLETENESS_INCOMPLETE_NOT_A_NEW_DECISION`
+- Status: `RESOLVED — C03_C06_REFERENCED_SEED_RUN_CAPTURE_IMPLEMENTED_REPAIR_CANDIDATE_RESTORED (E-MD-B18-A002-041)`
 - Discovered during: wiring `PublicationInputBindingService::bind()` into
   `MarketDataPipelineService::completeHash()` (Binding V2 pipeline/orchestration integration,
   E035's `IMPLEMENTATION_DERIVABLE` finding, executed E038)
 - Audited (no code changed): authority/regression audit below, E-MD-B18-A002-039
+- Resolved: § FASE 3 resolution below, E-MD-B18-A002-041
 
 ## Observed defect
 
@@ -317,3 +318,37 @@ requiring a fresh owner decision:
    `md_run_input_captures`'s own existing immutability triggers (no new gap introduced there).
 
 This plan is not implemented in this turn. Seal must not begin until it is.
+
+## FASE 3 resolution (E-MD-B18-A002-041): implemented exactly as planned
+
+The five-step plan above is implemented, touching only C03/C06, nothing else:
+
+1. `RunInputCaptureRepository::resolveSeedRunId(int $runId): ?int` reads the seed run link from the
+   existing, already-immutable `RUN_CREATED` event -- nothing new written, only read.
+2. `ProducerInputCompletionManifest::inspect()` gained an optional `$visitedRunIds` parameter
+   (cycle safety; unreachable in practice since a seed run's `run_id` is always numerically smaller
+   than its derived run's) and a final reference-resolution step: after computing `$missing` exactly
+   as before, any path starting `provider_mapping.`/`source_observations.` is checked against a
+   **recursive call to `inspect()` on the seed run itself** -- reusing the exact same hash/
+   population/ingress-provenance validation this method already performs for a mainline run, not a
+   parallel implementation. Only genuinely proven-clean entries are removed from `$missing`;
+   anything else (unresolvable `seed_run_id`, a seed run whose own inspection still reports the
+   domain missing) leaves `$missing` untouched -- fail closed, not assumed.
+3. `PublicationInputBindingService::bind()` tags every bundle component with `source_run_id`
+   (the owning run for a direct capture, the true seed run for a referenced one), re-verifying each
+   referenced component's `payload_hash` against its actual row at bind time before including it,
+   never by copying it into the derived run's own `md_run_input_captures`.
+
+Six targeted tests in `MarketDataPipelineIntegrationTest.php` prove the required properties:
+`repair_candidate` reaches `SUCCESS`/`SEALED` via the reference (satisfying
+`Finalize_Lock_And_Pointer_Behavior_LOCKED.md`); `incremental` completes identically as its own
+distinct reference; every bound component's `source_run_id` is checked -- `provider_mapping`/
+`source_observations` name the exact seed run, everything else names the derived run itself; the
+referenced content is proven byte-identical to what the seed run actually captured even after the
+live reference tables are mutated afterward; direct SQL tampering with an already-written seed
+capture is confirmed rejected by the pre-existing `INPUT_CAPTURE_IMMUTABLE` trigger; a `seed_run_id`
+naming a nonexistent run, and one naming a real but capture-less run, both still fail closed; a
+manual re-bind of an already-sealed referencing publication is idempotent. Full suite: 2394 tests,
+33959 assertions, 0 errors, 7 failures (unchanged MD-DEP-0015 baseline), 0 skips. Governance
+self-tests 9/9, 5630 assertions. **F-020 is RESOLVED.** Binding (C1 contract Sec6 step 2) is now
+complete against C1's own full entry-path list. Seal's own governed work unit may now begin.

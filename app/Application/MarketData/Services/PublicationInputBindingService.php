@@ -72,8 +72,47 @@ class PublicationInputBindingService
                     'stage_code' => $p['row']['stage_code'], 'component_key' => $p['row']['component_key'],
                     'slot_hash' => $p['row']['slot_hash'], 'payload_hash' => $p['row']['payload_hash'],
                     'member_count' => (int) $p['row']['member_count'], 'operation' => (string) $operation,
+                    // Captured directly by this run, not inherited -- explicit even in the common
+                    // case so a reader never has to infer ownership from absence of the field.
+                    'source_run_id' => (int) $run->run_id,
                 ];
             }
+
+            // F-MD-B18-A002-020: components the manifest proved satisfied by immutable reference to
+            // a seed run (provider_mapping/source_observations for a derived promote run only) are
+            // included by reference, never by copying the seed run's rows into this run's own
+            // md_run_input_captures -- their payload_hash/slot_hash identify the exact immutable
+            // capture, and source_run_id names the run that actually produced it, so this bundle
+            // can never be read as if this run captured them itself.
+            $referencedBySourceRun = [];
+            foreach (($manifestResult['referenced_components'] ?? []) as $slot) {
+                $referencedBySourceRun[(int) $slot['source_run_id']][] = $slot;
+            }
+            foreach ($referencedBySourceRun as $sourceRunId => $slots) {
+                $sourceRows = [];
+                foreach ($this->captures->forRun($sourceRunId) as $sourceRow) {
+                    $sourceRows[$sourceRow['stage_code'].'|'.$sourceRow['component_key'].'|'.$sourceRow['slot_hash']] = $sourceRow;
+                }
+                foreach ($slots as $slot) {
+                    $key = $slot['stage_code'].'|'.$slot['component_key'].'|'.$slot['slot_hash'];
+                    $sourceRow = $sourceRows[$key] ?? null;
+                    if ($sourceRow === null || $sourceRow['payload_hash'] !== $slot['payload_hash']) {
+                        // The seed capture named by the manifest can no longer be found or verified
+                        // byte-for-byte against the exact same immutable row: the reference is not
+                        // provable right now, so it cannot be bound as if it were -- fail closed
+                        // rather than bind an unverified inheritance.
+                        throw new \RuntimeException('INPUT_CAPTURE_BINDING_REFERENCED_CAPTURE_UNVERIFIABLE: '.$key.'@run:'.$sourceRunId);
+                    }
+                    $sourceOperation = $this->captures->verify($sourceRow)['selection_context']['operation'] ?? null;
+                    $components[] = [
+                        'stage_code' => $sourceRow['stage_code'], 'component_key' => $sourceRow['component_key'],
+                        'slot_hash' => $sourceRow['slot_hash'], 'payload_hash' => $sourceRow['payload_hash'],
+                        'member_count' => (int) $sourceRow['member_count'], 'operation' => (string) $sourceOperation,
+                        'source_run_id' => $sourceRunId,
+                    ];
+                }
+            }
+
             usort($components, static function ($a, $b) {
                 return [$a['stage_code'], $a['component_key'], $a['slot_hash']] <=> [$b['stage_code'], $b['component_key'], $b['slot_hash']];
             });

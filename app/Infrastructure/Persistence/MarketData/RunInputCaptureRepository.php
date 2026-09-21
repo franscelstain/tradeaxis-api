@@ -123,6 +123,26 @@ class RunInputCaptureRepository
         return $run;
     }
 
+    /**
+     * F-MD-B18-A002-020: the authoritative seed-run link for a derived promote run
+     * (`EodRunRepository::createPromoteRunFromSeed`), read from the immutable `RUN_CREATED` event
+     * already recorded for every such run -- nothing new is written here, only read. Returns null
+     * for a run with no seed (the ordinary mainline case), never a guess or a fallback to the
+     * current/latest run for the same trade date.
+     */
+    public function resolveSeedRunId(int $runId): ?int
+    {
+        $event = DB::table('eod_run_events')
+            ->where('run_id', $runId)
+            ->where('event_type', 'RUN_CREATED')
+            ->orderBy('event_id')
+            ->first();
+        if (! $event) return null;
+        $payload = json_decode((string) $event->event_payload_json, true);
+        if (! is_array($payload) || empty($payload['seed_run_id'])) return null;
+        return (int) $payload['seed_run_id'];
+    }
+
     public function captureRegistryVersions($run): array
     {
         return (new ProducerRegistrySnapshot())->capture($run, $this);
