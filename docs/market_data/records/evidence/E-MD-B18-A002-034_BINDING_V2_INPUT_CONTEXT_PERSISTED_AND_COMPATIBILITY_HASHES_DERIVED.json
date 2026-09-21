@@ -1,0 +1,72 @@
+{
+  "evidence_id": "E-MD-B18-A002-034",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-21T03:56:49.309622+00:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS",
+  "evidence_scope": "C1_BINDING_V2_INPUT_CONTEXT_PERSISTED_AND_COMPATIBILITY_HASHES_DERIVED",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-033"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "6 new tests / 39 assertions (Binding-specific), full MarketDataPipelineIntegrationTest suite re-run 64 tests / 6004 assertions PASS (58 pre-existing + 6 new). Governance/registry self-tests re-run clean (9 tests / 5566 assertions). No schema/migration change -- the four bound_input_* columns and their JSON-validity CHECK constraint already existed on md_publication_lineage_bindings from the C1 foundation migration (2026_09_16_000001).",
+  "probes": [
+    { "id": "P87-ownership-mismatch", "caught": true },
+    { "id": "P88-nonexistent-publication", "caught": true },
+    { "id": "P89-historical-replay-verify-fabrication-blocked", "caught": true },
+    { "id": "P90-incomplete-manifest-blocked", "caught": true },
+    { "id": "P91-compatibility-hash-inconsistent-with-captured-population", "caught": true },
+    { "id": "P92-conflicting-recorded-context-rejected", "caught": true },
+    { "id": "P93-sealed-mismatch-rejected-sealed-match-idempotent", "caught": true }
+  ],
+  "tested_source_sha256": {
+    "app/Application/MarketData/Services/PublicationInputBindingService.php": "11BCC3FF1C562AACEE97F2A5AD5330A593EB172423BB2C631CB79BA2EAAC68BD",
+    "tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php": "038740CD541835B38DBFA362D8512A33077F2F425B459D01E1D4B90D0CA4A935"
+  },
+  "schema_changed": false,
+  "root_cause_and_implementation": "Implements C1 contract Sec6 step 2 (Binding) as a new, additive, standalone service (PublicationInputBindingService), not yet wired into MarketDataPipelineService::completeHash/completeSeal -- wiring it into the live automatic call chain would newly require whole-C1 manifest completeness on every publication, which the pre-existing 58-case suite's disengaged/unseeded fixtures cannot currently satisfy (E032/E033 already found registry_versions.reason_registry.entries missing under the SQLite mirror), so it would have broken the entire existing suite; Binding therefore lands as its own provable slice first, exactly as the C1 contract phases capture/binding/seal/reader/admission as five separate implementation slices. bind($run, $publicationId, $tradeDate) locks the candidate publication and its existing md_publication_lineage_bindings row (both SELECT ... FOR UPDATE inside one transaction), verifies ownership (publication.run_id === run.run_id), trade date, and config-snapshot consistency against the row V1's existing PublicationGovernanceBindingService::bind() already wrote, then requires ProducerInputCompletionManifest::inspect() to report zero missing_paths before proceeding (fail-closed BLOCKED otherwise, naming every missing path). It assembles a canonical md_publication_inputs_v2 bundle (schema_version, scope [market/product scope, requested/effective trade date, dataset start, knowledge cutoff, source/request mode, config snapshot id], components [stage_code/component_key/slot_hash/payload_hash/member_count references into the already-immutable md_run_input_captures rows, not re-embedded payloads], component_manifest) from RunInputCaptureRepository::forRun(), computes semantic_input_hash over that bundle (which does not include its own digest), and persists all four bound_input_* columns via UPDATE (the row already exists from V1; INSERT is never used, so V1's row identity/uniqueness is preserved). It independently re-derives six of V1's seven existing compatibility component hashes purely from the same captured content (never a fresh live query, never a mutable calendar/registry lookup for an earlier stage): market_structure_revision_set_hash and identity_revision_set_hash from the market_structure capture's board_inputs/rule_revisions via a faithful port of PublicationGovernanceBindingService::bindMarketStructure's own resolution algorithm; calendar_revision_set_hash from calendar_session captures filtered to the exact trade date with V1's identical supersede/knowledge-cutoff filter; status_revision_set_hash from the per-listing eligibility-expectation/v1 captures (the same $expectation EodEligibilityBuildService itself captures verbatim, so no independent re-derivation of eligibility decision logic was needed); event_revision_set_hash, source_scale_assessment_set_hash and factor_decision_set_hash from event_factor's already-captured md_adjustment_factor_decisions table. Each derived hash is compared against V1's already-stored value; any mismatch throws INPUT_CAPTURE_BINDING_COMPATIBILITY_HASH_MISMATCH naming the field, rather than silently trusting or overwriting it -- proven by deliberately corrupting a stored V1 hash and confirming Binding refuses to proceed. Idempotency: a same-content re-bind is a safe no-op (returns the existing hash); a persisted context recorded out of band that differs is rejected as INPUT_CAPTURE_BINDING_CONFLICT, never silently overwritten. Seal immutability is enforced at the application/repository level (matching the pre-existing precedent for V1's own hash columns, which likewise have no DB trigger -- this codebase's established pattern for seal-state immutability is application-level, not a DB trigger, confirmed by grep across the base schema finding zero seal-related triggers anywhere): a sealed publication whose stored hash already matches is an idempotent no-op, but a sealed publication that would require any change is rejected outright as INPUT_CAPTURE_BINDING_SEALED_PUBLICATION_IMMUTABLE. Historical mode (request_mode === replay_verify) is rejected unconditionally before any other work, matching Q2's 'no historical identity reconstructed from assumptions.'",
+  "scope_result": {
+    "binding_implemented": true,
+    "seal_reader_admission_started": false,
+    "wired_into_live_pipeline_call_chain": false,
+    "compatibility_hashes_independently_rederived": [
+      "market_structure_revision_set_hash", "identity_revision_set_hash", "calendar_revision_set_hash",
+      "status_revision_set_hash", "event_revision_set_hash", "source_scale_assessment_set_hash", "factor_decision_set_hash"
+    ],
+    "compatibility_hashes_not_independently_rederived": [],
+    "note": "All seven were independently re-derivable from already-captured content in this work unit; none required fabricating a new derivation from current/latest state."
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "slices_complete": ["capture", "binding"],
+    "slices_remaining": ["seal", "reader", "admission"],
+    "incomplete_bases": 64,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [],
+    "clarification": "SATISFIED/denominator/INCOMPLETE (0/114/64) are UNCHANGED and NOT promoted by this evidence. Binding proves a new capability exists and is correct on a genuinely complete capture population; it is not itself a B18 per-predicate closure claim."
+  },
+  "full_suite": {
+    "status": "RUN_FOR_THIS_STAGE_SLICE",
+    "reason": "Full MarketDataPipelineIntegrationTest.php re-run: 64/64 PASS, 6004 assertions (58 pre-existing + 6 new). Governance/registry self-tests re-run clean (9/9, 5566 assertions). Repository-wide full PHPUnit not run.",
+    "prior_baseline": "E024/E031/E033 seven ProductionCorpusInvariantOracleTest failures; not touched by this evidence."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "MD-B18-A002: Binding (C1 contract Sec6 step 2) is implemented and proven as a standalone, additive capability, not yet wired into the live pipeline's automatic HASH/SEAL call chain (deliberately deferred: wiring it in now would require whole-C1 manifest completeness on every existing test fixture, which most do not yet satisfy). Do not start Seal, Reader, or Admission in the same work unit. Preserve E021-E034 and valid P51-P93; do not repeat C02-C09 or Binding proof already established. Before implementing Seal (C1 contract Sec6 step 3), decide and record: (a) whether/when PublicationInputBindingService::bind() gets wired into MarketDataPipelineService's live call chain (a distinct integration decision from Binding's own correctness, since it changes production behavior for every publication), and (b) whether the DB-level sealed-immutability protection the contract's Sec4.2 names ('rejected through both repository path and tested database protections') needs a new migration, given no such trigger exists anywhere in this schema today for the pre-existing V1 hash columns either -- this evidence records that as the current, deliberate, established pattern (application-level only), not a gap introduced here, but Seal's own governed work unit should make an explicit decision about it rather than inheriting it silently. No data_260914 action, new attempt, strategy change or relock."
+}

@@ -1,0 +1,285 @@
+<?php
+
+namespace App\Application\MarketData\Services;
+
+use App\Infrastructure\Persistence\MarketData\ProducerInputCompletionManifest;
+use App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * C1 §6 step 2 — Binding.
+ *
+ * Locks the candidate publication and its owning run, verifies ownership/cutoff/config
+ * consistency, validates the complete captured-input manifest, canonicalizes the producer-bound
+ * V2 input context from the immutable captures already on `md_run_input_captures`, persists it on
+ * the existing `md_publication_lineage_bindings` row, and independently re-derives the existing V1
+ * compatibility component hashes from that same bound content -- comparing them rather than
+ * maintaining a second competing computation. This never re-queries a mutable calendar/registry
+ * root for the earlier stages; every derived value comes from what was actually captured.
+ */
+class PublicationInputBindingService
+{
+    const SCHEMA_VERSION = 'md_publication_inputs_v2';
+
+    private $captures;
+    private $manifest;
+
+    public function __construct(RunInputCaptureRepository $captures = null, ProducerInputCompletionManifest $manifest = null)
+    {
+        $this->captures = $captures ?: new RunInputCaptureRepository();
+        $this->manifest = $manifest ?: new ProducerInputCompletionManifest();
+    }
+
+    public function bind($run, $publicationId, $tradeDate): array
+    {
+        if ((string) ($run->request_mode ?? '') === 'replay_verify') {
+            throw new \RuntimeException('INPUT_CAPTURE_BINDING_HISTORICAL_NOT_PERMITTED: a historical run cannot mint a new authoritative bound input context.');
+        }
+        $knownAt = (string) ($run->knowledge_cutoff_at ?? '');
+        if ($knownAt === '') {
+            throw new \RuntimeException('INPUT_CAPTURE_BINDING_KNOWLEDGE_CUTOFF_MISSING');
+        }
+        if (empty($run->config_snapshot_id)) {
+            throw new \RuntimeException('INPUT_CAPTURE_BINDING_CONFIG_SNAPSHOT_MISSING');
+        }
+
+        return DB::transaction(function () use ($run, $publicationId, $tradeDate, $knownAt) {
+            $publication = DB::table('eod_publications')->where('publication_id', (int) $publicationId)->lockForUpdate()->first();
+            if (! $publication) throw new \RuntimeException('INPUT_CAPTURE_BINDING_PUBLICATION_NOT_FOUND');
+            if ((int) $publication->run_id !== (int) $run->run_id) throw new \RuntimeException('INPUT_CAPTURE_BINDING_OWNERSHIP_MISMATCH');
+            if ((string) $publication->trade_date !== (string) $tradeDate) throw new \RuntimeException('INPUT_CAPTURE_BINDING_TRADE_DATE_MISMATCH');
+
+            $lineage = DB::table('md_publication_lineage_bindings')->where('publication_id', (int) $publicationId)->lockForUpdate()->first();
+            if (! $lineage) throw new \RuntimeException('INPUT_CAPTURE_BINDING_LINEAGE_ROW_MISSING: V1 governance binding must run before V2 binding.');
+            if ((int) $lineage->config_snapshot_id !== (int) $run->config_snapshot_id) throw new \RuntimeException('INPUT_CAPTURE_BINDING_CONFIG_SNAPSHOT_INCONSISTENT');
+
+            $manifestResult = $this->manifest->inspect($run, $this->captures);
+            if ($manifestResult['missing_paths'] !== []) {
+                throw new \RuntimeException('INPUT_CAPTURE_BINDING_MANIFEST_INCOMPLETE: '.implode(',', $manifestResult['missing_paths']));
+            }
+
+            $rawCaptures = $this->captures->forRun((int) $run->run_id);
+            $parsed = [];
+            foreach ($rawCaptures as $row) {
+                $parsed[] = ['row' => $row, 'payload' => $this->captures->verify($row)];
+            }
+
+            $components = [];
+            foreach ($parsed as $p) {
+                $operation = $p['payload']['selection_context']['operation'] ?? null;
+                if ($operation === 'input-completion-manifest/v1') continue;
+                $components[] = [
+                    'stage_code' => $p['row']['stage_code'], 'component_key' => $p['row']['component_key'],
+                    'slot_hash' => $p['row']['slot_hash'], 'payload_hash' => $p['row']['payload_hash'],
+                    'member_count' => (int) $p['row']['member_count'], 'operation' => (string) $operation,
+                ];
+            }
+            usort($components, static function ($a, $b) {
+                return [$a['stage_code'], $a['component_key'], $a['slot_hash']] <=> [$b['stage_code'], $b['component_key'], $b['slot_hash']];
+            });
+
+            $bundle = [
+                'schema_version' => self::SCHEMA_VERSION,
+                'scope' => [
+                    'market_code' => (string) config('market_data.scope.market_code', 'IDX'),
+                    'market_segment' => (string) config('market_data.scope.market_segment', 'REGULAR'),
+                    'requested_trade_date' => (string) $run->trade_date_requested,
+                    'effective_trade_date' => (string) $tradeDate,
+                    'dataset_start' => (string) config('market_data.scope.dataset_start'),
+                    'knowledge_cutoff_at' => $knownAt,
+                    'source' => (string) $run->source,
+                    'request_mode' => (string) ($run->request_mode ?? ''),
+                    'config_snapshot_id' => (int) $run->config_snapshot_id,
+                ],
+                'components' => $components,
+                'component_manifest' => [
+                    'required_operations' => $manifestResult['required_operations'],
+                    'status' => $manifestResult['status'],
+                    'actual_slot_count' => count($components),
+                ],
+            ];
+            $boundInputContextJson = RunInputCaptureRepository::canonicalJson($bundle);
+            $boundInputContextHash = hash('sha256', $boundInputContextJson);
+
+            $derived = $this->deriveCompatibilityHashes($parsed, $tradeDate, $knownAt);
+            $expected = [
+                'identity_revision_set_hash' => $lineage->identity_revision_set_hash,
+                'calendar_revision_set_hash' => $lineage->calendar_revision_set_hash,
+                'status_revision_set_hash' => $lineage->status_revision_set_hash,
+                'event_revision_set_hash' => $lineage->event_revision_set_hash,
+                'source_scale_assessment_set_hash' => $lineage->source_scale_assessment_set_hash,
+                'market_structure_revision_set_hash' => $lineage->market_structure_revision_set_hash,
+                'factor_decision_set_hash' => $lineage->factor_decision_set_hash,
+            ];
+            $mismatches = [];
+            foreach ($expected as $field => $existingValue) {
+                if ($existingValue === null) continue; // nullable compatibility fields with no captured basis are not compared
+                if (! array_key_exists($field, $derived)) continue; // not independently re-derived in this work unit
+                if ((string) $existingValue !== (string) $derived[$field]) $mismatches[] = $field;
+            }
+            if ($mismatches !== []) {
+                throw new \RuntimeException('INPUT_CAPTURE_BINDING_COMPATIBILITY_HASH_MISMATCH: '.implode(',', $mismatches));
+            }
+
+            $manifestPayload = [
+                'required_slots' => $manifestResult['required_operations'],
+                'actual_components' => array_map(static function ($c) { return $c['stage_code'].'|'.$c['component_key'].'|'.$c['slot_hash']; }, $components),
+                'derived_compatibility_hashes' => $derived,
+                'derivation_scope' => ['not_independently_rederived' => array_values(array_diff(array_keys($expected), array_keys($derived)))],
+            ];
+            $boundInputCaptureManifestJson = RunInputCaptureRepository::canonicalJson($manifestPayload);
+
+            if ((string) ($publication->seal_state ?? '') === 'SEALED') {
+                if ((string) ($lineage->bound_input_context_hash ?? '') === $boundInputContextHash) {
+                    return $this->result($boundInputContextHash, $derived, true);
+                }
+                throw new \RuntimeException('INPUT_CAPTURE_BINDING_SEALED_PUBLICATION_IMMUTABLE');
+            }
+
+            if ($lineage->bound_input_context_hash !== null) {
+                if ((string) $lineage->bound_input_context_hash === $boundInputContextHash) {
+                    return $this->result($boundInputContextHash, $derived, true);
+                }
+                throw new \RuntimeException('INPUT_CAPTURE_BINDING_CONFLICT: a different bound input context is already recorded for this publication.');
+            }
+
+            DB::table('md_publication_lineage_bindings')->where('publication_id', (int) $publicationId)->update([
+                'bound_input_schema_version' => self::SCHEMA_VERSION,
+                'bound_input_context_json' => $boundInputContextJson,
+                'bound_input_context_hash' => $boundInputContextHash,
+                'bound_input_capture_manifest_json' => $boundInputCaptureManifestJson,
+            ]);
+
+            return $this->result($boundInputContextHash, $derived, false);
+        });
+    }
+
+    private function result(string $hash, array $derived, bool $idempotent): array
+    {
+        return ['bound_input_context_hash' => $hash, 'derived_compatibility_hashes' => $derived, 'idempotent' => $idempotent];
+    }
+
+    /** Re-derive the existing V1 compatibility component hashes from the immutable captured content only. */
+    private function deriveCompatibilityHashes(array $parsed, string $tradeDate, string $knownAt): array
+    {
+        $derived = [];
+
+        $marketStructure = null;
+        foreach ($parsed as $p) {
+            if (($p['payload']['selection_context']['operation'] ?? null) === 'market-structure-consumed-inputs/v1') { $marketStructure = $p['payload']['rows'][0]; break; }
+        }
+        if ($marketStructure !== null) {
+            $bindings = $this->deriveMarketStructureBindings($marketStructure, $tradeDate, $knownAt);
+            $derived['market_structure_revision_set_hash'] = $this->hashRows('market-structure-resolution-set/v1', $bindings);
+            $derived['identity_revision_set_hash'] = $this->hashRows('identity-board-resolution-set/v1', array_map(static function ($b) {
+                return ['listing_id' => $b['listing_id'], 'normalized_board_code' => $b['normalized_board_code'],
+                    'board_identity_recorded_at' => $b['board_identity_recorded_at'], 'resolution_state' => $b['resolution_state']];
+            }, $bindings));
+        }
+
+        $calendarRows = [];
+        foreach ($parsed as $p) {
+            if ($p['row']['component_key'] !== 'calendar_session') continue;
+            foreach ($p['payload']['rows'] as $r) {
+                if (($r['cal_date'] ?? null) === $tradeDate) $calendarRows[(int) $r['calendar_revision_id']] = $r;
+            }
+        }
+        if ($calendarRows !== []) {
+            $rows = array_values($calendarRows);
+            $active = array_values(array_filter($rows, static function ($r) use ($rows, $knownAt) {
+                if ((string) $r['recorded_at'] > $knownAt) return false;
+                foreach ($rows as $n) if ((string) ($n['supersedes_revision_id'] ?? '') === (string) $r['calendar_revision_id'] && (string) $n['recorded_at'] <= $knownAt) return false;
+                return true;
+            }));
+            usort($active, static function ($a, $b) { return $a['calendar_revision_id'] <=> $b['calendar_revision_id']; });
+            $derived['calendar_revision_set_hash'] = $this->hashRows('calendar-revision-set/v1', array_map(static function ($r) {
+                return ['calendar_revision_id' => (int) $r['calendar_revision_id'], 'revision_uid' => (string) $r['revision_uid'], 'session_state' => (string) $r['session_state']];
+            }, $active));
+        }
+
+        $statusRows = [];
+        foreach ($parsed as $p) {
+            if (($p['payload']['selection_context']['operation'] ?? null) !== 'eligibility-expectation/v1') continue;
+            $listingId = (int) ($p['payload']['selection_context']['listing_id'] ?? 0);
+            if ($listingId <= 0) continue;
+            $expectation = $p['payload']['rows'][0];
+            $revisionIds = $expectation['trading_status_revision_ids'] ?? [];
+            $observationIds = $expectation['trading_status_source_observation_ids'] ?? [];
+            $statusRows[$listingId] = [
+                'listing_id' => $listingId,
+                'bar_expectation_state' => (string) $expectation['bar_expectation_state'],
+                'temporal_status_state' => (string) ($expectation['trading_status_code'] ?? 'UNKNOWN'),
+                'trading_status_revision_id' => count($revisionIds) === 1 ? (int) $revisionIds[0] : null,
+                'trading_status_source_observation_id' => count($observationIds) === 1 ? (int) $observationIds[0] : null,
+            ];
+        }
+        if ($statusRows !== []) {
+            ksort($statusRows, SORT_NUMERIC);
+            $derived['status_revision_set_hash'] = $this->hashRows('status-resolution-set/v1', array_values($statusRows));
+        }
+
+        $factorDecisions = null;
+        foreach ($parsed as $p) {
+            if (($p['payload']['selection_context']['operation'] ?? null) === 'event-factor-revisions/v1') { $factorDecisions = $p['payload']['rows'][0]['tables']['md_adjustment_factor_decisions'] ?? []; break; }
+        }
+        if ($factorDecisions !== null) {
+            $decisions = $factorDecisions;
+            usort($decisions, static function ($a, $b) { return (int) $a['corporate_action_revision_id'] <=> (int) $b['corporate_action_revision_id']; });
+            $derived['event_revision_set_hash'] = $this->hashRows('event-revision-set/v1', array_map(static function ($d) { return (int) $d['corporate_action_revision_id']; }, $decisions));
+            $derived['source_scale_assessment_set_hash'] = $this->hashRows('source-scale-assessment-set/v1', array_map(static function ($d) {
+                return ['corporate_action_revision_id' => (int) $d['corporate_action_revision_id'],
+                    'source_scale_assessment_id' => $d['source_scale_assessment_id'] === null ? null : (int) $d['source_scale_assessment_id'],
+                    'decision_state' => (string) $d['decision_state']];
+            }, $decisions));
+            $derived['factor_decision_set_hash'] = $this->hashRows('factor-decision-set/v1', array_map(static function ($d) {
+                return ['corporate_action_revision_id' => (int) $d['corporate_action_revision_id'], 'decision_state' => (string) $d['decision_state'],
+                    'candidate_price_factor' => $d['candidate_price_factor'] === null ? null : (string) $d['candidate_price_factor'],
+                    'candidate_volume_factor' => $d['candidate_volume_factor'] === null ? null : (string) $d['candidate_volume_factor'],
+                    'reason_code' => (string) $d['reason_code']];
+            }, $decisions));
+        }
+
+        return $derived;
+    }
+
+    /** Faithful port of PublicationGovernanceBindingService::bindMarketStructure's resolution, over captured arrays. */
+    private function deriveMarketStructureBindings(array $marketStructure, string $tradeDate, string $knownAt): array
+    {
+        $revisions = $marketStructure['rule_revisions'] ?? [];
+        $canonical = [];
+        foreach ($marketStructure['board_inputs'] ?? [] as $row) {
+            $board = $this->normalizeBoard($row['board_code'] ?? null);
+            $recordedDate = ! empty($row['board_identity_recorded_at']) ? substr((string) $row['board_identity_recorded_at'], 0, 10) : null;
+            $bandId = null; $floorId = null; $tickId = null;
+            if ($board === null) { $state = 'FAIL_CLOSED_BOARD_UNKNOWN'; $reason = 'MARKET_STRUCTURE_BOARD_UNKNOWN'; }
+            elseif ($recordedDate === null || $recordedDate > $tradeDate || ((string) $row['board_identity_recorded_at'] > $knownAt)) {
+                $state = 'FAIL_CLOSED_BOARD_NOT_POINT_IN_TIME'; $reason = 'MARKET_STRUCTURE_BOARD_NOT_POINT_IN_TIME';
+            } elseif (in_array($board, ['ACCELERATION', 'SPECIAL_MONITORING'], true)) { $state = 'FAIL_CLOSED_NON_STANDARD_BOARD'; $reason = 'MARKET_STRUCTURE_SCOPE_EXCLUDED'; }
+            elseif (! in_array($board, ['MAIN', 'DEVELOPMENT', 'NEW_ECONOMY'], true)) { $state = 'FAIL_CLOSED_BOARD_UNRECOGNIZED'; $reason = 'MARKET_STRUCTURE_BOARD_UNRECOGNIZED'; }
+            elseif (! isset($revisions['PRICE_BAND'], $revisions['MINIMUM_PRICE'], $revisions['TICK_SIZE'])) { $state = 'FAIL_CLOSED_REVISION_MISSING'; $reason = 'MARKET_STRUCTURE_REVISION_MISSING'; }
+            else {
+                $state = 'RESOLVED_STANDARD_BOARD'; $reason = null;
+                $bandId = (int) $revisions['PRICE_BAND']['market_structure_revision_id'];
+                $floorId = (int) $revisions['MINIMUM_PRICE']['market_structure_revision_id'];
+                $tickId = (int) $revisions['TICK_SIZE']['market_structure_revision_id'];
+            }
+            $canonical[] = ['listing_id' => (int) $row['listing_id'], 'resolution_state' => $state, 'normalized_board_code' => $board,
+                'board_identity_recorded_at' => $row['board_identity_recorded_at'], 'price_band_revision_id' => $bandId,
+                'minimum_price_revision_id' => $floorId, 'tick_size_revision_id' => $tickId, 'reason_code' => $reason];
+        }
+        return $canonical;
+    }
+
+    private function normalizeBoard($board)
+    {
+        $board = strtoupper(trim((string) $board));
+        $aliases = ['MB' => 'MAIN', 'DB' => 'DEVELOPMENT', 'DEVELOPMEN' => 'DEVELOPMENT', 'ACCELERATI' => 'ACCELERATION', 'WATCHLIST' => 'SPECIAL_MONITORING'];
+        $board = $aliases[$board] ?? $board;
+        return $board === '' ? null : $board;
+    }
+
+    private function hashRows($schemaVersion, array $rows): string
+    {
+        return hash('sha256', json_encode(['schema_version' => $schemaVersion, 'rows' => array_values($rows)], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    }
+}

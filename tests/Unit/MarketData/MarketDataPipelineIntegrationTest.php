@@ -5020,6 +5020,267 @@ class MarketDataPipelineIntegrationTest extends TestCase
         }
     }
 
+    /** Local, test-only reason codes: not the shared SQLite trait, just enough for a genuinely complete manifest. */
+    private function seedMinimalReasonCodesForBindingTest(): void
+    {
+        $now = '2020-01-01 00:00:00';
+        foreach (['ELIG_MISSING_BAR', 'ELIG_TRADING_SUSPENDED', 'COVERAGE_OK'] as $code) {
+            DB::table('eod_reason_codes')->insert([
+                'code' => $code, 'category' => 'ELIGIBILITY', 'description' => $code, 'severity' => 'INFO',
+                'is_active' => 1, 'created_at' => $now, 'updated_at' => $now,
+            ]);
+        }
+    }
+
+    /** Runs the pipeline through HASH (V1 governance binding + every C1 capture) without sealing. */
+    private function runPipelineThroughHashUnsealed(MarketDataPipelineService $pipeline, string $tradeDate, string $sourceMode = 'manual_file')
+    {
+        $run = null;
+        foreach ([
+            'INGEST_BARS' => ['completeIngest', 'full_publish'],
+            'COMPUTE_INDICATORS' => ['completeIndicators', 'full_publish'],
+            'BUILD_ELIGIBILITY' => ['completeEligibility', 'full_publish'],
+            'HASH' => ['completeHash', 'full_publish'],
+        ] as $stage => [$method, $requestMode]) {
+            $input = new \App\Application\MarketData\DTOs\MarketDataStageInput(
+                $tradeDate, $sourceMode, $run ? $run->run_id : null, $stage, null, false, null, $requestMode
+            );
+            $run = $pipeline->$method($input);
+        }
+
+        return $run;
+    }
+
+    public function test_binding_persists_v2_context_and_matches_v1_compatibility_hashes_before_seal(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedMinimalReasonCodesForBindingTest();
+        $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $listingId = (int) DB::table('md_listings')->where('legacy_ticker_id', 1)->value('listing_id');
+        DB::table('ticker_sector_memberships')->insert([
+            'ticker_id' => 1, 'listing_id' => $listingId, 'sector_code' => 'G', 'classification_system' => 'IDX-IC',
+            'effective_from' => '2020-01-01', 'effective_to' => null, 'source_name' => 'idx', 'source_ref' => 'idx-membership-ref',
+            'source_authority_class' => 'EXCHANGE_AUTHORITATIVE', 'recorded_at' => '2026-01-01 00:00:00',
+            'created_at' => '2026-01-01 00:00:00', 'updated_at' => '2026-01-01 00:00:00',
+        ]);
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20',
+            'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124, 'volume' => 2000,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+
+        $pipeline = $this->makePipelineWithAncillaryEngaged();
+        $run = $this->runPipelineThroughHashUnsealed($pipeline, '2026-03-20');
+        $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
+        $this->assertSame('UNSEALED', $publication->seal_state, 'Binding must be exercised before seal.');
+
+        $repository = new \App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository();
+        $validator = new \App\Infrastructure\Persistence\MarketData\ProducerInputCompletionManifest();
+        $manifest = $validator->inspect($run, $repository);
+        $this->assertSame([], $manifest['missing_paths'], 'Precondition: the manifest must be genuinely complete before Binding is exercised.');
+
+        $binder = new \App\Application\MarketData\Services\PublicationInputBindingService();
+        $result = $binder->bind($run, (int) $publication->publication_id, '2026-03-20');
+        $this->assertFalse($result['idempotent']);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $result['bound_input_context_hash']);
+        $this->assertNotEmpty($result['derived_compatibility_hashes']);
+
+        $lineage = DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->first();
+        $this->assertSame('md_publication_inputs_v2', $lineage->bound_input_schema_version);
+        $this->assertSame($result['bound_input_context_hash'], $lineage->bound_input_context_hash);
+        $context = json_decode($lineage->bound_input_context_json, true);
+        $this->assertSame('md_publication_inputs_v2', $context['schema_version']);
+        $this->assertNotEmpty($context['components']);
+        $this->assertSame((int) $run->config_snapshot_id, $context['scope']['config_snapshot_id']);
+        $manifestJson = json_decode($lineage->bound_input_capture_manifest_json, true);
+        $this->assertNotEmpty($manifestJson['actual_components']);
+
+        // The independently re-derived compatibility hashes must match what V1's existing binder
+        // already computed via live queries -- proving V1's hashes were actually consistent with
+        // the captured population, not merely self-consistent with themselves.
+        foreach ($result['derived_compatibility_hashes'] as $field => $hash) {
+            $this->assertSame($lineage->$field, $hash, $field.' must match the existing V1 compatibility hash.');
+        }
+        $this->assertArrayHasKey('market_structure_revision_set_hash', $result['derived_compatibility_hashes']);
+        $this->assertArrayHasKey('identity_revision_set_hash', $result['derived_compatibility_hashes']);
+        $this->assertArrayHasKey('calendar_revision_set_hash', $result['derived_compatibility_hashes']);
+        $this->assertArrayHasKey('status_revision_set_hash', $result['derived_compatibility_hashes']);
+        $this->assertArrayHasKey('event_revision_set_hash', $result['derived_compatibility_hashes']);
+        $this->assertArrayHasKey('source_scale_assessment_set_hash', $result['derived_compatibility_hashes']);
+        $this->assertArrayHasKey('factor_decision_set_hash', $result['derived_compatibility_hashes']);
+
+        // Idempotent re-bind: same captures, same bytes, no error, no change.
+        $again = $binder->bind($run, (int) $publication->publication_id, '2026-03-20');
+        $this->assertTrue($again['idempotent']);
+        $this->assertSame($result['bound_input_context_hash'], $again['bound_input_context_hash']);
+
+    }
+
+    public function test_binding_rejects_ownership_mismatch(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedMinimalReasonCodesForBindingTest();
+        $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20', 'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124, 'volume' => 2000,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+        $pipeline = $this->makePipelineWithAncillaryEngaged();
+        $run = $this->runPipelineThroughHashUnsealed($pipeline, '2026-03-20');
+        $binder = new \App\Application\MarketData\Services\PublicationInputBindingService();
+
+        try {
+            $binder->bind($run, 999999, '2026-03-20');
+            $this->fail('Binding a non-existent publication was accepted.');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_BINDING_PUBLICATION_NOT_FOUND', $e->getMessage());
+        }
+
+        $otherRun = (new \App\Infrastructure\Persistence\MarketData\EodRunRepository())->getOrCreateOwningRun('2026-03-21', 'manual_file', 'INGEST_BARS', null, 'binding-ownership-probe');
+        $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
+        try {
+            $binder->bind($otherRun, (int) $publication->publication_id, '2026-03-20');
+            $this->fail('Binding with a mismatched owning run was accepted.');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_BINDING_OWNERSHIP_MISMATCH', $e->getMessage());
+        }
+    }
+
+    public function test_binding_rejects_historical_replay_verify_run(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedMinimalReasonCodesForBindingTest();
+        $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20', 'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124, 'volume' => 2000,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+        $pipeline = $this->makePipelineWithAncillaryEngaged();
+        $run = $this->runPipelineThroughHashUnsealed($pipeline, '2026-03-20');
+        $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
+        $run->request_mode = 'replay_verify';
+
+        $binder = new \App\Application\MarketData\Services\PublicationInputBindingService();
+        try {
+            $binder->bind($run, (int) $publication->publication_id, '2026-03-20');
+            $this->fail('Historical binding fabricated a new authoritative context.');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_BINDING_HISTORICAL_NOT_PERMITTED', $e->getMessage());
+        }
+        $this->assertNull(DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->value('bound_input_context_hash'));
+    }
+
+    public function test_binding_rejects_an_incomplete_capture_manifest(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        // Deliberately NOT seeding eod_reason_codes: reproduces the one real, pre-existing whole-C1
+        // gap E032/E033 found (registry_versions.reason_registry.entries) as an incomplete-manifest
+        // fixture for Binding, rather than inventing an artificial one.
+        $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20', 'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124, 'volume' => 2000,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+        $pipeline = $this->makePipelineWithAncillaryEngaged();
+        $run = $this->runPipelineThroughHashUnsealed($pipeline, '2026-03-20');
+        $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
+
+        $binder = new \App\Application\MarketData\Services\PublicationInputBindingService();
+        try {
+            $binder->bind($run, (int) $publication->publication_id, '2026-03-20');
+            $this->fail('Binding proceeded on an incomplete capture manifest.');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_BINDING_MANIFEST_INCOMPLETE', $e->getMessage());
+        }
+        $this->assertNull(DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->value('bound_input_context_hash'));
+    }
+
+    public function test_binding_detects_a_compatibility_hash_inconsistent_with_the_captured_population(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedMinimalReasonCodesForBindingTest();
+        $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $listingId = (int) DB::table('md_listings')->where('legacy_ticker_id', 1)->value('listing_id');
+        DB::table('ticker_sector_memberships')->insert([
+            'ticker_id' => 1, 'listing_id' => $listingId, 'sector_code' => 'G', 'classification_system' => 'IDX-IC',
+            'effective_from' => '2020-01-01', 'effective_to' => null, 'source_name' => 'idx', 'source_ref' => 'idx-membership-ref',
+            'source_authority_class' => 'EXCHANGE_AUTHORITATIVE', 'recorded_at' => '2026-01-01 00:00:00',
+            'created_at' => '2026-01-01 00:00:00', 'updated_at' => '2026-01-01 00:00:00',
+        ]);
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20', 'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124, 'volume' => 2000,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+        $pipeline = $this->makePipelineWithAncillaryEngaged();
+        $run = $this->runPipelineThroughHashUnsealed($pipeline, '2026-03-20');
+        $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
+
+        // Corrupt V1's already-stored compatibility hash, as if it had drifted from the true
+        // captured population (the exact class of defect C1 exists to catch).
+        DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)
+            ->update(['calendar_revision_set_hash' => str_repeat('a', 64)]);
+
+        $binder = new \App\Application\MarketData\Services\PublicationInputBindingService();
+        try {
+            $binder->bind($run, (int) $publication->publication_id, '2026-03-20');
+            $this->fail('A compatibility hash inconsistent with the captured population was accepted.');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_BINDING_COMPATIBILITY_HASH_MISMATCH', $e->getMessage());
+            $this->assertStringContainsString('calendar_revision_set_hash', $e->getMessage());
+        }
+        $this->assertNull(DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->value('bound_input_context_hash'));
+    }
+
+    public function test_binding_rejects_a_conflicting_context_and_a_sealed_mismatch_but_allows_a_sealed_match(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedMinimalReasonCodesForBindingTest();
+        $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $listingId = (int) DB::table('md_listings')->where('legacy_ticker_id', 1)->value('listing_id');
+        DB::table('ticker_sector_memberships')->insert([
+            'ticker_id' => 1, 'listing_id' => $listingId, 'sector_code' => 'G', 'classification_system' => 'IDX-IC',
+            'effective_from' => '2020-01-01', 'effective_to' => null, 'source_name' => 'idx', 'source_ref' => 'idx-membership-ref',
+            'source_authority_class' => 'EXCHANGE_AUTHORITATIVE', 'recorded_at' => '2026-01-01 00:00:00',
+            'created_at' => '2026-01-01 00:00:00', 'updated_at' => '2026-01-01 00:00:00',
+        ]);
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20', 'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124, 'volume' => 2000,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+        $pipeline = $this->makePipelineWithAncillaryEngaged();
+        $run = $this->runPipelineThroughHashUnsealed($pipeline, '2026-03-20');
+        $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
+        $binder = new \App\Application\MarketData\Services\PublicationInputBindingService();
+        $result = $binder->bind($run, (int) $publication->publication_id, '2026-03-20');
+
+        // A stale/foreign context recorded out of band must not be silently overwritten.
+        DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)
+            ->update(['bound_input_context_hash' => str_repeat('b', 64)]);
+        try {
+            $binder->bind($run, (int) $publication->publication_id, '2026-03-20');
+            $this->fail('A conflicting recorded bound input context was silently overwritten.');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_BINDING_CONFLICT', $e->getMessage());
+        }
+
+        // Restore the true hash, then seal, then prove: matching re-bind is a safe no-op, but a
+        // sealed row whose stored hash would need to change is rejected outright.
+        DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)
+            ->update(['bound_input_context_hash' => $result['bound_input_context_hash']]);
+        DB::table('eod_publications')->where('publication_id', $publication->publication_id)->update(['seal_state' => 'SEALED']);
+        $sealedMatch = $binder->bind($run, (int) $publication->publication_id, '2026-03-20');
+        $this->assertTrue($sealedMatch['idempotent']);
+
+        DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)
+            ->update(['bound_input_context_hash' => str_repeat('c', 64)]);
+        try {
+            $binder->bind($run, (int) $publication->publication_id, '2026-03-20');
+            $this->fail('A sealed publication with a mismatched bound input context was treated as writable.');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_BINDING_SEALED_PUBLICATION_IMMUTABLE', $e->getMessage());
+        }
+    }
+
     private function makePipelineWithAncillaryEngaged(): MarketDataPipelineService
     {
         $publications = new EodPublicationRepository();
