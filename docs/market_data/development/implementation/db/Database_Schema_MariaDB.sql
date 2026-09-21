@@ -1347,3 +1347,29 @@ CREATE TABLE IF NOT EXISTS md_run_input_captures (
 
 CREATE TRIGGER trg_md_input_no_update BEFORE UPDATE ON md_run_input_captures FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'INPUT_CAPTURE_IMMUTABLE';
 CREATE TRIGGER trg_md_input_no_delete BEFORE DELETE ON md_run_input_captures FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'INPUT_CAPTURE_IMMUTABLE';
+
+-- Sealed V2 bound_input_* protection (C1 contract Sec4.2): scoped to the four V2 columns only,
+-- gated on the owning publication's seal_state. The pre-existing V1 hash columns on this table are
+-- a separate, not-yet-authorized concern and are untouched.
+CREATE TRIGGER trg_md_lineage_bound_input_no_update_sealed BEFORE UPDATE ON md_publication_lineage_bindings
+FOR EACH ROW
+BEGIN
+  IF (NOT (NEW.bound_input_schema_version <=> OLD.bound_input_schema_version)
+      OR NOT (NEW.bound_input_context_json <=> OLD.bound_input_context_json)
+      OR NOT (NEW.bound_input_context_hash <=> OLD.bound_input_context_hash)
+      OR NOT (NEW.bound_input_capture_manifest_json <=> OLD.bound_input_capture_manifest_json))
+     AND (SELECT seal_state FROM eod_publications WHERE publication_id = OLD.publication_id) = 'SEALED'
+  THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'INPUT_CAPTURE_BINDING_SEALED_IMMUTABLE';
+  END IF;
+END;
+
+CREATE TRIGGER trg_md_lineage_no_delete_sealed_bound BEFORE DELETE ON md_publication_lineage_bindings
+FOR EACH ROW
+BEGIN
+  IF OLD.bound_input_context_hash IS NOT NULL
+     AND (SELECT seal_state FROM eod_publications WHERE publication_id = OLD.publication_id) = 'SEALED'
+  THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'INPUT_CAPTURE_BINDING_SEALED_IMMUTABLE';
+  END IF;
+END;

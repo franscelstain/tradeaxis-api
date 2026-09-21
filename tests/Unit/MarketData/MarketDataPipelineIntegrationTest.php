@@ -5263,21 +5263,69 @@ class MarketDataPipelineIntegrationTest extends TestCase
             $this->assertStringContainsString('INPUT_CAPTURE_BINDING_CONFLICT', $e->getMessage());
         }
 
-        // Restore the true hash, then seal, then prove: matching re-bind is a safe no-op, but a
-        // sealed row whose stored hash would need to change is rejected outright.
+        // Restore the true hash, then seal: matching re-bind is a safe no-op.
         DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)
             ->update(['bound_input_context_hash' => $result['bound_input_context_hash']]);
         DB::table('eod_publications')->where('publication_id', $publication->publication_id)->update(['seal_state' => 'SEALED']);
         $sealedMatch = $binder->bind($run, (int) $publication->publication_id, '2026-03-20');
         $this->assertTrue($sealedMatch['idempotent']);
 
+        // Now sealed with the correct hash: the database itself rejects any further tampering,
+        // even before the application layer gets a chance to compare anything.
+        try {
+            DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)
+                ->update(['bound_input_context_hash' => str_repeat('c', 64)]);
+            $this->fail('Direct SQL tampering of a sealed bound input context was accepted by the database.');
+        } catch (\Illuminate\Database\QueryException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_BINDING_SEALED_IMMUTABLE', $e->getMessage());
+        }
+        $this->assertSame($result['bound_input_context_hash'], DB::table('md_publication_lineage_bindings')
+            ->where('publication_id', $publication->publication_id)->value('bound_input_context_hash'));
+    }
+
+    public function test_binding_detects_a_pre_seal_corrupted_context_once_sealed_and_the_database_then_protects_it(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedMinimalReasonCodesForBindingTest();
+        $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $listingId = (int) DB::table('md_listings')->where('legacy_ticker_id', 1)->value('listing_id');
+        DB::table('ticker_sector_memberships')->insert([
+            'ticker_id' => 1, 'listing_id' => $listingId, 'sector_code' => 'G', 'classification_system' => 'IDX-IC',
+            'effective_from' => '2020-01-01', 'effective_to' => null, 'source_name' => 'idx', 'source_ref' => 'idx-membership-ref',
+            'source_authority_class' => 'EXCHANGE_AUTHORITATIVE', 'recorded_at' => '2026-01-01 00:00:00',
+            'created_at' => '2026-01-01 00:00:00', 'updated_at' => '2026-01-01 00:00:00',
+        ]);
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20', 'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124, 'volume' => 2000,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+        $pipeline = $this->makePipelineWithAncillaryEngaged();
+        $run = $this->runPipelineThroughHashUnsealed($pipeline, '2026-03-20');
+        $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
+        $binder = new \App\Application\MarketData\Services\PublicationInputBindingService();
+        $binder->bind($run, (int) $publication->publication_id, '2026-03-20');
+
+        // A wrong value baked in while still lawfully unsealed, then sealed -- the only way such a
+        // row can exist now that the database rejects post-seal tampering directly.
         DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)
             ->update(['bound_input_context_hash' => str_repeat('c', 64)]);
+        DB::table('eod_publications')->where('publication_id', $publication->publication_id)->update(['seal_state' => 'SEALED']);
+
         try {
             $binder->bind($run, (int) $publication->publication_id, '2026-03-20');
             $this->fail('A sealed publication with a mismatched bound input context was treated as writable.');
         } catch (RuntimeException $e) {
             $this->assertStringContainsString('INPUT_CAPTURE_BINDING_SEALED_PUBLICATION_IMMUTABLE', $e->getMessage());
+        }
+
+        // Defense in depth: even attempting to "fix" the now-sealed, already-wrong row via direct
+        // SQL is itself rejected by the database, not just detected by the application.
+        try {
+            DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)
+                ->update(['bound_input_context_hash' => str_repeat('d', 64)]);
+            $this->fail('Direct SQL tampering of an already-sealed, already-wrong row was accepted by the database.');
+        } catch (\Illuminate\Database\QueryException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_BINDING_SEALED_IMMUTABLE', $e->getMessage());
         }
     }
 

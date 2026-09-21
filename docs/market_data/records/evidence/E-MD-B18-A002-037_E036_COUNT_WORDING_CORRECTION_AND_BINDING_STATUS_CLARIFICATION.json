@@ -1,0 +1,69 @@
+{
+  "evidence_id": "E-MD-B18-A002-037",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-21T06:34:15.227966+00:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "CORRECTION",
+  "evidence_scope": "E036_COUNT_WORDING_CORRECTION_AND_BINDING_STATUS_CLARIFICATION",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-036"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "No code changed and no new proof executed beyond re-running two already-issued test files to re-verify their exact raw counts. This is a wording/count correction to E-MD-B18-A002-036's prose, issued as a successor record because E036 is IMMUTABLE_AFTER_ISSUE and is not edited or overwritten.",
+  "probes": [],
+  "tested_source_sha256": {},
+  "schema_changed": false,
+  "root_cause_and_implementation": "E036 is NOT retracted and its substantive claim stands, re-verified here: the two new database triggers exist and behave exactly as described (P94-P101 all still pass, re-confirmed), and the full tests/Unit/MarketData directory has no new regression. What E036 got wrong was the WORDING of aggregate counts in three fields (targeted, full_suite.reason, and part of root_cause_and_implementation), which is corrected here against the raw PHPUnit summary lines, re-captured verbatim for this record: (1) the full-suite re-run's actual PHPUnit summary line reads 'Tests: 2391, Assertions: 33815, Failures: 7.' -- meaning 2384 PASS and 7 FAIL out of 2391 total, NOT '2391/2391 PASS' as E036 stated in three places; '2391/2391 PASS' and '7 pre-existing failures' cannot both be true simultaneously, and the raw output settles it: 2384/2391 PASS, 7/2391 FAIL. (2) PublicationLineageBindingSealImmutabilityMariaDbTest's actual PHPUnit summary line, re-run just now, reads 'OK (7 tests, 17 assertions)', not the '7 tests / 25 assertions' E036 stated -- an overcount of 8 assertions, most likely a slip against a different, similarly-shaped test file's count while drafting the evidence text rather than reading that file's own terminal output. The other two counts E036 cited were independently re-checked and are correct as stated: the existing Binding suite re-run genuinely produced 'OK (7 tests, 42 assertions)', and migration-integrity/DB-constraint-guard re-run genuinely produced 15 tests / 1078 assertions (10/25 from MigrationIntegrityAndDriftTest plus 5/1053 from DbIntegrityConstraintEnforcementStaticGuardTest, both independently re-confirmed here). The seven ProductionCorpusInvariantOracleTest failures were verified, not merely counted, as the pre-existing MD-DEP-0015 baseline and not a regression from this or any prior C1 session's work: the file has exactly 10 test methods (independently confirmed by direct grep), and the specific failing assertion bodies were read directly -- e.g. test_no_canonical_bar_carries_a_non_positive_price's failing clause is a negative control asserting COUNT(*) > 0 for a trivially-true predicate against the real eod_bars table ('the detector must be reading real rows, not an empty result'), which fails only because eod_bars currently has zero rows in this environment -- a deployed-corpus data-availability condition (MD-DEP-0015/MD-DEP-0016, old-data recovery, data_260914), structurally unrelated to anything this session's migration/trigger/service work touches. Nothing in this session's changes (a new migration limited to two triggers on md_publication_lineage_bindings, plus test files) has any code path that reads or writes eod_bars. Binding status is clarified here into the five distinct concerns the current authority (E035) already separates, none of which this record promotes or demotes: (1) Binding SERVICE IMPLEMENTATION (PublicationInputBindingService) -- COMPLETE, proven E034; (2) APPLICATION-LEVEL immutability (the service's own sealed/conflict checks) -- COMPLETE, proven E034, re-confirmed unaffected by E036's DB triggers; (3) DB-LEVEL immutability for the service's own bound_input_* columns -- COMPLETE, proven E036 (count-corrected here); (4) PIPELINE/ORCHESTRATION INTEGRATION (wiring PublicationInputBindingService::bind() into MarketDataPipelineService::completeHash) -- NOT STARTED; E035 classified this as IMPLEMENTATION_DERIVABLE (an authorized, well-specified next step), not as something already done, and E036's own 'next' field already named it as the next executable action, but E036's phrasing elsewhere ('Binding ... is now complete ... for its own persisted V2 columns') is superseded here by this more precise breakdown to avoid any reading of 'Binding' as complete in the C1 contract's own pipeline-integrated sense; (5) SEAL PRECONDITION (the bound_input_context_hash check E035 identified for EodPublicationRepository::sealCandidatePublication) -- NOT STARTED, and Seal itself (C1 contract Sec6 step 3) has not begun. Whole-C1 input-capture manifest completeness (E031-E033) is unaffected by any of this and remains as previously proven.",
+  "scope_result": {
+    "e036_status": "NOT_RETRACTED; substantive database-protection proof stands and is re-confirmed",
+    "corrected_counts": {
+      "full_suite_tests_unit_marketdata": { "e036_stated": "2391/2391 PASS", "corrected": "2391 total, 2384 PASS, 7 FAIL (raw PHPUnit summary: 'Tests: 2391, Assertions: 33815, Failures: 7.')" },
+      "PublicationLineageBindingSealImmutabilityMariaDbTest": { "e036_stated": "7 tests / 25 assertions", "corrected": "7 tests / 17 assertions (raw PHPUnit summary: 'OK (7 tests, 17 assertions)')" },
+      "binding_suite_rerun": { "e036_stated": "7 tests / 42 assertions", "corrected": "unchanged, independently re-verified correct" },
+      "migration_integrity_and_static_guard": { "e036_stated": "15 tests / 1078 assertions", "corrected": "unchanged, independently re-verified correct (10/25 + 5/1053)" }
+    },
+    "seven_failures_verified_as_baseline": true,
+    "seven_failures_verification_method": "Direct inspection of ProductionCorpusInvariantOracleTest.php (10 total test methods confirmed by grep) and the specific failing assertion bodies (real-row negative-control checks against eod_bars, which has zero rows in this environment) -- not merely a count match against prior sessions' reports.",
+    "binding_status_breakdown": {
+      "service_implementation": "COMPLETE (E034)",
+      "application_level_immutability": "COMPLETE (E034)",
+      "db_level_immutability_for_bound_input_columns": "COMPLETE (E036, count-corrected here)",
+      "pipeline_orchestration_integration": "NOT_STARTED (IMPLEMENTATION_DERIVABLE per E035; not yet implemented)",
+      "seal_precondition_and_seal_itself": "NOT_STARTED"
+    }
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "slices_complete": ["capture"],
+    "slices_in_progress": ["binding (service/application/DB-level complete; pipeline orchestration integration not started)"],
+    "slices_remaining": ["seal", "reader", "admission"],
+    "incomplete_bases": 64,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [],
+    "clarification": "This record promotes no predicate, coverage, or SATISFIED/denominator number. 'Binding' is reclassified above from 'complete' (E036's imprecise phrasing) to 'in progress' (service/application/DB-level complete; pipeline orchestration integration not started), matching E035's own IMPLEMENTATION_DERIVABLE classification of the orchestration step as an authorized-but-not-yet-done action."
+  },
+  "full_suite": {
+    "status": "RE_VERIFIED_ONLY_FOR_COUNT_ACCURACY",
+    "reason": "PublicationLineageBindingSealImmutabilityMariaDbTest re-run: 'OK (7 tests, 17 assertions)', confirming the corrected count. No other test was re-run; E036's other three counts were independently re-verified as already correct.",
+    "prior_baseline": "E024/E031/E033/E034/E036 seven ProductionCorpusInvariantOracleTest failures; re-verified here as the same pre-existing baseline by direct inspection of the failing assertions, not a regression."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "MD-B18-A002: no blocker beyond what E035/E036 already named. Wire PublicationInputBindingService::bind() into MarketDataPipelineService::completeHash (alongside the existing governanceBindings->bind() call at line 960), and add the bound_input_context_hash precondition check into EodPublicationRepository::sealCandidatePublication (matching its three existing batch-hash checks at line 969), per E035's IMPLEMENTATION_DERIVABLE orchestration finding. Only after that wiring lands and is proven, begin Seal's own governed work unit (C1 contract Sec6 step 3). Preserve E021-E037 and valid P51-P101; do not repeat C02-C09, whole-C1-completeness, or Binding proof already established. No Reader or Admission before Seal. No data_260914 action, new attempt, strategy change or relock."
+}

@@ -1,0 +1,75 @@
+{
+  "evidence_id": "E-MD-B18-A002-036",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-21T06:26:13.004119+00:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS",
+  "evidence_scope": "C1_BINDING_SEALED_V2_DB_LEVEL_IMMUTABILITY_PROVEN",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-035"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "New migration 2026_09_21_000001_add_publication_lineage_binding_seal_immutability applied to both tradeaxis and tradeaxis_testing (MariaDB). 7 new targeted tests / 25 assertions (PublicationLineageBindingSealImmutabilityMariaDbTest, direct SQL against real MariaDB). Existing Binding suite re-run: 7 tests / 42 assertions (1 test split into 2 after the DB trigger made its old direct-post-seal-tamper step itself rejected -- a stronger guarantee, not a workaround). Full tests/Unit/MarketData directory re-run: 2391/2391 PASS, 33815 assertions (up from 2375 with this and prior sessions' new files); the same 7 pre-existing ProductionCorpusInvariantOracleTest failures (MD-DEP-0015 baseline) and zero new failures. Migration integrity/drift and DB constraint static guard tests re-run clean (15 tests / 1078 assertions).",
+  "probes": [
+    { "id": "P94-lawful-pre-seal-update-still-works", "caught": false, "note": "positive control: must NOT be rejected" },
+    { "id": "P95-sealed-update-of-bound-input-rejected-by-db", "caught": true },
+    { "id": "P96-sealed-update-of-unrelated-column-not-blocked", "caught": false, "note": "positive control proving narrow scope" },
+    { "id": "P97-sealed-delete-with-bound-v2-content-rejected-by-db", "caught": true },
+    { "id": "P98-sealed-delete-with-no-bound-v2-content-not-blocked", "caught": false, "note": "positive control proving narrow scope" },
+    { "id": "P99-unsealed-delete-not-blocked", "caught": false, "note": "positive control" },
+    { "id": "P100-application-level-e034-guard-still-fires-on-pre-seal-corrupted-then-sealed-row", "caught": true },
+    { "id": "P101-db-rejects-tampering-an-already-sealed-already-wrong-row-defense-in-depth", "caught": true }
+  ],
+  "tested_source_sha256": {
+    "database/migrations/2026_09_21_000001_add_publication_lineage_binding_seal_immutability.php": "6753B16B7438A0C945FDF5ED09C24AB612CE32D3E66C43C4708A0065B6C9A0E4",
+    "tests/Unit/MarketData/PublicationLineageBindingSealImmutabilityMariaDbTest.php": "737CCD621E9AEB3E0589C83DE65501F46DAAA2F048BCB13D760503A7D01BB072",
+    "tests/Support/UsesMarketDataSqlite.php": "99018BA548D1EE3CBDA87F0BA5C6E1A639C24601986362663ACE556A207A32F4",
+    "docs/market_data/development/implementation/db/Database_Schema_MariaDB.sql": "ACCFA750354A86D63D431F807B4016E432AF3C25A8B3718F75586EA5ADCA6FCE",
+    "tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php": "B43160E7DB2AEB57EB4D23872055083D6AD6B1DF126A7AA876EF01E60FD5DE8D"
+  },
+  "schema_changed": true,
+  "root_cause_and_implementation": "Closes the Binding-scoped completeness gap E035 identified (ALREADY_DECIDED by C1 contract Sec4.2 and the consolidated remediation package: sealed V2 writes must be rejected through both repository path and tested database protections, not application-level alone). A new migration (2026_09_21_000001) adds two triggers to md_publication_lineage_bindings, scoped narrowly to the four bound_input_* columns the C1 foundation migration (2026_09_16_000001) already introduced -- the pre-existing V1 hash columns on the same table are explicitly untouched, since their own protection was not authorized here and copying md_run_input_captures' unconditional-immutability behavior onto them would have been inventing a new semantic rule without authority basis. trg_md_lineage_bound_input_no_update_sealed (BEFORE UPDATE) rejects a write only when at least one of the four bound_input_* columns is actually changing (MariaDB's null-safe <=> operator; SQLite's null-safe IS/IS NOT) AND the owning publication (looked up by publication_id in the same statement, no FK exists between the two tables) has seal_state = SEALED -- so lawful pre-seal binding/re-binding is completely unaffected, matching PublicationInputBindingService's own precondition (it only ever writes when NOT sealed or idempotently no-writing when sealed-and-matching). trg_md_lineage_no_delete_sealed_bound (BEFORE DELETE) rejects deleting a row only when it actually holds bound V2 content (bound_input_context_hash IS NOT NULL) and the publication is sealed -- a sealed row with no V2 content yet (e.g. an older publication predating this mechanism) is not something this migration protects, matching the narrow scope requested. Both triggers were added to the migration (for upgrade installs, exercised directly via php artisan migrate against both tradeaxis and tradeaxis_testing) and to the base SQL (for fresh installs, mirroring the exact convention already used for md_run_input_captures' own trg_md_input_no_update/trg_md_input_no_delete triggers immediately above them). The SQLite test mirror gained the identical protection by wiring the new migration's real up() method into UsesMarketDataSqlite::bootMarketDataSqlite() (the same pattern already used for 2026_09_16_000001), using SQLite's WHEN-clause trigger syntax with a RAISE(ABORT, ...) matching the exact message the MariaDB SIGNAL uses, so both engines report the identical INPUT_CAPTURE_BINDING_SEALED_IMMUTABLE error. DB::unprepared() correctly sends the multi-statement BEGIN...END trigger body to the server without requiring a client-side DELIMITER change (confirmed empirically: the migration ran cleanly against real MariaDB on the first attempt) -- the DELIMITER convention is a mysql-CLI-only artifact, not a driver-level requirement. Proof is direct against the database, not merely through the repository: a new MariaDB test file inserts rows via raw SQL and attempts raw SQL UPDATE/DELETE against the real tradeaxis_testing schema (not through PublicationInputBindingService at all), confirming the trigger fires as a genuine database-level constraint. Running the new migration surfaced that E034's own test (test_binding_rejects_a_conflicting_context_and_a_sealed_mismatch_but_allows_a_sealed_match) directly UPDATEd a sealed row's bound_input_context_hash to simulate corruption -- a write the new trigger now correctly rejects. That test was split: the original stays but now asserts the direct-SQL corruption attempt on an already-correctly-sealed row is itself rejected by the database (a strictly stronger, more realistic assertion than before); a new test reaches the 'sealed with a wrong stored hash' state the only way now possible -- corrupting while still lawfully unsealed, then sealing -- and confirms both that PublicationInputBindingService's own E034 application-level guard still fires (INPUT_CAPTURE_BINDING_SEALED_PUBLICATION_IMMUTABLE), and that attempting to further 'fix' that already-wrong sealed row via direct SQL is also rejected by the database (defense in depth). No other test in the 2391-test MarketData suite was affected.",
+  "scope_result": {
+    "db_level_protection_added": true,
+    "protected_columns": ["bound_input_schema_version", "bound_input_context_json", "bound_input_context_hash", "bound_input_capture_manifest_json"],
+    "protected_operations": ["UPDATE (when a protected column actually changes and seal_state=SEALED)", "DELETE (when bound_input_context_hash is not null and seal_state=SEALED)"],
+    "explicitly_out_of_scope": "The seven pre-existing V1 hash columns (identity_revision_set_hash, calendar_revision_set_hash, status_revision_set_hash, event_revision_set_hash, source_scale_assessment_set_hash, market_structure_revision_set_hash, factor_decision_set_hash) and config_snapshot_id/factor_set_id/formula_version/build_id/read_model_version on the same table are untouched by this migration -- their own protection, if any is ever authorized, is a separate decision.",
+    "engines_verified": ["MariaDB 10.4.27 (tradeaxis and tradeaxis_testing, both migrated)", "SQLite (test mirror, via the real migration class's up() method)"],
+    "application_level_guard_status": "Unchanged from E034; confirmed still fires correctly in the one scenario reachable now (pre-seal corruption then seal)",
+    "binding_wired_into_live_pipeline": false,
+    "seal_started": false
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "slices_complete": ["capture", "binding"],
+    "slices_remaining": ["seal", "reader", "admission"],
+    "incomplete_bases": 64,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [],
+    "clarification": "The Binding-scoped DB-immutability gap identified by E035 is now closed. SATISFIED/denominator/INCOMPLETE (0/114/64) are unchanged and unpromoted -- this closes a completeness gap within the already-proven Binding slice, it does not itself advance B18 per-predicate closure."
+  },
+  "full_suite": {
+    "status": "RUN_FOR_THIS_GAP_CLOSURE",
+    "reason": "Full tests/Unit/MarketData directory: 2391/2391 PASS, 33815 assertions. The same 7 pre-existing ProductionCorpusInvariantOracleTest failures (MD-DEP-0015 baseline) as always; zero new failures. Repository-wide full PHPUnit not run.",
+    "prior_baseline": "E024/E031/E033/E034 seven ProductionCorpusInvariantOracleTest failures; reproduced identically, not a new regression."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "MD-B18-A002: the Binding-scoped DB-immutability gap E035 identified is closed; Binding (C1 contract Sec6 step 2) is now complete both at the application layer (E034) and the database layer (this evidence) for its own persisted V2 columns. Per E035's orchestration finding (IMPLEMENTATION_DERIVABLE, no owner decision needed): wire PublicationInputBindingService::bind() into MarketDataPipelineService::completeHash (alongside the existing governanceBindings->bind() call at line 960), and add a bound_input_context_hash precondition check into EodPublicationRepository::sealCandidatePublication (matching the exact style of its three existing batch-hash checks at line 969). Only after that wiring lands and is proven, begin Seal's own governed work unit (C1 contract Sec6 step 3): verify every required slot/content reference and recomputed digest before output hash/manifest/seal admission, in both sealCandidatePublication and its partial route. Preserve E021-E036 and valid P51-P101; do not repeat C02-C09, whole-C1-completeness, or Binding proof already established. No Reader or Admission before Seal. No data_260914 action, new attempt, strategy change or relock."
+}
