@@ -5262,6 +5262,21 @@ class MarketDataPipelineIntegrationTest extends TestCase
         return $run;
     }
 
+    /**
+     * Runs the pipeline all the way through the real SEAL stage (`completeSeal`), which is what
+     * actually prepares the deterministic publication manifest (`prepareCandidateManifestForSeal`)
+     * before calling `sealCandidatePublication` -- unlike `runPipelineThroughHashUnsealed`, which
+     * deliberately stops at HASH so Binding-only tests can inspect the unsealed state.
+     */
+    private function runPipelineThroughSealed(MarketDataPipelineService $pipeline, string $tradeDate, string $sourceMode = 'manual_file')
+    {
+        $run = $this->runPipelineThroughHashUnsealed($pipeline, $tradeDate, $sourceMode);
+        $input = new \App\Application\MarketData\DTOs\MarketDataStageInput(
+            $tradeDate, $sourceMode, $run->run_id, 'SEAL', null, false, null, 'full_publish'
+        );
+        return $pipeline->completeSeal($input);
+    }
+
     public function test_binding_persists_v2_context_and_matches_v1_compatibility_hashes_before_seal(): void
     {
         $this->seedTicker(1, 'BBCA');
@@ -5598,6 +5613,217 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertNull($lineageAfter->bound_input_context_hash);
         $this->assertNull($lineageAfter->bound_input_schema_version);
         $this->assertSame('UNSEALED', (string) DB::table('eod_publications')->where('publication_id', $publication->publication_id)->value('seal_state'));
+    }
+
+    /** A run/publication pair with a genuine, real V2 binding, HASH-completed but not yet sealed. */
+    private function makeSealReadyPublication(): array
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $listingId = (int) DB::table('md_listings')->where('legacy_ticker_id', 1)->value('listing_id');
+        DB::table('ticker_sector_memberships')->insert([
+            'ticker_id' => 1, 'listing_id' => $listingId, 'sector_code' => 'G', 'classification_system' => 'IDX-IC',
+            'effective_from' => '2020-01-01', 'effective_to' => null, 'source_name' => 'idx', 'source_ref' => 'idx-membership-ref',
+            'source_authority_class' => 'EXCHANGE_AUTHORITATIVE', 'recorded_at' => '2026-01-01 00:00:00',
+            'created_at' => '2026-01-01 00:00:00', 'updated_at' => '2026-01-01 00:00:00',
+        ]);
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20', 'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124, 'volume' => 2000,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+        $pipeline = $this->makePipelineWithAncillaryEngaged();
+        $run = $this->runPipelineThroughHashUnsealed($pipeline, '2026-03-20');
+        $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
+        return [$run, $publication, $pipeline];
+    }
+
+    /**
+     * Reaches seal through the real pipeline stage (`completeSeal`), which prepares the
+     * deterministic publication manifest (`prepareCandidateManifestForSeal`) before internally
+     * calling `sealCandidatePublication` -- unlike calling `sealCandidatePublication` directly on
+     * an under-prepared candidate, this is what a genuine successful seal actually requires.
+     */
+    private function sealThroughPipeline(MarketDataPipelineService $pipeline, $run)
+    {
+        $input = new \App\Application\MarketData\DTOs\MarketDataStageInput(
+            '2026-03-20', 'manual_file', $run->run_id, 'SEAL', null, false, null, 'full_publish'
+        );
+        return $pipeline->completeSeal($input);
+    }
+
+    public function test_seal_completes_a_genuinely_valid_bound_context(): void
+    {
+        [$run, $publication, $pipeline] = $this->makeSealReadyPublication();
+
+        $sealedRun = $this->sealThroughPipeline($pipeline, $run);
+        $sealed = DB::table('eod_publications')->where('publication_id', $publication->publication_id)->first();
+
+        $this->assertNotNull($sealedRun);
+        $this->assertSame('SEALED', (string) $sealed->seal_state);
+        $this->assertSame((int) $publication->publication_id, (int) $sealed->publication_id);
+    }
+
+    public function test_seal_rejects_a_bound_context_referencing_a_missing_component(): void
+    {
+        [$run, $publication] = $this->makeSealReadyPublication();
+        $lineage = DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->first();
+        $bundle = json_decode((string) $lineage->bound_input_context_json, true);
+        $this->assertNotEmpty($bundle['components']);
+        // Rewrite the first component's slot_hash so it no longer resolves to any real capture,
+        // then re-canonicalize so the digest itself stays self-consistent -- isolating this as
+        // purely a missing-component defect, not a digest tamper.
+        $bundle['components'][0]['slot_hash'] = str_repeat('0', 64);
+        $newJson = json_encode($bundle);
+        DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->update([
+            'bound_input_context_json' => $newJson, 'bound_input_context_hash' => hash('sha256', $newJson),
+        ]);
+
+        try {
+            (new \App\Infrastructure\Persistence\MarketData\EodPublicationRepository())->sealCandidatePublication($run, 'operator');
+            $this->fail('Sealed a publication whose bound context named a component with no matching immutable capture.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_SEAL_VERIFICATION_COMPONENT_UNVERIFIABLE', $e->getMessage());
+        }
+        $this->assertSame('UNSEALED', (string) DB::table('eod_publications')->where('publication_id', $publication->publication_id)->value('seal_state'));
+    }
+
+    public function test_seal_rejects_a_bound_context_with_an_altered_component_hash(): void
+    {
+        [$run, $publication] = $this->makeSealReadyPublication();
+        $lineage = DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->first();
+        $bundle = json_decode((string) $lineage->bound_input_context_json, true);
+        $bundle['components'][0]['payload_hash'] = str_repeat('a', 64);
+        $newJson = json_encode($bundle);
+        DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->update([
+            'bound_input_context_json' => $newJson, 'bound_input_context_hash' => hash('sha256', $newJson),
+        ]);
+
+        try {
+            (new \App\Infrastructure\Persistence\MarketData\EodPublicationRepository())->sealCandidatePublication($run, 'operator');
+            $this->fail('Sealed a publication whose bound context claimed a payload_hash the immutable capture does not actually have.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_SEAL_VERIFICATION_COMPONENT_UNVERIFIABLE', $e->getMessage());
+        }
+        $this->assertSame('UNSEALED', (string) DB::table('eod_publications')->where('publication_id', $publication->publication_id)->value('seal_state'));
+    }
+
+    public function test_seal_rejects_a_bound_context_with_wrong_source_run_id_provenance(): void
+    {
+        [$run, $publication] = $this->makeSealReadyPublication();
+        $lineage = DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->first();
+        $bundle = json_decode((string) $lineage->bound_input_context_json, true);
+        // Point one genuinely-owned component at an arbitrary other run id: neither this run's own
+        // id nor its (nonexistent, for this mainline run) seed run.
+        $bundle['components'][0]['source_run_id'] = (int) $run->run_id + 999;
+        $newJson = json_encode($bundle);
+        DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->update([
+            'bound_input_context_json' => $newJson, 'bound_input_context_hash' => hash('sha256', $newJson),
+        ]);
+
+        try {
+            (new \App\Infrastructure\Persistence\MarketData\EodPublicationRepository())->sealCandidatePublication($run, 'operator');
+            $this->fail('Sealed a publication whose bound context named a component sourced from an arbitrary, unrecorded run.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_SEAL_VERIFICATION_PROVENANCE_INVALID', $e->getMessage());
+        }
+        $this->assertSame('UNSEALED', (string) DB::table('eod_publications')->where('publication_id', $publication->publication_id)->value('seal_state'));
+    }
+
+    public function test_seal_rejects_a_bound_context_digest_mismatch(): void
+    {
+        [$run, $publication] = $this->makeSealReadyPublication();
+        // Corrupt only the stored digest, leaving the JSON bytes exactly as bound -- proves the
+        // digest re-check is independent of, and runs before, any per-component verification.
+        DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)
+            ->update(['bound_input_context_hash' => str_repeat('9', 64)]);
+
+        try {
+            (new \App\Infrastructure\Persistence\MarketData\EodPublicationRepository())->sealCandidatePublication($run, 'operator');
+            $this->fail('Sealed a publication whose bound_input_context_hash did not match its own bound_input_context_json.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_SEAL_VERIFICATION_DIGEST_MISMATCH', $e->getMessage());
+        }
+        $this->assertSame('UNSEALED', (string) DB::table('eod_publications')->where('publication_id', $publication->publication_id)->value('seal_state'));
+    }
+
+    public function test_seal_verification_rejects_ownership_mismatch_directly(): void
+    {
+        // sealCandidatePublication always resolves its own candidate by $run->run_id, so a live
+        // ownership mismatch can never actually reach this check through that one caller; proven
+        // directly against PublicationInputBindingService::verifyBeforeSeal itself, the same way
+        // Binding's own ownership guard is proven, as defense in depth rather than dead code.
+        [$run, $publication] = $this->makeSealReadyPublication();
+        $otherRun = (new \App\Infrastructure\Persistence\MarketData\EodRunRepository())
+            ->getOrCreateOwningRun('2026-03-21', 'manual_file', 'INGEST_BARS', null, 'seal-ownership-probe');
+
+        $binder = new \App\Application\MarketData\Services\PublicationInputBindingService();
+        try {
+            $binder->verifyBeforeSeal($otherRun, (int) $publication->publication_id, '2026-03-20');
+            $this->fail('verifyBeforeSeal accepted a publication owned by a different run.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_SEAL_VERIFICATION_OWNERSHIP_MISMATCH', $e->getMessage());
+        }
+    }
+
+    public function test_seal_uses_frozen_bound_evidence_unaffected_by_later_live_data_mutation(): void
+    {
+        [$run, $publication, $pipeline] = $this->makeSealReadyPublication();
+        $lineageBefore = DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->first();
+
+        // Mutate a live reference table the original ancillary capture was drawn from, after
+        // Binding already ran -- Seal must never consult it, only the already-bound, immutable
+        // evidence. (`eod_bars` itself is deliberately left alone here: completeSeal's own,
+        // separate V1 snapshot/hash-equality check would legitimately reject a changed canonical
+        // bar before ever reaching Seal's V2 verification, which is not what this test isolates.)
+        DB::table('ticker_sector_memberships')->update(['sector_code' => 'Z']);
+
+        $this->sealThroughPipeline($pipeline, $run);
+        $sealed = DB::table('eod_publications')->where('publication_id', $publication->publication_id)->first();
+
+        $this->assertSame('SEALED', (string) $sealed->seal_state);
+        $lineageAfter = DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->first();
+        $this->assertSame($lineageBefore->bound_input_context_hash, $lineageAfter->bound_input_context_hash,
+            'Seal must not recompute or alter the bound context even after live/current data changed.');
+    }
+
+    public function test_seal_failure_leaves_binding_untouched_and_a_later_retry_succeeds_once_corrected(): void
+    {
+        [$run, $publication, $pipeline] = $this->makeSealReadyPublication();
+        $lineageBefore = DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->first();
+
+        // Induce a transient failure (a digest corruption), confirm Seal refuses and creates or
+        // repairs nothing, then correct it and confirm a retry now succeeds -- Seal's refusal is
+        // not a permanent, un-retriable state once the actual underlying condition is fixed. The
+        // induced-failure call goes directly through the repository (Seal's own verification is
+        // reached and refuses before the older, unrelated deterministic-manifest precondition ever
+        // matters); the retry goes through the real pipeline stage, which is what a genuine
+        // successful seal actually requires.
+        DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)
+            ->update(['bound_input_context_hash' => str_repeat('1', 64)]);
+        try {
+            (new \App\Infrastructure\Persistence\MarketData\EodPublicationRepository())->sealCandidatePublication($run, 'operator');
+            $this->fail('Sealed despite an induced digest mismatch.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_SEAL_VERIFICATION_DIGEST_MISMATCH', $e->getMessage());
+        }
+        $this->assertSame('UNSEALED', (string) DB::table('eod_publications')->where('publication_id', $publication->publication_id)->value('seal_state'));
+
+        DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)
+            ->update(['bound_input_context_hash' => $lineageBefore->bound_input_context_hash]);
+        $this->sealThroughPipeline($pipeline, $run);
+        $sealed = DB::table('eod_publications')->where('publication_id', $publication->publication_id)->first();
+        $this->assertSame('SEALED', (string) $sealed->seal_state);
+    }
+
+    public function test_seal_candidate_publication_partial_still_unconditionally_refuses(): void
+    {
+        [$run] = $this->makeSealReadyPublication();
+        try {
+            (new \App\Infrastructure\Persistence\MarketData\EodPublicationRepository())->sealCandidatePublicationPartial($run, 'operator');
+            $this->fail('sealCandidatePublicationPartial sealed a partial candidate.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('RUN_SEAL_PRECONDITION_FAILED', $e->getMessage());
+        }
     }
 
     private function makePipelineWithAncillaryEngaged(): MarketDataPipelineService

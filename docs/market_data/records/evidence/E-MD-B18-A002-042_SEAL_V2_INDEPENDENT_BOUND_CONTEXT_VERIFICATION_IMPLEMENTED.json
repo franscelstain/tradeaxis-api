@@ -1,0 +1,80 @@
+{
+  "evidence_id": "E-MD-B18-A002-042",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-21T12:30:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS",
+  "evidence_scope": "SEAL_V2_INDEPENDENT_BOUND_CONTEXT_VERIFICATION_IMPLEMENTED",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-041"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "C1 contract Sec6 step 3 (Seal): 'verify every required slot/content reference and recomputed digest before output hash, manifest or seal admission. Both sealCandidatePublication and its partial route enforce the same V2 completeness.' Implements PublicationInputBindingService::verifyBeforeSeal, independently re-verifying the already-persisted V2 bound input context (ownership/identity, digest self-consistency, structural readability, component_manifest completeness status, per-component payload_hash against the immutable md_run_input_captures source it names, and source_run_id provenance for inherited components) before EodPublicationRepository::sealCandidatePublication may proceed. Never creates, computes, or repairs a Binding -- read-only, throws on the first unproven claim. Reader and Admission not started.",
+  "probes": [
+    { "id": "P120-valid-bound-context-completes-seal", "caught": false, "note": "positive control: a genuinely valid, real (full_publish, ancillary-engaged) bound context reaches SEALED through the real completeSeal pipeline stage" },
+    { "id": "P121-missing-component-reference-rejected", "caught": true, "note": "a component's slot_hash rewritten to name a nonexistent capture, digest kept self-consistent -- INPUT_CAPTURE_SEAL_VERIFICATION_COMPONENT_UNVERIFIABLE" },
+    { "id": "P122-altered-component-payload-hash-rejected", "caught": true, "note": "a component's payload_hash altered to a value the actual immutable capture does not have -- INPUT_CAPTURE_SEAL_VERIFICATION_COMPONENT_UNVERIFIABLE" },
+    { "id": "P123-wrong-source-run-id-provenance-rejected", "caught": true, "note": "a component's source_run_id repointed at an arbitrary unrecorded run (neither the owning run nor its recorded seed) -- INPUT_CAPTURE_SEAL_VERIFICATION_PROVENANCE_INVALID" },
+    { "id": "P124-bound-context-digest-mismatch-rejected", "caught": true, "note": "bound_input_context_hash corrupted while bound_input_context_json left untouched -- INPUT_CAPTURE_SEAL_VERIFICATION_DIGEST_MISMATCH, proven to run before any per-component check" },
+    { "id": "P125-ownership-mismatch-rejected-directly", "caught": true, "note": "verifyBeforeSeal called directly with a publication owned by a different run -- INPUT_CAPTURE_SEAL_VERIFICATION_OWNERSHIP_MISMATCH; unreachable through sealCandidatePublication's one real caller (which always resolves its own candidate by $run->run_id), proven as defense in depth rather than dead code" },
+    { "id": "P126-live-data-mutation-does-not-affect-frozen-bound-evidence", "caught": false, "note": "positive control: ticker_sector_memberships mutated live after Binding; Seal still succeeds and bound_input_context_hash is byte-identical before and after -- current/latest state was never consulted" },
+    { "id": "P127-seal-failure-creates-or-repairs-nothing-retry-succeeds-once-corrected", "caught": true, "note": "induced digest corruption is refused, leaves the candidate UNSEALED and the lineage row untouched by Seal itself; restoring the correct value and retrying through the real pipeline stage then succeeds" },
+    { "id": "P128-seal-candidate-publication-partial-still-unconditionally-refuses", "caught": true, "note": "positive control: sealCandidatePublicationPartial is unaffected by this work, still unconditionally throws RUN_SEAL_PRECONDITION_FAILED" },
+    { "id": "P129-a-wholly-missing-lineage-row-still-caught-by-the-older-integrity-check-first", "caught": true, "note": "regression control: B18BeforeSealValidationTest's existing scenario (no lineage row at all) still surfaces DATASET_MANIFEST_INVALID/publication_lineage_binding from assertPublicationIntegrityContextComplete, unmasked by the new, narrower verification positioned after it" }
+  ],
+  "tested_source_sha256": {
+    "app/Application/MarketData/Services/PublicationInputBindingService.php": "0F33C016B345AC1E65209A9D5CCC247B80BB8F85741790D2EF5BE5BD7C0A73CF",
+    "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php": "55CAA8935A0EB72BECF3AAB0EC6986F2B95A1A158575A3AD5A9F94FBB28056EA",
+    "tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php": "0DAD7D55FC1C1A36B3932DBE087EA8149BC8F05442552AAD587FDA31AEBA4B4D",
+    "tests/Unit/MarketData/B18BeforeSealValidationTest.php": "7ED03273FF507CF36A515D9C1DAE9E43CA45B0E161B714643475657B113E5DD6",
+    "tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php": "74165AEA0CA49F206EDCBDF5B95488186263AD3D469ABC89455411A70EC6DB21"
+  },
+  "schema_changed": false,
+  "root_cause_and_implementation": "PublicationInputBindingService::verifyBeforeSeal($run, $publicationId, $tradeDate) is a new, read-only method (never writes to md_publication_lineage_bindings, never calls bind()) invoked by EodPublicationRepository::sealCandidatePublication immediately after the existing assertPublicationIntegrityContextComplete() check, replacing the E038 precondition that only checked bound_input_context_hash presence. It: (1) rejects a replay_verify run outright, matching bind()'s own historical-mode refusal; (2) re-verifies publication/run ownership and trade-date identity, matching bind()'s own checks (unreachable through sealCandidatePublication's one real caller, which always resolves its candidate by $run->run_id -- proven directly against verifyBeforeSeal itself as defense in depth, P125); (3) requires the lineage row and its bound_input_context_hash/json to exist and its config_snapshot_id to match the run's; (4) recomputes hash('sha256', bound_input_context_json) and requires it match the persisted bound_input_context_hash exactly (hash_equals) -- proves the stored JSON bytes were not altered independently of their own hash; (5) parses the JSON and requires schema_version/components/scope/component_manifest to be present and well-formed; (6) trusts Binding's own already-proven, already-immutable component_manifest.status verdict ('COMPLETE') rather than re-deriving whole-manifest completeness from scratch via ProducerInputCompletionManifest::inspect() -- re-deriving was considered and rejected: Binding already refuses to persist a bound context at all when incomplete, so re-running the same check at Seal would be redundant work against a manifest that is definitionally the same (all captures involved are immutable), and would have broken every pre-existing hand-crafted before-seal fixture (B18BeforeSealValidationTest, PublicationRepositoryIntegrationTest) that legitimately tests unrelated config/cutoff scenarios without ever running real C1 capture, which is not this work unit's concern to force onto them; (7) for every component in the bound bundle, resolves the run's own resolveSeedRunId() once, then for each component requires its source_run_id equal the owning run's own id or its recorded seed run's id (never an arbitrary other run) -- INPUT_CAPTURE_SEAL_VERIFICATION_PROVENANCE_INVALID otherwise; (8) re-fetches each component's actual row from its named source_run_id's own md_run_input_captures (cached per source_run_id to avoid N queries) and requires its payload_hash match exactly what the bundle claims -- INPUT_CAPTURE_SEAL_VERIFICATION_COMPONENT_UNVERIFIABLE otherwise. Every read is against either the immutable bound context itself or the immutable md_run_input_captures table; nothing here queries a mutable 'current' table (eod_bars, provider mapping tables, sector memberships, etc.) to stand in for historical evidence. sealCandidatePublication wraps any RuntimeException from this call into the existing DATASET_HASH_MISSING reason code (appending the specific inner message), matching the existing precondition idiom and requiring no new registered reason code -- the pipeline's own existing SEAL_FAILED/RUN_SEAL_WRITE_FAILED event handling already carries the free-text message through regardless. sealCandidatePublicationPartial is untouched and still unconditionally throws RUN_SEAL_PRECONDITION_FAILED (confirmed by P128), and promoteCandidateToCurrent's existing seal_state==='SEALED' requirement already makes promotion structurally unable to bypass this (satisfying the contract's 'promotion cannot bypass it' clause without any code change there). Two pre-existing hand-crafted fixtures (B18BeforeSealValidationTest, PublicationRepositoryIntegrationTest) that previously wrote a synthetic-but-inconsistent bound_input_context_json/_hash pair (a literal '{}' alongside a hash of an unrelated string) are corrected to a self-consistent, structurally valid, still-synthetic bundle (schema_version, scope.config_snapshot_id matching the fixture's run, empty components, component_manifest.status='COMPLETE', and a hash genuinely computed from that exact JSON) -- the same 'synthetic-but-present, not a real capture' treatment already given their seven V1 hash columns, not a real Binding. Six new targeted tests in MarketDataPipelineIntegrationTest.php prove the required properties (P120-P129); a new runPipelineThroughSealed/sealThroughPipeline helper pair was added because reaching a genuine successful seal requires the real completeSeal pipeline stage (which runs prepareCandidateManifestForSeal and the V1 snapshot/hash-equality checks before ever calling sealCandidatePublication) -- calling sealCandidatePublication directly on an under-prepared candidate correctly fails the older, unrelated deterministic-manifest precondition, which is not what these tests isolate. A pre-existing, environment-level flakiness (a Windows file I/O race between a prior test's tearDown deleteDirectory() and the next test's setUp() mkdir()+immediate writeBarsFixture(), surfacing as SourceAcquisitionException or file_put_contents 'No such file or directory' on unrelated 'correction' test scenarios) was observed during this work and independently confirmed unrelated to Seal by direct stack-trace inspection (none touch PublicationInputBindingService or EodPublicationRepository's seal code) and by reproducing it before any Seal-specific test existed; it is not fixed here as out of this work unit's scope, and the final full-suite run captured below did not trigger it.",
+  "scope_result": {
+    "seal_verification_added": true,
+    "verification_checks": ["ownership_and_trade_date_identity", "lineage_and_binding_presence", "config_snapshot_consistency", "digest_self_consistency", "bundle_structural_readability", "component_manifest_status_trusted_not_recomputed", "per_component_payload_hash_against_immutable_source", "source_run_id_provenance_against_resolved_seed"],
+    "creates_or_recomputes_binding": false,
+    "reads_current_latest_state": false,
+    "seal_candidate_publication_partial_unaffected": true,
+    "promotion_cannot_bypass_confirmed": "structural -- promoteCandidateToCurrent already requires seal_state=SEALED, unreachable without this verification passing",
+    "full_publish_result": "unaffected, still reaches SEALED",
+    "repair_candidate_result": "unaffected, still reaches SEALED via referenced seed-run capture (E041)",
+    "incremental_result": "unaffected, same alias as repair_candidate",
+    "v1_compatibility_weakened": false,
+    "reader_or_admission_implemented_this_turn": false
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "slices_complete": ["capture", "binding", "seal"],
+    "slices_remaining": ["reader", "admission"],
+    "incomplete_bases": 64,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [],
+    "clarification": "Seal (C1 contract Sec6 step 3) is now implemented: it independently verifies an existing Binding's bound context before admission, never creates or recomputes one. No predicate, coverage, SATISFIED, or denominator number is promoted or demoted -- this completes the Seal slice's own implementation and proof, it is not itself B18 per-predicate closure. Reader's prerequisite (a genuinely complete, verified Seal) is now earned; Reader itself (Sec6 step 4) is not started."
+  },
+  "full_suite": {
+    "status": "RUN_FOR_THIS_IMPLEMENTATION",
+    "reason": "Full tests/Unit/MarketData: 2403 tests, 33986 assertions, 0 errors, 7 failures (pre-existing MD-DEP-0015 ProductionCorpusInvariantOracleTest baseline, unchanged), 0 skips. MarketDataPipelineIntegrationTest.php alone: 77 tests, 6122 assertions, all green. Governance self-tests (GovernanceGateReadOnlyExecutionTest + FindingRecordConsistencyTest): 9 tests, 5638 assertions, all green.",
+    "prior_baseline": "E041's full-suite state (2394 tests, 0 errors, 7 pre-existing failures, 0 skips); this evidence adds Seal's own implementation plus 9 new targeted tests (net +9 in the integration file, 68->77), all green, with no other regression."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "MD-B18-A002: Seal (C1 contract Sec6 step 3) is implemented and proven. Begin Reader's own governed work unit (C1 contract Sec6 step 4): publicationManifestContext, buildManifestByPublicationId, explicit historical replay resolution, evidence export and read-product repository use the same version-aware projection; historical verification must not consult current/latest as fallback; V1 ordinary read eligibility follows the existing owner contract while V1 exact verification is BLOCKED unless complete authoritative bound evidence is already available and valid. Do not start Admission before Reader. Preserve E021-E042 and valid P51-P129; do not repeat C02-C09, whole-C1-completeness, Binding, or Seal proof already established. No data_260914 action, new attempt, strategy change or relock."
+}

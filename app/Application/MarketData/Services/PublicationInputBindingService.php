@@ -198,6 +198,96 @@ class PublicationInputBindingService
         return ['bound_input_context_hash' => $hash, 'derived_compatibility_hashes' => $derived, 'idempotent' => $idempotent];
     }
 
+    /**
+     * C1 §6 step 3 — Seal. Independently re-verifies the already-persisted V2 bound input context
+     * is still authentic and complete before a publication may be sealed. Read-only: this never
+     * writes to `md_publication_lineage_bindings` and never calls `bind()` -- Seal verifies an
+     * existing Binding, it does not create or recompute one. Every check reads only the immutable
+     * `md_run_input_captures` rows and the already-persisted bound context itself; nothing here
+     * reads a mutable "current" table to stand in for historical evidence. Throws on the first
+     * failure; the caller (`EodPublicationRepository::sealCandidatePublication`) fails the seal
+     * closed exactly like its other preconditions.
+     */
+    public function verifyBeforeSeal($run, $publicationId, $tradeDate): void
+    {
+        if ((string) ($run->request_mode ?? '') === 'replay_verify') {
+            throw new \RuntimeException('INPUT_CAPTURE_SEAL_VERIFICATION_HISTORICAL_NOT_PERMITTED: a historical run cannot seal a new authoritative publication.');
+        }
+
+        $publication = DB::table('eod_publications')->where('publication_id', (int) $publicationId)->first();
+        if (! $publication) throw new \RuntimeException('INPUT_CAPTURE_SEAL_VERIFICATION_PUBLICATION_NOT_FOUND');
+        if ((int) $publication->run_id !== (int) $run->run_id) throw new \RuntimeException('INPUT_CAPTURE_SEAL_VERIFICATION_OWNERSHIP_MISMATCH');
+        if ((string) $publication->trade_date !== (string) $tradeDate) throw new \RuntimeException('INPUT_CAPTURE_SEAL_VERIFICATION_TRADE_DATE_MISMATCH');
+
+        $lineage = DB::table('md_publication_lineage_bindings')->where('publication_id', (int) $publicationId)->first();
+        if (! $lineage || $lineage->bound_input_context_hash === null || $lineage->bound_input_context_json === null) {
+            throw new \RuntimeException('INPUT_CAPTURE_SEAL_VERIFICATION_BINDING_MISSING: no bound input context exists to verify.');
+        }
+        if ((int) $lineage->config_snapshot_id !== (int) $run->config_snapshot_id) {
+            throw new \RuntimeException('INPUT_CAPTURE_SEAL_VERIFICATION_CONFIG_SNAPSHOT_INCONSISTENT');
+        }
+
+        // The persisted bound context bytes must still hash to the persisted digest -- proves the
+        // stored JSON itself has not been altered independently of its hash.
+        if (! hash_equals((string) $lineage->bound_input_context_hash, hash('sha256', (string) $lineage->bound_input_context_json))) {
+            throw new \RuntimeException('INPUT_CAPTURE_SEAL_VERIFICATION_DIGEST_MISMATCH: persisted bound_input_context_hash does not match the persisted bound_input_context_json.');
+        }
+
+        $bundle = json_decode((string) $lineage->bound_input_context_json, true);
+        if (! is_array($bundle) || ($bundle['schema_version'] ?? null) !== self::SCHEMA_VERSION
+            || ! isset($bundle['components']) || ! is_array($bundle['components']) || ! isset($bundle['scope']) || ! is_array($bundle['scope'])
+            || ! isset($bundle['component_manifest']) || ! is_array($bundle['component_manifest'])) {
+            throw new \RuntimeException('INPUT_CAPTURE_SEAL_VERIFICATION_BUNDLE_UNREADABLE: canonical bound context could not be read back.');
+        }
+        if ((int) ($bundle['scope']['config_snapshot_id'] ?? -1) !== (int) $run->config_snapshot_id) {
+            throw new \RuntimeException('INPUT_CAPTURE_SEAL_VERIFICATION_CONFIG_SNAPSHOT_INCONSISTENT');
+        }
+
+        // Binding is the authoritative source of whole-manifest completeness (it refuses to
+        // persist a bound context at all when incomplete); Seal trusts that already-proven,
+        // already-immutable verdict rather than re-deriving it from scratch against potentially
+        // different data, and instead verifies the bound context itself was not corrupted since --
+        // every listed component below is individually re-verified against its immutable source.
+        if (($bundle['component_manifest']['status'] ?? null) !== 'COMPLETE') {
+            throw new \RuntimeException('INPUT_CAPTURE_SEAL_VERIFICATION_MANIFEST_INCOMPLETE: bound component_manifest.status is not COMPLETE.');
+        }
+
+        $seedRunId = $this->captures->resolveSeedRunId((int) $run->run_id);
+        $sourceCaptureCache = [];
+        foreach ($bundle['components'] as $component) {
+            foreach (['stage_code', 'component_key', 'slot_hash', 'payload_hash', 'source_run_id'] as $field) {
+                if (! array_key_exists($field, $component)) {
+                    throw new \RuntimeException('INPUT_CAPTURE_SEAL_VERIFICATION_COMPONENT_MALFORMED: missing '.$field);
+                }
+            }
+            $sourceRunId = (int) $component['source_run_id'];
+
+            // A component this run did not capture itself must trace to exactly this run's own
+            // recorded seed -- never an arbitrary or stale other run, and never satisfied merely
+            // because *some* source_run_id value is present.
+            if ($sourceRunId !== (int) $run->run_id && ($seedRunId === null || $sourceRunId !== $seedRunId)) {
+                throw new \RuntimeException(
+                    'INPUT_CAPTURE_SEAL_VERIFICATION_PROVENANCE_INVALID: '.$component['stage_code'].'|'.$component['component_key'].'|'.$component['slot_hash']
+                );
+            }
+
+            if (! array_key_exists($sourceRunId, $sourceCaptureCache)) {
+                $rows = [];
+                foreach ($this->captures->forRun($sourceRunId) as $row) {
+                    $rows[$row['stage_code'].'|'.$row['component_key'].'|'.$row['slot_hash']] = $row;
+                }
+                $sourceCaptureCache[$sourceRunId] = $rows;
+            }
+            $key = $component['stage_code'].'|'.$component['component_key'].'|'.$component['slot_hash'];
+            $actualRow = $sourceCaptureCache[$sourceRunId][$key] ?? null;
+            if ($actualRow === null || ! hash_equals((string) $actualRow['payload_hash'], (string) $component['payload_hash'])) {
+                throw new \RuntimeException(
+                    'INPUT_CAPTURE_SEAL_VERIFICATION_COMPONENT_UNVERIFIABLE: '.$key.'@run:'.$sourceRunId
+                );
+            }
+        }
+    }
+
     /** Re-derive the existing V1 compatibility component hashes from the immutable captured content only. */
     private function deriveCompatibilityHashes(array $parsed, string $tradeDate, string $knownAt): array
     {

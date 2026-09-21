@@ -329,6 +329,20 @@ class B18BeforeSealValidationTest extends TestCase
             'observation_manifest_hash' => $observationManifestHash,
         ]);
 
+        // This class is about the items-5/6 before-seal checks, not C1 Binding (V2) itself, so the
+        // V2 columns are hand-set here exactly like the seven V1 hash columns above: a
+        // synthetic-but-present, self-consistent bundle, not a real capture. It must satisfy
+        // PublicationInputBindingService::verifyBeforeSeal's structural/digest checks (schema
+        // version, empty-but-present components, a COMPLETE component_manifest status, and a hash
+        // that genuinely matches the stored JSON bytes) without any real md_run_input_captures rows
+        // existing -- that verification never itself computes or creates a Binding.
+        $boundInputContextJson = json_encode([
+            'schema_version' => 'md_publication_inputs_v2',
+            'scope' => ['config_snapshot_id' => self::CONFIG_SNAPSHOT_ID],
+            'components' => [],
+            'component_manifest' => ['status' => 'COMPLETE'],
+        ]);
+
         DB::table('md_publication_lineage_bindings')->updateOrInsert(
             ['publication_id' => $publicationId],
             [
@@ -345,14 +359,9 @@ class B18BeforeSealValidationTest extends TestCase
                 'formula_version' => 'eod_indicators_v1',
                 'build_id' => 'test-build',
                 'read_model_version' => 'market_data_read_product_v1',
-                // This class is about the items-5/6 before-seal checks, not C1 Binding (V2) itself,
-                // so the V2 columns are hand-set here exactly like the seven V1 hash columns above:
-                // a synthetic-but-present value, not a real capture. That is what
-                // EodPublicationRepository::sealCandidatePublication's precondition reads and checks
-                // for, and never itself computes or creates.
                 'bound_input_schema_version' => 'md_publication_inputs_v2',
-                'bound_input_context_json' => '{}',
-                'bound_input_context_hash' => hash('sha256', 'before-seal-bound-input-context'),
+                'bound_input_context_json' => $boundInputContextJson,
+                'bound_input_context_hash' => hash('sha256', $boundInputContextJson),
                 'bound_input_capture_manifest_json' => '{}',
                 'created_at' => '2026-03-20 17:10:00',
             ]

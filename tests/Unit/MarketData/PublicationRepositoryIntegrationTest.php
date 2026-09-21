@@ -786,12 +786,20 @@ class PublicationRepositoryIntegrationTest extends TestCase
                 'read_model_version' => 'market_data_read_product_v1',
                 // This fixture is about the stage-eight governance bindings, not C1 Binding (V2)
                 // itself, so the V2 columns are hand-set here exactly like the seven V1 hash
-                // columns above: a synthetic-but-present value, not a real capture. That is what
-                // EodPublicationRepository::sealCandidatePublication's precondition reads and
-                // checks for, and never itself computes or creates.
+                // columns above: a synthetic-but-present, self-consistent bundle, not a real
+                // capture. It must satisfy PublicationInputBindingService::verifyBeforeSeal's
+                // structural/digest checks (schema version, empty-but-present components, a
+                // COMPLETE component_manifest status, and a hash that genuinely matches the stored
+                // JSON bytes) without any real md_run_input_captures rows existing -- that
+                // verification never itself computes or creates a Binding.
                 'bound_input_schema_version' => 'md_publication_inputs_v2',
-                'bound_input_context_json' => '{}',
-                'bound_input_context_hash' => hash('sha256', 'test-bound-input-context-'.$publicationId),
+                'bound_input_context_json' => ($boundInputContextJson = json_encode([
+                    'schema_version' => 'md_publication_inputs_v2',
+                    'scope' => ['config_snapshot_id' => 1],
+                    'components' => [],
+                    'component_manifest' => ['status' => 'COMPLETE'],
+                ])),
+                'bound_input_context_hash' => hash('sha256', $boundInputContextJson),
                 'bound_input_capture_manifest_json' => '{}',
                 'created_at' => '2026-03-20 17:10:00',
             ]

@@ -972,16 +972,22 @@ class EodPublicationRepository
 
             $this->assertPublicationIntegrityContextComplete($candidate, $run, false);
 
-            // C1 producer-bound input capture (V2): seal must never compute or create this
-            // binding itself, only refuse to proceed without it. Checked after the integrity
-            // context above, which already establishes the lineage row itself exists and is
-            // consistent -- this only adds the narrower, additional requirement that the row it
-            // already found also carries a bound V2 context.
-            $boundInputContextHash = DB::table('md_publication_lineage_bindings')
-                ->where('publication_id', $candidate->publication_id)
-                ->value('bound_input_context_hash');
-            if (! $boundInputContextHash) {
-                throw new \RuntimeException('DATASET_HASH_MISSING: Cannot seal publication before its producer-bound input context is bound.');
+            // C1 §6 step 3 (Seal): independently re-verify the already-persisted V2 bound input
+            // context -- every required slot/content reference, the recomputed canonical digest,
+            // and (for a derived promote run) the referenced seed run's own provenance -- before
+            // this publication may be sealed. Checked after the integrity context above, which
+            // already establishes the lineage row itself exists and is consistent; this adds the
+            // narrower, additional requirement that the row it already found also carries a
+            // genuinely complete and verifiable bound V2 context. This never creates, computes, or
+            // repairs a Binding -- it only verifies one that must already exist, and fails closed
+            // (via the existing DATASET_HASH_MISSING/DATASET_MANIFEST_INVALID reason codes,
+            // wrapped by the pipeline's own existing SEAL_FAILED/RUN_SEAL_WRITE_FAILED handling)
+            // on the first thing it cannot prove.
+            try {
+                app(\App\Application\MarketData\Services\PublicationInputBindingService::class)
+                    ->verifyBeforeSeal($run, $candidate->publication_id, $run->trade_date_requested);
+            } catch (\RuntimeException $e) {
+                throw new \RuntimeException('DATASET_HASH_MISSING: Cannot seal publication before its producer-bound input context is bound and verified. '.$e->getMessage());
             }
 
             if (empty($candidate->publication_manifest_hash) || (string) ($candidate->readiness_state ?? '') !== 'READABLE') {
