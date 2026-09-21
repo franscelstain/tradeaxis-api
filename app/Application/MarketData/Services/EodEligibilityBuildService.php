@@ -6,6 +6,7 @@ use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\EventRiskSourceRepository;
 use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
+use App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository;
 use Carbon\Carbon;
 
 class EodEligibilityBuildService
@@ -16,6 +17,7 @@ class EodEligibilityBuildService
     private $decisions;
     private $eventRiskSources;
     private $expectations;
+    private $inputCaptures;
 
     public function __construct(
         TickerMasterRepository $tickers,
@@ -23,7 +25,8 @@ class EodEligibilityBuildService
         EodPublicationRepository $publications,
         EligibilityDecisionService $decisions,
         EventRiskSourceRepository $eventRiskSources = null,
-        ExpectedBarDecisionService $expectations = null
+        ExpectedBarDecisionService $expectations = null,
+        RunInputCaptureRepository $inputCaptures = null
     ) {
         $this->tickers = $tickers;
         $this->artifacts = $artifacts;
@@ -31,10 +34,19 @@ class EodEligibilityBuildService
         $this->decisions = $decisions;
         $this->eventRiskSources = $eventRiskSources;
         $this->expectations = $expectations ?: new ExpectedBarDecisionService();
+        $this->inputCaptures = $inputCaptures ?: new RunInputCaptureRepository();
     }
 
     public function build($run, $requestedDate, $correctionMode = false)
     {
+        return $this->inputCaptures->executeProducer($run, 'ELIGIBILITY', 'build/v1', function () use ($run, $requestedDate, $correctionMode) {
+            return $this->buildCaptured($run, $requestedDate, $correctionMode);
+        });
+    }
+
+    private function buildCaptured($run, $requestedDate, $correctionMode = false)
+    {
+        $this->inputCaptures->assertConsumedConfiguration($run);
         $candidatePublication = $this->publications->getOrCreateCandidatePublication($run);
         $useHistory = $correctionMode
             || (int) ($candidatePublication->publication_version ?? 1) > 1
@@ -77,6 +89,12 @@ class EodEligibilityBuildService
             $candidatePublication->publication_id
         ), true);
         $indicators = $this->artifacts->loadIndicatorsForTradeDate($requestedDate, $useHistory ? $candidatePublication->publication_id : null);
+        $this->inputCaptures->captureForProducer($run, 'ELIGIBILITY', 'universe_identity', 'eligibility-universe/v1', $universe, [], $universe === []
+            ? ['reason' => 'NO_LISTINGS_AT_COORDINATE', 'source' => 'TemporalIdentityRepository', 'evaluated_population' => 0] : null);
+        $this->inputCaptures->captureForProducer($run, 'ELIGIBILITY', 'ancillary', 'eligibility-materialized-inputs/v1', [[
+            'bars' => $bars, 'indicators' => $indicators, 'dormant_ticker_ids' => array_keys($dormantTickerIds),
+            'delivered_ticker_ids' => array_keys($deliveredTickerIds), 'trading_status_contexts' => $tradingStatusContexts,
+        ]], ['publication_id' => (int) $candidatePublication->publication_id, 'use_history' => (bool) $useHistory]);
         $rows = [];
         $blockedCount = 0;
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
@@ -91,6 +109,8 @@ class EodEligibilityBuildService
                 $requestedDate,
                 $knownAt
             );
+            $this->inputCaptures->captureForProducer($run, 'ELIGIBILITY', 'status_expectation', 'eligibility-expectation/v1', [$expectation],
+                ['listing_id' => (int) ($ticker['listing_id'] ?? 0)]);
             $isSuspended = (string) $expectation['bar_expectation_state'] === 'BAR_NOT_EXPECTED'
                 && strpos((string) ($expectation['trading_status_code'] ?? ''), 'SUSPENS') !== false;
             $decision = $this->decisions->decide($bar, $indicator);

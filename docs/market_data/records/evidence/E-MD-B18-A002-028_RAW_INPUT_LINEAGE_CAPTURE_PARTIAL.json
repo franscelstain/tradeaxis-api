@@ -1,0 +1,152 @@
+{
+  "evidence_id": "E-MD-B18-A002-028",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-19T17:20:33.971545+00:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "evidence_scope": "C1_C07_RAW_LINEAGE_CAPTURE_PARTIAL",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-027"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "PASS: 65 distinct tests / 6037 assertions across three disjoint final batches (all 57 pipeline cases and 8 C07 tests).",
+  "affected_pipeline_class": "All 57 affected pipeline cases PASS on current fixture/source state in disjoint final batches; initial 33 errors + 1 failure -> 0. Intermediate fixture version collision and event-count failure corrected. Full suite not run.",
+  "probes": [
+    {
+      "id": "P51-atr-full-row",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P52-population-hash",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P53-publication-date",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P54-link-reference",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P55-normalized-match",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P56-copy-target",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P57-historical-live-substitution",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P58-sealed-history-member",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P59-current-copy-capture",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P60-history-copy-capture",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P61-publication-run-reference",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    }
+  ],
+  "tested_source_sha256": {
+    "app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php": "D7C1FBCA7F5D06CBB62CD1C992D91B67DA17B56DEA86A09FD831BEAA552EC149",
+    "app/Infrastructure/Persistence/MarketData/ProducerRawInputLineage.php": "4B868D0975E8199B29ABEA4A4779F29D12790304B8835C1EBE9B75D28C412571",
+    "app/Infrastructure/Persistence/MarketData/ProducerInputScope.php": "FD290CA2712972FCCDCEE545F8E5876651FE945615CD129DDA697878A450DECA",
+    "app/Infrastructure/Persistence/MarketData/ProducerInputCompletionManifest.php": "2C36595208DF472E46626AD9C60E7002EA7CBED4BB03E043276E8AFAF709EA77",
+    "app/Infrastructure/Persistence/MarketData/ProducerSourceObservationPopulation.php": "28119A4644D5CAF40D406D0C0CA8576C16C3BEFA17090AD80C8E15B1CAB47FBC",
+    "tests/Unit/MarketData/B18ProducerRawInputLineageTest.php": "A8D1F91A92B102CF69F184A31F0D2B3AA4BBBB2A6F9D92B759C79070F7898422",
+    "tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php": "4D7A60525A7112B02426C72CDD18841DA8D5A15255964EBDDCDC75AA8BE90C61"
+  },
+  "schema_changed": false,
+  "scope_result": {
+    "C07": "PARTIAL_CAPTURE_AND_CONTENT_VALIDATION_PROOF",
+    "whole_C1": "BLOCKED",
+    "slot_count_is_completeness_proof": false,
+    "remaining_C07": [
+      "independent producer read/projection/population completeness and falsification"
+    ]
+  },
+  "raw_artifact_manifests": [
+    {
+      "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/c1-raw-lineage-20260919/C1_RAW_LINEAGE_MANIFEST.json",
+      "manifest_sha256": "2F44C12B5E8E3D4B29BFFF1737E66A962DB79B4E0ECDA6A4AA967E16884EB575",
+      "artifact_count": 106
+    }
+  ],
+  "remaining": {
+    "implementation_slices": 5,
+    "incomplete_bases": 64,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [
+      "raw_history",
+      "event_factor",
+      "ancillary"
+    ]
+  },
+  "full_suite": {
+    "status": "NOT_RUN_FOR_C07",
+    "reason": "Bounded user scope; changed path and complete affected pipeline class exercised. All affected pipeline cases pass after fixture corrections; no unresolved new broad-regression signal.",
+    "prior_baseline": "E024 seven ProductionCorpusInvariantOracleTest failures; not a post-C07 full-suite result."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "MD-B18-A002: continue C1 C07 from E028 by implementing and falsifying independent whole-C07 read/projection/full RAW population completeness against the actual window, ATR, date and history-copy consumers. Preserve E028 capture/content/fixture proof and unaffected P51-P61; do not restart attempt or repeat valid probes. Only after C07 completeness proceed to C08 event/factor and C09 ancillary, then whole-C1 completeness. No binding/seal/reader/admission before whole-C1 completeness."
+}

@@ -8,7 +8,55 @@ use Illuminate\Support\Facades\Schema;
 /** Resolve status only from temporal, source-registered, authority-bearing revisions. */
 class TemporalTradingStatusRepository
 {
+    private $capturedPopulation;
+    private $omissions = [];
+    private $authorityEvaluations = [];
+    private $terminalIds = [];
+
     public function resolveForListing($listingId, $tradeDate, $knownAt = null)
+    {
+        $knownAt = ProducerInputScope::knownAt($knownAt);
+        if (ProducerInputScope::active()) {
+            return (new ProducerTradingStatusPopulation())->resolve((int) $listingId, (string) $tradeDate, (string) $knownAt);
+        }
+        return $this->resolveStatus($listingId, $tradeDate, $knownAt);
+    }
+
+    /** Pure evaluation of already captured inputs, also used for content verification. */
+    public static function evaluateCaptured(array $population, int $listingId, string $tradeDate, string $knownAt): array
+    {
+        $resolver = new self(); $resolver->capturedPopulation = $population;
+        $result = $resolver->resolveStatus($listingId, $tradeDate, $knownAt);
+        $selected = array_map('intval', $result['status_revision_ids']);
+        foreach ($population['tables']['md_trading_status_revisions'] as $row) {
+            $id = (int) $row['status_revision_id'];
+            if (in_array($id, $selected, true) || isset($resolver->omissions[$id])) continue;
+            $evaluation = $resolver->authorityEvaluations[$id] ?? null;
+            if ($evaluation && ! $evaluation['valid']) $reason = $evaluation['reason'];
+            elseif ($result['reason_code'] !== null) $reason = $result['reason_code'];
+            else {
+                $priority = $evaluation['priority']; $selectedPriority = $priority;
+                foreach ($population['tables']['md_trading_status_revisions'] as $candidate) {
+                    if ($candidate['status_type_code'] === $row['status_type_code'] && in_array((int) $candidate['status_revision_id'], $selected, true)) {
+                        $selectedPriority = $resolver->authorityEvaluations[(int) $candidate['status_revision_id']]['priority'];
+                    }
+                }
+                $reason = $priority > $selectedPriority ? 'LOWER_AUTHORITY_PRIORITY' : 'EQUIVALENT_AUTHORITY_NOT_SELECTED';
+            }
+            $resolver->omissions[$id] = [$reason];
+        }
+        ksort($resolver->omissions, SORT_NUMERIC); ksort($resolver->authorityEvaluations, SORT_NUMERIC);
+        $omissions = [];
+        foreach ($resolver->omissions as $id => $reasons) $omissions[] = ['status_revision_id' => $id, 'reasons' => $reasons];
+        $evaluations = [];
+        foreach ($resolver->authorityEvaluations as $id => $evaluation) $evaluations[] = ['status_revision_id' => $id] + $evaluation;
+        return ['selection_result' => $result, 'selected_revision_ids' => $selected,
+            'terminal_revision_ids' => $resolver->terminalIds, 'authority_evaluations' => $evaluations,
+            'omitted_revisions' => $omissions,
+            'empty_basis' => $population['tables']['md_trading_status_revisions'] === [] ? 'NO_RECORDED_STATUS_REVISIONS_AT_KNOWLEDGE_CUTOFF' : null];
+    }
+
+    private function resolveStatus($listingId, $tradeDate, $knownAt)
     {
         $identity = $this->listingIdentity((int) $listingId, $tradeDate, $knownAt);
         if ($identity === null) {
@@ -24,6 +72,7 @@ class TemporalTradingStatusRepository
         $invalidReason = 'TRADING_STATUS_NO_AUTHORITATIVE_EVIDENCE';
         foreach ($rows as $row) {
             $validation = $this->validateAuthorityRow($row, $identity);
+            $this->authorityEvaluations[(int) $row->status_revision_id] = $validation;
             if ($validation['valid']) {
                 $valid[] = ['row' => $row, 'priority' => $validation['priority']];
             } else {
@@ -111,6 +160,24 @@ class TemporalTradingStatusRepository
 
     private function terminalRows(int $listingId, $tradeDate, $knownAt)
     {
+        if ($this->capturedPopulation !== null) {
+            $all = $this->capturedPopulation['tables']['md_trading_status_revisions']; $rows = [];
+            $superseded = array_filter(array_column($all, 'supersedes_revision_id'));
+            foreach ($all as $row) {
+                $id = (int) $row['status_revision_id']; $reasons = [];
+                if ((int) $row['listing_id'] !== $listingId) $reasons[] = 'OTHER_LISTING';
+                if (in_array($id, array_map('intval', $superseded), true)) $reasons[] = 'SUPERSEDED_AT_KNOWLEDGE_CUTOFF';
+                if ($row['effective_from'] > $tradeDate.' 23:59:59'
+                    || ($row['effective_to'] !== null && $row['effective_to'] <= $tradeDate.' 00:00:00')) $reasons[] = 'OUTSIDE_EFFECTIVE_INTERVAL';
+                if ($row['verification_state'] !== 'VERIFIED') $reasons[] = 'NOT_VERIFIED';
+                if ($row['retracted_at'] !== null && $row['retracted_at'] <= $knownAt) $reasons[] = 'RETRACTED_AT_KNOWLEDGE_CUTOFF';
+                if ($reasons !== []) { $this->omissions[$id] = $reasons; continue; }
+                $rows[] = (object) $row;
+            }
+            usort($rows, static function ($a, $b) { return strcmp($a->status_type_code, $b->status_type_code) ?: ($a->status_revision_id <=> $b->status_revision_id); });
+            $this->terminalIds = array_map(static function ($r) { return (int) $r->status_revision_id; }, $rows);
+            return collect($rows);
+        }
         if (! Schema::hasTable('md_trading_status_revisions')) {
             return collect();
         }
@@ -145,6 +212,23 @@ class TemporalTradingStatusRepository
 
     private function listingIdentity(int $listingId, $tradeDate, $knownAt)
     {
+        if ($this->capturedPopulation !== null) {
+            $tables = $this->capturedPopulation['tables']; $context = $this->capturedPopulation['domain_context'];
+            $listing = null;
+            foreach ($tables['md_listings'] as $row) if ((int) $row['listing_id'] === $listingId
+                && $row['exchange_code'] === $context['market_code']
+                && ($row['listed_date'] === null || $row['listed_date'] <= $tradeDate)
+                && ($row['delisted_date'] === null || $row['delisted_date'] >= $tradeDate)) $listing = $row;
+            if ($listing === null) return null;
+            $boards = array_values(array_filter($tables['md_listing_boards'], static function ($r) use ($listingId, $tradeDate, $knownAt) {
+                return (int) $r['listing_id'] === $listingId && $r['effective_from'] <= $tradeDate.' 23:59:59'
+                    && ($r['effective_to'] === null || $r['effective_to'] > $tradeDate.' 00:00:00')
+                    && ($r['retracted_at'] === null || $r['retracted_at'] > $knownAt);
+            }));
+            if (count($boards) !== 1 || $boards[0]['market_segment'] !== $context['market_segment'] || trim((string) $boards[0]['board_code']) === '') return null;
+            return (object) ['listing_id' => $listing['listing_id'], 'instrument_id' => $listing['instrument_id'],
+                'market_segment' => $boards[0]['market_segment'], 'board_code' => $boards[0]['board_code'], 'listing_board_id' => (int) $boards[0]['listing_board_id']];
+        }
         if (! Schema::hasTable('md_listings') || ! Schema::hasTable('md_listing_boards')) {
             return null;
         }
@@ -243,6 +327,12 @@ class TemporalTradingStatusRepository
 
     private function isGovernedStatusType(string $type, $row): bool
     {
+        if ($this->capturedPopulation !== null) {
+            foreach ($this->capturedPopulation['tables']['market_data_trading_status_event_types'] as $definition) {
+                if ($definition['event_type_code'] === $type) return (int) $definition['carries_forward'] === 1 || $row->effective_to !== null;
+            }
+            return false;
+        }
         if (! Schema::hasTable('market_data_trading_status_event_types')) {
             return false;
         }
@@ -257,6 +347,13 @@ class TemporalTradingStatusRepository
 
     private function sourceRegistry(string $sourceName, string $statusType)
     {
+        if ($this->capturedPopulation !== null) {
+            $rows = array_values(array_filter($this->capturedPopulation['tables']['md_trading_status_source_registry'], static function ($r) use ($sourceName, $statusType) {
+                return $r['source_name'] === $sourceName && (int) $r['active'] === 1 && in_array($r['status_type_code'], [$statusType, '*'], true);
+            }));
+            usort($rows, static function ($a, $b) use ($statusType) { return ($a['status_type_code'] === $statusType ? 0 : 1) <=> ($b['status_type_code'] === $statusType ? 0 : 1); });
+            return $rows === [] ? null : (object) $rows[0];
+        }
         if (! Schema::hasTable('md_trading_status_source_registry')) {
             return null;
         }
@@ -272,20 +369,24 @@ class TemporalTradingStatusRepository
     private function sourceObservationMatches($row): bool
     {
         $observationId = (int) ($row->source_observation_id ?? 0);
-        if ($observationId < 1 || ! Schema::hasTable('md_source_observations')) {
+        if ($observationId < 1 || ($this->capturedPopulation === null && ! Schema::hasTable('md_source_observations'))) {
             return false;
         }
-        $observation = DB::table('md_source_observations')
-            ->where('source_observation_id', $observationId)->first();
+        if ($this->capturedPopulation !== null) {
+            $observation = null;
+            foreach ($this->capturedPopulation['tables']['md_source_observations'] as $r) {
+                if ((int) $r['source_observation_id'] === $observationId) $observation = (object) $r;
+            }
+        } else $observation = DB::table('md_source_observations')->where('source_observation_id', $observationId)->first();
 
         if (! $observation
             || (string) $observation->outcome_state !== 'ACCEPTED'
             || strtolower((string) $observation->payload_hash) !== strtolower((string) $row->source_payload_hash)) {
             return false;
         }
+        $market = $this->capturedPopulation['domain_context']['market_code'] ?? config('market_data.scope.market_code', 'IDX');
         if ((string) $row->authority_class === 'EXCHANGE_AUTHORITATIVE'
-            && ((string) $observation->source_name !== config('market_data.scope.market_code', 'IDX')
-                || (string) $observation->provider !== config('market_data.scope.market_code', 'IDX'))) {
+            && ((string) $observation->source_name !== $market || (string) $observation->provider !== $market)) {
             return false;
         }
 

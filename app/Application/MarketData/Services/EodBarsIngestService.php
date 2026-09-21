@@ -10,6 +10,7 @@ use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
 use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 use App\Infrastructure\Persistence\MarketData\SourceObservationRepository;
+use App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -24,6 +25,7 @@ class EodBarsIngestService
     private $observations;
     private $calendar;
     private $actualTradedValues;
+    private $inputCaptures;
 
     public function __construct(
         ManualEodBarsSource $localSourceAdapter,
@@ -34,7 +36,8 @@ class EodBarsIngestService
         EodBarsMutationImpactResolver $impactResolver = null,
         SourceObservationRepository $observations = null,
         MarketCalendarRepository $calendar = null,
-        ActualTradedValueFactService $actualTradedValues = null
+        ActualTradedValueFactService $actualTradedValues = null,
+        RunInputCaptureRepository $inputCaptures = null
     ) {
         $this->localSourceAdapter = $localSourceAdapter;
         $this->apiSourceAdapter = $apiSourceAdapter;
@@ -45,6 +48,7 @@ class EodBarsIngestService
         $this->observations = $observations ?: new SourceObservationRepository();
         $this->calendar = $calendar ?: new MarketCalendarRepository();
         $this->actualTradedValues = $actualTradedValues ?: new ActualTradedValueFactService();
+        $this->inputCaptures = $inputCaptures ?: new RunInputCaptureRepository();
     }
 
     /**
@@ -91,6 +95,18 @@ class EodBarsIngestService
 
     public function acquireSourceRows($requestedDate, $sourceMode, array $tickerCodes = null, array $context = [])
     {
+        if (! empty($context['run_id'])) {
+            $run = $this->inputCaptures->owningRun((int) $context['run_id']);
+            if (! $run) throw new \RuntimeException('INPUT_CAPTURE_RUN_NOT_FOUND');
+            return $this->inputCaptures->executeProducer($run, 'ACQUISITION', 'acquireSourceRows/v1', function () use ($requestedDate, $sourceMode, $tickerCodes, $context) {
+                return $this->acquireSourceRowsCaptured($requestedDate, $sourceMode, $tickerCodes, $context);
+            }, false);
+        }
+        return $this->acquireSourceRowsCaptured($requestedDate, $sourceMode, $tickerCodes, $context);
+    }
+
+    private function acquireSourceRowsCaptured($requestedDate, $sourceMode, array $tickerCodes = null, array $context = [])
+    {
         // Calendar/session validity is an acquisition precondition, not an optional consequence of
         // configuration already being bound. Every path carries the exact revision it used.
         $calendarContext = $this->calendar->assertCompletedRegularSession($requestedDate, $context['known_at'] ?? null);
@@ -105,6 +121,13 @@ class EodBarsIngestService
     }
 
     public function ingestAcquiredRows($run, $requestedDate, $sourceMode, array $sourceRows, array $sourceAcquisition = null, $priorCurrentPublication = null, $replayIsolation = false)
+    {
+        return $this->inputCaptures->executeProducer($run, 'INGEST_BARS', 'ingestAcquiredRows/v1', function () use ($run, $requestedDate, $sourceMode, $sourceRows, $sourceAcquisition, $priorCurrentPublication, $replayIsolation) {
+            return $this->ingestAcquiredRowsCaptured($run, $requestedDate, $sourceMode, $sourceRows, $sourceAcquisition, $priorCurrentPublication, $replayIsolation);
+        });
+    }
+
+    private function ingestAcquiredRowsCaptured($run, $requestedDate, $sourceMode, array $sourceRows, array $sourceAcquisition = null, $priorCurrentPublication = null, $replayIsolation = false)
     {
         $replayIsolation = (bool) $replayIsolation;
         if ($replayIsolation && (string) ($run->request_mode ?? '') !== 'replay_verify') {
@@ -145,6 +168,9 @@ class EodBarsIngestService
         }
 
         $this->assertSingleDaySourceBoundary($requestedDate, $sourceMode, $sourceRows);
+        if (\App\Infrastructure\Persistence\MarketData\ProducerInputScope::active()) {
+            $sourceRows = \App\Infrastructure\Persistence\MarketData\ProducerSourceObservationPopulation::consume('incomingRows', ['input_rows' => $sourceRows], array_values(array_filter(array_map('intval', array_column($sourceRows, 'source_observation_id')))));
+        }
         $knowledgeCutoff = ! empty($run->knowledge_cutoff_at) ? (string) $run->knowledge_cutoff_at : null;
         if ($knowledgeCutoff === null) {
             throw new \RuntimeException('RUN_KNOWLEDGE_CUTOFF_MISSING: canonical ingest requires the immutable run knowledge cutoff.');
@@ -166,6 +192,13 @@ class EodBarsIngestService
          */
         $configSnapshotId = ! empty($run->config_snapshot_id) ? (int) $run->config_snapshot_id : null;
         $identityContexts = $this->tickers->resolveTemporalContextsByCodes(array_column($sourceRows, 'ticker_code'), $requestedDate, $knowledgeCutoff);
+        $this->inputCaptures->assertConsumedConfiguration($run);
+        $this->inputCaptures->captureForProducer($run, 'INGEST_BARS', 'source_observations', 'ingest-source-rows/v1', $sourceRows,
+            ['source_mode' => $sourceMode, 'input_route' => 'ingestAcquiredRows']);
+        $this->inputCaptures->captureForProducer($run, 'INGEST_BARS', 'provider_mapping', 'ingest-resolved-mappings/v1', array_values($identityContexts),
+            ['source_mode' => $sourceMode, 'input_route' => 'ingestAcquiredRows'], $identityContexts === []
+                ? ['reason' => 'NO_RESOLVED_INPUT_MAPPINGS', 'source' => 'TemporalIdentityRepository', 'evaluated_population' => count($sourceRows)] : null);
+
 
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
         $deduped = [];
@@ -251,6 +284,7 @@ class EodBarsIngestService
         }
 
         $validRows = [];
+        $selectedSourceRows = [];
         $useHistory = ! $replayIsolation && $priorCurrentPublication !== null;
 
         foreach (array_values($deduped) as $row) {
@@ -272,6 +306,7 @@ class EodBarsIngestService
 
                 $actualTradedValue = $this->actualTradedValues->normalize($this->actualTradedValueFact($row, $requestedDate));
 
+                $selectedSourceRows[] = $row;
                 $validRows[] = [
                     'trade_date' => $requestedDate,
                     'ticker_id' => $row['ticker_id'],
@@ -336,6 +371,11 @@ class EodBarsIngestService
                 $loser['loser_of_trade_date'],
                 $loser['loser_of_ticker_id']
             );
+        }
+
+        if (\App\Infrastructure\Persistence\MarketData\ProducerInputScope::active()) {
+            $omittedInputs = array_map(static function ($row) { unset($row['created_at']); return $row; }, $invalidRows);
+            \App\Infrastructure\Persistence\MarketData\ProducerSourceObservationPopulation::consume('ingestSelection', ['input_rows' => $sourceRows, 'selected_rows' => $selectedSourceRows, 'omitted_rows' => $omittedInputs], array_values(array_filter(array_map('intval', array_column($sourceRows, 'source_observation_id')))));
         }
 
         $sourceAcquisition = $sourceAcquisition !== null
@@ -426,6 +466,13 @@ class EodBarsIngestService
 
     public function ingestRecoveredRowsPartial($run, $requestedDate, $sourceMode, array $sourceRows, array $sourceAcquisition = null, $priorCurrentPublication = null)
     {
+        return $this->inputCaptures->executeProducer($run, 'INGEST_BARS', 'ingestRecoveredRowsPartial/v1', function () use ($run, $requestedDate, $sourceMode, $sourceRows, $sourceAcquisition, $priorCurrentPublication) {
+            return $this->ingestRecoveredRowsPartialCaptured($run, $requestedDate, $sourceMode, $sourceRows, $sourceAcquisition, $priorCurrentPublication);
+        });
+    }
+
+    private function ingestRecoveredRowsPartialCaptured($run, $requestedDate, $sourceMode, array $sourceRows, array $sourceAcquisition = null, $priorCurrentPublication = null)
+    {
         if ($priorCurrentPublication && (int) $priorCurrentPublication->publication_id === (int) ($run->publication_id ?? 0)) {
             throw new \RuntimeException('Correction candidate publication cannot equal prior current publication.');
         }
@@ -445,12 +492,22 @@ class EodBarsIngestService
         }
 
         $this->assertSingleDaySourceBoundary($requestedDate, $sourceMode, $sourceRows);
+        if (\App\Infrastructure\Persistence\MarketData\ProducerInputScope::active()) {
+            $sourceRows = \App\Infrastructure\Persistence\MarketData\ProducerSourceObservationPopulation::consume('incomingRows', ['input_rows' => $sourceRows], array_values(array_filter(array_map('intval', array_column($sourceRows, 'source_observation_id')))));
+        }
         $knowledgeCutoff = ! empty($run->knowledge_cutoff_at) ? (string) $run->knowledge_cutoff_at : null;
         if ($knowledgeCutoff === null) {
             throw new \RuntimeException('RUN_KNOWLEDGE_CUTOFF_MISSING: recovered canonical ingest requires the immutable run knowledge cutoff.');
         }
         $tickerMap = $this->tickers->resolveTickerIdsByCodes(array_column($sourceRows, 'ticker_code'));
         $identityContexts = $this->tickers->resolveTemporalContextsByCodes(array_column($sourceRows, 'ticker_code'), $requestedDate, $knowledgeCutoff);
+        $this->inputCaptures->assertConsumedConfiguration($run);
+        $this->inputCaptures->captureForProducer($run, 'INGEST_BARS', 'source_observations', 'ingest-source-rows/v1', $sourceRows,
+            ['source_mode' => $sourceMode, 'input_route' => 'ingestRecoveredRowsPartial']);
+        $this->inputCaptures->captureForProducer($run, 'INGEST_BARS', 'provider_mapping', 'ingest-resolved-mappings/v1', array_values($identityContexts),
+            ['source_mode' => $sourceMode, 'input_route' => 'ingestRecoveredRowsPartial'], $identityContexts === []
+                ? ['reason' => 'NO_RESOLVED_INPUT_MAPPINGS', 'source' => 'TemporalIdentityRepository', 'evaluated_population' => count($sourceRows)] : null);
+
         $configSnapshotId = ! empty($run->config_snapshot_id) ? (int) $run->config_snapshot_id : null;
 
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
@@ -537,6 +594,7 @@ class EodBarsIngestService
         }
 
         $validRows = [];
+        $selectedSourceRows = [];
         $useHistory = $priorCurrentPublication !== null;
 
         foreach (array_values($deduped) as $row) {
@@ -551,6 +609,7 @@ class EodBarsIngestService
 
                 $actualTradedValue = $this->actualTradedValues->normalize($this->actualTradedValueFact($row, $requestedDate));
 
+                $selectedSourceRows[] = $row;
                 $validRows[] = [
                     'trade_date' => $requestedDate,
                     'ticker_id' => $row['ticker_id'],
@@ -602,6 +661,11 @@ class EodBarsIngestService
                 $loser['loser_of_trade_date'],
                 $loser['loser_of_ticker_id']
             );
+        }
+
+        if (\App\Infrastructure\Persistence\MarketData\ProducerInputScope::active()) {
+            $omittedInputs = array_map(static function ($row) { unset($row['created_at']); return $row; }, $invalidRows);
+            \App\Infrastructure\Persistence\MarketData\ProducerSourceObservationPopulation::consume('ingestSelection', ['input_rows' => $sourceRows, 'selected_rows' => $selectedSourceRows, 'omitted_rows' => $omittedInputs], array_values(array_filter(array_map('intval', array_column($sourceRows, 'source_observation_id')))));
         }
 
         $sourceAcquisition = $sourceAcquisition !== null

@@ -55,14 +55,11 @@ class EodRunRepository
                 $activeRun->assertKnowledgeCutoffForExecution();
 
                 if (empty($activeRun->config_snapshot_id)) {
-                    $activeRun->config_snapshot_id = $snapshot['config_snapshot_id'];
-                    $activeRun->config_hash = $snapshot['config_hash'];
-                    $activeRun->config_snapshot_ref = $snapshot['snapshot_uid'];
-                    $activeRun->operational_start_date = $scope->operationalStartDate();
-                    $activeRun->freshness_state = $scope->operationalStartDate() ? 'NOT_EVALUATED' : 'DEVELOPMENT_NOT_OPERATIONAL';
-                    $activeRun->save();
+                    throw new \RuntimeException('INPUT_CAPTURE_CONFIG_MISSING: an existing run cannot acquire a historical configuration identity from current state.');
                 }
 
+                $boundSnapshot = $this->configSnapshots->find($activeRun->config_snapshot_id);
+                (new RunInputCaptureRepository())->captureRunConfiguration($activeRun, $boundSnapshot ?: []);
                 return $activeRun;
             }
 
@@ -159,6 +156,7 @@ class EodRunRepository
                 ]
             );
 
+            (new RunInputCaptureRepository())->captureRunConfiguration($run, $snapshot);
             return $run;
         });
     }
@@ -172,6 +170,13 @@ class EodRunRepository
      * is captured; only the replay-result record is persisted outside that transaction.
      */
     public function createAsKnownReplayRun($requestedDate, $knowledgeCutoff, $sourceMode = 'api')
+    {
+        return DB::transaction(function () use ($requestedDate, $knowledgeCutoff, $sourceMode) {
+            return $this->createAsKnownReplayRunWithinTransaction($requestedDate, $knowledgeCutoff, $sourceMode);
+        });
+    }
+
+    private function createAsKnownReplayRunWithinTransaction($requestedDate, $knowledgeCutoff, $sourceMode = 'api')
     {
         $scope = MarketDataScope::fromConfig();
         $requestedDate = $scope->assertRequestedDate($requestedDate);
@@ -225,11 +230,19 @@ class EodRunRepository
             ]
         );
 
+        (new RunInputCaptureRepository())->captureRunConfiguration($run, $snapshot);
         return $run;
     }
 
 
     public function createPromoteRunFromSeed(EodRun $seedRun, $stage, array $overrides = [])
+    {
+        return DB::transaction(function () use ($seedRun, $stage, $overrides) {
+            return $this->createPromoteRunFromSeedWithinTransaction($seedRun, $stage, $overrides);
+        });
+    }
+
+    private function createPromoteRunFromSeedWithinTransaction(EodRun $seedRun, $stage, array $overrides = [])
     {
         if (array_key_exists('knowledge_cutoff_at', $overrides)) {
             throw new \LogicException(
@@ -353,6 +366,7 @@ class EodRunRepository
             ]
         );
 
+        (new RunInputCaptureRepository())->captureRunConfiguration($run, $snapshot);
         return $run;
     }
 

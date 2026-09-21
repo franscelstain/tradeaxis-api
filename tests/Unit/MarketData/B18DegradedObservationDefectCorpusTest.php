@@ -37,6 +37,8 @@ use PHPUnit\Framework\TestCase;
  */
 class B18DegradedObservationDefectCorpusTest extends TestCase
 {
+    use \Tests\Support\MocksProducerInputCapture;
+
     use InteractsWithMarketDataConfig;
 
     private const CONTRACT = 'docs/market_data/authority/strategy/backtest/Historical_Replay_and_Data_Quality_Backtest.md';
@@ -317,7 +319,7 @@ class B18DegradedObservationDefectCorpusTest extends TestCase
             'knowledge_cutoff_at' => self::REQUESTED.' 18:00:00',
         ]);
 
-        (new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations))
+        (new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations, null, null, $this->mockProducerInputCapture()))
             ->ingestAcquiredRows($run, self::REQUESTED, 'api', $sourceRows, ['source_acquisition_state' => 'SUCCESS']);
     }
 

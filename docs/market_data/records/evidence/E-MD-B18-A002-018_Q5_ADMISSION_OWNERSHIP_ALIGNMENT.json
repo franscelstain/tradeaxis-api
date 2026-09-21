@@ -1,0 +1,273 @@
+{
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-15T15:22:45.945825+00:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "satisfaction_eligible_rule_ids": [],
+  "evidence_id": "E-MD-B18-A002-018",
+  "verdict": "PASS",
+  "evidence_scope": "Q5_AUTHORIZED_OWNERSHIP_ALIGNMENT_ONLY",
+  "related_findings": [
+    "F-MD-B18-A002-015"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-014"
+  ],
+  "dependencies": [
+    "MD-DEP-0017"
+  ],
+  "raw_artifact_manifests": [
+    {
+      "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/approved-remediation-20260915/Q5_OWNERSHIP_MANIFEST.json",
+      "manifest_sha256": "CFA266D4817F520C65B86215892FAB90579AFBE59C944860957FC71C8085F2F7",
+      "artifact_count": 35
+    }
+  ],
+  "decision_id": "D-MD-B18-A002-005",
+  "rule_id": "MD-S020-R0014",
+  "primary_stage_before": "MD-B18",
+  "primary_stage_after": "MD-B22",
+  "supporting_stages": [
+    "MD-B18",
+    "MD-B17"
+  ],
+  "applicability_before": "MANDATORY",
+  "applicability_after": "MANDATORY",
+  "coverage_before": "NOT_ASSESSED",
+  "coverage_after": "NOT_ASSESSED",
+  "current_evidence_ids": "",
+  "whole_parent_review": {
+    "deltas": [
+      {
+        "path": "authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv",
+        "before_sha256": "7226316072BB0C9492758AD3D1B4EDCACE07FE82A2B9DB55047C02B17749D76E",
+        "after_sha256": "EF1BEE964DCC3813AFFDD98CE509D1382F7417E8B532201B92CF63265F0088EE",
+        "before_rows": 6501,
+        "after_rows": 6501,
+        "changed_existing": [
+          "MD-S020-R0014"
+        ],
+        "added": [],
+        "unchanged_physical_lines_verified": 6501
+      }
+    ],
+    "whole_parent_population": 9,
+    "required_children": 7,
+    "transitions": [
+      {
+        "rule_id": "MD-S020-R0008",
+        "old_applicability": "REFERENCE_ONLY",
+        "new_applicability": "REFERENCE_ONLY",
+        "old_owner": "MD-B01",
+        "new_owner": "MD-B01",
+        "coverage": "REFERENCE_ONLY"
+      },
+      {
+        "rule_id": "MD-S020-R0009",
+        "old_applicability": "MANDATORY",
+        "new_applicability": "MANDATORY",
+        "old_owner": "MD-B12",
+        "new_owner": "MD-B12",
+        "coverage": "SATISFIED"
+      },
+      {
+        "rule_id": "MD-S020-R0010",
+        "old_applicability": "MANDATORY",
+        "new_applicability": "MANDATORY",
+        "old_owner": "MD-B07",
+        "new_owner": "MD-B07",
+        "coverage": "SATISFIED"
+      },
+      {
+        "rule_id": "MD-S020-R0011",
+        "old_applicability": "MANDATORY",
+        "new_applicability": "MANDATORY",
+        "old_owner": "MD-B05",
+        "new_owner": "MD-B05",
+        "coverage": "SATISFIED"
+      },
+      {
+        "rule_id": "MD-S020-R0012",
+        "old_applicability": "MANDATORY",
+        "new_applicability": "MANDATORY",
+        "old_owner": "MD-B15",
+        "new_owner": "MD-B15",
+        "coverage": "SATISFIED"
+      },
+      {
+        "rule_id": "MD-S020-R0013",
+        "old_applicability": "MANDATORY",
+        "new_applicability": "MANDATORY",
+        "old_owner": "MD-B14",
+        "new_owner": "MD-B14",
+        "coverage": "SATISFIED"
+      },
+      {
+        "rule_id": "MD-S020-R0014",
+        "old_applicability": "MANDATORY",
+        "new_applicability": "MANDATORY",
+        "old_owner": "MD-B18",
+        "new_owner": "MD-B22",
+        "coverage": "NOT_ASSESSED"
+      },
+      {
+        "rule_id": "MD-S020-R0015",
+        "old_applicability": "MANDATORY",
+        "new_applicability": "MANDATORY",
+        "old_owner": "MD-B17",
+        "new_owner": "MD-B17",
+        "coverage": "SATISFIED"
+      },
+      {
+        "rule_id": "MD-S020-R0016",
+        "old_applicability": "REFERENCE_ONLY",
+        "new_applicability": "REFERENCE_ONLY",
+        "old_owner": "MD-B01",
+        "new_owner": "MD-B01",
+        "coverage": "REFERENCE_ONLY"
+      }
+    ],
+    "global_mandatory_before": 3967,
+    "global_mandatory_after": 3967
+  },
+  "matrix_final_delta": {
+    "changed_rows": [
+      "MD-S020-R0014"
+    ],
+    "before_sha256": "7226316072BB0C9492758AD3D1B4EDCACE07FE82A2B9DB55047C02B17749D76E",
+    "after_sha256": "A584D897F9F77376BAA3F771A35CB1FF69BBB00BC64815F9C32E32D93E0FACB4",
+    "changed_physical_lines": 1,
+    "required_global_before": 3967,
+    "required_global_after": 3967,
+    "B18_required": 114,
+    "B22_required": 29,
+    "satisfaction_added": 0
+  },
+  "probes": [
+    {
+      "probe": "owner",
+      "anchor_count": 1,
+      "landed_count": 1,
+      "restored_byte_equal": true,
+      "control_before": {
+        "name": "owner-before",
+        "status": "PASS",
+        "exit": 0,
+        "errors": [],
+        "path": "storage/app/market-data/evidence/MD-B18-A002/approved-remediation-20260915/q5-owner-before.json",
+        "sha256": "58AB36BBB6EAD78CF89F852EAD06221AF3C57F199F224144DD1BBD821E7A9E30"
+      },
+      "mutation": {
+        "name": "owner-probe",
+        "status": "FAIL",
+        "exit": 1,
+        "errors": [
+          "ADMISSION_PARENT_MEMBER_INVALID:MD-S020-R0014",
+          "POPULATION_MISMATCH:MANDATORY",
+          "STAGE_POPULATION_MISMATCH",
+          "DENOMINATOR_MISMATCH:115"
+        ],
+        "path": "storage/app/market-data/evidence/MD-B18-A002/approved-remediation-20260915/q5-owner-probe.json",
+        "sha256": "5DD760C1EA94A6BDE83CF36FAB9A7A93CBB52A90420F9E8719EA013A244D6225"
+      },
+      "control_after": {
+        "name": "owner-after",
+        "status": "PASS",
+        "exit": 0,
+        "errors": [],
+        "path": "storage/app/market-data/evidence/MD-B18-A002/approved-remediation-20260915/q5-owner-after.json",
+        "sha256": "7E3F698D0E9CAF9A519FED05EDFD0D2DDF259E90F10A40E4DBD4AB8D6AEAF3D6"
+      }
+    },
+    {
+      "probe": "support",
+      "anchor_count": 1,
+      "landed_count": 1,
+      "restored_byte_equal": true,
+      "control_before": {
+        "name": "support-before",
+        "status": "PASS",
+        "exit": 0,
+        "errors": [],
+        "path": "storage/app/market-data/evidence/MD-B18-A002/approved-remediation-20260915/q5-support-before.json",
+        "sha256": "6AE8E8DA8ACB1ADD9413566F845D93F3A24E8EF8662AEC34CDC6D6DDBB19F3CF"
+      },
+      "mutation": {
+        "name": "support-probe",
+        "status": "FAIL",
+        "exit": 1,
+        "errors": [
+          "ADMISSION_OWNERSHIP_CONTEXT_INVALID:MD-S020-R0014"
+        ],
+        "path": "storage/app/market-data/evidence/MD-B18-A002/approved-remediation-20260915/q5-support-probe.json",
+        "sha256": "889A5FF4F6F45D937EBFC540BCD030A296D235BEC87DF45B176D56BE5F732D20"
+      },
+      "control_after": {
+        "name": "support-after",
+        "status": "PASS",
+        "exit": 0,
+        "errors": [],
+        "path": "storage/app/market-data/evidence/MD-B18-A002/approved-remediation-20260915/q5-support-after.json",
+        "sha256": "CFCAD30B945FD0A4097D145C8BE8A6F1A0A4343C4C697AA4F11A28FE0B552108"
+      }
+    },
+    {
+      "probe": "parent_population",
+      "anchor_count": 1,
+      "landed_count": 1,
+      "restored_byte_equal": true,
+      "control_before": {
+        "name": "parent_population-before",
+        "status": "PASS",
+        "exit": 0,
+        "errors": [],
+        "path": "storage/app/market-data/evidence/MD-B18-A002/approved-remediation-20260915/q5-parent_population-before.json",
+        "sha256": "88C6AEA8753B503D9281D8A0F49DE09692B286F59EC1C1FB55D49C59A7E6723B"
+      },
+      "mutation": {
+        "name": "parent_population-probe",
+        "status": "FAIL",
+        "exit": 1,
+        "errors": [
+          "ADMISSION_PARENT_POPULATION_MISMATCH",
+          "ADMISSION_PARENT_MEMBER_INVALID:MD-S020-R0008"
+        ],
+        "path": "storage/app/market-data/evidence/MD-B18-A002/approved-remediation-20260915/q5-parent_population-probe.json",
+        "sha256": "FCACB61D7EE254391C04D45F45C33E01952E09890D15F350D36F30E661AB1B8F"
+      },
+      "control_after": {
+        "name": "parent_population-after",
+        "status": "PASS",
+        "exit": 0,
+        "errors": [],
+        "path": "storage/app/market-data/evidence/MD-B18-A002/approved-remediation-20260915/q5-parent_population-after.json",
+        "sha256": "D3BCDB9BE6953D2F65DE98EC74782D56DF688D2660D0B141ED08AA6AC998FF84"
+      }
+    }
+  ],
+  "proof_basis_invalidation": "R0014 removed from current B18 family map/INCOMPLETE and retained audit-only in TRANSFERRED_OWNERSHIP. Original PredicateMap unchanged. B22 inherits no satisfied basis; B18/B17 supporting proof remains to be delivered. Prior B18 denominator verification invalidated; all other current basis entries retained.",
+  "tested_source_sha256": {
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationTraceabilitySpec.php": "08C7DA5C6155E14E53BA6F68933476DFFF12D87E7EBC094A91C2C1E605FF3B03",
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofSpec.php": "27CBB0CFDF497DB154FBDF20542914343BED0A8478DE4B19A9E42C877DCD0635",
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationNormalization.php": "5F730166538609C4EE9095DB508C29399CFD1E68EB5B78302EBA849B58D253C5",
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php": "807B1E477416E0CE822D9F39D6520D990AA08CD60EB4DF54FD40DAE60ABBF1DE"
+  },
+  "remaining": {
+    "B18_required": 114,
+    "B18_incomplete": 64,
+    "B18_retained_unbound": 50,
+    "B18_satisfied": 0,
+    "B22_required": 29,
+    "user_decisions_pending": 0
+  },
+  "validation_boundary": "Ownership probes completed before issue. Post-issue targeted/stage/governance/full suite pending, correlated by CI and HANDOFF_VALIDATION_MANIFEST; this record supplies no domain PASS or closure.",
+  "next": "C1 producer-bound input context implementation under D005, same attempt."
+}

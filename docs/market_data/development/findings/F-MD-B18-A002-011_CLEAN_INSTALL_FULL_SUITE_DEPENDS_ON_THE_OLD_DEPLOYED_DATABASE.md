@@ -90,3 +90,12 @@ Artifacts are in `storage/app/market-data/evidence/MD-B18-A002/f011a-orphan-subs
 database. They turn green only after the `MD-DEP-0016` recovery, which is not yet authorized.
 `MD-DEP-0015` and MD-B18 closure's full-suite condition therefore still depend on that recovery.
 `F-MD-B18-A002-012` separately suspends MariaDB runtime proof on the current instance.
+
+
+## Current package validation â€” 2026-09-15T21:37:14+07:00
+
+BLOCKED. Package validation: targeted 208/878 PASS; normalization and all governance gates PASS; 14 governance mutations caught with 4 green controls. Proof has 65 missing bases; closure has 4 unmet conditions/5 errors; proof-self-test baseline red. Full suite 2258 tests/21933 assertions/7 known corpus failures, zero errors/skips; MD-DEP-0015 and MD-DEP-0017 remain blocking.
+
+Recorded by E-MD-B18-A002-015. Seven failures remain in ProductionCorpusInvariantOracleTest with empty
+deployed-corpus populations. The oracle is unchanged under D004. MD-DEP-0016 recovery remains
+separately unauthorized; this is current evidence of the existing blocker, not a new defect class.

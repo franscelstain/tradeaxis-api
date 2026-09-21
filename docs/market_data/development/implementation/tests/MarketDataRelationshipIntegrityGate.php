@@ -237,9 +237,7 @@ $out = [
     'generated_at' => date(DATE_ATOM),
 ];
 
-file_put_contents(
-    $md.'/records/evidence/MD_RELATIONSHIP_INTEGRITY_GATE_LATEST.json',
-    json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL
-);
+// Q6 / D-MD-B18-A002-005: the check is read-only. Retention belongs to the caller's
+// governed runtime output, not to an overwrite of an immutable *_LATEST record.
 echo json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL;
 exit($status === 'FAIL' ? 1 : 0);

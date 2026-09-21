@@ -12,6 +12,8 @@ use App\Models\EodRun;
  */
 class StageThreeEligibilityProducerTest extends TestCase
 {
+    use \Tests\Support\MocksProducerInputCapture;
+
     protected function tearDown(): void
     {
         Mockery::close();
@@ -61,7 +63,8 @@ class StageThreeEligibilityProducerTest extends TestCase
         $run->run_id = 12;
         $run->knowledge_cutoff_at = '2026-08-12 18:00:00';
 
-        $service = new EodEligibilityBuildService($tickers, $artifacts, $publications, $decisions);
+        $service = new EodEligibilityBuildService($tickers, $artifacts, $publications, $decisions, null, null,
+            $this->mockProducerInputCapture());
         $service->build($run, '2026-08-12');
 
         $this->assertCount(2, $capturedRows);

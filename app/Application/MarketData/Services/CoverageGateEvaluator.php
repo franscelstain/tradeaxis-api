@@ -37,7 +37,7 @@ class CoverageGateEvaluator
         $this->tickerMasterRepository = $tickerMasterRepository;
         $this->eodArtifactRepository = $eodArtifactRepository;
         $this->eventRiskSourceRepository = $eventRiskSourceRepository;
-        $this->marketCalendarRepository = $marketCalendarRepository;
+        $this->marketCalendarRepository = $marketCalendarRepository ?: new MarketCalendarRepository();
     }
 
     /**
@@ -95,6 +95,18 @@ class CoverageGateEvaluator
      * reproduce it.
      */
     public function evaluate($tradeDate, $requestedPublicationId = null, $knownAt = null, $runId = null)
+    {
+        if ($runId !== null) {
+            $run = \App\Models\EodRun::query()->find($runId);
+            if (! $run) throw new \RuntimeException('INPUT_CAPTURE_RUN_NOT_FOUND');
+            return \App\Infrastructure\Persistence\MarketData\ProducerInputScope::during($run, 'COVERAGE', 'evaluate/v1', function () use ($tradeDate, $requestedPublicationId, $knownAt, $runId) {
+                return $this->evaluateCaptured($tradeDate, $requestedPublicationId, $knownAt, $runId);
+            });
+        }
+        return $this->evaluateCaptured($tradeDate, $requestedPublicationId, $knownAt, $runId);
+    }
+
+    private function evaluateCaptured($tradeDate, $requestedPublicationId = null, $knownAt = null, $runId = null)
     {
         $coverageBasis = $requestedPublicationId !== null && $requestedPublicationId !== ''
             ? 'CandidatePublication'

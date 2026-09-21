@@ -31,18 +31,7 @@ class MarketDataConfigSnapshotRepository
             return $this->resolveAsKnown($requestedDate, $knownAt);
         }
 
-        $marketDataConfig = config('market_data', []);
-        (new PlatformConfigRegistry())->assertResolvedConfiguration($marketDataConfig);
-
-        $resolved = $this->canonicalize([
-            'resolved_config' => $this->redact($marketDataConfig),
-            'semantic_bindings' => MarketDataSemanticBindings::snapshot(),
-        ]);
-        $json = json_encode($resolved, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
-
-        if ($json === false) {
-            throw new \RuntimeException('CONFIG_SNAPSHOT_SERIALIZATION_FAILED: market-data config cannot be serialized canonically.');
-        }
+        $json = $this->currentContent();
 
         $hash = hash('sha256', $json);
         $effectiveAt = $requestedDate.' 00:00:00';
@@ -145,6 +134,19 @@ class MarketDataConfigSnapshotRepository
         $row = DB::table('md_config_snapshots')->where('config_snapshot_id', $snapshotId)->first();
 
         return $row ? (array) $row : null;
+    }
+
+    /** The same serialization for issuance and for checking a producer's actual configuration. */
+    public function currentContent(): string
+    {
+        $config = config('market_data', []);
+        (new PlatformConfigRegistry())->assertResolvedConfiguration($config);
+        $json = json_encode($this->canonicalize([
+            'resolved_config' => $this->redact($config),
+            'semantic_bindings' => MarketDataSemanticBindings::snapshot(),
+        ]), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
+        if ($json === false) throw new \RuntimeException('CONFIG_SNAPSHOT_SERIALIZATION_FAILED');
+        return $json;
     }
 
     private function redact($value, $key = '')

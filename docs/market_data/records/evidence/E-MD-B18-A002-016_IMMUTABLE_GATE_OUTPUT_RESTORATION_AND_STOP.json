@@ -1,0 +1,74 @@
+{
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "issued_at": "2026-09-15T21:42:47+07:00",
+  "evidence_id": "E-MD-B18-A002-016",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "evidence_scope": "IMMUTABLE_GATE_OUTPUT_WRITE_DISCOVERY_RESTORATION_AND_STOP",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-019"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-014",
+    "E-MD-B18-A002-015"
+  ],
+  "dependencies": [
+    "MD-DEP-0018",
+    "MD-DEP-0015",
+    "MD-DEP-0017"
+  ],
+  "restoration": [
+    {
+      "path": "docs/market_data/records/evidence/MD_DOCUMENTATION_INTEGRITY_GATE_LATEST.json",
+      "registered_mutability": "IMMUTABLE_AFTER_ISSUE",
+      "entry_bytes_source": "Git HEAD blob, verified applicable by clean entry git status",
+      "overwritten_output_path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/before-gate-write-blocker/MD_DOCUMENTATION_INTEGRITY_GATE_LATEST.json.overwritten",
+      "overwritten_sha256": "1A38036B6D099EC46279EE1F0ABD6DA0D4C63B6349C2999EFBEF903FF3D8E001",
+      "restored_sha256": "CD201161BD867A880AA0FC15C2E022EE00CBE67CA7DA6BAD2BD66494A57DEB12",
+      "entry_sha256": "CD201161BD867A880AA0FC15C2E022EE00CBE67CA7DA6BAD2BD66494A57DEB12",
+      "byte_equal": true
+    },
+    {
+      "path": "docs/market_data/records/evidence/MD_RELATIONSHIP_INTEGRITY_GATE_LATEST.json",
+      "registered_mutability": "IMMUTABLE_AFTER_ISSUE",
+      "entry_bytes_source": "Git HEAD blob, verified applicable by clean entry git status",
+      "overwritten_output_path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/before-gate-write-blocker/MD_RELATIONSHIP_INTEGRITY_GATE_LATEST.json.overwritten",
+      "overwritten_sha256": "BC87686586660F74BD6D90A1B1DAC34C56FC1F2ABF74111DEF6C4C7E655ED665",
+      "restored_sha256": "B0C10E146657B5E15EDB56FF7F163535CAA2B3DE0B5B830610CEE29C8E547266",
+      "entry_sha256": "B0C10E146657B5E15EDB56FF7F163535CAA2B3DE0B5B830610CEE29C8E547266",
+      "byte_equal": true
+    }
+  ],
+  "completed_post_E015_validation": {
+    "record_targeted": "PASS: 11 tests / 86 assertions",
+    "documentation": "PASS: 15 checks",
+    "relationship": "PASS",
+    "self_test": "PASS: 14 mutations caught / 4 controls green",
+    "classification": "PASS",
+    "applicability": "PASS",
+    "full_suite": "FAIL: 2258 tests / 21941 assertions / 7 known corpus failures / 0 errors / 0 skips"
+  },
+  "proof_limit": "Successful checks did not detect their own immutable-output side effect. No new runtime PASS or closure. Post-F019/E016 canonical gate/full-suite checks are blocked; do not repeat the write. May validate docs in disposable copy only.",
+  "raw_artifact_manifests": [
+    {
+      "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/IMMUTABLE_OUTPUT_MANIFEST.json",
+      "manifest_sha256": "0421ED9902B36EE76C78AB3DBB9D568669B5D977B191F71187D31D219F2040C3",
+      "artifact_count": 27
+    }
+  ],
+  "remaining": {
+    "package_plans_missing": 0,
+    "user_decisions_pending": 6,
+    "predicate_bases_incomplete": 65,
+    "required_predicates_unbound": 115,
+    "known_corpus_failures": 7,
+    "post_new_record_safe_full_suite_pending": 1
+  },
+  "next": "Same package-review resume, now with F019 Q6 addendum. User decision and CI must precede dependent changes."
+}

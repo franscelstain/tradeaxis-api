@@ -26,6 +26,8 @@ use App\Models\EodRun;
  */
 class EligibilityFirstClassFactDimensionsTest extends TestCase
 {
+    use \Tests\Support\MocksProducerInputCapture;
+
     protected function tearDown(): void
     {
         Mockery::close();
@@ -67,7 +69,8 @@ class EligibilityFirstClassFactDimensionsTest extends TestCase
         $run->run_id = 12;
         $run->knowledge_cutoff_at = '2026-08-12 18:00:00';
 
-        (new EodEligibilityBuildService($tickers, $artifacts, $publications, $decisionService))
+        (new EodEligibilityBuildService($tickers, $artifacts, $publications, $decisionService, null, null,
+            $this->mockProducerInputCapture()))
             ->build($run, '2026-08-12');
 
         return $captured;

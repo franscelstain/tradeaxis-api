@@ -144,7 +144,7 @@ class ExpectedBarDecisionService
 
     private function calendarContext($tradeDate, $knownAt): array
     {
-        $key = (string) $tradeDate.'|'.(string) $knownAt;
+        $key = \App\Infrastructure\Persistence\MarketData\ProducerInputScope::cacheIdentity().'|'.(string) $tradeDate.'|'.(string) $knownAt;
         if (! array_key_exists($key, $this->calendarContexts)) {
             $this->calendarContexts[$key] = $this->calendar->sessionContext($tradeDate, $knownAt);
         }
@@ -154,7 +154,7 @@ class ExpectedBarDecisionService
 
     private function completedCalendarContext($tradeDate, $knownAt): array
     {
-        $key = (string) $tradeDate.'|'.(string) $knownAt;
+        $key = \App\Infrastructure\Persistence\MarketData\ProducerInputScope::cacheIdentity().'|'.(string) $tradeDate.'|'.(string) $knownAt;
         if (! array_key_exists($key, $this->completedCalendarContexts)) {
             $this->completedCalendarContexts[$key] = $this->calendar->assertCompletedRegularSession($tradeDate, $knownAt);
         }

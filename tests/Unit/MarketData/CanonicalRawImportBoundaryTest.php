@@ -30,6 +30,8 @@ use PHPUnit\Framework\TestCase;
  */
 class CanonicalRawImportBoundaryTest extends TestCase
 {
+    use \Tests\Support\MocksProducerInputCapture;
+
     use InteractsWithMarketDataConfig;
 
     /** @var array */
@@ -121,7 +123,7 @@ class CanonicalRawImportBoundaryTest extends TestCase
         });
 
         $run = new EodRun(['run_id' => 91, 'trade_date_requested' => '2026-03-24', 'knowledge_cutoff_at' => '2026-03-24 18:00:00']);
-        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations);
+        $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations, null, null, $this->mockProducerInputCapture());
 
         try {
             $service->ingestAcquiredRows($run, '2026-03-24', 'api', $sourceRows, ['source_acquisition_state' => 'SUCCESS']);

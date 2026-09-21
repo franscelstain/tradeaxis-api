@@ -1,0 +1,151 @@
+{
+  "evidence_id": "E-MD-B18-A002-027",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-19T00:28:01.759740+00:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "evidence_scope": "C1_C06_CONSUMED_SOURCE_POPULATION_AND_COMPLETENESS",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-026"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "OK (118 tests, 6299 assertions)",
+  "targeted_final_content": "OK (15 tests, 4803 assertions)",
+  "probes": [
+    {
+      "id": "P40-one-rejected-member",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P41-prior-selection",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P42-accepted-binding-count",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P43-manifest-outcome",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P44-recovered-cutoff",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P45-required-acceptance-read",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P46-comparison-content",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P47-omission-reason",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P48-one-row-coordinate",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P49-empty-c06-population",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P50-immutable-member-drift",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    }
+  ],
+  "tested_source_sha256": {
+    "app/Infrastructure/Persistence/MarketData/SourceObservationRepository.php": "F3EE17DA335AC3098F65E77EB71001F4E148915DE567E9430C6E1D68F4629577",
+    "app/Infrastructure/Persistence/MarketData/ProducerSourceObservationPopulation.php": "5339FFD36018864DD6235CF9A9B4207C87BB9A0CAD8B10508864BD2291A9A7A9",
+    "app/Infrastructure/Persistence/MarketData/ProducerSourceObservationCompleteness.php": "936E7A97EF7ABC5AEB466E6BBB284B67EBCF287ECC9C32F798751CC1CD540116",
+    "app/Infrastructure/Persistence/MarketData/ProducerInputCompletionManifest.php": "1BEBAD96DFCBD80FDE233E15F0DCFC633510F9823F5DB2D5A74613E533A06AAD",
+    "app/Application/MarketData/Services/EodBarsIngestService.php": "11EA1EADC9B7B3160E30AEC1B3124D6A349C5E331B3EDB0221B363C8502ADE41",
+    "tests/Unit/MarketData/B18ProducerSourceObservationPopulationTest.php": "73C4D956BCF18F96FC74D7222F8F2E17BAACF3BEDD7ECFF9D5AA1734DB7DC804",
+    "tests/Unit/MarketData/B18ProducerSourceObservationJournalTest.php": "520906EFD1E83209A2920AE740270712EC8835A68847838D67E8256FE71E8AED",
+    "tests/Unit/MarketData/B18ProducerCalendarRegistryTest.php": "67C0FACC5CC49E63FCBCDA17CCCA2F2A3368C62D94ABB8126C944CE8608E951A",
+    "tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php": "DFD55A447E1135C3A3AEE50F4291AE97F4D6855C26C324001F902A96D5A70DD9"
+  },
+  "schema_changed": false,
+  "scope_result": {
+    "C06": "SCOPED_EXECUTABLE_COMPLETENESS_PROOF",
+    "whole_C1": "BLOCKED",
+    "slot_count_is_completeness_proof": false
+  },
+  "raw_artifact_manifests": [
+    {
+      "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/c1-observation-populations-20260919/C1_OBSERVATION_POPULATION_MANIFEST.json",
+      "manifest_sha256": "48EEFC8CE943E26E1D9C1431666E49566A9C23C510BCB2D5C2A30F6FCB158B52",
+      "artifact_count": 80
+    }
+  ],
+  "remaining": {
+    "implementation_slices": 5,
+    "incomplete_bases": 64,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [
+      "raw_history",
+      "event_factor",
+      "ancillary"
+    ]
+  },
+  "full_suite": {
+    "status": "NOT_RUN_FOR_C06",
+    "reason": "User-scoped targeted/probe/governance validation. No new regression requiring broad validation after targeted correction.",
+    "prior_baseline": "E024: seven ProductionCorpusInvariantOracleTest failures; not post-C06 validation."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "MD-B18-A002: continue accepted C1 at C07 raw-input lineage at actual producer consumption, then C08 event/factor and C09 ancillary full-revision contracts, followed by independent whole-C1 completeness. Retain E021-E027 scoped proof and do not repeat unaffected P35-P50. Same attempt, D005 and current CI. No binding -> seal -> reader -> admission before whole-C1 completeness is proven."
+}

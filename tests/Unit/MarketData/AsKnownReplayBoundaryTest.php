@@ -364,11 +364,15 @@ class AsKnownReplayBoundaryTest extends TestCase
     {
         return [
             [MarketDataConfigSnapshotRepository::class, 'resolveForRun', 1],
+            [\App\Infrastructure\Persistence\MarketData\ProducerInputScope::class, 'knownAt', 0],
+            [\App\Infrastructure\Persistence\MarketData\ProducerTemporalPopulation::class, 'resolve', 1],
             [TemporalIdentityRepository::class, 'universeAsOf', 1],
             [TemporalIdentityRepository::class, 'readProjectedUniverseAsOf', 1],
             [TemporalIdentityRepository::class, 'resolveProviderContext', 3],
             [TemporalIdentityRepository::class, 'resolveByTickerCodes', 2],
             [TemporalTradingStatusRepository::class, 'resolveForListing', 2],
+            [TemporalTradingStatusRepository::class, 'evaluateCaptured', 3],
+            [\App\Infrastructure\Persistence\MarketData\ProducerTradingStatusPopulation::class, 'resolve', 2],
             [MarketCalendarRepository::class, 'sessionContext', 1],
             [MarketCalendarRepository::class, 'assertCompletedRegularSession', 1],
             [MarketCalendarRepository::class, 'tradingDatesBetween', 2],

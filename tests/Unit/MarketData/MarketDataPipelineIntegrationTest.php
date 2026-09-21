@@ -61,10 +61,40 @@ class MarketDataPipelineIntegrationTest extends TestCase
         parent::tearDown();
     }
 
+    public function test_recovered_ingest_captures_its_exact_consumed_rows_before_partial_write(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20',
+            'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124, 'volume' => 2000,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+        $pipeline = $this->makePipeline();
+        $original = $pipeline->importDaily('2026-03-20', 'manual_file');
+        $repository = new \App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository();
+        $inputs = $this->capturedOperation($repository->forRun($original->run_id), 'ingest-source-rows/v1')['rows'];
+        $recovered = $pipeline->applyRecoveredRowsPartial('2026-03-20', 'manual_file', $inputs);
+        $this->assertNotSame($original->run_id, $recovered->run_id, 'Recovery uses the existing completed-run lifecycle.');
+        $captures = array_column($repository->forRun($recovered->run_id), null, 'component_key');
+        foreach (['run_config', 'source_observations', 'provider_mapping'] as $component) {
+            $this->assertArrayHasKey($component, $captures, 'Recovered producer omitted required capture '.$component);
+        }
+        $payload = $this->capturedOperation($repository->forRun($recovered->run_id), 'ingest-source-rows/v1');
+        $this->assertSame($inputs, $payload['rows']);
+        $this->assertSame('ingestRecoveredRowsPartial', $payload['selection_context']['input_route']);
+        $this->assertSame([], (new \App\Infrastructure\Persistence\MarketData\ProducerSourceObservationCompleteness())->missing($repository->forRun($recovered->run_id), $repository));
+        $mapping = $this->capturedOperation($repository->forRun($recovered->run_id), 'ingest-resolved-mappings/v1');
+        $this->assertGreaterThan(0, $mapping['rows'][0]['listing_id']);
+        $population = $this->capturedOperation($repository->forRun($recovered->run_id), 'provider-mapping-revisions/v1');
+        $this->assertSame('BBCA', $population['rows'][0]['selected_rows'][0]['ticker_code']);
+        $this->assertFalse(DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->exists());
+    }
+
     public function test_run_daily_persists_full_db_backed_pipeline_and_current_publication(): void
     {
         $this->seedTicker(1, 'BBCA');
-        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $expectedPublicationId = (int) DB::table('eod_publications')->max('publication_id') + 1;
 
         $this->writeBarsFixture('2026-03-20', [[
             'ticker_code' => 'BBCA',
@@ -87,7 +117,83 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame('COMPLETED', $run->lifecycle_state);
         $this->assertSame('2026-03-20', $run->trade_date_effective);
         $this->assertSame('LOCAL_FILE', $run->source_name);
-        $this->assertSame(1, (int) $run->publication_id);
+        $captures = (new \App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository())->forRun($run->run_id);
+        $byComponent = array_column($captures, null, 'component_key');
+        $this->assertArrayHasKey('calendar_session', $byComponent);
+        $this->assertArrayHasKey('registry_versions', $byComponent);
+        $this->assertArrayHasKey('completion', $byComponent);
+        $calendarDates = [];
+        foreach ($captures as $capture) {
+            if ($capture['component_key'] !== 'calendar_session') continue;
+            $payload = json_decode($capture['semantic_payload_json'], true);
+            $this->assertSame((string) $run->knowledge_cutoff_at, $payload['selection_context']['known_at']);
+            foreach ($payload['rows'] as $revision) {
+                $this->assertArrayHasKey('recorded_at', $revision);
+                $this->assertArrayHasKey('supersedes_revision_id', $revision);
+                $calendarDates[$revision['cal_date']] = true;
+            }
+        }
+        $this->assertArrayHasKey('2026-03-20', $calendarDates);
+        $this->assertArrayHasKey('2026-03-19', $calendarDates);
+        $sourceCapture = $this->capturedOperation($captures, 'ingest-source-rows/v1');
+        $this->assertSame('BBCA', $sourceCapture['rows'][0]['ticker_code']);
+        $this->assertEquals(124, $sourceCapture['rows'][0]['close']);
+        $this->assertSame('ingestAcquiredRows', $sourceCapture['selection_context']['input_route']);
+        $mappingCapture = $this->capturedOperation($captures, 'ingest-resolved-mappings/v1');
+        $this->assertSame('BBCA', $mappingCapture['rows'][0]['ticker_code']);
+        $this->assertGreaterThan(0, $mappingCapture['rows'][0]['listing_id']);
+        foreach (['temporal-identity-revisions/v1', 'provider-mapping-revisions/v1'] as $operation) {
+            $population = $this->capturedOperation($captures, $operation);
+            $source = $this->capturedPopulation($captures, $population['rows'][0]['population_ref']);
+            $this->assertCount(6, $source['tables']);
+            $this->assertSame('BBCA', $population['rows'][0]['selected_rows'][0]['ticker_code']);
+        }
+        $sourceLink = $this->capturedOperation($captures, 'provider-source-row-link/v1');
+        $this->assertSame($sourceLink['rows'][0]['observation_row']['source_observation_row_id'],
+            (string) $sourceLink['rows'][0]['identity_binding']['source_observation_row_id']);
+        $statusCapture = $this->capturedOperation($captures, 'status-authority-revisions/v1');
+        $statusPopulation = $this->capturedPopulation($captures, $statusCapture['rows'][0]['population_ref']);
+        $this->assertArrayHasKey('md_trading_status_revisions', $statusPopulation['tables']);
+        $this->assertArrayHasKey('md_trading_status_source_registry', $statusPopulation['tables']);
+        $this->assertArrayHasKey('bar_expectation_state', $statusCapture['rows'][0]['selection_result']);
+        $this->assertArrayHasKey('omitted_revisions', $statusCapture['rows'][0]);
+        $this->assertCount(62, $captures, 'All actual producer slots, calendar reads and per-scope completion must be retained.');
+        $rawReads = [];
+        foreach ($captures as $capture) {
+            $payload = json_decode($capture['semantic_payload_json'], true);
+            if (($payload['selection_context']['operation'] ?? null) !== 'raw-input-lineage/v1') continue;
+            \App\Infrastructure\Persistence\MarketData\ProducerRawInputLineage::assertValid($payload['rows'][0], $payload['selection_context']);
+            $rawReads[$payload['selection_context']['read_kind']] = $payload;
+        }
+        $this->assertSame([], (new \App\Infrastructure\Persistence\MarketData\ProducerRawInputCompleteness())->missing($captures, new \App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository()), 'Independent full RAW/read/projection completeness, not slot count.');
+        $rawKinds = array_keys($rawReads); sort($rawKinds, SORT_STRING);
+        $this->assertSame(['atr', 'date', 'window'], $rawKinds);
+        $this->assertCount(21, $rawReads['atr']['rows'][0]['raw_rows']);
+        $this->assertCount(21, $rawReads['window']['rows'][0]['raw_rows']);
+        $this->assertCount(1, $rawReads['date']['rows'][0]['raw_rows']);
+        $observationJournal = $this->capturedOperation($captures, 'source-observation-journal/v1');
+        $this->assertArrayHasKey('payload_hash', $observationJournal['rows'][0]['observation']);
+        $this->assertSame('PERSISTED_OBSERVATION_ONLY_NOT_CONSUMPTION_COMPLETENESS', $observationJournal['rows'][0]['scope']);
+        $this->assertSame(['ACQUISITION', 'COVERAGE', 'ELIGIBILITY', 'HASH', 'INDICATORS', 'INGEST_BARS', 'RUN_CONTEXT'], array_values(array_unique(array_column($captures, 'stage_code'))));
+        $capturedInputs = [];
+        foreach ($captures as $capture) {
+            $payload = json_decode($capture['semantic_payload_json'], true);
+            $capturedInputs[$payload['selection_context']['operation']] = $payload;
+        }
+        $this->assertSame('BLOCKED', $capturedInputs['input-completion-manifest/v1']['rows'][0]['status']);
+        $this->assertSame([], (new \App\Infrastructure\Persistence\MarketData\ProducerSourceObservationCompleteness())->missing($captures, new \App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository()), 'Whole C06 requires content and cross-capture membership, not slot count.');
+        $this->assertSame([], array_values(array_filter($capturedInputs['input-completion-manifest/v1']['rows'][0]['missing_paths'], static function ($path) {
+            return strpos($path, 'universe_identity.') === 0 || strpos($path, 'provider_mapping.') === 0 || strpos($path, 'status_expectation.') === 0 || strpos($path, 'raw_history.') === 0 || strpos($path, 'completion.producer_scope.') === 0;
+        })), 'C02/C03/C05 content and scoped membership are verified independently of slot count.');
+        foreach (['event_factor', 'ancillary'] as $domain) $this->assertContains($domain.'.full_revision_contract_not_implemented', $capturedInputs['input-completion-manifest/v1']['rows'][0]['missing_paths']);
+        $this->assertArrayHasKey('rule_revisions', $capturedInputs['market-structure-consumed-inputs/v1']['rows'][0]);
+        $this->assertCount(1, $capturedInputs['eligibility-universe/v1']['rows']);
+        $this->assertSame('BBCA', $capturedInputs['eligibility-universe/v1']['rows'][0]['ticker_code']);
+        $this->assertGreaterThan(1, count($capturedInputs['indicator-consumed-bars/v1']['rows']));
+        $this->assertGreaterThan(1, count($capturedInputs['indicator-consumed-atr-series/v1']['rows']));
+        $this->assertArrayHasKey('factor_set_hash', $capturedInputs['indicator-factor-context/v1']['rows'][0]);
+        $this->assertArrayHasKey('bar_expectation_state', $capturedInputs['eligibility-expectation/v1']['rows'][0]);
+        $this->assertSame($expectedPublicationId, (int) $run->publication_id);
         $this->assertNull($run->correction_id);
         $this->assertNull($run->final_reason_code);
         $this->assertEquals(1.0, (float) $run->coverage_ratio);
@@ -924,6 +1030,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $corrections = new EodCorrectionRepository();
         $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'request-without-approval', 'system');
 
+        $eventsBefore = DB::table('eod_run_events')->count();
         try {
             $this->makePipeline()->runDaily('2026-03-20', 'manual_file', $request->correction_id);
             $this->fail('Expected correction without approval to be rejected before run creation.');
@@ -962,7 +1069,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
         $this->assertSame(1, DB::table('eod_publications')->where('trade_date', '2026-03-20')->count());
         $this->assertSame(0, DB::table('eod_runs')->where('notes', 'like', 'correction_id='.$request->correction_id.'%')->count());
-        $this->assertSame(0, DB::table('eod_run_events')->count());
+        $this->assertSame($eventsBefore, DB::table('eod_run_events')->count());
     }
     public function test_run_daily_correction_with_reseal_failure_keeps_prior_current_and_leaves_candidate_non_current(): void
     {
@@ -4708,6 +4815,24 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame(1, (int) $pointer->publication_id);
     }
 
+    private function capturedOperation(array $captures, string $operation): array
+    {
+        foreach ($captures as $capture) {
+            $payload = json_decode($capture['semantic_payload_json'], true);
+            if ($payload['selection_context']['operation'] === $operation) return $payload;
+        }
+        $this->fail('Producer omitted required capture operation '.$operation);
+    }
+
+    private function capturedPopulation(array $captures, array $reference): array
+    {
+        foreach ($captures as $capture) if ($capture['slot_hash'] === $reference['slot_hash'] && $capture['stage_code'] === $reference['stage_code']) {
+            $this->assertSame($capture['payload_hash'], $reference['payload_hash']);
+            return (new \App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository())->verify($capture)['rows'][0];
+        }
+        $this->fail('The consumed temporal population must resolve by immutable capture identity.');
+    }
+
     private function deleteDirectory(string $path): void
     {
         if (! is_dir($path)) {
@@ -4926,35 +5051,48 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->seedVerifiedMarketCalendarRange($startDate, $endDate);
     }
 
-    private function seedHistoricalBars(string $startDate, string $endDate, int $tickerId, float $startClose, int $startVolume): void
+    /** Fixture-authored immutable input history; never a repair path for real historical data. */
+    private function seedProducerBoundHistoricalBars(string $startDate, string $endDate, int $tickerId, float $startClose, int $startVolume): void
     {
-        $date = Carbon::parse($startDate);
-        $end = Carbon::parse($endDate);
-        $close = $startClose;
-        $volume = $startVolume;
-
+        $identity = new \App\Infrastructure\Persistence\MarketData\TemporalIdentityRepository();
+        $identity->ensureLegacyProjection();
+        $source = new \App\Infrastructure\Persistence\MarketData\SourceObservationRepository();
+        $date = Carbon::parse($startDate); $end = Carbon::parse($endDate); $close = $startClose; $volume = $startVolume;
         while ($date->lessThanOrEqualTo($end)) {
-            DB::table('eod_bars')->insert([
-                'trade_date' => $date->toDateString(),
-                'ticker_id' => $tickerId,
-                'open' => $close - 1,
-                'high' => $close + 2,
-                'low' => $close - 2,
-                'close' => $close,
-                'volume' => $volume,
-                'adj_close' => $close,
-                'source' => 'MANUAL_FILE',
-                'run_id' => 1,
-                'publication_id' => 0,
-                'created_at' => Carbon::now()->toDateTimeString(),
-            ]);
-
-            $date->addDay();
-            $close += 1;
-            $volume += 10;
+            $day = $date->toDateString();
+            $run = (new EodRunRepository())->getOrCreateOwningRun($day, 'manual_file', 'INGEST_BARS', null, 'c07-fixture-'.$day);
+            $publicationId = (int) $date->format('Ymd');
+            if (! DB::table('eod_publications')->where('publication_id', $publicationId)->exists()) DB::table('eod_publications')->insert([
+                'publication_id' => $publicationId, 'trade_date' => $day, 'run_id' => $run->run_id,
+                'publication_version' => 2, 'seal_state' => 'UNSEALED', 'created_at' => $day.' 18:00:00']);
+            $pub = DB::table('eod_publications')->where('publication_id', $publicationId)->first();
+            $listing = $identity->resolveByTickerCodes([DB::table('tickers')->where('ticker_id', $tickerId)->value('ticker_code')], $day);
+            $listing = (array) reset($listing);
+            $row = ['ticker_code' => DB::table('tickers')->where('ticker_id', $tickerId)->value('ticker_code'),
+                'listing_id' => $listing['listing_id'], 'provider_mapping_id' => $listing['provider_mapping_id'],
+                'mapping_revision' => $listing['mapping_revision'], 'source_row_ref' => 'fixture:'.$tickerId,
+                'trade_date' => $day, 'open' => $close - 1, 'high' => $close + 2, 'low' => $close - 2, 'close' => $close, 'volume' => $volume];
+            $out = $source->recordAcceptedRows($source->capture(['run_id' => $run->run_id, 'attempt_uid' => 'c07-fixture-'.$day,
+                'requested_trade_date' => $day, 'source_mode' => 'manual_file', 'source_name' => 'C07_FIXTURE',
+                'provider' => 'fixture', 'provider_symbol' => $row['ticker_code'], 'sanitized_request_identity' => 'fixture:'.$day,
+                'adapter_version' => 'c07-fixture-v1', 'payload' => json_encode($row), 'acquired_at' => $day.' 17:00:00']), [$row]);
+            $source->bindResolvedIdentity($out['source_observation_id'], $row['source_row_ref'], $row);
+            $raw = array_intersect_key($row, array_flip(['listing_id','trade_date','open','high','low','close','volume']));
+            $raw += ['ticker_id' => $tickerId, 'source' => 'MANUAL_FILE', 'run_id' => $run->run_id,
+                'publication_id' => $pub->publication_id, 'source_observation_id' => $out['source_observation_id'],
+                'canonicalization_version' => 'c07-fixture-v1', 'price_product_code' => 'RAW', 'quality_state' => 'VALIDATED',
+                'config_snapshot_id' => $run->config_snapshot_id, 'created_at' => $day.' 18:00:00'];
+            DB::table('eod_bars')->insert($raw); DB::table('eod_bars_history')->insert($raw);
+            DB::table('eod_publications')->where('publication_id', $pub->publication_id)->update([
+                'seal_state' => 'SEALED', 'bars_batch_hash' => (new DeterministicHashService())->hashRows(DB::table('eod_bars_history')->where('publication_id', $pub->publication_id)->orderBy('ticker_id')->get(), MarketDataPipelineService::BARS_HASH_COLUMNS), 'sealed_at' => $day.' 18:00:00']);
+            $date->addDay(); $close += 1; $volume += 10;
         }
     }
 
+    private function seedHistoricalBars(string $startDate, string $endDate, int $tickerId, float $startClose, int $startVolume): void
+    {
+        $this->seedProducerBoundHistoricalBars($startDate, $endDate, $tickerId, $startClose, $startVolume);
+    }
 
     private function seedBaselinePointerToDifferentTradeDatePublication(string $pointerTradeDate, string $publicationTradeDate, int $tickerId, float $close): void
     {

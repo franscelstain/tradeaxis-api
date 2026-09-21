@@ -1293,3 +1293,57 @@ CREATE TABLE IF NOT EXISTS md_publication_projection_reconciliations (
   KEY idx_md_pub_proj_recon_pub_checked (publication_id, checked_at),
   KEY idx_md_pub_proj_recon_checked (checked_at)
 ) ENGINE=InnoDB;
+
+-- C1 producer input capture and the existing publication-lineage substrate.
+CREATE TABLE IF NOT EXISTS md_publication_lineage_bindings (
+  publication_lineage_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  publication_id BIGINT UNSIGNED NOT NULL,
+  corpus_admission_decision_id BIGINT UNSIGNED NULL,
+  config_snapshot_id BIGINT UNSIGNED NOT NULL,
+  factor_set_id BIGINT UNSIGNED NULL,
+  observation_manifest_hash CHAR(64) NOT NULL,
+  identity_revision_set_hash CHAR(64) NOT NULL,
+  calendar_revision_set_hash CHAR(64) NOT NULL,
+  status_revision_set_hash CHAR(64) NOT NULL,
+  event_revision_set_hash CHAR(64) NOT NULL,
+  source_scale_assessment_set_hash CHAR(64) NULL,
+  market_structure_revision_set_hash CHAR(64) NULL,
+  factor_decision_set_hash CHAR(64) NULL,
+  formula_version VARCHAR(64) NOT NULL,
+  build_id VARCHAR(128) NOT NULL,
+  read_model_version VARCHAR(64) NOT NULL,
+  created_at DATETIME NOT NULL,
+  bound_input_schema_version VARCHAR(64) NULL,
+  bound_input_context_json LONGTEXT NULL,
+  bound_input_context_hash CHAR(64) NULL,
+  bound_input_capture_manifest_json LONGTEXT NULL,
+  PRIMARY KEY (publication_lineage_id),
+  UNIQUE KEY md_publication_lineage_bindings_publication_id_unique (publication_id),
+  CONSTRAINT chk_md_bound_input_json CHECK ((bound_input_context_json IS NULL OR JSON_VALID(bound_input_context_json)) AND (bound_input_capture_manifest_json IS NULL OR JSON_VALID(bound_input_capture_manifest_json)))
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS md_run_input_captures (
+  input_capture_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  run_id BIGINT UNSIGNED NOT NULL,
+  stage_code VARCHAR(32) NOT NULL,
+  component_key VARCHAR(64) NOT NULL,
+  slot_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  capture_schema_version VARCHAR(64) NOT NULL,
+  selection_context_json LONGTEXT NOT NULL,
+  semantic_payload_json LONGTEXT NOT NULL,
+  payload_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,
+  member_count BIGINT UNSIGNED NOT NULL,
+  empty_basis_json LONGTEXT NULL,
+  audit_context_json LONGTEXT NOT NULL,
+  captured_at DATETIME(6) NOT NULL,
+  PRIMARY KEY (input_capture_id),
+  UNIQUE KEY uq_md_run_input_slot (run_id, stage_code, component_key, slot_hash),
+  KEY idx_md_run_input_stage (run_id, stage_code),
+  CONSTRAINT fk_md_run_input_run FOREIGN KEY (run_id) REFERENCES eod_runs (run_id) ON DELETE RESTRICT ON UPDATE RESTRICT,
+  CONSTRAINT chk_md_input_json CHECK (JSON_VALID(selection_context_json) AND JSON_VALID(semantic_payload_json) AND JSON_VALID(audit_context_json) AND (empty_basis_json IS NULL OR JSON_VALID(empty_basis_json))),
+  CONSTRAINT chk_md_input_hash CHECK (slot_hash REGEXP BINARY '^[a-f0-9]{64}$' AND payload_hash REGEXP BINARY '^[a-f0-9]{64}$'),
+  CONSTRAINT chk_md_input_empty CHECK (member_count > 0 OR empty_basis_json IS NOT NULL)
+) ENGINE=InnoDB;
+
+CREATE TRIGGER trg_md_input_no_update BEFORE UPDATE ON md_run_input_captures FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'INPUT_CAPTURE_IMMUTABLE';
+CREATE TRIGGER trg_md_input_no_delete BEFORE DELETE ON md_run_input_captures FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'INPUT_CAPTURE_IMMUTABLE';

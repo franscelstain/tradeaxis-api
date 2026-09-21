@@ -86,3 +86,8 @@ In `BackfillLifecycleOrchestrator::caseStatus` (`:~1599`), a readable case whose
 `~596-600` set `SKIPPED` exactly when evidence export fails. `replay_status` stays `SKIPPED`, so no
 replay pass is claimed, but an evidence failure is reported as a successful date. The owner is the
 backfill lifecycle (MD-B19). It is carried forward for MD-B19-A001 and is not MD-B18 proof.
+
+
+## Q5 ownership correction — 2026-09-15T15:22:45.945825+00:00
+
+D005/E018 settle the one ownership question: MD-S020-R0014 primary B22, supporting B18/B17. The entire nine-row parent was reviewed; exactly one matrix row changed, MANDATORY to MANDATORY and NOT_ASSESSED to NOT_ASSESSED. Context includes documentation, implementation and operational readiness. Prior B18 incomplete basis moved to audit-only TRANSFERRED_OWNERSHIP; no B22 proof inherited. This finding remains OPEN for the 14 remaining B18 predicate plans (5 executable defects and 9 guard/rebind gaps); B18 supporting contract/evidence remains an obligation of the approved package. Global required population is unchanged.

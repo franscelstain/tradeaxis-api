@@ -59,6 +59,7 @@ class SourceObservationRepository implements SourceObservationRecorder
         ]);
 
         $id = DB::table('md_source_observations')->insertGetId($row);
+        ProducerSourceObservationJournal::record((int) $id);
 
         return $row + [
             'source_observation_id' => (int) $id,
@@ -88,6 +89,7 @@ class SourceObservationRepository implements SourceObservationRecorder
         ]);
 
         $id = DB::table('md_source_observations')->insertGetId($row);
+        ProducerSourceObservationJournal::record((int) $id);
 
         return $row + [
             'source_observation_id' => (int) $id,
@@ -120,6 +122,8 @@ class SourceObservationRepository implements SourceObservationRecorder
                 $this->persistRejectedRow($capture, $outcome, $row, $index + 1);
             }
 
+            if (ProducerInputScope::active()) ProducerSourceObservationPopulation::consume('outcomeRows', ['normalized_count' => count($rows), 'rejected_count' => count($rejectedRows)], [(int) $outcome['source_observation_id']]);
+
             return $outcome + [
                 'normalized_row_count' => count($rows),
                 'comparison_count' => $comparisonCount,
@@ -141,6 +145,7 @@ class SourceObservationRepository implements SourceObservationRecorder
                 $this->persistRejectedRow($capture, $outcome, $row, $index + 1);
             }
 
+            if (ProducerInputScope::active()) ProducerSourceObservationPopulation::consume('outcomeRows', ['normalized_count' => 0, 'rejected_count' => count($rejectedRows)], [(int) $outcome['source_observation_id']]);
             return $outcome + ['rejected_row_count' => count($rejectedRows)];
         });
     }
@@ -163,6 +168,7 @@ class SourceObservationRepository implements SourceObservationRecorder
 
     public function existsAccepted($observationId, $sourceRowRef = null)
     {
+        if (ProducerInputScope::active()) return ProducerSourceObservationPopulation::consume('existsAccepted', ['source_row_ref' => $sourceRowRef === null ? null : (string) $sourceRowRef], [(int) $observationId]);
         $outcome = DB::table('md_source_observations')
             ->where('source_observation_id', $observationId)
             ->whereIn('outcome_state', ['ACCEPTED', 'NORMALIZED'])
@@ -259,10 +265,27 @@ class SourceObservationRepository implements SourceObservationRecorder
                 }
             }
 
+            $binding['recorded_at'] = (string) $existing->recorded_at;
+            $this->captureIdentityInput($observationRow, $identity, $binding);
+
             return (int) $existing->source_observation_identity_binding_id;
         }
 
+        $this->captureIdentityInput($observationRow, $identity, $binding);
         return (int) DB::table('md_source_observation_identity_bindings')->insertGetId($binding);
+    }
+
+    private function captureIdentityInput($observationRow, array $identity, array $binding): void
+    {
+        ProducerInputScope::inputRead('provider_mapping', [
+            'operation' => 'provider-source-row-link/v1',
+            'source_observation_id' => (int) $observationRow->source_observation_id,
+            'source_row_ref' => (string) $observationRow->source_row_ref,
+            'trade_date' => (string) $identity['trade_date'],
+        ], static function () use ($observationRow, $identity, $binding) {
+            return [['observation_row' => (array) $observationRow, 'resolved_identity' => $identity,
+                'identity_binding' => $binding]];
+        });
     }
 
     /**
@@ -275,6 +298,13 @@ class SourceObservationRepository implements SourceObservationRecorder
     {
         if ($knownAt === null || trim((string) $knownAt) === '') {
             throw new \RuntimeException('REPLAY_KNOWLEDGE_CUTOFF_REQUIRED: source observation replay requires knowledge_cutoff.');
+        }
+
+        if (ProducerInputScope::active()) {
+            $knownAt = ProducerInputScope::knownAt($knownAt);
+            $ids = DB::table('md_source_observations')->where('requested_trade_date', (string) $tradeDate)->pluck('source_observation_id')->all();
+            $ids = array_merge($ids, DB::table('md_source_observation_rows')->where('trade_date', (string) $tradeDate)->pluck('source_observation_id')->all());
+            return ProducerSourceObservationPopulation::consume('normalizedAsKnown', ['trade_date' => (string) $tradeDate, 'known_at' => (string) $knownAt], $ids);
         }
 
         $rows = DB::table('md_source_observation_rows as row')
@@ -312,6 +342,13 @@ class SourceObservationRepository implements SourceObservationRecorder
     {
         if ($knownAt === null || trim((string) $knownAt) === '') {
             throw new \RuntimeException('REPLAY_KNOWLEDGE_CUTOFF_REQUIRED: source observation replay requires knowledge_cutoff.');
+        }
+
+        if (ProducerInputScope::active()) {
+            $knownAt = ProducerInputScope::knownAt($knownAt);
+            $ids = DB::table('md_source_observations')->where('requested_trade_date', (string) $tradeDate)->pluck('source_observation_id')->all();
+            $ids = array_merge($ids, DB::table('md_source_observation_rows')->where('trade_date', (string) $tradeDate)->pluck('source_observation_id')->all());
+            return ProducerSourceObservationPopulation::consume('manifestAsKnown', ['trade_date' => (string) $tradeDate, 'known_at' => (string) $knownAt], $ids);
         }
 
         $rows = DB::table('md_source_observations')
@@ -411,6 +448,7 @@ class SourceObservationRepository implements SourceObservationRecorder
             ->where('run_id', $runId)
             ->orderBy('observation_uid')
             ->get();
+        if (ProducerInputScope::active()) return ProducerSourceObservationPopulation::consume('manifestRun', ['run_id' => (int) $runId], array_map('intval', $rows->pluck('source_observation_id')->all()));
         return $this->manifestHashForRows($rows);
     }
 
@@ -428,6 +466,7 @@ class SourceObservationRepository implements SourceObservationRecorder
             throw new \RuntimeException('SOURCE_OBSERVATION_MANIFEST_INCOMPLETE: one or more selected observations are missing.');
         }
 
+        if (ProducerInputScope::active()) return ProducerSourceObservationPopulation::consume('manifestIds', [], $observationIds);
         return $this->manifestHashForRows($rows);
     }
 
@@ -640,6 +679,16 @@ class SourceObservationRepository implements SourceObservationRecorder
                 ->where('ticker_code', Str::upper(trim($tickerCode)));
         }
 
+        if (ProducerInputScope::active()) {
+            $candidates = $query->orderByDesc('source_observation_row_id')->get();
+            $selected = ProducerSourceObservationPopulation::consume('priorRow', [
+                'candidate_row_ids' => array_map('intval', $candidates->pluck('source_observation_row_id')->all()),
+                'trade_date' => $tradeDate, 'listing_id' => $listingId, 'provider' => $provider,
+                'provider_symbol' => $providerSymbol, 'ticker_code' => Str::upper(trim($tickerCode)),
+                'current_observation_id' => $currentObservationId,
+            ], array_map('intval', $candidates->pluck('source_observation_id')->all()));
+            return $selected === null ? null : (object) $selected;
+        }
         return $query->orderByDesc('source_observation_row_id')->first();
     }
 
@@ -766,12 +815,12 @@ class SourceObservationRepository implements SourceObservationRecorder
      * Redaction must cover every shape a credential arrives in, because this table is immutable:
      * a secret written here is written permanently.
      *
-     * The two patterns previously disagreed. `crumb` — Yahoo's session credential — was redacted
+     * The two patterns previously disagreed. `crumb` â€” Yahoo's session credential â€” was redacted
      * as a query parameter but survived as a JSON field, so a payload carrying it in the body was
      * stored verbatim. Keeping one keyword list for both shapes is what prevents that class of
      * gap from reopening.
      *
-     * Owner contract: docs/market_data/book/Source_Data_Acquisition_Contract_LOCKED.md —
+     * Owner contract: docs/market_data/book/Source_Data_Acquisition_Contract_LOCKED.md â€”
      * "Credential, API key, cookie rahasia, authorization header, dan sensitive query value tidak
      * boleh masuk envelope atau diagnostic sample."
      */

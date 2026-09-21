@@ -29,15 +29,24 @@ class AdjustmentFactorSetService
 
     public function ensureForPublication($run, $publicationId, $requestedDate, array $barsByTicker): array
     {
+        return \App\Infrastructure\Persistence\MarketData\ProducerEventFactorCapture::execute($run, $publicationId, $requestedDate, $barsByTicker,
+            function () use ($run, $publicationId, $requestedDate, $barsByTicker) {
+                return $this->produceForPublication($run, $publicationId, $requestedDate, $barsByTicker);
+            });
+    }
+
+    private function produceForPublication($run, $publicationId, $requestedDate, array $barsByTicker): array
+    {
         $knownAt = $run->knowledge_cutoff_at ?? null;
         if ($knownAt === null || $knownAt === '') {
             throw new \RuntimeException('RUN_KNOWLEDGE_CUTOFF_MISSING: adjustment factor binding requires immutable run knowledge_cutoff_at.');
         }
         $events = $this->authoritativeEventsThrough($requestedDate, $knownAt);
-        $decisions = [];
+        $decisions = []; $termInputs = []; $assessmentInputs = [];
 
         foreach ($events as $event) {
             $factorTerms = $this->factorTermsForEvent($event);
+            $termInputs[(int) $event->corporate_action_revision_id] = $factorTerms;
             if ($factorTerms['factor_required'] === false) {
                 continue;
             }
@@ -53,6 +62,7 @@ class AdjustmentFactorSetService
                 $assessment = $this->recordUnknownAssessment($event, $barsByTicker[(int) $event->legacy_ticker_id] ?? []);
             }
 
+            $assessmentInputs[(int) $event->corporate_action_revision_id] = (array) $assessment;
             $sourceScaleState = (string) $assessment->source_scale_state;
             if ($sourceScaleState === 'AS_TRADED') {
                 $decisionState = 'APPLIED';
@@ -172,6 +182,8 @@ class AdjustmentFactorSetService
         ksort($heldByTicker);
 
         return [
+            '_producer_trace' => ['selected_events' => array_map(static function ($r) { return (array) $r; }, $events->all()),
+                'terms' => $termInputs, 'assessments' => $assessmentInputs, 'canonical_payload' => $payload],
             'factor_set_id' => (int) $factorSet->factor_set_id,
             'factor_set_hash' => (string) $factorSet->content_hash,
             'factors_by_ticker' => $factorsByTicker,

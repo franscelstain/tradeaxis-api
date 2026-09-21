@@ -537,12 +537,6 @@ final class MarketDataReplayVerificationProofBasis
             'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
             'basis' => 'pass-rate-cannot-compensate is a citation prohibition in scope of the corpus guard',
         ],
-        // F-MD-B18-A002-015: readiness admission rule; the guard forbids one sentence shape, and the admission owner (MD-B17/MD-B22) is a user decision.
-        'MD-S020-R0014' => [
-            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
-            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
-            'basis' => 'admitting market-data readiness only from qualifying market-data evidence is a citation rule the corpus admissibility guard scans for',
-        ],
         // F-MD-B18-A002-015: executable, the coverage reason code is never persisted and the export synthesizes it from the gate state, collapsing distinct evaluator reasons.
         'MD-S040-R0071' => [
             'positive' => 'B18ReplayEvidencePreservationContractTest::test_every_preserved_item_survives_the_real_export',
@@ -812,6 +806,17 @@ final class MarketDataReplayVerificationProofBasis
             'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_named_assertion_class_denies_pass',
             'negative' => 'B18ReplayComparisonExhaustivenessTest::test_the_unperturbed_fixture_passes',
             'basis' => 'new. One baseline fixture that matches, then one perturbation per class the contract names -- a value (bars_rows_written), a null reason (final_reason_code), a state (publishability, terminal, coverage gate), a lineage (publishing run, publication version), a content hash (all three batch hashes) and the seal -- each asserted to turn PASS into a reason-coded MISMATCH, so a class that is not compared shows up as a perturbation that still passes. A separate test asserts the perturbation table covers every class MD-S050-R0029 lists, so exhaustiveness is not proven over whatever subset happened to be written down; the manifest half is a fixture whose manifest declares a file it does not carry, refused outright. The negative guard is the unperturbed control, without which each perturbation could be failing for an unrelated reason.',
+        ],
+    ];
+
+    // D005 transfer audit only: primary admission belongs to B22, supporting B18/B17.
+    // This prior INCOMPLETE entry supplies no accepted basis in either stage.
+    public const TRANSFERRED_OWNERSHIP = [
+        // F-MD-B18-A002-015: readiness admission rule; the guard forbids one sentence shape, and the admission owner (MD-B17/MD-B22) is a user decision.
+        'MD-S020-R0014' => [
+            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
+            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
+            'basis' => 'admitting market-data readiness only from qualifying market-data evidence is a citation rule the corpus admissibility guard scans for',
         ],
     ];
 

@@ -43,6 +43,15 @@ class EodIndicatorsComputeService
 
     public function compute($run, $requestedDate, $correctionMode = false)
     {
+        return \App\Infrastructure\Persistence\MarketData\ProducerInputScope::during($run, 'INDICATORS', 'compute/v1', function () use ($run, $requestedDate, $correctionMode) {
+            return $this->computeCaptured($run, $requestedDate, $correctionMode);
+        });
+    }
+
+    private function computeCaptured($run, $requestedDate, $correctionMode = false)
+    {
+        $inputCaptures = new \App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository();
+        $inputCaptures->assertConsumedConfiguration($run);
         $candidatePublication = $this->publications->getOrCreateCandidatePublication($run);
         $useHistory = $correctionMode
             || (int) ($candidatePublication->publication_version ?? 1) > 1
@@ -181,6 +190,14 @@ class EodIndicatorsComputeService
 
         $rows = [];
         $invalidCount = 0;
+        $inputCaptures->captureForProducer($run, 'INDICATORS', 'event_factor', 'indicator-factor-context/v1', [$factorContext],
+            ['publication_id' => (int) $candidatePublication->publication_id]);
+        $inputCaptures->captureForProducer($run, 'INDICATORS', 'ancillary', 'indicator-materialized-dependencies/v1', [[
+            'benchmark_roc20' => $benchmarkRoc20, 'sector_benchmark_roc20s' => $sectorBenchmarkRoc20s,
+            'sector_contexts' => $sectorContextsByTicker, 'event_risk_contexts' => $eventRiskContextsByTicker,
+            'contamination' => $contaminationByTicker, 'price_scale_breaks' => $priceScaleBreaksByTicker,
+            'trading_dates' => $tradingDatesWindow,
+        ]], ['history_start_date' => $historyStartDate, 'bar_load_window' => $barLoadWindow]);
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
 
         foreach ($barsByTicker as $tickerId => $bars) {
@@ -205,6 +222,14 @@ class EodIndicatorsComputeService
                     $useHistory ? $candidatePublication->publication_id : null
                 )
                 : null;
+
+            $inputCaptures->captureForProducer($run, 'INDICATORS', 'raw_history', 'indicator-consumed-bars/v1', $bars,
+                ['ticker_id' => (int) $tickerId, 'history_start_date' => $historyStartDate, 'bar_load_window' => $barLoadWindow,
+                    'publication_id' => $useHistory ? (int) $candidatePublication->publication_id : null]);
+            $inputCaptures->captureForProducer($run, 'INDICATORS', 'raw_history', 'indicator-consumed-atr-series/v1', $atrSeries ?: [],
+                ['ticker_id' => (int) $tickerId, 'history_start_date' => $historyStartDate,
+                    'publication_id' => $useHistory ? (int) $candidatePublication->publication_id : null], $atrSeries ? null
+                    : ['reason' => 'NO_ATR_INPUT_SERIES', 'source' => 'EodArtifactRepository', 'evaluated_population' => 0]);
 
             $row = $this->vectors->buildRow(
                 (int) $tickerId,

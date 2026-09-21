@@ -448,6 +448,12 @@ final class MarketDataTraceabilityApplicabilityGate
 }
 
 if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
+    // Explicit check mode cannot silently become a matrix-writing operation.
+    if (in_array('--check', $argv, true)
+        && (in_array('--apply-normalization', $argv, true) || in_array('--bind-a012-evidence', $argv, true))) {
+        echo json_encode(['status' => 'FAIL', 'errors' => ['READ_ONLY_MODE_CONFLICT']], JSON_PRETTY_PRINT).PHP_EOL;
+        exit(2);
+    }
     $md = realpath(dirname(__DIR__, 3));
     $matrix = $md.'/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv';
     $data = MarketDataTraceabilityApplicabilityGate::readMatrix($matrix);

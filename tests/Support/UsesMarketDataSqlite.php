@@ -1111,6 +1111,8 @@ trait UsesMarketDataSqlite
         });
 
         $this->createMarketDataV2SqliteSchema($schema);
+        require_once dirname(__DIR__, 2).'/database/migrations/2026_09_16_000001_add_producer_bound_input_captures.php';
+        (new \AddProducerBoundInputCaptures())->up();
         $this->seedMarketDataSectorTaxonomy();
     }
 

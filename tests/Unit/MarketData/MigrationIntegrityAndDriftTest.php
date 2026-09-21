@@ -350,31 +350,62 @@ class MigrationIntegrityAndDriftTest extends TestCase
      */
     public function test_no_rollout_column_is_enforced_not_null_before_a_verified_backfill(): void
     {
-        $columns = [];
-        foreach ($this->v2NullableColumns() as $list) {
-            foreach ($list as $column) {
-                $columns[$column] = true;
-            }
-        }
-        // 94 nullable declarations across the foundation migration collapse to 69 distinct names.
-        $this->assertGreaterThan(60, count($columns), 'the rollout column set must be populated before it is searched for');
-
+        $columns = $this->v2NullableColumns();
+        $this->assertGreaterThan(80, array_sum(array_map('count', $columns)), 'rollout table/column population must be real');
         $enforced = [];
         foreach ($this->migrationFiles() as $name => $path) {
-            if ($name === self::V2_FOUNDATION_MIGRATION) {
-                continue;
+            if ($name === self::V2_FOUNDATION_MIGRATION) continue;
+            foreach ($this->rolloutEnforcements((string) file_get_contents($path), $columns) as $field) {
+                $enforced[] = $name.' :: '.$field;
             }
-            $source = (string) file_get_contents($path);
-            foreach (array_keys($columns) as $column) {
-                $quoted = preg_quote($column, '/');
-                if (preg_match("/'".$quoted."'[^;\\n]*nullable\(false\)/", $source)
-                    || preg_match('/(?:MODIFY|CHANGE)\s+(?:COLUMN\s+)?`?'.$quoted.'`?[^;]*NOT\s+NULL/i', $source)) {
-                    $enforced[] = $name.' :: '.$column;
+        }
+        $this->assertSame([], $enforced, 'a rollout column was enforced NOT NULL while its area is still open');
+    }
+
+    /** Table-qualified identity matters: a new table can legitimately share a column name. */
+    private function rolloutEnforcements(string $source, array $columns): array
+    {
+        $enforced = [];
+        $tokens = token_get_all($source);
+        $source = '';
+        foreach ($tokens as $token) {
+            if (is_array($token) && in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true)) continue;
+            $source .= is_array($token) ? $token[1] : $token;
+        }
+        preg_match_all('/ALTER\s+TABLE\s+`?([a-z0-9_]+)`?\s+([^;\n]*)/i', $source, $statements, PREG_SET_ORDER);
+        foreach ($statements as $statement) {
+            $table = $statement[1];
+            foreach ($columns[$table] ?? [] as $column) {
+                if (preg_match('/(?:MODIFY|CHANGE)\s+(?:COLUMN\s+)?`?'.preg_quote($column, '/').'`?\b[^,;]*NOT\s+NULL/i', $statement[2])) {
+                    $enforced[] = $table.'.'.$column;
                 }
             }
         }
+        // Match each Blueprint closure separately. No migration-name whitelist or blanket exemption.
+        preg_match_all("/Schema::(?:create|table)\\(\\s*'([a-z0-9_]+)'[^\\{]*\\{/", $source, $blocks, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
+        foreach ($blocks as $block) {
+            $table = $block[1][0]; $start = $block[0][1] + strlen($block[0][0]);
+            $depth = 1; $body = '';
+            foreach (token_get_all('<?php '.substr($source, $start)) as $token) {
+                if (is_array($token)) { if ($token[0] !== T_OPEN_TAG) $body .= $token[1]; continue; }
+                if ($token === '{') $depth++;
+                if ($token === '}') { $depth--; if ($depth === 0) break; }
+                $body .= $token;
+            }
+            foreach ($columns[$table] ?? [] as $column) {
+                if (preg_match("/'".preg_quote($column, '/')."'[^;]*nullable\\(false\\)/", $body)) $enforced[] = $table.'.'.$column;
+            }
+        }
+        return array_values(array_unique($enforced));
+    }
 
-        $this->assertSame([], $enforced, 'a rollout column was enforced NOT NULL while its area is still open');
+    public function test_rollout_guard_distinguishes_same_named_columns_and_catches_each_table(): void
+    {
+        $columns = ['md_source_observations' => ['payload_hash']];
+        $this->assertSame([], $this->rolloutEnforcements('<?php DB::statement("ALTER TABLE md_run_input_captures MODIFY payload_hash CHAR(64) NOT NULL");', $columns));
+        $this->assertSame(['md_source_observations.payload_hash'], $this->rolloutEnforcements('<?php DB::statement("ALTER TABLE md_source_observations MODIFY payload_hash CHAR(64) NOT NULL");', $columns));
+        $this->assertSame(['md_source_observations.payload_hash'], $this->rolloutEnforcements("<?php Schema::table('md_source_observations', function (Blueprint \$table) { \$table->char('payload_hash', 64)->nullable(false); });", $columns));
+        $this->assertSame([], $this->rolloutEnforcements("<?php Schema::create('md_run_input_captures', function (Blueprint \$table) { \$table->char('payload_hash', 64)->nullable(false); });", $columns));
     }
 
     /**

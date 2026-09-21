@@ -8,6 +8,7 @@ require_once __DIR__.'/MarketDataReplayVerificationTraceabilitySpec.php';
 $root = dirname(__DIR__, 5);
 $path = $root.'/docs/market_data/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv';
 $all = [];
+$admissionParent = [];
 $errors = [];
 $h = fopen($path, 'rb');
 if (! $h) { throw new RuntimeException('TRACEABILITY_MATRIX_UNREADABLE'); }
@@ -16,18 +17,43 @@ $header[0] = preg_replace('/^\xEF\xBB\xBF/', '', $header[0]);
 while (($v = fgetcsv($h)) !== false) {
     if (count($v) !== count($header)) { $errors[] = 'MALFORMED_MATRIX_ROW'; continue; }
     $row = array_combine($header, $v);
+    if (in_array($row['rule_id'], array_map(fn ($i) => sprintf('MD-S020-R%04d', $i), range(8, 16)), true)) { $admissionParent[$row['rule_id']] = $row; }
     if ($row['active'] === 'YES' && $row['primary_stage'] === 'MD-B18') { $all[] = $row; }
 }
 fclose($h);
+// D005 Q5 assigns admission to B22; retain every child of the frozen parent.
+// This guard checks ownership/context only, never readiness satisfaction.
+$admissionOwners = [8 => 'MD-B01', 9 => 'MD-B12', 10 => 'MD-B07', 11 => 'MD-B05',
+    12 => 'MD-B15', 13 => 'MD-B14', 14 => 'MD-B22', 15 => 'MD-B17', 16 => 'MD-B01'];
+if (count($admissionParent) !== 9) { $errors[] = 'ADMISSION_PARENT_POPULATION_MISMATCH'; }
+foreach ($admissionOwners as $number => $owner) {
+    $id = sprintf('MD-S020-R%04d', $number);
+    $row = $admissionParent[$id] ?? [];
+    $applicability = in_array($number, [8, 16], true) ? 'REFERENCE_ONLY' : 'MANDATORY';
+    if (($row['active'] ?? '') !== 'YES' || ($row['primary_stage'] ?? '') !== $owner
+        || ($row['applicability'] ?? '') !== $applicability) {
+        $errors[] = 'ADMISSION_PARENT_MEMBER_INVALID:'.$id;
+    }
+}
+$admission = $admissionParent['MD-S020-R0014'] ?? [];
+if (($admission['supporting_stages'] ?? '') !== 'MD-B18;MD-B17'
+    || strpos($admission['notes'] ?? '', 'current_ownership_decision=D-MD-B18-A002-005;') === false
+    || strpos($admission['notes'] ?? '', 'predicate_context=MD-S020-R0008;') === false
+    || strpos($admission['notes'] ?? '', 'normalized_predicate=Market-data documentation, implementation, and operational readiness are admitted only from market-data evidence establishing immutable publication, lineage, reproducibility, and replay;') === false) {
+    $errors[] = 'ADMISSION_OWNERSHIP_CONTEXT_INVALID:MD-S020-R0014';
+}
+if (! is_file($root.'/docs/market_data/records/decisions/D-MD-B18-A002-005_APPROVED_Q1_Q6_BOUNDED_REMEDIATION.md')) {
+    $errors[] = 'ADMISSION_OWNERSHIP_DECISION_MISSING';
+}
 $counts = array_count_values(array_column($all, 'applicability'));
-$expected = ['MANDATORY' => 115, 'CONDITIONAL_NOT_APPLICABLE' => 4, 'REFERENCE_ONLY' => 33, 'OPTIONAL_CAPABILITY' => 2];
+$expected = ['MANDATORY' => 114, 'CONDITIONAL_NOT_APPLICABLE' => 4, 'REFERENCE_ONLY' => 33, 'OPTIONAL_CAPABILITY' => 2];
 foreach ($expected as $class => $count) {
     if (($counts[$class] ?? 0) !== $count) { $errors[] = 'POPULATION_MISMATCH:'.$class; }
 }
 foreach ($counts as $class => $count) {
     if (! isset($expected[$class])) { $errors[] = 'UNEXPECTED_APPLICABILITY:'.$class; }
 }
-if (count($all) !== 154) { $errors[] = 'STAGE_POPULATION_MISMATCH'; }
+if (count($all) !== 153) { $errors[] = 'STAGE_POPULATION_MISMATCH'; }
 $required = MarketDataReplayVerificationTraceabilitySpec::required($root);
 if (count($required) !== MarketDataReplayVerificationTraceabilitySpec::EXPECTED_DENOMINATOR) {
     $errors[] = 'DENOMINATOR_MISMATCH:'.count($required);
@@ -89,6 +115,7 @@ if (! is_file($root.'/'.($source['path'] ?? ''))
 $result = ['gate' => 'MarketDataReplayVerificationNormalization', 'stage_id' => 'MD-B18',
     'status' => $errors ? 'FAIL' : 'PASS', 'counts' => $counts, 'denominator' => count($required),
     'conditional_na_evidence' => $evidenceId, 'whole_parent_population' => count($found),
+    'admission_parent_population' => count($admissionParent), 'admission_primary_owner' => $admission['primary_stage'] ?? null,
     'errors' => $errors, 'generated_at' => date(DATE_ATOM)];
 echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL;
 exit($result['status'] === 'PASS' ? 0 : 1);

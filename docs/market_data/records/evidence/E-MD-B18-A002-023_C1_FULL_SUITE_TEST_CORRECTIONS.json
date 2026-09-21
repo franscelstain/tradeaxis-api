@@ -1,0 +1,69 @@
+{
+  "evidence_id": "E-MD-B18-A002-023",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-18T00:18:35.342848+00:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "evidence_scope": "C1_CURRENT_TEST_SOURCE_AND_REAL_STORAGE_COMPLETION_CORRECTION",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-022"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "OK (27 tests, 159 assertions)",
+  "probe": {
+    "id": "P18-real-storage-completion",
+    "caught": true,
+    "landed_count": 1,
+    "green_controls": 2,
+    "restored_byte_identical": true
+  },
+  "tested_source_sha256": {
+    "tests/Unit/MarketData/AsKnownReplayBoundaryTest.php": "29634D9A8957C0EDD3CAAA4D803CD5E17D2ACC35BEE82A959CFB771DEC35CFBD",
+    "tests/Unit/MarketData/B18ProducerCalendarRegistryTest.php": "3795536C2F1549E4F7AC2A051DCCEF237708167AFEC1A70B382437C155432027",
+    "tests/Unit/MarketData/StageEightGovernanceBindingTest.php": "1E6F8A36CC6DF74EB86EDD1B727719FDC0E6A6DB1D272ADCBB2656E22E3BEFA6"
+  },
+  "domain_source_changed": false,
+  "schema_changed": false,
+  "superseded_current_proof": "E022 B18ProducerCalendarRegistryTest source and P11 mock-based omission test; P18 uses real persistence and savepoint rollback. Other E022 production source/probes retained.",
+  "raw_artifact_manifests": [
+    {
+      "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/c1-calendar-registry-20260917/C1_TEST_CORRECTION_MANIFEST.json",
+      "manifest_sha256": "DB40D06317B64E5B0A5B4133C2FC86816738B605D44F8215564821FAAB413C89",
+      "artifact_count": 46
+    }
+  ],
+  "remaining": {
+    "implementation_slices": 5,
+    "capture_state": "PARTIAL",
+    "incomplete_bases": 64,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [
+      "universe_identity",
+      "provider_mapping",
+      "status_expectation",
+      "source_observations",
+      "raw_history",
+      "event_factor",
+      "ancillary"
+    ]
+  },
+  "post_record_validation": "Future results attached to current CI; no full-suite PASS claimed at issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "MD-B18-A002: continue C1 capture at C02/C03 full temporal-identity and provider-mapping revision populations at actual producer consumption, including effective/recorded/supersedes coordinates and omission basis; then complete status, all observation outcomes, raw lineage, event/factor and ancillary full-revision contracts. Extend the independent completion validator and prove completeness before binding -> seal -> reader -> admission. Same attempt, accepted C1 contract, D005 and current CI; retain E021/E022/E023 scoped proof without repeating it."
+}

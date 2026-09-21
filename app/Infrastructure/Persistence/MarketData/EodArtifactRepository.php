@@ -288,6 +288,24 @@ class EodArtifactRepository
 
     public function ensureBarsHistoryFromCurrentTradeDate($tradeDate, $publicationId, $runId)
     {
+        if ($publicationId === null || $publicationId === '') return;
+        return DB::transaction(function () use ($tradeDate, $publicationId, $runId) {
+            if (DB::table('eod_bars_history')->where('trade_date', $tradeDate)->where('publication_id', $publicationId)->exists()) return;
+            $this->assertHistorySnapshotMutable($publicationId);
+            $sourceRows = $this->applyStableArtifactOrder(DB::table('eod_bars')->where('trade_date', $tradeDate))
+                ->get()->map(function ($row) { return (array) $row; })->all();
+            $this->assertCompleteBarRows($sourceRows, 'ensureBarsHistoryFromCurrentTradeDate');
+            $run = DB::table('eod_runs')->where('run_id', (int) $runId)->first();
+            if (! $run) throw new \RuntimeException('INPUT_CAPTURE_RAW_COPY_RUN_REQUIRED');
+            return ProducerInputScope::during($run, 'INGEST_BARS', 'raw-current-history-copy/v1:'.(int) $publicationId,
+                function () use ($tradeDate, $publicationId, $runId, $sourceRows) {
+                    return $this->copyCurrentBarsWithLineage($tradeDate, $publicationId, $runId, $sourceRows);
+                });
+        });
+    }
+
+    private function copyCurrentBarsWithLineage($tradeDate, $publicationId, $runId, array $sourceRows)
+    {
         if ($publicationId === null || $publicationId === '') {
             return;
         }
@@ -302,9 +320,11 @@ class EodArtifactRepository
         $this->assertHistorySnapshotMutable($publicationId);
 
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
-        $bars = $this->applyStableArtifactOrder(
-            DB::table('eod_bars')->where('trade_date', $tradeDate)
-        )->get();
+        $selection = ['read_kind' => 'history-copy-current', 'trade_date' => (string) $tradeDate, 'start_date' => (string) $tradeDate,
+            'publication_id' => null, 'target_publication_id' => (int) $publicationId,
+            'target_run_id' => (int) $runId, 'source_table' => 'eod_bars'];
+        $raw = ProducerRawInputLineage::consume($selection, function () use ($sourceRows) { return $sourceRows; });
+        $bars = collect($raw)->map(function ($row) { return (object) $row; });
 
         $insert = [];
         foreach ($bars as $row) {
@@ -329,6 +349,8 @@ class EodArtifactRepository
         if (! empty($insert)) {
             DB::table('eod_bars_history')->insert($insert);
         }
+        ProducerInputScope::rawProjection($selection, DB::table('eod_bars_history')->where('trade_date', $tradeDate)
+            ->where('publication_id', $publicationId)->orderBy('ticker_id')->get()->map(function ($row) { return (array) $row; })->all());
     }
 
     private function assertReplayIsolationCandidate($publicationId, $runId): void
@@ -353,36 +375,36 @@ class EodArtifactRepository
 
     public function replaceBarsHistoryFromPublication($tradeDate, $sourcePublicationId, $targetPublicationId, $runId)
     {
-        if ($sourcePublicationId === null || $sourcePublicationId === '' || $targetPublicationId === null || $targetPublicationId === '') {
-            return;
-        }
-
-        $sourcePublicationId = (int) $sourcePublicationId;
-        $targetPublicationId = (int) $targetPublicationId;
-
-        if ($sourcePublicationId === $targetPublicationId) {
-            return;
-        }
-
-        DB::transaction(function () use ($tradeDate, $sourcePublicationId, $targetPublicationId, $runId) {
-            $sourceRows = $this->applyStableArtifactOrder(
-                DB::table('eod_bars_history')
-                    ->where('trade_date', $tradeDate)
-                    ->where('publication_id', $sourcePublicationId)
-            )->get();
-
+        if ($sourcePublicationId === null || $sourcePublicationId === '' || $targetPublicationId === null || $targetPublicationId === '' || (int) $sourcePublicationId === (int) $targetPublicationId) return;
+        return DB::transaction(function () use ($tradeDate, $sourcePublicationId, $targetPublicationId, $runId) {
+            $sourceTable = 'eod_bars_history';
+            $sourceRows = $this->applyStableArtifactOrder(DB::table($sourceTable)->where('trade_date', $tradeDate)->where('publication_id', $sourcePublicationId))->get();
             if ($sourceRows->isEmpty()) {
-                $sourceRows = $this->applyStableArtifactOrder(
-                    DB::table('eod_bars')
-                        ->where('trade_date', $tradeDate)
-                        ->where('publication_id', $sourcePublicationId)
-                )->get();
+                $sourceTable = 'eod_bars';
+                $sourceRows = $this->applyStableArtifactOrder(DB::table($sourceTable)->where('trade_date', $tradeDate)->where('publication_id', $sourcePublicationId))->get();
             }
+            if ($sourceRows->isEmpty()) throw new \RuntimeException('INPUT_CAPTURE_RAW_COPY_SOURCE_MISSING');
+            $this->assertHistorySnapshotMutable($targetPublicationId);
+            $this->assertCompleteBarRows($sourceRows->map(function ($row) { return (array) $row; })->all(), 'replaceBarsHistoryFromPublication');
+            $run = DB::table('eod_runs')->where('run_id', (int) $runId)->first();
+            if (! $run) throw new \RuntimeException('INPUT_CAPTURE_RAW_COPY_RUN_REQUIRED');
+            return ProducerInputScope::during($run, 'INGEST_BARS', 'raw-history-copy/v1:'.(int) $sourcePublicationId.':'.(int) $targetPublicationId,
+                function () use ($tradeDate, $sourcePublicationId, $targetPublicationId, $runId, $sourceRows, $sourceTable) {
+                    return $this->copyBarsHistoryWithLineage($tradeDate, (int) $sourcePublicationId, (int) $targetPublicationId, $runId, $sourceRows, $sourceTable);
+                });
+        });
+    }
 
-            if ($sourceRows->isEmpty()) {
-                return;
-            }
-
+    private function copyBarsHistoryWithLineage($tradeDate, $sourcePublicationId, $targetPublicationId, $runId, $sourceRows, $sourceTable)
+    {
+        return DB::transaction(function () use ($tradeDate, $sourcePublicationId, $targetPublicationId, $runId, $sourceRows, $sourceTable) {
+            $selection = ['read_kind' => 'history-copy', 'trade_date' => (string) $tradeDate, 'start_date' => (string) $tradeDate,
+                'publication_id' => $sourcePublicationId, 'target_publication_id' => $targetPublicationId,
+                'target_run_id' => (int) $runId, 'source_table' => $sourceTable];
+            $captured = ProducerRawInputLineage::consume($selection, function () use ($sourceRows) {
+                return $sourceRows->map(function ($row) { return (array) $row; })->all();
+            });
+            $sourceRows = collect($captured)->map(function ($row) { return (object) $row; });
             $this->assertHistorySnapshotMutable($targetPublicationId);
 
             $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
@@ -412,6 +434,8 @@ class EodArtifactRepository
                 ->delete();
 
             DB::table('eod_bars_history')->insert($insert);
+            ProducerInputScope::rawProjection($selection, DB::table('eod_bars_history')->where('trade_date', $tradeDate)
+                ->where('publication_id', $targetPublicationId)->orderBy('ticker_id')->get()->map(function ($row) { return (array) $row; })->all());
         });
     }
 
@@ -424,40 +448,43 @@ class EodArtifactRepository
      * — measured on 120 production tickers at 2026-07-28, the median divergence from the
      * boundary-seeded value was 0.34%, but the 90th percentile was 1.62% and the worst was 72.9%.
      *
-     * Only the four fields true range needs are selected. Scoping the query to one ticker keeps
-     * the worker's peak memory bounded even when the complete canonical corpus is large.
+     * Capture the complete RAW rows before returning the four true-range fields. Scoping the
+     * query to one ticker bounds the producer's materialization of the canonical corpus.
      */
     public function loadAtrSeriesForTickerFromBoundary($tickerId, $tradeDate, $boundaryDate, $requestedPublicationId = null)
     {
-        $query = DB::table('eod_bars')
-            ->select(['trade_date', 'high', 'low', 'close'])
-            ->where('ticker_id', (int) $tickerId)
-            ->whereBetween('trade_date', [$boundaryDate, $tradeDate]);
-
-        // Correction candidates read their requested-date bar from immutable candidate history,
-        // matching loadBarsWindow(). Earlier dates remain current canonical inputs.
-        if ($requestedPublicationId !== null && $requestedPublicationId !== '') {
-            $query->where('trade_date', '<>', $tradeDate);
-        }
-
-        $rows = $query
-            ->orderBy('trade_date')
-            ->get();
-
-        if ($requestedPublicationId !== null && $requestedPublicationId !== '') {
-            $historyRow = DB::table('eod_bars_history')
-                ->select(['trade_date', 'high', 'low', 'close'])
-                ->where('publication_id', (int) $requestedPublicationId)
+        $selection = ['read_kind' => 'atr', 'ticker_id' => (int) $tickerId, 'trade_date' => (string) $tradeDate,
+            'start_date' => (string) $boundaryDate, 'publication_id' => $requestedPublicationId === null ? null : (int) $requestedPublicationId];
+        $captured = ProducerRawInputLineage::consume($selection, function () use ($tickerId, $tradeDate, $boundaryDate, $requestedPublicationId) {
+            $query = DB::table('eod_bars')
                 ->where('ticker_id', (int) $tickerId)
-                ->where('trade_date', $tradeDate)
-                ->first();
+                ->whereBetween('trade_date', [$boundaryDate, $tradeDate]);
 
-            if ($historyRow !== null) {
-                $rows->push($historyRow);
+            // Correction candidates read their requested-date bar from immutable candidate history,
+            // matching loadBarsWindow(). Earlier dates remain current canonical inputs.
+            if ($requestedPublicationId !== null && $requestedPublicationId !== '') {
+                $query->where('trade_date', '<>', $tradeDate);
             }
-        }
 
-        return $rows
+            $rows = $query
+                ->orderBy('trade_date')
+                ->get();
+
+            if ($requestedPublicationId !== null && $requestedPublicationId !== '') {
+                $historyRow = DB::table('eod_bars_history')
+                    ->where('publication_id', (int) $requestedPublicationId)
+                    ->where('ticker_id', (int) $tickerId)
+                    ->where('trade_date', $tradeDate)
+                    ->first();
+
+                if ($historyRow !== null) {
+                    $rows->push($historyRow);
+                }
+            }
+
+            return $rows->sortBy('trade_date')->values()->map(function ($row) { return (array) $row; })->all();
+        });
+        $projection = collect($captured)->map(function ($row) { return (object) $row; })
             ->sortBy('trade_date')
             ->values()
             ->map(function ($row) {
@@ -469,6 +496,7 @@ class EodArtifactRepository
                 ];
             })
             ->all();
+        return ProducerInputScope::rawProjection($selection, $projection);
     }
 
     public function loadBarsWindow($tradeDate, $lookbackDays, $requestedPublicationId = null, $historyStartDate = null)
@@ -478,24 +506,11 @@ class EodArtifactRepository
             $startDate = $historyStartDate;
         }
 
-        $rows = $this->applyStableArtifactOrder(
-            DB::table('eod_bars')->whereBetween('trade_date', [$startDate, $tradeDate])
-        )
-            ->get()
-            ->map(function ($row) {
-                return (array) $row;
-            })
-            ->all();
-
-        if ($requestedPublicationId) {
-            $rows = array_values(array_filter($rows, function ($row) use ($tradeDate) {
-                return (string) $row['trade_date'] !== (string) $tradeDate;
-            }));
-
-            $historyRows = $this->applyStableArtifactOrder(
-                DB::table('eod_bars_history')
-                    ->where('trade_date', $tradeDate)
-                    ->where('publication_id', $requestedPublicationId)
+        $selection = ['read_kind' => 'window', 'trade_date' => (string) $tradeDate, 'start_date' => (string) $startDate,
+            'lookback_days' => (int) $lookbackDays, 'publication_id' => $requestedPublicationId === null ? null : (int) $requestedPublicationId];
+        $rows = ProducerRawInputLineage::consume($selection, function () use ($startDate, $tradeDate, $requestedPublicationId) {
+            $rows = $this->applyStableArtifactOrder(
+                DB::table('eod_bars')->whereBetween('trade_date', [$startDate, $tradeDate])
             )
                 ->get()
                 ->map(function ($row) {
@@ -503,10 +518,29 @@ class EodArtifactRepository
                 })
                 ->all();
 
-            $rows = array_merge($rows, $historyRows);
-        }
+            if ($requestedPublicationId) {
+                $rows = array_values(array_filter($rows, function ($row) use ($tradeDate) {
+                    return (string) $row['trade_date'] !== (string) $tradeDate;
+                }));
 
-        return collect($rows)
+                $historyRows = $this->applyStableArtifactOrder(
+                    DB::table('eod_bars_history')
+                        ->where('trade_date', $tradeDate)
+                        ->where('publication_id', $requestedPublicationId)
+                )
+                    ->get()
+                    ->map(function ($row) {
+                        return (array) $row;
+                    })
+                    ->all();
+
+                $rows = array_merge($rows, $historyRows);
+            }
+
+            return $rows;
+        });
+
+        $projection = collect($rows)
             ->groupBy('ticker_id')
             ->map(function ($group) {
                 return collect($group)
@@ -517,6 +551,7 @@ class EodArtifactRepository
                     ->all();
             })
             ->all();
+        return ProducerInputScope::rawProjection($selection, $projection);
     }
 
     public function replaceIndicators($tradeDate, $runId, array $rows, $publicationId = null, $useHistory = false)
@@ -615,20 +650,25 @@ class EodArtifactRepository
 
     public function loadBarsForTradeDate($tradeDate, $requestedPublicationId = null)
     {
-        $table = $requestedPublicationId ? 'eod_bars_history' : 'eod_bars';
-        $query = DB::table($table)->where('trade_date', $tradeDate);
+        $selection = ['read_kind' => 'date', 'trade_date' => (string) $tradeDate, 'start_date' => (string) $tradeDate,
+            'publication_id' => $requestedPublicationId === null ? null : (int) $requestedPublicationId];
+        $rows = ProducerRawInputLineage::consume($selection, function () use ($tradeDate, $requestedPublicationId) {
+            $table = $requestedPublicationId ? 'eod_bars_history' : 'eod_bars';
+            $query = DB::table($table)->where('trade_date', $tradeDate);
 
-        if ($requestedPublicationId) {
-            $query->where('publication_id', $requestedPublicationId);
-        }
+            if ($requestedPublicationId) {
+                $query->where('publication_id', $requestedPublicationId);
+            }
 
-        return $this->applyStableArtifactOrder($query)
-            ->get()
-            ->keyBy('ticker_id')
-            ->map(function ($row) {
-                return (array) $row;
-            })
-            ->all();
+            return $this->applyStableArtifactOrder($query)
+                ->get()
+                ->map(function ($row) {
+                    return (array) $row;
+                })
+                ->all();
+        });
+        $projection = collect($rows)->keyBy('ticker_id')->all();
+        return ProducerInputScope::rawProjection($selection, $projection);
     }
 
 

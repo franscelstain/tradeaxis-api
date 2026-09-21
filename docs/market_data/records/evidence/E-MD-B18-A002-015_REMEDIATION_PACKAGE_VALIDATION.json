@@ -1,0 +1,485 @@
+{
+  "evidence_id": "E-MD-B18-A002-015",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-15T21:37:14+07:00",
+  "issued_at_source": "Windows host system clock converted to Asia/Jakarta UTC+07; raw tool timestamps retained as emitted",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "evidence_scope": "POST_E014_PACKAGE_VALIDATION_EXISTING_STAGE_AND_CORPUS_BLOCKERS_NO_CLOSURE",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_evidence": [
+    "E-MD-B18-A002-014"
+  ],
+  "related_findings": [
+    "F-MD-B18-A002-005",
+    "F-MD-B18-A002-011"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-004"
+  ],
+  "dependencies": [
+    "MD-DEP-0015",
+    "MD-DEP-0017"
+  ],
+  "targeted": {
+    "tests": 208,
+    "assertions": 878,
+    "status": "PASS"
+  },
+  "full_suite": {
+    "tests": 2258,
+    "assertions": 21933,
+    "errors": 0,
+    "failures": 7,
+    "skipped": 0,
+    "status": "FAIL",
+    "failure_class": "ProductionCorpusInvariantOracleTest empty deployed-corpus population",
+    "no_guard_weakened": true
+  },
+  "stage": {
+    "denominator": 115,
+    "satisfied": 0,
+    "incomplete_bases": 65,
+    "normalization": "PASS",
+    "proof_binder": "BLOCKED",
+    "proof_gate": "FAIL",
+    "proof_readiness": "FAIL",
+    "closure_conditions": {
+      "no_transitional_applicability": {
+        "required": "zero required rows with transitional MANDATORY_OR_CONDITIONAL",
+        "observed": 0,
+        "met": true,
+        "offenders": []
+      },
+      "no_pending_applicability": {
+        "required": "zero CONDITIONAL_PENDING or APPLICABILITY_PENDING rows",
+        "observed": 0,
+        "met": true,
+        "offenders": []
+      },
+      "denominator_fully_satisfied": {
+        "required": "all MANDATORY and CONDITIONAL_APPLICABLE denominator rows SATISFIED against current stage evidence",
+        "denominator": 115,
+        "satisfied": 0,
+        "met": false,
+        "offenders": [
+          "MD-S002-R0003",
+          "MD-S002-R0005",
+          "MD-S002-R0006",
+          "MD-S002-R0007",
+          "MD-S002-R0008",
+          "MD-S002-R0009",
+          "MD-S002-R0010",
+          "MD-S002-R0016",
+          "MD-S003-R0002",
+          "MD-S003-R0003"
+        ]
+      },
+      "non_required_rows_are_decided": {
+        "required": "every optional or reference row carries a recorded stage-entry decision",
+        "observed": 0,
+        "met": true,
+        "offenders": []
+      },
+      "bound_rows_name_their_guard": {
+        "required": "every SATISFIED row records its proof family and both guard methods, not just the evidence id",
+        "observed": 0,
+        "met": true,
+        "offenders": []
+      },
+      "context_binding_and_normalized_predicate": {
+        "required": "every required denominator row carries deterministic parent/context binding and a normalized predicate",
+        "denominator": 115,
+        "unbound": 0,
+        "met": true,
+        "offenders": []
+      },
+      "every_predicate_has_a_reviewed_proof_basis": {
+        "required": "every denominator row names a guard written or verified for that predicate, with a reviewed one-line basis",
+        "denominator": 115,
+        "with_a_basis": 50,
+        "outstanding": 65,
+        "foreign_basis_entries": [],
+        "met": false,
+        "offenders": [
+          "MD-S002-R0003",
+          "MD-S002-R0005",
+          "MD-S002-R0006",
+          "MD-S002-R0007",
+          "MD-S002-R0008",
+          "MD-S002-R0009",
+          "MD-S002-R0010",
+          "MD-S003-R0002",
+          "MD-S003-R0003",
+          "MD-S003-R0004"
+        ]
+      },
+      "no_foreign_row_carries_this_evidence": {
+        "required": "no row owned by another stage carries MD-B18 evidence",
+        "observed": 0,
+        "met": true,
+        "offenders": []
+      },
+      "raw_artifact_integrity": {
+        "manifest_present": false,
+        "met": false,
+        "required": "every governed raw artifact is present, readable, and hashes to the value the manifest records"
+      },
+      "governed_evidence_reachable": {
+        "required": "the stage evidence exists as exactly one governed record and links the raw artifact manifest",
+        "met": false,
+        "observed": 0
+      }
+    },
+    "closure_errors": [
+      "RAW_ARTIFACT_MANIFEST_MISSING",
+      "CLOSURE_CONDITION_UNMET:denominator_fully_satisfied",
+      "CLOSURE_CONDITION_UNMET:every_predicate_has_a_reviewed_proof_basis",
+      "CLOSURE_CONDITION_UNMET:raw_artifact_integrity",
+      "CLOSURE_CONDITION_UNMET:governed_evidence_reachable"
+    ],
+    "proof_self_test": {
+      "baseline": "FAIL",
+      "valid_falsifiability_claim": false,
+      "reason": "65 missing predicate bases already make control red; ten expected-red cases are not sufficient falsifiability proof"
+    }
+  },
+  "governance": {
+    "documentation_checks": [
+      {
+        "check": "ROOT_ARCHITECTURE",
+        "status": "PASS",
+        "details": {
+          "missing": []
+        }
+      },
+      {
+        "check": "ONE_DOCUMENT_ONE_ROLE",
+        "status": "PASS",
+        "details": {
+          "physical": 1096,
+          "registry": 1096,
+          "duplicates": [],
+          "missing": [],
+          "extra": []
+        }
+      },
+      {
+        "check": "DOCUMENT_ID_REGISTRY_INTEGRITY",
+        "status": "PASS",
+        "details": {
+          "physical": 1096,
+          "registry": 1096,
+          "errors": []
+        }
+      },
+      {
+        "check": "STAGE_REGISTER_SHAPE",
+        "status": "PASS",
+        "details": {
+          "stage_rows": 23,
+          "errors": []
+        }
+      },
+      {
+        "check": "STRATEGY_FREEZE",
+        "status": "PASS",
+        "details": {
+          "registered": 91,
+          "mismatches": []
+        }
+      },
+      {
+        "check": "CURRENT_VERIFICATION_REBASELINE",
+        "status": "PASS",
+        "details": {
+          "registry": 1096,
+          "missing": [],
+          "extra": [],
+          "duplicates": [],
+          "legacy_current_proof": []
+        }
+      },
+      {
+        "check": "JSON_PARSE",
+        "status": "PASS",
+        "details": {
+          "errors": []
+        }
+      },
+      {
+        "check": "CSV_STRUCTURE",
+        "status": "PASS",
+        "details": {
+          "errors": []
+        }
+      },
+      {
+        "check": "ACTIVE_MARKDOWN_LINKS",
+        "status": "PASS",
+        "details": {
+          "broken_count": 0,
+          "samples": []
+        }
+      },
+      {
+        "check": "TRACEABILITY_MATRIX",
+        "status": "PASS",
+        "details": {
+          "rows": 6501,
+          "errors": []
+        }
+      },
+      {
+        "check": "LEGACY_SEMANTIC_SPLIT_INTEGRITY",
+        "status": "PASS",
+        "details": {
+          "split_sources": 43,
+          "reconstructed": 43,
+          "errors": []
+        }
+      },
+      {
+        "check": "LEGACY_EXTRACT_STRUCTURE",
+        "status": "PASS",
+        "details": {
+          "extracts_checked": 428,
+          "errors": []
+        }
+      },
+      {
+        "check": "WINDOWS_SAFE_PATHS",
+        "status": "PASS",
+        "details": {
+          "max_length": 103,
+          "too_long": []
+        }
+      },
+      {
+        "check": "EXACT_DUPLICATE_FILES",
+        "status": "PASS",
+        "details": {
+          "duplicates": []
+        }
+      },
+      {
+        "check": "NO_LEGACY_ROOT_AREAS",
+        "status": "PASS",
+        "details": {
+          "unexpected": []
+        }
+      }
+    ],
+    "relationship": "PASS",
+    "classification": "PASS",
+    "applicability": "PASS",
+    "self_test": {
+      "status": "PASS",
+      "caught_mutations": 14,
+      "green_controls": 4,
+      "all_applied": true,
+      "surface": "temporary copy; canonical strategy/application/test bytes unchanged"
+    }
+  },
+  "raw_artifact_manifests": [
+    {
+      "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/VALIDATION_MANIFEST.json",
+      "manifest_sha256": "4DBF875A79227C5ADBFE750BACF76236C34CD286D181C3E8985473EA1D6156BE",
+      "artifact_count": 33
+    }
+  ],
+  "post_issue_boundary": "This record reports the completed validation of E014/package state. A final governance/full-suite pass and CURRENT_STATE regeneration after E015 registration remain an execution check, not an assertion of this immutable record. Any new discrepancy must be recorded separately.",
+  "remaining": {
+    "package_plans_missing": 0,
+    "user_decisions_pending": 5,
+    "predicate_bases_incomplete": 65,
+    "required_predicates_unbound": 115,
+    "closure_full_suite_failures": 7
+  },
+  "next": "Same single resume: user review of Q1-Q5 package under MD-DEP-0017. Record D/relationships and CI scope before application/test/schema or ownership mutation.",
+  "first_full_suite": {
+    "tests": 2258,
+    "assertions": 21930,
+    "failures": 8,
+    "additional_failure": "ScopeBoundaryAndOrchestrationCompletionTest: generated resume differs from canonical orchestration",
+    "remediation": "GenerateMarketDataCurrentState.php; navigation targeted 11 tests / 86 assertions PASS; synchronized full suite now has only seven recorded corpus failures"
+  },
+  "validation_sequence": [
+    {
+      "name": "01-targeted",
+      "command": [
+        "D:/xampp/php/php.exe",
+        "vendor/bin/phpunit",
+        "--colors=never",
+        "--filter",
+        "B18|ReplayBackfillServiceTest|FindingRecordConsistencyTest"
+      ],
+      "exit_code": 0,
+      "path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/01-targeted.txt",
+      "sha256": "6E68CAE7E9E32C10C2B93459E59267FC1D48DDCF017CEB398FFF18613B2D08EF"
+    },
+    {
+      "name": "02-MarketDataReplayVerificationNormalization",
+      "command": [
+        "D:/xampp/php/php.exe",
+        "docs/market_data/development/implementation/tests/MarketDataReplayVerificationNormalization.php"
+      ],
+      "exit_code": 0,
+      "path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/02-MarketDataReplayVerificationNormalization.txt",
+      "sha256": "71B18DB04AB2ED771B5C74FE64AD47F8BA0B3FD75C31EA6E16BAC1703EC3C5A4"
+    },
+    {
+      "name": "03-MarketDataReplayVerificationProofBinder",
+      "command": [
+        "D:/xampp/php/php.exe",
+        "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBinder.php",
+        "--validate-only"
+      ],
+      "exit_code": 1,
+      "path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/03-MarketDataReplayVerificationProofBinder.txt",
+      "sha256": "C6AE8D362C674532424C56C75C52F6089DB17151853AC0083B30C3C4BC082633"
+    },
+    {
+      "name": "04-MarketDataReplayVerificationProofGate",
+      "command": [
+        "D:/xampp/php/php.exe",
+        "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofGate.php",
+        "--pre-binding"
+      ],
+      "exit_code": 1,
+      "path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/04-MarketDataReplayVerificationProofGate.txt",
+      "sha256": "637317C50A9C0C0D3060DFC073D385BCA5EB8E960511D82E2F1ED336C4ECCC61"
+    },
+    {
+      "name": "05-MarketDataReplayVerificationProofReadinessGate",
+      "command": [
+        "D:/xampp/php/php.exe",
+        "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofReadinessGate.php"
+      ],
+      "exit_code": 1,
+      "path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/05-MarketDataReplayVerificationProofReadinessGate.txt",
+      "sha256": "D9D1E80F35B7A31EC41A82EDE547A4FBAA97F39F7FD15936B3CBE7E2A6F907F3"
+    },
+    {
+      "name": "06-MarketDataReplayVerificationClosureGate",
+      "command": [
+        "D:/xampp/php/php.exe",
+        "docs/market_data/development/implementation/tests/MarketDataReplayVerificationClosureGate.php"
+      ],
+      "exit_code": 1,
+      "path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/06-MarketDataReplayVerificationClosureGate.txt",
+      "sha256": "F463FA4336D2C69E4FFDF2791AA3A8C06C127395C6E66B8F3AC6C2E7BCFCB195"
+    },
+    {
+      "name": "07-MarketDataReplayVerificationProofSelfTest",
+      "command": [
+        "D:/xampp/php/php.exe",
+        "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofSelfTest.php",
+        "--pre-binding"
+      ],
+      "exit_code": 1,
+      "path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/07-MarketDataReplayVerificationProofSelfTest.txt",
+      "sha256": "C25F19D00AA54B02A8EB3D5C0FCDD12743B2282344AF8810A3A5CB4AF813A6B8"
+    },
+    {
+      "name": "08-MarketDataDocumentationIntegrityGate",
+      "command": [
+        "D:/xampp/php/php.exe",
+        "docs/market_data/development/implementation/tests/MarketDataDocumentationIntegrityGate.php"
+      ],
+      "exit_code": 0,
+      "path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/08-MarketDataDocumentationIntegrityGate.txt",
+      "sha256": "741ABD826BF0C2E6EEDADAD217813B8E39483B2EDC390BB12879A2BD3AD848E2"
+    },
+    {
+      "name": "09-MarketDataRelationshipIntegrityGate",
+      "command": [
+        "D:/xampp/php/php.exe",
+        "docs/market_data/development/implementation/tests/MarketDataRelationshipIntegrityGate.php"
+      ],
+      "exit_code": 0,
+      "path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/09-MarketDataRelationshipIntegrityGate.txt",
+      "sha256": "6EFCCB41BD69C7E23AAA8C65C94F927EFEB848F3608BE08FEA8E385D90DCCE3D"
+    },
+    {
+      "name": "10-MarketDataRelationshipIntegrityGateSelfTest",
+      "command": [
+        "D:/xampp/php/php.exe",
+        "docs/market_data/development/implementation/tests/MarketDataRelationshipIntegrityGateSelfTest.php"
+      ],
+      "exit_code": 0,
+      "path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/10-MarketDataRelationshipIntegrityGateSelfTest.txt",
+      "sha256": "FBF0BCD4CBC72953AE0D547C10A37116A525B265E96FA3EE0AFE710148799D17"
+    },
+    {
+      "name": "11-MarketDataClassificationConsistencyGate",
+      "command": [
+        "D:/xampp/php/php.exe",
+        "docs/market_data/development/implementation/tests/MarketDataClassificationConsistencyGate.php"
+      ],
+      "exit_code": 0,
+      "path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/11-MarketDataClassificationConsistencyGate.txt",
+      "sha256": "00F41A8DAF24E1C9A75DBB7AD710C0C30C2C9A68FA474E8C142AC02781103DA0"
+    },
+    {
+      "name": "12-MarketDataTraceabilityApplicabilityGate",
+      "command": [
+        "D:/xampp/php/php.exe",
+        "docs/market_data/development/implementation/tests/MarketDataTraceabilityApplicabilityGate.php"
+      ],
+      "exit_code": 0,
+      "path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/12-MarketDataTraceabilityApplicabilityGate.txt",
+      "sha256": "74F5C20C2A760DAEB620021EE8DC298BD66C5CCA8C16BAB0FACF01D3ABC6CC86"
+    },
+    {
+      "name": "13-full-suite",
+      "command": [
+        "D:/xampp/php/php.exe",
+        "vendor/bin/phpunit",
+        "--colors=never"
+      ],
+      "exit_code": 1,
+      "path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/13-full-suite.txt",
+      "sha256": "BF1C43DB3F7AF522FF15D965CEDBA9FF8B7EBA480B1CFF7689D99B13E4D7982C"
+    },
+    {
+      "name": "14-current-state",
+      "command": [
+        "D:/xampp/php/php.exe",
+        "docs/market_data/development/implementation/tests/GenerateMarketDataCurrentState.php"
+      ],
+      "exit_code": 0,
+      "path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/14-current-state.txt",
+      "sha256": "B0C659B596BAD187DB7769C7F591215A537438F1D97CF57D14D99F90FB06DC5C"
+    },
+    {
+      "name": "15-navigation-targeted",
+      "command": [
+        "D:/xampp/php/php.exe",
+        "vendor/bin/phpunit",
+        "--colors=never",
+        "--filter",
+        "ScopeBoundaryAndOrchestrationCompletionTest|FindingRecordConsistencyTest"
+      ],
+      "exit_code": 0,
+      "path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/15-navigation-targeted.txt",
+      "sha256": "211C00EE2313653209521B527E13D80F4B1B62EED4F5BFE1F3CAE496319B73EF"
+    },
+    {
+      "name": "16-full-suite-synchronized",
+      "command": [
+        "D:/xampp/php/php.exe",
+        "vendor/bin/phpunit",
+        "--colors=never"
+      ],
+      "exit_code": 1,
+      "path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/16-full-suite-synchronized.txt",
+      "sha256": "7B43479517A43FD8931343EA7D80AF2A0C6815A4EC4748A943CD024BA69B2606"
+    }
+  ]
+}

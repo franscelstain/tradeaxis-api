@@ -1,0 +1,108 @@
+{
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-15T15:22:45.945825+00:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "satisfaction_eligible_rule_ids": [],
+  "evidence_id": "E-MD-B18-A002-017",
+  "verdict": "PASS",
+  "evidence_scope": "Q6_READ_ONLY_GOVERNANCE_EXECUTION_ONLY",
+  "related_findings": [
+    "F-MD-B18-A002-019"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-016"
+  ],
+  "dependencies": [
+    "MD-DEP-0018",
+    "MD-DEP-0015"
+  ],
+  "raw_artifact_manifests": [
+    {
+      "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/approved-remediation-20260915/Q6_PROOF_MANIFEST.json",
+      "manifest_sha256": "689A9A4B8BF80FA2807B36390C3395A6CF0F27B743BC17E85A8CEB341BD4263A",
+      "artifact_count": 40
+    }
+  ],
+  "tested_source_sha256": {
+    "docs/market_data/development/implementation/tests/MarketDataDocumentationIntegrityGate.php": "5ECC9B5BECAB9238940B2143AC4D1835601804DD66554389CD22EDF2736CEC29",
+    "docs/market_data/development/implementation/tests/MarketDataRelationshipIntegrityGate.php": "0EAAC535253A4F20439655D51D4946E05893CC11E82477BA372DB2E00BF66375",
+    "docs/market_data/development/implementation/tests/MarketDataTraceabilityApplicabilityGate.php": "0A5FA06B1C46311635E89E838D3A06CE545341EBDD67947EDB89FAB65C0124BB",
+    "tests/Unit/MarketData/GovernanceGateReadOnlyExecutionTest.php": "F0837223F90DB0CC1C41F7D4625870BB2EEEFB84FB04AE50E3D51360D55068DB"
+  },
+  "root_cause": "Two unconditional file_put_contents calls overwrote registered immutable LATEST records; check accepted mutation flags. Removed the writes and reject explicit conflicting modes before mutation. Acceptance checks/stdout/exit semantics otherwise unchanged.",
+  "targeted": "PASS: 9 tests /5430 assertions; initial harness message assertion corrected to exact observed work identity mismatch, without weakening gate acceptance.",
+  "probes": [
+    {
+      "name": "P01-doc-put",
+      "file": "docs/market_data/development/implementation/tests/MarketDataDocumentationIntegrityGate.php",
+      "anchor_count": 1,
+      "landed_count": 1,
+      "eol": "LF",
+      "before_sha256": "5ECC9B5BECAB9238940B2143AC4D1835601804DD66554389CD22EDF2736CEC29",
+      "mutated_sha256": "04115855F5018A5415066AEE695A978A3C8AB8F1F321C8138D0F5ABBE5B6DA63",
+      "restored_byte_equal": true,
+      "caught": true
+    },
+    {
+      "name": "P02-rel-fwrite",
+      "file": "docs/market_data/development/implementation/tests/MarketDataRelationshipIntegrityGate.php",
+      "anchor_count": 1,
+      "landed_count": 1,
+      "eol": "LF",
+      "before_sha256": "0EAAC535253A4F20439655D51D4946E05893CC11E82477BA372DB2E00BF66375",
+      "mutated_sha256": "9A0EF3F5F80C7AA145FAB6135EA380E819F17E9D163C5A613806B9C3F2C83128",
+      "restored_byte_equal": true,
+      "caught": true
+    },
+    {
+      "name": "P03-other-record-copy",
+      "file": "docs/market_data/development/implementation/tests/MarketDataDocumentationIntegrityGate.php",
+      "anchor_count": 1,
+      "landed_count": 1,
+      "eol": "LF",
+      "before_sha256": "5ECC9B5BECAB9238940B2143AC4D1835601804DD66554389CD22EDF2736CEC29",
+      "mutated_sha256": "4C87EA09E82A37D2F154F9F55662C3E6C8B89F1BA094697066DB1727582B1582",
+      "restored_byte_equal": true,
+      "caught": true
+    },
+    {
+      "name": "P04-check-mode-bypass",
+      "file": "docs/market_data/development/implementation/tests/MarketDataTraceabilityApplicabilityGate.php",
+      "anchor_count": 1,
+      "landed_count": 1,
+      "eol": "LF",
+      "before_sha256": "0A5FA06B1C46311635E89E838D3A06CE545341EBDD67947EDB89FAB65C0124BB",
+      "mutated_sha256": "57FE5BDA102D21EC34C62BA794677149218C5F1B77E6753CF0F02419B57A8507",
+      "restored_byte_equal": true,
+      "caught": true
+    }
+  ],
+  "validation_summary": {
+    "documentation": "PASS 15 checks",
+    "relationship": "PASS validity/completeness",
+    "self_test": "PASS 14 mutations/4 green controls",
+    "classification": "PASS",
+    "applicability": "PASS explicit --check",
+    "full_suite": "FAIL 2267 tests/27406 assertions/seven known ProductionCorpusInvariantOracleTest failures/zero errors/skips",
+    "immutable_population": 663,
+    "all_relevant_commands_byte_preserved": true,
+    "stage": "Normalization PASS 115 at execution; proof/readiness/binder 65 incomplete, closure FAIL, proof self-test baseline red (not credited as falsifiability). Pre-Q5 counts superseded by E018."
+  },
+  "write_surface_review": "Documentation and Relationship now only emit JSON stdout; Classification has no persistent write; Applicability --check fails before any existing explicit mutator; self-test writes only disposable copies. Whole-document SHA snapshots prove PASS and FAIL read-only execution independently of write API; file_put_contents, fwrite and copy mutations caught. Canonical CURRENT_STATE changes only through its authorized generator.",
+  "execution_note": "Register encoding helper defect corrected from before-approval byte copy; intended two changed lines restored, remaining lines byte-identical. E017 does not treat full-suite corpus failures as PASS.",
+  "not_claimed": [
+    "domain predicate satisfaction",
+    "stage closure",
+    "full-suite PASS",
+    "old-data recovery"
+  ]
+}

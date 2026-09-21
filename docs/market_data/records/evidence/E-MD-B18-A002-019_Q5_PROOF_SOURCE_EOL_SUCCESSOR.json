@@ -1,0 +1,51 @@
+{
+  "evidence_id": "E-MD-B18-A002-019",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-15T15:25:26.022454+00:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS",
+  "evidence_scope": "Q5_PROOF_SOURCE_EOL_IDENTITY_ONLY",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-018"
+  ],
+  "predecessor_sha256": "48C9588FA861DCF49E6D685BF254F28D168BD921A6992A344125C994A06F6328",
+  "tested_source_sha256": {
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationTraceabilitySpec.php": "08C7DA5C6155E14E53BA6F68933476DFFF12D87E7EBC094A91C2C1E605FF3B03",
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofSpec.php": "27CBB0CFDF497DB154FBDF20542914343BED0A8478DE4B19A9E42C877DCD0635",
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationNormalization.php": "5F730166538609C4EE9095DB508C29399CFD1E68EB5B78302EBA849B58D253C5",
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php": "575F3BE21291092D31F914D4D37201AD118475B66B2A08B98D531D32D008AE90"
+  },
+  "correction": {
+    "path": "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php",
+    "before_sha256": "807B1E477416E0CE822D9F39D6520D990AA08CD60EB4DF54FD40DAE60ABBF1DE",
+    "after_sha256": "575F3BE21291092D31F914D4D37201AD118475B66B2A08B98D531D32D008AE90",
+    "CR_bytes_removed": 5,
+    "semantic_lines_identical": true,
+    "reason": "Remove unintended mixed EOL in newly inserted audit block; no executable semantics changed."
+  },
+  "raw_artifacts": [
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/approved-remediation-20260915/before-eol-successor/MarketDataReplayVerificationProofBasis.php",
+      "sha256": "807B1E477416E0CE822D9F39D6520D990AA08CD60EB4DF54FD40DAE60ABBF1DE"
+    },
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/approved-remediation-20260915/eol-successor-registry-deltas.json",
+      "sha256": "E07A82F5A8684C9B204630FA0DABDB2A29CFBC98CD7C3152BF06E26AA7A43649"
+    },
+    {
+      "path": "storage/app/market-data/evidence/MD-B18-A002/approved-remediation-20260915/q5_eol_successor.py",
+      "sha256": "689564C87850D1C167CBCF48E320990D0B29D4756FE8825210772B454DB1AB14"
+    }
+  ],
+  "proof_scope": "E018 ownership normalization and landed probes remain valid; matrix and normalization guard bytes unchanged. This record supersedes only the ProofBasis source identity, not E018 ownership evidence. Post-issue validation is recorded by current CI/HANDOFF_VALIDATION_MANIFEST.",
+  "satisfaction_eligible_rule_ids": []
+}

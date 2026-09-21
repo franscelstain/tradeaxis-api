@@ -1,0 +1,149 @@
+{
+  "evidence_id": "E-MD-B18-A002-029",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-20T02:08:59.180545+00:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "evidence_scope": "C1_C07_INDEPENDENT_COMPLETENESS",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-028"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "54 tests / 5125 assertions PASS; final completion-manifest recheck 6 tests / 4864 assertions PASS (overlapping controls, not summed).",
+  "probes": [
+    {
+      "id": "P62-retained-one-missing",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P63-read-witness-one-missing",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P64-retained-one-mismatch",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P65-window-projection-one-missing",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P66-atr-projection-one-missing",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P67-date-projection-one-extra",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P68-current-copy-one-missing",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P69-history-copy-one-missing",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P70-comparison-guard-bypass",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    },
+    {
+      "id": "P71-retained-completeness-guard-bypass",
+      "caught": true,
+      "landed_count": 1,
+      "green_controls": 2,
+      "restored_byte_identical": true
+    }
+  ],
+  "tested_source_sha256": {
+    "app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php": "53CC584489BBAB378FCF87AED50DAFF2B53491995C7B9D8B6DA1CE87881674C6",
+    "app/Infrastructure/Persistence/MarketData/ProducerRawInputLineage.php": "4284EF41AFEBF556C116C69F5D653224EE2692642CA1869D2842386A6A372CED",
+    "app/Infrastructure/Persistence/MarketData/ProducerInputScope.php": "CF6BDF35B03A2162D2C28AC7A41002E47EAC5A6C91FE35DEED0A40367429A1A1",
+    "app/Infrastructure/Persistence/MarketData/ProducerInputCompletionManifest.php": "5884F51E283082ECE96CE33D70966FC0535D6F6328F91656814921506F94E61F",
+    "app/Infrastructure/Persistence/MarketData/ProducerRawInputCompleteness.php": "421641CA4DC07D9A97B98397E6D5000C9B4DC97E0ABDCB30CDAAB82EF80A75E3",
+    "tests/Unit/MarketData/B18ProducerRawInputLineageTest.php": "3874DCA262717B0090899539B6AD99DA2C4CB850503210B127BB293C49482FFD",
+    "tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php": "C92AFD7A8972456329AE8EC50663AA4E8CFAF2A23E30BF2B34791D5D4767FB9C"
+  },
+  "schema_changed": false,
+  "root_cause_and_implementation": "The E028 capture builder could certify its own count/hash without independently proving retained member and final projection correspondence. Producer scope now retains the original read population before lineage construction, compares every full RAW member, requires projection receipts and immutable read/lineage references, and rejects unfinished or inconsistent scopes. An independent oracle compares actual window, ATR, date and both copy destinations; copy destinations are read back in the same transaction. Destination digest is a completion audit, not an admitted domain input. Only created_at is omitted in copy comparison; publication/run undergo explicit target identity transformation, with validated DB integer-string normalization. Missing/extraneous/mismatched members, repaired envelope hashes, missing receipts and swallowed projection errors fail closed. Explicit empty reads and identical retry remain valid. C07 placeholder removed only after current targeted tests and P62-P71; C08/C09 placeholders remain.",
+  "scope_result": {
+    "C07": "COMPLETE_FOR_ACCEPTED_PRODUCER_CONSUMPTION_SCOPE",
+    "whole_C1": "BLOCKED",
+    "slot_count_is_completeness_proof": false,
+    "remaining_C07": [],
+    "consumers": [
+      "window",
+      "ATR",
+      "date",
+      "history-copy-current",
+      "history-copy"
+    ]
+  },
+  "raw_artifact_manifests": [
+    {
+      "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/c1-raw-completeness-20260920/C1_RAW_COMPLETENESS_MANIFEST.json",
+      "manifest_sha256": "133495AC7141A48A2FE4422831F54F9E0047D5287B9ADF98D75E685AB5782D36",
+      "artifact_count": 75
+    }
+  ],
+  "remaining": {
+    "implementation_slices": 5,
+    "incomplete_bases": 64,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [
+      "event_factor",
+      "ancillary"
+    ]
+  },
+  "full_suite": {
+    "status": "NOT_RUN_FOR_C07",
+    "reason": "Bounded user scope. Changed production paths and relevant regression guards PASS; no unresolved broad regression.",
+    "prior_baseline": "E024 seven ProductionCorpusInvariantOracleTest failures; not a post-C07 full-suite result."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "MD-B18-A002: continue C1 C08 event/factor producer-bound revision populations from E029, following the accepted C1 contract and consolidated package; inspect actual selected and held/rejected event revisions, complete terms, effective/learned/verified/recorded coordinates, factor-set content and decisions, and source-scale assessments before capture/validation. Preserve E021-E029 and valid P51-P71; do not repeat C07 proof. Then C09 ancillary and whole-C1 completeness. No binding/seal/reader/admission before whole-C1 completeness."
+}

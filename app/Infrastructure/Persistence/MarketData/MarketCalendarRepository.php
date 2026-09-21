@@ -49,6 +49,7 @@ class MarketCalendarRepository
 
     public function sessionContext($tradeDate, $knownAt = null)
     {
+        $knownAt = ProducerInputScope::knownAt($knownAt);
         $tradeDate = MarketDataScope::fromConfig()->assertRequestedDate($tradeDate);
         $rows = $this->terminalRevisionRowsForDate($tradeDate, $knownAt);
         if ($rows->isEmpty()) {
@@ -95,6 +96,7 @@ class MarketCalendarRepository
 
     public function tradingDatesBetween($startDate, $endDate, $knownAt = null)
     {
+        $knownAt = ProducerInputScope::knownAt($knownAt);
         MarketDataScope::fromConfig()->assertRequestedRange($startDate, $endDate);
 
         return $this->resolvedTradingDates($startDate, $endDate, $knownAt);
@@ -102,6 +104,7 @@ class MarketCalendarRepository
 
     public function tradingDateWindowStart($endDate, $requiredTradingDates, $allowPartialWindow = true, $knownAt = null)
     {
+        $knownAt = ProducerInputScope::knownAt($knownAt);
         MarketDataScope::fromConfig()->assertRequestedDate($endDate);
         $requiredTradingDates = max(1, (int) $requiredTradingDates);
         $dates = $this->resolvedTradingDates(
@@ -142,7 +145,11 @@ class MarketCalendarRepository
             $query->where('revision.recorded_at', '<=', $knownAt);
         }
 
-        return $query->orderBy('revision.calendar_revision_id')->get(['revision.*']);
+        return ProducerInputScope::calendarRead('calendar-terminal-date/v1', [
+            'trade_date' => (string) $tradeDate, 'known_at' => $knownAt,
+            'market_code' => config('market_data.scope.market_code', 'IDX'),
+            'market_segment' => config('market_data.scope.market_segment', 'REGULAR'),
+        ], function () use ($query) { return $query->orderBy('revision.calendar_revision_id')->get(['revision.*']); });
     }
 
     private function resolvedTradingDates($startDate, $endDate, $knownAt): array
@@ -165,8 +172,14 @@ class MarketCalendarRepository
             $query->where('revision.recorded_at', '<=', $knownAt);
         }
 
-        $groups = $query->orderBy('revision.cal_date')->orderBy('revision.calendar_revision_id')
-            ->get(['revision.*'])->groupBy('cal_date');
+        $selected = ProducerInputScope::calendarRead('calendar-terminal-range/v1', [
+            'start_date' => (string) $startDate, 'end_date' => (string) $endDate, 'known_at' => $knownAt,
+            'market_code' => config('market_data.scope.market_code', 'IDX'),
+            'market_segment' => config('market_data.scope.market_segment', 'REGULAR'),
+        ], function () use ($query) {
+            return $query->orderBy('revision.cal_date')->orderBy('revision.calendar_revision_id')->get(['revision.*']);
+        });
+        $groups = $selected->groupBy('cal_date');
         $dates = [];
         foreach ($groups as $date => $rows) {
             if ($rows->count() !== 1) {

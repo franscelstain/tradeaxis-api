@@ -34,7 +34,7 @@ class TemporalIdentityRepository
     public function universeAsOf($tradeDate, $knownAt = null)
     {
         $tradeDate = MarketDataScope::fromConfig()->assertRequestedDate($tradeDate);
-        $this->ensureLegacyProjection();
+        if (! ProducerInputScope::historical()) $this->ensureLegacyProjection();
 
         return $this->readProjectedUniverseAsOf($tradeDate, $knownAt);
     }
@@ -48,6 +48,12 @@ class TemporalIdentityRepository
     {
         $tradeDate = MarketDataScope::fromConfig()->assertRequestedDate($tradeDate);
         $this->assertFoundationAvailable();
+        $knownAt = ProducerInputScope::knownAt($knownAt);
+        if (ProducerInputScope::active()) {
+            $rows = collect((new ProducerTemporalPopulation())->resolve($tradeDate, (string) $knownAt));
+            $this->assertSingleBoardContext($rows, $tradeDate);
+            return $rows->map(function ($row) { return $this->identityRow($row); })->all();
+        }
         $rows = $this->baseIdentityQuery($tradeDate, $knownAt)
             ->orderBy('l.listing_id')
             ->get();
@@ -65,7 +71,12 @@ class TemporalIdentityRepository
         $tradeDate = MarketDataScope::fromConfig()->assertRequestedDate($tradeDate);
         $tickerCode = Str::upper(trim((string) $tickerCode));
         $provider = Str::lower(trim((string) $provider));
-        $this->ensureLegacyProjection([$tickerCode]);
+        $knownAt = ProducerInputScope::knownAt($knownAt);
+        if (! ProducerInputScope::historical()) $this->ensureLegacyProjection(ProducerInputScope::active() ? [] : [$tickerCode]);
+        if (ProducerInputScope::active()) {
+            $rows = collect((new ProducerTemporalPopulation())->resolve($tradeDate, (string) $knownAt, $tickerCode, $provider));
+            return $this->providerResult($rows, $tickerCode, $provider, $tradeDate);
+        }
 
         $query = $this->baseIdentityQuery($tradeDate, $knownAt)
             ->join('md_provider_symbol_mappings as pm', 'pm.listing_id', '=', 'l.listing_id')
@@ -93,6 +104,11 @@ class TemporalIdentityRepository
             ])
             ->orderByDesc('pm.recorded_at')
             ->get();
+        return $this->providerResult($rows, $tickerCode, $provider, $tradeDate);
+    }
+
+    private function providerResult($rows, $tickerCode, $provider, $tradeDate)
+    {
         $this->assertSingleBoardContext($rows, $tradeDate);
 
         if ($rows->isEmpty()) {

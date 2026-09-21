@@ -1,0 +1,117 @@
+{
+  "evidence_id": "E-MD-B18-A002-020",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-16T01:17:31.515180+00:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "evidence_scope": "C1_CONTRACT_SCHEMA_PRODUCER_SOURCE_REVIEW_ONLY",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "related_findings": [
+    "F-MD-B18-A002-013",
+    "F-MD-B18-A002-014",
+    "F-MD-B18-A002-017",
+    "F-MD-B18-A002-018"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-014",
+    "E-MD-B18-A002-017",
+    "E-MD-B18-A002-019"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "contract": {
+    "path": "docs/market_data/development/implementation/MD_B18_A002_C1_PRODUCER_BOUND_INPUT_CONTRACT.md",
+    "sha256": "52AD619BEA4B16644EC45D3FEECB31AE272F2CE6191FF5E88F656D44F2EAB5D2",
+    "status": "REVIEW_READY_NOT_IMPLEMENTED",
+    "concrete_review_points": [
+      "append-only run capture + four versioned lineage columns",
+      "same-slot repeat/conflict semantics within authorized run lifecycle",
+      "V1 read compatibility and missing-input exact BLOCKED"
+    ]
+  },
+  "inspection": {
+    "producer_domains": 12,
+    "explicit_method_anchors": 21,
+    "source_files": 38,
+    "lexical_callsite_occurrences": 85,
+    "schema_surfaces": 73,
+    "strategy_hashes_current": 91,
+    "whole_parent_rows": 26,
+    "dynamic_execution_proven": false
+  },
+  "raw_artifact_manifests": [
+    {
+      "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/c1-contract-20260915/C1_REVIEW_MANIFEST.json",
+      "manifest_sha256": "F0408CAFA269954A921CC18326E8C720BD32CC21D0342C7968257B5FCD78218D",
+      "artifact_count": 20
+    }
+  ],
+  "current_source_sha256": {
+    "app/Application/MarketData/Services/AdjustmentFactorSetService.php": "8B42884EE8C40981208CA263BE25461A10EFF4B604BD1D5A9576CBE11EFEFAA6",
+    "app/Application/MarketData/Services/CoverageGateEvaluator.php": "E079CAEFBC597B3D2DD8391C16CFA9F0869ACC88C4EC8E1AFF8FF185A85E7DA4",
+    "app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php": "4B593593A9AB0C818DDDF215A7D3A5040756D9F9F492972E14CFB4797288CA05",
+    "app/Application/MarketData/Services/EodBarsIngestService.php": "7A166646F6CD5F736AA041261D0DFB1BABF1842337F9EC4375972E07F6E6013C",
+    "app/Application/MarketData/Services/EodEligibilityBuildService.php": "1C8F973EE6B85459E2EB9E264A76C8EDE75C647D61AF224BF6295396E22A756B",
+    "app/Application/MarketData/Services/EodIndicatorsComputeService.php": "DEAED319744C77C1BE1F0839FCD38AB1B1073B55E62F6E7B983BBC04C82D0146",
+    "app/Infrastructure/Persistence/MarketData/EodRunRepository.php": "75B9A773AA634C85A05E5DC69BF3115B42BCA79305592AE00B6DE3B6B4C7B5CB",
+    "app/Infrastructure/MarketData/Source/EquityProviderSymbolResolver.php": "3135824640D8B2AA5A8AEBDD8E3B978A350570846B9CD606225A5C18DEB045C5",
+    "app/Application/MarketData/Services/ExpectedBarDecisionService.php": "D337CC9CD0E29EF0E2C54CFE799D9D825D080642D7AAF51D343415F333E29343",
+    "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php": "C4242EF5CB8C1F1E9AB6369B9C8AE67B28C28206DB93A41EA1C978BA9CC26032",
+    "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php": "9421675900695EFD74141F1117B18D72DCA0710E9DB17B939FA7F51B596C0214",
+    "app/Application/MarketData/Services/MarketDataPipelineService.php": "D275E42AA8589A6B45B14B52BC57A096BFED7F25D912A21A75118AB442E25754",
+    "app/Application/MarketData/Services/PublicationGovernanceBindingService.php": "68B456188600DC16CD18DF123BEBE982038B04C9693D9896E3B54E3590326DB5",
+    "app/Application/MarketData/Services/ReplayVerificationService.php": "83EDE95F891503FAE41D42642BEEE3D4CA670C52CF46F4F91C5077F033C4B5C8",
+    "app/Infrastructure/Persistence/MarketData/SourceObservationRepository.php": "0A65FE66F715A9EFA7C7FBD4177D1E46485E5BF6C1D9C3ACFCC9872E1E8F7344",
+    "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php": "7C0BEBF26ACA2641281133643ACC6BFBE723F80129F2BA940BCEC22025862129",
+    "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php": "9C6945484240F0193FC06CC4E1C44D52F6A0E8152286243D4F7680ADB15DC7C5",
+    "app/Infrastructure/Persistence/MarketData/TickerMasterRepository.php": "0058670CEF2CE9647A9A5BE1DA82ABDBA6CC7FE383A5030A23878B353CBD7C32",
+    "app/Application/MarketData/Services/DeterministicHashService.php": "B7F6E72E22F22D353DBE6BD50ED845D990FA48BB84D14F9C641724DD0147856F",
+    "app/Infrastructure/Persistence/MarketData/ReplayResultRepository.php": "A06F81038706961E81A510936AC254A07ACACAE04DEB9D449D24737DF00DB47B",
+    "app/Application/MarketData/Services/MarketDataEvidenceExportService.php": "D886539447C45BFF4E6D95C007886B5F89CB7651FA7794C5444878A532E16A54",
+    "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php": "1C00BD93D5CCAC5F1339DC59F33D562C0AE166D14E76DF0286AA2F9C63C53C0B",
+    "app/Application/MarketData/Services/AsKnownReplayExecutionService.php": "0DE6DF364AD7912E8742477CAE2EA6C0C77DA033407946979E6547511D2402F8",
+    "app/Application/MarketData/Services/MarketDataReadProductService.php": "EA1763AB11B0241256E275F348F5B409EBE2B20821757EECA63D071C9C5AB29B",
+    "app/Infrastructure/Persistence/MarketData/MarketDataReadProductRepository.php": "22F61D7841EE5BF35B2D0123ABA8EBB5A9A4F0EBD7968CAB633BBCFF61FE570E",
+    "app/Application/MarketData/Services/ReplayBackfillService.php": "3259FA13501D22D9FBEEDE0B3FB37BF74ED7D48F8C95BC3776E3889150EB3B64",
+    "app/Application/MarketData/Services/ReplaySmokeSuiteService.php": "72DAF39CBF0A7A42B1F1763DE82C02711940FA8BB389FF6E88E2ABF162CEA470",
+    "app/Application/MarketData/Services/FullRangeCurrentEvidenceReplayService.php": "15D16CFE26ADE75086D1D810B00AF7F0DCA04CF385843A3B644C7EB5D48C04B1",
+    "app/Application/MarketData/Services/StageEightCorpusReconstructionService.php": "66BAF8299EDDA7B00147C15B3C6152435097FD9E57748EFDFC9174E9842E2CF9",
+    "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php": "3C991205AB9113AF88FDB371ACB4FA28D9A49042D014B9724BE25744FF3AAEF8",
+    "app/Application/MarketData/Services/BenchmarkIndicatorComputeService.php": "6957DDA7E1E80671817EF0B803C63303133ED2513ECADC3EBAB341DEE353B914",
+    "app/Infrastructure/Persistence/MarketData/SectorClassificationRepository.php": "4DECB0377146DCE9BC09DF8C2F9EE56A0797C66044231AFE351D60909D7A536B",
+    "app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php": "5687695A777B69F9B27FE8C3DD9FDDF2C241E9B4C0E5E29E8A6C0B1B1C7FFF28",
+    "app/Infrastructure/Persistence/MarketData/PriceScaleBreakRepository.php": "E3C33438B93CCDAB22B1AB01DD8521049426BD49CA5DBBCA7348B62C50074627",
+    "app/Infrastructure/MarketData/Config/PlatformConfigRegistry.php": "4723B4CCF0A9D33154F360CFF01BDC1090D6D103B92E74FA7907C301F2D14626",
+    "app/Domain/MarketData/MarketDataSemanticBindings.php": "4852D172F8E6376DCFE18369723615A1FA6E5263A4B7780B50F8D0D1F2A714FA",
+    "app/Infrastructure/Persistence/MarketData/EodCorrectionRepository.php": "D8917333074A48D021147F9034D8C929B593AF7CAD99F475BE46523D9F64D9CE",
+    "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php": "E88F22E43F594164CF6B1809E5CD2EF23D28CDDF4C3BE5482328A12D6176E4DC"
+  },
+  "remaining": {
+    "concrete_contract_packages_to_prepare_before_after": [
+      1,
+      0
+    ],
+    "concrete_contract_review_pending": 1,
+    "Q1_Q6_decisions_pending": 0,
+    "implementation_slices": 5,
+    "incomplete_bases_before_after": [
+      64,
+      64
+    ],
+    "satisfied": 0,
+    "denominator": 114
+  },
+  "validation_boundary": "Source/contract review only; no schema/app/test body mutation, no new mutation probe or runtime satisfaction. Existing Q6/Q5 source hashes and linked artifacts verified without repeating valid probes. Post-record tests/gates/full suite are future administrative checks correlated through CI and C1_VALIDATION_MANIFEST, not preclaimed here.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "Review the concrete C1 v1 contract/schema and producer mapping under D005, then record outcome/current CI before capture code. Same attempt."
+}

@@ -103,6 +103,8 @@ class StageEightGovernanceBindingTest extends TestCase
             3 => [['source_observation_id' => 103]],
         ];
 
+        DB::table('eod_runs')->insert(['run_id'=>77,'trade_date_requested'=>'2026-07-28','config_snapshot_id'=>1,'knowledge_cutoff_at'=>'2026-08-13 11:00:00','request_mode'=>'pipeline','source'=>'api','created_at'=>'2026-08-13 11:00:00']);
+        DB::table('eod_publications')->insert(['publication_id'=>99,'trade_date'=>'2026-07-28','run_id'=>77,'publication_version'=>1,'seal_state'=>'UNSEALED','created_at'=>'2026-08-13 11:00:00']);
         $result = (new AdjustmentFactorSetService())->ensureForPublication($run, 99, '2026-07-28', $bars);
 
         $this->assertSame([1], array_keys($result['factors_by_ticker']));
@@ -137,6 +139,8 @@ class StageEightGovernanceBindingTest extends TestCase
             'recorded_at' => '2026-08-13 11:01:00',
         ]);
 
+        DB::table('eod_runs')->insert(['run_id'=>1,'trade_date_requested'=>'2026-07-28','config_snapshot_id'=>1,'knowledge_cutoff_at'=>'2026-08-13 11:00:00','request_mode'=>'pipeline','source'=>'api','created_at'=>'2026-08-13 11:00:00']);
+        DB::table('eod_publications')->insert(['publication_id'=>1,'trade_date'=>'2026-07-28','run_id'=>1,'publication_version'=>1,'seal_state'=>'UNSEALED','created_at'=>'2026-08-13 11:00:00']);
         $result = (new AdjustmentFactorSetService())->ensureForPublication((object) [
             'run_id' => 1,
             'config_snapshot_id' => 1,
@@ -199,12 +203,19 @@ class StageEightGovernanceBindingTest extends TestCase
             ]);
         }
 
-        $publication = DB::table('eod_publications')->where('publication_id', 10)->first();
-        $result = (new PublicationGovernanceBindingService())->bind((object) [
+        DB::table('eod_runs')->insert([
+            'run_id' => 7,
+            'trade_date_requested' => '2026-07-28',
+            'source' => 'local_file',
             'config_snapshot_id' => 1,
             'started_at' => '2026-08-13 11:00:00',
             'knowledge_cutoff_at' => '2026-08-13 11:00:00',
-        ], $publication, '2026-07-28');
+            'created_at' => '2026-08-13 11:00:00',
+        ]);
+        $run = DB::table('eod_runs')->where('run_id', 7)->first();
+        $publication = DB::table('eod_publications')->where('publication_id', 10)->first();
+        $this->assertSame((int) $publication->run_id, (int) $run->run_id);
+        $result = (new PublicationGovernanceBindingService())->bind($run, $publication, '2026-07-28');
 
         $resolved = DB::table('md_publication_market_structure_bindings')->where('listing_id', 1)->first();
         $unknown = DB::table('md_publication_market_structure_bindings')->where('listing_id', 2)->first();

@@ -1,0 +1,91 @@
+{
+  "evidence_id": "E-MD-B18-A002-021",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-17T02:44:58.660158+00:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "evidence_scope": "PARTIAL_C1_PRODUCER_CAPTURE_RUNTIME",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-020",
+    "E-MD-B18-A002-017"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "user_review": "Explicit acceptance of C1 v1 in user message, recorded in CI before code. No repeat review required.",
+  "targeted": "OK (133 tests, 1718 assertions)",
+  "production_pipeline_persisted_slots": 10,
+  "probes": {
+    "code_and_schema_caught": 10,
+    "database_trigger_caught": 2,
+    "landed_count_each": 1,
+    "green_controls": 24,
+    "restoration": "Exact source byte copies; database SQL Original Statement exact, trigger creation audit timestamps may differ."
+  },
+  "schema": {
+    "both_databases": [
+      "tradeaxis",
+      "tradeaxis_testing"
+    ],
+    "fresh_migration_chain_executed": true,
+    "disposable_database_dropped": true,
+    "current_migration_actually_reexecuted": true
+  },
+  "tested_source_sha256": {
+    "app/Infrastructure/Persistence/MarketData/RunInputCaptureRepository.php": "3623B0DF8AF4AE79E1E83BFA8A881C46CCA4200E22A37F80E7054A097A9866D5",
+    "app/Infrastructure/Persistence/MarketData/EodRunRepository.php": "C836831201A2D45BDC06653089D4A3E9128D577ED219554268B6704BFC82D1B6",
+    "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php": "DD955236AE859B478D91D02E3313B8E5FFF64F6D5495F13FC51E9EFA99ABBB26",
+    "app/Application/MarketData/Services/EodBarsIngestService.php": "84D2E82127FCFB47D0140EEEC08089135AB8833CFA9AAF20C1FDA645A9FE68D5",
+    "app/Application/MarketData/Services/EodIndicatorsComputeService.php": "97BBCF84685153C1A6B7F136FA22FE3DFBB6D6DE58BA62FDBA7C29B746F0E851",
+    "app/Application/MarketData/Services/EodEligibilityBuildService.php": "AA2220B1BBBB23DE143FD41E07E13203DCE3837AE8F5C304F3D609073AA9D519",
+    "database/migrations/2026_09_16_000001_add_producer_bound_input_captures.php": "9BBF645E449E6B2B74ADFAA9FDA72D7543D2D98FC84329E6814576D82479D8D7",
+    "docs/market_data/development/implementation/db/Database_Schema_MariaDB.sql": "ED6341BAE98610EB8799EF27AE369DDCFD634980B4A605FDDCC02C283C62DEF0",
+    "tests/Support/UsesMarketDataSqlite.php": "5318026A8BBB892447302F460DC0C964017F5931D4A391E77EB4D1B6BA00571D",
+    "tests/Unit/MarketData/B18ProducerInputCaptureTest.php": "15EF7717C98D5B19F7256E3A10CE7EF16B3126E0BA955E663F8FFFF0AC453500",
+    "tests/Unit/MarketData/B18ProducerInputCaptureMariaDbTest.php": "88B1911F9B0A99228E1B033647C741A9970E93CF57C20C1A1FED31950DAF8134",
+    "tests/Unit/MarketData/B18ProducerInputSchemaSurfaceTest.php": "685116EDC3FA625F77C85FEB1A71FBA1F62068327A3B4AAE772FAA3A180026A8",
+    "tests/Unit/MarketData/B18DegradedObservationDefectCorpusTest.php": "C44BDBA6A7E66822E3F14BEF4CA93AF31B51126D5598ADCA1D9C6840DEFA4AF0",
+    "tests/Unit/MarketData/CanonicalRawImportBoundaryTest.php": "703D6B535FC070E6073EEA4C5E3E5B7ABFC55D3D41619DCC6007FA8B79F81A86",
+    "tests/Unit/MarketData/EligibilityFirstClassFactDimensionsTest.php": "7E99158A1203F40AAA1A9922AA0A587B3E02B2FB13119B4B1C3F394B2D95FBA5",
+    "tests/Unit/MarketData/EodBarsIngestServiceTest.php": "8DBC7733A2A304F3E3D42DC881128B000E1672B4004BD32019CCD1752366E5AD",
+    "tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php": "8BC0167ABC00C6A1FE2FF8ED523336DED5E48EFAF8236EA0A82107D92A027806",
+    "tests/Unit/MarketData/StageThreeEligibilityProducerTest.php": "CD2646CEEA54DF9DD1277F5E0BAFA47156EF36D2396EA69EE4B007C1F36F69D7"
+  },
+  "raw_artifact_manifests": [
+    {
+      "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/c1-implementation-20260916/C1_IMPLEMENTATION_MANIFEST.json",
+      "manifest_sha256": "24806C63E04E6C2A8382C34B67386DAB6A578CE7088DCB9E3C722FC87EB24C1B",
+      "artifact_count": 99
+    }
+  ],
+  "remaining": {
+    "implementation_slices": [
+      5,
+      5
+    ],
+    "capture_state": "PARTIAL",
+    "incomplete_bases": [
+      64,
+      64
+    ],
+    "satisfied": 0,
+    "denominator": 114,
+    "full_suite_failures_at_entry": 7
+  },
+  "limits": "No complete C1 bundle or V2 binding/seal/reader/admission proof. Calendar/session, complete temporal/provider/status/source outcomes, registry/build and independent completion manifest outstanding. Existing V1 pipeline test success is not V2 proof. Post-record full suite is future validation via CI attachment.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "MD-B18-A002: continue C1 capture at C04 calendar/session producer reads: preserve exact target and dependency-date revision payloads before consumption; then complete temporal/provider/status metadata, full observation outcomes, registry/build and independent completion manifest. C1 review is accepted, no repeat review. Continue binding, seal, reader and admission after capture completeness is proven; same attempt under D005/current CI."
+}

@@ -33,8 +33,8 @@ final class MarketDataReplayVerificationProofSpec
     public const BASELINE = 'MD-B18-A002-BL001';
     public const CI = 'CI-MD-B18-A002-001';
     // Exactly six exclusions under D001/D002; E005 proves all four conditional exclusions.
-    // This changes the owned set, not the proof status of its 115 retained predicates.
-    public const EXPECTED_DENOMINATOR = 115;
+    // This changes the owned set, not the proof status of its retained predicates; D005 transfers R0014 admission to B22.
+    public const EXPECTED_DENOMINATOR = 114;
 
     /**
      * Explicit `rule_id => family`. Every required row appears exactly once; an unmapped row is a
@@ -171,7 +171,7 @@ final class MarketDataReplayVerificationProofSpec
         'MD-S002-R0016' => 'admissibility_boundary',
         'MD-S003-R0031' => 'admissibility_boundary',
         'MD-S004-R0011' => 'admissibility_boundary',
-        'MD-S020-R0014' => 'admissibility_boundary',
+        // D005: MD-S020-R0014 primary B22, B18/B17 supporting; no proof inherited.
         'MD-S050-R0045' => 'admissibility_boundary',
         'MD-S050-R0050' => 'admissibility_boundary',
         'MD-S050-R0051' => 'admissibility_boundary',
@@ -201,7 +201,7 @@ final class MarketDataReplayVerificationProofSpec
         'independent_oracle' => 4,
         'corporate_action_and_indicator' => 4,
         'result_and_evidence' => 19,
-        'admissibility_boundary' => 11,
+        'admissibility_boundary' => 10,
         'determinism_and_operations' => 4,
     ];
 

@@ -1,0 +1,105 @@
+{
+  "evidence_id": "E-MD-B18-A002-014",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-15T08:10:54+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "evidence_scope": "CONSOLIDATED_REMEDIATION_PACKAGE_SOURCE_REVIEW_AND_REGISTRY_RECONCILIATION_ONLY",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013",
+    "F-MD-B18-A002-014",
+    "F-MD-B18-A002-015",
+    "F-MD-B18-A002-016",
+    "F-MD-B18-A002-017",
+    "F-MD-B18-A002-018"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-009",
+    "E-MD-B18-A002-010",
+    "E-MD-B18-A002-011",
+    "E-MD-B18-A002-012",
+    "E-MD-B18-A002-013"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-003",
+    "D-MD-B18-A002-004"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "package": {
+    "path": "docs/market_data/development/implementation/MD_B18_A002_CONSOLIDATED_REMEDIATION_PACKAGE.md",
+    "sha256": "1D7F35E6F83DA48A425DF96BA2E88959617B800F3B235A90B567B353368DFFC1",
+    "status": "DRAFT_AWAITING_USER_REVIEW",
+    "decisions_pending": [
+      "Q1",
+      "Q2",
+      "Q3",
+      "Q4",
+      "Q5"
+    ],
+    "predicate_plans": 65,
+    "plans_by_finding": [
+      10,
+      4,
+      15,
+      11,
+      16,
+      9
+    ]
+  },
+  "current_counts": {
+    "active": 154,
+    "required": 115,
+    "satisfied": 0,
+    "incomplete_basis": 65,
+    "retained_basis": 50
+  },
+  "inspection": {
+    "manifest_count": 12,
+    "verified_artifact_entries": 423,
+    "all_hashes_match": true,
+    "method": "Exact evidence-referenced manifests and entries only; no recursive storage search; source bodies inspected; no new domain probes performed."
+  },
+  "root_cause_refinement": "F013 was too broad about absence of frozen lineage. Existing lineage binding/manifest contains partial hashes; replay reads different absent properties and the existing content does not cover all frozen input obligations. Refined open F013; no immutable evidence or strategy changed.",
+  "registry_delta": {
+    "new_documents": 2,
+    "role_rows_added": 2,
+    "document_id_rows_added": 2,
+    "verification_rows_added": 2,
+    "work_rows_changed": 2,
+    "work_rows_added": 1,
+    "relationship_rows_added": 15,
+    "dependency_rows_changed": [
+      "MD-DEP-0016",
+      "MD-DEP-0017"
+    ],
+    "matrix_rows_changed": 0
+  },
+  "raw_artifact_manifests": [
+    {
+      "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/remediation-package-20260915/MANIFEST.json",
+      "manifest_sha256": "06E9C3888B52B7907089F5465B5244B1BA46E29C61555D3D5AA924FBDBEE7D41",
+      "artifact_count": 21
+    }
+  ],
+  "validation_boundary": "This evidence establishes package/source inspection and reconciliation. Post-issue targeted/stage/governance/full-suite verification is still to be executed and is not claimed by this immutable record. No closure or predicate satisfaction relies on this record.",
+  "not_claimed": [
+    "user approval",
+    "domain implementation",
+    "new landed mutation proof",
+    "runtime PASS",
+    "binding",
+    "E001 or SC",
+    "old-data recovery",
+    "production relock"
+  ],
+  "next": "Await user Q1-Q5 review under MD-DEP-0017; record D/relationships and CI scope before dependent implementation."
+}

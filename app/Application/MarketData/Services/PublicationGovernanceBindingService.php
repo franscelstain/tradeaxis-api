@@ -29,7 +29,7 @@ class PublicationGovernanceBindingService
             (string) $tradeDate
         );
 
-        $knownAt = $run->knowledge_cutoff_at ?? null;
+        $knownAt = empty($run->knowledge_cutoff_at) ? null : (string) $run->knowledge_cutoff_at;
         if ($knownAt === null || $knownAt === '') {
             throw new \RuntimeException('RUN_KNOWLEDGE_CUTOFF_MISSING: publication governance binding requires immutable run knowledge_cutoff_at.');
         }
@@ -37,7 +37,8 @@ class PublicationGovernanceBindingService
             (int) $publication->publication_id,
             (string) $tradeDate,
             $eligibilityRows,
-            $knownAt
+            $knownAt,
+            $run
         );
 
         $factorDecisions = DB::table('md_adjustment_factor_decisions')
@@ -123,6 +124,11 @@ class PublicationGovernanceBindingService
             ]);
         });
 
+        $captures = new \App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository();
+        $completion = (new \App\Infrastructure\Persistence\MarketData\ProducerInputCompletionManifest())->inspect($run, $captures);
+        $captures->captureForProducer($run, 'HASH', 'completion', 'input-completion-manifest/v1', [$completion],
+            ['publication_id' => (int) $publication->publication_id]);
+
         return [
             'source_scale_assessment_set_hash' => $sourceScaleHash,
             'market_structure_revision_set_hash' => $marketStructureHash,
@@ -131,9 +137,15 @@ class PublicationGovernanceBindingService
         ];
     }
 
-    private function bindMarketStructure($publicationId, $tradeDate, array $rows, $knownAt): array
+    private function bindMarketStructure($publicationId, $tradeDate, array $rows, $knownAt, $run): array
     {
         $revisions = $this->marketStructureRevisionsForDate($tradeDate, $knownAt);
+        (new \App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository())->captureForProducer(
+            $run, 'HASH', 'market_structure', 'market-structure-consumed-inputs/v1', [[
+                'board_inputs' => array_map(static function ($row) { return (array) $row; }, $rows),
+                'rule_revisions' => array_map(static function ($row) { return (array) $row; }, $revisions),
+            ]], ['publication_id' => (int) $publicationId, 'trade_date' => (string) $tradeDate, 'known_at' => $knownAt]
+        );
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
         $canonical = [];
 

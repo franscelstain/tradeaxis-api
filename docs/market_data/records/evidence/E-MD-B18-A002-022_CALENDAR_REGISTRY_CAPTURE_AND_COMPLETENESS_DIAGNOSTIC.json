@@ -1,0 +1,88 @@
+{
+  "evidence_id": "E-MD-B18-A002-022",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-17T16:42:41.024384+00:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "evidence_scope": "PARTIAL_C1_CALENDAR_REGISTRY_RUNTIME_AND_COMPLETENESS_DIAGNOSTIC",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-021",
+    "E-MD-B18-A002-017"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted_current": {
+    "targeted-current.txt": "OK (26 tests, 125 assertions)",
+    "pipeline-current.txt": "OK (1 test, 4705 assertions)"
+  },
+  "production_pipeline_persisted_slots": 29,
+  "probes": {
+    "caught": 7,
+    "landed_count_each": 1,
+    "green_controls": 14,
+    "restoration": "Exact source bytes restored, controls before/after green."
+  },
+  "schema_changed": false,
+  "tested_source_sha256": {
+    "app/Infrastructure/Persistence/MarketData/ProducerInputScope.php": "E0E69DD50DE58C0B467CECCD5B7583FFD72445360B30E94280C10716D4B64F0B",
+    "app/Infrastructure/Persistence/MarketData/ProducerRegistrySnapshot.php": "E86E8A4E4B1862FE1D58FE7D7911E8E22AC67653DC0D15FDCD5C7522273A954F",
+    "app/Infrastructure/Persistence/MarketData/ProducerInputCompletionManifest.php": "F537E6448644D105F064F57CFB73E8021BA375E72E30811BC1FDA977F5499C19",
+    "app/Infrastructure/Persistence/MarketData/RunInputCaptureRepository.php": "B9BC5BBA8AC0E3CF931681AFCE8DB01F9100257E9BFDD150FD77F480C16DB7E8",
+    "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php": "06FF5BFE70C593FFF901ABE98A22556AB7DAB833BA6E423928A330719753C63B",
+    "app/Application/MarketData/Services/EodBarsIngestService.php": "FFA512EC6624FF9C07A4676E5121046A58ADBE072869A17695B3D5A0B9A03FE4",
+    "app/Application/MarketData/Services/EodEligibilityBuildService.php": "BDFAE36E3412394E2F55F6E6218007EBD635A247A11F71E1F614E000DFF20568",
+    "app/Application/MarketData/Services/EodIndicatorsComputeService.php": "3D5CE3BE6366C5788CCD55E12A3713DDF0E6848B2619BBC3E277600F611CDFFF",
+    "app/Application/MarketData/Services/ExpectedBarDecisionService.php": "0633F51DE07F81FAC63F4EC5284976853F7BB6D2F77294371C0667B5938AE54F",
+    "app/Application/MarketData/Services/CoverageGateEvaluator.php": "4A58B785DFA41C1C4A07573480E5400FF2E85E557BDF869E4FCED321B6491260",
+    "app/Application/MarketData/Services/PublicationGovernanceBindingService.php": "7632459F9C392677C5600762B84BE83562D4C1911DD40FE428CA512B740C57A1",
+    "tests/Support/MocksProducerInputCapture.php": "FFAABFFD6C77C606A9CA323C840F4C2EBF929131C04CD8D72F7483CEB5EAEE77",
+    "tests/Unit/MarketData/B18ProducerCalendarRegistryTest.php": "19046E88A8328B5909F5AE4C72A642F4C0AF5B3602705B1C1339EE6F604DC31D",
+    "tests/Unit/MarketData/EodBarsIngestServiceTest.php": "07346EB443FA530B71F60822779ADAF9A84612346800D5473E1E9E96DF6A722F",
+    "tests/Unit/MarketData/StageThreeEligibilityProducerTest.php": "7B69F469E52DF24AD439B9314E858D71E453FF44CDA7E8685F885A970AF87C0F",
+    "tests/Unit/MarketData/EligibilityFirstClassFactDimensionsTest.php": "BAA54A648668068ACE9E4BD7008AB13990CA57F9C8CDBE1627303620EDEC5024",
+    "tests/Unit/MarketData/CanonicalRawImportBoundaryTest.php": "18568842E94DFF8E228CC6366AD1658120A79816CA857D3380A192932AAA0204",
+    "tests/Unit/MarketData/B18DegradedObservationDefectCorpusTest.php": "B1D17524579B841CC44432E464E8FCEEF2BB091CB3DED95D58075F7982F42CEB",
+    "tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php": "156B91379304AFA3E7635A9EE7DC643FE4E2C1D5EE2EEB318976BFF851C3AE80",
+    "tests/Unit/MarketData/MigrationIntegrityAndDriftTest.php": "7FB9B73988A55B58B9DCE4A941D7A230051B6A0CB922134C76A2F065EC83C788"
+  },
+  "raw_artifact_manifests": [
+    {
+      "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/c1-calendar-registry-20260917/C1_CONTINUATION_MANIFEST.json",
+      "manifest_sha256": "03984ED670B1DD4034FB37E226C7B475E9320E6593DFAFCE70FD4D8F0A4C2138",
+      "artifact_count": 92
+    }
+  ],
+  "remaining": {
+    "implementation_slices": 5,
+    "capture_state": "PARTIAL",
+    "incomplete_bases": 64,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [
+      "universe_identity",
+      "provider_mapping",
+      "status_expectation",
+      "source_observations",
+      "raw_history",
+      "event_factor",
+      "ancillary"
+    ]
+  },
+  "limits": "No complete C1 bundle or V2 binding/seal/reader/admission proof. Completion is a conservative partial diagnostic, not a finished validator. Latest whole-suite baseline before this patch was 7 corpus failures plus one migration false positive; post-record suite is future validation through CI attachment.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "MD-B18-A002: continue C1 capture at C02/C03 full temporal-identity and provider-mapping revision populations at actual producer consumption, including effective/recorded/supersedes coordinates and omission basis; then complete status, all observation outcomes, raw lineage, event/factor and ancillary full-revision contracts. Extend the independent completion validator and prove completeness before binding -> seal -> reader -> admission. Same attempt, accepted C1 contract, D005 and current CI; retain E021/E022 scoped proof without repeating it."
+}
