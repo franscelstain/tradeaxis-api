@@ -198,6 +198,16 @@ class EodIndicatorsComputeService
             'contamination' => $contaminationByTicker, 'price_scale_breaks' => $priceScaleBreaksByTicker,
             'trading_dates' => $tradingDatesWindow,
         ]], ['history_start_date' => $historyStartDate, 'bar_load_window' => $barLoadWindow]);
+        \App\Infrastructure\Persistence\MarketData\ProducerAncillaryCapture::executeIndicatorDependencies(
+            $run, $candidatePublication->publication_id, $requestedDate, array_keys($barsByTicker), $tradingDatesWindow,
+            $adjustmentFactorsByTicker, $factorContext['held_events_by_ticker'],
+            ['benchmark' => $this->benchmarkIndicators !== null, 'sector' => $this->sectors !== null, 'event_risk' => $this->eventRisks !== null],
+            function () use ($benchmarkRoc20, $sectorBenchmarkRoc20s, $sectorContextsByTicker, $eventRiskContextsByTicker, $contaminationByTicker, $priceScaleBreaksByTicker) {
+                return ['benchmark_roc20' => $benchmarkRoc20, 'sector_benchmark_roc20s' => $sectorBenchmarkRoc20s,
+                    'sector_contexts' => $sectorContextsByTicker, 'event_risk_contexts' => $eventRiskContextsByTicker,
+                    'contamination' => $contaminationByTicker, 'price_scale_breaks' => $priceScaleBreaksByTicker];
+            }
+        );
         $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
 
         foreach ($barsByTicker as $tickerId => $bars) {

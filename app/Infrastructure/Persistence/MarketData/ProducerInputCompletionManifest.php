@@ -96,6 +96,15 @@ final class ProducerInputCompletionManifest
                 try { ProducerRawInputLineage::assertValid($payload['rows'][0] ?? [], $selection); }
                 catch (\Throwable $error) { $missing[] = 'raw_history.'.$row['slot_hash'].'.'.$error->getMessage(); }
             }
+            if ($operation === 'ancillary-source-revisions/v1') {
+                try {
+                    if (($selection['domain'] ?? null) === 'dormancy') {
+                        ProducerAncillaryCapture::assertValidDormancy($payload['rows'][0] ?? [], $selection);
+                    } elseif (($selection['domain'] ?? null) === 'indicator_dependencies') {
+                        ProducerAncillaryCapture::assertValid($payload['rows'][0] ?? [], $selection, (string) $selection['trade_date']);
+                    }
+                } catch (\Throwable $error) { $missing[] = 'ancillary.'.$row['slot_hash'].'.'.$error->getMessage(); }
+            }
             if ($operation === 'provider-source-row-link/v1') $sourceLinks[] = [$row, $payload];
             if ($operation === 'status-authority-revisions/v1') {
                 $prefix = 'status_expectation.'.$row['slot_hash']; $status = $payload['rows'][0] ?? [];
@@ -111,7 +120,7 @@ final class ProducerInputCompletionManifest
                     || ($source[1]['selection_context']['producer_operation'] ?? null) !== ($selection['producer_operation'] ?? null)) $missing[] = $prefix.'.population_reference';
                 else $missing = array_merge($missing, (new ProducerTradingStatusCaptureValidator())->missing($source[1]['rows'][0] ?? [], $status, $selection, $prefix));
             }
-            if (in_array($component, ['universe_identity', 'provider_mapping', 'status_expectation', 'raw_history', 'event_factor'], true) && isset($selection['producer_operation'])) {
+            if (in_array($component, ['universe_identity', 'provider_mapping', 'status_expectation', 'raw_history', 'event_factor', 'ancillary'], true) && isset($selection['producer_operation'])) {
                 $inputScopes[$row['stage_code'].'|'.$selection['producer_operation']][$row['slot_hash']] = $row['payload_hash'];
             }
             if ($operation === 'producer-input-read-completion/v1') {
@@ -125,9 +134,6 @@ final class ProducerInputCompletionManifest
         // contracts. A caller cannot mint completion merely by inserting their operation names.
         $missing = array_merge($missing, (new ProducerSourceObservationCompleteness())->missing($captures, $repository));
         $missing = array_merge($missing, (new ProducerRawInputCompleteness())->missing($captures, $repository));
-        foreach (['event_factor', 'ancillary'] as $component) {
-            $missing[] = $component.'.full_revision_contract_not_implemented';
-        }
         foreach (array_keys($requiredDates) as $date) if (! isset($dates[$date])) $missing[] = 'calendar_session.required_date.'.$date;
         foreach ($calendarScopes as $scope => $actual) {
             sort($actual, SORT_STRING); $manifest = $calendarManifests[$scope] ?? [];

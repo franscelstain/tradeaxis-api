@@ -1,0 +1,68 @@
+{
+  "evidence_id": "E-MD-B18-A002-031",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-21T02:24:02.460861+00:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "evidence_scope": "C1_C09_ANCILLARY_CAPTURE_AND_WHOLE_C1_MANIFEST_COMPLETENESS",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-030"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "PASS: full tests/Unit/MarketData directory, 2375 tests / 33694 assertions, 2368/2375 green. The remaining 7 failures are ProductionCorpusInvariantOracleTest, the documented pre-existing MD-DEP-0015 deployed-MariaDB corpus baseline (E024 and every C1 evidence record since); not caused by this change and not rerun against a live corpus.",
+  "probes": [
+    { "id": "P86-sector-context-mismatch", "caught": true, "landed_count": 1, "green_controls": 1, "restored_byte_identical": true }
+  ],
+  "tested_source_sha256": {
+    "app/Infrastructure/Persistence/MarketData/ProducerAncillaryCapture.php": "4E979D615ED61226674F40708C2CA537FEFFD1EABDBFDD8F5444B3718D609264",
+    "app/Application/MarketData/Services/EodIndicatorsComputeService.php": "61E8A213D65FB31E82E6F2CAD0E29D09ECC09E706848C5CD928E37342F287E62",
+    "app/Application/MarketData/Services/EodEligibilityBuildService.php": "918F1544B3309D176CFEF5AE88B79B5C7FA58A52797E94BCCB62D8C64294BF09",
+    "app/Infrastructure/Persistence/MarketData/ProducerInputCompletionManifest.php": "D8C480A1B975E0C5D1BCC308A0E04018E5BAD23E3450088B6CB0EAB565CFC55A",
+    "app/Infrastructure/Persistence/MarketData/ProducerInputScope.php": "73120CF8FABE202416A92F9F298F6D33E4082304DC962B48796507F2CADF71AD",
+    "tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php": "9A554662285A71ED45E90D433C20ECE69A8865AE5ADEC071552FADC6E3CF3616",
+    "tests/Unit/MarketData/B18ProducerEventFactorCaptureTest.php": "6300E275655457E170D2EA53B0599F3DCCCCACB56DCB31DC87E6D83BE0AAEC0A"
+  },
+  "schema_changed": false,
+  "root_cause_and_implementation": "ProducerAncillaryCapture wraps the already-computed indicator-stage ancillary bundle (benchmark, sector, event-risk, corporate-action contamination, price-scale-break contamination) inside EodIndicatorsComputeService::computeCaptured, and the eligibility-stage dormancy read inside EodEligibilityBuildService::dormantTickerIdSet -- both call sites unchanged in their production logic, wrapped externally exactly as C08 wrapped AdjustmentFactorSetService. Each wrap retains the full unfiltered source population (market_benchmarks/market_benchmark_bars/market_benchmark_indicators, market_data_sectors/ticker_sector_memberships, md_corporate_action_revisions/market_data_corporate_action_types/market_data_corporate_actions, market_data_trading_status_event_types/market_data_trading_status_events, md_price_scale_break_candidates/md_price_scale_break_candidate_reviews/market_data_price_scale_breaks/md_adjustment_factors, and the eod_bars window for dormancy) and independently re-derives every consumed value in pure PHP from that captured population -- a faithful line-for-line port of SectorClassificationRepository::resolveSectorContextForTickerIds, EventRiskSourceRepository::resolveEventRiskContextForTickerIds/resolveCorporateActionContaminationForTickerIds and PriceScaleBreakRepository::resolveContaminationForTickerIds, cross-checked byte-for-byte against the real result (including the real producer's post-factor-removal/held-event-merge contamination post-processing). Two of the three optional producer dependencies (sector/event-risk/benchmark) are legitimately nullable in this codebase; the capture carries an explicit per-run engaged-flags selection so a disengaged producer's trivially-empty consumed value is accepted rather than independently re-derived, and a non-empty value from a disengaged producer fails closed. Historical (replay_verify) mode is blocked from reconstructing current ancillary inputs, matching every other C1 domain. ProducerInputScope's generic producer-scope completion tracking (completeInputs) and ProducerInputCompletionManifest's per-row assertValid dispatch and producer-scope reference check both had their tracked-component whitelist widened from the C08-era four entries to include 'ancillary' -- without that, C09 could never be recognized regardless of implementation state, the same class of stale gate C08 (E030) found and fixed for event_factor. The blanket 'ancillary.full_revision_contract_not_implemented' stub is removed entirely (both event_factor and ancillary stubs are now gone; nothing remains in that placeholder list). A dedicated real-data integration test (not disengaged) seeds an actual sector membership for a real listing and proves the captured sector_contexts resolves RESOLVED_AUTHORITATIVE with the correct sector_code, that the whole-C1 manifest reports zero 'ancillary.' gaps for that valid capture, and that a damaged consumed field is caught by assertValid (P86). The existing full pipeline integration suite (57 pre-existing cases, all using disengaged sector/event-risk/benchmark, i.e. exercising dormancy plus the empty/skip branches) continues to pass, proving no regression to the pre-C09 baseline.",
+  "scope_result": {
+    "C09": "COMPLETE_FOR_ACCEPTED_PRODUCER_CONSUMPTION_SCOPE",
+    "whole_C1": "NO_UNIMPLEMENTED_FULL_REVISION_DOMAIN_REMAINS; OTHER_C1_OBLIGATIONS_NOT_INDEPENDENTLY_RECHECKED_HERE",
+    "slot_count_is_completeness_proof": false,
+    "remaining_C09": [],
+    "remaining_full_revision_domains": [],
+    "consumers": [
+      "EodIndicatorsComputeService::computeCaptured (benchmark, sector, event_risk, contamination, price_scale_break)",
+      "EodEligibilityBuildService::dormantTickerIdSet (dormancy)"
+    ]
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "incomplete_bases": 64,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": []
+  },
+  "full_suite": {
+    "status": "RUN_FOR_C09_MARKETDATA_DIRECTORY_ONLY",
+    "reason": "Full tests/Unit/MarketData directory run (2375 tests / 33694 assertions): 2368 PASS, 7 FAIL. The 7 failures are ProductionCorpusInvariantOracleTest, the pre-existing MD-DEP-0015 deployed-MariaDB corpus baseline documented since E024; not caused by this change. Repository-wide full PHPUnit (all test directories) not run.",
+    "prior_baseline": "E024 seven ProductionCorpusInvariantOracleTest failures; reproduced identically here, not a new regression."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "MD-B18-A002: all six C1 full-revision input domains (universe_identity/C02, provider_mapping/C03, status_expectation/C05, source_observations/C06, raw_history/C07, event_factor/C08) plus C09 ancillary now have a genuine capture implementation and manifest wiring; ProducerInputCompletionManifest's blanket not-implemented placeholders (event_factor and ancillary) are both gone -- no remaining domain is blocked merely by an unimplemented full-revision contract. This does NOT mean ProducerInputCompletionManifest::inspect() returns COMPLETE for any given real run: market_structure, registry_versions and other non-full-revision obligations were not independently rechecked in this evidence and the existing full-pipeline test still correctly reports BLOCKED. Before claiming whole-C1 completeness, run inspect() against a real fully-engaged run (all optional producers non-null) and enumerate whatever remains. C10 (registry_versions)/C11 (market_structure)/C12 (completion/binding) were out of this C09 scope and are unverified. Preserve E021-E031 and valid P51-P86; do not repeat C02-C09 proof. No binding/seal/reader/admission, no proof/coverage promotion, and no data_260914 action, new attempt, strategy change or relock without an explicit owner decision per the C1 contract §6/§9 boundary."
+}

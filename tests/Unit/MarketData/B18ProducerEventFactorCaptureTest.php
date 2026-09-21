@@ -114,4 +114,29 @@ class B18ProducerEventFactorCaptureTest extends TestCase
         $this->assertSame(0,DB::table('md_adjustment_factor_sets')->count());$this->assertSame($before,DB::table('md_run_input_captures')->count());
     }
 
+    public function test_c08_whole_manifest_reports_no_event_factor_gap_while_ancillary_remains_blocked(): void
+    {
+        $this->seed();(new AdjustmentFactorSetService())->ensureForPublication($this->run,99,'2026-07-28',[]);
+        $repository=new RunInputCaptureRepository();
+        $validator=new \App\Infrastructure\Persistence\MarketData\ProducerInputCompletionManifest();
+        $result=$validator->inspect($this->run,$repository);
+        $this->assertSame([],array_values(array_filter($result['missing_paths'],static function($p){return strpos($p,'event_factor.')===0;})),
+            'A valid full C08 capture must have no event_factor gap, even while other C1 domains/C09 remain blocked.');
+        $this->assertContains('ancillary.ancillary-source-revisions/v1',$result['missing_paths'],
+            'This isolated C08-only scope never engages C09, so its required ancillary operation is legitimately unmet here.');
+    }
+
+    public function test_c08_whole_manifest_names_a_corrupted_persisted_capture_as_a_gap(): void
+    {
+        $this->seed();(new AdjustmentFactorSetService())->ensureForPublication($this->run,99,'2026-07-28',[]);
+        $repository=new RunInputCaptureRepository();$capsule=$this->capsule();
+        $selection=$capsule['selection_context'];$selection['fixture_variant']='corrupt-factor-set-content';
+        $payload=$capsule['rows'][0];$payload['result']['factor_set_hash']=str_repeat('9',64);
+        $bad=$repository->capture((int)$this->run->run_id,'PROBE','event_factor',$selection,[$payload]);
+        $validator=new \App\Infrastructure\Persistence\MarketData\ProducerInputCompletionManifest();
+        $result=$validator->inspect($this->run,$repository);
+        $this->assertSame('BLOCKED',$result['status']);
+        $this->assertContains('event_factor.'.$bad['slot_hash'].'.INPUT_CAPTURE_FACTOR_SET_CONTENT',$result['missing_paths']);
+    }
+
 }

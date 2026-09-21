@@ -236,7 +236,7 @@ final class ProducerInputScope
         if ($this->expectedInputs === []) return;
         $actual = [];
         foreach ($this->repository->forRun((int) $this->run->run_id) as $row) {
-            if ($row['stage_code'] !== $this->stage || ! in_array($row['component_key'], ['universe_identity', 'provider_mapping', 'status_expectation', 'raw_history', 'event_factor'], true)) continue;
+            if ($row['stage_code'] !== $this->stage || ! in_array($row['component_key'], ['universe_identity', 'provider_mapping', 'status_expectation', 'raw_history', 'event_factor', 'ancillary'], true)) continue;
             $payload = $this->repository->verify($row);
             if (($payload['selection_context']['producer_operation'] ?? null) !== $this->operation) continue;
             if (! isset($this->expectedInputs[$row['slot_hash']])

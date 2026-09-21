@@ -157,7 +157,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertArrayHasKey('md_trading_status_source_registry', $statusPopulation['tables']);
         $this->assertArrayHasKey('bar_expectation_state', $statusCapture['rows'][0]['selection_result']);
         $this->assertArrayHasKey('omitted_revisions', $statusCapture['rows'][0]);
-        $this->assertCount(62, $captures, 'All actual producer slots, calendar reads and per-scope completion must be retained.');
+        $this->assertCount(64, $captures, 'All actual producer slots, calendar reads and per-scope completion must be retained.');
         $rawReads = [];
         foreach ($captures as $capture) {
             $payload = json_decode($capture['semantic_payload_json'], true);
@@ -183,9 +183,8 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame('BLOCKED', $capturedInputs['input-completion-manifest/v1']['rows'][0]['status']);
         $this->assertSame([], (new \App\Infrastructure\Persistence\MarketData\ProducerSourceObservationCompleteness())->missing($captures, new \App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository()), 'Whole C06 requires content and cross-capture membership, not slot count.');
         $this->assertSame([], array_values(array_filter($capturedInputs['input-completion-manifest/v1']['rows'][0]['missing_paths'], static function ($path) {
-            return strpos($path, 'universe_identity.') === 0 || strpos($path, 'provider_mapping.') === 0 || strpos($path, 'status_expectation.') === 0 || strpos($path, 'raw_history.') === 0 || strpos($path, 'completion.producer_scope.') === 0;
-        })), 'C02/C03/C05 content and scoped membership are verified independently of slot count.');
-        foreach (['event_factor', 'ancillary'] as $domain) $this->assertContains($domain.'.full_revision_contract_not_implemented', $capturedInputs['input-completion-manifest/v1']['rows'][0]['missing_paths']);
+            return strpos($path, 'universe_identity.') === 0 || strpos($path, 'provider_mapping.') === 0 || strpos($path, 'status_expectation.') === 0 || strpos($path, 'raw_history.') === 0 || strpos($path, 'event_factor.') === 0 || strpos($path, 'ancillary.') === 0 || strpos($path, 'completion.producer_scope.') === 0;
+        })), 'C02/C03/C05/C08/C09 content and scoped membership are verified independently of slot count.');
         $this->assertArrayHasKey('rule_revisions', $capturedInputs['market-structure-consumed-inputs/v1']['rows'][0]);
         $this->assertCount(1, $capturedInputs['eligibility-universe/v1']['rows']);
         $this->assertSame('BBCA', $capturedInputs['eligibility-universe/v1']['rows'][0]['ticker_code']);
@@ -4959,6 +4958,115 @@ class MarketDataPipelineIntegrationTest extends TestCase
                 ->where('event_type', 'STALE_ACTIVE_RUN_CANCELLED')
                 ->where('reason_code', 'STALE_ACTIVE_RUN_CANCELLED')
                 ->exists()
+        );
+    }
+
+    public function test_ancillary_capture_proves_real_sector_and_event_risk_selection_and_is_named_by_the_manifest_on_corruption(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $listingId = (int) DB::table('md_listings')->where('legacy_ticker_id', 1)->value('listing_id');
+        DB::table('ticker_sector_memberships')->insert([
+            'ticker_id' => 1, 'listing_id' => $listingId, 'sector_code' => 'G', 'classification_system' => 'IDX-IC',
+            'effective_from' => '2020-01-01', 'effective_to' => null, 'source_name' => 'idx', 'source_ref' => 'idx-membership-ref',
+            'source_authority_class' => 'EXCHANGE_AUTHORITATIVE', 'recorded_at' => '2026-01-01 00:00:00',
+            'created_at' => '2026-01-01 00:00:00', 'updated_at' => '2026-01-01 00:00:00',
+        ]);
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20',
+            'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124, 'volume' => 2000,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+
+        $pipeline = $this->makePipelineWithAncillaryEngaged();
+        $run = $pipeline->runDaily('2026-03-20', 'manual_file');
+
+        $repository = new \App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository();
+        $captures = $repository->forRun((int) $run->run_id);
+        $indicatorAncillary = null;
+        foreach ($captures as $capture) {
+            $payload = $repository->verify($capture);
+            if ($payload['selection_context']['operation'] !== 'ancillary-source-revisions/v1') continue;
+            if ($payload['selection_context']['domain'] !== 'indicator_dependencies') continue;
+            $indicatorAncillary = ['capture' => $capture, 'payload' => $payload];
+        }
+        $this->assertNotNull($indicatorAncillary, 'Expected an indicator_dependencies ancillary capture.');
+        $consumed = $indicatorAncillary['payload']['rows'][0]['consumed'];
+        $this->assertSame('G', $consumed['sector_contexts'][1]['sector_code']);
+        $this->assertSame('RESOLVED_AUTHORITATIVE', $consumed['sector_contexts'][1]['resolution_state']);
+
+        $validator = new \App\Infrastructure\Persistence\MarketData\ProducerInputCompletionManifest();
+        $result = $validator->inspect($run, $repository);
+        $this->assertSame([], array_values(array_filter($result['missing_paths'], static function ($p) {
+            return strpos($p, 'ancillary.') === 0;
+        })), 'A valid real C09 capture must have no ancillary gap.');
+        // Whole-C1, all optional producers engaged: the only remaining gap is the pre-existing,
+        // C09-independent registry_versions.reason_registry.entries (C1 contract C10 row / S7 fail-closed
+        // rule) -- eod_reason_codes has zero rows in this SQLite mirror (unlike deployed MariaDB, which
+        // seeds it via migration), so the gate correctly reports BLOCKED rather than an implementation gap.
+        $this->assertSame(['registry_versions.reason_registry.entries'], $result['missing_paths'],
+            'Whole-C1 with every optional ancillary producer engaged has exactly one remaining, pre-existing, C09-independent gap.');
+
+        // Mutation: damaging one consumed field must be independently caught, in memory only (the real
+        // run is already sealed, so no post-seal capture write is attempted).
+        $selection = $indicatorAncillary['payload']['selection_context'];
+        $damaged = $indicatorAncillary['payload']['rows'][0];
+        $damaged['consumed']['sector_contexts'][1]['sector_code'] = 'ZZ';
+        try {
+            \App\Infrastructure\Persistence\MarketData\ProducerAncillaryCapture::assertValid($damaged, $selection, (string) $selection['trade_date']);
+            $this->fail('Damaged sector context accepted');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_ANCILLARY_SECTOR_CONTEXTS_MISMATCH', $e->getMessage());
+        }
+    }
+
+    private function makePipelineWithAncillaryEngaged(): MarketDataPipelineService
+    {
+        $publications = new EodPublicationRepository();
+        $artifacts = new EodArtifactRepository();
+        $runs = new EodRunRepository();
+        $tickers = new TickerMasterRepository();
+        $bars = new EodBarsIngestService(
+            new LocalFileEodBarsAdapter(),
+            new PublicApiEodBarsAdapter(function () {
+                throw new RuntimeException('API source not expected in sqlite integration test.');
+            }),
+            $tickers,
+            $artifacts,
+            $publications
+        );
+        $eventRisks = new \App\Infrastructure\Persistence\MarketData\EventRiskSourceRepository();
+        $indicators = new EodIndicatorsComputeService(
+            $artifacts,
+            $publications,
+            new IndicatorVectorService(),
+            new \App\Application\MarketData\Services\BenchmarkIndicatorComputeService(
+                new \App\Infrastructure\Persistence\MarketData\MarketBenchmarkRepository(),
+                new \App\Application\MarketData\Services\BenchmarkIndicatorVectorService()
+            ),
+            new \App\Infrastructure\Persistence\MarketData\SectorClassificationRepository(),
+            $eventRisks
+        );
+        $eligibility = new EodEligibilityBuildService(
+            $tickers,
+            $artifacts,
+            $publications,
+            new EligibilityDecisionService(),
+            $eventRisks
+        );
+        return new MarketDataPipelineService(
+            $runs,
+            $bars,
+            $indicators,
+            $eligibility,
+            $publications,
+            new EodCorrectionRepository(),
+            $artifacts,
+            new DeterministicHashService(),
+            new FinalizeDecisionService(),
+            new PublicationDiffService(),
+            new PublicationFinalizeOutcomeService(),
+            new CoverageGateEvaluator(new TickerMasterRepository(), $artifacts)
         );
     }
 

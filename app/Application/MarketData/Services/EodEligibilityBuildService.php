@@ -81,7 +81,7 @@ class EodEligibilityBuildService
          * trading. The fact is still worth knowing — it just belongs on the usability row as a
          * liquidity observation, where a reader can see it without it moving a gate.
          */
-        $dormantTickerIds = $this->dormantTickerIdSet($universe, $requestedDate);
+        $dormantTickerIds = $this->dormantTickerIdSet($run, $universe, $requestedDate);
         $bars = $this->artifacts->loadBarsForTradeDate($requestedDate, $useHistory ? $candidatePublication->publication_id : null);
         $deliveredTickerIds = array_fill_keys($this->artifacts->loadDeliveredObservationTickerIdsForTradeDate(
             $requestedDate,
@@ -321,7 +321,7 @@ class EodEligibilityBuildService
      * A resolution failure yields an empty set rather than an exception: dormancy is descriptive
      * here, so failing to describe it must not stop a snapshot from being written.
      */
-    private function dormantTickerIdSet(array $universeRows, $tradeDate): array
+    private function dormantTickerIdSet($run, array $universeRows, $tradeDate): array
     {
         $lookback = (int) config('market_data.activity.dormant_absence_trading_days', 60);
         $tickerIds = array_values(array_filter(array_map(function ($row) {
@@ -333,7 +333,12 @@ class EodEligibilityBuildService
         }
 
         try {
-            $dormant = $this->artifacts->loadDormantTickerIds($tickerIds, $tradeDate, $lookback);
+            $dormant = \App\Infrastructure\Persistence\MarketData\ProducerAncillaryCapture::executeDormancy(
+                $run, $tradeDate, $tickerIds, $lookback,
+                function () use ($tickerIds, $tradeDate, $lookback) {
+                    return $this->artifacts->loadDormantTickerIds($tickerIds, $tradeDate, $lookback);
+                }
+            );
         } catch (\Throwable $e) {
             return [];
         }

@@ -1,0 +1,80 @@
+{
+  "evidence_id": "E-MD-B18-A002-030",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-21T01:21:53.889891+00:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "evidence_scope": "C1_C08_EVENT_FACTOR_CAPTURE_AND_MANIFEST_COMPLETENESS",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-029"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "PASS: 7 tests / 43 assertions (B18ProducerEventFactorCaptureTest, isolated) and 57 tests / 5960 assertions (MarketDataPipelineIntegrationTest, full pipeline). Full PHPUnit not rerun.",
+  "probes": [
+    { "id": "P72-selected-event-drop", "caught": true, "landed_count": 1, "green_controls": 2, "restored_byte_identical": true },
+    { "id": "P73-event-revision-required-field", "caught": true, "landed_count": 1, "green_controls": 2, "restored_byte_identical": true },
+    { "id": "P74-assessment-required-field", "caught": true, "landed_count": 1, "green_controls": 2, "restored_byte_identical": true },
+    { "id": "P75-omitted-revision-drop", "caught": true, "landed_count": 1, "green_controls": 2, "restored_byte_identical": true },
+    { "id": "P76-assessment-omission-drop", "caught": true, "landed_count": 1, "green_controls": 2, "restored_byte_identical": true },
+    { "id": "P77-forged-canonical-decision-hash", "caught": true, "landed_count": 1, "green_controls": 2, "restored_byte_identical": true },
+    { "id": "P78-event-terms-source-tamper", "caught": true, "landed_count": 1, "green_controls": 2, "restored_byte_identical": true },
+    { "id": "P79-assessment-state-tamper", "caught": true, "landed_count": 1, "green_controls": 2, "restored_byte_identical": true },
+    { "id": "P80-decision-state-tamper", "caught": true, "landed_count": 1, "green_controls": 2, "restored_byte_identical": true },
+    { "id": "P81-stored-decision-terms-tamper", "caught": true, "landed_count": 1, "green_controls": 2, "restored_byte_identical": true },
+    { "id": "P82-applied-factor-content-tamper", "caught": true, "landed_count": 1, "green_controls": 2, "restored_byte_identical": true },
+    { "id": "P83-held-projection-wipe", "caught": true, "landed_count": 1, "green_controls": 2, "restored_byte_identical": true },
+    { "id": "P84-source-observation-hash-tamper", "caught": true, "landed_count": 1, "green_controls": 2, "restored_byte_identical": true },
+    { "id": "P85-manifest-corruption-named-as-gap", "caught": true, "landed_count": 1, "green_controls": 2, "restored_byte_identical": true }
+  ],
+  "tested_source_sha256": {
+    "app/Infrastructure/Persistence/MarketData/ProducerEventFactorCapture.php": "4CF892F893E0FBA2668288E0C0946C300159329BCC48872CDBEC88533A561004",
+    "app/Application/MarketData/Services/AdjustmentFactorSetService.php": "09B8708FEEFC9715874167824FEE3DB460DAA67F1068485F37EC9AFA86065370",
+    "app/Infrastructure/Persistence/MarketData/ProducerInputCompletionManifest.php": "8C837D5EF95CA7445E70CE93FA73ACC6EB006B4A2068BC275F54FC6583E9BBDE",
+    "app/Infrastructure/Persistence/MarketData/ProducerInputScope.php": "DF13F0FF4482439692A6C996BFE1B10F2733A2803382B64B9096DC7BFE7CA258",
+    "tests/Unit/MarketData/B18ProducerEventFactorCaptureTest.php": "4902DE0BB0B130D5DA6868E8843CAE3D2C19A1B52B774BDD333C1DCED2C81BB1",
+    "tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php": "2EB07FC92255986BE055762A3DC24C8D0F5033CA272E3987CF23204AC1B3D202"
+  },
+  "schema_changed": false,
+  "root_cause_and_implementation": "ProducerEventFactorCapture (landed by the prior handoff commit) already retained the full unfiltered md_corporate_action_revisions/md_listings/market_data_corporate_action_types/md_source_scale_assessments population plus the immutable md_source_observations reference set, derived an independent PHP-side selected/omitted/assessment/terms/decision projection from that captured population, and cross-checked it byte-for-byte against the real AdjustmentFactorSetService SQL-derived result -- proven by 13 single-instance mutation probes (P72-P84). ProducerInputCompletionManifest::inspect(), however, still carried an unconditional 'event_factor.full_revision_contract_not_implemented' stub left over from before C08 landed, so whole-C1 completeness could never recognize C08 as done regardless of implementation state. Diagnostic runs of the manifest against a genuine C08 capture showed that stub was the ONLY event_factor-prefixed gap -- the generic producer-scope declaration path (ProducerInputScope::completeInputs(), already listing 'event_factor' in its tracked component set) and the per-row assertValid() check (already wired into inspect()) both already passed cleanly. The stub was narrowed to 'ancillary' only (C09, genuinely unbuilt). Two new manifest-level regression tests were added: one proving a real C08 capture leaves zero event_factor.* gaps while ancillary.full_revision_contract_not_implemented still correctly reports, and one proving inspect() still names a corrupted persisted event_factor capture (factor_set_hash tampered via a fresh PROBE-stage capture, not by mutating the immutable row) as an event_factor.<slot>.INPUT_CAPTURE_FACTOR_SET_CONTENT gap. The full pipeline integration test (MarketDataPipelineIntegrationTest) was updated to assert the same and re-run end-to-end: 57/57 PASS, 5960 assertions.",
+  "scope_result": {
+    "C08": "COMPLETE_FOR_ACCEPTED_PRODUCER_CONSUMPTION_SCOPE",
+    "whole_C1": "BLOCKED",
+    "slot_count_is_completeness_proof": false,
+    "remaining_C08": [],
+    "consumers": [
+      "AdjustmentFactorSetService::ensureForPublication"
+    ]
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "incomplete_bases": 64,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [
+      "ancillary"
+    ]
+  },
+  "full_suite": {
+    "status": "NOT_RUN_FOR_C08",
+    "reason": "Bounded user scope. Changed production path is a manifest-gate narrowing plus regression coverage; no application/schema/migration change. Targeted and full pipeline integration both PASS; no unresolved broad regression signal.",
+    "prior_baseline": "E024 seven ProductionCorpusInvariantOracleTest failures; not a post-C08 full-suite result."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "MD-B18-A002: continue C1 C09 ancillary/contamination producer-bound input capture (benchmark, sector, event-risk, contamination, dormancy dependency inputs actually used by EodIndicatorsComputeService/BenchmarkIndicatorComputeService/SectorClassificationRepository/EventRiskSourceRepository/PriceScaleBreakRepository/EodArtifactRepository::loadDormantTickerIds), following the accepted C1 contract and consolidated package. Preserve E021-E030 and valid P51-P85; do not repeat C07/C08 proof. After C09 capture and its own manifest-completeness proof, remove the remaining 'ancillary' stub from ProducerInputCompletionManifest and re-verify whole-C1 completeness end to end. No binding/seal/reader/admission before whole-C1 completeness."
+}

@@ -1,0 +1,64 @@
+{
+  "evidence_id": "E-MD-B18-A002-032",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-21T03:07:18.989935+00:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "BLOCKED",
+  "evidence_scope": "C1_WHOLE_C1_ALL_ENGAGED_COMPLETENESS_AUDIT",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-031"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "1 test / 6 assertions (the all-engaged pipeline test, now asserting the exact full missing_paths list, not a filtered subset). No code changed; audit-only pass.",
+  "probes": [],
+  "tested_source_sha256": {
+    "tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php": "046BCABF8CE1D6882D256E04CD8818A732FB73BE3DDD9E7312D721C2E959B6CA"
+  },
+  "schema_changed": false,
+  "root_cause_and_implementation": "No production code changed. This evidence records an independent whole-C1 completeness audit run against a real pipeline execution with every optional ancillary producer (SectorClassificationRepository, EventRiskSourceRepository, BenchmarkIndicatorComputeService) actually engaged simultaneously (not the disengaged construction the pre-existing 57-case suite uses), per the C09 handoff's resume instruction. ProducerInputCompletionManifest::inspect() was run against that real run and the FULL missing_paths list enumerated (not a component-filtered subset). Result: exactly one entry, 'registry_versions.reason_registry.entries', everything else -- universe_identity, provider_mapping, status_expectation, source_observations, raw_history, event_factor, ancillary, calendar_session, market_structure -- reports zero gaps. That one entry traces to an existing, already-named obligation: the C1 contract's C10 registries/versions row (MD_B18_A002_C1_PRODUCER_BOUND_INPUT_CONTRACT.md Sec5, 'Canonical reason entries (code,category,description,severity,is_active)...') and its Sec7 explicit instruction ('record missing reason-registry proof and BLOCKED; do not use today's rows or infer history from timestamps'). It is not a C09 defect and not a new C10/C11/C12 work unit: ProducerRegistrySnapshot correctly retains whatever eod_reason_codes rows exist (zero, in this SQLite test mirror), and the gate is behaving exactly as the contract specifies -- fail closed on an empty reason registry rather than silently passing. Production/dev MariaDB seeds eod_reason_codes via existing migrations (2026_08_13_000002/2026_08_13_000004/2026_08_14_000001/2026_08_14_000003); the SQLite trait used throughout this attempt's C1 evidence chain (E021-E031) creates the table schema but never seeds rows, so this exact gap has been present, unattributed, since before C08/C09 (confirmed: it already appeared in the isolated C08-only diagnostic run that preceded E030, unrelated to ancillary engagement). No patch was made: seeding the SQLite fixture or otherwise forcing this closed has no existing C1 capture/manifest authority behind it and was out of this audit's scope. The claimed 'binding requires a new owner decision' framing repeated in prior CI declaration entries was independently checked against D-MD-B18-A002-005 and CI-MD-B18-A002-001: neither document requires a NEW owner approval before binding. CI-MD-B18-A002-001's own declaration entries (issued under D005's Q1-Q6 approval) repeatedly state the sequencing as a PROOF gate ('No binding/seal/reader/admission before whole-C1 completeness [is proven]'), not an additional approval gate; D005 itself only requires that 'approval alone resolves no finding, dependency, predicate, or stage' and that MD-DEP-0017/0018 proof criteria be met. So progression from capture to binding is already authorized by D005/CI-MD-B18-A002-001 once whole-C1 completeness is genuinely proven -- no new approval requirement is invented or needed here; the gate that remains is the proof gate, not an authorization gap, and it is not yet satisfied.",
+  "scope_result": {
+    "audit_result": "WHOLE_C1_NOT_COMPLETE",
+    "remaining_gap_count": 1,
+    "remaining_gaps": [
+      {
+        "path": "registry_versions.reason_registry.entries",
+        "canonical_basis": "MD_B18_A002_C1_PRODUCER_BOUND_INPUT_CONTRACT.md Sec5 (C10 registries/versions row) and Sec7 (reason-registry fail-closed instruction)",
+        "classification": "ENVIRONMENT_STATE_GAP_NOT_IMPLEMENTATION_GAP",
+        "reason": "eod_reason_codes has zero rows in the SQLite test mirror used throughout this attempt's C1 evidence chain; the gate correctly reports BLOCKED per the contract's own explicit fail-closed rule. Production/dev MariaDB seeds this table via existing migrations. Pre-existing since before C08/C09; not introduced by this work.",
+        "authority_to_patch": "NONE_FOUND; not patched"
+      }
+    ],
+    "all_other_components": "ZERO_GAPS (universe_identity, provider_mapping, status_expectation, source_observations, raw_history, event_factor, ancillary, calendar_session, market_structure all clean under the all-engaged real run)",
+    "slot_count_is_completeness_proof": false
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "incomplete_bases": 64,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": []
+  },
+  "full_suite": {
+    "status": "NOT_RUN_FOR_THIS_AUDIT",
+    "reason": "Audit-only pass, no production code changed. The single all-engaged pipeline test and the pre-existing 57-case disengaged suite were both re-run; no regression. Full tests/Unit/MarketData directory not re-run in this audit (already run clean, 2368/2375, in E031).",
+    "prior_baseline": "E024/E031 seven ProductionCorpusInvariantOracleTest failures; not touched by this audit."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "MD-B18-A002: whole-C1 completeness is NOT proven; binding/seal/reader/admission remain not started, per CI-MD-B18-A002-001's own proof-gate sequencing (already authorized by D-MD-B18-A002-005, not a new approval requirement). The single remaining gap (registry_versions.reason_registry.entries) is an environment-state condition, not a C1 implementation defect and not a new C10/C11/C12 work unit -- closing it (if ever authorized) would mean either seeding eod_reason_codes in the SQLite test mirror or re-running this same all-engaged audit against a real migrated MariaDB instance where the table is populated, and recording that outcome as new evidence. Neither action is authorized by this audit; no patch was made. Preserve E021-E032 and valid P51-P86; do not repeat C02-C09 proof or re-derive this audit without new information. No binding/seal/reader/admission, no proof/coverage promotion, no data_260914 action, new attempt, strategy change or relock."
+}
