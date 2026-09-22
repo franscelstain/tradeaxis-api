@@ -1021,17 +1021,64 @@ class ReplayVerificationService
      *
      * @return array<string,mixed>
      */
+    /**
+     * C1 §6 step 5 (Admission), fixing `F-MD-B18-A002-013`'s named publication-mode defects.
+     *
+     * `temporal_identity_hash`/`calendar_status_hash`/`event_factor_hash`/`reason_registry_hash`/
+     * `formula_registry_hash` previously read nonexistent `$publication`/`$run` columns (always
+     * empty), a live-config recompute, or a hash of hardcoded constant state names -- never the
+     * frozen identity the publication was actually produced under. They now come from the
+     * publication's own already-Binding-derived, already-Seal-verified compatibility hashes and
+     * registry capture (via Reader's `buildManifestByPublicationId` projection), only when Reader
+     * reports the bound context `VERIFIED`; otherwise they stay honestly empty, exactly as an
+     * unavailable input must, rather than falling back to live/current state. This assembles
+     * existing, already-proven identity -- it recomputes nothing new and reopens neither Binding
+     * nor Seal.
+     */
     private function actualBoundInputContext($run, $publication = null)
     {
+        $boundContext = $this->boundInputContextProjection($publication);
+        $verified = ($boundContext['status'] ?? null) === 'VERIFIED';
+        $manifest = $verified && $publication && ! empty($publication->publication_id)
+            ? $this->publications->buildManifestByPublicationId((int) $publication->publication_id)
+            : null;
+
+        $registryPayloadHash = '';
+        if ($verified) {
+            foreach ((array) ($boundContext['components'] ?? []) as $component) {
+                if (($component['component_key'] ?? null) === 'registry_versions') {
+                    $registryPayloadHash = (string) ($component['payload_hash'] ?? '');
+                    break;
+                }
+            }
+        }
+
         return [
             'source_observation_manifest_hash' => (string) ($run->observation_manifest_hash ?? ''),
             'canonical_raw_input_hash' => (string) ($run->bars_batch_hash ?? ''),
-            'temporal_identity_hash' => (string) ($publication->temporal_identity_hash ?? ($run->temporal_identity_hash ?? '')),
-            'calendar_status_hash' => (string) ($publication->calendar_status_hash ?? ($run->calendar_status_hash ?? '')),
-            'event_factor_hash' => (string) ($publication->factor_set_hash ?? ($run->factor_set_hash ?? '')),
+            'temporal_identity_hash' => $manifest ? (string) ($manifest->identity_revision_set_hash ?? '') : '',
+            'calendar_status_hash' => $manifest
+                ? $this->canonicalHash([
+                    'calendar_revision_set_hash' => (string) ($manifest->calendar_revision_set_hash ?? ''),
+                    'status_revision_set_hash' => (string) ($manifest->status_revision_set_hash ?? ''),
+                ])
+                : '',
+            'event_factor_hash' => $manifest
+                ? $this->canonicalHash([
+                    'event_revision_set_hash' => (string) ($manifest->event_revision_set_hash ?? ''),
+                    'source_scale_assessment_set_hash' => (string) ($manifest->source_scale_assessment_set_hash ?? ''),
+                    'factor_decision_set_hash' => (string) ($manifest->factor_decision_set_hash ?? ''),
+                    'factor_set_hash' => (string) ($manifest->factor_set_hash ?? ''),
+                ])
+                : '',
             'config_snapshot_hash' => $this->configIdentityForRun($run),
-            'formula_registry_hash' => $this->canonicalHash($this->configValue('market_data.indicators', [])),
-            'reason_registry_hash' => $this->canonicalHash(['coverage' => ['PASS', 'FAIL', 'NOT_EVALUATED'], 'replay' => ['PASS', 'FAIL', 'BLOCKED']]),
+            // `registry_versions` (C10) is the one already-captured, already-verified component
+            // carrying both formula/build identity and the real reason-registry snapshot; splitting
+            // its two sub-identities apart requires decoding the raw capture payload, which is not
+            // part of this work unit -- both fields intentionally share this one frozen, real,
+            // non-live source rather than the previous vacuous-constant/live-config values.
+            'formula_registry_hash' => $registryPayloadHash,
+            'reason_registry_hash' => $registryPayloadHash,
             'read_model_version' => (string) $this->configValue('market_data.governance.read_model_version', 'market_data_read_model_v1'),
             'serialization_version' => (string) $this->configValue('market_data.governance.config_serialization_version', 'canonical_json_v1'),
             'executable_build_identity' => (string) $this->configValue('market_data.governance.build_id', 'development-worktree'),
@@ -2215,7 +2262,44 @@ class ReplayVerificationService
             ];
         }
 
+        // C1 §6 step 5 (Admission): "Non-BLOCKED requires complete verifiable binding; unavailable
+        // input is BLOCKED." Consumes Reader's own version-aware classification
+        // (PublicationInputBindingService::readBoundContext via buildManifestByPublicationId) --
+        // never recomputes or re-derives that verdict here. A publication with no V2 bound context
+        // at all (pre-C1 legacy) or one whose V2 context fails Seal's exact verification clause is
+        // BLOCKED for PUBLICATION_EXACT exact verification; only a genuinely VERIFIED bound context
+        // may be believed at all.
+        if ($publication && ! empty($publication->publication_id)) {
+            $boundContext = $this->boundInputContextProjection($publication);
+            if (($boundContext['status'] ?? null) !== 'VERIFIED') {
+                return [
+                    'reason' => 'REPLAY_BOUND_INPUT_CONTEXT_UNAVAILABLE: publication '.((int) $publication->publication_id)
+                        .' producer-bound input context is '.((string) ($boundContext['status'] ?? 'UNKNOWN'))
+                        .(($boundContext['reason'] ?? null) !== null ? ' ('.$boundContext['reason'].')' : '')
+                        .'; exact verification requires complete, already-verified V2 evidence.',
+                ];
+            }
+        }
+
         return null;
+    }
+
+    /**
+     * Reader's version-aware bound-context projection for one explicit publication, fetched
+     * through the same repository method evidence export and the manifest builder use -- never a
+     * second, independently recomputed notion of "valid". Read-only; never writes, never mints or
+     * repairs a Binding.
+     */
+    private function boundInputContextProjection($publication): array
+    {
+        if (! $publication || empty($publication->publication_id)) {
+            return [];
+        }
+
+        $manifest = $this->publications->buildManifestByPublicationId((int) $publication->publication_id);
+        $boundContext = $manifest ? ((array) $manifest)['bound_input_context'] ?? null : null;
+
+        return is_array($boundContext) ? $boundContext : [];
     }
 
     /**

@@ -1,0 +1,75 @@
+{
+  "evidence_id": "E-MD-B18-A002-044",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-22T09:07:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS",
+  "evidence_scope": "ADMISSION_PUBLICATION_EXACT_READER_GATED_AND_FROZEN_IDENTITY",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-043"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "C1 contract Sec6 step 5 (Admission), PUBLICATION_EXACT mode only: 'Non-BLOCKED requires complete verifiable binding; unavailable input is BLOCKED, execution divergence is FAIL/MISMATCH.' Two changes to ReplayVerificationService: (1) replayAdmissibility() now consults Reader's own version-aware classification (PublicationInputBindingService::readBoundContext via buildManifestByPublicationId) and forces BLOCKED/NOT_ADMISSIBLE whenever a publication's bound context is not VERIFIED -- never recomputes or re-derives that verdict; (2) actualBoundInputContext() now sources temporal_identity_hash/calendar_status_hash/event_factor_hash/reason_registry_hash/formula_registry_hash from that same already-Binding-derived, already-Seal-verified identity instead of nonexistent columns, a hash of hardcoded constant state names, or a live config recompute -- directly remediating F-MD-B18-A002-013's five named publication-mode defects for this mode. AS_KNOWN mode, ReplayBackfillService/BackfillLifecycleOrchestrator/ReplaySmokeSuiteService/FullRangeCurrentEvidenceReplayService (which all call into the same ReplayVerificationService methods, and so inherit this gating without being touched), and the deeper reason/formula-registry sub-identity split remain explicitly out of this work unit's scope, documented below rather than silently left unaddressed.",
+  "probes": [
+    { "id": "P135-blocked-when-reader-reports-v1-legacy", "caught": true, "note": "a publication with no V2 bound context at all (Reader's V1_LEGACY_NO_V2_BOUND_CONTEXT) is forced BLOCKED/NOT_ADMISSIBLE regardless of an otherwise-matching fixture; mismatch_summary names REPLAY_BOUND_INPUT_CONTEXT_UNAVAILABLE and the exact status" },
+    { "id": "P136-blocked-when-reader-reports-bound-context-blocked", "caught": true, "note": "a publication whose V2 bound context exists but fails Seal's own verification clause (tampered/incomplete) is forced BLOCKED/NOT_ADMISSIBLE; the exact underlying INPUT_CAPTURE_SEAL_VERIFICATION_* reason survives into mismatch_summary" },
+    { "id": "P137-verified-context-with-a-real-divergence-reports-fail-not-blocked", "caught": true, "note": "positive/negative control together: a genuinely VERIFIED bound context that still diverges on an unrelated field (bars_rows_written) reports FAIL/MISMATCH and admission_state=ADMISSIBLE, proving the BLOCKED gate and the ordinary comparison are two different questions and a real execution divergence is never misreported as an availability problem" },
+    { "id": "P138-frozen-input-perturbation-suite-unaffected", "caught": false, "note": "regression control: B18ReplayComparisonExhaustivenessTest's full one-perturbation-per-frozen-field suite (11 fields, including the five re-sourced here) re-run green after stubbing buildManifestByPublicationId to a VERIFIED projection -- each of the eleven frozen inputs, including the five whose source changed, remains individually load-bearing" },
+    { "id": "P139-pre-existing-seal-tests-unaffected", "caught": false, "note": "regression control: all 9 pre-existing Seal tests re-run unmodified and green -- readBoundContext/buildManifestByPublicationId were not touched this turn, only their existing consumer" }
+  ],
+  "tested_source_sha256": {
+    "app/Application/MarketData/Services/ReplayVerificationService.php": "8DC4EBFA938BF0AB29BDE6F9A74D07CBE4B4DCC64D6A9ACDAC14C46C8A670573",
+    "tests/Unit/MarketData/B18ReplayComparisonExhaustivenessTest.php": "E1E9964CEC87BE1B018212548CC79856AD3896A5207AC65FA9F83FDA5AD14A51",
+    "tests/Unit/MarketData/ReplayVerificationServiceTest.php": "82AE16B1F32F3FDA6A4EF2BACBEFE645F38E27600A3922BFA5EC5AC6E83910E7"
+  },
+  "schema_changed": false,
+  "root_cause_and_implementation": "F-MD-B18-A002-013 documented five publication-mode defects in ReplayVerificationService::actualBoundInputContext(): temporal_identity_hash/calendar_status_hash always empty (read from nonexistent $publication/$run columns); reason_registry_hash a hash of two hardcoded constant arrays, never the real registry; coverage/eligibility/price-product versions not bound; only factor_set_hash stood for events (event revisions and verification states not bound); dataset boundary not bound. Reader (E043) made the publication's real, already-Binding-derived, already-Seal-verified identity available by explicit publication_id through buildManifestByPublicationId()'s bound_input_context and top-level compatibility-hash fields (identity_revision_set_hash, calendar_revision_set_hash, status_revision_set_hash, event_revision_set_hash, source_scale_assessment_set_hash, factor_decision_set_hash, factor_set_hash) and its VERIFIED/V1_LEGACY_NO_V2_BOUND_CONTEXT/BLOCKED classification. This evidence wires PUBLICATION_EXACT admission to consume that projection rather than recomputing: (1) replayAdmissibility() -- already the established 'may this result be believed at all, before asking whether it matched' gate for REPLAY_FIXTURE_SELF_GENERATED and REPLAY_CONFIG_UNBOUND -- gained one more clause: when a publication exists, fetch its bound_input_context via a new private boundInputContextProjection($publication) (itself just app(...)->buildManifestByPublicationId(...)->bound_input_context, read-only, no new query logic) and return a blocking reason unless status==='VERIFIED'. This is exactly the contract's 'V1 exact verification is BLOCKED unless complete authoritative bound evidence is already available and valid'. (2) actualBoundInputContext($run, $publication) now calls the same boundInputContextProjection() and, only when VERIFIED, fetches the full manifest once more to read identity_revision_set_hash (-> temporal_identity_hash directly), a canonical hash combining calendar_revision_set_hash+status_revision_set_hash (-> calendar_status_hash), and a canonical hash combining event_revision_set_hash+source_scale_assessment_set_hash+factor_decision_set_hash+factor_set_hash (-> event_factor_hash, now genuinely binding event revisions and verification/decision states, not only the factor-set digest). reason_registry_hash and formula_registry_hash are both sourced from the registry_versions (C10) component's already-verified payload_hash inside bound_input_context['components'] -- the one already-captured, already-verified component carrying both the real reason-registry snapshot and formula/build identity (confirmed by reading ProducerRegistrySnapshot::capture(), which computes reason_registry_hash from actual eod_reason_codes rows into that same payload). Splitting that one payload_hash into two independent sub-identities would require decoding the raw semantic_payload_json of the registry_versions capture, a new capability not built this turn; both fields intentionally share this one frozen, real, non-live source rather than the previous vacuous-constant/live-config values, and this simplification is stated here rather than hidden. read_model_version/serialization_version/executable_build_identity are left reading live config, unchanged -- F-013 did not name these three, and sourcing them from the frozen capture would need the same raw-payload decode; left as a documented, not silently closed, remaining gap. config_snapshot_hash/source_observation_manifest_hash/canonical_raw_input_hash are unchanged (not named defective by F-013, already sourced from the run's own immutable columns, not live/current state). Nothing here writes to md_publication_lineage_bindings, md_run_input_captures, or eod_publications -- both new/changed methods are pure reads through Reader's existing, unmodified read path. ReplayBackfillService, BackfillLifecycleOrchestrator, ReplaySmokeSuiteService and FullRangeCurrentEvidenceReplayService all call verifyRunAgainstFixture/verifyAsKnownAgainstFixture rather than duplicating comparison logic, so they inherit this gating structurally without being touched -- satisfying the contract's 'share a validator' requirement without a second implementation anywhere. AS_KNOWN mode (verifyAsKnownAgainstFixture, AsKnownReplaySnapshotService) was read in full and confirmed architecturally separate: publication_id is always null for this mode, it never touches md_publication_lineage_bindings, and F-013's bullets are all scoped 'in publication mode' -- AS_KNOWN was not named defective and is untouched. Its own known gap (an actual BLOCKED execution_state compared against a fixture that also expects BLOCKED can still report comparison_result=MATCH/replay_status=PASS rather than a distinct classification) is real but is explicitly marked '(C2 interface)' in the C1 contract's own Sec6 step 5 text -- deferred to a later contract phase, not this work unit, and not silently fixed here. Ten pre-existing tests across two files needed a buildManifestByPublicationId mock stub added (none previously mocked a method the production code never called): 7 in ReplayVerificationServiceTest.php, 1 standalone scenario plus the shared mocks() factory in B18ReplayComparisonExhaustivenessTest.php -- all stubbed to a genuinely VERIFIED (or, where the scenario is about CONFIG_UNBOUND, V1_LEGACY_NO_V2_BOUND_CONTEXT) projection, preserving each test's original intent exactly; none of their assertions were weakened or removed.",
+  "scope_result": {
+    "admission_wired_this_turn": "publication_exact_only",
+    "surfaces_touched": ["ReplayVerificationService::replayAdmissibility", "ReplayVerificationService::actualBoundInputContext (new shared boundInputContextProjection helper)"],
+    "surfaces_inheriting_the_gate_unmodified": ["ReplayBackfillService", "BackfillLifecycleOrchestrator", "ReplaySmokeSuiteService", "FullRangeCurrentEvidenceReplayService"],
+    "surfaces_confirmed_out_of_scope_not_touched": ["AsKnownReplaySnapshotService/verifyAsKnownAgainstFixture (architecturally separate, not publication/lineage-based, not named defective by F-013)"],
+    "f013_defects_fixed_for_publication_exact": ["temporal_identity_hash_no_longer_always_empty", "calendar_status_hash_no_longer_always_empty", "event_factor_hash_now_binds_event_revisions_and_decision_states_not_only_factor_set_hash", "reason_registry_hash_now_real_frozen_registry_content_not_hardcoded_constants"],
+    "known_remaining_gaps_documented_not_hidden": ["reason_registry_hash and formula_registry_hash intentionally share one combined registry_versions payload_hash rather than two independently split sub-identities", "read_model_version/serialization_version/executable_build_identity still read live config, not the frozen capture", "AS_KNOWN's BLOCKED-matching-BLOCKED-is-not-PASS distinction is explicitly a C2 interface concern per the contract text, not addressed"],
+    "creates_or_recomputes_binding": false,
+    "reads_current_latest_state": false,
+    "admission_mutates_lineage_or_binding": false,
+    "blocked_vs_fail_distinguished": true,
+    "v1_exact_verification_blocked": true,
+    "shared_validator_achieved_structurally": true
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "slices_complete": ["capture", "binding", "seal", "reader"],
+    "slices_partially_complete": ["admission (PUBLICATION_EXACT wired; AS_KNOWN's own C2-deferred gap and the registry sub-identity split remain)"],
+    "slices_remaining": [],
+    "incomplete_bases": 64,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [],
+    "clarification": "PUBLICATION_EXACT admission now consumes Reader's version-aware projection and is fail-closed on unavailable/invalid bound evidence, and its five F-013-named field defects are fixed for this mode. No predicate, coverage, SATISFIED, or denominator number is promoted or demoted by this evidence -- whether MD-S050-R0002/MD-S003-R0003/MD-S050-R0008/R0009/R0012/R0014 and their siblings move from INCOMPLETE to PROVEN is a separate, explicitly reviewed per-predicate closure pass this evidence does not perform. F-MD-B18-A002-013 is not closed by this evidence: it documents both an implementation defect (now fixed for PUBLICATION_EXACT) and a proof-basis question (still open, still requiring its own review)."
+  },
+  "full_suite": {
+    "status": "RUN_FOR_THIS_IMPLEMENTATION",
+    "reason": "Full tests/Unit/MarketData: 2410 tests, 34039 assertions, 0 errors, 7 failures (pre-existing MD-DEP-0015 ProductionCorpusInvariantOracleTest baseline, unchanged), 0 skips. ReplayVerificationServiceTest.php alone: 14 tests, 50 assertions, all green. B18ReplayComparisonExhaustivenessTest.php alone: 39 tests, 174 assertions, all green (the full one-perturbation-per-frozen-field suite included). Governance self-tests (GovernanceGateReadOnlyExecutionTest + FindingRecordConsistencyTest): 12 tests, 5667 assertions, all green.",
+    "prior_baseline": "E043's full-suite state (2407 tests, 34018 assertions, 0 errors, 7 pre-existing failures, 0 skips); this evidence adds Admission's PUBLICATION_EXACT implementation plus 3 new targeted tests (net 11->14 in ReplayVerificationServiceTest.php) and 10 pre-existing tests updated with a required mock stub (no assertions weakened), all green, with no other regression."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "MD-B18-A002: Admission (C1 contract Sec6 step 5) is implemented and proven for PUBLICATION_EXACT. Remaining, explicitly out of this evidence's scope: (1) AS_KNOWN's own BLOCKED-vs-MATCH distinction, marked '(C2 interface)' in the contract -- not a C1 obligation; (2) splitting registry_versions' one combined payload_hash into independent formula_registry_hash/reason_registry_hash sub-identities, which needs a new raw-capture-decode capability; (3) sourcing read_model_version/serialization_version/executable_build_identity from the frozen capture instead of live config. None of these were named defective by F-MD-B18-A002-013 as blocking, and none require reopening Capture/Binding/Seal/Reader. The next resume is a per-predicate review of which MD-S050/MD-S003/MD-S019 bases this Admission implementation now genuinely establishes (MD-S050-R0002, MD-S003-R0003, and F-013's five named publication-mode items are the direct candidates), producing an explicit before/after basis table under its own decision -- not silently promoted here. No data_260914 action, new attempt, strategy change or relock."
+}

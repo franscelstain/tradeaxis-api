@@ -87,6 +87,7 @@ class ReplayVerificationServiceTest extends TestCase
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
 
+        $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(91)->andReturn((object) $run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
             return $selector['type'] === 'replay_fixture_explicit_publication'
@@ -134,6 +135,99 @@ class ReplayVerificationServiceTest extends TestCase
         $this->assertSame([], $result['mismatch_reason_codes']);
         $this->assertSame('fixture_replay_unchanged_input', $result['fixture_family']);
         $this->assertContains('lineage', $result['deterministic_fields_checked']);
+    }
+
+    /**
+     * C1 §6 step 5 (Admission): "Non-BLOCKED requires complete verifiable binding; unavailable
+     * input is BLOCKED." A publication with no V2 bound context at all (Reader's
+     * `V1_LEGACY_NO_V2_BOUND_CONTEXT`) must never reach a comparison verdict -- exact verification
+     * is BLOCKED regardless of whether every other field would otherwise match.
+     */
+    public function test_admission_blocks_publication_exact_when_reader_reports_v1_legacy(): void
+    {
+        $result = $this->verifyWithBoundContextStatus('V1_LEGACY_NO_V2_BOUND_CONTEXT', null);
+
+        $this->assertSame('BLOCKED', $result['replay_status']);
+        $this->assertSame('NOT_ADMISSIBLE', $result['comparison_result']);
+        $this->assertSame('NOT_ADMISSIBLE', $result['admission_state']);
+        $this->assertStringContainsString('REPLAY_BOUND_INPUT_CONTEXT_UNAVAILABLE', (string) $result['mismatch_summary']);
+        $this->assertStringContainsString('V1_LEGACY_NO_V2_BOUND_CONTEXT', (string) $result['mismatch_summary']);
+    }
+
+    /**
+     * The other BLOCKED path: a V2 bound context exists but fails Seal's own exact verification
+     * clause (tampered/incomplete). Admission must not compare against a bound context it cannot
+     * trust, and the specific reason Reader/Seal gave must survive into the stored record.
+     */
+    public function test_admission_blocks_publication_exact_when_reader_reports_bound_context_blocked(): void
+    {
+        $result = $this->verifyWithBoundContextStatus('BLOCKED', 'INPUT_CAPTURE_SEAL_VERIFICATION_COMPONENT_UNVERIFIABLE: universe_identity|x|y@run:991');
+
+        $this->assertSame('BLOCKED', $result['replay_status']);
+        $this->assertSame('NOT_ADMISSIBLE', $result['comparison_result']);
+        $this->assertSame('NOT_ADMISSIBLE', $result['admission_state']);
+        $this->assertStringContainsString('INPUT_CAPTURE_SEAL_VERIFICATION_COMPONENT_UNVERIFIABLE', (string) $result['mismatch_summary']);
+    }
+
+    /**
+     * The BLOCKED gate and the ordinary comparison are two different questions. A genuinely
+     * `VERIFIED` bound context that still diverges on an unrelated field must fall through to the
+     * normal comparison outcome (`FAIL`/`MISMATCH`) -- never `BLOCKED`, which would misreport a real
+     * execution divergence as an availability problem.
+     */
+    public function test_admission_reports_fail_not_blocked_when_verified_context_still_diverges(): void
+    {
+        $result = $this->verifyWithBoundContextStatus('VERIFIED', null, ['bars_rows_written' => 999]);
+
+        $this->assertSame('FAIL', $result['replay_status']);
+        $this->assertSame('MISMATCH', $result['comparison_result']);
+        $this->assertSame('ADMISSIBLE', $result['admission_state']);
+        $this->assertContains('bars_rows_written', array_column($result['mismatches'], 'field'));
+    }
+
+    /**
+     * @param array<string,mixed> $expectedOverride perturbs the fixture's expected run summary, to
+     *   prove a VERIFIED bound context does not itself suppress an unrelated real divergence
+     */
+    private function verifyWithBoundContextStatus(string $status, ?string $reason, array $expectedOverride = []): array
+    {
+        $fixtureDir = $this->makeFixture($this->fixturePayload([
+            'expected/expected_replay_result.json' => $this->expectedReplayResult(array_merge([
+                'publication_id' => 944,
+                'publication_run_id' => 991,
+                'run_id' => 991,
+            ], $expectedOverride)),
+            'expected/expected_reason_code_counts.json' => [],
+        ], 'fixture_replay_admission_bound_context_'.strtolower($status)));
+
+        $run = (object) $this->successReadableRun(991, '2026-03-20');
+        $publication = (object) [
+            'publication_id' => 944,
+            'run_id' => 991,
+            'publication_version' => 4,
+            'is_current' => 1,
+            'seal_state' => 'SEALED',
+            'sealed_at' => '2026-03-20 17:30:00',
+        ];
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $replays = m::mock(ReplayResultRepository::class);
+
+        $manifest = $status === 'VERIFIED' ? $this->verifiedBoundContextManifest() : (object) [
+            'bound_input_context' => ['available' => false, 'status' => $status, 'reason' => $reason],
+        ];
+        $publications->shouldReceive('buildManifestByPublicationId')->andReturn($manifest);
+        $evidence->shouldReceive('findRunById')->once()->with(991)->andReturn($run);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->andReturn($publication);
+        $evidence->shouldReceive('dominantReasonCodes')->andReturn([]);
+        $evidence->shouldReceive('exportEligibilityRows')->andReturn([]);
+        $replays->shouldReceive('nextReplayId')->once()->andReturn(3900);
+        $replays->shouldReceive('upsertMetric')->once();
+        $replays->shouldReceive('replaceReasonCodeCounts')->once();
+
+        return (new ReplayVerificationService($evidence, $publications, $replays))
+            ->verifyRunAgainstFixture(991, $fixtureDir);
     }
 
     public function test_verify_replay_handles_non_readable_run_as_reason_coded_expected_degrade()
@@ -276,6 +370,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(93)->andReturn($run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
             return $selector['type'] === 'replay_fixture_explicit_publication'
@@ -371,6 +466,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(94)->andReturn($run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
             return $selector['type'] === 'replay_fixture_explicit_publication'
@@ -422,6 +518,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(95)->andReturn($run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
             return $selector['type'] === 'replay_fixture_explicit_publication'
@@ -535,6 +632,7 @@ class ReplayVerificationServiceTest extends TestCase
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
 
+        $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(191)->andReturn($run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
             return $selector['type'] === 'replay_fixture_explicit_publication'
@@ -679,6 +777,7 @@ class ReplayVerificationServiceTest extends TestCase
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
 
+        $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(408)->andReturn($run);
         $evidence->shouldReceive('findCorrectionByRunId')->once()->with(408)->andReturn($correction);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
@@ -899,6 +998,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(103)->andReturn($run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
             return $selector['type'] === 'replay_fixture_explicit_publication'
@@ -921,6 +1021,36 @@ class ReplayVerificationServiceTest extends TestCase
         $this->assertSame('MISMATCH', $result['comparison_result']);
         $this->assertContains('REPLAY_LINEAGE_MISMATCH', $result['mismatch_reason_codes']);
         $this->assertSame($actualFactorHash, $result['actual_context']['actual_publication_context']['factor_set_hash']);
+    }
+
+    /**
+     * C1 §6 step 5 (Admission): `replayAdmissibility()`/`actualBoundInputContext()` now read a
+     * publication's producer-bound context through `buildManifestByPublicationId()`. These
+     * pre-existing fixtures are not about that classification at all, so they stub a genuinely
+     * `VERIFIED` projection -- the same shape Reader actually returns -- to keep exercising the
+     * comparison behaviour they were written for, unaffected by the new gate.
+     */
+    private function verifiedBoundContextManifest(): object
+    {
+        return (object) [
+            'bound_input_context' => [
+                'available' => true,
+                'status' => 'VERIFIED',
+                'schema_version' => 'md_publication_inputs_v2',
+                'reason' => null,
+                'bound_input_context_hash' => str_repeat('f', 64),
+                'components' => [],
+                'scope' => [],
+                'component_manifest' => ['status' => 'COMPLETE'],
+            ],
+            'identity_revision_set_hash' => str_repeat('1', 64),
+            'calendar_revision_set_hash' => str_repeat('2', 64),
+            'status_revision_set_hash' => str_repeat('3', 64),
+            'event_revision_set_hash' => str_repeat('4', 64),
+            'source_scale_assessment_set_hash' => str_repeat('5', 64),
+            'factor_decision_set_hash' => str_repeat('6', 64),
+            'factor_set_hash' => str_repeat('7', 64),
+        ];
     }
 
     private function successReadableRun($runId, $tradeDate)

@@ -295,6 +295,9 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
             });
         $evidence->shouldReceive('dominantReasonCodes')->andReturn([]);
         $evidence->shouldReceive('exportEligibilityRows')->andReturn([]);
+        $publications->shouldReceive('buildManifestByPublicationId')->andReturn((object) [
+            'bound_input_context' => ['available' => false, 'status' => 'V1_LEGACY_NO_V2_BOUND_CONTEXT', 'reason' => null],
+        ]);
         $replays->shouldReceive('nextReplayId')->andReturn(3102);
         $replays->shouldReceive('upsertMetric')->andReturnNull();
         $replays->shouldReceive('replaceReasonCodeCounts')->andReturnNull();
@@ -577,6 +580,26 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
             array_fill(0, 3, ['eligible' => 0])
         ));
 
+        // C1 §6 step 5 (Admission): `temporal_identity_hash`/`calendar_status_hash`/
+        // `event_factor_hash` now come from Reader's projection (this publication's own
+        // already-Binding-derived compatibility hashes) rather than the run/publication row
+        // directly, and the replay is only admissible at all when Reader reports the bound
+        // context `VERIFIED`. Without this stub the service has nothing to diverge from.
+        $publications->shouldReceive('buildManifestByPublicationId')->andReturn((object) [
+            'bound_input_context' => [
+                'available' => true, 'status' => 'VERIFIED', 'schema_version' => 'md_publication_inputs_v2',
+                'reason' => null, 'bound_input_context_hash' => str_repeat('f', 64),
+                'components' => [], 'scope' => [], 'component_manifest' => ['status' => 'COMPLETE'],
+            ],
+            'identity_revision_set_hash' => str_repeat('a', 64),
+            'calendar_revision_set_hash' => str_repeat('b', 64),
+            'status_revision_set_hash' => str_repeat('c', 64),
+            'event_revision_set_hash' => str_repeat('d', 64),
+            'source_scale_assessment_set_hash' => str_repeat('e', 64),
+            'factor_decision_set_hash' => str_repeat('f', 64),
+            'factor_set_hash' => str_repeat('4', 64),
+        ]);
+
         if ($expectWrite) {
             $replays->shouldReceive('nextReplayId')->andReturn(3101);
             $replays->shouldReceive('upsertMetric')->andReturnUsing(function (array $metric) {
@@ -624,11 +647,10 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
             'bars_batch_hash' => 'A1',
             'indicators_batch_hash' => 'B1',
             'eligibility_batch_hash' => 'C1',
-            // The frozen inputs MD-S050 names. Without them on the run the bound-input block
-            // would be empty strings and a perturbation would have nothing to diverge from.
+            // observation_manifest_hash is the one MD-S050 frozen input still read directly off
+            // the run; temporal_identity_hash/calendar_status_hash/event_factor_hash come from
+            // Reader's projection stubbed in mocks() instead (C1 §6 step 5), not from this row.
             'observation_manifest_hash' => str_repeat('1', 64),
-            'temporal_identity_hash' => str_repeat('2', 64),
-            'calendar_status_hash' => str_repeat('3', 64),
             'factor_set_hash' => str_repeat('4', 64),
             'sealed_at' => self::TRADE_DATE.' 17:30:00',
         ];
