@@ -183,6 +183,7 @@ class ReplayVerificationService
             'coverage_ratio' => $actual['coverage_ratio'],
             'coverage_min_threshold' => $actual['coverage_min_threshold'],
             'coverage_gate_state' => $actual['coverage_gate_state'],
+            'coverage_reason_code' => $actual['coverage_reason_code'],
             'coverage_threshold_mode' => $actual['coverage_threshold_mode'],
             'coverage_universe_basis' => $actual['coverage_universe_basis'],
             'coverage_contract_version' => $actual['coverage_contract_version'],
@@ -714,7 +715,11 @@ class ReplayVerificationService
 
         $coverageGateState = CoverageGateStateNormalizer::normalize($run->coverage_gate_state ?? null);
         $legacyCoverageGateStateRaw = CoverageGateStateNormalizer::legacyRaw($run->coverage_gate_state ?? null);
-        $coverageReasonCode = $this->resolveCoverageReasonCodeFromState($coverageGateState);
+        // F-MD-B18-A002-015 G04, MD-S040-R0071: read the producer's own persisted
+        // `coverage_reason_code` verbatim. NULL on a run written before this column existed --
+        // never silently reconstructed from coverage_gate_state, which cannot distinguish
+        // RUN_COVERAGE_LOW from the other FAIL-adjacent codes the evaluator can emit.
+        $coverageReasonCode = $run->coverage_reason_code ?? null;
         $finalReasonCode = $run->final_reason_code ?? ($run->source_final_reason_code ?? $coverageReasonCode);
         $sourceIdentity = $this->buildSourceIdentity($run);
         $publicationId = $publication && isset($publication->publication_id) && $publication->publication_id !== null ? (int) $publication->publication_id : (isset($run->publication_id) && $run->publication_id !== null ? (int) $run->publication_id : null);

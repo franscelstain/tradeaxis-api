@@ -794,6 +794,12 @@ class ReplayVerificationServiceTest extends TestCase
             'coverage_missing_count' => 2,
             'coverage_ratio' => '0.8000',
             'coverage_gate_state' => 'FAIL',
+            'coverage_reason_code' => 'RUN_COVERAGE_LOW',
+            // MD-S040-R0077's guard gap (F-MD-B18-A002-015): only the PASS path was asserted to
+            // preserve final_reason_code; a MISMATCH case was never exercised. Set explicitly here
+            // (distinct from the fixture's expected COVERAGE_THRESHOLD_MET) so the assertion below
+            // proves it survives a genuine divergence, not just an unchallenged echo.
+            'final_reason_code' => 'RUN_COVERAGE_LOW',
             'coverage_missing_sample_json' => json_encode(['BBCA', 'BMRI']),
             'bars_rows_written' => 8,
             'indicators_rows_written' => 8,
@@ -838,6 +844,14 @@ class ReplayVerificationServiceTest extends TestCase
         $this->assertSame('MISMATCH', $result['comparison_result']);
         $this->assertSame('FAIL', $result['replay_status']);
         $this->assertContains('REPLAY_COVERAGE_STATE_MISMATCH', $result['mismatch_reason_codes']);
+        // MD-S040-R0077 (F-MD-B18-A002-015 guard gap): the run's own final_reason_code must survive
+        // in actual_context even though the comparison as a whole diverged -- a MISMATCH must not
+        // blank it out or substitute the fixture's expected value.
+        $this->assertSame('RUN_COVERAGE_LOW', $result['actual_context']['actual_run_context']['final_reason_code']);
+        // MD-S040-R0071: the actual-side coverage_reason_code must be the run's own persisted value
+        // (RUN_COVERAGE_LOW), never a reconstruction from coverage_gate_state=FAIL, which would
+        // synthesize the different string COVERAGE_BELOW_THRESHOLD.
+        $this->assertSame('RUN_COVERAGE_LOW', $result['actual_context']['actual_coverage_context']['coverage_reason_code']);
     }
 
     /**
@@ -1275,6 +1289,7 @@ class ReplayVerificationServiceTest extends TestCase
             'coverage_ratio' => null,
             'coverage_min_threshold' => '0.9800',
             'coverage_gate_state' => 'BLOCKED',
+            'coverage_reason_code' => 'RUN_COVERAGE_NOT_EVALUABLE',
             'coverage_threshold_mode' => 'MIN_RATIO',
             'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
             'coverage_contract_version' => 'coverage_gate_v1',
@@ -1437,6 +1452,10 @@ class ReplayVerificationServiceTest extends TestCase
             'coverage_ratio' => '1.0000',
             'coverage_min_threshold' => '0.9800',
             'coverage_gate_state' => 'PASS',
+            // F-MD-B18-A002-015 G04, MD-S040-R0071: the actual/producer-side persisted value this
+            // shared fixture's runs carry. Any test that overrides coverage_gate_state must override
+            // this alongside it to keep the fixture internally consistent.
+            'coverage_reason_code' => 'COVERAGE_THRESHOLD_MET',
             'coverage_threshold_mode' => 'MIN_RATIO',
             'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
             'coverage_contract_version' => 'coverage_gate_v1',

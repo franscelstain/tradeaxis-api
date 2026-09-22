@@ -656,6 +656,10 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
             'coverage_ratio' => '1.0000',
             'coverage_min_threshold' => '0.9800',
             'coverage_gate_state' => 'PASS',
+            // F-MD-B18-A002-015 G04, MD-S040-R0071: kept consistent with coverage_gate_state above
+            // -- any override of one must override the other, since the actual side no longer
+            // reconstructs this from state.
+            'coverage_reason_code' => 'COVERAGE_THRESHOLD_MET',
             'coverage_threshold_mode' => 'MIN_RATIO',
             'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
             'coverage_contract_version' => 'coverage_gate_v1',

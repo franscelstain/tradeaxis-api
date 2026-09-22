@@ -666,6 +666,13 @@ CREATE TABLE IF NOT EXISTS eod_runs (
   coverage_ratio DECIMAL(12,6) NULL,
   coverage_min_threshold DECIMAL(12,6) NULL,
   coverage_gate_state ENUM('PASS','FAIL','NOT_EVALUABLE') NULL,
+  -- F-MD-B18-A002-015 G04, MD-S040-R0071: the exact producer-emitted `coverage_reason_code`
+  -- (`CoverageGateEvaluator`'s own field, 3-value vocabulary: RUN_COVERAGE_NOT_EVALUABLE /
+  -- COVERAGE_THRESHOLD_MET / RUN_COVERAGE_LOW), persisted verbatim so evidence/replay never has to
+  -- reconstruct it from `coverage_gate_state` -- a reconstruction that collapsed RUN_COVERAGE_LOW
+  -- into COVERAGE_BELOW_THRESHOLD, a value the producer never emits for this field. NULL on rows
+  -- written before this column existed; never backfilled by reconstruction.
+  coverage_reason_code VARCHAR(64) NULL,
   coverage_threshold_mode VARCHAR(32) NULL,
   coverage_universe_basis VARCHAR(64) NULL,
   coverage_contract_version VARCHAR(64) NULL,
@@ -1165,6 +1172,10 @@ CREATE TABLE IF NOT EXISTS md_replay_daily_metrics (
   coverage_ratio DECIMAL(12,6) NULL,
   coverage_min_threshold DECIMAL(12,6) NULL,
   coverage_gate_state VARCHAR(16) NULL,
+  -- F-MD-B18-A002-015 G04, MD-S040-R0071 -- the exact producer `coverage_reason_code`, carried
+  -- through the actual/current side of a replay comparison verbatim (see the matching column on
+  -- eod_runs).
+  coverage_reason_code VARCHAR(64) NULL,
   coverage_threshold_mode VARCHAR(32) NULL,
   coverage_universe_basis VARCHAR(64) NULL,
   coverage_contract_version VARCHAR(64) NULL,
@@ -1213,6 +1224,11 @@ CREATE TABLE IF NOT EXISTS md_replay_daily_metrics (
   expected_coverage_ratio DECIMAL(12,6) NULL,
   expected_coverage_min_threshold DECIMAL(12,6) NULL,
   expected_coverage_gate_state VARCHAR(16) NULL,
+  -- F-MD-B18-A002-015 G04, MD-S040-R0071 -- the fixture's own declared
+  -- `expected_coverage_context.coverage_reason_code` (already a required proof field per
+  -- `ReplayVerificationService::validateExpectedProofCompleteness()`), persisted verbatim instead
+  -- of being computed and then discarded.
+  expected_coverage_reason_code VARCHAR(64) NULL,
   expected_coverage_threshold_mode VARCHAR(32) NULL,
   expected_coverage_universe_basis VARCHAR(64) NULL,
   expected_coverage_contract_version VARCHAR(64) NULL,

@@ -871,6 +871,7 @@ trait UsesMarketDataSqlite
             $table->decimal('coverage_ratio', 12, 6)->nullable();
             $table->decimal('coverage_min_threshold', 12, 6)->nullable();
             $table->string('coverage_gate_state')->nullable();
+            $table->string('coverage_reason_code', 64)->nullable();
             $table->string('coverage_threshold_mode')->nullable();
             $table->string('coverage_universe_basis')->nullable();
             $table->string('coverage_contract_version')->nullable();
@@ -1281,6 +1282,7 @@ trait UsesMarketDataSqlite
             $table->decimal('coverage_ratio', 12, 6)->nullable();
             $table->decimal('coverage_min_threshold', 12, 6)->nullable();
             $table->string('coverage_gate_state')->nullable();
+            $table->string('coverage_reason_code', 64)->nullable();
             $table->string('coverage_threshold_mode')->nullable();
             $table->string('coverage_universe_basis')->nullable();
             $table->string('coverage_contract_version')->nullable();
@@ -1329,6 +1331,7 @@ trait UsesMarketDataSqlite
             $table->decimal('expected_coverage_ratio', 12, 6)->nullable();
             $table->decimal('expected_coverage_min_threshold', 12, 6)->nullable();
             $table->string('expected_coverage_gate_state')->nullable();
+            $table->string('expected_coverage_reason_code', 64)->nullable();
             $table->string('expected_coverage_threshold_mode')->nullable();
             $table->string('expected_coverage_universe_basis')->nullable();
             $table->string('expected_coverage_contract_version')->nullable();

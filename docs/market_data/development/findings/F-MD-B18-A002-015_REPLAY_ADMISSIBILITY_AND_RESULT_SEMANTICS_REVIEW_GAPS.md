@@ -211,10 +211,85 @@ Targeted suites green: `ReplayBackfillServiceTest` 4/4, `OpsCommandSurfaceTest` 
 collateral impact on the CLI command surface). Governance self-tests 12/12. Full suite not run, not
 required for a three-predicate bounded unit.
 
-**This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.** 9 of its own 14 predicates
-remain `INCOMPLETE`: `MD-S040-R0071`/`MD-S040-R0077` (G04, coverage-reason preservation --
-`coverage_reason_code` has no column in any migration or base SQL, a genuine schema-plus-application
-defect, not a proof-only rebind); `MD-S050-R0051`/`MD-S050-R0052` (G08, consumer/admission claim
-scan); `MD-S036-R0012`/`MD-S050-R0036`/`MD-S003-R0021`/`MD-S005-R0096` (G09, rebind to already-
-existing executing guards); `MD-S050-R0033` (G07, hash-only divergence perturbation rebind).
-`MD-DEP-0017` remains `BLOCKING`. Next bounded unit, per canonical C2 guard-scan ordering: G04.
+## E054: G04 coverage-reason preservation (MD-S040-R0071/MD-S040-R0077) — third bounded unit — 2026-09-23T00:10:00+07:00
+
+Bounded to exactly the two predicates the prior audit turn named for this unit (G04). G07, G08, G09
+and every other F-015 predicate are untouched.
+
+**Defect confirmed by reading current source.** `CoverageGateEvaluator::evaluateCaptured()` and
+`notEvaluableResult()` emit a `coverage_reason_code` field with exactly three values
+(`RUN_COVERAGE_NOT_EVALUABLE`/`COVERAGE_THRESHOLD_MET`/`RUN_COVERAGE_LOW`), each in strict
+one-to-one correspondence with `coverage_gate_state`'s three values -- confirmed by reading both
+methods in full, which rules out a same-state/different-reason collision as constructible from this
+field's real vocabulary and distinguishes it from the broader five-value `reason_code`/`reason_codes`
+fields this finding's item 2 more loosely described as "more distinct codes than can be reconstructed
+from the gate state alone." `Manual_File_Publishability_Policy_LOCKED.md` section 7 lists "coverage
+reason code" as its own sibling item beside "coverage gate state," confirming the literal field is
+this predicate's exact scope. No `coverage_reason_code` column existed in the base SQL, any
+migration, or the SQLite mirror. `MarketDataEvidenceExportService::buildCoverageState()`/
+`buildExpectedCoverageState()` and an independent second copy of the identical logic in
+`ReplayVerificationService::buildActualReplayState()` both called
+`resolveCoverageReasonCodeFromState(coverageGateState)`, which returns `COVERAGE_BELOW_THRESHOLD` for
+`FAIL` -- a value the producer never emits for this field (it emits `RUN_COVERAGE_LOW`) -- confirmed
+live in `B18ReplayEvidencePreservationContractTest`'s own pre-existing fixture and comment, which had
+explicitly documented and asserted the wrong reconstructed value as correct behaviour. This is a
+genuine correctness bug, not only a fidelity loss.
+
+**Fix.** `coverage_reason_code VARCHAR(64) NULL` added to `eod_runs`;
+`coverage_reason_code`/`expected_coverage_reason_code VARCHAR(64) NULL` added to
+`md_replay_daily_metrics` (new migration, base SQL, SQLite mirror, applied to both `tradeaxis` and
+`tradeaxis_testing`). `MarketDataPipelineService::completeCoverageEvaluation()`/`completeEligibility()`
+now persist the evaluator's exact value verbatim. `MarketDataEvidenceExportService` and
+`ReplayVerificationService` now read the persisted column instead of reconstructing;
+`ReplayResultRepository` persists both the actual and expected sides -- the expected side's exact
+fixture-declared value was already computed into `$comparison['expected_coverage_reason_code']`
+before this unit but discarded at the repository boundary for lack of a column.
+`resolveCoverageReasonCodeFromState()` is kept in both classes for their other, out-of-scope callers
+(the exporter's `publication_reason_code`/`pointer_switch_reason_code` fallback chain; a
+legacy-fixture default-fill in `ReplayVerificationService::buildExpectedContext()` unreachable for
+any fixture meeting the existing required-proof check) -- neither is this predicate's scope.
+
+**Historical rows.** No authority addresses retroactive reconstruction for this field. Per the
+explicit instruction against inventing semantics where unresolved, a pre-migration row reads back
+`NULL` on every path, never a reconstruction: one legacy-fixture test was re-pointed from asserting
+the old reconstructed `RUN_COVERAGE_NOT_EVALUABLE` to asserting `NULL`.
+
+**MD-S040-R0077** needed no production change of its own -- this finding's own table classified it as
+a guard gap, not an executable defect. Its guard was extended from the PASS-only path to a genuine
+MISMATCH case, proving `final_reason_code` survives a real divergence rather than only an
+unchallenged echo. `MD-S040-R0071`'s fix incidentally strengthens its existing fallback chain
+(`run->final_reason_code ?? run->source_final_reason_code ?? coverageReasonCode`) from an
+approximated to an exact value, though the new guard exercises an explicitly-set value, not that
+fallback path.
+
+**Proof.** Three production mutations proven and byte-restored with sha256 verification: reverting
+the exporter's reconstruction turned `B18ReplayEvidencePreservationContractTest`'s main preservation
+test red (and, independently, two `MarketDataEvidenceExportServiceTest` cases, one on the wrong FAIL
+value, one on the historical-NULL rule); reverting the replay-actual reconstruction turned
+`ReplayVerificationServiceTest`'s mismatch test red on its actual-side `coverage_reason_code`
+assertion; removing the writer's telemetry key (on `completeEligibility()` only, the sibling call
+site left untouched) turned `MarketDataPipelineServiceTest`'s strengthened matcher red. Every other
+case in each suite stayed green throughout.
+
+**Validation.** One contaminated full-suite/pipeline-integration round was discarded after being
+traced to mutation-testing edits racing a still-running background test process (confirmed via
+`ProducerRegistrySnapshot`'s in-process build-drift guard correctly firing
+`INPUT_CAPTURE_BUILD_EXECUTABLE_DRIFT`); both re-run start-to-finish with no concurrent edits. The
+first clean full run (2420/34177/0 errors/10 failures) surfaced three genuine regressions this unit
+caused -- `EvidenceExportCompletenessStaticGuardTest`'s `RUN_COVERAGE_STORAGE_EXPORT_PATHS`
+declaration gap, and two `B18ReplayComparisonExhaustivenessTest` default-fixture tests whose shared
+run-row helper needed the matching field -- all three fixed. Final clean run: 2420 tests, 34194
+assertions, 0 errors, 7 failures, all seven the pre-existing `ProductionCorpusInvariantOracleTest`
+corpus-data-absence baseline, none related to this unit.
+
+`MD-S040-R0071` and `MD-S040-R0077` moved `INCOMPLETE` → `PROVEN` in
+`MarketDataReplayVerificationProofBasis` (confirmed via `git stash`: without-basis count 45 → 43,
+exactly these two, and the proof self-test's own pre-existing overall `FAIL` status is identical
+before and after -- not a regression). No traceability-matrix `coverage_status`/`SATISFIED`/
+denominator change.
+
+**This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.** 7 of its own 14 predicates
+remain `INCOMPLETE`: `MD-S050-R0051`/`MD-S050-R0052` (G08, consumer/admission claim scan);
+`MD-S036-R0012`/`MD-S050-R0036`/`MD-S003-R0021`/`MD-S005-R0096` (G09, rebind to already-existing
+executing guards); `MD-S050-R0033` (G07, hash-only divergence perturbation rebind). `MD-DEP-0017`
+remains `BLOCKING`. Next bounded unit, per canonical C2 guard-scan ordering: G07 or G09.

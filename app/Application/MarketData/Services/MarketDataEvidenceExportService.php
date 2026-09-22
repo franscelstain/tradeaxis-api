@@ -29,6 +29,7 @@ class MarketDataEvidenceExportService
         'coverage_ratio' => 'coverage_ratio',
         'coverage_min_threshold' => 'coverage_min_threshold',
         'coverage_gate_state' => 'coverage_gate_state',
+        'coverage_reason_code' => 'coverage_reason_code',
         'coverage_threshold_mode' => 'coverage_threshold_mode',
         'coverage_universe_basis' => 'coverage_universe_basis',
         'coverage_contract_version' => 'coverage_contract_version',
@@ -2127,7 +2128,12 @@ class MarketDataEvidenceExportService
     {
         $coverageGateState = CoverageGateStateNormalizer::normalize($record->coverage_gate_state ?? null);
         $legacyCoverageGateStateRaw = CoverageGateStateNormalizer::legacyRaw($record->coverage_gate_state ?? null);
-        $reasonCode = $this->resolveCoverageReasonCodeFromState($coverageGateState);
+        // F-MD-B18-A002-015 G04, MD-S040-R0071: read the producer's own persisted
+        // `coverage_reason_code` verbatim. NULL on a record written before this column existed --
+        // never reconstructed from coverage_gate_state, a reconstruction that could not distinguish
+        // RUN_COVERAGE_LOW from other FAIL-adjacent codes and returned COVERAGE_BELOW_THRESHOLD for
+        // FAIL, a value the producer never emits for this field.
+        $reasonCode = $record->coverage_reason_code ?? null;
         $storedMissingSample = $this->decodeNullableJsonArray($this->field($record, 'coverage_missing_sample_json'));
         $missingSample = $storedMissingSample ?? [];
         $excludedSample = $this->decodeNullableJsonArray($this->field($record, 'coverage_excluded_sample_json'));
@@ -2196,7 +2202,9 @@ class MarketDataEvidenceExportService
     {
         $coverageGateState = CoverageGateStateNormalizer::normalize($record->expected_coverage_gate_state ?? null);
         $legacyCoverageGateStateRaw = CoverageGateStateNormalizer::legacyRaw($record->expected_coverage_gate_state ?? null);
-        $reasonCode = $this->resolveCoverageReasonCodeFromState($coverageGateState);
+        // F-MD-B18-A002-015 G04, MD-S040-R0071: the fixture's own declared
+        // expected_coverage_context.coverage_reason_code, read back verbatim -- never reconstructed.
+        $reasonCode = $record->expected_coverage_reason_code ?? null;
         $missingSample = $this->decodeJsonArray($record->expected_coverage_missing_sample_json ?? null);
 
         return [

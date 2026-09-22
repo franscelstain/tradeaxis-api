@@ -808,6 +808,9 @@ class MarketDataPipelineServiceTest extends TestCase
                 'coverage_calibration_version' => 'coverage_gate_v1',
                 'reason_code' => 'COVERAGE_THRESHOLD_MET',
                 'reason_codes' => ['COVERAGE_THRESHOLD_MET'],
+                // F-MD-B18-A002-015 G04, MD-S040-R0071: the evaluator's own coverage_reason_code
+                // field, distinct from reason_code/reason_codes above.
+                'coverage_reason_code' => 'COVERAGE_THRESHOLD_MET',
                 'missing_ticker_ids' => [101, 102],
                 'missing_ticker_codes' => ['AAA', 'BBB'],
             ]);
@@ -822,6 +825,9 @@ class MarketDataPipelineServiceTest extends TestCase
                     && $telemetry['coverage_delivered_count'] === 890
                     && $telemetry['coverage_delivered_valid_count'] === 890
                     && $telemetry['coverage_available_count'] === 890
+                    // MD-S040-R0071: the persisted telemetry must carry the evaluator's exact
+                    // coverage_reason_code verbatim.
+                    && $telemetry['coverage_reason_code'] === 'COVERAGE_THRESHOLD_MET'
                     && $telemetry['coverage_missing_count'] === 10
                     && abs($telemetry['coverage_ratio'] - 0.9888889) < 0.000001
                     && $telemetry['coverage_gate_state'] === 'PASS'

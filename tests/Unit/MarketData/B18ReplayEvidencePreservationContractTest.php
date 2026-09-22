@@ -45,12 +45,16 @@ class B18ReplayEvidencePreservationContractTest extends TestCase
                 'expected_coverage.coverage_gate_state' => 'FAIL',
             ],
             'coverage reason code' => [
-                // Derived from the normalized gate state, not echoed from the record: no
-                // coverage reason code is persisted on the replay metric (the table carries
-                // `final_reason_code`, not `coverage_reason_code`). The fixture below sets a
-                // different value on purpose, and the export ignoring it is correct behaviour -
-                // this expectation was wrong on its first run and the exporter was right.
-                'coverage.coverage_reason_code' => 'COVERAGE_BELOW_THRESHOLD',
+                // F-MD-B18-A002-015 G04, MD-S040-R0071 (post-remediation): coverage_reason_code is
+                // now a persisted column on both eod_runs and md_replay_daily_metrics (actual and
+                // expected sides), and the export echoes it verbatim -- it is never re-derived from
+                // the normalized gate state. The fixture deliberately sets a value
+                // (COVERAGE_BELOW_MIN_RATIO / RUN_COVERAGE_LOW) that a state-derivation would NOT
+                // produce for FAIL (which would synthesize COVERAGE_BELOW_THRESHOLD): if the
+                // exporter ever regresses to deriving from state instead of reading the persisted
+                // column, this assertion is what turns red.
+                'coverage.coverage_reason_code' => 'COVERAGE_BELOW_MIN_RATIO',
+                'expected_coverage.coverage_reason_code' => 'RUN_COVERAGE_LOW',
             ],
             'coverage ratio' => [
                 'coverage.coverage_ratio' => 0.842,
@@ -307,6 +311,7 @@ class B18ReplayEvidencePreservationContractTest extends TestCase
             'expected_coverage_ratio' => '0.8420',
             'expected_coverage_min_threshold' => '0.9800',
             'expected_coverage_gate_state' => 'FAIL',
+            'expected_coverage_reason_code' => 'RUN_COVERAGE_LOW',
             'expected_coverage_threshold_mode' => 'MIN_RATIO',
             'expected_coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
             'expected_coverage_contract_version' => 'coverage_gate_v1',

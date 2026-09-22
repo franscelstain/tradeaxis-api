@@ -35,6 +35,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
             'coverage_ratio' => 1.0,
             'coverage_min_threshold' => 0.98,
             'coverage_gate_state' => 'PASS',
+            'coverage_reason_code' => 'COVERAGE_THRESHOLD_MET',
             'coverage_threshold_mode' => 'MIN_RATIO',
             'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
             'coverage_contract_version' => 'coverage_gate_v1',
@@ -393,6 +394,10 @@ class MarketDataEvidenceExportServiceTest extends TestCase
             'coverage_ratio' => 0.0055,
             'coverage_min_threshold' => 0.98,
             'coverage_gate_state' => 'FAIL',
+            // F-MD-B18-A002-015 G04, MD-S040-R0071: the producer's real value for FAIL is
+            // RUN_COVERAGE_LOW, never COVERAGE_BELOW_THRESHOLD -- the state-derived reconstruction
+            // this fixture used to depend on returned the wrong string for exactly this case.
+            'coverage_reason_code' => 'RUN_COVERAGE_LOW',
             'coverage_threshold_mode' => 'MIN_RATIO',
             'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
             'coverage_contract_version' => 'coverage_gate_v1',
@@ -455,6 +460,10 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame('INCOMPLETE', $payload['evidence_completeness']['evidence_completeness_state']);
         $this->assertContains('artifact_hash_context', $payload['evidence_completeness']['missing_sections']);
         $this->assertSame('FAIL', $payload['coverage_context']['coverage_gate_state']);
+        // The discriminating assertion for F-MD-B18-A002-015 G04 / MD-S040-R0071: a FAIL run's
+        // persisted coverage_reason_code must read back as the producer's own RUN_COVERAGE_LOW, not
+        // the state-derived COVERAGE_BELOW_THRESHOLD a reconstruction-from-state would synthesize.
+        $this->assertSame('RUN_COVERAGE_LOW', $payload['coverage_context']['coverage_reason_code']);
         $this->assertNull($payload['coverage_context']['coverage_expected_count']);
         $this->assertNull($payload['coverage_context']['coverage_delivered_count']);
         $this->assertNull($payload['coverage_context']['coverage_delivered_valid_count']);
@@ -670,10 +679,15 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame('BLOCKED', $summary['quality_gate_state']);
         $this->assertSame('NOT_EVALUABLE', $summary['coverage']['coverage_gate_state']);
         $this->assertSame('BLOCKED', $summary['coverage']['legacy_coverage_gate_state_raw']);
-        $this->assertSame('RUN_COVERAGE_NOT_EVALUABLE', $summary['coverage']['coverage_reason_code']);
+        // F-MD-B18-A002-015 G04, MD-S040-R0071: this fixture is a legacy row that predates the
+        // coverage_reason_code column (it never sets the property), exactly like a real historical
+        // eod_runs row written before the migration. The exact-unresolved-history rule is: NULL, not
+        // a reconstruction from coverage_gate_state -- RUN_COVERAGE_NOT_EVALUABLE is never invented
+        // for a row that never recorded it.
+        $this->assertNull($summary['coverage']['coverage_reason_code']);
         $this->assertSame('NOT_EVALUABLE', $payload['coverage_context']['coverage_gate_state']);
         $this->assertSame('BLOCKED', $payload['coverage_context']['legacy_coverage_gate_state_raw']);
-        $this->assertSame('RUN_COVERAGE_NOT_EVALUABLE', $payload['coverage_context']['coverage_reason_code']);
+        $this->assertNull($payload['coverage_context']['coverage_reason_code']);
     }
 
 

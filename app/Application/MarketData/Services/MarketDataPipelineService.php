@@ -814,6 +814,10 @@ class MarketDataPipelineService
                     'coverage_ratio' => $coverage['coverage_ratio'],
                     'coverage_min_threshold' => $coverage['coverage_threshold_value'],
                     'coverage_gate_state' => $coverageGateState,
+                    // F-MD-B18-A002-015 G04, MD-S040-R0071: persist the evaluator's own exact
+                    // `coverage_reason_code` verbatim, so downstream readers never have to
+                    // reconstruct it from coverage_gate_state.
+                    'coverage_reason_code' => $coverage['coverage_reason_code'] ?? null,
                     'coverage_threshold_mode' => $coverage['coverage_threshold_mode'],
                     'coverage_universe_basis' => $coverage['coverage_universe_basis'] ?? (string) config('market_data.coverage_gate.universe_basis', 'ticker_master_active_on_trade_date'),
                     'coverage_contract_version' => $coverage['coverage_calibration_version'],
@@ -900,6 +904,10 @@ class MarketDataPipelineService
                     'coverage_ratio' => $coverage['coverage_ratio'],
                     'coverage_min_threshold' => $coverage['coverage_threshold_value'],
                     'coverage_gate_state' => $coverageGateState,
+                    // F-MD-B18-A002-015 G04, MD-S040-R0071: persist the evaluator's own exact
+                    // `coverage_reason_code` verbatim, so downstream readers never have to
+                    // reconstruct it from coverage_gate_state.
+                    'coverage_reason_code' => $coverage['coverage_reason_code'] ?? null,
                     'coverage_threshold_mode' => $coverage['coverage_threshold_mode'],
                     'coverage_universe_basis' => $coverage['coverage_universe_basis'] ?? (string) config('market_data.coverage_gate.universe_basis', 'ticker_master_active_on_trade_date'),
                     'coverage_contract_version' => $coverage['coverage_calibration_version'],

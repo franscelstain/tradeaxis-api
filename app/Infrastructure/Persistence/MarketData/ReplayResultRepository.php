@@ -94,6 +94,9 @@ class ReplayResultRepository
             'coverage_ratio' => $metric['coverage_ratio'] ?? null,
             'coverage_min_threshold' => $metric['coverage_min_threshold'] ?? null,
             'coverage_gate_state' => CoverageGateStateNormalizer::normalize($metric['coverage_gate_state'] ?? null),
+            // F-MD-B18-A002-015 G04, MD-S040-R0071: the exact producer `coverage_reason_code`,
+            // carried through verbatim rather than reconstructed from coverage_gate_state.
+            'coverage_reason_code' => $metric['coverage_reason_code'] ?? null,
             'coverage_threshold_mode' => $metric['coverage_threshold_mode'] ?? null,
             'coverage_universe_basis' => $metric['coverage_universe_basis'] ?? null,
             'coverage_contract_version' => $metric['coverage_contract_version'] ?? null,
@@ -142,6 +145,9 @@ class ReplayResultRepository
             'expected_coverage_ratio' => $metric['expected_coverage_ratio'] ?? null,
             'expected_coverage_min_threshold' => $metric['expected_coverage_min_threshold'] ?? null,
             'expected_coverage_gate_state' => CoverageGateStateNormalizer::normalize($metric['expected_coverage_gate_state'] ?? null),
+            // F-MD-B18-A002-015 G04, MD-S040-R0071: the fixture's own declared
+            // expected_coverage_context.coverage_reason_code, carried through verbatim.
+            'expected_coverage_reason_code' => $metric['expected_coverage_reason_code'] ?? null,
             'expected_coverage_threshold_mode' => $metric['expected_coverage_threshold_mode'] ?? null,
             'expected_coverage_universe_basis' => $metric['expected_coverage_universe_basis'] ?? null,
             'expected_coverage_contract_version' => $metric['expected_coverage_contract_version'] ?? null,
