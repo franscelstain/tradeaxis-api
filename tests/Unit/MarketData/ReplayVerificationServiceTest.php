@@ -138,6 +138,136 @@ class ReplayVerificationServiceTest extends TestCase
     }
 
     /**
+     * `F-MD-B18-A002-014` -- `MD-S019-R0073`, `MD-S005-R0095`, replay half of `MD-S019-R0009`.
+     *
+     * `B18ReplayRerunDeterminismTest` was found mistargeted: both its "runs" call
+     * `MarketDataEvidenceExportService::exportReplayEvidence()` on one hand-fabricated
+     * `md_replay_daily_metrics` row, twice -- nothing in it ever calls
+     * `ReplayVerificationService::verifyRunAgainstFixture()`, the method that actually computes a
+     * replay result. Re-exporting the same static object twice proves the exporter is
+     * deterministic; it proves nothing about whether *replaying* is.
+     *
+     * This calls `verifyRunAgainstFixture()` itself, twice, each time through a genuinely separate
+     * service instance and a genuinely separate set of mocks -- not the same object reused, and the
+     * first call's return value is never fed into the second as its "actual". Each call
+     * independently re-loads the fixture package from disk and re-derives the entire persisted
+     * metric from scratch. The two mocks are configured to represent the same stable underlying
+     * state (the point of a determinism claim), but each `nextReplayId()` mints its own identity,
+     * matching how two real replay executions would each get their own `replay_id` in production.
+     */
+    public function test_replaying_the_same_unchanged_publication_twice_persists_byte_identical_results_except_execution_identity(): void
+    {
+        $fixtureDir = $this->makeFixture($this->fixturePayload([
+            'expected/expected_replay_result.json' => $this->expectedReplayResult([
+                'publication_id' => 61, 'publication_run_id' => 951, 'run_id' => 951,
+            ]),
+            'expected/expected_reason_code_counts.json' => [
+                ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'reason_count' => 3],
+            ],
+        ], 'fixture_replay_rerun_determinism'));
+
+        $captured = [];
+        foreach ([4801, 4802] as $replayId) {
+            $run = (object) $this->successReadableRun(951, '2026-03-20');
+            $publication = (object) [
+                'publication_id' => 61, 'run_id' => 951, 'publication_version' => 4, 'is_current' => 1,
+                'seal_state' => 'SEALED', 'sealed_at' => '2026-03-20 17:30:00',
+            ];
+
+            $evidence = m::mock(EodEvidenceRepository::class);
+            $publications = m::mock(EodPublicationRepository::class);
+            $replays = m::mock(ReplayResultRepository::class);
+
+            $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
+            $evidence->shouldReceive('findRunById')->once()->with(951)->andReturn($run);
+            $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->andReturn($publication);
+            $evidence->shouldReceive('dominantReasonCodes')->andReturn([
+                ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'count' => 3],
+            ]);
+            $evidence->shouldReceive('exportEligibilityRows')->andReturn(array_merge(
+                array_fill(0, 7, ['eligible' => 1]), array_fill(0, 3, ['eligible' => 0])
+            ));
+            $replays->shouldReceive('nextReplayId')->once()->andReturn($replayId);
+            $replays->shouldReceive('upsertMetric')->once()->andReturnUsing(function (array $metric) use (&$captured, $replayId) {
+                $captured[$replayId] = $metric;
+
+                return null;
+            });
+            $replays->shouldReceive('replaceReasonCodeCounts')->once();
+
+            (new ReplayVerificationService($evidence, $publications, $replays))
+                ->verifyRunAgainstFixture(951, $fixtureDir);
+        }
+
+        $this->assertCount(2, $captured, 'both independent replay executions must have persisted a metric');
+        [$first, $second] = array_values($captured);
+
+        $this->assertNotSame($first['replay_id'], $second['replay_id'],
+            'two independent replay executions must each mint their own identity -- otherwise this is one execution compared with itself, not two');
+
+        $diverged = [];
+        foreach ($first as $field => $value) {
+            if ($field === 'replay_id') {
+                continue;
+            }
+            if ($value !== ($second[$field] ?? null)) {
+                $diverged[] = $field;
+            }
+        }
+        $this->assertSame([], $diverged,
+            'these fields differed between two genuinely independent replays of the same unchanged publication and fixture, so replay is not reproducible');
+    }
+
+    /**
+     * The mutation half `test_replaying_the_same_unchanged_publication_twice...` needs to be a
+     * determinism claim rather than a constant-output implementation passing it by accident: a
+     * genuine divergence in one real input between the two independent replay executions must move
+     * the persisted result in exactly that field.
+     */
+    public function test_a_genuine_input_divergence_between_two_independent_replays_is_detected(): void
+    {
+        $fixtureDir = $this->makeFixture($this->fixturePayload([
+            'expected/expected_replay_result.json' => $this->expectedReplayResult([
+                'publication_id' => 62, 'publication_run_id' => 952, 'run_id' => 952,
+            ]),
+            'expected/expected_reason_code_counts.json' => [],
+        ], 'fixture_replay_rerun_divergence_probe'));
+
+        $captured = [];
+        foreach ([['id' => 4901, 'bars' => 'A1'], ['id' => 4902, 'bars' => 'A1_DIVERGED']] as $round) {
+            $run = (object) array_merge($this->successReadableRun(952, '2026-03-20'), ['bars_batch_hash' => $round['bars']]);
+            $publication = (object) [
+                'publication_id' => 62, 'run_id' => 952, 'publication_version' => 4, 'is_current' => 1,
+                'seal_state' => 'SEALED', 'sealed_at' => '2026-03-20 17:30:00',
+            ];
+
+            $evidence = m::mock(EodEvidenceRepository::class);
+            $publications = m::mock(EodPublicationRepository::class);
+            $replays = m::mock(ReplayResultRepository::class);
+
+            $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
+            $evidence->shouldReceive('findRunById')->once()->with(952)->andReturn($run);
+            $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->andReturn($publication);
+            $evidence->shouldReceive('dominantReasonCodes')->andReturn([]);
+            $evidence->shouldReceive('exportEligibilityRows')->andReturn([]);
+            $replays->shouldReceive('nextReplayId')->once()->andReturn($round['id']);
+            $replays->shouldReceive('upsertMetric')->once()->andReturnUsing(function (array $metric) use (&$captured, $round) {
+                $captured[$round['id']] = $metric;
+
+                return null;
+            });
+            $replays->shouldReceive('replaceReasonCodeCounts')->once();
+
+            (new ReplayVerificationService($evidence, $publications, $replays))
+                ->verifyRunAgainstFixture(952, $fixtureDir);
+        }
+
+        [$first, $second] = array_values($captured);
+        $this->assertNotSame($first['bars_batch_hash'], $second['bars_batch_hash'],
+            'a genuine input divergence between two independent replay executions did not move the persisted bars_batch_hash, so this determinism guard could not have detected real non-determinism either');
+    }
+
+    /**
      * C1 §6 step 5 (Admission): "Non-BLOCKED requires complete verifiable binding; unavailable
      * input is BLOCKED." A publication with no V2 bound context at all (Reader's
      * `V1_LEGACY_NO_V2_BOUND_CONTEXT`) must never reach a comparison verdict -- exact verification

@@ -1,0 +1,78 @@
+{
+  "evidence_id": "E-MD-B18-A002-051",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+  "issued_at": "2026-09-22T20:00:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS_FOUR_PREDICATES_REBOUND_PROVEN_FINDING_RESOLVED",
+  "evidence_scope": "F014_RERUN_DETERMINISM_SPLIT_INTO_REPLAY_AND_REBUILD_SENSES_BOTH_PROVEN_BY_REAL_EXECUTION_GUARDS",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-014"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-050",
+    "CI-MD-B18-A002-001"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "F-MD-B18-A002-014's four predicates (MD-S003-R0004, MD-S005-R0095, MD-S019-R0073, MD-S019-R0009) were re-verified against current authority before any code/test change. Read the exact contract text: MD-S003-R0004 (Historical_Replay_and_Data_Quality_Backtest.md:13, exact-publication scenario family), MD-S005-R0095 (Audit_Hash_and_Reproducibility_Contract_LOCKED.md:153, required proof 5, explicitly 'exact publication replay'), MD-S019-R0073 (Determinism_Invariants_LOCKED.md:120, Invariant 14 consequent, replay only), MD-S019-R0009 (Determinism_Invariants_LOCKED.md:18, Invariant 1, explicitly 'across reruns and replay' -- both senses). The same document's separate 'Correction and rerun rules' section (line ~139) names the rebuild sense precisely: 'An unchanged rebuild with identical stable inputs/versions produces identical artifact hashes and must not create a fake corrected publication.' This is ALREADY_DECIDED by the contract text itself -- two named mechanisms (replay-verification subsystem vs. production pipeline), not an interpretation invented by matching a plausible-sounding method name, which the review was explicitly warned against. B18ReplayRerunDeterminismTest was re-read in full and confirmed by grep (zero matches for ReplayVerificationService/verifyRunAgainstFixture/MarketDataPipelineService/runDaily) to still call only MarketDataEvidenceExportService::exportReplayEvidence() twice on one static fabricated object -- proving exporter round-trip fidelity, nothing about either determinism sense.",
+  "probes": [
+    { "id": "P163-exploratory-probe-two-independent-rundaily-calls-same-unchanged-date", "caught": false, "note": "a throwaway diagnostic test (not committed, discarded after use) called MarketDataPipelineService::runDaily() twice, independently, for the same unchanged trade date with no correction request: the second call received a genuinely new run_id, computed an identical bars_batch_hash to the first, sealed its own candidate publication but never made it current, and was held terminal_status=HELD/publishability_state=NOT_READABLE/final_reason_code=RUN_LOCK_CONFLICT via PublicationFinalizeOutcomeService's promotion-safety refusal -- proving the production system already behaves correctly for an unauthorized bare rerun before any guard was written" },
+    { "id": "P164-pre-existing-rebuild-guard-pair-cross-referenced-and-confirmed-sufficient", "caught": false, "note": "MarketDataPipelineIntegrationTest::test_run_daily_correction_with_unchanged_artifacts_cancels_request_and_preserves_current_publication (unchanged content through the explicit correction workflow: identical batch hashes, correction explicitly CONSUMED_CURRENT, no version switch, published_at null) and its immediate neighbour test_run_daily_correction_replaces_current_publication_and_marks_correction_published (changed content: new publication_version, correction CORRECTION_PUBLISHED) were found already in the test corpus and already green, cross-referenced against F-014's predicates rather than assumed absent -- no new test needed for the rebuild sense" },
+    { "id": "P165-replay-rerun-positive-guard-two-genuinely-independent-executions", "caught": false, "note": "new test: verifyRunAgainstFixture() called twice through two genuinely separate ReplayVerificationService instances and two genuinely separate sets of Mockery mocks representing the same stable underlying state; every persisted metric field identical except replay_id, which is asserted to differ" },
+    { "id": "P166-replay-rerun-negative-guard-genuine-divergence-detected", "caught": true, "note": "new test: diverging one real input (bars_batch_hash) between the two independent calls moves the persisted result in exactly that field, proving the positive guard could not be satisfied by a constant-output implementation" }
+  ],
+  "tested_source_sha256": {
+    "app/Application/MarketData/Services/ReplayVerificationService.php": "9647B728B31BCACD4F1D14345940801508E4246B093815DAFA43A8F3A915F04C",
+    "app/Application/MarketData/Services/MarketDataPipelineService.php": "03271E79DAE3C59E1E11F84450E80141F00781C0867AE7C81C0CE663600B84DC",
+    "tests/Unit/MarketData/ReplayVerificationServiceTest.php": "4E50CFB138D9BEE0B074F1E6F8ECDD54A08861A9140DFB7FAB6AA6849D8BAE79",
+    "tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php": "B6DB1446D3C359EBD0C6A71C54814EBB37AD365E3D08F56D9B3A89EFBC79A5B6",
+    "tests/Unit/MarketData/B18ReplayRerunDeterminismTest.php": "FADB7822CD900BE7F88516E74BE1C6B0B0998F8EA75EAD627B15D711B42AE70C",
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php": "ECEF1B8CBFB152BA4A3CD7EF18E612A2F0C365AA77086F08D537EBCE8D7FABC8"
+  },
+  "schema_changed": false,
+  "root_cause_and_implementation": "No production code changed -- ReplayVerificationService::verifyRunAgainstFixture() and MarketDataPipelineService were both read in full and found already correct for both the replay and rebuild determinism senses. The defect was entirely in proof binding: B18ReplayRerunDeterminismTest, the guard all four predicates were bound to, calls MarketDataEvidenceExportService::exportReplayEvidence() twice on one static, hand-fabricated md_replay_daily_metrics object -- it never calls ReplayVerificationService::verifyRunAgainstFixture() (the replay sense) or MarketDataPipelineService (the rebuild sense) at all, confirmed by grep across the whole file. Two predicates need the replay sense only (MD-S019-R0073, MD-S005-R0095), one needs the rebuild sense only (MD-S003-R0004), and one needs both (MD-S019-R0009) -- this split is read directly from the contract text (two separate named document sections describing two separate mechanisms), not inferred from a method name. For the rebuild sense, an exploratory throwaway probe (discarded after use, never committed) called runDaily() twice independently for the same unchanged date with no correction request, and observed concrete real behavior: a genuinely new run_id, an identical bars_batch_hash, a sealed-but-never-current second candidate publication, and a HELD/NOT_READABLE/RUN_LOCK_CONFLICT outcome via PublicationFinalizeOutcomeService's existing promotion-safety refusal -- the system already refuses to silently promote an unauthorized second run as a fake correction. Cross-referencing MarketDataPipelineIntegrationTest's existing correction-workflow tests against F-014's predicates (rather than assuming no guard existed) found a pre-existing, already-green, real-SQLite-pipeline positive/negative pair that already proves exactly this for the SUPPORTED rerun path (the explicit correction workflow): test_run_daily_correction_with_unchanged_artifacts_cancels_request_and_preserves_current_publication (unchanged content -> identical batch hashes, correction explicitly CONSUMED_CURRENT, no version switch) and test_run_daily_correction_replaces_current_publication_and_marks_correction_published (changed content -> genuinely new publication_version, correction CORRECTION_PUBLISHED). No new test was needed for the rebuild sense. For the replay sense, no existing test calls verifyRunAgainstFixture() twice against the same publication/fixture (confirmed by grep across tests/), so two new targeted tests were added to ReplayVerificationServiceTest.php: test_replaying_the_same_unchanged_publication_twice_persists_byte_identical_results_except_execution_identity calls verifyRunAgainstFixture() twice through two genuinely separate service instances and two genuinely separate Mockery mock sets (never the same object reused, never the first call's return value fed into the second as its actual), configured to represent the same stable underlying state; every persisted metric field is asserted identical between the two calls except replay_id, which is asserted to DIFFER (each independent execution mints its own identity via its own nextReplayId() expectation), proving two genuinely separate executions were compared rather than one execution compared with itself. test_a_genuine_input_divergence_between_two_independent_replays_is_detected is the falsification half: diverging one real input (bars_batch_hash) between the two independent calls moves the persisted result in exactly that field, so a constant-output implementation could not satisfy the first test by accident. The excluded-field list (only replay_id, beyond the class's own pre-existing $ignoredVolatileFields already used elsewhere in its comparison logic) is not invented: it applies the same general principle Audit_Hash_and_Reproducibility_Contract_LOCKED.md already states for artifact hashes (run_id and auto-increment navigation IDs excluded unless they alter semantics) to this new record shape. B18ReplayRerunDeterminismTest is kept unmodified as supporting evidence for exporter determinism, per this finding's own remediation point 3 -- it remains valid proof of a narrower, different claim.",
+  "scope_result": {
+    "predicates_reviewed": ["MD-S003-R0004", "MD-S005-R0095", "MD-S019-R0073", "MD-S019-R0009"],
+    "predicates_promoted_to_proven": ["MD-S003-R0004", "MD-S005-R0095", "MD-S019-R0073", "MD-S019-R0009"],
+    "predicate_promotion_reasoning": "each predicate rebound to a guard confirmed, by direct reading and by an exploratory probe of real production behavior, to genuinely exercise the exact sense (replay or rebuild) its own contract text requires; two of the four rebinds needed zero new tests (a pre-existing, already-green real-pipeline pair was found by cross-referencing rather than assumed absent), and two needed exactly the two new targeted tests this evidence adds",
+    "new_tests_added": ["ReplayVerificationServiceTest::test_replaying_the_same_unchanged_publication_twice_persists_byte_identical_results_except_execution_identity", "ReplayVerificationServiceTest::test_a_genuine_input_divergence_between_two_independent_replays_is_detected"],
+    "pre_existing_tests_rebound_no_modification": ["MarketDataPipelineIntegrationTest::test_run_daily_correction_with_unchanged_artifacts_cancels_request_and_preserves_current_publication", "MarketDataPipelineIntegrationTest::test_run_daily_correction_replaces_current_publication_and_marks_correction_published"],
+    "production_code_changed": false,
+    "exploratory_probe_discarded": true,
+    "f014_status": "RESOLVED",
+    "md_dep_0017_status": "UNCHANGED -- still blocks on F-015 through F-018, none of which this evidence touches",
+    "traceability_matrix_coverage_status_touched": false,
+    "satisfied_or_denominator_changed": false,
+    "f013_or_f021_reopened": false,
+    "commit_or_push": "NONE -- explicitly withheld per current instruction"
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "slices_complete": ["capture", "binding", "seal", "reader", "admission (publication_exact)"],
+    "slices_remaining": [],
+    "incomplete_bases": 50,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [],
+    "clarification": "MarketDataReplayVerificationProofBasis's INCOMPLETE count moves from 54 to 50 (four F014 predicates promoted this round). F-MD-B18-A002-014 is RESOLVED. MD-DEP-0017 remains BLOCKING pending F-015 through F-018, none of which this evidence addresses."
+  },
+  "full_suite": {
+    "status": "RUN_FOR_THIS_IMPLEMENTATION",
+    "reason": "Full tests/Unit/MarketData, run solo (no concurrent file edits, learning from an earlier round's read-race): 2417 tests, 34154 assertions, 0 errors, 7 failures (unchanged pre-existing MD-DEP-0015 ProductionCorpusInvariantOracleTest baseline), 0 skips. Test count rose by exactly 2 from E050's 2415, matching the two new tests this evidence adds. ReplayVerificationServiceTest alone: 19/19, 73 assertions. MarketDataPipelineIntegrationTest alone (includes the pre-existing rebuild-guard pair, confirmed unmodified): 82/82, 6148 assertions. B18ReplayRerunDeterminismTest alone (confirmed unmodified by diff, kept as supporting evidence): 7/7, 18 assertions. GovernanceGateReadOnlyExecutionTest 9/9 and FindingRecordConsistencyTest 3/3, after registering E-MD-B18-A002-051 across all four document registries and regenerating CURRENT_STATE.md to resync with the updated Stage Register resume point (ScopeBoundaryAndOrchestrationCompletionTest's orchestration-sync check briefly failed between the Stage Register edit and the CURRENT_STATE regeneration, as expected, and passed once both were synced).",
+    "prior_baseline": "E050's full-suite state (2415 tests, 34142 assertions, 0 errors, 7 pre-existing failures, 0 skips); this evidence adds two new tests, net 2415 -> 2417, with no other regression."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "F-MD-B18-A002-014 is RESOLVED; no further action is owed to it. MD-DEP-0017 remains BLOCKING pending F-015 (replay admissibility and result semantics review gaps), F-016 (replay comparison identity and resolution review gaps), F-017 (point-in-time release criteria and config replay review gaps) and F-018 (as-known fixtures bitemporal and comparison class review gaps), none of which this evidence addresses -- each is its own separately-scoped work unit. No data_260914 action, new attempt, strategy change or relock. No commit or push performed, per current instruction."
+}

@@ -406,6 +406,40 @@ final class MarketDataReplayVerificationProofBasis
             'basis' => 'the eleven items MD-S003 names for exact publication verification -- frozen observations, temporal revisions, config, factors, formulas, artifacts, hashes, manifest, seal, reasons, terminal state -- are each mapped to an executing guard in this class, and the map is checked against the contract line parsed from the document rather than transcribed, so an item added with nothing verifying it fails. Observations, temporal revisions, config, factors and formulas are covered by the frozen-input perturbations added for MD-S050-R0002; artifacts, hashes, seal, reasons and terminal state by the assertion-class perturbations; manifest by the fixture whose manifest declares a file it does not carry, which is refused outright. The negative guard asserts every guard the map names still exists, so a rename empties nothing silently. "Formulas" shares MD-S050-R0002\'s eligibility/formula/reason/read-model/serialization/build closure directly, since both read the same actualBoundInputContext() fields through the same perturbation table. Probe: removing seal from the map turned the positive red.',
         ],
 
+        // ---- F-MD-B18-A002-014 remediation (E051): four predicates, one shared defect. Their bound
+        // guard, B18ReplayRerunDeterminismTest, calls MarketDataEvidenceExportService::exportReplayEvidence()
+        // twice on one hand-fabricated md_replay_daily_metrics row -- it never calls
+        // ReplayVerificationService::verifyRunAgainstFixture() (the replay sense) or MarketDataPipelineService
+        // (the rebuild sense) at all, so it proves the exporter is deterministic, nothing about whether
+        // replaying or rebuilding is. Two of the four predicates concern the replay sense only, one concerns
+        // the rebuild sense only, and one names both -- each rebound to a guard that actually exercises the
+        // sense it requires, verified concretely (not assumed) before rebinding: for the rebuild sense, an
+        // exploratory probe called MarketDataPipelineService::runDaily() twice, independently, for the same
+        // unchanged date and confirmed the second run gets a genuinely new run_id, computes the identical
+        // bars_batch_hash, and is held NOT_READABLE (final_reason_code RUN_LOCK_CONFLICT / RUN_NON_CURRENT_PROMOTION
+        // depending on path) rather than silently becoming current -- the system already does the right
+        // thing; this remediation is proof-binding only, not a production change.
+        'MD-S019-R0073' => [
+            'positive' => 'ReplayVerificationServiceTest::test_replaying_the_same_unchanged_publication_twice_persists_byte_identical_results_except_execution_identity',
+            'negative' => 'ReplayVerificationServiceTest::test_a_genuine_input_divergence_between_two_independent_replays_is_detected',
+            'basis' => 'the consequent of the MD-S019 bound-input conditional, replay sense: verifyRunAgainstFixture() is called twice, each time through a genuinely separate ReplayVerificationService instance and a genuinely separate set of mocks representing the same stable underlying run/publication/fixture -- not the same object reused, and the first call\'s return value is never fed into the second as its actual. Every field of the persisted metric is asserted identical between the two calls except replay_id, which is asserted to differ (each independent execution mints its own identity, proving this is two executions compared with each other, not one compared with itself). The negative guard diverges one real input (bars_batch_hash) between the two independent calls and asserts the persisted result moves in exactly that field, so a constant-output implementation could not satisfy the positive guard by accident.',
+        ],
+        'MD-S005-R0095' => [
+            'positive' => 'ReplayVerificationServiceTest::test_replaying_the_same_unchanged_publication_twice_persists_byte_identical_results_except_execution_identity',
+            'negative' => 'ReplayVerificationServiceTest::test_a_genuine_input_divergence_between_two_independent_replays_is_detected',
+            'basis' => 'same basis as MD-S019-R0073, which restates this required proof: exact publication replay reproduces hashes -- two genuinely independent verifyRunAgainstFixture() executions against the same unchanged publication and fixture persist byte-identical bars/indicators/eligibility batch hashes and every other content field, differing only in the replay\'s own execution identity.',
+        ],
+        'MD-S003-R0004' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_with_unchanged_artifacts_cancels_request_and_preserves_current_publication',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_replaces_current_publication_and_marks_correction_published',
+            'basis' => 'rebuild sense, "prove an unchanged rerun is byte-identical and does not create a fake correction" -- read literally against Audit_Hash_and_Reproducibility_Contract_LOCKED.md\'s own rerun rule ("an unchanged rebuild with identical stable inputs/versions produces identical artifact hashes and must not create a fake corrected publication"). This pre-existing, already-green, real-pipeline test (not written for this finding, found by cross-referencing MarketDataPipelineIntegrationTest against F-014\'s predicates) runs a real SQLite pipeline once, then reruns it through the explicit correction workflow with byte-identical input: bars_batch_hash/indicators_batch_hash/eligibility_batch_hash are each asserted identical to the baseline run, and the correction record is asserted CONSUMED_CURRENT with no publication_version switch and a null published_at -- an unchanged rebuild is explicitly recorded as not a real correction, never silently promoted as one. The negative guard is the immediately preceding test in the same file: a rerun with genuinely changed content (a different close price) is asserted to produce a different publication_version and a correction explicitly marked CORRECTION_PUBLISHED, proving the unchanged-rerun guard is not satisfied by an implementation that always treats any rerun as a no-op.',
+        ],
+        'MD-S019-R0009' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_with_unchanged_artifacts_cancels_request_and_preserves_current_publication',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_replaces_current_publication_and_marks_correction_published',
+            'basis' => 'Invariant 1\'s own three named hashes (bars_batch_hash, indicators_batch_hash, eligibility_batch_hash) are each asserted individually identical across an unchanged rebuild by the cited positive guard, and each is shown load-bearing by the negative guard\'s genuinely different content producing a genuinely different publication version -- the rerun half of "this must hold across reruns and replay". The replay half is the same claim ReplayVerificationServiceTest::test_replaying_the_same_unchanged_publication_twice_persists_byte_identical_results_except_execution_identity independently proves for MD-S019-R0073/MD-S005-R0095, not re-cited here only because this schema holds one positive/negative pair per entry; both halves are genuinely proven, not assumed from one.',
+        ],
+
         // ---- MD-S050-R0017, the anti-future list. Two of its nine items were covered only by a reflection
         // check that a cutoff parameter exists, which an ignored parameter passes.
 
@@ -554,30 +588,6 @@ final class MarketDataReplayVerificationProofBasis
         // empty otherwise, never a live-config fallback). No guard was weakened and no new test was added: both
         // negative guards already existed from this round's and E047/E048's own remediation, and the comparison
         // guard already existed from E046. Promoted to PROVEN.
-        // F-MD-B18-A002-014: the guard re-exports one stored replay record; no replay is rerun, so reproduction of outputs and hashes is not shown.
-        'MD-S019-R0073' => [
-            'positive' => 'B18ReplayRerunDeterminismTest::test_an_unchanged_rerun_produces_byte_identical_artifacts',
-            'negative' => 'B18ReplayRerunDeterminismTest::test_a_changed_bound_input_changes_the_bytes',
-            'basis' => 'the consequent of the MD-S019 bound-input conditional: two exports of the same replay are asserted byte-identical across every artifact by sha256, and the negative guard asserts replay_result.json changes when a bound input changes, so constant output cannot satisfy it',
-        ],
-        // F-MD-B18-A002-014: the guard re-exports one stored replay record; no unchanged rebuild is run, so byte identity and the absence of a fake correction are not shown.
-        'MD-S003-R0004' => [
-            'positive' => 'B18ReplayRerunDeterminismTest::test_an_unchanged_rerun_produces_byte_identical_artifacts',
-            'negative' => 'B18ReplayRerunDeterminismTest::test_a_changed_bound_input_changes_the_bytes',
-            'basis' => 'an unchanged rerun is asserted byte-identical, and a separate test passes the publication and correction repositories as mocks with no expectations so any write to either fails - the fake-correction half of the predicate',
-        ],
-        // F-MD-B18-A002-014: the guard re-exports one stored replay record; exact publication replay reproducing hashes is not shown.
-        'MD-S005-R0095' => [
-            'positive' => 'B18ReplayRerunDeterminismTest::test_an_unchanged_rerun_produces_byte_identical_artifacts',
-            'negative' => 'B18ReplayRerunDeterminismTest::test_a_changed_bound_input_changes_the_bytes',
-            'basis' => 'exact publication replay is asserted to reproduce the same hashes: the artifacts carrying bars, indicators and eligibility batch hashes are byte-identical across two runs of the same fixture',
-        ],
-        // F-MD-B18-A002-014: each batch hash is shown carried into the export, not identical across reruns and replay.
-        'MD-S019-R0009' => [
-            'positive' => 'B18ReplayRerunDeterminismTest::test_each_batch_hash_is_individually_load_bearing_across_a_rerun',
-            'negative' => 'B18ReplayRerunDeterminismTest::test_an_unchanged_rerun_produces_byte_identical_artifacts',
-            'basis' => 'the antecedent is Invariant 1 -- identical semantic content and bindings imply bars_batch_hash, indicators_batch_hash AND eligibility_batch_hash are each identical -- and R0009 adds that it holds across reruns and replay. The pre-existing rerun guard proves the identical direction for the whole artifact set at once and perturbs only bars_batch_hash, so it does not establish that the three are individually load-bearing, which is what makes the conjunction a claim rather than a list. Each of the three is now perturbed separately across a real double export and asserted to move replay_result.json, with the table checked against the Invariant 1 block parsed from Determinism_Invariants_LOCKED.md so a fourth hash added there fails rather than going unchecked. The negative guard is the unchanged rerun asserting byte-identical artifacts by sha256, so the pair is not satisfied by an exporter whose output varies freely. Probe: the eligibility hash reaches replay_result.json by four independent paths -- the top-level field, the replay-metric publication artifact lineage, the run-derived lineage, and the resolution-context lineage -- and neutering fewer than all four left the guard green; constanting all four turned exactly the eligibility data set red. Dropping indicators from the reviewed table turned the contract-map guard red.',
-        ],
         // F-MD-B18-A002-015: the corpus guard sees prose only; no guard stops code from using a replay PASS to close a finding, release a quarantine, dismiss a candidate or satisfy a continuity check.
         'MD-S050-R0051' => [
             'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
