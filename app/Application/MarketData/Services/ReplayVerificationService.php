@@ -1034,6 +1034,20 @@ class ReplayVerificationService
      * unavailable input must, rather than falling back to live/current state. This assembles
      * existing, already-proven identity -- it recomputes nothing new and reopens neither Binding
      * nor Seal.
+     *
+     * `F-MD-B18-A002-021` correction: `temporal_identity_hash` previously read
+     * `identity_revision_set_hash`, which `PublicationInputBindingService::deriveCompatibilityHashes()`
+     * derives exclusively from C11 market-structure/board content -- the wrong domain for
+     * `MD-S050-R0008`/`MD-S019-R0067`'s "temporal universe/listing/symbol/provider mappings". It now
+     * reads a `componentGroupHash()` over the bound context's own `universe_identity` (C02) capture
+     * references instead -- already-verified, already-immutable `md_run_input_captures` slot/payload
+     * identities Reader already exposes, no Binding change needed. Because each `universe_identity`
+     * slot's `slot_hash` covers its full `selection_context` (which the C1 capture contract requires
+     * to include `dataset_start`), this single hash also carries "intentional dataset boundary"
+     * without a separate field. `event_factor_hash` gained a fifth member the same way: a
+     * `componentGroupHash()` over the `ancillary` (C09) capture, whose own payload already contains
+     * `contamination` (and `price_scale_breaks`) content (`ProducerAncillaryCapture::deriveContamination`/
+     * `derivePriceScaleBreaks`) -- the missing "contamination decisions" member of `MD-S050-R0012`.
      */
     private function actualBoundInputContext($run, $publication = null)
     {
@@ -1042,21 +1056,20 @@ class ReplayVerificationService
         $manifest = $verified && $publication && ! empty($publication->publication_id)
             ? $this->publications->buildManifestByPublicationId((int) $publication->publication_id)
             : null;
+        $components = $verified ? (array) ($boundContext['components'] ?? []) : [];
 
         $registryPayloadHash = '';
-        if ($verified) {
-            foreach ((array) ($boundContext['components'] ?? []) as $component) {
-                if (($component['component_key'] ?? null) === 'registry_versions') {
-                    $registryPayloadHash = (string) ($component['payload_hash'] ?? '');
-                    break;
-                }
+        foreach ($components as $component) {
+            if (($component['component_key'] ?? null) === 'registry_versions') {
+                $registryPayloadHash = (string) ($component['payload_hash'] ?? '');
+                break;
             }
         }
 
         return [
             'source_observation_manifest_hash' => (string) ($run->observation_manifest_hash ?? ''),
             'canonical_raw_input_hash' => (string) ($run->bars_batch_hash ?? ''),
-            'temporal_identity_hash' => $manifest ? (string) ($manifest->identity_revision_set_hash ?? '') : '',
+            'temporal_identity_hash' => (string) ($this->componentGroupHash($components, 'universe_identity') ?? ''),
             'calendar_status_hash' => $manifest
                 ? $this->canonicalHash([
                     'calendar_revision_set_hash' => (string) ($manifest->calendar_revision_set_hash ?? ''),
@@ -1069,6 +1082,7 @@ class ReplayVerificationService
                     'source_scale_assessment_set_hash' => (string) ($manifest->source_scale_assessment_set_hash ?? ''),
                     'factor_decision_set_hash' => (string) ($manifest->factor_decision_set_hash ?? ''),
                     'factor_set_hash' => (string) ($manifest->factor_set_hash ?? ''),
+                    'ancillary_contamination_hash' => (string) ($this->componentGroupHash($components, 'ancillary') ?? ''),
                 ])
                 : '',
             'config_snapshot_hash' => $this->configIdentityForRun($run),
@@ -1083,6 +1097,38 @@ class ReplayVerificationService
             'serialization_version' => (string) $this->configValue('market_data.governance.config_serialization_version', 'canonical_json_v1'),
             'executable_build_identity' => (string) $this->configValue('market_data.governance.build_id', 'development-worktree'),
         ];
+    }
+
+    /**
+     * A deterministic identity for every already-verified `md_run_input_captures` reference the
+     * bound context names for one `$componentKey` -- read-only over Reader's own `components` list
+     * (`stage_code`/`component_key`/`slot_hash`/`payload_hash`), never a new query or a raw-capture
+     * decode. `slot_hash` already covers that slot's full `selection_context` and `payload_hash`
+     * already covers its full content, so grouping and hashing these tuples binds both "which slice
+     * was consumed" and "with what content" for the named domain, without inventing a new digest
+     * algorithm or reopening Binding to persist a new column.
+     */
+    private function componentGroupHash(array $components, string $componentKey): ?string
+    {
+        $matching = [];
+        foreach ($components as $component) {
+            if (($component['component_key'] ?? null) !== $componentKey) {
+                continue;
+            }
+            $matching[] = [
+                'stage_code' => (string) ($component['stage_code'] ?? ''),
+                'slot_hash' => (string) ($component['slot_hash'] ?? ''),
+                'payload_hash' => (string) ($component['payload_hash'] ?? ''),
+            ];
+        }
+        if ($matching === []) {
+            return null;
+        }
+        usort($matching, static function ($a, $b) {
+            return $a['slot_hash'] <=> $b['slot_hash'];
+        });
+
+        return $this->canonicalHash(['component_key' => $componentKey, 'members' => $matching]);
     }
 
     private function actualReasonCodeCounts($run, $resolvedTradeDate, $publication, $correction = null)

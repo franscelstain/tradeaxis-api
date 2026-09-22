@@ -1,0 +1,74 @@
+{
+  "evidence_id": "E-MD-B18-A002-046",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-22T11:16:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS",
+  "evidence_scope": "F021_TEMPORAL_IDENTITY_DOMAIN_FIX_AND_CONTAMINATION_BINDING_SIX_PREDICATES_PROVEN",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-021",
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-045",
+    "E-MD-B18-A002-044"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "F-MD-B18-A002-021 remediation, the two of its five items that are ALREADY_DECIDED by existing authority (the C1 contract's own C02/C09/C10/C11 producer-domain separation) and IMPLEMENTATION_DERIVABLE without reopening Capture or adding a schema column: (1) temporal_identity_hash re-sourced from the correct C02 universe_identity capture domain instead of the C11 market-structure/board domain identity_revision_set_hash actually carries; (2) event_factor_hash gained a fifth member over the C09 ancillary capture, which the C1 contract's own producer table and ProducerAncillaryCapture already establish as the domain carrying corporate-action-window and price-scale-break contamination content. Both read Reader's already-verified bound_input_context['components'] list (stage_code/component_key/slot_hash/payload_hash tuples) directly -- no Binding, Seal, Reader, Capture, or schema change. The remaining three F-021 items (eligibility version; read_model_version/serialization_version/executable_build_identity) are explicitly NOT remediated here -- classified and deferred below with reasons, not silently dropped.",
+  "probes": [
+    { "id": "P140-universe-identity-component-drives-temporal-identity-hash-and-nothing-else", "caught": true, "note": "domain-isolation probe: changing only the universe_identity component's payload_hash changes temporal_identity_hash and leaves calendar_status_hash/event_factor_hash byte-identical" },
+    { "id": "P141-ancillary-component-drives-event-factor-hash-and-nothing-else", "caught": true, "note": "domain-isolation probe: changing only the ancillary component's payload_hash changes event_factor_hash and leaves temporal_identity_hash byte-identical" },
+    { "id": "P142-both-hashes-are-real-and-non-empty-when-verified", "caught": false, "note": "positive control: with a genuinely VERIFIED bound context carrying real universe_identity/ancillary component entries, both temporal_identity_hash and event_factor_hash resolve to real, non-empty, deterministic values, not placeholders" },
+    { "id": "P143-full-frozen-input-perturbation-suite-unaffected-with-real-component-content", "caught": true, "note": "regression + strengthening control: B18ReplayComparisonExhaustivenessTest's mocks() stub was extended from an empty components list to two real universe_identity/ancillary entries; all eleven frozen-input perturbations, including temporal_identity_hash and event_factor_hash, still individually deny PASS when diverged, now against genuine (not merely empty-string) content" }
+  ],
+  "tested_source_sha256": {
+    "app/Application/MarketData/Services/ReplayVerificationService.php": "59A7766A26D7BDC51315F3639D3F093AC53273AC9E089A0DE8B1F4FE5EA6851F",
+    "tests/Unit/MarketData/ReplayVerificationServiceTest.php": "ABDF8249E2D61B559E97E3D821BF85A06187372A06023E650BB20BB26A43F0E6",
+    "tests/Unit/MarketData/B18ReplayComparisonExhaustivenessTest.php": "A8DC13B58A57C9070A95EDCBF7C9240B8B64968FEB7BB7C768B930017DF53180",
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php": "4E81FF33BD36AB7DB18A19E31C40E38A7DB984FB6958F1F586C5DD27F8EF8A92"
+  },
+  "schema_changed": false,
+  "root_cause_and_implementation": "F-MD-B18-A002-021 named five remediation items. Each was classified against existing authority before any code was written: (1) temporal_identity_hash's correct domain (C02 universe_identity, not C11 market-structure) is ALREADY_DECIDED by the C1 contract's own producer mapping table, which lists C02 ('universe/identity') and C11 ('market structure') as explicitly separate domains with separate producer surfaces -- not a new semantic decision. (2) 'Dataset boundary' folding into that same hash is ALREADY_DECIDED: the C1 contract's own C02 row lists 'dataset boundary' as part of that domain's captured content, and ProducerInputCompletionManifest::temporalMissing() already requires dataset_start inside the universe_identity capture's own selection_context, which slot_hash already covers. (3) Contamination decisions' home (C09 ancillary, the same component already used for benchmark/sector/event-risk) is ALREADY_DECIDED by the C1 contract's own producer table and confirmed by reading ProducerAncillaryCapture::deriveContamination()/derivePriceScaleBreaks() in full: contamination and price-scale-break content is already captured and asserted as part of that exact component's payload (domain=indicator_dependencies) -- not a new domain, and its target bound field (event_factor_hash) is ALREADY_DECIDED by B18ReplayBoundInputIdentityContractTest's own reviewed identityMap(), which maps the whole MD-S050-R0012 bullet (event revisions, verification states, factor-set revisions, AND contamination decisions) to that one field. (4) Eligibility version's home (C10 registry_versions) is ALREADY_DECIDED by the C1 contract's own producer table ('full formula/indicator/price-product/coverage/eligibility/read-model/serialization/build identity'), but ProducerRegistrySnapshot::capture() does not currently capture any eligibility-version concept at all (confirmed by grep) -- remediating this requires reopening Capture to add a new captured field, a materially larger and separately-scoped change than (1)-(3), which touch only Admission. Classified IMPLEMENTATION_DERIVABLE but explicitly deferred, not implemented here. (5) read_model_version/serialization_version/executable_build_identity's home (also C10 registry_versions, which does capture serialization_version and executable_build for real, confirmed by reading the same capture code) is likewise ALREADY_DECIDED, but reading them precisely (rather than as part of one combined payload_hash, already used for reason/formula registry) requires decoding the registry_versions capture's raw semantic_payload_json -- a new Reader/Admission capability not yet built. Classified IMPLEMENTATION_DERIVABLE but explicitly deferred, not implemented here, to avoid a rushed partial implementation of a new capability in the same turn as two other substantial changes. Implementation for (1)-(3): a new private ReplayVerificationService::componentGroupHash(array $components, string $componentKey) reads Reader's own bound_input_context['components'] list (already exposed, read-only, no new query), filters to one component_key, sorts by slot_hash for determinism, and canonically hashes the (stage_code, slot_hash, payload_hash) tuples -- proving both 'which slice was consumed' (slot_hash covers the full selection_context, including dataset_start) and 'with what content' (payload_hash covers the resolved population) without decoding raw capture payloads or persisting a new compatibility-hash column on md_publication_lineage_bindings. temporal_identity_hash now equals componentGroupHash(components, 'universe_identity') directly, replacing identity_revision_set_hash entirely (the wrong-domain field is no longer read at all for this purpose; it remains untouched on the manifest/lineage row for whatever else legitimately consumes it). event_factor_hash gained a fifth combined member, ancillary_contamination_hash = componentGroupHash(components, 'ancillary'), alongside its existing four. A new targeted test, ReplayVerificationServiceTest::test_temporal_identity_and_event_factor_hash_are_domain_isolated_by_component, directly proves domain isolation via three actualBoundInputContext() computations built from three deliberately-different component sets (P140/P141/P142): changing only the universe_identity component's payload_hash changes temporal_identity_hash and nothing else; changing only the ancillary component's payload_hash changes event_factor_hash and nothing else; both are real, non-empty values when genuinely VERIFIED. B18ReplayComparisonExhaustivenessTest's shared mocks() stub, previously returning components: [] (making temporal_identity_hash/event_factor_hash's ancillary contribution resolve to placeholder empty strings), was extended with two real universe_identity/ancillary entries so its existing full eleven-field perturbation suite (P143) now exercises genuine content rather than an empty-list edge case. Governance follow-through: MD-S050-R0008/R0009/R0012 and their MD-S019-R0067/R0068/R0069 Invariant-14 restatements were moved from MarketDataReplayVerificationProofBasis::INCOMPLETE to ::PROVEN, each with its guard rebound from B18ReplayBoundInputIdentityContractTest (which only ever proved MarketDataEvidenceExportService pass-through of a fabricated metric row, never the real writer -- confirmed unchanged and still insufficient by re-reading it) to B18ReplayComparisonExhaustivenessTest's real-path perturbation pair, plus the new domain-isolation test for the two predicates the domain-mapping/contamination fix specifically concerns. MD-S050-R0002/MD-S003-R0003/MD-S050-R0014/MD-S019-R0071 remain INCOMPLETE -- their conjunctions still fail on the deferred eligibility-version and read_model/serialization/build gaps -- and their MarketDataReplayVerificationProofBasis inline comments were updated to reflect that the domain-mismatch and contamination gaps are no longer among their blockers. Verified via a direct PHP require + array-key check that the six moved predicates now appear in PROVEN and not in INCOMPLETE, and that no unintended duplicate keys exist across the file's arrays beyond one pre-existing, unrelated, deliberate duplicate (MD-S050-R0056 in both PROVEN and SUPERSEDED, predating this turn).",
+  "scope_result": {
+    "f021_items_remediated": ["temporal_identity_hash_domain_mapping", "dataset_boundary_folded_into_universe_identity_hash", "contamination_decisions_bound_via_ancillary_component"],
+    "f021_items_deferred_with_reason": ["eligibility_version_requires_new_capture_field_not_added_here", "read_model_serialization_build_require_raw_capture_decode_capability_not_built_here"],
+    "predicates_promoted_to_proven": ["MD-S050-R0008", "MD-S050-R0009", "MD-S050-R0012", "MD-S019-R0067", "MD-S019-R0068", "MD-S019-R0069"],
+    "predicates_still_incomplete": ["MD-S050-R0002", "MD-S050-R0014", "MD-S003-R0003", "MD-S019-R0071"],
+    "guard_rebind_performed": true,
+    "guard_weakened": false,
+    "new_schema_or_binding_reopened": false,
+    "binding_seal_reader_admission_reopened_beyond_f021_scope": false,
+    "traceability_matrix_coverage_status_touched": false,
+    "satisfied_or_denominator_changed": false
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "slices_complete": ["capture", "binding", "seal", "reader", "admission (publication_exact)"],
+    "slices_remaining": [],
+    "incomplete_bases": 58,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [],
+    "clarification": "The traceability matrix's own coverage_status/SATISFIED/denominator counters are unchanged by this evidence (still 0/114 SATISFIED, matrix untouched beyond notes). MarketDataReplayVerificationProofBasis's own PROVEN/INCOMPLETE bookkeeping -- a separate, code-level proof registry this evidence is directly responsible for -- moved six of F013's ten INCOMPLETE bases to PROVEN (64 -> 58 incomplete bases in that registry). F-MD-B18-A002-013 remains OPEN: four of its ten bases (the full-conjunction MD-S050-R0002/MD-S003-R0003 and the registry-version MD-S050-R0014/MD-S019-R0071) are still blocked on F-MD-B18-A002-021's two deferred items. F-MD-B18-A002-021 remains OPEN, now for exactly those two deferred items."
+  },
+  "full_suite": {
+    "status": "RUN_FOR_THIS_IMPLEMENTATION",
+    "reason": "Full tests/Unit/MarketData: 2411 tests, 34070 assertions, 0 errors, 7 failures (pre-existing MD-DEP-0015 ProductionCorpusInvariantOracleTest baseline, unchanged), 0 skips. B18ReplayComparisonExhaustivenessTest.php alone: 39 tests, 174 assertions, all green (full eleven-field perturbation suite included, now against real component content). ReplayVerificationServiceTest.php alone: 15 tests, 57 assertions, all green. Governance self-tests (GovernanceGateReadOnlyExecutionTest + FindingRecordConsistencyTest): 12 tests, 5691 assertions, all green. Proof-gate/classification/traceability governance tests directly touching the edited files (PromotedPredicateProofGateTest, ClassificationConsistencyGateTest, TraceabilityApplicabilityGateTest, CalendarStatusTraceabilityGateTest): 45 tests, 1190 assertions, all green.",
+    "prior_baseline": "E045's full-suite state (2410 tests, 34039 assertions, 0 errors, 7 pre-existing failures, 0 skips); this evidence adds one new targeted test (net 2410->2411) and the mocks() stub strengthening, all green, with no other regression."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "F-MD-B18-A002-021's two remaining, deferred items: (1) add an eligibility-version concept to ProducerRegistrySnapshot::capture()'s payload (a Capture-layer change, its own Change Impact Declaration, since it changes what C10 registry_versions captures); (2) build a Reader/Admission capability to decode the registry_versions capture's raw semantic_payload_json precisely (rather than its combined payload_hash) so read_model_version/serialization_version/executable_build_identity can be sourced from frozen content instead of live config. Neither is required before returning to F-MD-B18-A002-013's remaining four bases (MD-S050-R0002/MD-S003-R0003/MD-S050-R0014/MD-S019-R0071), which stay INCOMPLETE until both land. No data_260914 action, new attempt, strategy change or relock."
+}

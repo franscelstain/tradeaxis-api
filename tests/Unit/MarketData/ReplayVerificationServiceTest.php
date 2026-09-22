@@ -186,6 +186,85 @@ class ReplayVerificationServiceTest extends TestCase
     }
 
     /**
+     * `F-MD-B18-A002-021`: `temporal_identity_hash` previously read `identity_revision_set_hash`,
+     * derived exclusively from market-structure/board content (C11) -- the wrong domain for
+     * `MD-S050-R0008`/`MD-S019-R0067`. It now reads a `componentGroupHash()` over the bound
+     * context's `universe_identity` (C02) component entries, and `event_factor_hash` gained a fifth
+     * member the same way over `ancillary` (C09, which already carries contamination content).
+     * Proves domain isolation directly: changing only the `universe_identity` component's
+     * `payload_hash` changes `temporal_identity_hash` and nothing else; changing only `ancillary`'s
+     * changes `event_factor_hash` and nothing else. A field that changed for both, or neither,
+     * would mean the two domains are bleeding into each other or not read at all.
+     */
+    public function test_temporal_identity_and_event_factor_hash_are_domain_isolated_by_component(): void
+    {
+        $baseline = $this->actualBoundInputContextForComponents([
+            ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('u', 64)],
+            ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('n', 64)],
+        ]);
+        $changedUniverse = $this->actualBoundInputContextForComponents([
+            ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('v', 64)],
+            ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('n', 64)],
+        ]);
+        $changedAncillary = $this->actualBoundInputContextForComponents([
+            ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('u', 64)],
+            ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('m', 64)],
+        ]);
+
+        $this->assertNotSame('', $baseline['temporal_identity_hash'], 'universe_identity component must produce a real, non-empty hash');
+        $this->assertNotSame('', $baseline['event_factor_hash'], 'ancillary component must contribute to a real, non-empty event_factor_hash');
+
+        $this->assertNotSame($baseline['temporal_identity_hash'], $changedUniverse['temporal_identity_hash'],
+            'changing the universe_identity component must change temporal_identity_hash');
+        $this->assertSame($baseline['event_factor_hash'], $changedUniverse['event_factor_hash'],
+            'changing only universe_identity must not bleed into event_factor_hash');
+        $this->assertSame($baseline['calendar_status_hash'], $changedUniverse['calendar_status_hash'],
+            'changing only universe_identity must not bleed into calendar_status_hash');
+
+        $this->assertSame($baseline['temporal_identity_hash'], $changedAncillary['temporal_identity_hash'],
+            'changing only ancillary must not bleed into temporal_identity_hash');
+        $this->assertNotSame($baseline['event_factor_hash'], $changedAncillary['event_factor_hash'],
+            'changing the ancillary component (which carries contamination content) must change event_factor_hash');
+    }
+
+    /** @param array<int,array<string,string>> $components */
+    private function actualBoundInputContextForComponents(array $components): array
+    {
+        $fixtureDir = $this->makeFixture($this->fixturePayload([
+            'expected/expected_replay_result.json' => $this->expectedReplayResult([
+                'publication_id' => 944, 'publication_run_id' => 991, 'run_id' => 991,
+            ]),
+            'expected/expected_reason_code_counts.json' => [],
+        ], 'fixture_replay_domain_isolation_probe_'.md5(json_encode($components))));
+
+        $run = (object) $this->successReadableRun(991, '2026-03-20');
+        $publication = (object) [
+            'publication_id' => 944, 'run_id' => 991, 'publication_version' => 4, 'is_current' => 1,
+            'seal_state' => 'SEALED', 'sealed_at' => '2026-03-20 17:30:00',
+        ];
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $replays = m::mock(ReplayResultRepository::class);
+
+        $manifest = $this->verifiedBoundContextManifest();
+        $manifest->bound_input_context['components'] = $components;
+        $publications->shouldReceive('buildManifestByPublicationId')->andReturn($manifest);
+        $evidence->shouldReceive('findRunById')->once()->with(991)->andReturn($run);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->andReturn($publication);
+        $evidence->shouldReceive('dominantReasonCodes')->andReturn([]);
+        $evidence->shouldReceive('exportEligibilityRows')->andReturn([]);
+        $replays->shouldReceive('nextReplayId')->once()->andReturn(3901);
+        $replays->shouldReceive('upsertMetric')->once();
+        $replays->shouldReceive('replaceReasonCodeCounts')->once();
+
+        $result = (new ReplayVerificationService($evidence, $publications, $replays))
+            ->verifyRunAgainstFixture(991, $fixtureDir);
+
+        return $result['actual_context']['actual_bound_input_context'];
+    }
+
+    /**
      * @param array<string,mixed> $expectedOverride perturbs the fixture's expected run summary, to
      *   prove a VERIFIED bound context does not itself suppress an unrelated real divergence
      */

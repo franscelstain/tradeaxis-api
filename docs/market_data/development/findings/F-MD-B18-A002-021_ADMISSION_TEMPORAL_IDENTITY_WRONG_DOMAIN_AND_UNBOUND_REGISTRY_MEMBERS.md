@@ -4,8 +4,12 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-09-22T10:30:00+07:00
 - Severity: `P2` — a real, confirmed content-mapping defect in already-committed code (`E-MD-B18-A002-044`), discovered during the F-MD-B18-A002-013 per-predicate proof-basis review; not a regression against LOCKED strategy authority, and not blocking anything already closed
-- Status: `OPEN — DISCOVERED_DURING_PROOF_BASIS_REVIEW_NOT_YET_REMEDIATED`
+- Status: `OPEN — THREE_OF_FIVE_ITEMS_REMEDIATED_E046_TWO_DEFERRED` (temporal_identity_hash domain mapping,
+  dataset boundary and contamination decisions resolved `E-MD-B18-A002-046`; eligibility version and
+  read_model_version/serialization_version/executable_build_identity remain, each classified
+  `IMPLEMENTATION_DERIVABLE` but requiring a larger, separately-scoped change -- see `E046` `next`)
 - Discovered during: `E-MD-B18-A002-045`'s per-predicate proof-basis review of the ten `MD-S050`/`MD-S019`/`MD-S003` bases `F-MD-B18-A002-013` carries
+- Remediated (partial): `E-MD-B18-A002-046`
 - Class: `BOUND_INPUT_IDENTITY_NOT_BOUND` (same class as its parent finding)
 
 ## Observed defect
@@ -98,3 +102,64 @@ where.
 - Concerns predicates: `MD-S050-R0002`, `MD-S050-R0008`, `MD-S050-R0009`, `MD-S050-R0012`,
   `MD-S050-R0014`, `MD-S003-R0003`, `MD-S019-R0067`, `MD-S019-R0068`, `MD-S019-R0069`,
   `MD-S019-R0071`
+
+## Remediation — 2026-09-22T11:16:00+07:00 (`E-MD-B18-A002-046`)
+
+Three of the five items listed under "What remediation would require" above turned out to be
+`ALREADY_DECIDED` by existing authority and `IMPLEMENTATION_DERIVABLE` without reopening Capture or
+adding a schema column, and are now implemented:
+
+1. **Item 1 (temporal_identity_hash domain) -- done.** The C1 contract's own producer mapping table
+   already separates C02 (`universe_identity`) from C11 (`market structure`) as distinct domains with
+   distinct producer surfaces; using C11 content for this field was never an authorized choice, so
+   correcting it required no new decision. `ReplayVerificationService::actualBoundInputContext()` now
+   reads a new `componentGroupHash()` over the bound context's `universe_identity` capture references
+   (already exposed by Reader, read-only) instead of `identity_revision_set_hash`.
+2. **Item 2 (dataset boundary) -- done, as a consequence of item 1.** The C1 contract's own C02 row
+   already lists dataset boundary as part of that domain's captured content, and
+   `ProducerInputCompletionManifest::temporalMissing()` already requires `dataset_start` inside the
+   `universe_identity` capture's `selection_context`, which its `slot_hash` already covers. No separate
+   field was needed.
+3. **Item 3 (contamination decisions) -- done.** The C1 contract's own producer table already assigns
+   contamination to C09 (`ancillary`), the same component already used for benchmark/sector/event-risk;
+   reading `ProducerAncillaryCapture::deriveContamination()`/`derivePriceScaleBreaks()` in full confirmed
+   contamination and price-scale-break content is already captured and asserted as part of that exact
+   component's payload. Its target bound field (`event_factor_hash`) was already decided by
+   `B18ReplayBoundInputIdentityContractTest`'s own reviewed `identityMap()`, which maps the whole
+   `MD-S050-R0012` bullet -- including contamination -- to that one field. `event_factor_hash` gained a
+   fifth combined member, `componentGroupHash()` over the `ancillary` capture.
+
+Both use the same new `componentGroupHash(array $components, string $componentKey)` helper: a
+canonical hash over the bound context's own `(stage_code, slot_hash, payload_hash)` tuples for one
+component_key, read entirely from data Reader already exposes. A new domain-isolation test,
+`ReplayVerificationServiceTest::test_temporal_identity_and_event_factor_hash_are_domain_isolated_by_component`,
+directly proves the defect class this finding named cannot recur undetected: changing only the
+`universe_identity` component changes `temporal_identity_hash` and nothing else; changing only
+`ancillary` changes `event_factor_hash` and nothing else.
+
+Following through, `MarketDataReplayVerificationProofBasis` was updated: `MD-S050-R0008`/`R0009`/`R0012`
+and their `MD-S019-R0067`/`R0068`/`R0069` Invariant-14 restatements moved from `INCOMPLETE` to `PROVEN`,
+each rebound from `B18ReplayBoundInputIdentityContractTest` (which only ever proved evidence-export
+pass-through of a fabricated metric row, never the real `actualBoundInputContext()` writer -- confirmed
+unchanged and still insufficient) to `B18ReplayComparisonExhaustivenessTest`'s real-path perturbation
+pair plus the new domain-isolation test where relevant.
+
+**Two items remain, both classified `IMPLEMENTATION_DERIVABLE` (authority has already decided *where*
+each belongs) but each requiring a materially larger, separately-scoped change than items 1-3, and
+deliberately not rushed into the same turn:**
+
+4. **Item 4 (eligibility version) -- not done.** The C1 contract's own C10 row already lists
+   "eligibility" among the identity/version content `registry_versions` should capture, but
+   `ProducerRegistrySnapshot::capture()` captures no eligibility-version concept at all today (confirmed
+   by grep). Remediating this means reopening **Capture** to add a new captured field -- its own Change
+   Impact Declaration, not an Admission-side read.
+5. **Item 5 (`read_model_version`/`serialization_version`/`executable_build_identity`) -- not done.**
+   The C1 contract's own C10 row already designates `registry_versions` as their home, and
+   `ProducerRegistrySnapshot::capture()` already captures real `serialization_version`/`executable_build`
+   content there -- but reading them precisely (rather than via the one combined `payload_hash` already
+   used for `reason_registry_hash`/`formula_registry_hash`) requires decoding the `registry_versions`
+   capture's raw `semantic_payload_json`, a Reader/Admission capability that does not exist yet.
+
+`MD-S050-R0002`/`MD-S003-R0003`/`MD-S050-R0014`/`MD-S019-R0071` remain `INCOMPLETE` in
+`MarketDataReplayVerificationProofBasis`, blocked exactly on items 4 and 5. This finding stays `OPEN`
+for those two items only.

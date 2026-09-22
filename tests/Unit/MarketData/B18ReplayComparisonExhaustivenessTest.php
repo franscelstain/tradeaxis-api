@@ -585,11 +585,20 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
         // already-Binding-derived compatibility hashes) rather than the run/publication row
         // directly, and the replay is only admissible at all when Reader reports the bound
         // context `VERIFIED`. Without this stub the service has nothing to diverge from.
+        //
+        // F-MD-B18-A002-021: `temporal_identity_hash` and part of `event_factor_hash` are now a
+        // `componentGroupHash()` over `bound_input_context.components` entries named
+        // `universe_identity`/`ancillary` -- real, non-empty component rows here (rather than an
+        // empty list) so the perturbation below exercises genuine content, not two empty strings.
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn((object) [
             'bound_input_context' => [
                 'available' => true, 'status' => 'VERIFIED', 'schema_version' => 'md_publication_inputs_v2',
                 'reason' => null, 'bound_input_context_hash' => str_repeat('f', 64),
-                'components' => [], 'scope' => [], 'component_manifest' => ['status' => 'COMPLETE'],
+                'components' => [
+                    ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('u', 64)],
+                    ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('n', 64)],
+                ],
+                'scope' => [], 'component_manifest' => ['status' => 'COMPLETE'],
             ],
             'identity_revision_set_hash' => str_repeat('a', 64),
             'calendar_revision_set_hash' => str_repeat('b', 64),
