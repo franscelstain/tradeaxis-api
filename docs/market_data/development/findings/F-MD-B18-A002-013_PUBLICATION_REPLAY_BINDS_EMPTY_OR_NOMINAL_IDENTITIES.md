@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-09-14T11:17:22+07:00 (system clock)
 - Severity: `P1` — an executable defect, plus a proof basis that overclaims
-- Status: `OPEN — EIGHT_OF_TEN_BASES_PROVEN_TWO_REMAIN_INCOMPLETE_ON_THEIR_BOUND_GUARD_ALONE` (whole-C1 input-capture manifest completeness proven E031/E032/E033; Binding E034/E036/E038, F-MD-B18-A002-020's repair_candidate/incremental regression resolved E041; Seal E042; Reader E043; Admission E044 wires PUBLICATION_EXACT to Reader's projection; E045's per-predicate proof-basis review found none of the ten bases this finding carries yet proven, discovering F-MD-B18-A002-021; E046 remediated three of F-021's five items (temporal_identity_hash domain, dataset boundary, contamination decisions) and moved MD-S050-R0008/R0009/R0012 and MD-S019-R0067/R0068/R0069 to PROVEN with a rebound real-path guard; E047 remediated serialization_version/executable_build_identity via a new Reader-side registry-content-decode capability; E048 remediated read_model_version (capturing the already-established canonical identity 'market_data_read_product_v1', not invented) and confirmed eligibility_version was genuinely unresolved; E049 closes F-MD-B18-A002-021 -- owner decision D-MD-B18-A002-006 registers a config-driven eligibility_contract_version, captured through the existing registry_versions path, with the historical-compatibility question (old-shape captures must stay VERIFIED, never BLOCKED) proven directly rather than assumed, and a previously-unproven registry_versions-extraction gap the predicate review itself surfaced closed with a new direct test; MD-S050-R0002 and MD-S003-R0003 moved to PROVEN. MD-S050-R0014 and MD-S019-R0071 remain INCOMPLETE for a corrected reason: their bound guard, B18ReplayBoundInputIdentityContractTest, proves only MarketDataEvidenceExportService's pass-through of a fabricated metric row and never exercises ReplayVerificationService::actualBoundInputContext(), the real writer -- eligibility is no longer their blocker; rebinding to a real-path guard is a separately-scoped change, not performed here)
+- Status: `RESOLVED` (whole-C1 input-capture manifest completeness proven E031/E032/E033; Binding E034/E036/E038, F-MD-B18-A002-020's repair_candidate/incremental regression resolved E041; Seal E042; Reader E043; Admission E044 wires PUBLICATION_EXACT to Reader's projection; E045's per-predicate proof-basis review found none of the ten bases this finding carries yet proven, discovering F-MD-B18-A002-021; E046 remediated three of F-021's five items and moved MD-S050-R0008/R0009/R0012 and MD-S019-R0067/R0068/R0069 to PROVEN with a rebound real-path guard; E047 remediated serialization_version/executable_build_identity; E048 remediated read_model_version; E049 closes F-MD-B18-A002-021 (owner decision D-MD-B18-A002-006, eligibility_contract_version) and moves MD-S050-R0002/MD-S003-R0003 to PROVEN; E050 reviews the last two carried predicates, MD-S050-R0014 and MD-S019-R0071, confirms their content requirement was already fully met and the sole remaining gap was their bound guard never exercising the real writer, rebinds both to the same real-path guards already used for the other eight (no new test, no production semantic change -- only a stale comment corrected), and moves both to PROVEN. All ten bases this finding carries are now PROVEN. This finding's own defect -- publication replay binding empty or nominal identities -- no longer exists in the implementation for any of the ten predicates it was raised to track.)
 - Class: `BOUND_INPUT_IDENTITY_NOT_BOUND`
 - Found by: per-predicate review of PAIR 01
   (`B18ReplayBoundInputIdentityContractTest`, 16 predicates)
@@ -430,3 +430,95 @@ pre-existing condition left alone.
 per-predicate bases are now `PROVEN`; the remaining two (`MD-S050-R0014`, `MD-S019-R0071`) are
 blocked on their bound guard never exercising the real writer, a distinct, separately-scoped
 remaining item.
+
+
+## E050: last two bases proven; finding RESOLVED - 2026-09-22T18:40:00+07:00
+
+Re-verified from current authority before touching any proof record, per instruction, rather than
+trusting the prior handoff's locator:
+
+- **`MD-S050-R0014`'s exact requirement**, read from `Replay_Verification_Contract_LOCKED.md` line
+  30 via the traceability matrix's own recorded `source_line` (not transcribed): "formula, indicator
+  registry, reason registry, price-product, coverage, eligibility, read-model, hash/serialization,
+  and build versions." **`MD-S019-R0071`'s exact requirement**, `Determinism_Invariants_LOCKED.md`
+  line 117: "price-product and formula/registry versions" -- the narrower Invariant-14 antecedent.
+- **Current guard binding for both**, re-read from `MarketDataReplayVerificationProofBasis::INCOMPLETE`:
+  unchanged since `E049` -- `B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result`
+  / `::test_a_fixture_binding_different_identities_produces_a_different_block`.
+- **Why the existing guard does not prove either predicate**, re-confirmed by reading
+  `B18ReplayBoundInputIdentityContractTest.php` in full again (not from memory) and grepping it for
+  `ReplayVerificationService`/`actualBoundInputContext`/`verifyRunAgainstFixture`: zero matches. The
+  guard mocks `EodEvidenceRepository::findReplayMetric()` to return a hand-fabricated
+  `md_replay_daily_metrics`-shaped object with arbitrary values (`'formula_registry_hash' =>
+  'FORMULA_A'`, etc.) and asserts `MarketDataEvidenceExportService::exportReplayEvidence()` echoes
+  those exact values into the exported JSON. It proves the exporter's pass-through fidelity, nothing
+  about how the metric row's values are computed. Confirmed unchanged since `F-013`'s own original
+  PAIR-01 write-up and `E045`'s reconfirmation -- not a new defect, and not caused by anything in
+  this attempt.
+- **Whether existing real-path tests/probes already suffice for rebind**, checked by reading
+  `ReplayVerificationService::actualBoundInputContext()`'s current, unmodified-by-this-review source
+  in full: all nine named `MD-S050-R0014` members fold into exactly two fields --
+  `formula_registry_hash`/`reason_registry_hash` (one combined hash over the whole `registry_versions`
+  capture's own `payload_hash`, which `ProducerRegistrySnapshot::capture()`'s payload already includes
+  `indicator_set_version`, `coverage_contract_version`, `price_product_version` (via
+  `semantic_versions`), `eligibility_contract_version` and the real `eod_reason_codes` content in --
+  confirmed by re-reading that file, not assumed) and `read_model_version`/`serialization_version`/
+  `executable_build_identity` (decoded `registry_content`, real when `VERIFIED`, honestly empty
+  otherwise). Two already-existing tests, both already green and neither modified this turn, jointly
+  establish "record-derived, not nominal" for all five: `ReplayVerificationServiceTest::
+  test_formula_and_reason_registry_hash_come_from_the_registry_versions_component` (built at `E049`'s
+  own predicate review) for the combined hash, and `ReplayVerificationServiceTest::
+  test_registry_content_fields_come_from_decoded_capture_only_when_verified` (built at `E047`) for the
+  other three. `B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass`,
+  run against the real writer (not a fabricated row), already proves each of the five is individually
+  load-bearing. **No targeted test was missing; only the rebind itself was outstanding.**
+
+**Production code:** unchanged in substance. One stale comment in `ReplayVerificationService.php`
+(claiming `eligibility_version` "has no existing identity anywhere," written before `D-MD-B18-A002-006`
+existed) was corrected to reflect that it is now captured through the shared `registry_versions`
+payload -- a documentation fix, not a behavioural change; confirmed by diff that no executable line
+changed. No new test was added, per instruction, since the two existing tests above already close the
+requirement independently of guard binding.
+
+**Both predicates reviewed independently, not bulk-promoted:**
+
+| Predicate | Verdict | Exact proof basis |
+|---|---|---|
+| `MD-S050-R0014` | **PROVEN** | Positive: `B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass` (all five real fields individually load-bearing against the real writer). Negative: `ReplayVerificationServiceTest::test_formula_and_reason_registry_hash_come_from_the_registry_versions_component` (formula/reason/indicator/price-product/coverage/eligibility half is genuinely the registry_versions component's own payload_hash, not a constant), supported by `ReplayVerificationServiceTest::test_registry_content_fields_come_from_decoded_capture_only_when_verified` (read-model/serialization/build half is genuinely decoded content, fail-closed to empty). `MarketDataEvidenceExportService`'s unchanged, separately-proven pass-through of a persisted metric row to the exported JSON is the remaining, already-established link to "bound into the exported replay result." |
+| `MD-S019-R0071` | **PROVEN** | Same basis as `MD-S050-R0014`'s formula/reason half, restated as the narrower Invariant-14 antecedent -- this rule needs only the combined `registry_versions` payload_hash, not the three decoded registry_content fields. Positive/negative tests identical to `MD-S050-R0014`. |
+
+Both were promoted only because both independently met their own exact requirement with existing,
+unmodified, already-green proof -- neither was promoted on the strength of the other, and neither
+required a new semantic to reach `PROVEN`.
+
+**Closure evaluation for `F-MD-B18-A002-013` itself:** this finding carries exactly ten predicates
+(the eight from its own PAIR-01 table plus the two carried forward from PAIR 14/15, per its own
+"Status of proof" section) -- not the broader set of "candidate"/"guard gap" predicates PAIR 01 also
+listed, which this finding's own text never adopted as part of its tracked remediation. All ten are
+now `PROVEN` in `MarketDataReplayVerificationProofBasis`, confirmed by direct enumeration against the
+live file, not assumed from the header text. This finding's own defect -- publication replay binding
+empty or nominal identities in place of the frozen ones the contract requires -- no longer exists for
+any predicate it was raised to track. Per the same closure reasoning already applied to
+`F-MD-B18-A002-021` (all named items resolved, each with legitimately earned proof), `F-MD-B18-A002-013`
+is `RESOLVED`.
+
+This closure does **not** touch `STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv`'s
+`coverage_status`/`SATISFIED`/denominator columns for these ten (or any) rule_ids -- that is a
+separate governance layer this whole evidence chain has consistently left untouched (E046 through
+E049 all state this explicitly), and nothing in this review licenses changing it now. It also does
+not resolve `MD-DEP-0017`, which bundles `F-013` through `F-018`: `F-014`-`F-018` remain independently
+`OPEN` and are unaffected by this closure.
+
+Traceability/governance re-run this turn, all against the live repository state, none stashed or
+assumed: `MarketDataReplayVerificationNormalization.php` and `MarketDataReplayVerificationProofGate.php`
+both report a pre-existing `CONDITION_EXECUTION_STALE`/`54-predicates-without-basis` condition --
+confirmed, by re-running both against the prior commit via `git stash`, to already exist before this
+turn's edits (the stale-source condition traces to `E-MD-B18-A002-008`'s 2026-09-14 hash of
+`ReplayVerificationService.php`, long predating this file's E044/E046/E047/E048 rewrites; the
+54-predicate gap is `MD-B18-A002`'s much larger, still-incomplete whole-attempt proof review, tracked
+by `F-014`-`F-019` and out of this review's scope). Neither is a regression this turn introduced;
+both are unaffected except that the without-basis count correctly dropped by two (56 -> 54) once
+`MD-S050-R0014`/`MD-S019-R0071` gained a real reviewed basis. `MarketDataDocumentationIntegrityGate`,
+`MarketDataRelationshipIntegrityGate`, `MarketDataClassificationConsistencyGate` and
+`MarketDataTraceabilityApplicabilityGate` all report `PASS`, run directly. `GovernanceGateReadOnlyExecutionTest`
+(9/9) and `FindingRecordConsistencyTest` (3/3) both green.

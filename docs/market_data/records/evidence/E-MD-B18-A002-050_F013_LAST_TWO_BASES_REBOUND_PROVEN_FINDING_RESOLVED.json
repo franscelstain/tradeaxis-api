@@ -1,0 +1,83 @@
+{
+  "evidence_id": "E-MD-B18-A002-050",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+  "issued_at": "2026-09-22T18:40:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS_LAST_TWO_BASES_PROVEN_FINDING_RESOLVED",
+  "evidence_scope": "F013_MD_S050_R0014_AND_MD_S019_R0071_REBOUND_TO_REAL_PATH_GUARD_ALL_TEN_BASES_PROVEN_FINDING_RESOLVED",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-049",
+    "E-MD-B18-A002-046",
+    "E-MD-B18-A002-047",
+    "E-MD-B18-A002-048"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "Reviewed MD-S050-R0014 and MD-S019-R0071 independently against current authority before touching any proof record. Read the exact contract text from Replay_Verification_Contract_LOCKED.md line 30 and Determinism_Invariants_LOCKED.md line 117 via the traceability matrix's own recorded source_line, not transcribed from memory. Re-read B18ReplayBoundInputIdentityContractTest.php in full and confirmed by grep it never references ReplayVerificationService/actualBoundInputContext/verifyRunAgainstFixture -- it proves only MarketDataEvidenceExportService's pass-through of a hand-fabricated md_replay_daily_metrics row, unchanged since F-013's own original PAIR-01 write-up. Re-read ReplayVerificationService::actualBoundInputContext()'s current source in full and confirmed all nine MD-S050-R0014 members fold into exactly two fields (formula_registry_hash/reason_registry_hash as one combined registry_versions payload_hash; read_model_version/serialization_version/executable_build_identity as decoded registry_content), both already genuinely record-derived per this session's own prior remediation (E046-E049), and both already independently proven by two pre-existing, unmodified, already-green tests. Concluded no new targeted test was required -- only the proof-basis rebind was outstanding -- and performed exactly that rebind, per instruction not to invent new implementation semantics or touch production behavior merely to reach PROVEN.",
+  "probes": [
+    { "id": "P158-bound-guard-confirmed-still-a-pass-through-fixture-not-the-real-writer", "caught": false, "note": "grep of B18ReplayBoundInputIdentityContractTest.php for ReplayVerificationService/actualBoundInputContext/verifyRunAgainstFixture returns zero matches, confirming the previously-recorded blocker (a mocked-row pass-through test, not the real computation) still holds unchanged" },
+    { "id": "P159-git-stash-control-confirms-the-normalization-and-proof-gate-condition-is-pre-existing", "caught": false, "note": "MarketDataReplayVerificationNormalization.php's CONDITION_EXECUTION_STALE and MarketDataReplayVerificationProofGate.php's predicate-without-basis list were both re-run against the prior commit (git stash) and found already present before this turn's edits -- confirmed not a regression this review introduced" },
+    { "id": "P160-predicates-without-reviewed-basis-count-drops-by-exactly-two", "caught": true, "note": "MarketDataReplayVerificationProofBinder.php --validate-only's B18_PREDICATES_WITHOUT_REVIEWED_BASIS count moves from 56 (pre-change, via git stash) to 54 (post-change), and MD-S050-R0014/MD-S019-R0071 specifically drop out of that list -- the only change in that list attributable to this review" },
+    { "id": "P161-governance-gates-remain-clean-after-the-rebind", "caught": false, "note": "MarketDataDocumentationIntegrityGate, MarketDataRelationshipIntegrityGate, MarketDataClassificationConsistencyGate, MarketDataTraceabilityApplicabilityGate all report PASS run directly; GovernanceGateReadOnlyExecutionTest (9/9) and FindingRecordConsistencyTest (3/3) both green" },
+    { "id": "P162-full-suite-race-with-concurrent-documentation-edits-diagnosed-not-trusted", "caught": false, "note": "a full tests/Unit/MarketData run launched before Stage Register/CURRENT_STATE.md edits landed showed two spurious GovernanceGateReadOnlyExecutionTest failures (GATE_DID_NOT_REACT), because that long-running process read those exact files mid-edit; a standalone re-run against the settled state was immediately 9/9 green, and a second full solo run with zero concurrent edits reproduced the same 9/9 clean result -- diagnosed as a read race from running a long test process while still editing the files it reads, not a defect, and not trusted as a real result" }
+  ],
+  "tested_source_sha256": {
+    "app/Application/MarketData/Services/ReplayVerificationService.php": "9647B728B31BCACD4F1D14345940801508E4246B093815DAFA43A8F3A915F04C",
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php": "2E0533ABA4C038AC6D6E1F6D881C4B2B490D478A33B68A662AC23870E5B86B1D",
+    "tests/Unit/MarketData/B18ReplayComparisonExhaustivenessTest.php": "8EB8D6774BB1C4DDB94165A2DA013F1CE133E860CDD007816A5AE0FF8D2F66FD",
+    "tests/Unit/MarketData/ReplayVerificationServiceTest.php": "087A9D651853AD176CC857812BFFF3CE93B59FB0044417744D8E7D5D792FED39",
+    "tests/Unit/MarketData/B18ReplayBoundInputIdentityContractTest.php": "924061BDF675EF7EB00FD3F4C48E459191A5B9918DA7D0E6C843B0DC1396300C"
+  },
+  "schema_changed": false,
+  "root_cause_and_implementation": "No production semantic change. ReplayVerificationService::actualBoundInputContext() already correctly computes all eleven BOUND_INPUT_FIELDS as of E048/this attempt's own eligibility_contract_version work (E049) -- the requirement was already fully met before this review began. The only defect this review found and fixed was in the proof record itself: MarketDataReplayVerificationProofBasis::INCOMPLETE bound MD-S050-R0014 and MD-S019-R0071 to B18ReplayBoundInputIdentityContractTest, a guard that proves only MarketDataEvidenceExportService's exporter pass-through of a hand-fabricated metric row -- never the real writer that computes those values. This mirrors, predicate for predicate, the exact defect class E046 already remediated for MD-S050-R0008/R0009/R0012 and their MD-S019 restatements (same guard, same limitation, same fix pattern). Rebound both predicates to B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass as positive (proves each of the five relevant real fields -- formula_registry_hash, reason_registry_hash, read_model_version, serialization_version, executable_build_identity -- individually denies PASS on divergence, run against the real writer since this attempt's own registry_versions-component fixture addition at E049) and to ReplayVerificationServiceTest::test_formula_and_reason_registry_hash_come_from_the_registry_versions_component as negative (proves the combined registry_versions payload_hash, which folds in indicator_set_version/coverage_contract_version/price_product_version/eligibility_contract_version/reason-registry content, is genuinely record-derived: presence yields the real hash, a change moves both fields, absence is an honest empty value) -- with ReplayVerificationServiceTest::test_registry_content_fields_come_from_decoded_capture_only_when_verified cited in the basis narrative as the companion proof for the read_model/serialization/build half. Neither test was modified; both already existed and were already green from this attempt's own prior remediation rounds (E047, E049). One stale code comment in ReplayVerificationService.php, written before D-MD-B18-A002-006 existed and claiming eligibility_version 'has no existing identity anywhere,' was corrected to state it is now captured through the shared registry_versions payload -- confirmed by diff to be a comment-only change with zero executable-line difference. A pre-existing, unrelated condition was found and explicitly NOT touched: MarketDataReplayVerificationNormalization.php reports CONDITION_EXECUTION_STALE for ReplayVerificationService.php because E-MD-B18-A002-008 (issued 2026-09-14, concerning an unrelated R0056/AsKnown matter) recorded that file's hash before E044/E046/E047/E048/E049 all subsequently modified it -- confirmed via git stash to already exist identically before this turn's own edit, and out of scope for this predicate review (E-008 is immutable and cannot be edited; revalidating its condition proof is a separate governance action). Likewise, MarketDataReplayVerificationProofGate.php's broader 54-of-114-predicates-without-any-reviewed-basis condition is MD-B18-A002's much larger, long-standing, whole-attempt incompleteness (tracked by F-014 through F-019, none of which this review touches), confirmed via git stash to already be 56-of-114 before this turn and to correctly drop to 54 (not a new problem, exactly the expected effect of promoting two predicates).",
+  "scope_result": {
+    "predicates_reviewed": ["MD-S050-R0014", "MD-S019-R0071"],
+    "predicates_promoted_to_proven": ["MD-S050-R0014", "MD-S019-R0071"],
+    "predicate_promotion_reasoning": "both predicates' full content requirement was already independently met by existing, unmodified, already-green tests (ReplayVerificationServiceTest::test_formula_and_reason_registry_hash_come_from_the_registry_versions_component and ::test_registry_content_fields_come_from_decoded_capture_only_when_verified for content; B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass for comparison against the real writer) -- the sole missing piece was the proof-basis binding itself, now corrected. No new implementation semantics were invented and no production behavior was changed to reach PROVEN.",
+    "new_test_added": false,
+    "production_code_changed": false,
+    "comment_only_correction": "app/Application/MarketData/Services/ReplayVerificationService.php: one stale docblock comment corrected, zero executable lines changed",
+    "f013_closure_criteria_met": "all ten predicates F-013 itself carries (per its own 'Status of proof' section, not the broader PAIR-01 candidate/guard-gap list it never adopted) are now PROVEN",
+    "f013_status": "RESOLVED",
+    "md_dep_0017_status": "UNCHANGED -- still blocks on F-014 through F-018, none of which this evidence touches",
+    "traceability_matrix_coverage_status_touched": false,
+    "satisfied_or_denominator_changed": false,
+    "pre_existing_unrelated_conditions_confirmed_not_regressions": [
+      "MarketDataReplayVerificationNormalization.php CONDITION_EXECUTION_STALE (traces to E-MD-B18-A002-008, 2026-09-14, unrelated R0056/AsKnown matter)",
+      "MarketDataReplayVerificationProofGate.php 54-of-114 predicates without any reviewed basis (MD-B18-A002's whole-attempt incompleteness, tracked by F-014 through F-019)"
+    ],
+    "commit_or_push": "NONE -- explicitly withheld per current instruction"
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "slices_complete": ["capture", "binding", "seal", "reader", "admission (publication_exact)"],
+    "slices_remaining": [],
+    "incomplete_bases": 54,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [],
+    "clarification": "MarketDataReplayVerificationProofBasis's INCOMPLETE count moves from 56 to 54 (two more F013 bases promoted this round; all ten of F013's own carried bases are now PROVEN). F-MD-B18-A002-013 is RESOLVED. MD-DEP-0017 remains BLOCKING pending F-014 through F-018, none of which this evidence addresses."
+  },
+  "full_suite": {
+    "status": "RUN_FOR_THIS_IMPLEMENTATION",
+    "reason": "Full tests/Unit/MarketData, run solo with no concurrent file edits (an earlier attempt overlapped with this review's own Stage Register/CURRENT_STATE.md documentation edits and produced two spurious GovernanceGateReadOnlyExecutionTest failures from that read race; discarded, not trusted, and re-run clean): 2415 tests, 34142 assertions, 0 errors, 7 failures (unchanged pre-existing MD-DEP-0015 ProductionCorpusInvariantOracleTest baseline), 0 skips. Test count unchanged from E049 (no test added this round, as expected -- this was a pure proof-basis rebind). Assertion count rose by 16 (34126 -> 34142) purely because GovernanceGateReadOnlyExecutionTest's own document/relationship-count assertions grew as this round's registry rows were added (5710 -> 5726 assertions in that one file), not from any change to replay-verification behavior. B18ReplayComparisonExhaustivenessTest (39/39) and ReplayVerificationServiceTest (17/17) individually re-confirmed green. GovernanceGateReadOnlyExecutionTest (9/9) and FindingRecordConsistencyTest (3/3) both green on a settled, non-racing run.",
+    "prior_baseline": "E049's full-suite state (2415 tests, 34126 assertions, 0 errors, 7 pre-existing failures, 0 skips); this evidence changes no test files and no executable production code beyond one corrected comment, so no test-count change was expected and none occurred."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "F-MD-B18-A002-013 is RESOLVED; no further action is owed to it. MD-DEP-0017 remains BLOCKING pending F-014 (rerun-determinism guards re-export instead of rerunning, status OPEN -- GUARD_REDESIGN_REQUIRED), F-015, F-016, F-017 and F-018, none of which this evidence addresses -- each is its own separately-scoped work unit. No data_260914 action, new attempt, strategy change or relock. No commit or push performed, per current instruction."
+}

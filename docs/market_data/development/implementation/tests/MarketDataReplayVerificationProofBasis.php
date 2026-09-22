@@ -162,6 +162,26 @@ final class MarketDataReplayVerificationProofBasis
             'basis' => 'this rule\'s narrower wording ("corporate-action event/factor-set revisions") is the subset of MD-S050-R0012\'s four members that event_revision_set_hash/factor_decision_set_hash/factor_set_hash already cover on their own, independent of the ancillary/contamination member added for R0012; the consequent MD-S019-R0073 remains outstanding',
         ],
 
+        // ---- MD-S050-R0014 and its MD-S019-R0071 Invariant-14 restatement, promoted at F-MD-B18-A002-013's
+        // E-MD-B18-A002-049 predicate review, after both eligibility_contract_version (this round) and
+        // read_model_version/serialization_version/executable_build_identity (E047/E048) closed the
+        // implementation gaps that had blocked them, and after this review's own re-read of the bound guard
+        // found the remaining blocker was the guard, not the content: B18ReplayBoundInputIdentityContractTest
+        // proves only MarketDataEvidenceExportService's pass-through of a fabricated metric row, never
+        // ReplayVerificationService::actualBoundInputContext(), the real writer of the values it asserts.
+        // Rebound to the same real-path guards MD-S050-R0008/R0009/R0012 already used (E046) plus the two
+        // registry-specific tests this attempt's own remediation built.
+        'MD-S050-R0014' => [
+            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass',
+            'negative' => 'ReplayVerificationServiceTest::test_formula_and_reason_registry_hash_come_from_the_registry_versions_component',
+            'basis' => 'all nine named members (formula, indicator registry, reason registry, price-product, coverage, eligibility, read-model, hash/serialization, build) fold into exactly two actualBoundInputContext() fields. formula_registry_hash/reason_registry_hash are one combined value over the whole registry_versions capture\'s own payload_hash -- ProducerRegistrySnapshot::capture() writes indicator_set_version, coverage_contract_version, price_product_version (via semantic_versions), eligibility_contract_version and the real eod_reason_codes content all into that one payload, so a change to any of them changes the hash by construction, and the cited negative test proves the extraction itself is genuine: presence yields the real payload_hash, a change moves both fields, absence is an honest empty value, never stale or fallback. read_model_version/serialization_version/executable_build_identity are decoded registry_content, proven real-when-VERIFIED and honestly-empty-otherwise by ReplayVerificationServiceTest::test_registry_content_fields_come_from_decoded_capture_only_when_verified and by a real (non-mocked) full-pipeline integration test (MarketDataPipelineIntegrationTest::test_reader_decodes_real_registry_content_captured_by_the_real_producer_path) proving the whole Capture-to-Reader chain end to end. The cited positive guard, run against the real writer (not a fabricated row), proves each of the five fields individually denies PASS on divergence. MarketDataEvidenceExportService\'s unchanged, separately-proven pass-through of a persisted metric row\'s columns to the exported JSON is the remaining link from this real computation to the exported replay result; nothing about that link was weakened or re-tested here because nothing about it changed.',
+        ],
+        'MD-S019-R0071' => [
+            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass',
+            'negative' => 'ReplayVerificationServiceTest::test_formula_and_reason_registry_hash_come_from_the_registry_versions_component',
+            'basis' => 'same basis as MD-S050-R0014\'s formula_registry_hash/reason_registry_hash half, which this restates as the Invariant-14 antecedent -- this rule\'s narrower wording ("price-product and formula/registry versions") needs only that combined registry_versions payload_hash, not read_model_version/serialization_version/executable_build_identity; the consequent MD-S019-R0073 remains outstanding',
+        ],
+
         // ---- Re-verified under MD-B18-A002: predicates whose MD-B18-A001 guard does establish
         // them. The guards were re-executed in this attempt (149 tests green) and re-probed --
         // 11/11 fail-closed probes caught with controls green either side -- because a pass
@@ -504,34 +524,36 @@ final class MarketDataReplayVerificationProofBasis
     public const INCOMPLETE = [
         // F-MD-B18-A002-013: reason_registry_hash hashes constant state names in both modes; price-product, coverage and eligibility versions are unbound in publication mode.
         // E-MD-B18-A002-045/F-MD-B18-A002-021 remediation review: E-044 (Admission) now sources reason_registry_hash/formula_registry_hash from the registry_versions capture's real payload_hash (real eod_reason_codes content, indicator_set_version, coverage_contract_version, and price_product_version via semantic_versions) instead of a hardcoded constant -- genuine progress, though both fields intentionally share one combined value rather than independently splitting formula from reason. This predicate's remaining gap is independent of MD-S050-R0008/R0009/R0012 (now PROVEN): "eligibility version" is captured nowhere in the system at all (a capture-completeness gap, not an Admission wiring gap), and read_model_version/serialization_version/executable_build_identity still read live config, unchanged. Still INCOMPLETE.
-        // D-MD-B18-A002-006/DOC-CHG-20260922-001 closing review: the two implementation gaps above are now both
-        // closed (eligibility_contract_version registered and captured; read_model/serialization/build decoded
-        // from real content since E-047/E-048), and MD-S050-R0002/MD-S003-R0003's own bound guard was extended
-        // to prove the registry_versions extraction directly (see the MD-S050-R0002 PROVEN entry) -- but this
-        // predicate's own bound guard is unchanged: B18ReplayBoundInputIdentityContractTest mocks a fabricated
-        // md_replay_daily_metrics row and proves only that MarketDataEvidenceExportService passes its columns
-        // through to the exported JSON; it never calls, mocks, or otherwise exercises
-        // ReplayVerificationService::actualBoundInputContext(), the real writer of those columns. A guard that
-        // never inspects the real computation cannot establish that computation is "record-derived", regardless
-        // of what that computation now does. That is the sole remaining reason this stays INCOMPLETE -- not
-        // eligibility, which is resolved. Rebinding to a guard that exercises the real writer (or extending this
-        // one to) is out of scope for this work unit and not performed here.
-        'MD-S050-R0014' => [
-            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
-            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
-            'basis' => 'formula registry, reason registry, read-model, serialization and executable build identities are each asserted bound and record-derived',
-        ],
-        // F-MD-B18-A002-013: reason registry nominal and publication-mode price-product/coverage/eligibility versions unbound (as MD-S050-R0014).
-        // E-MD-B18-A002-045/F-MD-B18-A002-021 remediation review: this rule's narrower wording ("price-product and formula/registry versions") is now substantively closer to covered by E-044's registry_versions-sourced hashes, but the eligibility-version and read_model/serialization/build gaps still apply where relevant, and the bound guard is unchanged. Still INCOMPLETE; kept conservative rather than promoted on this review's own reading of the narrower wording.
-        // D-MD-B18-A002-006/DOC-CHG-20260922-001 closing review: same disposition and same reason as
-        // MD-S050-R0014 above, which this restates -- the underlying content gaps are closed, but this
-        // predicate's own bound guard is the same evidence-export pass-through test and still never exercises
-        // ReplayVerificationService::actualBoundInputContext(). Still INCOMPLETE for that reason alone.
-        'MD-S019-R0071' => [
-            'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
-            'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
-            'basis' => 'price-product and formula/registry versions are asserted bound through the formula and reason registry hashes and the read-model version; the consequent MD-S019-R0073 remains outstanding',
-        ],
+        // D-MD-B18-A002-006/DOC-CHG-20260922-001 closing review (E049): the two implementation gaps above are
+        // now both closed (eligibility_contract_version registered and captured; read_model/serialization/build
+        // decoded from real content since E-047/E-048), but this predicate's own bound guard was found still
+        // unchanged: B18ReplayBoundInputIdentityContractTest mocks a fabricated md_replay_daily_metrics row and
+        // proves only MarketDataEvidenceExportService's pass-through, never ReplayVerificationService::
+        // actualBoundInputContext(), the real writer -- kept INCOMPLETE at E049, blocker corrected to name the
+        // guard rather than eligibility.
+        // Rebind (this review): B18ReplayBoundInputIdentityContractTest's pass-through fact does not disappear
+        // -- MarketDataEvidenceExportService is still proven, separately and unchangedly, to pass a persisted
+        // metric row's columns through to the exported JSON verbatim (the same background fact R0008/R0009/R0012
+        // already relied on when they were rebound in E046) -- but "record-derived" now needs a guard that
+        // inspects the real writer, which this predicate's guard never did. All nine named members fold into
+        // exactly two ReplayVerificationService::actualBoundInputContext() fields: formula_registry_hash/
+        // reason_registry_hash (one combined hash over the whole registry_versions capture, whose captured
+        // payload includes indicator_set_version, coverage_contract_version, price_product_version via
+        // semantic_versions, eligibility_contract_version, and the reason-registry content itself -- the same
+        // combined-value composition already accepted for MD-S050-R0002/MD-S003-R0003's promotion this round,
+        // not a new interpretation invented for this predicate) and read_model_version/serialization_version/
+        // executable_build_identity (decoded registry_content, real when VERIFIED, honestly empty otherwise).
+        // Rebound to B18ReplayComparisonExhaustivenessTest's real-path perturbation (proves every one of these
+        // five fields is individually load-bearing against the real writer) and
+        // ReplayVerificationServiceTest::test_formula_and_reason_registry_hash_come_from_the_registry_versions_component
+        // (proves formula_registry_hash/reason_registry_hash are genuinely the registry_versions component's own
+        // payload_hash, not a constant or coincidence: presence yields the real hash, a change moves both fields,
+        // absence is an honest empty value) -- with
+        // ReplayVerificationServiceTest::test_registry_content_fields_come_from_decoded_capture_only_when_verified
+        // as the companion proof for the other three members (real decoded value only when VERIFIED, honest
+        // empty otherwise, never a live-config fallback). No guard was weakened and no new test was added: both
+        // negative guards already existed from this round's and E047/E048's own remediation, and the comparison
+        // guard already existed from E046. Promoted to PROVEN.
         // F-MD-B18-A002-014: the guard re-exports one stored replay record; no replay is rerun, so reproduction of outputs and hashes is not shown.
         'MD-S019-R0073' => [
             'positive' => 'B18ReplayRerunDeterminismTest::test_an_unchanged_rerun_produces_byte_identical_artifacts',

@@ -1093,15 +1093,16 @@ class ReplayVerificationService
             // non-live source rather than the previous vacuous-constant/live-config values.
             'formula_registry_hash' => $registryPayloadHash,
             'reason_registry_hash' => $registryPayloadHash,
-            // F-MD-B18-A002-021 (final remediated item): `read_model_version`, `serialization_version`
-            // and `executable_build_identity` are now all real fields `ProducerRegistrySnapshot::
-            // capture()` captures inside `registry_versions` -- Reader decodes and re-verifies them
+            // F-MD-B18-A002-021 (resolved): `read_model_version`, `serialization_version` and
+            // `executable_build_identity` are all real fields `ProducerRegistrySnapshot::capture()`
+            // captures inside `registry_versions` -- Reader decodes and re-verifies them
             // (`readBoundContext()`'s `registry_content`), so all three read the frozen, captured
             // value instead of live config whenever the bound context is `VERIFIED`, and an honest
-            // empty string otherwise (never a live-config fallback). `eligibility_version` -- the one
-            // remaining `MD-S050-R0014` member -- was found to have no existing identity anywhere in
-            // this codebase (no config key, no code constant, no LOCKED strategy definition) and is
-            // deliberately not invented here; it stays a named, open gap in `F-MD-B18-A002-021`.
+            // empty string otherwise (never a live-config fallback). `eligibility_version` -- the
+            // last remaining `MD-S050-R0014` member -- was resolved by `D-MD-B18-A002-006`
+            // (config-driven `market_data.eligibility.contract_version`) and is captured as part of
+            // the same `registry_versions` payload whose combined `payload_hash` already flows into
+            // `formula_registry_hash`/`reason_registry_hash` below -- no separate field needed here.
             'read_model_version' => $verified && isset($boundContext['registry_content']['read_model_version'])
                 ? (string) $boundContext['registry_content']['read_model_version']
                 : '',
