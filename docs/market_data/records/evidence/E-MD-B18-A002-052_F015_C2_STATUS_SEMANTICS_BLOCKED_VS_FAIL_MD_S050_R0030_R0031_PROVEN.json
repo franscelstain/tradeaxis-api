@@ -1,0 +1,76 @@
+{
+  "evidence_id": "E-MD-B18-A002-052",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+  "issued_at": "2026-09-22T21:30:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS_ONE_BOUNDED_UNIT_TWO_PREDICATES_PROVEN_F015_REMAINS_OPEN",
+  "evidence_scope": "F015_C2_STATUS_SEMANTICS_MISSING_PROOF_BLOCKED_VS_EXECUTED_DIVERGENCE_FAIL_MD_S050_R0030_AND_R0031_ONLY",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-015"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-051",
+    "CI-MD-B18-A002-001"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "First bounded remediation unit of F-MD-B18-A002-015 (per the audit turn preceding this evidence): C2 status semantics for the two predicates naming the BLOCKED/FAIL boundary directly -- MD-S050-R0031 ('BLOCKED: required fixture/runtime/input proof was unavailable') and MD-S050-R0030 ('FAIL: comparison executed and diverged'). Verified exact current lines before any change: compareExpectedAndActual() (validateExpectedProofCompleteness() at :640, its result folded into the ordinary mismatch list via appendMismatch() at :1205-1206) computed a fixture's missing required expected-proof sections as MISMATCH, and replayStatusForComparison() (:2424) mapped MISMATCH to FAIL -- making unavailable proof indistinguishable from an executed, genuinely diverged comparison. Confirmed by reading both functions in full and by the pre-existing test test_verify_replay_fails_safe_when_expected_proof_is_incomplete, which had asserted exactly this defective MISMATCH/FAIL outcome. Scope explicitly bounded to this one pair only, per instruction: MD-S050-R0053/MD-S002-R0009/MD-S002-R0010 (unknown-fixture backfill defect), G04 (coverage reason preservation), and every other F-015 predicate are untouched and not promoted here.",
+  "probes": [
+    { "id": "P167-blocked-for-missing-required-fixture-proof-verified-bound-context", "caught": false, "note": "new test: a fixture genuinely missing expected_coverage_context.coverage_reason_code (actually absent from the JSON, not simulated), with a genuinely VERIFIED bound context and every other field agreeing, reports replay_status=BLOCKED, comparison_result=NOT_ADMISSIBLE, admission_state=NOT_ADMISSIBLE -- never FAIL. The missing path still names itself in mismatch_summary and in the raw mismatches list (expected_proof.expected_coverage_context.coverage_reason_code, reason REPLAY_EXPECTED_PROOF_INCOMPLETE)" },
+    { "id": "P168-fail-for-executed-divergence-with-complete-proof-unaffected", "caught": false, "note": "pre-existing test test_admission_reports_fail_not_blocked_when_verified_context_still_diverges (unmodified by this evidence): complete required proof, VERIFIED bound context, one deliberate field divergence (bars_rows_written) reports replay_status=FAIL, comparison_result=MISMATCH, admission_state=ADMISSIBLE, with the diverged field named in mismatches -- confirms the fix did not touch the FAIL path" },
+    { "id": "P169-pre-existing-mismatch-test-corrected-not-just-flipped", "caught": true, "note": "test_verify_replay_fails_safe_when_expected_proof_is_incomplete, which had locked in the defective MISMATCH/FAIL outcome for a near-empty expected_replay_result.json, was corrected to assert NOT_ADMISSIBLE/BLOCKED while its own missing-path assertion (expected_proof.expected_run_context) was kept and strengthened to also check the raw mismatches array, not just replaced" },
+    { "id": "P170-mutation-A-disable-new-admissibility-check", "caught": true, "note": "replayAdmissibility()'s new expected_proof_missing check temporarily replaced with `if (false)` (byte-for-byte copy saved first): both BLOCKED-side proofs (the new discriminating test and the corrected pre-existing test) turned red -- one via an explicit BLOCKED-vs-FAIL assertion failure, one via a Mockery expectation mismatch on the now-wrong comparison_result/replay_status -- while the FAIL counterpart (test_admission_reports_fail_not_blocked_when_verified_context_still_diverges) stayed green. Restored byte-for-byte after; sha256 identical before/after; control green again" },
+    { "id": "P171-mutation-B-force-executed-divergence-into-blocked", "caught": true, "note": "replayStatusForComparison()'s MISMATCH/UNEXPECTED -> FAIL branch temporarily replaced with `if (false)` (byte-for-byte copy saved first): the FAIL counterpart turned red (asserted FAIL, observed BLOCKED) while both BLOCKED-side proofs stayed green. Restored byte-for-byte after; sha256 identical before/after; control green again" }
+  ],
+  "tested_source_sha256": {
+    "app/Application/MarketData/Services/ReplayVerificationService.php": "9A78141EBAC538494DDBC2F77A485C0138952D802A76B561E8379E0BC2C03198",
+    "tests/Unit/MarketData/ReplayVerificationServiceTest.php": "CABAC5EB185517D57A54B000CBC9F0FABA4C88932C4E33892CAB9912B9B27C1B",
+    "tests/Unit/MarketData/ReplayComparisonDetectsDivergenceTest.php": "87DD1407FEEBE6093E157ED962843FC052940147CA79E0A24965661AAACE74E2",
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php": "0736A1AB5305C046D5B9EB1BADFE0D138926882232E2C4C92E3A85230317FB3F"
+  },
+  "schema_changed": false,
+  "root_cause_and_implementation": "Minimum change following the C2 contract table: replayAdmissibility() (already the authoritative pre-comparison gate producing NOT_ADMISSIBLE/BLOCKED for a self-generated fixture, an unbound configuration, or an unverified bound-input context -- all three already existing, none touched) gained one further, structurally identical check, placed first: if $fixture['expected_proof_missing'] is non-empty, return a reason naming every missing path with the REPLAY_EXPECTED_PROOF_INCOMPLETE prefix. verifyRunAgainstFixture()'s existing admissibility-override block (unmodified) then sets replay_status=BLOCKED and comparison_result=NOT_ADMISSIBLE exactly as it already does for the other two conditions -- no new status vocabulary was invented; Replay_Verification_Contract_LOCKED.md's own BLOCKED definition already reads 'fixture/runtime/input proof', so extending the existing mechanism to the fixture-incompleteness case is the literal contract text, not an interpretation. compareExpectedAndActual() itself was not changed: it still folds expected_proof_missing entries into its own mismatches list via appendMismatch() (field=expected_proof.<path>, reason=REPLAY_EXPECTED_PROOF_INCOMPLETE), and that list is never cleared by the admissibility override (confirmed by reading verifyRunAgainstFixture()'s final return, which passes through $comparison['mismatches']/['mismatch_reason_codes'] unmodified) -- so the exact missing path remains visible in evidence (mismatch_summary and the raw mismatches/mismatch_reason_codes_json) even though the outer verdict is now BLOCKED, not FAIL. ReplayResultRepository was read (not modified): comparison_result/replay_status are persisted as plain string columns already capable of carrying NOT_ADMISSIBLE/BLOCKED, proven by the two pre-existing admissibility tests (bound-context-unavailable cases) that already exercise this exact persistence path -- no repository change was needed or made. One pre-existing test asserting the defective behavior (test_verify_replay_fails_safe_when_expected_proof_is_incomplete) was corrected in place, not silently left red or deleted: its Mockery matcher and final assertions now require NOT_ADMISSIBLE/BLOCKED, and a new assertion on the raw mismatches array confirms the missing path still survives. One new discriminating test (test_admission_blocks_publication_exact_when_required_fixture_proof_is_missing) proves the BLOCKED side with a genuinely (not simulated) incomplete fixture and a genuinely VERIFIED bound context, isolating the missing-proof condition from every other admissibility reason. The FAIL side needed no new test: test_admission_reports_fail_not_blocked_when_verified_context_still_diverges (built in an earlier F-013 remediation round, unmodified here) already proves complete-proof-plus-divergence reports FAIL/ADMISSIBLE, and now doubles as this predicate's negative counterpart. Both directions were mutation-proven per governance protocol: disabling the new check (byte-restored after, hash-verified identical) turned the BLOCKED proofs red while the FAIL proof stayed green; forcing MISMATCH to also map to BLOCKED (byte-restored after, hash-verified identical) turned the FAIL proof red while the BLOCKED proofs stayed green.",
+  "scope_result": {
+    "predicates_reviewed": ["MD-S050-R0030", "MD-S050-R0031"],
+    "predicates_promoted_to_proven": ["MD-S050-R0030", "MD-S050-R0031"],
+    "predicates_explicitly_not_touched": ["MD-S050-R0053", "MD-S002-R0009", "MD-S002-R0010", "MD-S040-R0071", "MD-S040-R0077", "MD-S050-R0051", "MD-S050-R0052", "MD-S036-R0012", "MD-S050-R0036", "MD-S003-R0021", "MD-S005-R0096", "MD-S050-R0033"],
+    "production_code_changed": true,
+    "production_change_summary": "replayAdmissibility() in app/Application/MarketData/Services/ReplayVerificationService.php gained one additional early-return check for fixture-side missing required proof; no other method changed",
+    "f015_status": "OPEN -- REMEDIATION_IN_CONSOLIDATED_PACKAGE (unchanged, per instruction not to close F-015 after this one unit)",
+    "md_dep_0017_status": "UNCHANGED -- still BLOCKING, still bundles F-013 through F-018",
+    "traceability_matrix_coverage_status_touched": false,
+    "satisfied_or_denominator_changed": false,
+    "f013_f014_f021_reopened": false,
+    "mutant_or_temp_artifact_remaining": false,
+    "commit_or_push": "NONE -- explicitly withheld per current instruction"
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "slices_complete": ["capture", "binding", "seal", "reader", "admission (publication_exact)"],
+    "slices_remaining": [],
+    "incomplete_bases": 48,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [],
+    "clarification": "MarketDataReplayVerificationProofBasis's INCOMPLETE count moves from 50 to 48 (exactly the two predicates this evidence promotes). F-MD-B18-A002-015 remains OPEN with 12 of its own 14 predicates still INCOMPLETE (MD-S050-R0053, MD-S002-R0009, MD-S002-R0010 -- the unknown-fixture/backfill unit, next; plus the G04/G08/G09 guard-only items). MD-DEP-0017 remains BLOCKING pending F-015 (partial), F-016, F-017 and F-018."
+  },
+  "full_suite": {
+    "status": "TARGETED_ONLY_PER_INSTRUCTION",
+    "reason": "Targeted suites run, all green: ReplayVerificationServiceTest.php 20/20 (83 assertions, includes the one corrected pre-existing test and the one new discriminating test); ReplayComparisonDetectsDivergenceTest.php 29/29 (unmodified, unaffected since it calls compareExpectedAndActual() directly and never reaches replayAdmissibility()); B18ReplayComparisonExhaustivenessTest.php 39/39; ReplayEvidenceExportServiceTest.php 2/2; ReplayBackfillServiceTest.php 2/2; ReplaySmokeSuiteServiceTest.php 1/1; FullRangeCurrentEvidenceReplayServiceTest.php 2/2; BackfillLifecyclePublicationReprocessTest.php 6/6; BackfillMissingTickerLifecycleTest.php 12/12; OpsCommandSurfaceTest.php 64/64; ReplayMismatchClassificationTest.php 22/22; ReplayDeterminismStaticGuardTest.php 4/4. GovernanceGateReadOnlyExecutionTest 9/9 (5734 assertions), FindingRecordConsistencyTest 3/3. Full application suite not run, per instruction that it is warranted only at coherent implementation closure or governance/regression need, neither of which applies to this one-pair bounded unit.",
+    "prior_baseline": "E051's full-suite state (2417 tests, 34154 assertions, 0 errors, 7 pre-existing failures, 0 skips) is the last full-suite reference point; not re-run this turn."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "F-MD-B18-A002-015's next bounded unit, per the audit turn's dependency derivation (ReplayBackfillService consumes the status vocabulary ReplayVerificationService produces): the unknown-fixture-case defect in ReplayBackfillService.php:68 (expectedOutcomeForFixtureCase() returning null for any unrecognised --fixture_case value, making $passed=true unconditionally, including for a now-correctly-BLOCKED replay result) and MD-S050-R0053/MD-S002-R0009/MD-S002-R0010, which name exactly this. The known-case path also needs re-verification now that missing proof correctly reports BLOCKED: does ReplayBackfillService's $passed = $expectedOutcome ? $observedOutcome === $expectedOutcome : true correctly treat a BLOCKED-observed date as failed for every named fixture case, not only the unknown one. No data_260914 action, new attempt, strategy change or relock. No commit or push performed, per current instruction."
+}

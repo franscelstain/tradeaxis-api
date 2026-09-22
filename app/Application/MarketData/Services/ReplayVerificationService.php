@@ -2298,6 +2298,24 @@ class ReplayVerificationService
      */
     private function replayAdmissibility($run, $publication, array $fixture)
     {
+        // `Replay_Verification_Contract_LOCKED.md` "Result and evidence": `BLOCKED` is "required
+        // fixture/runtime/input proof was unavailable" -- the fixture half of that sentence, not
+        // only the runtime/input half the two checks below already cover. Before this, a fixture
+        // package missing a required `expected_*` field (`validateExpectedProofCompleteness()`)
+        // was folded into `compareExpectedAndActual()`'s ordinary mismatch list, which made an
+        // absent required section indistinguishable from a comparison that executed and diverged --
+        // `FAIL`, not `BLOCKED`. `compareExpectedAndActual()` still records each missing path as its
+        // own named mismatch entry (`expected_proof.<path>`), so the exact missing paths remain
+        // visible in `mismatches`/`mismatch_reason_codes` regardless of this admissibility verdict;
+        // this only decides the outer `comparison_result`/`replay_status`, the same way the two
+        // checks below already do for their own conditions.
+        if (! empty($fixture['expected_proof_missing'])) {
+            return [
+                'reason' => 'REPLAY_EXPECTED_PROOF_INCOMPLETE: required fixture proof was unavailable: '
+                    .implode(', ', $fixture['expected_proof_missing']),
+            ];
+        }
+
         $family = (string) ($fixture['manifest']['fixture_family'] ?? '');
         if (in_array($family, ['runtime_generated_diagnostic_case', 'runtime_generated_valid_case'], true)) {
             return [

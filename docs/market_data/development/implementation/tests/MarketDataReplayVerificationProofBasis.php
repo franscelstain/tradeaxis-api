@@ -440,6 +440,41 @@ final class MarketDataReplayVerificationProofBasis
             'basis' => 'Invariant 1\'s own three named hashes (bars_batch_hash, indicators_batch_hash, eligibility_batch_hash) are each asserted individually identical across an unchanged rebuild by the cited positive guard, and each is shown load-bearing by the negative guard\'s genuinely different content producing a genuinely different publication version -- the rerun half of "this must hold across reruns and replay". The replay half is the same claim ReplayVerificationServiceTest::test_replaying_the_same_unchanged_publication_twice_persists_byte_identical_results_except_execution_identity independently proves for MD-S019-R0073/MD-S005-R0095, not re-cited here only because this schema holds one positive/negative pair per entry; both halves are genuinely proven, not assumed from one.',
         ],
 
+        // ---- F-MD-B18-A002-015 (bounded first remediation unit, C2 status semantics): MD-S050-R0030
+        // ("FAIL: comparison executed and diverged") and MD-S050-R0031 ("BLOCKED: required
+        // fixture/runtime/input proof was unavailable") were both bound to
+        // ReplayEvidenceExportServiceTest::test_export_replay_evidence_writes_replay_result_and_reason_code_summary
+        // / ReplayComparisonDetectsDivergenceTest::test_missing_expected_proof_is_reported_rather_than_ignored
+        // -- neither guard exercises `replay_status`/`comparison_result` at all (the first only proves
+        // export pass-through of a stored row; the second calls `compareExpectedAndActual()` directly
+        // by reflection and asserts only that a missing-proof path lands in the raw mismatch list, not
+        // what the outer verdict becomes). The real defect this predicate pair names was executable, not
+        // proof-only: `compareExpectedAndActual()` folded a fixture's own missing required
+        // `expected_*` sections into its ordinary mismatch list, so `replayStatusForComparison()` mapped
+        // them to `FAIL` -- indistinguishable from a comparison that genuinely executed and diverged.
+        // `replayAdmissibility()` (already the authoritative "may this verdict be believed at all" gate,
+        // already producing `NOT_ADMISSIBLE`/`BLOCKED` for a self-generated fixture, an unbound
+        // configuration, or an unverified bound-input context) gained one further, structurally
+        // identical check: `$fixture['expected_proof_missing']` non-empty is now checked first and
+        // returns its own `REPLAY_EXPECTED_PROOF_INCOMPLETE` reason, naming every missing path. This
+        // reuses the exact existing BLOCKED mechanism rather than inventing a new status value --
+        // `Replay_Verification_Contract_LOCKED.md`'s own BLOCKED definition already reads "fixture/
+        // runtime/input proof", covering the fixture-incompleteness case and the two pre-existing
+        // runtime/input cases under one status. `compareExpectedAndActual()` itself is unchanged: the
+        // missing-path mismatch entries (`expected_proof.<path>`, reason `REPLAY_EXPECTED_PROOF_INCOMPLETE`)
+        // still land in `mismatches`/`mismatch_reason_codes`, so the exact missing path stays visible in
+        // evidence even though the outer verdict is now `BLOCKED`, not `FAIL`.
+        'MD-S050-R0031' => [
+            'positive' => 'ReplayVerificationServiceTest::test_admission_blocks_publication_exact_when_required_fixture_proof_is_missing',
+            'negative' => 'ReplayVerificationServiceTest::test_admission_reports_fail_not_blocked_when_verified_context_still_diverges',
+            'basis' => 'a fixture genuinely missing one required expected-proof section (`expected_coverage_context.coverage_reason_code`, actually absent from the JSON on disk, not fabricated to look missing), with a genuinely VERIFIED bound context and every other field agreeing, reports `replay_status=BLOCKED`/`comparison_result=NOT_ADMISSIBLE`/`admission_state=NOT_ADMISSIBLE` -- never `FAIL`. The missing path still names itself in both `mismatch_summary` and the raw `mismatches` list (`expected_proof.expected_coverage_context.coverage_reason_code`, reason `REPLAY_EXPECTED_PROOF_INCOMPLETE`), so C2\'s "exact missing field/path" requirement is not lost under the BLOCKED verdict. The negative guard is the neighbouring genuinely-VERIFIED-context-with-a-real-divergence case, which reports `FAIL`/`ADMISSIBLE`, not `BLOCKED` -- proving the two are not merged. A pre-existing test (`test_verify_replay_fails_safe_when_expected_proof_is_incomplete`) that had asserted the defective `MISMATCH`/`FAIL` outcome for a near-empty fixture was corrected to assert `NOT_ADMISSIBLE`/`BLOCKED` while keeping its own missing-path assertion. Mutation-proven: disabling the new admissibility check (byte-restored after) turned this predicate\'s guard red while the FAIL counterpart stayed green; forcing `MISMATCH` to also map to `BLOCKED` in `replayStatusForComparison()` (byte-restored after) turned the FAIL counterpart red while this guard stayed green -- proving the two verdicts are independently, not coincidentally, correct.',
+        ],
+        'MD-S050-R0030' => [
+            'positive' => 'ReplayVerificationServiceTest::test_admission_reports_fail_not_blocked_when_verified_context_still_diverges',
+            'negative' => 'ReplayVerificationServiceTest::test_admission_blocks_publication_exact_when_required_fixture_proof_is_missing',
+            'basis' => 'restates MD-S050-R0031\'s same discriminating pair from the FAIL side: complete required proof, a genuinely VERIFIED bound context, and one deliberate field divergence (`bars_rows_written`) reports `replay_status=FAIL`/`comparison_result=MISMATCH`/`admission_state=ADMISSIBLE`, with the diverged field named in `mismatches`. The negative guard is MD-S050-R0031\'s own missing-required-proof case, which reports `BLOCKED`, never `FAIL` -- the same mutation-proven pair proves both directions of this predicate too.',
+        ],
+
         // ---- MD-S050-R0017, the anti-future list. Two of its nine items were covered only by a reflection
         // check that a cutoff parameter exists, which an ignored parameter passes.
 
@@ -653,18 +688,6 @@ final class MarketDataReplayVerificationProofBasis
             'positive' => 'B18AsKnownSnapshotIsolationTest::test_every_later_revision_kind_is_bound_to_an_executing_guard',
             'negative' => 'B18AsKnownSnapshotIsolationTest::test_an_incomplete_historical_config_snapshot_is_refused_instead_of_using_live_config',
             'basis' => 'the contract-derived seven-root corpus executes exclusion guards for every later revision named by MD-S003; substituting live formula config and removing a root mapping each turned the corpus red',
-        ],
-        // F-MD-B18-A002-015: the positive exports a PASS record; rebind to an executed-divergence FAIL guard and probe.
-        'MD-S050-R0030' => [
-            'positive' => 'ReplayEvidenceExportServiceTest::test_export_replay_evidence_writes_replay_result_and_reason_code_summary',
-            'negative' => 'ReplayComparisonDetectsDivergenceTest::test_missing_expected_proof_is_reported_rather_than_ignored',
-            'basis' => 'the divergence guard executes a comparison that diverges and reports FAIL',
-        ],
-        // F-MD-B18-A002-015: executable, a missing expected-proof section is reported as a mismatch (FAIL) instead of BLOCKED.
-        'MD-S050-R0031' => [
-            'positive' => 'ReplayEvidenceExportServiceTest::test_export_replay_evidence_writes_replay_result_and_reason_code_summary',
-            'negative' => 'ReplayComparisonDetectsDivergenceTest::test_missing_expected_proof_is_reported_rather_than_ignored',
-            'basis' => 'missing expected proof is reported rather than ignored, which is the BLOCKED semantics',
         ],
         // F-MD-B18-A002-015: the negative is a text check; rebind to the hash-only divergence perturbation and probe.
         'MD-S050-R0033' => [

@@ -316,6 +316,79 @@ class ReplayVerificationServiceTest extends TestCase
     }
 
     /**
+     * `F-MD-B18-A002-015`, `MD-S050-R0031` -- the BLOCKED half of the C2 status pair.
+     *
+     * Before this, a fixture package missing a required `expected_*` field was folded into the
+     * ordinary mismatch list by `compareExpectedAndActual()`, which made "the fixture's own required
+     * proof was never available" indistinguishable from "the comparison executed and genuinely
+     * diverged" -- both reached `MISMATCH`/`FAIL`. `Replay_Verification_Contract_LOCKED.md` "Result
+     * and evidence" requires the two to stay structurally separate: `BLOCKED` is not a weaker `FAIL`,
+     * it states the comparison did not execute at all.
+     *
+     * This fixture is genuinely missing `expected_coverage_context.coverage_reason_code` -- not
+     * fabricated to look missing, actually absent from the JSON on disk
+     * (`validateExpectedProofCompleteness()` walks the real decoded file). The bound context is
+     * genuinely `VERIFIED` and every other field genuinely agrees, so the *only* thing making this
+     * replay unusable is the missing required section -- isolating this from
+     * `test_admission_reports_fail_not_blocked_when_verified_context_still_diverges` above, which is
+     * the FAIL counterpart: complete proof, one deliberate field divergence.
+     */
+    public function test_admission_blocks_publication_exact_when_required_fixture_proof_is_missing(): void
+    {
+        $expected = $this->expectedReplayResult([
+            'publication_id' => 944, 'publication_run_id' => 991, 'run_id' => 991,
+        ]);
+        unset($expected['expected_coverage_context']['coverage_reason_code']);
+
+        $fixtureDir = $this->makeFixture($this->fixturePayload([
+            'expected/expected_replay_result.json' => $expected,
+            'expected/expected_reason_code_counts.json' => [],
+        ], 'fixture_replay_missing_required_proof'));
+
+        $run = (object) $this->successReadableRun(991, '2026-03-20');
+        $publication = (object) [
+            'publication_id' => 944, 'run_id' => 991, 'publication_version' => 4, 'is_current' => 1,
+            'seal_state' => 'SEALED', 'sealed_at' => '2026-03-20 17:30:00',
+        ];
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $replays = m::mock(ReplayResultRepository::class);
+
+        $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
+        $evidence->shouldReceive('findRunById')->once()->with(991)->andReturn($run);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->andReturn($publication);
+        $evidence->shouldReceive('dominantReasonCodes')->andReturn([]);
+        $evidence->shouldReceive('exportEligibilityRows')->andReturn([]);
+        $replays->shouldReceive('nextReplayId')->once()->andReturn(3910);
+        $replays->shouldReceive('upsertMetric')->once();
+        $replays->shouldReceive('replaceReasonCodeCounts')->once();
+
+        $result = (new ReplayVerificationService($evidence, $publications, $replays))
+            ->verifyRunAgainstFixture(991, $fixtureDir);
+
+        $this->assertSame('BLOCKED', $result['replay_status'],
+            'required proof was unavailable, not an executed comparison -- this must never read as FAIL');
+        $this->assertSame('NOT_ADMISSIBLE', $result['comparison_result']);
+        $this->assertSame('NOT_ADMISSIBLE', $result['admission_state']);
+        $this->assertStringContainsString('REPLAY_EXPECTED_PROOF_INCOMPLETE', (string) $result['mismatch_summary']);
+        $this->assertStringContainsString(
+            'expected_coverage_context.coverage_reason_code',
+            (string) $result['mismatch_summary'],
+            'the summary must name which required section was missing, not just that something was'
+        );
+
+        // The exact missing path must still be visible in the underlying mismatch evidence, per C2:
+        // BLOCKED does not mean the missing-proof fact disappears, only that it is not reported as
+        // an executed divergence.
+        $this->assertContains(
+            'expected_proof.expected_coverage_context.coverage_reason_code',
+            array_column($result['mismatches'], 'field')
+        );
+        $this->assertContains('REPLAY_EXPECTED_PROOF_INCOMPLETE', $result['mismatch_reason_codes']);
+    }
+
+    /**
      * `F-MD-B18-A002-021`: `temporal_identity_hash` previously read `identity_revision_set_hash`,
      * derived exclusively from market-structure/board content (C11) -- the wrong domain for
      * `MD-S050-R0008`/`MD-S019-R0067`. It now reads a `componentGroupHash()` over the bound
@@ -767,6 +840,16 @@ class ReplayVerificationServiceTest extends TestCase
         $this->assertContains('REPLAY_COVERAGE_STATE_MISMATCH', $result['mismatch_reason_codes']);
     }
 
+    /**
+     * `F-MD-B18-A002-015`, `MD-S050-R0031` -- corrected. This fixture's `expected_replay_result.json`
+     * is missing nearly every required section (only `comparison_result`/`expected_status` are
+     * present), so required proof was never available for this replay at all. Before the fix, that
+     * state reached `MISMATCH`/`FAIL` -- indistinguishable from an executed comparison that genuinely
+     * diverged. It must read as `BLOCKED`/`NOT_ADMISSIBLE`: the comparison never legitimately
+     * executed, so nothing about it can be reported as a divergence. The missing-path fact itself is
+     * still preserved (`REPLAY_EXPECTED_PROOF_INCOMPLETE` and the named path survive into the
+     * summary and the raw mismatch list), just not reported as `FAIL`.
+     */
     public function test_verify_replay_fails_safe_when_expected_proof_is_incomplete()
     {
         $fixtureDir = $this->makeFixture($this->fixturePayload([
@@ -803,17 +886,25 @@ class ReplayVerificationServiceTest extends TestCase
         $replays->shouldReceive('nextReplayId')->once()->andReturn(3006);
         $replays->shouldReceive('upsertMetric')->once()->with(m::on(function ($metric) {
             $reasonCodes = json_decode($metric['mismatch_reason_codes_json'], true);
-            return $metric['comparison_result'] === 'MISMATCH'
+            return $metric['comparison_result'] === 'NOT_ADMISSIBLE'
+                && $metric['replay_status'] === 'BLOCKED'
                 && in_array('REPLAY_EXPECTED_PROOF_INCOMPLETE', $reasonCodes, true)
-                && strpos((string) $metric['mismatch_summary'], 'expected_proof.expected_run_context') !== false;
+                && strpos((string) $metric['mismatch_summary'], 'REPLAY_EXPECTED_PROOF_INCOMPLETE') !== false
+                && strpos((string) $metric['mismatch_summary'], 'expected_run_context') !== false
+                && strpos((string) $metric['mismatches_json'], 'expected_proof.expected_run_context') !== false;
         }));
         $replays->shouldReceive('replaceReasonCodeCounts')->once()->with(3006, '2026-03-20', []);
 
         $service = new ReplayVerificationService($evidence, $publications, $replays);
         $result = $service->verifyRunAgainstFixture(95, $fixtureDir, null, 47);
 
-        $this->assertSame('MISMATCH', $result['comparison_result']);
+        $this->assertSame('NOT_ADMISSIBLE', $result['comparison_result']);
+        $this->assertSame('BLOCKED', $result['replay_status']);
+        $this->assertSame('NOT_ADMISSIBLE', $result['admission_state']);
         $this->assertContains('REPLAY_EXPECTED_PROOF_INCOMPLETE', $result['mismatch_reason_codes']);
+        // The raw mismatch list -- distinct from the BLOCKED verdict above -- still names every
+        // missing required path, so C2's "exact missing field/path" requirement is not lost.
+        $this->assertContains('expected_proof.expected_run_context', array_column($result['mismatches'], 'field'));
     }
 
     public function test_verify_replay_throws_reason_coded_exception_when_manifest_declares_missing_file()
