@@ -590,6 +590,9 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
         // `componentGroupHash()` over `bound_input_context.components` entries named
         // `universe_identity`/`ancillary` -- real, non-empty component rows here (rather than an
         // empty list) so the perturbation below exercises genuine content, not two empty strings.
+        // `registry_content` (item 5, partial) is Reader's decoded `registry_versions` payload;
+        // real `serialization_version`/`executable_build.build_id` here likewise exercise genuine
+        // content for those two fields instead of an always-empty fallback.
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn((object) [
             'bound_input_context' => [
                 'available' => true, 'status' => 'VERIFIED', 'schema_version' => 'md_publication_inputs_v2',
@@ -599,6 +602,10 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
                     ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('n', 64)],
                 ],
                 'scope' => [], 'component_manifest' => ['status' => 'COMPLETE'],
+                'registry_content' => [
+                    'serialization_version' => 'canonical_json_v1_probe',
+                    'executable_build' => ['build_id' => 'sha256:probe_build_identity'],
+                ],
             ],
             'identity_revision_set_hash' => str_repeat('a', 64),
             'calendar_revision_set_hash' => str_repeat('b', 64),

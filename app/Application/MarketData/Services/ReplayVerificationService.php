@@ -1093,9 +1093,21 @@ class ReplayVerificationService
             // non-live source rather than the previous vacuous-constant/live-config values.
             'formula_registry_hash' => $registryPayloadHash,
             'reason_registry_hash' => $registryPayloadHash,
+            // F-MD-B18-A002-021 (item 5, partial): `serialization_version` and
+            // `executable_build_identity` are real fields `ProducerRegistrySnapshot::capture()`
+            // already captures inside `registry_versions` -- Reader now decodes and re-verifies
+            // them (`readBoundContext()`'s `registry_content`), so these two read the frozen,
+            // captured value instead of live config whenever the bound context is `VERIFIED`.
+            // `read_model_version` is not part of this fix: no such field exists anywhere in that
+            // capture today (a genuine missing-capture gap, not a decode gap), so it is left
+            // reading live config exactly as before, unchanged and undisguised.
             'read_model_version' => (string) $this->configValue('market_data.governance.read_model_version', 'market_data_read_model_v1'),
-            'serialization_version' => (string) $this->configValue('market_data.governance.config_serialization_version', 'canonical_json_v1'),
-            'executable_build_identity' => (string) $this->configValue('market_data.governance.build_id', 'development-worktree'),
+            'serialization_version' => $verified && isset($boundContext['registry_content']['serialization_version'])
+                ? (string) $boundContext['registry_content']['serialization_version']
+                : '',
+            'executable_build_identity' => $verified && isset($boundContext['registry_content']['executable_build']['build_id'])
+                ? (string) $boundContext['registry_content']['executable_build']['build_id']
+                : '',
         ];
     }
 

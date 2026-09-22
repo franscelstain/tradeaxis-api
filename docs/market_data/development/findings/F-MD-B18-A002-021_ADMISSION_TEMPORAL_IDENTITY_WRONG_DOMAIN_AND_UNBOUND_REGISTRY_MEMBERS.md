@@ -4,12 +4,16 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-09-22T10:30:00+07:00
 - Severity: `P2` — a real, confirmed content-mapping defect in already-committed code (`E-MD-B18-A002-044`), discovered during the F-MD-B18-A002-013 per-predicate proof-basis review; not a regression against LOCKED strategy authority, and not blocking anything already closed
-- Status: `OPEN — THREE_OF_FIVE_ITEMS_REMEDIATED_E046_TWO_DEFERRED` (temporal_identity_hash domain mapping,
-  dataset boundary and contamination decisions resolved `E-MD-B18-A002-046`; eligibility version and
-  read_model_version/serialization_version/executable_build_identity remain, each classified
-  `IMPLEMENTATION_DERIVABLE` but requiring a larger, separately-scoped change -- see `E046` `next`)
+- Status: `OPEN — FOUR_OF_FIVE_ORIGINAL_ITEMS_RESOLVED_TWO_REMAIN_BOTH_NEED_A_NEW_CAPTURE_FIELD`
+  (temporal_identity_hash domain mapping, dataset boundary and contamination decisions resolved
+  `E-MD-B18-A002-046`; `serialization_version`/`executable_build_identity` resolved `E-MD-B18-A002-047`
+  via a new Reader-side registry-content-decode capability; `E047` also corrected this finding's own
+  original item 5 description -- `read_model_version` was never actually a decode gap, since
+  `ProducerRegistrySnapshot::capture()` never captures it at all, the same category as eligibility
+  version. **Two items remain, both requiring a new field in `ProducerRegistrySnapshot::capture()`'s
+  payload**: eligibility version, read_model_version.)
 - Discovered during: `E-MD-B18-A002-045`'s per-predicate proof-basis review of the ten `MD-S050`/`MD-S019`/`MD-S003` bases `F-MD-B18-A002-013` carries
-- Remediated (partial): `E-MD-B18-A002-046`
+- Remediated (partial): `E-MD-B18-A002-046`, `E-MD-B18-A002-047`
 - Class: `BOUND_INPUT_IDENTITY_NOT_BOUND` (same class as its parent finding)
 
 ## Observed defect
@@ -163,3 +167,49 @@ deliberately not rushed into the same turn:**
 `MD-S050-R0002`/`MD-S003-R0003`/`MD-S050-R0014`/`MD-S019-R0071` remain `INCOMPLETE` in
 `MarketDataReplayVerificationProofBasis`, blocked exactly on items 4 and 5. This finding stays `OPEN`
 for those two items only.
+
+## Remediation (item 5, partial) and scope correction — 2026-09-22T12:10:00+07:00 (`E-MD-B18-A002-047`)
+
+Before coding, the two remaining items (eligibility version; read_model_version/serialization_version/
+executable_build_identity) were checked for a canonical ordering. Re-reading
+`ProducerRegistrySnapshot::capture()` line by line while doing so found that item 5's own description
+above was imprecise: only `serialization_version` and `executable_build.build_id` are real fields that
+capture already writes (a genuine decode-only gap); **`read_model_version` does not exist anywhere in
+that capture at all** -- it needs a new captured field, exactly like eligibility version, not a
+decode. This is a correction to this finding's own item 5, recorded here rather than silently
+absorbed into "done".
+
+The ordering between "add a new Capture field" and "decode what Capture already writes" was
+classified `IMPLEMENTATION_DERIVABLE` (infrastructure-before-consumer): building the general
+registry-content-decode capability in Reader first is the lower-risk choice (it stays entirely within
+Reader/Admission, the layer already under active work this whole multi-turn arc, and reopens no
+"already valid, proven" layer), and the eventual Capture-reopening work for eligibility
+version/`read_model_version` will itself want to expose its new fields through this same capability
+rather than build a second one. This is not an arbitrary preference; it is which piece is a
+prerequisite for the other's clean exposure.
+
+`PublicationInputBindingService::verifyBoundContext()` (shared by Seal and Reader) now decodes the
+already-hash-verified `registry_versions` component's raw `semantic_payload_json` once, via
+`RunInputCaptureRepository::verify()` -- the same decode method every other capture-completeness
+check in this codebase already uses, adding no new trust surface since it only reads content whose
+integrity the existing `payload_hash` check immediately above it already established.
+`PublicationInputBindingService::readBoundContext()`'s `VERIFIED` result gained a new `registry_content`
+key exposing it. `ReplayVerificationService::actualBoundInputContext()` now reads
+`serialization_version`/`executable_build_identity` from that decoded content -- precisely, via
+`isset()` -- only when the bound context is `VERIFIED` and that specific field was actually decoded;
+otherwise both report an honest empty string, never falling back to live config as before (the exact
+failure mode this whole finding is about). Two targeted tests prove the real-value case and the
+fail-closed-to-empty case; `B18ReplayComparisonExhaustivenessTest`'s shared stub was extended with a
+real `registry_content` block so its full eleven-field perturbation suite exercises genuine content
+for these two fields as well.
+
+**Four of the original five items are now resolved. Two remain, both requiring a new field in
+`ProducerRegistrySnapshot::capture()`'s payload** (eligibility version; `read_model_version`) -- the
+same category of change, sharing one Capture-layer scope, which a future work unit should address
+together under its own Change Impact Declaration and then wire through the decode capability this
+evidence already built, rather than building a second decode path. No predicate was promoted:
+`MD-S050-R0002`/`R0003`/`R0014` and `MD-S019-R0071` remain `INCOMPLETE`, still blocked exactly by
+these two remaining items. Full `tests/Unit/MarketData`: 2412 tests, 34082 assertions, 0 errors, 7
+failures (unchanged pre-existing MD-DEP-0015 baseline), 0 skips. Governance self-tests 12/12, 5699
+assertions. **This finding remains `OPEN`, now for exactly two items, both needing the same
+Capture-layer change.**

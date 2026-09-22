@@ -227,15 +227,39 @@ class ReplayVerificationServiceTest extends TestCase
             'changing the ancillary component (which carries contamination content) must change event_factor_hash');
     }
 
+    /**
+     * `F-MD-B18-A002-021` (item 5, partial): `serialization_version`/`executable_build_identity`
+     * now come from Reader's decoded `registry_content` (the `registry_versions` capture's own
+     * real, already-verified payload) instead of live config, but only when genuinely `VERIFIED` --
+     * proving the fix does not merely swap one always-present value for another, and that an
+     * unavailable decode still fails closed to empty rather than silently falling back to config.
+     */
+    public function test_serialization_version_and_executable_build_identity_come_from_decoded_registry_content_only_when_verified(): void
+    {
+        $withRegistryContent = $this->actualBoundInputContextForComponents([], [
+            'serialization_version' => 'canonical_json_v2_real',
+            'executable_build' => ['build_id' => 'sha256:real_build'],
+        ]);
+        $this->assertSame('canonical_json_v2_real', $withRegistryContent['serialization_version']);
+        $this->assertSame('sha256:real_build', $withRegistryContent['executable_build_identity']);
+
+        $withoutRegistryContent = $this->actualBoundInputContextForComponents([], null);
+        $this->assertSame('', $withoutRegistryContent['serialization_version'],
+            'a VERIFIED bound context with no decoded registry_content must report an honest empty value, never a live-config fallback');
+        $this->assertSame('', $withoutRegistryContent['executable_build_identity']);
+    }
+
+    private const REGISTRY_CONTENT_UNSET = '__unset__';
+
     /** @param array<int,array<string,string>> $components */
-    private function actualBoundInputContextForComponents(array $components): array
+    private function actualBoundInputContextForComponents(array $components, $registryContent = self::REGISTRY_CONTENT_UNSET): array
     {
         $fixtureDir = $this->makeFixture($this->fixturePayload([
             'expected/expected_replay_result.json' => $this->expectedReplayResult([
                 'publication_id' => 944, 'publication_run_id' => 991, 'run_id' => 991,
             ]),
             'expected/expected_reason_code_counts.json' => [],
-        ], 'fixture_replay_domain_isolation_probe_'.md5(json_encode($components))));
+        ], 'fixture_replay_domain_isolation_probe_'.md5(json_encode([$components, $registryContent]))));
 
         $run = (object) $this->successReadableRun(991, '2026-03-20');
         $publication = (object) [
@@ -249,6 +273,9 @@ class ReplayVerificationServiceTest extends TestCase
 
         $manifest = $this->verifiedBoundContextManifest();
         $manifest->bound_input_context['components'] = $components;
+        if ($registryContent !== self::REGISTRY_CONTENT_UNSET) {
+            $manifest->bound_input_context['registry_content'] = $registryContent;
+        }
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($manifest);
         $evidence->shouldReceive('findRunById')->once()->with(991)->andReturn($run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->andReturn($publication);

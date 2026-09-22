@@ -267,6 +267,10 @@ class PublicationInputBindingService
             'scope' => $bundle['scope'],
             'components' => $bundle['components'],
             'component_manifest' => $bundle['component_manifest'],
+            // F-MD-B18-A002-021 (item 5, partial): the registry_versions component's own decoded
+            // content (serialization_version, executable_build.build_id, ...), already re-verified
+            // against its immutable capture above -- not just its opaque combined payload_hash.
+            'registry_content' => $bundle['_registry_versions_content'] ?? null,
         ];
     }
 
@@ -313,6 +317,7 @@ class PublicationInputBindingService
 
         $seedRunId = $this->captures->resolveSeedRunId((int) $run->run_id);
         $sourceCaptureCache = [];
+        $registryVersionsContent = null;
         foreach ($bundle['components'] as $component) {
             foreach (['stage_code', 'component_key', 'slot_hash', 'payload_hash', 'source_run_id'] as $field) {
                 if (! array_key_exists($field, $component)) {
@@ -344,7 +349,21 @@ class PublicationInputBindingService
                     'INPUT_CAPTURE_SEAL_VERIFICATION_COMPONENT_UNVERIFIABLE: '.$key.'@run:'.$sourceRunId
                 );
             }
+
+            // F-MD-B18-A002-021 (item 5, partial): `registry_versions` is the one component whose
+            // raw content Reader/Admission need precisely, not only as one opaque combined
+            // payload_hash -- `serialization_version` and `executable_build.build_id` are real,
+            // already-captured fields (confirmed by reading ProducerRegistrySnapshot::capture()),
+            // just never decoded past this point before. Decoding here, once, after the exact same
+            // payload_hash check every other component already passed, adds no new trust: it reads
+            // only content already proven immutable and unaltered.
+            if ($registryVersionsContent === null && $component['component_key'] === 'registry_versions') {
+                $decoded = $this->captures->verify($actualRow);
+                $registryVersionsContent = $decoded['rows'][0] ?? [];
+            }
         }
+
+        $bundle['_registry_versions_content'] = $registryVersionsContent;
 
         return $bundle;
     }

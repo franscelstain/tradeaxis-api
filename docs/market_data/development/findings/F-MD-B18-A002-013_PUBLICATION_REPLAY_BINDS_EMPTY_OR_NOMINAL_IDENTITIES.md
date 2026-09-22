@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-09-14T11:17:22+07:00 (system clock)
 - Severity: `P1` — an executable defect, plus a proof basis that overclaims
-- Status: `OPEN — SIX_OF_TEN_BASES_PROVEN_E046_FOUR_REMAIN_INCOMPLETE_ON_F021S_TWO_DEFERRED_ITEMS` (whole-C1 input-capture manifest completeness proven E031/E032/E033; Binding E034/E036/E038, F-MD-B18-A002-020's repair_candidate/incremental regression resolved E041; Seal E042; Reader E043; Admission E044 wires PUBLICATION_EXACT to Reader's projection; E045's per-predicate proof-basis review found none of the ten bases this finding carries yet proven, discovering F-MD-B18-A002-021; E046 remediated three of F-021's five items (temporal_identity_hash domain, dataset boundary, contamination decisions) and moved MD-S050-R0008/R0009/R0012 and MD-S019-R0067/R0068/R0069 to PROVEN with a rebound real-path guard; MD-S050-R0002/R0014, MD-S003-R0003 and MD-S019-R0071 remain INCOMPLETE, blocked on F-021's two still-deferred items (eligibility version; read_model/serialization/build versions), each classified IMPLEMENTATION_DERIVABLE but requiring a larger, separately-scoped change)
+- Status: `OPEN — SIX_OF_TEN_BASES_PROVEN_FOUR_REMAIN_INCOMPLETE_ON_F021S_LAST_TWO_ITEMS` (whole-C1 input-capture manifest completeness proven E031/E032/E033; Binding E034/E036/E038, F-MD-B18-A002-020's repair_candidate/incremental regression resolved E041; Seal E042; Reader E043; Admission E044 wires PUBLICATION_EXACT to Reader's projection; E045's per-predicate proof-basis review found none of the ten bases this finding carries yet proven, discovering F-MD-B18-A002-021; E046 remediated three of F-021's five items (temporal_identity_hash domain, dataset boundary, contamination decisions) and moved MD-S050-R0008/R0009/R0012 and MD-S019-R0067/R0068/R0069 to PROVEN with a rebound real-path guard; E047 remediated a fourth item (serialization_version/executable_build_identity, via a new Reader-side registry-content-decode capability) and corrected F-021's own description of its remaining scope -- read_model_version was never a decode gap, it is an uncaptured field, the same category as eligibility version; MD-S050-R0002/R0014, MD-S003-R0003 and MD-S019-R0071 remain INCOMPLETE, blocked exactly on F-021's last two items -- eligibility version and read_model_version -- both requiring the same new Capture-layer field, not yet added)
 - Class: `BOUND_INPUT_IDENTITY_NOT_BOUND`
 - Found by: per-predicate review of PAIR 01
   (`B18ReplayBoundInputIdentityContractTest`, 16 predicates)
@@ -335,3 +335,24 @@ No traceability-matrix `coverage_status`/`SATISFIED`/denominator change. Full `t
 skips. Governance self-tests 12/12, 5691 assertions. **F013 remains OPEN**: six of its ten bases are
 now `PROVEN`, but the remaining four are still blocked, and `F-MD-B18-A002-021` remains open for its
 two deferred items. No data_260914 action, new attempt, strategy change or relock.
+
+
+## E047 F021 item 5 (partial): registry-content decode capability built, scope corrected - 2026-09-22T12:10:00+07:00
+
+`F-MD-B18-A002-021`'s remaining two items were checked for a canonical order before any code was
+written. Re-reading `ProducerRegistrySnapshot::capture()` found its own item 5 description was
+imprecise: only `serialization_version`/`executable_build.build_id` are real, already-captured
+fields; `read_model_version` is captured nowhere at all, the same category of gap as eligibility
+version. `PublicationInputBindingService::verifyBoundContext()` now decodes the already
+hash-verified `registry_versions` capture once (`RunInputCaptureRepository::verify()`, no new trust
+surface), and `ReplayVerificationService::actualBoundInputContext()` reads
+`serialization_version`/`executable_build_identity` from that decoded content -- real when
+`VERIFIED` and decoded, honestly empty otherwise, never a live-config fallback. Two targeted tests
+prove both cases; the full eleven-field perturbation suite (`B18ReplayComparisonExhaustivenessTest`)
+now exercises genuine content for these two fields too. No predicate promoted -- `MD-S050-R0002`/
+`R0014`, `MD-S003-R0003` and `MD-S019-R0071` remain `INCOMPLETE`, blocked exactly on the two items
+that remain (eligibility version, `read_model_version`), both needing the same new
+`ProducerRegistrySnapshot` capture field. Full `tests/Unit/MarketData`: 2412 tests, 34082 assertions,
+0 errors, 7 failures (unchanged pre-existing MD-DEP-0015 baseline), 0 skips. Governance self-tests
+12/12, 5699 assertions. **F013 remains OPEN**. `F-MD-B18-A002-021` remains open for exactly its last
+two items, both sharing one Capture-layer scope for a future work unit.
