@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-09-14T11:17:22+07:00 (system clock)
 - Severity: `P1` — an executable defect, plus a proof basis that overclaims
-- Status: `OPEN — SIX_OF_TEN_BASES_PROVEN_FOUR_REMAIN_INCOMPLETE_ON_F021S_LAST_TWO_ITEMS` (whole-C1 input-capture manifest completeness proven E031/E032/E033; Binding E034/E036/E038, F-MD-B18-A002-020's repair_candidate/incremental regression resolved E041; Seal E042; Reader E043; Admission E044 wires PUBLICATION_EXACT to Reader's projection; E045's per-predicate proof-basis review found none of the ten bases this finding carries yet proven, discovering F-MD-B18-A002-021; E046 remediated three of F-021's five items (temporal_identity_hash domain, dataset boundary, contamination decisions) and moved MD-S050-R0008/R0009/R0012 and MD-S019-R0067/R0068/R0069 to PROVEN with a rebound real-path guard; E047 remediated a fourth item (serialization_version/executable_build_identity, via a new Reader-side registry-content-decode capability) and corrected F-021's own description of its remaining scope -- read_model_version was never a decode gap, it is an uncaptured field, the same category as eligibility version; MD-S050-R0002/R0014, MD-S003-R0003 and MD-S019-R0071 remain INCOMPLETE, blocked exactly on F-021's last two items -- eligibility version and read_model_version -- both requiring the same new Capture-layer field, not yet added)
+- Status: `OPEN — SIX_OF_TEN_BASES_PROVEN_FOUR_REMAIN_INCOMPLETE_ON_ELIGIBILITY_VERSION_ALONE` (whole-C1 input-capture manifest completeness proven E031/E032/E033; Binding E034/E036/E038, F-MD-B18-A002-020's repair_candidate/incremental regression resolved E041; Seal E042; Reader E043; Admission E044 wires PUBLICATION_EXACT to Reader's projection; E045's per-predicate proof-basis review found none of the ten bases this finding carries yet proven, discovering F-MD-B18-A002-021; E046 remediated three of F-021's five items (temporal_identity_hash domain, dataset boundary, contamination decisions) and moved MD-S050-R0008/R0009/R0012 and MD-S019-R0067/R0068/R0069 to PROVEN with a rebound real-path guard; E047 remediated serialization_version/executable_build_identity via a new Reader-side registry-content-decode capability and corrected F-021's own scope description; E048 remediated the last decode-eligible item, read_model_version (capturing the already-established canonical identity 'market_data_read_product_v1', not invented) and confirmed eligibility_version has no existing identity anywhere in current authority -- GENUINELY_UNRESOLVED, not invented; all eleven BOUND_INPUT_FIELDS are now individually real, which is necessary but not sufficient while eligibility remains an explicitly-named, absent member of MD-S050-R0014; MD-S050-R0002/R0014, MD-S003-R0003 and MD-S019-R0071 remain INCOMPLETE, blocked exactly on eligibility_version alone, which needs an owner decision on what identity to use before it can be captured)
 - Class: `BOUND_INPUT_IDENTITY_NOT_BOUND`
 - Found by: per-predicate review of PAIR 01
   (`B18ReplayBoundInputIdentityContractTest`, 16 predicates)
@@ -356,3 +356,24 @@ that remain (eligibility version, `read_model_version`), both needing the same n
 0 errors, 7 failures (unchanged pre-existing MD-DEP-0015 baseline), 0 skips. Governance self-tests
 12/12, 5699 assertions. **F013 remains OPEN**. `F-MD-B18-A002-021` remains open for exactly its last
 two items, both sharing one Capture-layer scope for a future work unit.
+
+
+## E048 F021's last derivable item resolved; eligibility_version confirmed genuinely unresolved - 2026-09-22T13:05:00+07:00
+
+`read_model_version` -- re-verified still missing from `ProducerRegistrySnapshot::capture()`'s actual
+payload -- is now captured as `'market_data_read_product_v1'`, the already-established, already-reused
+canonical identity `MarketDataReadProductService`/`EodPublicationRepository` already use elsewhere
+(not invented), decoded and consumed by `ReplayVerificationService::actualBoundInputContext()` through
+the same `registry_content` capability `E-MD-B18-A002-047` built, real when `VERIFIED` and honestly
+empty otherwise. A new real-pipeline integration test proves the whole Capture-to-Reader chain for all
+three registry-content fields together. `eligibility_version` was re-checked against current authority
+in full (`config/market_data.php`, the eligibility LOCKED contracts, every eligibility-related
+service) and confirmed to have no existing identity anywhere -- classified `GENUINELY_UNRESOLVED`, left
+exactly that way rather than invented. All eleven `BOUND_INPUT_FIELDS` are now individually real, but
+this is necessary, not sufficient, for `MD-S050-R0002`/`MD-S003-R0003`'s full conjunction or
+`MD-S050-R0014`'s full enumeration while eligibility remains an explicitly-named, absent member; no
+predicate was promoted. Full `tests/Unit/MarketData`: 2413 tests, 34098 assertions, 0 errors, 7
+failures (unchanged pre-existing MD-DEP-0015 baseline), 0 skips. Governance self-tests 12/12, 5707
+assertions. **F013 remains OPEN.** `F-MD-B18-A002-021` remains open for exactly one item --
+`eligibility_version` -- which needs an owner decision on what identity to use before it can be
+captured; no further Admission/Reader/Binding/Seal/Capture work is needed once that decision exists.

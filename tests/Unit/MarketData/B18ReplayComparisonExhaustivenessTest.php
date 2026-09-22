@@ -603,6 +603,7 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
                 ],
                 'scope' => [], 'component_manifest' => ['status' => 'COMPLETE'],
                 'registry_content' => [
+                    'read_model_version' => 'market_data_read_product_v1',
                     'serialization_version' => 'canonical_json_v1_probe',
                     'executable_build' => ['build_id' => 'sha256:probe_build_identity'],
                 ],

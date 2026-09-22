@@ -4,16 +4,18 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-09-22T10:30:00+07:00
 - Severity: `P2` — a real, confirmed content-mapping defect in already-committed code (`E-MD-B18-A002-044`), discovered during the F-MD-B18-A002-013 per-predicate proof-basis review; not a regression against LOCKED strategy authority, and not blocking anything already closed
-- Status: `OPEN — FOUR_OF_FIVE_ORIGINAL_ITEMS_RESOLVED_TWO_REMAIN_BOTH_NEED_A_NEW_CAPTURE_FIELD`
-  (temporal_identity_hash domain mapping, dataset boundary and contamination decisions resolved
-  `E-MD-B18-A002-046`; `serialization_version`/`executable_build_identity` resolved `E-MD-B18-A002-047`
-  via a new Reader-side registry-content-decode capability; `E047` also corrected this finding's own
-  original item 5 description -- `read_model_version` was never actually a decode gap, since
-  `ProducerRegistrySnapshot::capture()` never captures it at all, the same category as eligibility
-  version. **Two items remain, both requiring a new field in `ProducerRegistrySnapshot::capture()`'s
-  payload**: eligibility version, read_model_version.)
+- Status: `OPEN — ONE_ITEM_REMAINS_GENUINELY_UNRESOLVED_NOT_INVENTED` (temporal_identity_hash domain
+  mapping, dataset boundary and contamination decisions resolved `E-MD-B18-A002-046`;
+  `serialization_version`/`executable_build_identity` resolved `E-MD-B18-A002-047` via a new
+  Reader-side registry-content-decode capability; `read_model_version` resolved `E-MD-B18-A002-048` by
+  capturing the already-established, already-reused canonical identity `'market_data_read_product_v1'`
+  (not invented -- reused from `MarketDataReadProductService`/`EodPublicationRepository`). **`E048`
+  re-verified `eligibility_version` against current authority (`config/market_data.php`, the eligibility
+  LOCKED contracts, every eligibility-related service) and confirmed it has no existing identity
+  anywhere at all** -- classified `GENUINELY_UNRESOLVED`, not implemented, not invented. This is the
+  one item this finding stays open for.)
 - Discovered during: `E-MD-B18-A002-045`'s per-predicate proof-basis review of the ten `MD-S050`/`MD-S019`/`MD-S003` bases `F-MD-B18-A002-013` carries
-- Remediated (partial): `E-MD-B18-A002-046`, `E-MD-B18-A002-047`
+- Remediated (partial): `E-MD-B18-A002-046`, `E-MD-B18-A002-047`, `E-MD-B18-A002-048`
 - Class: `BOUND_INPUT_IDENTITY_NOT_BOUND` (same class as its parent finding)
 
 ## Observed defect
@@ -213,3 +215,50 @@ these two remaining items. Full `tests/Unit/MarketData`: 2412 tests, 34082 asser
 failures (unchanged pre-existing MD-DEP-0015 baseline), 0 skips. Governance self-tests 12/12, 5699
 assertions. **This finding remains `OPEN`, now for exactly two items, both needing the same
 Capture-layer change.**
+
+## Remediation (final derivable item) and eligibility_version reclassification — 2026-09-22T13:05:00+07:00 (`E-MD-B18-A002-048`)
+
+Before coding, both remaining items were re-verified against `ProducerRegistrySnapshot::capture()`'s
+actual current payload -- both still confirmed missing. They were then classified separately, not as
+one symmetric pair. `read_model_version` has an already-established, already-reused canonical identity
+elsewhere in this codebase: `'market_data_read_product_v1'`, the real (non-default) value set in
+`MarketDataReadProductService::buildReadModel()`/`buildDegradedReadModel()` and
+`EodPublicationRepository`'s own manifest construction (four call sites total), and already
+`PublicationGovernanceBindingService`'s own fallback default. Classified `IMPLEMENTATION_DERIVABLE` --
+capturing it is reuse, not invention -- and implemented: `ProducerRegistrySnapshot::capture()` gained
+`'read_model_version' => 'market_data_read_product_v1'` (a fixed-literal field, the same pattern as
+the existing `registry_contract` field, no config lookup needed since the value never varies).
+`ReplayVerificationService::actualBoundInputContext()` now reads it from Reader's `registry_content`
+decode (built `E-MD-B18-A002-047`), real when `VERIFIED`, honestly empty otherwise -- replacing a
+live-config read that had always silently resolved to its hardcoded default (the config key
+`market_data.governance.read_model_version` never existed) and that additionally carried a second,
+independent inconsistency: it read the literal `'market_data_read_model_v1'`, a string that appears
+nowhere else in the codebase, rather than the actually-established `'market_data_read_product_v1'`.
+
+`eligibility_version` was re-checked against current authority in full: `config/market_data.php` has
+no `'eligibility'` top-level section at all (unlike `coverage`, which has its own `contract_version`);
+`EOD_Eligibility_Snapshot_Contract_LOCKED.md` and `Eligibility_Partial_Data_Behavior_LOCKED.md` define
+no version tag; and no eligibility-related service
+(`EodEligibilityBuildService`/`EligibilityDecisionService`/`CoverageGateEvaluator`) carries an
+embedded literal analogous to `read_model_version`'s. **There is no existing identity to capture.**
+Classified `GENUINELY_UNRESOLVED` and left exactly that way: not implemented, not invented. Choosing a
+value here -- a new config key, a new hardcoded literal, or something else -- is an owner/authority
+decision this work unit is not licensed to make on its own.
+
+A new real-pipeline (not mocked) integration test seals a genuine publication through the real
+`MarketDataPipelineService` and proves `PublicationInputBindingService::readBoundContext()` decodes
+the real `read_model_version`/`serialization_version`/`executable_build.build_id` together, end to
+end from Capture through Reader. A mocked test proves the positive and fail-closed-to-empty cases.
+`B18ReplayComparisonExhaustivenessTest`'s shared stub gained the real `read_model_version` value; the
+existing eleven-field perturbation suite still catches a divergence in it.
+
+**Predicate review, explicitly not automatic:** all eleven `BOUND_INPUT_FIELDS` `ReplayVerificationService`
+records are now individually real, frozen, and load-bearing for the first time -- but this is
+necessary, not sufficient, for `MD-S050-R0002`/`MD-S003-R0003`'s full "using exactly ... frozen with
+it" conjunction or `MD-S050-R0014`'s full enumeration, both of which explicitly name eligibility as a
+required member that remains absent. `MD-S019-R0071`'s own narrower wording was not the target of
+this change and is left at its prior assessment, not re-interpreted here. **No predicate was
+promoted.** Full `tests/Unit/MarketData`: 2413 tests, 34098 assertions, 0 errors, 7 failures (unchanged
+pre-existing MD-DEP-0015 baseline), 0 skips. Governance self-tests 12/12, 5707 assertions. **This
+finding remains `OPEN`, now for exactly one item: `eligibility_version`, which needs an owner decision
+before it can be captured.**

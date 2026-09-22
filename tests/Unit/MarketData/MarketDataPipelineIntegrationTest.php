@@ -5853,6 +5853,30 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertEquals((array) $lineage, (array) $lineageAfter);
     }
 
+    /**
+     * `F-MD-B18-A002-021`: proves the whole chain end to end against the real pipeline, not mocks --
+     * `ProducerRegistrySnapshot` genuinely captures `read_model_version`/`serialization_version`/
+     * `executable_build.build_id` on the producer path; Binding folds the `registry_versions`
+     * component into the bound context; Seal's verification (reused by Reader) re-derives and
+     * matches its `payload_hash`; and `readBoundContext()` decodes the real, immutable captured
+     * values -- not a placeholder, not live config read fresh at test time.
+     */
+    public function test_reader_decodes_real_registry_content_captured_by_the_real_producer_path(): void
+    {
+        [$run, $publication, $pipeline] = $this->makeSealReadyPublication();
+        $this->sealThroughPipeline($pipeline, $run);
+
+        $bound = (new \App\Application\MarketData\Services\PublicationInputBindingService())
+            ->readBoundContext($publication->publication_id);
+
+        $this->assertSame('VERIFIED', $bound['status']);
+        $this->assertIsArray($bound['registry_content'] ?? null, 'registry_content must be decoded for a genuinely sealed, VERIFIED publication');
+        $this->assertSame('market_data_read_product_v1', $bound['registry_content']['read_model_version']);
+        $this->assertNotSame('', (string) ($bound['registry_content']['serialization_version'] ?? ''));
+        $this->assertNotSame('', (string) ($bound['registry_content']['executable_build']['build_id'] ?? ''));
+        $this->assertStringStartsWith('sha256:', (string) $bound['registry_content']['executable_build']['build_id']);
+    }
+
     public function test_reader_manifest_reports_v1_legacy_for_a_publication_with_no_v2_bound_context(): void
     {
         [$run, $publication] = $this->makeSealReadyPublication();

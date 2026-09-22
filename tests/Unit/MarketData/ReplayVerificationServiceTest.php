@@ -228,24 +228,27 @@ class ReplayVerificationServiceTest extends TestCase
     }
 
     /**
-     * `F-MD-B18-A002-021` (item 5, partial): `serialization_version`/`executable_build_identity`
+     * `F-MD-B18-A002-021`: `read_model_version`/`serialization_version`/`executable_build_identity`
      * now come from Reader's decoded `registry_content` (the `registry_versions` capture's own
      * real, already-verified payload) instead of live config, but only when genuinely `VERIFIED` --
      * proving the fix does not merely swap one always-present value for another, and that an
      * unavailable decode still fails closed to empty rather than silently falling back to config.
      */
-    public function test_serialization_version_and_executable_build_identity_come_from_decoded_registry_content_only_when_verified(): void
+    public function test_registry_content_fields_come_from_decoded_capture_only_when_verified(): void
     {
         $withRegistryContent = $this->actualBoundInputContextForComponents([], [
+            'read_model_version' => 'market_data_read_product_v1',
             'serialization_version' => 'canonical_json_v2_real',
             'executable_build' => ['build_id' => 'sha256:real_build'],
         ]);
+        $this->assertSame('market_data_read_product_v1', $withRegistryContent['read_model_version']);
         $this->assertSame('canonical_json_v2_real', $withRegistryContent['serialization_version']);
         $this->assertSame('sha256:real_build', $withRegistryContent['executable_build_identity']);
 
         $withoutRegistryContent = $this->actualBoundInputContextForComponents([], null);
-        $this->assertSame('', $withoutRegistryContent['serialization_version'],
+        $this->assertSame('', $withoutRegistryContent['read_model_version'],
             'a VERIFIED bound context with no decoded registry_content must report an honest empty value, never a live-config fallback');
+        $this->assertSame('', $withoutRegistryContent['serialization_version']);
         $this->assertSame('', $withoutRegistryContent['executable_build_identity']);
     }
 

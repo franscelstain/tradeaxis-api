@@ -34,6 +34,13 @@ final class ProducerRegistrySnapshot
             'config_registry_revision' => (string) config('market_data.governance.config_registry_revision'),
             'config_resolver_version' => (string) config('market_data.governance.config_resolver_version'),
             'serialization_version' => (string) config('market_data.governance.config_serialization_version'),
+            // F-MD-B18-A002-021 (last remaining item, partial): the one already-established,
+            // already-reused read-model identity in this codebase -- MarketDataReadProductService
+            // and EodPublicationRepository's real (non-default) manifest construction both already
+            // set exactly this literal; it is not invented here, only captured for the first time.
+            // No config key exists for it (confirmed by review) because it never varied -- like
+            // registry_contract above, its exact bytes are the identity.
+            'read_model_version' => 'market_data_read_product_v1',
             // These implementations have no separate nominal version; their exact bytes are the identity.
             'implementation_identities' => array_intersect_key($build['files'], array_flip([
                 'app/Application/MarketData/Services/IndicatorVectorService.php',

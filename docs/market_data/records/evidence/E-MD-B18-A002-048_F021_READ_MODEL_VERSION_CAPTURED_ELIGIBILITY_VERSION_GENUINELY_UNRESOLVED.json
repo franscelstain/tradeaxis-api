@@ -1,0 +1,78 @@
+{
+  "evidence_id": "E-MD-B18-A002-048",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-22T13:05:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS_PARTIAL_ONE_ITEM_GENUINELY_UNRESOLVED",
+  "evidence_scope": "F021_READ_MODEL_VERSION_CAPTURED_ELIGIBILITY_VERSION_CLASSIFIED_GENUINELY_UNRESOLVED_NOT_INVENTED",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-021",
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-047",
+    "E-MD-B18-A002-046"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "F-MD-B18-A002-021's two remaining items (eligibility version; read_model_version), before coding, were independently re-verified against ProducerRegistrySnapshot::capture()'s actual current payload and current authority to confirm they are genuinely still missing and still belong to the registry_versions (C10) domain -- both confirmed. Each was then classified separately rather than treated as one symmetric pair: read_model_version has an already-established, already-reused canonical identity elsewhere in the codebase ('market_data_read_product_v1', used as the real, non-default value in MarketDataReadProductService twice, EodPublicationRepository twice, and as PublicationGovernanceBindingService's own fallback default) -- classified IMPLEMENTATION_DERIVABLE, implemented here. eligibility_version has no existing identity anywhere: no config key (confirmed by reviewing config/market_data.php in full -- no 'eligibility' section exists at all), no code constant analogous to 'market_data_read_product_v1' or 'coverage_gate_v1', and no version tag in EOD_Eligibility_Snapshot_Contract_LOCKED.md -- classified GENUINELY_UNRESOLVED. Per current instruction, this is not invented; it is named as its own explicit gap and this work unit proceeds only on the derivable item.",
+  "probes": [
+    { "id": "P148-read-model-version-genuinely-captured-on-the-real-producer-path", "caught": false, "note": "positive control, real pipeline (not mocked): a genuinely sealed publication's PublicationInputBindingService::readBoundContext() decodes registry_content.read_model_version === 'market_data_read_product_v1' -- the same canonical constant MarketDataReadProductService/EodPublicationRepository already use elsewhere, captured for the first time rather than invented" },
+    { "id": "P149-serialization-version-and-build-identity-still-real-through-the-same-real-pipeline", "caught": false, "note": "regression control on the same real-pipeline test: registry_content.serialization_version and .executable_build.build_id (the sha256: form) remain real and non-empty, confirming E047's decode capability is unaffected by adding a new field alongside them" },
+    { "id": "P150-registry-content-fields-fail-closed-to-empty-not-live-config", "caught": true, "note": "mocked control: a VERIFIED bound context with no decoded registry_content reports empty string for read_model_version (as well as the two already-covered fields), never a live-config fallback" },
+    { "id": "P151-full-frozen-input-perturbation-suite-still-catches-all-eleven-fields-including-read-model-version", "caught": true, "note": "B18ReplayComparisonExhaustivenessTest's shared stub extended with a real read_model_version value; all eleven frozen-input perturbations, including read_model_version, still individually deny PASS when diverged" }
+  ],
+  "tested_source_sha256": {
+    "app/Infrastructure/Persistence/MarketData/ProducerRegistrySnapshot.php": "7F3010AC3503AC36D1ABDED0C6F65C5582E06010494090C66FBC33C98BD32963",
+    "app/Application/MarketData/Services/ReplayVerificationService.php": "EC55E85EBD57DEF8BC90A16D80C8981293F42C4C0CD1EAED81887260017CE43F",
+    "tests/Unit/MarketData/ReplayVerificationServiceTest.php": "2645C05C20F2673CC53095E2F7028A822F0F0CC4BA8AEE931421D13F296F8A7A",
+    "tests/Unit/MarketData/B18ReplayComparisonExhaustivenessTest.php": "FD2376240B0F706F007A507334891E2FA2033CD3D75B7B5CABCBA600160F871D",
+    "tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php": "B6DB1446D3C359EBD0C6A71C54814EBB37AD365E3D08F56D9B3A89EFBC79A5B6"
+  },
+  "schema_changed": false,
+  "root_cause_and_implementation": "ProducerRegistrySnapshot::capture()'s payload gained one new key, 'read_model_version' => 'market_data_read_product_v1', immediately after serialization_version -- no config lookup, no fail-closed empty check needed (matching the existing pattern for 'registry_contract', another fixed-literal identity field in the same payload whose exact bytes are the identity, not a config-resolved value). The value is not invented: it is the literal already set as the real (non-default) value in MarketDataReadProductService::buildReadModel()/buildDegradedReadModel() (two call sites) and EodPublicationRepository's own manifest construction (two more call sites), and already used as PublicationGovernanceBindingService's own fallback default -- five prior, independent uses of the exact same string, none of which this evidence introduces. ReplayVerificationService::actualBoundInputContext() now reads read_model_version from $boundContext['registry_content']['read_model_version'] (Reader's decode capability, built E047), precisely isset()-checked, only when the bound context is VERIFIED -- otherwise an honest empty string, replacing the prior config('market_data.governance.read_model_version', 'market_data_read_model_v1') read, which itself always resolved to its hardcoded default because no such config key exists (confirmed by reviewing config/market_data.php's governance section in full) and additionally used a different, non-canonical literal ('market_data_read_model_v1' vs the actually-established 'market_data_read_product_v1') -- a second latent inconsistency this fix also removes. A new real-pipeline (not mocked) integration test, test_reader_decodes_real_registry_content_captured_by_the_real_producer_path, seals a genuine publication through the real MarketDataPipelineService and asserts PublicationInputBindingService::readBoundContext()'s decoded registry_content carries the real read_model_version, serialization_version and executable_build.build_id values -- proving the full Capture-to-Reader chain, not just a mocked unit. A companion mocked test, renamed test_registry_content_fields_come_from_decoded_capture_only_when_verified (from its E047 predecessor, extended rather than duplicated), proves both the positive (real decoded value reported exactly) and fail-closed (VERIFIED but undecoded -> empty, never config) cases for all three registry_content fields together. B18ReplayComparisonExhaustivenessTest's shared stub gained the real read_model_version value alongside its existing serialization_version/executable_build entries so the pre-existing eleven-field perturbation suite exercises genuine content for this field too. eligibility_version: reviewed config/market_data.php in full (no 'eligibility' top-level section exists, unlike 'coverage' which has its own contract_version), reviewed EOD_Eligibility_Snapshot_Contract_LOCKED.md and Eligibility_Partial_Data_Behavior_LOCKED.md (neither defines a version tag), and reviewed every eligibility-related service (EodEligibilityBuildService, EligibilityDecisionService, CoverageGateEvaluator) for an embedded literal analogous to read_model_version's 'market_data_read_product_v1' -- none exists. There is no existing authoritative value to capture; inventing one (a new version string, a new config key) would be a semantic decision this work unit is not authorized to make, so it is left alone, named explicitly, and not silently absorbed into 'resolved'. Predicate review: MD-S050-R0002/MD-S003-R0003's eleven-field BOUND_INPUT_FIELDS checklist is now fully populated with real content for the first time (all eleven fields individually proven load-bearing across this and prior evidence), but MD-S050-R0002's 'formulas/registries' clause is elaborated by MD-S050-R0014's own fuller list, which still names eligibility as a required member that is not captured anywhere -- the field-presence checklist being complete is necessary but not sufficient for the parent rule's full 'using exactly ... frozen with it' claim while that named sub-item remains absent. MD-S050-R0014 itself still names eligibility explicitly and is unmet for the same reason. MD-S019-R0071's own narrower wording ('price-product and formula/registry versions') was not the target of this turn's change and is left exactly as previously assessed, not re-interpreted here. No predicate promoted.",
+  "scope_result": {
+    "ordering_reverified": "read_model_version and eligibility_version confirmed still missing from ProducerRegistrySnapshot::capture()'s actual current payload and still belong to the registry_versions (C10) component, matching E047's prior finding",
+    "read_model_version_classification": "IMPLEMENTATION_DERIVABLE -- reuses an already-established, already-reused canonical constant, not invented",
+    "eligibility_version_classification": "GENUINELY_UNRESOLVED -- no existing config key, code constant, or LOCKED strategy version tag anywhere; not implemented, not invented",
+    "f021_items_remediated_this_turn": ["read_model_version_captured_and_decoded"],
+    "f021_items_still_open": ["eligibility_version_has_no_existing_identity_to_capture"],
+    "predicates_promoted_to_proven": [],
+    "predicates_still_incomplete": ["MD-S050-R0002", "MD-S050-R0014", "MD-S003-R0003", "MD-S019-R0071"],
+    "predicate_promotion_reasoning": "all eleven BOUND_INPUT_FIELDS are now individually real and load-bearing, which is necessary but not sufficient for MD-S050-R0002/MD-S003-R0003's full conjunction or MD-S050-R0014's full enumeration while eligibility remains an explicitly-named, still-absent member; MD-S019-R0071's own narrower wording was not touched by this turn's change and is left at its prior assessment",
+    "capture_domain_reopened": "registry_versions only, the same domain E047 already touched -- no other Capture domain reopened",
+    "guard_weakened": false,
+    "fallback_to_live_config_removed_for_read_model_version": true,
+    "traceability_matrix_coverage_status_touched": false,
+    "satisfied_or_denominator_changed": false
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "slices_complete": ["capture", "binding", "seal", "reader", "admission (publication_exact)"],
+    "slices_remaining": [],
+    "incomplete_bases": 58,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [],
+    "clarification": "MarketDataReplayVerificationProofBasis's INCOMPLETE count is unchanged at 58 (unchanged from E046/E047) -- this evidence adds a real, proven capture/decode/consumption chain for read_model_version but promotes no predicate, since eligibility_version -- the one item genuinely blocking MD-S050-R0002/R0003/R0014's full requirement -- remains unresolved and is not invented. F-MD-B18-A002-021 remains OPEN, now for exactly one item: eligibility_version. F-MD-B18-A002-013 remains OPEN (four bases still incomplete, unchanged)."
+  },
+  "full_suite": {
+    "status": "RUN_FOR_THIS_IMPLEMENTATION",
+    "reason": "Full tests/Unit/MarketData: 2413 tests, 34098 assertions, 0 errors, 7 failures (pre-existing MD-DEP-0015 ProductionCorpusInvariantOracleTest baseline, unchanged), 0 skips. MarketDataPipelineIntegrationTest.php alone (real SQLite, includes the new real-pipeline registry-content test): 82 tests, 6148 assertions, all green. ReplayVerificationServiceTest.php alone: 16 tests, 63 assertions, all green. B18ReplayComparisonExhaustivenessTest.php alone: 39 tests, 174 assertions, all green. B18ProducerCalendarRegistryTest.php and WholeC1RegistryVersionsMariaDbAuditTest.php (the two other test files touching ProducerRegistrySnapshot/registry_versions directly): all green, confirming the new capture field does not break any existing completeness or population assertion. Governance self-tests (GovernanceGateReadOnlyExecutionTest + FindingRecordConsistencyTest): 12 tests, 5707 assertions, all green.",
+    "prior_baseline": "E047's full-suite state (2412 tests, 34082 assertions, 0 errors, 7 pre-existing failures, 0 skips); this evidence adds one new real-pipeline integration test (net 2412->2413) and extends one existing mocked test and one stub, all green, with no other regression."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "F-MD-B18-A002-021's one remaining item, eligibility_version, requires an owner/authority decision this work unit is not licensed to make on its own: what identity should represent 'eligibility version' (a new literal constant analogous to read_model_version's, a new config key analogous to coverage_gate.contract_version, or something else), and where should it be defined. Until that decision is recorded, this item stays a named, open gap -- not implemented, not invented. Once decided, capturing it follows the exact same pattern this evidence and E047 already established (add the field to ProducerRegistrySnapshot::capture()'s payload, read it from registry_content in actualBoundInputContext()), requiring no further design work. Only after it lands does MD-S050-R0014/MD-S019-R0071 and, transitively, MD-S050-R0002/MD-S003-R0003 become re-reviewable for PROVEN. No data_260914 action, new attempt, strategy change or relock."
+}

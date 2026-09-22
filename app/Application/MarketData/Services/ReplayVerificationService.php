@@ -1093,15 +1093,18 @@ class ReplayVerificationService
             // non-live source rather than the previous vacuous-constant/live-config values.
             'formula_registry_hash' => $registryPayloadHash,
             'reason_registry_hash' => $registryPayloadHash,
-            // F-MD-B18-A002-021 (item 5, partial): `serialization_version` and
-            // `executable_build_identity` are real fields `ProducerRegistrySnapshot::capture()`
-            // already captures inside `registry_versions` -- Reader now decodes and re-verifies
-            // them (`readBoundContext()`'s `registry_content`), so these two read the frozen,
-            // captured value instead of live config whenever the bound context is `VERIFIED`.
-            // `read_model_version` is not part of this fix: no such field exists anywhere in that
-            // capture today (a genuine missing-capture gap, not a decode gap), so it is left
-            // reading live config exactly as before, unchanged and undisguised.
-            'read_model_version' => (string) $this->configValue('market_data.governance.read_model_version', 'market_data_read_model_v1'),
+            // F-MD-B18-A002-021 (final remediated item): `read_model_version`, `serialization_version`
+            // and `executable_build_identity` are now all real fields `ProducerRegistrySnapshot::
+            // capture()` captures inside `registry_versions` -- Reader decodes and re-verifies them
+            // (`readBoundContext()`'s `registry_content`), so all three read the frozen, captured
+            // value instead of live config whenever the bound context is `VERIFIED`, and an honest
+            // empty string otherwise (never a live-config fallback). `eligibility_version` -- the one
+            // remaining `MD-S050-R0014` member -- was found to have no existing identity anywhere in
+            // this codebase (no config key, no code constant, no LOCKED strategy definition) and is
+            // deliberately not invented here; it stays a named, open gap in `F-MD-B18-A002-021`.
+            'read_model_version' => $verified && isset($boundContext['registry_content']['read_model_version'])
+                ? (string) $boundContext['registry_content']['read_model_version']
+                : '',
             'serialization_version' => $verified && isset($boundContext['registry_content']['serialization_version'])
                 ? (string) $boundContext['registry_content']['serialization_version']
                 : '',
