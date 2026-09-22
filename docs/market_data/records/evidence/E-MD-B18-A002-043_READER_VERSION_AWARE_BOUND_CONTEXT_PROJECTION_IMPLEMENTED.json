@@ -1,0 +1,75 @@
+{
+  "evidence_id": "E-MD-B18-A002-043",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-22T07:52:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS",
+  "evidence_scope": "READER_VERSION_AWARE_BOUND_CONTEXT_PROJECTION_IMPLEMENTED",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-042"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "C1 contract Sec6 step 4 (Reader): 'publicationManifestContext, buildManifestByPublicationId, explicit historical replay resolution, evidence export and read-product repository use the same version-aware projection. Historical verification does not consult current/latest as fallback. V1 ordinary read eligibility follows the existing owner contract, while V1 exact verification is BLOCKED unless complete authoritative bound evidence is already available and valid under its contract.' Implements PublicationInputBindingService::readBoundContext($publicationId): a read-only, explicit-publication_id-scoped classification of a publication's already-bound V2 input context, reusing the exact same content verification Seal performs (extracted into a shared private verifyBoundContext($run, $lineage) so Reader can never diverge from Seal on what 'valid' means), wired into EodPublicationRepository::buildManifestByPublicationId() and threaded through MarketDataEvidenceExportService::buildRunSummary(). Never creates, computes or repairs a Binding.",
+  "probes": [
+    { "id": "P130-verified-status-for-a-genuinely-sealed-publication", "caught": false, "note": "positive control: a genuinely valid, real (full_publish, ancillary-engaged) sealed publication's manifest reports bound_input_context.status=VERIFIED, available=true, correct schema_version and bound_input_context_hash matching the lineage row, non-empty components and component_manifest.status=COMPLETE; the lineage row is verified byte-identical before/after the read" },
+    { "id": "P131-v1-legacy-classification-for-a-publication-with-no-v2-bound-context", "caught": true, "note": "lineage row's four V2 columns nulled out to recreate a genuinely pre-C1 publication -- buildManifestByPublicationId reports bound_input_context.status=V1_LEGACY_NO_V2_BOUND_CONTEXT, available=false, reason=null, without erroring, and every other manifest field (publication_id, run_id, etc.) remains correctly populated -- V1 ordinary read eligibility is unaffected by this classification" },
+    { "id": "P132-blocked-and-withholds-content-for-a-tampered-bound-context", "caught": true, "note": "a component's payload_hash altered post-seal (the identical tamper Seal itself rejects, P122) -- buildManifestByPublicationId reports bound_input_context.status=BLOCKED, available=false, reason containing INPUT_CAPTURE_SEAL_VERIFICATION_COMPONENT_UNVERIFIABLE, and critically the components/scope keys are absent from the returned bound_input_context -- a BLOCKED classification never carries the unverified content alongside it" },
+    { "id": "P133-reader-projection-is-read-only-across-repeated-reads", "caught": false, "note": "positive control: buildManifestByPublicationId called twice and readBoundContext called once more against the same sealed publication; md_publication_lineage_bindings compared byte-for-byte before and after all three reads and found identical -- Reader never writes" },
+    { "id": "P134-evidence-export-carries-the-manifest-projection-verbatim", "caught": false, "note": "positive control: MarketDataEvidenceExportServiceTest's existing mocked-manifest fixture extended with a bound_input_context block; exported run_summary.json is asserted to carry bound_input_context_available/status/schema_version/hash exactly as the manifest supplied them -- export computes nothing of its own" }
+  ],
+  "tested_source_sha256": {
+    "app/Application/MarketData/Services/PublicationInputBindingService.php": "6E34B31259CE9F571846F94AC45A52DAF568F81519B74ACEFF8F8E36D708C06A",
+    "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php": "3A953986DE912D0466C2380325A3D80F188F28079D7DFFACC85534EECE37DCB9",
+    "app/Application/MarketData/Services/MarketDataEvidenceExportService.php": "A23AE68C9D3AFBFC7C409BE7239967FCC7B7C70A07829CAF28797A20CC8D201D",
+    "tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php": "2BCB87FCCD6000AC4B97552446B449BE8FB44EFF07EFDAD73BDA8B28D814326F",
+    "tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php": "D8D2ECC521FDB0794DAB9B7874FE125C31E1E0B5AF898225E6F4816219CFED54"
+  },
+  "schema_changed": false,
+  "root_cause_and_implementation": "Before this work, EodPublicationRepository::buildManifestByPublicationId() -- the repository's one version-aware publication-manifest reader, already explicit-publication_id-scoped with no current/latest fallback -- did not select or expose any of the four V2 columns on md_publication_lineage_bindings (bound_input_schema_version, bound_input_context_json, bound_input_context_hash, bound_input_capture_manifest_json) at all; every reader surface that consumes it (evidence export, and by extension anything built on the manifest) was therefore blind to whether a publication had a V2 bound context, let alone whether that context was still valid. PublicationInputBindingService::verifyBeforeSeal's existing content-verification body (lineage presence, config_snapshot_id consistency, digest self-consistency via hash_equals, bundle structural readability, component_manifest.status trust, per-component payload_hash and source_run_id provenance against resolveSeedRunId) was extracted verbatim -- same exception messages, same order, zero behavioural change -- into a new private verifyBoundContext($run, $lineage): array, confirmed byte-identical in behaviour by re-running all 9 pre-existing Seal tests unmodified and green. verifyBeforeSeal itself now just performs its own Seal-specific preconditions (replay_verify rejection, publication existence, ownership, trade_date) then delegates to verifyBoundContext. A new public method, PublicationInputBindingService::readBoundContext($publicationId): array, resolves the publication and its owning run itself (no external $run parameter, since Reader classifies an already-sealed publication's own recorded state rather than comparing it to some other currently-executing run), and returns one of three classifications built entirely from contract vocabulary: 'V1_LEGACY_NO_V2_BOUND_CONTEXT' (available=false, reason=null) when the lineage row has no V2 columns populated at all; 'BLOCKED' (available=false, reason=<the exact verifyBoundContext exception message>) when a V2 bound context exists but fails any verification clause -- and in this case the components/scope/component_manifest keys are deliberately omitted from the return value entirely, so a BLOCKED classification can never be mistaken for verified content by a careless caller; or 'VERIFIED' (available=true) with the schema_version, bound_input_context_hash and the decoded scope/components/component_manifest, when every check passes. readBoundContext never writes anything (proven directly, P133) and never calls bind(). EodPublicationRepository::buildManifestByPublicationId() now sets $manifest['bound_input_context'] = app(PublicationInputBindingService::class)->readBoundContext(...) before casting to object -- the exact same app()-resolution idiom sealCandidatePublication already uses for verifyBeforeSeal. MarketDataEvidenceExportService::buildRunSummary() -- which already had an established, explicitly-commented pattern of reading every V2-derived field straight off the manifest array rather than computing anything itself ('Nothing is computed here... a run with no resolved publication exports them as null') -- gained four fields (bound_input_context_schema_version/status/available/hash) following that identical pattern, verified to read through the mocked-manifest fixture unchanged (P134). publicationManifestContext() (the private V1-manifest-hash helper used by assertPublicationManifestHashValid) was deliberately left untouched: it serves a narrower, unrelated V1 manifest-hash purpose, and readBoundContext() runs its own independent queries rather than depending on that helper's select list, so extending it was unnecessary and would have been added surface area against an already-proven V1 code path. resolveExplicitFixturePublication/resolvePublicationForEvidenceAudit (ReplayVerificationService's 'explicit historical replay resolution') and MarketDataReadProductRepository ('read-product repository') were read and audited, not modified: both already resolve by explicit run_id/publication_id/trade_date selector with no current/latest substitution (resolvePublicationForEvidenceAudit throws EVIDENCE_SELECTOR_MISSING rather than defaulting, and MarketDataReadProductRepository::rowsForReadablePublication takes an already-resolved $publication object as a parameter rather than looking one up itself) -- both already satisfy the contract's 'does not consult current/latest as fallback' clause and needed no change. ReplayVerificationService::actualBoundInputContext, the PUBLICATION_EXACT/AS_KNOWN comparison and MATCH/MISMATCH decision logic, and ReplayResult persistence were deliberately not touched: the C1 contract Sec6 step 5 (Admission) explicitly names ReplayVerificationService as sharing 'a validator for both exact and as-known required inputs' and deciding BLOCKED/MATCH/MISMATCH, which is out of this work unit's scope by the user's explicit instruction not to start Admission.",
+  "scope_result": {
+    "reader_projection_added": true,
+    "surfaces_touched": ["EodPublicationRepository::buildManifestByPublicationId", "PublicationInputBindingService::readBoundContext (new)", "MarketDataEvidenceExportService::buildRunSummary"],
+    "surfaces_audited_and_confirmed_already_compliant_no_change": ["EodEvidenceRepository::resolvePublicationForEvidenceAudit", "ReplayVerificationService::resolveExplicitFixturePublication", "MarketDataReadProductRepository::rowsForReadablePublication"],
+    "surfaces_deliberately_not_touched_admission_scope": ["ReplayVerificationService::actualBoundInputContext and its PUBLICATION_EXACT/AS_KNOWN comparison, MATCH/MISMATCH decision and ReplayResult persistence"],
+    "classifications": ["VERIFIED", "V1_LEGACY_NO_V2_BOUND_CONTEXT", "BLOCKED"],
+    "creates_or_recomputes_binding": false,
+    "reads_current_latest_state": false,
+    "blocked_result_withholds_unverified_content": true,
+    "seal_verification_reused_not_duplicated": true,
+    "v1_ordinary_read_eligibility_unaffected": true,
+    "reader_or_admission_implemented_this_turn": "reader only"
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "slices_complete": ["capture", "binding", "seal", "reader"],
+    "slices_remaining": ["admission"],
+    "incomplete_bases": 64,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [],
+    "clarification": "Reader (C1 contract Sec6 step 4) is now implemented: publicationManifestContext/buildManifestByPublicationId/evidence export share one version-aware bound-context projection by explicit publication_id, and the two other named read surfaces (explicit historical replay resolution, read-product repository) were audited and found already compliant. No predicate, coverage, SATISFIED, or denominator number is promoted or demoted -- this completes Reader's own implementation and proof, it is not itself B18 per-predicate closure, and it does not itself make V1 exact verification BLOCKED end-to-end (that requires Admission to consult this projection, which is the next, not-yet-started work unit)."
+  },
+  "full_suite": {
+    "status": "RUN_FOR_THIS_IMPLEMENTATION",
+    "reason": "Full tests/Unit/MarketData: 2407 tests, 34018 assertions, 0 errors, 7 failures (pre-existing MD-DEP-0015 ProductionCorpusInvariantOracleTest baseline, unchanged), 0 skips. MarketDataPipelineIntegrationTest.php alone: 81 tests, 6142 assertions, all green (no file-I/O flakiness this run). MarketDataEvidenceExportServiceTest.php alone: 5 tests, 200 assertions, all green. Governance self-tests (GovernanceGateReadOnlyExecutionTest + FindingRecordConsistencyTest): 12 tests, 5659 assertions, all green.",
+    "prior_baseline": "E042's full-suite state (2403 tests, 33986 assertions, 0 errors, 7 pre-existing failures, 0 skips); this evidence adds Reader's own implementation plus 4 new targeted tests in MarketDataPipelineIntegrationTest.php (net 77->81) and extends one existing MarketDataEvidenceExportServiceTest.php test with 4 new assertions (196->200 assertions in that file), all green, with no other regression."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "MD-B18-A002: Reader (C1 contract Sec6 step 4) is implemented and proven. Begin Admission's own governed work unit (C1 contract Sec6 step 5): ReplayVerificationService, direct ReplayResultRepository persistence, replay exporter, fixture verifier/backfill and evidence-admission paths must share a validator for both exact and as-known required inputs, consuming Reader's version-aware projection (PublicationInputBindingService::readBoundContext via buildManifestByPublicationId) rather than ReplayVerificationService::actualBoundInputContext's current live-config recomputation; non-BLOCKED requires complete verifiable binding, unavailable input is BLOCKED, execution divergence is FAIL/MISMATCH; a BLOCKED record must retain explicit mode, requested identity, known fields, exact missing paths and original reason and can never claim MATCH or ADMISSIBLE. Preserve E021-E043 and valid P51-P134; do not repeat C02-C09, whole-C1-completeness, Binding, Seal, or Reader proof already established. No data_260914 action, new attempt, strategy change or relock."
+}

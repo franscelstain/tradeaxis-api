@@ -1107,6 +1107,16 @@ class MarketDataEvidenceExportService
             'canonicalization_version' => $manifest['canonicalization_version'] ?? null,
             'formula_version' => $manifest['formula_version'] ?? null,
             'read_model_version' => $manifest['read_model_version'] ?? null,
+            /*
+             * C1 §6 step 4 (Reader): the manifest's own version-aware projection of the producer-
+             * bound input context, read verbatim -- not re-derived here. `available`/`status` come
+             * from `PublicationInputBindingService::readBoundContext()`, which reuses the exact
+             * verification Seal performs; export never invents a separate notion of "valid".
+             */
+            'bound_input_context_schema_version' => $manifest['bound_input_context']['schema_version'] ?? null,
+            'bound_input_context_status' => $manifest['bound_input_context']['status'] ?? null,
+            'bound_input_context_available' => $manifest['bound_input_context']['available'] ?? false,
+            'bound_input_context_hash' => $manifest['bound_input_context']['bound_input_context_hash'] ?? null,
             'config_snapshot_id' => $this->field($run, 'config_snapshot_id') !== null
                 ? (int) $this->field($run, 'config_snapshot_id')
                 : null,

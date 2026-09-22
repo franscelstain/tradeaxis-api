@@ -105,6 +105,13 @@ class MarketDataEvidenceExportServiceTest extends TestCase
             'indicators_rows_written' => 2,
             'eligibility_rows_written' => 2,
             'trade_date_effective' => '2026-04-21',
+            'bound_input_context' => [
+                'available' => true,
+                'status' => 'VERIFIED',
+                'schema_version' => 'md_publication_inputs_v2',
+                'reason' => null,
+                'bound_input_context_hash' => str_repeat('f', 64),
+            ],
         ];
 
         $evidence = m::mock(EodEvidenceRepository::class);
@@ -238,6 +245,12 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         );
         $this->assertSame(0.98, $summary['coverage']['coverage_min_threshold']);
         $this->assertSame([], $summary['coverage']['coverage_missing_sample']);
+        // C1 §6 step 4 (Reader): evidence export must carry the manifest's own version-aware
+        // bound-input-context projection verbatim, never re-derive it.
+        $this->assertTrue($summary['bound_input_context_available']);
+        $this->assertSame('VERIFIED', $summary['bound_input_context_status']);
+        $this->assertSame('md_publication_inputs_v2', $summary['bound_input_context_schema_version']);
+        $this->assertSame(str_repeat('f', 64), $summary['bound_input_context_hash']);
         $this->assertSame('API_FREE', $summary['source_context']['source_name']);
         $this->assertSame('PRIMARY', $summary['source_context']['source_priority']);
         $this->assertSame('api_free', $summary['source_context']['active_source_decision']);

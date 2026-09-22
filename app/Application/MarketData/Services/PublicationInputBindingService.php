@@ -220,6 +220,65 @@ class PublicationInputBindingService
         if ((string) $publication->trade_date !== (string) $tradeDate) throw new \RuntimeException('INPUT_CAPTURE_SEAL_VERIFICATION_TRADE_DATE_MISMATCH');
 
         $lineage = DB::table('md_publication_lineage_bindings')->where('publication_id', (int) $publicationId)->first();
+
+        $this->verifyBoundContext($run, $lineage);
+    }
+
+    /**
+     * C1 §6 step 4 -- Reader. Read-only, version-aware projection of a publication's already-bound
+     * input context, by explicit publication_id only -- it never consults a current/latest pointer
+     * to stand in for the identity requested. Reuses exactly the same verification clause Seal
+     * performs (`verifyBoundContext` below), so Reader can never diverge from Seal on what "valid"
+     * means; it never writes, creates or repairs a Binding. A publication with no V2 bound context
+     * at all (pre-C1 / V1 legacy) is reported as `V1_LEGACY_NO_V2_BOUND_CONTEXT`, not silently
+     * treated as verified and not treated as an error -- V1 ordinary reads are unaffected by this
+     * method; only exact verification requires V2 evidence, which is why a missing bound context is
+     * a distinct classification from a present-but-invalid one (`BLOCKED`, with the exact reason).
+     */
+    public function readBoundContext($publicationId): array
+    {
+        $publication = DB::table('eod_publications')->where('publication_id', (int) $publicationId)->first();
+        if (! $publication) {
+            return ['available' => false, 'status' => 'BLOCKED', 'schema_version' => null, 'reason' => 'INPUT_CAPTURE_READ_PUBLICATION_NOT_FOUND', 'bound_input_context_hash' => null];
+        }
+
+        $lineage = DB::table('md_publication_lineage_bindings')->where('publication_id', (int) $publicationId)->first();
+        if (! $lineage || $lineage->bound_input_context_hash === null || $lineage->bound_input_context_json === null) {
+            return ['available' => false, 'status' => 'V1_LEGACY_NO_V2_BOUND_CONTEXT', 'schema_version' => null, 'reason' => null, 'bound_input_context_hash' => null];
+        }
+
+        $run = DB::table('eod_runs')->where('run_id', (int) $publication->run_id)->first();
+        if (! $run) {
+            return ['available' => false, 'status' => 'BLOCKED', 'schema_version' => (string) $lineage->bound_input_schema_version, 'reason' => 'INPUT_CAPTURE_READ_OWNING_RUN_NOT_FOUND', 'bound_input_context_hash' => (string) $lineage->bound_input_context_hash];
+        }
+
+        try {
+            $bundle = $this->verifyBoundContext($run, $lineage);
+        } catch (\RuntimeException $e) {
+            return ['available' => false, 'status' => 'BLOCKED', 'schema_version' => (string) $lineage->bound_input_schema_version, 'reason' => $e->getMessage(), 'bound_input_context_hash' => (string) $lineage->bound_input_context_hash];
+        }
+
+        return [
+            'available' => true,
+            'status' => 'VERIFIED',
+            'schema_version' => (string) $lineage->bound_input_schema_version,
+            'reason' => null,
+            'bound_input_context_hash' => (string) $lineage->bound_input_context_hash,
+            'scope' => $bundle['scope'],
+            'components' => $bundle['components'],
+            'component_manifest' => $bundle['component_manifest'],
+        ];
+    }
+
+    /**
+     * Shared by Seal (`verifyBeforeSeal`, which fails closed on any exception) and Reader
+     * (`readBoundContext`, which catches and classifies). Verifies the bound context already
+     * persisted on `$lineage` is internally self-consistent and that every listed component still
+     * traces to its exact immutable capture -- never creates, recomputes or repairs the binding.
+     * Returns the decoded bundle on success.
+     */
+    private function verifyBoundContext($run, $lineage): array
+    {
         if (! $lineage || $lineage->bound_input_context_hash === null || $lineage->bound_input_context_json === null) {
             throw new \RuntimeException('INPUT_CAPTURE_SEAL_VERIFICATION_BINDING_MISSING: no bound input context exists to verify.');
         }
@@ -286,6 +345,8 @@ class PublicationInputBindingService
                 );
             }
         }
+
+        return $bundle;
     }
 
     /** Re-derive the existing V1 compatibility component hashes from the immutable captured content only. */

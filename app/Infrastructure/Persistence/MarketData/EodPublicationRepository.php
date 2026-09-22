@@ -1977,6 +1977,13 @@ class EodPublicationRepository
             'seal_verification_reason_code' => $context->seal_state === 'SEALED' && $context->sealed_at ? 'DATASET_HASH_VERIFIED' : 'DATASET_SEAL_INVALID',
         ];
 
+        // C1 §6 step 4 -- Reader. Version-aware projection of the producer-bound input context:
+        // read-only, by this exact publication_id, never a current/latest substitute. Callers
+        // (evidence export, replay resolution) read this instead of each re-deriving their own
+        // notion of whether a V2 bound context exists and is valid.
+        $manifest['bound_input_context'] = app(\App\Application\MarketData\Services\PublicationInputBindingService::class)
+            ->readBoundContext((int) $context->publication_id);
+
         return (object) $manifest;
     }
 

@@ -5826,6 +5826,92 @@ class MarketDataPipelineIntegrationTest extends TestCase
         }
     }
 
+    /**
+     * C1 §6 step 4 -- Reader. `buildManifestByPublicationId()` is the version-aware projection
+     * every reader surface (evidence export, explicit replay resolution) is required to read
+     * instead of each re-deriving its own notion of the producer-bound input context.
+     */
+    public function test_reader_manifest_reports_verified_bound_context_for_a_genuinely_sealed_publication(): void
+    {
+        [$run, $publication, $pipeline] = $this->makeSealReadyPublication();
+        $this->sealThroughPipeline($pipeline, $run);
+        $lineage = DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->first();
+
+        $manifest = (new \App\Infrastructure\Persistence\MarketData\EodPublicationRepository())->buildManifestByPublicationId($publication->publication_id);
+
+        $this->assertIsArray($manifest->bound_input_context);
+        $this->assertTrue($manifest->bound_input_context['available']);
+        $this->assertSame('VERIFIED', $manifest->bound_input_context['status']);
+        $this->assertNull($manifest->bound_input_context['reason']);
+        $this->assertSame('md_publication_inputs_v2', $manifest->bound_input_context['schema_version']);
+        $this->assertSame($lineage->bound_input_context_hash, $manifest->bound_input_context['bound_input_context_hash']);
+        $this->assertNotEmpty($manifest->bound_input_context['components']);
+        $this->assertSame('COMPLETE', $manifest->bound_input_context['component_manifest']['status']);
+        // Reader only reads what Binding/Seal already established -- it must not itself have
+        // written anything back onto the lineage row while producing this projection.
+        $lineageAfter = DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->first();
+        $this->assertEquals((array) $lineage, (array) $lineageAfter);
+    }
+
+    public function test_reader_manifest_reports_v1_legacy_for_a_publication_with_no_v2_bound_context(): void
+    {
+        [$run, $publication] = $this->makeSealReadyPublication();
+        // Simulate a publication that predates C1 Binding entirely: HASH already persisted a V2
+        // bound context through the pipeline's real bind() call, so null it back out to recreate
+        // the genuinely-legacy state this projection must still classify correctly, not crash on.
+        DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->update([
+            'bound_input_schema_version' => null, 'bound_input_context_json' => null,
+            'bound_input_context_hash' => null, 'bound_input_capture_manifest_json' => null,
+        ]);
+
+        $manifest = (new \App\Infrastructure\Persistence\MarketData\EodPublicationRepository())->buildManifestByPublicationId($publication->publication_id);
+
+        $this->assertFalse($manifest->bound_input_context['available']);
+        $this->assertSame('V1_LEGACY_NO_V2_BOUND_CONTEXT', $manifest->bound_input_context['status']);
+        $this->assertNull($manifest->bound_input_context['reason']);
+        // V1 ordinary read eligibility is unaffected -- the rest of the manifest is untouched by
+        // this classification; Reader does not degrade or hide unrelated, already-valid fields.
+        $this->assertSame((int) $publication->publication_id, $manifest->publication_id);
+        $this->assertSame((int) $run->run_id, $manifest->run_id);
+    }
+
+    public function test_reader_manifest_reports_blocked_and_withholds_content_for_a_tampered_bound_context(): void
+    {
+        [$run, $publication] = $this->makeSealReadyPublication();
+        $lineage = DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->first();
+        $bundle = json_decode((string) $lineage->bound_input_context_json, true);
+        $bundle['components'][0]['payload_hash'] = str_repeat('a', 64);
+        $newJson = json_encode($bundle);
+        DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->update([
+            'bound_input_context_json' => $newJson, 'bound_input_context_hash' => hash('sha256', $newJson),
+        ]);
+
+        $manifest = (new \App\Infrastructure\Persistence\MarketData\EodPublicationRepository())->buildManifestByPublicationId($publication->publication_id);
+
+        $this->assertFalse($manifest->bound_input_context['available']);
+        $this->assertSame('BLOCKED', $manifest->bound_input_context['status']);
+        $this->assertStringContainsString('INPUT_CAPTURE_SEAL_VERIFICATION_COMPONENT_UNVERIFIABLE', $manifest->bound_input_context['reason']);
+        // A BLOCKED classification must never carry the unverified content alongside it, or a
+        // careless caller could read the tampered components as if Reader had certified them.
+        $this->assertArrayNotHasKey('components', $manifest->bound_input_context);
+        $this->assertArrayNotHasKey('scope', $manifest->bound_input_context);
+    }
+
+    public function test_reader_bound_context_projection_is_read_only_across_repeated_reads(): void
+    {
+        [$run, $publication, $pipeline] = $this->makeSealReadyPublication();
+        $this->sealThroughPipeline($pipeline, $run);
+        $before = (array) DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->first();
+
+        $repo = new \App\Infrastructure\Persistence\MarketData\EodPublicationRepository();
+        $repo->buildManifestByPublicationId($publication->publication_id);
+        $repo->buildManifestByPublicationId($publication->publication_id);
+        (new \App\Application\MarketData\Services\PublicationInputBindingService())->readBoundContext($publication->publication_id);
+
+        $after = (array) DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->first();
+        $this->assertEquals($before, $after, 'Reader must never write to md_publication_lineage_bindings.');
+    }
+
     private function makePipelineWithAncillaryEngaged(): MarketDataPipelineService
     {
         $publications = new EodPublicationRepository();
