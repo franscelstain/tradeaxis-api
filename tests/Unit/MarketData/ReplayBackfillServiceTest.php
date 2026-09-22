@@ -100,4 +100,82 @@ class ReplayBackfillServiceTest extends TestCase
         $this->assertSame('NO_READABLE_PUBLICATION', $summary['cases'][0]['reason_code']);
         $this->assertStringContainsString('NO_READABLE_PUBLICATION:', $summary['cases'][0]['error_message']);
     }
+
+    /**
+     * `F-MD-B18-A002-015`, `MD-S050-R0053`/`MD-S002-R0009`/`MD-S002-R0010` -- C2: "case/fixture tidak
+     * dikenal ... tolak sebelum bekerja; tidak memilih pointer atau menebak expected outcome."
+     *
+     * Before this, `expectedOutcomeForFixtureCase()` returned `null` for any unrecognised case and
+     * `$passed = $expectedOutcome ? ... : true` turned that into an automatic pass for every date in
+     * the range -- after doing the full replay/export work for each one. An unknown case must instead
+     * be refused outright, before any calendar lookup, directory creation, or replay execution --
+     * proven here by `shouldNotReceive` on every collaborator, not merely by asserting the exception.
+     */
+    public function test_execute_rejects_an_unknown_fixture_case_before_any_work(): void
+    {
+        $calendar = m::mock(MarketCalendarRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $replays = m::mock(ReplayVerificationService::class);
+        $evidence = m::mock(MarketDataEvidenceExportService::class);
+        $calendar->shouldNotReceive('tradingDatesBetween');
+        $publications->shouldNotReceive('findCurrentPublicationForTradeDate');
+        $replays->shouldNotReceive('verifyRunAgainstFixture');
+        $evidence->shouldNotReceive('exportReplayEvidence');
+
+        $service = new ReplayBackfillService($calendar, $publications, $replays, $evidence);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('REPLAY_BACKFILL_UNKNOWN_FIXTURE_CASE: totally_unrecognised_case');
+
+        $service->execute('2026-03-18', '2026-03-20', 'totally_unrecognised_case');
+    }
+
+    /**
+     * `F-MD-B18-A002-015`, `MD-S050-R0053` -- the C2 boundary this predicate names directly: `BLOCKED`
+     * is not a weaker `PASS`. A fixture case that legitimately expects `MISMATCH`
+     * (`reason_code_mismatch_case`) but whose replay comes back `NOT_ADMISSIBLE`/`BLOCKED` (required
+     * proof unavailable, per `E-MD-B18-A002-052`) must not be counted as a fixture pass, and the
+     * actual replay status recorded must stay `BLOCKED` -- never silently promoted to match the
+     * fixture's own unrelated expectation.
+     */
+    public function test_execute_does_not_count_a_blocked_replay_as_passed_for_a_mismatch_expecting_case(): void
+    {
+        $calendar = m::mock(MarketCalendarRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $replays = m::mock(ReplayVerificationService::class);
+        $evidence = m::mock(MarketDataEvidenceExportService::class);
+        $fixtureRoot = sys_get_temp_dir().'/replay_backfill_root_'.uniqid();
+        mkdir($fixtureRoot, 0777, true);
+        $outputDir = sys_get_temp_dir().'/replay_backfill_output_'.uniqid();
+
+        $calendar->shouldReceive('tradingDatesBetween')->once()->andReturn(['2026-03-18']);
+        $publication = (object) ['publication_id' => 61, 'run_id' => 61];
+        $publications->shouldReceive('findCurrentPublicationForTradeDate')->once()->with('2026-03-18')->andReturn($publication);
+        $fixturePath = $fixtureRoot.'/2026-03-18/publication_61';
+        mkdir($fixturePath, 0777, true);
+        $replays->shouldReceive('verifyRunAgainstFixture')->once()->with(61, $fixturePath, null, 61)->andReturn([
+            'replay_id' => 161,
+            'trade_date' => '2026-03-18',
+            // The genuine post-E052 shape: required proof was unavailable, so the replay itself
+            // reports BLOCKED/NOT_ADMISSIBLE, unrelated to whatever this fixture case expected.
+            'comparison_result' => 'NOT_ADMISSIBLE',
+            'replay_status' => 'BLOCKED',
+            'comparison_note' => 'REPLAY_EXPECTED_PROOF_INCOMPLETE: required fixture proof was unavailable: expected_coverage_context.coverage_reason_code',
+        ]);
+        $evidence->shouldReceive('exportReplayEvidence')->once()->with(161, '2026-03-18', $outputDir.'/2026-03-18')->andReturn([
+            'output_dir' => $outputDir.'/2026-03-18',
+            'files' => ['replay_result.json'],
+        ]);
+
+        $service = new ReplayBackfillService($calendar, $publications, $replays, $evidence);
+        $summary = $service->execute('2026-03-18', '2026-03-18', 'reason_code_mismatch_case', $fixtureRoot, $outputDir, false);
+
+        $this->assertFalse($summary['all_passed'],
+            'a BLOCKED replay must never be counted as a fixture pass, regardless of what the fixture case expected');
+        $this->assertFalse($summary['cases'][0]['passed']);
+        $this->assertSame('MISMATCH', $summary['cases'][0]['expected_outcome']);
+        $this->assertSame('NOT_ADMISSIBLE', $summary['cases'][0]['observed_outcome']);
+        $this->assertSame('BLOCKED', $summary['cases'][0]['replay_status'],
+            'the actual replay status must be preserved as BLOCKED -- expectation-match and replay-status are not the same question');
+    }
 }

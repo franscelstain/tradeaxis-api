@@ -475,6 +475,51 @@ final class MarketDataReplayVerificationProofBasis
             'basis' => 'restates MD-S050-R0031\'s same discriminating pair from the FAIL side: complete required proof, a genuinely VERIFIED bound context, and one deliberate field divergence (`bars_rows_written`) reports `replay_status=FAIL`/`comparison_result=MISMATCH`/`admission_state=ADMISSIBLE`, with the diverged field named in `mismatches`. The negative guard is MD-S050-R0031\'s own missing-required-proof case, which reports `BLOCKED`, never `FAIL` -- the same mutation-proven pair proves both directions of this predicate too.',
         ],
 
+        // ---- F-MD-B18-A002-015 (bounded second remediation unit, C2 status semantics carried into
+        // the backfill consumer): MD-S050-R0053 ("BLOCKED is not a weaker PASS"), MD-S002-R0009
+        // ("BLOCKED treated as missing proof, never converted to pass") and MD-S002-R0010 ("pass rates
+        // ... cannot compensate for a semantic mismatch") were all three bound to
+        // B18ReplayAdmissibilityBoundaryTest -- a citation-scanning corpus guard for an entirely
+        // different concern (whether any active surface cites a replay PASS as evidence it cannot
+        // establish), never exercising ReplayBackfillService at all. The real defect these three name
+        // was executable: `expectedOutcomeForFixtureCase()` returned `null` for any `--fixture_case`
+        // value outside its four-entry map, and `$passed = $expectedOutcome ? ... : true` turned that
+        // into an automatic pass for every date -- after doing the full replay/export work for each
+        // one, per C2's "case/fixture tidak dikenal ... tolak sebelum bekerja; tidak memilih pointer
+        // atau menebak expected outcome." `ReplayBackfillService::execute()` now rejects any
+        // `$fixtureCase` not in a single `KNOWN_FIXTURE_CASES` source of truth (shared with
+        // `expectedOutcomeForFixtureCase()`, so the two can never diverge) before any calendar lookup,
+        // directory creation, or replay execution -- proven by `shouldNotReceive` on every
+        // collaborator, not merely by asserting the thrown exception. Separately, re-verified per
+        // instruction that the *known*-case comparison itself needed no further change: `$observedOutcome
+        // === $expectedOutcome` already fails for every one of the four named cases (`MATCH`,
+        // `MISMATCH`, and the exception-path `ERROR` sentinel) when the actual outcome is
+        // `NOT_ADMISSIBLE` (E-MD-B18-A002-052's BLOCKED value), since none of those four values is the
+        // string `NOT_ADMISSIBLE` -- proven directly with a `reason_code_mismatch_case` fixture whose
+        // replay returns `comparison_result=NOT_ADMISSIBLE`/`replay_status=BLOCKED`. No current named
+        // fixture case expects `BLOCKED`/`NOT_ADMISSIBLE` (confirmed by reading the map in full), so
+        // C2's "fixture negatif memang mengharapkan ERROR/BLOCKED" row has nothing to implement here;
+        // inventing such a case was out of scope and not done. Sibling consumers
+        // (`ReplaySmokeSuiteService`'s hardcoded internal case map; `FullRangeCurrentEvidenceReplayService`'s
+        // positive allowlist requiring `MATCH`+`PASS`+zero mismatches+both admission states
+        // `ADMITTED_COMPLETE`) were confirmed, not assumed, structurally immune to this defect and were
+        // not touched.
+        'MD-S050-R0053' => [
+            'positive' => 'ReplayBackfillServiceTest::test_execute_does_not_count_a_blocked_replay_as_passed_for_a_mismatch_expecting_case',
+            'negative' => 'ReplayBackfillServiceTest::test_execute_runs_verification_for_each_trading_date_and_writes_summary',
+            'basis' => 'a `reason_code_mismatch_case` fixture (expects `MISMATCH`) whose replay reports `comparison_result=NOT_ADMISSIBLE`/`replay_status=BLOCKED` is asserted `passed=false` and `all_passed=false`, with `replay_status` preserved as `BLOCKED` in the case record -- `BLOCKED` is never silently promoted to a pass because the fixture expected something else. The negative guard is the pre-existing, unmodified three-date `valid_case` run where every replay genuinely `MATCH`es, asserted `all_passed=true` -- so the rule is not satisfied by a comparator that rejects everything. Mutation-proven: forcing `$passed = true` unconditionally (byte-restored after, sha256 identical) turned the positive red while the unrelated unknown-case and missing-publication tests stayed green.',
+        ],
+        'MD-S002-R0009' => [
+            'positive' => 'ReplayBackfillServiceTest::test_execute_does_not_count_a_blocked_replay_as_passed_for_a_mismatch_expecting_case',
+            'negative' => 'ReplayBackfillServiceTest::test_execute_runs_verification_for_each_trading_date_and_writes_summary',
+            'basis' => 'same discriminating pair as MD-S050-R0053, which this restates as the release-candidate acceptance-criteria wording: `BLOCKED` is treated as missing proof (the `passed=false`/`all_passed=false` assertions) and never silently converted to pass.',
+        ],
+        'MD-S002-R0010' => [
+            'positive' => 'ReplayBackfillServiceTest::test_execute_does_not_count_a_blocked_replay_as_passed_for_a_mismatch_expecting_case',
+            'negative' => 'ReplayBackfillServiceTest::test_execute_rejects_an_unknown_fixture_case_before_any_work',
+            'basis' => 'the backfill instance of "pass rates ... cannot compensate for a semantic mismatch": `$allPassed` in `ReplayBackfillService::execute()` is monotonic by construction -- set `true` once before the date loop and only ever written to `false` inside it, with no code path that resets it back to `true` once any date fails -- so the single-date `BLOCKED` case the positive guard proves generalizes to any range: one non-conforming date can never be compensated by others that matched, because nothing in the loop is capable of un-failing the aggregate. The negative guard proves the companion half of "cannot compensate" -- an ambiguous/unrecognised case is rejected outright rather than having some default outcome silently chosen for it (`tidak memilih pointer atau menebak expected outcome`), proven with `shouldNotReceive` on every collaborator so no work happens before the refusal.',
+        ],
+
         // ---- MD-S050-R0017, the anti-future list. Two of its nine items were covered only by a reflection
         // check that a cutoff parameter exists, which an ignored parameter passes.
 
@@ -634,24 +679,6 @@ final class MarketDataReplayVerificationProofBasis
             'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
             'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
             'basis' => 'names the admissible alternative evidence; the corpus guard forbids the substitution',
-        ],
-        // F-MD-B18-A002-015: executable, ReplayBackfillService counts an unknown fixture case as passed whatever the outcome, BLOCKED included.
-        'MD-S050-R0053' => [
-            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
-            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
-            'basis' => 'BLOCKED is not a weaker PASS - a citation rule',
-        ],
-        // F-MD-B18-A002-015: executable, ReplayBackfillService converts BLOCKED to passed for an unknown fixture case.
-        'MD-S002-R0009' => [
-            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
-            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
-            'basis' => 'BLOCKED-never-a-pass is exactly a citation prohibition the corpus guard scans for',
-        ],
-        // F-MD-B18-A002-015: executable, ReplayBackfillService lets a MISMATCH pass for an unknown fixture case; no acceptance guard.
-        'MD-S002-R0010' => [
-            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
-            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
-            'basis' => 'pass-rate-cannot-compensate is a citation prohibition in scope of the corpus guard',
         ],
         // F-MD-B18-A002-015: executable, the coverage reason code is never persisted and the export synthesizes it from the gate state, collapsing distinct evaluator reasons.
         'MD-S040-R0071' => [

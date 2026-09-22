@@ -1,0 +1,79 @@
+{
+  "evidence_id": "E-MD-B18-A002-053",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+  "issued_at": "2026-09-22T22:30:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS_SECOND_BOUNDED_UNIT_THREE_PREDICATES_PROVEN_F015_REMAINS_OPEN",
+  "evidence_scope": "F015_REPLAY_BACKFILL_FIXTURE_CASE_SEMANTICS_UNKNOWN_CASE_REJECTED_BEFORE_WORK_BLOCKED_NEVER_COUNTED_AS_PASS",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-015"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-052",
+    "CI-MD-B18-A002-001"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "Second bounded remediation unit of F-MD-B18-A002-015, scoped explicitly to MD-S050-R0053 ('BLOCKED is not a weaker PASS'), MD-S002-R0009 ('BLOCKED treated as missing proof, never converted to pass') and MD-S002-R0010 ('pass rates or row-count similarity cannot compensate for a semantic mismatch'), per instruction not to attempt G04/G07/G08/G09 or close F-015 in this turn. Re-verified from current authority before any change: Backtest_Metrics_and_Acceptance_Criteria_LOCKED.md lines 13/15 (R0009/R0010) and Replay_Verification_Contract_LOCKED.md line 101 (R0053), plus the consolidated remediation package's C2 table row 'Case/fixture tidak dikenal ... Tolak sebelum bekerja; tidak memilih pointer atau menebak expected outcome' and row 'Fixture negatif memang mengharapkan ERROR/BLOCKED: Catat fixture expectation matched terpisah; status replay tetap ERROR/FAIL/BLOCKED yang sebenarnya'. Re-read ReplayBackfillService.php in full (not from the prior audit's summary): expectedOutcomeForFixtureCase() returned null for any unrecognised --fixture_case, and $passed = $expectedOutcome ? $observedOutcome === $expectedOutcome : true turned that into an automatic pass for every date in the range, after the full replay/export work for each one. ReplayBackfillCommand.php confirmed to have no independent --fixture_case validation of its own, so a single fix inside execute() covers every caller.",
+  "probes": [
+    { "id": "P172-unknown-fixture-case-rejected-before-any-work", "caught": false, "note": "new test: an unrecognised --fixture_case throws REPLAY_BACKFILL_UNKNOWN_FIXTURE_CASE before any work, proven with shouldNotReceive on the calendar, publication repository, replay service and evidence exporter -- not merely by asserting the exception" },
+    { "id": "P173-known-case-with-matching-outcome-still-passes", "caught": false, "note": "pre-existing, unmodified test_execute_runs_verification_for_each_trading_date_and_writes_summary (three dates, all genuinely MATCH) still asserts all_passed=true -- confirms the new rejection did not narrow the valid path" },
+    { "id": "P174-known-case-expecting-mismatch-but-observing-blocked-not-counted-as-passed", "caught": false, "note": "new test: a reason_code_mismatch_case fixture (expects MISMATCH) whose real verifyRunAgainstFixture() call (per E-MD-B18-A002-052) returns comparison_result=NOT_ADMISSIBLE/replay_status=BLOCKED asserts passed=false, all_passed=false, and replay_status preserved as BLOCKED in the case record -- expectation-match and actual replay status are not conflated" },
+    { "id": "P175-no-current-fixture-case-expects-blocked", "caught": false, "note": "KNOWN_FIXTURE_CASES read in full: valid_case=>MATCH, reason_code_mismatch_case=>MISMATCH, broken_manifest_case=>ERROR, missing_file_case=>ERROR -- none maps to BLOCKED/NOT_ADMISSIBLE, so C2's 'fixture negatif memang mengharapkan ERROR/BLOCKED' row has nothing to implement for this predicate set; no case invented" },
+    { "id": "P176-sibling-consumers-confirmed-not-reused-not-refactored", "caught": false, "note": "ReplaySmokeSuiteService (hardcoded internal case map, arbitrary input cannot reach it) and FullRangeCurrentEvidenceReplayService (casePassed() is a positive allowlist requiring MATCH+PASS+zero mismatches+both admission states ADMITTED_COMPLETE) re-read and confirmed structurally immune to this defect, matching the prior audit turn's finding; neither touched" },
+    { "id": "P177-mutation-A-remove-unknown-case-rejection", "caught": true, "note": "the array_key_exists pre-execution check temporarily replaced with `if (false)` (byte-for-byte copy saved first): the unknown-case-rejection proof turned red (a different exception -- storagePath() undefined on the test's mocked container -- fired instead, since the flow proceeded past the removed guard); the two unaffected tests stayed green. Restored byte-for-byte after; sha256 identical before/after; control green again" },
+    { "id": "P178-mutation-B-force-blocked-to-count-as-passed", "caught": true, "note": "$passed = $expectedOutcome ? $observedOutcome === $expectedOutcome : true; temporarily replaced with $passed = true; (byte-for-byte copy saved first): the BLOCKED-not-counted-as-passed proof turned red (asserted false, observed true) while the unknown-case-rejection and missing-publication tests stayed green. Restored byte-for-byte after; sha256 identical before/after; control green again" }
+  ],
+  "tested_source_sha256": {
+    "app/Application/MarketData/Services/ReplayBackfillService.php": "080ED14C3B2E47D213DB5CFAA954E0C2DFE0E255543253A529BC25B9EC1B0E54",
+    "tests/Unit/MarketData/ReplayBackfillServiceTest.php": "BD26E7AA22DB900D47A9D6C24B66A37BBA92CE5C98B8D624B7BE6CA0E807680B",
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php": "EA7B03BB75A56BA0218D1BCFFFAA37878096AB2494C2FDBF38768F2CF0CBC06C"
+  },
+  "schema_changed": false,
+  "root_cause_and_implementation": "ReplayBackfillService gained a single new private const KNOWN_FIXTURE_CASES (the four existing case=>expected-outcome pairs, unchanged in content), now the one source of truth both execute()'s new pre-execution rejection and expectedOutcomeForFixtureCase() read from -- the two can never diverge into two different notions of 'known' because there is only one list. execute() now throws REPLAY_BACKFILL_UNKNOWN_FIXTURE_CASE (naming the offending value and the known set) as its very first action, before guardDateRange(), before any storage_path()/is_dir() filesystem check, before the calendar lookup, before the date loop -- matching C2's 'tolak sebelum bekerja; tidak memilih pointer atau menebak expected outcome' literally: no outcome is guessed, no partial work happens. expectedOutcomeForFixtureCase()'s own map lookup is otherwise unchanged; its '?? null' fallback is now unreachable dead-but-harmless code since execute() already rejects anything not in the map, left in place as a fail-closed default rather than removed, since removing it would require re-deriving what should happen if the two ever did diverge -- they cannot, by construction, so this is a non-issue. Separately, the known-case comparison logic itself ($observedOutcome === $expectedOutcome) required no change: it was re-verified, not assumed, that this strict-equality check already correctly fails for every one of the four current known cases when the actual observed outcome is the new NOT_ADMISSIBLE value E-MD-B18-A002-052 introduced, since NOT_ADMISSIBLE is not equal to MATCH, MISMATCH, or ERROR under strict string comparison -- proven directly with a mocked ReplayVerificationService returning exactly that shape for a reason_code_mismatch_case fixture. No current named fixture case expects BLOCKED/NOT_ADMISSIBLE (the map has only MATCH/MISMATCH/ERROR as values), so C2's negative-fixture-expects-BLOCKED row has no existing case to preserve here; inventing one was explicitly out of scope per instruction and not done. ReplayBackfillCommand.php was read and confirmed to pass --fixture_case straight through to execute() with no validation of its own, so this one change covers the only entry point besides direct service instantiation (which the test suite already exercises). Two targeted tests were added to the existing, previously two-method ReplayBackfillServiceTest.php: test_execute_rejects_an_unknown_fixture_case_before_any_work (Mockery shouldNotReceive on all four collaborators, proving zero work occurs, not merely that an exception is thrown) and test_execute_does_not_count_a_blocked_replay_as_passed_for_a_mismatch_expecting_case (a real-shaped mocked verifyRunAgainstFixture() return matching E-052's NOT_ADMISSIBLE/BLOCKED output, asserting passed=false, all_passed=false, and replay_status still BLOCKED in the persisted case). Both pre-existing tests were left completely unmodified and re-confirmed green, proving no regression to the already-covered paths (three-date all-matching success case; missing-publication error-and-stop case). Both new tests mutation-proven per governance protocol with byte-for-byte restore.",
+  "scope_result": {
+    "predicates_reviewed": ["MD-S050-R0053", "MD-S002-R0009", "MD-S002-R0010"],
+    "predicates_promoted_to_proven": ["MD-S050-R0053", "MD-S002-R0009", "MD-S002-R0010"],
+    "predicates_explicitly_not_touched": ["MD-S040-R0071", "MD-S050-R0051", "MD-S050-R0052", "MD-S036-R0012", "MD-S050-R0036", "MD-S003-R0021", "MD-S005-R0096", "MD-S050-R0033", "MD-S040-R0077"],
+    "production_code_changed": true,
+    "production_change_summary": "app/Application/MarketData/Services/ReplayBackfillService.php: added KNOWN_FIXTURE_CASES const, a pre-execution rejection for any fixture_case not in it, and pointed expectedOutcomeForFixtureCase() at the same const. No other method changed.",
+    "expected_blocked_fixture_case_invented": false,
+    "sibling_consumers_touched": false,
+    "f015_status": "OPEN -- REMEDIATION_IN_CONSOLIDATED_PACKAGE (unchanged, per instruction not to close F-015 -- 9 of its 14 predicates remain INCOMPLETE)",
+    "md_dep_0017_status": "UNCHANGED -- still BLOCKING, still bundles F-013 through F-018",
+    "traceability_matrix_coverage_status_touched": false,
+    "satisfied_or_denominator_changed": false,
+    "prior_findings_reopened": false,
+    "mutant_or_temp_artifact_remaining": false,
+    "commit_or_push": "NONE -- explicitly withheld per current instruction"
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "slices_complete": ["capture", "binding", "seal", "reader", "admission (publication_exact)"],
+    "slices_remaining": [],
+    "incomplete_bases": 45,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [],
+    "clarification": "MarketDataReplayVerificationProofBasis's INCOMPLETE count moves from 48 to 45 (exactly the three predicates this evidence promotes, confirmed via git stash). F-MD-B18-A002-015 remains OPEN with 9 of its own 14 predicates still INCOMPLETE: MD-S040-R0071/MD-S040-R0077 (G04, coverage-reason preservation), MD-S050-R0051/MD-S050-R0052 (G08, consumer/admission claim scan), MD-S036-R0012/MD-S050-R0036/MD-S003-R0021/MD-S005-R0096 (G09, rebind existing executing guards), MD-S050-R0033 (G07, hash-only divergence perturbation rebind). MD-DEP-0017 remains BLOCKING pending F-015 (partial), F-016, F-017 and F-018."
+  },
+  "full_suite": {
+    "status": "TARGETED_ONLY_PER_INSTRUCTION",
+    "reason": "Targeted suites run, all green: ReplayBackfillServiceTest.php 4/4 (18 assertions, includes the two new discriminating tests and the two unmodified pre-existing tests); OpsCommandSurfaceTest.php 64/64 (371 assertions, confirms no collateral impact on the CLI command surface). GovernanceGateReadOnlyExecutionTest 9/9 (5742 assertions), FindingRecordConsistencyTest 3/3. Full application suite not run, per instruction that it is warranted only at coherent implementation closure or governance/regression need, neither of which applies to this three-predicate bounded unit.",
+    "prior_baseline": "E052's targeted state; full application suite last run at E051 (2417 tests, 34154 assertions, 0 errors, 7 pre-existing failures, 0 skips) remains the last full-suite reference point, not re-run this turn."
+  },
+  "post_record_validation": "Results attached via current CI after issue.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "F-MD-B18-A002-015's remaining bounded units, per canonical C2 ordering (guard scan G01-G09 in the consolidated package): G04 (coverage_gate_reason_code persisted without re-synthesis, MD-S040-R0071/R0077 -- the coverage_reason_code column does not exist in any migration or base SQL, confirmed absent by the prior audit turn, so this is a genuine schema-plus-application executable defect, not a proof-only rebind); then G07/G08/G09 (MD-S050-R0033, MD-S050-R0051/R0052, MD-S036-R0012/MD-S050-R0036/MD-S003-R0021/MD-S005-R0096 -- guard-only rebinds to already-existing executing tests, no production change expected). No data_260914 action, new attempt, strategy change or relock. No commit or push performed, per current instruction."
+}

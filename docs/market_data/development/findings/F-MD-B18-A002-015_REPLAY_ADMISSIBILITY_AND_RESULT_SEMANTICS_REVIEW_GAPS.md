@@ -154,3 +154,67 @@ remain `INCOMPLETE`. `MD-DEP-0017` remains `BLOCKING`. Next bounded unit: the un
 defect in `ReplayBackfillService.php:68` and `MD-S050-R0053`/`MD-S002-R0009`/`MD-S002-R0010`, which
 also needs re-checking that a now-correctly-`BLOCKED` date is treated as failed for every named
 fixture case, not only the previously-unhandled unknown one.
+
+## E053: backfill fixture-case semantics (MD-S050-R0053/MD-S002-R0009/MD-S002-R0010) — second bounded unit — 2026-09-22T22:30:00+07:00
+
+Bounded to exactly the three predicates the prior audit turn named for this unit. G04, G07, G08, G09
+and every other F-015 predicate are untouched.
+
+**Defect confirmed by reading current source.** `ReplayBackfillService::expectedOutcomeForFixtureCase()`
+returned `null` for any `--fixture_case` outside its four-entry map, and
+`$passed = $expectedOutcome ? $observedOutcome === $expectedOutcome : true` turned that into an
+automatic pass for every date in the requested range -- reached only *after* the full replay/export
+work already ran for each one. `ReplayBackfillCommand.php` was confirmed to carry no independent
+`--fixture_case` validation of its own, so the fix belongs in `execute()` alone.
+
+**Fix.** A single `KNOWN_FIXTURE_CASES` constant is now the sole source of truth for both a new
+pre-execution rejection (`execute()`'s first action, before `guardDateRange()`, before any
+filesystem/calendar work, before the date loop) and `expectedOutcomeForFixtureCase()`'s own lookup --
+the two notions of "known" can never diverge because there is only one list. An unrecognised case is
+refused outright, matching C2's "tolak sebelum bekerja; tidak memilih pointer atau menebak expected
+outcome" literally: no outcome is guessed, no partial work happens for any date.
+
+**Known-case comparison, re-verified rather than assumed to need a change.** `$observedOutcome ===
+$expectedOutcome` already correctly fails for all four named cases (`MATCH`, `MISMATCH`, and the
+exception-path `ERROR` sentinel) when the actual outcome is the `NOT_ADMISSIBLE` value
+`E-MD-B18-A002-052` introduced, since none of those three strings equals `NOT_ADMISSIBLE` -- proven
+directly with a `reason_code_mismatch_case` fixture whose mocked `verifyRunAgainstFixture()` call
+returns exactly that shape. No production change was needed for this half. **No current named fixture
+case expects `BLOCKED`/`NOT_ADMISSIBLE`** (the map's only values are `MATCH`/`MISMATCH`/`ERROR`), so
+C2's "fixture negatif memang mengharapkan ERROR/BLOCKED" row has nothing to implement here; inventing
+such a case was explicitly out of scope and not done.
+
+**Sibling consumers, confirmed not reused.** `ReplaySmokeSuiteService` iterates a hardcoded internal
+case map that arbitrary input cannot reach; `FullRangeCurrentEvidenceReplayService::casePassed()` is
+a positive allowlist requiring `MATCH`+`PASS`+zero mismatches+both admission states
+`ADMITTED_COMPLETE`. Both re-confirmed structurally immune to this defect, matching the prior audit
+turn's finding; neither touched.
+
+**Proof.** Two new tests added to the previously two-method `ReplayBackfillServiceTest.php`:
+`test_execute_rejects_an_unknown_fixture_case_before_any_work` (Mockery `shouldNotReceive` on the
+calendar, publication repository, replay service and evidence exporter, proving zero work occurs, not
+merely that an exception is thrown) and
+`test_execute_does_not_count_a_blocked_replay_as_passed_for_a_mismatch_expecting_case` (a
+real-shaped mocked `verifyRunAgainstFixture()` return matching E-052's `NOT_ADMISSIBLE`/`BLOCKED`
+output, asserting `passed=false`, `all_passed=false`, and `replay_status` preserved as `BLOCKED` in
+the persisted case record). Both pre-existing tests were left completely unmodified and re-confirmed
+green. Both new tests mutation-proven: removing the unknown-case rejection turned that proof red
+while the others stayed green; forcing `$passed=true` unconditionally turned the `BLOCKED`-not-passed
+proof red while the others stayed green. Both mutations byte-restored after, sha256-verified identical
+before/after, control green again, no mutant artifact left behind.
+
+`MD-S050-R0053`, `MD-S002-R0009` and `MD-S002-R0010` moved `INCOMPLETE` → `PROVEN` in
+`MarketDataReplayVerificationProofBasis` (confirmed via `git stash`: without-basis count 48 → 45,
+exactly these three). No traceability-matrix `coverage_status`/`SATISFIED`/denominator change.
+
+Targeted suites green: `ReplayBackfillServiceTest` 4/4, `OpsCommandSurfaceTest` 64/64 (confirms no
+collateral impact on the CLI command surface). Governance self-tests 12/12. Full suite not run, not
+required for a three-predicate bounded unit.
+
+**This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.** 9 of its own 14 predicates
+remain `INCOMPLETE`: `MD-S040-R0071`/`MD-S040-R0077` (G04, coverage-reason preservation --
+`coverage_reason_code` has no column in any migration or base SQL, a genuine schema-plus-application
+defect, not a proof-only rebind); `MD-S050-R0051`/`MD-S050-R0052` (G08, consumer/admission claim
+scan); `MD-S036-R0012`/`MD-S050-R0036`/`MD-S003-R0021`/`MD-S005-R0096` (G09, rebind to already-
+existing executing guards); `MD-S050-R0033` (G07, hash-only divergence perturbation rebind).
+`MD-DEP-0017` remains `BLOCKING`. Next bounded unit, per canonical C2 guard-scan ordering: G04.

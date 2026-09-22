@@ -9,6 +9,19 @@ use Carbon\Carbon;
 
 class ReplayBackfillService
 {
+    /**
+     * `F-MD-B18-A002-015` / C2 (consolidated remediation package): "case/fixture tidak dikenal ...
+     * tolak sebelum bekerja; tidak memilih pointer atau menebak expected outcome." The single source
+     * of truth for both the pre-execution rejection below and `expectedOutcomeForFixtureCase()`, so
+     * the two can never diverge into two different notions of "known".
+     */
+    private const KNOWN_FIXTURE_CASES = [
+        'valid_case' => 'MATCH',
+        'reason_code_mismatch_case' => 'MISMATCH',
+        'broken_manifest_case' => 'ERROR',
+        'missing_file_case' => 'ERROR',
+    ];
+
     private $calendar;
     private $publications;
     private $replays;
@@ -28,6 +41,16 @@ class ReplayBackfillService
 
     public function execute($startDate, $endDate, $fixtureCase = 'valid_case', $fixtureRoot = null, $outputDir = null, $continueOnError = false)
     {
+        // Rejected before any work: no calendar lookup, no directory creation, no replay execution
+        // for any date. An unrecognised case must never silently become an "always passes" run
+        // (`expectedOutcomeForFixtureCase()` returning null previously let exactly that happen) and
+        // must never have an outcome guessed for it -- it is refused outright, the same way a
+        // missing fixture root already is below.
+        if (! array_key_exists($fixtureCase, self::KNOWN_FIXTURE_CASES)) {
+            throw new \RuntimeException('REPLAY_BACKFILL_UNKNOWN_FIXTURE_CASE: '.$fixtureCase
+                .'. Known fixture cases: '.implode(', ', array_keys(self::KNOWN_FIXTURE_CASES)).'.');
+        }
+
         $this->guardDateRange($startDate, $endDate);
 
         $fixtureRoot = $fixtureRoot ?: storage_path('app/market_data/replay-fixtures');
@@ -149,14 +172,10 @@ class ReplayBackfillService
 
     private function expectedOutcomeForFixtureCase($fixtureCase)
     {
-        $map = [
-            'valid_case' => 'MATCH',
-            'reason_code_mismatch_case' => 'MISMATCH',
-            'broken_manifest_case' => 'ERROR',
-            'missing_file_case' => 'ERROR',
-        ];
-
-        return $map[$fixtureCase] ?? null;
+        // `execute()` already rejects any case not in `self::KNOWN_FIXTURE_CASES` before reaching
+        // here, so `?? null` is a fail-closed default for a path that should now be unreachable, not
+        // a second definition of "known" that could drift from the one above.
+        return self::KNOWN_FIXTURE_CASES[$fixtureCase] ?? null;
     }
 
     private function normalizePathForDisplay($path)
