@@ -1,0 +1,61 @@
+{
+  "evidence_id": "E-MD-B18-A002-045",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-22T10:30:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "REVIEW_COMPLETE_NO_PREDICATE_PROMOTED",
+  "evidence_scope": "PER_PREDICATE_PROOF_BASIS_REVIEW_OF_THE_TEN_F013_BOUND_BASES",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-013",
+    "F-MD-B18-A002-021"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-044"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "Per-predicate proof-basis review of the ten MD-S050/MD-S003/MD-S019 bases F-MD-B18-A002-013 moved to INCOMPLETE, now that Admission (E-044) exists for PUBLICATION_EXACT. Audit only: no application or test code is changed by this evidence. For each predicate: read its exact rule_text from the traceability matrix, read the exact production code path its currently-bound positive/negative guard exercises, and independently determine whether the requirement is now genuinely established, partially established with a named residual gap, or blocked on a guard binding that does not exercise the real computation at all.",
+  "probes": [],
+  "tested_source_sha256": {},
+  "schema_changed": false,
+  "root_cause_and_implementation": "This is a record/review artifact, not an implementation change. Method: (1) confirmed all ten rule_ids against the current STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv -- all ten carry coverage_status=NOT_ASSESSED there (a separate, higher-level classification column governed by its own closure process, unaffected by this review) and are recorded as INCOMPLETE in the actual proof-basis registry, docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php::INCOMPLETE -- confirmed present there, not PROVEN, by direct grep before any review conclusion was drawn. (2) Read PublicationInputBindingService::deriveCompatibilityHashes() line by line to determine exactly which capture domain backs each of the seven compatibility hashes (identity_revision_set_hash, calendar_revision_set_hash, status_revision_set_hash, event_revision_set_hash, source_scale_assessment_set_hash, market_structure_revision_set_hash, factor_decision_set_hash) Admission's actualBoundInputContext() (E-044) now reads. Finding: identity_revision_set_hash is derived exclusively from the market-structure-consumed-inputs/v1 capture (C11 board/price-band/tick resolution) via deriveMarketStructureBindings(), not from the C02 universe_identity capture (temporal-identity-revisions/v1) MD-S050-R0008/MD-S019-R0067 actually name -- a genuine domain mismatch in E-044's own field mapping, newly discovered by this review and recorded as F-MD-B18-A002-021. calendar_revision_set_hash/status_revision_set_hash are correctly domain-matched (real calendar_session and eligibility-expectation/status captures). event_revision_set_hash/source_scale_assessment_set_hash/factor_decision_set_hash are correctly domain-matched to event/verification/factor-decision content, but PublicationInputBindingService derives no compatibility hash at all for the C09 ancillary/contamination domain (confirmed by an exhaustive grep of the file for ancillary/contamination/dormant -- zero matches), so 'contamination decisions' (one of MD-S050-R0012's four named members) remains unbound regardless of guard binding. (3) Read ProducerRegistrySnapshot::capture() and MarketDataSemanticBindings::snapshot() to determine exactly what the registry_versions component's payload_hash (which E-044 now reads for reason_registry_hash/formula_registry_hash) actually contains: real eod_reason_codes entries, indicator_set_version, coverage_contract_version, and (via semantic_versions) price_product_version -- but no eligibility-version concept anywhere in the system (confirmed by grep across app/), a capture-completeness gap upstream of Admission. read_model_version/serialization_version/executable_build_identity remain live-config-sourced in actualBoundInputContext(), unchanged by E-044 (F-013 did not name these three), even though buildManifestByPublicationId() already exposes a manifest-level read_model_version/build_id E-044 did not read. (4) Read tests/Unit/MarketData/B18ReplayBoundInputIdentityContractTest.php in full -- the positive/negative guard currently bound to eight of the ten predicates (all but MD-S050-R0002/MD-S003-R0003). Finding: both its tests exercise MarketDataEvidenceExportService::exportReplayEvidence() against a hand-constructed md_replay_daily_metrics row with fabricated string values (identities('A')/identities('B'), e.g. 'TEMPORAL_A') -- they prove the evidence exporter passes an already-stored value through without dropping or defaulting it. Neither test calls, mocks, or otherwise exercises ReplayVerificationService::actualBoundInputContext() (the function E-044 actually changed) at all. This is exactly the gap F-013's own review of this same guard originally described ('the guard proves the exporter passes the identities through... does not prove that the identities bind what the contract names') -- unchanged by E-044, because E-044 changed the writer, not this guard, and this guard was never testing the writer. (5) Read tests/Unit/MarketData/B18ReplayComparisonExhaustivenessTest.php in full -- the guard bound to MD-S050-R0002/MD-S003-R0003. This one does exercise the real ReplayVerificationService::verifyRunAgainstFixture()/actualBoundInputContext() path (through a mocked EodPublicationRepository returning a manifest, with the comparison logic itself running unmocked), and its resolvedBoundInputs()/perturbation mechanism is self-calibrating (captures whatever the real computation returns rather than asserting a hardcoded expected value), so it is a materially better-grounded guard than the other eight predicates have. But MD-S050-R0002 requires the full eleven-field conjunction ('using exactly ... frozen with it') and MD-S003-R0003 requires the parallel eleven-item conjunction; both fail on the same residual gaps items (1)-(3) above name, so neither reaches PROVEN despite the stronger guard.",
+  "scope_result": {
+    "predicates_reviewed": 10,
+    "predicates_promoted_to_proven": 0,
+    "predicates_remaining_incomplete": 10,
+    "new_finding_discovered": "F-MD-B18-A002-021 (temporal_identity_hash domain mismatch; contamination-decisions, eligibility-version, and three live-config-sourced registry members remain unbound)",
+    "traceability_matrix_coverage_status_touched": false,
+    "proof_basis_array_membership_changed": false,
+    "proof_basis_inline_comments_annotated": true,
+    "bulk_promotion_performed": false
+  },
+  "remaining": {
+    "implementation_slices": 5,
+    "slices_complete": ["capture", "binding", "seal", "reader", "admission (publication_exact)"],
+    "slices_remaining": [],
+    "incomplete_bases": 64,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [],
+    "clarification": "No predicate, coverage, SATISFIED, or denominator number changes as a result of this review. All ten reviewed bases remain INCOMPLETE in MarketDataReplayVerificationProofBasis::INCOMPLETE, with their inline comments extended (not replaced) to name this review and F-MD-B18-A002-021 as the current, more precise reason each remains unestablished. F-MD-B18-A002-013 remains OPEN: its proof-basis obligation is not resolved by this review, and a newly-discovered defect within its own remediation (F-MD-B18-A002-021) is now tracked separately."
+  },
+  "full_suite": {
+    "status": "NOT_RUN_NO_CODE_CHANGED",
+    "reason": "This evidence is a documentation/governance-record review only: no app/ or tests/ file is changed by it (only docs/ finding, evidence, registry, stage-register and generated CURRENT_STATE files). Per current authority ('jangan menjalankan full application suite secara otomatis jika tidak ada code change dan current authority tidak mewajibkannya'), the full tests/Unit/MarketData suite was not re-run for this evidence; its last confirmed state remains E-MD-B18-A002-044's (2410 tests, 34039 assertions, 0 errors, 7 pre-existing MD-DEP-0015 failures, 0 skips).",
+    "prior_baseline": "E-MD-B18-A002-044"
+  },
+  "post_record_validation": "Governance self-tests (GovernanceGateReadOnlyExecutionTest + FindingRecordConsistencyTest) run after registration; see governance_self_test result recorded in the Stage Register update accompanying this evidence.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "F-MD-B18-A002-013 stays OPEN. Its most direct remaining obligation is F-MD-B18-A002-021's own resolution (temporal_identity_hash re-sourced from a genuine C02 universe_identity compatibility hash Binding does not yet derive; a decision on contamination-decisions/eligibility-version scope; read_model_version/build_identity/serialization_version sourced from the frozen manifest instead of live config) -- an Admission-refinement work unit under its own Change Impact Declaration, not performed here. Independently, MD-S050-R0009/MD-S019-R0068 (calendar_status_hash) and, more narrowly, MD-S019-R0069 (event/factor-set revisions only, no explicit verification-state/contamination wording) are the closest of the ten to PROVEN on content grounds alone -- their blocker is purely that the currently-bound guard (B18ReplayBoundInputIdentityContractTest) does not exercise the real ReplayVerificationService::actualBoundInputContext() computation; a guard rebind (or new guard) exercising the real path, reviewed and probed the way this whole attempt requires, would need to precede any promotion, and is not performed in this review-only turn. No data_260914 action, new attempt, strategy change or relock."
+}

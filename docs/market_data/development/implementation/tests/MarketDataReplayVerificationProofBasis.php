@@ -424,60 +424,70 @@ final class MarketDataReplayVerificationProofBasis
     // PROVEN only after the aggregate executed on the clean instance and every D003 probe was caught.
     public const INCOMPLETE = [
         // F-MD-B18-A002-013: publication-mode temporal identity is always empty (no eod_publications/eod_runs column, no writer) and the dataset boundary is unbound in publication mode.
+        // E-MD-B18-A002-045 review: E-044 (Admission) wired temporal_identity_hash to identity_revision_set_hash, which is real and non-empty, but F-MD-B18-A002-021 found it is derived exclusively from market-structure/board resolution content (C11), not the C02 universe/listing/symbol/provider-mapping revisions this predicate names -- a domain mismatch, still INCOMPLETE. The bound guard also still only proves evidence-export pass-through of a fabricated metric row, not the real writer.
         'MD-S050-R0008' => [
             'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
             'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
             'basis' => 'the temporal identity hash carrying dataset boundary and universe/listing/symbol/provider mappings is asserted bound and record-derived',
         ],
         // F-MD-B18-A002-013: publication-mode calendar/status identity is always empty (no eod_publications/eod_runs column, no writer).
+        // E-MD-B18-A002-045 review: E-044 (Admission) now sources calendar_status_hash from calendar_revision_set_hash+status_revision_set_hash, which are correctly domain-matched real calendar_session/eligibility-expectation content -- the closest of the ten bases to PROVEN on content grounds. Still INCOMPLETE only because the bound guard (B18ReplayBoundInputIdentityContractTest) exercises evidence-export pass-through of a fabricated metric row, never the real ReplayVerificationService::actualBoundInputContext() computation; a guard rebind/addition exercising the real path is the exact remaining step, not performed in this review-only turn.
         'MD-S050-R0009' => [
             'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
             'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
             'basis' => 'the calendar/status revision hash is asserted bound and record-derived',
         ],
         // F-MD-B18-A002-013: publication mode binds only factor_set_hash; event revisions and verification states are unbound, contamination decisions are never an input.
+        // E-MD-B18-A002-045 review: E-044 (Admission) now combines event_revision_set_hash+source_scale_assessment_set_hash+factor_decision_set_hash+factor_set_hash -- event revisions, verification states and factor-set revisions/decisions are now genuinely bound. Only "contamination decisions" remains unbound: F-MD-B18-A002-021 confirmed PublicationInputBindingService derives no compatibility hash at all for the C09 ancillary/contamination domain. Still INCOMPLETE (partial, narrower gap than before), and the bound guard still does not exercise the real writer.
         'MD-S050-R0012' => [
             'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
             'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
             'basis' => 'the event/factor revision hash covering verification states and factor-set revisions is asserted bound and record-derived',
         ],
         // F-MD-B18-A002-013: reason_registry_hash hashes constant state names in both modes; price-product, coverage and eligibility versions are unbound in publication mode.
+        // E-MD-B18-A002-045 review: E-044 (Admission) now sources reason_registry_hash/formula_registry_hash from the registry_versions capture's real payload_hash (real eod_reason_codes content, indicator_set_version, coverage_contract_version, and price_product_version via semantic_versions) instead of a hardcoded constant -- genuine progress, though both fields intentionally share one combined value rather than independently splitting formula from reason. F-MD-B18-A002-021 found "eligibility version" is captured nowhere in the system at all (a capture-completeness gap, not just an Admission wiring gap), and read_model_version/serialization_version/executable_build_identity still read live config, unchanged. Still INCOMPLETE.
         'MD-S050-R0014' => [
             'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
             'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
             'basis' => 'formula registry, reason registry, read-model, serialization and executable build identities are each asserted bound and record-derived',
         ],
         // F-MD-B18-A002-013: publication-mode temporal identity is always empty (as MD-S050-R0008).
+        // E-MD-B18-A002-045 review: same finding as MD-S050-R0008 -- E-044's temporal_identity_hash is real but domain-mismatched (market-structure/board content per F-MD-B18-A002-021, not temporal issuer/instrument/listing/symbol/provider-mapping revisions). Still INCOMPLETE.
         'MD-S019-R0067' => [
             'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
             'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
             'basis' => 'temporal issuer/instrument/listing/symbol and provider-mapping identity is asserted bound and record-derived; the consequent MD-S019-R0073 remains outstanding',
         ],
         // F-MD-B18-A002-013: publication-mode calendar/status identity is always empty (as MD-S050-R0009).
+        // E-MD-B18-A002-045 review: same finding as MD-S050-R0009 -- content is now genuinely correct (real calendar/status revisions), blocked purely on the bound guard not exercising the real writer. Closest of the ten to PROVEN; still INCOMPLETE pending a guard rebind.
         'MD-S019-R0068' => [
             'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
             'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
             'basis' => 'calendar/session/status revisions are asserted bound and record-derived; the consequent MD-S019-R0073 remains outstanding',
         ],
         // F-MD-B18-A002-013: publication mode binds only factor_set_hash; event revisions are unbound (as MD-S050-R0012).
+        // E-MD-B18-A002-045 review: this rule's own narrower wording ("corporate-action event/factor-set revisions", no explicit verification-state or contamination member) now appears fully content-covered by E-044's event_factor_hash combination -- the second-closest of the ten to PROVEN, alongside MD-S019-R0068, on the same guard-rebind blocker (the bound guard does not exercise the real writer). Kept INCOMPLETE conservatively pending that rebind and an explicit review confirming the narrower reading is correct, rather than promoted on this review's own interpretation.
         'MD-S019-R0069' => [
             'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
             'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
             'basis' => 'corporate-action event and factor-set revisions are asserted bound and record-derived; the consequent MD-S019-R0073 remains outstanding',
         ],
         // F-MD-B18-A002-013: reason registry nominal and publication-mode price-product/coverage/eligibility versions unbound (as MD-S050-R0014).
+        // E-MD-B18-A002-045 review: this rule's narrower wording ("price-product and formula/registry versions") is now substantively closer to covered by E-044's registry_versions-sourced hashes, but F-MD-B18-A002-021's read_model_version/serialization_version/executable_build_identity and eligibility-version gaps still apply where relevant. Still INCOMPLETE.
         'MD-S019-R0071' => [
             'positive' => 'B18ReplayBoundInputIdentityContractTest::test_every_named_identity_is_bound_into_the_exported_replay_result',
             'negative' => 'B18ReplayBoundInputIdentityContractTest::test_a_fixture_binding_different_identities_produces_a_different_block',
             'basis' => 'price-product and formula/registry versions are asserted bound through the formula and reason registry hashes and the read-model version; the consequent MD-S019-R0073 remains outstanding',
         ],
         // F-MD-B18-A002-013: the comparison guard diverges fabricated run-row temporal/calendar identities that production never persists.
+        // E-MD-B18-A002-045 review: E-044 (Admission) made the comparison itself use real, Reader-verified content instead of fabricated/live-recomputed values for several fields, and this predicate's own bound guard (B18ReplayComparisonExhaustivenessTest) does genuinely exercise the real ReplayVerificationService::actualBoundInputContext() path. But MD-S050-R0002 is a full eleven-item conjunction ("using exactly ... frozen with it"), and F-MD-B18-A002-021's residual gaps (temporal_identity_hash domain mismatch; contamination decisions; eligibility version; read_model_version/serialization_version/executable_build_identity still live-config) each independently break the conjunction. Still INCOMPLETE.
         'MD-S050-R0002' => [
             'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass',
             'negative' => 'B18ReplayComparisonExhaustivenessTest::test_a_fixture_declaring_every_frozen_input_correctly_still_passes',
             'basis' => 'code change, not only a guard. None of the eleven frozen-input identities was compared: verifyRunAgainstFixture wrote them into the stored result and compareExpectedAndActual never looked, and the fixture schema had no expected side at all, so a replay resolving today\'s indicator registry, today\'s build identity, or a different temporal identity than the one frozen with the publication reported MATCH. Added ReplayVerificationService::actualBoundInputContext() as the single source for the recorded and the compared value, an expected_bound_input_context block read from the fixture, and a per-field comparison over BOUND_INPUT_FIELDS. The guard declares all eleven at the values the replay resolved and perturbs one at a time, asserting the verdict is denied and the mismatch names bound_input_<field>; a companion test parses the MD-S050 publication-replay sentence and asserts the reviewed map covers exactly the inputs it names, so an input added to the contract with no field behind it fails. The negative guard declares all eleven correctly and still reaches PASS, so the rule is not satisfied by rejecting any fixture that carries the block. Reason codes are the registry as it stands -- config identity has its own, the rest fall through to REPLAY_NON_DETERMINISTIC_OUTPUT, which the registry defines as a deterministic-field mismatch with no more specific code; a dedicated REPLAY_BOUND_INPUT_MISMATCH was written and then reverted because Reason_Codes_Registry.md is STRATEGY/CONTROLLED_REVISION and adding vocabulary so an implementation change can emit it is not an implementation decision. Probe: comparing an empty field list turned exactly the eleven perturbations red and nothing else.',
         ],
         // F-MD-B18-A002-013: temporal revisions are mapped to the same fabricated frozen-input perturbation.
+        // E-MD-B18-A002-045 review: same conjunction problem as MD-S050-R0002, whose frozen-input perturbations this predicate's map directly reuses for "temporal revisions" and "formulas" -- both still carry F-MD-B18-A002-021's residual gaps. Still INCOMPLETE.
         'MD-S003-R0003' => [
             'positive' => 'B18ReplayComparisonExhaustivenessTest::test_the_exact_verification_map_names_exactly_what_the_contract_names',
             'negative' => 'B18ReplayComparisonExhaustivenessTest::test_every_guard_the_exact_verification_map_names_exists',
