@@ -252,6 +252,39 @@ class ReplayVerificationServiceTest extends TestCase
         $this->assertSame('', $withoutRegistryContent['executable_build_identity']);
     }
 
+    /**
+     * `F-MD-B18-A002-021` (closing review): `formula_registry_hash`/`reason_registry_hash` are the
+     * `registry_versions` component's own `payload_hash` -- found by scanning `components` for
+     * `component_key === 'registry_versions'`, not decoded from `registry_content` like the three
+     * fields above. That scan had never been exercised by any test with a real matching component
+     * present: the domain-isolation test above only supplies `universe_identity`/`ancillary`, and the
+     * exhaustiveness perturbation suite's fixture supplies no `registry_versions` component either, so
+     * both leave this specific extraction unproven and its baseline permanently empty. Proven directly
+     * here, the same way `universe_identity`/`ancillary` are proven for their own fields: presence
+     * yields the real payload_hash, changing it changes both fields, and absence is an honest empty
+     * value rather than a stale one.
+     */
+    public function test_formula_and_reason_registry_hash_come_from_the_registry_versions_component(): void
+    {
+        $baseline = $this->actualBoundInputContextForComponents([
+            ['stage_code' => 'RUN_CONTEXT', 'component_key' => 'registry_versions', 'slot_hash' => str_repeat('3', 64), 'payload_hash' => str_repeat('r', 64)],
+        ]);
+        $changed = $this->actualBoundInputContextForComponents([
+            ['stage_code' => 'RUN_CONTEXT', 'component_key' => 'registry_versions', 'slot_hash' => str_repeat('3', 64), 'payload_hash' => str_repeat('s', 64)],
+        ]);
+        $absent = $this->actualBoundInputContextForComponents([]);
+
+        $this->assertSame(str_repeat('r', 64), $baseline['formula_registry_hash']);
+        $this->assertSame(str_repeat('r', 64), $baseline['reason_registry_hash']);
+        $this->assertNotSame($baseline['formula_registry_hash'], $changed['formula_registry_hash'],
+            'changing the registry_versions component payload_hash must change formula_registry_hash');
+        $this->assertNotSame($baseline['reason_registry_hash'], $changed['reason_registry_hash'],
+            'changing the registry_versions component payload_hash must change reason_registry_hash');
+        $this->assertSame('', $absent['formula_registry_hash'],
+            'with no registry_versions component at all this must be an honest empty value, never a stale or fallback one');
+        $this->assertSame('', $absent['reason_registry_hash']);
+    }
+
     private const REGISTRY_CONTENT_UNSET = '__unset__';
 
     /** @param array<int,array<string,string>> $components */

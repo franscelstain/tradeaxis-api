@@ -600,6 +600,12 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
                 'components' => [
                     ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('u', 64)],
                     ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('n', 64)],
+                    // F-MD-B18-A002-021 (closing review): a real registry_versions component, so
+                    // formula_registry_hash/reason_registry_hash resolve from genuine content here
+                    // too, rather than the permanently-empty value an absent component would give --
+                    // ReplayVerificationServiceTest::test_formula_and_reason_registry_hash_come_from_the_registry_versions_component
+                    // proves the extraction itself; this fixture only needs it to be non-empty.
+                    ['stage_code' => 'RUN_CONTEXT', 'component_key' => 'registry_versions', 'slot_hash' => str_repeat('3', 64), 'payload_hash' => str_repeat('r', 64)],
                 ],
                 'scope' => [], 'component_manifest' => ['status' => 'COMPLETE'],
                 'registry_content' => [

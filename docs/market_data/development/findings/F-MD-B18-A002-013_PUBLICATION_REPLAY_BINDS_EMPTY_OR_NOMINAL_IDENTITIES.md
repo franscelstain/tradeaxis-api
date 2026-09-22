@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-09-14T11:17:22+07:00 (system clock)
 - Severity: `P1` — an executable defect, plus a proof basis that overclaims
-- Status: `OPEN — SIX_OF_TEN_BASES_PROVEN_FOUR_REMAIN_INCOMPLETE_ON_ELIGIBILITY_VERSION_ALONE` (whole-C1 input-capture manifest completeness proven E031/E032/E033; Binding E034/E036/E038, F-MD-B18-A002-020's repair_candidate/incremental regression resolved E041; Seal E042; Reader E043; Admission E044 wires PUBLICATION_EXACT to Reader's projection; E045's per-predicate proof-basis review found none of the ten bases this finding carries yet proven, discovering F-MD-B18-A002-021; E046 remediated three of F-021's five items (temporal_identity_hash domain, dataset boundary, contamination decisions) and moved MD-S050-R0008/R0009/R0012 and MD-S019-R0067/R0068/R0069 to PROVEN with a rebound real-path guard; E047 remediated serialization_version/executable_build_identity via a new Reader-side registry-content-decode capability and corrected F-021's own scope description; E048 remediated the last decode-eligible item, read_model_version (capturing the already-established canonical identity 'market_data_read_product_v1', not invented) and confirmed eligibility_version has no existing identity anywhere in current authority -- GENUINELY_UNRESOLVED, not invented; all eleven BOUND_INPUT_FIELDS are now individually real, which is necessary but not sufficient while eligibility remains an explicitly-named, absent member of MD-S050-R0014; MD-S050-R0002/R0014, MD-S003-R0003 and MD-S019-R0071 remain INCOMPLETE, blocked exactly on eligibility_version alone, which needs an owner decision on what identity to use before it can be captured)
+- Status: `OPEN — EIGHT_OF_TEN_BASES_PROVEN_TWO_REMAIN_INCOMPLETE_ON_THEIR_BOUND_GUARD_ALONE` (whole-C1 input-capture manifest completeness proven E031/E032/E033; Binding E034/E036/E038, F-MD-B18-A002-020's repair_candidate/incremental regression resolved E041; Seal E042; Reader E043; Admission E044 wires PUBLICATION_EXACT to Reader's projection; E045's per-predicate proof-basis review found none of the ten bases this finding carries yet proven, discovering F-MD-B18-A002-021; E046 remediated three of F-021's five items (temporal_identity_hash domain, dataset boundary, contamination decisions) and moved MD-S050-R0008/R0009/R0012 and MD-S019-R0067/R0068/R0069 to PROVEN with a rebound real-path guard; E047 remediated serialization_version/executable_build_identity via a new Reader-side registry-content-decode capability; E048 remediated read_model_version (capturing the already-established canonical identity 'market_data_read_product_v1', not invented) and confirmed eligibility_version was genuinely unresolved; E049 closes F-MD-B18-A002-021 -- owner decision D-MD-B18-A002-006 registers a config-driven eligibility_contract_version, captured through the existing registry_versions path, with the historical-compatibility question (old-shape captures must stay VERIFIED, never BLOCKED) proven directly rather than assumed, and a previously-unproven registry_versions-extraction gap the predicate review itself surfaced closed with a new direct test; MD-S050-R0002 and MD-S003-R0003 moved to PROVEN. MD-S050-R0014 and MD-S019-R0071 remain INCOMPLETE for a corrected reason: their bound guard, B18ReplayBoundInputIdentityContractTest, proves only MarketDataEvidenceExportService's pass-through of a fabricated metric row and never exercises ReplayVerificationService::actualBoundInputContext(), the real writer -- eligibility is no longer their blocker; rebinding to a real-path guard is a separately-scoped change, not performed here)
 - Class: `BOUND_INPUT_IDENTITY_NOT_BOUND`
 - Found by: per-predicate review of PAIR 01
   (`B18ReplayBoundInputIdentityContractTest`, 16 predicates)
@@ -377,3 +377,56 @@ failures (unchanged pre-existing MD-DEP-0015 baseline), 0 skips. Governance self
 assertions. **F013 remains OPEN.** `F-MD-B18-A002-021` remains open for exactly one item --
 `eligibility_version` -- which needs an owner decision on what identity to use before it can be
 captured; no further Admission/Reader/Binding/Seal/Capture work is needed once that decision exists.
+
+
+## E049: F-MD-B18-A002-021 closed; eight of ten bases now PROVEN - 2026-09-22T14:00:00+07:00
+
+The owner decided `F-MD-B18-A002-021`'s one remaining item (`D-MD-B18-A002-006`, Option B): a
+config-driven `market_data.eligibility.contract_version`, captured through the existing
+`ProducerRegistrySnapshot::capture()`/`registry_versions` path, no new decode path or bound-input
+field. Full detail, including the historical-compatibility proof and the governance-registry
+dependency this LOCKED-document edit required, is recorded in `F-MD-B18-A002-021`'s own closing
+section and in `E-MD-B18-A002-049`; not repeated here.
+
+Reviewing the four predicates this finding's status line names as still dependent on that item
+(`MD-S050-R0014`, `MD-S019-R0071`, `MD-S050-R0002`, `MD-S003-R0003`), each on its own earned proof:
+
+- **`MD-S050-R0002`, `MD-S003-R0003` -- promoted to `PROVEN`.** All eleven `BOUND_INPUT_FIELDS` are
+  now individually real and load-bearing, and the one link the review found still unproven --
+  `formula_registry_hash`/`reason_registry_hash`'s extraction of the `registry_versions` component's
+  `payload_hash` from the `components` list -- is now directly proven by a new test
+  (`ReplayVerificationServiceTest::test_formula_and_reason_registry_hash_come_from_the_registry_versions_component`),
+  closed rather than left resting on the strength of an always-empty perturbation baseline.
+- **`MD-S050-R0014`, `MD-S019-R0071` -- remain `INCOMPLETE`, for a corrected reason.** Eligibility is
+  resolved and no longer blocks them. What still blocks them is their own bound guard,
+  `B18ReplayBoundInputIdentityContractTest`, re-read in full and confirmed (as `F-013`'s own original
+  text already said of this guard, and as `E-045` reconfirmed) to prove only
+  `MarketDataEvidenceExportService`'s pass-through of a hand-fabricated `md_replay_daily_metrics` row
+  -- it never calls or mocks `ReplayVerificationService::actualBoundInputContext()`, so it cannot
+  establish "record-derived" regardless of what that real writer now computes. This is the same class
+  of defect `E-046` already fixed for six other predicates by rebinding them to a real-path guard;
+  doing the same for these two is a legitimate next step but a separately-scoped one, not performed in
+  this turn, which was bounded to the eligibility-version implementation and its four named dependents
+  only.
+
+`MarketDataReplayVerificationProofBasis`: 2 of 10 `F013` bases moved `INCOMPLETE` → `PROVEN` this
+round (8 of 10 now `PROVEN` in total, across `E046` and `E049`); the remaining 2 stay `INCOMPLETE`
+with their inline comments corrected to name the actual current blocker. No traceability-matrix
+`coverage_status`/`SATISFIED`/denominator change -- that governance layer is untouched by predicate
+proof-basis review, as throughout this whole arc.
+
+Targeted/integration coverage run this round: `B18BeforeSealValidationTest` (10/10, including the new
+historical-compatibility test), `ReplayVerificationServiceTest` (17/17, including the new
+registry-versions-extraction test), `B18ReplayComparisonExhaustivenessTest` (39/39),
+`B18ProducerCalendarRegistryTest` (8/8), `WholeC1RegistryVersionsMariaDbAuditTest` (2/2),
+`PlatformConfigRegistryConformanceTest` (6/6), `MarketDataEvidenceExportServiceTest` (5/5), and the
+full `MarketDataPipelineIntegrationTest` (82/82). Governance self-tests
+(`GovernanceGateReadOnlyExecutionTest`, `FindingRecordConsistencyTest`) both pass, after fixing the
+strategy-freeze and traceability-matrix registrations the `Platform_Config_Registry_LOCKED.md` edit
+required -- a real, previously-unexercised-in-this-arc gate failure this turn found and closed, not a
+pre-existing condition left alone.
+
+**`F-MD-B18-A002-021`: `RESOLVED`.** **`F-MD-B18-A002-013`: remains `OPEN`** -- eight of its ten
+per-predicate bases are now `PROVEN`; the remaining two (`MD-S050-R0014`, `MD-S019-R0071`) are
+blocked on their bound guard never exercising the real writer, a distinct, separately-scoped
+remaining item.

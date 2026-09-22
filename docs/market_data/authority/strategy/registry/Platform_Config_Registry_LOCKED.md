@@ -157,6 +157,7 @@ Generated from `config/market_data.php` on 2026-08-03: 128 keys. A key added, re
 | `market_data.coverage_gate.missing_sample_limit` | int | `MARKET_DATA_COVERAGE_MISSING_SAMPLE_LIMIT` | `MARKET_DATA_COVERAGE_MISSING_SAMPLE_LIMIT` | `../book/EOD_COVERAGE_GATE_CONTRACT_LOCKED.md` |
 | `market_data.activity.dormant_absence_trading_days` | int | `MARKET_DATA_COVERAGE_DORMANT_ABSENCE_TRADING_DAYS` during compatibility migration | `MARKET_DATA_COVERAGE_DORMANT_ABSENCE_TRADING_DAYS` | activity/liquidity fact only; **must not change coverage denominator or data usability** |
 | `market_data.coverage_gate.dormant_absence_trading_days` | int | legacy alias | `MARKET_DATA_COVERAGE_DORMANT_ABSENCE_TRADING_DAYS` | **DEPRECATED misleading namespace.** If still resolved by runtime it is snapshotted for reproducibility, but any use to exclude denominator rows is a V2 migration failure. |
+| `market_data.eligibility.contract_version` | string | `eod_eligibility_snapshot_v1` | `MARKET_DATA_ELIGIBILITY_CONTRACT_VERSION` | `../book/EOD_Eligibility_Snapshot_Contract_LOCKED.md` |
 | `market_data.indicators.set_version` | string | `v1` | `MARKET_DATA_INDICATOR_SET_VERSION` | `Indicator_Registry_Baseline_LOCKED.md` |
 | `market_data.indicators.dv_window_days` | int | `MARKET_DATA_DV_WINDOW_DAYS` | `MARKET_DATA_DV_WINDOW_DAYS` | `Indicator_Registry_Baseline_LOCKED.md` |
 | `market_data.indicators.atr_window_days` | int | `MARKET_DATA_ATR_WINDOW_DAYS` | `MARKET_DATA_ATR_WINDOW_DAYS` | `Indicator_Registry_Baseline_LOCKED.md` |

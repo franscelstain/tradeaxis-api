@@ -56,6 +56,12 @@ return [
         // only as the snapshotted compatibility alias named by the locked config registry.
         'dormant_absence_trading_days' => (int) env('MARKET_DATA_COVERAGE_DORMANT_ABSENCE_TRADING_DAYS', 60),
     ],
+    'eligibility' => [
+        // F-MD-B18-A002-021 owner decision: the eligibility decision contract's own version
+        // identity, distinct from coverage_gate.contract_version -- EOD_Eligibility_Snapshot_Contract_LOCKED.md
+        // governs a broader upstream data-usability decision that coverage is only one input to.
+        'contract_version' => env('MARKET_DATA_ELIGIBILITY_CONTRACT_VERSION', 'eod_eligibility_snapshot_v1'),
+    ],
     'quality_gates' => [
         'date_level_anomaly' => [
             'zero_volume_share_max' => (float) env('MARKET_DATA_DATE_LEVEL_ANOMALY_ZERO_VOLUME_SHARE_MAX', 0.30),

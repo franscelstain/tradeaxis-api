@@ -4,16 +4,19 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-09-22T10:30:00+07:00
 - Severity: `P2` — a real, confirmed content-mapping defect in already-committed code (`E-MD-B18-A002-044`), discovered during the F-MD-B18-A002-013 per-predicate proof-basis review; not a regression against LOCKED strategy authority, and not blocking anything already closed
-- Status: `OPEN — ONE_ITEM_REMAINS_GENUINELY_UNRESOLVED_NOT_INVENTED` (temporal_identity_hash domain
-  mapping, dataset boundary and contamination decisions resolved `E-MD-B18-A002-046`;
-  `serialization_version`/`executable_build_identity` resolved `E-MD-B18-A002-047` via a new
-  Reader-side registry-content-decode capability; `read_model_version` resolved `E-MD-B18-A002-048` by
-  capturing the already-established, already-reused canonical identity `'market_data_read_product_v1'`
-  (not invented -- reused from `MarketDataReadProductService`/`EodPublicationRepository`). **`E048`
-  re-verified `eligibility_version` against current authority (`config/market_data.php`, the eligibility
-  LOCKED contracts, every eligibility-related service) and confirmed it has no existing identity
-  anywhere at all** -- classified `GENUINELY_UNRESOLVED`, not implemented, not invented. This is the
-  one item this finding stays open for.)
+- Status: `RESOLVED` (temporal_identity_hash domain mapping, dataset boundary and contamination
+  decisions resolved `E-MD-B18-A002-046`; `serialization_version`/`executable_build_identity`
+  resolved `E-MD-B18-A002-047` via a new Reader-side registry-content-decode capability;
+  `read_model_version` resolved `E-MD-B18-A002-048` by capturing the already-established,
+  already-reused canonical identity `'market_data_read_product_v1'` (not invented -- reused from
+  `MarketDataReadProductService`/`EodPublicationRepository`); `eligibility_version` resolved
+  `E-MD-B18-A002-049` by owner decision `D-MD-B18-A002-006` (Option B, config-driven
+  `market_data.eligibility.contract_version`) and captured through the existing
+  `ProducerRegistrySnapshot::capture()`/`registry_versions` path with no new decode path or
+  bound-input field. `E049`'s predicate review promoted `MD-S050-R0002`/`MD-S003-R0003` to `PROVEN`;
+  `MD-S050-R0014`/`MD-S019-R0071` remain `INCOMPLETE` for a different, newly-precise reason -- their
+  bound guard never exercises the real writer -- which is now `F-MD-B18-A002-013`'s open item, not
+  this finding's.)
 - Discovered during: `E-MD-B18-A002-045`'s per-predicate proof-basis review of the ten `MD-S050`/`MD-S019`/`MD-S003` bases `F-MD-B18-A002-013` carries
 - Remediated (partial): `E-MD-B18-A002-046`, `E-MD-B18-A002-047`, `E-MD-B18-A002-048`
 - Class: `BOUND_INPUT_IDENTITY_NOT_BOUND` (same class as its parent finding)
@@ -262,3 +265,92 @@ promoted.** Full `tests/Unit/MarketData`: 2413 tests, 34098 assertions, 0 errors
 pre-existing MD-DEP-0015 baseline), 0 skips. Governance self-tests 12/12, 5707 assertions. **This
 finding remains `OPEN`, now for exactly one item: `eligibility_version`, which needs an owner decision
 before it can be captured.**
+
+## Closing remediation — eligibility_version registered and implemented; predicate review; finding RESOLVED — 2026-09-22T14:00:00+07:00 (`E-MD-B18-A002-049`)
+
+The owner decided this finding's one remaining item: `D-MD-B18-A002-006` selects Option B
+(config-driven) from the owner-decision package presented after `E-048` — canonical config key
+`market_data.eligibility.contract_version`, default `eod_eligibility_snapshot_v1`, environment input
+`MARKET_DATA_ELIGIBILITY_CONTRACT_VERSION`, owned by `EOD_Eligibility_Snapshot_Contract_LOCKED.md`.
+Implemented exactly per the decision, per the repository's own established pattern for
+`indicator_set_version`/`coverage_contract_version`, and per the decision package's own architectural
+finding that no new decode path or bound-input field is needed:
+
+1. `config/market_data.php` gained an `'eligibility' => ['contract_version' => env(...)]` section.
+2. `ProducerRegistrySnapshot::capture()` gained `'eligibility_contract_version' => (string)
+   config('market_data.eligibility.contract_version')`, added to the existing fail-closed
+   empty-value validation loop alongside `indicator_set_version`/`coverage_contract_version`/etc.
+3. `Platform_Config_Registry_LOCKED.md` (`MD-S082`) gained the matching resolved-key row —
+   discovered as a mandatory, previously-unexercised-in-this-arc governance gate
+   (`PlatformConfigRegistry`) that fails closed on any resolved `market_data.*` key absent from this
+   catalog; without it, every test that captures `registry_versions` failed
+   `CONFIG_REGISTRY_KEY_MISMATCH`.
+4. No change to `ReplayVerificationService`, `PublicationInputBindingService`, or any Binding/Seal/
+   Reader code: `formula_registry_hash`/`reason_registry_hash` already read the whole
+   `registry_versions` component's combined `payload_hash`, so the new field flows through
+   automatically once captured.
+
+**Historical-compatibility question, resolved from the exact contract mechanics, not assumed:** does
+a `registry_versions` capture written before this field existed become `BLOCKED`, remain `VERIFIED`
+with its own historical content, or need some other treatment? `PublicationInputBindingService::
+verifyBoundContext()` was read in full: its per-component check is purely self-referential — it
+compares a capture's own stored `payload_hash` against its own stored `semantic_payload_json`, and
+never diffs against what current code would produce for the same inputs. Nothing in Seal or Reader
+re-derives a component's expected content from current config or current code. This makes the answer
+`IMPLEMENTATION_DERIVABLE`, not a fork requiring a new owner decision: an old-shape capture verifies
+exactly as well as a new one, so it must remain `VERIFIED`, never `BLOCKED`. Proven directly, not
+assumed, by a new test
+(`B18BeforeSealValidationTest::test_reader_verifies_a_registry_versions_capture_predating_eligibility_contract_version`)
+that hand-inserts a `registry_versions` capture built from the pre-this-finding payload shape (no
+`eligibility_contract_version` key at all) into a real, otherwise-valid bound context, and asserts
+`readBoundContext()` reports `VERIFIED` with `registry_content` honestly lacking the key — never
+`BLOCKED`, and never a manufactured value.
+
+**A further gap surfaced by the predicate review itself, not by the eligibility work:**
+`formula_registry_hash`/`reason_registry_hash`'s extraction (`ReplayVerificationService::
+actualBoundInputContext()` scans `components` for `component_key === 'registry_versions'` and takes
+its `payload_hash`) had never been exercised by any test with a real matching component present. The
+domain-isolation test added by `E-046` supplies only `universe_identity`/`ancillary`; the
+`registry_content`-focused test added by `E-047` supplies `registry_content` directly, bypassing the
+`components` scan entirely; and `B18ReplayComparisonExhaustivenessTest`'s shared fixture supplied no
+`registry_versions` component either, so its own eleven-field perturbation's baseline for these two
+fields was permanently the empty string — a real, provably-red-capable guard proving the comparison
+mechanism is generic, but never proving this specific extraction is wired at all. Closed by:
+
+- A new direct test,
+  `ReplayVerificationServiceTest::test_formula_and_reason_registry_hash_come_from_the_registry_versions_component`,
+  proving presence yields the component's real `payload_hash` for both fields, changing it changes
+  both, and absence is an honest empty value rather than a stale or fallback one.
+- Adding a real `registry_versions` entry to `B18ReplayComparisonExhaustivenessTest`'s shared
+  `mocks()` fixture, so its own perturbation exercises genuine content for these two fields as well
+  (matching the precedent already set for `universe_identity`/`ancillary`/`registry_content`).
+
+**Predicate review — each judged on its own earned proof, not promoted in bulk:**
+
+| Predicate | Verdict | Reason |
+|---|---|---|
+| `MD-S050-R0002` | **PROVEN** | All eleven `BOUND_INPUT_FIELDS` are now individually real and load-bearing (the eleven-field perturbation suite denies pass on a divergence in any one, including the two closed here), and the `registry_versions` extraction itself — the one previously-unproven link in that chain — is now directly proven. |
+| `MD-S003-R0003` | **PROVEN** | Its map reuses `MD-S050-R0002`'s same frozen-input perturbations for "temporal revisions" and "formulas"; the same closure applies directly. |
+| `MD-S050-R0014` | **Still INCOMPLETE, for a different reason than before.** | Its bound guard, `B18ReplayBoundInputIdentityContractTest`, was re-read in full: it mocks a fabricated `md_replay_daily_metrics` row and proves only that `MarketDataEvidenceExportService` passes its columns through to the exported JSON — it never calls or mocks `ReplayVerificationService::actualBoundInputContext()`, the real writer. A guard that never inspects the real computation cannot establish "record-derived", regardless of what that computation now does. Rebinding this predicate to a real-path guard is a materially different, separately-scoped change from this finding's eligibility-version item, and is not performed here. |
+| `MD-S019-R0071` | **Still INCOMPLETE, same reason as `MD-S050-R0014`.** | Bound to the same evidence-export pass-through guard. |
+
+`MarketDataReplayVerificationProofBasis`: `MD-S050-R0002` and `MD-S003-R0003` moved from
+`INCOMPLETE` to `PROVEN`. `MD-S050-R0014` and `MD-S019-R0071` stay `INCOMPLETE`; their inline
+comments were rewritten to record the corrected reason (guard does not exercise the real writer),
+replacing the now-stale "blocked on eligibility" text. No traceability-matrix `coverage_status`/
+`SATISFIED`/denominator change — that is `F-MD-B18-A002-013`'s own separate governance layer, updated
+there, not here.
+
+Editing the LOCKED `Platform_Config_Registry_LOCKED.md` also required updating the mandatory strategy
+freeze manifest (`MARKET_DATA_STRATEGY_FREEZE_MANIFEST.json`, `MARKET_DATA_STRATEGY_AUTHORITY_REGISTRY.csv`)
+and change log (`DOCUMENT_CHANGE_LOG.md`, `DOC-CHG-20260922-001`) — a governance dependency discovered
+by a real gate failure (`GovernanceGateReadOnlyExecutionTest`'s `STRATEGY_FREEZE` check) during this
+work unit, not assumed in advance. The single inserted table row also shifted 128 downstream
+`MD-S082` rule rows' recorded `source_line` in `STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv`
+by exactly one line each — caught by the same gate's `TRACEABILITY_MATRIX` check, corrected by
+shifting only the `source_line` field of exactly those 128 rows (verified row-by-row against the
+predecessor content: no other field of any row changed). All governance self-tests pass, including
+the control entries that had been silently red before this fix.
+
+`F-MD-B18-A002-021`'s one remaining item is resolved. **Status: `RESOLVED`.** No item of this
+finding was left unresolved, invented, or promoted without its own earned proof.

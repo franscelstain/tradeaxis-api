@@ -93,3 +93,16 @@
 - Scope limit: no other key, default, threshold, finding behavior, readiness rule, publishability rule, or strategy semantic is authorised to change.
 - Freeze impact: successor freeze `MD-STRATEGY-FREEZE-20260903-001`; only the registered `MD-S082` fingerprint changes.
 - Verification impact: `MD-B17-A001-BL001` and both A001 evidence records remain immutable/non-PASS under the predecessor freeze. `MD-B17` resumes only through `MD-B17-A002` with a new baseline/CI, fresh 246-predicate proof, and explicit affected-proof revalidation of the changed B04 exhaustive configuration/snapshot invariants.
+
+## DOC-CHG-20260922-001 — Eligibility decision contract version registration
+
+- Date: 2026-09-22
+- Finding: `F-MD-B18-A002-021`
+- Supporting evidence: `E-MD-B18-A002-045` through `E-MD-B18-A002-048`
+- Reviewed decision: `D-MD-B18-A002-006`
+- Explicit authorization: user instruction "OWNER DECISION untuk F-MD-B18-A002-021 / `eligibility_version`: Pilih Opsi B — config-driven eligibility contract version. Tetapkan: canonical config key: `market_data.eligibility.contract_version`; initial value: `eod_eligibility_snapshot_v1`; environment variable: `MARKET_DATA_ELIGIBILITY_CONTRACT_VERSION`," received 2026-09-22, authorises exactly this one-key registration recorded by `D-MD-B18-A002-006`.
+- Strategy impact: one additive resolved-key row in `MD-S082` only; every other strategy document remains byte-identical.
+- Result: the eligibility decision contract's own version identity (distinct from `coverage_gate.contract_version`) now has a typed configuration identity with an explicit default and environment input, owned by `EOD_Eligibility_Snapshot_Contract_LOCKED.md`.
+- Scope limit: no other key, default, threshold, finding behavior, readiness rule, publishability rule, or strategy semantic is authorised to change.
+- Freeze impact: successor freeze `MD-STRATEGY-FREEZE-20260922-001`; only the registered `MD-S082` fingerprint changes.
+- Verification impact: prior `MD-B18-A002` evidence (`E-MD-B18-A002-001` through `-048`) is unaffected and remains immutable under the predecessor freeze; none of it depended on the `MD-S082` exhaustive key population. The four predicates this registration bears on (`MD-S050-R0002`, `MD-S050-R0014`, `MD-S019-R0071`, `MD-S003-R0003`) are reviewed on their own merits in this work unit's own evidence record, not promoted automatically because this registration exists.

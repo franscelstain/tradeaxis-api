@@ -248,6 +248,65 @@ class B18BeforeSealValidationTest extends TestCase
         $this->assertSame('as-known replay cannot see later revisions', $items[6]);
     }
 
+    /**
+     * `F-MD-B18-A002-021` (closing item): historical-publication compatibility. A `registry_versions`
+     * capture written before `eligibility_contract_version` existed at all must not be reclassified as
+     * unverifiable now that current code always writes it. `verifyBoundContext()` never re-derives a
+     * component's expected content from current config or current code -- it only checks that a
+     * component's own stored `payload_hash` still matches its own stored `semantic_payload_json` --
+     * so a capture in the old shape verifies exactly as well as one in the new shape, and Reader must
+     * report it `VERIFIED` with its own historical content, not `BLOCKED`.
+     */
+    public function test_reader_verifies_a_registry_versions_capture_predating_eligibility_contract_version(): void
+    {
+        $publicationId = $this->prepareCandidate();
+
+        $oldShapeRow = [
+            'registry_contract' => 'producer_registry_content_v1',
+            'reason_registry_source' => 'eod_reason_codes',
+            'reason_entries' => [],
+            'reason_registry_hash' => hash('sha256', \App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository::canonicalJson([])),
+            'missing_paths' => ['registry_versions.reason_registry.entries'],
+            'semantic_versions' => ['price_product_version' => 'structural_adjusted_v1'],
+            'indicator_set_version' => 'eod_indicators_v1',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            // Deliberately absent: this row is the pre-F-MD-B18-A002-021 shape, from before
+            // eligibility_contract_version existed as a captured field at all.
+            'config_registry_revision' => 'platform_config_registry_v2',
+            'config_resolver_version' => 'test-resolver-v1',
+            'serialization_version' => 'canonical_json_v1',
+            'read_model_version' => 'market_data_read_product_v1',
+            'implementation_identities' => [],
+            'executable_build' => ['build_id' => 'sha256:'.str_repeat('a', 64)],
+        ];
+        $captures = new \App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository();
+        $captured = $captures->capture(self::RUN_ID, 'RUN_CONTEXT', 'registry_versions', [
+            'operation' => 'producer-registry-build/v1', 'knowledge_cutoff_at' => self::CUTOFF,
+        ], [$oldShapeRow]);
+
+        $lineage = DB::table('md_publication_lineage_bindings')->where('publication_id', $publicationId)->first();
+        $bundle = json_decode((string) $lineage->bound_input_context_json, true);
+        $bundle['components'] = [[
+            'stage_code' => $captured['stage_code'], 'component_key' => $captured['component_key'],
+            'slot_hash' => $captured['slot_hash'], 'payload_hash' => $captured['payload_hash'],
+            'member_count' => (int) $captured['member_count'], 'operation' => 'producer-registry-build/v1',
+            'source_run_id' => self::RUN_ID,
+        ]];
+        $newJson = json_encode($bundle);
+        DB::table('md_publication_lineage_bindings')->where('publication_id', $publicationId)->update([
+            'bound_input_context_json' => $newJson, 'bound_input_context_hash' => hash('sha256', $newJson),
+        ]);
+
+        $bound = (new \App\Application\MarketData\Services\PublicationInputBindingService())->readBoundContext($publicationId);
+
+        $this->assertSame('VERIFIED', $bound['status'],
+            'a historical registry_versions capture predating eligibility_contract_version must not be BLOCKED');
+        $this->assertIsArray($bound['registry_content']);
+        $this->assertArrayNotHasKey('eligibility_contract_version', $bound['registry_content'],
+            'this capture genuinely predates the field -- its own historical content has none, and Reader must not invent one');
+        $this->assertSame('market_data_read_product_v1', $bound['registry_content']['read_model_version']);
+    }
+
     // ---- fixture ---------------------------------------------------------------------------------
 
     /**

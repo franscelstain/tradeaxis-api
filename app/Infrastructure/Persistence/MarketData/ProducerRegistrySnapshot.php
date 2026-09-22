@@ -31,6 +31,11 @@ final class ProducerRegistrySnapshot
             'semantic_versions' => MarketDataSemanticBindings::snapshot(),
             'indicator_set_version' => (string) config('market_data.indicators.set_version'),
             'coverage_contract_version' => (string) config('market_data.coverage_gate.contract_version'),
+            // F-MD-B18-A002-021 owner decision (Option B, config-driven, symmetric with
+            // coverage_contract_version above): the eligibility decision contract's own version,
+            // distinct from coverage -- EOD_Eligibility_Snapshot_Contract_LOCKED.md governs a
+            // broader upstream data-usability decision that coverage is only one input to.
+            'eligibility_contract_version' => (string) config('market_data.eligibility.contract_version'),
             'config_registry_revision' => (string) config('market_data.governance.config_registry_revision'),
             'config_resolver_version' => (string) config('market_data.governance.config_resolver_version'),
             'serialization_version' => (string) config('market_data.governance.config_serialization_version'),
@@ -52,7 +57,7 @@ final class ProducerRegistrySnapshot
             ])),
             'executable_build' => $build,
         ];
-        foreach (['indicator_set_version', 'coverage_contract_version', 'config_registry_revision', 'config_resolver_version', 'serialization_version'] as $field) {
+        foreach (['indicator_set_version', 'coverage_contract_version', 'eligibility_contract_version', 'config_registry_revision', 'config_resolver_version', 'serialization_version'] as $field) {
             if ($payload[$field] === '') throw new \RuntimeException('INPUT_CAPTURE_REGISTRY_VERSION_MISSING: '.$field);
         }
         if (count($payload['implementation_identities']) !== 6) throw new \RuntimeException('INPUT_CAPTURE_BUILD_COMPONENT_MISSING');
