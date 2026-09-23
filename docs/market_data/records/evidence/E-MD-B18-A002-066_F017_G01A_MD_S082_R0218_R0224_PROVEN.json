@@ -1,0 +1,88 @@
+{
+  "evidence_id": "E-MD-B18-A002-066",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-23T23:18:33+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS_G01A_TWO_PREDICATES_INDEPENDENTLY_PROVEN_F017_REMAINS_OPEN",
+  "evidence_scope": "F017_G01A_MD_S082_R0218_R0224_PROVEN",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": ["F-MD-B18-A002-017"],
+  "related_evidence": ["E-MD-B18-A002-012", "E-MD-B18-A002-065", "CI-MD-B18-A002-001"],
+  "related_decisions": ["D-MD-B18-A002-005"],
+  "dependencies": ["MD-DEP-0017", "MD-DEP-0015"],
+  "schema_changed": false,
+  "predicates": [
+    {
+      "rule_id": "MD-S082-R0218",
+      "requirement_source": "Platform_Config_Registry_LOCKED.md:290",
+      "requirement_text": "Current registry state must never leak into historical replay. Alternate-scenario runs are explicitly labeled and cannot impersonate the historical publication.",
+      "classification": "REBIND_ONLY",
+      "prior_basis_defect": "positive was B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass, a comparison-completeness test: it overwrites the fixture's expected value and asserts denial, never varying whether the underlying 'actual' read is live or frozen. A live-config leak would pass this test identically to a correct implementation.",
+      "implementation_path": "app/Application/MarketData/Services/ReplayVerificationService.php::actualBoundInputContext, lines 1111-1119 (read_model_version/serialization_version/executable_build_identity)",
+      "rebind_target_positive": "ReplayVerificationServiceTest::test_registry_content_fields_come_from_decoded_capture_only_when_verified",
+      "rebind_target_negative": "B18AsKnownModeIsolationTest::test_an_as_known_result_claims_no_publication_and_records_its_own_mode (unchanged -- already correctly proves clause 2, impersonation-prevention)",
+      "discriminating_probe": {
+        "target_file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+        "baseline_sha256": "a40a79a5e123a5abaab014ca2aadbd9f2fc8157322508f9140732d3f4f310532",
+        "mutation": "changed executable_build_identity's ': \\'\\'' fallback branch to a literal non-empty placeholder (equivalent narrow live/current-fallback violation; the actual config() helper is unavailable in this unit-test bootstrap, confirmed by a prior attempt erroring with ReflectionException: Class config does not exist)",
+        "target_test_result": "RED -- expected '' vs actual 'PROBE-LIVE-FALLBACK-build-id'",
+        "sibling_isolation": "21 of 22 tests in ReplayVerificationServiceTest stayed GREEN (including the R0224 guard); B18ReplayComparisonExhaustivenessTest's 42 tests stayed fully GREEN, confirming that suite cannot see this defect class",
+        "restored_sha256": "a40a79a5e123a5abaab014ca2aadbd9f2fc8157322508f9140732d3f4f310532",
+        "sha256_match": true,
+        "control_after_restore": "22/22 GREEN (89 assertions)"
+      },
+      "production_code_changed": false,
+      "final_state": "PROVEN"
+    },
+    {
+      "rule_id": "MD-S082-R0224",
+      "requirement_source": "Platform_Config_Registry_LOCKED.md:301 (item 5 of 'Before seal, validation proves')",
+      "requirement_text": "current environment drift cannot change publication replay",
+      "classification": "REBIND_ONLY",
+      "prior_basis_defect": "positive was B18BeforeSealValidationTest::test_a_candidate_without_its_lineage_binding_cannot_seal, which genuinely proves config_snapshot_id binding is mandatory at seal -- a real but different property. verifyBoundContext() was read in full: it does not require a registry_versions component to be present, so this test cannot establish that formula/read-model/serialization/build identity (the actual fields F-MD-B18-A002-021 found reading live environment, fixed by E-044/E-047/E-048) are frozen.",
+      "implementation_path": "app/Application/MarketData/Services/ReplayVerificationService.php::actualBoundInputContext, lines 1066-1072 (registryPayloadHash -> formula_registry_hash/reason_registry_hash)",
+      "rebind_target_positive": "ReplayVerificationServiceTest::test_formula_and_reason_registry_hash_come_from_the_registry_versions_component",
+      "rebind_target_negative": "ReplayVerificationServiceTest::test_registry_content_fields_come_from_decoded_capture_only_when_verified (covers the other three environment-drift-sensitive fields: read_model_version, serialization_version, executable_build_identity)",
+      "discriminating_probe": {
+        "target_file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+        "baseline_sha256": "a40a79a5e123a5abaab014ca2aadbd9f2fc8157322508f9140732d3f4f310532",
+        "mutation": "changed registryPayloadHash's initial value from '' to a literal non-empty placeholder (the narrow stale/fallback-default violation this predicate forbids)",
+        "target_test_result": "RED on the 'absent' case -- expected '' vs actual 'PROBE-STALE-FALLBACK-registry-hash'",
+        "sibling_isolation": "21 of 22 tests in ReplayVerificationServiceTest stayed GREEN (including the R0218 guard, confirming independence); B18ReplayComparisonExhaustivenessTest's 42 tests stayed fully GREEN",
+        "restored_sha256": "a40a79a5e123a5abaab014ca2aadbd9f2fc8157322508f9140732d3f4f310532",
+        "sha256_match": true,
+        "control_after_restore": "22/22 GREEN (89 assertions)"
+      },
+      "production_code_changed": false,
+      "final_state": "PROVEN"
+    }
+  ],
+  "independent_review_note": "Both predicates were established independently, not promoted merely because they share F-013 remediation. Each has its own requirement source, its own implementation-path reading, its own discriminating probe on a genuinely distinct code location (executable_build_identity's fallback branch for R0218; registryPayloadHash's initial value for R0224), and each probe's sibling-isolation check confirmed the OTHER predicate's guard was unaffected -- proving the two rebindings are independent, not one guard doing double duty.",
+  "proof_basis_transition": {"before": {"PROVEN": 89, "INCOMPLETE": 25}, "after": {"PROVEN": 91, "INCOMPLETE": 23}, "confirmed_via": "PHP parse"},
+  "validation": {
+    "targeted": {
+      "ReplayVerificationServiceTest": "22/22 PASS (89 assertions)",
+      "B18AsKnownModeIsolationTest": "5/5 PASS (21 assertions, regression check)",
+      "B18ReplayComparisonExhaustivenessTest": "42/42 PASS (186 assertions, regression check + cross-defect-blindness confirmation)",
+      "B18BeforeSealValidationTest": "10/10 PASS (28 assertions, regression check -- the superseded guard's own suite still passes on its own genuine claim)"
+    },
+    "governance_gates": {
+      "PromotedPredicateProofGateTest": "8/8 PASS (22 assertions)",
+      "FindingRecordConsistencyTest": "3/3 PASS (13 assertions)",
+      "ClassificationConsistencyGateTest": "20/20 PASS (96 assertions)",
+      "TraceabilityApplicabilityGateTest": "11/11 PASS (23 assertions)",
+      "ScopeBoundaryAndOrchestrationCompletionTest": "8/8 PASS (73 assertions)"
+    },
+    "proof_readiness_gate": "FAIL/NOT_READY as expected -- 23 predicates still missing a reviewed basis, matching proof-basis INCOMPLETE count exactly; neither R0218 nor R0224 appears",
+    "proof_self_test": "overall FAIL from the pre-existing baseline only (24 entries: 23 unrelated PREDICATE_WITHOUT_REVIEWED_BASIS + 1 unrelated MISSING_NEGATIVE_PROOF:determinism_and_operations); 10/10 injected mutation scenarios pass; neither R0218 nor R0224 flagged -- not a regression",
+    "production_code_changed": false,
+    "application_suite": "not run, not required -- production code confirmed byte-identical to HEAD (git diff --quiet app/); only the proof-basis file changed"
+  },
+  "final_governance_gates": null,
+  "no_commit_or_push": true
+}
