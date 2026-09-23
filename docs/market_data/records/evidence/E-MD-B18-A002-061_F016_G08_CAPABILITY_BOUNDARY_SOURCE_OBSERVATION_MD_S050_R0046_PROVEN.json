@@ -1,0 +1,54 @@
+{
+  "evidence_record_id": "E-MD-B18-A002-061",
+  "finding_id": "F-MD-B18-A002-016",
+  "work_unit": "G08",
+  "rule_id": "MD-S050-R0046",
+  "description": "Capability boundary: replay cannot prove source observation was faithful",
+  "classification": "REBIND_ONLY",
+  "proof_status": "PROVEN",
+  "contract_reference": "docs/market_data/authority/strategy/book/Replay_Verification_Contract_LOCKED.md:91",
+  "contract_text": "That the source observation was faithful. Provider error inside an immutable observation is frozen by the same mechanism that guarantees reproducibility.",
+  "guard_location": "tests/Unit/MarketData/B18ReplayAdmissibilityBoundaryTest.php:62-64",
+  "guard_type": "CORPUS_PATTERN",
+  "pattern": "/replay(?:(?!\b(?:not|never|cannot|can not|no|without|tidak|bukan|denies|denied|forbids|forbidden|refuses|must|may not)\b)[^.\n]){0,40}(proves|confirms|establishes)(?:(?!\b(?:not|never|cannot|can not|no|without|tidak|bukan|denies|denied|forbids|forbidden|refuses|must|may not)\b)[^.\n]){0,30}(source\s+)?observation(?:(?!\b(?:not|never|cannot|can not|no|without|tidak|bukan|denies|denied|forbids|forbidden|refuses|must|may not)\b)[^.\n]){0,20}(was|is)\s+(faithful|accurate|correct)/i",
+  "forbidden_claim_text": "[documentation only — pattern matches this type of claim: source observation faithfulness]",
+  "guard_tests": [
+    {
+      "name": "test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish",
+      "path": "tests/Unit/MarketData/B18ReplayAdmissibilityBoundaryTest.php:238",
+      "purpose": "Scans all documents in /docs/market_data and /app to verify no active surface asserts forbidden claims",
+      "execution": "EXECUTED"
+    },
+    {
+      "name": "test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial",
+      "path": "tests/Unit/MarketData/B18ReplayAdmissibilityBoundaryTest.php:264",
+      "purpose": "Verifies each pattern fires on the claim it forbids and does not fire on denials",
+      "execution": "EXECUTED"
+    }
+  ],
+  "discriminating_probe": {
+    "strategy": "INJECTED_CLAIM_DOCUMENT",
+    "method": "Created temporary file docs/market_data/records/evidence/PROBE_MD_S050_R0046_INJECTED.md containing forbidden text",
+    "target_pattern_class": "Claims that replay proves source observation was faithful, accurate, or correct",
+    "baseline_test": "test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish",
+    "baseline_status": "PASS",
+    "probe_status": "FAIL (expected)",
+    "probe_result": "Pattern matched with correct detection on injected file before removal",
+    "restoration": "Removed probe file; sha256 verification not applicable (file was temporary, not code mutation)",
+    "control_status": "PASS (expected)",
+    "load_bearing": true,
+    "discriminating": true
+  },
+  "proof_summary": {
+    "guard_status": "EXECUTING",
+    "pattern_load_bearing": true,
+    "pattern_discriminating": true,
+    "corpus_clean": true,
+    "probe_successful": true,
+    "proof_valid": true
+  },
+  "issued_at": "2026-09-23T14:15:30+07:00",
+  "issued_by": "Claude Haiku 4.5",
+  "promotion_criteria_met": true,
+  "next_step": "Update proof-basis file, register evidence, update Stage Register, regenerate CURRENT_STATE, run governance gates"
+}

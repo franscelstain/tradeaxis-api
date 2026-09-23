@@ -322,6 +322,41 @@ nine injected-mutation scenarios still pass, and `MD-S050-R0017` no longer appea
 `PREDICATE_WITHOUT_REVIEWED_BASIS` list — confirmed not a regression. Full application suite not run,
 not required — zero production code changed.
 
-**This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.** 5 of its own 14 predicates
-remain `INCOMPLETE`: `MD-S050-R0046` (G08), `MD-S003-R0009`/`MD-S003-R0010`/`MD-S003-R0005` (G09
-rebind-only), `MD-S019-R0074` (F-013 carry-forward, package-labelled G01). Not started in this unit.
+**This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.** 4 of its own 14 predicates
+remain `INCOMPLETE`: `MD-S003-R0009`/`MD-S003-R0010`/`MD-S003-R0005` (G09), `MD-S019-R0074` (F-013
+carry-forward, package-labelled G01). G08 (`MD-S050-R0046`) closed in this unit.
+
+## G08: capability boundary source observation (MD-S050-R0046) — 2026-09-23T14:15:30+07:00
+
+**Exact requirement (Replay_Verification_Contract_LOCKED.md:91):** "That the source observation was faithful. Provider error inside an immutable observation is frozen by the same mechanism that guarantees reproducibility."
+
+**Classification:** REBIND_ONLY — corpus pattern guard already exists in the code.
+
+**Existing guard and corpus:** `B18ReplayAdmissibilityBoundaryTest` at lines 62-64 contains the pattern guard for MD-S050-R0046:
+
+```php
+'MD-S050-R0046' => [
+    '/replay'.$this->gap(40).'(proves|confirms|establishes)'.$this->gap(30).'(source\s+)?observation'.$this->gap(20).'(was|is)\s+(faithful|accurate|correct)/i',
+    'A successful replay proves the source observation was faithful.',
+],
+```
+
+The pattern scans the active corpus to forbid any claim of the form ('replay proves the source observation was faithful, accurate, or correct'). Nothing in the active corpus may make this assertion. The test `test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish` executes this guard against all files in `/docs/market_data` and `/app`.
+
+**Discriminating probe:** Injected a temporary file `docs/market_data/records/evidence/PROBE_MD_S050_R0046_INJECTED.md` containing the forbidden claim text. The scan test turned red with correct pattern match (detecting the injection). Removed the file; test turned green again. Pattern is load-bearing and discriminating.
+
+**Proof and validation:** 
+- Control baseline: PASS
+- Probe target red: PASS
+- Probe restoration green: PASS
+- Guard tests: `test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial` confirms the pattern fires on the claim and spares denials (PASS)
+- Corpus clean: No active surface makes the forbidden assertion
+- Governance: `PromotedPredicateProofGateTest` 8/8 PASS
+
+**Production code impact:** None — zero production code changed.
+
+**Evidence record:** E-MD-B18-A002-061, registered in DOCUMENT_ID_REGISTRY (MD-DOC-01194), DOCUMENT_ROLE_REGISTRY, CURRENT_VERIFICATION_REGISTRY, and WORK_RECORD_REGISTRY.
+
+**Proof-basis state:** Promoted MD-S050-R0046 from INCOMPLETE to PROVEN. PROVEN 84→85, INCOMPLETE 30→29.
+
+**This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`** with 4 of its own 14 predicates still `INCOMPLETE`.
