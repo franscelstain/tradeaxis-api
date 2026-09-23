@@ -952,7 +952,11 @@ final class MarketDataReplayVerificationProofBasis
         // empty otherwise, never a live-config fallback). No guard was weakened and no new test was added: both
         // negative guards already existed from this round's and E047/E048's own remediation, and the comparison
         // guard already existed from E046. Promoted to PROVEN.
-        // F-MD-B18-A002-013 carry-forward via F-MD-B18-A002-017: the individual-identity guard asserts non-empty values on a hand-built metric; production publication mode stores temporal and calendar identity empty.
+        // F-MD-B18-A002-017. Comment corrected (state-alignment, no predicate move): F-013's E-044
+        // remediation ended the always-empty temporal/calendar identity this comment described --
+        // both now derive from the verified bound-input context. The individual-identity guard
+        // still asserts non-empty values on a hand-built metric rather than a real export, which is
+        // why this predicate remains INCOMPLETE.
         'MD-S003-R0023' => [
             'positive' => 'B18ReplayEvidenceSelfExplanationTest::test_every_item_the_contract_requires_recording_is_present',
             'negative' => 'B18ReplayEvidenceSelfExplanationTest::test_every_frozen_identity_is_recorded_individually',
@@ -982,7 +986,12 @@ final class MarketDataReplayVerificationProofBasis
             'negative' => 'EmptyDatasetFailSafeTest::test_no_fallback_fails_the_run_outright',
             'basis' => 'the degraded corpus is enumerated and asserted executable: the four MD-S003 observation defects with the outcome each proves, the held-versus-failed pair that produces the expected states through the real FinalizeDecisionService, and the provider outage that must remain in the as-known observation manifest -- which is the denominator-shrinkage half, since an outage that vanished would shrink the expected count rather than being reported. The recorded basis was that one degraded case was proven to stop with an error; the corpus now covers held, failed and unavailable outcomes and both permitted defect outcomes. The negative guard fails a run outright when no fallback exists, so producing expected states is not satisfied by an implementation that always holds. Probe: renaming a member guard turned the corpus test red.',
         ],
-        // F-MD-B18-A002-013 carry-forward via F-MD-B18-A002-017: listing identity maps to temporal_identity_hash, empty in production publication mode; formula identity is read from current config.
+        // F-MD-B18-A002-017. Comment corrected (state-alignment, no predicate move): F-013's E-044
+        // remediation ended the always-empty temporal_identity_hash and live-config formula read
+        // this comment described. The remaining gap is a wrong binding, not an empty value: "listing
+        // identity" is mapped to a run-level hash rather than the per-row listing_id as-known rows
+        // actually carry, and "factor/formula versions" is mapped to formula_registry_hash rather
+        // than event_factor_hash.
         'MD-S004-R0004' => [
             'positive' => 'B18ReplayEvidenceSelfExplanationTest::test_every_required_binding_is_present_in_the_export',
             'negative' => 'B18ReplayEvidenceSelfExplanationTest::test_the_availability_timestamp_is_a_separate_field_from_the_trade_date',
@@ -1000,7 +1009,13 @@ final class MarketDataReplayVerificationProofBasis
             'negative' => 'B18ReleaseCandidateCriteriaTest::test_every_guard_named_by_any_criterion_exists',
             'basis' => 'both corpora the criterion names are enumerated from their own contracts and asserted complete and executable: the eight MD-S050 anti-survivorship fixtures through their contract-parsed map, the seven MD-S003 later-revision kinds through theirs, and the nine MD-S050 anti-future items through the map added for MD-S050-R0017. The recorded basis for this row was that the guard executed identity-cutoff invisibility only; the corpus now spans identity, symbol, symbol reuse, calendar, status, event, factor, config, sector and provider mapping. That every member is green is established by the suite run recorded with the stage evidence rather than by a test asserting it about itself, which would be circular. Probe: rewording a criterion away from the contract turned the map guard red; renaming a member guard turned both the corpus test and the existence test red.',
         ],
-        // F-MD-B18-A002-017 with F-MD-B18-A002-013, executable: only a missing config snapshot is BLOCKED; empty temporal, calendar and observation identities replay PASS.
+        // F-MD-B18-A002-017. Comment corrected (state-alignment, no predicate move): since F-013's
+        // E-044, replayAdmissibility() blocks any publication whose bound input context is not
+        // VERIFIED (this covers temporal, calendar, event/factor, config and registry together, not
+        // config alone). The open question this predicate still tracks is narrower: source_
+        // observation_manifest_hash is read directly from the run row rather than the verified
+        // context, so it is unclear whether an empty/unrecorded observation manifest can still pass
+        // admission while the rest of the bound context is VERIFIED.
         'MD-S050-R0016' => [
             'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_publication_with_no_configuration_snapshot_is_blocked_rather_than_passed',
             'negative' => 'B18ReplayComparisonExhaustivenessTest::test_a_blocked_replay_does_not_fall_back_to_the_current_publication',
@@ -1024,13 +1039,23 @@ final class MarketDataReplayVerificationProofBasis
             'negative' => 'B18PointInTimeInputContractTest::test_every_acceptance_fixture_guard_exists_and_they_are_distinct',
             'basis' => 'the seven acceptance fixtures the contract requires at minimum are each bound to a guard that executes that scenario against a real surface: the delisted-listing universe fixture, the reused-symbol-text fixture, the as-known corporate-action boundary, the knowledge-time suspension sequence, the no-fallback run that fails outright, the fallback run that holds with the prior effective date, and the two-publication read-path fixture. The map is parsed from the acceptance-fixtures sentence rather than transcribed, so a fixture added there fails. The recorded basis was that the guard executed none of the seven as fixtures. The negative guard is the anti-collapse check as well as the existence check: at minimum prove is a floor over seven distinct scenarios, so they are asserted to resolve to at least six distinct guards -- a binding pointing them all at one test would satisfy the map while proving one of them. Probe: dropping explicit stale fallback from the map turned the contract-map guard red.',
         ],
-        // F-MD-B18-A002-013 carry-forward via F-MD-B18-A002-017: formula and reason registry identities are read from current config or a constant at replay time.
+        // F-MD-B18-A002-017. Comment corrected (state-alignment, no predicate move): F-013's E-044
+        // remediation ended the live-config/constant reads this comment described (formula/reason
+        // registry identities now come from the registry_versions captured payload_hash). The
+        // recorded guard basis (a before-seal lineage check) is still the wrong binding for this
+        // predicate, which is why it remains INCOMPLETE -- rebind, not implementation, is what F-017
+        // G01-A resolves.
         'MD-S082-R0218' => [
             'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass',
             'negative' => 'B18AsKnownModeIsolationTest::test_an_as_known_result_claims_no_publication_and_records_its_own_mode',
             'basis' => 'two sentences, one guard each. Current registry state must never leak into historical replay: formula_registry_hash and reason_registry_hash are two of the eleven frozen inputs now compared field by field, so a publication replay resolving today\'s indicator registry or today\'s reason registry instead of the one frozen with the publication is denied and the mismatch names which registry moved. That comparison did not exist before MD-S050-R0002 -- the identities were written into every stored result and compared by nothing -- which is why this row\'s recorded basis said registry state generally was not asserted. Alternate-scenario runs are explicitly labeled and cannot impersonate the historical publication: an as-known result is asserted end to end to record AS_KNOWN and its cutoff, to carry a null publication_id, and to leave the sealed publication, its pointer and its history rows byte-identical while producing a replay row of its own. Probes: comparing an empty frozen-input list turned the registry perturbations red along with the other nine; making the as-known metric carry the run publication id turned the labelling guard red.',
         ],
-        // F-MD-B18-A002-013 carry-forward via F-MD-B18-A002-017: formula, read-model, serialization and build identities come from the environment at replay time.
+        // F-MD-B18-A002-017. Comment corrected (state-alignment, no predicate move): F-013's
+        // E-044/E-047/E-048 remediation ended the live-environment reads this comment described --
+        // formula, read-model, serialization and build identities now come from the verified
+        // registry_versions captured payload, never live config(). The recorded guard basis is
+        // still the wrong binding for this predicate, which is why it remains INCOMPLETE -- rebind,
+        // not implementation, is what F-017 G01-A resolves.
         'MD-S082-R0224' => [
             'positive' => 'B18BeforeSealValidationTest::test_a_candidate_without_its_lineage_binding_cannot_seal',
             'negative' => 'B18BeforeSealValidationTest::test_a_completely_bound_candidate_seals',
