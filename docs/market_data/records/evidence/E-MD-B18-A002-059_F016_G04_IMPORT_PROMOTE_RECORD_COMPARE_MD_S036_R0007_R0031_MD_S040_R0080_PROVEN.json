@@ -1,0 +1,95 @@
+{
+  "evidence_id": "E-MD-B18-A002-059",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+  "issued_at": "2026-09-23T12:34:25+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS_G04_UNIT_THREE_PREDICATES_PROVEN_F016_REMAINS_OPEN",
+  "evidence_scope": "F016_G04_IMPORT_PROMOTE_RECORD_COMPARE_MD_S036_R0007_R0031_MD_S040_R0080_ONLY",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": ["F-MD-B18-A002-016"],
+  "related_evidence": ["E-MD-B18-A002-058", "CI-MD-B18-A002-001"],
+  "related_decisions": ["D-MD-B18-A002-005"],
+  "dependencies": ["MD-DEP-0017", "MD-DEP-0015"],
+  "targeted": "Second bounded remediation unit of F-MD-B18-A002-016 (G04, per the consolidated remediation package's own G-label taxonomy): MD-S036-R0007, MD-S036-R0031, MD-S040-R0080, reviewed independently. Prior reconstruction classified all three as PROOF_GUARD_GAP; each was re-verified against current implementation before writing any guard, not trusted from the locator.",
+  "authority_reviewed": {
+    "MD-S036-R0007": "Import_Promote_Separation_Contract.md line 16, 'Runtime ownership': 'Evidence and replay must record and compare request mode, import status, promote status, source mode, pointer switch status, and publication state.'",
+    "MD-S036-R0031": "Import_Promote_Separation_Contract.md line 59, 'Evidence and replay boundary': three clauses -- (1) 'Evidence export must show whether a run is import-only or promoted without requiring direct DB inspection.' (2) 'Replay must compare expected vs actual request mode, source mode, import status, promote status, publication state, pointer state, and reason code.' (3) 'Unexpected import promotion must be a replay mismatch, not a silent pass.'",
+    "MD-S040-R0080": "Manual_File_Publishability_Policy_LOCKED.md line 167, '7. Evidence and Replay Contract': 'No evidence or replay flow may treat `manual_file` as readable merely because import succeeded.'"
+  },
+  "implementation_verification": {
+    "R0007_and_R0031_clause_2": {
+      "finding": "ReplayVerificationService::compareExpectedAndActual already calls compareField() for import_status, promote_status, promoted, and pointer_switched (lines 1217-1220 at review time), each reading from actual['context']['actual_import_promote_context'], which is genuinely computed from the real run row (request_mode/terminal_status/publishability_state/bars_rows_written/is_current_publication -- confirmed by reading the assignment block directly, not derived from the expected side). compareField() skips comparison entirely when the expected value is null. Confirmed by direct inspection: B18ReplayComparisonExhaustivenessTest's expectedReplayResult() builder never included import_status/promote_status/promoted/pointer_switched keys in expected_run_context at all -- neither the baseline nor any of the 13 pre-existing perturbations, nor either import-only test's overrides -- so every existing test left these three comparisons permanently skipped. This is real, correctly-implemented code with zero test coverage, not an executable defect.",
+      "classification": "PROOF_GUARD_GAP -- no production code changed."
+    },
+    "R0031_clause_1": {
+      "finding": "MarketDataEvidenceExportService::buildRunSummary computes request_mode/import_status/promote_status/promoted/import_promote_boundary purely via deriveImportStatus()/derivePromoteStatus(), both confirmed by direct reading to be pure functions of the already-fetched $run row and the already-computed $requestMode/$promoted -- neither issues a query or takes a repository parameter. Confirmed by grep: zero existing test references import_promote_boundary, deriveImportStatus, or derivePromoteStatus at all.",
+      "classification": "PROOF_GUARD_GAP -- no production code changed."
+    },
+    "R0031_clause_3": {
+      "finding": "Already PROVEN prior to this unit via appendImportPromotionPolicyMismatches() and its guard pair (test_an_import_only_expectation_is_not_satisfied_by_a_run_that_promoted / test_an_import_only_expectation_against_an_unpromoted_run_raises_no_promotion_mismatch). Not re-derived in this unit; reused as the negative guard for R0031's proof-basis entry.",
+      "classification": "Pre-existing PROVEN, unchanged."
+    },
+    "R0080": {
+      "finding": "MarketDataEvidenceExportService::isReadableRun() already requires terminal_status=SUCCESS AND publishability_state=READABLE AND CoverageGateStateNormalizer::normalize(coverage_gate_state)=PASS (confirmed by direct reading). Every existing test with coverage_gate_state=FAIL also had terminal_status=HELD, so the coverage clause's own necessity was never isolated -- a broken or a correct coverage clause would have produced an identical test outcome in every existing fixture.",
+      "classification": "PROOF_GUARD_GAP -- no production code changed."
+    }
+  },
+  "per_predicate": {
+    "MD-S036-R0007": {
+      "guard": "Three new entries added to B18ReplayComparisonExhaustivenessTest::perturbations() (import_status, promote_status, pointer_switched), sharing the existing test_a_divergence_in_any_named_assertion_class_denies_pass dataProvider mechanism. Baseline defaults (import_status='COMPLETED', promote_status='PROMOTED', pointer_switched=true) added to expectedReplayResult()'s $v array and propagated into expected_run_context, matching the real actual-side computation for the shared baseline run/publication so all 13 pre-existing perturbations remain unaffected.",
+      "probe": "Removed the four compareField() calls for import_status/promote_status/promoted/pointer_switched from ReplayVerificationService. Exactly the 3 new perturbation cases turned red (17 tests run under the dataProvider filter, 3 failures; the other 14, including all pre-existing entries, stayed green). Byte-restored via git checkout (file confirmed byte-identical to committed HEAD both before and after -- untouched by this session otherwise), sha256-verified (a40a79a5e123a5abaab014ca2aadbd9f2fc8157322508f9140732d3f4f310532 before and after), control green (42/42, 186 assertions).",
+      "final_state": "PROVEN"
+    },
+    "MD-S036-R0031": {
+      "guard": "New test MarketDataEvidenceExportServiceTest::test_export_run_evidence_distinguishes_import_only_from_promoted_without_extra_db_inspection -- exports an import-only run and a promoted run through the same real (unmocked) buildRunSummary/exportRunEvidence path, asserting request_mode/import_status/promote_status/promoted/import_promote_boundary.boundary_rule all differ correctly, with neither collaborator mock stubbing anything import/promote-specific beyond what every export already structurally requires.",
+      "probe": "Two mutations, each caught, each independently confirming a distinct assertion: (1) removed the boundary_rule ternary's request_mode branch (collapsed to always return the promote-branch string) -- turned the test red naming exactly that field mismatch. (2) broadened the $promoted computation to ignore publishability_state/pointer state (terminal_status=SUCCESS alone) -- turned the test red on promote_status (NOT_PROMOTED expected, PROMOTED observed). Both byte-restored via git checkout, sha256-verified (3aeee9762b391a3fe9d017c34fd624942322de6ef8922b09d4454fb58ae8d21d before and after each), control green (8/8, 222 assertions) after each restore. A third mutation attempt (disabling one import_only branch inside derivePromoteStatus's dead-code fallback) was found NOT discriminating for this fixture's specific terminal_status and was discarded before drawing any conclusion from it -- both branches converge to the same value for a SUCCESS-terminal-status run, so that particular line is not independently exercised by this fixture pair; it remains covered by R0007's own generic compareField() proof instead.",
+      "final_state": "PROVEN"
+    },
+    "MD-S040-R0080": {
+      "guard": "New test MarketDataEvidenceExportServiceTest::test_export_run_evidence_does_not_treat_a_manual_file_run_as_readable_when_coverage_failed_despite_import_success -- terminal_status=SUCCESS and publishability_state=READABLE held constant, only coverage_gate_state varied to FAIL, asserting the exported final_outcome_note reads 'Run is not readable...' rather than the SUCCESS+READABLE message, and that publication_manifest.json is not written. Paired positive control test_export_run_evidence_treats_a_manual_file_run_as_readable_when_coverage_passed (coverage PASS -> genuinely readable, manifest written).",
+      "probe": "Removed the coverage_gate_state=PASS clause from isReadableRun(). The positive test turned red (final_outcome_note read the SUCCESS+READABLE message instead of the not-readable one) while the negative control stayed green. Byte-restored via git checkout, sha256-verified (3aeee9762b391a3fe9d017c34fd624942322de6ef8922b09d4454fb58ae8d21d before and after), control green (8/8, 222 assertions).",
+      "final_state": "PROVEN"
+    }
+  },
+  "falsifiability_summary": {
+    "total_discriminating_probes": 4,
+    "probes_caught": 4,
+    "probes_discarded_as_non_discriminating": 1,
+    "byte_restores_verified_by_sha256": 4,
+    "controls_green_after_every_restore": true,
+    "no_mutant_or_temp_artifact_remaining_in_repo": true,
+    "production_code_changed": false,
+    "test_code_changed": true,
+    "test_files_changed": ["tests/Unit/MarketData/B18ReplayComparisonExhaustivenessTest.php", "tests/Unit/MarketData/MarketDataEvidenceExportServiceTest.php"]
+  },
+  "scope_result": {
+    "predicates_reviewed": ["MD-S036-R0007", "MD-S036-R0031", "MD-S040-R0080"],
+    "predicates_promoted_to_proven": ["MD-S036-R0007", "MD-S036-R0031", "MD-S040-R0080"],
+    "predicates_reviewed_independently": true,
+    "bulk_promotion": false,
+    "production_code_changed": false,
+    "test_code_changed": true,
+    "f016_status": "OPEN -- REMEDIATION_IN_CONSOLIDATED_PACKAGE, not closed. G01 (E058) and G04 (this unit) complete; remaining units not started.",
+    "md_dep_0017_status": "UNCHANGED -- still BLOCKING, bundles F-013 (RESOLVED) through F-018 (F-017/F-018 OPEN)",
+    "traceability_matrix_coverage_status_touched": false,
+    "satisfied_or_denominator_changed": false,
+    "prior_findings_reopened": false,
+    "mutant_or_temp_artifact_remaining": false,
+    "commit_or_push": "NONE -- explicitly withheld per current instruction"
+  },
+  "remaining": {
+    "clarification": "MarketDataReplayVerificationProofBasis's PROVEN count moves from 80 to 83; INCOMPLETE count moves from 34 to 31 (exactly these three predicates). F-MD-B18-A002-016 remains OPEN with 6 of its own 14 predicates still INCOMPLETE: MD-S050-R0017 (G05 full-parent aggregate), MD-S050-R0046 (G08), MD-S003-R0009/MD-S003-R0010/MD-S003-R0005 (G09 rebind-only), MD-S019-R0074 (F-013 carry-forward, package-labelled G01)."
+  },
+  "full_suite": {
+    "status": "NOT_RUN -- not required, no production code changed",
+    "reason": "Production code is byte-identical to before this unit (all four mutations were probes, each restored via git checkout and sha256-verified). Targeted suites all green: B18ReplayComparisonExhaustivenessTest 42/42 (186 assertions), MarketDataEvidenceExportServiceTest 8/8 (222 assertions). Governance self-tests green: GovernanceGateReadOnlyExecutionTest+ScopeBoundaryAndOrchestrationCompletionTest 9/9 (5790 assertions), FindingRecordConsistencyTest 3/3 (13 assertions). Proof self-test re-run: baseline's failure shape unchanged (driven only by predicates from other, still-open findings; one coincidental substring match, MD-S002-R0007, is an unrelated rule id), and none of the three G04 predicates appear in its PREDICATE_WITHOUT_REVIEWED_BASIS list."
+  },
+  "post_record_validation": "Results confirmed via 4 live mutation/restore probes with sha256 verification, targeted test execution, proof-basis PHP-parse validation (PROVEN 80->83, INCOMPLETE 34->31), and a full proof-self-test re-run confirming no regression.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "F-MD-B18-A002-016's remaining bounded units, per the consolidated package's G-label taxonomy, not derived or started here: G05 (MD-S050-R0017, full-parent aggregate), G08 (MD-S050-R0046), G09 (MD-S003-R0009/MD-S003-R0010/MD-S003-R0005), and the F-013 carry-forward (MD-S019-R0074). Not started here. No data_260914 action, new attempt, strategy change or relock. No commit or push performed, per current instruction."
+}

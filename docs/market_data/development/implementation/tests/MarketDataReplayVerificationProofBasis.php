@@ -758,6 +758,65 @@ final class MarketDataReplayVerificationProofBasis
             'basis' => 'a real, unmocked call to verifyRunAgainstFixture with no explicit publication id anywhere throws REPLAY_EXPLICIT_PUBLICATION_REQUIRED before any pointer/current lookup is consulted (proven by leaving those lookup methods unstubbed, so an unexpected call itself fails the test), while a genuinely explicit id is independently proven to resolve successfully through the explicit path; mutation-proven by removing the refusal, which turned the negative test red on an unstubbed downstream call rather than silently substituting a pointer-resolved publication, byte-restored and sha256-verified, control green',
         ],
 
+        // F-MD-B18-A002-016 G04: "record and compare request mode, import status, promote status,
+        // source mode, pointer switch status, and publication state." request_mode/source_mode/
+        // publishability_state were already proven load-bearing by the perturbation table. The real
+        // production compareField() calls for import_status/promote_status/pointer_switched
+        // (ReplayVerificationService::compareExpectedAndActual) already existed and were correctly
+        // implemented -- each derived from the real run row (request_mode/terminal_status/
+        // publishability_state/bars_rows_written/is_current_publication), not from the expected side
+        // -- but no fixture in this file ever declared a non-null expected value for these three
+        // fields, so compareField()'s null-expectation skip meant real code no test ever exercised.
+        // Fixed with three new perturbation-table entries (no production change): baseline defaults
+        // for import_status='COMPLETED'/promote_status='PROMOTED'/pointer_switched=true match the real
+        // actual-side computation for the shared baseline run (so all 13 pre-existing perturbations
+        // are unaffected), and three new entries diverge each field from that baseline. Mutation-proven:
+        // removing the three compareField() calls turned exactly these three new perturbation cases red
+        // (17 tests run, 3 failures, the other 14 including the unrelated 11 stayed green); byte-restored
+        // via git checkout (file confirmed byte-identical to committed HEAD both before and after, since
+        // this session's F-016 work never otherwise touched it), sha256-verified, control green (42/42).
+        'MD-S036-R0007' => [
+            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_named_assertion_class_denies_pass',
+            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_the_unperturbed_fixture_passes',
+            'basis' => 'all six named fields (request_mode, import_status, promote_status, source_mode, pointer_switched, publishability_state) are each individually proven load-bearing by the perturbation table against the real ReplayVerificationService::compareExpectedAndActual, with the unperturbed fixture as the control that a genuine match still reaches PASS',
+        ],
+        // F-MD-B18-A002-016 G04: three clauses. Clause 3 (unexpected import promotion is a mismatch,
+        // not a silent pass) was already proven via appendImportPromotionPolicyMismatches() and its
+        // guard pair. Clause 2 (replay compares 7 named fields: request_mode/source_mode/import_status/
+        // promote_status/publication_state/pointer_state/reason_code) shares R0007's exact gap for
+        // import_status/promote_status/pointer_switched, now closed by the same three perturbation
+        // entries; final_reason_code was already proven. Clause 1 -- "Evidence export must show whether
+        // a run is import-only or promoted without requiring direct DB inspection" -- was genuinely
+        // unguarded: MarketDataEvidenceExportService::buildRunSummary/deriveImportStatus/
+        // derivePromoteStatus were already correctly implemented as pure functions of the already-fetched
+        // $run row (confirmed by reading both helpers: neither takes a repository or issues a query), but
+        // zero existing test ever exercised the import_promote_boundary export block for either scenario.
+        // New test exports an import-only run and a promoted run through the same method, with neither
+        // collaborator mock stubbing anything import/promote-specific beyond what every export already
+        // needs -- an unstubbed extra DB call would itself fail the test.
+        'MD-S036-R0031' => [
+            'positive' => 'MarketDataEvidenceExportServiceTest::test_export_run_evidence_distinguishes_import_only_from_promoted_without_extra_db_inspection',
+            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_an_import_only_expectation_against_an_unpromoted_run_raises_no_promotion_mismatch',
+            'basis' => 'the export genuinely distinguishes an import-only run from a promoted run (request_mode/import_status/promote_status/promoted/import_promote_boundary.boundary_rule all differ correctly) using only the already-fetched run row, no extra collaborator stubbed; the replay-side unexpected-promotion clause and the request-mode/import-status/promote-status/pointer-switched comparison clause are proven by the same guards bound to MD-S036-R0007 and the pre-existing import-only promotion-policy pair. Mutation-proven: nulling the boundary_rule ternary and separately broadening the promoted computation to ignore publishability_state/pointer state each turned the export-distinguishing test red on its own distinct assertion; byte-restored via git checkout, sha256-verified, control green',
+        ],
+        // F-MD-B18-A002-016 G04: the replay half (a manual_file run whose import succeeded and which
+        // claims READABLE while its coverage gate did not pass is a MISMATCH) was already proven. The
+        // evidence-export half was not: MarketDataEvidenceExportService::isReadableRun() already
+        // required terminal_status=SUCCESS AND publishability_state=READABLE AND coverage_gate_state=PASS,
+        // but every existing test that set coverage_gate_state=FAIL also set terminal_status=HELD, so
+        // readability was already false from the terminal-status clause alone and the coverage condition
+        // was never isolated -- a broken coverage clause and a correct one would have passed the same
+        // tests identically. New test holds terminal_status=SUCCESS and publishability_state=READABLE
+        // constant (import genuinely succeeded, run superficially looks READABLE) and varies only
+        // coverage_gate_state, asserting the exported final_outcome_note correctly says "not readable"
+        // rather than the SUCCESS+READABLE message, paired with a positive control (coverage PASS ->
+        // genuinely readable, publication_manifest.json written).
+        'MD-S040-R0080' => [
+            'positive' => 'MarketDataEvidenceExportServiceTest::test_export_run_evidence_does_not_treat_a_manual_file_run_as_readable_when_coverage_failed_despite_import_success',
+            'negative' => 'MarketDataEvidenceExportServiceTest::test_export_run_evidence_treats_a_manual_file_run_as_readable_when_coverage_passed',
+            'basis' => 'a SUCCESS + READABLE-looking run whose coverage gate failed is exported with a "not readable" final_outcome_note and no publication_manifest.json, isolating the coverage clause of isReadableRun() from the terminal-status/publishability-state clauses every prior fixture conflated it with; the positive control (coverage PASS) is independently proven genuinely readable. Complements the pre-existing replay-side proof (B18ReplayComparisonExhaustivenessTest::test_a_manual_file_run_readable_without_a_coverage_pass_is_a_mismatch), so neither the evidence nor the replay flow treats manual_file as readable merely because import succeeded. Mutation-proven: removing the coverage_gate_state=PASS clause from isReadableRun() turned exactly the positive test red (the note read as SUCCESS+READABLE instead of not-readable) while the negative control stayed green; byte-restored via git checkout, sha256-verified, control green',
+        ],
+
     ];
 
     // Withdrawn from PROVEN on 2026-09-14: these four rows are CONDITIONAL_NOT_APPLICABLE under
@@ -829,24 +888,6 @@ final class MarketDataReplayVerificationProofBasis
         // empty otherwise, never a live-config fallback). No guard was weakened and no new test was added: both
         // negative guards already existed from this round's and E047/E048's own remediation, and the comparison
         // guard already existed from E046. Promoted to PROVEN.
-        // F-MD-B18-A002-016: import status comparison and the export record of request mode, import status and promote status are unguarded (G09 probes not caught); only the import-only promotion policy is proven.
-        'MD-S036-R0007' => [
-            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_an_import_only_expectation_is_not_satisfied_by_a_run_that_promoted',
-            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_an_import_only_expectation_against_an_unpromoted_run_raises_no_promotion_mismatch',
-            'basis' => 'request mode, source mode and publication state are each proven load-bearing by the perturbation table, and import status, promote status and pointer switch status by the import-only fixture: a fixture declaring request_mode import_only against a run that promoted is asserted to raise REPLAY_IMPORT_PROMOTE_MISMATCH naming import_only_promote_status_policy and import_only_pointer_switch_policy. The negative guard runs the same import-only expectation against a run that did not promote and asserts no promotion mismatch, so the rule is not satisfied by failing every import-only fixture.',
-        ],
-        // F-MD-B18-A002-016: the export clause (import-only versus promoted without DB inspection) and import status comparison are unguarded; the unexpected-promotion clause is proven.
-        'MD-S036-R0031' => [
-            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_an_import_only_expectation_is_not_satisfied_by_a_run_that_promoted',
-            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_an_import_only_expectation_against_an_unpromoted_run_raises_no_promotion_mismatch',
-            'basis' => 'code change, not only a guard. The contract sentence is unexpected import promotion must be a replay mismatch, not a silent pass, and it had no implementation: compareField() skips a null expectation and the fixture schema leaves import_status, promote_status, promoted and pointer_switched optional, so a fixture declaring request_mode import_only had its promotion state checked by nothing. REPLAY_IMPORT_PROMOTE_MISMATCH was a registered reason code with no path able to emit it. ReplayVerificationService::appendImportPromotionPolicyMismatches() was added so that declaring the request mode makes all three promotion signals load-bearing. Probe: removing the call turned the positive red while everything else stayed green.',
-        ],
-        // F-MD-B18-A002-016: the replay half is proven; the evidence half, the coverage clause of the export readability check, is unguarded.
-        'MD-S040-R0080' => [
-            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_manual_file_run_readable_without_a_coverage_pass_is_a_mismatch',
-            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_the_unperturbed_fixture_passes',
-            'basis' => 'the prohibition rather than the exhibit: a manual_file run whose import succeeded and which claims READABLE while its coverage gate did not pass is asserted to raise manual_file_readable_coverage_policy and a FAIL verdict, so import success alone cannot produce readability. The negative guard is the same manual_file fixture with a passing coverage gate reaching PASS, so the rule is not satisfied by refusing every manual_file run. Probe: disabling the readability policy condition in appendManualFilePolicyMismatches turned the positive red.',
-        ],
         // F-MD-B18-A002-016: the basis never seeds a delisted listing; rebind to the anti-survivorship delisting fixture, which caught the probe the basis missed.
         'MD-S003-R0009' => [
             'positive' => 'TemporalIdentityLayerContractTest::test_point_in_time_resolution_returns_the_full_identity_for_the_trade_date',

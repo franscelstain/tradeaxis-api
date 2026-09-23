@@ -153,7 +153,84 @@ than silently resolving a pointer-substituted publication.
 Proof basis: `PROVEN` 78 → 80, `INCOMPLETE` 36 → 34, confirmed via PHP parse. No traceability-matrix
 `coverage_status`/`SATISFIED`/denominator change. `MD-DEP-0017` remains `BLOCKING`.
 
-**This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.** 9 of its own 14 predicates
-remain `INCOMPLETE`: `MD-S036-R0007`/`MD-S036-R0031`/`MD-S040-R0080`/`MD-S003-R0005` (guard gaps),
-`MD-S050-R0017` (G05 full-parent aggregate), `MD-S003-R0009`/`MD-S003-R0010`/`MD-S050-R0046`
-(rebind-only), `MD-S019-R0074` (F-013 carry-forward). Not started in this unit.
+**This finding remained `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`** after G01, with 9 of its own
+14 predicates `INCOMPLETE`: `MD-S036-R0007`/`MD-S036-R0031`/`MD-S040-R0080`/`MD-S003-R0005` (guard
+gaps), `MD-S050-R0017` (G05 full-parent aggregate), `MD-S003-R0009`/`MD-S003-R0010`/`MD-S050-R0046`
+(rebind-only), `MD-S019-R0074` (F-013 carry-forward).
+
+## G04: import/promote record and compare (MD-S036-R0007/MD-S036-R0031/MD-S040-R0080) — 2026-09-23T12:34:25+07:00
+
+Bounded to exactly three predicates, per the consolidated remediation package's own G-label taxonomy
+(the same numeric order this attempt already used for F-015: G03→G04). Reviewed independently
+against current implementation before any guard was written — the prior reconstruction's
+`PROOF_GUARD_GAP` classification for all three was confirmed, not trusted.
+
+**`MD-S036-R0007`.** "Record and compare request mode, import status, promote status, source mode,
+pointer switch status, and publication state." `request_mode`/`source_mode`/`publishability_state`
+were already proven load-bearing by `B18ReplayComparisonExhaustivenessTest`'s perturbation table. The
+real `compareField()` calls for `import_status`/`promote_status`/`promoted`/`pointer_switched` in
+`ReplayVerificationService::compareExpectedAndActual` already existed and were confirmed correctly
+implemented — each genuinely derived from the real run row, not the expected side — but
+`expectedReplayResult()`'s `expected_run_context` array literal never included these three keys at
+all, so `compareField()`'s null-expectation skip left real code permanently unexercised by every
+existing test. **Fixed with three new perturbation entries**, paired with matching non-divergent
+baseline defaults so all 13 pre-existing perturbations remain provably unaffected.
+
+**`MD-S036-R0031`.** Three clauses. Clause 3 ("unexpected import promotion must be a replay
+mismatch") was already proven prior to this unit. Clause 2 (replay compares 7 named fields) shares
+R0007's exact fix for its unproven fields. **Clause 1** — "Evidence export must show whether a run
+is import-only or promoted without requiring direct DB inspection" — was genuinely unguarded:
+`MarketDataEvidenceExportService::buildRunSummary`/`deriveImportStatus`/`derivePromoteStatus`
+confirmed by direct reading to be pure functions of the already-fetched `$run` row (neither issues a
+query nor takes a repository); grep confirmed zero existing test ever referenced
+`import_promote_boundary`, `deriveImportStatus`, or `derivePromoteStatus` at all. **New test** exports
+both an import-only run and a promoted run through the same real, unmocked path, with neither
+collaborator mock stubbing anything import/promote-specific beyond what every export already
+structurally requires, proving `request_mode`/`import_status`/`promote_status`/`promoted`/
+`import_promote_boundary.boundary_rule` all differ correctly between the two runs.
+
+**`MD-S040-R0080`.** The replay half was already proven. `MarketDataEvidenceExportService::isReadableRun()`
+confirmed by direct reading to already require `coverage_gate_state=PASS` alongside
+`terminal_status=SUCCESS` and `publishability_state=READABLE` — but every existing test declaring
+`coverage_gate_state=FAIL` also declared `terminal_status=HELD`, so the coverage clause's own
+necessity was never isolated: a broken coverage clause and a correct one would have produced
+byte-identical outcomes on every existing fixture. **New test** holds `terminal_status=SUCCESS` and
+`publishability_state=READABLE` constant (import genuinely succeeded, run superficially looks
+`READABLE`) and varies only `coverage_gate_state` to `FAIL`, proving the coverage clause
+independently load-bearing, paired with a positive control.
+
+**No production code changed for any of the three predicates** — every implementation was already
+correct; only test coverage was added, across `B18ReplayComparisonExhaustivenessTest.php` and
+`MarketDataEvidenceExportServiceTest.php`.
+
+**Falsifiability.** Four live mutation/restore probes, all caught on their own distinct assertion, all
+byte-restored via `git checkout` (each file confirmed byte-identical to committed HEAD both before and
+after, since this session's F-016 work had not otherwise touched either file), all sha256-verified,
+all controls green: removing the four `compareField()` calls for
+`import_status`/`promote_status`/`promoted`/`pointer_switched` turned exactly the 3 new perturbation
+cases red out of 17 run under that dataProvider filter; removing the `boundary_rule` ternary's
+`request_mode` branch turned the import/promote-distinguishing test red on that exact field;
+broadening the `$promoted` computation to ignore `publishability_state`/pointer state turned the same
+test red on `promote_status`; removing the `coverage_gate_state=PASS` clause from `isReadableRun()`
+turned exactly the R0080 positive test red while its negative control stayed green. **A fifth
+mutation attempt was discarded rather than counted as a false proof**: disabling one dead-code branch
+inside `derivePromoteStatus` specific to the import-only fixture's `terminal_status=SUCCESS` was found
+non-discriminating — both branches converge to the same value for that terminal status — so it proved
+nothing about that line; the line remains covered by R0007's own generic field-comparison proof
+instead.
+
+`MD-S036-R0007`/`MD-S036-R0031`/`MD-S040-R0080` moved `INCOMPLETE` → `PROVEN`, reviewed and bound
+independently. Proof basis: `PROVEN` 80 → 83, `INCOMPLETE` 34 → 31, confirmed via PHP parse. No
+traceability-matrix `coverage_status`/`SATISFIED`/denominator change. `MD-DEP-0017` remains
+`BLOCKING`.
+
+Targeted suites green: `B18ReplayComparisonExhaustivenessTest` 42/42 (186 assertions),
+`MarketDataEvidenceExportServiceTest` 8/8 (222 assertions). Governance self-tests green:
+`GovernanceGateReadOnlyExecutionTest`+`ScopeBoundaryAndOrchestrationCompletionTest` 9/9,
+`FindingRecordConsistencyTest` 3/3. Full application suite not run, not required — production code is
+byte-identical to before this unit.
+
+**This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.** 6 of its own 14 predicates
+remain `INCOMPLETE`: `MD-S050-R0017` (G05 full-parent aggregate), `MD-S050-R0046` (G08),
+`MD-S003-R0009`/`MD-S003-R0010`/`MD-S003-R0005` (G09 rebind-only), `MD-S019-R0074` (F-013
+carry-forward, package-labelled G01). Not started in this unit.

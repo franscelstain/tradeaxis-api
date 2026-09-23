@@ -81,6 +81,16 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
             'MD-S036: request mode' => [['request_mode' => 'correction'], 'request_mode'],
             'MD-S036: source mode' => [['source_mode' => 'api', 'source_identity' => 'mode=api'], 'source_mode'],
             'MD-S036: publication identity' => [['publication_id' => 45], 'publication_id'],
+            // MD-S036-R0007/R0031: import status, promote status, pointer switch status. The generic
+            // field comparison for these three already existed in ReplayVerificationService
+            // (compareField() at the import_status/promote_status/pointer_switched call sites) but no
+            // fixture ever declared a non-null expected value for them, so compareField()'s
+            // null-expectation skip meant the comparison was real code that no test ever exercised.
+            // The baseline `$v` defaults below give every other perturbation a matching, non-divergent
+            // expectation for these three fields, so only these three entries turn the verdict red.
+            'MD-S036: import status' => [['import_status' => 'PENDING'], 'import_status'],
+            'MD-S036: promote status' => [['promote_status' => 'NOT_PROMOTED'], 'promote_status'],
+            'MD-S036: pointer switched' => [['pointer_switched' => false], 'pointer_switched'],
         ];
     }
 
@@ -765,6 +775,14 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
             'trade_date_requested' => self::TRADE_DATE,
             'trade_date_effective' => self::TRADE_DATE,
             'request_mode' => null,
+            // The real actual-side computation for the baseline run/publication (no request_mode,
+            // terminal_status SUCCESS, publishability_state READABLE, is_current true): promoted is
+            // true, so import_status='COMPLETED', promote_status='PROMOTED',
+            // pointer_switched=true. These match every other perturbation's untouched actual side, so
+            // only the three MD-S036 import/promote/pointer entries above diverge from them.
+            'import_status' => 'COMPLETED',
+            'promote_status' => 'PROMOTED',
+            'pointer_switched' => true,
             'terminal_status' => 'SUCCESS',
             'publishability_state' => 'READABLE',
             'final_reason_code' => 'COVERAGE_THRESHOLD_MET',
@@ -808,6 +826,9 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
                 'trade_date_requested' => $v['trade_date_requested'],
                 'trade_date_effective' => $v['trade_date_effective'],
                 'request_mode' => $v['request_mode'],
+                'import_status' => $v['import_status'],
+                'promote_status' => $v['promote_status'],
+                'pointer_switched' => $v['pointer_switched'],
                 'terminal_status' => $v['terminal_status'],
                 'publishability_state' => $v['publishability_state'],
                 'final_reason_code' => $v['final_reason_code'],

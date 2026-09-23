@@ -690,5 +690,309 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertNull($payload['coverage_context']['coverage_reason_code']);
     }
 
+    /**
+     * `MD-S040-R0080` -- "No evidence or replay flow may treat `manual_file` as readable merely
+     * because import succeeded." The replay half is proven by
+     * `B18ReplayComparisonExhaustivenessTest::test_a_manual_file_run_readable_without_a_coverage_pass_is_a_mismatch`.
+     * This is the evidence-export half: `isReadableRun()` requires `terminal_status=SUCCESS` AND
+     * `publishability_state=READABLE` AND `coverage_gate_state=PASS`. Every existing export test that
+     * sets `coverage_gate_state=FAIL` also sets `terminal_status=HELD`, so the coverage clause was
+     * never isolated -- readability was already false from the terminal-status clause alone, and the
+     * coverage condition contributed nothing that test could detect. Here `terminal_status=SUCCESS`
+     * and `publishability_state=READABLE` are both held constant (i.e. import genuinely succeeded and
+     * the run superficially looks READABLE), and only `coverage_gate_state` is FAIL, isolating the
+     * one clause this predicate is about.
+     */
+    public function test_export_run_evidence_does_not_treat_a_manual_file_run_as_readable_when_coverage_failed_despite_import_success(): void
+    {
+        $run = (object) [
+            'run_id' => 8140,
+            'trade_date_requested' => '2026-05-01',
+            'trade_date_effective' => '2026-05-01',
+            'lifecycle_state' => 'COMPLETED',
+            'terminal_status' => 'SUCCESS',
+            'quality_gate_state' => 'PASS',
+            'publishability_state' => 'READABLE',
+            'stage' => 'FINALIZE',
+            'source' => 'manual_file',
+            'bars_rows_written' => 10,
+            'invalid_bar_count' => 0,
+            'coverage_universe_count' => 1000,
+            'coverage_available_count' => 10,
+            'coverage_missing_count' => 990,
+            'coverage_ratio' => 0.01,
+            'coverage_min_threshold' => 0.98,
+            'coverage_gate_state' => 'FAIL',
+            'coverage_reason_code' => 'RUN_COVERAGE_LOW',
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            'coverage_missing_sample_json' => json_encode([]),
+            'final_reason_code' => 'COVERAGE_BELOW_THRESHOLD',
+            'started_at' => '2026-05-01T17:00:00+07:00',
+            'finished_at' => '2026-05-01T17:03:00+07:00',
+        ];
 
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $corrections = m::mock(EodCorrectionRepository::class);
+
+        $evidence->shouldReceive('findRunById')->once()->with(8140)->andReturn($run);
+        // The discriminating assertion: SUCCESS + READABLE alone must not route the export down the
+        // readable-publication resolution path when coverage failed.
+        $evidence->shouldNotReceive('resolvePublicationForEvidenceAudit');
+        $publications->shouldNotReceive('buildManifestByPublicationId');
+        $publications->shouldReceive('findRawCurrentPublicationStateForTradeDate')->once()->with('2026-05-01')->andReturn(null);
+        $evidence->shouldReceive('summarizeRunEvents')->once()->with(8140)->andReturn([
+            'event_count' => 1, 'first_event_time' => null, 'last_event_time' => null,
+            'first_event_type' => null, 'last_event_type' => null, 'highest_severity' => 'INFO',
+            'stage_counts' => [], 'reason_code_counts' => [],
+        ]);
+        $evidence->shouldNotReceive('dominantReasonCodes');
+        $evidence->shouldNotReceive('exportEligibilityRows');
+        $evidence->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(8140)->andReturn([]);
+        $evidence->shouldReceive('exportInvalidBarsRows')->once()->with('2026-05-01', 8140)->andReturn([]);
+
+        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
+        $dir = sys_get_temp_dir().'/market_data_evidence_run_'.uniqid();
+        $result = $service->exportRunEvidence(8140, $dir);
+
+        $this->assertSame('SUCCESS', $result['summary']['terminal_status']);
+        $this->assertSame('READABLE', $result['summary']['publishability_state']);
+        $this->assertSame('FAIL', $result['summary']['coverage_gate_state']);
+        $summary = json_decode(file_get_contents($dir.'/run_summary.json'), true);
+        $this->assertStringStartsWith('Run is not readable', $summary['final_outcome_note'],
+            'a SUCCESS + READABLE run whose coverage gate failed was reported as readable -- import success alone produced readability');
+        $this->assertFileDoesNotExist($dir.'/publication_manifest.json');
+    }
+
+    /** The positive control for the test above: SUCCESS + READABLE + coverage PASS is genuinely readable. */
+    public function test_export_run_evidence_treats_a_manual_file_run_as_readable_when_coverage_passed(): void
+    {
+        $run = (object) [
+            'run_id' => 8141,
+            'trade_date_requested' => '2026-05-02',
+            'trade_date_effective' => '2026-05-02',
+            'lifecycle_state' => 'COMPLETED',
+            'terminal_status' => 'SUCCESS',
+            'quality_gate_state' => 'PASS',
+            'publishability_state' => 'READABLE',
+            'stage' => 'FINALIZE',
+            'source' => 'manual_file',
+            'bars_rows_written' => 10,
+            'invalid_bar_count' => 0,
+            'coverage_universe_count' => 10,
+            'coverage_available_count' => 10,
+            'coverage_missing_count' => 0,
+            'coverage_ratio' => 1.0,
+            'coverage_min_threshold' => 0.98,
+            'coverage_gate_state' => 'PASS',
+            'coverage_reason_code' => 'COVERAGE_THRESHOLD_MET',
+            'coverage_threshold_mode' => 'MIN_RATIO',
+            'coverage_universe_basis' => 'active_equity_universe_asof_trade_date',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            'coverage_missing_sample_json' => json_encode([]),
+            'final_reason_code' => 'COVERAGE_THRESHOLD_MET',
+            'publication_id' => 1301,
+            'started_at' => '2026-05-02T17:00:00+07:00',
+            'finished_at' => '2026-05-02T17:03:00+07:00',
+        ];
+        $publication = (object) [
+            'publication_id' => 1301, 'run_id' => 8141, 'publication_version' => 1, 'is_current' => 1,
+            'seal_state' => 'SEALED', 'evidence_resolution_mode' => 'CURRENT_READABLE_PUBLICATION_AUDIT',
+            'evidence_publication_scope' => 'CURRENT_POINTER_PUBLICATION', 'evidence_selector_type' => 'run_id',
+            'evidence_selector_id' => 8141, 'current_pointer_required' => true,
+            'current_pointer_status' => 'RESOLVED_READABLE_CURRENT', 'historical_publication_allowed' => false,
+            'artifact_scope' => 'PUBLICATION_SCOPED', 'coverage_basis_publication_id' => 1301,
+            'coverage_basis_run_id' => 8141, 'lineage_verification_status' => 'LINEAGE_VERIFIED',
+            'evidence_reason_code' => 'CURRENT_READABLE_PUBLICATION_RESOLVED',
+        ];
+        $manifest = (object) [
+            'publication_id' => 1301, 'trade_date' => '2026-05-02', 'run_id' => 8141,
+            'publication_version' => 1, 'is_current' => 1, 'supersedes_publication_id' => null,
+            'seal_state' => 'SEALED', 'sealed_at' => '2026-05-02T17:03:00+07:00',
+            'config_identity' => 'cfg_v1', 'bars_batch_hash' => 'A1', 'indicators_batch_hash' => 'B1',
+            'eligibility_batch_hash' => 'C1', 'bars_rows_written' => 10, 'indicators_rows_written' => 10,
+            'eligibility_rows_written' => 10, 'trade_date_effective' => '2026-05-02',
+            'bound_input_context' => [
+                'available' => true, 'status' => 'VERIFIED', 'schema_version' => 'md_publication_inputs_v2',
+                'reason' => null, 'bound_input_context_hash' => str_repeat('f', 64),
+            ],
+        ];
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $corrections = m::mock(EodCorrectionRepository::class);
+
+        $evidence->shouldReceive('findRunById')->once()->with(8141)->andReturn($run);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with([
+            'type' => 'run_id', 'run_id' => 8141, 'trade_date' => '2026-05-02',
+        ])->andReturn($publication);
+        $publications->shouldReceive('buildManifestByPublicationId')->once()->with(1301)->andReturn($manifest);
+        $evidence->shouldReceive('summarizeRunEvents')->once()->with(8141)->andReturn([
+            'event_count' => 1, 'first_event_time' => null, 'last_event_time' => null,
+            'first_event_type' => null, 'last_event_type' => null, 'highest_severity' => 'INFO',
+            'stage_counts' => [], 'reason_code_counts' => [],
+        ]);
+        $evidence->shouldReceive('dominantReasonCodesForEvidencePublication')->once()->with(8141, '2026-05-02', 1301, true)->andReturn([]);
+        $evidence->shouldReceive('exportEligibilityRowsForEvidencePublication')->once()->with('2026-05-02', 1301, true)->andReturn([]);
+        $evidence->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(8141)->andReturn([]);
+        $evidence->shouldReceive('exportInvalidBarsRows')->once()->with('2026-05-02', 8141)->andReturn([]);
+
+        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
+        $dir = sys_get_temp_dir().'/market_data_evidence_run_'.uniqid();
+        $result = $service->exportRunEvidence(8141, $dir);
+
+        $summary = json_decode(file_get_contents($dir.'/run_summary.json'), true);
+        $this->assertStringStartsWith('Run is SUCCESS + READABLE', $summary['final_outcome_note'],
+            'a SUCCESS + READABLE run whose coverage gate passed must be reported as readable');
+        $this->assertFileExists($dir.'/publication_manifest.json');
+    }
+
+    /**
+     * `MD-S036-R0031` clause 1 -- "Evidence export must show whether a run is import-only or
+     * promoted without requiring direct DB inspection." `MarketDataEvidenceExportService::buildRunSummary`
+     * derives `request_mode`/`import_status`/`promote_status`/`promoted`/`import_promote_boundary`
+     * purely from the already-fetched `$run` row (`deriveImportStatus()`/`derivePromoteStatus()` take
+     * no repository and issue no query); no test exercised that block for either an import-only or a
+     * promoted run. Neither collaborator mock here stubs any lookup specific to import/promote
+     * determination -- only what every export already requires (`findRunById` once) -- so if the
+     * implementation ever required an extra DB call to tell the two apart, this test would fail on an
+     * unstubbed Mockery call rather than silently passing.
+     */
+    public function test_export_run_evidence_distinguishes_import_only_from_promoted_without_extra_db_inspection(): void
+    {
+        $importOnlyRun = (object) [
+            'run_id' => 8142,
+            'trade_date_requested' => '2026-05-03',
+            'trade_date_effective' => '2026-05-03',
+            'lifecycle_state' => 'COMPLETED',
+            'terminal_status' => 'SUCCESS',
+            'quality_gate_state' => 'PASS',
+            'publishability_state' => 'NOT_READABLE',
+            'stage' => 'INGEST_BARS',
+            'source' => 'manual_file',
+            'request_mode' => 'import_only',
+            'bars_rows_written' => 10,
+            'is_current_publication' => 0,
+            'coverage_gate_state' => 'NOT_EVALUATED',
+            'final_reason_code' => 'IMPORT_ONLY_ACCEPTED',
+            'started_at' => '2026-05-03T17:00:00+07:00',
+            'finished_at' => '2026-05-03T17:01:00+07:00',
+        ];
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $corrections = m::mock(EodCorrectionRepository::class);
+
+        $evidence->shouldReceive('findRunById')->once()->with(8142)->andReturn($importOnlyRun);
+        $evidence->shouldNotReceive('resolvePublicationForEvidenceAudit');
+        $publications->shouldNotReceive('buildManifestByPublicationId');
+        $publications->shouldReceive('findRawCurrentPublicationStateForTradeDate')->once()->with('2026-05-03')->andReturn(null);
+        $evidence->shouldReceive('summarizeRunEvents')->once()->with(8142)->andReturn([
+            'event_count' => 1, 'first_event_time' => null, 'last_event_time' => null,
+            'first_event_type' => null, 'last_event_type' => null, 'highest_severity' => 'INFO',
+            'stage_counts' => [], 'reason_code_counts' => [],
+        ]);
+        $evidence->shouldNotReceive('dominantReasonCodes');
+        $evidence->shouldNotReceive('exportEligibilityRows');
+        $evidence->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(8142)->andReturn([]);
+        $evidence->shouldReceive('exportInvalidBarsRows')->once()->with('2026-05-03', 8142)->andReturn([]);
+
+        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
+        $dir = sys_get_temp_dir().'/market_data_evidence_run_'.uniqid();
+        $service->exportRunEvidence(8142, $dir);
+        $importSummary = json_decode(file_get_contents($dir.'/run_summary.json'), true);
+
+        $this->assertSame('import_only', $importSummary['request_mode']);
+        $this->assertSame('COMPLETED', $importSummary['import_status']);
+        $this->assertSame('NOT_PROMOTED', $importSummary['promote_status']);
+        $this->assertFalse($importSummary['promoted']);
+        $this->assertSame(
+            'import_only must not create READABLE publication or switch current pointer',
+            $importSummary['import_promote_boundary']['boundary_rule']
+        );
+
+        // The promoted case, same method, no extra collaborator stubbed beyond the readable-path
+        // resolution every promoted export already needs.
+        $promotedRun = (object) [
+            'run_id' => 8143,
+            'trade_date_requested' => '2026-05-04',
+            'trade_date_effective' => '2026-05-04',
+            'lifecycle_state' => 'COMPLETED',
+            'terminal_status' => 'SUCCESS',
+            'quality_gate_state' => 'PASS',
+            'publishability_state' => 'READABLE',
+            'stage' => 'FINALIZE',
+            'source' => 'manual_file',
+            'request_mode' => 'promote',
+            'bars_rows_written' => 10,
+            'is_current_publication' => 1,
+            'coverage_gate_state' => 'PASS',
+            'coverage_reason_code' => 'COVERAGE_THRESHOLD_MET',
+            'final_reason_code' => 'COVERAGE_THRESHOLD_MET',
+            'publication_id' => 1302,
+            'started_at' => '2026-05-04T17:00:00+07:00',
+            'finished_at' => '2026-05-04T17:03:00+07:00',
+        ];
+        $publication = (object) [
+            'publication_id' => 1302, 'run_id' => 8143, 'publication_version' => 1, 'is_current' => 1,
+            'seal_state' => 'SEALED', 'evidence_resolution_mode' => 'CURRENT_READABLE_PUBLICATION_AUDIT',
+            'evidence_publication_scope' => 'CURRENT_POINTER_PUBLICATION', 'evidence_selector_type' => 'run_id',
+            'evidence_selector_id' => 8143, 'current_pointer_required' => true,
+            'current_pointer_status' => 'RESOLVED_READABLE_CURRENT', 'historical_publication_allowed' => false,
+            'artifact_scope' => 'PUBLICATION_SCOPED', 'coverage_basis_publication_id' => 1302,
+            'coverage_basis_run_id' => 8143, 'lineage_verification_status' => 'LINEAGE_VERIFIED',
+            'evidence_reason_code' => 'CURRENT_READABLE_PUBLICATION_RESOLVED',
+        ];
+        $manifest = (object) [
+            'publication_id' => 1302, 'trade_date' => '2026-05-04', 'run_id' => 8143,
+            'publication_version' => 1, 'is_current' => 1, 'supersedes_publication_id' => null,
+            'seal_state' => 'SEALED', 'sealed_at' => '2026-05-04T17:03:00+07:00',
+            'config_identity' => 'cfg_v1', 'bars_batch_hash' => 'A1', 'indicators_batch_hash' => 'B1',
+            'eligibility_batch_hash' => 'C1', 'bars_rows_written' => 10, 'indicators_rows_written' => 10,
+            'eligibility_rows_written' => 10, 'trade_date_effective' => '2026-05-04',
+            'bound_input_context' => [
+                'available' => true, 'status' => 'VERIFIED', 'schema_version' => 'md_publication_inputs_v2',
+                'reason' => null, 'bound_input_context_hash' => str_repeat('f', 64),
+            ],
+        ];
+
+        $evidence2 = m::mock(EodEvidenceRepository::class);
+        $publications2 = m::mock(EodPublicationRepository::class);
+        $corrections2 = m::mock(EodCorrectionRepository::class);
+
+        $evidence2->shouldReceive('findRunById')->once()->with(8143)->andReturn($promotedRun);
+        $evidence2->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with([
+            'type' => 'run_id', 'run_id' => 8143, 'trade_date' => '2026-05-04',
+        ])->andReturn($publication);
+        $publications2->shouldReceive('buildManifestByPublicationId')->once()->with(1302)->andReturn($manifest);
+        $evidence2->shouldReceive('summarizeRunEvents')->once()->with(8143)->andReturn([
+            'event_count' => 1, 'first_event_time' => null, 'last_event_time' => null,
+            'first_event_type' => null, 'last_event_type' => null, 'highest_severity' => 'INFO',
+            'stage_counts' => [], 'reason_code_counts' => [],
+        ]);
+        $evidence2->shouldReceive('dominantReasonCodesForEvidencePublication')->once()->with(8143, '2026-05-04', 1302, true)->andReturn([]);
+        $evidence2->shouldReceive('exportEligibilityRowsForEvidencePublication')->once()->with('2026-05-04', 1302, true)->andReturn([]);
+        $evidence2->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(8143)->andReturn([]);
+        $evidence2->shouldReceive('exportInvalidBarsRows')->once()->with('2026-05-04', 8143)->andReturn([]);
+
+        $service2 = new MarketDataEvidenceExportService($evidence2, $publications2, $corrections2);
+        $dir2 = sys_get_temp_dir().'/market_data_evidence_run_'.uniqid();
+        $service2->exportRunEvidence(8143, $dir2);
+        $promotedSummary = json_decode(file_get_contents($dir2.'/run_summary.json'), true);
+
+        $this->assertSame('promote', $promotedSummary['request_mode']);
+        $this->assertSame('COMPLETED', $promotedSummary['import_status']);
+        $this->assertSame('PROMOTED', $promotedSummary['promote_status']);
+        $this->assertTrue($promotedSummary['promoted']);
+        $this->assertSame(
+            'promote must pass coverage/hash/seal/finalize before pointer switch',
+            $promotedSummary['import_promote_boundary']['boundary_rule']
+        );
+
+        // The two runs must genuinely differ, not both default to the same value.
+        $this->assertNotSame($importSummary['promote_status'], $promotedSummary['promote_status']);
+        $this->assertNotSame($importSummary['promoted'], $promotedSummary['promoted']);
+    }
 }
