@@ -106,3 +106,15 @@
 - Scope limit: no other key, default, threshold, finding behavior, readiness rule, publishability rule, or strategy semantic is authorised to change.
 - Freeze impact: successor freeze `MD-STRATEGY-FREEZE-20260922-001`; only the registered `MD-S082` fingerprint changes.
 - Verification impact: prior `MD-B18-A002` evidence (`E-MD-B18-A002-001` through `-048`) is unaffected and remains immutable under the predecessor freeze; none of it depended on the `MD-S082` exhaustive key population. The four predicates this registration bears on (`MD-S050-R0002`, `MD-S050-R0014`, `MD-S019-R0071`, `MD-S003-R0003`) are reviewed on their own merits in this work unit's own evidence record, not promoted automatically because this registration exists.
+
+## DOC-CHG-20260923-001 — Immutable historical integrity exception for the documentation gate
+
+- Date: 2026-09-23
+- Finding: `F-MD-B18-A002-022`
+- Supporting evidence: `E-MD-B18-A002-063` (correction of `E-MD-B18-A002-061`, unresolved item `E061-U1`); `E-MD-B18-A002-064` (gate remediation and fail-closed proof)
+- Reviewed decision: `D-MD-B18-A002-007`
+- Explicit authorization: owner decision received 2026-09-23: "Do not declare E061 “never issued” and do not edit E061. Adopt a narrowly controlled immutable historical integrity exception mechanism, but only through explicit governance authority and fail-closed gate implementation."
+- Strategy impact: none; strategy authority bytes, semantics and freeze unchanged.
+- Governance result: `DOCUMENT_INTEGRITY_GATE_STANDARD.md` gains a section defining `DOCUMENT_INTEGRITY_EXCEPTION_REGISTRY.json` as the only exception path for an issued, immutable, structurally invalid evidence record: eligibility conditions, registry contract, and fail-closed gate behaviour. The original gate requirement sentence is unchanged. `MarketDataDocumentationIntegrityGate` validates the registry as its own check and admits a `JSON_PARSE` failure only through a valid `ACTIVE` entry.
+- Scope limit: one excepted check (`JSON_PARSE`), one eligible class (issued `IMMUTABLE_AFTER_ISSUE` evidence with an issued correction), one registered entry (`MD-DOCEX-0001`, `E-MD-B18-A002-061`). Any other check, class or artifact requires a new controlled revision.
+- Verification impact: prior documentation-gate `PASS` results are unaffected, because the registry held no entry from its creation until this revision and so no earlier result could have used the admission path. Revalidated here: the gate, its self-test with new fail-closed mutations, and the governance gates (`E-MD-B18-A002-064`). No immutable record is edited.

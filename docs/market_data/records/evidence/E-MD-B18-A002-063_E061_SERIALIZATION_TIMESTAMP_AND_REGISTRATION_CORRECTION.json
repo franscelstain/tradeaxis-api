@@ -1,0 +1,82 @@
+{
+    "evidence_id": "E-MD-B18-A002-063",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+    "issued_at": "2026-09-23T16:25:01+07:00",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "CORRECTION",
+    "evidence_scope": "E061_SERIALIZATION_TIMESTAMP_AND_REGISTRATION_CORRECTION",
+    "ci_id": "CI-MD-B18-A002-001",
+    "related_findings": [
+        "F-MD-B18-A002-016",
+        "F-MD-B18-A002-022"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-061",
+        "E-MD-B18-A002-062"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-005",
+        "D-MD-B18-A002-007"
+    ],
+    "dependencies": [
+        "MD-DEP-0017",
+        "MD-DEP-0015"
+    ],
+    "schema_changed": false,
+    "authority": {
+        "DOCUMENT_CHANGE_POLICY.md §3": "IMMUTABLE_AFTER_ISSUE: MUST NOT be edited after issue; corrections require a new correlated record according to the applicable standard.",
+        "DOCUMENT_RECORDING_STANDARD.md §1": "Evidence correction creates new evidence; issued decisions are superseded by new decisions; historical records are never rewritten to look current.",
+        "DOCUMENT_CHANGE_POLICY.md §3 (MUTABLE_TRACEABLE)": "may be updated as part of normal governed execution when the document's own standard requires it, provided the update is traceable, does not silently alter strategy semantics, and does not create a parallel authority.",
+        "WORK_CORRELATION_AND_RECORD_REGISTRY_STANDARD.md §1": "All current work records MUST be registered in records/WORK_RECORD_REGISTRY.csv.",
+        "precedent": "E-MD-B18-A002-037 corrected issued E-MD-B18-A002-036 within the same attempt: E036 left unmodified and still CURRENT_ISSUED_RECORD, E037 issued with verdict CORRECTION, related_evidence naming E036, supersedes empty, no WORK_RELATIONSHIP_REGISTRY row (same attempt, no boundary crossed). This record follows that shape."
+    },
+    "corrected_record": {
+        "record_id": "E-MD-B18-A002-061",
+        "document_path": "records/evidence/E-MD-B18-A002-061_F016_G08_CAPABILITY_BOUNDARY_SOURCE_OBSERVATION_MD_S050_R0046_PROVEN.json",
+        "issued_in_commit": "0caaf38dd1acdc49456b70c272183ef83ceabe7c",
+        "retained_sha256": "3ad2e42e87e41f5163acb31c8726bf6fd4c7843fa245b389aac9b7fd206a8576",
+        "disposition": "RETAINED_UNMODIFIED. A working-tree edit that re-escaped its pattern field was reverted; the file is byte-identical to the committed blob (sha256 above, git diff empty). E061 remains CURRENT_ISSUED_RECORD; its substantive proof claims are not withdrawn."
+    },
+    "defects": [
+        {
+            "id": "E061-D1",
+            "integrity_check": "JSON_PARSE",
+            "field": "pattern",
+            "defect": "The field transcribes the MD-S050-R0046 regex with single backslashes. JSON permits \\b and \\n as escapes (decoding to backspace and newline, not a regex word boundary or the literal two characters), and rejects \\s outright, so the document does not parse. MarketDataDocumentationIntegrityGate JSON_PARSE fails on it.",
+            "correction": "The transcription is not restated. The authoritative value is the first element of B18ReplayAdmissibilityBoundaryTest::forbidden()['MD-S050-R0046'] in tests/Unit/MarketData/B18ReplayAdmissibilityBoundaryTest.php (lines 62-64), git blob c0b27ac8e0f237ea9d3d31a7471271e67826a9a7, unchanged since E061 was issued. Any reader of E061 should take the pattern from there."
+        },
+        {
+            "id": "E061-D2",
+            "field": "issued_at",
+            "defect": "E061 states 2026-09-23T14:15:30+07:00, an estimate. The only clock-derived stamp written with it is the original WORK_RECORD_REGISTRY row: 2026-09-23T09:51:51+02:00, i.e. 2026-09-23T14:51:51+07:00. E061 was therefore written about 36 minutes later than it claims; commit 0caaf38 is 2026-09-23T15:10:08+07:00.",
+            "correction": "Disclosed here, as for D-003/E-008/E-009/F-011 and E-056. The corrected WORK_RECORD_REGISTRY row keeps issued_at equal to the record's own stated value, matching how every other registry row mirrors its record; the true write time is this entry."
+        },
+        {
+            "id": "E061-D3",
+            "field": "registration",
+            "defect": "Commit 0caaf38 appended malformed rows for E061: DOCUMENT_ROLE_REGISTRY.csv \"MD-DOC-01194,EVIDENCE\" (2 fields against an 8-field header, and a document ID where document_path belongs); CURRENT_VERIFICATION_REGISTRY.csv \"MD-DOC-01194,E-MD-B18-A002-061,F-MD-B18-A002-016,G08,MD-S050-R0046,PROVEN\" (6 against 10); WORK_RECORD_REGISTRY.csv \"WR-061,E-MD-B18-A002-061,...,2026-09-23T09:51:51+02:00,\\\"Claude Haiku 4.5\\\"\" (8 against 15, record_id not the record's own ID). E061 was consequently unregistered under its own path in the role and verification registries, and CSV_STRUCTURE and GovernanceGateReadOnlyExecutionTest (array_combine on the role registry) failed.",
+            "correction": "Each malformed row was replaced with a schema-complete row for E061's real path: role EVIDENCE/CURRENT_EVIDENCE/IMMUTABLE_AFTER_ISSUE; verification CURRENT_RECORD/CURRENT_ISSUED_RECORD/current_proof_eligible YES; work record E-MD-B18-A002-061/ISSUED. These registries are MUTABLE_TRACEABLE and their own standard requires the registration; this record is the trace. DOCUMENT_ID_REGISTRY row MD-DOC-01194 was already well-formed and is unchanged."
+        },
+        {
+            "id": "E061-D4",
+            "field": "development/implementation/CURRENT_STATE.md (same commit)",
+            "defect": "Commit 0caaf38 committed CURRENT_STATE.md with its first 84 bytes overwritten by the path string \"D:\\Laravel\\tradeaxis-api\\docs\\market_data/development/implementation/CURRENT_STATE.md\", leaving \"tity and coverage\" where the title and the \"Verification identity and coverage\" heading were. Cause: GenerateMarketDataCurrentState.php writes the file itself (line 338) and then echoes its path (line 339); running it with stdout redirected into CURRENT_STATE.md let the shell truncate the file and the echo overwrite its head.",
+            "correction": "Regenerated by running the generator without redirecting its output; two consecutive runs are byte-identical and the file begins with \"# Market Data Current State\". CURRENT_STATE.md is generated, MUTABLE_TRACEABLE navigation, so regeneration is the correction."
+        }
+    ],
+    "proof_impact": "None on MD-S050-R0046. Its PROVEN basis in MarketDataReplayVerificationProofBasis.php names the executing guards (B18ReplayAdmissibilityBoundaryTest scan and pattern tests), which pass; the defects are in E061's serialization, timestamp and registration, not in the guard or the probe it reports.",
+    "coexistence_with_E062": "E-MD-B18-A002-062 (G09: MD-S003-R0009/R0010/R0005) does not rely on E061 for any proof and is independently valid. It names E061 only as the preceding record in the attempt sequence.",
+    "integrity_gate_conflict": {
+        "id": "E061-U1",
+        "statement": "Defect E061-D1 cannot be corrected by this record: MarketDataDocumentationIntegrityGate parses every .json under docs/market_data, and until DOC-CHG-20260923-001 it had no exception path while E061 is IMMUTABLE_AFTER_ISSUE. The conflict is recorded as F-MD-B18-A002-022 and addressed by owner decision D-MD-B18-A002-007: an explicit, fail-closed entry in DOCUMENT_INTEGRITY_EXCEPTION_REGISTRY.json that binds E061 at its retained sha256 to this record and to defect E061-D1. E061 is not edited and is not declared unissued.",
+        "exception_relies_on": [
+            "corrected_record",
+            "defects[E061-D1]"
+        ]
+    }
+}

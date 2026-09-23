@@ -84,6 +84,55 @@ class CoverageGateEvaluatorTest extends TestCase
         $this->assertSame('TKR0855', $result['missing_ticker_codes'][0]);
     }
 
+    /**
+     * `MD-S003-R0005` -- a total provider outage (zero delivered bars) must not shrink the
+     * denominator. `expected_universe_count` is a property of the market (the ticker-master
+     * universe for the trade date), never of what the provider happened to deliver, and every
+     * listing the universe names must be counted missing rather than quietly excluded.
+     *
+     * `SourceFailureResilienceTest::test_a_provider_failure_never_shrinks_the_denominator` sets
+     * `expected_universe_count` directly in its fixture and asserts `FinalizeDecisionService`
+     * echoes it back -- `FinalizeDecisionService` never computes that count, so the fixture proves
+     * only that a pass-through is a pass-through. This guard instead drives the real universe
+     * computation inside `CoverageGateEvaluator::evaluate()`: the universe is seeded at 900 and the
+     * artifact repository is mocked to return zero delivered ticker ids, matching what a total
+     * source outage looks like at this boundary.
+     */
+    public function test_evaluator_keeps_the_full_universe_as_the_denominator_when_the_provider_delivers_nothing()
+    {
+        $this->bindCoverageGateConfig();
+
+        $tickers = $this->createMock(TickerMasterRepository::class);
+        $artifacts = $this->createMock(EodArtifactRepository::class);
+
+        $tickers->expects($this->once())
+            ->method('getUniverseForTradeDate')
+            ->with('2026-04-03')
+            ->willReturn($this->buildUniverseRows(900));
+
+        $artifacts->expects($this->once())
+            ->method('loadCanonicalBarTickerIdsForTradeDate')
+            ->with('2026-04-03', null)
+            ->willReturn([]);
+
+        $service = new CoverageGateEvaluator($tickers, $artifacts);
+        $result = $service->evaluate('2026-04-03');
+
+        $this->assertSame(
+            900,
+            $result['expected_universe_count'],
+            'a total provider outage must not shrink the denominator below the full universe'
+        );
+        $this->assertSame(0, $result['available_eod_count']);
+        $this->assertSame(
+            900,
+            $result['missing_eod_count'],
+            'every listing in the universe must be counted missing when nothing was delivered'
+        );
+        $this->assertSame('FAIL', $result['coverage_gate_status']);
+        $this->assertEquals(0.0, $result['coverage_ratio']);
+    }
+
     public function test_evaluator_excludes_source_backed_suspended_tickers_from_expected_universe(): void
     {
         $this->bindCoverageGateConfig();

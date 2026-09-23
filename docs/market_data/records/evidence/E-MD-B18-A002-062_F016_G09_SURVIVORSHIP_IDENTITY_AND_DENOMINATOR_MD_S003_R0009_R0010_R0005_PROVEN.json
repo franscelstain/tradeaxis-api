@@ -1,0 +1,112 @@
+{
+    "evidence_record_id": "E-MD-B18-A002-062",
+    "finding_id": "F-MD-B18-A002-016",
+    "work_unit": "G09",
+    "rule_ids": [
+        "MD-S003-R0009",
+        "MD-S003-R0010",
+        "MD-S003-R0005"
+    ],
+    "description": "Survivorship identity (listing delisting, symbol change/reuse) and provider-outage denominator preservation",
+    "issued_at": "2026-09-23T15:34:21+07:00",
+    "issued_by": "Claude Sonnet 5",
+    "predicates": [
+        {
+            "rule_id": "MD-S003-R0009",
+            "requirement": "inactive-now/active-then listing remains in the historical universe (Historical_Replay_and_Data_Quality_Backtest.md:24, section 'Temporal identity and status')",
+            "classification": "REBIND_ONLY",
+            "prior_basis_defect": "TemporalIdentityLayerContractTest point-in-time/retraction tests never seed a delisted listing; structurally blind to survivorship",
+            "implementation_path": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php::baseIdentityQuery (delisted_date > $tradeDate OR-branch)",
+            "rebind_target": "B18AntiSurvivorshipFixtureCorpusTest::test_a_listing_active_at_T_but_delisted_today_stays_in_the_historical_universe",
+            "guard_verified_executing": true,
+            "guard_verified_dbbacked": true,
+            "guard_verified_no_producer_scope_mocking": true,
+            "discriminating_probe": {
+                "target_file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+                "baseline_sha256": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+                "mutation": "removed the delisted_date > $tradeDate OR-branch, leaving only whereNull(delisted_date)",
+                "target_test_result": "RED -- historical-date assertion failed, delisted listing 'GONE' missing from as-of-T universe",
+                "sibling_isolation": "9 of 10 tests in the file stayed GREEN (only the target test failed)",
+                "restored_sha256": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+                "sha256_match": true,
+                "control_after_restore": "10/10 GREEN (47 assertions)"
+            },
+            "production_code_changed": false,
+            "final_state": "PROVEN"
+        },
+        {
+            "rule_id": "MD-S003-R0010",
+            "requirement": "symbol change and symbol reuse resolve through stable listing identity (Historical_Replay_and_Data_Quality_Backtest.md:25, section 'Temporal identity and status')",
+            "classification": "REBIND_ONLY",
+            "prior_basis_defect": "same TemporalIdentityLayerContractTest pair; one symbol and one mapping per listing, never a change or reuse",
+            "implementation_path": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php::resolveProviderContext (pm.effective_to upper-bound clause, the 'mapping end')",
+            "rebind_target": [
+                "B18AntiSurvivorshipFixtureCorpusTest::test_a_symbol_change_resolves_to_the_symbol_and_mapping_effective_on_the_trade_date",
+                "B18AntiSurvivorshipFixtureCorpusTest::test_reused_symbol_text_resolves_to_the_listing_that_held_it_on_the_trade_date"
+            ],
+            "guard_verified_executing": true,
+            "guard_verified_dbbacked": true,
+            "guard_verified_no_producer_scope_mocking": true,
+            "discriminating_probe": {
+                "target_file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+                "baseline_sha256": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+                "mutation": "removed the pm.effective_to upper-bound clause from resolveProviderContext's provider-mapping join (F-016 remedy table's 'P11-R0010-MAP')",
+                "target_test_result": "RED (errored) on both target tests -- PROVIDER_SYMBOL_MAPPING_AMBIGUOUS once old and new mapping rows both matched the post-change date",
+                "sibling_isolation": "8 of 10 tests in the file stayed GREEN; only the 2 mapping-interval-dependent tests failed (the unrelated R0009 delisting fixture stayed green)",
+                "restored_sha256": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+                "sha256_match": true,
+                "control_after_restore": "10/10 GREEN (47 assertions)"
+            },
+            "production_code_changed": false,
+            "final_state": "PROVEN"
+        },
+        {
+            "rule_id": "MD-S003-R0005",
+            "requirement": "provider outage remains missing delivery and cannot shrink the denominator (Historical_Replay_and_Data_Quality_Backtest.md:17, section 'Degraded acquisition and expectation')",
+            "classification": "PROOF_GUARD_GAP",
+            "prior_basis_defect": "SourceFailureResilienceTest::test_a_provider_failure_never_shrinks_the_denominator sets expected_universe_count directly in its own fixture and asserts FinalizeDecisionService echoes it back; FinalizeDecisionService::evaluate() never computes that count (verified: return-array construction at lines 65/278 is a direct pass-through of the input coverage_summary key) -- the fixture proves a pass-through is a pass-through, not that the real universe computation survives an outage",
+            "audit_result": "no production defect found. CoverageGateEvaluator::evaluateCaptured() computes expected_universe_count = count($universeByTickerId) from TickerMasterRepository::getUniverseForTradeDate() (the ticker-master/temporal-identity universe), filtered only by verified full-session suspension, strictly BEFORE delivered/available ticker ids are loaded from the artifact repository -- architecturally independent of provider delivery. Matches Coverage_Universe_Definition_LOCKED.md's denominator = EXPECTED + UNKNOWN rule and its explicit prohibition on excluding dormant/quiet tickers (COVERAGE_DORMANT_TICKERS_EXCLUDED is deprecated).",
+            "implementation_path": "app/Application/MarketData/Services/CoverageGateEvaluator.php::evaluateCaptured",
+            "guard_added": "tests/Unit/MarketData/CoverageGateEvaluatorTest.php::test_evaluator_keeps_the_full_universe_as_the_denominator_when_the_provider_delivers_nothing",
+            "guard_description": "drives the real CoverageGateEvaluator::evaluate() (only the TickerMasterRepository/EodArtifactRepository boundary is mocked) through a total-outage fixture: 900-ticker universe, zero delivered ticker ids. Asserts expected_universe_count stays 900, available_eod_count drops to 0, missing_eod_count rises to 900 (every listing counted missing, none silently excluded), coverage_gate_status is FAIL.",
+            "discriminating_probe": {
+                "target_file": "app/Application/MarketData/Services/CoverageGateEvaluator.php",
+                "baseline_sha256": "4a58b785dfa41c1c4a07573480e5400ff2e85e557bdf869e4fced321b6491260",
+                "mutation": "changed the returned expected_universe_count from $expectedUniverseCount (the real universe count) to $deliveredObservationCount (what was actually delivered)",
+                "target_test_result": "RED on both the new total-outage guard (900 expected vs 0 observed) and the pre-existing partial-shortfall guard test_evaluator_returns_fail_when_available_is_below_threshold (900 expected vs 854 observed)",
+                "sibling_isolation": "6 of 8 tests in the file stayed GREEN (pass-matching, disabled-gate, zero-universe, suspended-exclusion, threshold-output cases where delivered already equals universe or the mutated line is unreached)",
+                "restored_sha256": "4a58b785dfa41c1c4a07573480e5400ff2e85e557bdf869e4fced321b6491260",
+                "sha256_match": true,
+                "control_after_restore": "8/8 GREEN (73 assertions)"
+            },
+            "production_code_changed": false,
+            "final_state": "PROVEN"
+        }
+    ],
+    "validation": {
+        "targeted_suites": {
+            "B18AntiSurvivorshipFixtureCorpusTest": "10/10 PASS (47 assertions)",
+            "CoverageGateEvaluatorTest": "8/8 PASS (73 assertions)",
+            "SourceFailureResilienceTest": "18/18 PASS (54 assertions, unaffected regression check)",
+            "AsKnownReplayBoundaryTest": "11/11 PASS (91 assertions, unaffected regression check)"
+        },
+        "proof_self_test": "overall FAIL from the baseline scenario only: 27 pre-existing entries (26 PREDICATE_WITHOUT_REVIEWED_BASIS for predicates outside G09, plus MISSING_NEGATIVE_PROOF:determinism_and_operations); none names MD-S003-R0009/R0010/R0005; all 10 injected-mutation scenarios pass. Not a regression.",
+        "governance_gates": {
+            "PromotedPredicateProofGateTest": "8/8 PASS (22 assertions)",
+            "ScopeBoundaryAndOrchestrationCompletionTest": "8/8 PASS (73 assertions)",
+            "FindingRecordConsistencyTest": "3/3 PASS (13 assertions)",
+            "ClassificationConsistencyGateTest": "20/20 PASS (96 assertions)",
+            "TraceabilityApplicabilityGateTest": "11/11 PASS (23 assertions)",
+            "B18ReplayAdmissibilityBoundaryTest": "4/4 PASS (10 assertions)",
+            "MarketDataRelationshipIntegrityGate": "PASS (validity PASS, completeness PASS)",
+            "MarketDataDocumentationIntegrityGate": "FAIL on JSON_PARSE only, for E-MD-B18-A002-061 alone (issued, immutable, unparseable; E-MD-B18-A002-063 E061-U1). Every other check passes, including CSV_STRUCTURE and ONE_DOCUMENT_ONE_ROLE.",
+            "GovernanceGateReadOnlyExecutionTest": "7/9 (5773 assertions); the documentation-pass case and the relationship self-test case fail, both because the documentation gate is red on E061 (self-test: 14/14 mutations fail closed, 2/2 relationship controls OK, 2 documentation controls red for that reason). Not caused by G09."
+        },
+        "full_application_suite": "not run, not required -- zero production application code changed; only one new test method added (CoverageGateEvaluatorTest); two production files (TemporalIdentityRepository.php, CoverageGateEvaluator.php) were mutation-probed and restored byte-identical, sha256-verified before and after"
+    },
+    "f016_predicates_remaining_after_this_unit": [
+        "MD-S019-R0074"
+    ],
+    "promotion_criteria_met": true,
+    "related_evidence_note": "E062 does not rely on E-MD-B18-A002-061 for any proof; E061 precedes it in the attempt sequence only. Corrections to issued E061 are recorded in E-MD-B18-A002-063, not here."
+}

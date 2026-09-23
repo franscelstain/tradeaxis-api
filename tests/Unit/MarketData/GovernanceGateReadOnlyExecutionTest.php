@@ -108,14 +108,20 @@ class GovernanceGateReadOnlyExecutionTest extends TestCase
         $this->assertSame($before, $this->snapshot(), 'SELF_TEST_CHANGED_ITS_SOURCE_DOCUMENTS');
         $this->assertSame(0, $code, json_encode($result));
         $this->assertSame('PASS', $result['status']);
-        $caught = $controls = 0;
+        $caught = $controls = $checkScoped = 0;
         foreach ($result['mutations'] as $mutation) {
             $this->assertTrue($mutation['mutation_applied']);
             $this->assertSame($mutation['expected'], $mutation['observed']);
             $caught += $mutation['verdict'] === 'FAILS_CLOSED' ? 1 : 0;
             $controls += $mutation['verdict'] === 'CONTROL_OK' ? 1 : 0;
+            // DOC-CHG-20260923-001: integrity-exception probes must fail exactly the checks they name.
+            if (isset($mutation['expected_failing_checks']) && $mutation['verdict'] === 'FAILS_CLOSED') {
+                $this->assertSame($mutation['expected_failing_checks'], $mutation['observed_failing_checks'], $mutation['mutation']);
+                $checkScoped++;
+            }
         }
-        $this->assertGreaterThanOrEqual(14, $caught);
+        $this->assertGreaterThanOrEqual(29, $caught);
+        $this->assertGreaterThanOrEqual(15, $checkScoped, 'the integrity-exception probes are missing from the self-test');
         $this->assertSame(4, $controls);
     }
 

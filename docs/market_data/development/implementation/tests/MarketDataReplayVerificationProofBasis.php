@@ -832,6 +832,46 @@ final class MarketDataReplayVerificationProofBasis
             'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
             'basis' => 'the corpus pattern guard at MD-S050-R0046 in the forbidden() map scans the active documents and forbids the claim that replay proves source observation faithfulness. A successful replay is evidence of reproducibility only; provider error inside a frozen observation is frozen by the same mechanism that guarantees determinism. The pattern is executed by the corpus scan test and verified to fire on the claim and spare denials. The active corpus contains no such assertion. Discriminating probe: injected a document containing "A successful replay proves the source observation was faithful", the scan test turned red with correct pattern-match detection; removed the document, test green again. No production code changed.',
         ],
+        // F-MD-B18-A002-016 (G09): rebind-only. The prior basis (TemporalIdentityLayerContractTest point-in-time
+        // and retraction tests) never seeds a delisted listing, so it is structurally blind to survivorship.
+        // Rebound to B18AntiSurvivorshipFixtureCorpusTest's dedicated delisting fixture, which seeds both a
+        // delisted-today/active-at-T listing and a live control and asserts both the historical and current reads.
+        'MD-S003-R0009' => [
+            'positive' => 'B18AntiSurvivorshipFixtureCorpusTest::test_a_listing_active_at_T_but_delisted_today_stays_in_the_historical_universe',
+            'negative' => 'B18AntiSurvivorshipFixtureCorpusTest::test_a_listing_active_at_T_but_delisted_today_stays_in_the_historical_universe',
+            'basis' => 'the fixture seeds a listing delisted 2025-06-30 alongside a live control, then reads TemporalIdentityRepository::readProjectedUniverseAsOf() at a historical trade date (2024-05-02, before delisting) and at a current date (2026-03-02, after). The delisted listing must appear at the historical date and must not appear at the current date -- both directions are asserted, so a query that ignores delisted_date entirely would fail the current-date assertion, and a query that drops delisted listings unconditionally would fail the historical-date assertion. The test constructs TemporalIdentityRepository directly with no ProducerInputScope active, so it exercises baseIdentityQuery() (the real DB-backed clause), not the mocked/active-producer branch. Mutation-proven this unit: removed the delisted_date > $tradeDate OR-branch from baseIdentityQuery(), leaving only whereNull(delisted_date); target test turned red (the historical-date assertion failed, "GONE" missing from the as-of-T universe) while the other 9 tests in the file stayed green; byte-restored via git-equivalent literal replacement and sha256-verified (cdd98b5...84 unchanged), control re-run green (10/10).',
+        ],
+        // F-MD-B18-A002-016 (G09): rebind-only. Same prior-basis defect as R0009 (one symbol/one mapping per
+        // listing, never seeding a change or reuse). Rebound to the two dedicated symbol-identity fixtures that
+        // seed an actual symbol change and an actual symbol reuse across two listings.
+        'MD-S003-R0010' => [
+            'positive' => 'B18AntiSurvivorshipFixtureCorpusTest::test_a_symbol_change_resolves_to_the_symbol_and_mapping_effective_on_the_trade_date',
+            'negative' => 'B18AntiSurvivorshipFixtureCorpusTest::test_reused_symbol_text_resolves_to_the_listing_that_held_it_on_the_trade_date',
+            'basis' => 'the first fixture seeds one listing with a symbol rename (OLDSYM->NEWSYM) and a parallel provider-mapping rename, and asserts the old symbol resolves only pre-change, the new symbol resolves only post-change, and the new symbol on a pre-change date refuses outright (fail-closed, not a soft miss) -- proving identity survives a rename through TemporalIdentityRepository::resolveProviderContext(). The second fixture seeds two distinct listings sharing the literal text "REUSED" in disjoint effective windows and asserts each date resolves to the listing that actually held the symbol then, through both resolveProviderContext() (provider-mapping path) and readProjectedUniverseAsOf() (symbol-interval path directly), so a defect isolated to either table is caught. Both tests run TemporalIdentityRepository unmocked against a real DB. Mutation-proven this unit: removed the pm.effective_to upper-bound clause from resolveProviderContext()\'s provider-mapping join (the "mapping end" the F-016 remedy table names as P11-R0010-MAP); both target tests turned red -- the symbol-change test errored on PROVIDER_SYMBOL_MAPPING_AMBIGUOUS (the old and new mapping rows both matched the post-change date once the upper bound was gone) and the reuse test likewise errored, while 8 of the file\'s other 10 tests (including the unrelated R0009 delisting fixture) stayed green; byte-restored and sha256-verified (cdd98b5...84 unchanged), control re-run green (10/10).',
+        ],
+        // F-MD-B18-A002-016 (G09): PROOF_GUARD_GAP, not rebind-only. The prior candidate
+        // (SourceFailureResilienceTest::test_a_provider_failure_never_shrinks_the_denominator) sets
+        // expected_universe_count directly in its own fixture and asserts FinalizeDecisionService echoes it back;
+        // FinalizeDecisionService never computes that count (verified: lines 16/278 are a straight pass-through
+        // of the input array key), so the fixture proves a pass-through is a pass-through, not that the real
+        // universe computation survives a provider outage. Audited the actual denominator construction in
+        // CoverageGateEvaluator::evaluateCaptured(): expected_universe_count = count($universeByTickerId) is
+        // computed from TickerMasterRepository::getUniverseForTradeDate() (the ticker-master/temporal-identity
+        // universe) filtered only by verified full-session suspension, strictly before delivered/available ticker
+        // ids are even loaded -- architecturally independent of provider delivery, matching
+        // Coverage_Universe_Definition_LOCKED.md's denominator = EXPECTED + UNKNOWN rule and its explicit
+        // prohibition on excluding dormant/quiet tickers. No production defect found; the implementation was
+        // already correct. Added the missing evaluator-level guard this unit (no prior test drove
+        // CoverageGateEvaluator::evaluate() through a real, unmocked-boundary total-outage scenario):
+        // CoverageGateEvaluatorTest::test_evaluator_keeps_the_full_universe_as_the_denominator_when_the_provider_delivers_nothing
+        // seeds a 900-ticker universe, mocks zero delivered ticker ids (total outage), and asserts
+        // expected_universe_count stays 900, available_eod_count is 0, and missing_eod_count is 900 (every
+        // listing counted missing, none silently excluded).
+        'MD-S003-R0005' => [
+            'positive' => 'CoverageGateEvaluatorTest::test_evaluator_keeps_the_full_universe_as_the_denominator_when_the_provider_delivers_nothing',
+            'negative' => 'CoverageGateEvaluatorTest::test_evaluator_returns_fail_when_available_is_below_threshold',
+            'basis' => 'expected_universe_count is computed inside CoverageGateEvaluator::evaluateCaptured() from the ticker-master universe (count($universeByTickerId)), before delivered/available ticker ids are loaded, so it is structurally independent of provider delivery; the only clause that can shrink it is the verified-suspension filter, a canonical universe semantic distinct from provider failure. The positive guard drives the real evaluator (only the repository boundary is mocked) through a total-outage fixture (900-ticker universe, zero delivered ids) and asserts the denominator stays 900, available drops to 0, and missing rises to 900 -- every listing is counted missing rather than excluded. The negative guard is the pre-existing partial-shortfall case (854/900 delivered), confirming the same denominator-preservation property under a milder failure. Mutation-proven this unit: changed the returned expected_universe_count from $expectedUniverseCount (the real universe count) to $deliveredObservationCount (what was actually delivered) in the evaluator\'s return array; both the new total-outage guard and the pre-existing partial-shortfall guard turned red (0 and 854 respectively, instead of 900), while the other 6 of 8 tests in the file (pass-matching, disabled-gate, zero-universe, suspended-exclusion, threshold-output cases where delivered already equals universe or the mutated line is unreached) stayed green; byte-restored and sha256-verified (4a58b78...260 unchanged), control re-run green (8/8). No production code changed -- the defect was in test coverage, not behavior.',
+        ],
 
     ];
 
@@ -904,24 +944,6 @@ final class MarketDataReplayVerificationProofBasis
         // empty otherwise, never a live-config fallback). No guard was weakened and no new test was added: both
         // negative guards already existed from this round's and E047/E048's own remediation, and the comparison
         // guard already existed from E046. Promoted to PROVEN.
-        // F-MD-B18-A002-016: the basis never seeds a delisted listing; rebind to the anti-survivorship delisting fixture, which caught the probe the basis missed.
-        'MD-S003-R0009' => [
-            'positive' => 'TemporalIdentityLayerContractTest::test_point_in_time_resolution_returns_the_full_identity_for_the_trade_date',
-            'negative' => 'TemporalIdentityLayerContractTest::test_retraction_after_cutoff_does_not_erase_symbol_board_or_provider_mapping_from_as_known_history',
-            'basis' => 'inactive-now/active-then listing remaining in the historical universe is asserted',
-        ],
-        // F-MD-B18-A002-016: the basis has one symbol and one mapping per listing; rebind to the symbol-change and symbol-reuse fixtures, which caught both interval probes.
-        'MD-S003-R0010' => [
-            'positive' => 'TemporalIdentityLayerContractTest::test_point_in_time_resolution_returns_the_full_identity_for_the_trade_date',
-            'negative' => 'TemporalIdentityLayerContractTest::test_retraction_after_cutoff_does_not_erase_symbol_board_or_provider_mapping_from_as_known_history',
-            'basis' => 'symbol change and reuse resolving through stable listing identity is asserted',
-        ],
-        // F-MD-B18-A002-016: the basis checks the observation manifest, never the denominator; the SourceFailureResilience candidate passes expected_universe_count through.
-        'MD-S003-R0005' => [
-            'positive' => 'SourceObservationAsKnownBoundaryTest::test_as_known_rows_require_both_observation_and_identity_binding_to_be_known_by_cutoff',
-            'negative' => 'SourceObservationAsKnownBoundaryTest::test_zero_row_provider_outage_remains_in_as_known_observation_manifest',
-            'basis' => 'the negative guard keeps a zero-row provider outage in the manifest, so the denominator cannot shrink',
-        ],
         // F-MD-B18-A002-013 carry-forward via F-MD-B18-A002-016: the positive is the fabricated frozen-input perturbation; the as-known clause is shown for the status root only, through the repository.
         'MD-S019-R0074' => [
             'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass',

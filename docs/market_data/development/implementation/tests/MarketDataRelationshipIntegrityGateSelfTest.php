@@ -183,8 +183,72 @@ function record(&$results, &$failed, $name, $expected, $observed, $applied = tru
     ];
 }
 
+/** Run the documentation gate and return [exit code, sorted failing check names, JSON_PARSE details]. */
+function runDocGateChecks($gate)
+{
+    $out = [];
+    $code = 0;
+    exec(escapeshellarg(PHP_BINARY).' '.escapeshellarg($gate).' 2>&1', $out, $code);
+    $report = json_decode(implode("\n", $out), true);
+    if (! is_array($report) || ! isset($report['checks'])) {
+        return [$code, ['UNPARSEABLE_GATE_OUTPUT'], []];
+    }
+    $failing = [];
+    $jsonParse = [];
+    foreach ($report['checks'] as $check) {
+        if ($check['status'] !== 'PASS') {
+            $failing[] = $check['check'];
+        }
+        if ($check['check'] === 'JSON_PARSE') {
+            $jsonParse = $check['details'];
+        }
+    }
+    sort($failing);
+
+    return [$code, $failing, $jsonParse];
+}
+
+/**
+ * A documentation-gate probe that is right only for the right reason: the gate must fail exactly
+ * the named checks. A probe that fails some other check has not shown what it claims to show.
+ * With no expected failures this is a control, and $mustAdmit names paths JSON_PARSE must still
+ * observe as raw failures and admit only through the named exception.
+ */
+function recordDoc(&$results, &$failed, $gate, $name, array $expectedFailing, $applied = true, array $mustAdmit = [])
+{
+    [$code, $failing, $jsonParse] = runDocGateChecks($gate);
+    sort($expectedFailing);
+    $ok = $applied && $failing === $expectedFailing && ($expectedFailing === [] ? $code === 0 : $code !== 0);
+    foreach ($mustAdmit as $path => $exceptionId) {
+        $raw = isset($jsonParse['raw_errors']) ? $jsonParse['raw_errors'] : [];
+        $admitted = isset($jsonParse['admitted_by_exception']) ? $jsonParse['admitted_by_exception'] : [];
+        $ok = $ok && in_array($path, $raw, true) && in_array(['path' => $path, 'exception_id' => $exceptionId], $admitted, true);
+    }
+    if (! $ok) {
+        $failed = true;
+    }
+    $isControl = $expectedFailing === [];
+    $results[] = [
+        'mutation' => $name,
+        'expected' => $isControl ? 'PASS' : 'FAIL',
+        'observed' => $code === 0 ? 'PASS' : 'FAIL',
+        'mutation_applied' => $applied,
+        'expected_failing_checks' => $expectedFailing,
+        'observed_failing_checks' => $failing,
+        'verdict' => $ok ? ($isControl ? 'CONTROL_OK' : 'FAILS_CLOSED') : ($applied ? 'GATE_DID_NOT_REACT' : 'MUTATION_NOT_APPLIED'),
+    ];
+}
+
+$exceptionRegistry = $work.'/authority/governance/DOCUMENT_INTEGRITY_EXCEPTION_REGISTRY.json';
+$exceptedArtifact = null;
+$exceptionRegistryData = json_decode((string) @file_get_contents($exceptionRegistry), true);
+if (is_array($exceptionRegistryData) && ! empty($exceptionRegistryData['exceptions'][0]['artifact_path'])) {
+    $exceptedArtifact = $exceptionRegistryData['exceptions'][0];
+}
+$mustAdmitControl = $exceptedArtifact ? [$exceptedArtifact['artifact_path'] => $exceptedArtifact['exception_id']] : [];
+
 // ---- control -------------------------------------------------------------
-record($results, $failed, 'control: unmutated documentation gate', 0, runGate($docGate));
+recordDoc($results, $failed, $docGate, 'control: unmutated documentation gate', [], true, $mustAdmitControl);
 record($results, $failed, 'control: unmutated relationship gate', 0, runGate($relGate));
 
 // ---- documentation gate --------------------------------------------------
@@ -242,6 +306,111 @@ if ($extracts) {
     file_put_contents($extract, $extractBackup);
 } else {
     record($results, $failed, 'legacy split extract body tampered inside the seal', 1, 0, false);
+}
+
+// ---- immutable historical integrity exception (DOC-CHG-20260923-001) ------
+// Every probe below must fail exactly the checks it names. Registry probes also fail JSON_PARSE,
+// because an invalid registry admits nothing and the excepted artifact is then an ordinary failure.
+$exceptionProbes = [
+    'integrity exception removed; the excepted artifact is an ordinary parse failure again' => [['JSON_PARSE'], function (array $e) { return null; }],
+    'integrity exception names the wrong correction record' => [['INTEGRITY_EXCEPTION_REGISTRY', 'JSON_PARSE'], function (array $e) {
+        $e['correction_record_id'] = 'E-MD-B18-A002-062';
+        $e['correction_path'] = 'records/evidence/E-MD-B18-A002-062_F016_G09_SURVIVORSHIP_IDENTITY_AND_DENOMINATOR_MD_S003_R0009_R0010_R0005_PROVEN.json';
+        return $e;
+    }],
+    'integrity exception claims a different failure category' => [['INTEGRITY_EXCEPTION_REGISTRY', 'JSON_PARSE'], function (array $e) { $e['integrity_check'] = 'CSV_STRUCTURE'; return $e; }],
+    'integrity exception names an unknown artifact' => [['INTEGRITY_EXCEPTION_REGISTRY', 'JSON_PARSE'], function (array $e) { $e['artifact_path'] = 'records/evidence/SELF_TEST_NO_SUCH_ARTIFACT.json'; return $e; }],
+    'integrity exception names a missing correction' => [['INTEGRITY_EXCEPTION_REGISTRY', 'JSON_PARSE'], function (array $e) { $e['correction_path'] = 'records/evidence/SELF_TEST_NO_SUCH_CORRECTION.json'; return $e; }],
+    'integrity exception names a defect the correction does not attribute to the check' => [['INTEGRITY_EXCEPTION_REGISTRY', 'JSON_PARSE'], function (array $e) { $e['correction_defect_id'] = 'SELF-TEST-NO-SUCH-DEFECT'; return $e; }],
+    'integrity exception binds a different artifact hash' => [['INTEGRITY_EXCEPTION_REGISTRY', 'JSON_PARSE'], function (array $e) { $e['artifact_sha256'] = str_repeat('0', 64); return $e; }],
+    'integrity exception names an unissued authorising decision' => [['INTEGRITY_EXCEPTION_REGISTRY', 'JSON_PARSE'], function (array $e) { $e['authorizing_decision_id'] = 'D-MD-B18-A002-999'; return $e; }],
+];
+if ($exceptedArtifact !== null) {
+    $registryBytes = file_get_contents($exceptionRegistry);
+    foreach ($exceptionProbes as $probeName => [$expected, $mutate]) {
+        $mutatedEntry = $mutate($exceptedArtifact);
+        $data = $exceptionRegistryData;
+        $data['exceptions'] = $mutatedEntry === null ? [] : [$mutatedEntry];
+        $mutatedBytes = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n";
+        file_put_contents($exceptionRegistry, $mutatedBytes);
+        recordDoc($results, $failed, $docGate, $probeName, $expected, $mutatedBytes !== $registryBytes && file_get_contents($exceptionRegistry) === $mutatedBytes);
+        file_put_contents($exceptionRegistry, $registryBytes);
+    }
+
+    // Whole-registry fail-closed: the E061 entry stays valid, something else in the registry does
+    // not, and still nothing may be admitted. Single-entry probes cannot show this, because an
+    // invalid entry is never a candidate in the first place.
+    $wholeRegistryProbes = [
+        'valid exception beside an invalid one admits nothing' => function (array $d) use ($exceptedArtifact) {
+            $bad = $exceptedArtifact;
+            $bad['exception_id'] = 'MD-DOCEX-9999';
+            $bad['status'] = 'WITHDRAWN';
+            $bad['integrity_check'] = 'CSV_STRUCTURE';
+            $d['exceptions'][] = $bad;
+            return $d;
+        },
+        'valid exception under an unknown registry schema admits nothing' => function (array $d) {
+            $d['schema_version'] = 'document_integrity_exception_registry_v0';
+            return $d;
+        },
+    ];
+    foreach ($wholeRegistryProbes as $probeName => $mutate) {
+        $mutatedBytes = json_encode($mutate($exceptionRegistryData), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n";
+        file_put_contents($exceptionRegistry, $mutatedBytes);
+        recordDoc($results, $failed, $docGate, $probeName, ['INTEGRITY_EXCEPTION_REGISTRY', 'JSON_PARSE'], $mutatedBytes !== $registryBytes && file_get_contents($exceptionRegistry) === $mutatedBytes);
+        file_put_contents($exceptionRegistry, $registryBytes);
+    }
+
+    file_put_contents($exceptionRegistry, substr($registryBytes, 0, (int) (strlen($registryBytes) / 2)));
+    recordDoc($results, $failed, $docGate, 'integrity exception registry is malformed', ['INTEGRITY_EXCEPTION_REGISTRY', 'JSON_PARSE'], file_get_contents($exceptionRegistry) !== $registryBytes);
+    file_put_contents($exceptionRegistry, $registryBytes);
+
+    $artifactFile = $work.'/'.$exceptedArtifact['artifact_path'];
+    $artifactBytes = file_get_contents($artifactFile);
+    file_put_contents($artifactFile, $artifactBytes."\n");
+    recordDoc($results, $failed, $docGate, 'excepted artifact bytes changed after issue', ['INTEGRITY_EXCEPTION_REGISTRY', 'JSON_PARSE'], file_get_contents($artifactFile) !== $artifactBytes);
+    file_put_contents($artifactFile, $artifactBytes);
+
+    $correctionFile = $work.'/'.$exceptedArtifact['correction_path'];
+    $correctionBytes = file_get_contents($correctionFile);
+    file_put_contents($correctionFile, substr($correctionBytes, 0, (int) (strlen($correctionBytes) / 2)));
+    recordDoc($results, $failed, $docGate, 'correction record is malformed', ['INTEGRITY_EXCEPTION_REGISTRY', 'JSON_PARSE'], file_get_contents($correctionFile) !== $correctionBytes);
+    file_put_contents($correctionFile, $correctionBytes);
+
+    $workRegistry = $work.'/records/WORK_RECORD_REGISTRY.csv';
+    $workRegistryBytes = file_get_contents($workRegistry);
+    $applied = csvDropFirst($workRegistry, 'record_id', $exceptedArtifact['correction_record_id']);
+    recordDoc($results, $failed, $docGate, 'correction record is unregistered', ['INTEGRITY_EXCEPTION_REGISTRY', 'JSON_PARSE'], $applied);
+    file_put_contents($workRegistry, $workRegistryBytes);
+
+    // An exception for one file must not become a path for another: a second, unexcepted malformed
+    // evidence record fails JSON_PARSE on its own while the registered exception stays valid.
+    $other = null;
+    foreach (glob($work.'/records/evidence/E-MD-B18-A002-06*.json') as $candidate) {
+        if (str_replace('\\', '/', $candidate) !== str_replace('\\', '/', $artifactFile) && str_replace('\\', '/', $candidate) !== str_replace('\\', '/', $correctionFile)) {
+            $other = $candidate;
+            break;
+        }
+    }
+    if ($other !== null) {
+        $otherBytes = file_get_contents($other);
+        file_put_contents($other, $otherBytes."{");
+        recordDoc($results, $failed, $docGate, 'another malformed JSON artifact without an exception', ['JSON_PARSE'], file_get_contents($other) !== $otherBytes);
+        file_put_contents($other, $otherBytes);
+    } else {
+        recordDoc($results, $failed, $docGate, 'another malformed JSON artifact without an exception', ['JSON_PARSE'], false);
+    }
+
+    foreach ([$exceptionRegistry => $registryBytes, $artifactFile => $artifactBytes, $correctionFile => $correctionBytes, $workRegistry => $workRegistryBytes] as $path => $bytes) {
+        if (file_get_contents($path) !== $bytes) {
+            record($results, $failed, 'integrity exception probe restore: '.basename($path), 0, 1, true);
+        }
+    }
+} else {
+    // No registered exception means none of these probes can fire. Reported, not skipped.
+    foreach (array_keys($exceptionProbes) as $probeName) {
+        recordDoc($results, $failed, $docGate, $probeName, ['JSON_PARSE'], false);
+    }
 }
 
 // ---- relationship gate ---------------------------------------------------
@@ -337,7 +506,7 @@ record($results, $failed, 'record declares a cross-attempt relationship with no 
 file_put_contents($rec, $recAll);
 
 // ---- final control: the copy must be back to a passing state -------------
-record($results, $failed, 'post-restore control: documentation gate', 0, runGate($docGate));
+recordDoc($results, $failed, $docGate, 'post-restore control: documentation gate', [], true, $mustAdmitControl);
 record($results, $failed, 'post-restore control: relationship gate', 0, runGate($relGate));
 
 rrmdir($work);

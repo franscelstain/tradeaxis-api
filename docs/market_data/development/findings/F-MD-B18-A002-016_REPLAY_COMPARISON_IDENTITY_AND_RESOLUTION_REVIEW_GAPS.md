@@ -360,3 +360,157 @@ The pattern scans the active corpus to forbid any claim of the form ('replay pro
 **Proof-basis state:** Promoted MD-S050-R0046 from INCOMPLETE to PROVEN. PROVEN 84→85, INCOMPLETE 30→29.
 
 **This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`** with 4 of its own 14 predicates still `INCOMPLETE`.
+
+## G09: survivorship identity and denominator preservation (MD-S003-R0009/MD-S003-R0010/MD-S003-R0005) — 2026-09-23T15:34:21+07:00
+
+Three predicates, reviewed and proven independently rather than bulk-promoted. G09 closes because all
+three legitimately earned `PROVEN` on their own; had any one failed, the other two would still be
+independently promotable and G09 would remain `OPEN` pointing at the unresolved predicate.
+
+### MD-S003-R0009 — inactive-now/active-then listing remains in the historical universe
+
+**Requirement** (`Historical_Replay_and_Data_Quality_Backtest.md:24`, section "Temporal identity and
+status"): "inactive-now/active-then listing remains in the historical universe."
+
+**Classification:** `REBIND_ONLY`, confirmed after independent review — the prior basis
+(`TemporalIdentityLayerContractTest` point-in-time/retraction pair) never seeds a delisted listing, so
+it is structurally blind to the survivorship claim it was recorded against, exactly as the F-016 remedy
+table states.
+
+**Implementation path:** `TemporalIdentityRepository::baseIdentityQuery`'s `delisted_date > $tradeDate`
+OR-branch (the same knowledge-time-gated clause probed as member 1 of `MD-S050-R0017` in G05, here
+proven for its own distinct predicate).
+
+**Rebind target:**
+`B18AntiSurvivorshipFixtureCorpusTest::test_a_listing_active_at_T_but_delisted_today_stays_in_the_historical_universe`.
+Seeds a listing delisted 2025-06-30 alongside a live control; asserts the historical read (2024-05-02,
+pre-delisting) includes the delisted listing and the current read (2026-03-02) excludes it. Constructs
+`TemporalIdentityRepository` directly with no `ProducerInputScope` active, so it exercises the real
+DB-backed `baseIdentityQuery()` path, not a mocked/active-producer branch.
+
+**Discriminating probe:** Removed the `delisted_date > $tradeDate` OR-branch, leaving only
+`whereNull('l.delisted_date')`. Target test turned red (historical-date assertion failed — the delisted
+listing vanished from the as-of-T universe). 9 of the file's other 9 tests stayed green. Byte-restored;
+sha256 unchanged (`cdd98b5...84`). Control re-run: 10/10 green (47 assertions).
+
+**Production code impact:** None.
+
+### MD-S003-R0010 — symbol change and symbol reuse resolve through stable listing identity
+
+**Requirement** (`Historical_Replay_and_Data_Quality_Backtest.md:25`, same section): "symbol change and
+symbol reuse resolve through stable listing identity."
+
+**Classification:** `REBIND_ONLY`, confirmed after independent review, not assumed from R0009's
+outcome — the prior basis has one symbol and one mapping per listing, never a change or a reuse.
+
+**Implementation path:** `TemporalIdentityRepository::resolveProviderContext`'s `pm.effective_to`
+upper-bound clause on the provider-mapping join (the F-016 remedy table's own "mapping end",
+`P11-R0010-MAP`).
+
+**Rebind targets:**
+`B18AntiSurvivorshipFixtureCorpusTest::test_a_symbol_change_resolves_to_the_symbol_and_mapping_effective_on_the_trade_date`
+(one listing renamed OLDSYM→NEWSYM with a parallel provider-mapping rename; asserts pre-change,
+post-change, and fail-closed-on-wrong-side) and
+`test_reused_symbol_text_resolves_to_the_listing_that_held_it_on_the_trade_date` (two listings sharing
+literal text "REUSED" in disjoint windows; asserts both the provider-mapping path and the
+symbol-interval path independently).
+
+**Discriminating probe:** Removed the `pm.effective_to` upper bound from the provider-mapping join.
+Both target tests turned red — `PROVIDER_SYMBOL_MAPPING_AMBIGUOUS`, since the old and new mapping rows
+both matched the post-change date once the upper bound was gone. 8 of the file's other 8 tests stayed
+green (including the unrelated R0009 delisting fixture). Byte-restored; sha256 unchanged (`cdd98b5...84`).
+Control re-run: 10/10 green (47 assertions).
+
+**Production code impact:** None.
+
+### MD-S003-R0005 — provider outage remains missing delivery and cannot shrink the denominator
+
+**Requirement** (`Historical_Replay_and_Data_Quality_Backtest.md:17`, section "Degraded acquisition and
+expectation"): "provider outage remains missing delivery and cannot shrink the denominator."
+
+**Classification:** `PROOF_GUARD_GAP` — **not** `REBIND_ONLY`, verified rather than assumed per explicit
+instruction. This predicate required adding a new guard, not merely rebinding to an existing one.
+
+**Prior basis defect:** `SourceFailureResilienceTest::test_a_provider_failure_never_shrinks_the_denominator`
+sets `expected_universe_count` directly in its own fixture array and asserts `FinalizeDecisionService`
+echoes it back. Direct reading of `FinalizeDecisionService::evaluate()` (lines 16 and 278) confirmed this
+field is a pure pass-through of the input array key — never computed. The fixture proves a pass-through
+is a pass-through, not that the real universe computation survives a provider outage.
+
+**Audit result — no production defect found.** `CoverageGateEvaluator::evaluateCaptured()` computes
+`expected_universe_count = count($universeByTickerId)` from
+`TickerMasterRepository::getUniverseForTradeDate()` (the ticker-master/temporal-identity universe),
+filtered only by verified full-session suspension, computed strictly *before* delivered/available ticker
+ids are even loaded from the artifact repository. This is architecturally independent of provider
+delivery, consistent with `Coverage_Universe_Definition_LOCKED.md`'s denominator = EXPECTED + UNKNOWN
+rule and its explicit prohibition on excluding dormant/quiet tickers (`COVERAGE_DORMANT_TICKERS_EXCLUDED`
+is deprecated).
+
+**Guard added:**
+`CoverageGateEvaluatorTest::test_evaluator_keeps_the_full_universe_as_the_denominator_when_the_provider_delivers_nothing`.
+Drives the real `CoverageGateEvaluator::evaluate()` (only the two repository collaborators are mocked,
+matching the file's existing pattern) through a 900-ticker universe with zero delivered ticker ids (a
+total outage). Asserts `expected_universe_count` stays 900, `available_eod_count` is 0,
+`missing_eod_count` is 900 (every listing counted missing, none silently excluded), and
+`coverage_gate_status` is `FAIL`.
+
+**Discriminating probe:** Changed the evaluator's returned `expected_universe_count` from the real
+universe count to the delivered-observation count. Both the new total-outage guard (900 expected vs. 0
+observed) and the pre-existing partial-shortfall guard
+`test_evaluator_returns_fail_when_available_is_below_threshold` (900 expected vs. 854 observed) turned
+red, while the other 6 of 8 tests in the file stayed green. Byte-restored; sha256 unchanged
+(`4a58b78...260`). Control re-run: 8/8 green (73 assertions).
+
+**Production code impact:** None. One new test method added; no application code changed.
+
+**Evidence record:** `E-MD-B18-A002-062`, registered in `DOCUMENT_ID_REGISTRY` (`MD-DOC-01195`),
+`DOCUMENT_ROLE_REGISTRY`, `CURRENT_VERIFICATION_REGISTRY`, and `WORK_RECORD_REGISTRY`. E062 does not rely
+on E061 for any proof.
+
+**Proof-basis state:** Promoted `MD-S003-R0009`, `MD-S003-R0010`, `MD-S003-R0005` from `INCOMPLETE` to
+`PROVEN`, each independently. `PROVEN` 85→88, `INCOMPLETE` 29→26.
+
+**This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`** with exactly 1 of its own 14
+predicates still `INCOMPLETE`: `MD-S019-R0074` (F-013 carry-forward, package-labelled G01). Not started
+in this unit.
+
+## Correction of issued E061 (E-MD-B18-A002-063) — 2026-09-23T15:57:33+07:00
+
+`E-MD-B18-A002-061` (G08) was issued in commit `0caaf38` with four defects. It is
+`IMMUTABLE_AFTER_ISSUE`, so it is not edited: `DOCUMENT_CHANGE_POLICY.md` §3 requires a new correlated
+record, and `DOCUMENT_RECORDING_STANDARD.md` §1 says evidence correction creates new evidence. An earlier
+working-tree edit that re-escaped its `pattern` field was reverted; E061 is byte-identical to the
+committed blob (sha256 `3ad2e42e…8576`). `E-MD-B18-A002-063` corrects it in the same shape E037 used to
+correct E036:
+
+- **E061-D1:** the `pattern` field transcribes the regex with single backslashes, which is not valid
+  JSON. The authoritative value is `B18ReplayAdmissibilityBoundaryTest::forbidden()['MD-S050-R0046']`;
+  E063 points there rather than transcribing it again.
+- **E061-D2:** its `issued_at` (14:15:30+07:00) was estimated; the clock-derived write time recorded
+  with it is 14:51:51+07:00.
+- **E061-D3:** its rows in `DOCUMENT_ROLE_REGISTRY.csv`, `CURRENT_VERIFICATION_REGISTRY.csv` and
+  `WORK_RECORD_REGISTRY.csv` were malformed (2/6/8 fields against 8/10/15). These registries are
+  `MUTABLE_TRACEABLE` and their standard requires the registration, so the rows were replaced with
+  schema-complete ones; E063 is the trace.
+- **E061-D4:** the same commit left `CURRENT_STATE.md` with its first bytes overwritten by the
+  generator's echoed path, because the generator was run with stdout redirected into the file it
+  writes. Regenerated by running it without redirection; two consecutive runs are byte-identical.
+
+No proof impact: `MD-S050-R0046`'s basis names the executing guards, which pass.
+
+**Unresolved — E061-U1.** `MarketDataDocumentationIntegrityGate` parses every JSON file under
+`docs/market_data` with no exception path, and `DOCUMENT_INTEGRITY_EXCEPTION_REGISTRY.json` has no
+defined semantics and is not read by the gate. With E061 immutable, `JSON_PARSE` stays red on E061
+alone. Resolving that changes a gate requirement, so it needs an owner decision; it is not resolved
+here.
+
+## E061-U1 resolved (F-MD-B18-A002-022) — 2026-09-23
+
+The documentation-gate conflict above was raised as `F-MD-B18-A002-022` and resolved by controlled
+revision `DOC-CHG-20260923-001` under owner decision `D-MD-B18-A002-007`, proven in
+`E-MD-B18-A002-064`. E061 is admitted through exception `MD-DOCEX-0001`, which binds it at its
+retained sha256 to `E-MD-B18-A002-063` defect `E061-D1`; its raw `JSON_PARSE` failure is still
+reported, and any unexcepted malformed JSON remains a hard `FAIL`. E061 is unchanged.
+
+**This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`** with exactly 1 of its own 14
+predicates still `INCOMPLETE`: `MD-S019-R0074` (F-013 carry-forward, package-labelled G01).

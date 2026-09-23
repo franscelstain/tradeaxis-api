@@ -1,0 +1,149 @@
+{
+    "evidence_id": "E-MD-B18-A002-064",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+    "issued_at": "2026-09-23T17:02:28+07:00",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "PASS_GOVERNANCE_GATE_REMEDIATION_F022_RESOLVED",
+    "evidence_scope": "F022_IMMUTABLE_HISTORICAL_INTEGRITY_EXCEPTION_GATE_REMEDIATION",
+    "ci_id": "CI-MD-B18-A002-001",
+    "related_findings": [
+        "F-MD-B18-A002-022",
+        "F-MD-B18-A002-016"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-061",
+        "E-MD-B18-A002-063",
+        "CI-MD-B18-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-007"
+    ],
+    "dependencies": [
+        "MD-DEP-0017",
+        "MD-DEP-0015"
+    ],
+    "schema_changed": false,
+    "change_log_entry": "DOC-CHG-20260923-001",
+    "governance_revision": {
+        "standard": "authority/governance/DOCUMENT_INTEGRITY_GATE_STANDARD.md",
+        "change_class": "CONTROLLED_REVISION",
+        "change": "Additive: the original requirement sentence is unchanged (git numstat +52/-0); a new section \"Immutable historical integrity exception\" defines eligibility (issued EVIDENCE/IMMUTABLE_AFTER_ISSUE, byte-identical by sha256, issued parseable CORRECTION record naming the artifact, its retained hash and the defect with its integrity_check, correction does not supersede, artifact still a current issued record, ISSUED authorising DECISION), the registry contract (exact top-level and entry keys, MD-DOCEX-NNNN ids, ACTIVE/WITHDRAWN, only JSON_PARSE exceptable, one ACTIVE entry per path) and fail-closed gate behaviour.",
+        "sha256_after": "195f0c564cae83546a8896eef951b41b14c2e9134d2b3f85ad3c66c62a8f9677"
+    },
+    "exception_registry": {
+        "path": "authority/governance/DOCUMENT_INTEGRITY_EXCEPTION_REGISTRY.json",
+        "change_class": "MUTABLE_TRACEABLE",
+        "before": "{\"exceptions\": []} since creation in commit ac09939",
+        "after": "schema document_integrity_exception_registry_v1 with one ACTIVE entry MD-DOCEX-0001: JSON_PARSE for E-MD-B18-A002-061 (MD-DOC-01194) at sha256 3ad2e42e87e41f5163acb31c8726bf6fd4c7843fa245b389aac9b7fd206a8576, corrected by E-MD-B18-A002-063 defect E061-D1, authorised by D-MD-B18-A002-007",
+        "sha256_after": "9202565f1210d1738c1724c84769ca2456f2b432dfe7634f6f40e759683e2183"
+    },
+    "gate_change": {
+        "file": "development/implementation/tests/MarketDataDocumentationIntegrityGate.php",
+        "sha256_after": "93e447389bab9d76f62a4dceeec6dc481558dea0e24194e6a1bcb54fd0f6d391",
+        "behaviour": "New check INTEGRITY_EXCEPTION_REGISTRY validates the registry and every ACTIVE entry against the role, ID, verification and work registries, the artifact bytes, and the correction record; any error fails the check and empties the admitted set. JSON_PARSE still decodes every .json file and reports raw_errors; a failure is admitted only when a valid ACTIVE entry names exactly that path, and each admission is reported with its exception_id under admitted_by_exception.",
+        "current_output": "JSON_PARSE PASS with raw_errors [E-MD-B18-A002-061] and admitted_by_exception [{E-MD-B18-A002-061, MD-DOCEX-0001}]; INTEGRITY_EXCEPTION_REGISTRY PASS with active [MD-DOCEX-0001]; every other check PASS."
+    },
+    "falsifiability": {
+        "self_test": "development/implementation/tests/MarketDataRelationshipIntegrityGateSelfTest.php",
+        "method": "Each probe mutates a temporary copy of docs/market_data, runs the real gate, and must fail exactly the named checks (not merely exit non-zero); each mutation is byte-restored and the restore verified. Controls must pass and must still observe E061 as a raw JSON_PARSE failure admitted by MD-DOCEX-0001.",
+        "result": "PASS: 29 FAILS_CLOSED (14 pre-existing, 15 new), 4 CONTROL_OK.",
+        "new_probes": {
+            "integrity exception removed; the excepted artifact is an ordinary parse failure again": [
+                "JSON_PARSE"
+            ],
+            "integrity exception names the wrong correction record": [
+                "INTEGRITY_EXCEPTION_REGISTRY",
+                "JSON_PARSE"
+            ],
+            "integrity exception claims a different failure category": [
+                "INTEGRITY_EXCEPTION_REGISTRY",
+                "JSON_PARSE"
+            ],
+            "integrity exception names an unknown artifact": [
+                "INTEGRITY_EXCEPTION_REGISTRY",
+                "JSON_PARSE"
+            ],
+            "integrity exception names a missing correction": [
+                "INTEGRITY_EXCEPTION_REGISTRY",
+                "JSON_PARSE"
+            ],
+            "integrity exception names a defect the correction does not attribute to the check": [
+                "INTEGRITY_EXCEPTION_REGISTRY",
+                "JSON_PARSE"
+            ],
+            "integrity exception binds a different artifact hash": [
+                "INTEGRITY_EXCEPTION_REGISTRY",
+                "JSON_PARSE"
+            ],
+            "integrity exception names an unissued authorising decision": [
+                "INTEGRITY_EXCEPTION_REGISTRY",
+                "JSON_PARSE"
+            ],
+            "valid exception beside an invalid one admits nothing": [
+                "INTEGRITY_EXCEPTION_REGISTRY",
+                "JSON_PARSE"
+            ],
+            "valid exception under an unknown registry schema admits nothing": [
+                "INTEGRITY_EXCEPTION_REGISTRY",
+                "JSON_PARSE"
+            ],
+            "integrity exception registry is malformed": [
+                "INTEGRITY_EXCEPTION_REGISTRY",
+                "JSON_PARSE"
+            ],
+            "excepted artifact bytes changed after issue": [
+                "INTEGRITY_EXCEPTION_REGISTRY",
+                "JSON_PARSE"
+            ],
+            "correction record is malformed": [
+                "INTEGRITY_EXCEPTION_REGISTRY",
+                "JSON_PARSE"
+            ],
+            "correction record is unregistered": [
+                "INTEGRITY_EXCEPTION_REGISTRY",
+                "JSON_PARSE"
+            ],
+            "another malformed JSON artifact without an exception": [
+                "JSON_PARSE"
+            ]
+        },
+        "probe_suite_can_fail": {
+            "method": "The gate itself was weakened on a scratch copy of docs/market_data (never in the repository) and the self-test re-run from that copy; the gate was restored and its sha256 re-verified after each.",
+            "generic JSON_PARSE bypass for records/evidence": "caught: self-test FAIL, 16 entries red including both documentation controls",
+            "exceptions applied even when the registry is invalid": "first run ESCAPED: every single-entry probe left the admitted set empty, so whole-registry fail-closed was never exercised. Two probes added (valid entry beside an invalid one; valid entry under an unknown schema); re-run caught it, 2 entries red",
+            "artifact hash check removed": "caught: excepted-artifact-bytes-changed probe red (the wrong-hash probe still fails closed through the correction record retained_sha256 check)"
+        },
+        "phpunit_guard": "GovernanceGateReadOnlyExecutionTest now requires >= 29 FAILS_CLOSED, >= 15 check-scoped probes whose observed failing checks equal the expected ones, and exactly 4 controls; the previous floor of 14 would not have noticed the new probes being removed."
+    },
+    "artifact_disposition": {
+        "E-MD-B18-A002-061": "byte-identical to commit 0caaf38, sha256 3ad2e42e87e41f5163acb31c8726bf6fd4c7843fa245b389aac9b7fd206a8576; still unparseable; admitted only through MD-DOCEX-0001",
+        "E-MD-B18-A002-063": "correction record; received a pre-issue machine-readable integrity_check JSON_PARSE on defect E061-D1 and names F-MD-B18-A002-022 and D-MD-B18-A002-007; parses; registered",
+        "E-MD-B18-A002-062": "G09 evidence unchanged by this remediation"
+    },
+    "proof_basis_unchanged": "PROVEN 88, INCOMPLETE 26; MD-S003-R0009/R0010/R0005 and MD-S050-R0046 PROVEN; no application code changed",
+    "final_governance_gates": {
+        "measured": "Measured on the working tree immediately before this record received its final bytes; only this record changed afterwards.",
+        "MarketDataDocumentationIntegrityGate": "PASS, 16/16 checks; JSON_PARSE raw_errors [E-MD-B18-A002-061], admitted_by_exception [MD-DOCEX-0001]; INTEGRITY_EXCEPTION_REGISTRY active [MD-DOCEX-0001]",
+        "MarketDataRelationshipIntegrityGate": "PASS (validity PASS, completeness PASS)",
+        "MarketDataRelationshipIntegrityGateSelfTest": "PASS: 29 FAILS_CLOSED, 4 CONTROL_OK; all 15 integrity-exception probes observed exactly their expected failing checks; both documentation controls observed E061 raw and admitted by MD-DOCEX-0001",
+        "MarketDataClassificationConsistencyGate": "PASS",
+        "MarketDataTraceabilityApplicabilityGate --check": "PASS",
+        "GovernanceGateReadOnlyExecutionTest": "OK, 9 tests, 5894 assertions",
+        "PromotedPredicateProofGateTest": "OK, 8 tests, 22 assertions",
+        "FindingRecordConsistencyTest": "OK, 3 tests, 13 assertions",
+        "ClassificationConsistencyGateTest": "OK, 20 tests, 96 assertions",
+        "TraceabilityApplicabilityGateTest": "OK, 11 tests, 23 assertions",
+        "ScopeBoundaryAndOrchestrationCompletionTest": "OK, 8 tests, 73 assertions",
+        "B18ReplayAdmissibilityBoundaryTest": "OK, 4 tests, 10 assertions",
+        "G09 targeted controls": "B18AntiSurvivorshipFixtureCorpusTest OK 10/47; CoverageGateEvaluatorTest OK 8/73; SourceFailureResilienceTest OK 18/54; AsKnownReplayBoundaryTest OK 11/91",
+        "MarketDataReplayVerificationProofSelfTest": "FAIL from the pre-existing baseline only: 27 entries naming no G08/G09 predicate; 10/10 injected scenarios pass; unchanged from before this remediation",
+        "proof_basis": "PROVEN 88, INCOMPLETE 26",
+        "application_code": "app/ unchanged against HEAD"
+    },
+    "verification_impact": "Prior documentation-gate PASS results are unaffected: the exception registry held no entry from its creation until this revision, so no earlier result could have used the admission path."
+}

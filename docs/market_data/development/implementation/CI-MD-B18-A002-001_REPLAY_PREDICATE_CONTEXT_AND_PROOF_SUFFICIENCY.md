@@ -8,7 +8,7 @@
 - Blocking dependency: `MD-DEP-0009` — `MD-B19` is the blocked logical stage; return-to `MD-B19-A001`
 - Status: `IN_PROGRESS — REMEDIATION`
 - Strategy meaning change: `NO`
-- Governance authority change: `NO`
+- Governance authority change: `YES` — bounded to `DOC-CHG-20260923-001` (documentation integrity gate: immutable historical integrity exception); declared below before mutation. No other governance authority change.
 
 Issued after `MD-B18-A002-BL001` and before any material `MD-B18` mutation, so that it directs the
 attempt rather than describing it afterwards.
@@ -960,3 +960,14 @@ Single exact resume: MD-B18-A002: continue C1 C08 event/factor producer-bound re
 ### C1 C08 event/factor declaration BEFORE mutation - 2026-09-20T02:16:32.522717+00:00
 
 Accepted C08/D005, MD-S050-R0012/S019-R0069 and corporate-action factor authority MD-S011/S012. Capture full event revisions, listing join population and type registry at actual factor consumption; retain selected and omitted/rejected/superseded members, terms and temporal coordinates, accepted observation provenance, assessment populations including the explicit generated/reused UNKNOWN fallback, factor-set rows/decisions/factors and actual returned consumer context. Independently verify selection/omission and factor/held decisions against those retained inputs, exact population membership and hashes/references. Preserve existing selection/math/source-scale safety rules; no new field exemptions. Generated fallback rows are captured after they are materialized and before final consumer return; they are actual consumed inputs, not historical reconstruction. Wrap production factor execution in producer capture scope/transaction and account for direct entry and test fixtures. Historical missing binding remains BLOCKED. Targeted C08/affected-path tests, new probes P72 onward, governance and immutable checks; no full suite absent broad regression. No schema/strategy/matrix/basis change planned. Entry 676 immutable records preserved; two unfinished C1 domains, five slices, 64 INCOMPLETE, 0/114 SATISFIED. F013 OPEN, DEP17/DEP15 BLOCKING; no binding or data_260914. Runtime directory storage/app/market-data/evidence/MD-B18-A002/c1-event-factor-20260920.
+
+
+### E061-U1 documentation-integrity exception declaration BEFORE mutation - 2026-09-23T16:22:40+07:00
+
+Trigger: issued `E-MD-B18-A002-061` (commit `0caaf38`) is `IMMUTABLE_AFTER_ISSUE` and does not parse as JSON; `MarketDataDocumentationIntegrityGate` `JSON_PARSE` has no exception path, so the gate, `GovernanceGateReadOnlyExecutionTest` and the relationship self-test's documentation controls are red for that one artifact (`E-MD-B18-A002-063` E061-U1). Owner decision (to be recorded as `D-MD-B18-A002-007`): do not declare E061 never issued, do not edit it; adopt a narrowly controlled immutable historical integrity exception through explicit governance authority and a fail-closed gate.
+
+Affected areas: governance authority `DOCUMENT_INTEGRITY_GATE_STANDARD.md` (`CONTROLLED_REVISION`), `DOCUMENT_CHANGE_LOG.md`, `DOCUMENT_INTEGRITY_EXCEPTION_REGISTRY.json` (`MUTABLE_TRACEABLE`; schema defined, one entry), gate `MarketDataDocumentationIntegrityGate.php`, self-test `MarketDataRelationshipIntegrityGateSelfTest.php` (new fail-closed mutations), finding `F-MD-B18-A002-022`, evidence `E-MD-B18-A002-064`, registries, Stage Register, generated `CURRENT_STATE.md`. `E-MD-B18-A002-063` (uncommitted) may receive a pre-issue machine-readable defect category.
+
+Not affected: strategy authority and freeze (governance-only change); application code; schema; runtime; traceability matrix; proof basis (88 PROVEN / 26 INCOMPLETE); G09 proof (`E-MD-B18-A002-062`); `E-MD-B18-A002-061` bytes (sha256 `3ad2e42e...8576`).
+
+Compatibility / residue risk: the only relaxation is for an artifact explicitly listed in the registry at its exact bytes with a valid issued correction; every other unparseable JSON remains a hard `FAIL`, and the registry itself is validated fail-closed. Prior gate `PASS` results are not affected: the exception registry held no entry from its creation until now, so no earlier result could have used the new admission path, and the registry validation is stricter than before. Verification: new mutations must each fail closed on the intended check; controls must pass with E061 physically unparseable.

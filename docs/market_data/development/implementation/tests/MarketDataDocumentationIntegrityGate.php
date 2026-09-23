@@ -30,6 +30,80 @@ function stageRegisterShapeErrors($text){
   foreach($rows as $line){if(!preg_match('/^\| `(MD-B\d{2})` \|/',$line,$mm))continue;$cols=explode('|',$line);$life=isset($cols[3])?trim($cols[3]," `\t\r\n"):'';if(!isset($allowed[$life]))$errors[]='invalid lifecycle '.$mm[1].'='.$life;}
   return $errors;
 }
+/**
+ * DOCUMENT_INTEGRITY_GATE_STANDARD.md, "Immutable historical integrity exception" (DOC-CHG-20260923-001).
+ * Returns [errors, activeByArtifactPath]. Any error empties the active set: a registry that is wrong
+ * anywhere admits nothing.
+ */
+function integrityExceptionEvaluation($md,$roleRows,$idRows,$verifRows,$workRows){
+  $errors=array();$candidates=array();
+  $file=$md.'/authority/governance/DOCUMENT_INTEGRITY_EXCEPTION_REGISTRY.json';
+  if(!is_file($file))return array(array('exception registry missing'),array());
+  $reg=json_decode(file_get_contents($file),true);
+  if(json_last_error()!==JSON_ERROR_NONE||!is_array($reg))return array(array('exception registry does not parse'),array());
+  $top=array_keys($reg);sort($top);if($top!==array('exceptions','governing_standard','schema_version'))$errors[]='registry top-level keys must be exactly schema_version, governing_standard, exceptions';
+  if(!isset($reg['schema_version'])||$reg['schema_version']!=='document_integrity_exception_registry_v1')$errors[]='unknown schema_version';
+  if(!isset($reg['governing_standard'])||$reg['governing_standard']!=='authority/governance/DOCUMENT_INTEGRITY_GATE_STANDARD.md')$errors[]='governing_standard must name DOCUMENT_INTEGRITY_GATE_STANDARD.md';
+  if(!isset($reg['exceptions'])||!is_array($reg['exceptions'])||array_values($reg['exceptions'])!==$reg['exceptions'])return array(array_merge($errors,array('exceptions must be a list')),array());
+  $fields=array('exception_id','status','integrity_check','artifact_path','artifact_document_id','artifact_record_id','artifact_sha256','correction_record_id','correction_path','correction_defect_id','authorizing_decision_id','reason');$sortedFields=$fields;sort($sortedFields);
+  $role=array();foreach($roleRows as $r)$role[$r['document_path']]=$r;
+  $docIds=array();foreach($idRows as $r)$docIds[$r['document_id'].'|'.$r['document_path']]=1;
+  $idPaths=array();foreach($idRows as $r)$idPaths[$r['document_path']]=1;
+  $verif=array();foreach($verifRows as $r)$verif[$r['document_path']]=$r;
+  $work=array();$supersededBy=array();foreach($workRows as $r){$work[$r['record_id']]=$r;foreach(array_filter(array_map('trim',explode(';',isset($r['supersedes'])?$r['supersedes']:''))) as $s)$supersededBy[$s][]=$r['record_id'];}
+  $seenIds=array();$activePaths=array();
+  foreach($reg['exceptions'] as $i=>$e){
+    $label='exceptions['.$i.']';
+    if(!is_array($e)){$errors[]=$label.' is not an object';continue;}
+    $k=array_keys($e);sort($k);if($k!==$sortedFields){$errors[]=$label.' keys must be exactly the contract fields';continue;}
+    $blank=false;foreach($fields as $f)if(!is_string($e[$f])||trim($e[$f])===''){$errors[]=$label.' '.$f.' must be a non-empty string';$blank=true;}
+    if($blank)continue;
+    $label=$e['exception_id'];
+    if(!preg_match('/^MD-DOCEX-\d{4}$/',$e['exception_id']))$errors[]=$label.' malformed exception_id';
+    if(isset($seenIds[$e['exception_id']]))$errors[]=$label.' duplicate exception_id';$seenIds[$e['exception_id']]=1;
+    if($e['status']!=='ACTIVE'&&$e['status']!=='WITHDRAWN'){$errors[]=$label.' status must be ACTIVE or WITHDRAWN';continue;}
+    if($e['integrity_check']!=='JSON_PARSE'){$errors[]=$label.' integrity_check '.$e['integrity_check'].' may not be excepted';continue;}
+    if($e['status']!=='ACTIVE')continue;
+    $ap=$e['artifact_path'];$cp=$e['correction_path'];$before=count($errors);
+    foreach(array('artifact_path'=>$ap,'correction_path'=>$cp) as $n=>$p)if(strpos($p,'..')!==false||$p[0]==='/'||strpos($p,':')!==false||strpos($p,'\\')!==false)$errors[]=$label.' '.$n.' must be a relative path inside docs/market_data';
+    if(count($errors)>$before)continue;
+    if(isset($activePaths[$ap]))$errors[]=$label.' second ACTIVE exception for '.$ap;$activePaths[$ap]=1;
+    if($ap===$cp)$errors[]=$label.' correction cannot be the artifact itself';
+    // artifact: issued, immutable, registered, byte-identical, still current, and actually malformed
+    if(!is_file($md.'/'.$ap)){$errors[]=$label.' unknown artifact '.$ap;continue;}
+    if(!isset($role[$ap])||$role[$ap]['document_role']!=='EVIDENCE'||$role[$ap]['mutability']!=='IMMUTABLE_AFTER_ISSUE')$errors[]=$label.' artifact is not registered EVIDENCE/IMMUTABLE_AFTER_ISSUE';
+    if(!isset($docIds[$e['artifact_document_id'].'|'.$ap]))$errors[]=$label.' artifact_document_id does not identify artifact_path';
+    $aw=isset($work[$e['artifact_record_id']])?$work[$e['artifact_record_id']]:null;
+    if(!$aw||$aw['record_type']!=='EVIDENCE'||$aw['status']!=='ISSUED'||$aw['document_path']!==$ap)$errors[]=$label.' artifact_record_id is not an ISSUED EVIDENCE work record for artifact_path';
+    if(!isset($verif[$ap])||$verif[$ap]['current_verification_status']!=='CURRENT_ISSUED_RECORD')$errors[]=$label.' artifact is no longer a current issued record';
+    if(isset($supersededBy[$e['artifact_record_id']]))$errors[]=$label.' artifact is superseded by '.implode(',',$supersededBy[$e['artifact_record_id']]);
+    if(hash_file('sha256',$md.'/'.$ap)!==$e['artifact_sha256'])$errors[]=$label.' artifact bytes differ from artifact_sha256';
+    json_decode(file_get_contents($md.'/'.$ap),true);if(json_last_error()===JSON_ERROR_NONE)$errors[]=$label.' stale: artifact parses, nothing to except';
+    // correction: issued, registered, parseable, and naming this artifact and this defect
+    if(!is_file($md.'/'.$cp)){$errors[]=$label.' correction_path does not exist';continue;}
+    if(!isset($role[$cp])||$role[$cp]['document_role']!=='EVIDENCE'||$role[$cp]['mutability']!=='IMMUTABLE_AFTER_ISSUE')$errors[]=$label.' correction is not registered EVIDENCE/IMMUTABLE_AFTER_ISSUE';
+    if(!isset($idPaths[$cp]))$errors[]=$label.' correction has no Document ID';
+    $cw=isset($work[$e['correction_record_id']])?$work[$e['correction_record_id']]:null;
+    if(!$cw||$cw['record_type']!=='EVIDENCE'||$cw['status']!=='ISSUED'||$cw['document_path']!==$cp)$errors[]=$label.' correction_record_id is not an ISSUED EVIDENCE work record for correction_path';
+    elseif(in_array($e['artifact_record_id'],array_filter(array_map('trim',explode(';',$cw['supersedes']))),true))$errors[]=$label.' correction supersedes the artifact instead of correcting it';
+    $c=json_decode(file_get_contents($md.'/'.$cp),true);
+    if(json_last_error()!==JSON_ERROR_NONE||!is_array($c)){$errors[]=$label.' correction does not parse';continue;}
+    if(!isset($c['evidence_id'])||$c['evidence_id']!==$e['correction_record_id'])$errors[]=$label.' correction evidence_id differs from correction_record_id';
+    if(!isset($c['verdict'])||$c['verdict']!=='CORRECTION')$errors[]=$label.' correction verdict is not CORRECTION';
+    if(!isset($c['related_evidence'])||!is_array($c['related_evidence'])||!in_array($e['artifact_record_id'],$c['related_evidence'],true))$errors[]=$label.' correction related_evidence does not name the artifact';
+    $cr=isset($c['corrected_record'])&&is_array($c['corrected_record'])?$c['corrected_record']:array();
+    if((isset($cr['record_id'])?$cr['record_id']:null)!==$e['artifact_record_id']||(isset($cr['document_path'])?$cr['document_path']:null)!==$ap||(isset($cr['retained_sha256'])?$cr['retained_sha256']:null)!==$e['artifact_sha256'])$errors[]=$label.' correction corrected_record does not identify the artifact at artifact_sha256';
+    if(!isset($cr['disposition'])||!is_string($cr['disposition'])||strpos($cr['disposition'],'RETAINED_UNMODIFIED')!==0)$errors[]=$label.' correction does not retain the artifact unmodified';
+    $defectFound=false;if(isset($c['defects'])&&is_array($c['defects']))foreach($c['defects'] as $d)if(is_array($d)&&isset($d['id'],$d['integrity_check'])&&$d['id']===$e['correction_defect_id']&&$d['integrity_check']===$e['integrity_check'])$defectFound=true;
+    if(!$defectFound)$errors[]=$label.' correction has no defect '.$e['correction_defect_id'].' for '.$e['integrity_check'];
+    // authorisation
+    $dw=isset($work[$e['authorizing_decision_id']])?$work[$e['authorizing_decision_id']]:null;
+    if(!$dw||$dw['record_type']!=='DECISION'||$dw['status']!=='ISSUED'||!is_file($md.'/'.$dw['document_path']))$errors[]=$label.' authorizing_decision_id is not an ISSUED DECISION record';
+    if(count($errors)===$before)$candidates[$ap]=$e['exception_id'];
+  }
+  if($errors)return array($errors,array());
+  return array(array(),$candidates);
+}
 $md=realpath(dirname(__DIR__,3));$checks=array();$files=rec($md);
 $missing=array();foreach(array('authority/strategy','authority/governance','development/implementation','development/research','development/findings','records/evidence','records/decisions','records/history') as $d)if(!is_dir($md.'/'.$d))$missing[]=$d;add($checks,'ROOT_ARCHITECTURE',!$missing,array('missing'=>$missing));
 // registries complete + one role
@@ -42,8 +116,10 @@ $stageText=file_get_contents($md.'/development/implementation/MD_IMPLEMENTATION_
 $mf=json_decode(file_get_contents($md.'/authority/governance/MARKET_DATA_STRATEGY_FREEZE_MANIFEST.json'),true);$bad=array();foreach($mf['documents'] as $d){$p=$md.'/'.$d['current_path'];if(!is_file($p)||strtoupper(sha1_file($p))!==strtoupper($d['sha1']))$bad[]=$d['current_path'];}add($checks,'STRATEGY_FREEZE',!$bad,array('registered'=>count($mf['documents']),'mismatches'=>$bad));
 // verification registry complete and legacy proof zero
 $vr=csvrows($md.'/authority/governance/CURRENT_VERIFICATION_REGISTRY.csv');$vseen=array();$vdup=array();$legacyProof=array();foreach($vr as $r){if(isset($vseen[$r['document_path']]))$vdup[]=$r['document_path'];$vseen[$r['document_path']]=1;if($r['legacy_origin']==='YES'&&$r['document_role']!=='STRATEGY'&&$r['current_proof_eligible']==='YES')$legacyProof[]=$r['document_path'];}$vmiss=array_values(array_diff($physical,array_keys($vseen)));$vextra=array_values(array_diff(array_keys($vseen),$physical));add($checks,'CURRENT_VERIFICATION_REBASELINE',!$vmiss&&!$vextra&&!$vdup&&!$legacyProof,array('registry'=>count($vr),'missing'=>array_slice($vmiss,0,20),'extra'=>array_slice($vextra,0,20),'duplicates'=>array_slice($vdup,0,20),'legacy_current_proof'=>$legacyProof));
-// JSON CSV parse
-$je=array();$ce=array();foreach($files as $p){if(substr($p,-5)==='.json'){json_decode(file_get_contents($p),true);if(json_last_error()!==JSON_ERROR_NONE)$je[]=norm($p);}elseif(substr($p,-4)==='.csv'){$f=fopen($p,'r');$h=fgetcsv($f);$n=is_array($h)?count($h):0;$ln=1;while(($r=fgetcsv($f))!==false){$ln++;if(count($r)!==$n){$ce[]=norm($p).':'.$ln;break;}}fclose($f);}}add($checks,'JSON_PARSE',!$je,array('errors'=>$je));add($checks,'CSV_STRUCTURE',!$ce,array('errors'=>$ce));
+// integrity exception registry, validated fail-closed before it may admit anything
+$wr=csvrows($md.'/records/WORK_RECORD_REGISTRY.csv');list($exErr,$exActive)=integrityExceptionEvaluation($md,$rr,$idr,$vr,$wr);add($checks,'INTEGRITY_EXCEPTION_REGISTRY',!$exErr,array('active'=>array_values($exActive),'errors'=>array_slice($exErr,0,20)));
+// JSON CSV parse; every file is parsed and every raw failure reported, admitted or not
+$je=array();$jraw=array();$jadmitted=array();$ce=array();foreach($files as $p){if(substr($p,-5)==='.json'){json_decode(file_get_contents($p),true);if(json_last_error()!==JSON_ERROR_NONE){$rel=substr(norm($p),strlen(norm($md))+1);$jraw[]=$rel;if(isset($exActive[$rel]))$jadmitted[]=array('path'=>$rel,'exception_id'=>$exActive[$rel]);else$je[]=norm($p);}}elseif(substr($p,-4)==='.csv'){$f=fopen($p,'r');$h=fgetcsv($f);$n=is_array($h)?count($h):0;$ln=1;while(($r=fgetcsv($f))!==false){$ln++;if(count($r)!==$n){$ce[]=norm($p).':'.$ln;break;}}fclose($f);}}add($checks,'JSON_PARSE',!$je,array('errors'=>$je,'raw_errors'=>$jraw,'admitted_by_exception'=>$jadmitted));add($checks,'CSV_STRUCTURE',!$ce,array('errors'=>$ce));
 // active markdown links (only explicit links, skip history)
 $broken=array();foreach($files as $p){$rp=substr(norm($p),strlen(norm($md))+1);if(substr($p,-3)!=='.md'||strpos($rp,'records/history/')===0)continue;$txt=file_get_contents($p);if(!preg_match_all('/\[[^\]]*\]\(([^)]+)\)/',$txt,$m))continue;foreach($m[1] as $t){$t=trim($t);if($t===''||$t[0]==='#'||preg_match('/^[a-z]+:\/\//i',$t)||strpos($t,'mailto:')===0)continue;$t=preg_replace('/#.*/','',$t);$res=dirname($p).'/'.rawurldecode($t);if(!file_exists($res))$broken[]=array('file'=>$rp,'target'=>$t);}}add($checks,'ACTIVE_MARKDOWN_LINKS',!$broken,array('broken_count'=>count($broken),'samples'=>array_slice($broken,0,20)));
 // traceability fingerprints
