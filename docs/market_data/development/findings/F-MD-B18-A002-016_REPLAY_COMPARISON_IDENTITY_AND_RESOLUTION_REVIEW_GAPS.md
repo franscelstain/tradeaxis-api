@@ -234,3 +234,94 @@ byte-identical to before this unit.
 remain `INCOMPLETE`: `MD-S050-R0017` (G05 full-parent aggregate), `MD-S050-R0046` (G08),
 `MD-S003-R0009`/`MD-S003-R0010`/`MD-S003-R0005` (G09 rebind-only), `MD-S019-R0074` (F-013
 carry-forward, package-labelled G01). Not started in this unit.
+
+---
+
+## G05 remediation (E-MD-B18-A002-060, 2026-09-23) — `MD-S050-R0017`, full-parent aggregate
+
+Third bounded unit, scoped to exactly one predicate: `MD-S050-R0017`, the anti-future full-parent
+aggregate. Treated as a genuine nine-member aggregate, not a simple rebind — the parent is proven
+only if all nine named members are independently, executably guarded, one member's failure fails
+only that member, and the other eight (plus the map-completeness check itself) stay green.
+
+**Reconstruction.** The nine members were reconstructed from `Replay_Verification_Contract_LOCKED.md`
+line 37 (Anti-future and anti-survivorship rules) directly — today's `is_active`, current symbol,
+current sector, current suspension/status, latest calendar correction, later corporate-action
+revision, later factor, current config, latest provider mapping — parsed the same way the guard test
+itself parses it, rather than trusted from this finding's own gap-table row or the pre-existing draft
+proof-basis narrative for this predicate. `B18AntiFutureResolutionTest.php` was found to already
+exist, fully committed under a commit that predates this remediation session entirely, and to already
+implement the correct structure: `antiFutureMap()` binds all nine items to guards, and
+`test_the_anti_future_map_names_exactly_what_the_contract_names` asserts the map and the live-parsed
+contract sentence name exactly the same set.
+
+**Audit before any guard was trusted.** Seven members already had executing, DB-backed guards spread
+across `B18AntiSurvivorshipFixtureCorpusTest`, `AsKnownReplayBoundaryTest` and
+`B18AsKnownSnapshotIsolationTest`. Two — current sector and latest provider mapping — were previously
+covered only by `AsKnownReplayBoundaryTest::test_every_temporal_root_accepts_a_knowledge_cutoff`, a
+reflection check that a cutoff parameter exists and is accepted, which an ignored parameter also
+passes; both are proven inside `B18AntiFutureResolutionTest` itself against real, unmocked
+repositories (`SectorClassificationRepository::resolveSectorContextForTickerIds`,
+`TemporalIdentityRepository::resolveProviderContext`). Every one of the nine members' production
+implementation was read and confirmed already correct before any probe was run. **No production code
+was changed for this predicate.**
+
+**Nine required discriminating probes, one per member, all caught:**
+
+| # | Member | Implementation path | Probe |
+|---|---|---|---|
+| 1 | today's `is_active` | `TemporalIdentityRepository::baseIdentityQuery` — `delisted_date`/`delisted_recorded_at` knowledge-time OR-clause | Removed the `delisted_recorded_at` branch |
+| 2 | current symbol | same method — `md_listing_symbols` join `effective_to`/`retracted_at` conditions | Removed those conditions |
+| 3 | current sector | `SectorClassificationRepository::resolveSectorContextForTickerIds` — `recorded_at <= $knownAt` | Removed the clause |
+| 4 | current suspension/status | `TemporalTradingStatusRepository::resolveStatus` — `knownAt`-gated branch | Disabled the condition |
+| 5 | latest calendar correction | `MarketCalendarRepository::terminalRevisionRowsForDate` — `recorded_at <= knownAt` (disambiguated from an unrelated duplicate-looking line elsewhere in the file) | Removed the correct clause |
+| 6 | later corporate-action revision | `EventRiskSourceRepository::applyKnowledgeCutoff` — the legacy-table path the fixture actually exercises (confirmed by inspection, not the unexercised V2 path) | Made it a no-op |
+| 7 | later factor | `AsKnownReplaySnapshotService::eventFactorContext` — `md_adjustment_factor_sets` `recorded_at <= $knowledgeCutoff` | Hardcoded the cutoff to a future date |
+| 8 | current config | `MarketDataConfigSnapshotRepository::governingSnapshot` — `knownAt`-gated `recorded_at` clause | Disabled the condition |
+| 9 | latest provider mapping | `TemporalIdentityRepository::resolveProviderContext` — conditional `pm.recorded_at`/`pm.retracted_at` block | Replaced with unconditional `whereNull('pm.retracted_at')` |
+
+Each probe was byte-restored via `git checkout` and sha256-verified identical to its pre-probe
+baseline both before and after, each turned exactly its own target test red while sibling members
+stayed green, and the combined control suite across all four touched files (28 tests, 175 assertions)
+was confirmed green before the probe series began and after every restore. Zero probes discarded as
+non-discriminating.
+
+**Aggregate semantics.** A tenth, supplementary probe (not counted toward the nine) re-verified the
+map-completeness scaffold test itself by mutating `Replay_Verification_Contract_LOCKED.md` to add a
+tenth, unmapped anti-future item; the test correctly turned red on the resulting array-diff, byte-
+restored and sha256-verified. A direct attempt to probe the same scaffold from the test side —
+temporarily removing one mapped entry from `antiFutureMap()` — was blocked by the Claude Code
+auto-mode security classifier (reason: "Security Test Removal") before any test ran against the
+mutation; the file was immediately restored and confirmed sha256-identical to its pre-edit state, so
+no coverage was ever weakened, and the authority-document-side probe above independently demonstrates
+the same class of falsifiability. Full-parent aggregate semantics reused the repository's existing
+map-completeness-plus-per-member-execution pattern (the same shape already used for `MD-S040`'s
+ten-member list and `MD-S050-R0040`'s eight-fixture classification), not a new parallel mechanism.
+
+**No current/latest substitution**, audited per member using exact repository semantics: each of the
+nine guarding clauses is conditioned on the caller-supplied `knownAt`/`knowledgeCutoff` argument
+rather than defaulting to an unfiltered current read, which is exactly what disabling that one
+condition in each probe demonstrated by exposing the later fact while the other eight stayed silent.
+
+`MD-S050-R0017` moved `INCOMPLETE` → `PROVEN`, reviewed independently. Proof basis: `PROVEN` 83 → 84,
+`INCOMPLETE` 31 → 30, confirmed via PHP parse. (The promotion edit was initially misplaced into the
+`WITHDRAWN_NOT_APPLICABLE` array — an audit-only array never read as current basis — during
+authoring; caught immediately by re-verifying the PHP-parsed count and key membership, corrected
+before evidence was issued, re-verified clean.) No traceability-matrix `coverage_status`/`SATISFIED`/
+denominator change. `MD-DEP-0017` remains `BLOCKING`.
+
+Targeted suites green: `B18AntiFutureResolutionTest` 4/4 (10 assertions),
+`B18AntiSurvivorshipFixtureCorpusTest` 10/10 (47 assertions), `AsKnownReplayBoundaryTest` 11/11 (91
+assertions), `B18AsKnownSnapshotIsolationTest` 3/3 (27 assertions). Governance self-tests green:
+`GovernanceGateReadOnlyExecutionTest` 9/9, `ScopeBoundaryAndOrchestrationCompletionTest` 8/8,
+`FindingRecordConsistencyTest` 3/3, `ClassificationConsistencyGateTest` 20/20,
+`TraceabilityApplicabilityGateTest` 11/11, `PromotedPredicateProofGateTest` 8/8. Proof self-test
+(`MarketDataReplayVerificationProofSelfTest.php`) re-run: overall status remains `FAIL`, driven
+entirely by the pre-existing baseline scenario (unrelated, still-open findings' predicates only); all
+nine injected-mutation scenarios still pass, and `MD-S050-R0017` no longer appears in the baseline's
+`PREDICATE_WITHOUT_REVIEWED_BASIS` list — confirmed not a regression. Full application suite not run,
+not required — zero production code changed.
+
+**This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.** 5 of its own 14 predicates
+remain `INCOMPLETE`: `MD-S050-R0046` (G08), `MD-S003-R0009`/`MD-S003-R0010`/`MD-S003-R0005` (G09
+rebind-only), `MD-S019-R0074` (F-013 carry-forward, package-labelled G01). Not started in this unit.

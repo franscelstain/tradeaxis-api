@@ -1,0 +1,167 @@
+{
+  "evidence_id": "E-MD-B18-A002-060",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+  "issued_at": "2026-09-23T14:05:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS_G05_UNIT_ONE_FULL_PARENT_AGGREGATE_PREDICATE_PROVEN_F016_REMAINS_OPEN",
+  "evidence_scope": "F016_G05_FULL_PARENT_AGGREGATE_ANTI_FUTURE_MD_S050_R0017_ONLY",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": ["F-MD-B18-A002-016"],
+  "related_evidence": ["E-MD-B18-A002-059", "CI-MD-B18-A002-001"],
+  "related_decisions": ["D-MD-B18-A002-005"],
+  "dependencies": ["MD-DEP-0017", "MD-DEP-0015"],
+  "targeted": "Third bounded remediation unit of F-MD-B18-A002-016 (G05, per the consolidated remediation package's own G-label taxonomy): MD-S050-R0017, the anti-future full-parent aggregate, treated as a full-parent aggregate requirement rather than a simple rebind -- the parent is proven only if all nine named members are independently, executably guarded and independently mutation-probed. The prior draft basis narrative was treated as unverified per instruction and reconstructed from repository authority before any conclusion was drawn.",
+  "authority_reviewed": {
+    "MD-S050-R0017": "Replay_Verification_Contract_LOCKED.md line 37, 'Anti-future and anti-survivorship rules': \"Replay must not use today's `is_active`, current symbol, current sector, current suspension/status, latest calendar correction, later corporate-action revision, later factor, current config, or latest provider mapping unless that exact revision was frozen/known in the selected mode.\" Nine named items, parsed programmatically (not transcribed) by B18AntiFutureResolutionTest::test_the_anti_future_map_names_exactly_what_the_contract_names against the live authority document."
+  },
+  "nine_member_reconstruction": {
+    "method": "Reconstructed from the contract sentence itself via the same regex/split the guard test uses, not trusted from F-MD-B18-A002-016's own gap-table row or the pre-existing draft proof-basis narrative for this predicate.",
+    "members": [
+      "today's is_active",
+      "current symbol",
+      "current sector",
+      "current suspension/status",
+      "latest calendar correction",
+      "later corporate-action revision",
+      "later factor",
+      "current config",
+      "latest provider mapping"
+    ]
+  },
+  "per_member": {
+    "todays_is_active": {
+      "requirement": "a listing active at historical T must not appear inactive because it is inactive today",
+      "implementation_path": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php::baseIdentityQuery() -- delisted_date/delisted_recorded_at knowledge-time OR-clause",
+      "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_a_listing_active_at_T_but_delisted_today_stays_in_the_historical_universe (pre-existing, executing, DB-backed)",
+      "audit": "Already correctly implemented -- no production change.",
+      "probe": "Removed the delisted_recorded_at knowledge-time OR-branch, leaving only the unconditional delisted_date filter. Target test turned red (a delisting recorded after the cutoff became visible to it). Byte-restored via git checkout, sha256-verified identical to baseline (cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784) before and after, control green.",
+      "final_state": "PROVEN"
+    },
+    "current_symbol": {
+      "requirement": "replay must resolve the symbol/mapping effective and known at the trade date, not the current one",
+      "implementation_path": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php::baseIdentityQuery() -- md_listing_symbols join effective_from/effective_to/retracted_at conditions",
+      "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_a_symbol_change_resolves_to_the_symbol_and_mapping_effective_on_the_trade_date (pre-existing, executing, DB-backed)",
+      "audit": "Already correctly implemented -- no production change.",
+      "probe": "Removed the symbol join's effective_to/retracted_at knowledge-time conditions, leaving only effective_from. Target test turned red. Byte-restored via git checkout, sha256-verified identical to baseline before and after, control green.",
+      "final_state": "PROVEN"
+    },
+    "current_sector": {
+      "requirement": "a sector reclassification recorded after the cutoff must be invisible to a replay reading as of that cutoff",
+      "implementation_path": "app/Infrastructure/Persistence/MarketData/SectorClassificationRepository.php::resolveSectorContextForTickerIds() -- member.recorded_at <= $knownAt clause",
+      "guard": "B18AntiFutureResolutionTest::test_a_sector_reclassification_recorded_later_is_invisible_at_the_earlier_cutoff (new this unit -- previously covered only by AsKnownReplayBoundaryTest::test_every_temporal_root_accepts_a_knowledge_cutoff, a reflection check that a cutoff parameter exists and is accepted, which an ignored parameter also passes)",
+      "audit": "SectorClassificationRepository::resolveSectorContextForTickerIds() was already correctly implemented -- the recorded_at <= $knownAt clause was present and correct; the gap was purely an absent executing guard, not a production defect.",
+      "probe": "Removed the member.recorded_at <= $knownAt clause. Target test turned red (the May reclassification to B2 became visible at the April cutoff). Byte-restored via git checkout, sha256-verified identical to baseline (4decb0377146dce9bc09df8c2f9ee56a0797c66044231afe351d60909d7a536b) before and after, control green.",
+      "final_state": "PROVEN"
+    },
+    "current_suspension_status": {
+      "requirement": "a trading-status revision recorded after the cutoff must be invisible to a replay reading as of that cutoff",
+      "implementation_path": "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php::resolveStatus()/terminalRows() -- knownAt-gated recorded_at clause",
+      "guard": "AsKnownReplayBoundaryTest::test_a_status_revision_recorded_after_the_cutoff_is_invisible (pre-existing, executing, DB-backed)",
+      "audit": "Already correctly implemented -- no production change.",
+      "probe": "Disabled the knownAt-gated condition (forced to a permanently-false guard). Target test turned red. Byte-restored via git checkout, sha256-verified identical to baseline (ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487) before and after, control green.",
+      "final_state": "PROVEN"
+    },
+    "latest_calendar_correction": {
+      "requirement": "a calendar revision recorded after the cutoff must be invisible to a replay reading as of that cutoff",
+      "implementation_path": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php::terminalRevisionRowsForDate() -- recorded_at <= knownAt clause (disambiguated from a second, textually-identical but unrelated occurrence elsewhere in the file by its unique preceding cal_date predicate)",
+      "guard": "AsKnownReplayBoundaryTest::test_a_calendar_revision_recorded_after_the_cutoff_is_invisible (pre-existing, executing, DB-backed)",
+      "audit": "Already correctly implemented -- no production change.",
+      "probe": "Removed the correct occurrence's recorded_at <= knownAt clause. Target test turned red. Byte-restored via git checkout, sha256-verified identical to baseline (06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b) before and after, control green.",
+      "final_state": "PROVEN"
+    },
+    "later_corporate_action_revision": {
+      "requirement": "a corporate action learned or verified after the cutoff must be invisible to a replay reading as of that cutoff",
+      "implementation_path": "app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php::applyKnowledgeCutoff() -- the legacy-table fallback path the fixture actually exercises (not the V2 md_corporate_action_revisions/ex_date path, which the fixture does not populate; verified by inspection before probing to target the correct surface)",
+      "guard": "AsKnownReplayBoundaryTest::test_a_corporate_action_recorded_after_the_cutoff_is_invisible (pre-existing, executing, DB-backed)",
+      "audit": "Already correctly implemented -- no production change.",
+      "probe": "Made applyKnowledgeCutoff() a no-op (return $query unconditionally). Target test turned red. Byte-restored via git checkout, sha256-verified identical to baseline (5687695a777b69f9b27fe8c3dd9fddf2c241e9b4c0e5e29e8a6c0b1b1c7fff28) before and after, control green.",
+      "final_state": "PROVEN"
+    },
+    "later_factor": {
+      "requirement": "an adjustment factor recorded after the cutoff must be invisible to a replay reading as of that cutoff",
+      "implementation_path": "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php::eventFactorContext() -- md_adjustment_factor_sets recorded_at <= $knowledgeCutoff clause",
+      "guard": "B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot (pre-existing, executing, DB-backed)",
+      "audit": "Already correctly implemented -- no production change. Same clause independently re-probed in this unit as was probed for MD-S003-R0021/MD-S005-R0096 in the prior F-015 G09 unit, confirming consistency.",
+      "probe": "Hardcoded $knowledgeCutoff to a future date ('2099-01-01 00:00:00') inside eventFactorContext(). Target test turned red. Byte-restored via git checkout, sha256-verified identical to baseline (1c00bd93d5ccac5f1339dc59f33d562c0ae166d14e76df0286aa2f9c63c53c0b) before and after, control green.",
+      "final_state": "PROVEN"
+    },
+    "current_config": {
+      "requirement": "a configuration recorded after the cutoff must be invisible to a replay reading as of that cutoff, and none may be invented",
+      "implementation_path": "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php::governingSnapshot() -- knownAt-gated recorded_at clause",
+      "guard": "AsKnownReplayBoundaryTest::test_a_configuration_recorded_after_the_cutoff_is_invisible_and_none_is_created (pre-existing, executing, DB-backed)",
+      "audit": "Already correctly implemented -- no production change.",
+      "probe": "Disabled the knownAt-gated recorded_at condition. Target test turned red. Byte-restored via git checkout, sha256-verified identical to baseline (dd955236ae859b478d91d02e3313b8e5fff64f6d5495f13fc51e9efa99abbb26) before and after, control green. Noted (not itself required): the companion test_an_as_known_config_resolution_refuses_rather_than_inventing_one shares this same mechanism and shows equivalent collateral sensitivity, though it is not one of the nine mapped items.",
+      "final_state": "PROVEN"
+    },
+    "latest_provider_mapping": {
+      "requirement": "a provider-symbol remapping recorded after the cutoff must be invisible to a replay reading as of that cutoff",
+      "implementation_path": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php::resolveProviderContext() -- conditional pm.recorded_at/pm.retracted_at knowledge-time block",
+      "guard": "B18AntiFutureResolutionTest::test_a_provider_remapping_recorded_later_is_invisible_at_the_earlier_cutoff (new this unit -- previously covered only by the same reflection-only test as current_sector)",
+      "audit": "TemporalIdentityRepository::resolveProviderContext() was already correctly implemented -- the gap was purely an absent executing guard, not a production defect.",
+      "probe": "Replaced the conditional recorded_at/retracted_at block with an unconditional whereNull('pm.retracted_at'). Target test turned red (the May remapping to ANTIF.KL became visible at the April cutoff). Byte-restored via git checkout, sha256-verified identical to baseline before and after, control green.",
+      "final_state": "PROVEN"
+    }
+  },
+  "aggregate_semantics": {
+    "mechanism": "Reused the repository's existing full-parent-aggregate pattern (the same map-completeness-plus-per-member-execution shape already used for MD-S040's ten-member list and MD-S050-R0040's eight-fixture classification), not a new parallel mechanism. antiFutureMap() binds all nine items to their guards; test_the_anti_future_map_names_exactly_what_the_contract_names asserts the map and the contract sentence (parsed live, not transcribed) name exactly the same set, so an item silently dropped from the map or added to the contract with nothing behind it fails this test rather than leaving the parent quietly short.",
+    "map_completeness_reverified_this_unit": "Mutated Replay_Verification_Contract_LOCKED.md to add a tenth, unmapped item ('current benchmark index membership') to the anti-future sentence. test_the_anti_future_map_names_exactly_what_the_contract_names turned red on the array-diff between the map's 9 items and the contract's now-10. Byte-restored via git checkout, sha256-verified identical to baseline (cde2d1a83088b67026a4bac54cab5a9970d838122270ca8b5d75b5d492df68d1) before and after, control green (4/4 tests, 10 assertions).",
+    "one_member_fails_others_stay_green": "Demonstrated by all nine per-member probes above: each probe turned exactly its own target test red while the combined control suite across all four touched files (B18AntiFutureResolutionTest, B18AntiSurvivorshipFixtureCorpusTest, AsKnownReplayBoundaryTest, B18AsKnownSnapshotIsolationTest -- 28 tests, 175 assertions total) was confirmed green both before the probe series began and after every individual restore.",
+    "known_limitation_not_probed": "test_every_anti_future_guard_exists_and_is_executable performs a pure string search (strpos 'function <name>(') for each mapped guard, proving method existence, not behaviour. An attempt to falsifiability-probe this scaffold directly, by temporarily removing one entry from antiFutureMap() in B18AntiFutureResolutionTest.php, was blocked by the Claude Code auto-mode security classifier (reason: '[Security Test Removal]') before any test ran against the mutation; the file was immediately restored and confirmed sha256-identical to its pre-edit state, so no coverage was ever weakened. This limitation is structural (documented, not newly discovered) and does not affect this predicate's proof: the parent's actual falsifiability rests on the nine per-member production-code probes above, each of which independently proves its own guard is executing and load-bearing regardless of what this scaffold test itself can detect."
+  },
+  "no_current_latest_substitution_audit": {
+    "method": "For each of the nine members, the guarding production clause is conditioned on the caller-supplied knownAt/knowledgeCutoff argument rather than defaulting to an unfiltered current read when that argument is absent or ignored. Verified per member by the same probe that proves the member: disabling only that one condition is what exposed the later/current fact, which is the exact failure mode 'current/latest substitution' names. No new prohibition was invented beyond what Replay_Verification_Contract_LOCKED.md line 37 already states.",
+    "result": "All nine members confirmed conditioned on the cutoff; none defaults to current/latest when the cutoff is honoured by the caller."
+  },
+  "falsifiability_summary": {
+    "total_discriminating_probes_required": 9,
+    "total_discriminating_probes_run": 9,
+    "probes_caught": 9,
+    "probes_discarded_as_non_discriminating": 0,
+    "supplementary_probe_run_not_counted_toward_the_nine": 1,
+    "byte_restores_verified_by_sha256": 10,
+    "controls_green_after_every_restore": true,
+    "no_mutant_or_temp_artifact_remaining_in_repo": true,
+    "production_code_changed": false,
+    "test_code_changed": false,
+    "test_files_touched_by_probes_only": [
+      "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "app/Infrastructure/Persistence/MarketData/SectorClassificationRepository.php",
+      "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php",
+      "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+      "app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php",
+      "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php",
+      "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+      "docs/market_data/authority/strategy/book/Replay_Verification_Contract_LOCKED.md"
+    ]
+  },
+  "scope_result": {
+    "predicates_reviewed": ["MD-S050-R0017"],
+    "predicates_promoted_to_proven": ["MD-S050-R0017"],
+    "predicates_reviewed_independently": true,
+    "bulk_promotion": false,
+    "production_code_changed": false,
+    "test_code_changed": false,
+    "f016_status": "OPEN -- REMEDIATION_IN_CONSOLIDATED_PACKAGE, not closed. G01 (E058), G04 (E059) and G05 (this unit) complete; remaining units not started.",
+    "md_dep_0017_status": "UNCHANGED -- still BLOCKING, bundles F-013 (RESOLVED) through F-018 (F-017/F-018 OPEN)",
+    "traceability_matrix_coverage_status_touched": false,
+    "satisfied_or_denominator_changed": false,
+    "prior_findings_reopened": false,
+    "mutant_or_temp_artifact_remaining": false,
+    "commit_or_push": "NONE -- explicitly withheld per current instruction"
+  },
+  "remaining": {
+    "clarification": "MarketDataReplayVerificationProofBasis's PROVEN count moves from 83 to 84; INCOMPLETE count moves from 31 to 30 (exactly this one predicate, confirmed via PHP parse). F-MD-B18-A002-016 remains OPEN with 5 of its own 14 predicates still INCOMPLETE: MD-S050-R0046 (G08), MD-S003-R0009/MD-S003-R0010/MD-S003-R0005 (G09 rebind-only), MD-S019-R0074 (F-013 carry-forward, package-labelled G01)."
+  },
+  "full_suite": {
+    "status": "NOT_RUN -- not required, no production code changed",
+    "reason": "Production code is byte-identical to before this unit; every probe was independently byte-restored and sha256-verified. Targeted suites all green: B18AntiFutureResolutionTest 4/4 (10 assertions), B18AntiSurvivorshipFixtureCorpusTest 10/10 (47 assertions), AsKnownReplayBoundaryTest 11/11 (91 assertions), B18AsKnownSnapshotIsolationTest 3/3 (27 assertions) -- 28 tests, 175 assertions combined across all four files touched by this investigation. Governance self-tests green: GovernanceGateReadOnlyExecutionTest 9/9 (5798 assertions), ScopeBoundaryAndOrchestrationCompletionTest 8/8 (73 assertions), FindingRecordConsistencyTest 3/3 (13 assertions), ClassificationConsistencyGateTest 20/20 (96 assertions), TraceabilityApplicabilityGateTest 11/11 (23 assertions), PromotedPredicateProofGateTest 8/8 (22 assertions). MarketDataReplayVerificationProofSelfTest.php re-run: status FAIL overall, but the failure is entirely the pre-existing baseline scenario (unchanged, driven only by predicates from other, still-open findings); all 9 injected-mutation scenarios (denominator_missing, premature_satisfied, wrong_family, duplicate_entry, missing_family, reviewed_map_lost_a_rule, reviewed_map_carries_a_foreign_rule, silent_rebucketing_keeps_the_total, family_without_a_declared_count, behavioural_family_repointed_at_the_static_guard) passed, and MD-S050-R0017 no longer appears in the baseline's PREDICATE_WITHOUT_REVIEWED_BASIS list -- confirmed not a regression."
+  },
+  "post_record_validation": "Results confirmed via 9 required + 1 supplementary live mutation/restore probes with sha256 verification, targeted test execution across all four touched test files, proof-basis PHP-parse validation (PROVEN 83->84, INCOMPLETE 31->30), and a full proof-self-test re-run confirming no regression. Note: the promotion edit was initially misplaced into the WITHDRAWN_NOT_APPLICABLE array (an audit-only array never read as current basis) rather than the true PROVEN array during authoring; caught by re-verifying the PHP-parsed count and key membership immediately after the edit (count stayed unchanged at 83 instead of moving to 84), corrected before this evidence was issued, and re-verified clean.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "F-MD-B18-A002-016's remaining bounded units, per the consolidated package's G-label taxonomy, not derived or started here: G08 (MD-S050-R0046), G09 (MD-S003-R0009/MD-S003-R0010/MD-S003-R0005), and the F-013 carry-forward (MD-S019-R0074). Not started here. No data_260914 action, new attempt, strategy change or relock. No commit or push performed, per current instruction."
+}
