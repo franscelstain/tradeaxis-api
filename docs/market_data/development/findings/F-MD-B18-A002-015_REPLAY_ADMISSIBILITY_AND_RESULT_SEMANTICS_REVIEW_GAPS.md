@@ -313,3 +313,82 @@ remain `INCOMPLETE`: `MD-S050-R0051`/`MD-S050-R0052` (G08); `MD-S036-R0012`/`MD-
 `MD-S003-R0021`/`MD-S005-R0096` (G09). `MD-DEP-0017` remains `BLOCKING`. 
 
 **Next bounded unit per consolidated remediation package canonical ordering:** G08 (`MD-S050-R0051` and `MD-S050-R0052` together, consumer/admission claim scan requiring new static guard + pattern guard).
+
+## E056: G08 consumer/admission claim scan (MD-S050-R0051/MD-S050-R0052) — 2026-09-23T04:20:00+07:00
+
+Bounded to exactly two predicates: `MD-S050-R0051` and `MD-S050-R0052`, reviewed and proven
+independently rather than bulk-promoted. All other F-015 predicates untouched.
+
+**Requirements reconstructed from current authority, not from this table's paraphrase.**
+`STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv` against `Replay_Verification_Contract_LOCKED.md`
+lines 99-100, section "Admissibility of a PASS (LOCKED)": `MD-S050-R0051` — "A replay `PASS` may not
+close a data-quality finding, release a quarantine, dismiss a corporate-action candidate, or satisfy
+a continuity check." `MD-S050-R0052` — "Where an audit claim requires correctness, the admissible
+evidence is independent — verified event terms, source reconciliation, or exchange-published facts —
+not a replay verdict." R0051 concerns executable consumer behaviour; R0052 concerns what a claim may
+cite.
+
+**Consumer scan performed before any guard was written.** `app/` grepped for `replay_status` and
+`comparison_result`, the two verdict field names, yielding exactly 13 files: `BackfillLifecycleOrchestrator`,
+`FullRangeCurrentEvidenceReplayService`, `MarketDataEvidenceExportService`, `ReplayBackfillService`,
+`ReplaySmokeSuiteService`, `ReplayVerificationService`, six command classes, and `ReplayResultRepository`
+— matching this finding's own earlier review ("verdict readers are the replay, backfill, evidence and
+command surfaces"). All 13 read directly: zero occurrences of finding/quarantine/corporate-action-candidate/
+continuity vocabulary outside comments. Every `candidate` occurrence in this surface is a publication or
+correction candidate (the immutable publication state machine's own vocabulary), never a corporate-action
+candidate. The only verdict consumption found is telemetry — a counter increment, a diagnostic
+case-pass flag — never a downstream action on a finding, quarantine, candidate, or continuity check.
+**Implementation already correct; no production code changed for either predicate.**
+
+**R0051 remedy.** New test file `B18ReplayVerdictConsumerBoundaryTest.php`. `REVIEWED_VERDICT_CONSUMERS`
+is a positive-locator, fail-closed enumeration of the 13 files, asserted equal (both directions) to
+the set actually derived by scanning `app/` for the two verdict fields — a file added later that reads
+one fails this closed until reviewed and added. Each reviewed file is then scanned for the rule's four
+prohibited actions using bidirectional verb/noun proximity patterns (verb-then-subject or
+subject-then-verb, since a real call site as often reads `$this->quarantine->release(...)` as
+`releaseQuarantine(...)`), so the OHLC `close` price field and the publication/correction `candidate`
+vocabulary already present throughout this exact surface cannot false-positive — proven directly
+against the real files, not assumed.
+
+**R0052 remedy.** `forbidden()` in `B18ReplayAdmissibilityBoundaryTest` carried no pattern of its own
+for this predicate. One was added, deliberately phrased from the rule's own named alternative
+(`admissible|independent` evidence) rather than from the paraphrase this very table already quotes
+verbatim for this predicate ("the replay verdict establishes correctness") — reusing that wording
+would have made the new pattern fire on this finding's own live, unexcluded document. Corpus-grepped
+before writing the pattern to confirm zero collision with any existing sentence, including this one.
+
+**Falsifiability.** Four live mutation/restore probes, each byte-restored from a pre-mutation copy and
+sha256-verified identical before/after, each control re-run green: injecting a bare `replay_status`
+token into an unreviewed file (`PriceScaleBreakDetectionService.php`) turned the positive-locator
+drift guard red; injecting a real prohibited call (`$this->findingRepository->closeFinding(...)`)
+into a reviewed consumer (`ReplayVerificationService.php`) turned the action-scan red, naming the
+exact file and action; a synthetic-sample test independently proves all four R0051 patterns fire
+without needing a file mutation; injecting the exact R0052 claim sentence into a live scanned file
+(`CURRENT_STATE.md`) turned the corpus scan red, naming the injected file and matched span, while this
+finding's own quoted example of the same underlying claim — phrased differently — stayed correctly
+unflagged throughout.
+
+`MD-S050-R0051` and `MD-S050-R0052` moved `INCOMPLETE` → `PROVEN`, reviewed and bound independently
+(separate positive/negative/basis entries, not a bulk promotion). Proof basis: `PROVEN` 72 → 74,
+`INCOMPLETE` 42 → 40, confirmed via PHP parse. Proof self-test no longer lists either predicate under
+`PREDICATE_WITHOUT_REVIEWED_BASIS` (baseline remains its own pre-existing `FAIL`, unchanged, driven
+only by the other genuinely-incomplete predicates — not a regression). No traceability-matrix
+`coverage_status`/`SATISFIED`/denominator change.
+
+Targeted suites green: `B18ReplayVerdictConsumerBoundaryTest` 5/5 (48 assertions),
+`B18ReplayAdmissibilityBoundaryTest` 4/4 (10 assertions), plus sanity re-runs of unrelated consumer
+suites — `ReplayVerificationServiceTest` 20/20, `OpsCommandSurfaceTest` 64/64,
+`B18ReplayComparisonExhaustivenessTest` 39/39 — all green, confirming zero collateral impact from
+test-tooling-only changes. Governance self-tests green:
+`GovernanceGateReadOnlyExecutionTest`+`ScopeBoundaryAndOrchestrationCompletionTest` 9/9,
+`FindingRecordConsistencyTest` 3/3. Full application suite not run, not required — only test files
+changed, no production/schema/migration touched.
+
+**This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.** 4 of its own 14 predicates
+remain `INCOMPLETE`, all `G09`: `MD-S036-R0012`/`MD-S050-R0036`/`MD-S003-R0021`/`MD-S005-R0096`.
+`MD-DEP-0017` remains `BLOCKING`.
+
+**Next and final bounded unit per consolidated remediation package canonical ordering:** G09
+(`MD-S036-R0012`, `MD-S050-R0036`, `MD-S003-R0021`, `MD-S005-R0096` — four rebind-only predicates
+naming already-existing executing guards per this finding's own "Guard gaps and rebinds" table, no
+application change anticipated).

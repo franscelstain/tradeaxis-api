@@ -73,6 +73,14 @@ class B18ReplayAdmissibilityBoundaryTest extends TestCase
                 '/replay'.$this->gap(40).'(pass|verdict|result)'.$this->gap(40).'(closes|resolves|releases|dismisses|satisfies)'.$this->gap(30).'(finding|quarantine|candidate|continuity)/i',
                 'The replay PASS closes the outstanding data-quality finding.',
             ],
+            // A correctness claim needs independent evidence -- verified event terms, source
+            // reconciliation, or exchange-published facts -- never a replay verdict standing in for it.
+            // Phrased from the rule's own named alternative ("admissible|independent evidence"),
+            // not from any paraphrase already quoted elsewhere in this corpus as a named example.
+            'MD-S050-R0052' => [
+                '/replay'.$this->gap(30).'(verdict|pass|result)'.$this->gap(40).'(admissible|independent)\s+evidence'.$this->gap(30).'correctness/i',
+                'The replay verdict serves as the admissible evidence a correctness audit needs.',
+            ],
             // BLOCKED is the absence of a comparison, not a soft success.
             'MD-S050-R0053' => [
                 '/blocked'.$this->gap(30).'(is|as|counts\s+as|treated\s+as)'.$this->gap(20).'(a\s+)?(weaker|partial|soft|qualified)\s+pass/i',

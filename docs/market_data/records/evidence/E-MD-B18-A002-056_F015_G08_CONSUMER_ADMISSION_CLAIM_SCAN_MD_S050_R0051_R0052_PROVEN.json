@@ -1,0 +1,98 @@
+{
+  "evidence_id": "E-MD-B18-A002-056",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+  "issued_at": "2026-09-23T04:20:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS_ONE_BOUNDED_UNIT_TWO_INDEPENDENT_PREDICATES_PROVEN_F015_REMAINS_OPEN",
+  "evidence_scope": "F015_G08_CONSUMER_ADMISSION_CLAIM_SCAN_MD_S050_R0051_R0052_ONLY",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-015"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-055",
+    "CI-MD-B18-A002-001"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "Fifth bounded remediation unit of F-MD-B18-A002-015 (G08, per consolidated remediation package canonical ordering): consumer/admission claim scan for MD-S050-R0051 and MD-S050-R0052, reviewed and proven independently. Exact rule text confirmed from STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv against Replay_Verification_Contract_LOCKED.md lines 99-100 (section 'Admissibility of a PASS (LOCKED)'): R0051 -- 'A replay PASS may not close a data-quality finding, release a quarantine, dismiss a corporate-action candidate, or satisfy a continuity check.'; R0052 -- 'Where an audit claim requires correctness, the admissible evidence is independent -- verified event terms, source reconciliation, or exchange-published facts -- not a replay verdict.' Both predicates concern what code may DO with a replay verdict (R0051, executable consumer behaviour) and what a correctness claim may CITE (R0052, a prose/claim boundary), not merely what may be stated in a sentence.",
+  "consumer_scan": {
+    "verdict_fields_searched": ["replay_status", "comparison_result"],
+    "reviewed_consumer_surface": [
+      "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+      "app/Application/MarketData/Services/FullRangeCurrentEvidenceReplayService.php",
+      "app/Application/MarketData/Services/MarketDataEvidenceExportService.php",
+      "app/Application/MarketData/Services/ReplayBackfillService.php",
+      "app/Application/MarketData/Services/ReplaySmokeSuiteService.php",
+      "app/Application/MarketData/Services/ReplayVerificationService.php",
+      "app/Console/Commands/MarketData/BackfillLifecycleCommand.php",
+      "app/Console/Commands/MarketData/BackfillMissingTickersCommand.php",
+      "app/Console/Commands/MarketData/FullRangeCurrentEvidenceReplayCommand.php",
+      "app/Console/Commands/MarketData/ReplayBackfillCommand.php",
+      "app/Console/Commands/MarketData/ReplaySmokeSuiteCommand.php",
+      "app/Console/Commands/MarketData/VerifyReplayCommand.php",
+      "app/Infrastructure/Persistence/MarketData/ReplayResultRepository.php"
+    ],
+    "finding": "Confirmed by direct reading of all 13 files (grep for finding/quarantine/corporate-action-candidate/continuity vocabulary returns zero hits outside comments; every 'candidate' occurrence in this surface is a publication or correction candidate, unrelated to R0051's corporate-action candidate). No consumer treats a PASS verdict as sufficient to close a finding, release a quarantine, dismiss a corporate-action candidate, or satisfy a continuity check -- confirming F-MD-B18-A002-015's own review note that no such consumer exists today. The only verdict consumption found is telemetry/counter/report-shaping (e.g. BackfillLifecycleOrchestrator's replayVerified++ counter, FullRangeCurrentEvidenceReplayService::casePassed()'s diagnostic case-pass flag) -- never a downstream action on a finding, quarantine, corporate-action candidate, or continuity check. IMPLEMENTATION_ALREADY_CORRECT: no production code change was required or made; the gap was purely an absent guard."
+  },
+  "probes": [
+    { "id": "P182-r0051-no-reviewed-consumer-performs-any-prohibited-action", "caught": false, "note": "B18ReplayVerdictConsumerBoundaryTest::test_no_reviewed_consumer_closes_releases_dismisses_or_satisfies_on_a_verdict scans all 13 reviewed consumers (comment-stripped) for four bidirectional verb/noun proximity patterns (close+finding, release+quarantine, dismiss+corporate-action-candidate, satisfy+continuity, matched in either call-site order). Zero violations found; this is the R0051 positive proof of the current, unmodified implementation." },
+    { "id": "P183-r0051-reviewed-list-is-fail-closed-positive-locator", "caught": false, "note": "B18ReplayVerdictConsumerBoundaryTest::test_the_reviewed_list_is_exactly_every_file_that_reads_a_verdict_field derives the actual set of app/ files containing replay_status or comparison_result and asserts it equals REVIEWED_VERDICT_CONSUMERS exactly (13 files, both directions). A file added later that reads a verdict field fails this closed until reviewed and added." },
+    { "id": "P184-r0051-each-forbidden-pattern-fires-on-its-own-sample", "caught": false, "note": "B18ReplayVerdictConsumerBoundaryTest::test_each_forbidden_action_pattern_fires_on_its_own_sample_violation asserts each of the four patterns matches a synthetic in-memory violation shaped like a real call site (e.g. $this->quarantine->release($tickerCode, \"verified by replay\");), proving the scan is not vacuous." },
+    { "id": "P185-r0051-benign-close-and-candidate-vocabulary-untouched", "caught": false, "note": "B18ReplayVerdictConsumerBoundaryTest::test_the_reviewed_surfaces_own_benign_close_and_candidate_vocabulary_is_untouched asserts the four forbidden patterns do not fire on the real OHLC 'close' field or publication/correction 'candidate' vocabulary already present in BackfillLifecycleOrchestrator.php and MarketDataEvidenceExportService.php." },
+    { "id": "P186-r0051-mutation-unreviewed-consumer-drift", "caught": true, "note": "Live mutation probe: injected a bare 'replay_status' comment token into PriceScaleBreakDetectionService.php (not a reviewed consumer). test_the_reviewed_list_is_exactly_every_file_that_reads_a_verdict_field went red, naming the new file as an array diff entry. File restored byte-for-byte from a pre-mutation copy; sha256 confirmed identical (1ee63f2b243d11242061f88d63e41675f770d48e29ed4b19303cdb5d14b2eb12 before and after); control re-run green." },
+    { "id": "P187-r0051-mutation-real-prohibited-call-injected", "caught": true, "note": "Live mutation probe: appended a real prohibited call ($this->findingRepository->closeFinding($findingId, \"REPLAY_PASS\");) to ReplayVerificationService.php, a reviewed consumer. test_no_reviewed_consumer_closes_releases_dismisses_or_satisfies_on_a_verdict went red, naming the exact file and the exact prohibited action ('closes a data-quality finding'). File restored byte-for-byte; sha256 confirmed identical (a40a79a5e123a5abaab014ca2aadbd9f2fc8157322508f9140732d3f4f310532 before and after); control re-run green (14 assertions)." },
+    { "id": "P188-r0052-pattern-fires-on-claim-spares-denial", "caught": false, "note": "B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial confirms the new MD-S050-R0052 pattern fires on its own claim sentence ('The replay verdict serves as the admissible evidence a correctness audit needs.') and stays silent on all three denial-prefixed versions of the same sentence." },
+    { "id": "P189-r0052-corpus-scan-zero-live-violations", "caught": false, "note": "B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish confirms zero live matches for the new R0052 pattern across the full scanned corpus (docs/market_data + app, excluding the five standing exclusions), including against F-MD-B18-A002-015's own gap-table entry which quotes a different paraphrase (\"the replay verdict establishes correctness\") as a named example -- the new pattern was deliberately phrased from the rule's own named alternative (admissible/independent evidence) rather than from that paraphrase, to avoid exactly this collision." },
+    { "id": "P190-r0052-mutation-live-corpus-injection", "caught": true, "note": "Live mutation probe: appended the exact claim sentence ('The replay verdict serves as the admissible evidence a correctness audit needs.') to CURRENT_STATE.md, a live scanned file outside every excluded prefix. test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish went red, naming the injected file and the exact matched span ('replay verdict serves as the admissible evidence a correctness'). File restored byte-for-byte; sha256 confirmed identical (2813462beac7e6ae7468365438f6b85d8e26758131ecb05ed609c8166ba45779 before and after); control re-run green, including F-015's own quoted example, which the pattern correctly spared throughout." }
+  ],
+  "tested_source_sha256": {
+    "note": "Test-tooling files only; no production code touched. Exact hashes not separately recorded beyond the mutation-probe restore verification above, which is the load-bearing proof for this evidence."
+  },
+  "schema_changed": false,
+  "production_code_changed": false,
+  "root_cause_and_implementation": "Both predicates were guard gaps, not executable defects; the existing implementation already conformed to both rules, confirmed by direct consumer-surface reading before any test was written. R0051: the existing corpus guard (B18ReplayAdmissibilityBoundaryTest's forbidden() prose scan) only reads sentences in documents and code comments, so a real consumer enacting the prohibition as executable behaviour -- a call, not a claim -- would cross the existing guard silently. A new static consumer guard, B18ReplayVerdictConsumerBoundaryTest, was added: it derives a positive-locator, fail-closed enumeration of every file under app/ that reads a replay verdict field (13 files today, matching F-015's own review of the replay/backfill/evidence/command surfaces plus the result repository), and scans each reviewed file for the rule's four prohibited actions using bidirectional verb/noun proximity patterns (verb-then-subject or subject-then-verb, since a real call site as often reads $this->quarantine->release(...) as releaseQuarantine(...)). No production code was changed. R0052: forbidden() carried no pattern of its own for this predicate at all. A dedicated pattern was added to the existing array, deliberately phrased from the rule's own named alternative (independent/admissible evidence) rather than from the paraphrase F-MD-B18-A002-015's own gap-table entry already quotes verbatim as a named example -- reusing that paraphrase would have made the new pattern fire on F-015's own live, unexcluded finding document, a false positive against the very record describing the gap. No production code was changed for this predicate either.",
+  "scope_result": {
+    "predicates_reviewed": ["MD-S050-R0051", "MD-S050-R0052"],
+    "predicates_promoted_to_proven": ["MD-S050-R0051", "MD-S050-R0052"],
+    "predicates_reviewed_independently": true,
+    "predicates_explicitly_not_touched": ["MD-S036-R0012", "MD-S050-R0036", "MD-S003-R0021", "MD-S005-R0096"],
+    "production_code_changed": false,
+    "production_change_summary": "None. Both predicates were already satisfied by current implementation; only test-tooling guards were added/extended. No application, schema, or migration file touched.",
+    "f015_status": "OPEN -- REMEDIATION_IN_CONSOLIDATED_PACKAGE (unchanged, per instruction not to close F-015 after this unit)",
+    "md_dep_0017_status": "UNCHANGED -- still BLOCKING, still bundles F-013 through F-018",
+    "traceability_matrix_coverage_status_touched": false,
+    "satisfied_or_denominator_changed": false,
+    "f013_f014_f015_prior_units_reopened": false,
+    "mutant_or_temp_artifact_remaining": false,
+    "commit_or_push": "NONE -- explicitly withheld per current instruction"
+  },
+  "remaining": {
+    "implementation_slices": 0,
+    "slices_complete": ["R0051 static consumer guard", "R0052 dedicated pattern"],
+    "slices_remaining": [],
+    "incomplete_bases": 40,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [],
+    "clarification": "MarketDataReplayVerificationProofBasis's PROVEN count moves from 72 to 74; INCOMPLETE count moves from 42 to 40 (exactly the two predicates this evidence promotes). F-MD-B18-A002-015 remains OPEN with 4 of its own 14 predicates still INCOMPLETE: MD-S036-R0012/MD-S050-R0036/MD-S003-R0021/MD-S005-R0096 (G09, rebind to already-existing executing guards). MD-DEP-0017 remains BLOCKING."
+  },
+  "full_suite": {
+    "status": "NOT_RUN -- not required, only test-tooling files changed",
+    "reason": "No production code, schema, or migration changed. Targeted guard suites (B18ReplayVerdictConsumerBoundaryTest 5/5, B18ReplayAdmissibilityBoundaryTest 4/4) plus sanity re-runs of unrelated consumer suites (ReplayVerificationServiceTest 20/20, OpsCommandSurfaceTest 64/64, B18ReplayComparisonExhaustivenessTest 39/39) all green, confirming zero collateral impact. Governance self-tests (GovernanceGateReadOnlyExecutionTest 9/9 combined with ScopeBoundaryAndOrchestrationCompletionTest, FindingRecordConsistencyTest 3/3) green.",
+    "prior_baseline": "E054's full-suite state (2420 tests, 34194 assertions, 0 errors, 7 pre-existing failures) remains current reference; untouched by this unit."
+  },
+  "post_record_validation": "Results confirmed via targeted test execution, live mutation/restore probes with sha256 verification, and proof basis PHP-parse validation (PROVEN 72->74, INCOMPLETE 42->40).",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "F-MD-B18-A002-015's next and final bounded unit per canonical ordering: G09 (MD-S036-R0012, MD-S050-R0036, MD-S003-R0021, MD-S005-R0096 -- four rebind-only predicates naming already-existing executing guards per the finding's own 'Guard gaps and rebinds' table, no application change anticipated). Not started here. No data_260914 action, new attempt, strategy change or relock. No commit or push performed, per current instruction."
+}

@@ -622,6 +622,21 @@ final class MarketDataReplayVerificationProofBasis
             'basis' => 'equal row counts cannot establish PASS; content/hash divergence at unchanged population produces MISMATCH with the specific hash as the mismatched field',
         ],
 
+        // F-MD-B18-A002-015 G08: the corpus guard read prose only, so a real consumer enacting the
+        // prohibition as code -- a call, not a claim -- would cross it silently. New executable guard
+        // B18ReplayVerdictConsumerBoundaryTest closes that gap.
+        'MD-S050-R0051' => [
+            'positive' => 'B18ReplayVerdictConsumerBoundaryTest::test_no_reviewed_consumer_closes_releases_dismisses_or_satisfies_on_a_verdict',
+            'negative' => 'B18ReplayVerdictConsumerBoundaryTest::test_each_forbidden_action_pattern_fires_on_its_own_sample_violation',
+            'basis' => 'a static consumer guard, not a prose scan: REVIEWED_VERDICT_CONSUMERS is a positive-locator, fail-closed enumeration (test_the_reviewed_list_is_exactly_every_file_that_reads_a_verdict_field) of every file under app/ that reads a replay verdict field (replay_status, comparison_result) -- today exactly 13 files, matching F-015\'s own review: the replay, backfill, evidence and command surfaces, plus ReplayResultRepository. Each reviewed file is scanned for the rule\'s four prohibited actions (closes a finding, releases a quarantine, dismisses a corporate-action candidate, satisfies a continuity check), matched bidirectionally (verb-then-subject or subject-then-verb, since a real call site as often reads $this->quarantine->release(...) as releaseQuarantine(...)) so the OHLC close field and the publication/correction candidate vocabulary already present throughout this exact surface cannot false-positive (test_the_reviewed_surfaces_own_benign_close_and_candidate_vocabulary_is_untouched). Confirmed by reading all 13 files directly: none contains finding/quarantine/corporate-action-candidate/continuity vocabulary at all outside comments, so the rule already held and no production code was changed -- only the guard was missing. Mutation-proven three ways, each byte-restored and sha256-verified identical before/after, controls green either side: injecting `replay_status` into an unreviewed file (PriceScaleBreakDetectionService.php) turned the positive-locator drift guard red, naming the new file; injecting a real prohibited call (`$this->findingRepository->closeFinding(...)`) into a reviewed consumer (ReplayVerificationService.php) turned the action-scan red, naming the exact file and the exact prohibited action; the sample-violation test independently proves all four patterns fire on synthetic in-memory violations without needing any file mutation.',
+        ],
+        // F-MD-B18-A002-015 G08: forbidden() carried no pattern of its own for this predicate.
+        'MD-S050-R0052' => [
+            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
+            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
+            'basis' => 'a dedicated pattern phrased from the rule\'s own named alternative (admissible/independent evidence), not from the paraphrase F-MD-B18-A002-015\'s own gap-table entry for this predicate already quotes verbatim ("the replay verdict establishes correctness") as a named example -- a pattern built on that wording would false-positive against that live, unexcluded finding document. The new pattern requires `replay (verdict|pass|result) ... (admissible|independent) evidence ... correctness`, confirmed by corpus grep to have zero matches anywhere in the current active corpus and zero collision with F-015\'s own quoted example. Proven by the corpus scan\'s shared machinery: test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial confirms the pattern fires on its own claim sentence and stays silent on all three denial-prefixed versions of that sentence; test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish confirms zero live violations. Mutation-proven: injecting the exact claim sentence into a live scanned file (CURRENT_STATE.md, outside every excluded prefix) turned the corpus scan red, naming the injected file and the matched span verbatim; the file was restored byte-for-byte, sha256-verified identical, and the control -- including F-015\'s own quoted example, which the pattern correctly spares -- confirmed green again.',
+        ],
+
     ];
 
     // Withdrawn from PROVEN on 2026-09-14: these four rows are CONDITIONAL_NOT_APPLICABLE under
@@ -693,18 +708,6 @@ final class MarketDataReplayVerificationProofBasis
         // empty otherwise, never a live-config fallback). No guard was weakened and no new test was added: both
         // negative guards already existed from this round's and E047/E048's own remediation, and the comparison
         // guard already existed from E046. Promoted to PROVEN.
-        // F-MD-B18-A002-015: the corpus guard sees prose only; no guard stops code from using a replay PASS to close a finding, release a quarantine, dismiss a candidate or satisfy a continuity check.
-        'MD-S050-R0051' => [
-            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
-            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
-            'basis' => 'explicit prohibition on what a PASS may close',
-        ],
-        // F-MD-B18-A002-015: no pattern of its own in forbidden(); a correctness claim resting on a replay verdict is not caught.
-        'MD-S050-R0052' => [
-            'positive' => 'B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish',
-            'negative' => 'B18ReplayAdmissibilityBoundaryTest::test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial',
-            'basis' => 'names the admissible alternative evidence; the corpus guard forbids the substitution',
-        ],
         // F-MD-B18-A002-015: the basis names the replay-mode guard; the replay_verify request mode has no guard.
         'MD-S036-R0012' => [
             'positive' => 'ReplayModeContractTest::test_only_the_two_locked_replay_modes_are_accepted',
