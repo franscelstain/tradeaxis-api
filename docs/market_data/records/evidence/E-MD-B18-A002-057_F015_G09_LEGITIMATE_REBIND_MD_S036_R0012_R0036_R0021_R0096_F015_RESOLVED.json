@@ -1,0 +1,96 @@
+{
+  "evidence_id": "E-MD-B18-A002-057",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+  "issued_at": "2026-09-23T10:50:41+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS_FINAL_F015_UNIT_FOUR_PREDICATES_LEGITIMATELY_PROVEN_F015_RESOLVED",
+  "evidence_scope": "F015_G09_FINAL_REMEDIATION_MD_S036_R0012_MD_S050_R0036_MD_S003_R0021_MD_S005_R0096_ONLY",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": ["F-MD-B18-A002-015"],
+  "related_evidence": ["E-MD-B18-A002-056", "CI-MD-B18-A002-001"],
+  "related_decisions": ["D-MD-B18-A002-005"],
+  "dependencies": ["MD-DEP-0017", "MD-DEP-0015"],
+  "id_provenance": "E-MD-B18-A002-057 is the next evidence identifier derived fresh from the currently committed registries (last committed: E-056/MD-DOC-01189) after an earlier, invalid uncommitted E-057 attempt (same session, prior turn) was found to have promoted these same four predicates with no new guard, no rebind, and no probe -- a byte-identical INCOMPLETE-to-PROVEN move that contradicted this finding's own remedy table. That invalid draft was never committed, never appeared in any committed registry, and was discarded (tracked files restored to HEAD, the untracked draft evidence file deleted) before this unit began. This evidence number is issued because it is canonically next now, not because the prior identifier is being reused.",
+  "targeted": "Final bounded remediation unit of F-MD-B18-A002-015 (G09, per consolidated remediation package canonical ordering): four rebind-only predicates reviewed and proven independently, each against its own exact requirement, executing guard and discriminating probe -- MD-S036-R0012, MD-S050-R0036, MD-S003-R0021, MD-S005-R0096.",
+  "per_predicate": {
+    "MD-S036-R0012": {
+      "rule": "Allowed request modes: `replay_verify` (Import_Promote_Separation_Contract.md line 25).",
+      "prior_defect": "The finding's own remedy table names the defect precisely: the old basis pointed at the ReplayMode (PUBLICATION_EXACT/AS_KNOWN) guard, a domain distinct from the eod_runs.request_mode vocabulary this predicate actually governs.",
+      "guard": "MarketDataStageInput::ALLOWED_REQUEST_MODES is the real allowlist; MarketDataPipelineService::assertAllowedRequestMode() is the real enforcement boundary (throws REQUEST_MODE_INVALID for any mode outside it). RequestModeVocabularyTest already invoked this real method behaviourally, but its dataProvider for the positive test derives its cases from ALLOWED_REQUEST_MODES itself -- confirmed live: removing replay_verify from the array did not fail the guard, it silently shrank the dataProvider by one case (16/16 green instead of a failure naming replay_verify). A new, independent test was added, test_replay_verify_specifically_is_an_accepted_request_mode, asserting the literal string 'replay_verify' against the real method -- not a value read from the array under test.",
+      "probe": "Removed replay_verify from ALLOWED_REQUEST_MODES: the new test turned red with InvalidArgumentException REQUEST_MODE_INVALID naming exactly the removed mode (17 tests, 1 error). Byte-restored from a pre-mutation copy, sha256 confirmed identical (9738870e2df0626ca1917782540f812ecc1ea432d69d9c7b187c51e6f0279ddd before and after), control re-run green (17/17, 22 assertions).",
+      "final_state": "PROVEN"
+    },
+    "MD-S050-R0036": {
+      "rule": "A result carrying no mode is not a publication-replay result by default. It is unclassified, and an unclassified result may not be cited as either (Replay_Verification_Contract_LOCKED.md lines 70-71).",
+      "prior_defect": "The old basis concerned command invocation (ReplayModeContractTest / OpsCommandSurfaceTest), while this predicate concerns a stored, already-unmoded result -- the read side of the rule, for a corpus row that predates MD-S050-R0035's write-time mandate.",
+      "guard": "B18ReplayEvidenceSelfExplanationTest::test_an_unmoded_result_is_not_admitted_as_citable_evidence forces replay_mode=null onto a real exported metric row and asserts the real (unmocked) MarketDataEvidenceExportService::exportReplayEvidence marks the pack ADMITTED_INCOMPLETE, reason EVIDENCE_ADMISSION_INCOMPLETE, naming replay_mode_invalid_or_historical_unclassified among missing_sections. test_every_exported_pack_requires_and_carries_the_mode_that_produced_it is the positive control: a correctly-moded PUBLICATION_EXACT or AS_KNOWN result is independently proven ADMITTED_COMPLETE, so the guard is not merely refusing every export.",
+      "probe": "Removed the else-branch in MarketDataEvidenceExportService.php that appends replay_mode_invalid_or_historical_unclassified to missing_sections when the mode is neither PUBLICATION_EXACT nor AS_KNOWN. The discriminating test turned red on exactly that assertion (\"Failed asserting that an array contains 'replay_mode_invalid_or_historical_unclassified'\"). Byte-restored, sha256 confirmed identical (3aeee9762b391a3fe9d017c34fd624942322de6ef8922b09d4454fb58ae8d21d before and after), control re-run green (14/14, 143 assertions).",
+      "final_state": "PROVEN"
+    },
+    "MD-S003-R0021": {
+      "rule": "Later master, event, status, calendar, config, formula, and factor revisions are invisible before their recorded/known times (Historical_Replay_and_Data_Quality_Backtest.md lines 43-46).",
+      "prior_defect": "The finding's own remedy table names the defect precisely: 'The positive guard only checks that the mapped guard methods exist.' test_every_later_revision_kind_is_bound_to_an_executing_guard performs exactly that -- a string search for 'function <name>(' in a file -- which proves nothing about whether the method's body actually enforces the cutoff.",
+      "guard": "Rebound to test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot, a behavioural guard using real repositories and real seeded DB rows (no mocks), distinguished only by recorded_at, exercising all seven contract-named roots in one real AsKnownReplaySnapshotService::capture() call: an early cutoff sees only early-recorded rows for each root; a later cutoff exposes the later-recorded rows for each root; re-running the early cutoff after the later capture returns a byte-identical snapshot_hash; and no bound-input row is created or mutated by either capture (boundRowCounts unchanged).",
+      "probes": [
+        "master (identity): forced the identity resolver's cutoff argument to 2099-01-01; the LATE-recorded listing leaked into the early-cutoff universe (assertion at test line 154). Byte-restored, sha256 identical (1c00bd93d5ccac5f1339dc59f33d562c0ae166d14e76df0286aa2f9c63c53c0b), control green.",
+        "status: forced the status resolver's cutoff argument to 2099-01-01; the early capture's SUSPENSION status changed to UNKNOWN (test line 165). Byte-restored, sha256 identical, control green.",
+        "calendar: forced the calendar resolver's cutoff argument to 2099-01-01; calendar-late leaked into the early capture (test line 160). Byte-restored, sha256 identical, control green.",
+        "config: forced the config-snapshot resolver's cutoff argument to 2099-01-01; the late config_snapshot_id leaked into the early capture (test line 144, assertion 2 identical to 1). Byte-restored, sha256 identical, control green.",
+        "formula: read indicator_config from live config() instead of the frozen snapshot payload; roc_lookback_days leaked the live value 21 instead of the frozen early value 20 (test line 145) -- independently distinct from the config probe, which passed under this same mutation, confirming formula and config-snapshot-selection are separately guarded. Byte-restored, sha256 identical, control green.",
+        "event: removed the recorded_at filter on the md_corporate_action_revisions query; two revisions became visible at the early cutoff instead of one (test line 170). Byte-restored, sha256 identical, control green.",
+        "factor: removed the recorded_at filter on the md_adjustment_factor_sets query; two factor_sets became visible at the early cutoff instead of one (test line 171, distinct assertion from the event probe). Byte-restored, sha256 identical, control green."
+      ],
+      "negative_probe": "test_an_incomplete_historical_config_snapshot_is_refused_instead_of_using_live_config uses a real repository and a real corrupted DB row (resolved_config_json set to '{}'), not a mock. Removing the refusal and substituting a live-config fallback turned this test red (an ErrorException on the now-undefined resolved_config key, rather than a silent live-config success). Byte-restored, sha256 identical, control green.",
+      "final_state": "PROVEN"
+    },
+    "MD-S005-R0096": {
+      "rule": "Fixtures must prove: as-known replay excludes later revisions (Audit_Hash_and_Reproducibility_Contract_LOCKED.md line 154, item 6).",
+      "prior_defect": "Same method-existence defect the finding names for MD-S003-R0021; this predicate is the fixture-proof framing of the identical underlying rule, reviewed independently rather than assumed proven merely because it shares a guard with R0021.",
+      "guard": "Same guard pair as MD-S003-R0021 -- test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot (positive) and test_an_incomplete_historical_config_snapshot_is_refused_instead_of_using_live_config (negative) -- reviewed and confirmed independently to satisfy this predicate's own wording rather than bulk-promoted alongside R0021.",
+      "probes": "Identical seven-root probe set as MD-S003-R0021 (see above); each independently proves that as-known replay excludes later revisions for its own root, not merely that R0021's wording is satisfied.",
+      "final_state": "PROVEN"
+    }
+  },
+  "falsifiability_summary": {
+    "total_discriminating_probes": 9,
+    "probes_caught": 9,
+    "byte_restores_verified_by_sha256": 9,
+    "controls_green_after_every_restore": true,
+    "no_mutant_or_temp_artifact_remaining_in_repo": true,
+    "production_code_changed": false,
+    "test_code_changed": true,
+    "test_files_changed": ["tests/Unit/MarketData/RequestModeVocabularyTest.php"],
+    "note_on_production_code": "All seven AsKnownReplaySnapshotService.php and one MarketDataEvidenceExportService.php mutations were probes only, each restored byte-for-byte and sha256-verified before the next probe began; the repository's final application-code state is byte-identical to before this unit."
+  },
+  "scope_result": {
+    "predicates_reviewed": ["MD-S036-R0012", "MD-S050-R0036", "MD-S003-R0021", "MD-S005-R0096"],
+    "predicates_promoted_to_proven": ["MD-S036-R0012", "MD-S050-R0036", "MD-S003-R0021", "MD-S005-R0096"],
+    "predicates_reviewed_independently": true,
+    "bulk_promotion": false,
+    "production_code_changed": false,
+    "test_code_changed": true,
+    "f015_status": "RESOLVED -- all 14 of F-015's own named predicates are PROVEN: MD-S050-R0053/MD-S002-R0009/MD-S002-R0010 (unknown-fixture-case rejection, E053), MD-S040-R0071/MD-S040-R0077 (coverage reason code preservation, E054), MD-S050-R0030/MD-S050-R0031 (BLOCKED-vs-FAIL status semantics, E052), MD-S050-R0033 (hash divergence rebind, E055), MD-S050-R0051/MD-S050-R0052 (consumer/admission claim scan, E056), MD-S036-R0012/MD-S050-R0036/MD-S003-R0021/MD-S005-R0096 (this unit, G09).",
+    "md_dep_0017_status": "UNCHANGED -- still BLOCKING, still bundles F-013 through F-018; not resolved by F-015 closure",
+    "traceability_matrix_coverage_status_touched": false,
+    "satisfied_or_denominator_changed": false,
+    "f013_f014_prior_findings_reopened": false,
+    "mutant_or_temp_artifact_remaining": false,
+    "commit_or_push": "NONE -- explicitly withheld per current instruction"
+  },
+  "remaining": {
+    "f015_incomplete_count": 0,
+    "clarification": "MarketDataReplayVerificationProofBasis's PROVEN count moves from 74 to 78; INCOMPLETE count moves from 40 to 36 (exactly these four predicates, confirmed via PHP parse before and after). F-MD-B18-A002-015 has zero remaining predicate obligations of its own. MD-DEP-0017 remains BLOCKING for F-016 through F-018."
+  },
+  "full_suite": {
+    "status": "NOT_RUN -- not required for this bounded unit",
+    "reason": "Production code is byte-identical to before this unit (all mutations were probes, each restored and sha256-verified). Targeted guard suites all green: RequestModeVocabularyTest 17/17 (22 assertions), B18ReplayEvidenceSelfExplanationTest 14/14 (143 assertions), B18AsKnownSnapshotIsolationTest 3/3 (27 assertions). Governance self-tests green: GovernanceGateReadOnlyExecutionTest+ScopeBoundaryAndOrchestrationCompletionTest 9/9 (5774 assertions), FindingRecordConsistencyTest 3/3 (13 assertions). Proof self-test re-run: baseline shape unchanged (10/11 scenarios pass as before; the sole failure, 'baseline', is driven only by predicates from other, still-open findings -- not a regression), and none of the four G09 predicates appear in its PREDICATE_WITHOUT_REVIEWED_BASIS list any more."
+  },
+  "post_record_validation": "Results confirmed via 9 live mutation/restore probes with sha256 verification at every step, targeted test execution, proof-basis PHP-parse validation (PROVEN 74->78, INCOMPLETE 40->36), and a full proof-self-test re-run confirming no regression in the baseline's unrelated-predicate shape.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "F-MD-B18-A002-015 is RESOLVED with zero remaining predicate obligations. MD-DEP-0017 remains BLOCKING and bundles F-013 (RESOLVED) through F-018 (F-016/F-017/F-018 still OPEN). The next canonical MD-B18 finding is derived from the Stage Register and consolidated remediation package's own ordering, not assumed by sequence number, and is not started in this unit. No commit or push performed, per current instruction."
+}

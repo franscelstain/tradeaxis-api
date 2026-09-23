@@ -51,6 +51,22 @@ class RequestModeVocabularyTest extends TestCase
         return $cases;
     }
 
+    /**
+     * `MD-S036-R0012` names this one mode literally. The dataProvider test above reads its cases
+     * from `ALLOWED_REQUEST_MODES` itself, so removing `replay_verify` from that list would shrink
+     * the dataProvider rather than fail it -- the guard would go quiet, not red. This expectation is
+     * the literal string, independent of the list under test: `replay_verify` is what
+     * `EodRunRepository` hardcodes for an isolated AS_KNOWN replay run and what
+     * `EodBarsIngestService::ingestAcquiredRowsCaptured` requires for the replay-isolation ingest
+     * path, so the pipeline guard must accept exactly this value regardless of what else it accepts.
+     */
+    public function test_replay_verify_specifically_is_an_accepted_request_mode(): void
+    {
+        $this->assertMode('replay_verify', 'FINALIZE');
+
+        $this->assertTrue(true);
+    }
+
     public function test_an_unknown_request_mode_is_rejected(): void
     {
         $this->expectException(InvalidArgumentException::class);

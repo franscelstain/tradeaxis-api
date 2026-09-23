@@ -3,11 +3,12 @@
 - ID: `F-MD-B18-A002-015`
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-09-14T14:02:47+07:00 (system clock)
-- Severity: `P1` for closure. It contains executable defects and proof bases that overclaim.
-- Status: `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`
+- Closed: 2026-09-23T10:50:41+07:00 (E-MD-B18-A002-057 issuance)
+- Severity: `P1` for closure. It contained executable defects and proof bases that overclaimed.
+- Status: `RESOLVED — CONSOLIDATED_REMEDIATION_PACKAGE_COMPLETE`
 - Class: `EXECUTABLE_DEFECT_AND_PROOF_BASIS_MISTARGETED`
 - Found by: per-predicate review of PAIRS 02, 03, 04, 06, 07 and 08 (30 predicates)
-- Dependency: `MD-DEP-0017` (consolidated remediation review)
+- Dependency: `MD-DEP-0017` (consolidated remediation review) — not resolved by F-015 closure; still BLOCKING
 
 ## Executable defects
 
@@ -384,11 +385,89 @@ test-tooling-only changes. Governance self-tests green:
 `FindingRecordConsistencyTest` 3/3. Full application suite not run, not required — only test files
 changed, no production/schema/migration touched.
 
-**This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.** 4 of its own 14 predicates
-remain `INCOMPLETE`, all `G09`: `MD-S036-R0012`/`MD-S050-R0036`/`MD-S003-R0021`/`MD-S005-R0096`.
-`MD-DEP-0017` remains `BLOCKING`.
+**This finding remained `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`** after G08, with 4 of its own
+14 predicates `INCOMPLETE`, all `G09`: `MD-S036-R0012`/`MD-S050-R0036`/`MD-S003-R0021`/`MD-S005-R0096`.
 
-**Next and final bounded unit per consolidated remediation package canonical ordering:** G09
-(`MD-S036-R0012`, `MD-S050-R0036`, `MD-S003-R0021`, `MD-S005-R0096` — four rebind-only predicates
-naming already-existing executing guards per this finding's own "Guard gaps and rebinds" table, no
-application change anticipated).
+## E057: G09 final unit (MD-S036-R0012/MD-S050-R0036/MD-S003-R0021/MD-S005-R0096) — 2026-09-23T10:50:41+07:00
+
+**An earlier, uncommitted attempt at this same unit was invalid and was discarded before commit.**
+That draft moved all four predicates from `INCOMPLETE` to `PROVEN` byte-for-byte, with no new guard,
+no rebind, and no probe — directly contradicting this finding's own "Guard gaps and rebinds" table,
+which names a specific remedy for each: "A request-mode guard plus a probe" for `MD-S036-R0012`;
+"Rebind ... plus a probe" for `MD-S050-R0036`; "Rebind ... plus one probe per root" for
+`MD-S003-R0021`/`MD-S005-R0096`. The draft was found before commit, its tracked-file changes were
+restored to the last valid HEAD (the G08/E056 commit), and its untracked evidence file was deleted.
+This section records the unit actually done.
+
+**`MD-S036-R0012` — "Allowed request modes: `replay_verify`".** The old basis pointed at the
+`ReplayMode` (`PUBLICATION_EXACT`/`AS_KNOWN`) guard, a domain distinct from the `eod_runs.request_mode`
+vocabulary this predicate governs (`MarketDataStageInput::ALLOWED_REQUEST_MODES`, enforced by
+`MarketDataPipelineService::assertAllowedRequestMode()`). `RequestModeVocabularyTest` already invoked
+that real method behaviourally, but its positive test's `dataProvider` derives its cases from
+`ALLOWED_REQUEST_MODES` itself — confirmed live: removing `replay_verify` from the array did not fail
+the guard, it silently shrank the `dataProvider` by one case (16/16 green instead of a failure naming
+`replay_verify`). A new, independent test,
+`test_replay_verify_specifically_is_an_accepted_request_mode`, asserts the literal string against the
+real method, not a value read from the array it verifies. Re-probed under the identical mutation: the
+new test turns red with `REQUEST_MODE_INVALID` naming exactly the removed mode; byte-restored,
+sha256-verified identical, control green (17/17).
+
+**`MD-S050-R0036` — "A result carrying no mode ... is unclassified ... may not be cited as either".**
+The old basis concerned command invocation, while this predicate concerns a stored, already-unmoded
+result — the read side of the rule, for a corpus row predating `MD-S050-R0035`'s write-time mandate.
+Rebound to `B18ReplayEvidenceSelfExplanationTest::test_an_unmoded_result_is_not_admitted_as_citable_evidence`,
+which forces `replay_mode=null` onto a real exported metric row and asserts the real (unmocked)
+`MarketDataEvidenceExportService::exportReplayEvidence` marks the pack `ADMITTED_INCOMPLETE` naming
+`replay_mode_invalid_or_historical_unclassified`, paired with
+`test_every_exported_pack_requires_and_carries_the_mode_that_produced_it` as the positive control (a
+correctly-moded result is `ADMITTED_COMPLETE`). Mutation-proven: removing the missing-section append
+turned exactly that assertion red; byte-restored, sha256-verified identical, control green (14/14).
+
+**`MD-S003-R0021`/`MD-S005-R0096` — later master/event/status/calendar/config/formula/factor
+revisions invisible before their recorded/known times; as-known replay excludes later revisions.**
+The finding's own remedy table names the defect precisely: "The positive guard only checks that the
+mapped guard methods *exist*" — `test_every_later_revision_kind_is_bound_to_an_executing_guard`
+performs a string search for `function <name>(` in a file, proving nothing about the method's body.
+Rebound to `test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot`, a
+behavioural guard using real repositories and real seeded DB rows (no mocks) for all seven
+contract-named roots in one real `AsKnownReplaySnapshotService::capture()` call. **Seven independent,
+isolated discriminating probes**, one per root, each byte-restored and sha256-verified before the
+next began: master and status and calendar and config (each root's cutoff argument forced to a future
+date, leaking a later-recorded revision into the early capture — four distinct assertions, all
+caught); formula (indicator config read from live `config()` instead of the frozen snapshot payload —
+caught independently of the config probe, which passed under this same mutation, proving the two are
+separately guarded); event and factor (each root's `recorded_at` filter removed — two distinct
+assertions, all caught). The negative guard,
+`test_an_incomplete_historical_config_snapshot_is_refused_instead_of_using_live_config`, uses a real
+repository and a real corrupted DB row (not a mock); independently re-probed by removing the refusal
+and substituting a live-config fallback, which turned it red rather than silently succeeding.
+`MD-S005-R0096` was reviewed independently rather than assumed proven merely because it shares a
+guard with `R0021`; both name the same underlying rule (as-known exclusion of later revisions) and
+both are established by the same nine probes.
+
+`MD-S036-R0012`/`MD-S050-R0036`/`MD-S003-R0021`/`MD-S005-R0096` moved `INCOMPLETE` → `PROVEN`,
+reviewed and bound independently. Proof basis: `PROVEN` 74 → 78, `INCOMPLETE` 40 → 36, confirmed via
+PHP parse. Proof self-test re-run: baseline's failure shape unchanged (driven only by predicates from
+other, still-open findings — not a regression), and none of the four `G09` predicates appear in its
+`PREDICATE_WITHOUT_REVIEWED_BASIS` list any more. No traceability-matrix
+`coverage_status`/`SATISFIED`/denominator change. **No production application code changed** — every
+mutation in this unit was a probe, restored byte-for-byte and sha256-verified before the next began;
+one new independent test method was added
+(`RequestModeVocabularyTest::test_replay_verify_specifically_is_an_accepted_request_mode`).
+
+Targeted suites green: `RequestModeVocabularyTest` 17/17 (22 assertions),
+`B18ReplayEvidenceSelfExplanationTest` 14/14 (143 assertions), `B18AsKnownSnapshotIsolationTest` 3/3
+(27 assertions). Governance self-tests green:
+`GovernanceGateReadOnlyExecutionTest`+`ScopeBoundaryAndOrchestrationCompletionTest` 9/9,
+`FindingRecordConsistencyTest` 3/3. Full application suite not run, not required — production code is
+byte-identical to before this unit.
+
+**`F-MD-B18-A002-015` is now formally `RESOLVED`.** All 14 of its own predicates are `PROVEN`:
+`MD-S050-R0053`/`MD-S002-R0009`/`MD-S002-R0010` (unknown-fixture-case rejection, E053),
+`MD-S040-R0071`/`MD-S040-R0077` (coverage reason code preservation, E054),
+`MD-S050-R0030`/`MD-S050-R0031` (`BLOCKED`-vs-`FAIL` status semantics, E052), `MD-S050-R0033` (hash
+divergence rebind, E055), `MD-S050-R0051`/`MD-S050-R0052` (consumer/admission claim scan, E056), and
+`MD-S036-R0012`/`MD-S050-R0036`/`MD-S003-R0021`/`MD-S005-R0096` (this unit, E057). Consolidated
+remediation package canonical closure (G04/G07/G08/G09) is complete for this finding. `MD-DEP-0017`
+remains `BLOCKING` — it is not resolved by F-015 closure and bundles F-013 (`RESOLVED`) through F-018
+(`F-016`/`F-017`/`F-018` remain `OPEN`).

@@ -637,6 +637,89 @@ final class MarketDataReplayVerificationProofBasis
             'basis' => 'a dedicated pattern phrased from the rule\'s own named alternative (admissible/independent evidence), not from the paraphrase F-MD-B18-A002-015\'s own gap-table entry for this predicate already quotes verbatim ("the replay verdict establishes correctness") as a named example -- a pattern built on that wording would false-positive against that live, unexcluded finding document. The new pattern requires `replay (verdict|pass|result) ... (admissible|independent) evidence ... correctness`, confirmed by corpus grep to have zero matches anywhere in the current active corpus and zero collision with F-015\'s own quoted example. Proven by the corpus scan\'s shared machinery: test_every_pattern_matches_the_claim_it_forbids_and_spares_the_denial confirms the pattern fires on its own claim sentence and stays silent on all three denial-prefixed versions of that sentence; test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish confirms zero live violations. Mutation-proven: injecting the exact claim sentence into a live scanned file (CURRENT_STATE.md, outside every excluded prefix) turned the corpus scan red, naming the injected file and the matched span verbatim; the file was restored byte-for-byte, sha256-verified identical, and the control -- including F-015\'s own quoted example, which the pattern correctly spares -- confirmed green again.',
         ],
 
+        // F-MD-B18-A002-015 G09 (re-executed after an invalid prior closure that moved these four
+        // rows INCOMPLETE -> PROVEN byte-for-byte with no new guard, no rebind, and no probe -- caught
+        // before commit and discarded). The finding's own remedy for MD-S036-R0012 names the old basis's
+        // defect precisely: it pointed at the ReplayMode (PUBLICATION_EXACT/AS_KNOWN) guard, a different
+        // domain from the `replay_verify` *request_mode* enumerated in MarketDataStageInput::
+        // ALLOWED_REQUEST_MODES and enforced by MarketDataPipelineService::assertAllowedRequestMode.
+        // RequestModeVocabularyTest already exercised that real method behaviourally, but its one
+        // dataProvider case for replay_verify is derived from the very array under test: removing
+        // replay_verify from ALLOWED_REQUEST_MODES shrinks the dataProvider by one case instead of
+        // failing it, confirmed live (mutated, ran, 16/16 green -- the guard went quiet, not red;
+        // byte-restored, sha256 identical, re-confirmed 16/16). A new, independent test was added --
+        // test_replay_verify_specifically_is_an_accepted_request_mode -- asserting the literal string
+        // against the real assertAllowedRequestMode(), not a value read from the array it verifies.
+        // Mutation-proven: the same removal now turns this new test red with REQUEST_MODE_INVALID
+        // naming exactly the removed mode; byte-restored, sha256 identical, control green (17/17).
+        'MD-S036-R0012' => [
+            'positive' => 'RequestModeVocabularyTest::test_replay_verify_specifically_is_an_accepted_request_mode',
+            'negative' => 'RequestModeVocabularyTest::test_an_unknown_request_mode_is_rejected',
+            'basis' => 'replay_verify is independently asserted as an accepted request_mode against the real MarketDataPipelineService::assertAllowedRequestMode(), not derived from the vocabulary array itself, so removing it from ALLOWED_REQUEST_MODES cannot silently shrink the proof; the negative guard (a hardcoded unknown mode) independently proves the boundary is not accept-all',
+        ],
+        // F-MD-B18-A002-015 G09: the predicate is a read-side rule about a stored, already-unmoded
+        // result ("carrying no mode... unclassified... may not be cited as either"), not about command
+        // invocation. B18ReplayEvidenceSelfExplanationTest::test_an_unmoded_result_is_not_admitted_as_citable_evidence
+        // forces replay_mode=null onto a real exported metric row (simulating a corpus row that
+        // predates MD-S050-R0035's write-time mandate) and asserts the real
+        // MarketDataEvidenceExportService::exportReplayEvidence -- not mocked -- marks the pack
+        // ADMITTED_INCOMPLETE with reason EVIDENCE_ADMISSION_INCOMPLETE and names
+        // replay_mode_invalid_or_historical_unclassified among missing_sections, i.e. the unmoded
+        // result is refused citable status rather than defaulted into either mode. Mutation-proven:
+        // removing the else-branch that appends that missing-section entry
+        // (MarketDataEvidenceExportService.php) turned exactly that assertion red
+        // ("Failed asserting that an array contains 'replay_mode_invalid_or_historical_unclassified'");
+        // byte-restored, sha256 identical, control green (14/14). The companion test
+        // test_every_exported_pack_requires_and_carries_the_mode_that_produced_it is the positive
+        // control: a correctly-moded PUBLICATION_EXACT or AS_KNOWN result is admitted
+        // ADMITTED_COMPLETE, so the guard is not simply refusing every export.
+        'MD-S050-R0036' => [
+            'positive' => 'B18ReplayEvidenceSelfExplanationTest::test_an_unmoded_result_is_not_admitted_as_citable_evidence',
+            'negative' => 'B18ReplayEvidenceSelfExplanationTest::test_every_exported_pack_requires_and_carries_the_mode_that_produced_it',
+            'basis' => 'a stored result with no mode is exported as ADMITTED_INCOMPLETE naming replay_mode_invalid_or_historical_unclassified rather than being cited as either mode by default; a correctly-moded result is independently proven ADMITTED_COMPLETE, so the rule is not satisfied by refusing every export',
+        ],
+        // F-MD-B18-A002-015 G09: the finding names the exact defect in the old basis -- "the positive
+        // guard only checks that the mapped guard methods exist" -- which is precisely what
+        // test_every_later_revision_kind_is_bound_to_an_executing_guard does (a string search for
+        // "function <name>(" in a file). Rebound to
+        // test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot, the
+        // behavioural guard that seeds real DB rows for all seven contract-named roots (master, event,
+        // status, calendar, config, formula, factor), distinguished only by recorded_at, and asserts
+        // each root's early-cutoff view excludes the later-recorded revision while the late-cutoff view
+        // includes both, that re-running the early cutoff is byte-identical (no rewrite), and that no
+        // row is created/mutated by either capture. One discriminating probe run per root in
+        // AsKnownReplaySnapshotService::capture(), each isolated, each byte-restored and sha256-verified
+        // identical before continuing to the next, each caught by a distinct assertion in the same test:
+        // master (identity cutoff forced to a future date -- LATE leaked into the April universe, line
+        // 154); status (same -- SUSPENSION became UNKNOWN, line 165); calendar (same --
+        // calendar-late leaked into the early capture, line 160); config (same -- late
+        // config_snapshot_id leaked into the early capture, line 144); formula (indicator_config read
+        // from live config() instead of the frozen snapshot payload -- roc_lookback_days leaked 21
+        // instead of 20, line 145, independent of the config probe which passed); event (recorded_at
+        // filter removed on md_corporate_action_revisions -- two revisions visible at the early cutoff
+        // instead of one, line 170); factor (recorded_at filter removed on
+        // md_adjustment_factor_sets -- two factor_sets visible at the early cutoff instead of one, line
+        // 171, independent of the event probe which caught a different line). The negative guard,
+        // test_an_incomplete_historical_config_snapshot_is_refused_instead_of_using_live_config, uses
+        // real repositories and a real corrupted DB row (not a mock) and was independently re-probed:
+        // removing the refusal and substituting a live-config fallback turned it red (an
+        // ErrorException on the now-absent resolved_config key, rather than a silent live-config
+        // success) -- byte-restored, sha256 identical, control green.
+        'MD-S003-R0021' => [
+            'positive' => 'B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot',
+            'negative' => 'B18AsKnownSnapshotIsolationTest::test_an_incomplete_historical_config_snapshot_is_refused_instead_of_using_live_config',
+            'basis' => 'each of the seven contract-named roots (master, event, status, calendar, config, formula, factor) is individually mutation-proven against the real repositories and the real service: forcing any one root to ignore its cutoff leaks a later-recorded revision into the earlier-cutoff capture, caught by a distinct assertion for each root; an incomplete historical snapshot is independently proven to refuse rather than fall back to live configuration',
+        ],
+        // F-MD-B18-A002-015 G09: same corpus and same seven-root mutation proof as MD-S003-R0021 --
+        // this predicate is the fixture-proof framing of the identical rule ("as-known replay excludes
+        // later revisions") rather than a separate mechanism, so it is reviewed independently but bound
+        // to the same guard pair rather than to a second, duplicate corpus.
+        'MD-S005-R0096' => [
+            'positive' => 'B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot',
+            'negative' => 'B18AsKnownSnapshotIsolationTest::test_an_incomplete_historical_config_snapshot_is_refused_instead_of_using_live_config',
+            'basis' => 'as-known replay\'s exclusion of later revisions is proven per-root against the real repositories and service, not by method-existence alone: seven independent mutation probes (one per contract-named root) each turn the behavioural guard red on its own distinct assertion, and an incomplete historical snapshot is independently proven to refuse rather than substitute live configuration',
+        ],
+
     ];
 
     // Withdrawn from PROVEN on 2026-09-14: these four rows are CONDITIONAL_NOT_APPLICABLE under
@@ -708,30 +791,6 @@ final class MarketDataReplayVerificationProofBasis
         // empty otherwise, never a live-config fallback). No guard was weakened and no new test was added: both
         // negative guards already existed from this round's and E047/E048's own remediation, and the comparison
         // guard already existed from E046. Promoted to PROVEN.
-        // F-MD-B18-A002-015: the basis names the replay-mode guard; the replay_verify request mode has no guard.
-        'MD-S036-R0012' => [
-            'positive' => 'ReplayModeContractTest::test_only_the_two_locked_replay_modes_are_accepted',
-            'negative' => 'OpsCommandSurfaceTest::test_replay_verify_refuses_an_inadmissible_mode_without_attempting_verification',
-            'basis' => 'replay_verify as an allowed request mode is established by the mode guard and its command-surface refusal counterpart',
-        ],
-        // F-MD-B18-A002-015: the basis concerns command invocation; rebind to the unmoded-admission guard and probe.
-        'MD-S050-R0036' => [
-            'positive' => 'ReplayModeContractTest::test_only_the_two_locked_replay_modes_are_accepted',
-            'negative' => 'OpsCommandSurfaceTest::test_replay_verify_refuses_an_inadmissible_mode_without_attempting_verification',
-            'basis' => 'an unmoded result is refused rather than defaulted, which the mode guard establishes',
-        ],
-        // F-MD-B18-A002-015: the positive checks mapped guard methods exist; rebind to the executing snapshot test and probe each root.
-        'MD-S003-R0021' => [
-            'positive' => 'B18AsKnownSnapshotIsolationTest::test_every_later_revision_kind_is_bound_to_an_executing_guard',
-            'negative' => 'B18AsKnownSnapshotIsolationTest::test_an_incomplete_historical_config_snapshot_is_refused_instead_of_using_live_config',
-            'basis' => 'the contract-derived seven-kind map binds master, event, status, calendar, config, formula and factor to executed cutoff guards; deleting the factor mapping failed the map, and replacing the selected historical formula config with live config failed the snapshot corpus',
-        ],
-        // F-MD-B18-A002-015: the positive checks mapped guard methods exist; rebind to the executing snapshot test and probe.
-        'MD-S005-R0096' => [
-            'positive' => 'B18AsKnownSnapshotIsolationTest::test_every_later_revision_kind_is_bound_to_an_executing_guard',
-            'negative' => 'B18AsKnownSnapshotIsolationTest::test_an_incomplete_historical_config_snapshot_is_refused_instead_of_using_live_config',
-            'basis' => 'the contract-derived seven-root corpus executes exclusion guards for every later revision named by MD-S003; substituting live formula config and removing a root mapping each turned the corpus red',
-        ],
         // F-MD-B18-A002-016: import status comparison and the export record of request mode, import status and promote status are unguarded (G09 probes not caught); only the import-only promotion policy is proven.
         'MD-S036-R0007' => [
             'positive' => 'B18ReplayComparisonExhaustivenessTest::test_an_import_only_expectation_is_not_satisfied_by_a_run_that_promoted',
