@@ -74,16 +74,22 @@ class ReplayBackfillService
 
         foreach ($dates as $tradeDate) {
             try {
-                $publication = $this->publications->findCurrentPublicationForTradeDate($tradeDate);
+                $explicitPublicationId = $this->explicitPublicationIdFromFixture($fixtureRoot, $tradeDate);
+                $publication = $this->publications->buildManifestByPublicationId($explicitPublicationId);
                 if (! $publication) {
-                    throw new NoReadablePublicationException($tradeDate, 'Replay backfill');
+                    throw new \RuntimeException('REPLAY_BACKFILL_EXPLICIT_PUBLICATION_NOT_FOUND: declared publication_id '
+                        .$explicitPublicationId.' for '.$tradeDate.' does not exist.');
+                }
+                if ((string) $publication['trade_date'] !== (string) $tradeDate) {
+                    throw new \RuntimeException('REPLAY_BACKFILL_EXPLICIT_PUBLICATION_TRADE_DATE_MISMATCH: fixture directory declares '
+                        .$tradeDate.' but publication_id '.$explicitPublicationId.' belongs to '.$publication['trade_date'].'.');
                 }
 
-                $fixturePath = rtrim($fixtureRoot, '/\\').'/'.$tradeDate.'/publication_'.(int) $publication->publication_id;
+                $fixturePath = rtrim($fixtureRoot, '/\\').'/'.$tradeDate.'/publication_'.$explicitPublicationId;
                 if (! is_dir($fixturePath)) {
                     throw new \RuntimeException('REPLAY_INDEPENDENT_FIXTURE_MISSING: '.$fixturePath);
                 }
-                $result = $this->replays->verifyRunAgainstFixture((int) $publication->run_id, $fixturePath, null, (int) $publication->publication_id);
+                $result = $this->replays->verifyRunAgainstFixture($publication['run_id'], $fixturePath, null, $explicitPublicationId);
                 $evidence = $this->evidence->exportReplayEvidence($result['replay_id'], $result['trade_date'], rtrim($outputDir, '/').'/'.$tradeDate);
 
                 $observedOutcome = $result['comparison_result'];
@@ -92,8 +98,8 @@ class ReplayBackfillService
                 $cases[] = [
                     'trade_date' => $tradeDate,
                     'status' => 'SUCCESS',
-                    'publication_id' => (int) $publication->publication_id,
-                    'run_id' => (int) $publication->run_id,
+                    'publication_id' => $explicitPublicationId,
+                    'run_id' => $publication['run_id'],
                     'replay_id' => (int) $result['replay_id'],
                     'expected_outcome' => $expectedOutcome,
                     'observed_outcome' => $observedOutcome,
@@ -168,6 +174,39 @@ class ReplayBackfillService
         if ($end->lt($start)) {
             throw new \RuntimeException('Replay backfill requires end_date >= start_date.');
         }
+    }
+
+    /**
+     * `MD-S050-R0027`/`MD-S003-R0002` (D-MD-B18-A002-005 Q3): "historical/backfill verification uses
+     * explicit publication/fixture identity ... No latest/current substitution." The fixture
+     * directory itself is the declared manifest: `{fixtureRoot}/{tradeDate}/publication_{N}` names
+     * the immutable publication this date's replay targets, frozen at fixture-creation time. This
+     * never consults `EodPublicationRepository::findCurrentPublicationForTradeDate` or any other
+     * pointer/current lookup, so a correction that moves the pointer after the fixture was created
+     * cannot retarget which publication gets verified.
+     */
+    private function explicitPublicationIdFromFixture($fixtureRoot, $tradeDate)
+    {
+        $dateDir = rtrim($fixtureRoot, '/\\').'/'.$tradeDate;
+        $matches = [];
+        foreach (is_dir($dateDir) ? scandir($dateDir) : [] as $entry) {
+            if (preg_match('/^publication_(\d+)$/', $entry, $m) && is_dir($dateDir.'/'.$entry)) {
+                $matches[] = (int) $m[1];
+            }
+        }
+
+        if ($matches === []) {
+            throw new \RuntimeException('REPLAY_BACKFILL_EXPLICIT_PUBLICATION_UNDECLARED: no publication_<id> fixture '
+                .'directory declared under '.$dateDir.'. PUBLICATION_EXACT backfill requires an explicitly declared '
+                .'immutable publication identity; the current pointer is never consulted.');
+        }
+        if (count($matches) > 1) {
+            sort($matches);
+            throw new \RuntimeException('REPLAY_BACKFILL_EXPLICIT_PUBLICATION_AMBIGUOUS: '.count($matches).' publication_<id> '
+                .'fixture directories declared under '.$dateDir.' ('.implode(', ', $matches).'); exactly one must be declared.');
+        }
+
+        return $matches[0];
     }
 
     private function expectedOutcomeForFixtureCase($fixtureCase)

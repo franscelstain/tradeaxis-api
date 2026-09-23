@@ -1,0 +1,102 @@
+{
+  "evidence_id": "E-MD-B18-A002-058",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+  "issued_at": "2026-09-23T11:50:20+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS_FIRST_BOUNDED_F016_UNIT_TWO_PREDICATES_PROVEN_F016_REMAINS_OPEN",
+  "evidence_scope": "F016_G01_EXPLICIT_PUBLICATION_IDENTITY_BACKFILL_MD_S050_R0027_MD_S003_R0002_ONLY",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": ["F-MD-B18-A002-016"],
+  "related_evidence": ["E-MD-B18-A002-057", "CI-MD-B18-A002-001"],
+  "related_decisions": ["D-MD-B18-A002-005"],
+  "dependencies": ["MD-DEP-0017", "MD-DEP-0015"],
+  "targeted": "First bounded remediation unit of F-MD-B18-A002-016, per canonical package ordering (C2-backfill, the sole remaining implementation step in the C1->C2->C3 chain): PUBLICATION_EXACT backfill must use an explicitly declared immutable publication identity, never one derived from the current pointer and then passed as though it were explicit. Two predicates -- MD-S050-R0027 and MD-S003-R0002 -- reviewed and proven independently.",
+  "authority_reviewed": {
+    "MD-S050-R0027": "Replay_Verification_Contract_LOCKED.md line 52, section 'Resolution rules': 'Publication replay starts from explicit publication identity, never latest/current. Current-read verification is a separate assertion that the pointer resolves a specific publication.'",
+    "MD-S003-R0002": "Historical_Replay_and_Data_Quality_Backtest.md line 11, section 'Exact publication verification': 'resolve an explicit immutable publication, not latest/current;'",
+    "D-MD-B18-A002-005_Q3": "'historical/backfill verification uses explicit publication/fixture identity, including publication_id wherever required. No latest/current substitution. Any current-read verification is a separate operation/semantic contract, not a fallback for historical verification.' This decided the remedy direction F-016's own text left open: the backfill takes explicit identities via a declared manifest, rather than being reclassified as current-read verification."
+  },
+  "defect_confirmed_before_change": {
+    "location": "ReplayBackfillService::execute (line 77 at review time)",
+    "mechanism": "findCurrentPublicationForTradeDate($tradeDate) resolved each date's publication from the current pointer; that pointer-derived publication_id was then passed as the 4th positional argument to ReplayVerificationService::verifyRunAgainstFixture(), which treats any non-null caller-supplied id as explicit (line 78: '$publicationId !== null ? (int) $publicationId : ...') with no check against the fixture manifest's own declared identity -- laundering a pointer lookup into an apparently explicit identity.",
+    "trigger": "a correction moves eod_current_publication_pointer for a trade date between fixture creation and command execution",
+    "observed_behaviour_before_fix": "the backfill silently verified whichever publication was current at execution time, not the one the fixture was created against",
+    "scope": "local to ReplayBackfillService's call site; ReplayVerificationService's own refusal (REPLAY_EXPLICIT_PUBLICATION_REQUIRED) already existed and was already correct -- it refuses when NO id is supplied at all, but had no way to know the supplied id was pointer-derived rather than genuinely declared"
+  },
+  "per_predicate": {
+    "MD-S050-R0027": {
+      "implementation_change": "ReplayBackfillService::execute no longer calls findCurrentPublicationForTradeDate. The fixture directory itself is now the declared manifest: {fixtureRoot}/{tradeDate}/publication_{N} names the immutable publication that date's replay targets, discovered by scanning the date directory (never computed from a live lookup) via the new private explicitPublicationIdFromFixture() method, and resolved via EodPublicationRepository::buildManifestByPublicationId() -- a pre-existing, unmodified, pure identity-keyed lookup with no pointer/current concept at all.",
+      "actual_identity_source": "the publication_<id> subdirectory name under {fixtureRoot}/{tradeDate}/, frozen at fixture-creation time, never re-derived at execution time",
+      "refusal_behaviour": "zero declared publication_<id> directories -> REPLAY_BACKFILL_EXPLICIT_PUBLICATION_UNDECLARED (refused before any replay work); more than one -> REPLAY_BACKFILL_EXPLICIT_PUBLICATION_AMBIGUOUS; a declared id that does not exist in the database -> REPLAY_BACKFILL_EXPLICIT_PUBLICATION_NOT_FOUND; a declared id whose real trade_date disagrees with the directory it was found under -> REPLAY_BACKFILL_EXPLICIT_PUBLICATION_TRADE_DATE_MISMATCH. All four reject before verifyRunAgainstFixture or exportReplayEvidence are ever called.",
+      "final_state": "PROVEN"
+    },
+    "MD-S003-R0002": {
+      "implementation_change": "None. ReplayVerificationService::verifyRunAgainstFixture already refused a READABLE-expected PUBLICATION_EXACT replay with no explicit id (REPLAY_EXPLICIT_PUBLICATION_REQUIRED). The gap was purely in proof: the only guard, B18ReplayContractStaticGuardTest::test_exact_missing_publication_fails_closed, was a static source-text check asserting the reason-code string and the textual absence of one specific literal call pattern -- it never executed the refusal.",
+      "actual_identity_source": "unchanged: caller-supplied 4th argument, else fixture manifest's own publication_id, else expected_publication_context.publication_id, else refused",
+      "refusal_behaviour": "for a READABLE-expected run with no explicit id resolvable from any of those three sources, REPLAY_EXPLICIT_PUBLICATION_REQUIRED fires before resolveExplicitFixturePublication or resolvePublicationForReplayActualState (the pointer-consulting fallback) is ever called -- proven by leaving findCurrentPublicationForTradeDate, findReadableCurrentPublicationForRun, and resolvePublicationForEvidenceAudit entirely unstubbed on the mocked collaborators, so an unexpected call to any of them fails the test on its own",
+      "final_state": "PROVEN"
+    }
+  },
+  "full_range_current_evidence_replay_service_disposition": {
+    "audited": true,
+    "modified": false,
+    "finding": "FullRangeCurrentEvidenceReplayService also derives publicationId from findCurrentPublicationForTradeDate, matching the surface pattern F-016 describes, but it is not the same defect. Its own summary explicitly declares 'assertion_scope' => 'current_readable_publication_per_trading_date', and its suite name is market_data_full_range_current_evidence_replay -- a self-declared, explicit 'verify whatever is current, per date' operation, not a claim of historical exact identity.",
+    "authority_basis": "this is precisely the second disposition F-016's own remedy names: 'the backfill is reclassified as current-read verification, which then needs the separate pointer assertion R0027 names' -- except this service was already built that way from the start and already carries that separate, explicit classification (assertion_scope + the CURRENT_READABLE_PUBLICATION_AUDIT / replay_actual_resolution_mode labelling that flows through into its exported evidence), unlike ReplayBackfillService, which mixed the two operations with no classification at all.",
+    "disposition": "left unmodified; documented here and in F-016 as the reviewed disposition, not implemented in this bounded unit per explicit scope instruction"
+  },
+  "tests_changed": {
+    "production_files_changed": ["app/Application/MarketData/Services/ReplayBackfillService.php"],
+    "test_files_changed": ["tests/Unit/MarketData/ReplayBackfillServiceTest.php", "tests/Unit/MarketData/ReplayVerificationServiceTest.php"],
+    "ReplayBackfillServiceTest_rewrite": "the two tests that pinned pointer-derived selection (findCurrentPublicationForTradeDate mocked and asserted-called) rewritten against the corrected contract; every test in the file now asserts $publications->shouldNotReceive('findCurrentPublicationForTradeDate'). Four new tests added: undeclared publication (REPLAY_BACKFILL_EXPLICIT_PUBLICATION_UNDECLARED before any work), ambiguous declaration (two publication_<id> dirs, REPLAY_BACKFILL_EXPLICIT_PUBLICATION_AMBIGUOUS), declared id that does not exist (REPLAY_BACKFILL_EXPLICIT_PUBLICATION_NOT_FOUND), and declared id whose real trade_date disagrees with the fixture directory (REPLAY_BACKFILL_EXPLICIT_PUBLICATION_TRADE_DATE_MISMATCH). One new positive test, test_pointer_moving_after_fixture_creation_does_not_retarget_the_replay, proves the core discriminating scenario the finding names: fixture declares P61, findCurrentPublicationForTradeDate is never called at all (shouldNotReceive), replay targets P61 regardless of what the (unconsulted) pointer would now resolve to.",
+    "ReplayVerificationServiceTest_additions": "two new tests for MD-S003-R0002: test_publication_exact_refuses_a_readable_expectation_with_no_explicit_publication_id_before_any_pointer_lookup (negative -- refusal fires, pointer/current-lookup methods left unstubbed so an unexpected call itself fails the test) and test_publication_exact_accepts_a_readable_expectation_with_a_genuinely_explicit_publication_id (positive control -- a genuinely explicit id resolves successfully, proving the boundary is not reject-everything)."
+  },
+  "probes": [
+    {
+      "id": "P191-r0027-pointer-derived-identity-reintroduced",
+      "caught": true,
+      "note": "Reintroduced the exact removed pointer-derived-identity code (findCurrentPublicationForTradeDate call, publication_id/run_id taken from its return value) into ReplayBackfillService::execute. 7 of the file's 8 tests turned red (the eighth, test_execute_rejects_an_unknown_fixture_case_before_any_work, fires earlier in the method on the fixture-case check and is correctly unaffected). File restored byte-for-byte from a pre-mutation copy; sha256 confirmed identical (27c7e36a1b38369172dfe4fe804b5fd1367352f719fcfa2f9036b523e6551b1b before and after); control re-run green (8/8, 24 assertions)."
+    },
+    {
+      "id": "P192-r0027-trade-date-consistency-check-removed",
+      "caught": true,
+      "note": "Removed the trade_date consistency check (publication['trade_date'] !== tradeDate refusal) from ReplayBackfillService::execute. test_execute_rejects_a_publication_whose_actual_trade_date_disagrees_with_the_fixture_directory turned red: the mutation fell through to an unmocked verifyRunAgainstFixture call instead of refusing, producing reason_code COMMAND_EXECUTION_FAILED instead of the expected REPLAY_BACKFILL_EXPLICIT_PUBLICATION_TRADE_DATE_MISMATCH. Byte-restored, sha256 confirmed identical, control re-run green (8/8, 24 assertions)."
+    },
+    {
+      "id": "P193-r0002-explicit-publication-refusal-removed",
+      "caught": true,
+      "note": "Removed the REPLAY_EXPLICIT_PUBLICATION_REQUIRED refusal block from ReplayVerificationService::verifyRunAgainstFixture. test_publication_exact_refuses_a_readable_expectation_with_no_explicit_publication_id_before_any_pointer_lookup turned red: execution fell through past the missing refusal into an unstubbed downstream call (ReplayResultRepository::nextReplayId(), which the test's mock left unstubbed since it should never be reached), throwing a Mockery BadMethodCallException instead of the expected RuntimeException -- proving the mutation did not silently substitute a pointer-resolved publication, it simply proceeded further than it should have. Byte-restored via git checkout (file was confirmed byte-identical to committed HEAD both before and after, since this session had not otherwise touched it), sha256 confirmed identical (a40a79a5e123a5abaab014ca2aadbd9f2fc8157322508f9140732d3f4f310532 before and after); control re-run green (22/22, 89 assertions)."
+    }
+  ],
+  "scope_result": {
+    "predicates_reviewed": ["MD-S050-R0027", "MD-S003-R0002"],
+    "predicates_promoted_to_proven": ["MD-S050-R0027", "MD-S003-R0002"],
+    "predicates_reviewed_independently": true,
+    "predicates_explicitly_not_touched": ["MD-S036-R0007", "MD-S036-R0031", "MD-S040-R0080", "MD-S003-R0005", "MD-S050-R0017", "MD-S003-R0009", "MD-S003-R0010", "MD-S050-R0046", "MD-S019-R0074"],
+    "production_code_changed": true,
+    "production_change_summary": "ReplayBackfillService.php only: pointer-derived identity resolution replaced with fixture-directory-declared explicit identity resolution via the pre-existing, unmodified EodPublicationRepository::buildManifestByPublicationId(). No schema, migration, or other application file touched. FullRangeCurrentEvidenceReplayService audited, confirmed a genuinely separate current-read operation already self-classified as such, left unmodified.",
+    "f016_status": "OPEN -- REMEDIATION_IN_CONSOLIDATED_PACKAGE (unchanged; this is the first of ten remaining bounded units, not a closure)",
+    "md_dep_0017_status": "UNCHANGED -- still BLOCKING, still bundles F-013 (RESOLVED) through F-018 (F-017/F-018 OPEN)",
+    "traceability_matrix_coverage_status_touched": false,
+    "satisfied_or_denominator_changed": false,
+    "f013_f014_f015_prior_findings_reopened": false,
+    "mutant_or_temp_artifact_remaining": false,
+    "commit_or_push": "NONE -- explicitly withheld per current instruction"
+  },
+  "remaining": {
+    "clarification": "MarketDataReplayVerificationProofBasis's PROVEN count moves from 78 to 80; INCOMPLETE count moves from 36 to 34 (exactly these two predicates). F-MD-B18-A002-016 remains OPEN with 9 of its own 14 predicates still INCOMPLETE: MD-S036-R0007/MD-S036-R0031/MD-S040-R0080/MD-S003-R0005 (guard gaps), MD-S050-R0017 (G05 full-parent aggregate, not a bare rebind), MD-S003-R0009/MD-S003-R0010/MD-S050-R0046 (rebind-only), MD-S019-R0074 (F-013 carry-forward). F-MD-B18-A002-016 is explicitly NOT closed by this unit."
+  },
+  "full_suite": {
+    "status": "RUN -- production semantic change, per current instruction",
+    "targeted_suites": "ReplayBackfillServiceTest 8/8 (24 assertions), ReplayVerificationServiceTest 22/22 (89 assertions), FullRangeCurrentEvidenceReplayServiceTest 2/2 (11 assertions, confirming audit-only disposition caused zero collateral change), OpsCommandSurfaceTest 64/64 (371 assertions), B18ReplayContractStaticGuardTest 18/18, BoundaryInvariantSemanticsTest 11/11, IndicatorEngineBoundaryB14Test 6/6, ReplayDeterminismStaticGuardTest 4/4, ScopeBoundaryAndOrchestrationCompletionTest 8/8, B18ReplayVerdictConsumerBoundaryTest 5/5 -- all green.",
+    "full_marketdata_suite": "tests/Unit/MarketData full directory: 2432 tests, 34286 assertions, 8 failures. All 8 confirmed not caused by this unit's changes: 1 (B18ReplayAdmissibilityBoundaryTest::test_no_active_surface_cites_a_replay_verdict_for_something_replay_cannot_establish) confirmed pre-existing at committed HEAD via git stash of all this unit's changes followed by re-running the isolated test against clean HEAD -- identical failure, unrelated to F-016, a self-reference in evidence record E-MD-B18-A002-056 tripping its own R0052 corpus guard; flagged separately as a standalone tooling defect, not fixed here as it is out of this bounded unit's scope. The remaining 7 are the pre-existing ProductionCorpusInvariantOracleTest corpus-data-absence baseline (MD-DEP-0015, local database has no production corpus loaded), matching the exact same baseline count documented in E-MD-B18-A002-054. Zero new regressions from this unit's changes.",
+    "governance_self_tests": "GovernanceGateReadOnlyExecutionTest+ScopeBoundaryAndOrchestrationCompletionTest 9/9 (5782 assertions), FindingRecordConsistencyTest 3/3 (13 assertions) -- both green."
+  },
+  "post_record_validation": "Results confirmed via 3 live mutation/restore probes with sha256 verification, targeted and full-directory test execution, isolated pre-existing-failure confirmation via git stash against clean HEAD, and proof-basis PHP-parse validation (PROVEN 78->80, INCOMPLETE 36->34).",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "F-MD-B18-A002-016's next bounded unit, per canonical package ordering, not derived or started here: the guard-gap group (MD-S036-R0007/MD-S036-R0031/MD-S040-R0080/MD-S003-R0005), the G05 full-parent aggregate (MD-S050-R0017), the rebind-only group (MD-S003-R0009/MD-S003-R0010/MD-S050-R0046), or the F-013 carry-forward (MD-S019-R0074). Not started here. F-MD-B18-A002-016 remains OPEN. No data_260914 action, new attempt, strategy change or relock. No commit or push performed, per current instruction."
+}

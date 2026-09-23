@@ -720,6 +720,44 @@ final class MarketDataReplayVerificationProofBasis
             'basis' => 'as-known replay\'s exclusion of later revisions is proven per-root against the real repositories and service, not by method-existence alone: seven independent mutation probes (one per contract-named root) each turn the behavioural guard red on its own distinct assertion, and an incomplete historical snapshot is independently proven to refuse rather than substitute live configuration',
         ],
 
+        // F-MD-B18-A002-016 first bounded unit: ReplayBackfillService chose each date's publication with
+        // findCurrentPublicationForTradeDate($tradeDate), then passed that pointer-derived id to
+        // verifyRunAgainstFixture() as though it had been declared -- laundering a "whatever is current"
+        // lookup into an apparently explicit identity. After a correction moved the pointer, the same
+        // command would verify a different publication than the fixture was created against. Fixed:
+        // the fixture directory itself is now the declared manifest (`{fixtureRoot}/{tradeDate}/publication_{N}`),
+        // resolved via EodPublicationRepository::buildManifestByPublicationId(), a pure identity-keyed
+        // lookup with no pointer/current concept; findCurrentPublicationForTradeDate is never called
+        // from this class again. Zero, one, and more-than-one declared publication_<id> directories are
+        // each handled explicitly (undeclared/ambiguous both fail closed before any replay work), and a
+        // declared identity whose real trade_date disagrees with its directory fails closed rather than
+        // silently accepting either date.
+        'MD-S050-R0027' => [
+            'positive' => 'ReplayBackfillServiceTest::test_pointer_moving_after_fixture_creation_does_not_retarget_the_replay',
+            'negative' => 'ReplayBackfillServiceTest::test_execute_rejects_a_date_with_no_declared_publication_before_any_work',
+            'basis' => 'the fixture-declared publication survives a pointer move to a different publication after fixture creation (findCurrentPublicationForTradeDate proven never called, by explicit shouldNotReceive), and a date with no declared identity is refused before any replay work rather than falling back to whatever the pointer would resolve; mutation-proven by reintroducing the removed pointer-derived-identity code, which turned 7 of 8 targeted tests red (the eighth, the unknown-fixture-case guard, fires earlier and is unaffected), byte-restored and sha256-verified, control green',
+        ],
+        // F-MD-B18-A002-016: the general PUBLICATION_EXACT resolution boundary this predicate names
+        // ("resolve an explicit immutable publication, not latest/current") already existed as real code
+        // in ReplayVerificationService::verifyRunAgainstFixture (REPLAY_EXPLICIT_PUBLICATION_REQUIRED,
+        // refusing a readable expectation with no explicit id), but its only guard,
+        // B18ReplayContractStaticGuardTest::test_exact_missing_publication_fails_closed, was a static
+        // source-text check -- it asserted the reason-code string and the absence of one specific
+        // literal call pattern, never executing the refusal or proving any pointer/current lookup was
+        // genuinely bypassed. Two new behavioural tests replace that as this predicate's proof: the
+        // refusal fires for a real READABLE-expected run with no explicit id anywhere (no argument, no
+        // manifest, no expected_publication_context), before any pointer/current lookup is even stubbed
+        // (an unexpected call to findCurrentPublicationForTradeDate, findReadableCurrentPublicationForRun,
+        // or resolvePublicationForEvidenceAudit would itself fail the test); and a genuinely explicit id
+        // supplied as the 4th argument is accepted and resolved through the explicit path, proving the
+        // boundary is not reject-everything. No production code change was required for this predicate;
+        // the implementation was already correct.
+        'MD-S003-R0002' => [
+            'positive' => 'ReplayVerificationServiceTest::test_publication_exact_accepts_a_readable_expectation_with_a_genuinely_explicit_publication_id',
+            'negative' => 'ReplayVerificationServiceTest::test_publication_exact_refuses_a_readable_expectation_with_no_explicit_publication_id_before_any_pointer_lookup',
+            'basis' => 'a real, unmocked call to verifyRunAgainstFixture with no explicit publication id anywhere throws REPLAY_EXPLICIT_PUBLICATION_REQUIRED before any pointer/current lookup is consulted (proven by leaving those lookup methods unstubbed, so an unexpected call itself fails the test), while a genuinely explicit id is independently proven to resolve successfully through the explicit path; mutation-proven by removing the refusal, which turned the negative test red on an unstubbed downstream call rather than silently substituting a pointer-resolved publication, byte-restored and sha256-verified, control green',
+        ],
+
     ];
 
     // Withdrawn from PROVEN on 2026-09-14: these four rows are CONDITIONAL_NOT_APPLICABLE under
@@ -833,12 +871,6 @@ final class MarketDataReplayVerificationProofBasis
             'negative' => 'SourceObservationAsKnownBoundaryTest::test_zero_row_provider_outage_remains_in_as_known_observation_manifest',
             'basis' => 'that replay cannot prove source faithfulness is a capability boundary the observation guard framing establishes',
         ],
-        // F-MD-B18-A002-016: executable, replay backfill selects each publication from the current pointer; the service refusal of an unpinned readable replay is guarded by a string check only.
-        'MD-S050-R0027' => [
-            'positive' => 'ReplayVerificationServiceTest::test_verify_replay_resolves_historical_publication_without_current_pointer_fallback',
-            'negative' => 'ReplayVerificationServiceTest::test_verify_replay_maps_unsealed_historical_publication_to_reason_coded_failure',
-            'basis' => 'starting from explicit publication identity and never latest/current is exactly what the guard asserts',
-        ],
         // F-MD-B18-A002-013 carry-forward via F-MD-B18-A002-016: the positive is the fabricated frozen-input perturbation; the as-known clause is shown for the status root only, through the repository.
         'MD-S019-R0074' => [
             'positive' => 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass',
@@ -850,12 +882,6 @@ final class MarketDataReplayVerificationProofBasis
             'positive' => 'B18AntiFutureResolutionTest::test_the_anti_future_map_names_exactly_what_the_contract_names',
             'negative' => 'B18AntiFutureResolutionTest::test_every_anti_future_guard_exists_and_is_executable',
             'basis' => 'the nine items the anti-future sentence names are each bound to a guard that executes the prohibition, and the map is checked against the sentence parsed from Replay_Verification_Contract_LOCKED.md rather than transcribed, so an item added with nothing behind it fails. Seven already had executing guards across B18AntiSurvivorshipFixtureCorpusTest, AsKnownReplayBoundaryTest and B18AsKnownSnapshotIsolationTest. Two did not and are new: current sector and latest provider mapping were covered only by test_every_temporal_root_accepts_a_knowledge_cutoff, which reflects over the method signature -- a cutoff parameter that is accepted and ignored passes it. Both now run against real repositories: a sector reclassification effective from the dataset start but recorded in May resolves A1 at an April cutoff and B2 without one; a provider remapping modelled as the schema expects, by retracting the original when the replacement is learned, resolves ANTIF.JK at the April cutoff and ANTIF.KL without one, exercising both the recorded_at and retracted_at knowledge-time filters. Two live mappings over one trade date was the fixture\'s first shape and the resolver refused it as PROVIDER_SYMBOL_MAPPING_AMBIGUOUS, which is the fail-closed rule rather than a fixture error. Probes: dropping the sector recorded_at filter turned the sector guard red; widening the provider mapping recorded_at bound turned the mapping guard red, failing closed on ambiguity rather than silently serving the later mapping.',
-        ],
-        // F-MD-B18-A002-016: the service refusal that keeps an unpinned readable replay off the current publication is guarded by a string check only.
-        'MD-S003-R0002' => [
-            'positive' => 'ReplayVerificationServiceTest::test_verify_replay_resolves_historical_publication_without_current_pointer_fallback',
-            'negative' => 'ReplayVerificationServiceTest::test_verify_replay_maps_unsealed_historical_publication_to_reason_coded_failure',
-            'basis' => 'resolving an explicit immutable publication without current-pointer fallback is the subject of the guard',
         ],
         // F-MD-B18-A002-013 carry-forward via F-MD-B18-A002-017: the individual-identity guard asserts non-empty values on a hand-built metric; production publication mode stores temporal and calendar identity empty.
         'MD-S003-R0023' => [

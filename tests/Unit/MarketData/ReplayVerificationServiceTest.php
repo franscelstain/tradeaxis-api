@@ -1049,6 +1049,129 @@ class ReplayVerificationServiceTest extends TestCase
         $this->assertTrue($result['actual_context']['actual_replay_resolution_context']['historical_publication_allowed']);
     }
 
+    /**
+     * `MD-S003-R0002` -- "resolve an explicit immutable publication, not latest/current." The prior
+     * guard for this predicate was a static source-text check
+     * (`B18ReplayContractStaticGuardTest::test_exact_missing_publication_fails_closed`) asserting the
+     * reason code string and the absence of one specific literal call pattern in the file -- it never
+     * executed the refusal or proved anything about pointer/current lookup being genuinely bypassed.
+     *
+     * This test calls the real `verifyRunAgainstFixture` with a `READABLE`-expected run and no
+     * explicit publication id anywhere (no 4th argument, no `manifest.publication_id`, no
+     * `expected_publication_context.publication_id`), and proves two things behaviourally: the
+     * refusal fires with the correct reason code, and it fires *before* any pointer/current lookup --
+     * `findCurrentPublicationForTradeDate`, `findReadableCurrentPublicationForRun`, and
+     * `resolvePublicationForEvidenceAudit` are none of them stubbed, so an unexpected call to any of
+     * them fails the test with a Mockery exception rather than silently resolving a substitute
+     * publication.
+     */
+    public function test_publication_exact_refuses_a_readable_expectation_with_no_explicit_publication_id_before_any_pointer_lookup(): void
+    {
+        $expected = $this->expectedReplayResult([
+            'trade_date_requested' => '2026-04-01',
+            'trade_date_effective' => '2026-04-01',
+            'terminal_status' => 'SUCCESS',
+            'publishability_state' => 'READABLE',
+            'publication_id' => null,
+            'publication_run_id' => null,
+            'publication_version' => null,
+            'publication_is_current' => false,
+        ]);
+
+        $fixtureDir = $this->makeFixture($this->fixturePayload([
+            'expected/expected_replay_result.json' => $expected,
+            'expected/expected_reason_code_counts.json' => [],
+        ], 'fixture_no_explicit_publication_declared'));
+
+        $run = (object) $this->successReadableRun(555, '2026-04-01');
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $replays = m::mock(ReplayResultRepository::class);
+
+        $evidence->shouldReceive('findRunById')->once()->with(555)->andReturn($run);
+        $evidence->shouldNotReceive('resolvePublicationForEvidenceAudit');
+        $publications->shouldNotReceive('findCurrentPublicationForTradeDate');
+        $publications->shouldNotReceive('findReadableCurrentPublicationForRun');
+
+        $service = new ReplayVerificationService($evidence, $publications, $replays);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('REPLAY_EXPLICIT_PUBLICATION_REQUIRED');
+
+        $service->verifyRunAgainstFixture(555, $fixtureDir);
+    }
+
+    /**
+     * `MD-S003-R0002` positive control -- the same `READABLE`-expected run as above, but with a valid
+     * explicit publication id supplied as the 4th argument, proving the refusal boundary is not
+     * simply "reject every readable case": a genuinely explicit identity is accepted and resolved
+     * through the explicit path, and no pointer/current lookup is consulted here either.
+     */
+    public function test_publication_exact_accepts_a_readable_expectation_with_a_genuinely_explicit_publication_id(): void
+    {
+        $expected = $this->expectedReplayResult([
+            'trade_date_requested' => '2026-04-01',
+            'trade_date_effective' => '2026-04-01',
+            'terminal_status' => 'SUCCESS',
+            'publishability_state' => 'READABLE',
+            'publication_id' => null,
+            'publication_run_id' => null,
+            'publication_version' => null,
+            'publication_is_current' => false,
+        ]);
+        $expected['expected_pointer_context']['pointer_resolve_status'] = 'NOT_CURRENT_POINTER';
+
+        $fixtureDir = $this->makeFixture($this->fixturePayload([
+            'expected/expected_replay_result.json' => $expected,
+            'expected/expected_reason_code_counts.json' => [],
+        ], 'fixture_genuinely_explicit_publication'));
+
+        $run = (object) $this->successReadableRun(556, '2026-04-01');
+
+        $explicitPublication = (object) [
+            'publication_id' => 61,
+            'run_id' => 556,
+            'publication_version' => 4,
+            'is_current' => 0,
+            'seal_state' => 'SEALED',
+            'sealed_at' => '2026-04-01 17:30:00',
+            'evidence_resolution_mode' => 'HISTORICAL_PUBLICATION_AUDIT',
+            'evidence_publication_scope' => 'HISTORICAL_SEALED_PUBLICATION',
+            'historical_publication_allowed' => true,
+            'current_pointer_required' => false,
+            'current_pointer_status' => 'NOT_CURRENT_POINTER',
+            'artifact_scope' => 'publication:61',
+            'lineage_verification_status' => 'LINEAGE_VERIFIED',
+        ];
+
+        $evidence = m::mock(EodEvidenceRepository::class);
+        $publications = m::mock(EodPublicationRepository::class);
+        $replays = m::mock(ReplayResultRepository::class);
+
+        $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
+        $publications->shouldNotReceive('findCurrentPublicationForTradeDate');
+        $publications->shouldNotReceive('findReadableCurrentPublicationForRun');
+        $evidence->shouldReceive('findRunById')->once()->with(556)->andReturn($run);
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
+            return $selector['type'] === 'replay_fixture_explicit_publication'
+                && $selector['publication_id'] === 61
+                && $selector['trade_date'] === '2026-04-01';
+        }))->andReturn($explicitPublication);
+        $evidence->shouldReceive('dominantReasonCodesForEvidencePublication')->once()->andReturn([]);
+        $evidence->shouldReceive('exportEligibilityRowsForEvidencePublication')->once()->andReturn([]);
+        $replays->shouldReceive('nextReplayId')->once()->andReturn(3102);
+        $replays->shouldReceive('upsertMetric')->once();
+        $replays->shouldReceive('replaceReasonCodeCounts')->once();
+
+        $service = new ReplayVerificationService($evidence, $publications, $replays);
+        $result = $service->verifyRunAgainstFixture(556, $fixtureDir, null, 61);
+
+        $this->assertSame(61, $result['publication_id'],
+            'a genuinely explicit publication id must resolve through the explicit path, proving the refusal boundary is not reject-everything');
+        $this->assertSame(61, $result['actual_context']['actual_publication_context']['publication_id']);
+    }
+
     public function test_verify_replay_matches_unchanged_correction_preserved_baseline_publication()
     {
         $expected = $this->expectedReplayResult([
