@@ -59,6 +59,66 @@ class SourceObservationAsKnownBoundaryTest extends TestCase
         $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $manifest['manifest_hash']);
     }
 
+    /**
+     * `MD-S019-R0074` clause 2 -- as-known replay resolves only revisions known by the declared
+     * cutoff -- for the source-observation root specifically. `Determinism_Invariants_LOCKED.md:113`
+     * names "immutable source-observation manifest" as one of the frozen identities; `G05`
+     * (`MD-S050-R0017`) proved knowledge-time gating for temporal/calendar/corporate-action/
+     * factor/config, but named no source-observation member, and the two existing tests above seed
+     * only one `acquired_at`, so neither discriminates `obs.acquired_at <= knownAt` from an
+     * unconditional read. Two observations for the same trade date, one acquired before the cutoff
+     * and one after, close that gap for both `observationManifestAsKnown` (raw observation gate)
+     * and `normalizedRowsAsKnown` (the same gate plus the identity-binding gate already proven by
+     * the binding-only test above).
+     */
+    public function test_an_observation_acquired_after_the_cutoff_is_invisible_to_as_known_replay(): void
+    {
+        [$earlyObservationId, $earlyRowId] = $this->seedObservationRow('2025-07-02', '2025-07-02 09:00:00');
+        DB::table('md_source_observation_identity_bindings')->insert([
+            'source_observation_row_id' => $earlyRowId,
+            'source_observation_id' => $earlyObservationId,
+            'listing_id' => 201,
+            'provider_mapping_id' => 11,
+            'mapping_revision' => 'map-v1',
+            'effective_trade_date' => '2025-07-02',
+            'recorded_at' => '2025-07-02 09:00:00',
+        ]);
+
+        [$lateObservationId, $lateRowId] = $this->seedObservationRow('2025-07-02', '2025-07-10 09:00:00');
+        DB::table('md_source_observation_identity_bindings')->insert([
+            'source_observation_row_id' => $lateRowId,
+            'source_observation_id' => $lateObservationId,
+            'listing_id' => 202,
+            'provider_mapping_id' => 12,
+            'mapping_revision' => 'map-v1',
+            'effective_trade_date' => '2025-07-02',
+            'recorded_at' => '2025-07-10 09:00:00',
+        ]);
+
+        $repo = new SourceObservationRepository();
+        $cutoffBetween = '2025-07-05 00:00:00';
+
+        $manifestAtCutoff = $repo->observationManifestAsKnown('2025-07-02', $cutoffBetween);
+        $this->assertSame(
+            1,
+            $manifestAtCutoff['observation_count'],
+            'an observation acquired after the cutoff is visible to a replay that could not yet know it'
+        );
+
+        $rowsAtCutoff = $repo->normalizedRowsAsKnown('2025-07-02', $cutoffBetween);
+        $this->assertCount(1, $rowsAtCutoff);
+        $this->assertSame(201, (int) $rowsAtCutoff[0]['listing_id'],
+            'the row visible at the earlier cutoff must be the early observation, not the late one');
+
+        $cutoffAfterBoth = '2025-07-11 00:00:00';
+        $manifestAfterBoth = $repo->observationManifestAsKnown('2025-07-02', $cutoffAfterBoth);
+        $this->assertSame(2, $manifestAfterBoth['observation_count'],
+            'once both are known, the manifest must not remain walled off at the earlier count');
+
+        $rowsAfterBoth = $repo->normalizedRowsAsKnown('2025-07-02', $cutoffAfterBoth);
+        $this->assertCount(2, $rowsAfterBoth);
+    }
+
     public function test_zero_row_provider_outage_remains_in_as_known_observation_manifest(): void
     {
         DB::table('md_source_observations')->insert([

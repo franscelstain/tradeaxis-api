@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-09-14T16:03:58+07:00 (system clock)
 - Severity: `P1` for closure. It contains an executable defect and proof bases that overclaim.
-- Status: `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`
+- Status: `RESOLVED — CONSOLIDATED_REMEDIATION_PACKAGE_COMPLETE`
 - Class: `EXECUTABLE_DEFECT_AND_PROOF_BASIS_MISTARGETED`
 - Found by: per-predicate review of PAIRS 09, 10, 11, 12, 13, 16, 17, 18 and 19 (14 predicates)
 - Probe evidence: `E-MD-B18-A002-011`
@@ -514,3 +514,77 @@ reported, and any unexcepted malformed JSON remains a hard `FAIL`. E061 is uncha
 
 **This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`** with exactly 1 of its own 14
 predicates still `INCOMPLETE`: `MD-S019-R0074` (F-013 carry-forward, package-labelled G01).
+
+## G01 (F-013 carry-forward): `MD-S019-R0074` proven, finding resolved — 2026-09-23T17:19:11+07:00
+
+`MD-S019-R0074` (`Determinism_Invariants_LOCKED.md:122`, Invariant 14): "Publication replay freezes
+the exact identities above. As-known replay resolves only revisions known by the declared knowledge
+cutoff. Current state must not leak into either mode." Reconstructed independently from repository
+authority rather than trusted from F-013's `RESOLVED` status or the prior draft basis narrative.
+
+**Clause 1 — publication replay freezes the exact identities.** Identical predicate content to
+`MD-S050-R0002` at the strategy layer: `ReplayVerificationService::BOUND_INPUT_FIELDS` names all
+eleven fields the seven `Determinism_Invariants_LOCKED.md:111-118` categories decompose into, and
+`compareExpectedAndActual()` compares each individually. This finding's own carry-forward note
+(written before F-013's `E-044`/`E-046`–`E-050` remediation) described
+`test_a_divergence_in_any_frozen_input_denies_pass` as defective — true only until `MD-S050-R0002`
+was promoted `PROVEN` in `E-MD-B18-A002-050` on the strength of this exact guard. That note is now
+stale. Re-probed independently rather than trusted from `R0002`'s promotion alone: removed
+`temporal_identity_hash` from the compared-fields loop; exactly that data set (2 of 11) turned red,
+the other ten stayed green; byte-restored, sha256-verified (`a40a79a5…532` unchanged), control re-run
+green (11/11, 66 assertions).
+
+**Clause 2 — as-known replay resolves only known revisions.** Requires per-root proof across the same
+seven identity categories, not one root standing in for all seven — the same class of defect
+`F-MD-B18-A002-015`/`G05` already found in this proof family, and exactly what this finding's own
+carry-forward note flagged (only the status root shown). Reconstructed per root:
+
+- temporal identity, sector, calendar, trading status, corporate-action, factor-set, configuration
+  snapshot — all seven already independently mutation-probed in `G05` (`MD-S050-R0017`,
+  `E-MD-B18-A002-060`), one probe per member; not re-probed here.
+- formula/registry versions, serialization rules, `read_model_version` —
+  `AsKnownReplaySnapshotService::capture()` derives these exclusively from
+  `resolvedConfigPayload()`, never from live `config()` (confirmed by direct reading; the method's
+  own comment records this as a deliberate guard against "the exact future-state leak that
+  `resolveForRun(...,$knowledgeCutoff)` prevents"). Their knowledge-time correctness is a structural
+  consequence of the already-probed config-snapshot clause, not an independent code path.
+- `executable_build_identity` — reads live `config()` in `AS_KNOWN` mode, the same accepted
+  architectural boundary `F-013`/`E-050` already established for `MD-S050-R0002` in
+  `PUBLICATION_EXACT` mode. Names which build executed the replay, not a historical market-data
+  fact — carries no knowledge-cutoff semantic to leak.
+- immutable source-observation manifest — genuinely uncovered: both existing
+  `SourceObservationAsKnownBoundaryTest` cases seed only one `acquired_at`, so neither discriminates
+  `observationManifestAsKnown()`/`normalizedRowsAsKnown()`'s `obs.acquired_at <= knownAt` clause from
+  an unconditional read. New test added
+  (`test_an_observation_acquired_after_the_cutoff_is_invisible_to_as_known_replay`): seeds one
+  observation acquired before a cutoff and one after, for the same trade date; asserts both methods
+  return only the early one at the earlier cutoff and both once the cutoff passes the late one.
+  Mutation-proven: removed the `acquired_at <= knownAt` clause from `observationManifestAsKnown()`;
+  the new test turned red (2 visible instead of 1), the other 3 tests in the file stayed green;
+  byte-restored, sha256-verified (`f3ee17da…577` unchanged), control re-run green (4/4, 14
+  assertions).
+
+**Clause 3 — current state must not leak into either mode.** Not a separate mechanism: the
+conjunction of clauses 1 and 2 already individually true. No independent probe required.
+
+Zero production code changed. `PROVEN` 88→89, `INCOMPLETE` 26→25.
+
+**Evidence record:** `E-MD-B18-A002-065`, registered in `DOCUMENT_ID_REGISTRY` (`MD-DOC-01200`),
+`DOCUMENT_ROLE_REGISTRY`, `CURRENT_VERIFICATION_REGISTRY`, and `WORK_RECORD_REGISTRY`.
+
+**Proof-basis state:** Promoted `MD-S019-R0074` from `INCOMPLETE` to `PROVEN`.
+
+### F-016 closure review
+
+All 14 of this finding's own predicates are `PROVEN`: `MD-S050-R0027`/`MD-S003-R0002` (G01, `E058`);
+`MD-S036-R0007`/`MD-S036-R0031`/`MD-S040-R0080` (G04, `E059`); `MD-S050-R0017` (G05, `E060`);
+`MD-S050-R0046` (G08, `E061`); `MD-S003-R0005`/`MD-S003-R0009`/`MD-S003-R0010` (G09, `E062`);
+`MD-S019-R0074` (this unit, `E065`); and `MD-S085-R0452`/`MD-S050-R0032`/`MD-S050-R0005`, reviewed and
+kept `PROVEN` at intake (`E-MD-B18-A002-011`). The executable defect this finding opened with
+(`ReplayBackfillService` starting publication replay from the current pointer) was fixed in G01. No
+residue or explicit closure blocker was found. No traceability-matrix `coverage_status`/`SATISFIED`/
+denominator change.
+
+**`F-MD-B18-A002-016` is now formally `RESOLVED`.** `MD-DEP-0017` remains `BLOCKING` — it is not
+resolved by F-016 closure and bundles `F-013` (`RESOLVED`) through `F-018` (`F-017`/`F-018` remain
+`OPEN`).

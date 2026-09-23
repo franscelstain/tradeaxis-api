@@ -1,0 +1,117 @@
+{
+  "evidence_id": "E-MD-B18-A002-065",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+  "issued_at": "2026-09-23T17:19:11+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS_FINAL_F016_UNIT_MD_S019_R0074_PROVEN_F016_RESOLVED",
+  "evidence_scope": "F016_G01_MD_S019_R0074_PROVEN_FINDING_RESOLVED",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": ["F-MD-B18-A002-016", "F-MD-B18-A002-013"],
+  "related_evidence": ["E-MD-B18-A002-058", "E-MD-B18-A002-059", "E-MD-B18-A002-060", "E-MD-B18-A002-061", "E-MD-B18-A002-062", "E-MD-B18-A002-050", "CI-MD-B18-A002-001"],
+  "related_decisions": ["D-MD-B18-A002-005"],
+  "dependencies": ["MD-DEP-0017", "MD-DEP-0015"],
+  "schema_changed": false,
+  "predicate": {
+    "rule_id": "MD-S019-R0074",
+    "requirement_source": "Determinism_Invariants_LOCKED.md:122 (Invariant 14)",
+    "requirement_text": "Publication replay freezes the exact identities above. As-known replay resolves only revisions known by the declared knowledge cutoff. Current state must not leak into either mode.",
+    "identities_named": "Determinism_Invariants_LOCKED.md:111-118: immutable source-observation manifest; temporal issuer/instrument/listing/symbol and provider-mapping revisions; calendar/session/status revisions; corporate-action event/factor-set revisions; full configuration snapshot/hash; price-product and formula/registry versions; serialization rules",
+    "carry_forward_origin": "F-MD-B18-A002-013 (RESOLVED via E-MD-B18-A002-050), carried into F-MD-B18-A002-016 as package-labelled G01",
+    "prior_basis_status": "INCOMPLETE at session start, draft narrative claiming three clauses executed -- treated as an unverified locator, not trusted",
+    "clauses": [
+      {
+        "clause": 1,
+        "text": "Publication replay freezes the exact identities above",
+        "finding": "identical predicate content to MD-S050-R0002 at the strategy layer. R0002 was promoted PROVEN in E-MD-B18-A002-050 on the strength of B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass proving all eleven BOUND_INPUT_FIELDS individually load-bearing. F-016's own carry-forward note describing this test as defective predates that promotion and is stale.",
+        "guard": "B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass",
+        "probe": {
+          "target_file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+          "baseline_sha256": "a40a79a5e123a5abaab014ca2aadbd9f2fc8157322508f9140732d3f4f310532",
+          "mutation": "removed temporal_identity_hash from the BOUND_INPUT_FIELDS comparison loop via array_diff",
+          "result": "RED -- exactly data set #2 (temporal_identity_hash) of the 11-case perturbation suite failed; other 10 stayed green",
+          "restored_sha256": "a40a79a5e123a5abaab014ca2aadbd9f2fc8157322508f9140732d3f4f310532",
+          "sha256_match": true,
+          "control_after_restore": "11/11 GREEN (66 assertions)"
+        },
+        "production_code_changed": false
+      },
+      {
+        "clause": 2,
+        "text": "As-known replay resolves only revisions known by the declared knowledge cutoff",
+        "finding": "requires per-root knowledge-time proof across all seven identity categories, not one root standing in for all seven -- the same class of defect F-MD-B18-A002-015/G05 already found in this proof family. F-016's carry-forward note correctly flagged that only the status root had discriminating coverage.",
+        "roots": [
+          {"root": "temporal identity (listing/symbol/provider-mapping) + sector", "guard": "B18AntiFutureResolutionTest / B18AntiSurvivorshipFixtureCorpusTest", "proof_source": "G05 (E-MD-B18-A002-060), members 1/2/3/9, independently mutation-probed there", "new_probe_this_unit": false},
+          {"root": "calendar / trading status", "guard": "MarketCalendarRepository / TemporalTradingStatusRepository knowledge-time clauses", "proof_source": "G05, members 4/5, independently mutation-probed there", "new_probe_this_unit": false},
+          {"root": "corporate-action / factor-set", "guard": "EventRiskSourceRepository / AsKnownReplaySnapshotService::eventFactorContext knowledge-time clauses", "proof_source": "G05, members 6/7, independently mutation-probed there", "new_probe_this_unit": false},
+          {"root": "configuration snapshot", "guard": "MarketDataConfigSnapshotRepository::governingSnapshot knownAt-gated clause", "proof_source": "G05, member 8, independently mutation-probed there", "new_probe_this_unit": false},
+          {"root": "formula/registry versions, serialization rules, read_model_version", "guard": "none needed independently", "proof_source": "structural: AsKnownReplaySnapshotService::capture() derives formulaIdentity/reasonIdentity/serialization_version/read_model_version exclusively from resolvedConfigPayload(), never from live config() (confirmed by direct code reading; the method's own comment records this as a deliberate guard against future-state leak) -- knowledge-time correctness is a consequence of the already-probed config-snapshot clause, not an independent code path", "new_probe_this_unit": false},
+          {"root": "executable_build_identity", "excluded_with_basis": "reads live config() in AS_KNOWN mode, same as PUBLICATION_EXACT mode per F-013/E-050 -- accepted architectural boundary (R0002 was promoted PROVEN despite this same field reading live config); names which build executed the replay, not a historical market-data fact, carries no knowledge-cutoff semantic"},
+          {"root": "immutable source-observation manifest", "guard": "SourceObservationAsKnownBoundaryTest::test_an_observation_acquired_after_the_cutoff_is_invisible_to_as_known_replay (NEW)", "proof_source": "genuinely uncovered before this unit -- both pre-existing tests in the file seed only one acquired_at each, neither discriminates the acquired_at <= knownAt clause", "new_probe_this_unit": true}
+        ],
+        "new_guard_probe": {
+          "target_file": "app/Infrastructure/Persistence/MarketData/SourceObservationRepository.php",
+          "baseline_sha256": "f3ee17da335ac3098f65e77eb71001f4e148915de567e9430c6e1d68f4629577",
+          "mutation": "removed the acquired_at <= knownAt clause from observationManifestAsKnown()",
+          "result": "RED -- new test observed 2 observations instead of 1 at the earlier cutoff; other 3 tests in the file stayed green",
+          "restored_sha256": "f3ee17da335ac3098f65e77eb71001f4e148915de567e9430c6e1d68f4629577",
+          "sha256_match": true,
+          "control_after_restore": "4/4 GREEN (14 assertions)"
+        },
+        "production_code_changed": false
+      },
+      {
+        "clause": 3,
+        "text": "Current state must not leak into either mode",
+        "finding": "not a separate mechanism -- the conjunction of clause 1 (publication mode: every one of the eleven frozen fields is compared against the fixture-declared value) and clause 2 (as-known mode: every one of the seven identity categories is resolved through a knowledge-time-gated read) already being individually true. No independent probe performed; none required."
+      }
+    ],
+    "final_state": "PROVEN",
+    "positive_guard": "B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass",
+    "negative_guard": "SourceObservationAsKnownBoundaryTest::test_an_observation_acquired_after_the_cutoff_is_invisible_to_as_known_replay"
+  },
+  "proof_basis_transition": {"before": {"PROVEN": 88, "INCOMPLETE": 26}, "after": {"PROVEN": 89, "INCOMPLETE": 25}, "confirmed_via": "PHP parse"},
+  "f016_closure_review": {
+    "all_14_predicates": [
+      {"rule_id": "MD-S050-R0027", "unit": "G01", "evidence": "E-MD-B18-A002-058", "state": "PROVEN"},
+      {"rule_id": "MD-S003-R0002", "unit": "G01", "evidence": "E-MD-B18-A002-058", "state": "PROVEN"},
+      {"rule_id": "MD-S036-R0007", "unit": "G04", "evidence": "E-MD-B18-A002-059", "state": "PROVEN"},
+      {"rule_id": "MD-S036-R0031", "unit": "G04", "evidence": "E-MD-B18-A002-059", "state": "PROVEN"},
+      {"rule_id": "MD-S040-R0080", "unit": "G04", "evidence": "E-MD-B18-A002-059", "state": "PROVEN"},
+      {"rule_id": "MD-S050-R0017", "unit": "G05", "evidence": "E-MD-B18-A002-060", "state": "PROVEN"},
+      {"rule_id": "MD-S050-R0046", "unit": "G08", "evidence": "E-MD-B18-A002-061", "state": "PROVEN"},
+      {"rule_id": "MD-S003-R0009", "unit": "G09", "evidence": "E-MD-B18-A002-062", "state": "PROVEN"},
+      {"rule_id": "MD-S003-R0010", "unit": "G09", "evidence": "E-MD-B18-A002-062", "state": "PROVEN"},
+      {"rule_id": "MD-S003-R0005", "unit": "G09", "evidence": "E-MD-B18-A002-062", "state": "PROVEN"},
+      {"rule_id": "MD-S019-R0074", "unit": "G01 (F-013 carry-forward)", "evidence": "E-MD-B18-A002-065 (this record)", "state": "PROVEN"},
+      {"rule_id": "MD-S085-R0452", "unit": "kept PROVEN after review (E-MD-B18-A002-011)", "evidence": "E-MD-B18-A002-011", "state": "PROVEN"},
+      {"rule_id": "MD-S050-R0032", "unit": "kept PROVEN after review (E-MD-B18-A002-011)", "evidence": "E-MD-B18-A002-011", "state": "PROVEN"},
+      {"rule_id": "MD-S050-R0005", "unit": "kept PROVEN after review (E-MD-B18-A002-011)", "evidence": "E-MD-B18-A002-011", "state": "PROVEN"}
+    ],
+    "all_14_proven": true,
+    "executable_defect": {"description": "ReplayBackfillService started publication replay from the current pointer instead of an explicit declared identity", "resolved_in": "G01, E-MD-B18-A002-058", "resolved": true},
+    "dependency_state": {"MD-DEP-0017": "remains BLOCKING -- not resolved by F-016 closure; bundles F-013 (RESOLVED) through F-018 (F-017/F-018 remain OPEN)"},
+    "traceability_matrix": "no coverage_status/SATISFIED/denominator change made by this closure",
+    "residue_or_blocker": "none found",
+    "determination": "F-MD-B18-A002-016 formally RESOLVED"
+  },
+  "validation": {
+    "targeted": {
+      "B18ReplayComparisonExhaustivenessTest": "42/42 PASS (186 assertions)",
+      "SourceObservationAsKnownBoundaryTest": "4/4 PASS (14 assertions)",
+      "B18AntiFutureResolutionTest": "4/4 PASS (10 assertions, regression check)",
+      "B18AntiSurvivorshipFixtureCorpusTest": "10/10 PASS (47 assertions, regression check)",
+      "AsKnownReplayBoundaryTest": "11/11 PASS (91 assertions, regression check)",
+      "B18AsKnownSnapshotIsolationTest": "3/3 PASS (27 assertions, regression check)",
+      "B18AsKnownTemporalSequenceTest": "5/5 PASS (12 assertions, regression check)"
+    },
+    "production_code_changed": false,
+    "application_suite": "not run, not required -- both mutation-probed production files restored byte-identical, sha256-verified; only one new test method added"
+  },
+  "final_governance_gates": null,
+  "no_commit_or_push": true
+}
