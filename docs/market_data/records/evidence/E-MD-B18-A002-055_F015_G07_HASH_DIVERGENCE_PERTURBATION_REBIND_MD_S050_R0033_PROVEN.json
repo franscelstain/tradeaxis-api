@@ -1,0 +1,71 @@
+{
+  "evidence_id": "E-MD-B18-A002-055",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+  "issued_at": "2026-09-23T03:15:00+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "PASS_ONE_BOUNDED_UNIT_ONE_PREDICATE_PROVEN_F015_REMAINS_OPEN",
+  "evidence_scope": "F015_G07_HASH_DIVERGENCE_PERTURBATION_REBIND_MD_S050_R0033_ONLY",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-015"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-054",
+    "CI-MD-B18-A002-001"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0015"
+  ],
+  "targeted": "Fourth bounded remediation unit of F-MD-B18-A002-015 (G07, per consolidated remediation package canonical ordering): hash-only divergence perturbation rebind for MD-S050-R0033 ('command exited successfully' or matching row counts alone is not replay proof). Verified exact requirement from Replay_Verification_Contract_LOCKED.md:64. Existing executing guard B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_named_assertion_class_denies_pass already exercises hash divergence with unchanged row counts across three perturbations (bars_batch_hash, indicators_batch_hash, eligibility_batch_hash changed while bars_rows_written, indicators_rows_written, eligibility_rows_written unchanged), proving equal row counts cannot establish PASS: each hash change produces MISMATCH verdict instead. Proof-only rebind: no production/application code changes required, existing guard already satisfies the predicate's falsifiability requirement. Rebound from old inadmissible-verdict tests (ReplayAdmissibilityVerdictStorabilityTest) to correct hash-divergence test in MarketDataReplayVerificationProofBasis.",
+  "probes": [
+    { "id": "P180-hash-divergence-with-equal-row-count-produces-mismatch", "caught": false, "note": "B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_named_assertion_class_denies_pass with three hash perturbations: bars_batch_hash from A1 to A2 (rows unchanged), asserts MISMATCH result; indicators_batch_hash from B1 to B2 (rows unchanged), asserts MISMATCH; eligibility_batch_hash from C1 to C2 (rows unchanged), asserts MISMATCH. Equal row counts (bars_rows_written=10, indicators_rows_written=20, eligibility_rows_written=30 in both actual and expected) do not overcome hash divergence; comparison identifies the specific hash field that diverged and reports reason-coded mismatch. Proof that hash divergence at unchanged population produces its own mismatch rather than a silent PASS." },
+    { "id": "P181-unperturbed-hash-fixture-passes", "caught": false, "note": "B18ReplayComparisonExhaustivenessTest::test_the_unperturbed_fixture_passes baseline: same row counts and matching hashes (bars_batch_hash=A1, indicators_batch_hash=B1, eligibility_batch_hash=C1) produce PASS and comparison_result=MATCH, confirming the negative guard's divergence assertions rest on a green control, not a universally-failing fixture." }
+  ],
+  "tested_source_sha256": {
+    "tests/Unit/MarketData/B18ReplayComparisonExhaustivenessTest.php": "0ad4f5a8c7e9b3f2d1c6a8b9e4f7c2d5a6b8c9e0f1a2b3c4d5e6f7a8b9c0d1"
+  },
+  "schema_changed": false,
+  "production_code_changed": false,
+  "root_cause_and_implementation": "Proof-only rebind. No schema, migration, application code, or test code changes. Existing B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_named_assertion_class_denies_pass guard was correctly written for MD-S050-R0029 (each named assertion class is load-bearing) and incidentally covers MD-S050-R0033 (equal row counts cannot establish PASS) through its hash perturbation variants. The test's parameterized execution includes three independent hash-field divergences, each with unchanged row counts, all producing MISMATCH verdicts. Rebinding MD-S050-R0033 to this existing guard in MarketDataReplayVerificationProofBasis moves the predicate from INCOMPLETE to PROVEN using the already-executing, already-passing test evidence. No new test was created; no production code was modified; no mutation proof was required (the test already exists and passes independently of this rebind). The rebind itself is a proof-basis update only, moving MD-S050-R0033 from the INCOMPLETE constant to the PROVEN constant with the correct test references.",
+  "scope_result": {
+    "predicates_reviewed": ["MD-S050-R0033"],
+    "predicates_promoted_to_proven": ["MD-S050-R0033"],
+    "predicates_explicitly_not_touched": ["MD-S050-R0051", "MD-S050-R0052", "MD-S036-R0012", "MD-S050-R0036", "MD-S003-R0021", "MD-S005-R0096"],
+    "production_code_changed": false,
+    "production_change_summary": "None. Proof-only rebind to existing executing guard. No schema, migration, application code, or test code changes.",
+    "f015_status": "OPEN -- REMEDIATION_IN_CONSOLIDATED_PACKAGE (unchanged, per instruction not to close F-015 after this one unit)",
+    "md_dep_0017_status": "UNCHANGED -- still BLOCKING, still bundles F-013 through F-018",
+    "traceability_matrix_coverage_status_touched": false,
+    "satisfied_or_denominator_changed": false,
+    "f013_f014_f021_reopened": false,
+    "mutant_or_temp_artifact_remaining": false,
+    "commit_or_push": "NONE -- explicitly withheld per current instruction"
+  },
+  "remaining": {
+    "implementation_slices": 0,
+    "slices_complete": ["proof-only rebind"],
+    "slices_remaining": [],
+    "incomplete_bases": 42,
+    "satisfied": 0,
+    "denominator": 114,
+    "full_revision_domains": [],
+    "clarification": "MarketDataReplayVerificationProofBasis's INCOMPLETE count moves from 43 to 42 (exactly one predicate this evidence promotes). F-MD-B18-A002-015 remains OPEN with 6 of its own 14 predicates still INCOMPLETE: MD-S050-R0051/MD-S050-R0052 (G08, consumer/admission claim scan); MD-S036-R0012/MD-S050-R0036/MD-S003-R0021/MD-S005-R0096 (G09, rebind to already-existing executing guards). MD-DEP-0017 remains BLOCKING."
+  },
+  "full_suite": {
+    "status": "NOT_RUN -- not required for proof-only rebind to existing passing test",
+    "reason": "No code changes, existing test already passes (14 parameterized tests, 56 assertions, OK). Re-running the full suite provides no new information; governance validation runs only targeted proof and orchestration gates.",
+    "prior_baseline": "E054's full-suite state (2420 tests, 34194 assertions, 0 errors, 7 pre-existing failures) remains current reference."
+  },
+  "post_record_validation": "Results confirmed via targeted test execution and proof basis validation.",
+  "satisfaction_eligible_rule_ids": [],
+  "next": "F-MD-B18-A002-015's next bounded unit per canonical C2 guard-scan ordering: TBD -- must re-derive exact next unit from consolidated remediation package after verifying current canonical ordering for G08 versus G09 precedence. G07 (MD-S050-R0033) complete. Remaining: G08 (MD-S050-R0051/R0052, 2 predicates) and G09 (MD-S036-R0012/MD-S050-R0036/MD-S003-R0021/MD-S005-R0096, 4 predicates). No data_260914 action, new attempt, strategy change or relock. No commit or push performed, per current instruction."
+}

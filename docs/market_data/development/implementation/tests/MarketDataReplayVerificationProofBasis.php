@@ -615,6 +615,12 @@ final class MarketDataReplayVerificationProofBasis
             'negative' => 'ReplayVerificationServiceTest::test_verify_replay_marks_mismatch_when_coverage_contract_fields_diverge',
             'basis' => 'the F-MD-B18-A002-015 guard gap this predicate named directly: only the PASS/export-echo path was ever asserted, so a MISMATCH case -- where the comparison diverges and final_reason_code must still survive in actual_context rather than being blanked or replaced by the fixture\'s expectation -- went unexercised. The positive guard (unchanged) proves the PASS/export path per MD-S040 as before. The rebound negative guard sets the run\'s final_reason_code explicitly (RUN_COVERAGE_LOW, distinct from the fixture\'s expected COVERAGE_THRESHOLD_MET) on a fixture engineered to MISMATCH on coverage_gate_state and coverage_ratio, and asserts actual_context.actual_run_context.final_reason_code still reads RUN_COVERAGE_LOW after the comparison -- proving survival under a genuine divergence, not merely an unchallenged echo. This predicate needed no schema or production change of its own; MD-S040-R0071\'s persistence fix incidentally strengthens its fallback chain ($run->final_reason_code ?? $run->source_final_reason_code ?? $coverageReasonCode in buildActualReplayState()) from an approximated to an exact fallback value, but that fallback is not what this guard exercises, since the test sets final_reason_code explicitly.',
         ],
+        // F-MD-B18-A002-015 G07 rebind: equal row counts cannot establish equivalence; a content/hash divergence at unchanged population produces its own mismatch. Rebound to B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_named_assertion_class_denies_pass which exercises hash-only perturbations (bars_batch_hash, indicators_batch_hash, eligibility_batch_hash) with equal row counts.
+        'MD-S050-R0033' => [
+            'positive' => 'B18ReplayComparisonExhaustivenessTest::test_the_unperturbed_fixture_passes',
+            'negative' => 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_named_assertion_class_denies_pass',
+            'basis' => 'equal row counts cannot establish PASS; content/hash divergence at unchanged population produces MISMATCH with the specific hash as the mismatched field',
+        ],
 
     ];
 
@@ -722,12 +728,6 @@ final class MarketDataReplayVerificationProofBasis
             'positive' => 'B18AsKnownSnapshotIsolationTest::test_every_later_revision_kind_is_bound_to_an_executing_guard',
             'negative' => 'B18AsKnownSnapshotIsolationTest::test_an_incomplete_historical_config_snapshot_is_refused_instead_of_using_live_config',
             'basis' => 'the contract-derived seven-root corpus executes exclusion guards for every later revision named by MD-S003; substituting live formula config and removing a root mapping each turned the corpus red',
-        ],
-        // F-MD-B18-A002-015: the negative is a text check; rebind to the hash-only divergence perturbation and probe.
-        'MD-S050-R0033' => [
-            'positive' => 'ReplayAdmissibilityVerdictStorabilityTest::test_a_relabelled_self_generated_fixture_is_still_refused',
-            'negative' => 'ReplayAdmissibilityVerdictStorabilityTest::test_the_inadmissible_verdict_is_never_counted_as_a_pass',
-            'basis' => 'exit status or row counts alone is not replay proof; the inadmissible verdict is never counted as a pass',
         ],
         // F-MD-B18-A002-016: import status comparison and the export record of request mode, import status and promote status are unguarded (G09 probes not caught); only the import-only promotion policy is proven.
         'MD-S036-R0007' => [

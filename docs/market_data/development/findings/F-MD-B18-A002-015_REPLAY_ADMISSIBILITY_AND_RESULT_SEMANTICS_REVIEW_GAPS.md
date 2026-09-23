@@ -293,3 +293,23 @@ remain `INCOMPLETE`: `MD-S050-R0051`/`MD-S050-R0052` (G08, consumer/admission cl
 `MD-S036-R0012`/`MD-S050-R0036`/`MD-S003-R0021`/`MD-S005-R0096` (G09, rebind to already-existing
 executing guards); `MD-S050-R0033` (G07, hash-only divergence perturbation rebind). `MD-DEP-0017`
 remains `BLOCKING`. Next bounded unit, per canonical C2 guard-scan ordering: G07 or G09.
+
+## E055: G07 hash-only divergence perturbation rebind (MD-S050-R0033) — 2026-09-23T03:15:00+07:00
+
+Bounded to exactly one predicate: `MD-S050-R0033` only. All other F-015 predicates untouched.
+
+**Requirement confirmed.** `MD-S050-R0033` from Replay_Verification_Contract_LOCKED.md:64: "Command exited successfully" or matching row counts alone is not replay proof.
+
+**Proof-only rebind; no production/test code changes.** Existing executing guard `B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_named_assertion_class_denies_pass` already exercises the exact requirement: three independent hash perturbations (bars_batch_hash, indicators_batch_hash, eligibility_batch_hash changed to new values while row counts bars_rows_written, indicators_rows_written, eligibility_rows_written remain equal to their baseline), each producing MISMATCH verdict instead of PASS, proving equal row counts cannot establish equivalence.
+
+**Rebinding.** `MD-S050-R0033` was incorrectly bound to inadmissible-verdict tests in the old proof basis. Moved from `INCOMPLETE` array to `PROVEN` array in `MarketDataReplayVerificationProofBasis` with correct test references: positive = `B18ReplayComparisonExhaustivenessTest::test_the_unperturbed_fixture_passes` (control fixture matching); negative = `B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_named_assertion_class_denies_pass` (hash divergences with equal counts producing MISMATCH).
+
+**Validation.** Targeted test execution: `B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_named_assertion_class_denies_pass` 14 parameterized tests, 56 assertions, OK. Proof self-test: `MD-S050-R0033` no longer reported as `PREDICATE_WITHOUT_REVIEWED_BASIS`. Proof basis count: 71 → 72 PROVEN entries; global INCOMPLETE count 43 → 42, confirmed via PHP parse of updated basis.
+
+`MD-S050-R0033` moved `INCOMPLETE` → `PROVEN`. No traceability-matrix `coverage_status`/`SATISFIED`/denominator change.
+
+**This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.** 6 of its own 14 predicates
+remain `INCOMPLETE`: `MD-S050-R0051`/`MD-S050-R0052` (G08); `MD-S036-R0012`/`MD-S050-R0036`/
+`MD-S003-R0021`/`MD-S005-R0096` (G09). `MD-DEP-0017` remains `BLOCKING`. 
+
+**Next bounded unit per consolidated remediation package canonical ordering:** G08 (`MD-S050-R0051` and `MD-S050-R0052` together, consumer/admission claim scan requiring new static guard + pattern guard).
