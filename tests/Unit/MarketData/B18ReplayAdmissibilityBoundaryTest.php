@@ -185,7 +185,31 @@ class B18ReplayAdmissibilityBoundaryTest extends TestCase
         return $files;
     }
 
-    /** The matched claim, or null when the sentence carrying it is a denial. */
+    /**
+     * True when the matched span sits inside a quotation the sentence's own voice is not making --
+     * an opening quote mark within the few characters immediately before the match, closed by the
+     * same quote character somewhere shortly after the match ends. This is how a falsifiability-probe
+     * evidence record reports the literal sentence it injected ("...its own claim sentence ('The
+     * replay verdict serves as the admissible evidence a correctness audit needs.') and stays
+     * silent..."): the record is not asserting the claim, it is quoting the string it tested against
+     * the guard that forbids it. The closing quote must fall after the *entire* match, not inside it,
+     * so a short quoted term embedded in a genuine unquoted assertion (`The "replay verdict" serves as
+     * the admissible evidence...`) is not exempted -- its closing quote lands inside the match, before
+     * "serves", not after "correctness".
+     */
+    private function isQuotedAttribution(string $before, string $after): bool
+    {
+        $near = substr($before, -15);
+        foreach (["'", '"'] as $quote) {
+            if (strpos($near, $quote) !== false && strpos(substr($after, 0, 100), $quote) !== false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** The matched claim, or null when the sentence carrying it is a denial or a quoted attribution. */
     private function assertedMatch(string $text, string $pattern): ?string
     {
         foreach (preg_split('/(?<=[.!?])\s+|\n/', $text) as $sentence) {
@@ -194,6 +218,10 @@ class B18ReplayAdmissibilityBoundaryTest extends TestCase
             }
             $before = substr($sentence, 0, (int) $match[0][1]);
             if (preg_match('/\b(not|never|cannot|can not|no|nothing|without|neither|tidak|bukan|denies|denied|forbids|forbidden|refuses|may)\b/i', $before)) {
+                continue;
+            }
+            $after = substr($sentence, (int) $match[0][1] + strlen($match[0][0]));
+            if ($this->isQuotedAttribution($before, $after)) {
                 continue;
             }
 
