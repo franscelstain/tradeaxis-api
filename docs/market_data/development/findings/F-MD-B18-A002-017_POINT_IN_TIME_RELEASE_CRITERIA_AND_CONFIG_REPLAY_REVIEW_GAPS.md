@@ -425,3 +425,59 @@ Not implemented in this unit; restated here as a decision, not a chosen behaviou
 **This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`**, with 14 of its 16 predicates
 `INCOMPLETE` (`MD-S050-R0016` among them, on Gap B alone). **Next:** `MD-S050-R0016` Gap B, an
 authority/strategy decision -- not started. `G01-B` not started.
+
+## Gap B1 owner decision recorded; Gap B2 and predicate impact located — 2026-09-24T11:51:50+07:00
+
+**Gap B1 decided (`D-MD-B18-A002-008`, Option 1).** For AS_KNOWN replay, `read_model_version` binds
+the replay/read-product contract version of the artifact being rendered. The current canonical
+identity is `market_data_read_product_v1`, the same identity the publication path already binds
+(`F-MD-B18-A002-021`/`E-MD-B18-A002-048`). It is not the current runtime code version, the build
+identity, the configuration snapshot effective at the cutoff, the `MD-S082` minimum consumer
+read-model version, or a newly invented AS_KNOWN configuration value. A historical artifact rendered
+under V1 stays bound to V1 even if a later contract V2 exists.
+
+Before the record was written, the owner's choice was reverified against `MD-S021` (versioned read
+product), `MD-S045` (read-model version is the interpretation of the artifact rows), `MD-S050`
+(`:17`, `:30`, `:33`, `:107` "the versioned as-known read product"), `MD-S004` (backtests consume a
+versioned snapshot/export of the read model), and `MD-S082` (`:289`/`:291` govern configuration and
+registry revisions; the register has no read-model key). No conflict was found. The decision adds no
+configuration key, changes no strategy byte, and needs no `DOCUMENT_CHANGE_LOG.md` entry.
+
+**Implementation has not started.** AS_KNOWN still reads the nonexistent
+`governance.read_model_version` and records it empty, and the direct-write boundary still does not
+require `read_model_version`.
+
+**Gap B2 remains authority-determined fail-closed and is unimplemented.** No historical
+reason-registry identity exists: `MD-S085` defines no registry version or revision history,
+`MD-S082:289`/`:291` forbid using the current registry, and the producer already marks the as-known
+reason registry as missing (`registry_versions.reason_registry.authoritative_known_at_cutoff`).
+Today AS_KNOWN emits a hash of hard-coded state names in its place.
+
+**Predicate impact (read-only locator; nothing changed).**
+
+- **`MD-S050-R0014` (`PROVEN`) is over-claimed.** The predicate and the package scope it to "every
+  fixture/manifest", which means both modes. Its basis, promoted under `F-MD-B18-A002-013`/
+  `E-MD-B18-A002-050`, covers only `PUBLICATION_EXACT`. In AS_KNOWN the reason-registry member is
+  nominal and the read-model member is unbound. That is the same "reason registry nominal" defect
+  `F-MD-B18-A002-013` originally recorded, and the exact case the package's planned R0014 probe
+  targets ("force a constant reason hash"). The claim is inaccurate now, independent of any Gap B
+  implementation.
+- **`MD-S019-R0071` (`PROVEN`)** rests on the same publication-only basis. Invariant 14 covers both
+  modes ("Current state must not leak into either mode"). It appears to share the over-claim and
+  should be reverified independently rather than corrected by association.
+- **`MD-S050-R0005` (`PROVEN`)**: the requirement (new artifacts; never mutates or impersonates the
+  publication) is still valid, and the claim is true today. Its negative guard, however, drives an
+  AS_KNOWN replay with missing inputs to `MISMATCH`/`FAIL`. Once Gap B2 blocks AS_KNOWN, that outcome
+  becomes unreachable, so the proof must be rebound in the same unit that lands Gap B2. The positive
+  guards (mode, cutoff, null `publication_id`, untouched publication, comparison surface) survive only
+  if a `BLOCKED` AS_KNOWN result is still persisted with those fields.
+
+**Next order.** Correct the over-claimed `PROVEN` status before any Gap B implementation, so a claim
+already known to be invalid does not carry across a semantic change to the same inputs. `R0005` is
+rebound inside the Gap B2 implementation unit, where its guard stops being executable.
+
+`MD-S050-R0016` remains `INCOMPLETE`. Proof basis unchanged at 91 `PROVEN` / 23 `INCOMPLETE`. Formal
+`0/114` `SATISFIED` unchanged. **This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`**,
+with 14 of its 16 predicates `INCOMPLETE`. **Next:** governed correction of `MD-S050-R0014`'s
+`PROVEN` status (AS_KNOWN over-claim), with `MD-S019-R0071` reverified independently in the same unit.
+Not started. `G01-B` not started.
