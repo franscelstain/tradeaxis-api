@@ -481,3 +481,45 @@ rebound inside the Gap B2 implementation unit, where its guard stops being execu
 with 14 of its 16 predicates `INCOMPLETE`. **Next:** governed correction of `MD-S050-R0014`'s
 `PROVEN` status (AS_KNOWN over-claim), with `MD-S019-R0071` reverified independently in the same unit.
 Not started. `G01-B` not started.
+
+## `MD-S050-R0014` / `MD-S019-R0071` PROVEN claims corrected; `F-MD-B18-A002-013` reopened — 2026-09-24T13:23:51+07:00
+
+This unit corrected already-`PROVEN` claims before any Gap B implementation; no production or test
+code changed (`E-MD-B18-A002-070`).
+
+- **`MD-S050-R0014`** covers every fixture/manifest, in both modes. `E-MD-B18-A002-050` proved it on
+  the `PUBLICATION_EXACT` path only. Verified by execution in AS_KNOWN:
+  - changing one of 437 `eod_reason_codes` rows and adding a code left `reason_registry_hash` and the
+    whole as-known `snapshot_hash` unchanged;
+  - `read_model_version` is empty.
+
+  A constant AS_KNOWN reason hash (the package's own R0014 probe) was caught by none of the bound
+  guards or AS_KNOWN suites. The same constant in `PUBLICATION_EXACT` turned the bound negative guard
+  red. Classification: `IMPLEMENTATION_AND_PROOF_DEFECT`. Returned to `INCOMPLETE`.
+- **`MD-S019-R0071`**, reviewed independently. Invariant 14 names both modes. Its formula,
+  indicator and price-product ingredient is bound in AS_KNOWN; its reason-registry ingredient is not.
+  Classification: `IMPLEMENTATION_AND_PROOF_DEFECT`, on that ingredient only. Returned to
+  `INCOMPLETE`.
+- **`F-MD-B18-A002-013` reopened.** Its closure rested on all ten carried predicates being `PROVEN`,
+  and the unremediated defect is its own item 2 ("nominal in both modes"). E-050 stays as issued;
+  its publication-mode facts remain valid.
+- **`MD-S050-R0005`** is unchanged. Its claim is true today. Its negative guard must be rebound in
+  the Gap B2 unit, where that guard stops being reachable. That unit must also keep persisting a
+  `BLOCKED` AS_KNOWN result with its mode, cutoff, null `publication_id` and source, which `R0005`'s
+  positive guard and `MD-S082-R0218`'s negative guard assert.
+
+Proof basis 91 → 89 `PROVEN`, 23 → 25 `INCOMPLETE`, derived from the file. `MD-S050-R0016` remains
+`INCOMPLETE`. Formal `0/114` `SATISFIED` is unchanged, and `D-MD-B18-A002-008` is unchanged.
+
+**The claim corrections Gap B touches are now complete.** Gap B changes only the AS_KNOWN read-model
+and reason-registry members and AS_KNOWN admission. The `PROVEN` predicates resting on those —
+`MD-S050-R0014` and `MD-S019-R0071` — are corrected, and `MD-S050-R0005`'s rebind belongs to B2.
+
+**Next:** Gap B1 implementation under `D-MD-B18-A002-008`:
+- AS_KNOWN binds `market_data_read_product_v1` instead of reading the nonexistent configuration key;
+- the direct write requires `read_model_version` in both modes;
+- a discriminating proof.
+
+Gap B2 follows: AS_KNOWN reason registry fail-closed, with `MD-S050-R0005` rebound in that unit.
+This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`, with 14 of its own 16 predicates
+`INCOMPLETE`. `G01-B` has not started.

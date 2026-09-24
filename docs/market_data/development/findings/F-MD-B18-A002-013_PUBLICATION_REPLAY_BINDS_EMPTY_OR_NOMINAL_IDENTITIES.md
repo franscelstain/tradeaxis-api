@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-09-14T11:17:22+07:00 (system clock)
 - Severity: `P1` — an executable defect, plus a proof basis that overclaims
-- Status: `RESOLVED` (whole-C1 input-capture manifest completeness proven E031/E032/E033; Binding E034/E036/E038, F-MD-B18-A002-020's repair_candidate/incremental regression resolved E041; Seal E042; Reader E043; Admission E044 wires PUBLICATION_EXACT to Reader's projection; E045's per-predicate proof-basis review found none of the ten bases this finding carries yet proven, discovering F-MD-B18-A002-021; E046 remediated three of F-021's five items and moved MD-S050-R0008/R0009/R0012 and MD-S019-R0067/R0068/R0069 to PROVEN with a rebound real-path guard; E047 remediated serialization_version/executable_build_identity; E048 remediated read_model_version; E049 closes F-MD-B18-A002-021 (owner decision D-MD-B18-A002-006, eligibility_contract_version) and moves MD-S050-R0002/MD-S003-R0003 to PROVEN; E050 reviews the last two carried predicates, MD-S050-R0014 and MD-S019-R0071, confirms their content requirement was already fully met and the sole remaining gap was their bound guard never exercising the real writer, rebinds both to the same real-path guards already used for the other eight (no new test, no production semantic change -- only a stale comment corrected), and moves both to PROVEN. All ten bases this finding carries are now PROVEN. This finding's own defect -- publication replay binding empty or nominal identities -- no longer exists in the implementation for any of the ten predicates it was raised to track.)
+- Status: `OPEN — REOPENED 2026-09-24T13:23:51+07:00 by E-MD-B18-A002-070` (the AS_KNOWN half of item 2 -- nominal reason registry -- was never remediated; `MD-S050-R0014` and `MD-S019-R0071` returned to `INCOMPLETE`; see the E070 section). Previously: `RESOLVED` (whole-C1 input-capture manifest completeness proven E031/E032/E033; Binding E034/E036/E038, F-MD-B18-A002-020's repair_candidate/incremental regression resolved E041; Seal E042; Reader E043; Admission E044 wires PUBLICATION_EXACT to Reader's projection; E045's per-predicate proof-basis review found none of the ten bases this finding carries yet proven, discovering F-MD-B18-A002-021; E046 remediated three of F-021's five items and moved MD-S050-R0008/R0009/R0012 and MD-S019-R0067/R0068/R0069 to PROVEN with a rebound real-path guard; E047 remediated serialization_version/executable_build_identity; E048 remediated read_model_version; E049 closes F-MD-B18-A002-021 (owner decision D-MD-B18-A002-006, eligibility_contract_version) and moves MD-S050-R0002/MD-S003-R0003 to PROVEN; E050 reviews the last two carried predicates, MD-S050-R0014 and MD-S019-R0071, confirms their content requirement was already fully met and the sole remaining gap was their bound guard never exercising the real writer, rebinds both to the same real-path guards already used for the other eight (no new test, no production semantic change -- only a stale comment corrected), and moves both to PROVEN. All ten bases this finding carries are now PROVEN. This finding's own defect -- publication replay binding empty or nominal identities -- no longer exists in the implementation for any of the ten predicates it was raised to track.)
 - Class: `BOUND_INPUT_IDENTITY_NOT_BOUND`
 - Found by: per-predicate review of PAIR 01
   (`B18ReplayBoundInputIdentityContractTest`, 16 predicates)
@@ -522,3 +522,59 @@ both are unaffected except that the without-basis count correctly dropped by two
 `MarketDataRelationshipIntegrityGate`, `MarketDataClassificationConsistencyGate` and
 `MarketDataTraceabilityApplicabilityGate` all report `PASS`, run directly. `GovernanceGateReadOnlyExecutionTest`
 (9/9) and `FindingRecordConsistencyTest` (3/3) both green.
+
+## E070: reopened — the AS_KNOWN half of item 2 was never remediated; `MD-S050-R0014` and `MD-S019-R0071` returned to `INCOMPLETE` - 2026-09-24T13:23:51+07:00
+
+This section corrects the current state of this finding. It does not rewrite the E050 section above,
+which stays as issued; `E-MD-B18-A002-050` is `IMMUTABLE_AFTER_ISSUE` and is not edited.
+
+**What stays historically valid.** Everything E050 established about **publication replay** is still
+true and still proven. `ReplayVerificationService::actualBoundInputContext()` binds the
+`registry_versions` component's own payload hash (real `eod_reason_codes` content, indicator, coverage,
+price-product and eligibility versions) and decodes `read_model_version`, `serialization_version` and
+`executable_build_identity` from the verified capture. The guards E050 cited prove exactly that, and
+this review re-ran them green. E050 was a legitimate record of what its review examined.
+
+**What was not true.** This finding's item 2 reads: "**The reason-registry identity is nominal in both
+modes**", and cites `AsKnownReplaySnapshotService.php:80-85` for AS_KNOWN. `MD-S050-R0014`'s original
+`INCOMPLETE` reason was "reason registry nominal (2)", which covers that AS_KNOWN half. E050 examined
+only the publication path and closed with "This finding's own defect … no longer exists … for any of
+the ten predicates". For item 2's AS_KNOWN half that statement was wrong when written, and it is still
+wrong.
+
+**Executed now (`E-MD-B18-A002-070`):**
+
+- In the seeded AS_KNOWN world, one of 437 `eod_reason_codes` rows had its description, severity and
+  active flag changed, and a new code was added. AS_KNOWN's `reason_registry_hash` did not move, and
+  neither did the whole as-known `snapshot_hash`. The identity is
+  `{coverage_states, replay_states, build_reason_registry_revision: ""}`, not registry content.
+  `read_model_version` is `''`.
+- Probes, each byte-restored and sha256-verified, running the three files that hold every guard bound to these predicates plus all seven AS_KNOWN suites, each separately, with all 10 green unmutated: forcing a constant AS_KNOWN reason-registry hash (the package's own R0014 probe) turned **no** suite red; forcing the same constant into `PUBLICATION_EXACT` turned the predicates' own negative guard (`test_formula_and_reason_registry_hash_come_from_the_registry_versions_component`) red at once. The bound guards are live for publication replay and blind to AS_KNOWN.
+
+**Requirement scope.** `MD-S050-R0014` (`Replay_Verification_Contract_LOCKED.md:30`) applies to
+"every fixture/manifest", with no mode restriction; the matrix records it `MANDATORY`. `MD-S019-R0071`
+(`Determinism_Invariants_LOCKED.md:117`) is an Invariant 14 antecedent, and Invariant 14 closes with
+"Current state must not leak into either mode". Both predicates therefore cover AS_KNOWN, and neither
+has AS_KNOWN proof.
+
+**Classification.** `MD-S050-R0014`: `IMPLEMENTATION_AND_PROOF_DEFECT`. In AS_KNOWN the
+reason-registry member is nominal and the read-model member is empty; the proof covers publication
+mode only. `MD-S019-R0071`, established independently from Invariant 14's own text and the same
+execution: `IMPLEMENTATION_AND_PROOF_DEFECT`, on the reason-registry ingredient only. Read-model version
+is not part of R0071's wording. A rebind cannot restore either claim, because no guard can prove a
+member the implementation does not bind. Both return to `INCOMPLETE`.
+
+**Status of this finding.** Closure rested on "all ten predicates this finding carries are `PROVEN`"
+(E050) and on this finding's own defect no longer existing. Neither holds, so the finding is `OPEN`
+again. This is not a new defect carried in from elsewhere: it is this finding's own item 2, half of
+which was never remediated. The remaining work is delivered through the same root cause already
+scheduled under `F-MD-B18-A002-017` / `MD-DEP-0017`:
+
+- Gap B1 (`D-MD-B18-A002-008`): AS_KNOWN binds the read-product contract identity;
+- Gap B2: the AS_KNOWN reason registry is authority-determined fail-closed, because no historical
+  reason-registry identity exists;
+
+followed by a proof review of `MD-S050-R0014` and `MD-S019-R0071` against those changes.
+
+Eight of this finding's ten carried predicates remain `PROVEN`; `MD-S050-R0014` and `MD-S019-R0071` are
+`INCOMPLETE`.

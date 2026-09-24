@@ -1,0 +1,142 @@
+{
+    "evidence_id": "E-MD-B18-A002-070",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+    "issued_at": "2026-09-24T13:23:51+07:00",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "FAIL_PROVEN_CLAIM_CORRECTION_R0014_R0071_RETURNED_TO_INCOMPLETE_F013_REOPENED",
+    "evidence_scope": "F013_REOPEN_MD_S050_R0014_MD_S019_R0071_ASKNOWN_OVERCLAIM",
+    "ci_id": "CI-MD-B18-A002-001",
+    "related_findings": [
+        "F-MD-B18-A002-013",
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-050",
+        "E-MD-B18-A002-068",
+        "E-MD-B18-A002-069",
+        "CI-MD-B18-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-005",
+        "D-MD-B18-A002-008"
+    ],
+    "dependencies": [
+        "MD-DEP-0017"
+    ],
+    "corrects": {
+        "record": "E-MD-B18-A002-050",
+        "claims_corrected": [
+            "MD-S050-R0014 PROVEN",
+            "MD-S019-R0071 PROVEN",
+            "F-MD-B18-A002-013 RESOLVED (\"all ten predicates this finding carries are PROVEN\"; \"this finding's own defect ... no longer exists\")"
+        ],
+        "historically_valid": "E-050 accurately records what its review examined: the PUBLICATION_EXACT path (actualBoundInputContext() binds the registry_versions component payload hash, which carries real eod_reason_codes content and the indicator, coverage, price-product and eligibility versions, and decodes read_model_version/serialization_version/executable_build_identity from the verified capture). Those facts remain true and those guards re-ran green here. E-050 is IMMUTABLE_AFTER_ISSUE and is not edited.",
+        "why_the_claim_is_insufficient": "Both predicates cover AS_KNOWN as well, and E-050 never examined AsKnownReplaySnapshotService, although F-MD-B18-A002-013 item 2 records \"The reason-registry identity is nominal in both modes\" and MD-S050-R0014's original INCOMPLETE reason was \"reason registry nominal (2)\"."
+    },
+    "requirement_reconstruction": {
+        "MD-S050-R0014": {
+            "source": "Replay_Verification_Contract_LOCKED.md:30 (parent :21 \"Every fixture/manifest binds at minimum\")",
+            "text": "formula, indicator registry, reason registry, price-product, coverage, eligibility, read-model, hash/serialization, and build versions",
+            "mode_scope": "both modes: the parent names every fixture/manifest; only the knowledge cutoff (:23) is marked \"where applicable\"; matrix applicability MANDATORY; package R0014 \"Each ... version resolves to the frozen content, including real registry rows\", planned probe \"force a constant reason hash\""
+        },
+        "MD-S019-R0071": {
+            "source": "Determinism_Invariants_LOCKED.md:117, Invariant 14 antecedent (parent MD-S019-R0065)",
+            "text": "price-product and formula/registry versions",
+            "mode_scope": "both modes: Invariant 14 closes \"Publication replay freezes the exact identities above. As-known replay resolves only revisions known by the declared knowledge cutoff. Current state must not leak into either mode.\""
+        },
+        "registry_semantics": "MD-S082 lists reason-code registry version and data-usability decision/reason registry versions among configuration key families; MD-S082:289/291 as-known replay resolves only revisions known by the cutoff and current registry state must never leak into historical replay; MD-S085 defines no registry version or revision history. No authoritative historical reason-registry identity exists.",
+        "authority_ambiguity": "none: both mode scopes are explicit"
+    },
+    "executed": {
+        "as_known_registry_change": {
+            "method": "scratch test outside the repository, subclassing B18AsKnownModeIsolationTest to reuse its seeded as-known world; real AsKnownReplaySnapshotService",
+            "change": "one of 437 eod_reason_codes rows (AFFECTED_DATE_RUN_NOT_FOUND) had description, severity and is_active changed, and a new code PROBE_ONLY_NEW_CODE was inserted, holding the nominal state names fixed (the package's planned R0014 probe)",
+            "result": {
+                "reason_registry_identity": {
+                    "coverage_states": [
+                        "PASS",
+                        "FAIL",
+                        "NOT_EVALUATED"
+                    ],
+                    "replay_states": [
+                        "PASS",
+                        "FAIL",
+                        "BLOCKED"
+                    ],
+                    "build_reason_registry_revision": ""
+                },
+                "reason_registry_hash_before": "213b38f05cc2b98782ade65c8f53c16b2de6246bca46910b176d538f77711858",
+                "reason_registry_hash_after": "213b38f05cc2b98782ade65c8f53c16b2de6246bca46910b176d538f77711858",
+                "reason_registry_hash_moved": false,
+                "snapshot_hash_moved": false,
+                "read_model_version": "",
+                "formula_registry_hash_nonempty": true
+            },
+            "interpretation": "AS_KNOWN reason-registry identity is a non-empty hash of fixed state names and an undefined revision, not registry content; a registry change is invisible to the as-known identity and snapshot. Non-empty is not canonically present."
+        },
+        "probes": {
+            "baseline_sha256": {
+                "AsKnownReplaySnapshotService.php": "1c00bd93d5ccac5f1339dc59f33d562c0ae166d14e76df0286aa2f9c63c53c0b",
+                "ReplayVerificationService.php": "d1edc281c9299a6e190d2c0424f336d2793cd90988493f62bc5f4cfc3e99149c"
+            },
+            "suites": "B18ReplayComparisonExhaustivenessTest, ReplayVerificationServiceTest, MarketDataPipelineIntegrationTest (the three files holding the guards bound to R0014/R0071) plus all seven AS_KNOWN suites (B18AsKnownModeIsolationTest, B18AsKnownSnapshotIsolationTest, B18AsKnownTemporalSequenceTest, AsKnownReplayBoundaryTest, AsKnownReplayExecutionServiceTest, AsKnownWiringAndConfigIdentityTest, SourceObservationAsKnownBoundaryTest); each file run separately",
+            "control": "all 10 suites green unmutated (53/53, 22/22, 82/82, 5/5, 3/3, 5/5, 11/11, 1/1, 2/2, 4/4)",
+            "PX1_asknown_constant_reason_hash": {
+                "mutation": "AsKnownReplaySnapshotService reason_registry_hash forced to a literal constant (package R0014 probe, AS_KNOWN side)",
+                "result": "NOT CAUGHT: all 10 suites stayed green, including every guard bound to R0014/R0071 and every AS_KNOWN suite",
+                "restored_sha256": "1c00bd93d5ccac5f1339dc59f33d562c0ae166d14e76df0286aa2f9c63c53c0b"
+            },
+            "PX2_publication_constant_reason_hash": {
+                "mutation": "ReplayVerificationService actualBoundInputContext reason_registry_hash forced to the same literal constant (control, PUBLICATION_EXACT side)",
+                "result": "CAUGHT: ReplayVerificationServiceTest::test_formula_and_reason_registry_hash_come_from_the_registry_versions_component (the negative guard bound to both predicates) red, plus B18ReplayComparisonExhaustivenessTest registry-versions input case red; the other 8 suites green",
+                "restored_sha256": "d1edc281c9299a6e190d2c0424f336d2793cd90988493f62bc5f4cfc3e99149c"
+            },
+            "conclusion": "the bound guards are live for PUBLICATION_EXACT and blind to AS_KNOWN; the predicate-level PROVEN claims rested on one mode only"
+        }
+    },
+    "classification": {
+        "MD-S050-R0014": {
+            "value": "IMPLEMENTATION_AND_PROOF_DEFECT",
+            "uncovered_path": "AS_KNOWN: reason-registry member nominal (hash of fixed state names); read-model member empty (reads the nonexistent governance.read_model_version)",
+            "why_not_rebind": "no guard can prove a member the AS_KNOWN implementation does not bind"
+        },
+        "MD-S019-R0071": {
+            "value": "IMPLEMENTATION_AND_PROOF_DEFECT",
+            "reviewed": "independently, from Invariant 14's own mode clause and the same execution, not by association with R0014",
+            "uncovered_path": "AS_KNOWN reason-registry ingredient not bound; the formula/indicator and price-product half is genuinely bound (hash of the as-known snapshot resolved configuration and semantic bindings, which carry price_product_version); read-model version is outside this rule's wording",
+            "why_not_rebind": "the antecedent cannot be established for an ingredient the implementation does not bind",
+            "same_unit_justification": "shared root cause (AsKnownReplaySnapshotService reason identity), shared promoting evidence (E-050) and shared finding (F-013)"
+        }
+    },
+    "finding_status": {
+        "F-MD-B18-A002-013": {
+            "before": "RESOLVED (finding header and Stage Register); WORK_RECORD_REGISTRY and DOCUMENT_ROLE_REGISTRY had never been moved off OPEN",
+            "after": "OPEN (reopened)",
+            "basis": "E-050's own closure test was \"all ten predicates this finding carries are PROVEN\", and its closing statement was that the finding's own defect no longer exists. Neither holds: two carried predicates return to INCOMPLETE, and the unremediated defect is this finding's own item 2 (AS_KNOWN half), not a new defect carried in from elsewhere. Keeping RESOLVED with a carry-forward would state something false about the finding's own recorded defect.",
+            "history": "the E-050 section and the finding's prior status text are preserved; the status header is prefixed, not rewritten, and a new section is appended",
+            "remaining_work": "delivered through the shared root already scheduled under F-MD-B18-A002-017 / MD-DEP-0017: Gap B1 (D-MD-B18-A002-008) and Gap B2 (fail-closed), then a proof review of both predicates"
+        }
+    },
+    "proof_basis_transition": {
+        "before": {
+            "PROVEN": 91,
+            "INCOMPLETE": 23
+        },
+        "after": {
+            "PROVEN": 89,
+            "INCOMPLETE": 25
+        },
+        "confirmed_via": "PHP load of MarketDataReplayVerificationProofBasis constants"
+    },
+    "production_code_changed": false,
+    "tests_changed": false,
+    "formal_traceability": "0/114 SATISFIED unchanged; matrix coverage_status unchanged (both rows NOT_ASSESSED)",
+    "observed_not_corrected": "WORK_RECORD_REGISTRY and DOCUMENT_ROLE_REGISTRY still show F-MD-B18-A002-014, F-MD-B18-A002-015 and F-MD-B18-A002-021 as OPEN while their documents and the Stage Register say RESOLVED; out of scope here and reported.",
+    "d008": "D-MD-B18-A002-008 unchanged",
+    "no_commit_or_push": true
+}
