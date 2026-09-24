@@ -1,0 +1,129 @@
+{
+    "evidence_id": "E-MD-B18-A002-069",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+    "issued_at": "2026-09-24T08:31:09+07:00",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "PASS_G03_GAPA_CONFIG_IDENTITY_COMPLETENESS_FIXED_R0016_REMAINS_INCOMPLETE_GAPB_OPEN",
+    "evidence_scope": "F017_G03_MD_S050_R0016_GAPA_CONFIG_IDENTITY",
+    "ci_id": "CI-MD-B18-A002-001",
+    "related_findings": [
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-067",
+        "E-MD-B18-A002-068",
+        "CI-MD-B18-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-005"
+    ],
+    "dependencies": [
+        "MD-DEP-0017",
+        "MD-DEP-0015"
+    ],
+    "schema_changed": false,
+    "authority_reverified_before_coding": {
+        "Replay_Verification_Contract_LOCKED.md:29": "Required bound inputs include \"full configuration snapshot ID/hash\".",
+        "Platform_Config_Registry_LOCKED.md lines 20-31": "The same non-null snapshot ID and hash bind the run, output, manifest and seal; \"the resolved snapshot -- not the current environment or registry -- is used for replay.\" A sealed publication whose run carries no non-null config snapshot ID *and hash* is CONFIG_UNBOUND: \"not admissible as evidence of reproducibility, because the configuration that produced it cannot be recovered\"; \"Publication replay over them is BLOCKED, not PASS, since a required bound input is absent\"; the state must be named explicitly, never silently.",
+        "conclusion": "Authority establishes all four premises the prompt asked to reverify: (1) replay requires the canonical snapshot identity; (2) both ID and hash are required, not ID alone; (3) authority never mentions any accepted marker/placeholder standing in for a missing hash; (4) the required admission result and reason are exactly BLOCKED / CONFIG_UNBOUND, stated explicitly. No authority gap found; implementation proceeded.",
+        "reason_code_precedent": "REPLAY_CONFIG_UNBOUND is not a seeded row in Reason_Codes_Registry.md or Reason_Codes_Seed.sql -- like REPLAY_BOUND_INPUT_INCOMPLETE, REPLAY_FIXTURE_SELF_GENERATED and REPLAY_BOUND_INPUT_CONTEXT_UNAVAILABLE, it is an admissibility-reason label in replayAdmissibility(), not a per-field md_replay_reason_code_counts row. It is the exact label the pre-existing sibling check (missing config_snapshot_id) already uses for this same authority-defined CONFIG_UNBOUND state; reused rather than assumed."
+    },
+    "defect": {
+        "production_path": "app/Application/MarketData/Services/ReplayVerificationService.php::replayAdmissibility() (config-hash sub-condition); app/Infrastructure/Persistence/MarketData/ReplayResultRepository.php::assertModeInputs() (direct write)",
+        "mechanism": "A run with config_snapshot_id set but config_hash and config_snapshot_ref both empty resolves configIdentityForRun($run) to the literal placeholder CONFIG_IDENTITY_UNRECORDED. That marker is a non-empty string, so it satisfied both R0016 G03's empty-string BOUND_INPUT_FIELDS check and the storage boundary's empty() check, and the replay reached PASS/ADMISSIBLE and was persisted as if the configuration were resolved.",
+        "not_fabricated": "No value is invented anywhere in the fix; the marker is recognized and rejected, never replaced by a real-looking hash.",
+        "no_current_fallback": "The fix reads only $run, already fixed at the point admissibility runs; it adds no repository call. Probe P3 (below) confirms a hypothetical current-publication read would be caught."
+    },
+    "implementation": [
+        {
+            "defect": "Admission: a VERIFIED-context publication with an unrecorded run config hash replayed ADMISSIBLE/PASS.",
+            "production_path": "ReplayVerificationService::replayAdmissibility()",
+            "minimal_change": "Added a public const CONFIG_IDENTITY_UNRECORDED = 'CONFIG_IDENTITY_UNRECORDED' (the same literal configIdentityForRun() already returned, now shared instead of duplicated) and one check: if configIdentityForRun($run) === self::CONFIG_IDENTITY_UNRECORDED, return BLOCKED as REPLAY_CONFIG_UNBOUND. Scoped inside the existing \"there is a publication to reproduce\" branch (if ($publication && !empty($publication->publication_id))), after the VERIFIED check and before the G03 BOUND_INPUT_FIELDS loop, so it reports the specific CONFIG_UNBOUND reason rather than the generic one, and does not fire for a non-readable run with no publication (an unrelated EXPECTED_DEGRADE scenario).",
+            "resulting_behaviour": "A run with a config snapshot ID but no hash or snapshot reference is BLOCKED/NOT_ADMISSIBLE, naming REPLAY_CONFIG_UNBOUND, for any publication a fixture names -- it does not matter which publication is resolved, since the check reads only the run."
+        },
+        {
+            "defect": "Direct write: a non-BLOCKED result carrying the marker as config_snapshot_hash persisted.",
+            "production_path": "ReplayResultRepository::assertModeInputs()",
+            "minimal_change": "Added one check after the existing empty() loop: if $metric['config_snapshot_hash'] === ReplayVerificationService::CONFIG_IDENTITY_UNRECORDED, throw REPLAY_CONFIG_UNBOUND. Applies in both replay modes, matching the mode-agnostic scope the G03 seven-identity check already established.",
+            "resulting_behaviour": "A non-BLOCKED PUBLICATION_EXACT or AS_KNOWN result carrying the marker is refused before it reaches the table."
+        }
+    ],
+    "test_fixtures_corrected": {
+        "tests/Unit/MarketData/B18ReplayComparisonExhaustivenessTest.php": "runRow() gained a real config_hash (str_repeat('7',64)); without it, every test built on this shared fixture -- the whole file's baseline -- was unknowingly exercising a CONFIG_UNBOUND run. This represents a legitimately bound publication, matching the file's own stated premise.",
+        "tests/Unit/MarketData/ReplayVerificationServiceTest.php": "successReadableRun() gained the same real config_hash, for the same reason; its own pre-existing comment already said \"a fixture asserting a replay verdict has to bind [a configuration]\" but only bound the ID.",
+        "no_scenario_repurposed": "The non-readable/EXPECTED_DEGRADE fixture (test_verify_replay_handles_non_readable_run_as_reason_coded_expected_degrade) keeps its own dedicated $run object with no config_hash, unchanged -- confirmed by scoping the new admission check to the \"publication exists\" branch instead of altering that fixture, so its original degraded-run assertion is untouched."
+    },
+    "tests_added": {
+        "B18ReplayComparisonExhaustivenessTest::test_a_config_snapshot_with_no_recorded_hash_is_blocked_rather_than_passed": "Real-path positive: config_hash blanked on the shared run row -> BLOCKED/NOT_ADMISSIBLE, REPLAY_CONFIG_UNBOUND named, persisted config_snapshot_hash equals the marker (not fabricated).",
+        "B18ReplayComparisonExhaustivenessTest::test_an_unrecorded_config_hash_is_not_filled_from_current_state": "Real-path negative: every selector but the fixture's explicit one returns a publication as if it carried a different config identity; replay stays BLOCKED and only the explicit selector is used.",
+        "ReplayResultRepositoryIntegrationTest::incompleteBoundInputSets[\"config snapshot hash unrecorded\"]": "Direct-write refusal: a complete PUBLICATION_EXACT metric with config_snapshot_hash set to the marker is refused with REPLAY_CONFIG_UNBOUND and never persisted."
+    },
+    "probes": [
+        {
+            "id": "P1_remove_admission_check",
+            "mutation": "the new admission check's condition replaced by false",
+            "result": "RED: exactly the 2 new admission tests (of 53 in the file); 51 others green; ReplayResultRepositoryIntegrationTest 18/18 and ReplayVerificationServiceTest 22/22 stayed green",
+            "restored_sha256": "d1edc281c9299a6e190d2c0424f336d2793cd90988493f62bc5f4cfc3e99149c"
+        },
+        {
+            "id": "P2_storage_accepts_marker",
+            "mutation": "the new storage check short-circuited with false &&",
+            "result": "RED: exactly the 1 new repository case (17/18 stayed green); exhaustiveness 53/53 and ReplayVerificationServiceTest 22/22 stayed green",
+            "restored_sha256": "bbe283f45e9cb4e84dec118eeaac3cbf5dfa0f4edcea02980bb6db279d98a637"
+        },
+        {
+            "id": "P3_current_fallback",
+            "mutation": "introduced a hypothetical current-publication resolution when the marker is detected, using its config_snapshot_hash if non-empty instead of returning BLOCKED",
+            "result": "RED: only the no-fallback test (1 of 53); 52 others green",
+            "restored_sha256": "d1edc281c9299a6e190d2c0424f336d2793cd90988493f62bc5f4cfc3e99149c"
+        },
+        {
+            "id": "note",
+            "detail": "each file run separately per probe, after discovering PHPUnit CLI silently runs only the first of several positional file arguments"
+        }
+    ],
+    "validation": {
+        "targeted": {
+            "B18ReplayComparisonExhaustivenessTest": "53/53 PASS (257 assertions)",
+            "ReplayResultRepositoryIntegrationTest": "18/18 PASS (65 assertions)",
+            "ReplayVerificationServiceTest": "22/22 PASS (89 assertions)"
+        },
+        "replay_and_as_known_suites": "31 files in tests/Unit/MarketData matching Replay/AsKnown, all OK, including the MariaDB-backed B18ProductionPathReplayFixturesTest",
+        "full_marketdata_suite": "tests/Unit/MarketData: 2459 tests, 34569 assertions, 7 failures, 0 errors.",
+        "full_suite_baseline_comparison": "Exact match to the known MD-DEP-0015 corpus-oracle baseline (7 ProductionCorpusInvariantOracleTest failures). Zero new failures, zero baseline entries resolved.",
+        "failure_names": [
+            "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_carries_a_non_positive_price",
+            "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_violates_ohlc_ordering",
+            "ProductionCorpusInvariantOracleTest::test_exactly_one_publication_is_current_per_trade_date",
+            "ProductionCorpusInvariantOracleTest::test_no_readable_publication_rests_on_a_failed_run",
+            "ProductionCorpusInvariantOracleTest::test_authoritative_factor_candidates_reach_an_explicit_applied_or_held_decision",
+            "ProductionCorpusInvariantOracleTest::test_no_price_derived_factor_is_usable_as_an_adjustment",
+            "ProductionCorpusInvariantOracleTest::test_every_history_row_binds_to_a_publication"
+        ],
+        "mariadb": "reachable (127.0.0.1:3306) at the start of this unit; not started or restarted by this session; log showed clean restarts (06:48, 07:00, 07:42) with no future-LSN warnings",
+        "governance_note": "Governance gate suite (finding/classification/traceability/scope/promoted-predicate/read-only-execution/relationship-integrity/documentation-integrity/applicability) not re-run standalone in this unit; all pass or fail states from this change are already covered by their inclusion in the full tests/Unit/MarketData run above."
+    },
+    "production_sha256_after": {
+        "ReplayVerificationService.php": "d1edc281c9299a6e190d2c0424f336d2793cd90988493f62bc5f4cfc3e99149c",
+        "ReplayResultRepository.php": "bbe283f45e9cb4e84dec118eeaac3cbf5dfa0f4edcea02980bb6db279d98a637"
+    },
+    "proof_basis_transition": {
+        "MD-S050-R0016": "remains INCOMPLETE by explicit instruction -- Gap A is proven closed here, Gap B (AS_KNOWN read-model version / reason-registry identity) remains open and requires an owner decision. positive/negative rebound to the Gap A guards; basis text records both the closed and open halves.",
+        "PROVEN_INCOMPLETE_counts": "unchanged at 91 PROVEN / 23 INCOMPLETE (confirmed via PHP load of MarketDataReplayVerificationProofBasis constants after the comment update)"
+    },
+    "formal_traceability": "0/114 SATISFIED unchanged; binder --bound not run; not touched by this unit",
+    "authority_decision_needed": {
+        "gap": "MD-S050-R0016 Gap B: AS_KNOWN read-model version and reason-registry identity",
+        "authority_requires": "Replay_Verification_Contract_LOCKED.md:30 lists read-model, formula/registry and build versions among the required bound inputs for both replay modes; MD-S050-R0016 requires any missing one to be BLOCKED in both modes.",
+        "authority_or_config_does_not_define": "config/market_data.php has no governance.read_model_version key (confirmed at runtime); AsKnownReplaySnapshotService reads it anyway and always gets an empty string. No authority document defines what AS_KNOWN read-model or reason-registry identity should bind, or that it is intentionally not required for AS_KNOWN.",
+        "why_not_implementation_choice": "Two conforming remedies exist and are not equivalent: (a) fail-closed -- BLOCK every AS_KNOWN replay until this is resolved, which would remove AS_KNOWN admissibility entirely for the whole corpus; (b) bind a real as-known read-model/reason-registry identity, which requires deciding what that identity is (a new config key? a fixed constant carried by MD-S050-R0014? something else?) -- a strategy/config decision, not a code-only fix. Choosing between \"block everything\" and \"invent an identity\" without authority direction risks exactly the kind of choice this predicate's remediation history (F-013, the G03 unit itself) has repeatedly found defective when made silently.",
+        "minimum_clarification_needed": "Whether AS_KNOWN read-model/reason-registry identity is (i) required and must be bound to a real, authoritative source before AS_KNOWN can be non-BLOCKED, or (ii) exempted for AS_KNOWN with an explicit, recorded reason; and if (i), what that source is.",
+        "affected_scope": "AsKnownReplaySnapshotService::capture(); ReplayResultRepository::assertModeInputs() AS_KNOWN branch; every existing AS_KNOWN replay result and fixture, which would need re-evaluation once the identity source is defined."
+    },
+    "no_commit_or_push": true
+}

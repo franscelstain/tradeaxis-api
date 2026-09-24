@@ -325,6 +325,78 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
     }
 
     /**
+     * `MD-S050-R0016` closure audit (`E-MD-B18-A002-068`): a config snapshot *ID* alone is not the
+     * same as a bound configuration. `Platform_Config_Registry_LOCKED.md` defines `CONFIG_UNBOUND`
+     * as no non-null ID *and hash*; a run with the ID but neither a hash nor a snapshot reference
+     * still cannot be reproduced, and `configIdentityForRun()` marks that gap with an explicit
+     * `CONFIG_IDENTITY_UNRECORDED` placeholder rather than leave it null. That placeholder is a
+     * non-empty string, so it satisfied `MD-S050-R0016`'s own empty-string check and let the
+     * replay through PASS -- this proves it no longer does, without fabricating a hash.
+     */
+    public function test_a_config_snapshot_with_no_recorded_hash_is_blocked_rather_than_passed(): void
+    {
+        $result = $this->verify([], ['config_hash' => '']);
+
+        $this->assertSame('BLOCKED', $result['replay_status'],
+            'a config snapshot ID with no recorded hash or snapshot reference is CONFIG_UNBOUND; '
+                .'PASS would say the configuration that produced the run was recovered');
+        $this->assertSame('NOT_ADMISSIBLE', $result['comparison_result']);
+        $this->assertStringContainsString('REPLAY_CONFIG_UNBOUND', (string) $result['mismatch_summary'],
+            'this is the same CONFIG_UNBOUND state the missing-ID case reports, not a different one');
+        $this->assertNotNull($this->persistedMetric, 'a blocked replay must still be persisted');
+        $this->assertSame(
+            ReplayVerificationService::CONFIG_IDENTITY_UNRECORDED,
+            $this->persistedMetric['config_snapshot_hash'],
+            'the unrecorded state is recorded honestly as the placeholder, never a fabricated hash'
+        );
+    }
+
+    /**
+     * The no-fallback half for the hash-missing sub-case: an unrecorded config hash is not
+     * permission to complete the identity from the current publication's own configuration. Every
+     * selector but the fixture's explicit one is stubbed to return a publication carrying a real,
+     * different config hash; if the replay used it, this would come back ADMISSIBLE/PASS instead
+     * of BLOCKED.
+     */
+    public function test_an_unrecorded_config_hash_is_not_filled_from_current_state(): void
+    {
+        $selectors = [];
+        $currentHash = str_repeat('c', 64);
+        $evidence = m::mock(EodEvidenceRepository::class);
+        [, $publications, $replays] = $this->mocks(true);
+
+        $evidence->shouldReceive('findRunById')->andReturn((object) array_merge($this->runRow(), ['config_hash' => '']));
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')
+            ->andReturnUsing(function ($selector) use (&$selectors, $currentHash) {
+                $selectors[] = $selector['type'] ?? 'unknown';
+
+                return ($selector['type'] ?? null) === 'replay_fixture_explicit_publication'
+                    ? (object) $this->publicationRow()
+                    : (object) array_merge($this->publicationRow(), ['config_snapshot_hash' => $currentHash]);
+            });
+        $evidence->shouldReceive('dominantReasonCodes')->andReturn([
+            ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'count' => 3],
+        ]);
+        $evidence->shouldReceive('exportEligibilityRows')->andReturn(array_merge(
+            array_fill(0, 7, ['eligible' => 1]),
+            array_fill(0, 3, ['eligible' => 0])
+        ));
+
+        $result = $this->service([$evidence, $publications, $replays])
+            ->verifyRunAgainstFixture(self::RUN_ID, $this->fixtureDir());
+
+        $this->assertSame('BLOCKED', $result['replay_status']);
+        $this->assertStringContainsString('REPLAY_CONFIG_UNBOUND', (string) $result['mismatch_summary']);
+        $this->assertSame(
+            ReplayVerificationService::CONFIG_IDENTITY_UNRECORDED,
+            $this->persistedMetric['config_snapshot_hash'],
+            'the unrecorded config identity was filled from another publication\'s configuration'
+        );
+        $this->assertSame(['replay_fixture_explicit_publication'], array_values(array_unique($selectors)),
+            'an unrecorded config hash is not permission to resolve any publication but the one the fixture names');
+    }
+
+    /**
      * `MD-S050-R0016` beyond configuration: a VERIFIED bound context is not the same as every
      * required input being present. `source_observation_manifest_hash` and
      * `canonical_raw_input_hash` are read off the run row, and Seal admits a publication without an
@@ -780,6 +852,10 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
             'publishability_state' => 'READABLE',
             'config_version' => 'v1',
             'config_snapshot_id' => 7001,
+            // MD-S050-R0016 closure audit (E-MD-B18-A002-068): a real content hash, so this
+            // fixture represents a legitimately bound configuration rather than resolving to
+            // configIdentityForRun()'s CONFIG_IDENTITY_UNRECORDED placeholder.
+            'config_hash' => str_repeat('7', 64),
             'publication_version' => 4,
             'coverage_universe_count' => 10,
             'coverage_expected_count' => 10,

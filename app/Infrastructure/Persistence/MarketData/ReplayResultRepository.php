@@ -196,6 +196,14 @@ class ReplayResultRepository
                 throw new \RuntimeException('REPLAY_BOUND_INPUT_INCOMPLETE: non-BLOCKED replay result is missing '.$field.'.');
             }
         }
+        // MD-S050-R0016 closure audit (E-MD-B18-A002-068): `config_snapshot_hash` above is checked
+        // only for emptiness, and `ReplayVerificationService::configIdentityForRun()`'s
+        // `CONFIG_IDENTITY_UNRECORDED` placeholder for a run with no recorded hash or snapshot
+        // reference is a non-empty string, so it passed. `Platform_Config_Registry_LOCKED.md` names
+        // that state `CONFIG_UNBOUND`, whose replay must be `BLOCKED`, not persisted as if resolved.
+        if ($metric['config_snapshot_hash'] === \App\Application\MarketData\Services\ReplayVerificationService::CONFIG_IDENTITY_UNRECORDED) {
+            throw new \RuntimeException('REPLAY_CONFIG_UNBOUND: non-BLOCKED '.$mode.' result carries no recorded configuration hash or snapshot reference.');
+        }
         // MD-S050-R0016: these identities are required bound inputs in both modes. This loop was
         // AS_KNOWN-only, so a PUBLICATION_EXACT PASS with an empty observation identity persisted.
         foreach (['source_observation_manifest_hash', 'canonical_raw_input_hash', 'temporal_identity_hash', 'calendar_status_hash', 'event_factor_hash', 'formula_registry_hash', 'reason_registry_hash'] as $field) {

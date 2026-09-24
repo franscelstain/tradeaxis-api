@@ -27,6 +27,16 @@ class ReplayVerificationService
         'executable_build_identity',
     ];
 
+    /**
+     * `configIdentityForRun()`'s explicit placeholder for a run that recorded neither a
+     * configuration hash nor a snapshot reference. It exists so the gap stays legible to a human
+     * reading the field (never a silent null); it is not an identity and must never satisfy a
+     * required bound input merely by being a non-empty string. Exposed so
+     * `ReplayResultRepository::assertModeInputs()` can refuse it at the storage boundary using the
+     * same literal `replayAdmissibility()` blocks on, instead of a second, driftable copy.
+     */
+    public const CONFIG_IDENTITY_UNRECORDED = 'CONFIG_IDENTITY_UNRECORDED';
+
     private $evidence;
     private $publications;
     private $replays;
@@ -2365,6 +2375,25 @@ class ReplayVerificationService
                 ];
             }
 
+            // `Platform_Config_Registry_LOCKED.md`: a sealed publication whose run carries no
+            // non-null config snapshot ID *and hash* is `CONFIG_UNBOUND`, and "publication replay
+            // over them is BLOCKED, not PASS, since a required bound input is absent" -- the check
+            // above (before this `if`) only covers a missing ID. A run can carry an ID with no
+            // recorded hash or snapshot reference; configIdentityForRun() then returns
+            // CONFIG_IDENTITY_UNRECORDED, a legible placeholder, not an identity. The
+            // BOUND_INPUT_FIELDS loop below cannot catch it because the marker is a non-empty
+            // string (MD-S050-R0016 closure audit, E-MD-B18-A002-068). Scoped to here, inside the
+            // "there is a publication to reproduce" branch, because authority's rule is about a
+            // sealed publication -- a non-readable run with no publication resolved (an
+            // EXPECTED_DEGRADE fixture) is a different, unrelated assertion this must not convert
+            // into a config-unbound one. Reports the same reason as the ID-missing check above:
+            // both are the one CONFIG_UNBOUND state authority names.
+            if ($this->configIdentityForRun($run) === self::CONFIG_IDENTITY_UNRECORDED) {
+                return [
+                    'reason' => 'REPLAY_CONFIG_UNBOUND: run carries a configuration snapshot ID but no recorded configuration hash or snapshot reference, so reproducibility cannot be evidenced.',
+                ];
+            }
+
             // MD-S050-R0016: "Missing input is `BLOCKED`, not permission to query current/latest
             // state." A VERIFIED bound context does not by itself make every required input present:
             // `source_observation_manifest_hash` and `canonical_raw_input_hash` are still read off the
@@ -2443,7 +2472,7 @@ class ReplayVerificationService
             return $snapshotRef;
         }
 
-        return 'CONFIG_IDENTITY_UNRECORDED';
+        return self::CONFIG_IDENTITY_UNRECORDED;
     }
 
     private function replayStatusForComparison($comparisonResult)

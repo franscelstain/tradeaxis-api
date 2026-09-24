@@ -1,5 +1,6 @@
 <?php
 
+use App\Application\MarketData\Services\ReplayVerificationService;
 use App\Infrastructure\Persistence\MarketData\ReplayResultRepository;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\UsesMarketDataSqlite;
@@ -166,6 +167,14 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
             'no config snapshot hash' => [
                 ['config_snapshot_hash' => null],
                 'REPLAY_BOUND_INPUT_INCOMPLETE',
+            ],
+            // MD-S050-R0016 closure audit (E-MD-B18-A002-068): distinct from the null case above --
+            // this is a non-empty, non-null value (the CONFIG_IDENTITY_UNRECORDED placeholder), so
+            // it passed the plain empty() check that field goes through above and was persisted as
+            // if it were a resolved configuration identity.
+            'config snapshot hash unrecorded' => [
+                ['config_snapshot_hash' => ReplayVerificationService::CONFIG_IDENTITY_UNRECORDED],
+                'REPLAY_CONFIG_UNBOUND',
             ],
             'no serialization version' => [
                 ['serialization_version' => null],

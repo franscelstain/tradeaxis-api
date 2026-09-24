@@ -1582,6 +1582,12 @@ class ReplayVerificationServiceTest extends TestCase
             // A replay is admissible evidence only when the configuration that produced the run
             // can be recovered, so a fixture asserting a replay verdict has to bind one.
             'config_snapshot_id' => 7001,
+            // MD-S050-R0016 closure audit (E-MD-B18-A002-068): the ID alone is not "recovered" --
+            // Platform_Config_Registry_LOCKED.md requires the ID *and* hash. Without this, this
+            // fixture's config identity resolved to configIdentityForRun()'s
+            // CONFIG_IDENTITY_UNRECORDED placeholder and every test built on it was unknowingly
+            // exercising a CONFIG_UNBOUND run.
+            'config_hash' => str_repeat('7', 64),
             'publication_version' => 4,
             'coverage_universe_count' => 10,
             'coverage_expected_count' => 10,

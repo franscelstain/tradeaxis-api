@@ -328,3 +328,100 @@ entries, and no `mysqld` process was running at 07:27. I did not start or restar
 **State.** `MD-S050-R0016` is `INCOMPLETE`. `PROVEN` 92→91, `INCOMPLETE` 22→23. No production code
 changed in this audit. This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`, with 14 of
 its 16 predicates `INCOMPLETE`. **Next:** R0016 gap A. G01-B is not started.
+
+## G03 residual Gap A closed: config identity completeness (`MD-S050-R0016`) — 2026-09-24T08:31:09+07:00
+
+**Authority reverified before coding.** `Replay_Verification_Contract_LOCKED.md:29` requires "full
+configuration snapshot ID/hash". `Platform_Config_Registry_LOCKED.md` is explicit: "The same
+non-null snapshot ID and hash bind the run..."; "the resolved snapshot -- not the current
+environment or registry -- is used for replay"; and "A sealed publication whose run carries no
+non-null config snapshot ID **and hash** is `CONFIG_UNBOUND`... not admissible as evidence of
+reproducibility... Publication replay over them is `BLOCKED`, not `PASS`, since a required bound
+input is absent." Authority names ID **and** hash together, never an ID alone, and never mentions a
+placeholder standing in for a missing hash. This settled the audit's four premises without needing
+to stop for an authority gap.
+
+**The defect.** A run with `config_snapshot_id` set but `config_hash` and `config_snapshot_ref`
+both empty resolves `configIdentityForRun($run)` to the literal placeholder
+`CONFIG_IDENTITY_UNRECORDED`. That marker is a non-empty string, so it satisfied both R0016 G03's
+empty-string check and the direct-write boundary's `empty()` check, and the replay reached
+`PASS`/`ADMISSIBLE` and was persisted as if the configuration had been resolved.
+
+**Fix, minimal and never fabricating a value.**
+
+| defect | production path | minimal change | resulting behaviour |
+|---|---|---|---|
+| Admission let a `VERIFIED`-context publication with an unrecorded run config hash replay `ADMISSIBLE`/`PASS` | `ReplayVerificationService::replayAdmissibility()` | Added `CONFIG_IDENTITY_UNRECORDED` as a shared `public const` (the literal `configIdentityForRun()` already returned) and one check: if the run's identity resolves to it, `BLOCKED` as `REPLAY_CONFIG_UNBOUND`. Scoped inside the existing "there is a publication to reproduce" branch, so a non-readable run with no publication (an `EXPECTED_DEGRADE` fixture) is not converted into a config-unbound case | A run with an ID but no hash or snapshot reference is `BLOCKED`/`NOT_ADMISSIBLE`, naming `REPLAY_CONFIG_UNBOUND`, regardless of which publication a fixture names |
+| Direct write persisted a non-`BLOCKED` result carrying the marker | `ReplayResultRepository::assertModeInputs()` | One check after the existing `empty()` loop: the marker as `config_snapshot_hash` throws `REPLAY_CONFIG_UNBOUND`, in both modes | A non-`BLOCKED` result carrying the marker is refused before it reaches the table |
+
+No value is invented anywhere in the fix, and no current/latest lookup was added; the check reads
+only the already-resolved `$run`.
+
+**Test fixtures.** The shared `runRow()` (`B18ReplayComparisonExhaustivenessTest`) and
+`successReadableRun()` (`ReplayVerificationServiceTest`) carried a `config_snapshot_id` but no
+`config_hash` -- every test built on them, the whole file's baseline in each case, was unknowingly
+exercising a `CONFIG_UNBOUND` run. Both gained a real `config_hash`, matching their own stated
+premise of a legitimately bound publication. The dedicated non-readable/`EXPECTED_DEGRADE` fixture
+(`test_verify_replay_handles_non_readable_run_as_reason_coded_expected_degrade`) keeps its own run
+object unchanged -- its scenario was not repurposed into a config-unbound one.
+
+**New tests.** `test_a_config_snapshot_with_no_recorded_hash_is_blocked_rather_than_passed`
+(positive, real path: blank `config_hash` → `BLOCKED`, `REPLAY_CONFIG_UNBOUND` named, persisted
+value is the marker, never a fabricated hash). `test_an_unrecorded_config_hash_is_not_filled_from_current_state`
+(negative: every selector but the fixture's explicit one is stubbed with a different config
+identity; the replay stays `BLOCKED` and only the explicit selector is used).
+`ReplayResultRepositoryIntegrationTest`'s data provider gained a case: a complete metric with the
+marker as `config_snapshot_hash` is refused, never persisted.
+
+**Probes**, each isolated to its own target, byte-restored and sha256-verified. (Each file was run
+separately after discovering PHPUnit's CLI silently executes only the first of several positional
+file arguments.)
+
+- **P1 — admission check removed:** exactly the 2 new admission tests red; 51 others in the file,
+  plus the repository (18/18) and service (22/22) suites, stayed green.
+- **P2 — storage check bypassed:** exactly the 1 new repository case red (17/18 stayed green); the
+  exhaustiveness (53/53) and service (22/22) suites stayed green.
+- **P3 — a hypothetical current/latest fallback introduced** (resolve the current publication and
+  use its config identity instead of `BLOCKED`): only the no-fallback test red; 52 others green.
+
+**Validation.** All 31 replay/AS_KNOWN suites green, including the MariaDB-backed
+`B18ProductionPathReplayFixturesTest`. Full `tests/Unit/MarketData`: 2459 tests, 34569 assertions, 7 failures, 0 errors -- exact match to the known `MD-DEP-0015` corpus-oracle baseline (`ProductionCorpusInvariantOracleTest`), zero new failures, zero baseline entries resolved.
+MariaDB was reachable at the start of this unit (not started or restarted by this session; its log
+showed clean restarts with no future-LSN warnings).
+
+**R0016 remains `INCOMPLETE`.** Per explicit instruction this Gap A closure does not promote the
+predicate: Gap B (`AS_KNOWN` read-model version and reason-registry identity) is untouched and
+still open. `PROVEN`/`INCOMPLETE` counts are unchanged at 91/23. Formal `0/114` `SATISFIED` is
+unchanged.
+
+**Evidence record:** `E-MD-B18-A002-069`, registered in `DOCUMENT_ID_REGISTRY` (`MD-DOC-01204`),
+`DOCUMENT_ROLE_REGISTRY`, `CURRENT_VERIFICATION_REGISTRY` and `WORK_RECORD_REGISTRY`.
+
+## Authority decision needed: Gap B (`AS_KNOWN` read-model / reason-registry identity)
+
+Not implemented in this unit; restated here as a decision, not a chosen behaviour.
+
+- **What authority requires:** `Replay_Verification_Contract_LOCKED.md:30` lists read-model,
+  formula/registry and build versions among the required bound inputs for *both* replay modes;
+  `MD-S050-R0016` requires any missing one to be `BLOCKED` in both modes.
+- **What authority/config does not define:** `config/market_data.php` has no
+  `governance.read_model_version` key (confirmed at runtime); `AsKnownReplaySnapshotService` reads
+  it anyway and always gets an empty string. No authority document defines what `AS_KNOWN`
+  read-model or reason-registry identity should bind, or states that it is intentionally exempt.
+- **Why this is not an implementation choice:** two conforming remedies exist and are not
+  equivalent -- fail-closed (`BLOCK` every `AS_KNOWN` replay until resolved, removing `AS_KNOWN`
+  admissibility for the whole corpus) versus binding a real as-known identity (which requires
+  deciding what that identity is: a new config key, a fixed constant, something else -- a
+  strategy/config decision, not a code-only fix). Choosing between "block everything" and "invent an
+  identity" without authority direction repeats exactly the kind of silent choice this predicate's
+  own remediation history has already found defective.
+- **Minimum clarification needed:** whether `AS_KNOWN` read-model/reason-registry identity is
+  required and must be bound to a real, authoritative source before `AS_KNOWN` can be non-`BLOCKED`,
+  or exempted for `AS_KNOWN` with an explicit, recorded reason -- and if required, what that source
+  is.
+- **Affected scope:** `AsKnownReplaySnapshotService::capture()`; the `AS_KNOWN` branch of
+  `ReplayResultRepository::assertModeInputs()`; every existing `AS_KNOWN` replay result and fixture.
+
+**This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`**, with 14 of its 16 predicates
+`INCOMPLETE` (`MD-S050-R0016` among them, on Gap B alone). **Next:** `MD-S050-R0016` Gap B, an
+authority/strategy decision -- not started. `G01-B` not started.
