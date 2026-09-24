@@ -523,3 +523,75 @@ and reason-registry members and AS_KNOWN admission. The `PROVEN` predicates rest
 Gap B2 follows: AS_KNOWN reason registry fail-closed, with `MD-S050-R0005` rebound in that unit.
 This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`, with 14 of its own 16 predicates
 `INCOMPLETE`. `G01-B` has not started.
+
+## Gap B1 implemented: AS_KNOWN read-model contract identity — 2026-09-24T14:53:40+07:00
+
+`E-MD-B18-A002-071` implements `D-MD-B18-A002-008` exactly, re-verified against the decision itself
+before coding (no intervening repository state changed its applicability).
+
+**Canonical source.** No existing named constant carried `market_data_read_product_v1`; it was a
+literal duplicated across five files. Added `MarketDataReadProductService::READ_MODEL_VERSION` (the
+natural `MD-S021` owner). That class's own two pre-existing literal occurrences were deliberately
+left untouched, not switched to the constant: `ConsumerReadProductAntiBypassTest` source-scans this
+file for the exact substring `'read_model_version' => 'market_data_read_product_v1'`, and a first
+attempt at replacing both with `self::READ_MODEL_VERSION` broke that guard, caught by the first full
+regression run below and reverted before any governance record was written. The other four
+already-established, already-proven publication-path call sites were also left untouched -- out of
+Gap B1's AS_KNOWN scope.
+
+**Change.** `AsKnownReplaySnapshotService::capture()`'s `read_model_version` now reads
+`MarketDataReadProductService::READ_MODEL_VERSION` directly -- no `config()` call, no cutoff
+resolution, no dependency on the AS_KNOWN config snapshot. `ReplayResultRepository::assertModeInputs()`
+gained `read_model_version` as the eighth member of the existing both-modes required-input loop.
+Gap B2 (`reason_registry_hash`, checked only for emptiness) is untouched.
+
+**Real-path proof.** A positive test through the full `verifyAsKnownAgainstFixture()`/stored-metric
+path, asserted against both the constant and the literal string independently (so a wrong value in
+the constant itself is still caught -- the first draft of this test, checked only against the
+constant, was corrected after probe P2 showed it did not discriminate). A config-independence test:
+real `config()` mutated on two already-registered keys, called directly against
+`AsKnownReplaySnapshotService::capture()` rather than the full verifier, because the full
+canonicalizer run independently re-validates the seeded run's bound config snapshot against live
+config and would reject the mutation as unrelated drift (confirmed by first hitting
+`INPUT_CAPTURE_LIVE_CONFIG_DIVERGENCE` through the full path). Direct-write refusal cases for a
+missing `read_model_version` in both modes.
+
+**Probes**, each byte-restored and sha256-verified (re-run a second time against the corrected file
+after the anti-bypass fix), each suite file run separately: reverting AS_KNOWN to the config-derived
+value turned 6 of 7 `B18AsKnownModeIsolationTest` tests red (the storage boundary and the binding fix
+reinforcing each other); an incorrect canonical literal turned exactly the corrected positive test
+red; removing the storage check turned exactly the two new repository cases red. The publication-mode
+control suites (`B18ReplayComparisonExhaustivenessTest`, `ReplayVerificationServiceTest`,
+`ConsumerReadProductAntiBypassTest`) stayed green under every probe.
+
+**Two incidents surfaced and resolved during validation, neither left unaddressed:**
+
+1. The first full regression run found one real, unexpected failure --
+   `ConsumerReadProductAntiBypassTest::test_the_payload_declares_its_product_and_read_model_version`
+   -- caused by the unnecessary literal-to-constant replacement described above. Fixed by reverting
+   those two occurrences; confirmed green afterward, including a second full probe re-run.
+2. A second full regression run, launched to re-validate that fix, reported 51 errors and 15 failures
+   across unrelated MariaDB-backed producer-capture suites this unit never touched. The MariaDB error
+   log showed no crash, restart or error entry across any of the runs. Diagnosed as cross-process test
+   contention: the probe re-verification was run concurrently with that background regression against
+   the same MariaDB instance. Resolved by confirming file hashes were unchanged from the corrected,
+   probe-verified state and running a third, fully isolated regression (no other process running)
+   before trusting a result.
+
+**Validation (authoritative, isolated run).** Full `tests/Unit/MarketData`: 2463 tests, 34603
+assertions, 7 failures, 0 errors -- exact match to the known `MD-DEP-0015` corpus-oracle baseline,
+zero new failures. MariaDB verified reachable before each attempt; not started or restarted by this
+session.
+
+**Not promoted.** `MD-S050-R0016`, `MD-S050-R0014` and `MD-S019-R0071` remain `INCOMPLETE`: Gap B2
+(AS_KNOWN reason-registry identity, fail-closed) is a required member of all three and is
+unimplemented. Proof basis unchanged at 89 `PROVEN` / 25 `INCOMPLETE`. `D-MD-B18-A002-008`,
+`E-MD-B18-A002-050`, `E-MD-B18-A002-067`, `E-MD-B18-A002-068`, `E-MD-B18-A002-069` and
+`E-MD-B18-A002-070` are unchanged.
+
+**Evidence record:** `E-MD-B18-A002-071`, registered in `DOCUMENT_ID_REGISTRY` (`MD-DOC-01207`),
+`DOCUMENT_ROLE_REGISTRY`, `CURRENT_VERIFICATION_REGISTRY` and `WORK_RECORD_REGISTRY`.
+
+This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`, with 14 of its own 16 predicates
+`INCOMPLETE`. **Next:** `MD-S050-R0016` Gap B2 -- AS_KNOWN historical reason-registry fail-closed
+remediation, including the `MD-S050-R0005` proof impact/rebind. Not started. `G01-B` not started.

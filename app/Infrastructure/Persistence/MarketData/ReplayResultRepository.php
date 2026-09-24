@@ -206,7 +206,12 @@ class ReplayResultRepository
         }
         // MD-S050-R0016: these identities are required bound inputs in both modes. This loop was
         // AS_KNOWN-only, so a PUBLICATION_EXACT PASS with an empty observation identity persisted.
-        foreach (['source_observation_manifest_hash', 'canonical_raw_input_hash', 'temporal_identity_hash', 'calendar_status_hash', 'event_factor_hash', 'formula_registry_hash', 'reason_registry_hash'] as $field) {
+        // `read_model_version` joined this loop under Gap B1 (`D-MD-B18-A002-008`): AS_KNOWN
+        // previously read a nonexistent config key and always recorded it empty, so a non-BLOCKED
+        // AS_KNOWN result with no read-model identity persisted. Gap B2 (the reason-registry half)
+        // is untouched here -- `reason_registry_hash` below stays checked only for emptiness, which
+        // is already known insufficient for AS_KNOWN and is deliberately not fixed in this unit.
+        foreach (['source_observation_manifest_hash', 'canonical_raw_input_hash', 'temporal_identity_hash', 'calendar_status_hash', 'event_factor_hash', 'formula_registry_hash', 'reason_registry_hash', 'read_model_version'] as $field) {
             if (empty($metric[$field])) {
                 throw new \RuntimeException('REPLAY_BOUND_INPUT_INCOMPLETE: '.$mode.' result is missing '.$field.'.');
             }

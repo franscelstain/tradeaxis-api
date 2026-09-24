@@ -8,6 +8,22 @@ use Illuminate\Support\Facades\DB;
 
 class MarketDataReadProductService
 {
+    /**
+     * `MD-S021` (`Downstream_Consumer_Read_Model_Contract_LOCKED.md`): "one stable,
+     * publication-aware market-data read product". The version identifies the read-product
+     * contract itself (data shape, meaning, units, requiredness, null semantics, readiness
+     * behavior) -- not a tunable configuration value. `D-MD-B18-A002-008` binds this same
+     * identity into AS_KNOWN replay's `read_model_version`, added here as a constant so that
+     * binding reuses this one canonical source (`MD-S021`'s own owner class) instead of
+     * writing a fresh duplicate literal. Never resolved from configuration: it never varies.
+     *
+     * This class's own two pre-existing occurrences below are deliberately left as the literal,
+     * not switched to `self::READ_MODEL_VERSION`: `ConsumerReadProductAntiBypassTest` source-scans
+     * this file for the exact substring `'read_model_version' => 'market_data_read_product_v1'`
+     * as an anti-bypass guard, and refactoring them was never part of Gap B1's AS_KNOWN scope.
+     */
+    public const READ_MODEL_VERSION = 'market_data_read_product_v1';
+
     private $publications;
     private $readiness;
     private $rows;

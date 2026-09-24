@@ -578,3 +578,19 @@ followed by a proof review of `MD-S050-R0014` and `MD-S019-R0071` against those 
 
 Eight of this finding's ten carried predicates remain `PROVEN`; `MD-S050-R0014` and `MD-S019-R0071` are
 `INCOMPLETE`.
+
+## Gap B1 (read-model identity) implemented and proved — 2026-09-24T14:53:40+07:00
+
+`E-MD-B18-A002-071` implements `MD-S050-R0016` Gap B1 under `D-MD-B18-A002-008`: AS_KNOWN
+`read_model_version` binds `MarketDataReadProductService::READ_MODEL_VERSION`
+(`market_data_read_product_v1`), replacing the read from a configuration key
+(`governance.read_model_version`) that never existed. This fixes one of the two members this
+finding's item 2 named as nominal in AS_KNOWN.
+
+`MD-S050-R0014` and `MD-S019-R0071` **remain `INCOMPLETE`.** Neither predicate is satisfied by this
+unit alone: `MD-S050-R0014`'s AS_KNOWN reason-registry member (Gap B2) is still nominal, and
+`MD-S019-R0071`'s Invariant-14 reason-registry ingredient is still unbound in AS_KNOWN. Fixing the
+read-model half does not close either predicate; both need Gap B2 as well. Proof basis unchanged.
+
+Eight of this finding's ten carried predicates remain `PROVEN`; `MD-S050-R0014` and `MD-S019-R0071`
+are still `INCOMPLETE`, now on Gap B2 alone.

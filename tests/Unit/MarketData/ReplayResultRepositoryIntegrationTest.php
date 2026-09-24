@@ -35,6 +35,9 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
             'event_factor_hash' => str_repeat('0', 64),
             'formula_registry_hash' => str_repeat('1', 64),
             'reason_registry_hash' => str_repeat('2', 64),
+            // Gap B1 (D-MD-B18-A002-008): read_model_version joined the required-in-both-modes
+            // check; the real, canonical, non-cutoff-resolved identity, not a fabricated value.
+            'read_model_version' => \App\Application\MarketData\Services\MarketDataReadProductService::READ_MODEL_VERSION,
             'bound_input_context_json' => json_encode(['publication_id' => 44]),
             'trade_date' => '2026-03-20',
             'trade_date_effective' => '2026-03-20',
@@ -184,6 +187,13 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
                 ['executable_build_identity' => null],
                 'REPLAY_BOUND_INPUT_INCOMPLETE',
             ],
+            // Gap B1 (D-MD-B18-A002-008): read_model_version is required in AS_KNOWN too, and
+            // completeMetric()'s own real value (the canonical read-product identity, not a
+            // cutoff-derived one) is what this case blanks.
+            'as-known without read_model_version' => [
+                ['replay_mode' => 'AS_KNOWN', 'read_model_version' => null],
+                'REPLAY_BOUND_INPUT_INCOMPLETE: AS_KNOWN result is missing read_model_version',
+            ],
         ] + $this->exactResultMissingEachFrozenIdentity();
     }
 
@@ -191,6 +201,9 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
      * `MD-S050-R0016` on the direct-write path: the seven frozen identities were required only of
      * AS_KNOWN results, so a PUBLICATION_EXACT PASS with an empty observation identity was stored.
      * `completeMetric()` is PUBLICATION_EXACT, so each case here is exactly that mode missing one.
+     * `read_model_version` (Gap B1, `D-MD-B18-A002-008`) joined this same both-modes check; its
+     * AS_KNOWN case is declared separately above since `completeMetric()` defaults to
+     * `PUBLICATION_EXACT`.
      *
      * @return array<string,array{0:array<string,mixed>,1:string}>
      */
@@ -198,7 +211,8 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
     {
         $cases = [];
         foreach (['source_observation_manifest_hash', 'canonical_raw_input_hash', 'temporal_identity_hash',
-            'calendar_status_hash', 'event_factor_hash', 'formula_registry_hash', 'reason_registry_hash'] as $field) {
+            'calendar_status_hash', 'event_factor_hash', 'formula_registry_hash', 'reason_registry_hash',
+            'read_model_version'] as $field) {
             $cases['exact without '.$field] = [[$field => ''], 'REPLAY_BOUND_INPUT_INCOMPLETE: PUBLICATION_EXACT result is missing '.$field];
         }
 
@@ -250,6 +264,9 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
             'event_factor_hash' => str_repeat('0', 64),
             'formula_registry_hash' => str_repeat('1', 64),
             'reason_registry_hash' => str_repeat('2', 64),
+            // Gap B1 (D-MD-B18-A002-008): read_model_version joined the required-in-both-modes
+            // check; the real, canonical, non-cutoff-resolved identity, not a fabricated value.
+            'read_model_version' => \App\Application\MarketData\Services\MarketDataReadProductService::READ_MODEL_VERSION,
             'bound_input_context_json' => json_encode(['publication_id' => 44]),
             'trade_date' => '2026-03-20',
             'trade_date_effective' => '2026-03-20',

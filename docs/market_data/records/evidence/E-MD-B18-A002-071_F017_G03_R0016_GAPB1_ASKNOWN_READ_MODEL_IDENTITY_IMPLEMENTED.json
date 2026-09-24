@@ -1,0 +1,163 @@
+{
+    "evidence_id": "E-MD-B18-A002-071",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+    "issued_at": "2026-09-24T14:53:40+07:00",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "PASS_GAPB1_ASKNOWN_READ_MODEL_IDENTITY_IMPLEMENTED_R0016_R0014_R0071_REMAIN_INCOMPLETE_GAPB2_PENDING",
+    "evidence_scope": "F017_G03_MD_S050_R0016_GAPB1_ASKNOWN_READ_MODEL_IDENTITY",
+    "ci_id": "CI-MD-B18-A002-001",
+    "related_findings": [
+        "F-MD-B18-A002-017",
+        "F-MD-B18-A002-013"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-068",
+        "E-MD-B18-A002-069",
+        "E-MD-B18-A002-070",
+        "CI-MD-B18-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-005",
+        "D-MD-B18-A002-008"
+    ],
+    "dependencies": [
+        "MD-DEP-0017",
+        "MD-DEP-0015"
+    ],
+    "schema_changed": false,
+    "authority_recheck_before_coding": {
+        "method": "D-MD-B18-A002-008 re-read in full; confirmed no repository state changed since 2026-09-24T11:51:50+07:00 (production files AsKnownReplaySnapshotService.php/ReplayVerificationService.php byte-identical to the hashes recorded at issuance); E-070 (proof correction) touched only reason-registry behaviour and the proof basis, not read_model_version or MD-S021/MD-S045/MD-S050/MD-S004.",
+        "result": "no conflict found; D-008 implemented exactly as decided"
+    },
+    "canonical_identity_source": {
+        "finding": "no existing named constant; market_data_read_product_v1 was a literal duplicated across 5 files (MarketDataReadProductService.php x2, PublicationGovernanceBindingService.php, EodPublicationRepository.php x2, ProducerRegistrySnapshot.php) with no single source, per F-021/E-048 (the publication path's own established, reused identity).",
+        "action": "added MarketDataReadProductService::READ_MODEL_VERSION (public const), the natural owner per MD-S021 (\"one stable, publication-aware market-data read product\"); replaced this class's own two pre-existing literal occurrences with the constant (zero behaviour change, confirmed by identical values). The other four already-established, already-proven publication-path call sites (PublicationGovernanceBindingService, EodPublicationRepository x2, ProducerRegistrySnapshot) were left untouched -- out of Gap B1's AS_KNOWN scope, and touching them would have risked the \"existing PUBLICATION_EXACT identity remains unchanged and valid\" requirement."
+    },
+    "implementation": [
+        {
+            "defect": "AS_KNOWN read governance.read_model_version, a configuration key that never existed, and always recorded read_model_version empty.",
+            "old_source": "AsKnownReplaySnapshotService::capture(): (string) (isset($governanceConfig['read_model_version']) ? $governanceConfig['read_model_version'] : '')",
+            "canonical_source": "MarketDataReadProductService::READ_MODEL_VERSION (= market_data_read_product_v1)",
+            "code_change": "AsKnownReplaySnapshotService.php: 'read_model_version' => MarketDataReadProductService::READ_MODEL_VERSION -- a direct class-constant reference, no config() call, no dependency instantiation.",
+            "resulting_behaviour": "every AS_KNOWN snapshot/result carries the real, non-empty, code-level contract identity; the value is fixed regardless of the run's config snapshot, the knowledge cutoff, or any live configuration."
+        },
+        {
+            "defect": "Direct-write storage boundary never required read_model_version in either replay mode.",
+            "old_source": "ReplayResultRepository::assertModeInputs() -- read_model_version absent from both the unconditional 4-field loop and the both-modes 7-field loop",
+            "canonical_source": "n/a (storage enforcement, not an identity source)",
+            "code_change": "added 'read_model_version' as the eighth member of the existing both-modes required-input loop, alongside the seven MD-S050-R0016 fields already there. reason_registry_hash (Gap B2, untouched) stays in the same loop, checked only for emptiness as before.",
+            "resulting_behaviour": "a non-BLOCKED result missing read_model_version is refused before it reaches the table, in both PUBLICATION_EXACT and AS_KNOWN."
+        }
+    ],
+    "not_changed": [
+        "AS_KNOWN reason-registry identity/hash (Gap B2)",
+        "the fail-closed behaviour Gap B2 requires",
+        "MD-S050-R0005's AS_KNOWN negative guard",
+        "the four already-established publication-path call sites for the literal (PublicationGovernanceBindingService.php, EodPublicationRepository.php x2, ProducerRegistrySnapshot.php)"
+    ],
+    "tests_added": {
+        "B18AsKnownModeIsolationTest::test_as_known_read_model_identity_binds_the_canonical_read_product_contract": "real-path positive, via the full verifyAsKnownAgainstFixture()/stored-metric path: asserts the persisted value equals MarketDataReadProductService::READ_MODEL_VERSION, and independently pins it to the literal string 'market_data_read_product_v1' (D-008's own wording), so a wrong value in the constant itself is still caught.",
+        "B18AsKnownModeIsolationTest::test_as_known_read_model_identity_is_independent_of_runtime_configuration": "real runtime config() mutated (market_data.governance.build_id, market_data.governance.config_serialization_version -- both already-registered PlatformConfigRegistry keys) before a direct AsKnownReplaySnapshotService::capture() call; asserts the captured value is unaffected. Called capture() directly rather than through the full verifier, because the full canonicalizer run (AsKnownReplayExecutionService -> EodBarsIngestService) independently re-validates the seeded run's already-bound config snapshot against live config and would reject any market_data.* mutation as unrelated drift -- confirmed by first attempting the full path and observing INPUT_CAPTURE_LIVE_CONFIG_DIVERGENCE, an unrelated guard, not this predicate's own defect.",
+        "ReplayResultRepositoryIntegrationTest": "completeMetric() and the standalone persistence test gained a real read_model_version (the canonical identity, not a placeholder); exactResultMissingEachFrozenIdentity()'s field list gained read_model_version (PUBLICATION_EXACT case); one new explicit case for AS_KNOWN (completeMetric() defaults to PUBLICATION_EXACT, so the AS_KNOWN case needed a separate row with replay_mode overridden)."
+    },
+    "probes": [
+        {
+            "id": "P1_revert_to_config_derived",
+            "mutation": "AsKnownReplaySnapshotService reverted to reading governanceConfig['read_model_version'] (always empty)",
+            "result": "RED: 6 of 7 B18AsKnownModeIsolationTest tests (5 errors from the storage boundary refusing to persist any AS_KNOWN result once read_model_version is empty again -- both fixes reinforcing each other -- plus the config-independence test failing on direct capture); the 8th (publication-fixture-refused) stayed green as unrelated. All of ReplayResultRepositoryIntegrationTest (20/20), B18ReplayComparisonExhaustivenessTest (53/53) and ReplayVerificationServiceTest (22/22) stayed green.",
+            "restored_sha256": "5fb22580baa4d2f190534b65ad93adf68a5b85e137aa39be125947bb30d8af72"
+        },
+        {
+            "id": "P2_wrong_canonical_literal",
+            "mutation": "MarketDataReadProductService::READ_MODEL_VERSION changed to 'PROBE-WRONG-LITERAL'",
+            "result": "RED: exactly the 1 new positive test (the literal-pinned assertion); all 6 other AS_KNOWN isolation tests and all of the other three suites stayed green -- confirming the first-attempt version of this test (comparing only against the constant) would NOT have caught this and was corrected before this probe run.",
+            "restored_sha256": "62a9143aeb3a35859336d4fb34a5b7baf0e952cfb21723661704931c15aa015d"
+        },
+        {
+            "id": "P3_storage_check_removed",
+            "mutation": "read_model_version removed from the both-modes required-input loop",
+            "result": "RED: exactly the 2 new repository cases (as-known and exact without read_model_version); 18 of 20 repository cases and all of the other three suites stayed green.",
+            "restored_sha256": "9d8367d576832e9e85596b263cc8a2062deb56f4cf815967f103981c50c8697a"
+        },
+        {
+            "id": "note",
+            "detail": "each file run separately per probe (the multi-file phpunit CLI silent-drop lesson from Gap A)"
+        }
+    ],
+    "defect_found_during_first_regression_and_fixed": {
+        "symptom": "first full-suite attempt reported 1 unexpected failure beyond the known baseline: ConsumerReadProductAntiBypassTest::test_the_payload_declares_its_product_and_read_model_version",
+        "cause": "an unnecessary DRY refactor: MarketDataReadProductService.php's own two pre-existing literal occurrences of 'read_model_version' => 'market_data_read_product_v1' were replaced with self::READ_MODEL_VERSION when the constant was added. That anti-bypass test source-scans this exact file for the literal substring \"'read_model_version' => 'market_data_read_product_v1'\" and no longer found it -- the substring the guard requires and the constant-reference form are not the same text.",
+        "fix": "reverted both occurrences to the literal string, keeping only the new public const declaration; corrected the constant's docblock to explain the two occurrences are deliberately left as literals, out of Gap B1's AS_KNOWN scope, respecting the existing anti-bypass guard. Confirmed green: ConsumerReadProductAntiBypassTest 7/7, plus B18AsKnownModeIsolationTest, ReplayResultRepositoryIntegrationTest, B18ReplayComparisonExhaustivenessTest, ReplayVerificationServiceTest all still green. All three probes (P1/P2/P3) re-run against the corrected file, still isolating to exactly their targets, byte-restored and sha256-verified again.",
+        "production_sha256_after_fix": "a3af3130a20d8526d3b80537c04e0b8e9fa70e7d56c22f663e6685112ad54d54 (MarketDataReadProductService.php)"
+    },
+    "false_signal_from_concurrent_test_execution": {
+        "symptom": "a second full-suite run (launched to re-validate after the ConsumerReadProductAntiBypassTest fix) reported 51 errors and 15 failures across entirely unrelated MariaDB-backed producer capture suites (B18ProducerCalendarRegistryTest, B18ProducerEventFactorCaptureTest, B18ProducerRawInputLineageTest, B18ProducerTemporalPopulationTest, and others) -- none of which touch AsKnownReplaySnapshotService, MarketDataReadProductService or ReplayResultRepository.",
+        "cause": "the three-probe re-verification (P1/P2/P3, each mutating and restoring the same production files) was run concurrently with that background full-suite process, contending for the same shared MariaDB instance the C1 producer capture tests write to and roll back against -- the same class of race E-050 diagnosed for a full run started before concurrent documentation edits landed.",
+        "diagnosis": "MariaDB error log showed no crash, no restart and no error entries across either run; the server was reachable throughout. This rules out server-side corruption and points to client-side test contention from running multiple PHPUnit processes against the shared instance at once.",
+        "resolution": "production and test file hashes were confirmed unchanged from the corrected, probe-verified state; a third full-suite run was launched with zero concurrent processes (confirmed via process list beforehand and by running nothing else until it completed) and reproduced exactly the known 7-failure baseline, taken as the authoritative result.",
+        "lesson": "never run an additional PHPUnit invocation while a full-suite regression is in flight against the same MariaDB instance, even for file restore verification."
+    },
+    "validation": {
+        "targeted": {
+            "B18AsKnownModeIsolationTest": "7/7 PASS (25 assertions)",
+            "ReplayResultRepositoryIntegrationTest": "20/20 PASS (71 assertions)",
+            "ConsumerReadProductAntiBypassTest": "7/7 PASS (38 assertions), confirms the anti-bypass guard is intact after the fix",
+            "B18ReplayComparisonExhaustivenessTest (publication control)": "53/53 PASS (257 assertions), unchanged -- confirms existing PUBLICATION_EXACT identity is unaffected",
+            "ReplayVerificationServiceTest (publication control)": "22/22 PASS (89 assertions), unchanged"
+        },
+        "as_known_and_pipeline_suites": "B18AsKnownSnapshotIsolationTest, B18AsKnownTemporalSequenceTest, AsKnownReplayBoundaryTest, AsKnownReplayExecutionServiceTest, AsKnownWiringAndConfigIdentityTest, SourceObservationAsKnownBoundaryTest, MarketDataPipelineIntegrationTest -- all green, each file run separately",
+        "full_marketdata_suite": "tests/Unit/MarketData: 2463 tests, 34603 assertions, 7 failures, 0 errors.",
+        "full_suite_baseline_comparison": "Exact match to the known MD-DEP-0015 corpus-oracle baseline (7 ProductionCorpusInvariantOracleTest failures). Zero new failures, zero baseline entries resolved.",
+        "failure_names": [
+            "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_carries_a_non_positive_price",
+            "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_violates_ohlc_ordering",
+            "ProductionCorpusInvariantOracleTest::test_exactly_one_publication_is_current_per_trade_date",
+            "ProductionCorpusInvariantOracleTest::test_no_readable_publication_rests_on_a_failed_run",
+            "ProductionCorpusInvariantOracleTest::test_authoritative_factor_candidates_reach_an_explicit_applied_or_held_decision",
+            "ProductionCorpusInvariantOracleTest::test_no_price_derived_factor_is_usable_as_an_adjustment",
+            "ProductionCorpusInvariantOracleTest::test_every_history_row_binds_to_a_publication"
+        ],
+        "mariadb": "verified reachable (127.0.0.1:3306) before the regression; not started or restarted by this session; error log showed clean restarts with no future-LSN warnings, and no new entries at all across the two false-signal runs and the authoritative clean run",
+        "authoritative_run_isolation": "the counted run below was launched with no other process running against the repository or the database (confirmed via process listing beforehand, and by issuing no other command until it completed)",
+        "production_code_changed": true,
+        "test_code_changed": true
+    },
+    "production_sha256_after": {
+        "MarketDataReadProductService.php": "a3af3130a20d8526d3b80537c04e0b8e9fa70e7d56c22f663e6685112ad54d54",
+        "AsKnownReplaySnapshotService.php": "5fb22580baa4d2f190534b65ad93adf68a5b85e137aa39be125947bb30d8af72",
+        "ReplayResultRepository.php": "9d8367d576832e9e85596b263cc8a2062deb56f4cf815967f103981c50c8697a"
+    },
+    "predicate_state": {
+        "MD-S050-R0016": "INCOMPLETE (unchanged). Gap B1 alone does not close it -- Gap B2 (reason-registry identity) remains unimplemented and is a required member of the same predicate.",
+        "MD-S050-R0014": "INCOMPLETE (unchanged, per E-070). Its AS_KNOWN reason-registry member is still nominal; only its read-model member is now fixed.",
+        "MD-S019-R0071": "INCOMPLETE (unchanged, per E-070). Read-model version is not part of this rule's wording; its AS_KNOWN reason-registry ingredient is still unbound.",
+        "not_promoted": true,
+        "proof_basis_transition": {
+            "before": {
+                "PROVEN": 89,
+                "INCOMPLETE": 25
+            },
+            "after": {
+                "PROVEN": 89,
+                "INCOMPLETE": 25
+            },
+            "confirmed_via": "PHP load of MarketDataReplayVerificationProofBasis constants -- no entry in the file was edited by this unit"
+        }
+    },
+    "formal_traceability": "0/114 SATISFIED unchanged; not touched by this unit",
+    "preserved_unchanged": [
+        "D-MD-B18-A002-008",
+        "E-MD-B18-A002-050",
+        "E-MD-B18-A002-067",
+        "E-MD-B18-A002-068",
+        "E-MD-B18-A002-069",
+        "E-MD-B18-A002-070"
+    ],
+    "next": "MD-S050-R0016 Gap B2: AS_KNOWN historical reason-registry fail-closed remediation, including the MD-S050-R0005 proof impact/rebind (its negative guard becomes unreachable once AS_KNOWN is BLOCKED for the missing reason-registry identity, and a BLOCKED AS_KNOWN result must still be persisted with mode/cutoff/null publication_id/source, which R0005's positive guard and MD-S082-R0218's negative guard assert).",
+    "no_commit_or_push": true
+}

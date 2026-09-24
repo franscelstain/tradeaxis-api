@@ -2,6 +2,7 @@
 
 use App\Application\MarketData\Services\AsKnownReplayExecutionService;
 use App\Application\MarketData\Services\AsKnownReplaySnapshotService;
+use App\Application\MarketData\Services\MarketDataReadProductService;
 use App\Application\MarketData\Services\ReplayVerificationService;
 use App\Infrastructure\Persistence\MarketData\EodEvidenceRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
@@ -78,6 +79,61 @@ class B18AsKnownModeIsolationTest extends TestCase
             'an as-known result claiming a publication id impersonates a publication replay of it');
         $this->assertSame('as_known_replay', (string) $metric->source,
             'the result names as-known execution as its source rather than a publication run');
+    }
+
+    /**
+     * `MD-S050-R0016` Gap B1 (`D-MD-B18-A002-008`) -- AS_KNOWN's `read_model_version` binds the
+     * versioned replay/read-product contract that renders the artifact. Before this it read a
+     * configuration key that never existed and always recorded empty.
+     */
+    public function test_as_known_read_model_identity_binds_the_canonical_read_product_contract(): void
+    {
+        $this->verifyAsKnown();
+        $metric = $this->storedMetric();
+
+        $this->assertSame(
+            MarketDataReadProductService::READ_MODEL_VERSION,
+            (string) $metric->read_model_version,
+            'AS_KNOWN must bind the canonical read-product contract identity, not resolve empty'
+        );
+        // Pinned to the literal `D-MD-B18-A002-008` itself names, independent of the production
+        // constant: comparing only against `MarketDataReadProductService::READ_MODEL_VERSION`
+        // would still pass if that constant's own value were wrong, since both sides of the
+        // assertion above would move together.
+        $this->assertSame(
+            'market_data_read_product_v1',
+            (string) $metric->read_model_version,
+            'the canonical identity itself must be the one D-MD-B18-A002-008 names'
+        );
+    }
+
+    /**
+     * `D-MD-B18-A002-008` explicitly rejects binding this identity from configuration, including
+     * any similarly-named runtime setting. Real runtime configuration is changed here, not a
+     * fixture value, so a code path that still reads any of it would move this result. The exact
+     * key AS_KNOWN previously read, `market_data.governance.read_model_version`, cannot be set at
+     * all -- `PlatformConfigRegistry` refuses an unregistered key, itself confirming that key was
+     * never a real configuration identity.
+     *
+     * Calls `AsKnownReplaySnapshotService::capture()` directly rather than through
+     * `verifyAsKnown()`'s full canonicalizer run: that run re-validates the seeded run's already
+     * -bound config snapshot against live config (`EodBarsIngestService::assertConsumedConfiguration()`)
+     * and would reject this mutation as unrelated drift, not exercise the point being probed here.
+     */
+    public function test_as_known_read_model_identity_is_independent_of_runtime_configuration(): void
+    {
+        config([
+            'market_data.governance.build_id' => 'PROBE-CONFIG-DERIVED-VALUE',
+            'market_data.governance.config_serialization_version' => 'PROBE-CONFIG-DERIVED-VALUE',
+        ]);
+
+        $snapshot = (new AsKnownReplaySnapshotService())->capture(self::TRADE_DATE, self::CUTOFF);
+
+        $this->assertSame(
+            MarketDataReadProductService::READ_MODEL_VERSION,
+            (string) $snapshot['read_model_version'],
+            'changing runtime configuration must not change the read-model contract identity'
+        );
     }
 
     /**

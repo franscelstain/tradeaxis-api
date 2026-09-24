@@ -1,0 +1,35 @@
+{
+  "evidence_id": "E-MD-B18-A002-072",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+  "issued_at": "2026-09-24T15:00:10+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "CORRECTION_E071_PRODUCTION_SHA256_FIELD_ONLY_NO_SEMANTIC_CHANGE",
+  "evidence_scope": "E071_MARKETDATAREADPRODUCTSERVICE_SHA256_CORRECTION",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": ["F-MD-B18-A002-017"],
+  "related_evidence": ["E-MD-B18-A002-071", "CI-MD-B18-A002-001"],
+  "related_decisions": ["D-MD-B18-A002-008"],
+  "dependencies": ["MD-DEP-0017"],
+  "schema_changed": false,
+  "corrects": {
+    "record": "E-MD-B18-A002-071",
+    "field": "production_sha256_after.MarketDataReadProductService.php",
+    "old_value": "a3af3130a20d8526d3b80537c04e0b8e9fa70e7d56c22f663e6685112ad54d54",
+    "new_value": "98962b2a225e87e1f4cfa0ccc67b4b3440b648831d6a8368fd5de53ec97780cb",
+    "correction": "a3af3130... was recorded from a file whose line endings had been silently converted from the repository's original CRLF (confirmed: HEAD's committed bytes for this file use CRLF, with 12 pre-existing bare-LF lines mixed in) to plain LF by a `sed -i` command run during the ConsumerReadProductAntiBypassTest fix (Git Bash's sed rewrites files in text mode). This was caught only after E-071 was already issued, while preparing this session's final status summary and noticing the file's git diff was far larger than the actual content change. Corrected by restoring the file to HEAD's exact original bytes and inserting only the new constant block (16 lines) with matching CRLF endings -- confirmed by `git diff` showing exactly those 16 inserted lines and nothing else."
+  },
+  "why_not_a_semantic_defect": [
+    "php -l reports no syntax errors before and after",
+    "every previously-green suite re-run green after the correction, same counts: ConsumerReadProductAntiBypassTest 7/7 (38 assertions), B18AsKnownModeIsolationTest 7/7 (25 assertions), ReplayResultRepositoryIntegrationTest 20/20 (71 assertions), B18ReplayComparisonExhaustivenessTest 53/53 (257 assertions), ReplayVerificationServiceTest 22/22 (89 assertions)",
+    "probe P2 (incorrect canonical literal) re-run against the corrected file: identical result -- exactly the 1 positive test red, restored and sha256-verified again",
+    "no other file, test, evidence claim, probe result, registry entry, finding text, proof-basis entry, or predicate state in E-071 is affected -- E-071's implementation description, tests_added, other two probes (P1, P3), validation results, predicate_state and next-step text all remain accurate as issued"
+  ],
+  "governance_basis": "DOCUMENT_RECORDING_STANDARD.md #1/#3: issued evidence is IMMUTABLE_AFTER_ISSUE; a correction creates new evidence rather than editing the prior record in place, which stays exactly as issued.",
+  "no_other_changes": "no production code, test code, proof-basis entry, or predicate state changed by this correction; MD-S050-R0016/MD-S050-R0014/MD-S019-R0071 remain INCOMPLETE; PROVEN/INCOMPLETE unchanged at 89/25; formal 0/114 SATISFIED unchanged.",
+  "no_commit_or_push": true
+}

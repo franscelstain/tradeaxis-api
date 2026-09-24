@@ -102,8 +102,14 @@ final class AsKnownReplaySnapshotService
             'event_factor_context' => $eventsAndFactors,
             'formula_registry_identity' => $formulaIdentity,
             'reason_registry_identity' => $reasonIdentity,
-            'read_model_version' => (string) (isset($governanceConfig['read_model_version'])
-                ? $governanceConfig['read_model_version'] : ''),
+            // `D-MD-B18-A002-008`: `read_model_version` binds the versioned replay/read-product
+            // contract of the artifact being rendered -- not a value resolved from the config
+            // snapshot as known at the cutoff (which every other member of this `$context` array
+            // legitimately is). `governance.read_model_version` never existed as a configuration
+            // key, so this always read empty. Bound to the same canonical identity
+            // `MarketDataReadProductService::READ_MODEL_VERSION` the publication path already
+            // uses, never re-derived, never read from a cutoff-scoped `governance` source.
+            'read_model_version' => MarketDataReadProductService::READ_MODEL_VERSION,
             'serialization_version' => (string) (isset($config['serialization_version'])
                 ? $config['serialization_version'] : ''),
             'executable_build_identity' => (string) config('market_data.governance.build_id', 'development-worktree'),
