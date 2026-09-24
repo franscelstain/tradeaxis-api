@@ -1530,6 +1530,12 @@ class ReplayVerificationServiceTest extends TestCase
      * pre-existing fixtures are not about that classification at all, so they stub a genuinely
      * `VERIFIED` projection -- the same shape Reader actually returns -- to keep exercising the
      * comparison behaviour they were written for, unaffected by the new gate.
+     *
+     * `MD-S050-R0016`: this stub used to carry no components and no `registry_content`, a VERIFIED
+     * context `PublicationInputBindingService::bind()` cannot produce (`universe_identity` and
+     * `registry_versions` are required slots), with every input they supply resolving empty. Once
+     * an unavailable input is BLOCKED that state no longer reaches a comparison, so the stub now
+     * binds them the way a real binding does.
      */
     private function verifiedBoundContextManifest(): object
     {
@@ -1540,9 +1546,18 @@ class ReplayVerificationServiceTest extends TestCase
                 'schema_version' => 'md_publication_inputs_v2',
                 'reason' => null,
                 'bound_input_context_hash' => str_repeat('f', 64),
-                'components' => [],
+                'components' => [
+                    ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('u', 64)],
+                    ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('n', 64)],
+                    ['stage_code' => 'RUN_CONTEXT', 'component_key' => 'registry_versions', 'slot_hash' => str_repeat('3', 64), 'payload_hash' => str_repeat('r', 64)],
+                ],
                 'scope' => [],
                 'component_manifest' => ['status' => 'COMPLETE'],
+                'registry_content' => [
+                    'read_model_version' => 'market_data_read_product_v1',
+                    'serialization_version' => 'canonical_json_v1',
+                    'executable_build' => ['build_id' => 'sha256:test_build_identity'],
+                ],
             ],
             'identity_revision_set_hash' => str_repeat('1', 64),
             'calendar_revision_set_hash' => str_repeat('2', 64),
@@ -1593,6 +1608,9 @@ class ReplayVerificationServiceTest extends TestCase
             'bars_batch_hash' => 'A1',
             'indicators_batch_hash' => 'B1',
             'eligibility_batch_hash' => 'C1',
+            // MD-S050-R0016: the source observation identity is a required bound input read off
+            // the run; a run that acquired its observations carries one.
+            'observation_manifest_hash' => str_repeat('9', 64),
             'sealed_at' => $tradeDate.' 17:30:00',
         ];
     }

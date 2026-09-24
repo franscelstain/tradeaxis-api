@@ -1,0 +1,79 @@
+{
+    "evidence_id": "E-MD-B18-A002-068",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+    "issued_at": "2026-09-24T07:30:22+07:00",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "FAIL_CLOSURE_AUDIT_MD_S050_R0016_PROMOTION_PREMATURE_RETURNED_TO_INCOMPLETE",
+    "evidence_scope": "F017_G03_MD_S050_R0016_CLOSURE_AUDIT",
+    "ci_id": "CI-MD-B18-A002-001",
+    "related_findings": [
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-067",
+        "CI-MD-B18-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-005"
+    ],
+    "dependencies": [
+        "MD-DEP-0017",
+        "MD-DEP-0015"
+    ],
+    "corrects": {
+        "record": "E-MD-B18-A002-067",
+        "field": "verdict / predicate final state",
+        "correction": "E-067 recorded MD-S050-R0016 PROVEN. This read-only closure audit found two required inputs that can still be missing without BLOCKED, so the promotion was premature. E-067 is IMMUTABLE_AFTER_ISSUE and is not edited; its remediation, guards and probes remain valid for the inputs it names."
+    },
+    "authority": {
+        "Replay_Verification_Contract_LOCKED.md:19-33": "Required bound inputs (MD-S050-R0007..R0015); line 33 \"Missing input is BLOCKED, not permission to query current/latest state\" (MD-S050-R0016).",
+        "Platform_Config_Registry_LOCKED.md (Status of artifacts sealed before this gate was enforced)": "A run carrying no non-null config snapshot ID and hash is CONFIG_UNBOUND; publication replay over it is BLOCKED, not PASS, since a required bound input is absent.",
+        "MD_B18_A002_CONSOLIDATED_REMEDIATION_PACKAGE.md R0016": "All mandatory input identities, not just config, gate replay admission in both modes and repository direct writes.",
+        "MD_B18_A002_C1_PRODUCER_BOUND_INPUT_CONTRACT.md (guidance, no strategy authority)": "§6 completeness is validated at binding/seal and consumed by admission as VERIFIED; §8 R0016 names service and direct persistence/export/admission."
+    },
+    "questions": {
+        "Q1_required_set": "The inputs of MD-S050-R0007..R0015 at the granularity the contract names them. Component completeness (calendar dependency dates, status members, event verification states, factor decisions, contamination) is established at binding with named missing paths and consumed by admission through the VERIFIED verdict; the combined replay hashes are projections of the verified bundle, not the inputs.",
+        "Q2_calendar_status": "Present and valid when VERIFIED. A missing calendar session for any required or history date, or a damaged status member, is a named binding missing path (calendar_session.required_date.*, status_expectation.*); binding refuses, no V2 context exists, and replay is BLOCKED as REPLAY_BOUND_INPUT_CONTEXT_UNAVAILABLE. A null compatibility member under a complete VERIFIED capture is Binding-nullable (no captured basis for that derivation), not a missing input. Guards: B18ProducerCalendarRegistryTest::test_completion_names_one_uncaptured_history_date_and_missing_full_revision_contracts, B18ProducerTradingStatusPopulationTest::test_validator_names_one_damaged_status_member.",
+        "Q3_event_factor": "Same disposition. event_factor and ancillary are required slots; a damaged member is a named missing path (event_factor.<slot>.INPUT_CAPTURE_FACTOR_SET_CONTENT); Seal also requires source_scale_assessment_set_hash, factor_decision_set_hash and factor_set_hash. Guards: B18ProducerEventFactorCaptureTest::test_c08_whole_manifest_names_a_corrupted_persisted_capture_as_a_gap, ::test_c08_repaired_hash_cannot_hide_single_member_or_decision_damage.",
+        "Q4_config_marker": "Disguised missing input. The authority requires snapshot ID and hash; configIdentityForRun() documents the marker as a gap \"to be closed by binding config identity on the run\". Current behaviour: a run with config_snapshot_id and no config_hash replays ADMISSIBLE/PASS with config_snapshot_hash CONFIG_IDENTITY_UNRECORDED, and the storage check accepts the non-empty marker. Demonstrated by a temporary admission block (run config_hash empty -> REPLAY_CONFIG_UNBOUND): 41 of 51 B18ReplayComparisonExhaustivenessTest and 11 of 22 ReplayVerificationServiceTest tests turned red because their fixtures pass on the marker. The change was reverted (service sha256 back to cb2d14dce588cf77115b7eae0b7ff23574f00c12d9b8dfb16f74b5aae5fac2d6) because MariaDB became unreachable and the broad regression a production change requires could not run. RESIDUAL GAP A.",
+        "Q5_read_model_version": "In the required set (Replay_Verification_Contract_LOCKED.md:30, MD-S050-R0014). PUBLICATION_EXACT service admission enforces it (G03 case). AS_KNOWN does not: AsKnownReplaySnapshotService reads governance.read_model_version, which config/market_data.php does not define (confirmed at runtime: governance keys are config_snapshot_schema_version, config_serialization_version, config_registry_revision, config_resolver_version, build_id, environment_profile, credential_profile), so every AS_KNOWN replay records read_model_version empty and can PASS. The direct-write check omits read_model_version in both modes, so the seven-field boundary is insufficient. AS_KNOWN reason_registry_hash hashes nominal state names plus an undefined governance.reason_registry_revision -- the same disguised-missing shape. RESIDUAL GAP B; its minimal fail-closed remedy would BLOCK every AS_KNOWN replay, which needs an owner decision against binding an as-known read-model/reason-registry identity (MD-S050-R0014).",
+        "Q6_eight_cases": {
+            "observation identity off the run row": "source observation IDs/hashes | run.observation_manifest_hash | line 26 (R0010)",
+            "observation identity null on the run row": "same input, null form | run.observation_manifest_hash | line 26 (R0010)",
+            "canonical raw input off the run row": "canonical RAW input set | run.bars_batch_hash | line 27 (R0011)",
+            "temporal identity component": "temporal universe/listing/symbol/provider mappings | universe_identity component group | line 24 (R0008)",
+            "registry versions component": "formula, indicator registry, reason registry | registry_versions payload_hash (one component, two fields; not a combined hash) | line 30 (R0014)",
+            "read model version": "read-model version | decoded registry_content | line 30 (R0014)",
+            "serialization version": "hash/serialization version | decoded registry_content | line 30 (R0014)",
+            "executable build identity": "build version | decoded registry_content | line 30 (R0014)",
+            "untested_required_inputs": "configuration hash (gap A); every AS_KNOWN input (gap B); calendar/status and event/factor are unreachable as empty under VERIFIED and guarded at binding; fixture identity (R0007) and expected publication/seal/hash assertions (R0015) are BLOCKED by fixture completeness (REPLAY_EXPECTED_PROOF_INCOMPLETE, MD-S050-R0031).",
+            "non_R0016_cases": "none",
+            "combined_hash_masking": "none of the eight cases blanks a combined hash"
+        }
+    },
+    "out_of_scope_observation": "MarketDataEvidenceExportService::exportReplayEvidence requires the bound input identities only for AS_KNOWN, so a PUBLICATION_EXACT result persisted before G03 with missing identities can export ADMITTED_COMPLETE. C1 §8 names export under R0016, but C1 is guidance without strategy authority and the approved package scopes R0016 to service admission in both modes and repository direct writes. Recorded, not remediated here.",
+    "environment": "MariaDB stopped between runs (log shows starts at 2026-09-24 06:48 and 07:00 with no error entries; no mysqld process at 07:27). Not started or restarted. DB-backed tests skip or fail on connection refusal; these are environment evidence, not verdicts.",
+    "proof_basis_transition": {
+        "before": {
+            "PROVEN": 92,
+            "INCOMPLETE": 22
+        },
+        "after": {
+            "PROVEN": 91,
+            "INCOMPLETE": 23
+        },
+        "confirmed_via": "PHP load of MarketDataReplayVerificationProofBasis constants"
+    },
+    "production_code_changed": false,
+    "production_sha256_after": {
+        "ReplayVerificationService.php": "cb2d14dce588cf77115b7eae0b7ff23574f00c12d9b8dfb16f74b5aae5fac2d6",
+        "ReplayResultRepository.php": "566083f2cfcb22bda345b3b4ffdba667e51e28edd3fd92471a0053ba7fa87d31"
+    },
+    "next": "MD-S050-R0016 residual gap A: a run with a configuration snapshot ID but no configuration hash must be BLOCKED (REPLAY_CONFIG_UNBOUND) at service admission and refused at direct write, with fixtures carrying real config hashes; requires MariaDB for the broad regression. Gap B awaits an owner decision.",
+    "no_commit_or_push": true
+}

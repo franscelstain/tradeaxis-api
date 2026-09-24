@@ -1,0 +1,208 @@
+{
+    "evidence_id": "E-MD-B18-A002-067",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260903-001",
+    "issued_at": "2026-09-24T00:19:07+07:00",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "PASS_G03_EXECUTABLE_DEFECT_FIXED_MD_S050_R0016_PROVEN_F017_REMAINS_OPEN",
+    "evidence_scope": "F017_G03_MD_S050_R0016_MISSING_INPUT_BLOCKED",
+    "ci_id": "CI-MD-B18-A002-001",
+    "related_findings": [
+        "F-MD-B18-A002-017",
+        "F-MD-B18-A002-013"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-012",
+        "E-MD-B18-A002-044",
+        "E-MD-B18-A002-066",
+        "CI-MD-B18-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-005"
+    ],
+    "dependencies": [
+        "MD-DEP-0017",
+        "MD-DEP-0015"
+    ],
+    "schema_changed": false,
+    "predicate": {
+        "rule_id": "MD-S050-R0016",
+        "requirement_source": "docs/market_data/authority/strategy/book/Replay_Verification_Contract_LOCKED.md, \"Required bound inputs\" (lines 19-33)",
+        "requirement_text": "Missing input is `BLOCKED`, not permission to query current/latest state.",
+        "package_scope": "MD_B18_A002_CONSOLIDATED_REMEDIATION_PACKAGE.md R0016 (G03): all mandatory input identities, not just config, gate replay admission in both modes and repository direct writes.",
+        "classification": "IMPLEMENTATION_DEFECT_AND_PROOF_GUARD_GAP",
+        "classification_established_before_code_change": true,
+        "prior_basis_defect": "positive test_a_publication_with_no_configuration_snapshot_is_blocked_rather_than_passed and negative test_a_blocked_replay_does_not_fall_back_to_the_current_publication proved only the configuration half (REPLAY_CONFIG_UNBOUND); no guard covered any other required input."
+    },
+    "defect_confirmed_before_change": {
+        "method": "read-only experiment outside the repository driving the real ReplayVerificationService through the B18ReplayComparisonExhaustivenessTest harness with a VERIFIED bound context; fixture declared exactly the resolved bound inputs; working tree clean",
+        "observed": {
+            "control_full": "source_observation_manifest_hash 64-char hash; PASS / MATCH / ADMISSIBLE; mismatch_count 0",
+            "empty_observation_hash": "source_observation_manifest_hash ''; PASS / MATCH / ADMISSIBLE; mismatch_count 0",
+            "null_observation_hash": "source_observation_manifest_hash ''; PASS / MATCH / ADMISSIBLE; mismatch_count 0"
+        },
+        "mechanism": "ReplayVerificationService::actualBoundInputContext() reads source_observation_manifest_hash from $run->observation_manifest_hash and canonical_raw_input_hash from $run->bars_batch_hash (run row, not the verified context); replayAdmissibility() checked only fixture completeness, self-generation, CONFIG_UNBOUND and bound-context VERIFIED status.",
+        "reachability": "EodPublicationRepository::sealProvenanceScope() returns ANALYTICAL_ONLY when the publication has no observation_manifest_hash and the run promote_mode is analytical_remediation_current (RecomputeCurrentIndicatorsCommand); assertPublicationIntegrityContextComplete() then does not require observation_manifest_hash. The upstream contract therefore permits the state rather than making it impossible.",
+        "direct_write_gap": "ReplayResultRepository::assertModeInputs() required source_observation_manifest_hash, canonical_raw_input_hash, temporal_identity_hash, calendar_status_hash, event_factor_hash, formula_registry_hash and reason_registry_hash only for AS_KNOWN; a PUBLICATION_EXACT non-BLOCKED result missing them persisted."
+    },
+    "required_inputs": [
+        {
+            "input": "source_observation_manifest_hash",
+            "source": "eod_runs.observation_manifest_hash",
+            "verified_guarantee": "none (run row); Seal ANALYTICAL_ONLY permits empty",
+            "missing_behaviour_after": "BLOCKED REPLAY_BOUND_INPUT_INCOMPLETE; persisted empty",
+            "fallback_possible": "no -- probe P3 proves a current-publication fallback is caught",
+            "proof": "input cases \"observation identity off the run row\" / \"null on the run row\"; no-fallback negative; P1, P2, P3"
+        },
+        {
+            "input": "canonical_raw_input_hash",
+            "source": "eod_runs.bars_batch_hash",
+            "verified_guarantee": "none (run row); Seal requires publication bars_batch_hash unless partial",
+            "missing_behaviour_after": "BLOCKED",
+            "fallback_possible": "no",
+            "proof": "input case \"canonical raw input off the run row\"; P1"
+        },
+        {
+            "input": "temporal_identity_hash",
+            "source": "componentGroupHash(bound components, universe_identity)",
+            "verified_guarantee": "bind() requires the universe_identity slot (ProducerInputCompletionManifest::REQUIRED_OPERATIONS) and the digest fixes the component list; verifyBoundContext() itself does not re-require presence",
+            "missing_behaviour_after": "BLOCKED (defence in depth)",
+            "fallback_possible": "no",
+            "proof": "input case \"temporal identity component\"; P1"
+        },
+        {
+            "input": "calendar_status_hash",
+            "source": "canonicalHash of manifest calendar/status revision-set hashes",
+            "verified_guarantee": "composite never resolves empty under VERIFIED",
+            "missing_behaviour_after": "not reachable as empty; a null member is Binding-nullable (\"no captured basis\") and is hashed into the composite",
+            "fallback_possible": "no",
+            "proof": "no case (unreachable); residual observation recorded"
+        },
+        {
+            "input": "event_factor_hash",
+            "source": "canonicalHash of event/source-scale/factor-decision/factor-set hashes plus ancillary component group",
+            "verified_guarantee": "composite never resolves empty under VERIFIED; Seal requires source_scale_assessment_set_hash, factor_decision_set_hash, factor_set_hash",
+            "missing_behaviour_after": "not reachable as empty",
+            "fallback_possible": "no",
+            "proof": "no case (unreachable); residual observation recorded"
+        },
+        {
+            "input": "config_snapshot_hash",
+            "source": "configIdentityForRun(): config_hash, config_snapshot_ref, else CONFIG_IDENTITY_UNRECORDED marker",
+            "verified_guarantee": "config_snapshot_id required (REPLAY_CONFIG_UNBOUND); lineage config_snapshot_id checked at bind",
+            "missing_behaviour_after": "missing snapshot BLOCKED as REPLAY_CONFIG_UNBOUND; missing hash is an explicit marker, not fabricated",
+            "fallback_possible": "no",
+            "proof": "test_a_publication_with_no_configuration_snapshot_is_blocked_rather_than_passed"
+        },
+        {
+            "input": "formula_registry_hash / reason_registry_hash",
+            "source": "registry_versions component payload_hash",
+            "verified_guarantee": "bind() requires the registry_versions slot; verifyBoundContext() does not re-require presence",
+            "missing_behaviour_after": "BLOCKED",
+            "fallback_possible": "no (E-066 R0224 probe)",
+            "proof": "input case \"registry versions component\"; P1"
+        },
+        {
+            "input": "read_model_version / serialization_version / executable_build_identity",
+            "source": "decoded registry_content of the VERIFIED context",
+            "verified_guarantee": "decoded and re-verified by Reader when present",
+            "missing_behaviour_after": "BLOCKED",
+            "fallback_possible": "no (E-066 R0218 probe)",
+            "proof": "input cases for each registry_content field; P1"
+        }
+    ],
+    "remediation": {
+        "production_files_changed": {
+            "app/Application/MarketData/Services/ReplayVerificationService.php": "replayAdmissibility() receives the resolved actual bound input context; after the existing VERIFIED check, any BOUND_INPUT_FIELDS value that resolved empty returns REPLAY_BOUND_INPUT_INCOMPLETE naming each field. No value is fabricated or re-read from another source.",
+            "app/Infrastructure/Persistence/MarketData/ReplayResultRepository.php": "assertModeInputs() applies the existing seven-identity check to both modes (was AS_KNOWN only); message names the mode."
+        },
+        "baseline_sha256": {
+            "ReplayVerificationService.php": "a40a79a5e123a5abaab014ca2aadbd9f2fc8157322508f9140732d3f4f310532",
+            "ReplayResultRepository.php": "db6c1cc74d68541510ff4afaf1781a9c86f3cec0c7e051094e0db4a6dd5b6e99"
+        },
+        "after_sha256": {
+            "ReplayVerificationService.php": "cb2d14dce588cf77115b7eae0b7ff23574f00c12d9b8dfb16f74b5aae5fac2d6",
+            "ReplayResultRepository.php": "566083f2cfcb22bda345b3b4ffdba667e51e28edd3fd92471a0053ba7fa87d31"
+        },
+        "as_known_mode": "unchanged: AS_KNOWN inputs are captured as of the knowledge cutoff (AsKnownReplaySnapshotService), never from current state, and its direct-write check was already in force."
+    },
+    "tests_changed": {
+        "tests/Unit/MarketData/B18ReplayComparisonExhaustivenessTest.php": "added test_a_verified_publication_missing_a_required_input_is_blocked (8 cases) and test_an_unavailable_observation_identity_is_not_filled_from_current_state; mocks() gained an optional bound-context mutator.",
+        "tests/Unit/MarketData/ReplayResultRepositoryIntegrationTest.php": "seven PUBLICATION_EXACT cases, one per identity; the persistence test metric now carries the seven identities it previously lacked.",
+        "tests/Unit/MarketData/ReplayVerificationServiceTest.php": "shared VERIFIED stub carried no components or registry_content and the shared run no observation hash -- a VERIFIED state bind() cannot produce; six tests expected PASS/FAIL on it. The stub now binds universe_identity, ancillary and registry_versions components and registry_content, and the run an observation hash. The gate was not weakened."
+    },
+    "proof_basis_binding": {
+        "positive": "B18ReplayComparisonExhaustivenessTest::test_a_verified_publication_missing_a_required_input_is_blocked",
+        "negative": "B18ReplayComparisonExhaustivenessTest::test_an_unavailable_observation_identity_is_not_filled_from_current_state",
+        "direct_write": "ReplayResultRepositoryIntegrationTest::test_an_incomplete_bound_input_set_is_refused_rather_than_persisted"
+    },
+    "probes": [
+        {
+            "id": "P1_remove_block",
+            "mutation": "missing-input block condition replaced by false",
+            "result": "RED: all 8 input cases and the no-fallback test (9 of 51); 42 others green; ReplayVerificationServiceTest 22/22 green",
+            "restored_sha256": "cb2d14dce588cf77115b7eae0b7ff23574f00c12d9b8dfb16f74b5aae5fac2d6"
+        },
+        {
+            "id": "P2_skip_observation",
+            "mutation": "source_observation_manifest_hash excluded from the check",
+            "result": "RED: exactly the two observation cases and the no-fallback test (3 of 51)",
+            "restored_sha256": "cb2d14dce588cf77115b7eae0b7ff23574f00c12d9b8dfb16f74b5aae5fac2d6"
+        },
+        {
+            "id": "P3_current_fallback",
+            "mutation": "empty run observation identity filled from resolvePublicationForEvidenceAudit(type current_publication_for_trade_date)",
+            "result": "RED: only the no-fallback test in its suite (expected BLOCKED, actual PASS); 50 others green. Two ReplayVerificationServiceTest tests errored because their strict mocks refused the extra repository call -- probe mechanics, not a guard.",
+            "restored_sha256": "cb2d14dce588cf77115b7eae0b7ff23574f00c12d9b8dfb16f74b5aae5fac2d6"
+        },
+        {
+            "id": "P4_repo_as_known_only",
+            "mutation": "seven-identity write check returned to AS_KNOWN only",
+            "result": "RED: exactly the 7 new PUBLICATION_EXACT cases (7 of 17)",
+            "restored_sha256": "566083f2cfcb22bda345b3b4ffdba667e51e28edd3fd92471a0053ba7fa87d31"
+        }
+    ],
+    "per_input_probe_derivation": "The contract states one rule for every required input and the implementation is one loop over BOUND_INPUT_FIELDS. Per-field membership is covered by the dataProvider; P2 shows that removing one field is caught by exactly that field's cases. A separate probe per field would re-test the same loop.",
+    "residual_observations_not_remediated": [
+        "A null calendar/status/event revision-set member is Binding-nullable and still yields a non-empty composite hash; distinguishing an empty set from an unbound member is a Binding/composition question, not admission.",
+        "read_model_version is not in the repository direct-write check for either mode (the service admission check covers it for PUBLICATION_EXACT).",
+        "A PUBLICATION_EXACT replay with no resolved publication skips bound-context admission; its result cannot persist (REPLAY_EXPLICIT_PUBLICATION_REQUIRED)."
+    ],
+    "proof_basis_transition": {
+        "before": {
+            "PROVEN": 91,
+            "INCOMPLETE": 23
+        },
+        "after": {
+            "PROVEN": 92,
+            "INCOMPLETE": 22
+        },
+        "confirmed_via": "PHP load of MarketDataReplayVerificationProofBasis constants"
+    },
+    "validation": {
+        "targeted": {
+            "B18ReplayComparisonExhaustivenessTest": "51/51 PASS (248 assertions)",
+            "ReplayVerificationServiceTest": "22/22 PASS (89 assertions)",
+            "ReplayResultRepositoryIntegrationTest": "17/17 PASS (62 assertions)",
+            "replay_and_as_known_suites": "31 files in tests/Unit/MarketData matching Replay/AsKnown, all OK"
+        },
+        "full_marketdata_suite": "tests/Unit/MarketData: 2456 tests, 34541 assertions, 7 failures, 0 errors, 0 skips. All 7 are ProductionCorpusInvariantOracleTest (MD-DEP-0015 corpus baseline, same count as E-015/E-054/E-058). Zero new failures. MariaDB error log checked first: no future-LSN entries since the 2026-09-14 rebuild.",
+        "governance": {
+            "PromotedPredicateProofGateTest": "8/8 PASS",
+            "FindingRecordConsistencyTest": "3/3 PASS",
+            "ClassificationConsistencyGateTest": "20/20 PASS",
+            "TraceabilityApplicabilityGateTest": "11/11 PASS",
+            "ScopeBoundaryAndOrchestrationCompletionTest": "8/8 PASS",
+            "GovernanceGateReadOnlyExecutionTest": "9/9 PASS (5910 assertions)"
+        },
+        "proof_readiness_gate": "FAIL/NOT_READY as expected: 92 with a reviewed basis, 22 without; MD-S050-R0016 not listed",
+        "proof_self_test": "overall FAIL from the pre-existing baseline only (23 entries: 22 PREDICATE_WITHOUT_REVIEWED_BASIS + MISSING_NEGATIVE_PROOF:determinism_and_operations); 10/10 injected scenarios pass; MD-S050-R0016 not flagged"
+    },
+    "formal_traceability": "0/114 SATISFIED unchanged; binder --bound not run",
+    "final_governance_gates": null,
+    "no_commit_or_push": true
+}

@@ -150,3 +150,181 @@ independently.
 
 **This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`** with 14 of its own 16 predicates
 still `INCOMPLETE`.
+
+## G03: missing input is `BLOCKED` (`MD-S050-R0016`) — executable defect fixed — 2026-09-24T00:19:07+07:00
+
+**Classification: `IMPLEMENTATION_DEFECT` + `PROOF_GUARD_GAP`**, established from repository behaviour
+before any code changed. Since `E-044`, a publication whose bound context is not `VERIFIED` is blocked.
+The open question left by the reconstruction was the observation identity. The answer is that it
+could pass.
+
+**Defect.** I drove the real `ReplayVerificationService` through the exhaustiveness harness with a
+`VERIFIED` bound context and a fixture declaring exactly the resolved inputs:
+
+| Case | `source_observation_manifest_hash` | Result |
+|---|---|---|
+| control, all inputs bound | 64-char hash | PASS / MATCH / `ADMISSIBLE` |
+| run `observation_manifest_hash` empty | `''` | **PASS / MATCH / `ADMISSIBLE`**, 0 mismatches |
+| run `observation_manifest_hash` null | `''` | **PASS / MATCH / `ADMISSIBLE`**, 0 mismatches |
+
+- **Why a verified context didn't help.** `actualBoundInputContext()` reads the observation identity
+  and `canonical_raw_input_hash` off the run row, not from the verified context.
+- **Why the state is reachable.** `EodPublicationRepository::sealProvenanceScope()` returns
+  `ANALYTICAL_ONLY` for an `analytical_remediation_current` publication that has no acquisition
+  manifest, and in that scope Seal does not require `observation_manifest_hash`. So the upstream
+  contract allows this state; it does not rule it out.
+- **The same gap on the write path.** `ReplayResultRepository::assertModeInputs()` required the seven
+  input identities only for `AS_KNOWN`, so a `PUBLICATION_EXACT` PASS with an empty observation
+  identity was persisted.
+
+**Required inputs.**
+
+| Required input | Source | `VERIFIED` guarantee | Missing → (after) | Fallback possible? | Proof |
+|---|---|---|---|---|---|
+| source observation identity | run row | none; Seal `ANALYTICAL_ONLY` permits empty | `BLOCKED`, recorded empty | no (P3) | 2 input cases, no-fallback test, P1–P3 |
+| canonical raw input | run `bars_batch_hash` | none (run row) | `BLOCKED` | no | input case, P1 |
+| temporal identity | `universe_identity` component group | `bind()` requires the slot and the digest fixes the list; `verifyBoundContext()` does not re-require it | `BLOCKED` | no | input case, P1 |
+| calendar/status | composite over manifest revision-set hashes | never empty under `VERIFIED` | unreachable as empty | no | — (residual below) |
+| event/factor | composite plus `ancillary` group | never empty; Seal requires the factor/scale hashes | unreachable as empty | no | — (residual below) |
+| configuration | `configIdentityForRun()` | `config_snapshot_id` required | `REPLAY_CONFIG_UNBOUND`; a missing hash is an explicit marker | no | existing config test |
+| formula / reason registry | `registry_versions` payload hash | `bind()` requires the slot | `BLOCKED` | no (E-066) | input case, P1 |
+| read model / serialization / build | decoded `registry_content` | re-verified by Reader | `BLOCKED` | no (E-066) | 3 input cases, P1 |
+
+**Remediation (minimal; nothing fabricated).**
+
+- `replayAdmissibility()` now receives the resolved bound inputs. After the existing `VERIFIED`
+  check, any `BOUND_INPUT_FIELDS` value that resolved empty makes the replay
+  `REPLAY_BOUND_INPUT_INCOMPLETE`, naming each such field. The value is recorded empty and is never
+  re-read from another source.
+- `assertModeInputs()` applies the seven-identity check to both modes.
+- `AS_KNOWN` is unchanged. Its inputs are captured as of the knowledge cutoff, and its write check
+  was already in force.
+
+**Rebinding.**
+
+- Positive: `B18ReplayComparisonExhaustivenessTest::test_a_verified_publication_missing_a_required_input_is_blocked`
+  (eight cases). Each leaves one input unavailable through the path that actually supplies it, and
+  asserts `BLOCKED`/`NOT_ADMISSIBLE` (not PASS, not FAIL), the field named, and the value persisted
+  empty.
+- Negative: `::test_an_unavailable_observation_identity_is_not_filled_from_current_state`. Every
+  selector except the fixture's explicit one returns a publication that does carry an observation
+  identity. The replay must stay `BLOCKED` and resolve only the explicit publication.
+- Direct write: seven `PUBLICATION_EXACT` cases, one per identity, added to
+  `ReplayResultRepositoryIntegrationTest`.
+
+**Probes.** Each was byte-restored and sha256-verified afterwards (service `cb2d14dc…2d6`,
+repository `566083f2…d87`).
+
+- **P1 — block removed:** 9 red (all eight input cases and the no-fallback test); 42 stayed green.
+- **P2 — observation field dropped from the check:** exactly its two cases and the no-fallback test
+  went red.
+- **P3 — current-publication fallback:** only the no-fallback test went red (expected `BLOCKED`,
+  got PASS).
+- **P4 — write guard back to `AS_KNOWN` only:** exactly the seven new cases went red.
+
+No separate probe per field: the contract states one rule for every input, and the implementation
+is one loop. The provider already covers each field, and P2 shows that dropping one field is caught
+by exactly that field's cases.
+
+**Test fixtures corrected.** Six `ReplayVerificationServiceTest` tests expected PASS or FAIL on a
+shared `VERIFIED` stub with no components or `registry_content`, and on a run with no observation
+identity. `bind()` cannot produce that state. The stub now carries real bound inputs; the gate was
+not weakened.
+
+**Validation.**
+
+- `tests/Unit/MarketData` in full: 2456 tests, 7 failures, all of them the `MD-DEP-0015`
+  corpus-oracle baseline. Zero new failures.
+- Every Replay and AsKnown suite is green.
+- Proof readiness: 92 with a reviewed basis, 22 without.
+- Proof self-test: only the baseline fails (23 entries); 10/10 injected scenarios pass.
+
+**Residual observations (not remediated here).**
+
+- A null calendar, status or event revision-set member is nullable at Binding and is still hashed
+  into a non-empty composite.
+- `read_model_version` is absent from the direct-write check in both modes. The admission check
+  covers it for `PUBLICATION_EXACT`.
+- A `PUBLICATION_EXACT` replay with no resolved publication skips bound-context admission, but its
+  result cannot persist.
+
+**Evidence record:** `E-MD-B18-A002-067`, registered in `DOCUMENT_ID_REGISTRY` (`MD-DOC-01202`),
+`DOCUMENT_ROLE_REGISTRY`, `CURRENT_VERIFICATION_REGISTRY` and `WORK_RECORD_REGISTRY`.
+
+**Proof-basis state:** `MD-S050-R0016` moved from `INCOMPLETE` to `PROVEN`. `PROVEN` 91→92,
+`INCOMPLETE` 23→22. Formal traceability is unchanged at `0/114` `SATISFIED`.
+
+**This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`**, with 13 of its own 16
+predicates still `INCOMPLETE`. Next unit: G01-B (`MD-S003-R0023`/`MD-S004-R0004`).
+
+## G03 closure audit: `MD-S050-R0016` returned to `INCOMPLETE` — 2026-09-24T07:30:22+07:00
+
+This read-only audit, run before commit, checked the exact completeness meaning of `MD-S050-R0016`
+against canonical authority. It found that the `E-MD-B18-A002-067` promotion was **premature**.
+`E-067` is `IMMUTABLE_AFTER_ISSUE` and is not edited. Its remediation, guards and four probes stay
+valid for the inputs they name. `E-MD-B18-A002-068` corrects the verdict.
+
+**Scope derived from authority.** "Missing input is `BLOCKED`" (`Replay_Verification_Contract_LOCKED.md:33`)
+applies to the required inputs of lines 23–31 (`MD-S050-R0007`…`R0015`), at the granularity the
+contract names them. The approved package scopes it to "replay admission in both modes and
+repository direct writes". Component completeness is validated at binding with named missing paths.
+Admission consumes that result as the `VERIFIED` verdict (C1 §6).
+
+| Required input / component | Canonical authority | Current representation | Guaranteed complete? | Missing behaviour | Covered by G03 proof? |
+|---|---|---|---|---|---|
+| source observation IDs/hashes | :26 | run `observation_manifest_hash` | no (`ANALYTICAL_ONLY`) | `BLOCKED` | yes (2 cases, no-fallback, P1–P3) |
+| canonical RAW input set | :27 | run `bars_batch_hash` | no | `BLOCKED` | yes |
+| temporal universe/listing/symbol/mappings | :24 | `universe_identity` component | binding slot | `BLOCKED` | yes |
+| calendar/session + status revisions | :25 | captures C04/C05; composite projection | yes, at binding (`calendar_session.required_date.*`, `status_expectation.*`) | no `VERIFIED` context → `BLOCKED` | outside the admission check; binding guards |
+| event revisions, verification, factor sets, contamination | :28 | captures C08/C09; composite projection | yes, at binding; Seal requires factor/scale hashes | no `VERIFIED` context → `BLOCKED` | outside the admission check; binding guards |
+| **configuration snapshot ID/hash** | :29; Platform_Config_Registry `CONFIG_UNBOUND` | ID required; hash may be the `CONFIG_IDENTITY_UNRECORDED` marker | **no** | ID missing → `BLOCKED`; **hash missing → ADMISSIBLE/PASS** | **no — gap A** |
+| formula / indicator / reason registry | :30 | `registry_versions` payload hash | binding slot | `BLOCKED` (exact) | yes (exact only) |
+| **read-model version** | :30 | exact: `registry_content`; **as-known: undefined config key** | **no (as-known always empty)** | exact `BLOCKED`; **as-known PASS; not in the direct-write check (both modes)** | **exact only — gap B** |
+| serialization / build versions | :30 | `registry_content`; storage-checked | exact: yes | `BLOCKED` / refused | yes |
+| fixture identity, expected publication/seal/hash assertions | :23, :31 | fixture package | fixture completeness | `REPLAY_EXPECTED_PROOF_INCOMPLETE` → `BLOCKED` | `MD-S050-R0031` |
+
+**Dispositions.**
+
+- **Calendar/status components:** outside this predicate's admission check, and guaranteed at
+  binding (`B18ProducerCalendarRegistryTest`, `B18ProducerTradingStatusPopulationTest`). A null
+  compatibility member under a complete `VERIFIED` capture is Binding-nullable, not a missing input.
+- **Event/factor components:** same disposition (`B18ProducerEventFactorCaptureTest`).
+- **Config `CONFIG_IDENTITY_UNRECORDED`:** a disguised missing input. **Residual gap A.** I tested
+  it with a temporary admission block: 41 of 51 exhaustiveness tests and 11 of 22
+  `ReplayVerificationServiceTest` tests turned red, because their fixtures pass on the marker. I
+  reverted the block (service sha256 `cb2d14dc…2d6`) because MariaDB stopped responding and the
+  broad regression could not run.
+- **`read_model_version`:** a required input. `AS_KNOWN` reads `governance.read_model_version`,
+  which the configuration does not define, so every `AS_KNOWN` replay records it empty. The
+  direct-write check omits it in both modes. `AS_KNOWN` reason-registry identity is a hash of nominal
+  state names. **Residual gap B**, which needs an owner decision: the minimal fail-closed remedy
+  blocks every `AS_KNOWN` replay, while the alternative binds an as-known read-model and
+  reason-registry identity (`MD-S050-R0014`).
+- **Seven-field direct-write boundary:** insufficient. It lacks `read_model_version` (gap B) and
+  accepts the config marker (gap A).
+- **Export:** `exportReplayEvidence` requires input identities only for `AS_KNOWN`. This is
+  recorded as out of R0016 scope: C1 is guidance, and the package scopes R0016 to admission and
+  direct writes.
+
+**Eight G03 cases.** Every case maps to one required input:
+
+| Case | Required input | Authority line (predicate) |
+|---|---|---|
+| observation (empty) | source observation IDs/hashes | :26 (R0010) |
+| observation (null) | source observation IDs/hashes | :26 (R0010) |
+| canonical raw | canonical RAW input set | :27 (R0011) |
+| temporal | temporal universe/listing/symbol/mappings | :24 (R0008) |
+| registry versions | formula, indicator registry, reason registry | :30 (R0014) |
+| read model | read-model version | :30 (R0014) |
+| serialization | hash/serialization version | :30 (R0014) |
+| build | build version | :30 (R0014) |
+
+None of the cases falls outside R0016, and none blanks a combined hash. Two required inputs have no
+case: the configuration hash (gap A) and every `AS_KNOWN` input (gap B).
+
+**Environment.** MariaDB stopped between runs. The log shows starts at 06:48 and 07:00 with no error
+entries, and no `mysqld` process was running at 07:27. I did not start or restart it.
+
+**State.** `MD-S050-R0016` is `INCOMPLETE`. `PROVEN` 92→91, `INCOMPLETE` 22→23. No production code
+changed in this audit. This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`, with 14 of
+its 16 predicates `INCOMPLETE`. **Next:** R0016 gap A. G01-B is not started.

@@ -44,6 +44,9 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
     /** @var array<string,mixed>|null what upsertMetric was actually given */
     private $persistedMetric = null;
 
+    /** @var callable|null reshapes the VERIFIED bound context mocks() stubs, for one test */
+    private $boundContextMutator = null;
+
     protected function tearDown(): void
     {
         m::close();
@@ -319,6 +322,121 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
         $this->assertSame(['replay_fixture_explicit_publication'], array_values(array_unique($selectors)),
             'the only publication a blocked replay may resolve is the one the fixture names; '
                 .'reaching for the current pointer would be answering from latest state');
+    }
+
+    /**
+     * `MD-S050-R0016` beyond configuration: a VERIFIED bound context is not the same as every
+     * required input being present. `source_observation_manifest_hash` and
+     * `canonical_raw_input_hash` are read off the run row, and Seal admits a publication without an
+     * acquisition manifest (ANALYTICAL_ONLY), so an empty observation identity used to reach PASS
+     * here with every other input verified. Each case leaves one input unavailable through the path
+     * that actually supplies it and expects BLOCKED -- not PASS, which says the replay reproduced,
+     * and not FAIL, which says it ran and diverged -- naming that input, with the value recorded as
+     * empty rather than completed from somewhere else.
+     *
+     * `calendar_status_hash`, `event_factor_hash` and `config_snapshot_hash` have no case: under a
+     * VERIFIED context the first two are composites that never resolve empty, and the third
+     * resolves to an explicit marker (`configIdentityForRun()`); a missing configuration snapshot is
+     * `test_a_publication_with_no_configuration_snapshot_is_blocked_rather_than_passed`.
+     *
+     * @dataProvider unavailableRequiredInputs
+     *
+     * @param  array<int,string>  $unavailable
+     * @param  array<string,mixed>  $runOverride
+     */
+    public function test_a_verified_publication_missing_a_required_input_is_blocked(
+        array $unavailable,
+        array $runOverride,
+        ?callable $mutator
+    ): void {
+        $this->boundContextMutator = $mutator;
+        $result = $this->verify([], $runOverride);
+
+        $this->assertSame('BLOCKED', $result['replay_status'],
+            implode(', ', $unavailable).' was unavailable and the replay was not BLOCKED');
+        $this->assertSame('NOT_ADMISSIBLE', $result['comparison_result']);
+        $this->assertStringContainsString('REPLAY_BOUND_INPUT_INCOMPLETE', (string) $result['mismatch_summary']);
+        $this->assertNotNull($this->persistedMetric, 'a blocked replay must still be persisted');
+        $this->assertSame('NOT_ADMISSIBLE', $this->persistedMetric['admission_state']);
+        foreach ($unavailable as $field) {
+            $this->assertStringContainsString($field, (string) $result['mismatch_summary'],
+                'the block must name the input that was unavailable');
+            $this->assertSame('', $this->persistedMetric[$field],
+                $field.' was recorded with a value although its source had none');
+        }
+    }
+
+    /** @return array<string,array{0:array<int,string>,1:array<string,mixed>,2:callable|null}> */
+    public function unavailableRequiredInputs(): array
+    {
+        $withoutComponent = static function (string $key): callable {
+            return static function (array $context) use ($key): array {
+                $context['components'] = array_values(array_filter($context['components'],
+                    static function (array $c) use ($key) { return $c['component_key'] !== $key; }));
+
+                return $context;
+            };
+        };
+        $withoutRegistryField = static function (string $key): callable {
+            return static function (array $context) use ($key): array {
+                unset($context['registry_content'][$key]);
+
+                return $context;
+            };
+        };
+
+        return [
+            'observation identity off the run row' => [['source_observation_manifest_hash'], ['observation_manifest_hash' => ''], null],
+            'observation identity null on the run row' => [['source_observation_manifest_hash'], ['observation_manifest_hash' => null], null],
+            'canonical raw input off the run row' => [['canonical_raw_input_hash'], ['bars_batch_hash' => ''], null],
+            'temporal identity component' => [['temporal_identity_hash'], [], $withoutComponent('universe_identity')],
+            'registry versions component' => [['formula_registry_hash', 'reason_registry_hash'], [], $withoutComponent('registry_versions')],
+            'read model version' => [['read_model_version'], [], $withoutRegistryField('read_model_version')],
+            'serialization version' => [['serialization_version'], [], $withoutRegistryField('serialization_version')],
+            'executable build identity' => [['executable_build_identity'], [], $withoutRegistryField('executable_build')],
+        ];
+    }
+
+    /**
+     * The other half of `MD-S050-R0016` for an unavailable observation identity: it is not filled
+     * from current state. Any selector other than the fixture's explicit one gets a publication
+     * that does carry an observation identity, so a replay that reached for it would come back
+     * admissible with that value. It must stay BLOCKED, record the identity as empty, and resolve
+     * only the publication the fixture names.
+     */
+    public function test_an_unavailable_observation_identity_is_not_filled_from_current_state(): void
+    {
+        $selectors = [];
+        $current = str_repeat('c', 64);
+        $evidence = m::mock(EodEvidenceRepository::class);
+        [, $publications, $replays] = $this->mocks(true);
+
+        $evidence->shouldReceive('findRunById')->andReturn((object) array_merge($this->runRow(), ['observation_manifest_hash' => '']));
+        $evidence->shouldReceive('resolvePublicationForEvidenceAudit')
+            ->andReturnUsing(function ($selector) use (&$selectors, $current) {
+                $selectors[] = $selector['type'] ?? 'unknown';
+
+                return ($selector['type'] ?? null) === 'replay_fixture_explicit_publication'
+                    ? (object) $this->publicationRow()
+                    : (object) array_merge($this->publicationRow(), ['observation_manifest_hash' => $current]);
+            });
+        $evidence->shouldReceive('dominantReasonCodes')->andReturn([
+            ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'count' => 3],
+        ]);
+        $evidence->shouldReceive('exportEligibilityRows')->andReturn(array_merge(
+            array_fill(0, 7, ['eligible' => 1]),
+            array_fill(0, 3, ['eligible' => 0])
+        ));
+
+        $result = $this->service([$evidence, $publications, $replays])
+            ->verifyRunAgainstFixture(self::RUN_ID, $this->fixtureDir());
+
+        $this->assertSame('BLOCKED', $result['replay_status']);
+        $this->assertStringContainsString('source_observation_manifest_hash', (string) $result['mismatch_summary']);
+        $this->assertSame('', $this->persistedMetric['source_observation_manifest_hash'],
+            'the unavailable observation identity was filled from another publication');
+        $this->assertSame(['replay_fixture_explicit_publication'], array_values(array_unique($selectors)),
+            'a missing input is not permission to resolve any publication but the one the fixture names');
     }
 
     // ---- MD-S050-R0002: publication replay uses exactly the inputs frozen with the publication ---
@@ -603,27 +721,31 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
         // `registry_content` (item 5, partial) is Reader's decoded `registry_versions` payload;
         // real `serialization_version`/`executable_build.build_id` here likewise exercise genuine
         // content for those two fields instead of an always-empty fallback.
-        $publications->shouldReceive('buildManifestByPublicationId')->andReturn((object) [
-            'bound_input_context' => [
-                'available' => true, 'status' => 'VERIFIED', 'schema_version' => 'md_publication_inputs_v2',
-                'reason' => null, 'bound_input_context_hash' => str_repeat('f', 64),
-                'components' => [
-                    ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('u', 64)],
-                    ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('n', 64)],
-                    // F-MD-B18-A002-021 (closing review): a real registry_versions component, so
-                    // formula_registry_hash/reason_registry_hash resolve from genuine content here
-                    // too, rather than the permanently-empty value an absent component would give --
-                    // ReplayVerificationServiceTest::test_formula_and_reason_registry_hash_come_from_the_registry_versions_component
-                    // proves the extraction itself; this fixture only needs it to be non-empty.
-                    ['stage_code' => 'RUN_CONTEXT', 'component_key' => 'registry_versions', 'slot_hash' => str_repeat('3', 64), 'payload_hash' => str_repeat('r', 64)],
-                ],
-                'scope' => [], 'component_manifest' => ['status' => 'COMPLETE'],
-                'registry_content' => [
-                    'read_model_version' => 'market_data_read_product_v1',
-                    'serialization_version' => 'canonical_json_v1_probe',
-                    'executable_build' => ['build_id' => 'sha256:probe_build_identity'],
-                ],
+        $boundContext = [
+            'available' => true, 'status' => 'VERIFIED', 'schema_version' => 'md_publication_inputs_v2',
+            'reason' => null, 'bound_input_context_hash' => str_repeat('f', 64),
+            'components' => [
+                ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('u', 64)],
+                ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('n', 64)],
+                // F-MD-B18-A002-021 (closing review): a real registry_versions component, so
+                // formula_registry_hash/reason_registry_hash resolve from genuine content here
+                // too, rather than the permanently-empty value an absent component would give --
+                // ReplayVerificationServiceTest::test_formula_and_reason_registry_hash_come_from_the_registry_versions_component
+                // proves the extraction itself; this fixture only needs it to be non-empty.
+                ['stage_code' => 'RUN_CONTEXT', 'component_key' => 'registry_versions', 'slot_hash' => str_repeat('3', 64), 'payload_hash' => str_repeat('r', 64)],
             ],
+            'scope' => [], 'component_manifest' => ['status' => 'COMPLETE'],
+            'registry_content' => [
+                'read_model_version' => 'market_data_read_product_v1',
+                'serialization_version' => 'canonical_json_v1_probe',
+                'executable_build' => ['build_id' => 'sha256:probe_build_identity'],
+            ],
+        ];
+        if ($this->boundContextMutator !== null) {
+            $boundContext = ($this->boundContextMutator)($boundContext);
+        }
+        $publications->shouldReceive('buildManifestByPublicationId')->andReturn((object) [
+            'bound_input_context' => $boundContext,
             'identity_revision_set_hash' => str_repeat('a', 64),
             'calendar_revision_set_hash' => str_repeat('b', 64),
             'status_revision_set_hash' => str_repeat('c', 64),

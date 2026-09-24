@@ -87,7 +87,7 @@ class ReplayVerificationService
         $actual = $this->buildActualReplayState($run, $publication, $correction, $expectedContext);
         $comparison = $this->compareExpectedAndActual($fixture, $actual, $expectedContext);
         $replayStatus = $this->replayStatusForComparison($comparison['comparison_result']);
-        $admissibility = $this->replayAdmissibility($run, $publication, $fixture);
+        $admissibility = $this->replayAdmissibility($run, $publication, $fixture, $actual['context']['actual_bound_input_context']);
         if ($admissibility !== null) {
             $replayStatus = 'BLOCKED';
             $comparison['comparison_result'] = 'NOT_ADMISSIBLE';
@@ -2301,7 +2301,7 @@ class ReplayVerificationService
      * a comparison can only ever return MATCH, which is exactly what the corpus shows — zero FAIL
      * and zero BLOCKED across every recorded result.
      */
-    private function replayAdmissibility($run, $publication, array $fixture)
+    private function replayAdmissibility($run, $publication, array $fixture, array $actualBoundInputs = [])
     {
         // `Replay_Verification_Contract_LOCKED.md` "Result and evidence": `BLOCKED` is "required
         // fixture/runtime/input proof was unavailable" -- the fixture half of that sentence, not
@@ -2362,6 +2362,26 @@ class ReplayVerificationService
                         .' producer-bound input context is '.((string) ($boundContext['status'] ?? 'UNKNOWN'))
                         .(($boundContext['reason'] ?? null) !== null ? ' ('.$boundContext['reason'].')' : '')
                         .'; exact verification requires complete, already-verified V2 evidence.',
+                ];
+            }
+
+            // MD-S050-R0016: "Missing input is `BLOCKED`, not permission to query current/latest
+            // state." A VERIFIED bound context does not by itself make every required input present:
+            // `source_observation_manifest_hash` and `canonical_raw_input_hash` are still read off the
+            // run row, and Seal admits a publication with no acquisition manifest (ANALYTICAL_ONLY
+            // scope), so an empty observation identity reached PASS here. An input that resolved empty
+            // is unavailable; the replay is refused as it stands, never completed from another source.
+            $missing = [];
+            foreach (self::BOUND_INPUT_FIELDS as $field) {
+                if (trim((string) ($actualBoundInputs[$field] ?? '')) === '') {
+                    $missing[] = $field;
+                }
+            }
+            if ($missing !== []) {
+                return [
+                    'reason' => 'REPLAY_BOUND_INPUT_INCOMPLETE: publication '.((int) $publication->publication_id)
+                        .' required bound input unavailable: '.implode(', ', $missing)
+                        .'; a missing input is BLOCKED, not permission to read current/latest state.',
                 ];
             }
         }

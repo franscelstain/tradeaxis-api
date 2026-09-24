@@ -25,6 +25,15 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
             'config_snapshot_hash' => str_repeat('b', 64),
             'serialization_version' => 'replay-v2',
             'executable_build_identity' => 'test-build',
+            // MD-S050-R0016: a non-BLOCKED PUBLICATION_EXACT result carries every required bound
+            // input; before the guard covered this mode this metric persisted without them.
+            'source_observation_manifest_hash' => str_repeat('c', 64),
+            'canonical_raw_input_hash' => str_repeat('d', 64),
+            'temporal_identity_hash' => str_repeat('e', 64),
+            'calendar_status_hash' => str_repeat('f', 64),
+            'event_factor_hash' => str_repeat('0', 64),
+            'formula_registry_hash' => str_repeat('1', 64),
+            'reason_registry_hash' => str_repeat('2', 64),
             'bound_input_context_json' => json_encode(['publication_id' => 44]),
             'trade_date' => '2026-03-20',
             'trade_date_effective' => '2026-03-20',
@@ -166,7 +175,25 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
                 ['executable_build_identity' => null],
                 'REPLAY_BOUND_INPUT_INCOMPLETE',
             ],
-        ];
+        ] + $this->exactResultMissingEachFrozenIdentity();
+    }
+
+    /**
+     * `MD-S050-R0016` on the direct-write path: the seven frozen identities were required only of
+     * AS_KNOWN results, so a PUBLICATION_EXACT PASS with an empty observation identity was stored.
+     * `completeMetric()` is PUBLICATION_EXACT, so each case here is exactly that mode missing one.
+     *
+     * @return array<string,array{0:array<string,mixed>,1:string}>
+     */
+    private function exactResultMissingEachFrozenIdentity(): array
+    {
+        $cases = [];
+        foreach (['source_observation_manifest_hash', 'canonical_raw_input_hash', 'temporal_identity_hash',
+            'calendar_status_hash', 'event_factor_hash', 'formula_registry_hash', 'reason_registry_hash'] as $field) {
+            $cases['exact without '.$field] = [[$field => ''], 'REPLAY_BOUND_INPUT_INCOMPLETE: PUBLICATION_EXACT result is missing '.$field];
+        }
+
+        return $cases;
     }
 
     /**

@@ -196,11 +196,11 @@ class ReplayResultRepository
                 throw new \RuntimeException('REPLAY_BOUND_INPUT_INCOMPLETE: non-BLOCKED replay result is missing '.$field.'.');
             }
         }
-        if ($mode === ReplayMode::AS_KNOWN) {
-            foreach (['source_observation_manifest_hash', 'canonical_raw_input_hash', 'temporal_identity_hash', 'calendar_status_hash', 'event_factor_hash', 'formula_registry_hash', 'reason_registry_hash'] as $field) {
-                if (empty($metric[$field])) {
-                    throw new \RuntimeException('REPLAY_BOUND_INPUT_INCOMPLETE: AS_KNOWN result is missing '.$field.'.');
-                }
+        // MD-S050-R0016: these identities are required bound inputs in both modes. This loop was
+        // AS_KNOWN-only, so a PUBLICATION_EXACT PASS with an empty observation identity persisted.
+        foreach (['source_observation_manifest_hash', 'canonical_raw_input_hash', 'temporal_identity_hash', 'calendar_status_hash', 'event_factor_hash', 'formula_registry_hash', 'reason_registry_hash'] as $field) {
+            if (empty($metric[$field])) {
+                throw new \RuntimeException('REPLAY_BOUND_INPUT_INCOMPLETE: '.$mode.' result is missing '.$field.'.');
             }
         }
     }
