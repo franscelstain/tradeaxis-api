@@ -1,0 +1,194 @@
+{
+    "evidence_id": "E-MD-B18-A002-073",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+    "issued_at": "2026-09-24T21:09:22+07:00",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "PASS_GAPB2_ASKNOWN_REASON_REGISTRY_FAILCLOSED_IMPLEMENTED_R0005_REBOUND_R0016_R0014_R0071_REMAIN_INCOMPLETE",
+    "evidence_scope": "F017_G03_MD_S050_R0016_GAPB2_ASKNOWN_REASON_REGISTRY_IDENTITY",
+    "ci_id": "CI-MD-B18-A002-001",
+    "related_findings": [
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-068",
+        "E-MD-B18-A002-069",
+        "E-MD-B18-A002-070",
+        "E-MD-B18-A002-071",
+        "E-MD-B18-A002-072",
+        "CI-MD-B18-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-005",
+        "D-MD-B18-A002-008"
+    ],
+    "dependencies": [
+        "MD-DEP-0017",
+        "MD-DEP-0015"
+    ],
+    "schema_changed": false,
+    "authority_recheck_before_coding": {
+        "method": "Reason_Codes_Registry.md (MD-S085) read in full; its 5 'Registry rules' cover naming, one-code-one-meaning, description drift and deprecation only -- no revision, version, effective-time or recorded-time concept anywhere in the document. Platform_Config_Registry_LOCKED.md:289/291 re-read: as-known replay resolves only revisions known by the declared cutoff, and current registry state must never leak into historical replay. Replay_Verification_Contract_LOCKED.md:33/60 re-read: a missing input is BLOCKED, not permission to query current/latest state.",
+        "result": "confirmed: no historical reason-registry identity can be legitimately bound for AS_KNOWN under current authority. No conflict found. Not permitted to invent a historical reason-registry versioning scheme (out of this unit's scope) or to treat a nominal hash of fixed state names as an identity."
+    },
+    "defect_traced": {
+        "capture": "AsKnownReplaySnapshotService::capture()'s $reasonIdentity was two hardcoded constant arrays (coverage_states/replay_states) plus a config key (governance.reason_registry_revision) that has never existed -- the same 'non-empty is not present' shape E-MD-B18-A002-069 found in the config identity. A hash of it looked like a real identity but was not one.",
+        "verification": "verifyAsKnownAgainstFixture() had no admissibility gate at all for reason_registry_hash before this unit; it flowed straight into the field-by-field comparison and could reach PASS, MISMATCH or FAIL against a fixture's equally-fabricated expected hash.",
+        "storage": "ReplayResultRepository::assertModeInputs() checked reason_registry_hash only for emptiness in the both-modes loop; a non-empty fabricated hash passed silently (the exact defect class E-069 fixed for config_snapshot_hash, deliberately left open for Gap B2 by E-MD-B18-A002-071)."
+    },
+    "implementation": [
+        {
+            "defect": "AS_KNOWN captured a hash of fabricated constants as reason_registry_hash, indistinguishable in shape from a real identity.",
+            "old_source": "AsKnownReplaySnapshotService::capture(): 'reason_registry_hash' => $this->hash($reasonIdentity)",
+            "code_change": "AsKnownReplaySnapshotService.php: added public const REASON_REGISTRY_IDENTITY_UNAVAILABLE = 'REASON_REGISTRY_IDENTITY_UNAVAILABLE'; 'reason_registry_hash' now returns this marker unconditionally. $reasonIdentity/'reason_registry_identity' context entry left in place as harmless descriptive context, never itself claimed as an identity.",
+            "resulting_behaviour": "every AS_KNOWN snapshot now honestly reports that no historical reason-registry identity is available, instead of a hash that merely looks non-empty."
+        },
+        {
+            "defect": "verifyAsKnownAgainstFixture() had no admissibility check for this marker; it would compare against fixtures and could reach PASS/MISMATCH/FAIL on a fabricated basis.",
+            "old_source": "ReplayVerificationService::verifyAsKnownAgainstFixture() proceeded directly from the empty-hash check into AsKnownReplayExecutionService::execute().",
+            "code_change": "ReplayVerificationService.php: inserted an early-return block, placed BEFORE the execution service is invoked (unlike PUBLICATION_EXACT's admissibility check, which runs AFTER the actual state is built, because AS_KNOWN's canonicalizer has real side-effect/expense concerns and running it would contradict 'the comparison did not execute'). Fires when $actualSnapshot['reason_registry_hash'] === AsKnownReplaySnapshotService::REASON_REGISTRY_IDENTITY_UNAVAILABLE. Builds and persists a BLOCKED/NOT_ADMISSIBLE metric directly from the captured snapshot: admission_state=NOT_ADMISSIBLE, comparison_result=NOT_ADMISSIBLE, replay_status=BLOCKED, status=HELD, publishability_state=NOT_READABLE, publication_id=null, source=as_known_replay, mismatch_count=0, mismatches_json=[], mismatch_summary carries a human-readable REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE: <explanation> string.",
+            "resulting_behaviour": "every as-known replay is BLOCKED before any comparison executes, unconditionally -- no fixture content can reach comparison, because the block fires on the captured snapshot alone, independent of what the fixture claims."
+        },
+        {
+            "defect": "storage boundary accepted a non-BLOCKED result carrying the fabricated hash, checking only for emptiness.",
+            "old_source": "ReplayResultRepository::assertModeInputs(): both-modes loop treated a non-empty reason_registry_hash as present.",
+            "code_change": "ReplayResultRepository.php: added an explicit check ahead of the both-modes loop -- a non-BLOCKED metric whose reason_registry_hash equals AsKnownReplaySnapshotService::REASON_REGISTRY_IDENTITY_UNAVAILABLE is refused with RuntimeException, in both replay modes.",
+            "resulting_behaviour": "a direct write cannot bypass the service-layer BLOCKED decision by constructing its own non-BLOCKED metric carrying the marker."
+        }
+    ],
+    "final_reason_code_design_decision": {
+        "initial_attempt": "the BLOCKED metric's final_reason_code was first set to the bare literal 'REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE'.",
+        "discovery": "the first full isolated regression (2467 tests, 8 failures) found one real, new failure: EmittedReasonCodeRegistrationTest::test_every_reason_code_emitted_by_the_runtime_is_registered -- a static+seed-execution scan (not a hand-written list) proving the literal was emitted by ReplayVerificationService.php but registered in neither Reason_Codes_Seed.sql nor Reason_Codes_Registry.md. This is a genuine defect this unit introduced, not a false positive: an operator reading this code out of eod_run_events/eod_replay_results would find nothing to look it up in.",
+        "authority_boundary_found": "Reason_Codes_Registry.md is registered in MARKET_DATA_STRATEGY_FREEZE_MANIFEST.json as strategy_id MD-S085 with a pinned sha1 under the current freeze (MD-STRATEGY-FREEZE-20260922-001). An attempt to add the code there and to the paired Reason_Codes_Seed.sql (kept synchronized with the registry by LoggingTraceabilityReasonCodesStaticGuardTest::test_reason_code_registry_and_seed_are_synchronized) caused two further regression failures: GovernanceGateReadOnlyExecutionTest's STRATEGY_FREEZE check (sha1 mismatch on the frozen document) and its TRACEABILITY_MATRIX check (twenty 'source mismatch MD-S085-R####' errors from inserting a row that shifted every positionally-derived requirement id below it). The one prior precedent for adding a code to this exact document (DOC-CHG-20260823-001 / D-MD-20260823-01, BAR_ZERO_VOLUME_PRICE_MOVEMENT) required an explicit, quoted user authorization instruction before any byte of the frozen document changed, plus a successor freeze manifest and a DOCUMENT_CHANGE_LOG.md entry. This unit's governing instruction authorized Gap B2's production remediation; it did not authorize amending a LOCKED strategy-authority document, and 'Do not start G01-B' signals the user wants strict scope discipline.",
+        "reverted": "both edits (Reason_Codes_Registry.md, Reason_Codes_Seed.sql) fully reverted via exact-line Edit (git checkout was refused by the harness's own destructive-action classifier, so the inserted lines were removed individually instead). Reason_Codes_Registry.md's sha1 reconfirmed identical to the frozen manifest's registered value (3BB61139B60926D99A7E0940636A830C99627030). The one row seeded into tradeaxis_testing.eod_reason_codes during the attempt was deleted, restoring the table to its prior 437-row count.",
+        "final_design": "final_reason_code is set to null in this early-return block instead. Precedent: replayAdmissibility()'s own NOT_ADMISSIBLE override (Gap A's CONFIG_IDENTITY_UNRECORDED path, and REPLAY_BOUND_INPUT_INCOMPLETE/REPLAY_CONFIG_UNBOUND generally) never assigns a bespoke final_reason_code either -- those block-reasons live only in the free-text 'reason'/mismatch_summary field, which is exactly why they were never caught by this same scan (the regex requires the quoted string to be the bare code with nothing else, and 'CODE: explanation text' does not match). AS_KNOWN's early return has no regular field comparison to inherit a final_reason_code from (by design, the canonicalizer is never invoked), so null is used directly rather than fabricating one. The specific cause remains fully legible via mismatch_summary/comparison_note (the $reason string, which does contain the REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE text) and via reason_registry_hash (the REASON_REGISTRY_IDENTITY_UNAVAILABLE marker itself, already required to be looked up by predicate/code, not by a registry row). No new reason code was registered; no LOCKED strategy document was modified; no new authorization was required.",
+        "verified": "with this design, EmittedReasonCodeRegistrationTest, LoggingTraceabilityReasonCodesStaticGuardTest and GovernanceGateReadOnlyExecutionTest (9/9, 5966 assertions, including its self-test's 30-mutation control table) all pass; none of this unit's own new tests assert final_reason_code for the AS_KNOWN BLOCKED case, so no test needed to change."
+    },
+    "tests_added": {
+        "B18AsKnownModeIsolationTest::test_the_comparison_surface_field_list_names_as_known_artifacts_and_not_the_publication": "renamed/rewritten static source-scan guard for the deterministic_fields_checked_json literal array (unchanged claim, restated as a static guard).",
+        "B18AsKnownModeIsolationTest::test_an_as_known_result_with_a_diverging_fixture_is_still_blocked_by_the_unavailable_reason_registry": "renamed/rewritten from the former MISMATCH/FAIL guard; perturbs the fixture's own snapshot_hash and asserts BLOCKED/NOT_ADMISSIBLE with REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE in mismatch_summary, and mismatches_json decodes to [].",
+        "B18AsKnownModeIsolationTest::test_an_as_known_replay_is_blocked_even_when_the_fixture_would_otherwise_match": "base, non-perturbed scenario; proves the block is unconditional, not fixture-dependent.",
+        "B18AsKnownModeIsolationTest::test_mutating_the_current_reason_registry_does_not_make_as_known_admissible": "inserts a new row into the live eod_reason_codes table; asserts the result stays BLOCKED on the same marker -- current registry state cannot leak into historical replay.",
+        "ReplayResultRepositoryIntegrationTest": "incompleteBoundInputSets() gained two cases (PUBLICATION_EXACT and AS_KNOWN) asserting a non-BLOCKED metric carrying REASON_REGISTRY_IDENTITY_UNAVAILABLE is refused with REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE."
+    },
+    "probes": [
+        {
+            "id": "P1_restore_nominal_hash",
+            "mutation": "AsKnownReplaySnapshotService reverted to $this->hash($reasonIdentity) (the old fabricated-looking hash)",
+            "result": "RED: 3 of 9 B18AsKnownModeIsolationTest tests (the three that depend on the BLOCKED behaviour). B18AsKnownSnapshotIsolationTest (sibling) stayed green (3/3).",
+            "restored_sha256": "f1f42ea6583fca015ba39a4f705de8cc9f1699b9114b66e7875f7ef76336e8c3"
+        },
+        {
+            "id": "P2_bypass_blocked_decision",
+            "mutation": "the admission check in verifyAsKnownAgainstFixture() replaced with if (false) { ... }",
+            "result": "RED: 6 of 9 B18AsKnownModeIsolationTest tests, now as errors -- bypassing the check lets the marker reach the real canonicalizer path, which then reaches the (also-corrected) storage boundary and throws REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE there instead. ReplayVerificationServiceTest (publication-mode sibling) stayed green (22/22).",
+            "restored_sha256": "fc8f5e9a85d437e1134b9506dd6fdac1133012f81dbf25e3ab5a50014f298f9f"
+        },
+        {
+            "id": "P3_current_fallback",
+            "mutation": "reason_registry_hash derived from a live hash of DB::table('eod_reason_codes')->orderBy('code')->get() instead of the honest marker",
+            "result": "RED: 3 of 9 B18AsKnownModeIsolationTest tests (the same three as P1 -- a live-table-derived value is exactly as inadmissible as the old nominal hash was). B18AsKnownSnapshotIsolationTest stayed green (3/3).",
+            "restored_sha256": "f1f42ea6583fca015ba39a4f705de8cc9f1699b9114b66e7875f7ef76336e8c3"
+        },
+        {
+            "id": "P4_storage_check_removed",
+            "mutation": "the ReplayResultRepository refusal wrapped in if (false && ...) so it can never fire",
+            "result": "RED: exactly the 2 new ReplayResultRepositoryIntegrationTest cases (22/22 -> 2 failures). B18AsKnownModeIsolationTest (sibling, service-layer BLOCKED path unaffected) stayed green (9/9).",
+            "restored_sha256": "fcce71f77c3c0d1017f8aaf9d84d832ee5a91aa89af70e1c12dfa94cc0f43410"
+        },
+        {
+            "id": "note",
+            "detail": "each file run separately (multi-file phpunit CLI silent-drop lesson from Gap A). All four probes re-run a second time after the final_reason_code design change (P1/P3 target AsKnownReplaySnapshotService.php, unaffected by that change and re-confirmed identical; P2 target ReplayVerificationService.php re-confirmed against the new sha256; P4 target ReplayResultRepository.php unaffected and re-confirmed)."
+        }
+    ],
+    "r0005_impact": {
+        "requirement": "Replay_Verification_Contract_LOCKED.md:17: an as-known result 'may differ from a historical publication when the selected cutoff, approved as-known configuration, or declared scenario differs. It creates new replay artifacts and never mutates or impersonates the original publication.'",
+        "original_guard_shape": "positive: an as-known result claims no publication and records its own mode (still passes, unmutated). negative (former test_an_as_known_result_diverging_from_its_own_fixture_is_a_mismatch): perturbed the fixture's own snapshot_hash and asserted MISMATCH/FAIL, proving a genuine as-known divergence is caught rather than silently accepted under the 'may differ' permission.",
+        "structural_change": "Gap B2 makes every as-known replay BLOCKED before any comparison runs, unconditionally -- confirmed by inspection of AsKnownReplaySnapshotService::capture(): the reason_registry_hash assignment has zero conditional logic capable of ever not returning the unavailable marker. No fixture content can reach comparison through the real verifier any more.",
+        "classification": "IMPLEMENTATION_DEPENDENCY_UNAVAILABLE. R0005's own implementation is not defective and its positive clause remains independently true and reachable. Its negative clause's prerequisite -- a reachable as-known comparison -- is unavailable because a different required input (reason-registry identity) is genuinely unbindable per current authority, not because R0005 itself is unimplemented.",
+        "action_taken": "per instruction, not force-replaced with a same-named guard proving a different claim. The renamed test at the old name (test_an_as_known_result_with_a_diverging_fixture_is_still_blocked_by_the_unavailable_reason_registry) proves a true and useful but different fact (BLOCKED regardless of fixture divergence), not R0005's own original negative claim. MD-S050-R0005 moved from PROVEN to INCOMPLETE in the proof basis: positive clause kept unchanged, negative set to null.",
+        "remediation": "none available within this unit's authority; would require real historical reason-registry versioning (explicitly out of Gap B2's scope) or an owner decision narrowing R0005's own required proof shape."
+    },
+    "r0014_r0071_review": {
+        "MD-S050-R0014": "reviewed independently. Its own wording requires binding/comparing the named registry versions (a positive reproducibility requirement), which fail-closed BLOCKED behaviour does not satisfy -- it correctly refuses to fabricate a binding, but does not supply the missing one. AS_KNOWN can now never bind a reason-registry version at all. Remains INCOMPLETE; basis text extended to record Gap B2's landing and why it does not close this predicate.",
+        "MD-S019-R0071": "reviewed independently of R0014, as instructed. Requires 'if replay uses identical ... formula/registry versions, then replay must reproduce identical outputs' -- a positive reproducibility claim over an actually-used identical value, which AS_KNOWN cannot supply for the reason-registry ingredient for the same reason as R0014. What Gap B2 does prove is the narrower, adjacent Platform_Config_Registry_LOCKED.md:291 guarantee (current state must never leak into historical replay) for this ingredient specifically, confirmed by test_mutating_the_current_reason_registry_does_not_make_as_known_admissible. That is real and proven, but not R0071's own claim. Remains INCOMPLETE; basis text extended accordingly."
+    },
+    "r0016_review": {
+        "not_promoted": true,
+        "reasoning": "Gap A + Gap B1 + Gap B2 are now all implemented and proven for their specific inputs (config identity, read-model identity, reason-registry identity). A bounded, read-only check (not an executed probe) confirmed AS_KNOWN's config path (MarketDataConfigSnapshotRepository::resolveAsKnown()) is already fail-closed by construction -- it throws CONFIG_SNAPSHOT_NOT_KNOWN_AT_CUTOFF rather than returning an empty row. AS_KNOWN's calendar/status, event/factor, temporal universe, source-observation and canonical-raw-input captures were explicitly NOT independently probed for a missing-input case in this unit -- out of Gap B2's specific scope. MD-S050-R0016 therefore remains INCOMPLETE; basis text fully replaced to record exactly what is and is not proven."
+    },
+    "validation": {
+        "targeted": {
+            "B18AsKnownModeIsolationTest": "9/9 PASS (37 assertions)",
+            "ReplayResultRepositoryIntegrationTest": "22/22 PASS (77 assertions)",
+            "EmittedReasonCodeRegistrationTest": "3/3 PASS (10 assertions)",
+            "LoggingTraceabilityReasonCodesStaticGuardTest": "5/5 PASS (89 assertions)",
+            "ReasonCodeSeedExecutionTest": "5/5 PASS (6 assertions)",
+            "GovernanceGateReadOnlyExecutionTest": "9/9 PASS (5966 assertions), confirming STRATEGY_FREEZE and TRACEABILITY_MATRIX are intact after the full revert",
+            "B18AsKnownSnapshotIsolationTest (sibling)": "3/3 PASS, unchanged under every probe",
+            "ReplayVerificationServiceTest (publication control, sibling)": "22/22 PASS (89 assertions), unchanged under every probe"
+        },
+        "wider_as_known_and_pipeline_sweep_before_probing": "B18ReplayComparisonExhaustivenessTest, B18AsKnownTemporalSequenceTest, AsKnownReplayBoundaryTest, AsKnownReplayExecutionServiceTest, AsKnownWiringAndConfigIdentityTest, SourceObservationAsKnownBoundaryTest, B18ReplayContractStaticGuardTest, OpsCommandSurfaceTest, MarketDataPipelineIntegrationTest -- all green, each file run separately, zero concurrent processes",
+        "full_marketdata_suite": "tests/Unit/MarketData: 2467 tests, 34637 assertions, 7 failures, 0 errors.",
+        "full_suite_baseline_comparison": "Exact match to the known MD-DEP-0015 corpus-oracle baseline (7 ProductionCorpusInvariantOracleTest failures, by name). Zero new failures, zero baseline entries resolved. Two intermediate full-suite runs (8 failures with the bare final_reason_code literal, then 9 failures including the frozen-document STRATEGY_FREEZE/TRACEABILITY_MATRIX violations from the reverted registry-edit attempt) were diagnosed as real defects of this unit's own making, not test contention or false signals, and were fixed before trusting a result -- neither is a MariaDB-contention artifact.",
+        "failure_names": [
+            "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_carries_a_non_positive_price",
+            "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_violates_ohlc_ordering",
+            "ProductionCorpusInvariantOracleTest::test_exactly_one_publication_is_current_per_trade_date",
+            "ProductionCorpusInvariantOracleTest::test_no_readable_publication_rests_on_a_failed_run",
+            "ProductionCorpusInvariantOracleTest::test_authoritative_factor_candidates_reach_an_explicit_applied_or_held_decision",
+            "ProductionCorpusInvariantOracleTest::test_no_price_derived_factor_is_usable_as_an_adjustment",
+            "ProductionCorpusInvariantOracleTest::test_every_history_row_binds_to_a_publication"
+        ],
+        "mariadb": "verified reachable (127.0.0.1:3306) before each of the three full-suite attempts; not started or restarted by this session; error log showed no crash or future-LSN warning across any of them",
+        "authoritative_run_isolation": "each full-suite run (and every probe run) was launched with no other PHPUnit/probe process running against the repository or the database, confirmed via process listing beforehand and by issuing no other command until each run completed",
+        "production_code_changed": true,
+        "test_code_changed": true,
+        "documentation_reverted_to_unchanged": true
+    },
+    "production_sha256_after": {
+        "AsKnownReplaySnapshotService.php": "f1f42ea6583fca015ba39a4f705de8cc9f1699b9114b66e7875f7ef76336e8c3",
+        "ReplayVerificationService.php": "fc8f5e9a85d437e1134b9506dd6fdac1133012f81dbf25e3ab5a50014f298f9f",
+        "ReplayResultRepository.php": "fcce71f77c3c0d1017f8aaf9d84d832ee5a91aa89af70e1c12dfa94cc0f43410"
+    },
+    "documentation_sha1_confirmed_unchanged": {
+        "authority/strategy/registry/Reason_Codes_Registry.md": "3BB61139B60926D99A7E0940636A830C99627030 (matches MARKET_DATA_STRATEGY_FREEZE_MANIFEST.json's registered MD-S085 fingerprint; no strategy document was modified by this unit)"
+    },
+    "predicate_state": {
+        "MD-S050-R0005": "INCOMPLETE (was PROVEN). Positive clause kept; negative clause set to null; classification IMPLEMENTATION_DEPENDENCY_UNAVAILABLE. See r0005_impact above.",
+        "MD-S050-R0016": "INCOMPLETE (unchanged in state, basis text replaced). See r0016_review above.",
+        "MD-S050-R0014": "INCOMPLETE (unchanged in state, basis text extended). See r0014_r0071_review above.",
+        "MD-S019-R0071": "INCOMPLETE (unchanged in state, basis text extended). See r0014_r0071_review above.",
+        "MD-S082-R0218": "PROVEN, unaffected -- its negative guard (test_an_as_known_result_claims_no_publication_and_records_its_own_mode) was never renamed and still passes unmutated.",
+        "not_promoted": true,
+        "proof_basis_transition": {
+            "before": {
+                "PROVEN": 89,
+                "INCOMPLETE": 25
+            },
+            "after": {
+                "PROVEN": 88,
+                "INCOMPLETE": 26
+            },
+            "confirmed_via": "PHP load of MarketDataReplayVerificationProofBasis constants directly, both before and after the edit"
+        }
+    },
+    "formal_traceability": "0/114 SATISFIED unchanged; not touched by this unit",
+    "preserved_unchanged": [
+        "D-MD-B18-A002-008",
+        "E-MD-B18-A002-050",
+        "E-MD-B18-A002-067",
+        "E-MD-B18-A002-068",
+        "E-MD-B18-A002-069",
+        "E-MD-B18-A002-070",
+        "E-MD-B18-A002-071",
+        "E-MD-B18-A002-072",
+        "MARKET_DATA_STRATEGY_FREEZE_MANIFEST.json (MD-STRATEGY-FREEZE-20260922-001, unchanged -- attempted edit reverted before issuance)"
+    ],
+    "next": "G01-B (MD-S003-R0023 / MD-S004-R0004) -- not started by this unit, per explicit instruction. A separate, user-authorized unit may register REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE in Reason_Codes_Registry.md (MD-S085) and Reason_Codes_Seed.sql if a bespoke final_reason_code for this BLOCKED state is later wanted; not required by any currently INCOMPLETE predicate.",
+    "no_commit_or_push": true
+}

@@ -12,6 +12,21 @@ use Illuminate\Support\Facades\DB;
 
 final class AsKnownReplaySnapshotService
 {
+    /**
+     * `MD-S050-R0016` Gap B2: `Reason_Codes_Registry.md` (`MD-S085`) defines a stable code
+     * vocabulary but no revision, version, effective-time or recorded-time concept at all --
+     * confirmed by reading its "Registry rules" in full, which cover only naming, meaning
+     * stability and deprecation. There is therefore no historical reason-registry state an
+     * as-known replay could legitimately bind as of its knowledge cutoff. The prior
+     * `reason_registry_hash` was a hash of two hardcoded constant arrays
+     * (`coverage_states`/`replay_states`) plus a config key (`governance.reason_registry_revision`)
+     * that has never existed -- the exact same "non-empty is not present" shape `E-MD-B18-A002-069`
+     * found in the config identity. This marker replaces that fabricated-looking hash so the gap
+     * stays legible, exactly as `ReplayVerificationService::CONFIG_IDENTITY_UNRECORDED` already
+     * does for a missing config identity. Value equal to name, by the same convention.
+     */
+    public const REASON_REGISTRY_IDENTITY_UNAVAILABLE = 'REASON_REGISTRY_IDENTITY_UNAVAILABLE';
+
     private $identity;
     private $calendar;
     private $statuses;
@@ -124,7 +139,10 @@ final class AsKnownReplaySnapshotService
             'config_snapshot_id' => isset($config['config_snapshot_id']) ? (int) $config['config_snapshot_id'] : null,
             'config_snapshot_hash' => (string) ($config['config_hash'] ?? ''),
             'formula_registry_hash' => $this->hash($formulaIdentity),
-            'reason_registry_hash' => $this->hash($reasonIdentity),
+            // `MD-S050-R0016` Gap B2: `$reasonIdentity` above is two hardcoded constant arrays plus
+            // a config key that has never existed -- a hash of it is not a historical reason-
+            // registry identity, however non-empty it looks. See `self::REASON_REGISTRY_IDENTITY_UNAVAILABLE`.
+            'reason_registry_hash' => self::REASON_REGISTRY_IDENTITY_UNAVAILABLE,
             'snapshot_hash' => $this->hash($context),
         ];
     }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Application\MarketData\Services\AsKnownReplaySnapshotService;
 use App\Application\MarketData\Services\ReplayVerificationService;
 use App\Infrastructure\Persistence\MarketData\ReplayResultRepository;
 use Illuminate\Support\Facades\DB;
@@ -193,6 +194,18 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
             'as-known without read_model_version' => [
                 ['replay_mode' => 'AS_KNOWN', 'read_model_version' => null],
                 'REPLAY_BOUND_INPUT_INCOMPLETE: AS_KNOWN result is missing read_model_version',
+            ],
+            // Gap B2: distinct from a null/empty reason_registry_hash (already covered by
+            // exactResultMissingEachFrozenIdentity() below) -- this is the non-empty, non-null
+            // marker AsKnownReplaySnapshotService::capture() now returns honestly instead of a
+            // fabricated-looking hash, refused at direct write in both modes.
+            'exact with unavailable reason-registry identity' => [
+                ['reason_registry_hash' => AsKnownReplaySnapshotService::REASON_REGISTRY_IDENTITY_UNAVAILABLE],
+                'REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE',
+            ],
+            'as-known with unavailable reason-registry identity' => [
+                ['replay_mode' => 'AS_KNOWN', 'reason_registry_hash' => AsKnownReplaySnapshotService::REASON_REGISTRY_IDENTITY_UNAVAILABLE],
+                'REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE',
             ],
         ] + $this->exactResultMissingEachFrozenIdentity();
     }

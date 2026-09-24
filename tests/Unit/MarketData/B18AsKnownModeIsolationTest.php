@@ -82,6 +82,25 @@ class B18AsKnownModeIsolationTest extends TestCase
     }
 
     /**
+     * `MD-S050-R0016` Gap B2 -- even a fixture that would otherwise match exactly is `BLOCKED`, not
+     * `PASS`. `MD-S085` provides no historical reason-registry identity for any as-known replay to
+     * bind, so this holds unconditionally; before this fix the same scenario reached `PASS`/`MATCH`
+     * on a hash of two hardcoded constant arrays that never varied with anything.
+     */
+    public function test_an_as_known_replay_is_blocked_even_when_the_fixture_would_otherwise_match(): void
+    {
+        $this->verifyAsKnown();
+        $metric = $this->storedMetric();
+
+        $this->assertSame('BLOCKED', (string) $metric->replay_status,
+            'a fully-matching fixture must not make an unavailable required input admissible');
+        $this->assertSame('NOT_ADMISSIBLE', (string) $metric->comparison_result);
+        $this->assertSame('NOT_ADMISSIBLE', (string) $metric->admission_state);
+        $this->assertStringContainsString('REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE', (string) $metric->mismatch_summary,
+            'the block must name the input that was unavailable');
+    }
+
+    /**
      * `MD-S050-R0016` Gap B1 (`D-MD-B18-A002-008`) -- AS_KNOWN's `read_model_version` binds the
      * versioned replay/read-product contract that renders the artifact. Before this it read a
      * configuration key that never existed and always recorded empty.
@@ -157,43 +176,97 @@ class B18AsKnownModeIsolationTest extends TestCase
     }
 
     /**
-     * `MD-S050-R0005` -- the comparison surface is the as-known artifacts.
+     * `MD-S050-R0005` -- the comparison surface is the as-known artifacts, when a comparison runs
+     * at all.
      *
-     * That is what "may differ from a historical publication" rests on: as-known is judged against
-     * its own declared expectation, so differing from the publication is not a failure and cannot
-     * become one.
+     * Before `MD-S050-R0016` Gap B2, this was proven behaviourally: an as-known replay reached
+     * `MATCH`/`PASS`, and `deterministic_fields_checked_json` on the stored row named the fields it
+     * actually compared. Gap B2 made every as-known replay `BLOCKED` before comparison -- `MD-S085`
+     * defines no historical reason-registry identity an as-known replay could legitimately bind, so
+     * the comparison this test proved the surface of can no longer execute at all (see
+     * `test_an_as_known_result_with_a_diverging_fixture_is_still_blocked_by_the_unavailable_reason_registry`
+     * below). No conforming as-known scenario reaches this code, so this is now a static guard on
+     * the field list `ReplayVerificationService::verifyAsKnownAgainstFixture()` names when that code
+     * runs, rather than an executed one -- weaker, but honest about what it proves.
      */
-    public function test_the_comparison_surface_is_the_as_known_artifacts_and_not_the_publication(): void
+    public function test_the_comparison_surface_field_list_names_as_known_artifacts_and_not_the_publication(): void
     {
-        $this->verifyAsKnown();
+        $source = file_get_contents(base_path('app/Application/MarketData/Services/ReplayVerificationService.php'));
+        $this->assertNotFalse($source);
 
-        $checked = json_decode((string) $this->storedMetric()->deterministic_fields_checked_json, true);
-
-        $this->assertContains('as_known_snapshot_hash', $checked);
-        $this->assertContains('canonical_output_hash', $checked);
+        $this->assertStringContainsString(
+            "'deterministic_fields_checked_json' => json_encode(['as_known_snapshot_hash','canonical_output_hash','canonical_row_count','invalid_row_count','reason_code_counts'], JSON_UNESCAPED_SLASHES),",
+            $source,
+            'the as-known comparison field list must name the as-known artifacts it actually compares'
+        );
 
         foreach (['bars_batch_hash', 'seal_state', 'publication_version', 'is_current_publication'] as $publicationField) {
-            $this->assertNotContains($publicationField, $checked,
-                'as-known replay compared itself against '.$publicationField.', a property of the '
-                    .'publication; differing from the publication would then read as a failure');
+            $this->assertStringNotContainsString(
+                "'".$publicationField."'",
+                $this->asKnownComparisonFieldListLiteral($source),
+                'as-known replay must not compare itself against '.$publicationField.', a property of '
+                    .'the publication; differing from the publication would then read as a failure'
+            );
         }
     }
 
+    private function asKnownComparisonFieldListLiteral(string $source): string
+    {
+        $start = strpos($source, "'deterministic_fields_checked_json' => json_encode([");
+        $this->assertNotFalse($start, 'the as-known deterministic-fields-checked literal moved; re-locate it rather than weakening this guard');
+        $end = strpos($source, '],', $start);
+
+        return substr($source, $start, $end - $start);
+    }
+
     /**
-     * The control. An as-known verification whose actual artifacts diverge from its own fixture is
-     * a MISMATCH, so "may differ from a historical publication" is not "may differ from anything".
+     * `MD-S050-R0016` Gap B2 -- an unavailable historical reason-registry identity blocks the
+     * replay before any comparison, regardless of what else the fixture would have diverged on. The
+     * prior version of this test (`test_an_as_known_result_diverging_from_its_own_fixture_is_a_mismatch`)
+     * proved this same perturbed fixture reached `MISMATCH`/`FAIL`; that scenario no longer exists,
+     * because `MD-S085` provides no historical reason-registry identity for any as-known replay to
+     * bind, so every as-known replay is `BLOCKED` first. Forcing a `MISMATCH`/`FAIL` result here
+     * would require fabricating a reason-registry identity Gap B2 exists to refuse -- not done.
      */
-    public function test_an_as_known_result_diverging_from_its_own_fixture_is_a_mismatch(): void
+    public function test_an_as_known_result_with_a_diverging_fixture_is_still_blocked_by_the_unavailable_reason_registry(): void
     {
         $this->verifyAsKnown(['snapshot_hash' => str_repeat('9', 64)]);
         $metric = $this->storedMetric();
 
-        $this->assertSame('MISMATCH', (string) $metric->comparison_result);
-        $this->assertSame('FAIL', (string) $metric->replay_status);
+        $this->assertSame('BLOCKED', (string) $metric->replay_status,
+            'an unavailable required input is BLOCKED regardless of what else in the fixture diverges');
+        $this->assertSame('NOT_ADMISSIBLE', (string) $metric->comparison_result);
+        $this->assertStringContainsString('REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE', (string) $metric->mismatch_summary);
 
         $mismatches = json_decode((string) $metric->mismatches_json, true);
-        $this->assertSame('as_known_snapshot_hash', $mismatches[0]['field'],
-            'the divergence must name the as-known artifact that moved');
+        $this->assertSame([], $mismatches,
+            'a comparison that never ran must not report a named mismatch, fabricated or otherwise');
+    }
+
+    /**
+     * `MD-S050-R0016` Gap B2, the no-fallback half: mutating the *current* `eod_reason_codes`
+     * registry -- the real table, not a fixture -- cannot make an as-known replay admissible.
+     * `Platform_Config_Registry_LOCKED.md`: "Current registry state must never leak into
+     * historical replay." If the block were somehow keyed off today's registry being empty or
+     * absent, populating it richly would flip the verdict; it must not.
+     */
+    public function test_mutating_the_current_reason_registry_does_not_make_as_known_admissible(): void
+    {
+        DB::table('eod_reason_codes')->insert([
+            'code' => 'PROBE_CURRENT_ONLY_CODE', 'category' => 'PROBE', 'description' => 'current-only probe row',
+            'severity' => 'INFO', 'is_active' => 1,
+        ]);
+
+        $this->verifyAsKnown();
+        $metric = $this->storedMetric();
+
+        $this->assertSame('BLOCKED', (string) $metric->replay_status,
+            'richer current registry content must not make a historical as-known replay admissible');
+        $this->assertSame(
+            AsKnownReplaySnapshotService::REASON_REGISTRY_IDENTITY_UNAVAILABLE,
+            (string) $metric->reason_registry_hash,
+            'no current-table lookup may fill the historical identity in'
+        );
     }
 
     /**

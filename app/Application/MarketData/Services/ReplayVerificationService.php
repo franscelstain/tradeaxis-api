@@ -316,6 +316,112 @@ class ReplayVerificationService
         if ($expectedSnapshotHash === '') {
             throw new \RuntimeException('REPLAY_EXPECTED_PROOF_INCOMPLETE: AS_KNOWN fixture must bind snapshot_hash.');
         }
+
+        // `MD-S050-R0016` Gap B2: reason-registry version is a required bound input
+        // (`Replay_Verification_Contract_LOCKED.md:30`) in both modes. `Reason_Codes_Registry.md`
+        // (`MD-S085`) has no revision/version/effective-time concept, so no as-known replay can
+        // legitimately bind a historical reason-registry identity as of its knowledge cutoff --
+        // `AsKnownReplaySnapshotService::capture()` now says so honestly via
+        // `REASON_REGISTRY_IDENTITY_UNAVAILABLE` instead of a hash that merely looks non-empty.
+        // A missing input is `BLOCKED` (`:33`), which "states that the comparison did not execute" --
+        // so the production canonicalizer is never invoked here: running it first and discarding its
+        // result would not be "did not execute", and it is the one AS_KNOWN input capable of real
+        // side effects, unlike `PUBLICATION_EXACT`'s cheap, read-only actual-state build.
+        if ((string) ($actualSnapshot['reason_registry_hash'] ?? '') === AsKnownReplaySnapshotService::REASON_REGISTRY_IDENTITY_UNAVAILABLE) {
+            $replayId = $replayId ?: $this->replays->nextReplayId();
+            $manifestHash = $this->canonicalHash($manifest);
+            $reason = 'REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE: no historical reason-registry '
+                .'identity can be bound as of the knowledge cutoff; MD-S085 defines no revision/version '
+                .'lineage to resolve one from, so replay cannot proceed.';
+            $actualContext = ['bound_inputs' => $actualSnapshot, 'executed_replay' => null];
+            $expectedContext = ['bound_inputs' => $expectedSnapshot, 'executed_replay' => $expectedExecution];
+            $metric = [
+                'replay_id' => $replayId,
+                'trade_date' => $tradeDate,
+                'trade_date_effective' => $tradeDate,
+                'replay_suite' => $manifest['fixture_family'] ?? 'as_known_replay',
+                'replay_case' => $manifest['fixture_id'] ?? null,
+                'fixture_id' => $manifest['fixture_id'] ?? null,
+                'fixture_version' => $manifest['fixture_version'] ?? ($manifest['version'] ?? null),
+                'fixture_schema_version' => $manifest['fixture_schema_version'] ?? null,
+                'fixture_source' => $manifest['fixture_source'] ?? null,
+                'fixture_created_at' => $manifest['fixture_created_at'] ?? null,
+                'replay_mode' => ReplayMode::AS_KNOWN,
+                'knowledge_cutoff_at' => $knowledgeCutoff,
+                'fixture_manifest_hash' => $manifestHash,
+                'source_observation_manifest_hash' => $actualSnapshot['source_observation_manifest_hash'],
+                'canonical_raw_input_hash' => $actualSnapshot['canonical_raw_input_hash'],
+                'temporal_identity_hash' => $actualSnapshot['temporal_identity_hash'],
+                'calendar_status_hash' => $actualSnapshot['calendar_status_hash'],
+                'event_factor_hash' => $actualSnapshot['event_factor_hash'],
+                'config_snapshot_id' => $actualSnapshot['config_snapshot_id'],
+                'config_snapshot_hash' => $actualSnapshot['config_snapshot_hash'],
+                'formula_registry_hash' => $actualSnapshot['formula_registry_hash'],
+                'reason_registry_hash' => $actualSnapshot['reason_registry_hash'],
+                'read_model_version' => $actualSnapshot['read_model_version'],
+                'serialization_version' => $actualSnapshot['serialization_version'],
+                'executable_build_identity' => $actualSnapshot['executable_build_identity'],
+                'admission_state' => 'NOT_ADMISSIBLE',
+                'bound_input_context_json' => json_encode($actualContext, JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION),
+                'source' => 'as_known_replay',
+                'source_mode' => 'as_known_replay',
+                'source_name' => 'IMMUTABLE_OBSERVATIONS',
+                'status' => 'HELD',
+                'publishability_state' => 'NOT_READABLE',
+                'publication_id' => null,
+                'publication_run_id' => null,
+                'comparison_result' => 'NOT_ADMISSIBLE',
+                'replay_status' => 'BLOCKED',
+                'comparison_note' => $reason,
+                'artifact_changed_scope' => 'none',
+                'config_identity' => $actualSnapshot['config_snapshot_hash'],
+                'publication_version' => null,
+                'is_current_publication' => false,
+                'coverage_gate_state' => null,
+                'bars_rows_written' => 0,
+                'invalid_bar_count' => 0,
+                'bars_batch_hash' => null,
+                'indicators_batch_hash' => null,
+                'eligibility_batch_hash' => null,
+                'seal_state' => 'UNSEALED',
+                'expected_status' => strtoupper((string) ($expectedExecution['execution_state'] ?? 'SUCCESS')) === 'SUCCESS' ? 'SUCCESS' : 'HELD',
+                'expected_publishability_state' => 'NOT_READABLE',
+                'expected_trade_date_effective' => $tradeDate,
+                'expected_seal_state' => 'UNSEALED',
+                'expected_config_identity' => (string) ($expectedSnapshot['config_snapshot_hash'] ?? $actualSnapshot['config_snapshot_hash']),
+                'expected_bars_batch_hash' => $expectedExecution['canonical_output_hash'] ?? null,
+                'expected_reason_code_counts_json' => json_encode((array) ($expectedExecution['reason_code_counts'] ?? []), JSON_UNESCAPED_SLASHES),
+                'mismatch_summary' => $reason,
+                'mismatch_count' => 0,
+                'mismatch_reason_codes_json' => json_encode([], JSON_UNESCAPED_SLASHES),
+                'mismatches_json' => json_encode([], JSON_UNESCAPED_SLASHES),
+                'expected_context_json' => json_encode($expectedContext, JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION),
+                'actual_context_json' => json_encode($actualContext, JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION),
+                'ignored_volatile_fields_json' => json_encode($this->ignoredVolatileFields, JSON_UNESCAPED_SLASHES),
+                'deterministic_fields_checked_json' => json_encode([], JSON_UNESCAPED_SLASHES),
+                // No comparison ran, so there is no field-derived reason code to report here --
+                // same as `replayAdmissibility()`'s own NOT_ADMISSIBLE override, which never
+                // assigns a bespoke `final_reason_code` either. The specific cause lives in
+                // `mismatch_summary`/`comparison_note` (`$reason` above) and in the
+                // `REASON_REGISTRY_IDENTITY_UNAVAILABLE` marker already carried by
+                // `reason_registry_hash`; inventing a new bare reason-code literal here would
+                // require registering it in the LOCKED `MD-S085` strategy authority
+                // (`Reason_Codes_Registry.md`), which is out of this unit's authority.
+                'final_reason_code' => null,
+            ];
+
+            $this->replays->upsertMetric($metric);
+            $this->replays->replaceReasonCodeCounts($replayId, $tradeDate, []);
+
+            return $metric + [
+                'fixture_family' => $manifest['fixture_family'] ?? 'as_known_replay',
+                'mismatches' => [],
+                'mismatch_reason_codes' => [],
+                'actual_context' => $actualContext,
+                'expected_context' => $expectedContext,
+            ];
+        }
+
         $executionService = $this->asKnownExecution ?: app(AsKnownReplayExecutionService::class);
         $actualExecution = $executionService->execute($tradeDate, $knowledgeCutoff, $actualSnapshot);
         if ((string) ($expectedExecution['execution_scope'] ?? '') !== AsKnownReplayExecutionService::EXECUTION_SCOPE) {

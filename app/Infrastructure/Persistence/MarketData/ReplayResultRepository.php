@@ -204,13 +204,18 @@ class ReplayResultRepository
         if ($metric['config_snapshot_hash'] === \App\Application\MarketData\Services\ReplayVerificationService::CONFIG_IDENTITY_UNRECORDED) {
             throw new \RuntimeException('REPLAY_CONFIG_UNBOUND: non-BLOCKED '.$mode.' result carries no recorded configuration hash or snapshot reference.');
         }
+        // MD-S050-R0016 Gap B2: `reason_registry_hash` below is checked only for emptiness, and
+        // `AsKnownReplaySnapshotService::REASON_REGISTRY_IDENTITY_UNAVAILABLE` is a non-empty
+        // string, so it passed. `AsKnownReplaySnapshotService::verifyAsKnownAgainstFixture()` now
+        // returns BLOCKED whenever it captures this marker, so a non-BLOCKED result should never
+        // carry it -- refused here too, at the storage boundary, rather than trusted solely because
+        // the service already checked it.
+        if ($metric['reason_registry_hash'] === \App\Application\MarketData\Services\AsKnownReplaySnapshotService::REASON_REGISTRY_IDENTITY_UNAVAILABLE) {
+            throw new \RuntimeException('REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE: non-BLOCKED '.$mode.' result carries no available historical reason-registry identity.');
+        }
         // MD-S050-R0016: these identities are required bound inputs in both modes. This loop was
         // AS_KNOWN-only, so a PUBLICATION_EXACT PASS with an empty observation identity persisted.
-        // `read_model_version` joined this loop under Gap B1 (`D-MD-B18-A002-008`): AS_KNOWN
-        // previously read a nonexistent config key and always recorded it empty, so a non-BLOCKED
-        // AS_KNOWN result with no read-model identity persisted. Gap B2 (the reason-registry half)
-        // is untouched here -- `reason_registry_hash` below stays checked only for emptiness, which
-        // is already known insufficient for AS_KNOWN and is deliberately not fixed in this unit.
+        // `read_model_version` joined this loop under Gap B1 (`D-MD-B18-A002-008`).
         foreach (['source_observation_manifest_hash', 'canonical_raw_input_hash', 'temporal_identity_hash', 'calendar_status_hash', 'event_factor_hash', 'formula_registry_hash', 'reason_registry_hash', 'read_model_version'] as $field) {
             if (empty($metric[$field])) {
                 throw new \RuntimeException('REPLAY_BOUND_INPUT_INCOMPLETE: '.$mode.' result is missing '.$field.'.');

@@ -595,3 +595,113 @@ unimplemented. Proof basis unchanged at 89 `PROVEN` / 25 `INCOMPLETE`. `D-MD-B18
 This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`, with 14 of its own 16 predicates
 `INCOMPLETE`. **Next:** `MD-S050-R0016` Gap B2 -- AS_KNOWN historical reason-registry fail-closed
 remediation, including the `MD-S050-R0005` proof impact/rebind. Not started. `G01-B` not started.
+
+## Gap B2 implemented: AS_KNOWN reason-registry identity fail-closed — 2026-09-24T21:09:22+07:00
+
+`E-MD-B18-A002-073` implements Gap B2. Authority recheck first: `Reason_Codes_Registry.md`
+(`MD-S085`) read in full again -- its five "Registry rules" cover naming, one-code-one-meaning,
+description drift and deprecation only, with no revision, version, effective-time or recorded-time
+concept anywhere. There is therefore no historical reason-registry state an as-known replay could
+legitimately bind as of its knowledge cutoff.
+
+**Change.** `AsKnownReplaySnapshotService::REASON_REGISTRY_IDENTITY_UNAVAILABLE` replaces the old
+`reason_registry_hash` -- previously a hash of two hardcoded constant arrays plus a config key that
+never existed, the same "non-empty is not present" shape `E-MD-B18-A002-069` found for the config
+identity. `ReplayVerificationService::verifyAsKnownAgainstFixture()` gained an early-return block,
+placed before the execution service is invoked (AS_KNOWN's canonicalizer has real side-effect/expense
+concerns the publication-mode admissibility check does not, so it must never run once the result is
+already known to be BLOCKED): every as-known replay whose captured snapshot carries the unavailable
+marker is persisted directly as `BLOCKED`/`NOT_ADMISSIBLE`, unconditionally, before any comparison
+against the fixture executes. `ReplayResultRepository::assertModeInputs()` gained a direct-write
+refusal for a non-BLOCKED result carrying the marker, in both modes.
+
+**Real-path proof.** The base (non-perturbed) as-known scenario is BLOCKED, not PASS. A
+fixture-perturbed scenario is still BLOCKED, not MISMATCH/FAIL -- the block fires on the captured
+snapshot alone, independent of fixture content. Inserting a new row into the live
+`eod_reason_codes` table does not make a historical as-known replay admissible. Direct-write refusal
+confirmed in both replay modes.
+
+**Four probes**, each byte-restored and sha256-verified, each suite file run separately: restoring
+the old fabricated-looking hash turned 3 of 9 `B18AsKnownModeIsolationTest` tests red; bypassing the
+admission check turned 6 of 9 red (as errors, once the marker reaches the now-also-corrected storage
+boundary); deriving the hash from a live table read turned the same 3 tests red as the first probe;
+removing the storage check turned exactly the 2 new `ReplayResultRepositoryIntegrationTest` cases
+red. `B18AsKnownSnapshotIsolationTest` and `ReplayVerificationServiceTest` (publication-mode control)
+stayed green under every probe.
+
+**A real defect surfaced by the first full regression, found and fixed.** The BLOCKED metric's
+`final_reason_code` was first set to the bare literal `REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE`.
+The first isolated full run (2467 tests, 8 failures) found one genuine new failure --
+`EmittedReasonCodeRegistrationTest::test_every_reason_code_emitted_by_the_runtime_is_registered` --
+proving the literal was emitted but registered nowhere. Adding it to `Reason_Codes_Seed.sql` and the
+paired `Reason_Codes_Registry.md` (kept synchronized by
+`LoggingTraceabilityReasonCodesStaticGuardTest`) caused two further failures:
+`GovernanceGateReadOnlyExecutionTest`'s `STRATEGY_FREEZE` check (`Reason_Codes_Registry.md` is
+registered in `MARKET_DATA_STRATEGY_FREEZE_MANIFEST.json` as `MD-S085` under the current freeze, sha1
+pinned) and its `TRACEABILITY_MATRIX` check (inserting a row shifted twenty positionally-derived
+`MD-S085-R####` requirement ids). The one prior precedent for touching this exact document
+(`DOC-CHG-20260823-001` / `D-MD-20260823-01`) required an explicit, quoted user authorization
+instruction before any byte of it changed. This unit's governing instruction authorized Gap B2's
+production remediation, not amending a LOCKED strategy-authority document, and explicitly said not to
+start `G01-B` -- signalling strict scope discipline was wanted. Both edits were fully reverted (`git
+checkout` was refused by the harness's own destructive-action classifier, so the inserted lines were
+removed individually instead); `Reason_Codes_Registry.md`'s sha1 reconfirmed identical to the frozen
+manifest's registered value, and the one row seeded into `tradeaxis_testing.eod_reason_codes` during
+the attempt was deleted. `final_reason_code` is set to `null` in the early-return block instead,
+matching the precedent already set by `replayAdmissibility()`'s own `NOT_ADMISSIBLE` override (Gap
+A's `CONFIG_IDENTITY_UNRECORDED` path, `REPLAY_BOUND_INPUT_INCOMPLETE`, `REPLAY_CONFIG_UNBOUND`),
+none of which ever assign a bespoke `final_reason_code` either -- their block-reasons live only in
+free text (`mismatch_summary`/`comparison_note`), which is exactly why they were never caught by this
+same scan. The cause remains fully legible via `mismatch_summary` (the `REPLAY_REASON_REGISTRY_
+IDENTITY_UNAVAILABLE: ...` text) and via `reason_registry_hash` (the marker itself). No new reason
+code was registered; no LOCKED strategy document was modified; none of this unit's own tests assert
+`final_reason_code` for this case, so none needed to change.
+
+**`MD-S050-R0005` impact.** Gap B2 makes every as-known replay BLOCKED before any comparison runs,
+unconditionally -- confirmed by inspection: `capture()`'s `reason_registry_hash` assignment has no
+conditional logic capable of ever not returning the unavailable marker. R0005's negative clause
+(`Replay_Verification_Contract_LOCKED.md:17`, a genuine as-known divergence must be caught as
+MISMATCH/FAIL) therefore has no reachable comparison to exercise any more -- not merely untested, but
+structurally unreachable through the real verifier. Per instruction, not force-replaced with a
+same-named guard proving a different claim: the renamed test at the old name now proves "BLOCKED
+regardless of fixture divergence", a true and useful but different fact. `MD-S050-R0005` moved from
+`PROVEN` to `INCOMPLETE` (positive clause kept; negative set to `null`; classification
+`IMPLEMENTATION_DEPENDENCY_UNAVAILABLE`). Remediation would require real historical reason-registry
+versioning (out of Gap B2's scope) or an owner decision narrowing R0005's own proof shape.
+
+**`MD-S050-R0014` / `MD-S019-R0071` reviewed independently, both remain `INCOMPLETE`.** Both require
+positively binding/reproducing the reason-registry version, which fail-closed `BLOCKED` correctly
+refuses to fabricate but does not supply. `R0071`'s narrower, adjacent guarantee -- current registry
+state must never leak into historical replay -- is proven for this ingredient
+(`test_mutating_the_current_reason_registry_does_not_make_as_known_admissible`), but that is not
+R0071's own reproducibility claim.
+
+**`MD-S050-R0016` not promoted.** Gap A + Gap B1 + Gap B2 are all now implemented and proven for
+their specific inputs. AS_KNOWN's config path (`MarketDataConfigSnapshotRepository::resolveAsKnown()`)
+was confirmed fail-closed by construction via a bounded, read-only check (not an executed probe).
+Calendar/status, event/factor, temporal universe, source-observation and canonical-raw-input captures
+were explicitly not independently probed for a missing-input case in this unit -- out of Gap B2's
+scope, so `MD-S050-R0016` stays `INCOMPLETE` rather than being promoted on an assumption.
+
+**Validation (authoritative, isolated run).** Full `tests/Unit/MarketData`: 2467 tests, 34637
+assertions, 7 failures, 0 errors -- exact match to the known `MD-DEP-0015` corpus-oracle baseline,
+zero new failures. Two intermediate runs (8 and 9 failures) were diagnosed as real defects of this
+unit's own making and fixed, not MariaDB contention. MariaDB verified reachable before each attempt;
+not started or restarted by this session.
+
+**Proof basis:** `PROVEN` 89 -> 88, `INCOMPLETE` 25 -> 26 (`MD-S050-R0005` only transition).
+`D-MD-B18-A002-008`, `E-MD-B18-A002-050`, `E-MD-B18-A002-067` through `E-MD-B18-A002-072` are
+unchanged. `MARKET_DATA_STRATEGY_FREEZE_MANIFEST.json` (`MD-STRATEGY-FREEZE-20260922-001`) is
+unchanged -- the attempted edit was reverted before issuance.
+
+**Evidence record:** `E-MD-B18-A002-073`, registered in `DOCUMENT_ID_REGISTRY` (`MD-DOC-01209`),
+`DOCUMENT_ROLE_REGISTRY`, `CURRENT_VERIFICATION_REGISTRY` and `WORK_RECORD_REGISTRY`.
+
+This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`. Gap A, Gap B1 and Gap B2 (the
+executable gap this finding owns with F-013) are now all implemented and proven for their respective
+inputs; `MD-S050-R0016`, `MD-S050-R0014` and `MD-S019-R0071` remain `INCOMPLETE` for the reasons
+above, and `MD-S050-R0005` is newly `INCOMPLETE`. **Next:** `G01-B` (`MD-S003-R0023` /
+`MD-S004-R0004`) -- not started by this unit. Registering
+`REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE` in the LOCKED `Reason_Codes_Registry.md` remains
+available as a separate, explicitly user-authorized unit if a bespoke `final_reason_code` for this
+state is later wanted; no currently `INCOMPLETE` predicate requires it.
