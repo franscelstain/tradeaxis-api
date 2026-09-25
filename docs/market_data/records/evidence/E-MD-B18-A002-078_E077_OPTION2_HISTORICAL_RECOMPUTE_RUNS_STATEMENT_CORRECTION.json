@@ -1,0 +1,53 @@
+{
+  "evidence_id": "E-MD-B18-A002-078",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+  "issued_at": "2026-09-25T14:13:40+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "CORRECTION_E077_OPTION2_HISTORICAL_RECOMPUTE_RUNS_STATEMENT_ONLY_NO_PROOF_OR_STATE_CHANGE",
+  "evidence_scope": "E077_OWNER_DECISION_OPTIONS_OPTION_2_FACTUAL_CORRECTION",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-017"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-077",
+    "CI-MD-B18-A002-001"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-009"
+  ],
+  "dependencies": [
+    "MD-DEP-0017"
+  ],
+  "schema_changed": false,
+  "corrects": {
+    "record": "E-MD-B18-A002-077",
+    "record_sha256_at_correction": "0bb9cefce9f66ad9becb7ca7dec9fa593d792bd61ff975ef3433ba044d9abc02",
+    "record_commit": "13af693",
+    "field": "owner_decision_options.OPTION_2_DEFAULT_TO_THE_HISTORICAL_VERSION_AND_BLOCK",
+    "inaccurate_wording": "changes the operational recompute workflow that has run under today's configuration (the 843 recompute runs of 2026-08-10/11 named in the source comment)",
+    "full_field_text_at_correction": "A rerun of D resolves the governing snapshot (lookup, no insert); if live configuration differs, the rerun is BLOCKED unless an explicit override is supplied and recorded. Requires deciding the override form (flag, reason, approval, record location) and changes the operational recompute workflow that has run under today's configuration (the 843 recompute runs of 2026-08-10/11 named in the source comment).",
+    "why_inaccurate": [
+      "The source comment it cites says the opposite. EodRunRepository.php:328-331 (createPromoteRunFromSeedWithinTransaction): \"every run created here — including the 843 recompute runs of 2026-08-10/11 — was born with config_snapshot_id NULL, and md_config_snapshots stayed empty even though the resolver was wired into getOrCreateOwningRun. Replay then blocked such runs as REPLAY_CONFIG_UNBOUND.\" Those runs bound no configuration at all. They did not run under a recorded \"today's configuration\".",
+      "Under Platform_Config_Registry_LOCKED.md:31 a run with no config snapshot id and hash is CONFIG_UNBOUND: not admissible as evidence of reproducibility, \"because the configuration that produced it cannot be recovered\". A run in that state cannot be cited as evidence that a workflow ran under any particular configuration, live or historical, and so not as evidence of an implicit override.",
+      "No such run corpus exists to be changed or cited. Read-only counts on 2026-09-25: tradeaxis and tradeaxis_testing each hold 0 eod_runs, 0 eod_publications, 0 md_config_snapshots and 0 eod_dataset_corrections; 0 eod_runs were created 2026-08-10..2026-08-12. The figure 843 appears only in that production source comment and in the docblock of tests/Unit/MarketData/AsKnownWiringAndConfigIdentityTest.php:18, both historical narrative, and in no governed evidence, finding or runtime artifact."
+    ],
+    "correct_statement": "Option 2 would change the current rerun/promote code path (createPromoteRunFromSeed and getOrCreateOwningRun resolve live configuration and mint it stamped effective from the requested date) and the automated correction-current workflows that rerun historical dates (recompute, pipeline, backfill, Stage 8 reconstruction), which under Option 2 need an explicit governed override. It does not change any existing historical run corpus: the 843 recompute runs named in a source comment were CONFIG_UNBOUND, none exists in any current database, and none is evidence that a workflow ran under live configuration.",
+    "what_was_not_wrong": [
+      "E-077's executed finding that the current real rerun/promote path binds live configuration: a seed run for 2026-03-24 bound version A, version B became live and was recorded effective 2026-04-10, and createPromoteRunFromSeed for 2026-03-24 bound B, minted as a third snapshot stamped effective 2026-03-24. This correction does not touch it.",
+      "E-077's four resolveForRun call sites, the assertConsumedConfiguration constraint, the authority tension, the classification AUTHORITY_AMBIGUITY and the three options themselves.",
+      "E-077's stale_comment determination: the \"today's resolved config\" source comment describes what the code does and is accurate. The same comment's \"843 ... born with config_snapshot_id NULL\" sentence is historical narrative and is what the corrected wording misread."
+    ]
+  },
+  "materiality": "Low for proof, real for the decision record. No proof count, predicate state, probe or test in E-077 depends on it. But it described Option 2 as disturbing an established operational history under live configuration, a cost the owner could weigh when choosing, and no such history exists.",
+  "governance_basis": "DOCUMENT_RECORDING_STANDARD.md #1: evidence correction creates new evidence; historical records are never rewritten. DOCUMENT_CHANGE_POLICY.md #3: an IMMUTABLE_AFTER_ISSUE record MUST NOT be edited after issue; corrections require a new correlated record. Same pattern as E-MD-B18-A002-076 (correction of E-074) and E-MD-B18-A002-063 (correction of E-061). E-077 stays byte-identical.",
+  "correlation": "Same attempt (MD-B18-A002) as the corrected record, so no WORK_RELATIONSHIP_REGISTRY row is required; the link is this record's related_evidence and corrects block, mirrored in its WORK_RECORD_REGISTRY row, as E-072 and E-076 did.",
+  "mutable_repetitions": "F-MD-B18-A002-017 (G09 stopped section, Option 2 paragraph) repeats the wording. That section is append-only and stays as written; a correction note referencing this record is appended to the finding. D-MD-B18-A002-009 does not repeat it.",
+  "no_other_changes": "No production code, test code, proof-basis entry, predicate state or proof count is changed by this record. This record was issued in the same unit as the D-MD-B18-A002-010 controlled revision and ownership transfer; those changes are recorded by D-010, DOC-CHG-20260925-001 and E-MD-B18-A002-079, not here.",
+  "no_commit_or_push": true
+}

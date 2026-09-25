@@ -956,3 +956,113 @@ predicates untouched. This finding stays `OPEN — REMEDIATION_IN_CONSOLIDATED_P
 
 **Next:** the owner decision on `MD-S065-R0003` (options above). `G09` cannot proceed as proof-only
 work, and no other `F-017` unit is started while it is open. Not started.
+
+## G09 owner decision: `D-MD-B18-A002-009` (Option 2) — 2026-09-25T09:37:43+07:00
+
+The owner chose Option 2 from `E-MD-B18-A002-077`. `D-MD-B18-A002-009` records it: a rerun of requested
+trade date `D` binds the configuration effective for `D`; live/current/latest configuration is never used
+implicitly; a different configuration only through an explicit governed override that is recorded and
+distinguishable from historical-default execution; and an override configuration is never re-stamped as
+effective at `D`. Reverified before writing: it is `MD-S065-R0003` read literally, and it matches
+`MD-S082` `:274` ("Silent runtime overrides and undocumented defaults are forbidden") and `:286`. The
+correction and recompute contracts require historical reruns under changed configuration to be labelled
+and traceable, not implicit, so they become users of the override rather than contradictions. Strategy
+impact `NONE`.
+
+**Override mechanism, reconstructed read-only from authority and code.**
+
+| Topic | Current authority | Existing capability | Missing semantic | Class |
+|---|---|---|---|---|
+| Invocation | none for configuration; correction requests exist per trade date | `RequestCorrectionCommand`, `eod_corrections`, `eod_runs.correction_id`; no configuration selector anywhere | what makes a rerun an override, and how the intended configuration is named | `ADDITIVE_DECISION_REQUIRED` |
+| Authorization | correction flow: `REQUESTED` -> `APPROVED` with approval metadata | `ApproveCorrectionCommand`; but pipeline, backfill, recompute and Stage 8 reconstruction create and approve their own requests as `system` | whether a `system` approval can authorize an override, or a human approval / decision record is required | `ADDITIVE_DECISION_REQUIRED` |
+| Configuration identity | snapshot id + hash, effective and recorded intervals (`MD-S082` `:13-15`, `:21`) | `md_config_snapshots`, immutable; run binds id/hash/ref | none for identity itself; `D-009` item 4 already forbids stamping the override configuration effective at `D` | `ALREADY_DEFINED` |
+| Provenance | `D-009` item 5 lists the facts that must be observable | `correction_id`, `request_mode`, `supersedes_run_id`, notes, `RUN_CREATED` payload with `seed_run_id` | none that implementation cannot map once invocation/authorization are decided; no explicit mode, effective-for-`D` identity or override reason is stored today | `CLARIFICATION_ONLY` |
+| Scope / lifetime | correction is per trade date; recompute and backfill operate on ranges | one correction per date in all four automated paths | one run, one date, one correction or a declared range; and whether a first execution of a historical date (backfill, Stage 8) is a rerun | `ADDITIVE_DECISION_REQUIRED` |
+| Execution safety | `MD-S082` `:21` makes the snapshot replay authority, not rerun execution | `assertConsumedConfiguration()` rejects a bound snapshot that differs from live config; runtime reads live `config()` | when the effective-for-`D` configuration is not live and no override exists: `BLOCK`, or build execution under a historical snapshot | `ADDITIVE_DECISION_REQUIRED` |
+| Recompute / correction | recompute contract reruns after formula/config changes via correction-current flow | automated, self-approved | under `D-009` these are override cases by definition; they stay blocked until invocation/authorization/scope are decided | `CLARIFICATION_ONLY` (depends on the rows above) |
+| New-version effective date | `MD-S065-R0002`: a change is recorded with an effective date | the resolver stamps the requested date of the first run that resolves the change | how a new version legitimately acquires its effective date without a rerun or backfill stamping it onto a date it never governed | `ADDITIVE_DECISION_REQUIRED` |
+
+**Overall:** the semantic decision is `DECISION_RECORD_ONLY`. The mechanism is
+`CONTROLLED_STRATEGY_REVISION_REQUIRED`. The missing items are new normative rules, not readings of
+existing text. `records/decisions/README.md` requires a resulting current rule to be reflected in
+authority, `MARKET_DATA_DOCUMENT_AUTHORITY.md` rule 4 says a decision does not become strategy
+authority, and `MD-S065` is frozen strategy. The one precedent for adding to frozen strategy
+(`DOC-CHG-20260823-001`) needed an explicit authorization instruction, a decision, a successor freeze
+and a change-log entry. If the chosen `BLOCK` must be reported through a registered reason code, a
+bounded addition to `MD-S085` is also needed; no existing code has this meaning (`CONFIG_SNAPSHOT_REQUIRED`
+means a missing snapshot).
+
+**Reported, not acted on.** `E-077`'s run shows that a recorded effective date can be the requested date
+of a rerun the configuration never governed. That bears on `MD-S065-R0002`, which is `SATISFIED` under
+`MD-B04` (`E-MD-B04-A002-001`). It is outside this stage and unit, and is recorded for the owning
+stage's review.
+
+**Registry catch-up.** This finding's `WORK_RECORD_REGISTRY` row had not listed `E-072` through `E-077`
+since `E-071`. That was an omission in those units. The row now lists them and `D-MD-B18-A002-009`.
+
+No production, test, schema or strategy change. `MD-S065-R0003` stays `INCOMPLETE`; `91` `PROVEN` / `23`
+`INCOMPLETE`; formal `0/114` `SATISFIED` unchanged. **Next:** the owner's authority decision on the override
+mechanism (invocation and authorization, execution when the default cannot run, rerun and override
+scope including first historical execution and new-version effective dates), made as a bounded controlled
+revision of `MD-S065`. Not started.
+
+## G09 formalized: A1 + C1 + D2, controlled revision of `MD-S065`, `MD-S065-R0003` transferred to `MD-B21` — 2026-09-25T14:07:39+07:00
+
+The owner chose A1 + C1 + D2 for the mechanism `D-MD-B18-A002-009` left open, and authorized "the minimum
+bounded controlled revision necessary to encode A1+C1+D2". `D-MD-B18-A002-010` records it.
+
+- **A1:** a governed correction may be approved by `system`. An override exists only when that correction
+  explicitly requests it and records the configuration identity and the reason. An approval without that is
+  not an override.
+- **C1:** by default, a rerun of `D` binds the configuration effective for `D`. If that configuration is not the
+  live executable configuration and there is no override, the rerun is `BLOCKED`. `assertConsumedConfiguration()`
+  stays fail-closed.
+- **D2:** primary implementation and proof of `MD-S065-R0003` move to `MD-B21`, alongside `MD-S082-R0207`/`R0209`
+  (the effective-dated registry the rule depends on). `MD-B18` and `MD-B04` are supporting. Effective dates come
+  from the declared registry interval, never from a rerun or backfill date. D1 (build the registry in `MD-B18`)
+  and D3 (declare a baseline interval now) are not adopted.
+
+Fit was reverified before writing (`D-010`, authority review) and no conflict was found.
+
+**Controlled revision** (`DOC-CHG-20260925-001`, successor freeze `MD-STRATEGY-FREEZE-20260925-001`).
+`Config_Change_Protocol_LOCKED.md` line 7 is extended in place; the original sentence is kept as its prefix and
+CRLF line endings are preserved. Only the `MD-S065` fingerprint changes (`FBAC0291...` -> `28962247...`). Keeping
+it to one line means no row or rule id is added and the pinned `MD-B04` counts (`114/181/645`) do not move, so no
+test changes. Stage ownership is recorded in the matrix, not in the strategy text.
+
+**Ownership transfer**, by the `D005`/`E018` mechanism. The matrix row `MD-S065-R0003` now carries the new rule
+text and fingerprint, primary `MD-B21`, supporting `MD-B18;MD-B04`, and an appended ownership note. It stays
+`REQUIRED`/`MANDATORY`/`NOT_ASSESSED` with no evidence. `MarketDataConfigFoundationTraceabilitySpec` assigns
+R0003 to `MD-B21`. The B18 specs and normalization take their counts from gate output: denominator 113,
+`MANDATORY` 113, stage population 152, and the `bound_inputs` family 20. The proof-basis entry moved verbatim
+from `INCOMPLETE` to `TRANSFERRED_OWNERSHIP` (audit only). The original 121-row `PredicateMap` is unchanged.
+
+A fail-closed ownership check was added to the B18 normalization. Four single-row probes (supporting drops
+`MD-B18`, primary reverted to `MD-B18`, premature evidence binding, decision linkage removed) each landed on one
+row and added the expected error to the control's failure set. The primary-owner probe also turned the `MD-B04`
+gate red. The matrix was restored byte-identical each time. The control is red for a pre-existing reason: the
+three `CONDITION_EXECUTION_STALE` sources recorded since `E-050` are stale at `HEAD` and are not caused by this
+unit. It was identical before and after the probes.
+
+**Resulting state (tool-derived).** Readiness: 91/113 bases present, 22 without a reviewed basis. This finding
+owns 11 of them: nine G05, one G07 (`MD-S002-R0003`) and `MD-S050-R0005`. `F-018` owns 9 and `F-013` owns 2.
+`MD-S065-R0003` leaves this finding's remaining set because `MD-B18` no longer owns its proof. It is not proven,
+not withdrawn, and still a `MANDATORY` obligation, now `MD-B21`'s. Formal `SATISFIED` stays 0 (`0/113` after the
+ownership change).
+
+**Correction of `E-077` (`E-MD-B18-A002-078`).** The "G09 stopped" section above, Option 2, says Option 2 "changes
+the operational recompute workflow (the 843 recompute runs of 2026-08-10/11 the source comment names)". The
+section stays as written, and the same wording in `E-077` is corrected by `E-078`. The cited comment says those
+runs were born with `config_snapshot_id` NULL: they are `CONFIG_UNBOUND` (`MD-S082:31`), not evidence of runs
+under live configuration, and no such runs exist in any current database. `E-077`'s executed finding, that the
+current rerun/promote path binds live configuration, stands.
+
+**Reported, not acted on:** `MD-S065-R0002` (`SATISFIED` under `MD-B04`) is unchanged in text and obligation. The
+concern `D-009` already recorded stands for `MD-B04`'s review. The `CONDITION_EXECUTION_STALE` normalization
+residue predates this unit.
+
+**Evidence:** `E-MD-B18-A002-079` (revision, transfer, probes and validation). **Next:** `G07`, `MD-S002-R0003`.
+Derived, not chosen: package section 5 step 4 puts guard and rebind work before the executing aggregate, `G05` is
+that aggregate (its `MD-S002` parent includes R0003), and `MD-S050-R0005` stays
+`IMPLEMENTATION_DEPENDENCY_UNAVAILABLE`. Not started. This finding stays
+`OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE` with 11 predicates `INCOMPLETE`.

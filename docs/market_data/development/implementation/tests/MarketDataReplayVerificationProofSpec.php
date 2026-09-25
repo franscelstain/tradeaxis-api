@@ -34,7 +34,8 @@ final class MarketDataReplayVerificationProofSpec
     public const CI = 'CI-MD-B18-A002-001';
     // Exactly six exclusions under D001/D002; E005 proves all four conditional exclusions.
     // This changes the owned set, not the proof status of its retained predicates; D005 transfers R0014 admission to B22.
-    public const EXPECTED_DENOMINATOR = 114;
+    // D-MD-B18-A002-010 (D2) transfers MD-S065-R0003 to B21, alongside MD-S082-R0207/R0209.
+    public const EXPECTED_DENOMINATOR = 113;
 
     /**
      * Explicit `rule_id => family`. Every required row appears exactly once; an unmapped row is a
@@ -116,7 +117,7 @@ final class MarketDataReplayVerificationProofSpec
         'MD-S050-R0014' => 'bound_inputs',
         'MD-S050-R0015' => 'bound_inputs',
         'MD-S050-R0016' => 'bound_inputs',
-        'MD-S065-R0003' => 'bound_inputs',
+        // D-MD-B18-A002-010: MD-S065-R0003 primary B21, B18/B04 supporting; no proof inherited.
         'MD-S082-R0015' => 'bound_inputs',
 
         // -- temporal_identity: point-in-time listing, symbol and status resolution.
@@ -195,7 +196,7 @@ final class MarketDataReplayVerificationProofSpec
         'mode_admission' => 4,
         'exact_publication' => 14,
         'as_known_isolation' => 26,
-        'bound_inputs' => 21,
+        'bound_inputs' => 20,
         'temporal_identity' => 3,
         'source_observation' => 5,
         'independent_oracle' => 4,

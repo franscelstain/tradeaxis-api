@@ -1,0 +1,305 @@
+{
+  "evidence_id": "E-MD-B18-A002-079",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+  "predecessor_strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+  "issued_at": "2026-09-25T14:23:55+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "MD_S065_R0003_CONTROLLED_REVISION_AND_PRIMARY_OWNERSHIP_TRANSFER_TO_MD_B21_RECORDED_NOT_PROVEN_NO_RUNTIME_CHANGE",
+  "evidence_scope": "F017_G09_A1_C1_D2_FORMALIZATION",
+  "ci_id": "CI-MD-B18-A002-001",
+  "decision_id": "D-MD-B18-A002-010",
+  "document_change": "DOC-CHG-20260925-001",
+  "related_findings": [
+    "F-MD-B18-A002-017"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-077",
+    "E-MD-B18-A002-078",
+    "E-MD-B18-A002-018",
+    "CI-MD-B18-A002-001"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-010",
+    "D-MD-B18-A002-009",
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017"
+  ],
+  "schema_changed": false,
+  "production_code_changed": false,
+  "phpunit_test_code_changed": false,
+  "runtime_config_changed": false,
+  "owner_choice": {
+    "A1": "System authorization allowed: a governed correction may be approved by system; a configuration override exists only when explicitly requested and recorded on that correction (configuration identity and reason); an approval without that is not an override and permits no live/current/latest substitution.",
+    "C1": "Fail closed: default binds the configuration effective for D; if it differs from the live executable configuration and no override exists, the run BLOCKS; assertConsumedConfiguration() stays fail-closed; no historical-configuration execution added.",
+    "D2": "Primary implementation/proof of MD-S065-R0003 moves to MD-B21 alongside MD-S082-R0207/R0209; MD-B18 stays supporting; not withdrawn; not PROVEN.",
+    "effective_date": "Declared through the future effective-dated registry (MD-S082-R0207/R0209); never derived from a rerun or backfill requested date. D3 (declare a baseline interval now) and D1 (build the whole dated registry inside MD-B18) not adopted."
+  },
+  "fit_reverification": "No conflict. A1: Historical_Correction_and_Reseal_Contract_LOCKED.md:218 (the system must create/approve a correction), Correction_Lifecycle_Safety_Contract.md:121 (approval records that a governed actor authorised the correction), Platform_Config_Registry_LOCKED.md:274 (silent runtime overrides forbidden). C1: MD-S065-R0003 literal; assertConsumedConfiguration already refuses non-live execution, so BLOCK needs no new capability. D2: MD-S082-R0207/R0209 MANDATORY, primary MD-B21, NOT_ASSESSED; R0003 cannot be implemented or proven before them; D005/E018 is the canonical transfer mechanism. Recorded in D-MD-B18-A002-010.",
+  "strategy_revision": {
+    "document": "MD-S065",
+    "path": "authority/strategy/ops/Config_Change_Protocol_LOCKED.md",
+    "changed_line": 7,
+    "line_count": 9,
+    "eol": "CRLF preserved (9 CRLF, 9 LF)",
+    "original_text": "- reruns must use the registry version effective for the requested trade date or explicitly documented override",
+    "revised_text": "- reruns must use the registry version effective for the requested trade date or explicitly documented override. Default: a rerun of requested trade date D binds the configuration version effective for D; live, current or latest configuration is never substituted implicitly. Override: an explicitly documented override exists only when a governed correction explicitly requests it and records the identity of the configuration to use and the reason; that correction may be approved by system, but an approval without that request and configuration identity is not an override and permits no substitution. An override run records that it is an override and which configuration was effective for D, so it stays distinguishable from historical-default execution, and it never records or re-stamps the override configuration as effective for D. Failure: when the configuration effective for D is not the live executable configuration and no override exists, the rerun is BLOCKED and is not executed under any other configuration. A configuration's effective date is the effective interval declared in the configuration registry (registry/Platform_Config_Registry_LOCKED.md, Registry metadata), never a date derived from a rerun or backfill requested date.",
+    "original_kept_as_prefix": true,
+    "document_sha1_before": "FBAC0291FEA9C1C4B073C44A62BF46D6198BA0CC",
+    "document_sha1_after": "289622472A44FFC880B90B95E8FC6543FBB5F897",
+    "rule_fingerprint_before": "1C3707704ABB8770A404B5D7998CBA2FD08C9A27",
+    "rule_fingerprint_after": "DC5C11827C13FB9180DF78686C18437E837CA628",
+    "why_in_place": "One line keeps MD-S065 at five rows, adds no rule id, and leaves the MD-B04 corpus counts pinned by tests/Unit/MarketData/ConfigFoundationTraceabilityGateTest.php (114/181/645) unchanged, so no test is modified. Stage ownership lives in the matrix, not the strategy text (no strategy document names an owning stage).",
+    "other_strategy_documents": "90 byte-identical (sha1 re-verified against the pre-unit snapshot)",
+    "governance_records": [
+      "MARKET_DATA_STRATEGY_FREEZE_MANIFEST.json (freeze_id, created_at, rule, MD-S065 sha1/semantic_change/notes)",
+      "MARKET_DATA_STRATEGY_AUTHORITY_REGISTRY.csv (MD-S065 row)",
+      "DOCUMENT_CHANGE_LOG.md (DOC-CHG-20260925-001)",
+      "CI-MD-B18-A002-001 (declaration before mutation; header strategy-meaning line)"
+    ]
+  },
+  "ownership_transfer": {
+    "mechanism": "D-MD-B18-A002-005 Q5 / E-MD-B18-A002-018 (MD-S020-R0014 to MD-B22): matrix owner and supporting stages, appended ownership note, B18 spec/normalization populations, proof-basis entry moved to TRANSFERRED_OWNERSHIP (audit only), original PredicateMap unchanged, no proof inherited.",
+    "before": {
+      "primary_stage": "MD-B18",
+      "supporting_stages": "MD-B04",
+      "coverage_requirement": "REQUIRED",
+      "applicability": "MANDATORY",
+      "coverage_status": "NOT_ASSESSED",
+      "current_evidence_ids": "",
+      "b18_proof_basis": "INCOMPLETE",
+      "b04_spec_owner": "MD-B18"
+    },
+    "after": {
+      "primary_stage": "MD-B21",
+      "supporting_stages": "MD-B18;MD-B04",
+      "coverage_requirement": "REQUIRED",
+      "applicability": "MANDATORY",
+      "coverage_status": "NOT_ASSESSED",
+      "current_evidence_ids": "",
+      "b18_proof_basis": "TRANSFERRED_OWNERSHIP (audit only)",
+      "b04_spec_owner": "MD-B21"
+    },
+    "proof_status": "NOT PROVEN in any stage; MD-B21 inherits nothing and must prove it once MD-S082-R0207/R0209 exist.",
+    "tooling_changed_sha256": {
+      "docs/market_data/development/implementation/tests/MarketDataConfigFoundationTraceabilitySpec.php": "dc2e44851b240410410f516a226ded22f34afec4b1d3f1610ad185ac71fbfc2e",
+      "docs/market_data/development/implementation/tests/MarketDataReplayVerificationTraceabilitySpec.php": "e00a1cdcbb7877ea582708c09d74cc2bc49c6eda29498e1d4e797a9bbcb95ec6",
+      "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofSpec.php": "1e374cc710ebddefc625f9d7376f790d99e805aad91c9aaf10cb2a173eb6381e",
+      "docs/market_data/development/implementation/tests/MarketDataReplayVerificationNormalization.php": "8139f0e38e884aba12e2f038e2d0a5fc5cb0bc87baed5b036f38ee11c6f8e90b",
+      "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php": "a72ffdc934f105763969ac9bdc8bd52891ae4efe2dc4644173feb21e85cca393"
+    },
+    "predicate_map": "MarketDataReplayVerificationPredicateMap.php unchanged (original 121-row audit)."
+  },
+  "derived_state": {
+    "source": "gate output, not assertion",
+    "b18_normalization": {
+      "denominator": 113,
+      "counts": {
+        "MANDATORY": 113,
+        "CONDITIONAL_NOT_APPLICABLE": 4,
+        "REFERENCE_ONLY": 33,
+        "OPTIONAL_CAPABILITY": 2
+      },
+      "stage_population": 152,
+      "rerun_config_primary_owner": "MD-B21"
+    },
+    "b18_readiness": {
+      "denominator": 113,
+      "with_reviewed_basis": 91,
+      "without_reviewed_basis": [
+        "MD-S002-R0003",
+        "MD-S002-R0005",
+        "MD-S002-R0006",
+        "MD-S002-R0007",
+        "MD-S002-R0008",
+        "MD-S003-R0011",
+        "MD-S003-R0014",
+        "MD-S003-R0025",
+        "MD-S004-R0002",
+        "MD-S004-R0003",
+        "MD-S004-R0005",
+        "MD-S004-R0008",
+        "MD-S019-R0071",
+        "MD-S041-R0032",
+        "MD-S050-R0005",
+        "MD-S050-R0014",
+        "MD-S050-R0022",
+        "MD-S050-R0023",
+        "MD-S050-R0025",
+        "MD-S050-R0028",
+        "MD-S050-R0029",
+        "MD-S055-R0025"
+      ]
+    },
+    "remaining_ownership": {
+      "F-MD-B18-A002-017": {
+        "count": 11,
+        "G05": [
+          "MD-S002-R0005",
+          "MD-S002-R0006",
+          "MD-S002-R0007",
+          "MD-S002-R0008",
+          "MD-S003-R0025",
+          "MD-S004-R0002",
+          "MD-S004-R0003",
+          "MD-S004-R0005",
+          "MD-S004-R0008"
+        ],
+        "G07": [
+          "MD-S002-R0003"
+        ],
+        "other": [
+          "MD-S050-R0005 (IMPLEMENTATION_DEPENDENCY_UNAVAILABLE, E-073)"
+        ]
+      },
+      "F-MD-B18-A002-018": {
+        "count": 9
+      },
+      "F-MD-B18-A002-013": {
+        "count": 2,
+        "predicates": [
+          "MD-S050-R0014",
+          "MD-S019-R0071"
+        ]
+      },
+      "total": "11 + 9 + 2 = 22, equal to the readiness gate list"
+    },
+    "proof_basis": {
+      "PROVEN": 91,
+      "INCOMPLETE": 22,
+      "TRANSFERRED_OWNERSHIP": [
+        "MD-S020-R0014",
+        "MD-S065-R0003"
+      ]
+    },
+    "formal_traceability": "MD-B18 0 SATISFIED of 113 (was 0 of 114; SATISFIED count unchanged, denominator changed by ownership only)",
+    "b04_traceability": {
+      "mandatory_b04": 114,
+      "moved": 181,
+      "reference": 645,
+      "status": "PASS"
+    },
+    "b21_matrix_population": "55 MANDATORY NOT_ASSESSED rows with primary MD-B21 (54 before), stage NOT_STARTED",
+    "current_state": "CURRENT_STATE.md regenerated twice, identical sha256; MD-B18 denominator 113"
+  },
+  "ownership_check_probes": {
+    "check": "MarketDataReplayVerificationNormalization RERUN_CONFIG_OWNERSHIP_CONTEXT_INVALID:MD-S065-R0003 (primary MD-B21, supporting MD-B18;MD-B04, REQUIRED/MANDATORY/NOT_ASSESSED, no evidence, D-010 linkage and revised normalized predicate) plus MD-B04 owner assignment",
+    "method": "Single-row matrix mutation; landed count and changed-row count recorded; normalization and B04 gate failure sets compared with the control (the normalization control is red for the pre-existing CONDITION_EXECUTION_STALE residue, so exit codes are not the verdict); matrix restored from exact bytes and sha256-verified after each probe.",
+    "matrix_sha256": "0a49f12b65ae7f657fc999cd0fabfd5f21a9a8f4ad4b10ea81fa4ee0831b2af9",
+    "control_before": {
+      "normalization": {
+        "status": "FAIL",
+        "errors": [
+          "CONDITION_EXECUTION_STALE:app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+          "CONDITION_EXECUTION_STALE:app/Application/MarketData/Services/ReplayVerificationService.php",
+          "CONDITION_EXECUTION_STALE:tests/Unit/MarketData/B18AsKnownModeIsolationTest.php"
+        ]
+      },
+      "b04": {
+        "status": "PASS",
+        "errors": []
+      }
+    },
+    "probes": [
+      {
+        "probe": "P1_supporting_drops_B18",
+        "landed_count": 1,
+        "matrix_rows_changed": 1,
+        "normalization_status": "FAIL",
+        "normalization_added": [
+          "RERUN_CONFIG_OWNERSHIP_CONTEXT_INVALID:MD-S065-R0003"
+        ],
+        "normalization_removed": [],
+        "b04_status": "PASS",
+        "b04_added": [],
+        "restored_byte_identical": true
+      },
+      {
+        "probe": "P2_primary_reverted_to_B18",
+        "landed_count": 1,
+        "matrix_rows_changed": 1,
+        "normalization_status": "FAIL",
+        "normalization_added": [
+          "DENOMINATOR_MISMATCH:114",
+          "POPULATION_MISMATCH:MANDATORY",
+          "RERUN_CONFIG_OWNERSHIP_CONTEXT_INVALID:MD-S065-R0003",
+          "STAGE_POPULATION_MISMATCH"
+        ],
+        "normalization_removed": [],
+        "b04_status": "FAIL",
+        "b04_added": [
+          "MD-S065-R0003: proof owner MD-B18 != MD-B21"
+        ],
+        "restored_byte_identical": true
+      },
+      {
+        "probe": "P3_premature_evidence_binding",
+        "landed_count": 1,
+        "matrix_rows_changed": 1,
+        "normalization_status": "FAIL",
+        "normalization_added": [
+          "RERUN_CONFIG_OWNERSHIP_CONTEXT_INVALID:MD-S065-R0003"
+        ],
+        "normalization_removed": [],
+        "b04_status": "PASS",
+        "b04_added": [],
+        "restored_byte_identical": true
+      },
+      {
+        "probe": "P4_decision_linkage_removed",
+        "landed_count": 1,
+        "matrix_rows_changed": 1,
+        "normalization_status": "FAIL",
+        "normalization_added": [
+          "RERUN_CONFIG_OWNERSHIP_CONTEXT_INVALID:MD-S065-R0003"
+        ],
+        "normalization_removed": [],
+        "b04_status": "PASS",
+        "b04_added": [],
+        "restored_byte_identical": true
+      }
+    ],
+    "control_stable": true,
+    "final_matrix_sha256": "0a49f12b65ae7f657fc999cd0fabfd5f21a9a8f4ad4b10ea81fa4ee0831b2af9"
+  },
+  "validation_pre_issue": {
+    "documentation_integrity_gate": "PASS, 16/16 checks including STRATEGY_FREEZE (91 registered, 0 mismatches) and TRACEABILITY_MATRIX (6501 rows, 0 errors)",
+    "GovernanceGateReadOnlyExecutionTest": "9 tests, 2 failures, both the relationship completeness gap F-MD-B18-A002-017 -> E-MD-B18-A002-079 (declared target not yet a registered work record): the finding row named this record before it was issued. Resolved by registering this record; re-run after registration is appended to CI-MD-B18-A002-001, not claimed here.",
+    "ClassificationConsistencyGateTest": "OK 20 tests / 96 assertions",
+    "TraceabilityApplicabilityGateTest": "OK 11 / 23",
+    "FindingRecordConsistencyTest": "OK 3 / 13",
+    "ScopeBoundaryAndOrchestrationCompletionTest": "OK 8 / 73",
+    "ScopeBoundaryCompletionGateTest": "OK 6 / 16",
+    "PromotedPredicateProofGateTest": "OK 8 / 22",
+    "ConfigFoundationTraceabilityGateTest": "OK 4 / 9",
+    "ConfigFoundationProofGateTest": "OK 4 / 7",
+    "b18_proof_gate_and_readiness": "FAIL (expected): 91/113, 22 PREDICATE_WITHOUT_REVIEWED_BASIS plus pre-existing MISSING_NEGATIVE_PROOF:determinism_and_operations; no DENOMINATOR/FAMILY/MAP error",
+    "b18_proof_self_test": "FAIL on the baseline control only, for the same 22 bases plus the pre-existing determinism item; 10 mutation cases behave as expected",
+    "b18_closure_gate": "FAIL (expected, unchanged): binding, A002 manifest and governed evidence conditions unmet",
+    "full_marketdata_suite": "NOT RUN: no runtime behaviour changed"
+  },
+  "pre_existing_residue_reported_not_acted_on": [
+    "CONDITION_EXECUTION_STALE for AsKnownReplaySnapshotService.php, ReplayVerificationService.php and B18AsKnownModeIsolationTest.php in MarketDataReplayVerificationNormalization: these sources differ from E-MD-B18-A002-008 tested_source_sha256 at HEAD (verified with git show HEAD:...), first recorded by E-MD-B18-A002-050; unrelated to this unit.",
+    "MISSING_NEGATIVE_PROOF:determinism_and_operations in the B18 proof gate, already recorded in the Stage Register.",
+    "MD-S065-R0002 (SATISFIED under MD-B04, family-level proof): line and obligation unchanged by this revision; the D-009 concern that the resolver records a run requested date as a new version effective date stands for MD-B04 review."
+  ],
+  "issue_note": "Regenerated once before registration: the first write (2026-09-25T14:23:40+07:00, sha256 b6f1f38fcbcf9d92bdb5319c6896e52c640113c8935e769302d2a1b10f614de0) recorded strategy_revision.line_count 10 by counting the empty element after the final CRLF; the document has 9 lines. No other field differed in substance.",
+  "e078_issue_note": "E-MD-B18-A002-078 was first written at 2026-09-25T14:13:24+07:00 (sha256 7677f5590ba5180b4a9fbe757a22ff804f784d177fffecb753488920261fe75b) with strategy_freeze_id MD-STRATEGY-FREEZE-20260922-001, although the manifest already carried the successor freeze. It was regenerated at 14:13:40+07:00 with MD-STRATEGY-FREEZE-20260925-001 before any registration or citation by sha256; the registered record is the regenerated one.",
+  "immutable_records": "730 IMMUTABLE_AFTER_ISSUE records present before this unit re-verified byte-identical by sha256, including E-MD-B18-A002-077 (0bb9cefc...abc02) and D-MD-B18-A002-009 (a5a430c0...5ac3b).",
+  "not_done": [
+    "No change to resolveForRun, getOrCreateOwningRun, createPromoteRunFromSeed, assertConsumedConfiguration, correction commands, schema, migrations or runtime configuration.",
+    "No PHPUnit test added or changed; no test pins future semantics.",
+    "MD-S082-R0207/R0209 not built.",
+    "MD-S065-R0003 not PROVEN; no formal SATISFIED state changed.",
+    "MD-S050-R0005/R0014, MD-S019-R0071, F-013 status, G05/G07 untouched.",
+    "No reason code registered."
+  ],
+  "next": "F-MD-B18-A002-017 G07: MD-S002-R0003. Derived from the consolidated package section 5 step 4 (guard/rebind work before the executing aggregate G05, whose MD-S002 parent includes R0003); MD-S050-R0005 stays IMPLEMENTATION_DEPENDENCY_UNAVAILABLE. Not started.",
+  "no_commit_or_push": true
+}

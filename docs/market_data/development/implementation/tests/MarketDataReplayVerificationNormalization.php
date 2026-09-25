@@ -9,6 +9,7 @@ $root = dirname(__DIR__, 5);
 $path = $root.'/docs/market_data/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv';
 $all = [];
 $admissionParent = [];
+$rerunConfig = [];
 $errors = [];
 $h = fopen($path, 'rb');
 if (! $h) { throw new RuntimeException('TRACEABILITY_MATRIX_UNREADABLE'); }
@@ -18,6 +19,7 @@ while (($v = fgetcsv($h)) !== false) {
     if (count($v) !== count($header)) { $errors[] = 'MALFORMED_MATRIX_ROW'; continue; }
     $row = array_combine($header, $v);
     if (in_array($row['rule_id'], array_map(fn ($i) => sprintf('MD-S020-R%04d', $i), range(8, 16)), true)) { $admissionParent[$row['rule_id']] = $row; }
+    if ($row['rule_id'] === 'MD-S065-R0003') { $rerunConfig = $row; }
     if ($row['active'] === 'YES' && $row['primary_stage'] === 'MD-B18') { $all[] = $row; }
 }
 fclose($h);
@@ -45,15 +47,29 @@ if (($admission['supporting_stages'] ?? '') !== 'MD-B18;MD-B17'
 if (! is_file($root.'/docs/market_data/records/decisions/D-MD-B18-A002-005_APPROVED_Q1_Q6_BOUNDED_REMEDIATION.md')) {
     $errors[] = 'ADMISSION_OWNERSHIP_DECISION_MISSING';
 }
+// D-MD-B18-A002-010 (D2) moves MD-S065-R0003 primary to B21 with B18/B04 support. It stays a
+// required, unproven obligation: ownership/context only, never readiness satisfaction.
+if (($rerunConfig['active'] ?? '') !== 'YES' || ($rerunConfig['primary_stage'] ?? '') !== 'MD-B21'
+    || ($rerunConfig['supporting_stages'] ?? '') !== 'MD-B18;MD-B04'
+    || ($rerunConfig['coverage_requirement'] ?? '') !== 'REQUIRED' || ($rerunConfig['applicability'] ?? '') !== 'MANDATORY'
+    || ($rerunConfig['coverage_status'] ?? '') !== 'NOT_ASSESSED' || ($rerunConfig['current_evidence_ids'] ?? 'x') !== ''
+    || strpos($rerunConfig['notes'] ?? '', 'current_ownership_decision=D-MD-B18-A002-010;') === false
+    || strpos($rerunConfig['notes'] ?? '', 'proof_owner_confirmed=MD-B21;') === false
+    || strpos($rerunConfig['notes'] ?? '', 'predicate_context=MD-S065-R0001; normalized_predicate=Any output-affecting config change must be treated as a contract change. reruns must use the registry version effective for the requested trade date or explicitly documented override. Default:') === false) {
+    $errors[] = 'RERUN_CONFIG_OWNERSHIP_CONTEXT_INVALID:MD-S065-R0003';
+}
+if (! is_file($root.'/docs/market_data/records/decisions/D-MD-B18-A002-010_APPROVED_F017_R0003_OVERRIDE_MECHANISM_A1_C1_D2_AND_B21_OWNERSHIP.md')) {
+    $errors[] = 'RERUN_CONFIG_OWNERSHIP_DECISION_MISSING';
+}
 $counts = array_count_values(array_column($all, 'applicability'));
-$expected = ['MANDATORY' => 114, 'CONDITIONAL_NOT_APPLICABLE' => 4, 'REFERENCE_ONLY' => 33, 'OPTIONAL_CAPABILITY' => 2];
+$expected = ['MANDATORY' => 113, 'CONDITIONAL_NOT_APPLICABLE' => 4, 'REFERENCE_ONLY' => 33, 'OPTIONAL_CAPABILITY' => 2];
 foreach ($expected as $class => $count) {
     if (($counts[$class] ?? 0) !== $count) { $errors[] = 'POPULATION_MISMATCH:'.$class; }
 }
 foreach ($counts as $class => $count) {
     if (! isset($expected[$class])) { $errors[] = 'UNEXPECTED_APPLICABILITY:'.$class; }
 }
-if (count($all) !== 153) { $errors[] = 'STAGE_POPULATION_MISMATCH'; }
+if (count($all) !== 152) { $errors[] = 'STAGE_POPULATION_MISMATCH'; }
 $required = MarketDataReplayVerificationTraceabilitySpec::required($root);
 if (count($required) !== MarketDataReplayVerificationTraceabilitySpec::EXPECTED_DENOMINATOR) {
     $errors[] = 'DENOMINATOR_MISMATCH:'.count($required);
@@ -116,6 +132,7 @@ $result = ['gate' => 'MarketDataReplayVerificationNormalization', 'stage_id' => 
     'status' => $errors ? 'FAIL' : 'PASS', 'counts' => $counts, 'denominator' => count($required),
     'conditional_na_evidence' => $evidenceId, 'whole_parent_population' => count($found),
     'admission_parent_population' => count($admissionParent), 'admission_primary_owner' => $admission['primary_stage'] ?? null,
+    'rerun_config_primary_owner' => $rerunConfig['primary_stage'] ?? null,
     'errors' => $errors, 'generated_at' => date(DATE_ATOM)];
 echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL;
 exit($result['status'] === 'PASS' ? 0 : 1);

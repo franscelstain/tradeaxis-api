@@ -56,7 +56,8 @@ final class MarketDataConfigFoundationTraceabilitySpec
         $assign('MD-S034', [2, 27], 'MD-B21');
 
         $assign('MD-S065', [1, 2, 5], 'MD-B04');
-        $assign('MD-S065', [3], 'MD-B18');
+        // D-MD-B18-A002-010 (D2): R0003 primary B21 with MD-S082 R0207/R0209; B18/B04 supporting, no proof inherited.
+        $assign('MD-S065', [3], 'MD-B21');
         $assign('MD-S065', [4], 'MD-B19');
 
         // Config identity, resolved families, registry metadata, environment controls, and the
