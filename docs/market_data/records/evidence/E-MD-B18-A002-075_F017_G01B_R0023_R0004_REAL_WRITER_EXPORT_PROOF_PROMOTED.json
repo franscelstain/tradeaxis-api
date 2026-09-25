@@ -1,0 +1,138 @@
+{
+    "evidence_id": "E-MD-B18-A002-075",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+    "issued_at": "2026-09-25T07:42:08+07:00",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "PASS_G01B_MD_S003_R0023_AND_MD_S004_R0004_REBOUND_TO_REAL_WRITER_EXPORT_PROOF_PROMOTED_TO_PROVEN",
+    "evidence_scope": "F017_G01B_MD_S003_R0023_MD_S004_R0004_REAL_WRITER_TO_EXPORT_PROOF",
+    "ci_id": "CI-MD-B18-A002-001",
+    "related_findings": [
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-044",
+        "E-MD-B18-A002-050",
+        "E-MD-B18-A002-073",
+        "E-MD-B18-A002-074",
+        "CI-MD-B18-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-005",
+        "D-MD-B18-A002-008"
+    ],
+    "dependencies": [
+        "MD-DEP-0017",
+        "MD-DEP-0015"
+    ],
+    "schema_changed": false,
+    "production_code_changed": false,
+    "reconstruction": {
+        "MD-S003-R0023": {
+            "exact_requirement": "Historical_Replay_and_Data_Quality_Backtest.md:50, 'Per-run evidence': Record replay mode, fixture/manifest hash, requested/effective dates, knowledge cutoff, all frozen revision/snapshot IDs, expected/actual readiness and reason sets, field-level mismatch paths, artifact/manifest/seal hashes, executable build identity, and PASS/FAIL/BLOCKED.",
+            "applicability_and_mode_scope": "MANDATORY, both replay modes. The knowledge cutoff is an AS_KNOWN item; a PUBLICATION_EXACT result records it null by design (pinned to an immutable publication, not a moment of knowledge).",
+            "implementation_path": "ReplayVerificationService::verifyRunAgainstFixture()/verifyAsKnownAgainstFixture() -> ReplayResultRepository::upsertMetric() -> md_replay_daily_metrics -> EodEvidenceRepository::findReplayMetric() -> MarketDataEvidenceExportService::exportReplayEvidence() (replay_result.json bound_inputs block plus top-level fields).",
+            "old_proof_problem": "B18ReplayEvidenceSelfExplanationTest exports a hand-built metric (failedMetric()) through a mocked EodEvidenceRepository. The row is typed by the test, so the guard cannot fail if the real writer stops recording an identity, records a constant, or reads today's environment. Confirmed by probe: with the real writer no longer persisting event_factor_hash, that guard stayed 14/14 GREEN.",
+            "classification": "PROOF_GUARD_GAP. The prior reconstruction suggested REBIND_ONLY; corrected from the repository, because no existing guard drove the real writer and one had to be added. No implementation defect: every new guard passed unmutated on its first run."
+        },
+        "MD-S004-R0004": {
+            "exact_requirement": "Point_In_Time_Backtest_Input_Contract_LOCKED.md:15, 'Required input identity': Every row/export binds listing identity, requested/effective trade date, knowledge cutoff, as-known replay ID/publication-like artifact ID, read-model version, full config hash, factor/formula versions, and lineage. Availability timestamp is distinct from market trade date.",
+            "applicability_and_mode_scope": "MANDATORY, both replay modes; the cutoff is as-known only and the publication id is publication only.",
+            "listing_identity_decision": "Authority reads at two granularities ('row/export'; 'Symbol changes/reuse use listing IDs'). Both are proven, and neither substitutes for the other: the export binds the universe identity (temporal_identity_hash) and every row of the exported as-known dataset (universe rows, normalized source rows, factor rows) names its own listing_id. Proving the superset chooses no semantics: it is satisfied under either reading of the slash. Publication-mode exports carry no per-row dataset, so only the export-level identity applies there.",
+            "factor_vs_formula": "Distinct bindings. Factor identity: event_factor_hash (event revisions, source-scale assessments, factor decisions, factor_set_hash, ancillary contamination), the per-row factor_set_id/listing_id of exported factor rows, and the lineage factor_set_hash. Formula identity: formula_registry_hash. The old binding mapped 'factor/formula versions' to formula_registry_hash only, so factor identity was never asserted.",
+            "lineage": "Authority enumerates no lineage fields. This proof holds the repository's existing operational definition -- the verifier's lineage block (actual_lineage: run/publication/correction ids, artifact batch hashes, price-product and factor-set identity), the block REPLAY_LINEAGE_MISMATCH is raised over -- and invents no lineage field. The old 'lineage' binding (publication_artifact_lineage) is a three-key structure that is non-empty even when every value is null, so its presence check was vacuous; it is replaced by content assertions on actual_lineage. This is recorded as an authority under-specification that does not block the claim: nothing was chosen, and a richer lineage definition, if ever wanted, is a separate owner decision.",
+            "implementation_path": "same writer/export path as MD-S003-R0023; as-known rows are the bound snapshot carried in bound_input_context_json (AsKnownReplaySnapshotService::capture()).",
+            "old_proof_problem": "(1) listing identity mapped to the run-level hash alone; per-row listing_id never asserted. (2) factor identity never mapped or asserted. (3) lineage checked for presence only. (4) hand-built metric through a mocked repository, as for R0023. The prior reconstruction said production already carried the per-row listing_id: verified true (universe rows, source rows and factor rows all carry it in the persisted and exported as-known context).",
+            "classification": "PROOF_GUARD_GAP. No implementation defect: production already carried every binding."
+        }
+    },
+    "tests_added": {
+        "B18ReplayPersistedEvidenceBindingTest (new, 17 tests / 156 assertions)": "drives the real ReplayVerificationService, real ReplayResultRepository, real md_replay_daily_metrics row (SQLite mirror), real EodEvidenceRepository and real MarketDataEvidenceExportService; only what the writer consumes (run, publication, VERIFIED bound-input context) is stubbed, and those are the canonical sources each identity is asserted against. The fixture, run and publication rows are borrowed from B18ReplayComparisonExhaustivenessTest by reflection so the fixture is defined once.",
+        "test_the_real_writer_records_every_frozen_identity_and_the_export_reproduces_it": "R0023 positive: all twelve frozen identities persisted non-empty, exported exactly as persisted, and equal to their single-valued canonical source.",
+        "test_the_rest_of_the_per_run_evidence_line_is_recorded_by_the_real_writer": "R0023: mode, null cutoff for a publication replay, fixture manifest hash, requested/effective dates, artifact hash, PASS, and a named mismatch path for a diverging replay.",
+        "test_each_frozen_identity_follows_only_its_own_canonical_source (11 data sets)": "R0023 negative: one canonical source perturbed at a time; exactly the identities it feeds move and no other; exact new value where the source is a single value.",
+        "test_later_environment_drift_cannot_change_the_recorded_identities": "R0023: a second real replay after live config/build/indicators/eligibility drift records identical identities.",
+        "test_factor_identity_and_formula_identity_are_bound_independently": "R0004 negative: a factor-set change moves only event_factor_hash; a registry/formula change moves only the formula hash.",
+        "test_lineage_is_recorded_with_content_and_follows_its_sources": "R0004: actual_lineage carries publication/run ids, artifact hashes and factor_set_hash and follows its sources.",
+        "test_dates_and_the_availability_timestamp_are_bound_by_the_real_writer": "R0004: requested/effective dates, publication id, and a stored availability timestamp distinct from the trade date.",
+        "B18AsKnownModeIsolationTest::test_the_as_known_export_binds_listing_identity_per_row_and_per_export": "R0004 positive, and R0023 as-known mode/cutoff: export-level universe identity, every universe row and source row names a positive listing_id, each source row has an availability timestamp distinct from the trade date.",
+        "B18AsKnownModeIsolationTest::test_the_as_known_universe_identity_and_its_rows_follow_the_universe": "R0004: a second listing changes the universe identity and adds a row naming it.",
+        "B18AsKnownModeIsolationTest::test_the_as_known_export_binds_factor_identity_apart_from_formula_identity": "R0004: as-known factor identity (and the exported factor row's factor_set_id/listing_id) versus formula identity, moved independently in both directions.",
+        "B18AsKnownModeIsolationTest driver": "added verifyAsKnownBlocked(), the same real verifier and writer without the production canonicalizer run that verifyAsKnown() uses to author the fixture's expected execution. Every as-known replay is BLOCKED before the canonicalizer is reached (E-073), so that run contributes nothing these tests observe, cost most of the suite's time, and re-validates the config snapshot against live config, which rejected a deliberate snapshot mutation for an unrelated reason."
+    },
+    "probes": [
+        {"id": "P1_writer_drops_event_factor_hash", "mutation": "ReplayResultRepository::upsertMetric persists event_factor_hash as null", "result": "RED: 3 tests in B18ReplayPersistedEvidenceBindingTest (the R0023 positive, the 'factor set' perturbation, the factor/formula independence test). B18ReplayEvidenceSelfExplanationTest (old hand-built proof) 14/14 GREEN; ReplayResultRepositoryIntegrationTest 26/26 GREEN.", "restored_sha256": "18dff3a8416b9954b7828b292fc5bcc509287d0da5bd6e8c46db29de852c76c8"},
+        {"id": "P2_live_build_identity", "mutation": "ReplayVerificationService::actualBoundInputContext() reads executable_build_identity from live config", "result": "RED: 3 tests (R0023 positive, the 'executable build' perturbation, the environment-drift test). Old guard 14/14 GREEN.", "restored_sha256": "b6d5ff829ba412a7f00659b62c12c899892dad5bc2aa35ffef5de36a3716a04d"},
+        {"id": "P3_asknown_row_listing_id_removed", "mutation": "AsKnownReplaySnapshotService::capture() drops listing_id from the universe rows", "result": "RED: the R0004 per-row test, failing at 'universe row 0 names no listing' after 8 export-level assertions (mode, cutoff, valid universe hash) had passed -- a valid run-level universe hash does not hide the missing per-row identity; plus the universe-follows test and one existing B18AsKnownSnapshotIsolationTest guard that also depends on listing_id. Old hand-built guard 14/14 GREEN.", "restored_sha256": "22a8998bdcac0d118cfe54aceb184aa803ffbaa84b993b443459ebf2d13a104c"},
+        {"id": "P4_asknown_universe_identity_constant", "mutation": "temporal_identity_hash replaced by a constant", "result": "RED: test_the_as_known_universe_identity_and_its_rows_follow_the_universe and the existing R0016 no-listing guard. The per-row listing test stayed GREEN -- valid rows do not hide a constant universe identity. B18AsKnownSnapshotIsolationTest 3/3 GREEN; old hand-built guard 14/14 GREEN.", "restored_sha256": "22a8998bdcac0d118cfe54aceb184aa803ffbaa84b993b443459ebf2d13a104c"},
+        {"id": "P5_asknown_factor_identity_is_formula_hash", "mutation": "as-known event_factor_hash computed from the formula identity", "result": "RED: exactly test_the_as_known_export_binds_factor_identity_apart_from_formula_identity. B18AsKnownSnapshotIsolationTest 3/3 GREEN; old hand-built guard 14/14 GREEN.", "restored_sha256": "22a8998bdcac0d118cfe54aceb184aa803ffbaa84b993b443459ebf2d13a104c"},
+        {"id": "P6_publication_formula_constant", "mutation": "publication-mode formula_registry_hash replaced by a constant", "result": "RED: the 'registry versions payload' perturbation and the factor/formula independence test. Old guard 14/14 GREEN.", "restored_sha256": "b6d5ff829ba412a7f00659b62c12c899892dad5bc2aa35ffef5de36a3716a04d"},
+        {"id": "P7_publication_factor_set_dropped_from_identity", "mutation": "factor_set_hash removed from the publication event_factor_hash composition", "result": "RED: the 'factor set' perturbation and the factor/formula independence test. Old guard 14/14 GREEN.", "restored_sha256": "b6d5ff829ba412a7f00659b62c12c899892dad5bc2aa35ffef5de36a3716a04d"},
+        {"id": "P8_lineage_factor_set_dropped", "mutation": "actual_lineage factor_set_hash set to null", "result": "RED: the lineage test and the per-run-evidence test (the verifier itself now reports a lineage mismatch). Old guard 14/14 GREEN.", "restored_sha256": "b6d5ff829ba412a7f00659b62c12c899892dad5bc2aa35ffef5de36a3716a04d"},
+        {"id": "P9_availability_collapsed_onto_trade_date", "mutation": "writer stores created_at equal to the trade date", "result": "RED: exactly the availability-timestamp test. Old guard 14/14 and ReplayResultRepositoryIntegrationTest 26/26 GREEN.", "restored_sha256": "18dff3a8416b9954b7828b292fc5bcc509287d0da5bd6e8c46db29de852c76c8"},
+        {"id": "P10_writer_drops_knowledge_cutoff", "mutation": "writer persists knowledge_cutoff_at as null", "result": "RED: the as-known export test and the existing MD-S050-R0005 mode-recording guard. Old guard 14/14 GREEN.", "restored_sha256": "18dff3a8416b9954b7828b292fc5bcc509287d0da5bd6e8c46db29de852c76c8"},
+        {"id": "note", "detail": "each test file run separately; every mutation restored byte-for-byte from a saved copy and sha256-verified against it. A shell-quoting slip while adding P10 aborted before any mutation was applied; production hashes were re-confirmed unchanged before P10 ran. No shared mutation was used: each probe targets one production location and one identity."}
+    ],
+    "validation": {
+        "per_file": {
+            "B18ReplayPersistedEvidenceBindingTest": "17 tests, 156 assertions, OK",
+            "B18AsKnownModeIsolationTest": "16 tests, 89 assertions, OK",
+            "B18ReplayEvidenceSelfExplanationTest": "14 tests, 143 assertions, OK (unchanged; its two bound guards are no longer the proof)",
+            "B18ReplayComparisonExhaustivenessTest": "53 tests, 257 assertions, OK (borrowed fixture host, unchanged)",
+            "B18AsKnownSnapshotIsolationTest": "3 tests, 27 assertions, OK",
+            "directory-mode load check": "--filter over tests/Unit/MarketData for both classes: 70 tests (53 + 17), OK -- the borrowed-fixture require_once does not double-load or skip either class",
+            "PromotedPredicateProofGateTest": "8 tests, 22 assertions, OK",
+            "ClassificationConsistencyGateTest": "20 tests, 96 assertions, OK",
+            "TraceabilityApplicabilityGateTest": "11 tests, 23 assertions, OK",
+            "ScopeBoundaryAndOrchestrationCompletionTest": "8 tests, 73 assertions, OK",
+            "FindingRecordConsistencyTest": "3 tests, 13 assertions, OK"
+        },
+        "readiness_gate": "MarketDataReplayVerificationProofReadinessGate run directly: 23 predicates without a reviewed basis => 91/114 bases present; 0 PREDICATE_GUARD_MISSING; MD-S003-R0023, MD-S004-R0004 and MD-S050-R0016 absent from the list.",
+        "full_marketdata_suite": "not run: no production code changed (proof-only unit), so targeted tests, probes and governance gates are sufficient by the unit's own instruction.",
+        "mariadb": "not used by this unit: every test above runs on the SQLite mirror; MariaDB was neither started nor restarted.",
+        "isolation": "every run and probe was launched with no other PHPUnit/probe process active."
+    },
+    "production_sha256_unchanged": {
+        "AsKnownReplaySnapshotService.php": "22a8998bdcac0d118cfe54aceb184aa803ffbaa84b993b443459ebf2d13a104c",
+        "ReplayVerificationService.php": "b6d5ff829ba412a7f00659b62c12c899892dad5bc2aa35ffef5de36a3716a04d",
+        "ReplayResultRepository.php": "18dff3a8416b9954b7828b292fc5bcc509287d0da5bd6e8c46db29de852c76c8",
+        "MarketDataEvidenceExportService.php": "3aeee9762b391a3fe9d017c34fd624942322de6ef8922b09d4454fb58ae8d21d"
+    },
+    "test_sha256_after": {
+        "B18ReplayPersistedEvidenceBindingTest.php": "3b76044fd1b72009d1f479eeeb7581a392fd85ce1fd0e90a636692def831c008",
+        "B18AsKnownModeIsolationTest.php": "63d08bd6eabec30abe9696815448e6f8eb3ff7ee0ff3162a5dceb7cbd2063808"
+    },
+    "predicate_state": {
+        "MD-S003-R0023": "PROVEN (was INCOMPLETE)",
+        "MD-S004-R0004": "PROVEN (was INCOMPLETE)",
+        "MD-S050-R0016": "PROVEN, unchanged (E-074)",
+        "MD-S050-R0005": "INCOMPLETE, unchanged",
+        "MD-S050-R0014": "INCOMPLETE, unchanged",
+        "MD-S019-R0071": "INCOMPLETE, unchanged",
+        "proof_basis_transition": {
+            "before": {"PROVEN": 89, "INCOMPLETE": 25},
+            "after": {"PROVEN": 91, "INCOMPLETE": 23},
+            "confirmed_via": "PHP load of the MarketDataReplayVerificationProofBasis constants before and after the edit, and the readiness gate run directly (91/114)."
+        }
+    },
+    "formal_traceability": "0/114 SATISFIED unchanged; not touched by this unit",
+    "preserved_unchanged": [
+        "D-MD-B18-A002-008",
+        "E-MD-B18-A002-050",
+        "E-MD-B18-A002-067",
+        "E-MD-B18-A002-068",
+        "E-MD-B18-A002-069",
+        "E-MD-B18-A002-070",
+        "E-MD-B18-A002-071",
+        "E-MD-B18-A002-072",
+        "E-MD-B18-A002-073",
+        "E-MD-B18-A002-074",
+        "MARKET_DATA_STRATEGY_FREEZE_MANIFEST.json (MD-STRATEGY-FREEZE-20260922-001, unchanged; no strategy document touched)"
+    ],
+    "next": "F-017's remaining predicates are derived in the finding and the proof basis; see F-MD-B18-A002-017. Not started by this unit.",
+    "no_commit_or_push": true
+}

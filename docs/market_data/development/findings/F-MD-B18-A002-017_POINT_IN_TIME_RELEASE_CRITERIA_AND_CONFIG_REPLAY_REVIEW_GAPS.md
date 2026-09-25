@@ -789,3 +789,97 @@ A/B1/B2 plus this five-domain closure) is now fully remediated; 14 of its own pr
 carried predicates this unit did not touch. **Next:** `G01-B` (`MD-S003-R0023` / `MD-S004-R0004`) --
 not started. `G01-B` may now proceed under the coherent, complete state this unit establishes for
 `MD-S050-R0016`.
+
+## G01-B: `MD-S003-R0023` and `MD-S004-R0004` rebound to the real writer — 2026-09-25T07:42:08+07:00
+
+`E-MD-B18-A002-075` reconstructs both predicates independently from the repository, finds no
+implementation defect, and rebinds each from a hand-built exported row to the path that actually
+writes and exports the evidence. Both are `PROOF_GUARD_GAP`. The earlier reconstruction guessed
+`REBIND_ONLY` for `R0023`; that was corrected, because no existing guard drove the real writer and
+one had to be added.
+
+**`MD-S003-R0023`** ("Per-run evidence": replay mode, fixture/manifest hash, dates, knowledge
+cutoff, all frozen revision/snapshot IDs, expected/actual readiness and reason sets, mismatch paths,
+artifact/manifest/seal hashes, executable build identity, `PASS`/`FAIL`/`BLOCKED`). The recorded
+pair exports a hand-built metric through a mocked repository, so it cannot fail if the writer stops
+recording an identity, records a constant, or reads today's environment -- confirmed: with the real
+writer no longer persisting `event_factor_hash` it stayed 14/14 green. The new
+`B18ReplayPersistedEvidenceBindingTest` drives the real `ReplayVerificationService` -> real
+`ReplayResultRepository::upsertMetric()` -> `md_replay_daily_metrics` -> real `EodEvidenceRepository`
+-> real `MarketDataEvidenceExportService`, stubbing only what the writer consumes (run, publication,
+the `VERIFIED` bound-input context), which are the canonical sources. All twelve frozen identities are
+persisted, exported exactly as persisted, and equal to their source; eleven per-source perturbations
+each move exactly the identities that source feeds and no other (so a constant, a live read, or one
+identity standing in for another fails); and a second real replay after live config/build drift
+records identical identities.
+
+**`MD-S004-R0004`** ("Every row/export binds listing identity, ..., factor/formula versions, and
+lineage"). Three defects in the recorded binding, none in production. Listing identity was mapped to
+the run-level universe hash alone; authority reads at two granularities ("row/export", "symbol
+changes/reuse use listing IDs"), so both are proven and neither stands in for the other -- the export
+binds the universe identity and every row of the exported as-known dataset (universe, source and
+factor rows) names its own `listing_id`. "Factor/formula versions" was mapped to
+`formula_registry_hash` alone; factor identity (`event_factor_hash`, per-row `factor_set_id`, lineage
+`factor_set_hash`) is a different binding and is now proven independently of it in both modes. The
+"lineage" binding passed on any non-empty array (`publication_artifact_lineage` is a three-key
+structure even when every value is null); it is replaced by content assertions on the verifier's own
+lineage block. **Authority enumerates no lineage fields:** this proof holds the repository's
+existing operational definition (the block `REPLAY_LINEAGE_MISMATCH` is raised over), invents no
+lineage field and decides no richer one -- recorded as an under-specification that does not block the
+claim, since nothing was chosen. The prior note that production already carried per-row `listing_id`
+was verified true.
+
+**Ten probes**, each byte-restored and sha256-verified, each suite file run separately: the writer
+dropping `event_factor_hash` or `knowledge_cutoff_at`, reading the build identity from live config,
+or collapsing the stored availability timestamp onto the trade date; stripping `listing_id` from the
+as-known rows (the per-row assertion failed *after* the export-level universe-hash assertions had
+passed, so a valid run-level hash does not hide it); replacing the universe identity with a constant
+(the per-row test stayed green -- valid rows do not hide a constant identity); replacing the as-known
+factor identity with the formula hash; a constant publication formula hash; dropping the factor set
+from the publication event/factor identity; and dropping the lineage factor set. Each turned exactly
+its own guards red; the old hand-built guard stayed 14/14 green throughout.
+
+**No production code changed** (all four production hashes identical to `E-MD-B18-A002-074`), so
+per this unit's own scope the full `MarketData` suite was not run; targeted files, probes and the
+governance gates were. `B18ReplayPersistedEvidenceBindingTest` 17/156, `B18AsKnownModeIsolationTest`
+16/89, `B18ReplayEvidenceSelfExplanationTest` 14/143, `B18ReplayComparisonExhaustivenessTest` 53/257
+(all OK; a directory-mode filter run of both fixture-sharing classes gave 70 = 53 + 17), and the six
+governance self-tests green.
+
+**Proof basis:** `PROVEN` 89 -> 91, `INCOMPLETE` 25 -> 23 (`MD-S003-R0023`, `MD-S004-R0004`);
+`MarketDataReplayVerificationProofReadinessGate` run directly: 91/114 bases present, none missing a
+guard. `MD-S050-R0005`, `MD-S050-R0014` and `MD-S019-R0071` untouched.
+
+**Exact ownership of the 23 remaining** (derived from the consolidated package, not estimated): this
+finding owns **12** -- nine `G05` (`MD-S002-R0005`/`R0006`/`R0007`/`R0008`, `MD-S003-R0025`,
+`MD-S004-R0002`/`R0003`/`R0005`/`R0008`), one `G07` (`MD-S002-R0003`), one `G09` (`MD-S065-R0003`),
+and `MD-S050-R0005` (`IMPLEMENTATION_DEPENDENCY_UNAVAILABLE`, E-073); `F-MD-B18-A002-018` owns 9;
+`F-MD-B18-A002-013` (reopened) owns 2 (`MD-S050-R0014`, `MD-S019-R0071`). The earlier E-074 sentence
+counting those two among this finding's 14 was loose; the arithmetic (14 -> 12 here) was right.
+
+**Evidence record:** `E-MD-B18-A002-075`, registered in `DOCUMENT_ID_REGISTRY` (`MD-DOC-01211`),
+`DOCUMENT_ROLE_REGISTRY`, `CURRENT_VERIFICATION_REGISTRY` and `WORK_RECORD_REGISTRY`.
+
+This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`, 12 of its own predicates
+`INCOMPLETE`. **Next:** `G09` -- `MD-S065-R0003` (a rerun uses the registry version effective for the
+requested trade date). Derived, not chosen: it is the only remaining predicate here whose
+reconstruction (above, "Guard gaps") already names an executable remedy with no new harness -- rebind
+to `B18ConfigEffectiveTimeSelectionTest::test_the_configuration_effective_for_the_run_context_governs_and_not_the_newest`
+plus a guard on the rerun path (`EodRunRepository:324`), production already conforming. The `G05`/`G07`
+predicates need the executing aggregate runner, a separate, larger harness. Not started.
+
+## Ownership-attribution correction of `E-MD-B18-A002-074` — 2026-09-25T08:01:48+07:00
+
+`E-MD-B18-A002-076` corrects one factual misstatement in the issued, immutable `E-MD-B18-A002-074`
+(which stays byte-identical). Its `next` field says this finding "stays `OPEN` on its 14 remaining
+predicates" and names `MD-S050-R0014` and `MD-S019-R0071` among them. Their canonical owner is
+`F-MD-B18-A002-013` (reopened `E-070`), not this finding. The earlier sentence in the G01-B section
+above that called the `E-074` wording "loose" understated it: it was a misattribution of ownership.
+That earlier section is left as written (append-only) and is superseded on this point by `E-076`.
+
+At the `E-074` state the 25 `INCOMPLETE` predicates were: this finding 14 (thirteen package-owned,
+plus `MD-S050-R0005`, which is in no package section and is recorded here by `E-073`), `F-018` 9, and
+`F-013` 2 (`MD-S050-R0014`, `MD-S019-R0071`). The number 14, the `89`/`25` proof counts and every
+predicate state in `E-074` were correct. Nothing here changes a predicate state or a proof count
+(`91` `PROVEN` / `23` `INCOMPLETE`; formal `0/114` `SATISFIED` unchanged). **Next:** `G09`
+(`MD-S065-R0003`), unchanged; not started.

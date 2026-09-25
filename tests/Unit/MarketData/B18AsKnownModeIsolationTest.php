@@ -4,6 +4,8 @@ use App\Application\MarketData\Services\AsKnownReplayExecutionService;
 use App\Application\MarketData\Services\AsKnownReplaySnapshotService;
 use App\Application\MarketData\Services\MarketDataReadProductService;
 use App\Application\MarketData\Services\ReplayVerificationService;
+use App\Application\MarketData\Services\MarketDataEvidenceExportService;
+use App\Infrastructure\Persistence\MarketData\EodCorrectionRepository;
 use App\Infrastructure\Persistence\MarketData\EodEvidenceRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\MarketDataConfigSnapshotRepository;
@@ -366,6 +368,125 @@ class B18AsKnownModeIsolationTest extends TestCase
     }
 
     /**
+     * `MD-S004-R0004` -- "Every row/export binds listing identity". Authority reads at two
+     * granularities, so both are proven on the real persisted-and-exported evidence rather than one
+     * standing in for the other: the export binds the *universe* identity (`temporal_identity_hash`),
+     * and every *row* of the point-in-time dataset it carries binds its own stable `listing_id`
+     * (`Point_In_Time_Backtest_Input_Contract_LOCKED.md`: "Symbol changes/reuse use listing IDs").
+     * A valid universe hash does not say each row names its listing, and rows naming their listings
+     * do not say the export bound the universe.
+     */
+    public function test_the_as_known_export_binds_listing_identity_per_row_and_per_export(): void
+    {
+        $this->verifyAsKnownBlocked();
+        $export = $this->exportStoredMetric();
+        $bound = $export['bound_inputs'];
+        $snapshot = $bound['context']['bound_inputs'];
+
+        // Export level.
+        $this->assertSame('AS_KNOWN', $export['replay_mode']);
+        $this->assertSame(self::CUTOFF, (string) $export['knowledge_cutoff_at']);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', (string) $bound['temporal_identity_hash'],
+            'the export does not bind a universe identity');
+
+        // Row level, universe rows.
+        $listingId = (int) DB::table('md_listings')->value('listing_id');
+        $this->assertGreaterThan(0, $listingId);
+        $universe = $snapshot['temporal_universe'];
+        $this->assertNotEmpty($universe, 'the exported dataset carries no universe rows');
+        foreach ($universe as $index => $row) {
+            $this->assertGreaterThan(0, (int) ($row['listing_id'] ?? 0), 'universe row '.$index.' names no listing');
+        }
+        $this->assertContains($listingId, array_map('intval', array_column($universe, 'listing_id')));
+
+        // Row level, source rows -- with the availability timestamp distinct from the trade date.
+        $rows = $snapshot['normalized_source_rows_manifest']['rows'];
+        $this->assertNotEmpty($rows, 'the exported dataset carries no source rows');
+        foreach ($rows as $index => $row) {
+            $this->assertGreaterThan(0, (int) ($row['listing_id'] ?? 0), 'source row '.$index.' names no listing');
+            $this->assertSame(self::TRADE_DATE, (string) $row['trade_date']);
+            $this->assertNotEmpty($row['acquired_at'] ?? null, 'source row '.$index.' carries no availability timestamp');
+            $this->assertNotSame(self::TRADE_DATE, (string) $row['acquired_at'],
+                'the availability timestamp collapsed onto the market trade date');
+        }
+    }
+
+    /**
+     * The universe identity is a function of the universe, not a constant: a second listing known
+     * by the cutoff changes it and adds a row that names its own listing.
+     */
+    public function test_the_as_known_universe_identity_and_its_rows_follow_the_universe(): void
+    {
+        $this->verifyAsKnownBlocked();
+        $before = $this->exportStoredMetric()['bound_inputs'];
+
+        DB::table('tickers')->insert([
+            'ticker_id' => 502, 'ticker_code' => 'TEST2', 'company_name' => 'Test Two Tbk',
+            'is_active' => 1, 'listed_date' => '2023-01-02', 'created_at' => '2023-01-02 00:00:00',
+        ]);
+        (new TemporalIdentityRepository())->resolveProviderContext('TEST2', 'yahoo_finance', self::TRADE_DATE, self::CUTOFF);
+
+        $this->verifyAsKnownBlocked();
+        $after = $this->exportStoredMetric()['bound_inputs'];
+
+        $this->assertNotSame($before['temporal_identity_hash'], $after['temporal_identity_hash']);
+        $this->assertCount(count($before['context']['bound_inputs']['temporal_universe']) + 1, $after['context']['bound_inputs']['temporal_universe']);
+        foreach ($after['context']['bound_inputs']['temporal_universe'] as $row) {
+            $this->assertGreaterThan(0, (int) $row['listing_id']);
+        }
+    }
+
+    /**
+     * `MD-S004-R0004` -- "factor/formula versions" is two bindings. Factor identity (`event_factor_
+     * hash`, and the per-row `factor_set_id`/`listing_id` the exported factor rows carry) and formula
+     * identity (`formula_registry_hash`) move independently: a valid formula hash cannot hide a
+     * missing factor identity, and the reverse.
+     */
+    public function test_the_as_known_export_binds_factor_identity_apart_from_formula_identity(): void
+    {
+        $this->verifyAsKnownBlocked();
+        $baseline = $this->exportStoredMetric()['bound_inputs'];
+        $listingId = (int) DB::table('md_listings')->value('listing_id');
+
+        // A factor set recorded by the cutoff, with one row naming the listing it applies to.
+        $factorSetId = (int) DB::table('md_adjustment_factor_sets')->insertGetId([
+            'factor_set_uid' => hash('sha256', 'as-known-factor-set'), 'price_product_code' => 'STRUCTURAL_ADJUSTED',
+            'factor_formula_version' => 'factor_formula_v1', 'config_snapshot_id' => 1, 'state' => 'ACTIVE',
+            'content_hash' => str_repeat('c', 64), 'recorded_at' => '2026-03-01 00:00:00', 'created_at' => '2026-03-01 00:00:00',
+        ]);
+        DB::table('md_adjustment_factors')->insert([
+            'factor_set_id' => $factorSetId, 'listing_id' => $listingId, 'effective_from' => '2026-03-01',
+            'price_factor' => '1.000000000000', 'volume_factor' => '1.000000000000',
+            'corporate_action_revision_id' => 1, 'created_at' => '2026-03-01 00:00:00',
+        ]);
+
+        $this->verifyAsKnownBlocked();
+        $withFactor = $this->exportStoredMetric()['bound_inputs'];
+
+        $this->assertNotSame($baseline['event_factor_hash'], $withFactor['event_factor_hash']);
+        $this->assertSame($baseline['formula_registry_hash'], $withFactor['formula_registry_hash'],
+            'a factor-set change moved the formula identity, so one stands in for the other');
+        $factors = $withFactor['context']['bound_inputs']['event_factor_context']['factors'];
+        $this->assertCount(1, $factors);
+        $this->assertSame($factorSetId, (int) $factors[0]['factor_set_id']);
+        $this->assertSame($listingId, (int) $factors[0]['listing_id'], 'the exported factor row does not name its listing');
+
+        // And the reverse: a change to the resolved formula configuration moves only the formula.
+        $row = DB::table('md_config_snapshots')->orderByDesc('config_snapshot_id')->first();
+        $payload = json_decode((string) $row->resolved_config_json, true);
+        $payload['resolved_config']['indicators'] = ['formula_probe' => ['version' => 'changed']];
+        DB::table('md_config_snapshots')->where('config_snapshot_id', $row->config_snapshot_id)
+            ->update(['resolved_config_json' => json_encode($payload)]);
+
+        $this->verifyAsKnownBlocked();
+        $withFormula = $this->exportStoredMetric()['bound_inputs'];
+
+        $this->assertNotSame($withFactor['formula_registry_hash'], $withFormula['formula_registry_hash']);
+        $this->assertSame($withFactor['event_factor_hash'], $withFormula['event_factor_hash'],
+            'a formula change moved the factor identity, so one stands in for the other');
+    }
+
+    /**
      * A `PUBLICATION_EXACT` fixture handed to the as-known verifier is refused. Without this the
      * mode would be whatever the caller ran, and a publication fixture verified as-known would
      * produce an as-known-labelled result about publication artifacts.
@@ -419,12 +540,61 @@ class B18AsKnownModeIsolationTest extends TestCase
         ))->verifyAsKnownAgainstFixture(self::RUN_ID, $dir, self::CUTOFF);
     }
 
+    /**
+     * The same real verifier and real writer as `verifyAsKnown()`, without the production
+     * canonicalizer run that helper uses to author the fixture's expected execution. Every as-known
+     * replay is `BLOCKED` before the canonicalizer is reached, so that run contributes nothing the
+     * evidence tests below observe, costs most of the suite's time, and re-validates the config
+     * snapshot against live config -- which would reject the deliberate snapshot mutation one of
+     * them makes for an unrelated reason. The execution block is therefore canned; nothing reads it.
+     */
+    private function verifyAsKnownBlocked(): void
+    {
+        $snapshots = new AsKnownReplaySnapshotService();
+        $snapshot = $snapshots->capture(self::TRADE_DATE, self::CUTOFF);
+
+        $dir = $this->fixtureDir(
+            ['trade_date' => self::TRADE_DATE, 'knowledge_cutoff' => self::CUTOFF, 'snapshot_hash' => $snapshot['snapshot_hash']],
+            [
+                'execution_scope' => AsKnownReplayExecutionService::EXECUTION_SCOPE,
+                'execution_state' => 'SUCCESS',
+                'canonical_row_count' => 0,
+                'invalid_row_count' => 0,
+                'canonical_output_hash' => str_repeat('0', 64),
+                'reason_code_counts' => [],
+            ]
+        );
+
+        (new ReplayVerificationService(new EodEvidenceRepository(), new EodPublicationRepository(), new ReplayResultRepository(), $snapshots))
+            ->verifyAsKnownAgainstFixture(self::RUN_ID, $dir, self::CUTOFF);
+    }
+
     private function storedMetric()
     {
         $metric = DB::table('md_replay_daily_metrics')->orderByDesc('replay_id')->first();
         $this->assertNotNull($metric, 'the as-known verification persisted no result');
 
         return $metric;
+    }
+
+    /**
+     * The latest stored replay, exported through the real evidence repository and export service
+     * exactly as an operator would receive it -- the persisted row is read back, not reused.
+     *
+     * @return array<string,mixed> the decoded `replay_result.json`
+     */
+    private function exportStoredMetric(): array
+    {
+        $metric = $this->storedMetric();
+        $dir = sys_get_temp_dir().'/md_b18_as_known_export_'.uniqid();
+
+        (new MarketDataEvidenceExportService(new EodEvidenceRepository(), new EodPublicationRepository(), new EodCorrectionRepository()))
+            ->exportReplayEvidence($metric->replay_id, $metric->trade_date, $dir);
+
+        $json = json_decode((string) file_get_contents($dir.'/replay_result.json'), true);
+        $this->assertIsArray($json, 'the export wrote no replay_result.json');
+
+        return $json;
     }
 
     /** Everything about the publication that a replay must not move. */

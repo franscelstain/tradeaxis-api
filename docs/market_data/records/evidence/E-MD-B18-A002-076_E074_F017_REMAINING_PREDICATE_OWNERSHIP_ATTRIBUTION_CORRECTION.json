@@ -1,0 +1,43 @@
+{
+  "evidence_id": "E-MD-B18-A002-076",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+  "issued_at": "2026-09-25T08:01:48+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "CORRECTION_E074_OWNERSHIP_ATTRIBUTION_OF_MD_S050_R0014_AND_MD_S019_R0071_ONLY_NO_PROOF_OR_STATE_CHANGE",
+  "evidence_scope": "E074_NEXT_FIELD_OWNERSHIP_ATTRIBUTION_CORRECTION",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": ["F-MD-B18-A002-017", "F-MD-B18-A002-013"],
+  "related_evidence": ["E-MD-B18-A002-074", "CI-MD-B18-A002-001"],
+  "related_decisions": ["D-MD-B18-A002-008"],
+  "dependencies": ["MD-DEP-0017"],
+  "schema_changed": false,
+  "corrects": {
+    "record": "E-MD-B18-A002-074",
+    "record_sha256_at_correction": "602a3267360376e2d6316cdb5420f2fa34733a3e041a79f26738a14dd06c46a7",
+    "field": "next",
+    "inaccurate_wording": "the finding stays OPEN on its 14 remaining predicates (unprobed-input residue no longer applies to R0016; the remaining predicates are R0014/R0071's unmet reproducibility requirement, R0005's structural unreachability, and the finding's other, unrelated carried predicates)",
+    "why_inaccurate": "The sentence lists MD-S050-R0014 and MD-S019-R0071 among the remaining predicates OF F-MD-B18-A002-017. Their canonical owner is F-MD-B18-A002-013 (reopened E-070). This is a misattribution of ownership, not shorthand: the sentence's subject is the finding's own predicates, and it names the two as members of them. (A later, mutable F-017 sentence written in the G01-B unit called the E-074 wording 'loose'; that understated it and is superseded by this record.)",
+    "correct_ownership_at_the_E074_state": {
+      "basis": "MD_B18_A002_CONSOLIDATED_REMEDIATION_PACKAGE.md per-finding sections; F-MD-B18-A002-013 status and 'ten carried predicates'; the proof basis at the E-074 state (PROVEN 89 / INCOMPLETE 25) grouped by package owner.",
+      "F-MD-B18-A002-013": "2 -- MD-S050-R0014, MD-S019-R0071",
+      "F-MD-B18-A002-017": "14 -- thirteen package-owned (MD-S002-R0003/R0005/R0006/R0007/R0008, MD-S003-R0023/R0025, MD-S004-R0002/R0003/R0004/R0005/R0008, MD-S065-R0003) plus MD-S050-R0005, which is in no package section and is recorded under F-017 by E-MD-B18-A002-073 and by F-017's own text",
+      "F-MD-B18-A002-018": "9 -- MD-S003-R0011/R0014, MD-S041-R0032, MD-S050-R0022/R0023/R0025/R0028/R0029, MD-S055-R0025",
+      "total": "14 + 9 + 2 = 25, equal to the INCOMPLETE count E-074 recorded"
+    },
+    "what_was_not_wrong": [
+      "the number 14 (it is the correct count of F-017-recorded INCOMPLETE predicates at the E-074 state, counting MD-S050-R0005 as the finding does)",
+      "the proof-basis transition 88 -> 89 PROVEN and 26 -> 25 INCOMPLETE, and every predicate state E-074 records",
+      "the R0014/R0071 statements in E-074's 'not_touched' and 'predicate_state' blocks, which describe their status (INCOMPLETE, unchanged) and make no ownership claim"
+    ]
+  },
+  "materiality": "Low for proof, real for routing. No proof count, predicate state, probe, test or validation result in E-074 depends on the sentence. But ownership decides which finding's closure a predicate gates: read literally, E-074 makes R0014 and R0071 obligations of F-017's closure, when they belong to the reopened F-013.",
+  "governance_basis": "DOCUMENT_RECORDING_STANDARD.md #1: 'Evidence correction creates new evidence ... historical records are never rewritten to look current.' DOCUMENT_CHANGE_POLICY.md #3: an IMMUTABLE_AFTER_ISSUE record 'MUST NOT be edited after issue; corrections require a new correlated record'. Neither standard defines a materiality threshold or a separate 'clarification' record class, so a factual misstatement in issued evidence is corrected by a successor record, as E-MD-B18-A002-072 did for a field with zero semantic effect and E-MD-B18-A002-063 did for E-061. E-074 stays byte-identical.",
+  "correlation": "Same attempt (MD-B18-A002) as the corrected record, so no row in WORK_RELATIONSHIP_REGISTRY.csv is required (that registry is mandatory for relationships that cross attempt, stage or baseline boundaries, and holds no row for E-072 or any B18-A002 evidence after E-029). The canonical same-attempt correction link is the one E-072 used: this record's related_evidence and 'corrects' block, mirrored in its WORK_RECORD_REGISTRY row.",
+  "no_other_changes": "No production code, test code, proof-basis entry, predicate state or proof count changed. MD-S003-R0023, MD-S004-R0004 and MD-S050-R0016 remain PROVEN; MD-S050-R0005, MD-S050-R0014 and MD-S019-R0071 remain INCOMPLETE; the proof basis is 91 PROVEN / 23 INCOMPLETE; formal 0/114 SATISFIED is unchanged. E-MD-B18-A002-075 is not edited and its proof semantics are untouched.",
+  "no_commit_or_push": true
+}
