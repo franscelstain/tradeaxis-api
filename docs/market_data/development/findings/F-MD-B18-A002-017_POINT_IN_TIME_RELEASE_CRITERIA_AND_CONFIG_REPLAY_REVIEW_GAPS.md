@@ -883,3 +883,76 @@ plus `MD-S050-R0005`, which is in no package section and is recorded here by `E-
 predicate state in `E-074` were correct. Nothing here changes a predicate state or a proof count
 (`91` `PROVEN` / `23` `INCOMPLETE`; formal `0/114` `SATISFIED` unchanged). **Next:** `G09`
 (`MD-S065-R0003`), unchanged; not started.
+
+## G09 stopped: `MD-S065-R0003` is `AUTHORITY_AMBIGUITY`, and the earlier conformance claim was wrong — 2026-09-25T08:55:45+07:00
+
+`E-MD-B18-A002-077` reconstructs `MD-S065-R0003` from the repository and stops the unit. No probe,
+promotion, code change or test change was made; `MD-S065-R0003` stays `INCOMPLETE`
+(`91` `PROVEN` / `23` `INCOMPLETE`, formal `0/114` `SATISFIED` unchanged).
+
+**The requirement.** `Config_Change_Protocol_LOCKED.md:7`: "reruns must use the registry version
+effective for the requested trade date or explicitly documented override". It names the requested
+trade date -- not the execution date, today or latest. (`MD-S065-R0001`, that a config change is a
+contract change, is its own predicate and is `SATISFIED` under `MD-B04`; the matrix only prepends it as
+context.)
+
+**"Production conforms" is disproven.** The "Guard gaps" table above says all three `resolveForRun`
+callers pass the requested trade date and therefore conform. Passing the date is not the same as
+binding the version effective for it. `resolveForRun()` without a cutoff hashes the *live*
+configuration; it reuses the governing snapshot only if the hashes are equal, and otherwise inserts a
+new snapshot with the live content stamped `effective_at` = the requested date. There are now four call
+sites, not three (`EodRunRepository` `:33`, `:187`, `:337`, plus `AsKnownReplaySnapshotService` `:101`).
+The two that pass a knowledge cutoff are lookups and conform; the two that do not --
+`getOrCreateOwningRun` and `createPromoteRunFromSeed`, the real rerun/promote path -- bind live
+content. Executed on the real path: a seed run for 2026-03-24 bound version A; version B became live
+and was recorded effective 2026-04-10; `createPromoteRunFromSeed` for 2026-03-24 then bound **B**,
+minted as a third snapshot stamped effective 2026-03-24. The rerun did not bind the version effective
+for its date. The scratch test's source and output are embedded in the evidence and were not kept as a
+test, so no passing guard pins behaviour the rule may forbid.
+
+**Why the implementation cannot choose.** The platform forbids the literal alternative:
+`assertConsumedConfiguration()` throws `INPUT_CAPTURE_LIVE_CONFIG_DIVERGENCE` when a run's bound
+snapshot differs from live config, so a run always executes under live config. Authority does not
+define the rule's own exception, the "explicitly documented override" -- nothing in authority,
+governance or development names its form, approval or record. And other authority treats a rerun under
+changed configuration as legitimate: the recompute contract's operational rerun rule ("rerun affected
+dates after a change to ... indicator formula") and the correction contracts (a rerun whose
+"configuration binding" changes is a labelled correction). Read literally, the rule would forbid what
+those contracts require. Reconciling them is an owner decision. Three options, none chosen:
+
+1. **Recognise the current behaviour as the documented override** -- a controlled revision of the frozen
+   `MD-S065` protocol (or a decision plus change-log entry) saying a rerun after a recorded change
+   executes under the current configuration, recorded as a new snapshot. Needs strategy change control
+   and explicit user authorization. Proof would then be that the snapshot records exactly what ran and
+   never overwrites the prior version.
+2. **Default to the historical version and block** -- a rerun resolves the governing snapshot (lookup),
+   and is `BLOCKED` when live config differs unless an explicit, recorded override is supplied. Needs an
+   override form decided, and changes the operational recompute workflow (the 843 recompute runs of
+   2026-08-10/11 the source comment names).
+3. **Effective-dated registered changes** -- "effective for the requested trade date" means the effective
+   date registered with the change; a rerun of D under B is admitted only if B's registered effective
+   date is on or before D. Needs a registry mechanism that records a change's effective date
+   independently of the rerun that first resolves it; today the resolver stamps the requested date of
+   whichever run first sees the change.
+
+**The existing guard pair.** `B18ConfigEffectiveTimeSelectionTest` builds its two intervals by
+resolving the live configuration once and copying the row, so live content always equals the governing
+version. `test_the_configuration_effective_for_the_run_context_governs_and_not_the_newest` is valid for
+`MD-S082-R0216`; it cannot show a rerun binds the version effective for its date. The pair bound here
+still proves that an output-affecting change acquires a new identity and an unchanged configuration
+does not -- `MD-S065-R0001`'s content -- and the proof-basis narrative now says so instead of claiming
+the rerun rule.
+
+**The "today's resolved config" comment** in `createPromoteRunFromSeedWithinTransaction` was checked and
+is **not stale**: it accurately describes what the code does, which the executed run confirms. It
+contradicts the requirement text, not the code. Rewording it would make it false, and changing behaviour
+to match it is not permitted here; both belong to whichever unit implements the owner's decision.
+
+**Governance.** Evidence `E-MD-B18-A002-077` (`MD-DOC-01213`), registered in the four registries. The
+proof-basis narrative for `MD-S065-R0003` was corrected (mutable; positive/negative bindings and the
+`INCOMPLETE` state unchanged). `R0005`, `R0014`, `R0071`, `F-013`, `F-018` and the `G05`/`G07`
+predicates untouched. This finding stays `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE` with 12 predicates
+`INCOMPLETE`.
+
+**Next:** the owner decision on `MD-S065-R0003` (options above). `G09` cannot proceed as proof-only
+work, and no other `F-017` unit is started while it is open. Not started.

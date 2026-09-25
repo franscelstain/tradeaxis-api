@@ -1,0 +1,131 @@
+{
+    "evidence_id": "E-MD-B18-A002-077",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+    "issued_at": "2026-09-25T08:55:45+07:00",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "STOP_G09_MD_S065_R0003_AUTHORITY_AMBIGUITY_PRIOR_CONFORMANCE_CLAIM_DISPROVEN_NO_PROMOTION",
+    "evidence_scope": "F017_G09_MD_S065_R0003_RERUN_CONFIG_BINDING_RECONSTRUCTION",
+    "ci_id": "CI-MD-B18-A002-001",
+    "related_findings": [
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-012",
+        "E-MD-B18-A002-075",
+        "E-MD-B18-A002-076",
+        "CI-MD-B18-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-005"
+    ],
+    "dependencies": [
+        "MD-DEP-0017"
+    ],
+    "schema_changed": false,
+    "production_code_changed": false,
+    "test_code_changed": false,
+    "requirement": {
+        "predicate": "MD-S065-R0003",
+        "source": "authority/strategy/ops/Config_Change_Protocol_LOCKED.md:7 -- \"reruns must use the registry version effective for the requested trade date or explicitly documented override\"",
+        "applicability": "MANDATORY, proof owner MD-B18 (supporting MD-B04). MD-S065-R0001 (\"any output-affecting config change must be treated as a contract change\") is its own predicate, SATISFIED under MD-B04; the matrix prepends it to R0003 only as predicate_context. The rerun rule is what is reconstructed here.",
+        "date_meaning": "The rule names the requested trade date. It does not say execution date, today or latest. Read literally: for a rerun of trade date D the bound configuration is the registry version whose effective interval covers D, unless an explicitly documented override says otherwise."
+    },
+    "callers_of_resolveForRun": [
+        {
+            "caller": "EodRunRepository::getOrCreateOwningRun (line 33)",
+            "date_supplied": "requested trade date",
+            "resolver": "resolveForRun($date), no cutoff",
+            "bound_result": "the live configuration content is hashed; the governing snapshot for the date is reused only if its hash equals the live hash, otherwise a new snapshot with the live content is inserted with effective_at = the requested date. The run binds that snapshot (config_snapshot_id, config_hash, config_snapshot_ref)."
+        },
+        {
+            "caller": "EodRunRepository::createPromoteRunFromSeedWithinTransaction (line 337) -- the real rerun/promote path",
+            "date_supplied": "the seed run's requested trade date",
+            "resolver": "resolveForRun($seed->trade_date_requested), no cutoff; deliberately not copied from the seed",
+            "bound_result": "identical to the row above; the source comment states the run \"executes under today's resolved config\"."
+        },
+        {
+            "caller": "EodRunRepository::createAsKnownReplayRunWithinTransaction (line 187)",
+            "date_supplied": "requested date plus knowledge cutoff",
+            "resolver": "resolveForRun($date, $cutoff) -> resolveAsKnown(), lookup only, throws CONFIG_SNAPSHOT_NOT_KNOWN_AT_CUTOFF",
+            "bound_result": "the snapshot recorded by the cutoff that governs the date; never inserts. A replay, not a rerun in the operational sense; conforming."
+        },
+        {
+            "caller": "AsKnownReplaySnapshotService::capture (line 101)",
+            "date_supplied": "trade date plus knowledge cutoff",
+            "resolver": "same lookup-only branch",
+            "bound_result": "same as above; conforming."
+        }
+    ],
+    "callers_note": "Four resolveForRun call sites now, not three (the earlier reconstruction listed three EodRunRepository sites at :33, :182, :324; the file has since moved to :33, :187, :337). Passing the requested date is not the same as binding the version effective for it: in the two non-cutoff callers the date only selects which snapshot the live hash is compared against and stamps effective_at; the content is the live configuration.",
+    "executing_ground_truth": {
+        "what": "The real EodRunRepository::getOrCreateOwningRun and createPromoteRunFromSeed on the SQLite mirror, with two real config versions: A (roc_lookback_days=20, effective 2026-03-24) and B (roc_lookback_days=21, recorded and effective 2026-04-10, still live). A rerun/promote of the historical date 2026-03-24 is then created.",
+        "scratch_test_sha256": "83eb1cc5ebfb3177b3d2915a69c22e043c9e55c000d7f3043b504002b612998b",
+        "scratch_test_source": "<?php\nuse App\\Infrastructure\\Persistence\\MarketData\\EodRunRepository;\nuse Carbon\\Carbon;\nuse Illuminate\\Support\\Facades\\DB;\nuse Tests\\Support\\UsesMarketDataSqlite;\n\n/** Scratch ground truth: what does a real rerun/promote of a historical date bind when config changed? Deleted after use. */\nclass ScratchRerunGroundTruthTest extends TestCase\n{\n    use UsesMarketDataSqlite;\n    private const D = '2026-03-24';\n    protected function setUp(): void { parent::setUp(); $this->bootMarketDataSqlite(); }\n    protected function tearDown(): void { Carbon::setTestNow(); $this->tearDownMarketDataSqlite(); parent::tearDown(); }\n\n    public function test_ground_truth(): void\n    {\n        $runs = new EodRunRepository();\n        Carbon::setTestNow('2026-03-24 18:00:00');\n        $seed = $runs->getOrCreateOwningRun(self::D, 'api', 'INGEST_BARS');\n        $snapA = DB::table('md_config_snapshots')->where('config_snapshot_id', $seed->config_snapshot_id)->first();\n        fwrite(STDERR, \"\\nSEED run binds snapshot {$seed->config_snapshot_id} hash \".substr($seed->config_hash,0,12).\" effective {$snapA->effective_at} roc=\".config('market_data.indicators.roc_lookback_days').\"\\n\");\n\n        // Later: a new config version (B) becomes live and is recorded effective from a LATER date.\n        Carbon::setTestNow('2026-04-10 09:00:00');\n        config()->set('market_data.indicators.roc_lookback_days', 21);\n        $laterRun = $runs->getOrCreateOwningRun('2026-04-10', 'api', 'INGEST_BARS');\n        fwrite(STDERR, \"LATER run (2026-04-10) binds snapshot {$laterRun->config_snapshot_id} hash \".substr($laterRun->config_hash,0,12).\"\\n\");\n\n        // Rerun/promote of the HISTORICAL date D under the still-live config B.\n        Carbon::setTestNow('2026-09-25 09:00:00');\n        $derived = $runs->createPromoteRunFromSeed($seed, 'PUBLISH_BARS');\n        $snapD = DB::table('md_config_snapshots')->where('config_snapshot_id', $derived->config_snapshot_id)->first();\n        fwrite(STDERR, \"PROMOTE rerun of {$derived->trade_date_requested} binds snapshot {$derived->config_snapshot_id} hash \".substr($derived->config_hash,0,12)\n            .\" effective {$snapD->effective_at} recorded {$snapD->recorded_at}\\n\");\n        fwrite(STDERR, \"snapshots now: \".json_encode(DB::table('md_config_snapshots')->orderBy('config_snapshot_id')->get(['config_snapshot_id','effective_at','recorded_at'])->map(function($r){return (array)$r;})->all()).\"\\n\");\n        fwrite(STDERR, \"rerun binds the config version that was effective for D at the time? \".($derived->config_hash === $seed->config_hash ? \"YES (same as seed)\" : \"NO (differs from the version governing D)\").\"\\n\");\n        $this->assertTrue(true);\n    }\n}\n",
+        "output": [
+            "SEED run binds snapshot 1 hash 8d0dd54f449b effective 2026-03-24 00:00:00 roc=20",
+            "LATER run (2026-04-10) binds snapshot 2 hash 7e6807824c79",
+            "PROMOTE rerun of 2026-03-24 binds snapshot 3 hash 7e6807824c79 effective 2026-03-24 00:00:00 recorded 2026-09-25 09:00:00",
+            "snapshots now: 1 (effective 2026-03-24, recorded 2026-03-24 18:00), 2 (effective 2026-04-10, recorded 2026-04-10 09:00), 3 (effective 2026-03-24, recorded 2026-09-25 09:00)",
+            "rerun binds the config version that was effective for D at the time? NO (differs from the version governing D)"
+        ],
+        "finding": "The rerun of 2026-03-24 bound the later configuration B, not the version A that governed that date. B was minted as a third snapshot stamped effective 2026-03-24, and it is now the snapshot the non-cutoff lookup returns for that date; version A remains visible only to a lookup whose cutoff precedes 2026-09-25 09:00. The earlier F-017 statement \"Production conforms: all three resolveForRun callers pass the requested trade date\" is disproven for the case that matters, live configuration differing from the governing version.",
+        "retained": "The scratch test was deleted after the run; its full source and output are recorded here so the result can be re-executed. It is deliberately not kept as a test: a passing test that pins \"the rerun binds live config\" would enshrine behaviour the rule may forbid before the owner has decided."
+    },
+    "architectural_constraint": "RunInputCaptureRepository::assertConsumedConfiguration() throws INPUT_CAPTURE_LIVE_CONFIG_DIVERGENCE (\"producer must execute its bound configuration\") whenever the run's bound snapshot content differs from the live configuration. A run therefore always executes under live config and binds a snapshot equal to it. Binding a historical version for a rerun while live config has moved is not merely unimplemented; the platform rejects it. Enforcing the literal rule means blocking the rerun (or reverting live config), not selecting a different snapshot.",
+    "authority_tension": {
+        "literal_rule": "Config_Change_Protocol_LOCKED.md:7: the default is the version effective for the requested trade date; anything else needs an explicitly documented override.",
+        "documented_override_search": "No document in authority, governance or development defines a configuration override for reruns, its form, its approval, or where it is recorded. Searched: authority/strategy (rerun, override), Platform_Config_Registry_LOCKED.md, the operational runbook, the consolidated package and the CI records.",
+        "counter_authority": [
+            "Current_Indicator_Recompute_Command_Contract.md:140-142 \"Operational rerun rule\": rerun affected dates after a change to indicator formula/dependency logic, eligibility logic and similar, which necessarily executes the new logic and configuration on historical dates.",
+            "Historical_Correction_and_Reseal_Contract_LOCKED.md:29-36: a correction is a rerun for D that changes an artifact or a \"formula, or configuration binding that affects interpretation\"; Audit_Hash_and_Reproducibility_Contract_LOCKED.md:138-141: any changed config in a rerun creates a distinct publication context. Both treat a rerun bound to a different configuration as a legitimate, labelled correction, not a violation.",
+            "Platform_Config_Registry_LOCKED.md:286: operational production selects the approved configuration \"effective for the run context\", and registry keys carry an effective interval, but the registry defines no mechanism that assigns an effective date to a change other than the snapshot the resolver writes."
+        ],
+        "why_implementation_cannot_choose": "The rule and the correction/recompute contracts cannot both hold literally: if every rerun bound the historical version, a rerun could never apply a changed formula or configuration, which the recompute and correction contracts require. Reconciling them needs an owner decision on what the \"explicitly documented override\" is and where it is documented, or on whether an effective-dated registered change is what \"effective for the requested trade date\" means. Authority does not say. Any implementation would be choosing that semantics."
+    },
+    "owner_decision_options": {
+        "OPTION_1_RECOGNISE_CURRENT_BEHAVIOUR_AS_THE_DOCUMENTED_OVERRIDE": "A controlled revision of Config_Change_Protocol_LOCKED.md (or a decision plus change-log entry) states that a rerun after a recorded configuration change executes under the current resolved configuration, recorded as a new snapshot, and that this is the documented override. Behaviour stays; proof would then be that the snapshot records exactly what the run executed under and never overwrites the prior version. Needs strategy change control and explicit user authorization (MD-S065 is a frozen strategy document).",
+        "OPTION_2_DEFAULT_TO_THE_HISTORICAL_VERSION_AND_BLOCK": "A rerun of D resolves the governing snapshot (lookup, no insert); if live configuration differs, the rerun is BLOCKED unless an explicit override is supplied and recorded. Requires deciding the override form (flag, reason, approval, record location) and changes the operational recompute workflow that has run under today's configuration (the 843 recompute runs of 2026-08-10/11 named in the source comment).",
+        "OPTION_3_EFFECTIVE_DATED_REGISTERED_CHANGES": "\"Effective for the requested trade date\" means the effective date registered with the change (R0002: \"recorded in the configuration registry with effective date\"); a rerun of D under configuration B is admitted only when B's registered effective date is on or before D, otherwise BLOCKED. Requires a registry mechanism that records a change's effective date independently of the rerun that first resolves it; today the resolver stamps effective_at with the requested date of whichever run first sees the change."
+    },
+    "stale_comment": {
+        "location": "EodRunRepository::createPromoteRunFromSeedWithinTransaction, the block comment above resolveForRun($seedRun->trade_date_requested)",
+        "wording": "this run executes under today's resolved config, and claiming the seed's identity would attribute a configuration this run never used",
+        "assessment": "Not stale. It accurately describes the actual behaviour, which the ground truth confirms. What it contradicts is the requirement text, not the code. Rewording it to say the run uses the version effective for the requested trade date would make the comment false, and changing behaviour to match the comment is not permitted here. Left untouched; any comment change belongs to the unit that implements the owner's decision."
+    },
+    "classification": "AUTHORITY_AMBIGUITY, with a demonstrated literal non-conformance in the implementation. Not PROOF_GUARD_GAP and not REBIND_ONLY: the expectation that production conforms is false, so no guard can honestly be rebound to prove the rule as written. Not IMPLEMENTATION_DEFECT either: the code implements a coherent design that authority elsewhere appears to require, and the rule's exception clause is undefined. The unit stops here for this predicate.",
+    "what_the_existing_pair_does_and_does_not_prove": "B18ConfigEffectiveTimeSelectionTest builds its two intervals by resolving the live configuration once and copying the row, so live content always equals the governing version and the selection under test runs only when nothing differs. test_the_configuration_effective_for_the_run_context_governs_and_not_the_newest is valid for MD-S082-R0216 (effective-time selection); it cannot show that a rerun binds the version effective for its date, because no scenario there has live configuration different from the governing snapshot.",
+    "not_done": [
+        "no probe was run: a mutation probe shows a guard fails when a behaviour is removed, and there is no honest guard to probe until the owner decides what the behaviour must be",
+        "no promotion",
+        "no production or test change",
+        "no full MarketData suite"
+    ],
+    "predicate_state": {
+        "MD-S065-R0003": "INCOMPLETE, unchanged; its proof-basis narrative corrected (mutable) because it claimed the rerun rule was proven by the R0216 selection test",
+        "proof_basis": {
+            "PROVEN": 91,
+            "INCOMPLETE": 23,
+            "change": "none"
+        },
+        "MD-S050-R0005, MD-S050-R0014, MD-S019-R0071": "INCOMPLETE, untouched",
+        "F-013, F-018": "unchanged"
+    },
+    "formal_traceability": "0/114 SATISFIED unchanged",
+    "preserved_unchanged": [
+        "D-MD-B18-A002-008",
+        "E-MD-B18-A002-050",
+        "E-MD-B18-A002-067 through E-MD-B18-A002-076",
+        "MARKET_DATA_STRATEGY_FREEZE_MANIFEST.json"
+    ],
+    "production_sha256_examined_unchanged": {
+        "EodRunRepository.php": "c836831201a2d45bdc06653089d4a3e9128d577ed219554268b6704bfc82d1b6",
+        "MarketDataConfigSnapshotRepository.php": "dd955236ae859b478d91d02e3313b8e5fff64f6d5495f13fc51e9efa99abbb26"
+    },
+    "next": "Owner decision on MD-S065-R0003 (three options above). G09 cannot proceed as proof-only work and no other F-017 unit is started meanwhile.",
+    "no_commit_or_push": true
+}
