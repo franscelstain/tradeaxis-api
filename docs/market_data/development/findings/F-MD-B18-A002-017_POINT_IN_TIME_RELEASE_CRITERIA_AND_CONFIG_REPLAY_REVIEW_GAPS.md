@@ -705,3 +705,87 @@ above, and `MD-S050-R0005` is newly `INCOMPLETE`. **Next:** `G01-B` (`MD-S003-R0
 `REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE` in the LOCKED `Reason_Codes_Registry.md` remains
 available as a separate, explicitly user-authorized unit if a bespoke `final_reason_code` for this
 state is later wanted; no currently `INCOMPLETE` predicate requires it.
+
+## Five-domain cumulative closure: `MD-S050-R0016` promoted PROVEN — 2026-09-25T00:06:18+07:00
+
+`E-MD-B18-A002-074` closes the last three previously-unverified required bound inputs and reviews
+the remaining two, following the exact reconstruction discipline the audit demanded: for each of
+`temporal_identity_hash`, `calendar_status_hash`, `event_factor_hash`, `source_observation_manifest_
+hash` and `canonical_raw_input_hash`, trace producer/capture source, binding/seal guarantee, and
+whether a genuinely absent input can still produce a plausible non-empty derived hash -- not inferred
+from `hash()` returning 64 characters, but from reading each production path directly and, where a
+gap was found, proving it with a ground-truth capture against a controlled empty world before writing
+any fix.
+
+**`temporal_identity_hash` -- `IMPLEMENTATION_DEFECT`, fixed.** `readProjectedUniverseAsOf()` never
+throws on zero rows; a whole-system-empty universe (no listing known to the platform at all as of the
+cutoff -- confirmed reachable via a minimal calendar+config-only world) hashed to a real-looking
+64-character string. Unlike a non-trading day, listing existence is not a per-date business outcome,
+so this check is unconditional. `AsKnownReplaySnapshotService::TEMPORAL_IDENTITY_UNAVAILABLE` now
+replaces the hash when the universe is empty.
+
+**`source_observation_manifest_hash` / `canonical_raw_input_hash` -- `IMPLEMENTATION_DEFECT`, fixed,
+trading-day-gated.** Neither `observationManifestAsKnown()` nor `normalizedRowsManifestAsKnown()`
+throws on zero rows; a trading day with nothing recorded at all -- distinct from a recorded provider
+outage, which `SourceObservationAsKnownBoundaryTest::test_zero_row_provider_outage_remains_in_as_
+known_observation_manifest` already proves stays legitimately admissible -- hashed to a real-looking
+value. Gated on `calendar_context.is_trading_day`, matching the existing, established distinction
+`ExpectedBarDecisionService::decide()` already draws via `EXPECTED_BAR_NON_TRADING_DAY`: a
+non-trading day legitimately has nothing to record, so only a trading-day absence is treated as a
+gap. `AsKnownReplaySnapshotService::SOURCE_OBSERVATION_UNAVAILABLE` now replaces both hashes when
+that condition holds; a negative control proves a non-trading day's correct zero stays a real hash.
+
+**`calendar_status_hash` -- calendar half `ALREADY_PROVEN_BY_EXECUTING_UPSTREAM_GUARD`, trading-status
+half not a gap.** `MarketCalendarRepository::sessionContext()` already throws `MARKET_CALENDAR_
+EVIDENCE_MISSING` when no calendar row exists for the date -- now proven as an executing boundary by
+a new test, not assumed from reading the repository. The trading-status half legitimately returns a
+named `UNKNOWN`/no-evidence sentinel per listing when no override exists -- the common, correct
+default for the overwhelming majority of listing-days, and itself distinctly represented in the
+hashed content, not a missing required input.
+
+**`event_factor_hash` -- authority permits legitimate empty, not a gap.** Zero corporate-action
+revisions and zero factor sets for a trade date is the common, legitimate outcome; confirmed by code
+inspection (no minimum-cardinality requirement exists anywhere in this domain) and a ground-truth
+capture against the same empty world. No counterpart of `is_trading_day` exists for this domain, so
+no discriminating "genuine absence vs. valid absence" test is constructible, and none is required.
+
+**Real-path proof and four probes**, each byte-restored and sha256-verified, each suite file run
+separately: a whole-system-empty temporal universe is `BLOCKED`, not `PASS`; a trading day with zero
+recorded observations at all is `BLOCKED`, not `PASS`; a non-trading day with zero observations is
+not marked unavailable; the calendar throw is proven executing. Bypassing the capture-level check for
+either new domain turned exactly its own positive test red; bypassing the admission-check lookup
+turned both new positive tests red (the block still fired on the reason-registry marker, naming the
+wrong cause); removing the storage-boundary checks turned exactly the four new direct-write cases
+red. Publication-mode and sibling AS_KNOWN control suites stayed green under every probe.
+
+**Cumulative review of every canonical required input** (`config_snapshot_hash/id`, `reason_registry_
+hash`, `read_model_version`, `formula_registry_hash`, `serialization_version`, `executable_build_
+identity`, plus the five domains above) confirms each is now either present-when-required-and-checked
+with an executing probe, structurally protected by an upstream throw, or authority-confirmed
+legitimately empty with no missing-input failure mode -- no current/latest fallback anywhere.
+`MD-S050-R0016` therefore promotes to `PROVEN`. `MD-S050-R0005`, `MD-S050-R0014` and `MD-S019-R0071`
+are explicitly untouched: R0016's completeness does not by itself solve R0014/R0071's own unmet
+positive-reproducibility requirement or R0005's structural unreachability.
+
+**Validation (authoritative, isolated run).** Full `tests/Unit/MarketData`: 2475 tests, 34674
+assertions, 7 failures, 0 errors -- exact match to the known `MD-DEP-0015` corpus-oracle baseline,
+zero new failures. Governance self-tests re-run clean: `GovernanceGateReadOnlyExecutionTest` 9/9
+(5974 assertions), `PromotedPredicateProofGateTest` 8/8, `ClassificationConsistencyGateTest` 20/20,
+`TraceabilityApplicabilityGateTest` 11/11, `ScopeBoundaryAndOrchestrationCompletionTest` 8/8,
+`FindingRecordConsistencyTest` 3/3.
+
+**Proof basis:** `PROVEN` 88 -> 89, `INCOMPLETE` 26 -> 25 (`MD-S050-R0016` only transition).
+`MarketDataReplayVerificationProofReadinessGate` re-run directly: 89/114 bases present, `MD-S050-
+R0016` no longer in its `PREDICATE_WITHOUT_REVIEWED_BASIS` list. `D-MD-B18-A002-008`, `E-MD-B18-A002-
+050`, `E-MD-B18-A002-067` through `E-MD-B18-A002-073` and `MARKET_DATA_STRATEGY_FREEZE_MANIFEST.json`
+are unchanged.
+
+**Evidence record:** `E-MD-B18-A002-074`, registered in `DOCUMENT_ID_REGISTRY` (`MD-DOC-01210`),
+`DOCUMENT_ROLE_REGISTRY`, `CURRENT_VERIFICATION_REGISTRY` and `WORK_RECORD_REGISTRY`.
+
+This finding remains `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`. Its own executable defect (Gap
+A/B1/B2 plus this five-domain closure) is now fully remediated; 14 of its own predicates remain
+`INCOMPLETE` -- `MD-S050-R0014`, `MD-S019-R0071` and `MD-S050-R0005` for the reasons above, plus other
+carried predicates this unit did not touch. **Next:** `G01-B` (`MD-S003-R0023` / `MD-S004-R0004`) --
+not started. `G01-B` may now proceed under the coherent, complete state this unit establishes for
+`MD-S050-R0016`.

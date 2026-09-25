@@ -317,22 +317,46 @@ class ReplayVerificationService
             throw new \RuntimeException('REPLAY_EXPECTED_PROOF_INCOMPLETE: AS_KNOWN fixture must bind snapshot_hash.');
         }
 
-        // `MD-S050-R0016` Gap B2: reason-registry version is a required bound input
-        // (`Replay_Verification_Contract_LOCKED.md:30`) in both modes. `Reason_Codes_Registry.md`
-        // (`MD-S085`) has no revision/version/effective-time concept, so no as-known replay can
-        // legitimately bind a historical reason-registry identity as of its knowledge cutoff --
-        // `AsKnownReplaySnapshotService::capture()` now says so honestly via
-        // `REASON_REGISTRY_IDENTITY_UNAVAILABLE` instead of a hash that merely looks non-empty.
-        // A missing input is `BLOCKED` (`:33`), which "states that the comparison did not execute" --
-        // so the production canonicalizer is never invoked here: running it first and discarding its
-        // result would not be "did not execute", and it is the one AS_KNOWN input capable of real
-        // side effects, unlike `PUBLICATION_EXACT`'s cheap, read-only actual-state build.
-        if ((string) ($actualSnapshot['reason_registry_hash'] ?? '') === AsKnownReplaySnapshotService::REASON_REGISTRY_IDENTITY_UNAVAILABLE) {
+        // `MD-S050-R0016` (Gap B2 + five-domain cumulative audit): several bound inputs
+        // (`Replay_Verification_Contract_LOCKED.md:30`) can be genuinely unavailable to AS_KNOWN,
+        // and `AsKnownReplaySnapshotService::capture()` now says so honestly via a dedicated marker
+        // per field, instead of a hash that merely looks non-empty. A missing input is `BLOCKED`
+        // (`:33`), which "states that the comparison did not execute" -- so the production
+        // canonicalizer is never invoked here: running it first and discarding its result would not
+        // be "did not execute", and it is the one AS_KNOWN input capable of real side effects,
+        // unlike `PUBLICATION_EXACT`'s cheap, read-only actual-state build. Checked as a small table
+        // rather than one field each, so the block below stays single and the reason text names
+        // exactly which input was unavailable.
+        $unavailableInputMarkers = [
+            'temporal_identity_hash' => AsKnownReplaySnapshotService::TEMPORAL_IDENTITY_UNAVAILABLE,
+            'source_observation_manifest_hash' => AsKnownReplaySnapshotService::SOURCE_OBSERVATION_UNAVAILABLE,
+            'canonical_raw_input_hash' => AsKnownReplaySnapshotService::SOURCE_OBSERVATION_UNAVAILABLE,
+            'reason_registry_hash' => AsKnownReplaySnapshotService::REASON_REGISTRY_IDENTITY_UNAVAILABLE,
+        ];
+        $unavailableField = null;
+        foreach ($unavailableInputMarkers as $field => $marker) {
+            if ((string) ($actualSnapshot[$field] ?? '') === $marker) {
+                $unavailableField = $field;
+                break;
+            }
+        }
+        if ($unavailableField !== null) {
             $replayId = $replayId ?: $this->replays->nextReplayId();
             $manifestHash = $this->canonicalHash($manifest);
-            $reason = 'REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE: no historical reason-registry '
-                .'identity can be bound as of the knowledge cutoff; MD-S085 defines no revision/version '
-                .'lineage to resolve one from, so replay cannot proceed.';
+            $reasonText = [
+                'temporal_identity_hash' => 'REPLAY_TEMPORAL_IDENTITY_UNAVAILABLE: no listing was known to the '
+                    .'platform as of the knowledge cutoff, so the temporal universe cannot be bound.',
+                'source_observation_manifest_hash' => 'REPLAY_SOURCE_OBSERVATION_UNAVAILABLE: the requested trade '
+                    .'date is a trading day and no source observation was recorded for it at all, so the source '
+                    .'observation manifest cannot be bound.',
+                'canonical_raw_input_hash' => 'REPLAY_SOURCE_OBSERVATION_UNAVAILABLE: the requested trade date is '
+                    .'a trading day and no identity-bound canonical row exists for it, so the canonical raw input '
+                    .'set cannot be bound.',
+                'reason_registry_hash' => 'REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE: no historical reason-'
+                    .'registry identity can be bound as of the knowledge cutoff; MD-S085 defines no revision/'
+                    .'version lineage to resolve one from, so replay cannot proceed.',
+            ][$unavailableField];
+            $reason = $reasonText;
             $actualContext = ['bound_inputs' => $actualSnapshot, 'executed_replay' => null];
             $expectedContext = ['bound_inputs' => $expectedSnapshot, 'executed_replay' => $expectedExecution];
             $metric = [
@@ -402,11 +426,10 @@ class ReplayVerificationService
                 // No comparison ran, so there is no field-derived reason code to report here --
                 // same as `replayAdmissibility()`'s own NOT_ADMISSIBLE override, which never
                 // assigns a bespoke `final_reason_code` either. The specific cause lives in
-                // `mismatch_summary`/`comparison_note` (`$reason` above) and in the
-                // `REASON_REGISTRY_IDENTITY_UNAVAILABLE` marker already carried by
-                // `reason_registry_hash`; inventing a new bare reason-code literal here would
-                // require registering it in the LOCKED `MD-S085` strategy authority
-                // (`Reason_Codes_Registry.md`), which is out of this unit's authority.
+                // `mismatch_summary`/`comparison_note` (`$reason` above) and in the marker already
+                // carried by `$unavailableField`'s own column; inventing a new bare reason-code
+                // literal here would require registering it in the LOCKED `MD-S085` strategy
+                // authority (`Reason_Codes_Registry.md`), which is out of this unit's authority.
                 'final_reason_code' => null,
             ];
 

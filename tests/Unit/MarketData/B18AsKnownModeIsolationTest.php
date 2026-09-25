@@ -270,6 +270,102 @@ class B18AsKnownModeIsolationTest extends TestCase
     }
 
     /**
+     * `MD-S050-R0016` five-domain cumulative audit -- `temporal_identity_hash`.
+     * `readProjectedUniverseAsOf()` never throws on an empty universe; a whole-system-empty state
+     * (no listing known to the platform at all as of the cutoff) previously hashed to a real-looking
+     * value and was admissible.
+     */
+    public function test_an_as_known_replay_is_blocked_when_no_listing_is_known_at_all(): void
+    {
+        DB::table('md_listings')->delete();
+
+        $this->verifyAsKnown();
+        $metric = $this->storedMetric();
+
+        $this->assertSame('BLOCKED', (string) $metric->replay_status,
+            'a whole-system-empty temporal universe must not be admissible');
+        $this->assertSame('NOT_ADMISSIBLE', (string) $metric->comparison_result);
+        $this->assertSame(
+            AsKnownReplaySnapshotService::TEMPORAL_IDENTITY_UNAVAILABLE,
+            (string) $metric->temporal_identity_hash,
+            'no fabricated hash of an empty universe may satisfy the requirement'
+        );
+        $this->assertStringContainsString('REPLAY_TEMPORAL_IDENTITY_UNAVAILABLE', (string) $metric->mismatch_summary);
+    }
+
+    /**
+     * `MD-S050-R0016` five-domain cumulative audit -- `source_observation_manifest_hash` /
+     * `canonical_raw_input_hash`. `observationManifestAsKnown()`/`normalizedRowsManifestAsKnown()`
+     * never throw on zero rows; a trading day with nothing recorded at all (not even a recorded
+     * outage -- see `SourceObservationAsKnownBoundaryTest::test_zero_row_provider_outage_remains_
+     * in_as_known_observation_manifest` for that different, already-legitimate case) previously
+     * hashed to a real-looking value and was admissible.
+     */
+    public function test_an_as_known_replay_is_blocked_when_a_trading_day_has_no_recorded_observation_at_all(): void
+    {
+        DB::table('md_source_observation_identity_bindings')->delete();
+        DB::table('md_source_observation_rows')->delete();
+        DB::table('md_source_observations')->delete();
+
+        $this->verifyAsKnown();
+        $metric = $this->storedMetric();
+
+        $this->assertSame('BLOCKED', (string) $metric->replay_status,
+            'a trading day with no recorded source observation at all must not be admissible');
+        $this->assertSame('NOT_ADMISSIBLE', (string) $metric->comparison_result);
+        $this->assertSame(
+            AsKnownReplaySnapshotService::SOURCE_OBSERVATION_UNAVAILABLE,
+            (string) $metric->source_observation_manifest_hash
+        );
+        $this->assertSame(
+            AsKnownReplaySnapshotService::SOURCE_OBSERVATION_UNAVAILABLE,
+            (string) $metric->canonical_raw_input_hash
+        );
+        $this->assertStringContainsString('REPLAY_SOURCE_OBSERVATION_UNAVAILABLE', (string) $metric->mismatch_summary);
+    }
+
+    /**
+     * `MD-S050-R0016` five-domain cumulative audit -- negative control. A non-trading day with zero
+     * source observations is the *correct* value, not a gap (the same distinction
+     * `ExpectedBarDecisionService::decide()` already draws via `EXPECTED_BAR_NON_TRADING_DAY`), so
+     * `capture()` must not mark it unavailable. Exercised directly against the snapshot service
+     * (not the full verifier) because a non-trading-day scenario is otherwise orthogonal to what
+     * this class tests, and the claim is entirely about `capture()`'s own return value.
+     */
+    public function test_a_non_trading_day_with_no_observations_is_not_marked_unavailable(): void
+    {
+        DB::table('md_market_calendar_revisions')->where('cal_date', self::TRADE_DATE)
+            ->update(['is_trading_day' => 0, 'session_state' => 'CLOSED']);
+        DB::table('md_source_observation_identity_bindings')->delete();
+        DB::table('md_source_observation_rows')->delete();
+        DB::table('md_source_observations')->delete();
+
+        $snapshot = (new AsKnownReplaySnapshotService())->capture(self::TRADE_DATE, self::CUTOFF);
+
+        $this->assertNotSame(AsKnownReplaySnapshotService::SOURCE_OBSERVATION_UNAVAILABLE, $snapshot['source_observation_manifest_hash'],
+            'zero observations on a non-trading day is the correct value, not a missing input');
+        $this->assertNotSame(AsKnownReplaySnapshotService::SOURCE_OBSERVATION_UNAVAILABLE, $snapshot['canonical_raw_input_hash']);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $snapshot['source_observation_manifest_hash']);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $snapshot['canonical_raw_input_hash']);
+    }
+
+    /**
+     * `MD-S050-R0016` five-domain cumulative audit -- `calendar_status_hash`, the already-protected
+     * half. `MarketCalendarRepository::sessionContext()` already throws `MARKET_CALENDAR_EVIDENCE_
+     * MISSING` when no calendar row exists for the date, proven here as an executing boundary rather
+     * than assumed from reading the repository.
+     */
+    public function test_capture_throws_when_no_calendar_evidence_exists_for_the_date(): void
+    {
+        DB::table('md_market_calendar_revisions')->where('cal_date', self::TRADE_DATE)->delete();
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessageMatches('/MARKET_CALENDAR_EVIDENCE_MISSING/');
+
+        (new AsKnownReplaySnapshotService())->capture(self::TRADE_DATE, self::CUTOFF);
+    }
+
+    /**
      * A `PUBLICATION_EXACT` fixture handed to the as-known verifier is refused. Without this the
      * mode would be whatever the caller ran, and a publication fixture verified as-known would
      * produce an as-known-labelled result about publication artifacts.

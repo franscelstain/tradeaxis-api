@@ -207,6 +207,24 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
                 ['replay_mode' => 'AS_KNOWN', 'reason_registry_hash' => AsKnownReplaySnapshotService::REASON_REGISTRY_IDENTITY_UNAVAILABLE],
                 'REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE',
             ],
+            // MD-S050-R0016 five-domain cumulative audit: same non-empty, non-null marker shape as
+            // the reason-registry cases above, for the temporal universe and source observation.
+            'exact with unavailable temporal identity' => [
+                ['temporal_identity_hash' => AsKnownReplaySnapshotService::TEMPORAL_IDENTITY_UNAVAILABLE],
+                'REPLAY_TEMPORAL_IDENTITY_UNAVAILABLE',
+            ],
+            'as-known with unavailable temporal identity' => [
+                ['replay_mode' => 'AS_KNOWN', 'temporal_identity_hash' => AsKnownReplaySnapshotService::TEMPORAL_IDENTITY_UNAVAILABLE],
+                'REPLAY_TEMPORAL_IDENTITY_UNAVAILABLE',
+            ],
+            'exact with unavailable source observation manifest' => [
+                ['source_observation_manifest_hash' => AsKnownReplaySnapshotService::SOURCE_OBSERVATION_UNAVAILABLE],
+                'REPLAY_SOURCE_OBSERVATION_UNAVAILABLE',
+            ],
+            'as-known with unavailable canonical raw input' => [
+                ['replay_mode' => 'AS_KNOWN', 'canonical_raw_input_hash' => AsKnownReplaySnapshotService::SOURCE_OBSERVATION_UNAVAILABLE],
+                'REPLAY_SOURCE_OBSERVATION_UNAVAILABLE',
+            ],
         ] + $this->exactResultMissingEachFrozenIdentity();
     }
 

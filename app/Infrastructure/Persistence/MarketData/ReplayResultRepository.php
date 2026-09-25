@@ -213,6 +213,19 @@ class ReplayResultRepository
         if ($metric['reason_registry_hash'] === \App\Application\MarketData\Services\AsKnownReplaySnapshotService::REASON_REGISTRY_IDENTITY_UNAVAILABLE) {
             throw new \RuntimeException('REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE: non-BLOCKED '.$mode.' result carries no available historical reason-registry identity.');
         }
+        // MD-S050-R0016 five-domain cumulative audit: `temporal_identity_hash` and
+        // `source_observation_manifest_hash`/`canonical_raw_input_hash` are checked only for
+        // emptiness by the loop below, and their markers are non-empty strings for the same reason
+        // as the two checks above. `ReplayVerificationService::verifyAsKnownAgainstFixture()` now
+        // returns BLOCKED whenever it captures either marker, so a non-BLOCKED result should never
+        // carry them -- refused here too, at the storage boundary.
+        if ($metric['temporal_identity_hash'] === \App\Application\MarketData\Services\AsKnownReplaySnapshotService::TEMPORAL_IDENTITY_UNAVAILABLE) {
+            throw new \RuntimeException('REPLAY_TEMPORAL_IDENTITY_UNAVAILABLE: non-BLOCKED '.$mode.' result carries no known temporal universe.');
+        }
+        if ($metric['source_observation_manifest_hash'] === \App\Application\MarketData\Services\AsKnownReplaySnapshotService::SOURCE_OBSERVATION_UNAVAILABLE
+            || $metric['canonical_raw_input_hash'] === \App\Application\MarketData\Services\AsKnownReplaySnapshotService::SOURCE_OBSERVATION_UNAVAILABLE) {
+            throw new \RuntimeException('REPLAY_SOURCE_OBSERVATION_UNAVAILABLE: non-BLOCKED '.$mode.' result carries no available source observation for a trading day.');
+        }
         // MD-S050-R0016: these identities are required bound inputs in both modes. This loop was
         // AS_KNOWN-only, so a PUBLICATION_EXACT PASS with an empty observation identity persisted.
         // `read_model_version` joined this loop under Gap B1 (`D-MD-B18-A002-008`).

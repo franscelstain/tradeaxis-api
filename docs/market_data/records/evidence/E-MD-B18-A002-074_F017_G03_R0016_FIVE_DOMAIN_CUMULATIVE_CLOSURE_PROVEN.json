@@ -1,0 +1,267 @@
+{
+    "evidence_id": "E-MD-B18-A002-074",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260922-001",
+    "issued_at": "2026-09-25T00:06:18+07:00",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "PASS_MD_S050_R0016_FIVE_DOMAIN_CUMULATIVE_CLOSURE_PROMOTED_TO_PROVEN",
+    "evidence_scope": "F017_G03_MD_S050_R0016_FIVE_DOMAIN_CUMULATIVE_CLOSURE",
+    "ci_id": "CI-MD-B18-A002-001",
+    "related_findings": [
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-067",
+        "E-MD-B18-A002-068",
+        "E-MD-B18-A002-069",
+        "E-MD-B18-A002-071",
+        "E-MD-B18-A002-072",
+        "E-MD-B18-A002-073",
+        "CI-MD-B18-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-005",
+        "D-MD-B18-A002-008"
+    ],
+    "dependencies": [
+        "MD-DEP-0017",
+        "MD-DEP-0015"
+    ],
+    "schema_changed": false,
+    "authority_recheck_before_coding": {
+        "method": "Replay_Verification_Contract_LOCKED.md's Required bound inputs list re-read in full to confirm the five named domains (temporal_identity_hash, calendar_status_hash, event_factor_hash, source_observation_manifest_hash, canonical_raw_input_hash) map to authority's own semantic items (temporal universe/listing/symbol/provider mappings; Regular-Market calendar/session and trading-status revisions; corporate-action event revisions/verification states/factor-set revisions/contamination decisions; immutable source observation IDs/hashes; canonical RAW publication/input set) rather than field names alone, and that the ':33' missing-input-is-BLOCKED rule applies to all of them undifferentiated. No new required input was added beyond BOUND_INPUT_FIELDS, the canonical scope this predicate has used since G03.",
+        "result": "confirmed; the five domains are genuinely within R0016's boundary; no authority conflict found."
+    },
+    "per_domain_reconstruction": {
+        "temporal_identity_hash": {
+            "production_path": "readProjectedUniverseAsOf() -> capture()'s $universe/$statusContexts -> hash([$universe, $statusContexts])",
+            "prior_behaviour": "readProjectedUniverseAsOf() never threw on zero rows; a whole-system-empty universe (no listing known to the platform at all as of the cutoff) hashed to a real-looking 64-character string via hash([[], []]), confirmed by a ground-truth capture against a minimally-seeded world (calendar+config only, no tickers/listings at all).",
+            "genuine_absence_vs_valid_empty": "listing existence is not a per-date business outcome the way trading-day status is (a listing does not stop existing because today happens to have no session); a genuinely empty universe is therefore always a gap, never a legitimate value -- unconditional on trading-day status.",
+            "classification": "IMPLEMENTATION_DEFECT, fixed in this unit"
+        },
+        "calendar_status_hash": {
+            "production_path_calendar_half": "MarketCalendarRepository::sessionContext() -> capture()'s $calendar -> hash([$calendar, $statusContexts])",
+            "prior_behaviour_calendar_half": "sessionContext() already throws MARKET_CALENDAR_EVIDENCE_MISSING when zero calendar rows exist for the date -- an existing, upstream guard, now proven executing (not merely read) by a new test that deletes the calendar row and asserts the throw.",
+            "production_path_status_half": "TemporalTradingStatusRepository::resolveForListing() -> capture()'s $statusContexts, per listing",
+            "prior_behaviour_status_half": "resolveForListing() never throws; it returns a named unknown()/no-evidence sentinel (status_code=UNKNOWN, a specific reason_code) per listing when no override exists. This is the common, correct default for the overwhelming majority of listing-days -- most listings have no special status revision most days -- and is itself distinctly represented in the hashed content, not indistinguishable from real data the way a fabricated hash would be.",
+            "classification": "calendar half: ALREADY_PROVEN_BY_EXECUTING_UPSTREAM_GUARD (newly proven executing in this unit). status half: not a required-input-missing concern; no fix needed."
+        },
+        "event_factor_hash": {
+            "production_path": "AsKnownReplaySnapshotService::eventFactorContext() direct DB queries -> hash($eventsAndFactors)",
+            "prior_behaviour": "zero corporate-action revisions and zero factor sets for a trade date is the common, legitimate outcome (corporate actions are rare events); confirmed by code inspection (no minimum-cardinality requirement exists anywhere in this domain) and the same ground-truth capture, which returned a real hash of an entirely empty structure without incident.",
+            "genuine_absence_vs_valid_empty": "no counterpart of is_trading_day (or any other signal) exists that says 'a corporate action was expected today' -- every trade date can legitimately show zero, so there is no discriminating 'genuine absence' distinct from 'correct absence' to construct a test for.",
+            "classification": "authority permits legitimate empty; not a required-input-missing concern; no fix needed and no discriminating probe is constructible"
+        },
+        "source_observation_manifest_hash_and_canonical_raw_input_hash": {
+            "production_path": "SourceObservationRepository::observationManifestAsKnown()/normalizedRowsManifestAsKnown() -> capture()'s $sourceManifest/$normalizedRowsManifest -> manifest_hash / hash($normalizedRowsManifest['rows'])",
+            "prior_behaviour": "neither method throws on zero rows (only on a missing knowledge_cutoff); a trading day with nothing recorded at all -- distinct from a recorded provider outage, which SourceObservationAsKnownBoundaryTest::test_zero_row_provider_outage_remains_in_as_known_observation_manifest already proves is legitimately observation_count=1 with a SOURCE_TIMEOUT reason -- hashed to a real-looking value and was admissible. Confirmed by a ground-truth capture: a seeded listing with zero md_source_observations rows produced a valid 64-character manifest_hash with observation_count=0.",
+            "genuine_absence_vs_valid_empty": "a non-trading day legitimately has zero observations to record -- the same distinction ExpectedBarDecisionService::decide() already draws via EXPECTED_BAR_NON_TRADING_DAY, an existing, established precedent in this exact codebase, not an invented rule. Gated on calendar_context.is_trading_day.",
+            "classification": "IMPLEMENTATION_DEFECT, fixed in this unit, conditional on trading-day status"
+        }
+    },
+    "implementation": [
+        {
+            "defect": "an empty temporal universe (whole-system, no listing known at all) hashed as if resolved",
+            "code_change": "AsKnownReplaySnapshotService.php: added public const TEMPORAL_IDENTITY_UNAVAILABLE; 'temporal_identity_hash' returns it when $universe === [], unconditional on trading-day status; the real hash is used otherwise.",
+            "resulting_behaviour": "a whole-system-empty universe is now honestly reported as unavailable rather than hashed to a plausible-looking value."
+        },
+        {
+            "defect": "zero source observations / zero identity-bound rows on a trading day hashed as if resolved",
+            "code_change": "AsKnownReplaySnapshotService.php: added public const SOURCE_OBSERVATION_UNAVAILABLE; 'source_observation_manifest_hash' returns it when is_trading_day and observation_count===0; 'canonical_raw_input_hash' returns it when is_trading_day and row_count===0; the real hash is used otherwise, including on a non-trading day with zero rows (the correct value there).",
+            "resulting_behaviour": "a trading day with nothing recorded at all is now honestly reported as unavailable; a non-trading day's correct zero remains a real hash."
+        },
+        {
+            "defect": "verifyAsKnownAgainstFixture()'s admission check covered only reason_registry_hash's marker",
+            "code_change": "ReplayVerificationService.php: generalized the single-field check into a small ($field => $marker) table covering temporal_identity_hash, source_observation_manifest_hash, canonical_raw_input_hash (both sharing SOURCE_OBSERVATION_UNAVAILABLE) and reason_registry_hash; one early-return block, reason text selected by which field triggered. Placed before the execution service is invoked, same rationale as Gap B2 (AS_KNOWN's canonicalizer must not run once the result is already known to be BLOCKED). final_reason_code remains null, per the B2 audit's CURRENT_NULL_REASON_DESIGN_IS_AUTHORITY_CONFORMING classification -- unchanged design, now covering three markers instead of one.",
+            "resulting_behaviour": "every as-known replay whose captured snapshot carries any of the three markers is persisted directly as BLOCKED/NOT_ADMISSIBLE, unconditionally, before any fixture comparison executes."
+        },
+        {
+            "defect": "the storage boundary checked temporal_identity_hash/source_observation_manifest_hash/canonical_raw_input_hash only for emptiness",
+            "code_change": "ReplayResultRepository.php: added explicit refusals for TEMPORAL_IDENTITY_UNAVAILABLE and SOURCE_OBSERVATION_UNAVAILABLE, alongside the existing reason-registry refusal, ahead of the both-modes empty() loop.",
+            "resulting_behaviour": "a direct write cannot bypass the service-layer BLOCKED decision by constructing its own non-BLOCKED metric carrying either new marker."
+        }
+    ],
+    "tests_added": {
+        "B18AsKnownModeIsolationTest::test_an_as_known_replay_is_blocked_when_no_listing_is_known_at_all": "real-path positive for temporal_identity_hash; deletes md_listings, asserts BLOCKED/NOT_ADMISSIBLE/marker/mismatch_summary.",
+        "B18AsKnownModeIsolationTest::test_an_as_known_replay_is_blocked_when_a_trading_day_has_no_recorded_observation_at_all": "real-path positive for source_observation_manifest_hash/canonical_raw_input_hash; deletes all source-observation rows on a trading day, asserts BLOCKED/NOT_ADMISSIBLE/both markers/mismatch_summary.",
+        "B18AsKnownModeIsolationTest::test_a_non_trading_day_with_no_observations_is_not_marked_unavailable": "negative control, direct against capture(): a non-trading day with zero observations must not be marked unavailable.",
+        "B18AsKnownModeIsolationTest::test_capture_throws_when_no_calendar_evidence_exists_for_the_date": "executing proof of the already-existing calendar throw, not assumed from reading the repository.",
+        "ReplayResultRepositoryIntegrationTest": "incompleteBoundInputSets() gained four cases (PUBLICATION_EXACT and AS_KNOWN, for both new markers) asserting a non-BLOCKED metric carrying either marker is refused."
+    },
+    "probes": [
+        {
+            "id": "P5_temporal_empty_check_bypassed",
+            "mutation": "AsKnownReplaySnapshotService: temporal_identity_hash always computed from the real hash, bypassing the empty-universe check",
+            "result": "RED: exactly 1 test (test_an_as_known_replay_is_blocked_when_no_listing_is_known_at_all). B18AsKnownSnapshotIsolationTest (sibling) stayed green (3/3).",
+            "restored_sha256": "22a8998bdcac0d118cfe54aceb184aa803ffbaa84b993b443459ebf2d13a104c"
+        },
+        {
+            "id": "P6_source_observation_empty_check_bypassed",
+            "mutation": "AsKnownReplaySnapshotService: source_observation_manifest_hash/canonical_raw_input_hash always computed from the real hash, bypassing the trading-day-gated zero-row check",
+            "result": "RED: exactly 1 test (test_an_as_known_replay_is_blocked_when_a_trading_day_has_no_recorded_observation_at_all). SourceObservationAsKnownBoundaryTest (sibling) stayed green (4/4).",
+            "restored_sha256": "22a8998bdcac0d118cfe54aceb184aa803ffbaa84b993b443459ebf2d13a104c"
+        },
+        {
+            "id": "P7_admission_check_bypassed",
+            "mutation": "ReplayVerificationService: $unavailableInputMarkers narrowed to reason_registry_hash only, dropping temporal_identity_hash and source_observation_manifest_hash/canonical_raw_input_hash from the admission lookup",
+            "result": "RED: both new positive tests failed (the block still fired on reason_registry_hash, since capture() always returns that marker too, but named the wrong cause -- mismatch_summary no longer contained REPLAY_TEMPORAL_IDENTITY_UNAVAILABLE / REPLAY_SOURCE_OBSERVATION_UNAVAILABLE). ReplayVerificationServiceTest (publication-mode sibling) stayed green (22/22).",
+            "restored_sha256": "b6d5ff829ba412a7f00659b62c12c899892dad5bc2aa35ffef5de36a3716a04d"
+        },
+        {
+            "id": "P8_storage_check_removed",
+            "mutation": "ReplayResultRepository: both new refusal blocks wrapped in if (false) { ... }",
+            "result": "RED: exactly the 4 new ReplayResultRepositoryIntegrationTest cases (26/26 -> 4 failures). B18AsKnownModeIsolationTest (sibling, service-layer BLOCKED path unaffected) stayed green (13/13).",
+            "restored_sha256": "18dff3a8416b9954b7828b292fc5bcc509287d0da5bd6e8c46db29de852c76c8"
+        },
+        {
+            "id": "note",
+            "detail": "each file run separately (multi-file phpunit CLI silent-drop lesson from Gap A). A shared mutation was used for P5/P6 (one bypass per domain, not per admission-check field) because each targets exactly one production computation; P7 covers both new admission-check entries in a single mutation because they share the same lookup table and each is independently asserted by its own positive test naming its own distinct cause text -- confirmed discriminating since only the matching test failed each time a domain-specific probe ran, and P7 (which touches the shared table) correctly turned both red at once."
+        }
+    ],
+    "cumulative_required_input_review": {
+        "config_snapshot_hash_id": {
+            "implementation_guarantee": "fail-closed both modes",
+            "executing_proof_evidence": "PUBLICATION_EXACT: G03 (E-067) + Gap A (E-069, 3 probes). AS_KNOWN: MarketDataConfigSnapshotRepository::resolveAsKnown() throws CONFIG_SNAPSHOT_NOT_KNOWN_AT_CUTOFF unconditionally (re-confirmed by code read this unit; not separately mutation-probed for AS_KNOWN specifically).",
+            "absence_behaviour": "BLOCKED / throws",
+            "residual_gap": "none"
+        },
+        "reason_registry_hash": {
+            "implementation_guarantee": "fail-closed both modes",
+            "executing_proof_evidence": "PUBLICATION_EXACT: real historical value + G03 empty-check. AS_KNOWN: Gap B2 (E-073, 4 probes).",
+            "absence_behaviour": "BLOCKED",
+            "residual_gap": "none"
+        },
+        "read_model_version": {
+            "implementation_guarantee": "fail-closed both modes",
+            "executing_proof_evidence": "PUBLICATION_EXACT: established call sites + G03 admissibility coverage. AS_KNOWN: Gap B1 (E-071, 3 probes).",
+            "absence_behaviour": "BLOCKED",
+            "residual_gap": "none"
+        },
+        "formula_registry_hash": {
+            "implementation_guarantee": "structurally protected",
+            "executing_proof_evidence": "derives entirely from resolvedConfigPayload(), which throws on a missing/malformed resolved_config or semantic_bindings (re-confirmed by code read this unit).",
+            "absence_behaviour": "throws (via config payload validation)",
+            "residual_gap": "not independently mutation-probed on its own; inherits config's protection by construction"
+        },
+        "serialization_version": {
+            "implementation_guarantee": "low-risk, unhashed pass-through",
+            "executing_proof_evidence": "a genuinely-missing value produces a genuinely-empty string, caught by the existing both-modes empty() check.",
+            "absence_behaviour": "BLOCKED (empty() check)",
+            "residual_gap": "no executing test proves a config row with this column null actually gets BLOCKED; structural argument only"
+        },
+        "executable_build_identity": {
+            "implementation_guarantee": "explicitly out of scope",
+            "executing_proof_evidence": "E-065/R0002 precedent: permitted to reflect the live executable, not a historical-binding concern.",
+            "absence_behaviour": "n/a",
+            "residual_gap": "none -- by design"
+        },
+        "temporal_identity_hash": {
+            "implementation_guarantee": "fail-closed, unconditional",
+            "executing_proof_evidence": "this unit: P5/P7/storage probes; test_an_as_known_replay_is_blocked_when_no_listing_is_known_at_all",
+            "absence_behaviour": "BLOCKED",
+            "residual_gap": "none"
+        },
+        "calendar_status_hash": {
+            "implementation_guarantee": "calendar half fail-closed (upstream throw); trading-status half authority-permits-empty",
+            "executing_proof_evidence": "this unit: test_capture_throws_when_no_calendar_evidence_exists_for_the_date",
+            "absence_behaviour": "calendar: throws. trading-status: valid UNKNOWN sentinel, distinctly represented",
+            "residual_gap": "none"
+        },
+        "event_factor_hash": {
+            "implementation_guarantee": "authority-permits-empty",
+            "executing_proof_evidence": "code inspection + ground-truth capture against a fully empty world",
+            "absence_behaviour": "valid empty, real hash of nothing",
+            "residual_gap": "none -- no discriminating genuine-absence-vs-valid-absence test is constructible for this domain"
+        },
+        "source_observation_manifest_hash": {
+            "implementation_guarantee": "fail-closed, trading-day-gated",
+            "executing_proof_evidence": "this unit: P6/P7/storage probes; test_an_as_known_replay_is_blocked_when_a_trading_day_has_no_recorded_observation_at_all; negative control test_a_non_trading_day_with_no_observations_is_not_marked_unavailable",
+            "absence_behaviour": "BLOCKED on a trading day; real hash (correct) on a non-trading day",
+            "residual_gap": "none"
+        },
+        "canonical_raw_input_hash": {
+            "implementation_guarantee": "fail-closed, trading-day-gated, shares SOURCE_OBSERVATION_UNAVAILABLE marker",
+            "executing_proof_evidence": "same as source_observation_manifest_hash",
+            "absence_behaviour": "same as source_observation_manifest_hash",
+            "residual_gap": "none"
+        }
+    },
+    "r0016_verdict": "READY_TO_PROMOTE -- every canonical required input in this predicate's own BOUND_INPUT_FIELDS scope is now present-when-required-and-checked, explicitly fail-closed with an executing probe when unavailable, structurally protected by an upstream throw, or authority-confirmed as legitimately empty with no missing-input failure mode; no current/latest fallback exists anywhere in this closure.",
+    "not_touched": [
+        "MD-S050-R0005 (remains INCOMPLETE, IMPLEMENTATION_DEPENDENCY_UNAVAILABLE, unchanged)",
+        "MD-S050-R0014 (remains INCOMPLETE, unchanged -- its own AS_KNOWN reason-registry reproduction claim is not automatically solved by R0016's fail-closed completeness)",
+        "MD-S019-R0071 (remains INCOMPLETE, unchanged, same reason as R0014)",
+        "final_reason_code=null design (unchanged; CURRENT_NULL_REASON_DESIGN_IS_AUTHORITY_CONFORMING, now covering three markers instead of one)",
+        "MARKET_DATA_STRATEGY_FREEZE_MANIFEST.json (unchanged; no LOCKED strategy document touched)"
+    ],
+    "validation": {
+        "targeted": {
+            "B18AsKnownModeIsolationTest": "13/13 PASS (54 assertions)",
+            "ReplayResultRepositoryIntegrationTest": "26/26 PASS (89 assertions)",
+            "GovernanceGateReadOnlyExecutionTest": "9/9 PASS (5974 assertions), confirming STRATEGY_FREEZE/TRACEABILITY_MATRIX/self-test control table all intact",
+            "PromotedPredicateProofGateTest": "8/8 PASS",
+            "ClassificationConsistencyGateTest": "20/20 PASS",
+            "TraceabilityApplicabilityGateTest": "11/11 PASS",
+            "ScopeBoundaryAndOrchestrationCompletionTest": "8/8 PASS",
+            "FindingRecordConsistencyTest": "3/3 PASS"
+        },
+        "wider_sweep_before_probing": "B18AsKnownSnapshotIsolationTest, ReplayVerificationServiceTest, B18ReplayComparisonExhaustivenessTest, SourceObservationAsKnownBoundaryTest, AsKnownReplayBoundaryTest, AsKnownReplayExecutionServiceTest, AsKnownWiringAndConfigIdentityTest, B18AsKnownTemporalSequenceTest, B18ReplayContractStaticGuardTest, MarketDataPipelineIntegrationTest, OpsCommandSurfaceTest -- all green, each file run separately, zero concurrent processes",
+        "full_marketdata_suite": "tests/Unit/MarketData: 2475 tests, 34674 assertions, 7 failures, 0 errors.",
+        "full_suite_baseline_comparison": "Exact match to the known MD-DEP-0015 corpus-oracle baseline (7 ProductionCorpusInvariantOracleTest failures, by name). Zero new failures, zero baseline entries resolved.",
+        "failure_names": [
+            "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_carries_a_non_positive_price",
+            "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_violates_ohlc_ordering",
+            "ProductionCorpusInvariantOracleTest::test_exactly_one_publication_is_current_per_trade_date",
+            "ProductionCorpusInvariantOracleTest::test_no_readable_publication_rests_on_a_failed_run",
+            "ProductionCorpusInvariantOracleTest::test_authoritative_factor_candidates_reach_an_explicit_applied_or_held_decision",
+            "ProductionCorpusInvariantOracleTest::test_no_price_derived_factor_is_usable_as_an_adjustment",
+            "ProductionCorpusInvariantOracleTest::test_every_history_row_binds_to_a_publication"
+        ],
+        "mariadb": "verified reachable (127.0.0.1:3306) before the regression; not started or restarted by this session; error log showed no crash or future-LSN warning",
+        "authoritative_run_isolation": "the counted run, and every probe run, was launched with no other PHPUnit/probe process running against the repository or the database, confirmed via process listing beforehand and by issuing no other command until each run completed",
+        "production_code_changed": true,
+        "test_code_changed": true,
+        "documentation_or_strategy_changed": false
+    },
+    "production_sha256_after": {
+        "AsKnownReplaySnapshotService.php": "22a8998bdcac0d118cfe54aceb184aa803ffbaa84b993b443459ebf2d13a104c",
+        "ReplayVerificationService.php": "b6d5ff829ba412a7f00659b62c12c899892dad5bc2aa35ffef5de36a3716a04d",
+        "ReplayResultRepository.php": "18dff3a8416b9954b7828b292fc5bcc509287d0da5bd6e8c46db29de852c76c8"
+    },
+    "predicate_state": {
+        "MD-S050-R0016": "PROVEN (was INCOMPLETE). positive/negative pointers unchanged from the G03/Gap A pair; basis text fully replaced to narrate the complete cumulative closure across G03, Gap A, Gap B1, Gap B2 and this unit.",
+        "MD-S050-R0005": "INCOMPLETE, unchanged",
+        "MD-S050-R0014": "INCOMPLETE, unchanged",
+        "MD-S019-R0071": "INCOMPLETE, unchanged",
+        "proof_basis_transition": {
+            "before": {
+                "PROVEN": 88,
+                "INCOMPLETE": 26
+            },
+            "after": {
+                "PROVEN": 89,
+                "INCOMPLETE": 25
+            },
+            "confirmed_via": "PHP load of MarketDataReplayVerificationProofBasis constants directly, both before and after the edit; MarketDataReplayVerificationProofReadinessGate re-run directly, confirming 89/114 bases present and MD-S050-R0016 absent from its PREDICATE_WITHOUT_REVIEWED_BASIS error list."
+        }
+    },
+    "formal_traceability": "0/114 SATISFIED unchanged; not touched by this unit",
+    "preserved_unchanged": [
+        "D-MD-B18-A002-008",
+        "E-MD-B18-A002-050",
+        "E-MD-B18-A002-067",
+        "E-MD-B18-A002-068",
+        "E-MD-B18-A002-069",
+        "E-MD-B18-A002-070",
+        "E-MD-B18-A002-071",
+        "E-MD-B18-A002-072",
+        "E-MD-B18-A002-073",
+        "MARKET_DATA_STRATEGY_FREEZE_MANIFEST.json (MD-STRATEGY-FREEZE-20260922-001, unchanged)"
+    ],
+    "next": "F-MD-B18-A002-017's own executable defect (Gap A/B1/B2/five-domain closure) is now fully remediated; the finding stays OPEN on its 14 remaining predicates (unprobed-input residue no longer applies to R0016; the remaining predicates are R0014/R0071's unmet reproducibility requirement, R0005's structural unreachability, and the finding's other, unrelated carried predicates). G01-B (MD-S003-R0023/MD-S004-R0004) is the next resume point; not started by this unit.",
+    "no_commit_or_push": true
+}

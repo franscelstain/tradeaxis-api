@@ -27,6 +27,28 @@ final class AsKnownReplaySnapshotService
      */
     public const REASON_REGISTRY_IDENTITY_UNAVAILABLE = 'REASON_REGISTRY_IDENTITY_UNAVAILABLE';
 
+    /**
+     * `MD-S050-R0016` five-domain cumulative audit: `readProjectedUniverseAsOf()` returns an empty
+     * array, never throws, when the platform has no listing known as of the cutoff -- a
+     * whole-system-empty state, not a per-date business outcome (unlike a non-trading day, which
+     * still has exactly one governed calendar row). `hash([[], []])` is a real-looking 64-character
+     * string regardless, so an empty universe was silently admissible. Listing existence does not
+     * depend on today being a trading day, so this check is unconditional.
+     */
+    public const TEMPORAL_IDENTITY_UNAVAILABLE = 'TEMPORAL_IDENTITY_UNAVAILABLE';
+
+    /**
+     * `MD-S050-R0016` five-domain cumulative audit: `observationManifestAsKnown()`/
+     * `normalizedRowsManifestAsKnown()` never throw on zero rows -- `test_zero_row_provider_outage_
+     * remains_in_as_known_observation_manifest` already proves a *recorded* outage (observation_count
+     * 1, a `SOURCE_TIMEOUT`-reasoned row) is legitimately represented and must not be confused with
+     * this marker. This marker is for the different case: zero rows recorded at all. Gated on
+     * `is_trading_day`, matching the same distinction `ExpectedBarDecisionService::decide()` already
+     * draws (`EXPECTED_BAR_NON_TRADING_DAY`) -- a non-trading day legitimately has no observations to
+     * record, so only a trading day with nothing recorded is treated as a genuine gap.
+     */
+    public const SOURCE_OBSERVATION_UNAVAILABLE = 'SOURCE_OBSERVATION_UNAVAILABLE';
+
     private $identity;
     private $calendar;
     private $statuses;
@@ -130,11 +152,29 @@ final class AsKnownReplaySnapshotService
             'executable_build_identity' => (string) config('market_data.governance.build_id', 'development-worktree'),
         ];
 
+        $isTradingDay = ($calendar['is_trading_day'] ?? null) === true;
+
         return $context + [
-            'temporal_identity_hash' => $this->hash([$universe, $statusContexts]),
+            // `MD-S050-R0016`: an empty universe is a whole-system-empty state (see
+            // `self::TEMPORAL_IDENTITY_UNAVAILABLE`), unconditional on trading-day status.
+            'temporal_identity_hash' => $universe === []
+                ? self::TEMPORAL_IDENTITY_UNAVAILABLE
+                : $this->hash([$universe, $statusContexts]),
             'calendar_status_hash' => $this->hash([$calendar, $statusContexts]),
-            'source_observation_manifest_hash' => $sourceManifest['manifest_hash'],
-            'canonical_raw_input_hash' => $this->hash($normalizedRowsManifest['rows']),
+            // `MD-S050-R0016`: zero observations on a trading day is a genuine gap (see
+            // `self::SOURCE_OBSERVATION_UNAVAILABLE`); zero on a non-trading day is the correct,
+            // expected value (`EXPECTED_BAR_NON_TRADING_DAY` precedent), so it is left as a real hash.
+            'source_observation_manifest_hash' => ($isTradingDay && (int) ($sourceManifest['observation_count'] ?? 0) === 0)
+                ? self::SOURCE_OBSERVATION_UNAVAILABLE
+                : $sourceManifest['manifest_hash'],
+            'canonical_raw_input_hash' => ($isTradingDay && (int) ($normalizedRowsManifest['row_count'] ?? 0) === 0)
+                ? self::SOURCE_OBSERVATION_UNAVAILABLE
+                : $this->hash($normalizedRowsManifest['rows']),
+            // `MD-S050-R0016`: corporate-action/factor-set revisions have no minimum-cardinality
+            // requirement -- zero is the common, legitimate value for the overwhelming majority of
+            // trade dates (most listings have no corporate action most days), and no analogous
+            // "was one expected" signal exists for this domain the way `is_trading_day` does for
+            // source observations. Left as a real hash of whatever did or did not occur; no marker.
             'event_factor_hash' => $this->hash($eventsAndFactors),
             'config_snapshot_id' => isset($config['config_snapshot_id']) ? (int) $config['config_snapshot_id'] : null,
             'config_snapshot_hash' => (string) ($config['config_hash'] ?? ''),
