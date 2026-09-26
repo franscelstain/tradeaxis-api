@@ -1,0 +1,281 @@
+{
+    "evidence_id": "E-MD-B18-A002-083",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "issued_at": "2026-09-26T12:40:06+07:00",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "CORRECTION_E082_TWO_OF_EIGHT_PROMOTIONS_NOT_SUPPORTED_MD_S002_R0007_R0008_RETURNED_TO_INCOMPLETE",
+    "evidence_scope": "G05_CLOSURE_INTEGRITY_REVIEW_OF_E082",
+    "ci_id": "CI-MD-B18-A002-001",
+    "related_findings": [
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-082",
+        "E-MD-B18-A002-080",
+        "E-MD-B18-A002-081",
+        "CI-MD-B18-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-005"
+    ],
+    "dependencies": [
+        "MD-DEP-0017",
+        "MD-DEP-0019"
+    ],
+    "schema_changed": false,
+    "production_code_changed": false,
+    "runtime_config_changed": false,
+    "test_code_changed": false,
+    "git_base": "b2ec444",
+    "corrects": {
+        "record": "E-MD-B18-A002-082",
+        "record_sha256_at_correction": "5d43b1fd43ffd6481fbe01792bd7b05e0325b3c0c9732a2a1f62d820e01fe536",
+        "record_left_byte_identical": true,
+        "inaccurate_statement": "E-082 records MD-S002-R0007 and MD-S002-R0008 as PROVEN, and the derived counts 100 PROVEN / 13 INCOMPLETE / readiness 100/113 that follow from that.",
+        "why": "E-082 established that every member the aggregate runs is real, executes production behaviour and turns red under at least one probe. It did not establish that the member set of each predicate covers every clause of the criterion. Two review probes made after E-082 show two clauses no member sees.",
+        "correct_statement": "Six of the eight promotions stand. MD-S002-R0007 and MD-S002-R0008 return to INCOMPLETE. PROVEN 98, INCOMPLETE 15, readiness 98/113. Everything else E-082 states (its 85-probe count, the per-predicate tables of the six that stand, the MD-S003-R0025 finding, MD-DEP-0019) is unchanged and accurate."
+    },
+    "review_probes": {
+        "method": "one production clause neutered per probe, the anchor landing exactly once, the whole eight-predicate aggregate executed, the red set compared with the control, the file restored byte-identical and the sha256 verified; control run before and after, both GREEN with 55 executed guards",
+        "X1_promote_not_transactional": {
+            "file": "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php",
+            "clause": "promoteCandidateToCurrent runs its guards, row locks and writes inside DB::transaction; the probe runs the same closure without a transaction",
+            "landed_count": 1,
+            "aggregate_verdict": "GREEN",
+            "red_predicates": [],
+            "red_guards": 0,
+            "guards_executed": 55,
+            "restored_byte_identical": true,
+            "reading": "no member of MD-S002-R0008 (nor of any other predicate) notices that the switch is no longer atomic"
+        },
+        "X2_split_factor_inverted": {
+            "file": "app/Application/MarketData/Services/AdjustmentFactorSetService.php",
+            "clause": "a verified split ratio derives 'price_factor' => from/to, 'volume_factor' => to/from; the probe derives them inverted",
+            "landed_count": 1,
+            "aggregate_verdict": "GREEN",
+            "red_predicates": [],
+            "red_guards": 0,
+            "guards_executed": 55,
+            "restored_byte_identical": true,
+            "reading": "no member of MD-S002-R0007 notices a corporate-action result built on an inverted factor"
+        },
+        "X2b_existing_guard_outside_the_member_set": {
+            "run": "the same X2 mutation, then AdjustmentFactorSetB11Test::test_verified_split_ratio_maps_deterministically_to_price_and_volume_factors run alone",
+            "result": "red: \"Failed asserting that 5.0 is identical to 0.2\" (the hand-derived price factor)",
+            "restored_byte_identical": true,
+            "reading": "the independent oracle for the missing hop already exists and is proven; the R0007 criteria map does not name it"
+        },
+        "control_stable": true,
+        "counted_with_e082_probes": false,
+        "note": "These three are review probes and are not added to the 85 of E-082, whose categories stay as recorded."
+    },
+    "aggregate_runner_verdict": {
+        "legitimate_production_backed_aggregate_proof": "YES, with the per-predicate condition below",
+        "question": "A: does authority require the runner to invoke a production release-candidate or runtime entry point, or B: is it legitimate for the parent proof runner to orchestrate independently executing members that each execute actual production behaviour, with exhaustive and non-masking aggregation",
+        "answer": "B",
+        "authority_basis": [
+            "No production release-candidate or runtime entry point exists in the repository for these criteria (searched app/ for one; none), so a rule requiring the runner to invoke one would be unsatisfiable, and no authority text states it.",
+            "STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD requires an executable assertion for each mandatory predicate and forbids evidence that cannot fail; it does not require the assertion to enter through a production parent. The criteria (Backtest_Metrics_and_Acceptance_Criteria_LOCKED.md, \"Replay and Data-Quality Acceptance Criteria\") are claims over families of fixtures (\"all ... fixtures passing\"), which an executing aggregate over the family members proves by construction.",
+            "MD-B19-A001-002 (one guard pair proves a whole family) is the recorded defect this runner answers: the recorded pair checked that guards exist, and nothing executed them."
+        ],
+        "trace": {
+            "G05 parent requirement": "the nine predicates the consolidated package assigns to G05 inside the F-017 section, read by the runner from the package (a predicate added or dropped fails)",
+            "aggregate proof boundary": "per-predicate verdict computed from that predicate's own items; parent green only if every predicate is green; a predicate without items, without a current MANDATORY MD-B18 matrix row, or whose criterion no longer ends its row text is reported",
+            "member proof": "each item names exactly one guard; each distinct guard runs as its own real PHPUnit process; it counts only if PASSED with at least one assertion",
+            "actual production behaviour": "the members are the existing behaviour tests of the services and repositories; the runner copies no behaviour and stubs no member; neutering a production clause turned a member red in 51 probes"
+        },
+        "condition": "The runner proves what its member sets contain. Whether a member set covers every clause of a criterion is a separate question the review answered per predicate; two sets did not (MD-S002-R0007, MD-S002-R0008). That is a missing member, not a defect of the runner or of the aggregation."
+    },
+    "r0008_verdict": {
+        "promoted_proven_remains_legitimate": "NO",
+        "obligation": "The criterion \"corrected publications preserving their predecessors and switching atomically\" is combined. Preserving predecessors is proven. \"Switching atomically\" is: Downstream_Data_Readiness_Guarantee_LOCKED.md (\"atomically switches the active pointer ... Executed integration tests must prove ... atomic correction switch, concurrent reads\"); Publication_Current_Pointer_Integrity_Contract_LOCKED.md (trade_date unique key, transaction discipline); Finalize_Lock_And_Pointer_Behavior_LOCKED.md.",
+        "components": {
+            "MariaDB DDL uniqueness": "not provable on the SQLite mirror; the member runs on the mirror schema (PK1 probe on the mirror). Belongs with MD-S003-R0025 (MariaDB, MD-DEP-0019).",
+            "transaction / atomic switching": "service-level, provable on the mirror, and not proven: X1 leaves every guard green.",
+            "predecessor preservation": "proven (SEAL1, READ1, READ2, PSF1, PUB1 each turned a member red).",
+            "concurrent reads": "named by the authority; needs MariaDB; not proven."
+        },
+        "is_sqlite_mirror_execution_sufficient": "For predecessor preservation and the service-level atomic switch, yes in principle -- but no member proves the atomic switch. For the production DDL and concurrent reads, no.",
+        "decision": "C: R0008 must not remain PROVEN. Returned to INCOMPLETE; the proof basis records the exact missing proof.",
+        "missing_proof": "a guard that makes the promotion fail after its first write and asserts the prior publication still current, the pointer unchanged and the candidate not current, and that turns red when the transaction is removed (bounded, mirror-level); the concurrent-read and production-DDL halves wait for MariaDB and are owned with MD-S003-R0025"
+    },
+    "r0007_verdict": {
+        "promoted_proven_remains_legitimate": "NO",
+        "obligation": "\"long-chain ATR and corporate-action results matching independent oracles\". The ATR half is proven. The corporate-action result is the chain event -> factor -> adjusted price and volume; the members cover the last two hops (factor activation state, OHLC coherence) with factors as input, and not the derivation of the factor from the event terms.",
+        "decision": "returned to INCOMPLETE",
+        "missing_proof": "name AdjustmentFactorSetB11Test::test_verified_split_ratio_maps_deterministically_to_price_and_volume_factors (and any further factor-derivation guard the authority requires) in the R0007 criteria map, so the aggregate executes it, and probe it through the aggregate"
+    },
+    "md_dep_0019_verdict": {
+        "legitimate_canonical_dependency": "YES",
+        "classification": "a required proof-environment dependency: the predicate MD-S003-R0025 cannot be proven until the MD-S003 acceptance scenarios run on MariaDB with no skips. Not a semantic or product dependency, not a governed external dependency, not a temporary local condition that a person would simply remember.",
+        "why_not_a_local_manual_prerequisite": "DEPENDENCY_REGISTRY_STANDARD requires an unavailable external state on which a predicate waits to be recorded with an owner, evidence, impact, status and an exact resume trigger, and states that missing external state never authorizes semantic substitution. An unrecorded prerequisite would leave R0025 with no resume trigger and no owner, and would invite the mirror result to be read as the MariaDB half.",
+        "precedent": "MD-DEP-0013 (MariaDB runtime availability, RESOLVED on observable availability); MD-DEP-0015 (database owner recovery decision, BLOCKING) and MD-DEP-0016. MD-DEP-0019 is narrower than MD-DEP-0015: it carries the resume trigger of one predicate and of the aggregate run, and cross-references MD-DEP-0015 for recovery and the full-suite criterion.",
+        "changed": false,
+        "note": "MD-DEP-0019 stays as issued. The R0008 limit (pointer-uniqueness on the mirror, concurrent reads) now also waits on it; no new dependency row is needed because it is the same environment."
+    },
+    "f017_to_f018_progression_verdict": {
+        "permitted_while_f017_remains_open": "NO (moot after this correction)",
+        "basis": "E-082 proposed F-018 G06 because both remaining F-017 predicates were blocked. No orchestration rule or precedent was found that lets a finding stay OPEN and be passed over merely because its remaining predicates are blocked; the consolidated package and STAGE_EXECUTION_AND_REWORK_STANDARD keep dependency-driven remediation as one canonical resume point, and CURRENT_STATE was regenerated, not authority. After this correction F-017 has two actionable, unblocked predicates (MD-S002-R0007, MD-S002-R0008), so the premise no longer holds and the resume point stays inside F-017."
+    },
+    "e082_count_reconciliation": {
+        "source": "raw probe results in the working files (probes_final.json 66 probes, runner_probes_r2.json 19 probes), the aggregate test class listed by PHPUnit, and the role registry",
+        "rows": [
+            {
+                "category": "production (or mirror-schema) mutations",
+                "raw": 51,
+                "relation": "50 files under app/ plus 1 mirror-schema probe (PK1) in tests/Support; each executes the full eight-predicate aggregate"
+            },
+            {
+                "category": "map and fixture perturbations",
+                "raw": 15,
+                "relation": "probes whose file is a test source (tests/); with the 51 they are the 66 probes of one final run, control stable"
+            },
+            {
+                "category": "aggregate-verdict mutations",
+                "raw": 19,
+                "relation": "probes of the runner's own logic (RM1-RM19), caught by the runner's own 33 fast tests; separate run, separate control"
+            },
+            {
+                "category": "total probes run and restored",
+                "raw": 85,
+                "relation": "51 + 15 + 19; all restored byte-identical by sha256. Not increased by the review probes."
+            },
+            {
+                "category": "the \"10 + 4 + 4\" statement",
+                "raw": 18,
+                "relation": "a fourth, distinct category: not probes but inputs inside the runner's own tests -- 10 tiny executor members (8 real methods, one missing method, one missing class), 4 matrix-row edits, 4 map-item shapes (datasets). It does not overlap the 15; it is not part of the 85; \"fixture perturbations inside the runner tests\" in E-082 and in the F-017 section means these inputs, and is not the \"map and fixture perturbations\" probe category."
+            },
+            {
+                "category": "aggregate test class",
+                "raw": 43,
+                "relation": "PHPUnit-listed cases: 33 fast + 10 real-execution (the 8 per-predicate positive tests, the eight-together test and the MariaDB never-green test)"
+            },
+            {
+                "category": "per-predicate methods",
+                "raw": "8 positive + 9 negative = 17",
+                "relation": "the remaining 26 cases are: 5 structure/resolution, 1 all-green, 7 outcome data sets, 6 authority-tie and exhaustiveness (binding, shared guard, undeclared or memberless predicate, non-governed predicate, non-current row, criterion wording), 4 map-item shapes, 1 executor, 1 eight-together, 1 MariaDB never-green"
+            },
+            {
+                "category": "immutable records",
+                "raw": 736,
+                "relation": "IMMUTABLE_AFTER_ISSUE rows in the role registry now (with E-082; 737 with this record). 733 were snapshotted before G07 (sha256-verified intact today); E-080 and E-081 are two more, so 735 existed before E-082. E-082 states no total; the earlier handoff figure of 733 excluded E-080 and E-081 and is not an E-082 statement."
+            }
+        ],
+        "inaccuracies_in_e082_counts": "none",
+        "correction_scope": "E-082's count statements stand. The only E-082 statement corrected is the promotion of R0007 and R0008 and the counts derived from it."
+    },
+    "eight_predicate_review": [
+        {
+            "predicate": "MD-S002-R0005",
+            "sufficient": "YES",
+            "final_state": "PROVEN",
+            "basis": "36 items, 21 guards, 5 bindings; 31 production and 7 map probes reach it; no member or binding left un-red"
+        },
+        {
+            "predicate": "MD-S002-R0006",
+            "sufficient": "YES",
+            "final_state": "PROVEN",
+            "basis": "12 items on 12 guards, 2 bindings; 10 production and 4 map probes; denominator and unknown-expectation members added and probed"
+        },
+        {
+            "predicate": "MD-S002-R0007",
+            "sufficient": "NO",
+            "final_state": "INCOMPLETE",
+            "basis": "factor derivation from the event terms is in no member (X2 leaves all 55 guards green); an existing proven oracle guard is not in the map"
+        },
+        {
+            "predicate": "MD-S002-R0008",
+            "sufficient": "NO",
+            "final_state": "INCOMPLETE",
+            "basis": "the atomic switch is in no member (X1 leaves all 55 guards green); concurrent reads and production DDL need MariaDB (MD-DEP-0019)"
+        },
+        {
+            "predicate": "MD-S004-R0002",
+            "sufficient": "YES",
+            "final_state": "PROVEN",
+            "basis": "eight inputs, 8 items on 7 guards, 1 binding; 19 production probes, one known-at clause removed at a time per root"
+        },
+        {
+            "predicate": "MD-S004-R0003",
+            "sufficient": "YES",
+            "final_state": "PROVEN",
+            "basis": "five backfill kinds, 5 items, 1 binding; 8 production probes"
+        },
+        {
+            "predicate": "MD-S004-R0005",
+            "sufficient": "YES",
+            "final_state": "PROVEN",
+            "basis": "three members, 1 binding; 11 production probes"
+        },
+        {
+            "predicate": "MD-S004-R0008",
+            "sufficient": "YES",
+            "final_state": "PROVEN",
+            "basis": "seven acceptance fixtures, 1 binding; 10 production probes"
+        }
+    ],
+    "formal_state_after_correction": {
+        "source": "MarketDataReplayVerificationProofReadinessGate run directly and the PROVEN/INCOMPLETE constants",
+        "PROVEN": 98,
+        "INCOMPLETE": 15,
+        "denominator": 113,
+        "readiness": "98/113 bases present; 15 without a reviewed basis",
+        "predicates_without_basis": [
+            "MD-S002-R0007",
+            "MD-S002-R0008",
+            "MD-S003-R0011",
+            "MD-S003-R0014",
+            "MD-S003-R0025",
+            "MD-S019-R0071",
+            "MD-S041-R0032",
+            "MD-S050-R0005",
+            "MD-S050-R0014",
+            "MD-S050-R0022",
+            "MD-S050-R0023",
+            "MD-S050-R0025",
+            "MD-S050-R0028",
+            "MD-S050-R0029",
+            "MD-S055-R0025"
+        ],
+        "ownership": {
+            "F-MD-B18-A002-017": {
+                "count": 4,
+                "predicates": [
+                    "MD-S002-R0007",
+                    "MD-S002-R0008",
+                    "MD-S003-R0025",
+                    "MD-S050-R0005"
+                ]
+            },
+            "F-MD-B18-A002-018": {
+                "count": 9
+            },
+            "F-MD-B18-A002-013": {
+                "count": 2,
+                "predicates": [
+                    "MD-S050-R0014",
+                    "MD-S019-R0071"
+                ]
+            }
+        },
+        "formal_traceability": "0/113 SATISFIED, unchanged; no matrix row bound"
+    },
+    "changes_made": [
+        "proof basis: MD-S002-R0007 and MD-S002-R0008 moved PROVEN -> INCOMPLETE with the exact missing proof recorded; no other entry touched",
+        "mutable references updated: F-MD-B18-A002-017, CI-MD-B18-A002-001, MD_IMPLEMENTATION_STAGE_REGISTER, MD_DEPENDENCY_REGISTRY (MD-DEP-0017), CURRENT_STATE, registries",
+        "E-082 not edited"
+    ],
+    "not_done": [
+        "no production, schema, migration, runtime-configuration or test change; the guards named as missing were not written (that is the next unit)",
+        "MariaDB not started or restarted",
+        "F-018 not started; no commit or push",
+        "the 66-probe campaign was not re-run: no fact E-082 states about it was found wrong",
+        "the full MarketData suite was not run"
+    ],
+    "no_commit_or_push": true
+}

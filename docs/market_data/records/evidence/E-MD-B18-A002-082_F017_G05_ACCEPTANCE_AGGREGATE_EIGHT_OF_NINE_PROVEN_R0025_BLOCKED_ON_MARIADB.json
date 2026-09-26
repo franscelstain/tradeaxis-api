@@ -1,0 +1,2586 @@
+{
+  "evidence_id": "E-MD-B18-A002-082",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+  "issued_at": "2026-09-26T11:55:57+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "F017_G05_ACCEPTANCE_AGGREGATE_EIGHT_OF_NINE_PROVEN_MD_S003_R0025_BLOCKED_ON_MARIADB_NO_PRODUCTION_CHANGE",
+  "evidence_scope": "F017_G05_EXECUTING_FULL_PARENT_AGGREGATE",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-017"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-080",
+    "E-MD-B18-A002-081",
+    "CI-MD-B18-A002-001"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017",
+    "MD-DEP-0019"
+  ],
+  "schema_changed": false,
+  "production_code_changed": false,
+  "runtime_config_changed": false,
+  "test_code_changed": true,
+  "git_base": "b2ec444 (G07 checkpoint by the desktop harness); working tree clean at entry",
+  "governed_g05_set": {
+    "derivation": "the \"#### <id> -- G05 /\" headings inside the F-MD-B18-A002-017 section of MD_B18_A002_CONSOLIDATED_REMEDIATION_PACKAGE.md (other findings label already-proven predicates G05, e.g. MD-S050-R0017 under F-016)",
+    "predicates": [
+      "MD-S002-R0005",
+      "MD-S002-R0006",
+      "MD-S002-R0007",
+      "MD-S002-R0008",
+      "MD-S003-R0025",
+      "MD-S004-R0002",
+      "MD-S004-R0003",
+      "MD-S004-R0005",
+      "MD-S004-R0008"
+    ],
+    "count": 9,
+    "matches_stage_register_and_proof_basis_before_this_unit": true
+  },
+  "what_g05_was": {
+    "classification_per_predicate": {
+      "eight_mirror_backed_predicates": "aggregate/orchestration gap plus guard gaps; not implementation defects. The recorded pair for each checked that named guards exist; nothing executed the members, and a member breaking in production left every existence check green. Reviewing members against production found guard gaps (below) and two member-set gaps (MD-S002-R0006 and MD-S002-R0008 lacked members carrying the criterion's own words).",
+      "MD-S003-R0025": "dependency gap (environment): MariaDB unreachable, connection refused on 127.0.0.1:3306; the six family members were SKIPPED. Not started or restarted, per standing instruction. Not proven."
+    },
+    "guard_gaps_found_by_neutering_one_production_clause_at_a_time": [
+      "identity: the fixture recorded all five identity roots late at once, so the listing, instrument, issuer and board recorded-at clauses and the board retraction clause each turned nothing red",
+      "event: the guard exercised the legacy corporate-action table only; the source-backed revision recorded-at and supersession clauses turned nothing red",
+      "observations: the guard varied binding time only; the acquired-at clause turned nothing red",
+      "status: no guard varied a retraction recorded after the cutoff; the retraction clause turned nothing red"
+    ],
+    "member_set_gaps": [
+      "MD-S002-R0006: no member carried \"without denominator shrinkage\" or the unknown-expectation clauses; added CoverageGateEvaluatorTest denominator guard and two CalendarProvenanceAndStatusTest guards to the criterion map",
+      "MD-S002-R0008: no member carried \"switching atomically\"; added the reseal-failure guard and the promotion-transaction guard to the criterion map"
+    ],
+    "probes_that_hit_code_off_the_tested_path_and_are_excluded_from_the_counts": [
+      "FD1/FD2 changed the finalize baseState default that the empty-dataset branch overwrites; replaced by FD1b/FD2b on the live branch",
+      "PUB2 (restorePriorCurrentPublication) and SEAL2 (artifact-repository seal guard) are not reached by any G05 member; nothing depended on them"
+    ]
+  },
+  "aggregate_runner": {
+    "file": "docs/market_data/development/implementation/tests/MarketDataReplayVerificationAcceptanceAggregate.php",
+    "sha256": "37ea8b45370b2ac14b5f089166dc45f0cd1f944cf48a1f307096da8c6d62c802",
+    "execution_boundary": "For each governed predicate, the members are read from the reviewed maps in the test classes that own them (criteria map bullet, or a reviewed map bound to its authority sentence) and each item names exactly one executing guard. Every distinct guard is executed by the real PHPUnit as its own process (one test class per invocation, classes in parallel), reading the junit outcome per method. A member counts only if PASSED with at least one assertion. The authority binding of each map is executed with it. The predicate verdict is computed from its own items only; the parent verdict is green only when every predicate is.",
+    "not_a_synthetic_substitute": "The runner contains no copy of any behaviour it aggregates and stubs no member: the members are the existing production-path guards, run unmodified in their own classes.",
+    "first_control_run_defect": "The first control run reported GOVERNED_PREDICATE_NOT_DECLARED:MD-S050-R0017 because the governed set was parsed from every finding; fixed to the F-017 section before any proof was taken. That run is retained in the working data only as a runner-development observation."
+  },
+  "control_runs": {
+    "final_all_nine_predicates": {
+      "verdict": "RED",
+      "guards_executed": 63,
+      "errors": [],
+      "predicate_verdicts": {
+        "MD-S002-R0005": "GREEN",
+        "MD-S002-R0006": "GREEN",
+        "MD-S002-R0007": "GREEN",
+        "MD-S002-R0008": "GREEN",
+        "MD-S003-R0025": "RED",
+        "MD-S004-R0002": "GREEN",
+        "MD-S004-R0003": "GREEN",
+        "MD-S004-R0005": "GREEN",
+        "MD-S004-R0008": "GREEN"
+      }
+    },
+    "mirror_backed_probe_controls": {
+      "control_before_equals_control_after": true,
+      "control": {
+        "verdict": "GREEN",
+        "predicates": {
+          "MD-S002-R0005": "GREEN",
+          "MD-S002-R0006": "GREEN",
+          "MD-S002-R0007": "GREEN",
+          "MD-S002-R0008": "GREEN",
+          "MD-S004-R0002": "GREEN",
+          "MD-S004-R0003": "GREEN",
+          "MD-S004-R0005": "GREEN",
+          "MD-S004-R0008": "GREEN"
+        },
+        "red_guards": [],
+        "guards_executed": 55
+      }
+    },
+    "aggregate_test_class": "OK 43 tests / 1272 assertions (33 fast tests, 10 real-execution tests)",
+    "member_classes_after_strengthening": {
+      "AsKnownReplayBoundaryTest": "OK 11 / 110",
+      "SourceObservationAsKnownBoundaryTest": "OK 4 / 16",
+      "B18ReleaseCandidateCriteriaTest": "OK 8 / 27",
+      "B18ReplayComparisonExhaustivenessTest": "OK 77 / 563 (unchanged)",
+      "B18PointInTimeInputContractTest": "OK 8 / 19",
+      "B18AntiSurvivorshipFixtureCorpusTest": "OK 10 / 47",
+      "B18AsKnownSnapshotIsolationTest": "OK 3 / 27",
+      "B18CorrectionReadPathScenarioTest": "OK 12 / 29",
+      "B18AntiFutureResolutionTest": "OK 4 / 10",
+      "B18DegradedObservationDefectCorpusTest": "OK 7 / 23"
+    }
+  },
+  "implementation_changes": {
+    "new": [
+      "docs/market_data/development/implementation/tests/MarketDataReplayVerificationAcceptanceAggregate.php",
+      "tests/Unit/MarketData/B18ReleaseCandidateAcceptanceAggregateTest.php"
+    ],
+    "modified": [
+      "tests/Unit/MarketData/AsKnownReplayBoundaryTest.php (identity roots, event revision path, status retraction)",
+      "tests/Unit/MarketData/SourceObservationAsKnownBoundaryTest.php (acquired-at)",
+      "tests/Unit/MarketData/B18ReleaseCandidateCriteriaTest.php (five members added to the degraded and correction bullets)",
+      "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php (eight entries INCOMPLETE -> PROVEN; MD-S003-R0025 annotated)"
+    ],
+    "sha256": {
+      "docs/market_data/development/implementation/tests/MarketDataReplayVerificationAcceptanceAggregate.php": "37ea8b45370b2ac14b5f089166dc45f0cd1f944cf48a1f307096da8c6d62c802",
+      "tests/Unit/MarketData/B18ReleaseCandidateAcceptanceAggregateTest.php": "87189fba5c241af8e48c3fa506c92380b3a19dffe30650a16d1049a3e44ac9b9",
+      "tests/Unit/MarketData/AsKnownReplayBoundaryTest.php": "26b356a5e077facfeb2e1e53ef6e6be4e3992e1dbc3dce0506b8421d2f708f9b",
+      "tests/Unit/MarketData/SourceObservationAsKnownBoundaryTest.php": "9e7f2dce8405fb1015949dac4e392a81b74dcca70cc64c33b5a24cd75366f541",
+      "tests/Unit/MarketData/B18ReleaseCandidateCriteriaTest.php": "728a4ef2a79019588258f5bebba79d859487db0c8fb54882ff7206579ae87db5",
+      "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php": "86a88e7a10f2a244dc407a4e9be5405161762df5e3bf00f76968e26117dacda6"
+    },
+    "production_files_changed": []
+  },
+  "per_predicate_proof": {
+    "MD-S002-R0005": {
+      "aggregate_verdict": "GREEN",
+      "member_items": 36,
+      "distinct_member_guards": 21,
+      "authority_bindings": 5,
+      "production_mutations_that_turned_a_guard_of_this_predicate_red": 31,
+      "map_or_fixture_perturbations_that_did": 7,
+      "production_mutation_ids": [
+        "T2_delisted_date_after_trade_date",
+        "T3_symbol_interval_end",
+        "T9_provider_mapping_interval_end",
+        "CA1_calendar_recorded_by_cutoff",
+        "E1_event_recorded_by_cutoff",
+        "E2_event_supersession_by_cutoff",
+        "AK1_legacy_event_cutoff_removed",
+        "CF1_config_recorded_by_cutoff",
+        "BLK1_replay_resolves_current_pointer",
+        "OUT1_outage_dropped_from_manifest",
+        "T1_delisting_known_time",
+        "T4_symbol_recorded_by_cutoff",
+        "T6_symbol_retraction_by_cutoff",
+        "T7_provider_mapping_recorded_by_cutoff",
+        "T8_provider_mapping_retraction",
+        "ID_ALL_identity_recorded_wall_removed",
+        "EVD1_publication_sealed_by_cutoff",
+        "T5_listing_recorded_by_cutoff",
+        "T10_instrument_recorded_by_cutoff",
+        "T11_issuer_recorded_by_cutoff",
+        "T12_board_recorded_by_cutoff",
+        "T13_board_retraction_by_cutoff",
+        "ST1_status_recorded_by_cutoff",
+        "ST3_status_retraction_by_cutoff",
+        "UN1_absent_status_becomes_normal",
+        "ST2_status_supersession_by_cutoff",
+        "CA2_calendar_supersession_by_cutoff",
+        "SN1_factor_sets_by_cutoff",
+        "SN2_formula_from_live_config",
+        "DM1_long_suspension_becomes_dormant",
+        "SC1_sector_recorded_by_cutoff"
+      ],
+      "map_or_fixture_perturbation_ids": [
+        "MP1_exact_fixture_map_wording_drift",
+        "MP15_fixture_map_guard_missing",
+        "MP3_later_revision_map_kind_drift",
+        "MP11_member_guard_renamed_away",
+        "MP6_criteria_bullet_wording_drift",
+        "MP2_as_known_fixture_map_wording_drift",
+        "MP4_anti_future_map_item_drift"
+      ],
+      "member_guards_never_turned_red": [],
+      "binding_guards_never_turned_red": [],
+      "members": [
+        {
+          "item": "B18AntiSurvivorshipFixtureCorpusTest::test_the_contract_list_and_the_reviewed_fixture_map_cover_exactly_the_same_cases",
+          "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_the_contract_list_and_the_reviewed_fixture_map_cover_exactly_the_same_cases",
+          "status": "PASSED",
+          "assertions": 4
+        },
+        {
+          "item": "B18AntiSurvivorshipFixtureCorpusTest::test_every_named_fixture_guard_exists_and_is_executable",
+          "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_every_named_fixture_guard_exists_and_is_executable",
+          "status": "PASSED",
+          "assertions": 1
+        },
+        {
+          "item": "B18AsKnownSnapshotIsolationTest::test_every_later_revision_kind_is_bound_to_an_executing_guard",
+          "guard": "B18AsKnownSnapshotIsolationTest::test_every_later_revision_kind_is_bound_to_an_executing_guard",
+          "status": "PASSED",
+          "assertions": 5
+        },
+        {
+          "item": "B18AntiFutureResolutionTest::test_every_anti_future_guard_exists_and_is_executable",
+          "guard": "B18AntiFutureResolutionTest::test_every_anti_future_guard_exists_and_is_executable",
+          "status": "PASSED",
+          "assertions": 1
+        },
+        {
+          "item": "a listing active at historical T but inactive today;",
+          "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_a_listing_active_at_T_but_delisted_today_stays_in_the_historical_universe",
+          "status": "PASSED",
+          "assertions": 4
+        },
+        {
+          "item": "a symbol change and provider-symbol mapping transition;",
+          "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_a_symbol_change_resolves_to_the_symbol_and_mapping_effective_on_the_trade_date",
+          "status": "PASSED",
+          "assertions": 8
+        },
+        {
+          "item": "symbol text reused by another listing;",
+          "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_reused_symbol_text_resolves_to_the_listing_that_held_it_on_the_trade_date",
+          "status": "PASSED",
+          "assertions": 9
+        },
+        {
+          "item": "a calendar/status fact corrected after T;",
+          "guard": "AsKnownReplayBoundaryTest::test_a_calendar_revision_recorded_after_the_cutoff_is_invisible",
+          "status": "PASSED",
+          "assertions": 1
+        },
+        {
+          "item": "a corporate action learned or verified later;",
+          "guard": "AsKnownReplayBoundaryTest::test_a_corporate_action_recorded_after_the_cutoff_is_invisible",
+          "status": "PASSED",
+          "assertions": 6
+        },
+        {
+          "item": "a configuration/formula change after T;",
+          "guard": "AsKnownReplayBoundaryTest::test_a_configuration_recorded_after_the_cutoff_is_invisible_and_none_is_created",
+          "status": "PASSED",
+          "assertions": 3
+        },
+        {
+          "item": "an original and corrected immutable publication; and",
+          "guard": "ReplayVerificationServiceTest::test_verify_replay_resolves_historical_publication_without_current_pointer_fallback",
+          "status": "PASSED",
+          "assertions": 4
+        },
+        {
+          "item": "a provider outage that cannot disappear through dormancy/current-universe filtering.",
+          "guard": "SourceObservationAsKnownBoundaryTest::test_zero_row_provider_outage_remains_in_as_known_observation_manifest",
+          "status": "PASSED",
+          "assertions": 3
+        },
+        {
+          "item": "a listing active at historical T but inactive today;",
+          "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_a_delisting_recorded_later_is_invisible_to_an_earlier_cutoff",
+          "status": "PASSED",
+          "assertions": 3
+        },
+        {
+          "item": "a symbol change and provider-symbol mapping transition;",
+          "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_a_symbol_change_recorded_after_the_cutoff_is_not_yet_visible_to_it",
+          "status": "PASSED",
+          "assertions": 8
+        },
+        {
+          "item": "symbol text reused by another listing;",
+          "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_reused_symbol_text_resolves_to_the_holder_known_at_the_cutoff",
+          "status": "PASSED",
+          "assertions": 4
+        },
+        {
+          "item": "a calendar/status fact corrected after T;",
+          "guard": "AsKnownReplayBoundaryTest::test_a_calendar_revision_recorded_after_the_cutoff_is_invisible",
+          "status": "PASSED",
+          "assertions": 1
+        },
+        {
+          "item": "a corporate action learned or verified later;",
+          "guard": "AsKnownReplayBoundaryTest::test_a_corporate_action_recorded_after_the_cutoff_is_invisible",
+          "status": "PASSED",
+          "assertions": 6
+        },
+        {
+          "item": "a configuration/formula change after T;",
+          "guard": "AsKnownReplayBoundaryTest::test_a_configuration_recorded_after_the_cutoff_is_invisible_and_none_is_created",
+          "status": "PASSED",
+          "assertions": 3
+        },
+        {
+          "item": "an original and corrected immutable publication; and",
+          "guard": "B18CorrectionReadPathScenarioTest::test_a_correction_sealed_later_is_invisible_to_an_earlier_cutoff",
+          "status": "PASSED",
+          "assertions": 6
+        },
+        {
+          "item": "a provider outage that cannot disappear through dormancy/current-universe filtering.",
+          "guard": "SourceObservationAsKnownBoundaryTest::test_zero_row_provider_outage_remains_in_as_known_observation_manifest",
+          "status": "PASSED",
+          "assertions": 3
+        },
+        {
+          "item": "master",
+          "guard": "AsKnownReplayBoundaryTest::test_identity_recorded_after_the_cutoff_is_invisible",
+          "status": "PASSED",
+          "assertions": 16
+        },
+        {
+          "item": "event",
+          "guard": "AsKnownReplayBoundaryTest::test_a_corporate_action_recorded_after_the_cutoff_is_invisible",
+          "status": "PASSED",
+          "assertions": 6
+        },
+        {
+          "item": "status",
+          "guard": "AsKnownReplayBoundaryTest::test_a_status_revision_recorded_after_the_cutoff_is_invisible",
+          "status": "PASSED",
+          "assertions": 5
+        },
+        {
+          "item": "calendar",
+          "guard": "AsKnownReplayBoundaryTest::test_a_calendar_revision_recorded_after_the_cutoff_is_invisible",
+          "status": "PASSED",
+          "assertions": 1
+        },
+        {
+          "item": "config",
+          "guard": "AsKnownReplayBoundaryTest::test_a_configuration_recorded_after_the_cutoff_is_invisible_and_none_is_created",
+          "status": "PASSED",
+          "assertions": 3
+        },
+        {
+          "item": "formula",
+          "guard": "B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot",
+          "status": "PASSED",
+          "assertions": 20
+        },
+        {
+          "item": "factor",
+          "guard": "B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot",
+          "status": "PASSED",
+          "assertions": 20
+        },
+        {
+          "item": "today's `is_active`",
+          "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_a_listing_active_at_T_but_delisted_today_stays_in_the_historical_universe",
+          "status": "PASSED",
+          "assertions": 4
+        },
+        {
+          "item": "current symbol",
+          "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_a_symbol_change_resolves_to_the_symbol_and_mapping_effective_on_the_trade_date",
+          "status": "PASSED",
+          "assertions": 8
+        },
+        {
+          "item": "current sector",
+          "guard": "B18AntiFutureResolutionTest::test_a_sector_reclassification_recorded_later_is_invisible_at_the_earlier_cutoff",
+          "status": "PASSED",
+          "assertions": 2
+        },
+        {
+          "item": "current suspension/status",
+          "guard": "AsKnownReplayBoundaryTest::test_a_status_revision_recorded_after_the_cutoff_is_invisible",
+          "status": "PASSED",
+          "assertions": 5
+        },
+        {
+          "item": "latest calendar correction",
+          "guard": "AsKnownReplayBoundaryTest::test_a_calendar_revision_recorded_after_the_cutoff_is_invisible",
+          "status": "PASSED",
+          "assertions": 1
+        },
+        {
+          "item": "later corporate-action revision",
+          "guard": "AsKnownReplayBoundaryTest::test_a_corporate_action_recorded_after_the_cutoff_is_invisible",
+          "status": "PASSED",
+          "assertions": 6
+        },
+        {
+          "item": "later factor",
+          "guard": "B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot",
+          "status": "PASSED",
+          "assertions": 20
+        },
+        {
+          "item": "current config",
+          "guard": "AsKnownReplayBoundaryTest::test_a_configuration_recorded_after_the_cutoff_is_invisible_and_none_is_created",
+          "status": "PASSED",
+          "assertions": 3
+        },
+        {
+          "item": "latest provider mapping",
+          "guard": "B18AntiFutureResolutionTest::test_a_provider_remapping_recorded_later_is_invisible_at_the_earlier_cutoff",
+          "status": "PASSED",
+          "assertions": 4
+        }
+      ],
+      "authority_binding_guards": [
+        "B18ReleaseCandidateCriteriaTest::test_the_criteria_map_names_exactly_what_the_contract_names",
+        "B18AntiSurvivorshipFixtureCorpusTest::test_the_contract_list_and_the_reviewed_fixture_map_cover_exactly_the_same_cases",
+        "B18AntiSurvivorshipFixtureCorpusTest::test_every_required_fixture_is_also_an_as_known_fixture",
+        "B18AsKnownSnapshotIsolationTest::test_every_later_revision_kind_is_bound_to_an_executing_guard",
+        "B18AntiFutureResolutionTest::test_the_anti_future_map_names_exactly_what_the_contract_names"
+      ]
+    },
+    "MD-S002-R0006": {
+      "aggregate_verdict": "GREEN",
+      "member_items": 12,
+      "distinct_member_guards": 12,
+      "authority_bindings": 2,
+      "production_mutations_that_turned_a_guard_of_this_predicate_red": 10,
+      "map_or_fixture_perturbations_that_did": 4,
+      "production_mutation_ids": [
+        "FD2b_fallback_effective_date_dropped",
+        "FD1b_no_fallback_held_in_empty_dataset_branch",
+        "OUT1_outage_dropped_from_manifest",
+        "COV1_outage_shrinks_denominator",
+        "UN1_absent_status_becomes_normal",
+        "DM1_long_suspension_becomes_dormant",
+        "IN1_stale_prior_date_rows_accepted",
+        "AD1_invalid_row_evidence_not_persisted",
+        "IN2_wrong_date_later_rows_accepted",
+        "IN3_zero_price_canonical"
+      ],
+      "map_or_fixture_perturbation_ids": [
+        "MP14_defect_guard_missing",
+        "MP13_defect_bound_to_a_forbidden_outcome",
+        "MP6_criteria_bullet_wording_drift",
+        "MP5_defect_map_token_drift"
+      ],
+      "member_guards_never_turned_red": [],
+      "binding_guards_never_turned_red": [],
+      "members": [
+        {
+          "item": "B18DegradedObservationDefectCorpusTest::test_every_named_defect_guard_exists_and_is_executable",
+          "guard": "B18DegradedObservationDefectCorpusTest::test_every_named_defect_guard_exists_and_is_executable",
+          "status": "PASSED",
+          "assertions": 1
+        },
+        {
+          "item": "B18DegradedObservationDefectCorpusTest::test_every_defect_is_bound_to_one_of_the_two_permitted_outcomes",
+          "guard": "B18DegradedObservationDefectCorpusTest::test_every_defect_is_bound_to_one_of_the_two_permitted_outcomes",
+          "status": "PASSED",
+          "assertions": 6
+        },
+        {
+          "item": "EmptyDatasetFailSafeTest::test_an_available_fallback_holds_the_run_rather_than_failing_it",
+          "guard": "EmptyDatasetFailSafeTest::test_an_available_fallback_holds_the_run_rather_than_failing_it",
+          "status": "PASSED",
+          "assertions": 3
+        },
+        {
+          "item": "EmptyDatasetFailSafeTest::test_no_fallback_fails_the_run_outright",
+          "guard": "EmptyDatasetFailSafeTest::test_no_fallback_fails_the_run_outright",
+          "status": "PASSED",
+          "assertions": 3
+        },
+        {
+          "item": "SourceObservationAsKnownBoundaryTest::test_zero_row_provider_outage_remains_in_as_known_observation_manifest",
+          "guard": "SourceObservationAsKnownBoundaryTest::test_zero_row_provider_outage_remains_in_as_known_observation_manifest",
+          "status": "PASSED",
+          "assertions": 3
+        },
+        {
+          "item": "CoverageGateEvaluatorTest::test_evaluator_keeps_the_full_universe_as_the_denominator_when_the_provider_delivers_nothing",
+          "guard": "CoverageGateEvaluatorTest::test_evaluator_keeps_the_full_universe_as_the_denominator_when_the_provider_delivers_nothing",
+          "status": "PASSED",
+          "assertions": 7
+        },
+        {
+          "item": "CalendarProvenanceAndStatusTest::test_absent_status_evidence_resolves_to_unknown_not_normal",
+          "guard": "CalendarProvenanceAndStatusTest::test_absent_status_evidence_resolves_to_unknown_not_normal",
+          "status": "PASSED",
+          "assertions": 3
+        },
+        {
+          "item": "CalendarProvenanceAndStatusTest::test_a_long_suspension_is_not_reclassified_as_dormancy",
+          "guard": "CalendarProvenanceAndStatusTest::test_a_long_suspension_is_not_reclassified_as_dormancy",
+          "status": "PASSED",
+          "assertions": 3
+        },
+        {
+          "item": "stale",
+          "guard": "B18DegradedObservationDefectCorpusTest::test_a_prior_date_row_holds_the_run_under_its_own_stale_reason",
+          "status": "PASSED",
+          "assertions": 4
+        },
+        {
+          "item": "schema-invalid",
+          "guard": "PublicApiEodBarsAdapterTest::test_range_response_persists_partial_invalid_row_evidence_instead_of_silently_skipping_it",
+          "status": "PASSED",
+          "assertions": 4
+        },
+        {
+          "item": "wrong-date",
+          "guard": "B18DegradedObservationDefectCorpusTest::test_a_row_dated_after_the_requested_date_holds_the_run_rather_than_being_relabelled",
+          "status": "PASSED",
+          "assertions": 3
+        },
+        {
+          "item": "zero-price",
+          "guard": "CanonicalRawImportBoundaryTest::test_a_zero_price_placeholder_cannot_become_canonical",
+          "status": "PASSED",
+          "assertions": 2
+        }
+      ],
+      "authority_binding_guards": [
+        "B18ReleaseCandidateCriteriaTest::test_the_criteria_map_names_exactly_what_the_contract_names",
+        "B18DegradedObservationDefectCorpusTest::test_the_contract_line_and_the_reviewed_defect_map_name_exactly_the_same_defects"
+      ]
+    },
+    "MD-S002-R0007": {
+      "aggregate_verdict": "GREEN",
+      "member_items": 5,
+      "distinct_member_guards": 5,
+      "authority_bindings": 1,
+      "production_mutations_that_turned_a_guard_of_this_predicate_red": 5,
+      "map_or_fixture_perturbations_that_did": 1,
+      "production_mutation_ids": [
+        "ATR1_wilder_recursion_coefficient",
+        "ATR2_wilder_seed",
+        "MA1_moving_average_divisor",
+        "AFS1_unverified_revisions_active",
+        "PP1_high_not_scaled"
+      ],
+      "map_or_fixture_perturbation_ids": [
+        "MP6_criteria_bullet_wording_drift"
+      ],
+      "member_guards_never_turned_red": [],
+      "binding_guards_never_turned_red": [],
+      "members": [
+        {
+          "item": "B18LongChainWilderAtrOracleTest::test_a_two_hundred_session_chain_matches_the_independently_computed_wilder_atr",
+          "guard": "B18LongChainWilderAtrOracleTest::test_a_two_hundred_session_chain_matches_the_independently_computed_wilder_atr",
+          "status": "PASSED",
+          "assertions": 4
+        },
+        {
+          "item": "B18LongChainWilderAtrOracleTest::test_a_correction_thirty_sessions_back_still_moves_the_atr_by_its_decayed_amount",
+          "guard": "B18LongChainWilderAtrOracleTest::test_a_correction_thirty_sessions_back_still_moves_the_atr_by_its_decayed_amount",
+          "status": "PASSED",
+          "assertions": 7
+        },
+        {
+          "item": "IndicatorIndependentOracleTest::test_correction_oracle_propagates_by_exactly_the_expected_amount",
+          "guard": "IndicatorIndependentOracleTest::test_correction_oracle_propagates_by_exactly_the_expected_amount",
+          "status": "PASSED",
+          "assertions": 1
+        },
+        {
+          "item": "AdjustmentFactorSetB11Test::test_only_authoritative_or_manual_verified_revisions_are_adjustment_active",
+          "guard": "AdjustmentFactorSetB11Test::test_only_authoritative_or_manual_verified_revisions_are_adjustment_active",
+          "status": "PASSED",
+          "assertions": 2
+        },
+        {
+          "item": "CoherentPriceProductBoundaryTest::test_every_ohlc_field_moves_on_the_same_scale",
+          "guard": "CoherentPriceProductBoundaryTest::test_every_ohlc_field_moves_on_the_same_scale",
+          "status": "PASSED",
+          "assertions": 5
+        }
+      ],
+      "authority_binding_guards": [
+        "B18ReleaseCandidateCriteriaTest::test_the_criteria_map_names_exactly_what_the_contract_names"
+      ]
+    },
+    "MD-S002-R0008": {
+      "aggregate_verdict": "GREEN",
+      "member_items": 5,
+      "distinct_member_guards": 5,
+      "authority_bindings": 1,
+      "production_mutations_that_turned_a_guard_of_this_predicate_red": 6,
+      "map_or_fixture_perturbations_that_did": 2,
+      "production_mutation_ids": [
+        "SEAL1_sealed_publication_mutable",
+        "READ1_pointer_projection_coherence_removed",
+        "READ2_consumer_reads_the_non_pointer_publication",
+        "PK1_mirror_pointer_pk_removed",
+        "PSF1_seal_failure_swallowed",
+        "PUB1_promote_keeps_prior_current"
+      ],
+      "map_or_fixture_perturbation_ids": [
+        "MP12_member_guard_neutralised",
+        "MP6_criteria_bullet_wording_drift"
+      ],
+      "member_guards_never_turned_red": [],
+      "binding_guards_never_turned_red": [],
+      "members": [
+        {
+          "item": "B18CorrectionReadPathScenarioTest::test_the_superseded_publication_keeps_its_rows_and_cannot_be_discarded",
+          "guard": "B18CorrectionReadPathScenarioTest::test_the_superseded_publication_keeps_its_rows_and_cannot_be_discarded",
+          "status": "PASSED",
+          "assertions": 4
+        },
+        {
+          "item": "B18CorrectionReadPathScenarioTest::test_a_projection_disagreeing_with_the_pointer_yields_nothing_rather_than_stale_rows",
+          "guard": "B18CorrectionReadPathScenarioTest::test_a_projection_disagreeing_with_the_pointer_yields_nothing_rather_than_stale_rows",
+          "status": "PASSED",
+          "assertions": 2
+        },
+        {
+          "item": "PublicationSealPointerLifecycleTest::test_the_pointer_table_structurally_refuses_a_second_current_row",
+          "guard": "PublicationSealPointerLifecycleTest::test_the_pointer_table_structurally_refuses_a_second_current_row",
+          "status": "PASSED",
+          "assertions": 1
+        },
+        {
+          "item": "MarketDataPipelineIntegrationTest::test_run_daily_correction_with_reseal_failure_keeps_prior_current_and_leaves_candidate_non_current",
+          "guard": "MarketDataPipelineIntegrationTest::test_run_daily_correction_with_reseal_failure_keeps_prior_current_and_leaves_candidate_non_current",
+          "status": "PASSED",
+          "assertions": 30
+        },
+        {
+          "item": "PublicationRepositoryIntegrationTest::test_candidate_seal_and_promote_updates_current_pointer_and_prior_publication",
+          "guard": "PublicationRepositoryIntegrationTest::test_candidate_seal_and_promote_updates_current_pointer_and_prior_publication",
+          "status": "PASSED",
+          "assertions": 17
+        }
+      ],
+      "authority_binding_guards": [
+        "B18ReleaseCandidateCriteriaTest::test_the_criteria_map_names_exactly_what_the_contract_names"
+      ]
+    },
+    "MD-S003-R0025": {
+      "aggregate_verdict": "RED",
+      "member_items": 6,
+      "distinct_member_guards": 6,
+      "authority_bindings": 2,
+      "production_mutations_that_turned_a_guard_of_this_predicate_red": 0,
+      "map_or_fixture_perturbations_that_did": 0,
+      "production_mutation_ids": [],
+      "map_or_fixture_perturbation_ids": [],
+      "member_guards_never_turned_red": [
+        "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+        "B18ScenarioFamiliesOnMariaDbTest::test_degraded_acquisition_family_on_mariadb",
+        "B18ScenarioFamiliesOnMariaDbTest::test_temporal_identity_and_status_family_on_mariadb",
+        "B18ScenarioFamiliesOnMariaDbTest::test_corporate_actions_and_indicators_family_on_mariadb",
+        "B18ScenarioFamiliesOnMariaDbTest::test_correction_and_read_path_family_on_mariadb",
+        "B18ScenarioFamiliesOnMariaDbTest::test_as_known_isolation_family_on_mariadb"
+      ],
+      "binding_guards_never_turned_red": [
+        "B18ScenarioFamiliesOnMariaDbTest::test_the_family_map_names_exactly_the_families_the_contract_requires",
+        "B18ScenarioFamiliesOnMariaDbTest::test_these_scenarios_really_run_on_mariadb"
+      ],
+      "members": [
+        {
+          "item": "Exact publication verification",
+          "guard": "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+          "status": "SKIPPED",
+          "assertions": 0
+        },
+        {
+          "item": "Degraded acquisition and expectation",
+          "guard": "B18ScenarioFamiliesOnMariaDbTest::test_degraded_acquisition_family_on_mariadb",
+          "status": "SKIPPED",
+          "assertions": 0
+        },
+        {
+          "item": "Temporal identity and status",
+          "guard": "B18ScenarioFamiliesOnMariaDbTest::test_temporal_identity_and_status_family_on_mariadb",
+          "status": "SKIPPED",
+          "assertions": 0
+        },
+        {
+          "item": "Corporate actions and indicators",
+          "guard": "B18ScenarioFamiliesOnMariaDbTest::test_corporate_actions_and_indicators_family_on_mariadb",
+          "status": "SKIPPED",
+          "assertions": 0
+        },
+        {
+          "item": "Correction and read path",
+          "guard": "B18ScenarioFamiliesOnMariaDbTest::test_correction_and_read_path_family_on_mariadb",
+          "status": "SKIPPED",
+          "assertions": 0
+        },
+        {
+          "item": "As-known isolation",
+          "guard": "B18ScenarioFamiliesOnMariaDbTest::test_as_known_isolation_family_on_mariadb",
+          "status": "SKIPPED",
+          "assertions": 0
+        }
+      ],
+      "authority_binding_guards": [
+        "B18ScenarioFamiliesOnMariaDbTest::test_the_family_map_names_exactly_the_families_the_contract_requires",
+        "B18ScenarioFamiliesOnMariaDbTest::test_these_scenarios_really_run_on_mariadb"
+      ]
+    },
+    "MD-S004-R0002": {
+      "aggregate_verdict": "GREEN",
+      "member_items": 8,
+      "distinct_member_guards": 7,
+      "authority_bindings": 1,
+      "production_mutations_that_turned_a_guard_of_this_predicate_red": 19,
+      "map_or_fixture_perturbations_that_did": 1,
+      "production_mutation_ids": [
+        "OB1_observation_identity_binding",
+        "OB2_observation_acquired",
+        "T4_symbol_recorded_by_cutoff",
+        "T5_listing_recorded_by_cutoff",
+        "T10_instrument_recorded_by_cutoff",
+        "T11_issuer_recorded_by_cutoff",
+        "T12_board_recorded_by_cutoff",
+        "T13_board_retraction_by_cutoff",
+        "ID_ALL_identity_recorded_wall_removed",
+        "CA1_calendar_recorded_by_cutoff",
+        "ST2_status_supersession_by_cutoff",
+        "E1_event_recorded_by_cutoff",
+        "E2_event_supersession_by_cutoff",
+        "AK1_legacy_event_cutoff_removed",
+        "CF1_config_recorded_by_cutoff",
+        "CA2_calendar_supersession_by_cutoff",
+        "SN1_factor_sets_by_cutoff",
+        "SN2_formula_from_live_config",
+        "DM1_long_suspension_becomes_dormant"
+      ],
+      "map_or_fixture_perturbation_ids": [
+        "MP7_cutoff_input_map_kind_drift"
+      ],
+      "member_guards_never_turned_red": [],
+      "binding_guards_never_turned_red": [],
+      "members": [
+        {
+          "item": "observations",
+          "guard": "SourceObservationAsKnownBoundaryTest::test_as_known_rows_require_both_observation_and_identity_binding_to_be_known_by_cutoff",
+          "status": "PASSED",
+          "assertions": 5
+        },
+        {
+          "item": "identity",
+          "guard": "AsKnownReplayBoundaryTest::test_identity_recorded_after_the_cutoff_is_invisible",
+          "status": "PASSED",
+          "assertions": 16
+        },
+        {
+          "item": "calendar",
+          "guard": "B18AsKnownTemporalSequenceTest::test_the_same_calendar_revision_recorded_after_the_cutoff_is_refused",
+          "status": "PASSED",
+          "assertions": 2
+        },
+        {
+          "item": "status",
+          "guard": "B18AsKnownTemporalSequenceTest::test_a_suspension_lifted_later_is_still_suspended_as_known_before_the_lift_was_recorded",
+          "status": "PASSED",
+          "assertions": 4
+        },
+        {
+          "item": "event",
+          "guard": "AsKnownReplayBoundaryTest::test_a_corporate_action_recorded_after_the_cutoff_is_invisible",
+          "status": "PASSED",
+          "assertions": 6
+        },
+        {
+          "item": "factor",
+          "guard": "B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot",
+          "status": "PASSED",
+          "assertions": 20
+        },
+        {
+          "item": "config",
+          "guard": "AsKnownReplayBoundaryTest::test_a_configuration_recorded_after_the_cutoff_is_invisible_and_none_is_created",
+          "status": "PASSED",
+          "assertions": 3
+        },
+        {
+          "item": "formula",
+          "guard": "B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot",
+          "status": "PASSED",
+          "assertions": 20
+        }
+      ],
+      "authority_binding_guards": [
+        "B18PointInTimeInputContractTest::test_the_cutoff_bounded_input_map_names_exactly_what_the_contract_names"
+      ]
+    },
+    "MD-S004-R0003": {
+      "aggregate_verdict": "GREEN",
+      "member_items": 5,
+      "distinct_member_guards": 5,
+      "authority_bindings": 1,
+      "production_mutations_that_turned_a_guard_of_this_predicate_red": 8,
+      "map_or_fixture_perturbations_that_did": 1,
+      "production_mutation_ids": [
+        "T2_delisted_date_after_trade_date",
+        "T3_symbol_interval_end",
+        "T9_provider_mapping_interval_end",
+        "SC1_sector_recorded_by_cutoff",
+        "E1_event_recorded_by_cutoff",
+        "E2_event_supersession_by_cutoff",
+        "AK1_legacy_event_cutoff_removed",
+        "BLK1_replay_resolves_current_pointer"
+      ],
+      "map_or_fixture_perturbation_ids": [
+        "MP8_no_backfill_map_item_drift"
+      ],
+      "member_guards_never_turned_red": [],
+      "binding_guards_never_turned_red": [],
+      "members": [
+        {
+          "item": "Today's universe",
+          "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_a_listing_active_at_T_but_delisted_today_stays_in_the_historical_universe",
+          "status": "PASSED",
+          "assertions": 4
+        },
+        {
+          "item": "symbol",
+          "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_a_symbol_change_resolves_to_the_symbol_and_mapping_effective_on_the_trade_date",
+          "status": "PASSED",
+          "assertions": 8
+        },
+        {
+          "item": "sector",
+          "guard": "B18AntiFutureResolutionTest::test_a_sector_reclassification_recorded_later_is_invisible_at_the_earlier_cutoff",
+          "status": "PASSED",
+          "assertions": 2
+        },
+        {
+          "item": "action verification",
+          "guard": "AsKnownReplayBoundaryTest::test_a_corporate_action_recorded_after_the_cutoff_is_invisible",
+          "status": "PASSED",
+          "assertions": 6
+        },
+        {
+          "item": "current publication",
+          "guard": "B18ReplayComparisonExhaustivenessTest::test_a_blocked_replay_does_not_fall_back_to_the_current_publication",
+          "status": "PASSED",
+          "assertions": 2
+        }
+      ],
+      "authority_binding_guards": [
+        "B18PointInTimeInputContractTest::test_the_no_backfill_map_names_exactly_what_the_contract_names"
+      ]
+    },
+    "MD-S004-R0005": {
+      "aggregate_verdict": "GREEN",
+      "member_items": 3,
+      "distinct_member_guards": 3,
+      "authority_bindings": 1,
+      "production_mutations_that_turned_a_guard_of_this_predicate_red": 11,
+      "map_or_fixture_perturbations_that_did": 1,
+      "production_mutation_ids": [
+        "T2_delisted_date_after_trade_date",
+        "T3_symbol_interval_end",
+        "T9_provider_mapping_interval_end",
+        "CF1_config_recorded_by_cutoff",
+        "ST2_status_supersession_by_cutoff",
+        "CA1_calendar_recorded_by_cutoff",
+        "CA2_calendar_supersession_by_cutoff",
+        "SN1_factor_sets_by_cutoff",
+        "SN2_formula_from_live_config",
+        "DM1_long_suspension_becomes_dormant",
+        "ID_ALL_identity_recorded_wall_removed"
+      ],
+      "map_or_fixture_perturbation_ids": [
+        "MP9_survivorship_map_sentence_drift"
+      ],
+      "member_guards_never_turned_red": [],
+      "binding_guards_never_turned_red": [],
+      "members": [
+        {
+          "item": "Inactive/delisted securities remain present when they were in the temporal universe.",
+          "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_a_listing_active_at_T_but_delisted_today_stays_in_the_historical_universe",
+          "status": "PASSED",
+          "assertions": 4
+        },
+        {
+          "item": "Symbol changes/reuse use listing IDs.",
+          "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_reused_symbol_text_resolves_to_the_listing_that_held_it_on_the_trade_date",
+          "status": "PASSED",
+          "assertions": 9
+        },
+        {
+          "item": "Late corrections/actions produce a distinct later-known dataset and do not rewrite the earlier-known dataset.",
+          "guard": "B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot",
+          "status": "PASSED",
+          "assertions": 20
+        }
+      ],
+      "authority_binding_guards": [
+        "B18PointInTimeInputContractTest::test_the_survivorship_map_names_exactly_what_the_contract_names"
+      ]
+    },
+    "MD-S004-R0008": {
+      "aggregate_verdict": "GREEN",
+      "member_items": 7,
+      "distinct_member_guards": 7,
+      "authority_bindings": 1,
+      "production_mutations_that_turned_a_guard_of_this_predicate_red": 10,
+      "map_or_fixture_perturbations_that_did": 1,
+      "production_mutation_ids": [
+        "T2_delisted_date_after_trade_date",
+        "T3_symbol_interval_end",
+        "T9_provider_mapping_interval_end",
+        "E1_event_recorded_by_cutoff",
+        "E2_event_supersession_by_cutoff",
+        "AK1_legacy_event_cutoff_removed",
+        "ST2_status_supersession_by_cutoff",
+        "FD1b_no_fallback_held_in_empty_dataset_branch",
+        "FD2b_fallback_effective_date_dropped",
+        "READ2_consumer_reads_the_non_pointer_publication"
+      ],
+      "map_or_fixture_perturbation_ids": [
+        "MP10_acceptance_fixture_map_drift"
+      ],
+      "member_guards_never_turned_red": [],
+      "binding_guards_never_turned_red": [],
+      "members": [
+        {
+          "item": "inactive-now/active-then membership",
+          "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_a_listing_active_at_T_but_delisted_today_stays_in_the_historical_universe",
+          "status": "PASSED",
+          "assertions": 4
+        },
+        {
+          "item": "symbol transition/reuse",
+          "guard": "B18AntiSurvivorshipFixtureCorpusTest::test_reused_symbol_text_resolves_to_the_listing_that_held_it_on_the_trade_date",
+          "status": "PASSED",
+          "assertions": 9
+        },
+        {
+          "item": "late action verification",
+          "guard": "AsKnownReplayBoundaryTest::test_a_corporate_action_recorded_after_the_cutoff_is_invisible",
+          "status": "PASSED",
+          "assertions": 6
+        },
+        {
+          "item": "late config/calendar/status correction",
+          "guard": "B18AsKnownTemporalSequenceTest::test_a_suspension_lifted_later_is_still_suspended_as_known_before_the_lift_was_recorded",
+          "status": "PASSED",
+          "assertions": 4
+        },
+        {
+          "item": "unavailable same-day data",
+          "guard": "EmptyDatasetFailSafeTest::test_no_fallback_fails_the_run_outright",
+          "status": "PASSED",
+          "assertions": 3
+        },
+        {
+          "item": "explicit stale fallback",
+          "guard": "EmptyDatasetFailSafeTest::test_an_available_fallback_holds_the_run_rather_than_failing_it",
+          "status": "PASSED",
+          "assertions": 3
+        },
+        {
+          "item": "original-versus-corrected as-known datasets",
+          "guard": "B18CorrectionReadPathScenarioTest::test_a_consumer_reads_the_publication_the_pointer_names",
+          "status": "PASSED",
+          "assertions": 1
+        }
+      ],
+      "authority_binding_guards": [
+        "B18PointInTimeInputContractTest::test_the_acceptance_fixture_map_names_exactly_what_the_contract_names"
+      ]
+    }
+  },
+  "falsifiability_counts_kept_separate": {
+    "test_cases": {
+      "aggregate_test_class": 43,
+      "of_which_fast": 33,
+      "of_which_real_execution": 10,
+      "per_predicate_positive_methods": 8,
+      "per_predicate_negative_methods": 9,
+      "assertions_added_to_existing_member_guards": "identity roots (7 listings), event revision path (2 listings), observation acquired-at, status retraction; criteria map +5 members"
+    },
+    "production_mutations": {
+      "count": 51,
+      "meaning": "one production (or mirror-schema) clause disabled per probe; the full eight-predicate aggregate is executed each time",
+      "ids": [
+        "T1_delisting_known_time",
+        "T2_delisted_date_after_trade_date",
+        "T3_symbol_interval_end",
+        "T4_symbol_recorded_by_cutoff",
+        "T5_listing_recorded_by_cutoff",
+        "T6_symbol_retraction_by_cutoff",
+        "T7_provider_mapping_recorded_by_cutoff",
+        "T8_provider_mapping_retraction",
+        "T9_provider_mapping_interval_end",
+        "E1_event_recorded_by_cutoff",
+        "CF1_config_recorded_by_cutoff",
+        "ST1_status_recorded_by_cutoff",
+        "ST2_status_supersession_by_cutoff",
+        "ST3_status_retraction_by_cutoff",
+        "CA1_calendar_recorded_by_cutoff",
+        "CA2_calendar_supersession_by_cutoff",
+        "OB1_observation_identity_binding",
+        "OB2_observation_acquired",
+        "SN1_factor_sets_by_cutoff",
+        "SN2_formula_from_live_config",
+        "SC1_sector_recorded_by_cutoff",
+        "EVD1_publication_sealed_by_cutoff",
+        "E2_event_supersession_by_cutoff",
+        "T10_instrument_recorded_by_cutoff",
+        "T11_issuer_recorded_by_cutoff",
+        "T12_board_recorded_by_cutoff",
+        "T13_board_retraction_by_cutoff",
+        "IN1_stale_prior_date_rows_accepted",
+        "IN2_wrong_date_later_rows_accepted",
+        "IN3_zero_price_canonical",
+        "OUT1_outage_dropped_from_manifest",
+        "COV1_outage_shrinks_denominator",
+        "UN1_absent_status_becomes_normal",
+        "DM1_long_suspension_becomes_dormant",
+        "ATR1_wilder_recursion_coefficient",
+        "ATR2_wilder_seed",
+        "PP1_high_not_scaled",
+        "AFS1_unverified_revisions_active",
+        "PUB1_promote_keeps_prior_current",
+        "SEAL1_sealed_publication_mutable",
+        "READ1_pointer_projection_coherence_removed",
+        "BLK1_replay_resolves_current_pointer",
+        "AK1_legacy_event_cutoff_removed",
+        "ID_ALL_identity_recorded_wall_removed",
+        "FD1b_no_fallback_held_in_empty_dataset_branch",
+        "FD2b_fallback_effective_date_dropped",
+        "AD1_invalid_row_evidence_not_persisted",
+        "READ2_consumer_reads_the_non_pointer_publication",
+        "PSF1_seal_failure_swallowed",
+        "PK1_mirror_pointer_pk_removed",
+        "MA1_moving_average_divisor"
+      ]
+    },
+    "map_and_fixture_perturbations": {
+      "count": 15,
+      "meaning": "a reviewed map or member guard is drifted, renamed away, forbidden-outcome-bound, or emptied in the test source",
+      "ids": [
+        "MP1_exact_fixture_map_wording_drift",
+        "MP2_as_known_fixture_map_wording_drift",
+        "MP3_later_revision_map_kind_drift",
+        "MP4_anti_future_map_item_drift",
+        "MP5_defect_map_token_drift",
+        "MP6_criteria_bullet_wording_drift",
+        "MP7_cutoff_input_map_kind_drift",
+        "MP8_no_backfill_map_item_drift",
+        "MP9_survivorship_map_sentence_drift",
+        "MP10_acceptance_fixture_map_drift",
+        "MP11_member_guard_renamed_away",
+        "MP12_member_guard_neutralised",
+        "MP13_defect_bound_to_a_forbidden_outcome",
+        "MP14_defect_guard_missing",
+        "MP15_fixture_map_guard_missing"
+      ]
+    },
+    "aggregate_verdict_mutations": {
+      "count": 19,
+      "meaning": "the aggregate runner's own verdict/executor/authority-tie logic is mutated; the runner's own 33 fast tests must turn red",
+      "all_caught": true
+    },
+    "fixture_perturbations_inside_the_runner_tests": {
+      "executor_fixture_members": 10,
+      "matrix_row_perturbations": 4,
+      "map_item_shapes": 4,
+      "meaning": "real tiny PHPUnit files (pass, sibling pass, fail, error, skip, incomplete, no assertion, data set with one failing set, missing method, missing class); the matrix row with primary stage, applicability, active or rule text changed; a map item naming one, one nested, two, or no guard"
+    },
+    "total_probes_run_and_restored": 85,
+    "restoration_verified_byte_identical": true,
+    "control_stable_across_the_final_production_probe_run": true
+  },
+  "production_mutation_table": {
+    "T1_delisting_known_time": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "what": "delisting only removes a listing once known",
+      "red_predicates": [
+        "MD-S002-R0005"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18AntiSurvivorshipFixtureCorpusTest::test_a_delisting_recorded_later_is_invisible_to_an_earlier_cutoff"
+      ]
+    },
+    "T2_delisted_date_after_trade_date": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "what": "a listing delisted after the trade date stays in the universe",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0003",
+        "MD-S004-R0005",
+        "MD-S004-R0008"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18AntiSurvivorshipFixtureCorpusTest::test_a_listing_active_at_T_but_delisted_today_stays_in_the_historical_universe"
+      ]
+    },
+    "T3_symbol_interval_end": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "what": "listing symbol effective_to bound",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0003",
+        "MD-S004-R0005",
+        "MD-S004-R0008"
+      ],
+      "red_guard_count": 2,
+      "red_guards": [
+        "B18AntiSurvivorshipFixtureCorpusTest::test_a_symbol_change_resolves_to_the_symbol_and_mapping_effective_on_the_trade_date",
+        "B18AntiSurvivorshipFixtureCorpusTest::test_reused_symbol_text_resolves_to_the_listing_that_held_it_on_the_trade_date"
+      ]
+    },
+    "T4_symbol_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "what": "listing symbol recorded_at <= cutoff",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0002"
+      ],
+      "red_guard_count": 2,
+      "red_guards": [
+        "AsKnownReplayBoundaryTest::test_identity_recorded_after_the_cutoff_is_invisible",
+        "B18AntiSurvivorshipFixtureCorpusTest::test_a_symbol_change_recorded_after_the_cutoff_is_not_yet_visible_to_it"
+      ]
+    },
+    "T5_listing_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "what": "listing recorded_at <= cutoff",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0002"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "AsKnownReplayBoundaryTest::test_identity_recorded_after_the_cutoff_is_invisible"
+      ]
+    },
+    "T6_symbol_retraction_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "what": "listing symbol retraction visible only once known",
+      "red_predicates": [
+        "MD-S002-R0005"
+      ],
+      "red_guard_count": 2,
+      "red_guards": [
+        "B18AntiSurvivorshipFixtureCorpusTest::test_a_symbol_change_recorded_after_the_cutoff_is_not_yet_visible_to_it",
+        "B18AntiSurvivorshipFixtureCorpusTest::test_reused_symbol_text_resolves_to_the_holder_known_at_the_cutoff"
+      ]
+    },
+    "T7_provider_mapping_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "what": "provider mapping recorded_at <= cutoff",
+      "red_predicates": [
+        "MD-S002-R0005"
+      ],
+      "red_guard_count": 2,
+      "red_guards": [
+        "B18AntiFutureResolutionTest::test_a_provider_remapping_recorded_later_is_invisible_at_the_earlier_cutoff",
+        "B18AntiSurvivorshipFixtureCorpusTest::test_a_symbol_change_recorded_after_the_cutoff_is_not_yet_visible_to_it"
+      ]
+    },
+    "T8_provider_mapping_retraction": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "what": "provider mapping retraction visible only once known",
+      "red_predicates": [
+        "MD-S002-R0005"
+      ],
+      "red_guard_count": 3,
+      "red_guards": [
+        "B18AntiFutureResolutionTest::test_a_provider_remapping_recorded_later_is_invisible_at_the_earlier_cutoff",
+        "B18AntiSurvivorshipFixtureCorpusTest::test_a_symbol_change_recorded_after_the_cutoff_is_not_yet_visible_to_it",
+        "B18AntiSurvivorshipFixtureCorpusTest::test_reused_symbol_text_resolves_to_the_holder_known_at_the_cutoff"
+      ]
+    },
+    "T9_provider_mapping_interval_end": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "what": "provider mapping effective_to bound",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0003",
+        "MD-S004-R0005",
+        "MD-S004-R0008"
+      ],
+      "red_guard_count": 2,
+      "red_guards": [
+        "B18AntiSurvivorshipFixtureCorpusTest::test_a_symbol_change_resolves_to_the_symbol_and_mapping_effective_on_the_trade_date",
+        "B18AntiSurvivorshipFixtureCorpusTest::test_reused_symbol_text_resolves_to_the_listing_that_held_it_on_the_trade_date"
+      ]
+    },
+    "E1_event_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php",
+      "what": "corporate action revision recorded_at <= cutoff",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0002",
+        "MD-S004-R0003",
+        "MD-S004-R0008"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "AsKnownReplayBoundaryTest::test_a_corporate_action_recorded_after_the_cutoff_is_invisible"
+      ]
+    },
+    "CF1_config_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php",
+      "what": "config snapshot recorded_at <= cutoff",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0002",
+        "MD-S004-R0005"
+      ],
+      "red_guard_count": 2,
+      "red_guards": [
+        "AsKnownReplayBoundaryTest::test_a_configuration_recorded_after_the_cutoff_is_invisible_and_none_is_created",
+        "B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot"
+      ]
+    },
+    "ST1_status_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php",
+      "what": "status revision recorded_at <= cutoff",
+      "red_predicates": [
+        "MD-S002-R0005"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "AsKnownReplayBoundaryTest::test_a_status_revision_recorded_after_the_cutoff_is_invisible"
+      ]
+    },
+    "ST2_status_supersession_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php",
+      "what": "a later status revision supersedes only once recorded",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0002",
+        "MD-S004-R0005",
+        "MD-S004-R0008"
+      ],
+      "red_guard_count": 2,
+      "red_guards": [
+        "B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot",
+        "B18AsKnownTemporalSequenceTest::test_a_suspension_lifted_later_is_still_suspended_as_known_before_the_lift_was_recorded"
+      ]
+    },
+    "ST3_status_retraction_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php",
+      "what": "status retraction visible only once known",
+      "red_predicates": [
+        "MD-S002-R0005"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "AsKnownReplayBoundaryTest::test_a_status_revision_recorded_after_the_cutoff_is_invisible"
+      ]
+    },
+    "CA1_calendar_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+      "what": "calendar revision recorded_at <= cutoff (terminal date read)",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0002",
+        "MD-S004-R0005"
+      ],
+      "red_guard_count": 3,
+      "red_guards": [
+        "AsKnownReplayBoundaryTest::test_a_calendar_revision_recorded_after_the_cutoff_is_invisible",
+        "B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot",
+        "B18AsKnownTemporalSequenceTest::test_the_same_calendar_revision_recorded_after_the_cutoff_is_refused"
+      ]
+    },
+    "CA2_calendar_supersession_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+      "what": "a later calendar revision supersedes only once recorded",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0002",
+        "MD-S004-R0005"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot"
+      ]
+    },
+    "OB1_observation_identity_binding": {
+      "file": "app/Infrastructure/Persistence/MarketData/SourceObservationRepository.php",
+      "what": "observation identity binding recorded_at <= cutoff",
+      "red_predicates": [
+        "MD-S004-R0002"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "SourceObservationAsKnownBoundaryTest::test_as_known_rows_require_both_observation_and_identity_binding_to_be_known_by_cutoff"
+      ]
+    },
+    "OB2_observation_acquired": {
+      "file": "app/Infrastructure/Persistence/MarketData/SourceObservationRepository.php",
+      "what": "observation acquired_at <= cutoff (normalized rows)",
+      "red_predicates": [
+        "MD-S004-R0002"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "SourceObservationAsKnownBoundaryTest::test_as_known_rows_require_both_observation_and_identity_binding_to_be_known_by_cutoff"
+      ]
+    },
+    "SN1_factor_sets_by_cutoff": {
+      "file": "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+      "what": "factor sets recorded_at <= cutoff",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0002",
+        "MD-S004-R0005"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot"
+      ]
+    },
+    "SN2_formula_from_live_config": {
+      "file": "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+      "what": "formula identity read from live config instead of the snapshot the cutoff selects",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0002",
+        "MD-S004-R0005"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot"
+      ]
+    },
+    "SC1_sector_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/SectorClassificationRepository.php",
+      "what": "sector membership recorded_at <= cutoff",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0003"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18AntiFutureResolutionTest::test_a_sector_reclassification_recorded_later_is_invisible_at_the_earlier_cutoff"
+      ]
+    },
+    "EVD1_publication_sealed_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php",
+      "what": "as-known publication sealed_at <= cutoff",
+      "red_predicates": [
+        "MD-S002-R0005"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18CorrectionReadPathScenarioTest::test_a_correction_sealed_later_is_invisible_to_an_earlier_cutoff"
+      ]
+    },
+    "E2_event_supersession_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php",
+      "what": "a later corporate action revision supersedes only once recorded",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0002",
+        "MD-S004-R0003",
+        "MD-S004-R0008"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "AsKnownReplayBoundaryTest::test_a_corporate_action_recorded_after_the_cutoff_is_invisible"
+      ]
+    },
+    "T10_instrument_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "what": "instrument recorded_at <= cutoff",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0002"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "AsKnownReplayBoundaryTest::test_identity_recorded_after_the_cutoff_is_invisible"
+      ]
+    },
+    "T11_issuer_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "what": "issuer recorded_at <= cutoff",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0002"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "AsKnownReplayBoundaryTest::test_identity_recorded_after_the_cutoff_is_invisible"
+      ]
+    },
+    "T12_board_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "what": "listing board recorded_at <= cutoff",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0002"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "AsKnownReplayBoundaryTest::test_identity_recorded_after_the_cutoff_is_invisible"
+      ]
+    },
+    "T13_board_retraction_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "what": "listing board retraction visible only once known",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0002"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "AsKnownReplayBoundaryTest::test_identity_recorded_after_the_cutoff_is_invisible"
+      ]
+    },
+    "IN1_stale_prior_date_rows_accepted": {
+      "file": "app/Application/MarketData/Services/EodBarsIngestService.php",
+      "what": "rows dated before the requested date are accepted",
+      "red_predicates": [
+        "MD-S002-R0006"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18DegradedObservationDefectCorpusTest::test_a_prior_date_row_holds_the_run_under_its_own_stale_reason"
+      ]
+    },
+    "IN2_wrong_date_later_rows_accepted": {
+      "file": "app/Application/MarketData/Services/EodBarsIngestService.php",
+      "what": "rows dated after the requested date are accepted",
+      "red_predicates": [
+        "MD-S002-R0006"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18DegradedObservationDefectCorpusTest::test_a_row_dated_after_the_requested_date_holds_the_run_rather_than_being_relabelled"
+      ]
+    },
+    "IN3_zero_price_canonical": {
+      "file": "app/Application/MarketData/Services/EodBarsIngestService.php",
+      "what": "a zero price becomes a canonical bar",
+      "red_predicates": [
+        "MD-S002-R0006"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "CanonicalRawImportBoundaryTest::test_a_zero_price_placeholder_cannot_become_canonical"
+      ]
+    },
+    "OUT1_outage_dropped_from_manifest": {
+      "file": "app/Infrastructure/Persistence/MarketData/SourceObservationRepository.php",
+      "what": "a failed (zero-row) observation vanishes from the as-known manifest",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S002-R0006"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "SourceObservationAsKnownBoundaryTest::test_zero_row_provider_outage_remains_in_as_known_observation_manifest"
+      ]
+    },
+    "COV1_outage_shrinks_denominator": {
+      "file": "app/Application/MarketData/Services/CoverageGateEvaluator.php",
+      "what": "expected universe count follows delivered tickers",
+      "red_predicates": [
+        "MD-S002-R0006"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "CoverageGateEvaluatorTest::test_evaluator_keeps_the_full_universe_as_the_denominator_when_the_provider_delivers_nothing"
+      ]
+    },
+    "UN1_absent_status_becomes_normal": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php",
+      "what": "absent status evidence resolves to NORMAL instead of UNKNOWN",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S002-R0006"
+      ],
+      "red_guard_count": 2,
+      "red_guards": [
+        "AsKnownReplayBoundaryTest::test_a_status_revision_recorded_after_the_cutoff_is_invisible",
+        "CalendarProvenanceAndStatusTest::test_absent_status_evidence_resolves_to_unknown_not_normal"
+      ]
+    },
+    "DM1_long_suspension_becomes_dormant": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php",
+      "what": "a long suspension is reclassified DORMANT",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S002-R0006",
+        "MD-S004-R0002",
+        "MD-S004-R0005"
+      ],
+      "red_guard_count": 2,
+      "red_guards": [
+        "B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot",
+        "CalendarProvenanceAndStatusTest::test_a_long_suspension_is_not_reclassified_as_dormancy"
+      ]
+    },
+    "ATR1_wilder_recursion_coefficient": {
+      "file": "app/Application/MarketData/Services/IndicatorVectorService.php",
+      "what": "Wilder smoothing coefficient perturbed",
+      "red_predicates": [
+        "MD-S002-R0007"
+      ],
+      "red_guard_count": 2,
+      "red_guards": [
+        "B18LongChainWilderAtrOracleTest::test_a_correction_thirty_sessions_back_still_moves_the_atr_by_its_decayed_amount",
+        "B18LongChainWilderAtrOracleTest::test_a_two_hundred_session_chain_matches_the_independently_computed_wilder_atr"
+      ]
+    },
+    "ATR2_wilder_seed": {
+      "file": "app/Application/MarketData/Services/IndicatorVectorService.php",
+      "what": "Wilder seed uses the wrong divisor",
+      "red_predicates": [
+        "MD-S002-R0007"
+      ],
+      "red_guard_count": 2,
+      "red_guards": [
+        "B18LongChainWilderAtrOracleTest::test_a_correction_thirty_sessions_back_still_moves_the_atr_by_its_decayed_amount",
+        "B18LongChainWilderAtrOracleTest::test_a_two_hundred_session_chain_matches_the_independently_computed_wilder_atr"
+      ]
+    },
+    "PP1_high_not_scaled": {
+      "file": "app/Application/MarketData/Services/AnalyticalPriceProductService.php",
+      "what": "high is left on the pre-action scale",
+      "red_predicates": [
+        "MD-S002-R0007"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "CoherentPriceProductBoundaryTest::test_every_ohlc_field_moves_on_the_same_scale"
+      ]
+    },
+    "AFS1_unverified_revisions_active": {
+      "file": "app/Application/MarketData/Services/AdjustmentFactorSetService.php",
+      "what": "provider-reported and synthetic revisions become adjustment-active",
+      "red_predicates": [
+        "MD-S002-R0007"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "AdjustmentFactorSetB11Test::test_only_authoritative_or_manual_verified_revisions_are_adjustment_active"
+      ]
+    },
+    "PUB1_promote_keeps_prior_current": {
+      "file": "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php",
+      "what": "promotion no longer clears the prior current mirrors",
+      "red_predicates": [
+        "MD-S002-R0008"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "PublicationRepositoryIntegrationTest::test_candidate_seal_and_promote_updates_current_pointer_and_prior_publication"
+      ]
+    },
+    "SEAL1_sealed_publication_mutable": {
+      "file": "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php",
+      "what": "a sealed publication is treated as mutable",
+      "red_predicates": [
+        "MD-S002-R0008"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18CorrectionReadPathScenarioTest::test_the_superseded_publication_keeps_its_rows_and_cannot_be_discarded"
+      ]
+    },
+    "READ1_pointer_projection_coherence_removed": {
+      "file": "app/Infrastructure/Persistence/MarketData/EligibilitySnapshotScopeRepository.php",
+      "what": "consumer read no longer requires the projection to agree with the pointer",
+      "red_predicates": [
+        "MD-S002-R0008"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18CorrectionReadPathScenarioTest::test_a_projection_disagreeing_with_the_pointer_yields_nothing_rather_than_stale_rows"
+      ]
+    },
+    "BLK1_replay_resolves_current_pointer": {
+      "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+      "what": "explicit-publication replay selector becomes a current-pointer selector",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0003"
+      ],
+      "red_guard_count": 2,
+      "red_guards": [
+        "B18ReplayComparisonExhaustivenessTest::test_a_blocked_replay_does_not_fall_back_to_the_current_publication",
+        "ReplayVerificationServiceTest::test_verify_replay_resolves_historical_publication_without_current_pointer_fallback"
+      ]
+    },
+    "AK1_legacy_event_cutoff_removed": {
+      "file": "app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php",
+      "what": "knowledge cutoff no longer applied to the legacy corporate-action read",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0002",
+        "MD-S004-R0003",
+        "MD-S004-R0008"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "AsKnownReplayBoundaryTest::test_a_corporate_action_recorded_after_the_cutoff_is_invisible"
+      ]
+    },
+    "ID_ALL_identity_recorded_wall_removed": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "what": "every identity root recorded_at <= cutoff clause removed",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S004-R0002",
+        "MD-S004-R0005"
+      ],
+      "red_guard_count": 3,
+      "red_guards": [
+        "AsKnownReplayBoundaryTest::test_identity_recorded_after_the_cutoff_is_invisible",
+        "B18AntiSurvivorshipFixtureCorpusTest::test_a_symbol_change_recorded_after_the_cutoff_is_not_yet_visible_to_it",
+        "B18AsKnownSnapshotIsolationTest::test_a_later_cutoff_exposes_later_revisions_without_rewriting_the_earlier_snapshot"
+      ]
+    },
+    "FD1b_no_fallback_held_in_empty_dataset_branch": {
+      "file": "app/Application/MarketData/Services/FinalizeDecisionService.php",
+      "what": "empty dataset with no fallback is HELD instead of FAILED",
+      "red_predicates": [
+        "MD-S002-R0006",
+        "MD-S004-R0008"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "EmptyDatasetFailSafeTest::test_no_fallback_fails_the_run_outright"
+      ]
+    },
+    "FD2b_fallback_effective_date_dropped": {
+      "file": "app/Application/MarketData/Services/FinalizeDecisionService.php",
+      "what": "a fallback hold in the empty dataset branch loses the prior effective date",
+      "red_predicates": [
+        "MD-S002-R0006",
+        "MD-S004-R0008"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "EmptyDatasetFailSafeTest::test_an_available_fallback_holds_the_run_rather_than_failing_it"
+      ]
+    },
+    "AD1_invalid_row_evidence_not_persisted": {
+      "file": "app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php",
+      "what": "rejected (schema-invalid) rows are not persisted with the accepted ones",
+      "red_predicates": [
+        "MD-S002-R0006"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "PublicApiEodBarsAdapterTest::test_range_response_persists_partial_invalid_row_evidence_instead_of_silently_skipping_it"
+      ]
+    },
+    "READ2_consumer_reads_the_non_pointer_publication": {
+      "file": "app/Infrastructure/Persistence/MarketData/EligibilitySnapshotScopeRepository.php",
+      "what": "consumer read returns the publication the pointer does not name",
+      "red_predicates": [
+        "MD-S002-R0008",
+        "MD-S004-R0008"
+      ],
+      "red_guard_count": 2,
+      "red_guards": [
+        "B18CorrectionReadPathScenarioTest::test_a_consumer_reads_the_publication_the_pointer_names",
+        "B18CorrectionReadPathScenarioTest::test_a_projection_disagreeing_with_the_pointer_yields_nothing_rather_than_stale_rows"
+      ]
+    },
+    "PSF1_seal_failure_swallowed": {
+      "file": "app/Application/MarketData/Services/MarketDataPipelineService.php",
+      "what": "a seal failure during a correction is swallowed instead of aborting the pipeline",
+      "red_predicates": [
+        "MD-S002-R0008"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "MarketDataPipelineIntegrationTest::test_run_daily_correction_with_reseal_failure_keeps_prior_current_and_leaves_candidate_non_current"
+      ]
+    },
+    "PK1_mirror_pointer_pk_removed": {
+      "file": "tests/Support/UsesMarketDataSqlite.php",
+      "what": "mirror schema: the pointer table no longer admits one row per date by primary key",
+      "red_predicates": [
+        "MD-S002-R0008"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "PublicationSealPointerLifecycleTest::test_the_pointer_table_structurally_refuses_a_second_current_row"
+      ]
+    },
+    "MA1_moving_average_divisor": {
+      "file": "app/Application/MarketData/Services/IndicatorVectorService.php",
+      "what": "moving average divisor perturbed",
+      "red_predicates": [
+        "MD-S002-R0007"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "IndicatorIndependentOracleTest::test_correction_oracle_propagates_by_exactly_the_expected_amount"
+      ]
+    }
+  },
+  "map_and_fixture_perturbation_table": {
+    "MP1_exact_fixture_map_wording_drift": {
+      "file": "tests/Unit/MarketData/B18AntiSurvivorshipFixtureCorpusTest.php",
+      "what": "MD-S050 exact-publication fixture map no longer equals the contract list",
+      "red_predicates": [
+        "MD-S002-R0005"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18AntiSurvivorshipFixtureCorpusTest::test_the_contract_list_and_the_reviewed_fixture_map_cover_exactly_the_same_cases"
+      ]
+    },
+    "MP2_as_known_fixture_map_wording_drift": {
+      "file": "tests/Unit/MarketData/B18AntiSurvivorshipFixtureCorpusTest.php",
+      "what": "MD-S050 as-known fixture map no longer equals the contract list",
+      "red_predicates": [
+        "MD-S002-R0005"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18AntiSurvivorshipFixtureCorpusTest::test_every_required_fixture_is_also_an_as_known_fixture"
+      ]
+    },
+    "MP3_later_revision_map_kind_drift": {
+      "file": "tests/Unit/MarketData/B18AsKnownSnapshotIsolationTest.php",
+      "what": "MD-S003 later-revision kind renamed in the map",
+      "red_predicates": [
+        "MD-S002-R0005"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18AsKnownSnapshotIsolationTest::test_every_later_revision_kind_is_bound_to_an_executing_guard"
+      ]
+    },
+    "MP4_anti_future_map_item_drift": {
+      "file": "tests/Unit/MarketData/B18AntiFutureResolutionTest.php",
+      "what": "MD-S050 anti-future item renamed in the map",
+      "red_predicates": [
+        "MD-S002-R0005"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18AntiFutureResolutionTest::test_the_anti_future_map_names_exactly_what_the_contract_names"
+      ]
+    },
+    "MP5_defect_map_token_drift": {
+      "file": "tests/Unit/MarketData/B18DegradedObservationDefectCorpusTest.php",
+      "what": "MD-S003 degraded defect token renamed in the map",
+      "red_predicates": [
+        "MD-S002-R0006"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18DegradedObservationDefectCorpusTest::test_the_contract_line_and_the_reviewed_defect_map_name_exactly_the_same_defects"
+      ]
+    },
+    "MP6_criteria_bullet_wording_drift": {
+      "file": "tests/Unit/MarketData/B18ReleaseCandidateCriteriaTest.php",
+      "what": "MD-S002 oracle criterion wording drifts from the contract",
+      "red_predicates": [
+        "MD-S002-R0005",
+        "MD-S002-R0006",
+        "MD-S002-R0007",
+        "MD-S002-R0008"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18ReleaseCandidateCriteriaTest::test_the_criteria_map_names_exactly_what_the_contract_names"
+      ]
+    },
+    "MP7_cutoff_input_map_kind_drift": {
+      "file": "tests/Unit/MarketData/B18PointInTimeInputContractTest.php",
+      "what": "MD-S004 cutoff-bound input kind renamed in the map",
+      "red_predicates": [
+        "MD-S004-R0002"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18PointInTimeInputContractTest::test_the_cutoff_bounded_input_map_names_exactly_what_the_contract_names"
+      ]
+    },
+    "MP8_no_backfill_map_item_drift": {
+      "file": "tests/Unit/MarketData/B18PointInTimeInputContractTest.php",
+      "what": "MD-S004 no-backfill clause renamed in the map",
+      "red_predicates": [
+        "MD-S004-R0003"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18PointInTimeInputContractTest::test_the_no_backfill_map_names_exactly_what_the_contract_names"
+      ]
+    },
+    "MP9_survivorship_map_sentence_drift": {
+      "file": "tests/Unit/MarketData/B18PointInTimeInputContractTest.php",
+      "what": "MD-S004 survivorship sentence drifts in the map",
+      "red_predicates": [
+        "MD-S004-R0005"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18PointInTimeInputContractTest::test_the_survivorship_map_names_exactly_what_the_contract_names"
+      ]
+    },
+    "MP10_acceptance_fixture_map_drift": {
+      "file": "tests/Unit/MarketData/B18PointInTimeInputContractTest.php",
+      "what": "MD-S004 acceptance fixture renamed in the map",
+      "red_predicates": [
+        "MD-S004-R0008"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18PointInTimeInputContractTest::test_the_acceptance_fixture_map_names_exactly_what_the_contract_names"
+      ]
+    },
+    "MP11_member_guard_renamed_away": {
+      "file": "tests/Unit/MarketData/AsKnownReplayBoundaryTest.php",
+      "what": "a member guard is renamed so the name a map holds no longer exists",
+      "red_predicates": [
+        "MD-S002-R0005"
+      ],
+      "red_guard_count": 3,
+      "red_guards": [
+        "AsKnownReplayBoundaryTest::test_a_status_revision_recorded_after_the_cutoff_is_invisible",
+        "B18AntiFutureResolutionTest::test_every_anti_future_guard_exists_and_is_executable",
+        "B18AsKnownSnapshotIsolationTest::test_every_later_revision_kind_is_bound_to_an_executing_guard"
+      ]
+    },
+    "MP12_member_guard_neutralised": {
+      "file": "tests/Unit/MarketData/B18CorrectionReadPathScenarioTest.php",
+      "what": "a member guard is emptied: it still exists and passes, asserting nothing",
+      "red_predicates": [
+        "MD-S002-R0008"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18CorrectionReadPathScenarioTest::test_a_projection_disagreeing_with_the_pointer_yields_nothing_rather_than_stale_rows"
+      ]
+    },
+    "MP13_defect_bound_to_a_forbidden_outcome": {
+      "file": "tests/Unit/MarketData/B18DegradedObservationDefectCorpusTest.php",
+      "what": "a degraded defect is bound to an outcome MD-S003 does not permit",
+      "red_predicates": [
+        "MD-S002-R0006"
+      ],
+      "red_guard_count": 1,
+      "red_guards": [
+        "B18DegradedObservationDefectCorpusTest::test_every_defect_is_bound_to_one_of_the_two_permitted_outcomes"
+      ]
+    },
+    "MP14_defect_guard_missing": {
+      "file": "tests/Unit/MarketData/B18DegradedObservationDefectCorpusTest.php",
+      "what": "a degraded defect names a guard that does not exist",
+      "red_predicates": [
+        "MD-S002-R0006"
+      ],
+      "red_guard_count": 2,
+      "red_guards": [
+        "B18DegradedObservationDefectCorpusTest::test_every_named_defect_guard_exists_and_is_executable",
+        "CanonicalRawImportBoundaryTest::test_a_zero_price_placeholder_cannot_become_canonical_gone"
+      ]
+    },
+    "MP15_fixture_map_guard_missing": {
+      "file": "tests/Unit/MarketData/B18AntiSurvivorshipFixtureCorpusTest.php",
+      "what": "an anti-survivorship fixture names a guard that does not exist",
+      "red_predicates": [
+        "MD-S002-R0005"
+      ],
+      "red_guard_count": 2,
+      "red_guards": [
+        "B18AntiSurvivorshipFixtureCorpusTest::test_every_named_fixture_guard_exists_and_is_executable",
+        "ReplayVerificationServiceTest::test_verify_replay_resolves_historical_publication_without_current_pointer_fallback_gone"
+      ]
+    }
+  },
+  "aggregate_verdict_mutation_table": {
+    "RM1_skipped_counts_as_pass": {
+      "what": "a skipped member is accepted",
+      "red_tests": 3,
+      "first_red_tests": [
+        "test_only_a_passed_member_with_assertions_counts with data set \"passed with zero assertions\"",
+        "test_only_a_passed_member_with_assertions_counts with data set \"skipped\"",
+        "test_the_executor_reports_the_real_outcome_of_each_member_and_isolates_them_from_each_other"
+      ],
+      "restored_byte_identical": true
+    },
+    "RM2_zero_assertions_accepted": {
+      "what": "a member that passed without asserting anything is accepted",
+      "red_tests": 1,
+      "first_red_tests": [
+        "test_only_a_passed_member_with_assertions_counts with data set \"passed with zero assertions\""
+      ],
+      "restored_byte_identical": true
+    },
+    "RM3_failed_counts_as_pass": {
+      "what": "a failed member is accepted",
+      "red_tests": 13,
+      "first_red_tests": [
+        "test_a_failing_authority_binding_keeps_the_predicate_red_although_every_member_passes",
+        "test_a_failing_shared_guard_reddens_every_item_that_uses_it_and_each_stays_identifiable",
+        "test_md_s002_r0005_turns_red_when_any_anti_survivorship_or_as_known_isolation_member_fails"
+      ],
+      "restored_byte_identical": true
+    },
+    "RM4_missing_outcome_defaults_to_pass": {
+      "what": "a member with no recorded outcome is treated as passed",
+      "red_tests": 1,
+      "first_red_tests": [
+        "test_only_a_passed_member_with_assertions_counts with data set \"no outcome recorded at all\""
+      ],
+      "restored_byte_identical": true
+    },
+    "RM5_predicate_verdict_ignores_red_members": {
+      "what": "a predicate stays green although members are red",
+      "red_tests": 17,
+      "first_red_tests": [
+        "test_a_failing_authority_binding_keeps_the_predicate_red_although_every_member_passes",
+        "test_md_s002_r0005_turns_red_when_any_anti_survivorship_or_as_known_isolation_member_fails",
+        "test_md_s002_r0006_turns_red_when_any_degraded_or_negative_member_fails"
+      ],
+      "restored_byte_identical": true
+    },
+    "RM6_parent_verdict_ignores_predicates": {
+      "what": "the parent is green although a predicate is red",
+      "red_tests": 17,
+      "first_red_tests": [
+        "test_a_governed_predicate_that_is_not_declared_or_has_no_items_cannot_be_green",
+        "test_md_s002_r0005_turns_red_when_any_anti_survivorship_or_as_known_isolation_member_fails",
+        "test_md_s002_r0006_turns_red_when_any_degraded_or_negative_member_fails"
+      ],
+      "restored_byte_identical": true
+    },
+    "RM7_authority_binding_ignored": {
+      "what": "a failing authority binding does not keep the predicate red",
+      "red_tests": 1,
+      "first_red_tests": [
+        "test_a_failing_authority_binding_keeps_the_predicate_red_although_every_member_passes"
+      ],
+      "restored_byte_identical": true
+    },
+    "RM8_governed_predicate_may_vanish": {
+      "what": "a governed predicate that is not declared is not reported",
+      "red_tests": 1,
+      "first_red_tests": [
+        "test_a_governed_predicate_that_is_not_declared_or_has_no_items_cannot_be_green"
+      ],
+      "restored_byte_identical": true
+    },
+    "RM9_undeclared_extra_predicate_unreported": {
+      "what": "a declared predicate that is not governed is not reported",
+      "red_tests": 1,
+      "first_red_tests": [
+        "test_a_declared_predicate_that_is_not_governed_is_reported"
+      ],
+      "restored_byte_identical": true
+    },
+    "RM10_governed_set_read_from_the_wrong_section": {
+      "what": "the governed set is read from another finding section",
+      "red_tests": 22,
+      "first_red_tests": [
+        "test_a_failing_authority_binding_keeps_the_predicate_red_although_every_member_passes",
+        "test_a_failing_shared_guard_reddens_every_item_that_uses_it_and_each_stays_identifiable",
+        "test_a_governed_predicate_that_is_not_declared_or_has_no_items_cannot_be_green"
+      ],
+      "restored_byte_identical": true
+    },
+    "RM11_predicate_without_members_is_green": {
+      "what": "a predicate whose members all vanished is green",
+      "red_tests": 1,
+      "first_red_tests": [
+        "test_a_governed_predicate_that_is_not_declared_or_has_no_items_cannot_be_green"
+      ],
+      "restored_byte_identical": true
+    },
+    "RM12_bindings_not_executed": {
+      "what": "authority bindings are dropped from the executed items",
+      "red_tests": 2,
+      "first_red_tests": [
+        "test_a_failing_authority_binding_keeps_the_predicate_red_although_every_member_passes",
+        "test_the_authority_stated_item_counts_are_matched_by_the_members_and_each_map_has_an_executed_authority_binding"
+      ],
+      "restored_byte_identical": true
+    },
+    "RM13_junit_skip_read_as_pass": {
+      "what": "the executor reads a skipped test as passed",
+      "red_tests": 1,
+      "first_red_tests": [
+        "test_the_executor_reports_the_real_outcome_of_each_member_and_isolates_them_from_each_other"
+      ],
+      "restored_byte_identical": true
+    },
+    "RM14_junit_failure_read_as_pass": {
+      "what": "the executor reads a failed test as passed",
+      "red_tests": 1,
+      "first_red_tests": [
+        "test_the_executor_reports_the_real_outcome_of_each_member_and_isolates_them_from_each_other"
+      ],
+      "restored_byte_identical": true
+    },
+    "RM15_missing_method_read_as_pass": {
+      "what": "a member absent from the PHPUnit run is treated as passed",
+      "red_tests": 1,
+      "first_red_tests": [
+        "test_the_executor_reports_the_real_outcome_of_each_member_and_isolates_them_from_each_other"
+      ],
+      "restored_byte_identical": true
+    },
+    "RM16_data_set_failure_forgotten": {
+      "what": "one failing data set does not fail the member",
+      "red_tests": 1,
+      "first_red_tests": [
+        "test_the_executor_reports_the_real_outcome_of_each_member_and_isolates_them_from_each_other"
+      ],
+      "restored_byte_identical": true
+    },
+    "RM17_criterion_text_not_tied_to_matrix": {
+      "what": "a criterion source is no longer tied to the matrix row text",
+      "red_tests": 1,
+      "first_red_tests": [
+        "test_a_criterion_whose_wording_no_longer_ends_its_matrix_row_text_is_reported"
+      ],
+      "restored_byte_identical": true
+    },
+    "RM18_predicate_row_state_unchecked": {
+      "what": "a declared predicate need not be a current B18 mandatory matrix row",
+      "red_tests": 1,
+      "first_red_tests": [
+        "test_a_predicate_that_is_not_a_current_b18_mandatory_row_is_reported"
+      ],
+      "restored_byte_identical": true
+    },
+    "RM19_item_may_name_several_guards": {
+      "what": "a map item naming zero or several guards is accepted",
+      "red_tests": 1,
+      "first_red_tests": [
+        "test_a_map_item_must_name_exactly_one_guard with data set \"two guards\""
+      ],
+      "restored_byte_identical": true
+    }
+  },
+  "restoration_verification": {
+    "T1_delisting_known_time": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "sha256_before": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "T2_delisted_date_after_trade_date": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "sha256_before": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "T3_symbol_interval_end": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "sha256_before": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "T4_symbol_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "sha256_before": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "T5_listing_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "sha256_before": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "T6_symbol_retraction_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "sha256_before": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "T7_provider_mapping_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "sha256_before": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "T8_provider_mapping_retraction": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "sha256_before": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "T9_provider_mapping_interval_end": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "sha256_before": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "E1_event_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php",
+      "sha256_before": "5687695a777b69f9b27fe8c3dd9fddf2c241e9b4c0e5e29e8a6c0b1b1c7fff28",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "CF1_config_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php",
+      "sha256_before": "dd955236ae859b478d91d02e3313b8e5fff64f6d5495f13fc51e9efa99abbb26",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "ST1_status_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php",
+      "sha256_before": "ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "ST2_status_supersession_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php",
+      "sha256_before": "ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "ST3_status_retraction_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php",
+      "sha256_before": "ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "CA1_calendar_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+      "sha256_before": "06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "CA2_calendar_supersession_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+      "sha256_before": "06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "OB1_observation_identity_binding": {
+      "file": "app/Infrastructure/Persistence/MarketData/SourceObservationRepository.php",
+      "sha256_before": "f3ee17da335ac3098f65e77eb71001f4e148915de567e9430c6e1d68f4629577",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "OB2_observation_acquired": {
+      "file": "app/Infrastructure/Persistence/MarketData/SourceObservationRepository.php",
+      "sha256_before": "f3ee17da335ac3098f65e77eb71001f4e148915de567e9430c6e1d68f4629577",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "SN1_factor_sets_by_cutoff": {
+      "file": "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+      "sha256_before": "22a8998bdcac0d118cfe54aceb184aa803ffbaa84b993b443459ebf2d13a104c",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "SN2_formula_from_live_config": {
+      "file": "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+      "sha256_before": "22a8998bdcac0d118cfe54aceb184aa803ffbaa84b993b443459ebf2d13a104c",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "SC1_sector_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/SectorClassificationRepository.php",
+      "sha256_before": "4decb0377146dce9bc09df8c2f9ee56a0797c66044231afe351d60909d7a536b",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "EVD1_publication_sealed_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php",
+      "sha256_before": "fb6ecd9cd5b1824764f5e1d94900dafd5240c25a3689f73d21632ceeca516fd7",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "E2_event_supersession_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php",
+      "sha256_before": "5687695a777b69f9b27fe8c3dd9fddf2c241e9b4c0e5e29e8a6c0b1b1c7fff28",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "T10_instrument_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "sha256_before": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "T11_issuer_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "sha256_before": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "T12_board_recorded_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "sha256_before": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "T13_board_retraction_by_cutoff": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "sha256_before": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "IN1_stale_prior_date_rows_accepted": {
+      "file": "app/Application/MarketData/Services/EodBarsIngestService.php",
+      "sha256_before": "11ea1eadc9b7b3160e30aec1b3124d6a349c5e331b3edb0221b363c8502ade41",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "IN2_wrong_date_later_rows_accepted": {
+      "file": "app/Application/MarketData/Services/EodBarsIngestService.php",
+      "sha256_before": "11ea1eadc9b7b3160e30aec1b3124d6a349c5e331b3edb0221b363c8502ade41",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "IN3_zero_price_canonical": {
+      "file": "app/Application/MarketData/Services/EodBarsIngestService.php",
+      "sha256_before": "11ea1eadc9b7b3160e30aec1b3124d6a349c5e331b3edb0221b363c8502ade41",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "OUT1_outage_dropped_from_manifest": {
+      "file": "app/Infrastructure/Persistence/MarketData/SourceObservationRepository.php",
+      "sha256_before": "f3ee17da335ac3098f65e77eb71001f4e148915de567e9430c6e1d68f4629577",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "COV1_outage_shrinks_denominator": {
+      "file": "app/Application/MarketData/Services/CoverageGateEvaluator.php",
+      "sha256_before": "4a58b785dfa41c1c4a07573480e5400ff2e85e557bdf869e4fced321b6491260",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "UN1_absent_status_becomes_normal": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php",
+      "sha256_before": "ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "DM1_long_suspension_becomes_dormant": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php",
+      "sha256_before": "ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "ATR1_wilder_recursion_coefficient": {
+      "file": "app/Application/MarketData/Services/IndicatorVectorService.php",
+      "sha256_before": "1d55795c074fbe44a1bee5285121dc3886d0f941a83d773a4629ed9f0d6aead2",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "ATR2_wilder_seed": {
+      "file": "app/Application/MarketData/Services/IndicatorVectorService.php",
+      "sha256_before": "1d55795c074fbe44a1bee5285121dc3886d0f941a83d773a4629ed9f0d6aead2",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "PP1_high_not_scaled": {
+      "file": "app/Application/MarketData/Services/AnalyticalPriceProductService.php",
+      "sha256_before": "f321b20242d77ec11f4a968bb7433144c06af75d732c23a28572ce1a6f0c24c8",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "AFS1_unverified_revisions_active": {
+      "file": "app/Application/MarketData/Services/AdjustmentFactorSetService.php",
+      "sha256_before": "09b8708feefc9715874167824fee3db460daa67f1068485f37ec9afa86065370",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "PUB1_promote_keeps_prior_current": {
+      "file": "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php",
+      "sha256_before": "3a953986de912d0466c2380325a3d80f188f28079d7dffacc85534eece37dcb9",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "SEAL1_sealed_publication_mutable": {
+      "file": "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php",
+      "sha256_before": "3a953986de912d0466c2380325a3d80f188f28079d7dffacc85534eece37dcb9",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "READ1_pointer_projection_coherence_removed": {
+      "file": "app/Infrastructure/Persistence/MarketData/EligibilitySnapshotScopeRepository.php",
+      "sha256_before": "5b3c606c85c746fbeb739684ac0483924cc223b9909eb4aecace1b7145dc99b4",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "BLK1_replay_resolves_current_pointer": {
+      "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+      "sha256_before": "b6d5ff829ba412a7f00659b62c12c899892dad5bc2aa35ffef5de36a3716a04d",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "AK1_legacy_event_cutoff_removed": {
+      "file": "app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php",
+      "sha256_before": "5687695a777b69f9b27fe8c3dd9fddf2c241e9b4c0e5e29e8a6c0b1b1c7fff28",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "ID_ALL_identity_recorded_wall_removed": {
+      "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+      "sha256_before": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "FD1b_no_fallback_held_in_empty_dataset_branch": {
+      "file": "app/Application/MarketData/Services/FinalizeDecisionService.php",
+      "sha256_before": "1c466c9015f8244906b18c0137d10857efe53786795637bca843623c9a5e8af9",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "FD2b_fallback_effective_date_dropped": {
+      "file": "app/Application/MarketData/Services/FinalizeDecisionService.php",
+      "sha256_before": "1c466c9015f8244906b18c0137d10857efe53786795637bca843623c9a5e8af9",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "AD1_invalid_row_evidence_not_persisted": {
+      "file": "app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php",
+      "sha256_before": "82debb6dcb34c6bad22a8a84e3d7f0be7fd154a501c0c6903f8e413ca34fa7fd",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "READ2_consumer_reads_the_non_pointer_publication": {
+      "file": "app/Infrastructure/Persistence/MarketData/EligibilitySnapshotScopeRepository.php",
+      "sha256_before": "5b3c606c85c746fbeb739684ac0483924cc223b9909eb4aecace1b7145dc99b4",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "PSF1_seal_failure_swallowed": {
+      "file": "app/Application/MarketData/Services/MarketDataPipelineService.php",
+      "sha256_before": "9fbb1f0c141ad8886cb3c882b1ba98b5b70105bd5e232d46ab78d2e40278d3c6",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "PK1_mirror_pointer_pk_removed": {
+      "file": "tests/Support/UsesMarketDataSqlite.php",
+      "sha256_before": "4ff947f25f747a43093cb96da5fa256bfbc8c5d0b27dc0447161e9ab428921d7",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "MA1_moving_average_divisor": {
+      "file": "app/Application/MarketData/Services/IndicatorVectorService.php",
+      "sha256_before": "1d55795c074fbe44a1bee5285121dc3886d0f941a83d773a4629ed9f0d6aead2",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "MP1_exact_fixture_map_wording_drift": {
+      "file": "tests/Unit/MarketData/B18AntiSurvivorshipFixtureCorpusTest.php",
+      "sha256_before": "00ee73fba8047bffd4b7c08dcac1c08914c1f72a3e740c829df52273947ec81c",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "MP2_as_known_fixture_map_wording_drift": {
+      "file": "tests/Unit/MarketData/B18AntiSurvivorshipFixtureCorpusTest.php",
+      "sha256_before": "00ee73fba8047bffd4b7c08dcac1c08914c1f72a3e740c829df52273947ec81c",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "MP3_later_revision_map_kind_drift": {
+      "file": "tests/Unit/MarketData/B18AsKnownSnapshotIsolationTest.php",
+      "sha256_before": "7633a0403b49dca3a99c3118dc236e7c990a62c9c6f327c6f7877fb533ea37e1",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "MP4_anti_future_map_item_drift": {
+      "file": "tests/Unit/MarketData/B18AntiFutureResolutionTest.php",
+      "sha256_before": "9d079eb7cf0a50de4e4ac184c204b5d6663ce3883bd54bdbd395ea32d150d2e9",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "MP5_defect_map_token_drift": {
+      "file": "tests/Unit/MarketData/B18DegradedObservationDefectCorpusTest.php",
+      "sha256_before": "b1d17524579b841cc44432e464e8fceef2bb091cb3ded95d58075f7982f42ceb",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "MP6_criteria_bullet_wording_drift": {
+      "file": "tests/Unit/MarketData/B18ReleaseCandidateCriteriaTest.php",
+      "sha256_before": "728a4ef2a79019588258f5bebba79d859487db0c8fb54882ff7206579ae87db5",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "MP7_cutoff_input_map_kind_drift": {
+      "file": "tests/Unit/MarketData/B18PointInTimeInputContractTest.php",
+      "sha256_before": "79c46d3ee2b17a0f72ba36e6fbfb0f6111ced0fb23a8e63f0aa57a847129bc50",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "MP8_no_backfill_map_item_drift": {
+      "file": "tests/Unit/MarketData/B18PointInTimeInputContractTest.php",
+      "sha256_before": "79c46d3ee2b17a0f72ba36e6fbfb0f6111ced0fb23a8e63f0aa57a847129bc50",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "MP9_survivorship_map_sentence_drift": {
+      "file": "tests/Unit/MarketData/B18PointInTimeInputContractTest.php",
+      "sha256_before": "79c46d3ee2b17a0f72ba36e6fbfb0f6111ced0fb23a8e63f0aa57a847129bc50",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "MP10_acceptance_fixture_map_drift": {
+      "file": "tests/Unit/MarketData/B18PointInTimeInputContractTest.php",
+      "sha256_before": "79c46d3ee2b17a0f72ba36e6fbfb0f6111ced0fb23a8e63f0aa57a847129bc50",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "MP11_member_guard_renamed_away": {
+      "file": "tests/Unit/MarketData/AsKnownReplayBoundaryTest.php",
+      "sha256_before": "26b356a5e077facfeb2e1e53ef6e6be4e3992e1dbc3dce0506b8421d2f708f9b",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "MP12_member_guard_neutralised": {
+      "file": "tests/Unit/MarketData/B18CorrectionReadPathScenarioTest.php",
+      "sha256_before": "42ae2ab69a61e33221388c6c99ec88b378f5c17e9fa25b17c895b32fa9a31df3",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "MP13_defect_bound_to_a_forbidden_outcome": {
+      "file": "tests/Unit/MarketData/B18DegradedObservationDefectCorpusTest.php",
+      "sha256_before": "b1d17524579b841cc44432e464e8fceef2bb091cb3ded95d58075f7982f42ceb",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "MP14_defect_guard_missing": {
+      "file": "tests/Unit/MarketData/B18DegradedObservationDefectCorpusTest.php",
+      "sha256_before": "b1d17524579b841cc44432e464e8fceef2bb091cb3ded95d58075f7982f42ceb",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    },
+    "MP15_fixture_map_guard_missing": {
+      "file": "tests/Unit/MarketData/B18AntiSurvivorshipFixtureCorpusTest.php",
+      "sha256_before": "00ee73fba8047bffd4b7c08dcac1c08914c1f72a3e740c829df52273947ec81c",
+      "sha256_now_equal": true,
+      "restored_after_probe": true,
+      "landed_count": 1
+    }
+  },
+  "aggregate_exhaustiveness_proof": {
+    "declared_set_equals_governed_set": "test_the_declared_predicate_set_is_exactly_the_governed_g05_set_of_f017; RM8/RM9/RM10 turn it red",
+    "every_declared_predicate_has_members_and_a_current_b18_mandatory_matrix_row": "test_every_predicate_resolves_to_members_from_the_reviewed_maps_and_a_current_b18_mandatory_row; matrix perturbations and RM11/RM18",
+    "every_item_names_exactly_one_existing_public_guard": "test_every_item_names_exactly_one_existing_public_guard and test_a_map_item_must_name_exactly_one_guard; RM19",
+    "authority_counts_and_bindings": "test_the_authority_stated_item_counts_are_matched_by_the_members_and_each_map_has_an_executed_authority_binding; RM12; the ten map-drift probes turn the binding red",
+    "criterion_wording_tied_to_matrix": "test_a_criterion_whose_wording_no_longer_ends_its_matrix_row_text_is_reported; RM17",
+    "shared_guards_keep_item_identity": "test_predicates_that_share_a_guard_keep_their_own_item_identity and test_a_failing_shared_guard_reddens_every_item_that_uses_it_and_each_stays_identifiable (factor and formula)",
+    "no_masking_or_spreading": "nine per-predicate methods fail every member of the predicate in turn: the predicate turns red naming the member, a predicate not using that guard stays green, the parent is red; RM3/RM5/RM6",
+    "only_passed_with_assertions_counts": "test_only_a_passed_member_with_assertions_counts (seven non-passing states); RM1/RM2/RM4; executor test against real fixture files; RM13-RM16",
+    "a_predicate_whose_members_vanish_is_not_carried_by_its_binding": "test_a_governed_predicate_that_is_not_declared_or_has_no_items_cannot_be_green; RM11"
+  },
+  "formal_count_derivation": {
+    "source": "MarketDataReplayVerificationProofReadinessGate run directly, and the PROVEN/INCOMPLETE constants",
+    "proof_basis": {
+      "PROVEN": 100,
+      "INCOMPLETE": 13,
+      "TRANSFERRED_OWNERSHIP": [
+        "MD-S020-R0014",
+        "MD-S065-R0003"
+      ]
+    },
+    "readiness": "100/113 bases present; 13 without a reviewed basis",
+    "predicates_without_basis": [
+      "MD-S003-R0011",
+      "MD-S003-R0014",
+      "MD-S003-R0025",
+      "MD-S019-R0071",
+      "MD-S041-R0032",
+      "MD-S050-R0005",
+      "MD-S050-R0014",
+      "MD-S050-R0022",
+      "MD-S050-R0023",
+      "MD-S050-R0025",
+      "MD-S050-R0028",
+      "MD-S050-R0029",
+      "MD-S055-R0025"
+    ],
+    "ownership_of_the_remaining_13": {
+      "F-MD-B18-A002-017": {
+        "count": 2,
+        "predicates": [
+          "MD-S003-R0025",
+          "MD-S050-R0005"
+        ]
+      },
+      "F-MD-B18-A002-018": {
+        "count": 9
+      },
+      "F-MD-B18-A002-013": {
+        "count": 2,
+        "predicates": [
+          "MD-S050-R0014",
+          "MD-S019-R0071"
+        ]
+      }
+    },
+    "not_101_12": "MD-S003-R0025 did not earn PROVEN; the count is derived, not targeted",
+    "denominator": 113,
+    "formal_traceability": "0/113 SATISFIED, unchanged; matrix rows for the eight stay NOT_ASSESSED with no evidence bound; binder --bound not run"
+  },
+  "observations_not_acted_on": [
+    "The pointer-uniqueness member (PublicationSealPointerLifecycleTest) runs on the SQLite mirror schema; the production DDL is not exercised while MariaDB is unreachable.",
+    "A hollow member (a test that asserts nothing) is reported by PHPUnit as ERROR in these runs, not as PASSED with zero assertions; the aggregate is red either way.",
+    "MariaDB unreachable is also a baseline fact for MD-DEP-0015; not started or restarted.",
+    "The three pre-existing CONDITION_EXECUTION_STALE normalization entries and MISSING_NEGATIVE_PROOF:determinism_and_operations are unchanged."
+  ],
+  "not_done": [
+    "MD-S003-R0025 not proven; no MariaDB start or recovery",
+    "MD-S050-R0005, F-018, F-013 untouched",
+    "MD-S065-R0003, MD-S082-R0207/R0209, D-010 deferred questions, MD-S065-R0002 not touched",
+    "binder --bound not run; no formal SATISFIED change",
+    "no production, schema, migration, runtime-configuration or strategy change",
+    "full MarketData suite not run: no production behaviour changed"
+  ],
+  "immutable_records": "IMMUTABLE_AFTER_ISSUE records present before this unit re-verified byte-identical by sha256 at validation.",
+  "no_commit_or_push": true
+}

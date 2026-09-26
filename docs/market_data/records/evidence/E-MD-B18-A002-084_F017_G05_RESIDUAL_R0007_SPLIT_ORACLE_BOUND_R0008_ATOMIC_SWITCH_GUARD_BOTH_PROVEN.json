@@ -1,0 +1,417 @@
+{
+    "evidence_id": "E-MD-B18-A002-084",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "issued_at": "2026-09-26T13:17:17+07:00",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "G05_RESIDUAL_MD_S002_R0007_AND_MD_S002_R0008_PROVEN_AFTER_E083",
+    "evidence_scope": "F017_G05_RESIDUAL_MEMBER_BINDING_AND_ATOMIC_SWITCH_GUARD",
+    "ci_id": "CI-MD-B18-A002-001",
+    "related_findings": [
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-083",
+        "E-MD-B18-A002-082",
+        "CI-MD-B18-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-005"
+    ],
+    "dependencies": [
+        "MD-DEP-0017",
+        "MD-DEP-0019"
+    ],
+    "schema_changed": false,
+    "production_code_changed": false,
+    "runtime_config_changed": false,
+    "test_code_changed": true,
+    "git_base": "b2ec444",
+    "relationship_to_prior_records": {
+        "E-MD-B18-A002-082": "issued the aggregate runner and eight promotions; left byte-identical (sha256 5d43b1fd43ffd6481fbe01792bd7b05e0325b3c0c9732a2a1f62d820e01fe536)",
+        "E-MD-B18-A002-083": "returned MD-S002-R0007 and MD-S002-R0008 to INCOMPLETE with the missing proof named; left byte-identical (sha256 f583c91b0c1a4f27992f14b83a4a995a423f2866808edbc47027cdc370f107cc). This record is new proof after it, not a rewrite of it.",
+        "scope_clarification_of_E083": {
+            "inaccurate_statement": "E-083 (r0008_verdict.components, and the MD-DEP-0019 note written with it) lists \"MariaDB DDL uniqueness\" and \"concurrent reads\" as components of the MD-S002-R0008 obligation and says the R0008 halves wait on MD-DEP-0019.",
+            "correct_statement": "MD-S002-R0008 is the service-level criterion \"corrected publications preserving their predecessors and switching atomically\". The MariaDB-side correction and read-path family is a member of MD-S003-R0025 (B18ScenarioFamiliesOnMariaDbTest::test_correction_and_read_path_family_on_mariadb), and the \"atomic correction switch, concurrent reads\" acceptance list is MD-S022-R0033, whose primary stage is MD-B17 (coverage_status SATISFIED). MD-DEP-0019 therefore blocks MD-S003-R0025 only. E-083's decision (R0008 was not proven because no member detected loss of the atomic switch) is unchanged; only the attribution of the MariaDB and concurrency halves is corrected."
+        }
+    },
+    "reverification_before_change": {
+        "r0007_gap_confirmed": "the R0007 member map in B18ReleaseCandidateCriteriaTest::criteriaMap held five guards and not AdjustmentFactorSetB11Test::test_verified_split_ratio_maps_deterministically_to_price_and_volume_factors",
+        "r0008_gap_confirmed": "E-083 review probe X1 (promotion without its transaction) left all 55 executed guards green; the R0008 map held five guards, none of which makes the switch fail part-way",
+        "head": "b2ec444",
+        "f013": "OPEN; reopened by E-MD-B18-A002-070 on 2026-09-24T13:23:51+07:00 (committed history, F-013 finding file unmodified in the working tree and in this unit); 2 predicates MD-S050-R0014 and MD-S019-R0071 unchanged"
+    },
+    "r0007": {
+        "authority": "Backtest_Metrics_and_Acceptance_Criteria_LOCKED.md MD-S002: \"long-chain ATR and corporate-action results matching independent oracles\"; Price_Adjustment_Contract_LOCKED.md (price factor and applicable volume factor; volume uses the inverse share-unit factor when the event semantics require it); Corporate_Action_and_Adjustment_Policy.md (only verified revisions with complete terms are adjustment-active)",
+        "existing_oracle": "AdjustmentFactorSetB11Test::test_verified_split_ratio_maps_deterministically_to_price_and_volume_factors: calls the production AdjustmentFactorSetService::factorTermsForEvent (private, via reflection) with a STOCK_SPLIT of ratio 1:5 and asserts factor_required true, price_factor 0.2 and volume_factor 5.0, constants derived by hand and not by the service",
+        "new_derivation_logic": "none; no test or production logic was duplicated",
+        "aggregate_member_integration": "one line added to the R0007 entry of B18ReleaseCandidateCriteriaTest::criteriaMap (the reviewed-map mechanism); members 5 -> 6, distinct guards 5 -> 6, authority binding 1; the aggregate positive test pins 6",
+        "control": "aggregate GREEN, 6 members, 1 binding",
+        "X2_result": "inverted factors and volume-not-inverse each turn exactly the new member red and exactly MD-S002-R0007 red; the other seven predicates stay green; restored byte-identical",
+        "exhaustiveness": "member deleted from the map: the aggregate positive test (pinned count 6) turns red while the runner itself has only five members to run -- the pin is the tripwire; member renamed away: NOT_EXECUTED, predicate red; member emptied: predicate red",
+        "final_state": "PROVEN"
+    },
+    "r0008": {
+        "authority": "Backtest_Metrics_and_Acceptance_Criteria_LOCKED.md MD-S002: \"corrected publications preserving their predecessors and switching atomically\"; Downstream_Data_Readiness_Guarantee_LOCKED.md (\"A correction builds and validates a distinct immutable publication, then atomically switches the active pointer\"); Finalize_Lock_And_Pointer_Behavior_LOCKED.md (\"the pointer moved atomically, and ... a failed finalize left the previous pointer intact\"); Audit_Hash_and_Reproducibility_Contract_LOCKED.md (a correction is published through explicit supersession and atomic pointer switch); reason POINTER_SWITCH_FAILED (an atomic pointer switch failed before a valid current publication was established)",
+        "guard": "PublicationRepositoryIntegrationTest::test_a_switch_that_fails_part_way_leaves_the_prior_publication_current_and_nothing_partial, with data provider atomicSwitchFailurePoints (two data sets)",
+        "invariant_derived_from_authority": "a switch that fails leaves the previous pointer and previous current publication intact and no partial current state; the switch can then be retried. Nothing beyond that was asserted (no lock, ordering or concurrency semantics).",
+        "method": "the production EodPublicationRepository::promoteCandidateToCurrent runs unmodified on a correction fixture (prior publication 10 current, candidate sealed for the same date). A SQLite trigger created in the test aborts one write the promotion makes; the trigger is dropped afterwards. Data set 1 aborts the pointer write, after eod_publications.is_current has flipped (prior 0, candidate 1). Data set 2 aborts the final eod_runs mirror write, after the pointer already names the candidate. Assertions: the failure surfaces; prior publication still current; candidate still non-current; pointer still names the prior publication; every eod_publications, eod_current_publication_pointer and eod_runs row equals its pre-attempt state; the same promotion then retried succeeds (candidate current, supersedes 10, pointer on the candidate, prior non-current).",
+        "not_asserted": "that DB::transaction appears in source; that a transaction helper was called; the successful end state alone",
+        "control": "green on production code: 2 cases, 26 assertions; aggregate GREEN, 6 members, 1 binding",
+        "X1_result": "promotion run without its transaction: both data sets fail with \"prior publication must stay current\" (0 is not 1), i.e. the partial state the invariant forbids; the aggregate turns exactly MD-S002-R0008 red through exactly the new member; the other seven predicates stay green; restored byte-identical (sha256 3a953986de912d0466c2380325a3d80f188f28079d7dffacc85534eece37dcb9)",
+        "exhaustiveness": "member deleted from the map: the aggregate positive test (pinned count 6) turns red; member renamed away: NOT_EXECUTED, red; failure no longer injected: the guard turns red (ERROR), so it cannot pass without a switch that actually fails",
+        "boundary": "MariaDB DDL uniqueness and the MariaDB-side correction and read-path family remain with MD-S003-R0025 (MD-DEP-0019). Concurrent reads are MD-S022-R0033 (primary MD-B17). The rollback pointer event restorePriorCurrentPublication (a second writer of the pointer table, with its own transaction) is not exercised by this guard; the criterion wording concerns a correction switching, and its atomicity is not claimed.",
+        "final_state": "PROVEN"
+    },
+    "falsifiability_counts_kept_separate": {
+        "test_cases": {
+            "new_phpunit_cases": 2,
+            "meaning_of_new": "one new test method with a data provider of two data sets (pointer write; run-mirror write) in PublicationRepositoryIntegrationTest; 26 assertions",
+            "changed": "B18ReleaseCandidateCriteriaTest::criteriaMap +2 guard names (one per predicate) and two comments; B18ReleaseCandidateAcceptanceAggregateTest two pinned counts 5 -> 6; no runner change, aggregate test class unchanged at 43 cases",
+            "guard_executed_in_aggregate": 57,
+            "guards_executed_before": 55
+        },
+        "production_mutations": {
+            "count": 3,
+            "meaning": "one production clause disabled per probe; the full eight-predicate aggregate executed each time",
+            "probes": {
+                "X2_split_factor_inverted": {
+                    "id": "X2_split_factor_inverted",
+                    "file": "app/Application/MarketData/Services/AdjustmentFactorSetService.php",
+                    "clause": "a split ratio derives the inverted price and volume factors",
+                    "landed_count": 1,
+                    "file_sha256_before_and_after": "09b8708feefc9715874167824fee3db460daa67f1068485f37ec9afa86065370",
+                    "restored_byte_identical": true,
+                    "lint_ok": true,
+                    "aggregate_predicates_red": [
+                        "MD-S002-R0007"
+                    ],
+                    "aggregate_predicates_green": [
+                        "MD-S002-R0005",
+                        "MD-S002-R0006",
+                        "MD-S002-R0008",
+                        "MD-S004-R0002",
+                        "MD-S004-R0003",
+                        "MD-S004-R0005",
+                        "MD-S004-R0008"
+                    ],
+                    "red_guards": {
+                        "AdjustmentFactorSetB11Test::test_verified_split_ratio_maps_deterministically_to_price_and_volume_factors": "FAILED"
+                    },
+                    "guards_executed": 57
+                },
+                "X2b_split_volume_factor_not_inverse": {
+                    "id": "X2b_split_volume_factor_not_inverse",
+                    "file": "app/Application/MarketData/Services/AdjustmentFactorSetService.php",
+                    "clause": "a split ratio derives the volume factor equal to the price factor instead of its inverse",
+                    "landed_count": 1,
+                    "file_sha256_before_and_after": "09b8708feefc9715874167824fee3db460daa67f1068485f37ec9afa86065370",
+                    "restored_byte_identical": true,
+                    "lint_ok": true,
+                    "aggregate_predicates_red": [
+                        "MD-S002-R0007"
+                    ],
+                    "aggregate_predicates_green": [
+                        "MD-S002-R0005",
+                        "MD-S002-R0006",
+                        "MD-S002-R0008",
+                        "MD-S004-R0002",
+                        "MD-S004-R0003",
+                        "MD-S004-R0005",
+                        "MD-S004-R0008"
+                    ],
+                    "red_guards": {
+                        "AdjustmentFactorSetB11Test::test_verified_split_ratio_maps_deterministically_to_price_and_volume_factors": "FAILED"
+                    },
+                    "guards_executed": 57
+                },
+                "X1_promote_not_transactional": {
+                    "id": "X1_promote_not_transactional",
+                    "file": "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php",
+                    "clause": "promoteCandidateToCurrent runs without its database transaction",
+                    "landed_count": 1,
+                    "file_sha256_before_and_after": "3a953986de912d0466c2380325a3d80f188f28079d7dffacc85534eece37dcb9",
+                    "restored_byte_identical": true,
+                    "lint_ok": true,
+                    "aggregate_predicates_red": [
+                        "MD-S002-R0008"
+                    ],
+                    "aggregate_predicates_green": [
+                        "MD-S002-R0005",
+                        "MD-S002-R0006",
+                        "MD-S002-R0007",
+                        "MD-S004-R0002",
+                        "MD-S004-R0003",
+                        "MD-S004-R0005",
+                        "MD-S004-R0008"
+                    ],
+                    "red_guards": {
+                        "PublicationRepositoryIntegrationTest::test_a_switch_that_fails_part_way_leaves_the_prior_publication_current_and_nothing_partial": "FAILED"
+                    },
+                    "guards_executed": 57
+                }
+            }
+        },
+        "aggregate_and_map_perturbations": {
+            "count": 6,
+            "meaning": "the new members deleted from, renamed away from, or emptied in the reviewed map or the test sources; each run through the full aggregate, and for the two map deletions also through the aggregate's pinned executes-tests",
+            "probes": {
+                "MPR1_split_guard_removed_from_r0007_map": {
+                    "id": "MPR1_split_guard_removed_from_r0007_map",
+                    "file": "tests/Unit/MarketData/B18ReleaseCandidateCriteriaTest.php",
+                    "clause": "the split-ratio oracle is deleted from the R0007 member map",
+                    "landed_count": 1,
+                    "file_sha256_before_and_after": "1f98c4ec78b94e5b4268466977f18fa8740536d527bf342090ebdf40b546c4e3",
+                    "restored_byte_identical": true,
+                    "lint_ok": true,
+                    "aggregate_predicates_red": [],
+                    "aggregate_predicates_green": [
+                        "MD-S002-R0005",
+                        "MD-S002-R0006",
+                        "MD-S002-R0007",
+                        "MD-S002-R0008",
+                        "MD-S004-R0002",
+                        "MD-S004-R0003",
+                        "MD-S004-R0005",
+                        "MD-S004-R0008"
+                    ],
+                    "red_guards": [],
+                    "guards_executed": 56,
+                    "pinned_member_count_tests": {
+                        "green": false,
+                        "failed": [
+                            "B18ReleaseCandidateAcceptanceAggregateTest::test_md_s002_r0007_executes_the_atr_and_corporate_action_oracle_members_and_is_green"
+                        ]
+                    }
+                },
+                "MPR2_split_guard_renamed_away": {
+                    "id": "MPR2_split_guard_renamed_away",
+                    "file": "tests/Unit/MarketData/AdjustmentFactorSetB11Test.php",
+                    "clause": "the split-ratio oracle method is renamed so the mapped name no longer exists",
+                    "landed_count": 1,
+                    "file_sha256_before_and_after": "09148bd92cac88ce7cdd4f0940672b18a6fe0e1abb6a437c74266f4373483461",
+                    "restored_byte_identical": true,
+                    "lint_ok": true,
+                    "aggregate_predicates_red": [
+                        "MD-S002-R0007"
+                    ],
+                    "aggregate_predicates_green": [
+                        "MD-S002-R0005",
+                        "MD-S002-R0006",
+                        "MD-S002-R0008",
+                        "MD-S004-R0002",
+                        "MD-S004-R0003",
+                        "MD-S004-R0005",
+                        "MD-S004-R0008"
+                    ],
+                    "red_guards": {
+                        "AdjustmentFactorSetB11Test::test_verified_split_ratio_maps_deterministically_to_price_and_volume_factors": "NOT_EXECUTED"
+                    },
+                    "guards_executed": 57
+                },
+                "MPR3_split_guard_neutralised": {
+                    "id": "MPR3_split_guard_neutralised",
+                    "file": "tests/Unit/MarketData/AdjustmentFactorSetB11Test.php",
+                    "clause": "the split-ratio oracle body is emptied: it exists but asserts nothing",
+                    "landed_count": 1,
+                    "file_sha256_before_and_after": "09148bd92cac88ce7cdd4f0940672b18a6fe0e1abb6a437c74266f4373483461",
+                    "restored_byte_identical": true,
+                    "lint_ok": true,
+                    "aggregate_predicates_red": [
+                        "MD-S002-R0007"
+                    ],
+                    "aggregate_predicates_green": [
+                        "MD-S002-R0005",
+                        "MD-S002-R0006",
+                        "MD-S002-R0008",
+                        "MD-S004-R0002",
+                        "MD-S004-R0003",
+                        "MD-S004-R0005",
+                        "MD-S004-R0008"
+                    ],
+                    "red_guards": {
+                        "AdjustmentFactorSetB11Test::test_verified_split_ratio_maps_deterministically_to_price_and_volume_factors": "ERROR"
+                    },
+                    "guards_executed": 57
+                },
+                "MPR4_atomic_guard_removed_from_r0008_map": {
+                    "id": "MPR4_atomic_guard_removed_from_r0008_map",
+                    "file": "tests/Unit/MarketData/B18ReleaseCandidateCriteriaTest.php",
+                    "clause": "the atomic-switch guard is deleted from the R0008 member map",
+                    "landed_count": 1,
+                    "file_sha256_before_and_after": "1f98c4ec78b94e5b4268466977f18fa8740536d527bf342090ebdf40b546c4e3",
+                    "restored_byte_identical": true,
+                    "lint_ok": true,
+                    "aggregate_predicates_red": [],
+                    "aggregate_predicates_green": [
+                        "MD-S002-R0005",
+                        "MD-S002-R0006",
+                        "MD-S002-R0007",
+                        "MD-S002-R0008",
+                        "MD-S004-R0002",
+                        "MD-S004-R0003",
+                        "MD-S004-R0005",
+                        "MD-S004-R0008"
+                    ],
+                    "red_guards": [],
+                    "guards_executed": 56,
+                    "pinned_member_count_tests": {
+                        "green": false,
+                        "failed": [
+                            "B18ReleaseCandidateAcceptanceAggregateTest::test_md_s002_r0008_executes_the_correction_preservation_and_atomic_switch_members_and_is_green"
+                        ]
+                    }
+                },
+                "MPR5_atomic_guard_renamed_away": {
+                    "id": "MPR5_atomic_guard_renamed_away",
+                    "file": "tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php",
+                    "clause": "the atomic-switch guard is renamed so the mapped name no longer exists",
+                    "landed_count": 1,
+                    "file_sha256_before_and_after": "7b64c181943a5d11761b155150edbaaefd248b86bad2c98391b17086b2163606",
+                    "restored_byte_identical": true,
+                    "lint_ok": true,
+                    "aggregate_predicates_red": [
+                        "MD-S002-R0008"
+                    ],
+                    "aggregate_predicates_green": [
+                        "MD-S002-R0005",
+                        "MD-S002-R0006",
+                        "MD-S002-R0007",
+                        "MD-S004-R0002",
+                        "MD-S004-R0003",
+                        "MD-S004-R0005",
+                        "MD-S004-R0008"
+                    ],
+                    "red_guards": {
+                        "PublicationRepositoryIntegrationTest::test_a_switch_that_fails_part_way_leaves_the_prior_publication_current_and_nothing_partial": "NOT_EXECUTED"
+                    },
+                    "guards_executed": 57
+                },
+                "MPR6_atomic_guard_failure_never_injected": {
+                    "id": "MPR6_atomic_guard_failure_never_injected",
+                    "file": "tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php",
+                    "clause": "the guard no longer injects its failure, so the switch succeeds and the guard must not pass vacuously",
+                    "landed_count": 1,
+                    "file_sha256_before_and_after": "7b64c181943a5d11761b155150edbaaefd248b86bad2c98391b17086b2163606",
+                    "restored_byte_identical": true,
+                    "lint_ok": true,
+                    "aggregate_predicates_red": [
+                        "MD-S002-R0008"
+                    ],
+                    "aggregate_predicates_green": [
+                        "MD-S002-R0005",
+                        "MD-S002-R0006",
+                        "MD-S002-R0007",
+                        "MD-S004-R0002",
+                        "MD-S004-R0003",
+                        "MD-S004-R0005",
+                        "MD-S004-R0008"
+                    ],
+                    "red_guards": {
+                        "PublicationRepositoryIntegrationTest::test_a_switch_that_fails_part_way_leaves_the_prior_publication_current_and_nothing_partial": "ERROR"
+                    },
+                    "guards_executed": 57
+                }
+            }
+        },
+        "aggregate_verdict_mutations": {
+            "count": 0,
+            "meaning": "the runner's own logic was not changed, so E-082's 19 stand and were not re-run"
+        },
+        "total_probes_run_and_restored": 9,
+        "harness_note": "the first run of the campaign launched the pinned executes-tests from a wrong working directory (\"Could not open input file\"), so its two map-deletion probes (MPR1, MPR4) had no valid pinned result; both were re-run once in a second run with the launch fixed and are counted once, from the second run. Their runner-level result (green, five members) was identical in both runs.",
+        "direct_checks_not_counted_as_probes": {
+            "X1_direct": "the new guard alone under the X1 mutation: 2 failures, restored byte-identical before the campaign",
+            "X2_review_probe_E083": "X2 was first run in E-083 with all guards green; this record re-runs it with the member bound and it is red"
+        },
+        "controls": {
+            "before": {
+                "verdict": "GREEN",
+                "predicates": {
+                    "MD-S002-R0005": "GREEN",
+                    "MD-S002-R0006": "GREEN",
+                    "MD-S002-R0007": "GREEN",
+                    "MD-S002-R0008": "GREEN",
+                    "MD-S004-R0002": "GREEN",
+                    "MD-S004-R0003": "GREEN",
+                    "MD-S004-R0005": "GREEN",
+                    "MD-S004-R0008": "GREEN"
+                },
+                "red_guards": [],
+                "guards_executed": 57
+            },
+            "after": {
+                "verdict": "GREEN",
+                "predicates": {
+                    "MD-S002-R0005": "GREEN",
+                    "MD-S002-R0006": "GREEN",
+                    "MD-S002-R0007": "GREEN",
+                    "MD-S002-R0008": "GREEN",
+                    "MD-S004-R0002": "GREEN",
+                    "MD-S004-R0003": "GREEN",
+                    "MD-S004-R0005": "GREEN",
+                    "MD-S004-R0008": "GREEN"
+                },
+                "red_guards": [],
+                "guards_executed": 57
+            },
+            "stable_across_both_runs": true
+        }
+    },
+    "formal_state": {
+        "source": "MarketDataReplayVerificationProofReadinessGate run directly and the PROVEN/INCOMPLETE constants",
+        "PROVEN": 100,
+        "INCOMPLETE": 13,
+        "denominator": 113,
+        "readiness": "100/113 bases present; 13 without a reviewed basis",
+        "predicates_without_basis": [
+            "MD-S003-R0011",
+            "MD-S003-R0014",
+            "MD-S003-R0025",
+            "MD-S019-R0071",
+            "MD-S041-R0032",
+            "MD-S050-R0005",
+            "MD-S050-R0014",
+            "MD-S050-R0022",
+            "MD-S050-R0023",
+            "MD-S050-R0025",
+            "MD-S050-R0028",
+            "MD-S050-R0029",
+            "MD-S055-R0025"
+        ],
+        "ownership": {
+            "F-MD-B18-A002-017": {
+                "count": 2,
+                "predicates": [
+                    "MD-S003-R0025",
+                    "MD-S050-R0005"
+                ]
+            },
+            "F-MD-B18-A002-018": {
+                "count": 9
+            },
+            "F-MD-B18-A002-013": {
+                "count": 2,
+                "predicates": [
+                    "MD-S050-R0014",
+                    "MD-S019-R0071"
+                ]
+            }
+        },
+        "not_targeted": "each promotion was decided from its own chain; the count is what the gate derives",
+        "formal_traceability": "0/113 SATISFIED, unchanged; no matrix row bound; binder --bound not run",
+        "proof_gate_known_error": "MISSING_NEGATIVE_PROOF:determinism_and_operations, present before G07, unchanged"
+    },
+    "immutable_records": "E-082 and E-083 byte-identical (sha256 recorded above); the 733 records snapshotted before G07 verified by sha256 at validation",
+    "not_done": [
+        "no production, schema, migration, runtime-configuration or strategy change",
+        "MariaDB not started or restarted; MD-S003-R0025 and MD-S050-R0005 not worked",
+        "F-018 not started; the 66-probe G05 campaign and the 19 aggregate-verdict mutations not re-run (no change invalidated them)",
+        "the full MarketData suite not run; no binder --bound; no commit or push"
+    ],
+    "no_commit_or_push": true
+}

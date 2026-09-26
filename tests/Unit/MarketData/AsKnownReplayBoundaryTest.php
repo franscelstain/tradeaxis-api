@@ -70,6 +70,75 @@ class AsKnownReplayBoundaryTest extends TestCase
         $this->assertContains('EARLY', $asKnownCodes);
         $this->assertNotContains('LATE', $asKnownCodes, 'a listing recorded in June cannot be known in April');
         $this->assertContains('LATE', $todayCodes, 'and it is visible without a cutoff, so the fixture is real');
+
+        $this->assertEachIdentityRootIsBoundByTheCutoffOnItsOwn();
+    }
+
+    /**
+     * Identity is five separately recorded roots -- listing, instrument, issuer, symbol and board --
+     * each with its own knowledge time. The fixture above records all of them late at once, so any
+     * single root's cutoff clause could be removed and the row would still be hidden by the other
+     * four. Here exactly one root is late per listing, so each clause has to hide its own row; and
+     * a board retracted after the cutoff is still known at the cutoff, because the retraction is
+     * itself a later fact.
+     */
+    private function assertEachIdentityRootIsBoundByTheCutoffOnItsOwn(): void
+    {
+        $n = 100;
+        foreach (['listing', 'instrument', 'issuer', 'symbol', 'board'] as $root) {
+            $this->seedIdentityWithLateRoot(++$n, 'ROOT'.strtoupper($root), $root);
+        }
+        $this->seedIdentityWithLateRoot(++$n, 'ROOTALLEARLY', null);
+        $this->seedIdentityWithLateRoot(++$n, 'ROOTBOARDRETRACTED', null, '2026-06-01 00:00:00');
+
+        $repository = new TemporalIdentityRepository();
+        $asKnown = array_column($repository->universeAsOf('2026-03-24', self::CUTOFF), 'ticker_code');
+        $today = array_column($repository->universeAsOf('2026-03-24'), 'ticker_code');
+
+        $this->assertContains('ROOTALLEARLY', $asKnown, 'the control listing, every root known early, is visible at the cutoff');
+        foreach (['listing', 'instrument', 'issuer', 'symbol', 'board'] as $root) {
+            $code = 'ROOT'.strtoupper($root);
+            $this->assertNotContains($code, $asKnown,
+                'the '.$root.' root was recorded after the cutoff and must hide the listing on its own');
+            $this->assertContains($code, $today, 'and the '.$root.' listing is visible without a cutoff, so the fixture is real');
+        }
+
+        $this->assertContains('ROOTBOARDRETRACTED', $asKnown,
+            'a board retraction recorded after the cutoff is not yet known at the cutoff');
+        $this->assertNotContains('ROOTBOARDRETRACTED', $today, 'and it applies once known, so the fixture is real');
+    }
+
+    private function seedIdentityWithLateRoot(int $n, string $code, ?string $lateRoot, ?string $boardRetractedAt = null): void
+    {
+        $early = '2020-01-01 00:00:00';
+        $at = static function (string $root) use ($lateRoot, $early) {
+            return $lateRoot === $root ? '2026-06-01 00:00:00' : $early;
+        };
+
+        $issuerId = DB::table('md_issuers')->insertGetId([
+            'issuer_uid' => 'ROOT-ISSUER-'.$n, 'legal_name' => 'Issuer '.$n, 'source_ref' => 'fixture',
+            'recorded_at' => $at('issuer'), 'created_at' => $early,
+        ]);
+        $instrumentId = DB::table('md_instruments')->insertGetId([
+            'instrument_uid' => 'ROOT-INSTRUMENT-'.$n, 'issuer_id' => $issuerId, 'instrument_type' => 'EQUITY',
+            'currency_code' => 'IDR', 'source_ref' => 'fixture', 'recorded_at' => $at('instrument'), 'created_at' => $early,
+        ]);
+        $listingId = DB::table('md_listings')->insertGetId([
+            'listing_uid' => 'ROOT-LISTING-'.$n, 'legacy_ticker_id' => 900 + $n, 'instrument_id' => $instrumentId,
+            'exchange_code' => 'IDX', 'market_segment' => 'REGULAR', 'board_code' => 'MAIN',
+            'listed_date' => '2020-01-02', 'delisted_date' => null, 'listing_state' => 'LISTED',
+            'source_ref' => 'fixture', 'recorded_at' => $at('listing'), 'created_at' => $early,
+        ]);
+        DB::table('md_listing_symbols')->insert([
+            'listing_id' => $listingId, 'symbol' => $code, 'symbol_type' => 'EXCHANGE', 'symbol_namespace' => 'IDX',
+            'effective_from' => '2020-01-02 00:00:00', 'effective_to' => null, 'recorded_at' => $at('symbol'),
+            'source_ref' => 'fixture', 'change_reason' => 'LISTING',
+        ]);
+        DB::table('md_listing_boards')->insert([
+            'listing_id' => $listingId, 'market_segment' => 'REGULAR', 'board_code' => 'MAIN',
+            'effective_from' => '2020-01-02 00:00:00', 'effective_to' => null, 'recorded_at' => $at('board'),
+            'retracted_at' => $boardRetractedAt, 'source_ref' => 'fixture', 'change_reason' => 'LISTING',
+        ]);
     }
 
     /**
@@ -109,6 +178,72 @@ class AsKnownReplayBoundaryTest extends TestCase
             (int) ($today[7]['corporate_action_flag'] ?? 0),
             'and it is visible without a cutoff, so the fixture is real'
         );
+
+        $this->assertSourceBackedRevisionsAreBoundByTheCutoff();
+    }
+
+    /**
+     * The source-backed revision path is a second event root beside the legacy table above, and it
+     * has its own two cutoff clauses: a revision recorded after the cutoff is not known, and a
+     * revision superseded only by a revision recorded after the cutoff is still the terminal one at
+     * the cutoff. The legacy row above says nothing about either.
+     */
+    private function assertSourceBackedRevisionsAreBoundByTheCutoff(): void
+    {
+        $this->seedRevisionListing(31, 931);
+        $this->seedRevisionListing(32, 932);
+        $this->seedActionRevision('evt-late', 1, 31, 'EFFECTIVE', '2026-06-01 00:00:00');
+
+        $this->seedActionRevision('evt-superseded', 1, 32, 'EFFECTIVE', '2026-03-30 00:00:00');
+        DB::table('md_corporate_action_revisions')->insert([
+            'event_uid' => 'evt-superseded', 'revision_number' => 2, 'listing_id' => 32,
+            'action_type_code' => 'STOCK_SPLIT', 'lifecycle_state' => 'CANCELLED',
+            'verification_state' => 'AUTHORITATIVE_VERIFIED', 'ex_date' => '2026-03-24',
+            'recorded_at' => '2026-06-01 00:00:00',
+            'supersedes_revision_id' => (int) DB::table('md_corporate_action_revisions')
+                ->where('event_uid', 'evt-superseded')->where('revision_number', 1)->value('corporate_action_revision_id'),
+        ]);
+
+        $repository = new EventRiskSourceRepository();
+        $asKnown = $repository->resolveEventRiskContextForTickerIds([931, 932], '2026-03-24', self::CUTOFF);
+        $today = $repository->resolveEventRiskContextForTickerIds([931, 932], '2026-03-24');
+
+        $this->assertSame(0, (int) ($asKnown[931]['corporate_action_flag'] ?? 0),
+            'a revision recorded in June cannot be known in April');
+        $this->assertSame(1, (int) ($today[931]['corporate_action_flag'] ?? 0), 'and it is visible without a cutoff, so the fixture is real');
+
+        $this->assertSame(1, (int) ($asKnown[932]['corporate_action_flag'] ?? 0),
+            'the June cancellation is not known in April, so the earlier revision is still the terminal one');
+        $this->assertSame(0, (int) ($today[932]['corporate_action_flag'] ?? 0),
+            'and once known the cancellation removes it, so the fixture is real');
+    }
+
+    private function seedRevisionListing(int $n, int $tickerId): void
+    {
+        $issuerId = DB::table('md_issuers')->insertGetId([
+            'issuer_uid' => 'REV-ISSUER-'.$n, 'legal_name' => 'Issuer '.$n, 'source_ref' => 'fixture',
+            'recorded_at' => '2020-01-01 00:00:00', 'created_at' => '2020-01-01 00:00:00',
+        ]);
+        $instrumentId = DB::table('md_instruments')->insertGetId([
+            'instrument_uid' => 'REV-INSTRUMENT-'.$n, 'issuer_id' => $issuerId, 'instrument_type' => 'EQUITY',
+            'currency_code' => 'IDR', 'source_ref' => 'fixture', 'recorded_at' => '2020-01-01 00:00:00', 'created_at' => '2020-01-01 00:00:00',
+        ]);
+        DB::table('md_listings')->insert([
+            'listing_id' => $n, 'listing_uid' => 'REV-LISTING-'.$n, 'legacy_ticker_id' => $tickerId, 'instrument_id' => $instrumentId,
+            'exchange_code' => 'IDX', 'market_segment' => 'REGULAR', 'board_code' => 'MAIN',
+            'listed_date' => '2020-01-02', 'listing_state' => 'LISTED', 'source_ref' => 'fixture',
+            'recorded_at' => '2020-01-02 00:00:00', 'created_at' => '2020-01-02 00:00:00',
+        ]);
+    }
+
+    private function seedActionRevision(string $eventUid, int $revision, int $listingId, string $lifecycle, string $recordedAt): void
+    {
+        DB::table('md_corporate_action_revisions')->insert([
+            'event_uid' => $eventUid, 'revision_number' => $revision, 'listing_id' => $listingId,
+            'action_type_code' => 'STOCK_SPLIT', 'lifecycle_state' => $lifecycle,
+            'verification_state' => 'AUTHORITATIVE_VERIFIED', 'ex_date' => '2026-03-24',
+            'recorded_at' => $recordedAt,
+        ]);
     }
 
     /**
@@ -273,6 +408,26 @@ class AsKnownReplayBoundaryTest extends TestCase
         $this->assertSame('UNKNOWN', $asKnown['status_code'], 'not yet recorded is not yet knowable');
         $this->assertSame('TRADING_STATUS_NO_EVIDENCE', $asKnown['reason_code']);
         $this->assertSame('SUSPENSION', $today['status_code'], 'and it resolves without a cutoff');
+
+        // A retraction is itself a later fact. Recorded early and retracted after the cutoff, the
+        // suspension is still the known state at the cutoff, and gone once the retraction is known.
+        $retractedObservation = $this->seedStatusFoundation(5151, 6151, $hash);
+        DB::table('md_trading_status_revisions')->insert([
+            'listing_id' => 5151, 'instrument_id' => 6151, 'status_event_uid' => hash('sha256', 'status-5151'),
+            'status_type_code' => 'SUSPENDED', 'status_code' => 'SUSPENSION', 'bar_expectation_state' => 'BAR_NOT_EXPECTED',
+            'board_code' => 'RG', 'authority_class' => 'EXCHANGE_AUTHORITATIVE', 'source_name' => 'IDX_OFFICIAL',
+            'source_payload_hash' => $hash, 'verification_state' => 'VERIFIED', 'full_session_verified' => 1,
+            'effective_from' => '2026-03-01 00:00:00', 'effective_to' => null,
+            'recorded_at' => '2026-03-02 00:00:00', 'retracted_at' => '2026-05-02 00:00:00',
+            'source_observation_id' => $retractedObservation, 'source_ref' => 'https://www.idx.co.id/notice',
+            'observed_at' => '2026-03-01 00:00:00', 'announced_at' => '2026-03-01 00:00:00',
+        ]);
+        $retractedAsKnown = $repository->resolveForListing(5151, '2026-03-24', self::CUTOFF);
+        $retractedToday = $repository->resolveForListing(5151, '2026-03-24');
+
+        $this->assertSame('SUSPENSION', $retractedAsKnown['status_code'],
+            'a retraction recorded after the cutoff is not yet known, so the suspension still stands');
+        $this->assertSame('UNKNOWN', $retractedToday['status_code'], 'and it applies once known, so the fixture is real');
     }
 
     /**

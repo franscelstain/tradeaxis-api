@@ -403,6 +403,99 @@ class PublicationRepositoryIntegrationTest extends TestCase
         $this->assertSame(0, (int) $old->is_current);
     }
 
+    /**
+     * MD-S002-R0008, "corrected publications ... switching atomically". A correction is promoted while the
+     * prior publication is current, and the switch is made to fail after part of it has been written: the
+     * whole switch must then leave nothing behind. The failure is injected in the database (a trigger that
+     * aborts one write the promotion makes), so the production promotion path runs unmodified and only a
+     * real transaction can undo the writes that came before the failing one.
+     *
+     * @return array<string,array<int,string>>
+     */
+    public static function atomicSwitchFailurePoints(): array
+    {
+        return [
+            // the publication mirrors are already flipped (prior 0, candidate 1) when the pointer write fails
+            'pointer write, after the publication flags flipped' => [
+                'CREATE TRIGGER md_r0008_fail BEFORE UPDATE ON eod_current_publication_pointer '
+                .'BEGIN SELECT RAISE(ABORT, \'INJECTED_SWITCH_FAILURE\'); END',
+            ],
+            // the pointer already names the candidate when the last run mirror write fails
+            'run mirror write, after the pointer already moved' => [
+                'CREATE TRIGGER md_r0008_fail BEFORE UPDATE ON eod_runs '
+                .'WHEN NEW.run_id = 27 AND NEW.is_current_publication = 1 '
+                .'BEGIN SELECT RAISE(ABORT, \'INJECTED_SWITCH_FAILURE\'); END',
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider atomicSwitchFailurePoints
+     */
+    public function test_a_switch_that_fails_part_way_leaves_the_prior_publication_current_and_nothing_partial(string $failingWrite): void
+    {
+        $repo = new EodPublicationRepository();
+        $run = App\Models\EodRun::query()->findOrFail(27);
+
+        $candidate = $repo->getOrCreateCandidatePublication($run, 10);
+        $repo->updateCandidateHashes($candidate->publication_id, [
+            'bars_batch_hash' => hash('sha256', 'bars-new'),
+            'indicators_batch_hash' => hash('sha256', 'ind-new'),
+            'eligibility_batch_hash' => hash('sha256', 'elig-new'),
+        ]);
+        $repo->bindCandidateAnalyticalProduct(
+            $candidate->publication_id,
+            $run->run_id,
+            'STRUCTURAL_ADJUSTED',
+            'structural_adjusted_v1',
+            hash('sha256', 'publication-repository-new'),
+            1
+        );
+        $this->bindStageEightGovernance($candidate->publication_id, hash('sha256', 'publication-repository-new'));
+        $run = $run->fresh();
+        $repo->sealCandidatePublication($run, 'system');
+
+        $state = static function (): array {
+            return [
+                'publications' => DB::table('eod_publications')->orderBy('publication_id')->get()->map(static function ($r) { return (array) $r; })->all(),
+                'pointer' => DB::table('eod_current_publication_pointer')->orderBy('trade_date')->get()->map(static function ($r) { return (array) $r; })->all(),
+                'runs' => DB::table('eod_runs')->orderBy('run_id')->get()->map(static function ($r) { return (array) $r; })->all(),
+            ];
+        };
+
+        // Before: the prior publication is current and the candidate is sealed and not current.
+        $this->assertSame(1, (int) DB::table('eod_publications')->where('publication_id', 10)->value('is_current'));
+        $this->assertSame(0, (int) DB::table('eod_publications')->where('publication_id', $candidate->publication_id)->value('is_current'));
+        $this->assertSame(10, (int) DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->value('publication_id'));
+        $before = $state();
+
+        DB::statement($failingWrite);
+        $failure = null;
+        try {
+            $repo->promoteCandidateToCurrent($run, 10);
+        } catch (\Throwable $e) {
+            $failure = $e;
+        }
+        DB::statement('DROP TRIGGER md_r0008_fail');
+
+        $this->assertNotNull($failure, 'the injected write failure must surface, not be swallowed by the switch');
+        $this->assertStringContainsString('INJECTED_SWITCH_FAILURE', $failure->getMessage());
+
+        // After the failed switch: the prior publication is still current, the candidate is still not, the
+        // pointer still names the prior publication, and no row of the switch differs from before it.
+        $this->assertSame(1, (int) DB::table('eod_publications')->where('publication_id', 10)->value('is_current'), 'prior publication must stay current');
+        $this->assertSame(0, (int) DB::table('eod_publications')->where('publication_id', $candidate->publication_id)->value('is_current'), 'candidate must stay non-current');
+        $this->assertSame(10, (int) DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->value('publication_id'), 'pointer must still name the prior publication');
+        $this->assertSame($before, $state(), 'a failed switch leaves no partial publication, pointer or run state');
+
+        // The failure left nothing behind, so the same switch can be retried and completes cleanly.
+        $promoted = $repo->promoteCandidateToCurrent($run, 10);
+        $this->assertSame(1, (int) $promoted->is_current);
+        $this->assertSame(10, (int) $promoted->supersedes_publication_id);
+        $this->assertSame((int) $candidate->publication_id, (int) DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->value('publication_id'));
+        $this->assertSame(0, (int) DB::table('eod_publications')->where('publication_id', 10)->value('is_current'));
+    }
+
 
     public function test_promote_candidate_to_current_blocks_uncontrolled_replace_when_valid_current_exists(): void
     {

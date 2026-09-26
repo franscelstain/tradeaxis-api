@@ -1144,3 +1144,128 @@ are loops covering two and three cases. Every count, the `PROVEN` state and the 
 attempt and covers this scope; `CHANGE_IMPACT_DECLARATION_STANDARD.md` section 3 permits updating the mutable declaration
 during the attempt and requires it to be current before closure. The G07 entry states its late timing and is not
 back-dated. No remediation. `e751aff` is cleanly pre-G07. **Next** unchanged: `G05`, not started.
+
+## G05: acceptance aggregate — eight of nine predicates proven, `MD-S003-R0025` blocked on MariaDB — 2026-09-26T11:55:57+07:00
+
+> **Corrected by `E-MD-B18-A002-083` (G05 closure integrity review, below):** two of the eight promotions did not survive review. `MD-S002-R0007` and `MD-S002-R0008` are `INCOMPLETE` again; the figures "eight of nine", "`PROVEN` 92 -> 100", "`INCOMPLETE` 21 -> 13", "readiness 100/113", "this finding 2 remaining" and the **Next:** `F-018` `G06` below are superseded by the review section. `E-MD-B18-A002-082` is not edited.
+
+`E-MD-B18-A002-082` records the unit. Re-derived from the governed package (the `G05` headings inside this
+finding's own section, not other findings' `G05` labels), the nine predicates were `MD-S002-R0005`/`R0006`/`R0007`/`R0008`,
+`MD-S003-R0025` and `MD-S004-R0002`/`R0003`/`R0005`/`R0008`, as expected. `MD-S050-R0005` is not part of this unit.
+
+**What G05 was.** An aggregate/orchestration gap plus guard gaps, not implementation defects. Each predicate is a claim
+about a whole family, and each recorded pair checked that named guards *exist*; nothing ran the members, so a member
+breaking in production left every existence check green. `MD-S003-R0025` is a different case: a dependency gap
+(environment). MariaDB was unreachable (connection refused on `127.0.0.1:3306`); it was not started or restarted.
+
+**The aggregate runner** (`MarketDataReplayVerificationAcceptanceAggregate`, with `B18ReleaseCandidateAcceptanceAggregateTest`).
+The governed set is read from this finding's package section. Members are read from the reviewed maps in the test classes that
+own them, each item naming exactly one executing guard; each map's authority binding is executed with it. Every distinct guard
+runs as its own real PHPUnit process; a member counts only if `PASSED` with at least one assertion (skip, incomplete, risky,
+zero-assertion and not-executed all stay red); each predicate's verdict comes from its own items, so nothing is masked or
+spread. It contains no copy of any behaviour and stubs no member.
+
+**Gaps found by neutering one production clause at a time, and closed.** Four clauses no member could see: the five identity roots
+(listing, instrument, issuer, symbol, board) and a later board retraction, because the fixture recorded every root late at once;
+the source-backed corporate-action revision recorded and supersession clauses, because the guard exercised the legacy table only;
+the observation acquired-at clause, because the guard varied binding time only; and the status retraction clause. Each member
+guard now asserts them on its own. Two member-set gaps: `MD-S002-R0006` had no member for "denominator shrinkage" or the
+unknown-expectation clauses, and `MD-S002-R0008` none for "switching atomically"; five existing proven guards were added to the
+criteria map. Four early probes hit code off the tested path (default state overwritten by the live branch; two clauses no member
+reaches) and are excluded from the counts, with the corrected probes recorded.
+
+**Falsifiability, counts kept separate.** 51 production (or mirror-schema) mutations, each executed through the full eight-predicate
+aggregate; 15 map and fixture perturbations (map wording drift, a guard renamed away, a forbidden outcome, an emptied member); 19
+aggregate-verdict mutations against the runner's own tests; and fixture perturbations inside the runner tests (ten real tiny
+PHPUnit members, four matrix-row changes, four map-item shapes). All 85 probes were restored byte-identical (sha256) and the control
+was unchanged across the run. For each of the eight predicates every member guard and every authority binding was turned red by at
+least one probe. Test cases: the aggregate class is 43 tests (33 fast, 10 real-execution), eight per-predicate positive and nine
+per-predicate negative methods.
+
+**Proof basis (derived):** eight entries `INCOMPLETE` -> `PROVEN` (`MD-S002-R0005`/`R0006`/`R0007`/`R0008`, `MD-S004-R0002`/`R0003`/
+`R0005`/`R0008`), each with its own positive and negative guard; `PROVEN` 92 -> 100, `INCOMPLETE` 21 -> 13, readiness 100/113
+(not 101/12: `MD-S003-R0025` did not earn `PROVEN`). Formal `0/113` `SATISFIED` unchanged; the matrix rows stay `NOT_ASSESSED`;
+binder `--bound` not run.
+
+**`MD-S003-R0025` stays `INCOMPLETE`.** The aggregate executes its six family guards and two bindings and reports the predicate RED:
+all eight members `SKIPPED`, and a skip is never a pass. New dependency `MD-DEP-0019` (blocking): the owner restores an intact MariaDB;
+then the aggregate must run these members with zero skips and the family clauses need their own probes. Limit recorded for
+`MD-S002-R0008`: its pointer-uniqueness member runs on the SQLite mirror schema, so the production DDL is not exercised meanwhile.
+
+**Remaining ownership (tool-derived, 13):** this finding 2 (`MD-S003-R0025`, `MD-S050-R0005`), `F-018` 9, `F-013` (reopened) 2.
+No production, schema, migration, runtime-configuration or strategy change. This finding stays `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`
+with two predicates `INCOMPLETE`, both blocked (environment; recorded implementation dependency). **Next:** `F-MD-B18-A002-018` `G06`, not started.
+
+
+## G05 closure integrity review — two of eight promotions returned to `INCOMPLETE` — 2026-09-26
+
+> **Clarified and superseded by `E-MD-B18-A002-084` (G05 residual, below):** both predicates are `PROVEN` again; the review's attribution of "concurrent reads" and the MariaDB DDL to `MD-S002-R0008` is corrected there (they belong to `MD-S003-R0025` and `MD-S022-R0033`, primary `MD-B17`), and the figures 98/113, "this finding owns 4" and the **Next:** below are superseded.
+
+`E-MD-B18-A002-083` records the review. Two probes made after `E-082` decided it: with `EodPublicationRepository::promoteCandidateToCurrent`
+running without its database transaction (X1), and with a split ratio deriving inverted price and volume factors in
+`AdjustmentFactorSetService` (X2), the whole eight-predicate aggregate stayed GREEN on all 55 executed guards. Both mutations landed once and were
+restored byte-identical; the control was stable.
+
+**Aggregate runner.** Legitimate. No authority text requires the runner to enter through a production release-candidate entry point, and none
+exists; the traceability standard asks for an executable assertion that can fail, and the criteria are claims over families of fixtures, which an
+executing aggregate over independently executing members proves. The runner proves what its member sets contain; whether a set covers every clause is
+a separate, per-predicate question.
+
+**`MD-S002-R0008` returns to `INCOMPLETE`.** The criterion has two halves. Preserving predecessors is proven. "Switching atomically" is required by the
+readiness guarantee ("Executed integration tests must prove ... atomic correction switch, concurrent reads") and no member sees the switch lose its
+transaction (X1). The basis had cited a member that checks the end state after a successful promotion, which a non-transactional promotion also reaches.
+The SQLite-mirror execution is enough in principle for the service-level atomic switch and not for the production DDL or concurrent reads, which wait on
+`MD-DEP-0019`. **Missing proof:** a guard that fails the promotion after its first write and asserts the prior publication still current, the pointer
+unchanged and the candidate not current, red when the transaction is removed.
+
+**`MD-S002-R0007` returns to `INCOMPLETE`.** The members cover the ATR half and the last two hops of the corporate-action chain (factor activation state,
+OHLC coherence, both taking factors as input) but not the derivation of the factor from the event terms (X2). The independent oracle exists and is proven
+(`AdjustmentFactorSetB11Test::test_verified_split_ratio_maps_deterministically_to_price_and_volume_factors` went red under X2) but the criteria map does not
+name it. **Missing proof:** put it in the member set and probe it through the aggregate.
+
+**Six promotions stand:** `MD-S002-R0005`, `MD-S002-R0006`, `MD-S004-R0002`, `MD-S004-R0003`, `MD-S004-R0005`, `MD-S004-R0008`, each reviewed from
+authority to production behaviour to member to falsifying probe.
+
+**`MD-DEP-0019`** is a legitimate proof-environment dependency (the MD-S003 scenarios must run on MariaDB with no skips), narrower than `MD-DEP-0015`,
+and is unchanged. **Counts:** `E-082`'s 51 / 15 / 19 = 85 probes reconcile from the raw results; "10 + 4 + 4" is a separate category of inputs inside the
+runner's own tests (not probes, no overlap with the 15); 43 aggregate cases = 33 fast + 10 real-execution; 736 immutable records now, 735 before `E-082`.
+No count in `E-082` is wrong; only the two promotions and what follows from them.
+
+**Formal state:** proof basis `PROVEN` 98, `INCOMPLETE` 15, readiness 98/113; formal `0/113` `SATISFIED` unchanged. This finding owns 4 (`MD-S002-R0007`,
+`MD-S002-R0008`, `MD-S003-R0025`, `MD-S050-R0005`), `F-018` 9, reopened `F-013` 2. It stays `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`. No production,
+schema, migration, runtime-configuration or test change. **Next:** `F-MD-B18-A002-017` `G05` residual -- the two missing member guards above (`MD-S002-R0007`
+first, then the mirror-level atomic switch guard of `MD-S002-R0008`), not started. `F-018` `G06` is not next: this finding still has actionable, unblocked
+predicates.
+
+
+## G05 residual — `MD-S002-R0007` and `MD-S002-R0008` proven after `E-083` — 2026-09-26
+
+`E-MD-B18-A002-084` records the unit; `E-082` and `E-083` are unedited and this is new proof after them. Re-verified before changing anything: the R0007
+member map lacked the split-ratio oracle; no R0008 member made the switch fail part-way (`E-083` X1); `F-013` is `OPEN`, reopened by `E-MD-B18-A002-070` on
+2026-09-24 (committed history) and untouched here.
+
+**`MD-S002-R0007`.** The existing guard `AdjustmentFactorSetB11Test::test_verified_split_ratio_maps_deterministically_to_price_and_volume_factors`
+calls the production `AdjustmentFactorSetService::factorTermsForEvent` with a 1:5 split and asserts hand-derived 0.2 and 5.0 (volume is the inverse share-unit
+factor, `Price_Adjustment_Contract_LOCKED.md`). It was bound into the R0007 member map with one line; no derivation logic was duplicated. Members 5 -> 6.
+Inverted split factors and a volume factor equal to the price factor each turn exactly this member and exactly `MD-S002-R0007` red, the other seven
+predicates staying green. Removed from the map, the aggregate positive test (pinned count 6) turns red; renamed away, the member is `NOT_EXECUTED`; emptied, red.
+
+**`MD-S002-R0008`.** New guard `PublicationRepositoryIntegrationTest::test_a_switch_that_fails_part_way_leaves_the_prior_publication_current_and_nothing_partial`
+runs the production `promoteCandidateToCurrent` unmodified on a correction and makes it fail part-way with a database trigger: once at the pointer write (the
+publication flags already flipped), once at the last run-mirror write (the pointer already moved). The failure must surface, the prior publication stays
+current, the candidate non-current, the pointer on the prior publication, every publication, pointer and run row equals its pre-attempt state, and the same
+switch then retries cleanly (`Finalize_Lock_And_Pointer_Behavior_LOCKED.md`: a failed finalize leaves the previous pointer intact). It does not assert on source
+text, a helper call or the successful end state. With the transaction removed both data sets fail on "prior publication must stay current" and exactly
+`MD-S002-R0008` turns red. Scope kept: the MariaDB DDL and the MariaDB-side correction and read-path family are members of `MD-S003-R0025`; concurrent reads
+are `MD-S022-R0033` (primary `MD-B17`); `restorePriorCurrentPublication`, the rollback pointer write, is not exercised and not claimed.
+
+**Counts, kept apart:** 2 new PHPUnit cases (one method, two data sets); 3 production mutations; 6 map and member perturbations; 9 probes, all restored
+byte-identical (sha256); control stable (57 guards, all eight predicates green). No runner change, so `E-082`'s 19 aggregate-verdict mutations stand.
+
+**Formal state:** proof basis `PROVEN` 100, `INCOMPLETE` 13, readiness 100/113, formal `0/113` `SATISFIED`. This finding owns 2 (`MD-S003-R0025`,
+`MD-S050-R0005`), `F-018` 9, `F-013` 2. It stays `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`. No production, schema, migration or runtime-configuration change.
+
+**Progression.** Both remaining predicates are blocked: `MD-S003-R0025` on `MD-DEP-0019` (the owner starts and verifies an intact MariaDB, then the aggregate runs
+it with zero skips), `MD-S050-R0005` as `IMPLEMENTATION_DEPENDENCY_UNAVAILABLE`. The attempt is blocked at this finding. No rule in the stage execution standard,
+the dependency standard or the consolidated package permits moving to `F-018` while this finding is `OPEN`, so none is invented. **Next:** the owner decision on
+`MD-DEP-0019`, or an explicit owner decision authorizing progression; not started.

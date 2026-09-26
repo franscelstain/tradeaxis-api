@@ -60,11 +60,21 @@ class B18ReleaseCandidateCriteriaTest extends TestCase
                 'EmptyDatasetFailSafeTest::test_an_available_fallback_holds_the_run_rather_than_failing_it',
                 'EmptyDatasetFailSafeTest::test_no_fallback_fails_the_run_outright',
                 'SourceObservationAsKnownBoundaryTest::test_zero_row_provider_outage_remains_in_as_known_observation_manifest',
+                // The criterion's own words "without denominator shrinkage" and the MD-S003 degraded
+                // family's "unknown expectation does not become holiday/dormancy": the evaluator-level
+                // outage guard (MD-S003-R0005) and the two unknown-expectation guards (MD-S003-R0006).
+                'CoverageGateEvaluatorTest::test_evaluator_keeps_the_full_universe_as_the_denominator_when_the_provider_delivers_nothing',
+                'CalendarProvenanceAndStatusTest::test_absent_status_evidence_resolves_to_unknown_not_normal',
+                'CalendarProvenanceAndStatusTest::test_a_long_suspension_is_not_reclassified_as_dormancy',
             ],
             'long-chain ATR and corporate-action results matching independent oracles;' => [
                 'B18LongChainWilderAtrOracleTest::test_a_two_hundred_session_chain_matches_the_independently_computed_wilder_atr',
                 'B18LongChainWilderAtrOracleTest::test_a_correction_thirty_sessions_back_still_moves_the_atr_by_its_decayed_amount',
                 'IndicatorIndependentOracleTest::test_correction_oracle_propagates_by_exactly_the_expected_amount',
+                // The first hop of a corporate-action result: the price and volume factors a verified split ratio
+                // derives, against hand-derived constants (Price_Adjustment_Contract: volume takes the inverse
+                // share-unit factor). The two guards after it take those factors as input.
+                'AdjustmentFactorSetB11Test::test_verified_split_ratio_maps_deterministically_to_price_and_volume_factors',
                 'AdjustmentFactorSetB11Test::test_only_authoritative_or_manual_verified_revisions_are_adjustment_active',
                 'CoherentPriceProductBoundaryTest::test_every_ohlc_field_moves_on_the_same_scale',
             ],
@@ -72,6 +82,14 @@ class B18ReleaseCandidateCriteriaTest extends TestCase
                 'B18CorrectionReadPathScenarioTest::test_the_superseded_publication_keeps_its_rows_and_cannot_be_discarded',
                 'B18CorrectionReadPathScenarioTest::test_a_projection_disagreeing_with_the_pointer_yields_nothing_rather_than_stale_rows',
                 'PublicationSealPointerLifecycleTest::test_the_pointer_table_structurally_refuses_a_second_current_row',
+                // "Switching atomically": a failed reseal leaves the prior publication current and the
+                // candidate non-current (MD-S003-R0018), and promotion moves the one date pointer in a
+                // single repository transaction (MD-S003-R0019).
+                'MarketDataPipelineIntegrationTest::test_run_daily_correction_with_reseal_failure_keeps_prior_current_and_leaves_candidate_non_current',
+                'PublicationRepositoryIntegrationTest::test_candidate_seal_and_promote_updates_current_pointer_and_prior_publication',
+                // The switch itself: made to fail part-way (after the publication flags flipped, and after the pointer moved),
+                // it leaves the prior publication current and no partial state; the same switch then retries cleanly.
+                'PublicationRepositoryIntegrationTest::test_a_switch_that_fails_part_way_leaves_the_prior_publication_current_and_nothing_partial',
             ],
             '`BLOCKED` treated as missing proof, never converted to pass.' => [
                 'B18ReplayComparisonExhaustivenessTest::test_a_publication_with_no_configuration_snapshot_is_blocked_rather_than_passed',

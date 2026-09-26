@@ -38,6 +38,26 @@ class SourceObservationAsKnownBoundaryTest extends TestCase
         $rows = $repo->normalizedRowsAsKnown('2025-06-02', '2025-06-06 00:00:00');
         $this->assertCount(1, $rows);
         $this->assertSame(77, (int) $rows[0]['listing_id']);
+
+        // The other half of "both": an observation acquired after the cutoff is invisible even when
+        // its identity binding was recorded before the cutoff.
+        [$lateObservationId, $lateRowId] = $this->seedObservationRow('2025-06-02', '2025-06-10 18:00:00');
+        DB::table('md_source_observation_identity_bindings')->insert([
+            'source_observation_row_id' => $lateRowId,
+            'source_observation_id' => $lateObservationId,
+            'listing_id' => 78,
+            'provider_mapping_id' => 11,
+            'mapping_revision' => 'map-v1',
+            'effective_trade_date' => '2025-06-02',
+            'recorded_at' => '2025-06-02 18:00:00',
+        ]);
+
+        $atCutoff = $repo->normalizedRowsAsKnown('2025-06-02', '2025-06-06 00:00:00');
+        $this->assertSame([77], array_map('intval', array_column($atCutoff, 'listing_id')),
+            'an observation acquired on the 10th cannot be known on the 6th, whatever its binding says');
+        $afterAcquisition = $repo->normalizedRowsAsKnown('2025-06-02', '2025-06-11 00:00:00');
+        $this->assertSame([77, 78], array_map('intval', array_column($afterAcquisition, 'listing_id')),
+            'and it is known once acquired, so the fixture is real');
     }
 
     public function test_provider_outage_observation_manifest_does_not_depend_on_current_universe_filtering(): void
