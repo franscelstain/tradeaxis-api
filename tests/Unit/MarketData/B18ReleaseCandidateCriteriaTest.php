@@ -33,6 +33,9 @@ class B18ReleaseCandidateCriteriaTest extends TestCase
     {
         return [
             'zero unexplained value, null-reason, lineage, config, factor, hash, seal, or publication mismatches in exact publication fixtures;' => [
+                'B18ReplayComparisonExhaustivenessTest::test_the_release_criterion_class_map_names_exactly_the_classes_the_contract_names',
+                'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_each_named_mismatch_class_denies_pass_and_names_its_own_field',
+                'B18ReplayComparisonExhaustivenessTest::test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each',
                 'B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_named_assertion_class_denies_pass',
                 'B18ReplayComparisonExhaustivenessTest::test_the_perturbation_table_covers_every_class_the_contract_names',
                 'B18ReplayComparisonExhaustivenessTest::test_the_unperturbed_fixture_passes',

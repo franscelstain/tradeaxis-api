@@ -733,6 +733,290 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
 
         $this->assertSame([], $missing, 'these contract items name a guard that no longer exists');
     }
+    // ---- MD-S002-R0003: zero unexplained mismatches in exact publication fixtures ---------------
+    //
+    // Authority: Backtest_Metrics_and_Acceptance_Criteria_LOCKED.md:7 names eight classes -- value,
+    // null-reason, lineage, config, factor, hash, seal, publication. The replay verdict for an exact
+    // publication fixture is `PASS` for a deterministic match or an expected degrade the fixture
+    // declares, and `FAIL` for a mismatch or unexpected divergence (Run_Artifacts_Format_LOCKED.md:371);
+    // every replay mismatch reason code is HARD, and `REPLAY_MISMATCH` is the code for a mismatch that
+    // was never classified (Reason_Codes_Registry.md). Authority defines no accepted-mismatch state, so
+    // "explained" is what the fixture declares, and a divergence from it is unexplained.
+    //
+    // The perturbation table above (MD-S050-R0029) asserts only that *some* mismatch occurs, so a class
+    // whose own comparison is removed still reads red while a sibling comparison fires. Each entry
+    // below asserts the mismatch on the entry's own field.
+
+    /**
+     * Class => perturbations. `expected` changes the fixture expectation, `run`/`publication` change
+     * the actual side, `bound_input` diverges one frozen input, `field` is the mismatch that must
+     * name it, and `code` is pinned only where the registry text defines it directly.
+     *
+     * @return array<string,array<string,array<string,mixed>>>
+     */
+    private function releaseCriterionClassMap(): array
+    {
+        $hashMismatch = 'REPLAY_ARTIFACT_HASH_MISMATCH';
+        $reasonMismatch = 'REPLAY_FINAL_REASON_CODE_MISMATCH';
+        $lineageMismatch = 'REPLAY_LINEAGE_MISMATCH';
+        $configMismatch = 'REPLAY_CONFIG_IDENTITY_MISMATCH';
+
+        return [
+            'value' => [
+                'artifact row count' => ['expected' => ['bars_rows_written' => 9], 'field' => 'bars_rows_written', 'code' => $hashMismatch],
+                'eligible count' => ['expected' => ['eligible_count' => 9], 'field' => 'eligible_count', 'code' => $hashMismatch],
+            ],
+            'null-reason' => [
+                'final reason code' => ['expected' => ['final_reason_code' => 'RUN_PARTIAL_DATA'], 'field' => 'final_reason_code', 'code' => $reasonMismatch],
+                'reason-code counts' => [
+                    'expected' => ['expected_reason_code_counts' => [['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'reason_count' => 4]]],
+                    'field' => 'reason_code_counts', 'code' => $reasonMismatch,
+                ],
+            ],
+            'lineage' => [
+                'publishing run' => ['expected' => ['publication_run_id' => 92], 'field' => 'publication_run_id'],
+                'lineage record' => ['expected' => ['publication_run_id' => 92], 'field' => 'lineage', 'code' => $lineageMismatch],
+            ],
+            'config' => [
+                'frozen configuration snapshot hash' => ['bound_input' => 'config_snapshot_hash', 'field' => 'bound_input_config_snapshot_hash', 'code' => $configMismatch],
+                'recorded configuration identity' => ['expected' => ['config_identity' => 'diverged-config-identity'], 'field' => 'config_identity', 'code' => $configMismatch],
+            ],
+            'factor' => [
+                'factor set hash' => ['expected' => ['factor_set_hash' => str_repeat('5', 64)], 'field' => 'factor_set_hash', 'code' => $lineageMismatch],
+                'factor set id' => ['expected' => ['factor_set_id' => 12], 'field' => 'factor_set_id', 'code' => $lineageMismatch],
+                'frozen event/factor revisions' => ['bound_input' => 'event_factor_hash', 'field' => 'bound_input_event_factor_hash'],
+            ],
+            'hash' => [
+                'bars batch hash' => ['expected' => ['bars_batch_hash' => 'A2'], 'field' => 'bars_batch_hash', 'code' => $hashMismatch],
+                'indicators batch hash' => ['expected' => ['indicators_batch_hash' => 'B2'], 'field' => 'indicators_batch_hash', 'code' => $hashMismatch],
+                'eligibility batch hash' => ['expected' => ['eligibility_batch_hash' => 'C2'], 'field' => 'eligibility_batch_hash', 'code' => $hashMismatch],
+            ],
+            'seal' => [
+                'run seal state' => ['expected' => ['seal_state' => 'UNSEALED'], 'field' => 'seal_state', 'code' => 'REPLAY_SEAL_STATE_MISMATCH'],
+                'publication seal state' => ['expected' => ['seal_state' => 'UNSEALED'], 'field' => 'publication_seal_state'],
+            ],
+            'publication' => [
+                'publication identity' => ['expected' => ['publication_id' => 45], 'field' => 'publication_id'],
+                'publication version' => ['expected' => ['publication_version' => 5], 'field' => 'publication_version', 'code' => 'REPLAY_PUBLICATION_VERSION_MISMATCH'],
+                'publication currency' => ['expected' => ['publication_is_current' => false], 'field' => 'publication_is_current', 'code' => 'REPLAY_PUBLICATION_STATE_MISMATCH'],
+            ],
+        ];
+    }
+
+    /** @return array<string,array{0:string,1:array<string,mixed>}> */
+    public function releaseCriterionPerturbations(): array
+    {
+        $cases = [];
+        foreach ($this->releaseCriterionClassMap() as $class => $entries) {
+            foreach ($entries as $label => $spec) {
+                $cases[$class.': '.$label] = [$class, $spec];
+            }
+        }
+
+        return $cases;
+    }
+
+    /** @param array<string,mixed> $spec @return array<string,mixed> the expected-side override for one entry */
+    private function releaseCriterionExpected(array $spec): array
+    {
+        $expected = $spec['expected'] ?? [];
+        if (isset($spec['bound_input'])) {
+            $bound = $this->resolvedBoundInputs();
+            $this->assertArrayHasKey($spec['bound_input'], $bound);
+            $bound[$spec['bound_input']] = 'diverged-'.$spec['bound_input'];
+            $expected['expected_bound_input_context'] = $bound;
+        }
+
+        return $expected;
+    }
+
+    /** @return array<int,string> every reason code the strategy registry defines */
+    private function registeredReasonCodes(): array
+    {
+        $path = dirname(__DIR__, 3).'/docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md';
+        $this->assertFileExists($path);
+        preg_match_all('/^\| `([A-Z0-9_]+)` \|/m', (string) file_get_contents($path), $m);
+        $this->assertGreaterThan(100, count($m[1]), 'the reason-code registry table moved; re-read it');
+
+        return $m[1];
+    }
+
+    /**
+     * `MD-S002-R0003` -- the class map and the criterion must name the same eight classes. The
+     * sentence is parsed, so a class added to or removed from the criterion fails here rather than
+     * leaving the corpus quietly short or long.
+     */
+    public function test_the_release_criterion_class_map_names_exactly_the_classes_the_contract_names(): void
+    {
+        $path = dirname(__DIR__, 3).'/docs/market_data/authority/strategy/backtest/Backtest_Metrics_and_Acceptance_Criteria_LOCKED.md';
+        $this->assertFileExists($path);
+        $this->assertSame(1, preg_match(
+            '/^- zero unexplained (.+?) mismatches in exact publication fixtures;\s*$/m',
+            (string) file_get_contents($path),
+            $match
+        ), 'the MD-S002 exact-publication criterion moved; re-read it rather than weakening this map');
+
+        $named = array_values(array_filter(array_map(
+            static function (string $c) { return trim(preg_replace('/^or\s+/', '', trim($c))); },
+            explode(',', $match[1])
+        )));
+        $mapped = array_keys($this->releaseCriterionClassMap());
+        sort($named);
+        sort($mapped);
+
+        $this->assertCount(8, $named, 'the criterion no longer names eight classes');
+        $this->assertSame($named, $mapped, 'MD-S002 and the reviewed class map disagree about which mismatch classes a release candidate may not carry');
+
+        foreach ($this->releaseCriterionClassMap() as $class => $entries) {
+            $this->assertNotSame([], $entries, 'the "'.$class.'" class has no perturbation, so it is named and never probed');
+        }
+    }
+
+    /**
+     * `MD-S002-R0003` -- a divergence in each named class denies PASS, is reported as a mismatch on the
+     * field the class is carried by, and carries a registered, classified reason.
+     *
+     * @dataProvider releaseCriterionPerturbations
+     *
+     * @param array<string,mixed> $spec
+     */
+    public function test_a_divergence_in_each_named_mismatch_class_denies_pass_and_names_its_own_field(string $class, array $spec): void
+    {
+        $result = $this->verify(
+            $this->releaseCriterionExpected($spec),
+            $spec['run'] ?? [],
+            $spec['publication'] ?? []
+        );
+
+        $this->assertSame('FAIL', $result['replay_status'],
+            'a '.$class.' divergence must be a FAIL: BLOCKED would say the comparison never ran and PASS that it agreed');
+        $this->assertSame('MISMATCH', $result['comparison_result']);
+        $this->assertContains($spec['field'], array_column($result['mismatches'], 'field'),
+            'the '.$class.' divergence was reported, but not on '.$spec['field'].', so that comparison is not what caught it');
+
+        $registered = $this->registeredReasonCodes();
+        foreach ($result['mismatches'] as $mismatch) {
+            $this->assertContains($mismatch['reason_code'], $registered,
+                $mismatch['field'].' is reported with a reason code the strategy registry does not define');
+            $this->assertNotSame('REPLAY_MISMATCH', $mismatch['reason_code'],
+                $mismatch['field'].' is an unclassified mismatch; the specific code is the thing to add');
+        }
+
+        if (isset($spec['code'])) {
+            $own = array_values(array_filter($result['mismatches'], static function (array $m) use ($spec) { return $m['field'] === $spec['field']; }));
+            $this->assertSame($spec['code'], $own[0]['reason_code'],
+                $spec['field'].' must be classified with the code the registry defines for this class');
+        }
+    }
+
+    /**
+     * The control: a fixture matching in every named class -- including the frozen configuration and
+     * factor inputs and the recorded configuration identity, which are compared only when the fixture
+     * declares them -- reports zero mismatches, and the comparison actually evaluated every field the
+     * class map probes. Without it the perturbations could pass against a comparison that rejects any
+     * fixture, and a class could vanish from evaluation and still read as a match.
+     */
+    public function test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each(): void
+    {
+        $this->verify();
+        $this->assertNotNull($this->persistedMetric);
+        $declared = [
+            'expected_bound_input_context' => $this->resolvedBoundInputs(),
+            'config_identity' => $this->persistedMetric['config_identity'] ?? null,
+        ];
+        $this->assertNotNull($declared['config_identity'], 'the run recorded no configuration identity to declare');
+
+        $result = $this->verify($declared);
+
+        $this->assertSame('MATCH', $result['comparison_result']);
+        $this->assertSame('PASS', $result['replay_status']);
+        $this->assertSame(0, $result['mismatch_count']);
+        $this->assertSame([], $result['mismatches']);
+
+        $checked = $result['deterministic_fields_checked'];
+        foreach ($this->releaseCriterionClassMap() as $class => $entries) {
+            foreach ($entries as $label => $spec) {
+                $this->assertContains($spec['field'], $checked,
+                    'the "'.$label.'" comparison of the '.$class.' class was not evaluated, so a divergence in it could not be seen');
+            }
+        }
+    }
+
+    /**
+     * Every class diverging at once is reported class by class: no class masks another, and a class
+     * cannot be satisfied by a sibling's mismatch.
+     */
+    public function test_every_named_class_diverging_together_is_reported_for_each_class(): void
+    {
+        $expected = [];
+        $bound = $this->resolvedBoundInputs();
+        $usesBound = false;
+        foreach ($this->releaseCriterionClassMap() as $entries) {
+            foreach ($entries as $spec) {
+                $expected = array_merge($expected, $spec['expected'] ?? []);
+                if (isset($spec['bound_input'])) {
+                    $bound[$spec['bound_input']] = 'diverged-'.$spec['bound_input'];
+                    $usesBound = true;
+                }
+            }
+        }
+        $this->assertTrue($usesBound);
+        $expected['expected_bound_input_context'] = $bound;
+
+        $result = $this->verify($expected);
+
+        $this->assertSame('FAIL', $result['replay_status']);
+        $fields = array_column($result['mismatches'], 'field');
+        foreach ($this->releaseCriterionClassMap() as $class => $entries) {
+            foreach ($entries as $label => $spec) {
+                $this->assertContains($spec['field'], $fields,
+                    'with every class diverging, the "'.$label.'" mismatch of the '.$class.' class was not reported');
+            }
+        }
+    }
+
+    /**
+     * Explained versus unexplained. The fixture declares what it expects, and `EXPECTED_DEGRADE` is the
+     * declaration that the reproduced outcome is a degrade rather than a plain match. When the run
+     * reproduces the declaration exactly the verdict is `PASS` with zero mismatches; when it also
+     * diverges anywhere the fixture did not declare, the verdict is `UNEXPECTED` and `FAIL`. The declared
+     * class does not excuse an undeclared divergence, and the two outcomes are not one category.
+     *
+     * The state reproduced here is the baseline run, not a degraded one: what is under test is how the
+     * declared class is classified, and a full held-run fixture through this harness carries resolution,
+     * pointer and seal context that these tests do not otherwise assert.
+     */
+    public function test_a_declared_expected_degrade_is_accepted_and_an_undeclared_divergence_within_it_is_not(): void
+    {
+        $accepted = $this->verify(['comparison_result' => 'EXPECTED_DEGRADE']);
+        $this->assertSame([], array_column($accepted['mismatches'], 'field'),
+            'a declared expectation the run reproduces must produce no mismatch');
+        $this->assertSame('EXPECTED_DEGRADE', $accepted['comparison_result']);
+        $this->assertSame('PASS', $accepted['replay_status']);
+
+        $unexplained = $this->verify(['comparison_result' => 'EXPECTED_DEGRADE', 'bars_batch_hash' => 'A2']);
+        $this->assertSame('UNEXPECTED', $unexplained['comparison_result']);
+        $this->assertSame('FAIL', $unexplained['replay_status'],
+            'a divergence the fixture did not declare is not excused by the degrade it did declare');
+        $this->assertContains('bars_batch_hash', array_column($unexplained['mismatches'], 'field'));
+    }
+
+    /**
+     * The null-reason class cannot be dropped by omission: a fixture without its reason-count
+     * expectation is reported as incomplete proof, not skipped.
+     */
+    public function test_a_fixture_without_its_reason_count_expectation_is_reported_not_skipped(): void
+    {
+        $result = $this->verify(['omit_reason_code_counts' => true]);
+
+        // A fixture missing required proof is BLOCKED ("required fixture proof was unavailable"), never a
+        // PASS, and the missing path stays visible as its own mismatch entry.
+        $this->assertSame('BLOCKED', $result['replay_status']);
+        $this->assertSame('NOT_ADMISSIBLE', $result['comparison_result']);
+        $this->assertContains('expected_proof.expected/expected_reason_code_counts.json', array_column($result['mismatches'], 'field'));
+        $this->assertContains('REPLAY_EXPECTED_PROOF_INCOMPLETE', $result['mismatch_reason_codes']);
+    }
+
     // ---- fixture construction -------------------------------------------------------------
 
     /**
@@ -924,10 +1208,15 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
                 'indicators_batch_hash' => 'B1',
                 'eligibility_batch_hash' => 'C1',
             ],
-            'expected/expected_reason_code_counts.json' => [
+            // MD-S002-R0003 (null-reason class): a fixture may declare different reason counts, or
+            // omit the file, so both the comparison and the missing-proof report can be probed.
+            'expected/expected_reason_code_counts.json' => $override['expected_reason_code_counts'] ?? [
                 ['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'reason_count' => 3],
             ],
         ];
+        if (! empty($override['omit_reason_code_counts'])) {
+            unset($files['expected/expected_reason_code_counts.json']);
+        }
 
         $manifestFiles = array_keys($files);
         $manifest = [
@@ -1016,8 +1305,15 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
 
         $seal = $v['seal_state'] ?? ($v['terminal_status'] === 'SUCCESS' ? 'SEALED' : 'UNSEALED');
 
-        return [
-            'comparison_result' => 'MATCH',
+        $declared = [];
+        if (array_key_exists('config_identity', $overrides)) {
+            $declared['config_identity'] = $overrides['config_identity'];
+        }
+
+        return $declared + [
+            // MD-S002-R0003: a fixture may declare the expected degrade explicitly; the default is
+            // unchanged.
+            'comparison_result' => $overrides['comparison_result'] ?? 'MATCH',
             'comparison_note' => 'deterministic replay fixture expectation',
             'expected_run_context' => [
                 'run_id' => $v['publication_run_id'],
@@ -1084,6 +1380,7 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
                 'publication_publishability_state' => $v['publishability_state'],
                 'publication_is_current' => $v['publication_is_current'],
                 'publication_seal_state' => $seal,
+                'factor_set_id' => $overrides['factor_set_id'] ?? null,
                 'factor_set_hash' => $v['factor_set_hash'],
             ],
             'expected_pointer_context' => [

@@ -1,0 +1,179 @@
+{
+  "evidence_id": "E-MD-B18-A002-081",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+  "issued_at": "2026-09-25T19:33:56+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "CORRECTION_E080_THREE_FACTUAL_STATEMENTS_AND_G07_CI_TIMING_REVIEW_NO_PROOF_OR_STATE_CHANGE",
+  "evidence_scope": "E080_FACTUAL_CORRECTION_AND_CI_TIMING_CLOSURE_INTEGRITY_REVIEW",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-017"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-080",
+    "CI-MD-B18-A002-001"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017"
+  ],
+  "schema_changed": false,
+  "production_code_changed": false,
+  "test_code_changed": false,
+  "corrects": {
+    "record": "E-MD-B18-A002-080",
+    "record_sha256_at_correction": "ec15e434daeba05f66167dc57f9bed05f8b7bf490d98e2b8706ddfba3b9246b4",
+    "corrections": [
+      {
+        "field": "why_incomplete_at_entry.probes_before",
+        "inaccurate": "The embedded table has 14 rows and lists neither C2_config_bound_input_hash nor F3_factor_bound_input_event_factor_hash, so every row reads exhaustiveness_red=false. The same record's narrative says 16 comparisons were probed and that the exhaustiveness class went red for the two frozen-input comparisons.",
+        "why": "A builder defect: the table was assembled with the array union operator over the first probe run (whose two frozen-input anchors had matched twice and were skipped) and the re-run that fixed them, and the union kept the skipped entries, which were then filtered out.",
+        "correct_statement": "Sixteen comparisons were probed at HEAD. Fourteen appear in E-080; the other two are below and are the two the narrative names.",
+        "omitted_rows": {
+          "C2_config_bound_input_hash": {
+            "class": "config",
+            "landed_count": 1,
+            "files_red": [
+              "B18ReplayComparisonExhaustivenessTest"
+            ],
+            "bound_guards_red": [],
+            "exhaustiveness_red": true,
+            "red_test": [
+              "B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass"
+            ],
+            "restored_byte_identical": true
+          },
+          "F3_factor_bound_input_event_factor_hash": {
+            "class": "factor",
+            "landed_count": 1,
+            "files_red": [
+              "B18ReplayComparisonExhaustivenessTest"
+            ],
+            "bound_guards_red": [],
+            "exhaustiveness_red": true,
+            "red_test": [
+              "B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_frozen_input_denies_pass"
+            ],
+            "restored_byte_identical": true
+          }
+        },
+        "source_run": "probe_classes.php run \"head_before_bound\" (sha256 749fd5369d57d415d4bad4c479722f8d6704a3ecdcfc2435f0da3e2f4323668e), a re-run of exactly those two probes with unique anchors; the raw probe outputs are working files, not governed storage, and are not retained as artifacts.",
+        "totals_at_head": {
+          "probed": 16,
+          "no_test_red": 5,
+          "some_test_red": 11,
+          "exhaustiveness_class_red": 2,
+          "r0003_bound_guards_red": 0
+        }
+      },
+      {
+        "field": "why_incomplete_at_entry.evidence",
+        "inaccurate": "\"(each of 16 neutering probes turned some existing test red)\"",
+        "why": "Contradicted by the same field: five of the 16 (lineage publication_run_id, factor_set_hash, factor_set_id, publication_seal_state, publication_id) turned no test red in the five replay test files run.",
+        "correct_statement": "Of the 16 comparisons neutered at HEAD, 11 turned at least one existing test red and 5 turned none. The statement that every named class already had a working comparison holds per class (each class has at least one comparison an existing test guarded); it does not hold per comparison, which is exactly the gap G07 closed."
+      },
+      {
+        "field": "remediation.files[tests/Unit/MarketData/B18ReplayComparisonExhaustivenessTest.php]",
+        "inaccurate": "\"Four additive, default-preserving harness hooks\"",
+        "why": "The harness edits touched three places and add five fixture override keys, not four.",
+        "correct_statement": "Five additive, default-preserving fixture override keys across three edit sites: expected_reason_code_counts and omit_reason_code_counts (fixtureDir), comparison_result and config_identity (expectedReplayResult head), factor_set_id (expected_publication_context). With none supplied the fixture is unchanged; the 53 pre-existing tests pass unchanged. The same \"four\" appears in the F-017 G07 section and the CI G07 entry; both are mutable and receive a pointer to this record."
+      }
+    ],
+    "what_was_not_wrong": [
+      "The narrative counts: 16 comparison probes at HEAD, both R0003-bound guards red in none, the exhaustiveness class red only for the two frozen-input comparisons, five comparisons unguarded.",
+      "probes_after_remediation (22 rows: 16 comparison probes and 6 verdict probes), the 24 cases, the 19 perturbations, every derived proof count, and the PROVEN state of MD-S002-R0003.",
+      "The 733 immutable records re-verification and the production-file hash."
+    ]
+  },
+  "reconciliation_19_perturbations_vs_16_probes": {
+    "answer": "Different layers, and consistent. The 19 are test-side perturbation cases: one fixture expectation is diverged and the verdict must name that field. The 16 are production-side neutering probes: one comparison statement in ReplayVerificationService is disabled and the guards must turn red. They are many-to-one because two comparison statements are loops over several fields: the artifact-count loop carries two of the value cases (artifact row count, eligible count) and the batch-hash loop carries three hash cases, so those two probes each redden several cases and every other probe reddens exactly one.",
+    "probe_to_own_field_cases_turned_red_after_remediation": {
+      "V_value_rows_written": [
+        "\"value: artifact row count\"",
+        "\"value: eligible count\""
+      ],
+      "N1_null_reason_final_reason_code": [
+        "\"null-reason: final reason code\""
+      ],
+      "N2_null_reason_counts": [
+        "\"null-reason: reason-code counts\""
+      ],
+      "L1_lineage_array": [
+        "\"lineage: lineage record\""
+      ],
+      "L2_lineage_publication_run_id": [
+        "\"lineage: publishing run\""
+      ],
+      "C1_config_identity": [
+        "\"config: recorded configuration identity\""
+      ],
+      "C2_config_bound_input_hash": [
+        "\"config: frozen configuration snapshot hash\""
+      ],
+      "F1_factor_set_hash": [
+        "\"factor: factor set hash\""
+      ],
+      "F2_factor_set_id": [
+        "\"factor: factor set id\""
+      ],
+      "F3_factor_bound_input_event_factor_hash": [
+        "\"factor: frozen event/factor revisions\""
+      ],
+      "H_hash_batch_hashes": [
+        "\"hash: bars batch hash\"",
+        "\"hash: eligibility batch hash\"",
+        "\"hash: indicators batch hash\""
+      ],
+      "S1_seal_state": [
+        "\"seal: run seal state\""
+      ],
+      "S2_publication_seal_state": [
+        "\"seal: publication seal state\""
+      ],
+      "P1_publication_id": [
+        "\"publication: publication identity\""
+      ],
+      "P2_publication_version": [
+        "\"publication: publication version\""
+      ],
+      "P3_publication_is_current": [
+        "\"publication: publication currency\""
+      ]
+    },
+    "cases_covered_by_the_16_probes": 19,
+    "perturbations_in_the_class_map": 19,
+    "equal": true,
+    "the_six_verdict_probes": "Six further probes neuter the verdict path (MISMATCH or UNEXPECTED to PASS, EXPECTED_DEGRADE excusing an undeclared divergence, the unclassified fallback, a mismatch losing its reason code, a missing reason-count file skipped); they are not comparison probes and are counted separately (16 + 6 = 22)."
+  },
+  "ci_timing_review": {
+    "question": "Is the G07 Change Impact Declaration entry, written after the first test edit, procedurally valid?",
+    "authority": {
+      "CHANGE_IMPACT_DECLARATION_STANDARD.md section 1": "\"Every material current attempt MUST issue a correlated Change Impact Declaration record using the attempt Work ID\" -- the obligation attaches to the attempt, not to each work unit or mutation.",
+      "CHANGE_IMPACT_DECLARATION_STANDARD.md section 3": "\"The declaration MUST exist early enough to guide the attempt's validation scope and MUST be current before stage/attempt closure.\" and \"If the impact scope changes materially during the attempt, update the mutable declaration if its record class permits it, or issue the required correlated successor/correction record according to the recording standard.\"",
+      "CI-MD-B18-A002-001": "Registered MUTABLE_UNTIL_CLOSURE; issued after MD-B18-A002-BL001 and before any material MD-B18 mutation of the attempt (\"so that it directs the attempt rather than describing it afterwards\"); its section 2 declares tests/gates/proof-spec changes and new guards under tests/Unit/MarketData, and D-MD-B18-A002-005 (Q1-Q6) approved the consolidated package G01-G09.",
+      "STAGE_EXECUTION_AND_REWORK_STANDARD.md sections 1-2": "DONE requires a required CI where applicable; a valid open attempt continues rather than restarts. Nothing there or in DOCUMENT_CHANGE_POLICY.md, DOCUMENT_RECORDING_STANDARD.md, WORK_BASELINE_LOCK_STANDARD.md, WORK_CORRELATION_AND_RECORD_REGISTRY_STANDARD.md or STAGE_CLOSURE_MANIFEST_STANDARD.md requires a fresh declaration before the first mutation of a work unit inside an open attempt, or defines a deviation record for one."
+    },
+    "A_pre_mutation_ci_mandatory_for_this_g07_change": "No, not as a new record. The mandatory declaration is the attempt-level CI-MD-B18-A002-001, which already existed before any material mutation of MD-B18-A002 and whose declared scope covers this change (tests/proof-spec/new guards; no application, schema or strategy change). G07 changed no scope beyond it.",
+    "B_late_entry_satisfies_when_it_records_its_timing_truthfully": "Yes. Section 3 permits updating the mutable declaration during the attempt and requires only that it be current before closure; the attempt is open and the entry is current. The entry states that it was written after the first test edit, and it is not back-dated (its timestamp is the clock time at writing).",
+    "C_remediation": "None required. No canonical remediation mechanism exists or is needed. Earlier units in this attempt wrote a \"declaration BEFORE mutation\" entry per work unit; that is a self-imposed convention of this attempt, not a rule of the standard, and this unit did not follow it. It is recorded here, not repaired.",
+    "not_done": [
+      "No history rewritten, no timestamp altered, E-080 not edited or deleted, the CI entry not re-dated, no replay of G07 changes."
+    ]
+  },
+  "git_boundary": {
+    "e751aff": "docs: govern MD-B18 config override and transfer R0003 to B21; parent 13af693; authored 2026-09-25T14:48:31+07:00 by the repository user via the desktop harness checkpoint; 23 files, D-009/D-010/E-078/E-079, the MD-S065 revision and the R0003 transfer.",
+    "entirely_pre_g07": true,
+    "evidence": "No G07 identifier or file: E-MD-B18-A002-080, MD-DOC-01218 and the new test names are absent from that tree; its Stage Register still names G07 as the next work and its CURRENT_STATE shows denominator 113 and 0/113.",
+    "head_at_review": "e751aff71168322352c6c7d7026ed4b07329ed25, branch master, equal to origin/master",
+    "working_tree_at_review": "all G07 changes are uncommitted: 12 modified files and E-080 untracked; no other changes"
+  },
+  "no_other_changes": "No production code, test code, proof-basis entry, predicate state or count is changed by this record. E-080 stays byte-identical.",
+  "no_commit_or_push": true
+}

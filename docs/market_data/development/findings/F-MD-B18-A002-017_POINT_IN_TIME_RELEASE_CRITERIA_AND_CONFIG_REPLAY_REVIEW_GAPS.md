@@ -1066,3 +1066,81 @@ Derived, not chosen: package section 5 step 4 puts guard and rebind work before 
 that aggregate (its `MD-S002` parent includes R0003), and `MD-S050-R0005` stays
 `IMPLEMENTATION_DEPENDENCY_UNAVAILABLE`. Not started. This finding stays
 `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE` with 11 predicates `INCOMPLETE`.
+
+## G07: `MD-S002-R0003` proven — the eight mismatch classes, each with its own-field assertion — 2026-09-25T18:45:21+07:00
+
+`E-MD-B18-A002-080` records the unit. `MD-S002-R0003` (`Backtest_Metrics_and_Acceptance_Criteria_LOCKED.md:7`,
+"zero unexplained value, null-reason, lineage, config, factor, hash, seal, or publication mismatches in exact
+publication fixtures") moves from `INCOMPLETE` to `PROVEN`. No production, schema, runtime-configuration or
+strategy change.
+
+**Why it was `INCOMPLETE`: a proof-guard gap, not an implementation defect.** Every named class already had a
+working comparison in `ReplayVerificationService`, mapped to a registered `HARD` reason code. The recorded pair was
+existence-only: `B18ReleaseCandidateCriteriaTest::test_the_exact_publication_mismatch_corpus_is_complete` checks
+that named guards exist, and the negative is the unperturbed fixture passing. Neutering each of 16 comparisons in
+turn (before any change) turned neither bound guard red once, and turned `B18ReplayComparisonExhaustivenessTest`
+red only for the two frozen-input comparisons its frozen-input test asserts field by field. Five comparisons in the
+named classes were guarded by no test in the five replay comparison test files: lineage `publication_run_id`,
+`factor_set_hash`, `factor_set_id`, `publication_seal_state` and `publication_id`. The perturbation table the corpus
+rested on asserts only that *some* mismatch occurs, so a class whose own comparison is removed still reads red
+while a sibling comparison fires (this is the F-017 note that disabling config comparison left the corpus green).
+It also covers the six classes `MD-S050-R0029` names, not the eight `MD-S002` names, and nothing pinned the class
+list to the contract.
+
+**What "explained" means here.** Authority defines no accepted-mismatch state. It defines `PASS` for a deterministic
+match or an expected degrade the fixture declares, `FAIL` for a mismatch or unexpected divergence
+(`Run_Artifacts_Format_LOCKED.md:371`), every replay mismatch reason code is `HARD`, and `REPLAY_MISMATCH` is the code
+for a mismatch with no more specific classification. So "explained" is what the fixture declares, and a divergence
+from it is unexplained and denies `PASS`. This is a reading of existing text; the implementation already has no
+accepted-mismatch state and none was added. A reading under which an explained mismatch could still be accepted would
+need an owner decision, and no current authority supports it.
+
+**Remediation (tests only).** `B18ReplayComparisonExhaustivenessTest` gains six tests (24 cases): the class list is
+parsed from `MD-S002` and must equal the map's eight keys; 19 per-class perturbations, each through
+`verifyRunAgainstFixture`, assert `FAIL`, `MISMATCH`, the mismatch on that entry's own field, and a registered,
+non-`REPLAY_MISMATCH` reason code, with the code pinned where the registry text defines it; a control declaring every
+frozen input and the recorded configuration identity reports zero mismatches and asserts each probed field was
+evaluated; all classes diverging together are each reported; a declared `EXPECTED_DEGRADE` the run reproduces is
+`PASS` while an undeclared divergence inside it is `UNEXPECTED`/`FAIL`; a fixture without its reason-count
+expectation is `BLOCKED` with the missing path reported. Four additive, default-preserving harness hooks; the existing
+53 tests are unchanged and pass. The `MD-S002-R0003` criteria-map entry lists the new guards.
+
+**Falsifiability.** After the change, each of the 16 comparison probes turns red exactly the own-field case for the
+surface it neutered, plus the control and the all-classes test, and no other class's case; six verdict probes
+(`MISMATCH`/`UNEXPECTED` mapped to `PASS`, `EXPECTED_DEGRADE` excusing an undeclared divergence, the unclassified
+fallback, a mismatch losing its reason code, a missing reason-count file silently skipped) each turn the intended
+guard red. Every probe landed once and the service was restored byte-identical (sha256).
+
+**Proof basis:** `PROVEN` 91 -> 92, `INCOMPLETE` 22 -> 21 (`MarketDataReplayVerificationProofReadinessGate` run
+directly: 92/113). Formal `0/113` `SATISFIED` unchanged; the matrix row stays `NOT_ASSESSED`.
+
+**Remaining ownership (tool-derived, 21):** this finding 10 (nine `G05`: `MD-S002-R0005`/`R0006`/`R0007`/`R0008`,
+`MD-S003-R0025`, `MD-S004-R0002`/`R0003`/`R0005`/`R0008`; and `MD-S050-R0005`), `F-018` 9, `F-013` (reopened) 2.
+
+**Observed, not acted on:** a `publication_run_id` divergence is classified `REPLAY_PUBLICATION_STATE_MISMATCH` although
+the registry has run/publication lineage codes; it is guarded and classified with a registered `HARD` code, so the
+criterion holds, and the new test does not pin that code. Frozen inputs other than configuration fall through to
+`REPLAY_NON_DETERMINISTIC_OUTPUT`, as the service already records. The `EXPECTED_DEGRADE` proof classifies the
+declaration and reproduces the baseline run, not a held run. The actual side is the harness, not a production
+publication.
+
+This finding stays `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE` with 10 predicates `INCOMPLETE`. **Next:** `G05`, the
+executing full-parent aggregate runner for the nine remaining `G05` predicates. Derived: `MD-S050-R0005` is
+`IMPLEMENTATION_DEPENDENCY_UNAVAILABLE`, and this finding records that `G05` needs the aggregate runner, a separate,
+larger harness. Not started.
+
+## G07 closure-integrity review: `E-MD-B18-A002-081` — 2026-09-25T19:33:56+07:00
+
+`E-MD-B18-A002-081` corrects three factual statements in the issued `E-MD-B18-A002-080` (which stays byte-identical)
+and records the review of the G07 declaration timing. The G07 section above is append-only and stays as written; on
+one point it is superseded by `E-081`: it says "four additive harness hooks", and there are five fixture override
+keys across three edit sites (`E-081` lists them). Also corrected in `E-080`: its embedded before-probe table omits two
+of the 16 HEAD probes (the two frozen-input comparisons, which the narrative already names), and its parenthetical that
+each of 16 neutering probes turned some existing test red is wrong (11 did, 5 did not). The 19 perturbations and the 16
+comparison probes are different layers and are consistent: 19 test cases, 16 production comparison probes, two of which
+are loops covering two and three cases. Every count, the `PROVEN` state and the 92/113 readiness are unchanged.
+
+**CI timing:** compliant. The mandatory `CI-MD-B18-A002-001` is attempt-level, predates every material mutation of the
+attempt and covers this scope; `CHANGE_IMPACT_DECLARATION_STANDARD.md` section 3 permits updating the mutable declaration
+during the attempt and requires it to be current before closure. The G07 entry states its late timing and is not
+back-dated. No remediation. `e751aff` is cleanly pre-G07. **Next** unchanged: `G05`, not started.

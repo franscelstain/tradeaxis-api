@@ -1,0 +1,698 @@
+{
+  "evidence_id": "E-MD-B18-A002-080",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+  "issued_at": "2026-09-25T18:45:21+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "F017_G07_MD_S002_R0003_PROVEN_PROOF_GUARD_GAP_NO_PRODUCTION_CHANGE",
+  "evidence_scope": "F017_G07_EXACT_PUBLICATION_MISMATCH_CLASSES",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": [
+    "F-MD-B18-A002-017"
+  ],
+  "related_evidence": [
+    "E-MD-B18-A002-079",
+    "CI-MD-B18-A002-001"
+  ],
+  "related_decisions": [
+    "D-MD-B18-A002-005"
+  ],
+  "dependencies": [
+    "MD-DEP-0017"
+  ],
+  "schema_changed": false,
+  "production_code_changed": false,
+  "runtime_config_changed": false,
+  "test_code_changed": true,
+  "requirement": {
+    "rule": "MD-S002-R0003",
+    "source": "authority/strategy/backtest/Backtest_Metrics_and_Acceptance_Criteria_LOCKED.md:7",
+    "text": "zero unexplained value, null-reason, lineage, config, factor, hash, seal, or publication mismatches in exact publication fixtures;",
+    "named_classes": [
+      "value",
+      "null-reason",
+      "lineage",
+      "config",
+      "factor",
+      "hash",
+      "seal",
+      "publication"
+    ],
+    "classes_invented": "none; the eight are the criterion's own words and the test parses them from the contract"
+  },
+  "authority_fit": {
+    "verdicts": "Run_Artifacts_Format_LOCKED.md:371: PASS for deterministic match or expected degrade, FAIL for mismatch or unexpected divergence, BLOCKED only when fixture/context/runtime prerequisites are missing. Replay_Verification_Contract_LOCKED.md:58: PASS means all expected values, null reasons, states, lineages, content hashes, manifest and seal assertions match.",
+    "null_reason_meaning": "Audit_Hash_and_Reproducibility_Contract_LOCKED.md:78 and Downstream_Consumer_Read_Model_Contract_LOCKED.md:38 (per-field null/reason annotations); Reason_Codes_Registry.md defines REPLAY_FINAL_REASON_CODE_MISMATCH as \"final reason code or reason-code counts differ\" and REPLAY_ARTIFACT_HASH_MISMATCH as \"artifact hash or artifact row-count context differs\", which is why value/hash map to artifact counts and hashes and null-reason to the final reason code and the reason-code counts.",
+    "explained_versus_unexplained": "Authority does not define an accepted-mismatch state. What is defined: an expected degrade the fixture declares (PASS) versus a mismatch or unexpected divergence (FAIL); every replay mismatch reason code is HARD; REPLAY_MISMATCH is the code for a mismatch that carries no more specific classification. So \"explained\" is what the fixture declares, and a divergence from it is unexplained. This is a reading of existing text, not new semantics: the implementation already has no accepted-mismatch state and none was added. A stricter alternative (an explained mismatch may still be accepted) would need an owner decision and no current authority supports it.",
+    "field_to_class_mapping": "A reviewed mapping from each named class to the comparator fields that carry it; the class names are authority, the field mapping is the reviewed reading, pinned in releaseCriterionClassMap()."
+  },
+  "why_incomplete_at_entry": {
+    "classification": "PROOF_GUARD_GAP (guard/rebind gap); not an implementation defect, not a fixture gap, not an orchestration gap",
+    "evidence": "Every named class already had a working comparison in ReplayVerificationService (each of 16 neutering probes turned some existing test red) and the comparator maps every mismatch to a registered HARD reason code. The recorded pair was existence-only: B18ReleaseCandidateCriteriaTest::test_the_exact_publication_mismatch_corpus_is_complete checks that named guards exist, and the unperturbed fixture passes. With each of 16 comparisons neutered, neither bound guard went red once, and B18ReplayComparisonExhaustivenessTest went red only for the two frozen-input comparisons (configuration snapshot hash, event/factor hash). Five comparisons in the named classes were guarded by no test in the five replay test files run (lineage publication_run_id, factor_set_hash, factor_set_id, publication_seal_state, publication_id). The table the corpus rested on asserts only that some mismatch occurs, so a class whose own comparison is removed still reads red while a sibling comparison fires; it covers six classes named by MD-S050-R0029 rather than the eight MD-S002 names; and nothing pinned the class list to the contract.",
+    "probes_before": {
+      "V_value_rows_written": {
+        "class": "value",
+        "landed_count": 1,
+        "files_red": [
+          "ReplayComparisonDetectsDivergenceTest",
+          "ReplayVerificationServiceTest"
+        ],
+        "bound_guards_red": [],
+        "exhaustiveness_red": false,
+        "restored_byte_identical": true
+      },
+      "N1_null_reason_final_reason_code": {
+        "class": "null-reason",
+        "landed_count": 1,
+        "files_red": [
+          "ReplayComparisonDetectsDivergenceTest"
+        ],
+        "bound_guards_red": [],
+        "exhaustiveness_red": false,
+        "restored_byte_identical": true
+      },
+      "N2_null_reason_counts": {
+        "class": "null-reason",
+        "landed_count": 1,
+        "files_red": [
+          "ReplayVerificationServiceTest"
+        ],
+        "bound_guards_red": [],
+        "exhaustiveness_red": false,
+        "restored_byte_identical": true
+      },
+      "L1_lineage_array": {
+        "class": "lineage",
+        "landed_count": 1,
+        "files_red": [
+          "ReplayComparisonDetectsDivergenceTest",
+          "ReplayVerificationServiceTest"
+        ],
+        "bound_guards_red": [],
+        "exhaustiveness_red": false,
+        "restored_byte_identical": true
+      },
+      "L2_lineage_publication_run_id": {
+        "class": "lineage",
+        "landed_count": 1,
+        "files_red": [],
+        "bound_guards_red": [],
+        "exhaustiveness_red": false,
+        "restored_byte_identical": true
+      },
+      "C1_config_identity": {
+        "class": "config",
+        "landed_count": 1,
+        "files_red": [
+          "ReplayComparisonDetectsDivergenceTest"
+        ],
+        "bound_guards_red": [],
+        "exhaustiveness_red": false,
+        "restored_byte_identical": true
+      },
+      "F1_factor_set_hash": {
+        "class": "factor",
+        "landed_count": 1,
+        "files_red": [],
+        "bound_guards_red": [],
+        "exhaustiveness_red": false,
+        "restored_byte_identical": true
+      },
+      "F2_factor_set_id": {
+        "class": "factor",
+        "landed_count": 1,
+        "files_red": [],
+        "bound_guards_red": [],
+        "exhaustiveness_red": false,
+        "restored_byte_identical": true
+      },
+      "H_hash_batch_hashes": {
+        "class": "hash",
+        "landed_count": 1,
+        "files_red": [
+          "ReplayComparisonDetectsDivergenceTest"
+        ],
+        "bound_guards_red": [],
+        "exhaustiveness_red": false,
+        "restored_byte_identical": true
+      },
+      "S1_seal_state": {
+        "class": "seal",
+        "landed_count": 1,
+        "files_red": [
+          "ReplayComparisonDetectsDivergenceTest"
+        ],
+        "bound_guards_red": [],
+        "exhaustiveness_red": false,
+        "restored_byte_identical": true
+      },
+      "S2_publication_seal_state": {
+        "class": "seal",
+        "landed_count": 1,
+        "files_red": [],
+        "bound_guards_red": [],
+        "exhaustiveness_red": false,
+        "restored_byte_identical": true
+      },
+      "P1_publication_id": {
+        "class": "publication",
+        "landed_count": 1,
+        "files_red": [],
+        "bound_guards_red": [],
+        "exhaustiveness_red": false,
+        "restored_byte_identical": true
+      },
+      "P2_publication_version": {
+        "class": "publication",
+        "landed_count": 1,
+        "files_red": [
+          "ReplayComparisonDetectsDivergenceTest"
+        ],
+        "bound_guards_red": [],
+        "exhaustiveness_red": false,
+        "restored_byte_identical": true
+      },
+      "P3_publication_is_current": {
+        "class": "publication",
+        "landed_count": 1,
+        "files_red": [
+          "ReplayComparisonDetectsDivergenceTest"
+        ],
+        "bound_guards_red": [],
+        "exhaustiveness_red": false,
+        "restored_byte_identical": true
+      }
+    }
+  },
+  "remediation": {
+    "files": {
+      "tests/Unit/MarketData/B18ReplayComparisonExhaustivenessTest.php": "six new tests (24 cases): class map parsed from MD-S002; 19 per-class perturbations with own-field, FAIL, MISMATCH and registered/classified reason-code assertions; a control that declares every frozen input and the recorded configuration identity, reports zero mismatches and asserts each probed field was evaluated; all classes diverging together reported per class; a declared EXPECTED_DEGRADE accepted and an undeclared divergence within it UNEXPECTED/FAIL; a fixture without its reason-count expectation BLOCKED with the missing path reported. Four additive, default-preserving harness hooks (reason-count override/omission, declared comparison_result, config_identity, factor_set_id); the existing 53 tests are unchanged and pass.",
+      "tests/Unit/MarketData/B18ReleaseCandidateCriteriaTest.php": "the MD-S002-R0003 criteria-map entry lists the three new guards ahead of the previous three; existence check only, R0005-R0008 entries untouched.",
+      "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php": "MD-S002-R0003 moved from INCOMPLETE to PROVEN, positive = the per-class own-field guard, negative = the matched-and-evaluated control."
+    },
+    "production_change": "none; ReplayVerificationService.php sha256 b6d5ff829ba412a7f00659b62c12c899892dad5bc2aa35ffef5de36a3716a04d unchanged before and after every probe and at issue",
+    "weakened_or_ignored": "nothing: no class removed, blacklisted, excused or downgraded; no expectation was loosened; explained (declared) and unexplained (undeclared) outcomes stay distinct."
+  },
+  "falsifiability": {
+    "method": "One neutering mutation of ReplayVerificationService per probe, anchored so it lands exactly once, syntax-checked, each of five replay test files run in its own invocation (multi-file invocation silently drops files), failing test sets recorded per file and compared with a green control run before and after, service restored from its exact bytes and sha256-verified after every probe.",
+    "control_before_all_ok": true,
+    "control_stable": true,
+    "service_sha256_before_and_after": true,
+    "probes_after_remediation": {
+      "V_value_rows_written": {
+        "class": "value",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 4,
+        "own_field_cases_red": [
+          "\"value: artifact row count\"",
+          "\"value: eligible count\""
+        ],
+        "other_new_guards_red": [
+          "test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each",
+          "test_every_named_class_diverging_together_is_reported_for_each_class"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest",
+          "ReplayComparisonDetectsDivergenceTest",
+          "ReplayVerificationServiceTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "N1_null_reason_final_reason_code": {
+        "class": "null-reason",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 3,
+        "own_field_cases_red": [
+          "\"null-reason: final reason code\""
+        ],
+        "other_new_guards_red": [
+          "test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each",
+          "test_every_named_class_diverging_together_is_reported_for_each_class"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest",
+          "ReplayComparisonDetectsDivergenceTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "N2_null_reason_counts": {
+        "class": "null-reason",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 3,
+        "own_field_cases_red": [
+          "\"null-reason: reason-code counts\""
+        ],
+        "other_new_guards_red": [
+          "test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each",
+          "test_every_named_class_diverging_together_is_reported_for_each_class"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest",
+          "ReplayVerificationServiceTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "L1_lineage_array": {
+        "class": "lineage",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 3,
+        "own_field_cases_red": [
+          "\"lineage: lineage record\""
+        ],
+        "other_new_guards_red": [
+          "test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each",
+          "test_every_named_class_diverging_together_is_reported_for_each_class"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest",
+          "ReplayComparisonDetectsDivergenceTest",
+          "ReplayVerificationServiceTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "L2_lineage_publication_run_id": {
+        "class": "lineage",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 3,
+        "own_field_cases_red": [
+          "\"lineage: publishing run\""
+        ],
+        "other_new_guards_red": [
+          "test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each",
+          "test_every_named_class_diverging_together_is_reported_for_each_class"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "C1_config_identity": {
+        "class": "config",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 3,
+        "own_field_cases_red": [
+          "\"config: recorded configuration identity\""
+        ],
+        "other_new_guards_red": [
+          "test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each",
+          "test_every_named_class_diverging_together_is_reported_for_each_class"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest",
+          "ReplayComparisonDetectsDivergenceTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "C2_config_bound_input_hash": {
+        "class": "config",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 4,
+        "own_field_cases_red": [
+          "\"config: frozen configuration snapshot hash\""
+        ],
+        "other_new_guards_red": [
+          "test_a_divergence_in_any_frozen_input_denies_pass",
+          "test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each",
+          "test_every_named_class_diverging_together_is_reported_for_each_class"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "F1_factor_set_hash": {
+        "class": "factor",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 3,
+        "own_field_cases_red": [
+          "\"factor: factor set hash\""
+        ],
+        "other_new_guards_red": [
+          "test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each",
+          "test_every_named_class_diverging_together_is_reported_for_each_class"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "F2_factor_set_id": {
+        "class": "factor",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 3,
+        "own_field_cases_red": [
+          "\"factor: factor set id\""
+        ],
+        "other_new_guards_red": [
+          "test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each",
+          "test_every_named_class_diverging_together_is_reported_for_each_class"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "F3_factor_bound_input_event_factor_hash": {
+        "class": "factor",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 4,
+        "own_field_cases_red": [
+          "\"factor: frozen event/factor revisions\""
+        ],
+        "other_new_guards_red": [
+          "test_a_divergence_in_any_frozen_input_denies_pass",
+          "test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each",
+          "test_every_named_class_diverging_together_is_reported_for_each_class"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "H_hash_batch_hashes": {
+        "class": "hash",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 6,
+        "own_field_cases_red": [
+          "\"hash: bars batch hash\"",
+          "\"hash: eligibility batch hash\"",
+          "\"hash: indicators batch hash\""
+        ],
+        "other_new_guards_red": [
+          "test_a_declared_expected_degrade_is_accepted_and_an_undeclared_divergence_within_it_is_not",
+          "test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each",
+          "test_every_named_class_diverging_together_is_reported_for_each_class"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest",
+          "ReplayComparisonDetectsDivergenceTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "S1_seal_state": {
+        "class": "seal",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 3,
+        "own_field_cases_red": [
+          "\"seal: run seal state\""
+        ],
+        "other_new_guards_red": [
+          "test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each",
+          "test_every_named_class_diverging_together_is_reported_for_each_class"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest",
+          "ReplayComparisonDetectsDivergenceTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "S2_publication_seal_state": {
+        "class": "seal",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 3,
+        "own_field_cases_red": [
+          "\"seal: publication seal state\""
+        ],
+        "other_new_guards_red": [
+          "test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each",
+          "test_every_named_class_diverging_together_is_reported_for_each_class"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "P1_publication_id": {
+        "class": "publication",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 3,
+        "own_field_cases_red": [
+          "\"publication: publication identity\""
+        ],
+        "other_new_guards_red": [
+          "test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each",
+          "test_every_named_class_diverging_together_is_reported_for_each_class"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "P2_publication_version": {
+        "class": "publication",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 3,
+        "own_field_cases_red": [
+          "\"publication: publication version\""
+        ],
+        "other_new_guards_red": [
+          "test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each",
+          "test_every_named_class_diverging_together_is_reported_for_each_class"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest",
+          "ReplayComparisonDetectsDivergenceTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "P3_publication_is_current": {
+        "class": "publication",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 3,
+        "own_field_cases_red": [
+          "\"publication: publication currency\""
+        ],
+        "other_new_guards_red": [
+          "test_a_fixture_matching_in_every_named_class_reports_zero_mismatches_and_evaluates_each",
+          "test_every_named_class_diverging_together_is_reported_for_each_class"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest",
+          "ReplayComparisonDetectsDivergenceTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "M1_verdict_mismatch_passes": {
+        "class": "verdict",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 39,
+        "own_field_cases_red": [
+          "\"config: frozen configuration snapshot hash\"",
+          "\"config: recorded configuration identity\"",
+          "\"factor: factor set hash\"",
+          "\"factor: factor set id\"",
+          "\"factor: frozen event/factor revisions\"",
+          "\"hash: bars batch hash\"",
+          "\"hash: eligibility batch hash\"",
+          "\"hash: indicators batch hash\"",
+          "\"lineage: lineage record\"",
+          "\"lineage: publishing run\"",
+          "\"null-reason: final reason code\"",
+          "\"null-reason: reason-code counts\"",
+          "\"publication: publication currency\"",
+          "\"publication: publication identity\"",
+          "\"publication: publication version\"",
+          "\"seal: publication seal state\"",
+          "\"seal: run seal state\"",
+          "\"value: artifact row count\"",
+          "\"value: eligible count\""
+        ],
+        "other_new_guards_red": [
+          "test_a_divergence_in_any_frozen_input_denies_pass",
+          "test_a_divergence_in_any_named_assertion_class_denies_pass with data set \"MD-S036: import status\"",
+          "test_a_divergence_in_any_named_assertion_class_denies_pass with data set \"MD-S036: pointer switched\"",
+          "test_a_divergence_in_any_named_assertion_class_denies_pass with data set \"MD-S036: promote status\"",
+          "test_a_divergence_in_any_named_assertion_class_denies_pass with data set \"MD-S036: publication identity\"",
+          "test_a_divergence_in_any_named_assertion_class_denies_pass with data set \"MD-S036: request mode\"",
+          "test_a_divergence_in_any_named_assertion_class_denies_pass with data set \"MD-S036: source mode\"",
+          "test_a_divergence_in_any_named_assertion_class_denies_pass with data set \"content hash: bars batch\"",
+          "test_a_divergence_in_any_named_assertion_class_denies_pass with data set \"content hash: eligibility batch\"",
+          "test_a_divergence_in_any_named_assertion_class_denies_pass with data set \"content hash: indicators batch\"",
+          "test_a_divergence_in_any_named_assertion_class_denies_pass with data set \"lineage: the publication version\"",
+          "test_a_divergence_in_any_named_assertion_class_denies_pass with data set \"lineage: the publishing run\"",
+          "test_a_divergence_in_any_named_assertion_class_denies_pass with data set \"null reason: the final reason code\"",
+          "test_a_divergence_in_any_named_assertion_class_denies_pass with data set \"seal: the seal state\"",
+          "test_a_divergence_in_any_named_assertion_class_denies_pass with data set \"state: coverage gate\"",
+          "test_a_divergence_in_any_named_assertion_class_denies_pass with data set \"state: publishability\"",
+          "test_a_divergence_in_any_named_assertion_class_denies_pass with data set \"state: terminal status\"",
+          "test_a_divergence_in_any_named_assertion_class_denies_pass with data set \"value: an artifact row count\"",
+          "test_a_manual_file_run_readable_without_a_coverage_pass_is_a_mismatch",
+          "test_every_named_class_diverging_together_is_reported_for_each_class"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest",
+          "ReplayVerificationServiceTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "M2_verdict_unexpected_passes": {
+        "class": "verdict",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 1,
+        "own_field_cases_red": [],
+        "other_new_guards_red": [
+          "test_a_declared_expected_degrade_is_accepted_and_an_undeclared_divergence_within_it_is_not"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "M3_degrade_excuses_undeclared_divergence": {
+        "class": "verdict",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 1,
+        "own_field_cases_red": [],
+        "other_new_guards_red": [
+          "test_a_declared_expected_degrade_is_accepted_and_an_undeclared_divergence_within_it_is_not"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "M4_unclassified_fallback": {
+        "class": "verdict",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 1,
+        "own_field_cases_red": [
+          "\"factor: frozen event/factor revisions\""
+        ],
+        "other_new_guards_red": [],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "M5_mismatch_loses_reason_code": {
+        "class": "verdict",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 21,
+        "own_field_cases_red": [
+          "\"config: frozen configuration snapshot hash\"",
+          "\"config: recorded configuration identity\"",
+          "\"factor: factor set hash\"",
+          "\"factor: factor set id\"",
+          "\"factor: frozen event/factor revisions\"",
+          "\"hash: bars batch hash\"",
+          "\"hash: eligibility batch hash\"",
+          "\"hash: indicators batch hash\"",
+          "\"lineage: lineage record\"",
+          "\"lineage: publishing run\"",
+          "\"null-reason: final reason code\"",
+          "\"null-reason: reason-code counts\"",
+          "\"publication: publication currency\"",
+          "\"publication: publication identity\"",
+          "\"publication: publication version\"",
+          "\"seal: publication seal state\"",
+          "\"seal: run seal state\"",
+          "\"value: artifact row count\"",
+          "\"value: eligible count\""
+        ],
+        "other_new_guards_red": [
+          "test_a_fixture_without_its_reason_count_expectation_is_reported_not_skipped",
+          "test_an_import_only_expectation_is_not_satisfied_by_a_run_that_promoted"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest",
+          "ReplayComparisonDetectsDivergenceTest",
+          "ReplayVerificationServiceTest"
+        ],
+        "restored_byte_identical": true
+      },
+      "M6_missing_reason_counts_skipped": {
+        "class": "null-reason",
+        "landed_count": 1,
+        "exhaustiveness_red_count": 1,
+        "own_field_cases_red": [],
+        "other_new_guards_red": [
+          "test_a_fixture_without_its_reason_count_expectation_is_reported_not_skipped"
+        ],
+        "files_red": [
+          "B18ReplayComparisonExhaustivenessTest"
+        ],
+        "restored_byte_identical": true
+      }
+    },
+    "reading": "Each of the 16 comparison probes turns red exactly the own-field case for the surface it neutered, the control and the all-classes-together test, and no other class's own-field case. The verdict probes (MISMATCH and UNEXPECTED mapped to PASS, EXPECTED_DEGRADE excusing an undeclared divergence, the unclassified fallback REPLAY_MISMATCH, a mismatch losing its reason code, a missing reason-count file silently skipped) each turn the intended guard red. Failure sets, not exit codes, are the verdict."
+  },
+  "executed_tests": {
+    "B18ReplayComparisonExhaustivenessTest": "OK 77 tests / 563 assertions (was 53 / 257)",
+    "B18ReleaseCandidateCriteriaTest": "OK 8 / 27",
+    "ReplayComparisonDetectsDivergenceTest": "OK 29 / 84",
+    "ReplayVerificationServiceTest": "OK 22 / 89",
+    "ReplayMismatchClassificationTest": "OK 22 / 30",
+    "PromotedPredicateProofGateTest": "OK 8 / 22",
+    "full_marketdata_suite": "NOT RUN: no production behaviour changed; test-only change"
+  },
+  "source_sha256": {
+    "tests/Unit/MarketData/B18ReplayComparisonExhaustivenessTest.php": "9c4fcee2c0b958cab1a5f66d5f47fa6f2bfa272eabd849b75074eb3e277f536c",
+    "tests/Unit/MarketData/B18ReleaseCandidateCriteriaTest.php": "92dea39924d263b95196cf930883d95ba664048537769c35606fb62074e9eb2d",
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php": "b4e2cb6c2f6eccaf74b23b0dfe44a8a321e1c3fa03b7714de1b9ebe694790218",
+    "app/Application/MarketData/Services/ReplayVerificationService.php": "b6d5ff829ba412a7f00659b62c12c899892dad5bc2aa35ffef5de36a3716a04d"
+  },
+  "derived_state": {
+    "source": "MarketDataReplayVerificationProofReadinessGate run directly and PROVEN/INCOMPLETE constants, not assertion",
+    "proof_basis": {
+      "PROVEN": 92,
+      "INCOMPLETE": 21,
+      "TRANSFERRED_OWNERSHIP": [
+        "MD-S020-R0014",
+        "MD-S065-R0003"
+      ]
+    },
+    "readiness": "92/113 bases present; 21 without a reviewed basis",
+    "md_s002_r0003": "PROVEN (proof basis); matrix coverage_status stays NOT_ASSESSED with no evidence binding; formal SATISFIED unchanged",
+    "remaining_ownership": {
+      "F-MD-B18-A002-017": {
+        "count": 10,
+        "G05": [
+          "MD-S002-R0005",
+          "MD-S002-R0006",
+          "MD-S002-R0007",
+          "MD-S002-R0008",
+          "MD-S003-R0025",
+          "MD-S004-R0002",
+          "MD-S004-R0003",
+          "MD-S004-R0005",
+          "MD-S004-R0008"
+        ],
+        "other": [
+          "MD-S050-R0005"
+        ]
+      },
+      "F-MD-B18-A002-018": {
+        "count": 9
+      },
+      "F-MD-B18-A002-013": {
+        "count": 2,
+        "predicates": [
+          "MD-S050-R0014",
+          "MD-S019-R0071"
+        ]
+      },
+      "total": "10 + 9 + 2 = 21"
+    },
+    "denominator": 113,
+    "formal_traceability": "0/113 SATISFIED, unchanged"
+  },
+  "observations_not_acted_on": [
+    "The comparator reports a publication_run_id divergence with REPLAY_PUBLICATION_STATE_MISMATCH although the registry has REPLAY_RUN_PUBLICATION_MISMATCH and REPLAY_PUBLICATION_RUN_MISMATCH for run/publication lineage; the field is guarded and classified with a registered HARD code, so the criterion holds, and the code is not pinned by the new test. Whether a more specific code is wanted is outside G07.",
+    "Frozen-input mismatches other than configuration fall through to REPLAY_NON_DETERMINISTIC_OUTPUT (registered, HARD, the field names the input); a dedicated code would need a governed revision of the reason-code registry, as the service comment already records.",
+    "The EXPECTED_DEGRADE proof classifies the declaration; it reproduces the baseline run, not a held or failed run through this harness.",
+    "The actual side is the harness run and publication, not a production publication; production replay is MD-S050 scope (F-018 and the reopened F-013 own the remaining replay-comparison predicates)."
+  ],
+  "not_done": [
+    "No change to ReplayVerificationService, schema, migrations, runtime configuration or strategy.",
+    "G05 aggregate-runner work, F-018, MD-B21 work, MD-S065-R0003, MD-S082-R0207/R0209 and the D-010 deferred questions not started or decided.",
+    "The three pre-existing CONDITION_EXECUTION_STALE normalization entries, MD-S065-R0002, registry hygiene drift and MD-DEP-0015 not touched.",
+    "Binder --bound not run; no formal SATISFIED change."
+  ],
+  "immutable_records": "the 733 IMMUTABLE_AFTER_ISSUE records present before this unit (including E-077, E-078, E-079, D-009, D-010) re-verified byte-identical by sha256 at validation.",
+  "next": "F-MD-B18-A002-017 G05: the executing full-parent aggregate runner for the nine remaining G05 predicates (MD-S002-R0005/R0006/R0007/R0008, MD-S003-R0025, MD-S004-R0002/R0003/R0005/R0008). Derived: F-017 is the next bounded unit within MD-DEP-0017, G07 is closed, MD-S050-R0005 is IMPLEMENTATION_DEPENDENCY_UNAVAILABLE, and F-017 records that G05 needs the executing aggregate runner, a separate larger harness. Not started.",
+  "no_commit_or_push": true
+}
