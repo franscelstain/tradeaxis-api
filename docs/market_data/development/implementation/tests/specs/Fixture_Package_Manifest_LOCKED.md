@@ -63,6 +63,8 @@ Define the manifest shape for one fixture package so every fixture family is exp
 - Synthetic mathematics fixtures are labeled synthetic and cannot replace required real-market semantic cases.
 - Expected artifacts are independently derived and are not regenerated from the implementation being tested.
 
+For the first `MD-S003-R0025` golden package, the manifest additionally binds the frozen-input identity and lineage, independent oracle/method ID and version, derivation artifact/reference, fixture version, expected-content identity, and canonical SHA-256 entries for all package files. `independent_oracle_ref` is a reference to independently derived evidence, not proof by itself; a free-form `fixture_source` or a different source `run_id` cannot establish independence. The separately governed review/approval record identifies the reviewer, approval, derivation evidence and approved package/manifest fingerprint. The target-verification record identifies the target run and publication and cites that approved fingerprint. Target operational IDs do not alter semantic expected-content hashes. A previously executed target is eligible only after independent derivation and package approval, before the proof claim. Corrections require a new reviewed and approved package version; never edit approved files or this manifest in place.
+
 ## Required manifest fields
 - fixture_family
 - version

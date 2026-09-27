@@ -25,9 +25,15 @@ Expected values are calculated independently (for example, reviewed spreadsheet/
 
 Provider payloads are sanitized and frozen; provider `adj_close` is never the expected structural product oracle.
 
+### First independent R0025 fixture
+
+For the first admissible package, freeze the source inputs and derive the expected semantics independently of the target run output. A manual calculation, reviewed spreadsheet/calculation artifact, or separate reference implementation is suitable only with identified method/version and derivation evidence traceable to those inputs. Another `run_id` alone does not establish independence; a copied or relabelled same-target output remains inadmissible. A governed review must cover the authority-relevant expected semantics, input lineage, derivation evidence, oracle identity/version, reviewer, owner approval and package hashes before the package is used for a proof claim. An already executed target may be checked later against the independently approved package; its execution need not follow fixture approval, but the governed verification claim must. The target output may be inspected after independent derivation for comparison and must never supply expected truth. See `RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md` section 6A for record boundaries.
+
 ## Change rule
 
 A semantic change creates a new fixture/contract version. Do not update expected files merely to make a changed implementation green. The review records why the old oracle was wrong or why the new version intentionally differs.
+
+For an approved package, even a correction of an erroneous expected value creates a new fixture version with renewed derivation, independent review and approval; the old approved package remains immutable.
 
 ## Admission
 

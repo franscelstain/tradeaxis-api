@@ -89,6 +89,14 @@ For multi-file output, a manifest may be the primary raw-artifact reference when
 
 A path without execution identity is insufficient. A hash without a path/manifest identity is insufficient. A raw artifact without canonical evidence correlation is supporting material only.
 
+## 6A. First independent replay fixture admission (controlled revision)
+
+For the first admissible `MD-S003-R0025` golden fixture, the governed chain is frozen inputs -> independently derived expected semantics -> independent review -> owner approval -> immutable versioned package -> target verification. Manual calculation, a reviewed spreadsheet/calculation artifact, or a separate reference implementation may supply the oracle when its expected values are traceable to the frozen inputs and it does not consume the target run's produced output as expected truth. A different run ID alone is not independence. Copying, relabelling, or approving a package mechanically generated from the target does not make it admissible; `REPLAY_FIXTURE_SELF_GENERATED` remains fail-closed.
+
+Before admission, a governed review record MUST cover the authority-relevant expected semantics, derivation evidence, frozen-input identity and lineage, independent oracle/method identity and version, reviewer identity, owner approval, fixture version, and hashes of the package files and manifest. Approval is effective only for the reviewed fingerprint after this evidence exists. Existence of expected files or a free-form `fixture_source` string is insufficient. The package manifest binds its stable frozen inputs, oracle/derivation reference and version, expected-content identity, fixture version and canonical file hashes. The governed review/approval record binds reviewer, decision, approved package/manifest fingerprint and derivation evidence. The later verification record separately binds that approved fingerprint to target run and publication identities and the observed comparison result. Volatile operational identities MUST NOT be substituted into semantic expected-content hashes.
+
+An independently authored fixture MAY verify an already executed target publication. Expected values MUST be derived without using that target output as their source; approval and package freeze MUST precede the governed verification/proof claim, but need not precede target execution. After approval, package files and manifest are immutable. A semantic expected-value correction requires a new fixture version and renewed derivation, review and approval; the prior approved version is retained. This admission rule supplies no execution proof by itself and does not promote `MD-S003-R0025`.
+
 ## 7. Current versus historical raw artifacts
 
 Raw artifacts produced by historical W00..W22 work, old audits, old attempts, or prior verification epochs remain historical/supporting material unless a current governed evidence record explicitly revalidates and admits them.

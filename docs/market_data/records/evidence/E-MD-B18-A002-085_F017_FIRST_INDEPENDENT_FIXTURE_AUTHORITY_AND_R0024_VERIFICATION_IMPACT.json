@@ -1,0 +1,30 @@
+{
+  "evidence_id": "E-MD-B18-A002-085",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+  "issued_at": "2026-09-27T00:50:07+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "AUTHORITY_FIT_AND_VERIFICATION_IMPACT_REVIEW_ONLY",
+  "ci_id": "CI-MD-B18-A002-001",
+  "related_findings": ["F-MD-B18-A002-017"],
+  "related_decisions": ["D-MD-B18-A002-011"],
+  "dependencies": ["MD-DEP-0017", "MD-DEP-0019"],
+  "authority_review": {
+    "strategy": "Historical_Replay_and_Data_Quality_Backtest.md MD-S003-R0024 requires independently reviewed semantic oracles and refuses copied current implementation output without independent derivation; MD-S003-R0025 requires the scenario families on MariaDB without missing-family proof. Replay_Verification_Contract_LOCKED.md requires frozen inputs and independently meaningful verification. No strategy-byte change is needed.",
+    "technical": "Golden_Fixtures_Specification.md already permits manual lineage derivation and reviewed spreadsheet/reference calculations; Fixture_Package_Manifest_LOCKED.md requires frozen inputs, independent expected artifacts, canonical file SHA-256 entries and an independent oracle reference.",
+    "gap": "The first package's independent derivation, approval, target chronology and provenance boundaries were not explicit enough to admit a first golden oracle without treating target output as expected truth. The owner selected Option A; this controlled governance clarification supplies the admission contract, not an actual fixture."
+  },
+  "r0024_impact": {
+    "requirement": "MD-S003-R0024 independent-oracle rule in Historical_Replay_and_Data_Quality_Backtest.md",
+    "current_positive": "ReplayAdmissibilityVerdictStorabilityTest::test_a_relabelled_self_generated_fixture_is_still_refused",
+    "current_negative": "ReplayAdmissibilityVerdictStorabilityTest::test_the_inadmissible_verdict_is_never_counted_as_a_pass",
+    "determination": "CLARIFICATION_WITH_ADDITIONAL_FIRST_FIXTURE_ADMISSION_REQUIREMENTS; EXISTING_REJECTION_PROOF_RETAINED",
+    "reason": "The owner rule keeps relabelled or mechanically target-generated expectations inadmissible and retains REPLAY_FIXTURE_SELF_GENERATED fail-closed. The recorded R0024 tests prove that rejection only; they do not prove that a future independently derived package has review, approval or correct values. No existing R0024 claim is invalidated or expanded; no automatic promotion or demotion. Future R0025 proof must demonstrate the new admission chain."
+  },
+  "verification_impact": "MD-S003-R0025 remains INCOMPLETE; no approved independent package or target verification is claimed. Existing partial R0025 test and aggregate changes remain untouched. MD-DEP-0019 remains BLOCKING until its canonical resolution condition is met. Proof basis 100 PROVEN / 13 INCOMPLETE, readiness 100/113, formal SATISFIED 0/113 unchanged.",
+  "scope": "Read-only authority fit and verification-impact record for controlled documentation revision. No runtime execution, package construction, R0025 mutation campaign or predicate promotion."
+}
