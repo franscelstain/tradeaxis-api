@@ -1,0 +1,82 @@
+# Change Impact Declaration — `MD-B10-A002`
+
+- ID: `CI-MD-B10-A002-001`
+- Stage / Attempt / Baseline / Epoch: `MD-B10` / `MD-B10-A002` / `MD-B10-A002-BL001` / `MD-REBASELINE-20260820-001`
+- Strategy freeze: `MD-STRATEGY-FREEZE-20260925-001`
+- Predecessor: immutable `SC-MD-B10-A001-001`; current sufficiency partially withdrawn by `E-MD-B18-A002-086`
+- Finding / blocked return: `F-MD-B18-A002-023` / `MD-DEP-0020` / `MD-B18-A002` first independent R0025 fixture
+- Status: `ISSUED — BLOCKED_ON_MD_DEP_0021; RUNTIME_REMEDIATION_NOT_STARTED`
+- Strategy meaning change: `NO`
+
+## Objective and exact rule impact
+
+Revalidate and remediate allocation-independent semantic artifact and publication-manifest identity under the existing `Audit_Hash_and_Reproducibility_Contract_LOCKED.md` and shared security-identity dependency. Final complete-denominator review E-MD-B10-A002-001 corrects E086 scope: 56 B10 rules are NOT_ASSESSED: `MD-S005-R0001`, `MD-S005-R0019`, `MD-S005-R0021`, `MD-S005-R0022`, `MD-S005-R0023`, `MD-S005-R0024`, `MD-S005-R0025`, `MD-S005-R0026`, `MD-S005-R0028`, `MD-S005-R0030`, `MD-S005-R0031`, `MD-S005-R0035`, `MD-S005-R0038`, `MD-S005-R0039`, `MD-S005-R0040`, `MD-S005-R0042`, `MD-S005-R0043`, `MD-S005-R0044`, `MD-S005-R0046`, `MD-S005-R0047`, `MD-S005-R0050`, `MD-S005-R0053`, `MD-S005-R0056`, `MD-S005-R0059`, `MD-S005-R0061`, `MD-S005-R0062`, `MD-S005-R0068`, `MD-S005-R0069`, `MD-S005-R0071`, `MD-S005-R0073`, `MD-S005-R0075`, `MD-S005-R0076`, `MD-S005-R0077`, `MD-S005-R0078`, `MD-S005-R0080`, `MD-S005-R0086`, `MD-S005-R0087`, `MD-S005-R0092`, `MD-S005-R0098`, `MD-S005-R0105`, `MD-S013-R0003`, `MD-S013-R0009`, `MD-S018-R0009`, `MD-S019-R0006`, `MD-S019-R0007`, `MD-S019-R0008`, `MD-S019-R0014`, `MD-S019-R0015`, `MD-S035-R0032`, `MD-S035-R0062`, `MD-S035-R0069`, `MD-S035-R0127`, `MD-S045-R0001`, `MD-S045-R0054`, `MD-S045-R0056`, `MD-S045-R0059`. The other 1016 B10 predicates retain their unaffected current bindings; no new runtime proof is credited. This declaration authorizes no new semantic root issuance policy or strategy edit.
+
+## Affected surfaces and proof boundary
+
+- Shared foundation: immutable issuer/instrument/listing identities must be obtained from their actual owner; Market Data may consume them, not define the global master in B18. Legacy `ticker_id` projection and its documented compatibility relation require revalidation before use as stable content identity.
+- Runtime and persistence: `TemporalIdentityRepository` projection, `MarketDataPipelineService` artifact field lists and row ordering, `DeterministicHashService` row key/serialization, `EodPublicationRepository` semantic manifest payload, and any version/discriminator storage needed to distinguish historical hashes from successor hashes. No migration or particular hash schema is presumed before the bounded design/proof review.
+- Historical compatibility: sealed hashes, manifests, publications, evidence and fixtures must remain byte-identical. A successor verifier must choose the correct historical/current interpretation without silently recomputing old digests or fabricating stable IDs.
+- Proof: B10 per-predicate proof map and actual production guards must establish equivalent semantic content under different numeric allocations produces the same semantic hash, semantic changes change the hash, and operational correction/publication IDs do not contaminate the semantic manifest. A positive suite alone is insufficient; discriminating negative probes and restoration are required.
+- Raw artifacts: any executed MariaDB or fixture proof later in A002 must use the current runtime-artifact capture, linkage, manifest, hash and retention standard; this entry performs no runtime proof and changes no retained artifact.
+- Schema/config/backfill/ops: possible successor version metadata and historical classification are impact candidates, not approved mutations. Existing sealed data and owner datasets are never rewritten in place.
+
+## Dependency, residue and validation
+
+`MD-DEP-0020` blocks `MD-B18-A002` R0025 fixture work until this successor B10 attempt proves the final 56 predicates and valid closure; `MD-DEP-0017` and `MD-DEP-0019` remain separate B18 blockers. B05 117/117 remains valid for its bounded temporal/alias proof. Any genuinely missing shared-master source is recorded as an external dependency rather than solved by B18-owned issuance semantics. No production, schema, dataset, R0025 test, or partial aggregate file was changed at A002 entry. Current stage coverage is 1016/1072 and no B10 closure is claimed. Targeted governance validation applies now; runtime/MariaDB and broader regression follow only after a concrete implementation change.
+
+## Scope continuation — 2026-09-28T11:55:13+07:00
+
+The same A002 attempt and BL001 baseline remain valid under Stage Execution §2 and Change Impact §3. E-MD-B10-A002-001 is the successor scope correction to immutable E086: 1072 mandatory predicates / 31 proof families reviewed, 56 affected (45 additional), 1016 unaffected. The baseline remains the immutable entry snapshot at eleven reopened rows; this scope expansion is recorded here and in successor evidence, not backdated into BL001. No runtime/source/schema/strategy change, new baseline or attempt. Full per-predicate authority/member/assertion/surface/reason inventory is in the successor evidence. Remediation includes omitted config/source/reason/revision hash bindings, prohibited adj_close membership, ID-bearing nested digests, semantic equality/sensitivity, seal coverage and correction comparison; does not redesign identity/source models.
+
+## Artifact-unit dependency disposition - 2026-09-28T14:51:16+07:00
+
+Actual production/schema/test surfaces changed: NONE. E-MD-B10-A002-002 records the source review; MD-DEP-0021 blocks the shared stable identity/row-order boundary for bars, indicators and eligibility. Consumer inputs today are ticker-derived projections and allocated numeric IDs; no governed shared-master delivery/import was found. No hash-version/root design, manifest/correction/seal fix or unused alternative hasher is introduced.
+
+Affected subset: stable artifact identity/order obligations and their config/domain membership proof within the existing final 56-rule scope; no rule is implemented, newly proven or promoted by this blocked unit. Configuration content is already available as md_config_snapshots.config_hash; adj_close remains excluded by current authority. Changing active legacy lists alone would neither finish allocation independence nor preserve historical interpretation through explicit dispatch, so those independent clauses are retained for the resumed coherent artifact patch.
+
+New external prerequisite: MD-DEP-0021, owner shared security-identity foundation (outside Market Data), delivery coordination MD-B10. Supply retained immutable issuer/instrument/listing bindings with continuity/provenance and local temporal mapping; B10 validates allocation independence before consuming them. Current A002/BL001 is retained; final 56 NOT_ASSESSED and 1016 SATISFIED remain. MD-DEP-0020/0019 stay BLOCKING.
+
+Separate tooling debt F-MD-B10-A002-001 records EXPECTED_MOVED=1 versus current/HEAD zero. Only the mutable Stage Register's stale count is corrected; no gate, ownership, strategy or denominator change. It creates no parallel resume point. No runtime raw-artifact admission or retention change.
+
+## Foundation-delivery ownership clarification - 2026-09-28T15:30:36+07:00
+
+E-MD-B10-A002-003 records the full-repository ownership/delivery review. Actual implementation owner and source locator are UNKNOWN; shared global contract home is docs/db, outside Market Data consumer ownership. MD-DEP-0021 retains the external foundation role and explicitly records unassigned implementation accountability. The required upstream delivery and allocation-independence/temporal/fail-closed acceptance are traced to existing MD-S057/055/005, not a new issuance contract.
+
+Actual implementation/test/schema/raw-artifact changes: NONE. Governance changes: extend existing F023/dependency/Stage Register and register correlated E003/relationships; regenerate CURRENT_STATE. Same A002/BL001, final 56-rule affected scope and 1016/1072 unchanged. F-MD-B10-A002-001 remains byte-identical and separate. No foundation integration is started without a real governed source. No artifact, manifest, seal, historical interpretation or R0025 proof is credited. The external owner/source must be supplied before another B10 hash patch is useful.
+
+## Same-repository authority/source clarification - 2026-09-28T16:06:44+07:00
+
+E-MD-B10-A002-004 confirms current authority permits a shared security-identity module in tradeaxis-api outside Market Data logical ownership. Verdict B: authority sufficient with external data dependency. The missing prerequisite is admitted source-backed entity/lifecycle/continuity facts and accountable shared delivery owner, not a mandated external repository/service/UID issuer. Source selection and ID representation are technical within current provenance, immutability, import/rebuild and fail-closed invariants; no design mechanism selected.
+
+Actual implementation/test/schema/raw-artifact changes: NONE. No source acquired/admitted or root assigned/imported. Actual governance changes: correlated E004 registration; existing F023/0021/0020 notes, Stage Register and generated CURRENT_STATE clarification. Same MD-B10-A002 / BL001; final 56-rule scope and all proof counts unchanged. B05 re-entry is not required by unimplemented source delivery alone.
+
+Future material shared delivery work must identify its source/custodian, owner and correlated work boundary, with early Change Impact/current baseline and architecture ADR for concrete cross-module/intake/storage choices as applicable. No arbitrary new stage/attempt, production adapter, schema or foundation is created here. MD-DEP-0021/0020/0019 remain BLOCKING; no artifact hashing, historical reinterpretation, R0025 or F-018 work. Separate tooling finding remains byte-identical.
+
+## Source-readiness and shared-role ownership continuation - 2026-09-28T23:56:14+07:00
+
+E-MD-B10-A002-005 and D-MD-B10-A002-001 record actual available data, bounded primary-source admission and actionable same-repository shared ownership. Logical project-owner stewardship is now assigned. Source basis version foundation-source-basis-20260928-v1 holds the two observed source contexts, explicit unresolved fields, a read-only two-database inventory, retained-file inventory, acquisition failures and rendered/extracted source captures with exact manifest/member hashes. The package is git-ignored raw input/evidence material, not a governed replay fixture or production semantic-hash contract. Transfer/retain all members with E005; missing/corrupt input fails admission.
+
+Actual source/raw-artifact change: create the nine-file retained source-basis package, admit bounded source facts only. No production database writes: inventory uses READ ONLY transaction and ROLLBACK; no resolver/projection/import/migrate invoked. No roots assigned, no production code/schema/config/test/data backfill/hash/fixture change. Governance updates existing F023/dependency/orchestration and correlated E005/D001/registries only.
+
+Bounded next implementation is shared foundation admission/retained identity with unsupported linkage/history HELD, not B10 hashing. Concrete implementation/persistence/intake design must satisfy current early impact, baseline/correlation and ADR requirements before writes; keep same valid A002/BL001, no arbitrary attempt/stage. No B05 re-entry or proof promotion from source acquisition alone. Global master ownership remains shared, Market Data consumer-owned. Missing listing/board/provider/lifecycle/revision/known-time evidence blocks affected deliveries and completeness claims, not safe fail-closed implementation itself. All final 56 B10 statuses/counts and separate tooling finding unchanged; MD-DEP-0021/0020/0019 remain BLOCKING.
+
+## 2026-09-29 bounded shared foundation core implementation impact
+
+Same MD-B10-A002 / BL001 continuation under D-MD-B10-A002-001 and E005; strategy meaning unchanged. Implement the shared SecurityIdentity application/domain/persistence boundary outside MarketData, additive si_* tables, retained opaque registry assignments and strict E005 package admission. Core profiles may admit two issuers and one instrument relation only; listing/mapping/continuity/history remain HELD. No MD hash, resolver, R0025 or legacy schema wiring.
+
+Validation scope: focused MariaDB migration and core tests; allocation-history differences, retained registry export/import, profile/display continuity, synthetic temporal listing/mapping mechanism fixtures, missing/tampered/version/provenance rejection, atomic/idempotent import and fail-closed consumers. Synthetic listing fixtures are mechanism evidence only, not historical master truth. Test writes use isolated identified test databases or rollback-owned namespaces; normal tradeaxis is not migrated or modified. Source package remains immutable.
+
+Raw proof will be retained under storage/app/market_data/evidence/MD-B10-A002/foundation-core-20260929-v1 with exact commands/results and manifest hashes. Assigned registry is small versioned input outside MD ownership. New shared DTO/admission/read contracts and CLI boundary receive bounded architecture review and a correlated technical ADR. IMPLEMENTED/PROVEN/CONSUMER-READY/DEPENDENCY-RESOLVED are recorded separately; no B10 predicate promotion and MD-DEP-0021/0020/0019 remain BLOCKING until full criteria pass.
+
+Concrete dependency wiring: add a deferred shared SecurityIdentityServiceProvider binding and one bootstrap provider registration so the CLI receives FoundationService without persistence access in transport. No Market Data bindings, commands, algorithms or runtime entry points change. Focused CLI/core and existing governance/B05 checks cover this bounded registration.
+
+## 2026-09-29 implemented/proven core impact — E-MD-B10-A002-006
+
+New shared application/domain/persistence/CLI/provider and inert contracts; additive InnoDB si_* migration; retained once-assigned E005-bound UUID registry; shared bootstrap/CLI registrations only. New SecurityIdentity tests and independent test-only fixture; no MarketData production code/schema hash behavior or predicate binding altered. The normal database was not migrated or imported. Technical ADR D-MD-B10-A002-002 and raw proof manifest bind actual source/test versions.
+
+Acceptance: 16/223 core control, 15 syntax checks, seven distinct assertion-level mutation guards (nine executions including two repeats after shape guards), exact restoration and zero temporary DB residue. Atomic append/idempotence, export/rebuild, source hashes/provenance and effective/as-known failure behavior are implemented/proven. Production consumer data readiness remains zero listings; 0021 is not resolved. Remaining consumed-scope data, deployment and intake are separate required work, then B10 artifact integration; final 56 and B18 states unchanged.
+
+No full MarketData runtime suite: no existing hash/resolver/data behavior changed. Shared registration is deferred and exercised by focused CLI/core tests. Governance and B05/B10/B18 gates run; known B10/B18 incompleteness is retained. Raw artifact storage/app/market_data/evidence/MD-B10-A002/foundation-core-20260929-v1/manifest.json SHA-256 92017e3d8e209c5fdf7bb9767ada9303320fd5d241e7efbe87005d760ce1ff66 must remain transferable/verifiable with E006.
+
+Next governed unit: MD-B10-A002 / MD-DEP-0021: acquire and governedly admit authoritative executed listing, venue/board and effective symbol/provider mapping evidence for the already evidenced IKPM instrument into the implemented shared foundation. Retain unsupported continuity and historical knowledge as HELD. Core implementation is complete; do not repeat it. Same A002/BL001/CI. Production deployment and Market Data intake acceptance remain required before dependency resolution or hash remediation. MD-DEP-0021/0020/0019 remain BLOCKING; R0025 and F-018 stay paused.

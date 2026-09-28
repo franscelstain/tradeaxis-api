@@ -1,0 +1,401 @@
+{
+  "evidence_id": "E-MD-B10-A002-004",
+  "record_type": "EVIDENCE",
+  "role_scope": "CURRENT_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B10",
+  "attempt_id": "MD-B10-A002",
+  "work_id": "MD-B10-A002",
+  "baseline_id": "MD-B10-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+  "change_impact_declaration": "CI-MD-B10-A002-001",
+  "issued_at": "2026-09-28T16:06:44+07:00",
+  "verdict": "B_AUTHORITY_SUFFICIENT_WITH_EXTERNAL_DATA_DEPENDENCY",
+  "related_findings": [
+    "F-MD-B18-A002-023"
+  ],
+  "related_evidence": [
+    "E-MD-B10-A002-003",
+    "E-MD-B10-A002-002",
+    "E-MD-B10-A002-001",
+    "E-MD-B05-A001-001"
+  ],
+  "related_dependencies": [
+    "MD-DEP-0021",
+    "MD-DEP-0020",
+    "MD-DEP-0019"
+  ],
+  "supersedes": null,
+  "material_clarification": "Outside Market Data means logical ownership, not outside repository. Shared same-repository module conforms; no external ID issuer/service mandatory. E002/E003 producer-unavailability/proof conclusions retained; E004 clarifies mutable prerequisite/resume and source-data versus deployment.",
+  "documentation_coverage": [
+    {
+      "capability": "Legacy ticker/display/cache/audit",
+      "docs_db": "YES in docs/db",
+      "elsewhere": "MD-S057 strengthens alias/historical use",
+      "classification": "Legacy compatibility; not full master"
+    },
+    {
+      "capability": "Issuer/instrument/listing layers",
+      "docs_db": "NO full layers in docs/db",
+      "elsewhere": "MD-S057 fixes layers and relationships",
+      "classification": "Authority sufficient elsewhere; implementation/data missing"
+    },
+    {
+      "capability": "Bitemporal mapping/lifecycle/reuse/relisting",
+      "docs_db": "PARTIAL audit/listing history in docs/db",
+      "elsewhere": "MD-S057/055 fix behavior/failure",
+      "classification": "Source facts missing; not missing algorithm authority"
+    },
+    {
+      "capability": "Allocation independence",
+      "docs_db": "Not fully in docs/db",
+      "elsewhere": "MD-S005 + MD-S057 immutable semantic identity",
+      "classification": "Invariant fixed, technical mechanism free"
+    },
+    {
+      "capability": "Source/completeness",
+      "docs_db": "No named dataset in docs/db",
+      "elsewhere": "MD-S057 authoritative exchange listing/delisting + inherited mapping reconciliation",
+      "classification": "Data-delivery dependency"
+    },
+    {
+      "capability": "Module/deployment/storage",
+      "docs_db": "Logical table names free; shared contract home",
+      "elsewhere": "docs/README + api_architecture layers/ADR/config",
+      "classification": "Technical design, no required separate deployment"
+    }
+  ],
+  "foundation_domain_model": [
+    {
+      "concept": "issuer",
+      "source": "MD-S057 Tickers_and_Identity_Dependency_Contract_LOCKED.md Required identity layers",
+      "semantic_requirement": "Legal/economic issuing entity; immutable issuer identity.",
+      "logical_owner": "Shared foundation",
+      "consumers": "MD resolution/actions/products and identity consumers"
+    },
+    {
+      "concept": "instrument",
+      "source": "MD-S057 Tickers_and_Identity_Dependency_Contract_LOCKED.md Required identity layers",
+      "semantic_requirement": "Security issued by issuer; distinct immutable instrument identity. Same issuer does not imply same security.",
+      "logical_owner": "Shared foundation",
+      "consumers": "MD acquisition/actions/products"
+    },
+    {
+      "concept": "listing",
+      "source": "MD-S057 Tickers_and_Identity_Dependency_Contract_LOCKED.md Required identity layers / Stable-key rules",
+      "semantic_requirement": "Instrument admission to venue/segment/board over effective interval; distinct immutable listing identity.",
+      "logical_owner": "Shared foundation",
+      "consumers": "MD universe/observations/artifacts/publications"
+    },
+    {
+      "concept": "exchange symbol",
+      "source": "MD-S055 Symbol_Lifecycle_and_Mapping_Contract.md Core rule / Required mapping",
+      "semantic_requirement": "Mutable display/exchange code with explicit namespace/effective mapping; not durable security identity.",
+      "logical_owner": "Shared mapping owner",
+      "consumers": "MD resolution/acquisition/display"
+    },
+    {
+      "concept": "provider symbol",
+      "source": "MD-S055 Symbol_Lifecycle_and_Mapping_Contract.md Required mapping / Observation binding",
+      "semantic_requirement": "Transport text with provider namespace, immutable mapping/revision and stable target; suffix rendering never identity.",
+      "logical_owner": "Shared mapping owner; adapter rendering only",
+      "consumers": "MD acquisition/observations"
+    },
+    {
+      "concept": "venue/board",
+      "source": "MD-S057 Tickers_and_Identity_Dependency_Contract_LOCKED.md Historical universe / Stable-key rules; MD-S055 Symbol_Lifecycle_and_Mapping_Contract.md Lifecycle",
+      "semantic_requirement": "Context valid on T; dated movement preserves prior history, no automatic new root inferred.",
+      "logical_owner": "Shared listing context",
+      "consumers": "MD universe/canonical context"
+    },
+    {
+      "concept": "symbol history",
+      "source": "MD-S055 Symbol_Lifecycle_and_Mapping_Contract.md Historical replay",
+      "semantic_requirement": "Retained effective/known revisions; T/cutoff lookup, never future/current fallback.",
+      "logical_owner": "Shared mapping owner",
+      "consumers": "MD coverage/replay"
+    },
+    {
+      "concept": "listing lifecycle / delisting",
+      "source": "MD-S057 Tickers_and_Identity_Dependency_Contract_LOCKED.md Historical universe; MD-S055 Symbol_Lifecycle_and_Mapping_Contract.md Lifecycle",
+      "semantic_requirement": "Admission/termination boundaries include/exclude; delisting closes validity, retains history; suspension/status separate.",
+      "logical_owner": "Shared foundation; daily status MD",
+      "consumers": "MD universe/replay"
+    },
+    {
+      "concept": "rename",
+      "source": "MD-S055 Symbol_Lifecycle_and_Mapping_Contract.md Lifecycle; docs/db/02_TICKERS_MASTER.md Canonical code policy",
+      "semantic_requirement": "Close old symbol mapping/open new interval without rewriting old observations; display text change alone is not new security.",
+      "logical_owner": "Shared master/mapping owner",
+      "consumers": "Historical joins/display"
+    },
+    {
+      "concept": "restructuring continuity",
+      "source": "docs/db/02_TICKERS_MASTER.md Change-management; MD-S057 Tickers_and_Identity_Dependency_Contract_LOCKED.md Stable-key rules",
+      "semantic_requirement": "Old/new merger/restructuring relationship must be documented/source-backed. No automatic same-security/merger heuristic; ambiguous continuity holds.",
+      "logical_owner": "Governed master evidence owner",
+      "consumers": "MD historical relationships/actions"
+    },
+    {
+      "concept": "relisting",
+      "source": "MD-S057 Tickers_and_Identity_Dependency_Contract_LOCKED.md Stable-key rule 5; MD-S055 Symbol_Lifecycle_and_Mapping_Contract.md Lifecycle",
+      "semantic_requirement": "Explicit continuity/new listing from master evidence; same instrument/new listing versus different instrument recorded.",
+      "logical_owner": "Shared master evidence owner",
+      "consumers": "MD resolution/replay"
+    },
+    {
+      "concept": "symbol reuse",
+      "source": "MD-S057 Tickers_and_Identity_Dependency_Contract_LOCKED.md Stable-key rule 3; MD-S055 Symbol_Lifecycle_and_Mapping_Contract.md Lifecycle / Uniqueness",
+      "semantic_requirement": "Different security must bind different stable identity with non-overlapping mapping intervals.",
+      "logical_owner": "Shared mapping/master owner",
+      "consumers": "MD resolution/acquisition/replay"
+    },
+    {
+      "concept": "ambiguity",
+      "source": "MD-S057 Tickers_and_Identity_Dependency_Contract_LOCKED.md Failure behavior; MD-S055 Symbol_Lifecycle_and_Mapping_Contract.md Uniqueness / Failure",
+      "semantic_requirement": "Missing/conflicting/overlapping identity holds/rejects; unmapped observation quarantined; no fabricated identity/current fallback; coverage gap exposed.",
+      "logical_owner": "Foundation validity; MD acquisition/publication hold",
+      "consumers": "Affected consumers"
+    },
+    {
+      "concept": "provenance/revision",
+      "source": "MD-S057 Tickers_and_Identity_Dependency_Contract_LOCKED.md Temporal fields / Resolution output; MD-S055 Symbol_Lifecycle_and_Mapping_Contract.md Required mapping",
+      "semantic_requirement": "Source/provenance, revision/mapping identity and frozen snapshot/version used; corrections append revisions, no sealed rewrite.",
+      "logical_owner": "Foundation records; MD frozen consumption",
+      "consumers": "Audit/publication/replay"
+    },
+    {
+      "concept": "effective time",
+      "source": "MD-S057 Tickers_and_Identity_Dependency_Contract_LOCKED.md Temporal fields; MD-S055 Symbol_Lifecycle_and_Mapping_Contract.md Required mapping",
+      "semantic_requirement": "What is valid on T; one documented interval-end convention.",
+      "logical_owner": "Shared temporal owner",
+      "consumers": "MD as-of lookup"
+    },
+    {
+      "concept": "recorded/as-known time",
+      "source": "MD-S057 Tickers_and_Identity_Dependency_Contract_LOCKED.md Temporal fields; MD-S055 Symbol_Lifecycle_and_Mapping_Contract.md Historical replay",
+      "semantic_requirement": "When facts/revisions were available; cutoff excludes future knowledge, no invented current timestamp backfill.",
+      "logical_owner": "Shared provenance owner",
+      "consumers": "MD as-known replay"
+    }
+  ],
+  "identity_invariants": {
+    "immutable": "Distinct issuer/instrument/listing entity IDs retained through import/rebuild; mappings/revisions and historical relations retained.",
+    "metadata": "Symbol/company display change alone not new security; board context dated, no automatic root replacement.",
+    "new_identity": "Different security using same symbol must differ; multiple instruments per issuer possible. Relisting/restructuring continuity follows master evidence.",
+    "unknown": "Hold/reject; absence of automatic merger heuristic does not block fail-closed foundation implementation.",
+    "allocation": "Numeric representation allowed if retained/imported stable domain ID. Independent local PK allocation not root; frozen identity registry retains assigned IDs.",
+    "mechanism": "Issuance representation technical under shared owner and provenance/retention/idempotence/uniqueness/reuse/import invariants; none selected."
+  },
+  "ownership": {
+    "semantic": "Shared/global security-identity foundation; docs/db contract home; MD-S057/055 consumer requirements.",
+    "implementation": "Same tradeaxis-api shared logical module permitted; physical name technical. Accountable implementation/data owner UNKNOWN.",
+    "persistence": "Foundation authoritative lifecycle writes/revisions; MD projection/frozen consumption and artifact/publication links. Same database/physical reuse possible with controlled ownership and proof.",
+    "source": "Authoritative exchange listing/delisting for completeness; entity/continuity facts from traceable governed master evidence. Specific admitted dataset/custodian UNKNOWN.",
+    "consumer": "B05 resolver; B10 artifact integration; B21 convergence/completeness. Watchlist/future consumers follow approved intake; market facts remain MD read-product-owned, no new direct raw read path.",
+    "proof": "Upstream values/source-backed lifecycle owner unassigned; B05 bounded resolver, B10 allocation acceptance, B21 external completeness."
+  },
+  "deployment": {
+    "separate_repository_required": false,
+    "separate_service_required": false,
+    "separate_application_required": false,
+    "shared_module_inside_tradeaxis_api_permitted": true,
+    "mandated_topology": "NONE"
+  },
+  "persistence": {
+    "physical_canonical_choice": "Not mandated; technical impact/migration design. Current ID columns do not certify shared master.",
+    "reuse": [
+      {
+        "surface": "tickers / legacy TickerMasterRepository",
+        "classification": "LEGACY_COMPATIBILITY_ONLY; MIGRATION_SOURCE_ONLY",
+        "reason": "Current symbol/company/listing fields do not establish full entity/continuity facts."
+      },
+      {
+        "surface": "md_issuers / md_instruments / md_listings current rows",
+        "classification": "REUSE_AS_CONSUMER_PROJECTION; MIGRATION_SOURCE_ONLY",
+        "reason": "Ticker-derived roots/local PKs not certified semantic master. Physical structure can later be reused with controlled canonical writer/stable binding/proven migration."
+      },
+      {
+        "surface": "md_listing_symbols / md_provider_symbol_mappings / md_listing_boards",
+        "classification": "REUSE_AS_CONSUMER_PROJECTION",
+        "reason": "Retain interval/provenance resolver structures; validate real targets/boundaries/source continuity before canonical sharing."
+      },
+      {
+        "surface": "TemporalIdentityRepository resolver / ProducerTemporalPopulation",
+        "classification": "REUSE_AS_CONSUMER_PROJECTION",
+        "reason": "Retain bounded tested temporal resolution/frozen capture; intake changes require integration/proof, not copied hash roots."
+      },
+      {
+        "surface": "TemporalIdentityRepository::projectTicker UID creation",
+        "classification": "NON_CONFORMANT_MUST_NOT_BE_FOUNDATION",
+        "reason": "Ticker allocation derivation cannot be allocation-independent root delivery; preserve historical projection, no rewriting."
+      },
+      {
+        "surface": "Existing migrations",
+        "classification": "MIGRATION_SOURCE_ONLY / reusable physical structures",
+        "reason": "Never edit applied history; future additive supported upgrade/crosswalk must preserve sealed bindings."
+      }
+    ],
+    "logical_boundary": "Retain MD records as historical/consumer projections now. Future physical sharing requires foundation canonical writer, proven stable crosswalk and supported migrations; no ownership/table change enacted."
+  },
+  "source_of_truth": {
+    "defined": "MD-S057 authoritative exchange listing/delisting reconciliation; governed master continuity and provenance; explicit mapping history. docs/db master is a logical input contract, not named issuer/security dataset.",
+    "missing": "No currently supplied/admitted complete master identifies issuer->instrument->listing relationships, real lifecycle/mapping boundaries and ambiguous continuity decisions. Not a claim that such records do not exist publicly or in owner holdings.",
+    "external_data_meaning": "External to code derivation, not another application; retained source documents/imports in this repository workflow may satisfy it.",
+    "no_external_ID_issuer_needed": "Shared owner may assign/retain/export technical IDs from admitted entity facts; existing service-generated UIDs are not required.",
+    "selection_class": "TECHNICAL/DATA_ACQUISITION_DESIGN within authoritative-source/provenance constraints; inventing continuity or reducing source authority prohibited."
+  },
+  "required_source": {
+    "minimum_fields": "Issuer/entity facts, instrument-to-issuer relation, distinct listing/venue/board/admission/termination, namespace/symbol/provider mappings, explicit continuity/relisting/reuse relations/reasons, source/ref/revision, effective/end convention and known/recorded history/corrections. Retained supplied or shared-assigned identity registry once evidenced, not ticker-derived allocation.",
+    "scope": "Declared product/dataset start/history; missing/ambiguous members unavailable. Completeness needs exchange reconciliation; source metadata alone insufficient.",
+    "provider": "Accountable shared implementation/data owner UNKNOWN; exchange authority category fixed, endpoint/vendor not selected.",
+    "acceptance": [
+      "Trace entity/lifecycle decisions to retained master evidence, not ticker/company heuristics.",
+      "Retain frozen source plus assigned/imported domain roots and repeatable crosswalk/import/export.",
+      "Two stores with different local allocations/order yield same supplied roots and T/cutoff relationships.",
+      "Rename/reuse/relisting/board/delisting follow facts; ambiguous/missing/conflicting records hold, no fabrication.",
+      "Historical sealed bindings/digests unchanged; integration and affected proof separately governed."
+    ],
+    "not_executed_or_delivered": true
+  },
+  "technical_design_freedoms": [
+    {
+      "choice": "Namespace/module/class/interface names",
+      "why_technical": "Meaning/layers fixed, names not",
+      "constraints": "Specific shared identity responsibility outside MD; explicit inert handoff"
+    },
+    {
+      "choice": "Repository/process/service topology",
+      "why_technical": "No deployment requirement in current authority",
+      "constraints": "Same tradeaxis-api module allowed; single semantic owner; no required external service"
+    },
+    {
+      "choice": "Physical tables/PKs/ORM/query technique",
+      "why_technical": "Logical names free; repository.md permits persistence techniques",
+      "constraints": "Official writer ownership, retained identities/revisions/provenance/constraints; unstable local PK never semantic root"
+    },
+    {
+      "choice": "Domain ID representation/generation",
+      "why_technical": "Authority fixes immutable identity, not UUID/digest/vendor/imported integer",
+      "constraints": "Shared foundation may assign once/persist/export IDs from admitted entity facts. Frozen registry carries assigned roots; import/rebuild must retain, not regenerate. Idempotent assignment, reuse distinction, no mutable symbol/allocation derivation; no B10-local issuance. No algorithm selected here"
+    },
+    {
+      "choice": "Import/sync transport/orchestration",
+      "why_technical": "Transport/application/repository separation fixes responsibilities, not file/API technology",
+      "constraints": "Admitted source, explicit snapshot/revision, effective/known-time, retry/dedup and partial-failure audit"
+    },
+    {
+      "choice": "Source endpoint/parser within authority",
+      "why_technical": "No foundation endpoint/vendor mandated",
+      "constraints": "Authoritative exchange category/provenance constraints retained; no invented relationships or arbitrary master assertions"
+    },
+    {
+      "choice": "Interval/crosswalk/storage transition",
+      "why_technical": "One convention required, physical upgrade not prescribed",
+      "constraints": "Preserve B05 established convention and historical answers; evidence-backed backfill, ambiguity holds"
+    }
+  ],
+  "genuine_authority_gaps": [],
+  "authority_conflicts": [],
+  "why_B": "Conformant code design is possible, but neither generated roots nor empty tables certify absent source relations/continuity. Governed implemented/populated delivery and useful dependency resolution require admitted source/accountability. No semantic owner choice or new authority is needed.",
+  "legacy_contract_alignment": "docs/db display/current uniqueness and weaker legacy historical minimum do not override MD-specific stable-security, recorded reuse and fail-closed historical consumption. Complementary scope, not authority contradiction.",
+  "work_ownership": "Same A002/BL001/CI analysis. No arbitrary stage or new attempt. Identify source/custodian and correlate shared delivery work before implementation. Material future work needs early CI/current baseline/correlation, architecture ADR for concrete cross-module/intake/storage choice. B05 proof-owner re-entry only if actual integration affects its current proof, not merely external master incompleteness.",
+  "current_verification": {
+    "B05": {
+      "satisfied": 117,
+      "mandatory": 117,
+      "read_only_proof_gate_before_issue": "PASS"
+    },
+    "B10": {
+      "satisfied": 1016,
+      "not_assessed": 56,
+      "mandatory": 1072
+    },
+    "B18": {
+      "proven_basis": 100,
+      "incomplete_basis": 13,
+      "denominator": 113,
+      "formal_satisfied": 0,
+      "R0025": "INCOMPLETE"
+    },
+    "promoted_rules": []
+  },
+  "dependency": {
+    "id": "MD-DEP-0021",
+    "owner": "shared security-identity foundation role within TradeAxis (logically outside Market Data; same tradeaxis-api repository permitted); accountable implementation/data owner UNKNOWN; MD-B10 consumer coordination",
+    "status": "BLOCKING",
+    "resolution": "Admitted factual source/accountable shared owner, complete conformant foundation implementation/delivery and retained temporal crosswalk, executed allocation-independent/fail-closed acceptance before B10 use. Documentation sufficiency alone not resolution.",
+    "MD_DEP_0020": "BLOCKING: final 56 and successor closure required before B18 return.",
+    "MD_DEP_0019": "BLOCKING separately."
+  },
+  "proof_boundary": "Authority/source/schema review only. No source acquired/admitted, foundation assignment/import, code/schema/DB mutation, test mutation, hash campaign, fixture or approval. No runtime proof or predicate promotion. Governance validation after registration.",
+  "source_revision": "800774357215eb86489a3750bc25c26abe26fe1b",
+  "reviewed_source_sha256": {
+    "README.md": "339839db1400600260d8654ca7476ac99961b8752d44a0ef2580b707ff53b1f8",
+    "docs/market_data/START_HERE.md": "6fdee56483945440f62e404fa6ee1cadd9ca7db22752f8b0df17cf980fe2fce1",
+    "docs/README.md": "d5a687e3d729505e7bac46bfab5b84ee79c63bba433b4a45ffcbd22984b2f93c",
+    "docs/db/README.md": "1e9dbf9a3c223bbace8cd6fe963f56e96683ab0756ee578a5f77b686ad747fe6",
+    "docs/db/02_TICKERS_MASTER.md": "0d9bfbcff2df329f74a045fbc581a3a3be24aacc7dd9ec9dc035a935ba44f845",
+    "docs/system_audit/SYSTEM_ASSEMBLY_BASELINE.md": "b4b8d0b89dc8b12fc64a25a90a91b5f244d47602e687be65cf9fdff531e7b5d6",
+    "docs/system_audit/SYSTEM_CROSS_DOMAIN_INPUT_BASELINE.md": "f067c951c757529dbfcdde18970aede702aa0580e71fa39caea7f2c00e91de1b",
+    "docs/watchlist/authority/strategy/WS_MARKET_DATA_INPUT_REQUIREMENTS.md": "10416438e57136da180794bf2fa1d5fba9d9aedd65ac74b89d15909641088a0c",
+    "docs/api_architecture/README.md": "6a7f368216fd0d12a67b6cc6f0bd07f2ec3ee295e1eeefb14ece2d18ba7a3af5",
+    "docs/market_data/authority/strategy/book/Tickers_and_Identity_Dependency_Contract_LOCKED.md": "9358629ddc11a6c52ba86e612c0b231fae18b12ab9ab64883c1f1d854ac78a54",
+    "docs/market_data/authority/strategy/book/Symbol_Lifecycle_and_Mapping_Contract.md": "7d09f1ac987a77545d98cff5b49f6c03ed7256a509c0700547463911f3f43906",
+    "docs/market_data/authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md": "f8577acbb914552dd8bc90cdae60f9c2378c1a616b5fc7a5413bc2b0cf52fda2",
+    "docs/market_data/authority/governance/DEPENDENCY_REGISTRY_STANDARD.md": "6a1e419c90b6227f05b5b5dad289acd34d0d5883e8b29ea0b091c3931319c0d4",
+    "docs/market_data/authority/governance/STAGE_EXECUTION_AND_REWORK_STANDARD.md": "30a98a66dc6e68250d7c7c13c64753e50eec9e3d972d910800b686f21b2df08b",
+    "docs/market_data/authority/governance/WORK_CORRELATION_AND_RECORD_REGISTRY_STANDARD.md": "bac0749406e7dd3fb52249a2da31ac1a03ffcfc4dbc5c11049f4ee1eb144458a",
+    "docs/market_data/authority/governance/DOCUMENT_RECORDING_STANDARD.md": "4db3f1f73d79bc4fe5a430425dafdbefb564d4f88b83c07e9be81c1d603246f8",
+    "docs/market_data/records/evidence/E-MD-B05-A001-001_TEMPORAL_IDENTITY_AND_SECTOR_MEMBERSHIP.json": "fa665bca590fa43b80496d9b2c41f66d6c5f7b7205316843d35600a06b09b8ea",
+    "docs/market_data/development/implementation/tests/MarketDataTemporalIdentityProofGate.php": "6fe94120c5371401fbf73a7769506ff01d37cc35dcd76241a467177c23e3b67f",
+    "docs/market_data/development/implementation/tests/MarketDataTemporalIdentityTraceabilitySpec.php": "a5970231e784ce0ee4b3123d84a67240d0a67d17f660c8536685327a2ce928a5",
+    "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+    "app/Infrastructure/Persistence/MarketData/TickerMasterRepository.php": "0058670cef2ce9647a9a5be1da82abdba6cc7fe383a5030a23878b353cbd7c32",
+    "app/Infrastructure/Persistence/MarketData/ProducerTemporalPopulation.php": "93740e1580044eaa9684285725ee27dc0437c1e51f82f0448ad168dbffdf1085",
+    "app/Console/Commands/MarketData/ImportSectorMembershipCommand.php": "feb8a5dd1b3406d4c3afabf74c0d634f1c0c672e0bcd86aeebe00b1fc6f22da8",
+    "app/Console/Commands/MarketData/BackfillMissingTickersCommand.php": "dc050bced380fd9115a94c38bacdbf6e5502bd435b4ea7fb150651a0dcd06ad8",
+    "app/Application/MarketData/Services/CorporateActionExternalReconciliationService.php": "49da68014e6081c508b06fb9fbfccb41f65a4ccc91ccd4dab5884db15081ebff",
+    "database/migrations/2026_03_22_000001_create_tickers_table.php": "ad7ef3e021554887ae7c71b53232220e58a3081ad9c245fb790966b58e1f10b5",
+    "database/migrations/2026_08_02_000001_add_market_data_strategy_v2_foundation.php": "400d1d289cae1768206e841e6eef73d9d8e028c6b8a627c5b916199b8751fdfb",
+    "database/seeders/DatabaseSeeder.php": "32cb0060c41d9d5e507f2898a559000a6e57b61677f59de5a663abfe1615aa50",
+    "app/Console/Kernel.php": "f3eb17e7ed8b6a0c91e80aa5228400cb246ba4df3f61b3f5a84ab8a373485175",
+    "app/Providers/AppServiceProvider.php": "081ad7931dc7b29caf638f66ca966d3893e611239b8c0099fd52dc126b406668",
+    "routes/web.php": "bb3733ca9067ee25ff54081f9d82288b164af890d86eb3214ee1b1499195d9b3",
+    "bootstrap/app.php": "893fa53a21e3f61fde28505af0770012d6f43d5234c0acefdc4e077e452405b7",
+    "composer.json": "f9223f56b4932bde259811df61c505a297709107e17e6e431e8f13bd67c7f2ed",
+    "config/market_data.php": "813e85c234e1da22fd76e38157e13a64ed73a698d97a711e85d6c18f4f580ac9",
+    "docs/db/01_MARKET_CALENDAR.md": "288b2ab919e912fd7fcc58086b14391e8d4812ad1d7c99e35b6bd497a7b9a64a",
+    "docs/api_architecture/aturan-global-arsitektur-api.md": "6d7b3ad7c711b1c6429f9c019cc68c134ad90f3b6a8263e9f470a6a53b095fa5",
+    "docs/api_architecture/application-service.md": "8210fd8559e02f8c00f763b35aff6c1d2510117af4cd8c89281ece6bb50bf797",
+    "docs/api_architecture/repository.md": "fbaebb9d7fe9c2702a2221210c30e073773e4985e158da77f805c5a58414bc21",
+    "docs/api_architecture/domain-compute.md": "0a8a88d9bf17173f17bd455763b8fe820909a32c4d97ac26a2cda9115e0cebff",
+    "docs/api_architecture/handoff-antar-layer.md": "c1507a49c4dbb2767a4cd323c9c4c4496aa6c68e435b3bbbd8384887e308cc7d",
+    "docs/api_architecture/kontrak-dto.md": "a848d31cdb84dd72c577b33c623f3e13ea298615129897ccd3a180d5df3be885",
+    "docs/api_architecture/determinisme-dan-idempotensi.md": "999c9ef436bc609e69fed1b10fa8035ed3dabe8ded2aa891c14efe67aa5c929c",
+    "docs/api_architecture/lumen-config-env-baseline.md": "da1c330aa6bbc81d009abdddbf1d645b232744bbf953ae67d5eac451b1656fc3",
+    "docs/api_architecture/arsitektur-decision-record.md": "596fca7397bd4f2eb0153e54872e4fafdca98b92e73c373948b0fdde7ff895a1",
+    "docs/api_architecture/contoh-struktur-folder-kode-generik.md": "9eb94c52e0bdc7e43b5e3b9805e0a453521a90fa5e54a2ca0d71616ba94682c7",
+    "docs/market_data/authority/governance/MARKET_DATA_DOCUMENT_AUTHORITY.md": "9603baacf496aca45c2683a3214a5cf9513dabbb79b0cf0e054778da48c8b652",
+    "docs/market_data/authority/governance/DOCUMENT_CHANGE_POLICY.md": "424b44bf2eea9a3d3381ca5df3c2f361552d1bc7fea54fec895cf9450f44ab3c",
+    "docs/market_data/authority/governance/CHANGE_IMPACT_DECLARATION_STANDARD.md": "4bede7b193c8beba76596542a290c1dca5bfd608125385fc36b42ebe87d535f0",
+    "docs/market_data/authority/governance/WORK_BASELINE_LOCK_STANDARD.md": "d8049bf89cb750d2a0bfe385a3429811b24f6fdb5e64ff1c99f7c611de933bd5",
+    "docs/market_data/authority/strategy/book/Domain_Boundary_Invariants_LOCKED.md": "f836c0bffefaf1d0c76857d87614603e3450aa5d59a2adb40af91ae452c3fba9",
+    "docs/market_data/authority/strategy/book/Source_Mapping_Contract_LOCKED.md": "8828ec8084bbd03ddeaa455088de6db45b5ba40ffa1eb789fab831dba7274f1c",
+    "docs/market_data/authority/strategy/book/Corporate_Action_and_Adjustment_Policy.md": "323fc3b56df9611faff36123f3a008258c749195f78b7039b1396740b2bd03eb",
+    "docs/market_data/development/implementation/MD_IMPLEMENTATION_BUILD_SEQUENCE.md": "ec1a0630b5819d4b8f548b35dac7062a6c75651454a5c1707b1df64cec711bf2"
+  },
+  "preserved_checkpoint_sha256": {
+    "tests/Unit/MarketData/B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4",
+    "docs/market_data/development/findings/F-MD-B10-A002-001_TRACEABILITY_MOVED_ROW_COUNT_TOOLING_DEBT.md": "3468ef431a1466a6f5a48916d453e95aa3128505bcc64d3f1848efcf4868eaff",
+    "docs/market_data/records/evidence/E-MD-B10-A002-002_ARTIFACT_IDENTITY_FOUNDATION_DEPENDENCY_AND_SEPARATE_TOOLING_DEBT.json": "4804eebd4c4bb73cf1d12fdca6258647a885935263ec66dad036fbbbe366a062",
+    "docs/market_data/records/evidence/E-MD-B10-A002-001_FINAL_SEMANTIC_HASH_AFFECTED_VERIFICATION_SCOPE_CORRECTION.json": "4a371ba393c9a209f2f3dd5e70c84612116412186a20e88f740b576835921887",
+    "docs/market_data/records/evidence/E-MD-B18-A002-086_B05_IDENTITY_RECONCILIATION_B10_HASH_CURRENT_VERIFICATION_IMPACT.json": "17115c96411a310a92ddf3b7b358c5b4478c938d522302bda42a861a661cbe66",
+    "docs/market_data/records/evidence/MD-B10-A002-BL001_WORK_BASELINE_LOCK.json": "540d11b4859e50031b82f44067a0cb674d919908cd582a705b06046fbd565841",
+    "docs/market_data/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv": "fc07966ebaef23d3a8184984bbd2d82d9487e1450e5eea74a0faeb5af8be0476",
+    "docs/market_data/records/evidence/E-MD-B10-A002-003_FOUNDATION_OWNERSHIP_AND_UPSTREAM_DELIVERY_REQUIREMENT.json": "d683c2db723d19afb68eacced301a005a62ecdeeec11f3d39054ac0d4433b1c1"
+  },
+  "next_state": "MD-B10-A002 / MD-DEP-0021: identify and admit a provenance-backed identity/lifecycle master dataset and accountable shared-foundation implementation/data owner for delivery inside tradeaxis-api. Required facts: distinct issuer/instrument/listing relationships, effective and known-time symbol/provider/board history, and evidenced continuity/relisting/reuse decisions. Existing authority permits the shared module; no separate repository/service or external ID issuer is required. Freeze the source/retained identity basis and govern the delivery work before implementation; validate allocation independence before returning to the same B10 artifact unit. MD-DEP-0021/0020/0019 remain BLOCKING; no B18/R0025 or F-018 work."
+}

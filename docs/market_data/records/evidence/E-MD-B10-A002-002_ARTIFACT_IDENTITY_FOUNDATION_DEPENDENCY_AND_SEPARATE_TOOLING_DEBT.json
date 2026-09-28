@@ -1,0 +1,113 @@
+{
+  "evidence_id": "E-MD-B10-A002-002",
+  "record_type": "EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "role_scope": "CURRENT_EVIDENCE",
+  "stage_id": "MD-B10",
+  "attempt_id": "MD-B10-A002",
+  "work_id": "MD-B10-A002",
+  "baseline_id": "MD-B10-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+  "change_impact_declaration": "CI-MD-B10-A002-001",
+  "issued_at": "2026-09-28T14:51:16+07:00",
+  "verdict": "ARTIFACT_SEMANTIC_IDENTITY_REMEDIATION_BLOCKED_ON_SHARED_FOUNDATION_DELIVERY",
+  "related_findings": [
+    "F-MD-B18-A002-023",
+    "F-MD-B10-A002-001"
+  ],
+  "related_evidence": [
+    "E-MD-B10-A002-001"
+  ],
+  "related_dependencies": [
+    "MD-DEP-0021",
+    "MD-DEP-0020",
+    "MD-DEP-0019"
+  ],
+  "supersedes": null,
+  "authority": {
+    "stable_identity": "MD-S057 immutable issuer/instrument/listing identity and MD-S005 stable-key rule already fix semantics. Absence of the foundation consumer delivery is an implementation/dependency issue, not a request for new UID semantics.",
+    "ownership": "Shared security-identity foundation owns global master. Market Data consumes supplied immutable identities; no local root issuance or symbol-as-identity substitution.",
+    "artifacts": "MD-S005 bars/indicators/eligibility payload sections require stable listing key, configuration content hash, domain-specific consumer-visible meaning/revision/content bindings and sorted complete stable row key.",
+    "adj_close": "MD-S005 bars payload excludes analytical provider adj_close; retain source-observation provenance.",
+    "history": "MD-S007/MD-S018 preserve sealed history and digests. No existing recorded hash meaning may be silently replaced."
+  },
+  "foundation_reconciliation": {
+    "scope": "Current repository app/, config/, bootstrap/, routes/, composer dependencies, schema/migrations and current canonical records; no claim that an external master cannot exist elsewhere.",
+    "producer": "TemporalIdentityRepository::projectTicker is the identity creation path exposed here. Numeric issuer_id/instrument_id/listing_id use insertGetId; issuer_uid, instrument_uid and listing_uid hash legacy ticker_id.",
+    "consumers": "TickerMasterRepository and ProducerTemporalPopulation read/project those same tables. No registered shared-master delivery/import/binding with allocation-independent stable roots is available to this consumer.",
+    "uid_column_capacity": "Unique UID columns could store a future supplied stable identity; their existence is not proof that current ticker-derived projections are an external immutable master.",
+    "resolution_output": "TemporalIdentityRepository::identityRow exposes numeric listing_id/ticker_id, allocated issuer/instrument IDs and projected issuer/instrument UIDs; does not expose a separately certified stable listing binding.",
+    "rejected_substitutions": [
+      "allocated numeric key",
+      "ticker-derived projected UID",
+      "mutable exchange/provider symbol",
+      "B10-invented UUID/hash/root algorithm"
+    ],
+    "dependency": "MD-DEP-0021",
+    "delivery_condition": "Shared-foundation owner supplies retained immutable issuer/instrument/listing identity and explicit linkage to local temporal listing/revision records, with provenance/continuity and ambiguity handling. Equivalent semantic entities under different local allocations must resolve to the same supplied identity. B10 validates and freezes that delivered binding before implementing artifacts."
+  },
+  "partial_implementation_decision": {
+    "production_patch": false,
+    "new_tests": false,
+    "schema_or_database_mutation": false,
+    "configuration_content_available": "md_config_snapshots.config_hash is derived from canonical snapshot content by MarketDataConfigSnapshotRepository; it is available for later artifact binding.",
+    "why_deferred": "Configuration/adj_close changes are independently specified, but editing active legacy artifact lists now would change hash bytes without a completed stable identity/ordering boundary and explicit historical/successor dispatch. An unused substitute hasher or a fixture-invented root would not satisfy this work unit. No partial corrected-artifact PASS is emitted.",
+    "next_after_delivery": "Same A002/BL001: implement complete artifact semantic identity, config content, domain membership and stable ordering with historical hash compatibility; prove A-I through production paths before any per-rule promotion."
+  },
+  "separate_tooling_debt": {
+    "finding": "F-MD-B10-A002-001",
+    "classification": "TOOLING_DEFECT",
+    "existing_finding_search": "No current finding/dependency specifically records the EXPECTED_MOVED mismatch; original scope correction/final handoff reports it only as pre-existing.",
+    "actual_current_moved_count": 0,
+    "actual_HEAD_moved_count": 0,
+    "gate_expected_moved_count": 1,
+    "surface": "MarketDataPublicationLifecycleTraceabilitySpec::EXPECTED_MOVED and TraceabilityGate::validate",
+    "impact": "False traceability-gate failure independent of the 56 intentionally unbound rules. Do not fabricate a moved row or change ownership/authority to satisfy the constant.",
+    "stage_register_correction": "Mutable B10 coverage cell changes stale one moved/supporting to actual zero, with the separate finding referenced.",
+    "remediation": "Separate bounded tooling/current-denominator reconciliation and discriminating gate proof after canonical scope is checked; no tooling/source change in this blocked artifact unit."
+  },
+  "current_verification": {
+    "MD_B10": {
+      "mandatory": 1072,
+      "satisfied": 1016,
+      "not_assessed": 56
+    },
+    "MD_B18": {
+      "denominator": 113,
+      "proof_basis_proven": 100,
+      "proof_basis_incomplete": 13,
+      "formal_satisfied": 0,
+      "R0025": "INCOMPLETE"
+    },
+    "B05": "Existing 117/117 bounded temporal proof not invalidated by this dependency review.",
+    "promoted_predicates": [],
+    "MD_DEP_0019": "BLOCKING",
+    "MD_DEP_0020": "BLOCKING"
+  },
+  "attempt_continuation": "MD-B10-A002 and immutable BL001 retained; CI is updated under its mutable scope rule. Waiting dependency remains active, not terminal.",
+  "proof_boundary": "Read-only authority/source/current-record dependency diagnosis only; no new runtime semantic proof, no mutation campaign, no positive artifact claim. Governance validation results are reported separately after registration.",
+  "source_revision": "800774357215eb86489a3750bc25c26abe26fe1b",
+  "reviewed_source_sha256": {
+    "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+    "app/Infrastructure/Persistence/MarketData/TickerMasterRepository.php": "0058670cef2ce9647a9a5be1da82abdba6cc7fe383a5030a23878b353cbd7c32",
+    "app/Infrastructure/Persistence/MarketData/ProducerTemporalPopulation.php": "93740e1580044eaa9684285725ee27dc0437c1e51f82f0448ad168dbffdf1085",
+    "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php": "dd955236ae859b478d91d02e3313b8e5fff64f6d5495f13fc51e9efa99abbb26",
+    "app/Application/MarketData/Services/MarketDataPipelineService.php": "9fbb1f0c141ad8886cb3c882b1ba98b5b70105bd5e232d46ab78d2e40278d3c6",
+    "app/Application/MarketData/Services/DeterministicHashService.php": "b7f6e72e22f22d353dbe6bd50ed845d990fa48bb84d14f9c641724dd0147856f",
+    "database/migrations/2026_08_02_000001_add_market_data_strategy_v2_foundation.php": "400d1d289cae1768206e841e6eef73d9d8e028c6b8a627c5b916199b8751fdfb",
+    "database/migrations/2026_08_03_000001_harden_market_data_orders_1_to_4.php": "b2141ff8a97cf2454cdbab9e939deee11271efbf0c1cc82e1792fb7a9121f61e",
+    "composer.json": "f9223f56b4932bde259811df61c505a297709107e17e6e431e8f13bd67c7f2ed",
+    "docs/market_data/development/implementation/tests/MarketDataPublicationLifecycleTraceabilitySpec.php": "e82af9a892ec3e200bf02862c1ccea3f89969224620dbd342db53c83b13d8e4b",
+    "docs/market_data/development/implementation/tests/MarketDataPublicationLifecycleTraceabilityGate.php": "c2e9d8d468100d0c9ff8eaefde1190f696ddacc725710167451e2dc3731c8e72"
+  },
+  "preserved_checkpoint_sha256": {
+    "tests/Unit/MarketData/B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4",
+    "docs/market_data/records/evidence/E-MD-B18-A002-086_B05_IDENTITY_RECONCILIATION_B10_HASH_CURRENT_VERIFICATION_IMPACT.json": "17115c96411a310a92ddf3b7b358c5b4478c938d522302bda42a861a661cbe66",
+    "docs/market_data/records/evidence/MD-B10-A002-BL001_WORK_BASELINE_LOCK.json": "540d11b4859e50031b82f44067a0cb674d919908cd582a705b06046fbd565841",
+    "docs/market_data/records/evidence/E-MD-B10-A002-001_FINAL_SEMANTIC_HASH_AFFECTED_VERIFICATION_SCOPE_CORRECTION.json": "4a371ba393c9a209f2f3dd5e70c84612116412186a20e88f740b576835921887"
+  },
+  "matrix_sha256_unchanged": "fc07966ebaef23d3a8184984bbd2d82d9487e1450e5eea74a0faeb5af8be0476",
+  "next_state": "Obtain and validate the shared security-identity foundation delivery under MD-DEP-0021, then resume this same MD-B10-A002 artifact unit. Do not return to B18/R0025 yet."
+}

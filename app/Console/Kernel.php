@@ -49,6 +49,7 @@ use Laravel\Lumen\Console\Kernel as ConsoleKernel;
 class Kernel extends ConsoleKernel
 {
     protected $commands = [
+        \App\Console\Commands\SecurityIdentity\BootstrapFoundationCommand::class,
         IngestEodBarsCommand::class,
         AdmitStageEightConformantSuffixCommand::class,
         ComputeIndicatorsCommand::class,

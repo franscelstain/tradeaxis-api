@@ -1,0 +1,30 @@
+{
+  "evidence_id": "E-MD-B18-A002-086",
+  "stage_id": "MD-B18",
+  "attempt_id": "MD-B18-A002",
+  "work_id": "MD-B18-A002",
+  "baseline_id": "MD-B18-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+  "issued_at": "2026-09-27T11:37:01+07:00",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "verdict": "B05_PROOF_RETAINED_B10_AUDIT_HASH_CURRENT_VERIFICATION_PARTIALLY_INVALIDATED",
+  "related_findings": ["F-MD-B18-A002-023", "F-MD-B18-A002-017"],
+  "related_evidence": ["E-MD-B05-A001-001", "E-MD-B10-A001-001", "SC-MD-B10-A001-001", "E-MD-B18-A002-085"],
+  "dependencies": ["MD-DEP-0017", "MD-DEP-0019", "MD-DEP-0020"],
+  "authority": {
+    "identity": "Tickers_and_Identity_Dependency_Contract_LOCKED.md: immutable issuer_id/instrument_id/listing_id; ticker_id only a documented invariant compatibility alias; ambiguous identity fails closed; shared security-identity foundation owns the global master.",
+    "hash": "Audit_Hash_and_Reproducibility_Contract_LOCKED.md: semantic artifact hashes use stable domain/revision/content identities, excluding database surrogates when equivalent rebuilds can allocate differently; operational IDs are separated from semantic manifest content; unchanged stable inputs/versions produce identical hashes."
+  },
+  "b05_proof_reconciliation": "E-MD-B05-A001-001 and MarketDataTemporalIdentityProofGate bind tests of layer distinction, temporal point-in-time resolution, symbol reuse/relisting, and unique fail-closed compatibility alias binding within one database. They do not claim cross-database allocation invariance. MD-S057-R0028/R0029 remain MD-B21 NOT_ASSESSED. No B05 predicate is demoted.",
+  "implementation_facts": {
+    "creation": "tickers.ticker_id and md_issuers.issuer_id/md_instruments.instrument_id/md_listings.listing_id are allocated integer primary keys. TemporalIdentityRepository::projectTicker computes issuer_uid=SHA256('issuer|legacy-ticker|'+ticker_id), instrument_uid=SHA256('instrument|idx-equity|'+ticker_id), listing_uid=SHA256('listing|idx|regular|'+ticker_id), and inserts numeric IDs using insertGetId. The UIDs are legacy migration projections.",
+    "artifact_hashes": "MarketDataPipelineService BARS_HASH_COLUMNS, INDICATORS_HASH_COLUMNS and ELIGIBILITY_HASH_COLUMNS each include ticker_id and listing_id; hashForTable orders by ticker_id; DeterministicHashService stableRowKey uses trade_date, listing_id and ticker_id.",
+    "manifest_hash": "EodPublicationRepository::publicationManifestSemanticPayload includes supersedes_publication_id, previous_publication_id, replaced_publication_id and correction_lineage.correction_id as numeric members of the hashed canonical document.",
+    "bounded_read_only_probe": "Current DeterministicHashService over equal date/close and columns [trade_date,ticker_id,listing_id,close]: 2026-03-10|101|201|100.0000 -> e25909a91d10198a8a9a0f57d6f89796f69fb8f31bab2b3d5e5f287660ca5936; 2026-03-10|701|801|100.0000 -> 31e4c64780e15d2d06aa130feed900ff47cc6000380c485febf3ad8b74daaa3c. This isolates allocation sensitivity; no full database rebuild was performed."
+  },
+  "b10_proof_defect": "MarketDataPublicationLifecycleProofSpec maps MD-S005 audit-hash predicates to the audit_manifest family, whose static guard checks presence of named bindings and excludes literal run_id/publication_id but does not test numeric relationship IDs or allocation invariance. The canonical-document test checks order and value sensitivity, not equivalent semantic rebuilds.",
+  "affected_current_predicates": ["MD-S005-R0001", "MD-S005-R0019", "MD-S005-R0021", "MD-S005-R0022", "MD-S005-R0028", "MD-S005-R0030", "MD-S005-R0042", "MD-S005-R0053", "MD-S005-R0073", "MD-S005-R0077", "MD-S005-R0086"],
+  "current_verification_impact": "Eleven B10 SATISFIED rows return to NOT_ASSESSED; B10 current coverage becomes 1061/1072, so DONE/PASS is withdrawn pending successor revalidation. Original E-MD-B10-A001-001 and SC-MD-B10-A001-001 bytes are preserved and remain valid only for narrower unaffected claims. B05 117/117 stays. B18 R0025 INCOMPLETE and its 100/113 readiness and 0/113 formal SATISFIED stay unchanged. MD-DEP-0020 blocks the fixture until B10 hash identity remediation and proof.",
+  "scope": "Read-only authority, proof and source reconciliation plus governed current-verification correction. No runtime implementation, schema, fixture, database or strategy mutation; no new attempt, commit or push. Source-observation/B07 proof was not redesigned and may receive a separate bounded review."
+}

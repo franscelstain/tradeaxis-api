@@ -1,0 +1,1386 @@
+{
+  "evidence_id": "E-MD-B10-A002-005",
+  "record_type": "EVIDENCE",
+  "role_scope": "CURRENT_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B10",
+  "attempt_id": "MD-B10-A002",
+  "work_id": "MD-B10-A002",
+  "baseline_id": "MD-B10-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+  "change_impact_declaration": "CI-MD-B10-A002-001",
+  "issued_at": "2026-09-28T23:56:14+07:00",
+  "verdict": "B_CURRENT_DATA_PARTIALLY_SUFFICIENT",
+  "checkpoint_verdict": "B_PARTIAL_FOUNDATION_BASIS_READY_FAIL_CLOSED_IMPLEMENTATION_MAY_BEGIN",
+  "related_findings": [
+    "F-MD-B18-A002-023"
+  ],
+  "related_evidence": [
+    "E-MD-B10-A002-004",
+    "E-MD-B10-A002-003",
+    "E-MD-B10-A002-002",
+    "E-MD-B10-A002-001",
+    "E-MD-B05-A001-001"
+  ],
+  "related_decisions": [
+    "D-MD-B10-A002-001"
+  ],
+  "related_dependencies": [
+    "MD-DEP-0021",
+    "MD-DEP-0020",
+    "MD-DEP-0019"
+  ],
+  "supersedes": null,
+  "material_progress": "Current data was inspected, selected primary-source facts acquired/admitted with a retained versioned partial package, and logical project/module accountability assigned by a bounded architecture decision. E004 complete-master/source gap remains; partial implementation does not wait for universe-wide completion, but unresolved identities fail closed and dependency stays BLOCKING.",
+  "authority_sufficiency": "Existing MD-S057/055 failure behavior allows per-instrument gaps, holds and quarantine; capability boundary forbids complete/unreconciled-universe claims. No semantic gap or strategy revision. docs/README shared foundation and API ADR rules support logical ownership assignment; no person/team acceptance fabricated.",
+  "inventory": {
+    "actual_database": {
+      "status": "PASS",
+      "driver": "mysql",
+      "host": "127.0.0.1",
+      "port": "3306",
+      "server_version": "10.4.27-MariaDB",
+      "captured_at": "2026-09-28T23:49:44+07:00",
+      "database_data_mutated": false,
+      "isolation": "READ ONLY transaction, REPEATABLE READ default, ended by ROLLBACK",
+      "databases": {
+        "tradeaxis": {
+          "table_names": [
+            "eod_bars",
+            "eod_bars_history",
+            "eod_current_publication_pointer",
+            "eod_dataset_corrections",
+            "eod_eligibility",
+            "eod_eligibility_history",
+            "eod_indicators",
+            "eod_indicators_history",
+            "eod_invalid_bars",
+            "eod_publications",
+            "eod_reason_codes",
+            "eod_runs",
+            "eod_run_events",
+            "market_benchmarks",
+            "market_benchmark_bars",
+            "market_benchmark_indicators",
+            "market_calendar",
+            "market_data_corporate_actions",
+            "market_data_corporate_action_types",
+            "market_data_price_scale_breaks",
+            "market_data_sectors",
+            "market_data_trading_status_events",
+            "market_data_trading_status_event_types",
+            "md_adjustment_factors",
+            "md_adjustment_factor_decisions",
+            "md_adjustment_factor_sets",
+            "md_config_snapshots",
+            "md_corporate_action_reconciliations",
+            "md_corporate_action_revisions",
+            "md_corpus_admission_decisions",
+            "md_exchange_market_structure_revisions",
+            "md_exchange_price_band_tiers",
+            "md_exchange_tick_size_tiers",
+            "md_instruments",
+            "md_issuers",
+            "md_liquidity_metric_labels",
+            "md_listings",
+            "md_listing_boards",
+            "md_listing_symbols",
+            "md_market_calendar_revisions",
+            "md_price_scale_break_candidates",
+            "md_price_scale_break_candidate_reviews",
+            "md_provider_symbol_mappings",
+            "md_publication_lineage_bindings",
+            "md_publication_market_structure_bindings",
+            "md_publication_projection_reconciliations",
+            "md_replay_daily_metrics",
+            "md_replay_reason_code_counts",
+            "md_run_input_captures",
+            "md_session_snapshots",
+            "md_source_observations",
+            "md_source_observation_identity_bindings",
+            "md_source_observation_rejected_rows",
+            "md_source_observation_revision_comparisons",
+            "md_source_observation_rows",
+            "md_source_scale_assessments",
+            "md_stage8_reconstruction_campaigns",
+            "md_stage8_reconstruction_targets",
+            "md_trading_status_revisions",
+            "md_trading_status_source_registry",
+            "migrations",
+            "tickers",
+            "ticker_sector_memberships"
+          ],
+          "relevant_tables": {
+            "tickers": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "ticker_id",
+                "ticker_code",
+                "company_name",
+                "company_logo",
+                "listed_date",
+                "delisted_date",
+                "board_code",
+                "exchange_code",
+                "is_active",
+                "created_at",
+                "updated_at"
+              ]
+            },
+            "md_issuers": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "issuer_id",
+                "issuer_uid",
+                "legal_name",
+                "recorded_at",
+                "created_at",
+                "source_ref"
+              ]
+            },
+            "md_instruments": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "instrument_id",
+                "instrument_uid",
+                "issuer_id",
+                "instrument_type",
+                "currency_code",
+                "recorded_at",
+                "created_at",
+                "source_ref"
+              ]
+            },
+            "md_listings": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "listing_id",
+                "listing_uid",
+                "instrument_id",
+                "exchange_code",
+                "board_code",
+                "listed_date",
+                "delisted_date",
+                "delisted_recorded_at",
+                "recorded_at",
+                "created_at",
+                "legacy_ticker_id",
+                "market_segment",
+                "source_ref",
+                "listing_state"
+              ]
+            },
+            "md_listing_symbols": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "listing_symbol_id",
+                "listing_id",
+                "symbol",
+                "symbol_type",
+                "effective_from",
+                "effective_to",
+                "recorded_at",
+                "retracted_at",
+                "source_observation_id",
+                "symbol_namespace",
+                "source_ref",
+                "change_reason"
+              ]
+            },
+            "md_provider_symbol_mappings": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "provider_mapping_id",
+                "listing_id",
+                "provider",
+                "provider_symbol",
+                "effective_from",
+                "effective_to",
+                "recorded_at",
+                "retracted_at",
+                "source_observation_id",
+                "mapping_revision",
+                "source_ref",
+                "change_reason"
+              ]
+            },
+            "md_listing_boards": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "listing_board_id",
+                "listing_id",
+                "market_segment",
+                "board_code",
+                "effective_from",
+                "effective_to",
+                "recorded_at",
+                "retracted_at",
+                "source_observation_id",
+                "source_ref",
+                "change_reason"
+              ]
+            },
+            "ticker_sector_memberships": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "membership_id",
+                "ticker_id",
+                "listing_id",
+                "sector_code",
+                "classification_system",
+                "effective_from",
+                "effective_to",
+                "source_name",
+                "source_ref",
+                "source_authority_class",
+                "recorded_at",
+                "supersedes_membership_id",
+                "operator_name",
+                "reason_code",
+                "created_at",
+                "updated_at"
+              ]
+            },
+            "market_data_corporate_actions": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "corporate_action_id",
+                "ticker_id",
+                "ticker_code",
+                "action_date",
+                "action_type",
+                "source_name",
+                "source_ref",
+                "recorded_at",
+                "notes",
+                "price_adjustment_factor",
+                "volume_adjustment_factor",
+                "ex_date",
+                "cum_date",
+                "ratio_from",
+                "ratio_to",
+                "dividend_per_share",
+                "adjustment_source",
+                "adjustment_note",
+                "continuity_check_status",
+                "observed_gap_pct",
+                "continuity_checked_at",
+                "created_at",
+                "updated_at"
+              ]
+            },
+            "md_corporate_action_revisions": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "corporate_action_revision_id",
+                "event_uid",
+                "revision_number",
+                "listing_id",
+                "action_type_code",
+                "lifecycle_state",
+                "verification_state",
+                "ex_date",
+                "cum_date",
+                "record_date",
+                "payment_date",
+                "terms_json",
+                "source_observation_id",
+                "effective_at",
+                "recorded_at",
+                "supersedes_revision_id"
+              ]
+            },
+            "md_corporate_action_reconciliations": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "reconciliation_id",
+                "reconciliation_uid",
+                "scope_start",
+                "scope_end",
+                "authority_name",
+                "authority_class",
+                "scope_complete",
+                "manifest_sha256",
+                "manifest_event_count",
+                "platform_event_count",
+                "missing_platform_count",
+                "unexpected_platform_count",
+                "mismatch_count",
+                "reconciliation_state",
+                "details_json",
+                "recorded_at",
+                "created_at"
+              ]
+            },
+            "md_trading_status_revisions": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "status_revision_id",
+                "listing_id",
+                "status_code",
+                "bar_expectation_state",
+                "full_session_verified",
+                "effective_from",
+                "effective_to",
+                "recorded_at",
+                "retracted_at",
+                "source_observation_id",
+                "supersedes_revision_id",
+                "board_code",
+                "authority_class",
+                "source_ref",
+                "verification_state",
+                "observed_at",
+                "status_event_uid",
+                "instrument_id",
+                "status_type_code",
+                "source_name",
+                "source_payload_hash",
+                "announced_at",
+                "operator_name",
+                "governed_reason_code",
+                "authoritative_source_ref"
+              ]
+            },
+            "md_trading_status_source_registry": {
+              "exists": true,
+              "rows": 3,
+              "columns": [
+                "source_name",
+                "status_type_code",
+                "authority_class",
+                "priority",
+                "active",
+                "source_ref_pattern",
+                "created_at",
+                "updated_at"
+              ]
+            },
+            "md_source_observations": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "source_observation_id",
+                "observation_uid",
+                "run_id",
+                "attempt_uid",
+                "requested_trade_date",
+                "source_name",
+                "provider",
+                "provider_symbol",
+                "provider_mapping_id",
+                "sanitized_request_identity",
+                "response_status",
+                "content_type",
+                "source_timestamp",
+                "acquired_at",
+                "schema_fingerprint",
+                "adapter_version",
+                "payload_hash",
+                "payload_ref",
+                "bounded_payload_body",
+                "outcome_state",
+                "reason_code",
+                "supersedes_observation_id",
+                "created_at",
+                "parent_observation_id",
+                "source_mode",
+                "requested_start_date",
+                "requested_end_date",
+                "mapping_revision",
+                "config_snapshot_id",
+                "provider_schema_version",
+                "payload_byte_length",
+                "validation_state",
+                "acquisition_batch_id",
+                "acquisition_checkpoint_id",
+                "source_volume_unit_code",
+                "volume_unit_normalization_factor",
+                "volume_unit_normalization_state",
+                "volume_unit_evidence_ref"
+              ]
+            },
+            "md_source_observation_identity_bindings": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "source_observation_identity_binding_id",
+                "source_observation_row_id",
+                "source_observation_id",
+                "listing_id",
+                "provider_mapping_id",
+                "mapping_revision",
+                "effective_trade_date",
+                "recorded_at"
+              ]
+            },
+            "md_exchange_market_structure_revisions": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "market_structure_revision_id",
+                "rule_uid",
+                "revision_number",
+                "rule_type",
+                "exchange_code",
+                "market_segment",
+                "instrument_scope_code",
+                "coverage_scope_json",
+                "effective_from",
+                "effective_to",
+                "minimum_price_idr",
+                "verification_state",
+                "source_uid",
+                "source_observation_id",
+                "source_reference",
+                "content_hash",
+                "recorded_at",
+                "supersedes_revision_id"
+              ]
+            }
+          }
+        },
+        "tradeaxis_testing": {
+          "table_names": [
+            "eod_bars",
+            "eod_bars_history",
+            "eod_current_publication_pointer",
+            "eod_dataset_corrections",
+            "eod_eligibility",
+            "eod_eligibility_history",
+            "eod_indicators",
+            "eod_indicators_history",
+            "eod_invalid_bars",
+            "eod_publications",
+            "eod_reason_codes",
+            "eod_runs",
+            "eod_run_events",
+            "market_benchmarks",
+            "market_benchmark_bars",
+            "market_benchmark_indicators",
+            "market_calendar",
+            "market_data_corporate_actions",
+            "market_data_corporate_action_types",
+            "market_data_price_scale_breaks",
+            "market_data_sectors",
+            "market_data_trading_status_events",
+            "market_data_trading_status_event_types",
+            "md_adjustment_factors",
+            "md_adjustment_factor_decisions",
+            "md_adjustment_factor_sets",
+            "md_config_snapshots",
+            "md_corporate_action_reconciliations",
+            "md_corporate_action_revisions",
+            "md_corpus_admission_decisions",
+            "md_exchange_market_structure_revisions",
+            "md_exchange_price_band_tiers",
+            "md_exchange_tick_size_tiers",
+            "md_instruments",
+            "md_issuers",
+            "md_liquidity_metric_labels",
+            "md_listings",
+            "md_listing_boards",
+            "md_listing_symbols",
+            "md_market_calendar_revisions",
+            "md_price_scale_break_candidates",
+            "md_price_scale_break_candidate_reviews",
+            "md_provider_symbol_mappings",
+            "md_publication_lineage_bindings",
+            "md_publication_market_structure_bindings",
+            "md_publication_projection_reconciliations",
+            "md_replay_daily_metrics",
+            "md_replay_reason_code_counts",
+            "md_run_input_captures",
+            "md_session_snapshots",
+            "md_source_observations",
+            "md_source_observation_identity_bindings",
+            "md_source_observation_rejected_rows",
+            "md_source_observation_revision_comparisons",
+            "md_source_observation_rows",
+            "md_source_scale_assessments",
+            "md_stage8_reconstruction_campaigns",
+            "md_stage8_reconstruction_targets",
+            "md_trading_status_revisions",
+            "md_trading_status_source_registry",
+            "migrations",
+            "tickers",
+            "ticker_sector_memberships"
+          ],
+          "relevant_tables": {
+            "tickers": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "ticker_id",
+                "ticker_code",
+                "company_name",
+                "company_logo",
+                "listed_date",
+                "delisted_date",
+                "board_code",
+                "exchange_code",
+                "is_active",
+                "created_at",
+                "updated_at"
+              ]
+            },
+            "md_issuers": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "issuer_id",
+                "issuer_uid",
+                "legal_name",
+                "recorded_at",
+                "created_at",
+                "source_ref"
+              ]
+            },
+            "md_instruments": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "instrument_id",
+                "instrument_uid",
+                "issuer_id",
+                "instrument_type",
+                "currency_code",
+                "recorded_at",
+                "created_at",
+                "source_ref"
+              ]
+            },
+            "md_listings": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "listing_id",
+                "listing_uid",
+                "instrument_id",
+                "exchange_code",
+                "board_code",
+                "listed_date",
+                "delisted_date",
+                "delisted_recorded_at",
+                "recorded_at",
+                "created_at",
+                "legacy_ticker_id",
+                "market_segment",
+                "source_ref",
+                "listing_state"
+              ]
+            },
+            "md_listing_symbols": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "listing_symbol_id",
+                "listing_id",
+                "symbol",
+                "symbol_type",
+                "effective_from",
+                "effective_to",
+                "recorded_at",
+                "retracted_at",
+                "source_observation_id",
+                "symbol_namespace",
+                "source_ref",
+                "change_reason"
+              ]
+            },
+            "md_provider_symbol_mappings": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "provider_mapping_id",
+                "listing_id",
+                "provider",
+                "provider_symbol",
+                "effective_from",
+                "effective_to",
+                "recorded_at",
+                "retracted_at",
+                "source_observation_id",
+                "mapping_revision",
+                "source_ref",
+                "change_reason"
+              ]
+            },
+            "md_listing_boards": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "listing_board_id",
+                "listing_id",
+                "market_segment",
+                "board_code",
+                "effective_from",
+                "effective_to",
+                "recorded_at",
+                "retracted_at",
+                "source_observation_id",
+                "source_ref",
+                "change_reason"
+              ]
+            },
+            "ticker_sector_memberships": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "membership_id",
+                "ticker_id",
+                "listing_id",
+                "sector_code",
+                "classification_system",
+                "effective_from",
+                "effective_to",
+                "source_name",
+                "source_ref",
+                "source_authority_class",
+                "recorded_at",
+                "supersedes_membership_id",
+                "operator_name",
+                "reason_code",
+                "created_at",
+                "updated_at"
+              ]
+            },
+            "market_data_corporate_actions": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "corporate_action_id",
+                "ticker_id",
+                "ticker_code",
+                "action_date",
+                "action_type",
+                "source_name",
+                "source_ref",
+                "recorded_at",
+                "notes",
+                "price_adjustment_factor",
+                "volume_adjustment_factor",
+                "ex_date",
+                "cum_date",
+                "ratio_from",
+                "ratio_to",
+                "dividend_per_share",
+                "adjustment_source",
+                "adjustment_note",
+                "continuity_check_status",
+                "observed_gap_pct",
+                "continuity_checked_at",
+                "created_at",
+                "updated_at"
+              ]
+            },
+            "md_corporate_action_revisions": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "corporate_action_revision_id",
+                "event_uid",
+                "revision_number",
+                "listing_id",
+                "action_type_code",
+                "lifecycle_state",
+                "verification_state",
+                "ex_date",
+                "cum_date",
+                "record_date",
+                "payment_date",
+                "terms_json",
+                "source_observation_id",
+                "effective_at",
+                "recorded_at",
+                "supersedes_revision_id"
+              ]
+            },
+            "md_corporate_action_reconciliations": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "reconciliation_id",
+                "reconciliation_uid",
+                "scope_start",
+                "scope_end",
+                "authority_name",
+                "authority_class",
+                "scope_complete",
+                "manifest_sha256",
+                "manifest_event_count",
+                "platform_event_count",
+                "missing_platform_count",
+                "unexpected_platform_count",
+                "mismatch_count",
+                "reconciliation_state",
+                "details_json",
+                "recorded_at",
+                "created_at"
+              ]
+            },
+            "md_trading_status_revisions": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "status_revision_id",
+                "listing_id",
+                "status_code",
+                "bar_expectation_state",
+                "full_session_verified",
+                "effective_from",
+                "effective_to",
+                "recorded_at",
+                "retracted_at",
+                "source_observation_id",
+                "supersedes_revision_id",
+                "board_code",
+                "authority_class",
+                "source_ref",
+                "verification_state",
+                "observed_at",
+                "status_event_uid",
+                "instrument_id",
+                "status_type_code",
+                "source_name",
+                "source_payload_hash",
+                "announced_at",
+                "operator_name",
+                "governed_reason_code",
+                "authoritative_source_ref"
+              ]
+            },
+            "md_trading_status_source_registry": {
+              "exists": true,
+              "rows": 3,
+              "columns": [
+                "source_name",
+                "status_type_code",
+                "authority_class",
+                "priority",
+                "active",
+                "source_ref_pattern",
+                "created_at",
+                "updated_at"
+              ]
+            },
+            "md_source_observations": {
+              "exists": true,
+              "rows": 528,
+              "columns": [
+                "source_observation_id",
+                "observation_uid",
+                "run_id",
+                "attempt_uid",
+                "requested_trade_date",
+                "source_name",
+                "provider",
+                "provider_symbol",
+                "provider_mapping_id",
+                "sanitized_request_identity",
+                "response_status",
+                "content_type",
+                "source_timestamp",
+                "acquired_at",
+                "schema_fingerprint",
+                "adapter_version",
+                "payload_hash",
+                "payload_ref",
+                "bounded_payload_body",
+                "outcome_state",
+                "reason_code",
+                "supersedes_observation_id",
+                "created_at",
+                "parent_observation_id",
+                "source_mode",
+                "requested_start_date",
+                "requested_end_date",
+                "mapping_revision",
+                "config_snapshot_id",
+                "provider_schema_version",
+                "payload_byte_length",
+                "validation_state",
+                "acquisition_batch_id",
+                "acquisition_checkpoint_id",
+                "source_volume_unit_code",
+                "volume_unit_normalization_factor",
+                "volume_unit_normalization_state",
+                "volume_unit_evidence_ref"
+              ]
+            },
+            "md_source_observation_identity_bindings": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "source_observation_identity_binding_id",
+                "source_observation_row_id",
+                "source_observation_id",
+                "listing_id",
+                "provider_mapping_id",
+                "mapping_revision",
+                "effective_trade_date",
+                "recorded_at"
+              ]
+            },
+            "md_exchange_market_structure_revisions": {
+              "exists": true,
+              "rows": 0,
+              "columns": [
+                "market_structure_revision_id",
+                "rule_uid",
+                "revision_number",
+                "rule_type",
+                "exchange_code",
+                "market_segment",
+                "instrument_scope_code",
+                "coverage_scope_json",
+                "effective_from",
+                "effective_to",
+                "minimum_price_idr",
+                "verification_state",
+                "source_uid",
+                "source_observation_id",
+                "source_reference",
+                "content_hash",
+                "recorded_at",
+                "supersedes_revision_id"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "retained_source_file_count": 44,
+    "retained_source_file_groups": {
+      "eod_bars": 7,
+      "events": 9,
+      "sectors": 27,
+      "source_backfill": 1
+    },
+    "membership_rows": 971,
+    "membership_NLI_source_leads": 29,
+    "other_actual_data": "Status source registry has 3 rule rows, not entity facts; testing source observations 528, no master rows. Seeds supply reason/enum definitions, not issuer/instrument/listing facts.",
+    "documented_contract_only": "docs/db/02 and MD-S057/055; migrations/schema and synthetic tests are structures/behavior proof, not real source master.",
+    "implementation_derived": "projectTicker UID hashes use ticker_id; issuer/instrument/listing relations, .JK mapping and legacy board interval are projections/defaults, not admitted source truth. No such writes executed.",
+    "unrelated_recovery": "MD-DEP-0016 isolated data_260914 is uncertified and separately restricted. No directory read, recovery, copy or import; not available admitted master."
+  },
+  "source_coverage_matrix": [
+    {
+      "required_fact": "issuer identity",
+      "available_source": "KSEI IKPM issuer/security record; e-IPO ATLA issuer record",
+      "source_owner": "KSEI / exchange-operated e-IPO",
+      "provenance": "Retained package extraction/URL for selected facts; other CSV labels/references unverified",
+      "temporal_history": "No complete history admitted",
+      "coverage": "Named source entities only; no TradeAxis roots assigned",
+      "admissibility": "BOUNDED_FACTS or CORROBORATING/LEAD_ONLY as stated; missing data HELD",
+      "gap": "Historical legal identity/renames and disambiguating master facts unresolved"
+    },
+    {
+      "required_fact": "issuer -> instrument",
+      "available_source": "KSEI explicitly relates IKPM security to named issuer",
+      "source_owner": "KSEI",
+      "provenance": "Retained package extraction/URL for selected facts; other CSV labels/references unverified",
+      "temporal_history": "No complete history admitted",
+      "coverage": "One bounded registered-security relation",
+      "admissibility": "BOUNDED_FACTS or CORROBORATING/LEAD_ONLY as stated; missing data HELD",
+      "gap": "No complete cross-issuer/security master; ATLA offering lacks complete security specification"
+    },
+    {
+      "required_fact": "instrument identity",
+      "available_source": "IKPM ISIN ID1000199409; common-share type and IDR",
+      "source_owner": "KSEI",
+      "provenance": "Retained package extraction/URL for selected facts; other CSV labels/references unverified",
+      "temporal_history": "No complete history admitted",
+      "coverage": "One source instrument identified; root mechanism not selected",
+      "admissibility": "BOUNDED_FACTS or CORROBORATING/LEAD_ONLY as stated; missing data HELD",
+      "gap": "ATLA ISIN/class and replacement/continuity histories missing"
+    },
+    {
+      "required_fact": "instrument -> listing",
+      "available_source": "IKPM source reports IDX and listing date; ATLA source announces listing schedule",
+      "source_owner": "KSEI / e-IPO",
+      "provenance": "Retained package extraction/URL for selected facts; other CSV labels/references unverified",
+      "temporal_history": "No complete history admitted",
+      "coverage": "Corroborating/scheduled assertions only; no complete admitted exchange listing",
+      "admissibility": "BOUNDED_FACTS or CORROBORATING/LEAD_ONLY as stated; missing data HELD",
+      "gap": "Executed exchange admission, board/segment and stable listing crosswalk required"
+    },
+    {
+      "required_fact": "listing identity",
+      "available_source": "No supplied/admitted TradeAxis listing roots",
+      "source_owner": "Shared foundation technical assignment later",
+      "provenance": "Retained package extraction/URL for selected facts; other CSV labels/references unverified",
+      "temporal_history": "No complete history admitted",
+      "coverage": "NONE; held",
+      "admissibility": "BOUNDED_FACTS or CORROBORATING/LEAD_ONLY as stated; missing data HELD",
+      "gap": "No listing root generated or guessed"
+    },
+    {
+      "required_fact": "listing admission",
+      "available_source": "IKPM CSD-reported 2023-11-08; ATLA announced 2024-04-16; 29 NLI references in retained membership CSVs",
+      "source_owner": "KSEI / e-IPO / referenced IDX",
+      "provenance": "Retained package extraction/URL for selected facts; other CSV labels/references unverified",
+      "temporal_history": "No complete history admitted",
+      "coverage": "Two bounded reported/scheduled facts; NLI bodies not retained/verified",
+      "admissibility": "BOUNDED_FACTS or CORROBORATING/LEAD_ONLY as stated; missing data HELD",
+      "gap": "Authoritative executed-admission notice and listing context"
+    },
+    {
+      "required_fact": "termination/delisting",
+      "available_source": "Corporate-action CSV has 14 DELISTING-labelled rows; status files contain suspension/potential-delisting references",
+      "source_owner": "Original exchange claims; local preparer unestablished",
+      "provenance": "Retained package extraction/URL for selected facts; other CSV labels/references unverified",
+      "temporal_history": "No complete history admitted",
+      "coverage": "Source leads only, not termination facts",
+      "admissibility": "BOUNDED_FACTS or CORROBORATING/LEAD_ONLY as stated; missing data HELD",
+      "gap": "Original notices, exact affected listing/date, known-time and correction evidence"
+    },
+    {
+      "required_fact": "exchange symbol history",
+      "available_source": "IKPM short code and ATLA issuer code observed; retained symbol columns",
+      "source_owner": "KSEI / e-IPO; legacy file preparers",
+      "provenance": "Retained package extraction/URL for selected facts; other CSV labels/references unverified",
+      "temporal_history": "No complete history admitted",
+      "coverage": "Two source labels; no lifetime intervals",
+      "admissibility": "BOUNDED_FACTS or CORROBORATING/LEAD_ONLY as stated; missing data HELD",
+      "gap": "Rename/reuse effective intervals and target securities"
+    },
+    {
+      "required_fact": "board/segment history",
+      "available_source": "Status-note/sector CSV leads; empty md_listing_boards",
+      "source_owner": "Shared steward / source publishers",
+      "provenance": "Retained package extraction/URL for selected facts; other CSV labels/references unverified",
+      "temporal_history": "No complete history admitted",
+      "coverage": "No admitted listing-board intervals",
+      "admissibility": "BOUNDED_FACTS or CORROBORATING/LEAD_ONLY as stated; missing data HELD",
+      "gap": "Authoritative board/segment context and effective/known revisions"
+    },
+    {
+      "required_fact": "provider mapping history",
+      "available_source": "No source provider-to-security crosswalk; code only generates .JK suffix",
+      "source_owner": "Provider mapping steward",
+      "provenance": "Retained package extraction/URL for selected facts; other CSV labels/references unverified",
+      "temporal_history": "No complete history admitted",
+      "coverage": "NONE",
+      "admissibility": "BOUNDED_FACTS or CORROBORATING/LEAD_ONLY as stated; missing data HELD",
+      "gap": "Provider evidence tying transport symbol to security/listing at dates/cutoffs"
+    },
+    {
+      "required_fact": "rename",
+      "available_source": "Local master contract only; no admitted rename documents/history",
+      "source_owner": "Shared data steward",
+      "provenance": "Retained package extraction/URL for selected facts; other CSV labels/references unverified",
+      "temporal_history": "No complete history admitted",
+      "coverage": "NONE",
+      "admissibility": "BOUNDED_FACTS or CORROBORATING/LEAD_ONLY as stated; missing data HELD",
+      "gap": "Old/new symbol, same evidenced target, boundary and reason/provenance"
+    },
+    {
+      "required_fact": "symbol reuse",
+      "available_source": "Resolver synthetic tests only; no admitted actual reuse record",
+      "source_owner": "Shared data steward",
+      "provenance": "Retained package extraction/URL for selected facts; other CSV labels/references unverified",
+      "temporal_history": "No complete history admitted",
+      "coverage": "NONE",
+      "admissibility": "BOUNDED_FACTS or CORROBORATING/LEAD_ONLY as stated; missing data HELD",
+      "gap": "Distinct securities, intervals, namespace and evidence"
+    },
+    {
+      "required_fact": "relisting/continuity",
+      "available_source": "6 MERGER and 2 PARTIAL_RELISTING-labelled CSV rows, without old/new entity relation or retained notices",
+      "source_owner": "Original exchange claims; local preparer unestablished",
+      "provenance": "Retained package extraction/URL for selected facts; other CSV labels/references unverified",
+      "temporal_history": "No complete history admitted",
+      "coverage": "Leads only; no continuity decision admitted",
+      "admissibility": "BOUNDED_FACTS or CORROBORATING/LEAD_ONLY as stated; missing data HELD",
+      "gap": "Explicit old/new instrument/listing relation and decision evidence; partial relisting is not automatic new-listing continuity"
+    },
+    {
+      "required_fact": "correction/revision/known-time",
+      "available_source": "File bytes/hashes and this capture retained; live temporal tables empty",
+      "source_owner": "Shared data steward",
+      "provenance": "Retained package extraction/URL for selected facts; other CSV labels/references unverified",
+      "temporal_history": "No complete history admitted",
+      "coverage": "Package capture time known now; source historical publication/revision times unknown",
+      "admissibility": "BOUNDED_FACTS or CORROBORATING/LEAD_ONLY as stated; missing data HELD",
+      "gap": "Retained revisions/supersession and evidenced historical known-time; no backdating"
+    }
+  ],
+  "legacy_ticker_verdict": {
+    "actual_rows": 0,
+    "authoritative_facts_admitted": 0,
+    "display_compatibility": [
+      "ticker_code",
+      "company_name",
+      "company_logo",
+      "is_active"
+    ],
+    "migration_crosswalk": [
+      "ticker_id",
+      "listed_date",
+      "delisted_date",
+      "board_code",
+      "exchange_code",
+      "created_at",
+      "updated_at"
+    ],
+    "limitations": "Fields can be migration leads only when populated and source-backed. created_at/updated_at are not evidence of historical exchange knowledge. One ticker never implies one issuer/instrument/listing without evidence."
+  },
+  "md_temporal_verdict": "All seven identity/mapping/board tables have zero rows in both observed databases. Existing columns/resolver can preserve temporal consumer structures; no factual master history currently present. Historical B05 977 derived intervals is an issued past observation, not current population or primary evidence. Preserve B05 bounded proof.",
+  "admissible_source_classes": {
+    "primary": "Retained official exchange admission/lifecycle records; exchange-operated issuer/offering facts within announced scope; CSD registered instrument/issuer facts within registration scope. Composite source evidence allowed, each relationship traced.",
+    "corroborating": "KSEI reported exchange listing date; issuer/provider records for their explicit facts; no substitution for exchange universe-completeness reconciliation.",
+    "migration_hint": "Local CSV labels/generic URLs, third-party profile links, symbol/price rows and legacy projections unless original facts are verified.",
+    "not_admissible": "Synthetic fixtures as actual master; algorithm-derived roots; status/suspension inferred as delisting; announced listing inferred executed; unknown continuity guessed."
+  },
+  "initial_foundation_input_package": {
+    "path": "storage/app/market_data/evidence/MD-B10-A002/foundation-source-basis-20260928-v1",
+    "version": "foundation-source-basis-20260928-v1",
+    "manifest_path": "storage/app/market_data/evidence/MD-B10-A002/foundation-source-basis-20260928-v1/manifest.json",
+    "manifest_sha256": "ffa6acc11d41a2e219719dc035d381844983407210a3d2c39e5c9e52c7f2f45b",
+    "file_inventory": [
+      {
+        "path": "acquisition_manifest.json",
+        "bytes": 387,
+        "sha256": "3918fe1d633f11db33f9ecddd37296b6018261f565df8a0937a5ab70bcee1bf4"
+      },
+      {
+        "path": "admitted_facts.json",
+        "bytes": 2235,
+        "sha256": "eaeda381e35a0cec6d3b7d5d526c7d27b6116b8b5014664a96b3d13dcadb8307"
+      },
+      {
+        "path": "database_inventory.json",
+        "bytes": 32741,
+        "sha256": "0a1054ad205d7c55e0538e8ee8ba3a9c60010ea2678f50b42265f033cf86d6ae"
+      },
+      {
+        "path": "eipo_offering_extract.json",
+        "bytes": 884,
+        "sha256": "5d135621afba0267d375ebfd1219b9eae1d92f2adb1ca6cd2c21e75ccdfed420"
+      },
+      {
+        "path": "eipo_web_rendered_capture.json",
+        "bytes": 3892,
+        "sha256": "620f464f4f0a46d91e2b208edc75594c7a840d88665b919e127524a675f58c61"
+      },
+      {
+        "path": "ksei_registered_security_extract.json",
+        "bytes": 1305,
+        "sha256": "9748ccc8c1ab95ecdeb2cc5ac66d38ee7f3a3da1c4f8053bfde66a13c92de48d"
+      },
+      {
+        "path": "retained_file_inventory.json",
+        "bytes": 22235,
+        "sha256": "e22e9ac5b258dde2e808de0bad345353d9f30b4c2ac3b06cdae326166214830f"
+      },
+      {
+        "path": "unresolved.json",
+        "bytes": 1055,
+        "sha256": "619946c507c849acb8ebb26d51b1259c2785c2cd1c7dd9b5e2f4250c7747cbf7"
+      }
+    ],
+    "package_files": 9,
+    "admission": "ADMITTED_BOUNDED_SOURCE_FACTS_ONLY",
+    "admitted_source_contexts": 2,
+    "admitted_fact_records": [
+      {
+        "source_record": "https://web.ksei.co.id/services/registered-securities/shares/lc/IKPM?setLocale=en-US",
+        "facts": {
+          "security_name": "IKAPHARMINDO PUTRAMAS Tbk",
+          "issuer": "IKAPHARMINDO PUTRAMAS Tbk, PT",
+          "isin": "ID1000199409",
+          "short_code": "IKPM",
+          "type": "Saham Biasa",
+          "listing_date_reported": "2023-11-08",
+          "stock_exchange": "IDX",
+          "currency": "IDR"
+        },
+        "facts_admissible_for": "Issuer name, explicit issuer/security relation, registered ISIN/type/currency/short code. CSD listing date/exchange corroborating only.",
+        "known_to_this_package_at": "2026-09-28T23:51:36+07:00",
+        "source_historical_known_at": null,
+        "market_data_identity_delivery": "HELD_PENDING_EXCHANGE_LISTING_CONTEXT_AND_IMPLEMENTATION"
+      },
+      {
+        "source_record": "https://e-ipo.co.id/id/ipo/298/atla-pt-atlantis-subsea-indonesia-tbk",
+        "facts": {
+          "issuer_name": "PT Atlantis Subsea Indonesia Tbk",
+          "issuer_code": "ATLA",
+          "offered_shares_count": 1200000000,
+          "announced_listing_date": "2024-04-16"
+        },
+        "facts_admissible_for": "Exchange-operated issuer/offering record and announced schedule only.",
+        "known_to_this_package_at": "2026-09-28T23:51:36+07:00",
+        "source_historical_known_at": null,
+        "market_data_identity_delivery": "HELD_PENDING_SECURITY_DETAILS_AND_EXECUTED_LISTING_EVIDENCE"
+      }
+    ],
+    "assigned_roots": 0,
+    "market_data_consumable_listings": 0,
+    "reproducibility": "Exact facts/extraction, retained source URLs/rendered capture, raw file/database inventories and all member hashes frozen. KSEI is a manual extract from one successful web render, not original HTML; eIPO is a retained rendered tool response, not HTTP body. No source HTTP digest or historical source revision is invented.",
+    "known_time": "This package knows captured facts now. Historical source known_at absent; historical as-known consumers hold until evidence exists. Effective reported/announced dates retain their distinct meaning.",
+    "portability": "Raw package is git-ignored storage execution/input material. Transfer all manifest members with the evidence when moving checkout/host; missing or changed member invalidates admission. No ad-hoc handoff file."
+  },
+  "acquisition_limits": [
+    "Two referenced IDX NLI PDFs returned 403; no content/date/board inferred from their filenames.",
+    "KSEI first web render succeeded; direct HTTP 500/repeat tool timeouts/new-host404. Only frozen observed registration facts admitted, no active-now/current-completeness claim.",
+    "eIPO web render succeeded (crawl today), direct HTTP403. Rendered response retained and fields checked; not proof of executed listing."
+  ],
+  "fail_closed_bootstrap": {
+    "permitted": true,
+    "basis": [
+      "MD-S057 Failure behavior: missing/conflicting identity blocks affected acquisition/universe membership; one instrument failure can remain per-instrument but coverage/promote expose gap",
+      "MD-S055 Failure behavior: mapping unavailable does not fabricate IDs or publish affected row",
+      "MD-S057/055 Capability boundary: source/root completeness not proven by resolver"
+    ],
+    "scope": "Implement admission/retained identity mechanics for evidenced entities/facts; unresolved instrument/listing/context held. A partially populated foundation is not a complete master or resolved B10 prerequisite.",
+    "not_permitted": "No default roots/board/mapping/continuity, no hidden denominator loss, no current-symbol or historical-known-time fallback."
+  },
+  "accountable_owner": {
+    "implementation": "TradeAxis Shared Security Identity Foundation logical domain; project-owner role accountable for delivery",
+    "persistence": "Same shared foundation canonical identity/lifecycle writer; MD consumer projections/frozen artifacts remain MD-owned",
+    "data_stewardship": "TradeAxis project-owner role acting as shared-foundation steward; no named human/team manufactured",
+    "proof": "Shared foundation delivery acceptance, correlated in MD-B10-A002; B05 bounded resolver / B10 artifact integration / B21 external completeness unchanged",
+    "consumer": "Market Data through explicit stable temporal intake; Watchlist/future consumers require approved intake",
+    "decision": "D-MD-B10-A002-001"
+  },
+  "missing_data_acquisition": [
+    {
+      "fact": "issuer identity",
+      "missing": "Historical legal identity/renames and disambiguating master facts unresolved",
+      "why_current_insufficient": "Named source entities only; no TradeAxis roots assigned",
+      "source_type": "Original authoritative exchange/master/provider record appropriate to the fact; documented continuity adjudication where necessary",
+      "minimum_fields": "Explicit source entity/security/listing relation; namespace/symbol/venue/board as applicable; effective boundaries/reason; source document/revision and known/recorded evidence; old/new links for corrections/continuity",
+      "provenance": "Retained source record/body or reviewable extraction + locator/date/capture/hash; verify claimed authority; no generic source label alone",
+      "partial_implementation": "YES with missing fact/entity HELD; NO affected Market Data delivery or historical completeness claim"
+    },
+    {
+      "fact": "issuer -> instrument",
+      "missing": "No complete cross-issuer/security master; ATLA offering lacks complete security specification",
+      "why_current_insufficient": "One bounded registered-security relation",
+      "source_type": "Original authoritative exchange/master/provider record appropriate to the fact; documented continuity adjudication where necessary",
+      "minimum_fields": "Explicit source entity/security/listing relation; namespace/symbol/venue/board as applicable; effective boundaries/reason; source document/revision and known/recorded evidence; old/new links for corrections/continuity",
+      "provenance": "Retained source record/body or reviewable extraction + locator/date/capture/hash; verify claimed authority; no generic source label alone",
+      "partial_implementation": "YES with missing fact/entity HELD; NO affected Market Data delivery or historical completeness claim"
+    },
+    {
+      "fact": "instrument identity",
+      "missing": "ATLA ISIN/class and replacement/continuity histories missing",
+      "why_current_insufficient": "One source instrument identified; root mechanism not selected",
+      "source_type": "Original authoritative exchange/master/provider record appropriate to the fact; documented continuity adjudication where necessary",
+      "minimum_fields": "Explicit source entity/security/listing relation; namespace/symbol/venue/board as applicable; effective boundaries/reason; source document/revision and known/recorded evidence; old/new links for corrections/continuity",
+      "provenance": "Retained source record/body or reviewable extraction + locator/date/capture/hash; verify claimed authority; no generic source label alone",
+      "partial_implementation": "YES with missing fact/entity HELD; NO affected Market Data delivery or historical completeness claim"
+    },
+    {
+      "fact": "instrument -> listing",
+      "missing": "Executed exchange admission, board/segment and stable listing crosswalk required",
+      "why_current_insufficient": "Corroborating/scheduled assertions only; no complete admitted exchange listing",
+      "source_type": "Original authoritative exchange/master/provider record appropriate to the fact; documented continuity adjudication where necessary",
+      "minimum_fields": "Explicit source entity/security/listing relation; namespace/symbol/venue/board as applicable; effective boundaries/reason; source document/revision and known/recorded evidence; old/new links for corrections/continuity",
+      "provenance": "Retained source record/body or reviewable extraction + locator/date/capture/hash; verify claimed authority; no generic source label alone",
+      "partial_implementation": "YES with missing fact/entity HELD; NO affected Market Data delivery or historical completeness claim"
+    },
+    {
+      "fact": "listing identity",
+      "missing": "No listing root generated or guessed",
+      "why_current_insufficient": "NONE; held",
+      "source_type": "Original authoritative exchange/master/provider record appropriate to the fact; documented continuity adjudication where necessary",
+      "minimum_fields": "Explicit source entity/security/listing relation; namespace/symbol/venue/board as applicable; effective boundaries/reason; source document/revision and known/recorded evidence; old/new links for corrections/continuity",
+      "provenance": "Retained source record/body or reviewable extraction + locator/date/capture/hash; verify claimed authority; no generic source label alone",
+      "partial_implementation": "YES with missing fact/entity HELD; NO affected Market Data delivery or historical completeness claim"
+    },
+    {
+      "fact": "listing admission",
+      "missing": "Authoritative executed-admission notice and listing context",
+      "why_current_insufficient": "Two bounded reported/scheduled facts; NLI bodies not retained/verified",
+      "source_type": "Original authoritative exchange/master/provider record appropriate to the fact; documented continuity adjudication where necessary",
+      "minimum_fields": "Explicit source entity/security/listing relation; namespace/symbol/venue/board as applicable; effective boundaries/reason; source document/revision and known/recorded evidence; old/new links for corrections/continuity",
+      "provenance": "Retained source record/body or reviewable extraction + locator/date/capture/hash; verify claimed authority; no generic source label alone",
+      "partial_implementation": "YES with missing fact/entity HELD; NO affected Market Data delivery or historical completeness claim"
+    },
+    {
+      "fact": "termination/delisting",
+      "missing": "Original notices, exact affected listing/date, known-time and correction evidence",
+      "why_current_insufficient": "Source leads only, not termination facts",
+      "source_type": "Original authoritative exchange/master/provider record appropriate to the fact; documented continuity adjudication where necessary",
+      "minimum_fields": "Explicit source entity/security/listing relation; namespace/symbol/venue/board as applicable; effective boundaries/reason; source document/revision and known/recorded evidence; old/new links for corrections/continuity",
+      "provenance": "Retained source record/body or reviewable extraction + locator/date/capture/hash; verify claimed authority; no generic source label alone",
+      "partial_implementation": "YES with missing fact/entity HELD; NO affected Market Data delivery or historical completeness claim"
+    },
+    {
+      "fact": "exchange symbol history",
+      "missing": "Rename/reuse effective intervals and target securities",
+      "why_current_insufficient": "Two source labels; no lifetime intervals",
+      "source_type": "Original authoritative exchange/master/provider record appropriate to the fact; documented continuity adjudication where necessary",
+      "minimum_fields": "Explicit source entity/security/listing relation; namespace/symbol/venue/board as applicable; effective boundaries/reason; source document/revision and known/recorded evidence; old/new links for corrections/continuity",
+      "provenance": "Retained source record/body or reviewable extraction + locator/date/capture/hash; verify claimed authority; no generic source label alone",
+      "partial_implementation": "YES with missing fact/entity HELD; NO affected Market Data delivery or historical completeness claim"
+    },
+    {
+      "fact": "board/segment history",
+      "missing": "Authoritative board/segment context and effective/known revisions",
+      "why_current_insufficient": "No admitted listing-board intervals",
+      "source_type": "Original authoritative exchange/master/provider record appropriate to the fact; documented continuity adjudication where necessary",
+      "minimum_fields": "Explicit source entity/security/listing relation; namespace/symbol/venue/board as applicable; effective boundaries/reason; source document/revision and known/recorded evidence; old/new links for corrections/continuity",
+      "provenance": "Retained source record/body or reviewable extraction + locator/date/capture/hash; verify claimed authority; no generic source label alone",
+      "partial_implementation": "YES with missing fact/entity HELD; NO affected Market Data delivery or historical completeness claim"
+    },
+    {
+      "fact": "provider mapping history",
+      "missing": "Provider evidence tying transport symbol to security/listing at dates/cutoffs",
+      "why_current_insufficient": "NONE",
+      "source_type": "Original authoritative exchange/master/provider record appropriate to the fact; documented continuity adjudication where necessary",
+      "minimum_fields": "Explicit source entity/security/listing relation; namespace/symbol/venue/board as applicable; effective boundaries/reason; source document/revision and known/recorded evidence; old/new links for corrections/continuity",
+      "provenance": "Retained source record/body or reviewable extraction + locator/date/capture/hash; verify claimed authority; no generic source label alone",
+      "partial_implementation": "YES with missing fact/entity HELD; NO affected Market Data delivery or historical completeness claim"
+    },
+    {
+      "fact": "rename",
+      "missing": "Old/new symbol, same evidenced target, boundary and reason/provenance",
+      "why_current_insufficient": "NONE",
+      "source_type": "Original authoritative exchange/master/provider record appropriate to the fact; documented continuity adjudication where necessary",
+      "minimum_fields": "Explicit source entity/security/listing relation; namespace/symbol/venue/board as applicable; effective boundaries/reason; source document/revision and known/recorded evidence; old/new links for corrections/continuity",
+      "provenance": "Retained source record/body or reviewable extraction + locator/date/capture/hash; verify claimed authority; no generic source label alone",
+      "partial_implementation": "YES with missing fact/entity HELD; NO affected Market Data delivery or historical completeness claim"
+    },
+    {
+      "fact": "symbol reuse",
+      "missing": "Distinct securities, intervals, namespace and evidence",
+      "why_current_insufficient": "NONE",
+      "source_type": "Original authoritative exchange/master/provider record appropriate to the fact; documented continuity adjudication where necessary",
+      "minimum_fields": "Explicit source entity/security/listing relation; namespace/symbol/venue/board as applicable; effective boundaries/reason; source document/revision and known/recorded evidence; old/new links for corrections/continuity",
+      "provenance": "Retained source record/body or reviewable extraction + locator/date/capture/hash; verify claimed authority; no generic source label alone",
+      "partial_implementation": "YES with missing fact/entity HELD; NO affected Market Data delivery or historical completeness claim"
+    },
+    {
+      "fact": "relisting/continuity",
+      "missing": "Explicit old/new instrument/listing relation and decision evidence; partial relisting is not automatic new-listing continuity",
+      "why_current_insufficient": "Leads only; no continuity decision admitted",
+      "source_type": "Original authoritative exchange/master/provider record appropriate to the fact; documented continuity adjudication where necessary",
+      "minimum_fields": "Explicit source entity/security/listing relation; namespace/symbol/venue/board as applicable; effective boundaries/reason; source document/revision and known/recorded evidence; old/new links for corrections/continuity",
+      "provenance": "Retained source record/body or reviewable extraction + locator/date/capture/hash; verify claimed authority; no generic source label alone",
+      "partial_implementation": "YES with missing fact/entity HELD; NO affected Market Data delivery or historical completeness claim"
+    },
+    {
+      "fact": "correction/revision/known-time",
+      "missing": "Retained revisions/supersession and evidenced historical known-time; no backdating",
+      "why_current_insufficient": "Package capture time known now; source historical publication/revision times unknown",
+      "source_type": "Original authoritative exchange/master/provider record appropriate to the fact; documented continuity adjudication where necessary",
+      "minimum_fields": "Explicit source entity/security/listing relation; namespace/symbol/venue/board as applicable; effective boundaries/reason; source document/revision and known/recorded evidence; old/new links for corrections/continuity",
+      "provenance": "Retained source record/body or reviewable extraction + locator/date/capture/hash; verify claimed authority; no generic source label alone",
+      "partial_implementation": "YES with missing fact/entity HELD; NO affected Market Data delivery or historical completeness claim"
+    }
+  ],
+  "current_verification": {
+    "B05": {
+      "satisfied": 117,
+      "mandatory": 117,
+      "read_only_proof_gate_before_issue": "PASS"
+    },
+    "B10": {
+      "satisfied": 1016,
+      "not_assessed": 56,
+      "mandatory": 1072
+    },
+    "B18": {
+      "proven_basis": 100,
+      "incomplete_basis": 13,
+      "denominator": 113,
+      "formal_satisfied": 0,
+      "R0025": "INCOMPLETE"
+    },
+    "promoted_rules": []
+  },
+  "dependency": {
+    "id": "MD-DEP-0021",
+    "owner": "TradeAxis Shared Security Identity Foundation (same-repository shared logical domain); TradeAxis project-owner role accountable for implementation/data stewardship; MD-B10 consumer coordination",
+    "status": "BLOCKING",
+    "resolution": "Executed conformant shared implementation and provenance-backed complete identity/listing linkage for declared consumed scope; retained stable import/export and allocation-independent/fail-closed acceptance. Unresolved entities/history remain held and coverage exposed. Partial factual admission and ownership assignment alone are not resolution.",
+    "MD_DEP_0020": "BLOCKING: reprove final 56 and successor B10 closure before B18 return",
+    "MD_DEP_0019": "BLOCKING separately"
+  },
+  "proof_boundary": "Read-only schema/data inventory in explicit READ ONLY transactions ended by ROLLBACK; no resolver/projector/import/migrate called. Source package and governance records only; no roots, schema/code/tests/production data, hash campaign or fixture. This is data-readiness evidence, not runtime predicate proof.",
+  "source_revision": "800774357215eb86489a3750bc25c26abe26fe1b",
+  "preserved_checkpoint_sha256": {
+    "tests/Unit/MarketData/B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4",
+    "docs/market_data/development/findings/F-MD-B10-A002-001_TRACEABILITY_MOVED_ROW_COUNT_TOOLING_DEBT.md": "3468ef431a1466a6f5a48916d453e95aa3128505bcc64d3f1848efcf4868eaff",
+    "docs/market_data/records/evidence/E-MD-B10-A002-002_ARTIFACT_IDENTITY_FOUNDATION_DEPENDENCY_AND_SEPARATE_TOOLING_DEBT.json": "4804eebd4c4bb73cf1d12fdca6258647a885935263ec66dad036fbbbe366a062",
+    "docs/market_data/records/evidence/E-MD-B10-A002-001_FINAL_SEMANTIC_HASH_AFFECTED_VERIFICATION_SCOPE_CORRECTION.json": "4a371ba393c9a209f2f3dd5e70c84612116412186a20e88f740b576835921887",
+    "docs/market_data/records/evidence/E-MD-B18-A002-086_B05_IDENTITY_RECONCILIATION_B10_HASH_CURRENT_VERIFICATION_IMPACT.json": "17115c96411a310a92ddf3b7b358c5b4478c938d522302bda42a861a661cbe66",
+    "docs/market_data/records/evidence/MD-B10-A002-BL001_WORK_BASELINE_LOCK.json": "540d11b4859e50031b82f44067a0cb674d919908cd582a705b06046fbd565841",
+    "docs/market_data/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv": "fc07966ebaef23d3a8184984bbd2d82d9487e1450e5eea74a0faeb5af8be0476",
+    "docs/market_data/records/evidence/E-MD-B10-A002-003_FOUNDATION_OWNERSHIP_AND_UPSTREAM_DELIVERY_REQUIREMENT.json": "d683c2db723d19afb68eacced301a005a62ecdeeec11f3d39054ac0d4433b1c1",
+    "docs/market_data/records/evidence/E-MD-B10-A002-004_SAME_REPOSITORY_FOUNDATION_AUTHORITY_AND_SOURCE_DEPENDENCY_REVIEW.json": "0d26a8bbbf7d390190e7ea3475a53eeef020b901bf81771af376850da9c89721"
+  },
+  "reviewed_source_sha256": {
+    "README.md": "339839db1400600260d8654ca7476ac99961b8752d44a0ef2580b707ff53b1f8",
+    "docs/market_data/START_HERE.md": "6fdee56483945440f62e404fa6ee1cadd9ca7db22752f8b0df17cf980fe2fce1",
+    "docs/README.md": "d5a687e3d729505e7bac46bfab5b84ee79c63bba433b4a45ffcbd22984b2f93c",
+    "docs/db/README.md": "1e9dbf9a3c223bbace8cd6fe963f56e96683ab0756ee578a5f77b686ad747fe6",
+    "docs/db/02_TICKERS_MASTER.md": "0d9bfbcff2df329f74a045fbc581a3a3be24aacc7dd9ec9dc035a935ba44f845",
+    "docs/system_audit/SYSTEM_ASSEMBLY_BASELINE.md": "b4b8d0b89dc8b12fc64a25a90a91b5f244d47602e687be65cf9fdff531e7b5d6",
+    "docs/system_audit/SYSTEM_CROSS_DOMAIN_INPUT_BASELINE.md": "f067c951c757529dbfcdde18970aede702aa0580e71fa39caea7f2c00e91de1b",
+    "docs/watchlist/authority/strategy/WS_MARKET_DATA_INPUT_REQUIREMENTS.md": "10416438e57136da180794bf2fa1d5fba9d9aedd65ac74b89d15909641088a0c",
+    "docs/api_architecture/README.md": "6a7f368216fd0d12a67b6cc6f0bd07f2ec3ee295e1eeefb14ece2d18ba7a3af5",
+    "docs/market_data/authority/strategy/book/Tickers_and_Identity_Dependency_Contract_LOCKED.md": "9358629ddc11a6c52ba86e612c0b231fae18b12ab9ab64883c1f1d854ac78a54",
+    "docs/market_data/authority/strategy/book/Symbol_Lifecycle_and_Mapping_Contract.md": "7d09f1ac987a77545d98cff5b49f6c03ed7256a509c0700547463911f3f43906",
+    "docs/market_data/authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md": "f8577acbb914552dd8bc90cdae60f9c2378c1a616b5fc7a5413bc2b0cf52fda2",
+    "docs/market_data/authority/governance/DEPENDENCY_REGISTRY_STANDARD.md": "6a1e419c90b6227f05b5b5dad289acd34d0d5883e8b29ea0b091c3931319c0d4",
+    "docs/market_data/authority/governance/STAGE_EXECUTION_AND_REWORK_STANDARD.md": "30a98a66dc6e68250d7c7c13c64753e50eec9e3d972d910800b686f21b2df08b",
+    "docs/market_data/authority/governance/WORK_CORRELATION_AND_RECORD_REGISTRY_STANDARD.md": "bac0749406e7dd3fb52249a2da31ac1a03ffcfc4dbc5c11049f4ee1eb144458a",
+    "docs/market_data/authority/governance/DOCUMENT_RECORDING_STANDARD.md": "4db3f1f73d79bc4fe5a430425dafdbefb564d4f88b83c07e9be81c1d603246f8",
+    "docs/market_data/records/evidence/E-MD-B05-A001-001_TEMPORAL_IDENTITY_AND_SECTOR_MEMBERSHIP.json": "fa665bca590fa43b80496d9b2c41f66d6c5f7b7205316843d35600a06b09b8ea",
+    "docs/market_data/development/implementation/tests/MarketDataTemporalIdentityProofGate.php": "6fe94120c5371401fbf73a7769506ff01d37cc35dcd76241a467177c23e3b67f",
+    "docs/market_data/development/implementation/tests/MarketDataTemporalIdentityTraceabilitySpec.php": "a5970231e784ce0ee4b3123d84a67240d0a67d17f660c8536685327a2ce928a5",
+    "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php": "cdd98b540e016aeece62b3014c533e805c665d553f52e3b3ec21af2c498aa784",
+    "app/Infrastructure/Persistence/MarketData/TickerMasterRepository.php": "0058670cef2ce9647a9a5be1da82abdba6cc7fe383a5030a23878b353cbd7c32",
+    "app/Infrastructure/Persistence/MarketData/ProducerTemporalPopulation.php": "93740e1580044eaa9684285725ee27dc0437c1e51f82f0448ad168dbffdf1085",
+    "app/Console/Commands/MarketData/ImportSectorMembershipCommand.php": "feb8a5dd1b3406d4c3afabf74c0d634f1c0c672e0bcd86aeebe00b1fc6f22da8",
+    "app/Console/Commands/MarketData/BackfillMissingTickersCommand.php": "dc050bced380fd9115a94c38bacdbf6e5502bd435b4ea7fb150651a0dcd06ad8",
+    "app/Application/MarketData/Services/CorporateActionExternalReconciliationService.php": "49da68014e6081c508b06fb9fbfccb41f65a4ccc91ccd4dab5884db15081ebff",
+    "database/migrations/2026_03_22_000001_create_tickers_table.php": "ad7ef3e021554887ae7c71b53232220e58a3081ad9c245fb790966b58e1f10b5",
+    "database/migrations/2026_08_02_000001_add_market_data_strategy_v2_foundation.php": "400d1d289cae1768206e841e6eef73d9d8e028c6b8a627c5b916199b8751fdfb",
+    "database/seeders/DatabaseSeeder.php": "32cb0060c41d9d5e507f2898a559000a6e57b61677f59de5a663abfe1615aa50",
+    "app/Console/Kernel.php": "f3eb17e7ed8b6a0c91e80aa5228400cb246ba4df3f61b3f5a84ab8a373485175",
+    "app/Providers/AppServiceProvider.php": "081ad7931dc7b29caf638f66ca966d3893e611239b8c0099fd52dc126b406668",
+    "routes/web.php": "bb3733ca9067ee25ff54081f9d82288b164af890d86eb3214ee1b1499195d9b3",
+    "bootstrap/app.php": "893fa53a21e3f61fde28505af0770012d6f43d5234c0acefdc4e077e452405b7",
+    "composer.json": "f9223f56b4932bde259811df61c505a297709107e17e6e431e8f13bd67c7f2ed",
+    "config/market_data.php": "813e85c234e1da22fd76e38157e13a64ed73a698d97a711e85d6c18f4f580ac9",
+    "docs/db/01_MARKET_CALENDAR.md": "288b2ab919e912fd7fcc58086b14391e8d4812ad1d7c99e35b6bd497a7b9a64a",
+    "docs/api_architecture/aturan-global-arsitektur-api.md": "6d7b3ad7c711b1c6429f9c019cc68c134ad90f3b6a8263e9f470a6a53b095fa5",
+    "docs/api_architecture/application-service.md": "8210fd8559e02f8c00f763b35aff6c1d2510117af4cd8c89281ece6bb50bf797",
+    "docs/api_architecture/repository.md": "fbaebb9d7fe9c2702a2221210c30e073773e4985e158da77f805c5a58414bc21",
+    "docs/api_architecture/domain-compute.md": "0a8a88d9bf17173f17bd455763b8fe820909a32c4d97ac26a2cda9115e0cebff",
+    "docs/api_architecture/handoff-antar-layer.md": "c1507a49c4dbb2767a4cd323c9c4c4496aa6c68e435b3bbbd8384887e308cc7d",
+    "docs/api_architecture/kontrak-dto.md": "a848d31cdb84dd72c577b33c623f3e13ea298615129897ccd3a180d5df3be885",
+    "docs/api_architecture/determinisme-dan-idempotensi.md": "999c9ef436bc609e69fed1b10fa8035ed3dabe8ded2aa891c14efe67aa5c929c",
+    "docs/api_architecture/lumen-config-env-baseline.md": "da1c330aa6bbc81d009abdddbf1d645b232744bbf953ae67d5eac451b1656fc3",
+    "docs/api_architecture/arsitektur-decision-record.md": "596fca7397bd4f2eb0153e54872e4fafdca98b92e73c373948b0fdde7ff895a1",
+    "docs/api_architecture/contoh-struktur-folder-kode-generik.md": "9eb94c52e0bdc7e43b5e3b9805e0a453521a90fa5e54a2ca0d71616ba94682c7",
+    "docs/market_data/authority/governance/MARKET_DATA_DOCUMENT_AUTHORITY.md": "9603baacf496aca45c2683a3214a5cf9513dabbb79b0cf0e054778da48c8b652",
+    "docs/market_data/authority/governance/DOCUMENT_CHANGE_POLICY.md": "424b44bf2eea9a3d3381ca5df3c2f361552d1bc7fea54fec895cf9450f44ab3c",
+    "docs/market_data/authority/governance/CHANGE_IMPACT_DECLARATION_STANDARD.md": "4bede7b193c8beba76596542a290c1dca5bfd608125385fc36b42ebe87d535f0",
+    "docs/market_data/authority/governance/WORK_BASELINE_LOCK_STANDARD.md": "d8049bf89cb750d2a0bfe385a3429811b24f6fdb5e64ff1c99f7c611de933bd5",
+    "docs/market_data/authority/strategy/book/Domain_Boundary_Invariants_LOCKED.md": "f836c0bffefaf1d0c76857d87614603e3450aa5d59a2adb40af91ae452c3fba9",
+    "docs/market_data/authority/strategy/book/Source_Mapping_Contract_LOCKED.md": "8828ec8084bbd03ddeaa455088de6db45b5ba40ffa1eb789fab831dba7274f1c",
+    "docs/market_data/authority/strategy/book/Corporate_Action_and_Adjustment_Policy.md": "323fc3b56df9611faff36123f3a008258c749195f78b7039b1396740b2bd03eb",
+    "docs/market_data/development/implementation/MD_IMPLEMENTATION_BUILD_SEQUENCE.md": "ec1a0630b5819d4b8f548b35dac7062a6c75651454a5c1707b1df64cec711bf2"
+  },
+  "next_state": "MD-B10-A002 / MD-DEP-0021: implement the bounded fail-closed Shared Security Identity Foundation inside tradeaxis-api using foundation-source-basis-20260928-v1 under D-MD-B10-A002-001 ownership. Admit only the frozen source facts, retain unresolved listing/mapping/continuity/history as HELD, and choose no ticker-derived roots. Govern the concrete shared implementation/intake and its acceptance in the same valid A002/BL001/CI; no new stage/attempt presumed. No Market Data identity is usable until complete evidenced listing linkage and allocation-independent delivery pass. MD-DEP-0021/0020/0019 stay BLOCKING; hash remediation, R0025 and F-018 remain paused."
+}

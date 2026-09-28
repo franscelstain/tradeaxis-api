@@ -1,0 +1,21 @@
+{
+  "assignment_version": "security-identity-bootstrap-assignments/v1",
+  "package_version": "foundation-source-basis-20260928-v1",
+  "source_manifest_sha256": "ffa6acc11d41a2e219719dc035d381844983407210a3d2c39e5c9e52c7f2f45b",
+  "basis": "E-MD-B10-A002-005",
+  "identity_mechanism": "Opaque UUIDv4 assigned once here; retained on every import/export. Not derived from symbols, source IDs or local allocations.",
+  "records": [
+    {
+      "source_record": "https://web.ksei.co.id/services/registered-securities/shares/lc/IKPM?setLocale=en-US",
+      "issuer_id": "35ff26e0-a043-41c8-8c6e-f7f2d4227214",
+      "issuer_profile_revision_id": "f93204fa-ea61-458b-b743-34dd01f3e269",
+      "instrument_id": "93453e6d-87b4-4131-8379-a91fb1766fac",
+      "instrument_profile_revision_id": "bc0faa32-fad3-43c4-9e3a-f512a9354bd0"
+    },
+    {
+      "source_record": "https://e-ipo.co.id/id/ipo/298/atla-pt-atlantis-subsea-indonesia-tbk",
+      "issuer_id": "dfa75d57-f53e-4e89-8b00-9e752f7f8d2e",
+      "issuer_profile_revision_id": "4bfedee6-bd01-4377-9f5b-e6965f80dc5e"
+    }
+  ]
+}

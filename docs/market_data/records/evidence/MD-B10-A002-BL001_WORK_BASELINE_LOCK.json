@@ -1,0 +1,53 @@
+{
+    "baseline_id": "MD-B10-A002-BL001",
+    "stage_id": "MD-B10",
+    "attempt_id": "MD-B10-A002",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "verification_epoch_sha1": "956FA76EE6E6904FE14444FB088EE48694E738FC",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "strategy_freeze_manifest_sha1": "4ACBD6570E469F8E26971DC5B630040EE82480A9",
+    "strategy_tree_fingerprint_sha1": "F75BBAC973B793512B73CE69536B737C4BE11E19",
+    "strategy_document_count": 91,
+    "governance_fingerprint_sha1": "39DF9870A473225FDA77C4F046E2C855D5455752",
+    "governance_document_count": 43,
+    "traceability_matrix_sha1": "5E963DB531B8C5FDB2D7476E85073ADAB094D4AA",
+    "source_revision": "800774357215eb86489a3750bc25c26abe26fe1b",
+    "source_revision_branch": "master",
+    "working_tree": "DIRTY+F9B1CE992C38ED058CBCFBAF985E44143B4CCAF0",
+    "app_code_fingerprint_sha1": "878B5B116B031C50AB190969279677E1158707F7",
+    "tests_fingerprint_sha1": "4D651DBB81AB66EC346C753227B43B75302A7B2F",
+    "schema_config_identity": "schema:75011071E2E4D8433475E8E4276BB8A32954E336;config:5C86D6279737AF32E20456E907E5CE036169A732;migrations:51DDEF206E139F6651D28BEECAF8C5AC067C71A6",
+    "dependency_identity": {
+        "composer_lock_sha1": "DA18E8BA545FB761C2621248F57B76291F540049",
+        "phpunit_xml_sha1": "2531AC36967F9CA678CDD68FF77E984FE03B2657"
+    },
+    "toolchain_identity": "PHP 7.4.33",
+    "external_dependency_contract_identity": {
+        "registry": "development/implementation/MD_DEPENDENCY_REGISTRY.csv",
+        "registered": 20,
+        "open_blocking": [
+            "MD-DEP-0009",
+            "MD-DEP-0015",
+            "MD-DEP-0017",
+            "MD-DEP-0019",
+            "MD-DEP-0020"
+        ],
+        "registry_sha1": "AAF9BB5D38F559A2BC4BFBD0A6C4231765D6CA79",
+        "status_rule": "Current registry status BLOCKING; tool legacy OPEN_BLOCKING-only parser was corrected before record registration."
+    },
+    "fingerprint_method": "SHA1 over sorted \"<posix_path>\\0<UPPER_SHA1>\\n\" concatenation for tree fingerprints; plain SHA1 for single files.",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "created_at": "2026-09-27T06:50:11+02:00",
+    "issuance_note": "Successor re-entry caused by F-MD-B18-A002-023 and MD-DEP-0020; E-MD-B18-A002-086 demoted eleven B10 audit-hash predicates before any A002 runtime/schema mutation. B18 partial R0025 files are preserved and outside this attempt.",
+    "predecessor_attempt": "MD-B10-A001",
+    "predecessor_baseline": "MD-B10-A001-BL001",
+    "predecessor_closure": "SC-MD-B10-A001-001 (immutable; current sufficiency partially withdrawn by E-MD-B18-A002-086)",
+    "entry_coverage": {
+        "denominator": 1072,
+        "satisfied": 1061,
+        "not_assessed": 11,
+        "finding": "F-MD-B18-A002-023",
+        "blocked_return_stage": "MD-B18-A002",
+        "blocking_dependency": "MD-DEP-0020"
+    }
+}
