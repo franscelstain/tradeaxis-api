@@ -13,11 +13,17 @@ final class FrozenSourcePackageReader
     public const IKPM_LISTING_VERSION = 'foundation-source-basis-20260929-ikpm-listing-v2';
     public const IKPM_LISTING_MANIFEST_HASH = '9b31ec1a99e0ca18d2b82ef13e69d5bae872b7f75021d9ee1e4cf8ddcdafe47c';
     public const IKPM_LISTING_ASSIGNMENTS_HASH = 'df8783af5f2cc4c463686db73e2cd64bc45281798516408b3741e0313b30b20f';
+    public const IKPM_CURRENT_VERSION = 'foundation-source-basis-20260929-ikpm-current-window-v3';
+    public const IKPM_CURRENT_MANIFEST_HASH = 'f85c4ba3f0606177e58c3b94e2e7593819466df9c8cba238272cd1305405ac4f';
+    public const IKPM_CURRENT_ASSIGNMENTS_HASH = 'c3d9206fdb6d77e21264cccf279fe23d1ac8a790a0e8db8232c8018a784f2818';
 
     public function read(string $directory, string $assignmentPath): FoundationRegistry
     {
         $manifestBytes = $this->bytes($directory.'/manifest.json');
         $manifest = $this->json($manifestBytes);
+        if (($manifest['package_version'] ?? null) === self::IKPM_CURRENT_VERSION) {
+            return $this->readIkpmCurrentWindow($directory, $assignmentPath, $manifestBytes, $manifest);
+        }
         if (($manifest['package_version'] ?? null) === self::IKPM_LISTING_VERSION) {
             return $this->readIkpmListing($directory, $assignmentPath, $manifestBytes, $manifest);
         }
@@ -216,6 +222,132 @@ final class FrozenSourcePackageReader
                 'package_hash' => self::IKPM_LISTING_MANIFEST_HASH, 'source_locator' => $idxUrl,
             ]],
             'revisions' => $revisions, 'holds' => $holds,
+        ]);
+    }
+
+    private function readIkpmCurrentWindow(string $directory, string $assignmentPath, string $manifestBytes, array $manifest): FoundationRegistry
+    {
+        if (($manifest['manifest_version'] ?? null) !== 'foundation_source_basis_manifest_v1') {
+            throw new \DomainException('SOURCE_PACKAGE_VERSION_UNSUPPORTED');
+        }
+        if (hash('sha256', $manifestBytes) !== self::IKPM_CURRENT_MANIFEST_HASH) {
+            throw new \DomainException('SOURCE_MANIFEST_FINGERPRINT_MISMATCH');
+        }
+        if (($manifest['admission']['predecessor_manifest_sha256'] ?? null) !== self::IKPM_LISTING_MANIFEST_HASH
+            || ($manifest['admission']['no_predecessor_rewrite'] ?? null) !== true) {
+            throw new \DomainException('SOURCE_PREDECESSOR_BINDING_INVALID');
+        }
+
+        $members = [];
+        foreach ($manifest['files'] ?? [] as $member) {
+            $path = $member['path'] ?? null;
+            if (!is_string($path) || basename($path) !== $path || isset($members[$path])) {
+                throw new \DomainException('SOURCE_MEMBER_PATH_INVALID');
+            }
+            $bytes = $this->bytes($directory.'/'.$path);
+            if (strlen($bytes) !== ($member['bytes'] ?? null) || hash('sha256', $bytes) !== ($member['sha256'] ?? null)) {
+                throw new \DomainException('SOURCE_MEMBER_FINGERPRINT_MISMATCH:'.$path);
+            }
+            $members[$path] = $this->json($bytes);
+        }
+        foreach (['acquisition_manifest.json', 'admitted_facts.json', 'idx_current_profile_extract.json', 'idx_current_profile_response.json', 'predecessor_binding.json', 'unresolved.json'] as $required) {
+            if (!isset($members[$required])) { throw new \DomainException('SOURCE_MEMBER_MISSING:'.$required); }
+        }
+
+        $assignments = $this->json($this->verifiedBytes($assignmentPath, self::IKPM_CURRENT_ASSIGNMENTS_HASH));
+        if (($assignments['assignment_version'] ?? null) !== 'security-identity-ikpm-current-window-assignments/v1'
+            || ($assignments['source_manifest_sha256'] ?? null) !== self::IKPM_CURRENT_MANIFEST_HASH
+            || ($assignments['predecessor_manifest_sha256'] ?? null) !== self::IKPM_LISTING_MANIFEST_HASH
+            || ($assignments['basis'] ?? null) !== 'E-MD-B10-A002-008'
+            || ($assignments['retained_issuer_id'] ?? null) !== '35ff26e0-a043-41c8-8c6e-f7f2d4227214'
+            || ($assignments['retained_instrument_id'] ?? null) !== '93453e6d-87b4-4131-8379-a91fb1766fac'
+            || ($assignments['retained_listing_id'] ?? null) !== '6eb68d44-81bf-4469-be4f-27ce32ef03d5') {
+            throw new \DomainException('RETAINED_ASSIGNMENT_BINDING_INVALID');
+        }
+
+        $admitted = $members['admitted_facts.json'];
+        if (($admitted['admission_status'] ?? null) !== 'ADMITTED_BOUNDED_IKPM_CURRENT_WINDOW'
+            || ($admitted['admission_evidence'] ?? null) !== 'E-MD-B10-A002-008') {
+            throw new \DomainException('SOURCE_ADMISSION_REQUIRED');
+        }
+        $records = $admitted['records'] ?? [];
+        if (count($records) !== 1) { throw new \DomainException('SOURCE_RECORD_BINDING_INVALID'); }
+        $idxUrl = 'https://idx.id/primary/ListedCompany/GetCompanyProfilesDetail?KodeEmiten=IKPM&language=id-id';
+        $idx = $records[0];
+        if (($idx['source_record'] ?? null) !== $idxUrl) { throw new \DomainException('SOURCE_RECORD_BINDING_INVALID'); }
+
+        $extract = $members['idx_current_profile_extract.json'];
+        $raw = $members['idx_current_profile_response.json'];
+        $rawBytes = $this->bytes($directory.'/idx_current_profile_response.json');
+        $profile = $raw['Profiles'][0] ?? null;
+        if (($extract['source_url'] ?? null) !== $idxUrl
+            || ($extract['source_field_values'] ?? null) !== $idx['facts']
+            || ($extract['raw_sha256'] ?? null) !== hash('sha256', $rawBytes)
+            || ($extract['raw_bytes'] ?? null) !== strlen($rawBytes)
+            || ($raw['ResultCount'] ?? null) !== 1
+            || !is_array($profile)
+            || ($profile['KodeEmiten'] ?? null) !== 'IKPM'
+            || ($profile['NamaEmiten'] ?? null) !== 'PT Ikapharmindo Putramas Tbk.'
+            || ($profile['PapanPencatatan'] ?? null) !== 'Pengembangan'
+            || ($profile['TanggalPencatatan'] ?? null) !== '2023-11-08T00:00:00') {
+            throw new \DomainException('SOURCE_EXTRACTION_MISMATCH');
+        }
+        if (($members['predecessor_binding.json']['predecessor_manifest_sha256'] ?? null) !== self::IKPM_LISTING_MANIFEST_HASH
+            || ($members['predecessor_binding.json']['retained_issuer_id'] ?? null) !== $assignments['retained_issuer_id']
+            || ($members['predecessor_binding.json']['retained_instrument_id'] ?? null) !== $assignments['retained_instrument_id']
+            || ($members['predecessor_binding.json']['retained_listing_id'] ?? null) !== $assignments['retained_listing_id']) {
+            throw new \DomainException('SOURCE_PREDECESSOR_BINDING_INVALID');
+        }
+
+        $source = [
+            'facts' => $idx['facts'], 'admitted_fields' => $idx['admitted_fields'],
+            'evidence_class' => $idx['evidence_class'], 'source_revision' => $idx['source_revision'],
+            'source_known_at' => $this->utc($idx['source_known_at']),
+            'captured_at' => $this->utc($idx['captured_at']),
+            'review_reference' => 'E-MD-B10-A002-008',
+            'capture_metadata' => $extract,
+            'admission_limits' => $idx['admission_limits'],
+        ];
+        $listingId = $assignments['retained_listing_id'];
+        $known = $source['source_known_at'];
+        $captured = $source['captured_at'];
+        $from = $idx['facts']['valid_from'];
+        $to = $idx['facts']['valid_to'];
+        $revision = static function (string $id, string $type, string $supersedes, array $data) use ($listingId, $known, $captured, $from, $to, $idxUrl): array {
+            return ['revision_id' => $id, 'identity_id' => $listingId, 'revision_type' => $type, 'state' => 'ADMITTED',
+                'valid_from' => $from, 'valid_to' => $to, 'known_at' => $known, 'recorded_at' => $captured,
+                'package_hash' => self::IKPM_CURRENT_MANIFEST_HASH, 'source_locator' => $idxUrl,
+                'supersedes_revision_id' => $supersedes, 'data' => $data];
+        };
+        $revisions = [
+            $revision($assignments['listing_revision_id'], 'LISTING', $assignments['supersedes_listing_revision_id'], [
+                'venue' => $idx['facts']['venue'], 'continuity' => $idx['facts']['continuity'],
+                'history_verified_through' => $idx['facts']['history_verified_through'],
+                'listing_state' => $idx['facts']['listing_state'], 'change_reason' => $idx['facts']['change_reason'],
+            ]),
+            $revision($assignments['exchange_symbol_revision_id'], 'SYMBOL', $assignments['supersedes_exchange_symbol_revision_id'], [
+                'namespace' => $idx['facts']['namespace'], 'symbol' => $idx['facts']['symbol'],
+            ]),
+            $revision($assignments['board_revision_id'], 'BOARD', $assignments['supersedes_board_revision_id'], [
+                'market_segment' => $idx['facts']['market_segment'], 'board' => $idx['facts']['board'],
+            ]),
+        ];
+        $holds = [];
+        foreach ($members['unresolved.json']['rows'] as $row) {
+            $holds[] = ['hold_hash' => hash('sha256', self::IKPM_CURRENT_MANIFEST_HASH.'|'.$row['scope']),
+                'package_hash' => self::IKPM_CURRENT_MANIFEST_HASH, 'scope' => $row['scope'], 'held_facts' => $row['held_facts']];
+        }
+        return new FoundationRegistry([
+            'registry_version' => 'security-identity-registry/v1',
+            'packages' => [[
+                'package_hash' => self::IKPM_CURRENT_MANIFEST_HASH, 'package_version' => self::IKPM_CURRENT_VERSION,
+                'recorded_at' => $this->utc($admitted['admitted_at']), 'admission_evidence' => 'E-MD-B10-A002-008',
+                'sources' => [$idxUrl => $source], 'manifest' => $manifest,
+                'assignment_sha256' => self::IKPM_CURRENT_ASSIGNMENTS_HASH,
+                'predecessor_manifest_sha256' => self::IKPM_LISTING_MANIFEST_HASH,
+                'bounded_source_records' => $records,
+            ]],
+            'entities' => [], 'revisions' => $revisions, 'holds' => $holds,
         ]);
     }
 

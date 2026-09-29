@@ -47,7 +47,9 @@ final class FoundationService
         try {
             $this->admission->validate($incoming);
         } catch (\DomainException $e) {
-            if ($e->getMessage() !== 'ENTITY_PARENT_INVALID' || !$this->isIkpmListingSuccessor($incoming)) { throw $e; }
+            $validListingSuccessor = $e->getMessage() === 'ENTITY_PARENT_INVALID' && $this->isIkpmListingSuccessor($incoming);
+            $validCurrentWindowSuccessor = $e->getMessage() === 'REVISION_ENTITY_MISSING' && $this->isIkpmCurrentWindowSuccessor($incoming);
+            if (!$validListingSuccessor && !$validCurrentWindowSuccessor) { throw $e; }
         }
         return $this->repository->transaction(function () use ($incoming): FoundationRegistry {
             $d = $this->repository->snapshot()->document();
@@ -76,5 +78,17 @@ final class FoundationService
             && count($d['entities']) === 1
             && ($d['entities'][0]['entity_type'] ?? null) === 'LISTING'
             && ($d['entities'][0]['parent_identity_id'] ?? null) === '93453e6d-87b4-4131-8379-a91fb1766fac';
+    }
+
+    private function isIkpmCurrentWindowSuccessor(FoundationRegistry $incoming): bool
+    {
+        $d = $incoming->document();
+        return count($d['packages']) === 1
+            && ($d['packages'][0]['package_version'] ?? null) === FrozenSourcePackageReader::IKPM_CURRENT_VERSION
+            && ($d['packages'][0]['predecessor_manifest_sha256'] ?? null) === FrozenSourcePackageReader::IKPM_LISTING_MANIFEST_HASH
+            && $d['entities'] === []
+            && count($d['revisions']) === 3
+            && count(array_unique(array_column($d['revisions'], 'identity_id'))) === 1
+            && ($d['revisions'][0]['identity_id'] ?? null) === '6eb68d44-81bf-4469-be4f-27ce32ef03d5';
     }
 }
