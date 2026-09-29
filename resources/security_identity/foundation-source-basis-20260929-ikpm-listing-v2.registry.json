@@ -1,0 +1,16 @@
+{
+  "assignment_version": "security-identity-ikpm-listing-assignments/v1",
+  "package_version": "foundation-source-basis-20260929-ikpm-listing-v2",
+  "source_manifest_sha256": "9b31ec1a99e0ca18d2b82ef13e69d5bae872b7f75021d9ee1e4cf8ddcdafe47c",
+  "basis": "E-MD-B10-A002-007",
+  "predecessor_manifest_sha256": "ffa6acc11d41a2e219719dc035d381844983407210a3d2c39e5c9e52c7f2f45b",
+  "retained_issuer_id": "35ff26e0-a043-41c8-8c6e-f7f2d4227214",
+  "retained_instrument_id": "93453e6d-87b4-4131-8379-a91fb1766fac",
+  "listing_id": "6eb68d44-81bf-4469-be4f-27ce32ef03d5",
+  "listing_revision_id": "214a9276-5359-4d7f-9fd2-597215001e29",
+  "exchange_symbol_revision_id": "71d11fb5-45ea-41be-9efd-e10d440911e7",
+  "board_revision_id": "44334144-1ff3-494c-8b10-8a15c3094d50",
+  "provider_mapping_revision_id": "4ccda414-4c16-4ab2-b8c1-78058ce98bb3",
+  "identity_mechanism": "Opaque UUIDv4 assigned once in this retained registry; listing identity is not derived from ticker text, source IDs or local allocation.",
+  "scope": "IKPM only"
+}

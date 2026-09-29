@@ -1,0 +1,185 @@
+{
+  "evidence_id": "E-MD-B10-A002-007",
+  "record_type": "EVIDENCE",
+  "role_scope": "CURRENT_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B10",
+  "attempt_id": "MD-B10-A002",
+  "work_id": "MD-B10-A002",
+  "baseline_id": "MD-B10-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+  "change_impact_declaration": "CI-MD-B10-A002-001",
+  "issued_at": "2026-09-29T07:05:00+07:00",
+  "verdict": "IKPM_LISTING_ADMITTED_PROVIDER_CONSUMER_FACTS_STILL_HELD",
+  "checkpoint_verdict": "B_IKPM_LISTING_UNIT_COMPLETE_ADDITIONAL_PROVIDER_TEMPORAL_EVIDENCE_REQUIRED",
+  "related_findings": [
+    "F-MD-B18-A002-023"
+  ],
+  "related_evidence": [
+    "E-MD-B10-A002-006",
+    "E-MD-B10-A002-005",
+    "E-MD-B10-A002-001",
+    "E-MD-B05-A001-001"
+  ],
+  "related_decisions": [
+    "D-MD-B10-A002-001",
+    "D-MD-B10-A002-002"
+  ],
+  "related_dependencies": [
+    "MD-DEP-0021",
+    "MD-DEP-0020",
+    "MD-DEP-0019"
+  ],
+  "supersedes": null,
+  "progress": {
+    "foundation_core_implemented": true,
+    "first_real_listing_admitted": true,
+    "provider_fact_admitted": "Capture-time Yahoo Finance IKPM.JK mapping only.",
+    "temporal_provider_mapping_proven": false,
+    "market_data_intake_ready": false,
+    "consumed_scope_complete": false,
+    "dependency_resolved": false,
+    "promoted_rules": []
+  },
+  "required_fact_result": {
+    "issuer": "Existing PT Ikapharmindo Putramas Tbk retained issuer root; no replacement.",
+    "instrument": "Existing IKPM common-share retained instrument root; no replacement.",
+    "instrument_to_listing": "ADMITTED to one retained listing root.",
+    "executed_exchange_listing": "ADMITTED from IDX announcement Peng-P-01117/BEI.PP3/11-2023.",
+    "venue": "IDX ADMITTED.",
+    "board_segment": "Development Board / regular market ADMITTED for the initial listing interval.",
+    "exchange_symbol": "IDX:IKPM ADMITTED from the initial listing interval.",
+    "provider_symbol": "YAHOO_FINANCE:IKPM.JK ADMITTED from capture time only.",
+    "effective_interval": "Initial listing facts start 2023-11-08 Asia/Jakarta; verified lifecycle coverage ends after the first listing day. Yahoo mapping begins only at capture.",
+    "knowledge_time": "No source fact is known before its 2026-09-29 capture; historical source knowledge is not invented.",
+    "termination_or_delisting": "HELD; the initial listing notice does not establish subsequent lifecycle completeness."
+  },
+  "source_package": {
+    "version": "foundation-source-basis-20260929-ikpm-listing-v2",
+    "manifest_sha256": "9b31ec1a99e0ca18d2b82ef13e69d5bae872b7f75021d9ee1e4cf8ddcdafe47c",
+    "members": 7,
+    "predecessor": "foundation-source-basis-20260928-v1",
+    "predecessor_manifest_sha256": "ffa6acc11d41a2e219719dc035d381844983407210a3d2c39e5c9e52c7f2f45b",
+    "predecessor_rewritten": false,
+    "assignment_registry": "resources/security_identity/foundation-source-basis-20260929-ikpm-listing-v2.registry.json",
+    "assignment_sha256": "df8783af5f2cc4c463686db73e2cd64bc45281798516408b3741e0313b30b20f",
+    "integrity": "PASS: exact manifest fingerprint and every declared member byte count/SHA-256 rechecked before issue."
+  },
+  "sources": [
+    {
+      "owner": "Indonesia Stock Exchange",
+      "locator": "https://www.idnfinancials.com/id/fs3/content/announcements/2023/IKPM/20231108_IKPM_IPO.pdf",
+      "source_revision": "Peng-P-01117/BEI.PP3/11-2023",
+      "use": "Executed initial IDX listing, exchange symbol IKPM, 2023-11-08 listing/trading start, Development Board and issuer/listing relationship.",
+      "capture_limit": "Structured extraction of the official announcement surfaced through a transparent mirror; original PDF bytes were unavailable. Initial listing-day facts only."
+    },
+    {
+      "owner": "Yahoo Finance",
+      "locator": "https://query1.finance.yahoo.com/v8/finance/chart/IKPM.JK?range=1mo&interval=1d",
+      "source_revision": "chart-api/v8 response sha256:4cf804bb044156ae176c3e0304a4ebb59fe43cb468d2e063b811949f84313141",
+      "use": "Current capture-time provider mapping IKPM.JK.",
+      "capture_limit": "No historical provider mapping interval or exchange lifecycle fact is inferred."
+    }
+  ],
+  "admission": {
+    "retained_issuer_id": "35ff26e0-a043-41c8-8c6e-f7f2d4227214",
+    "retained_instrument_id": "93453e6d-87b4-4131-8379-a91fb1766fac",
+    "listing_id": "6eb68d44-81bf-4469-be4f-27ce32ef03d5",
+    "listing_revision_id": "214a9276-5359-4d7f-9fd2-597215001e29",
+    "exchange_symbol_revision_id": "71d11fb5-45ea-41be-9efd-e10d440911e7",
+    "board_revision_id": "44334144-1ff3-494c-8b10-8a15c3094d50",
+    "provider_mapping_revision_id": "4ccda414-4c16-4ab2-b8c1-78058ce98bb3",
+    "post_admission_counts": {
+      "issuer_roots": 2,
+      "instrument_roots": 1,
+      "listing_roots": 1,
+      "packages": 2,
+      "revisions": 7,
+      "holds": 6,
+      "market_data_consumable_listings": 0
+    },
+    "idempotent": true,
+    "allocation_independent": true,
+    "export_import_rebuild_retained": true
+  },
+  "temporal_boundary": {
+    "listing_valid_from_utc": "2023-11-07 17:00:00",
+    "listing_history_verified_through_utc": "2023-11-08 16:59:59",
+    "listing_source_known_at_utc": "2026-09-28 18:35:41",
+    "provider_mapping_valid_from_utc": "2026-09-28 18:35:16",
+    "provider_source_known_at_utc": "2026-09-28 18:35:16",
+    "historical_yahoo_resolution": "HELD / IDENTITY_OR_MAPPING_UNAVAILABLE",
+    "capture_time_yahoo_resolution": "HELD / LIFECYCLE_OUTSIDE_VERIFIED_SCOPE",
+    "held_scopes": [
+      "IKPM:provider-history",
+      "IKPM:lifecycle-after-first-day",
+      "IKPM:consumer-resolution"
+    ]
+  },
+  "execution": {
+    "phpunit_version": "9.6.34",
+    "driver": "mysql",
+    "server": "10.4.27-MariaDB",
+    "host": "127.0.0.1",
+    "port": 3306,
+    "control_database": "tradeaxis_testing",
+    "destructive_scope": "Fresh test-owned tradeaxis_testing_si_ikpm_<12 hex>_a/b databases only; namespace preflight and ordinary success/failure cleanup.",
+    "ikpm_control": {
+      "tests": 7,
+      "assertions": 96,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "foundation_core_regression": {
+      "tests": 16,
+      "assertions": 223,
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0
+    },
+    "syntax_checks": 4,
+    "production_probe_mechanisms": 3,
+    "production_negative_executions": 3,
+    "temporary_databases_remaining": 0,
+    "normal_foundation_tables_added": 0
+  },
+  "discriminating_probes": [
+    {
+      "mechanism": "provider_mapping_temporal_boundary",
+      "mutation": "Backdate Yahoo mapping to the IDX listing interval.",
+      "red": "LIFECYCLE_INTERVAL_NOT_EVIDENCED",
+      "restoration": "Source restored byte-identically; targeted control GREEN."
+    },
+    {
+      "mechanism": "verified_listing_lifecycle_scope",
+      "mutation": "Ignore history_verified_through during resolution.",
+      "red": "Expected HELD, actual RESOLVED at the intended assertion.",
+      "restoration": "Source restored byte-identically; targeted control GREEN."
+    },
+    {
+      "mechanism": "issuer_instrument_listing_parent_chain",
+      "mutation": "Permit LISTING parented directly to ISSUER.",
+      "red": "Expected ENTITY_PARENT_INVALID rejection was absent at the intended assertion.",
+      "restoration": "Source restored byte-identically; targeted control GREEN."
+    }
+  ],
+  "raw_proof": {
+    "directory": "storage/app/market_data/evidence/MD-B10-A002/foundation-ikpm-listing-20260929-v1",
+    "manifest_sha256": "f24363abd6cfa878cc9895a15858cedbd27462415c5dd4d76433274de559764c",
+    "source_package_directory": "storage/app/market_data/evidence/MD-B10-A002/foundation-source-basis-20260929-ikpm-listing-v2",
+    "transfer_requirement": "Both ignored directories and all manifest-declared members must remain transferable with this evidence."
+  },
+  "governance_state": {
+    "b05": "PASS 117/117",
+    "b10": "1016 SATISFIED / 56 NOT_ASSESSED / 1072 mandatory",
+    "b18": "100 PROVEN / 13 INCOMPLETE / 113; formal SATISFIED 0/113",
+    "md_dep_0021": "BLOCKING",
+    "md_dep_0020": "BLOCKING",
+    "md_dep_0019": "BLOCKING",
+    "r0025": "INCOMPLETE",
+    "f018_started": false
+  },
+  "next_resume_point": "MD-B10-A002 / MD-DEP-0021: acquire and governedly admit authoritative IKPM lifecycle, symbol and board continuity/termination evidence covering the interval after 2023-11-08 through the admitted Yahoo capture boundary. Preserve the capture-time provider mapping and retained listing root; do not repeat listing admission. Only after one instant has complete lifecycle plus provider coverage may the bounded Market Data consumer integration begin."
+}

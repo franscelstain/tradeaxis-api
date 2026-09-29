@@ -7,8 +7,8 @@ use Illuminate\Console\Command;
 
 final class BootstrapFoundationCommand extends Command
 {
-    protected $signature = 'security-identity:bootstrap {package : Frozen E005 source package directory}';
-    protected $description = 'Admit bounded shared identity facts using retained registry assignments; unresolved listings remain held.';
+    protected $signature = 'security-identity:bootstrap {package : Frozen governed source package directory} {--assignments=resources/security_identity/foundation-source-basis-20260928-v1.registry.json : Retained assignment registry path relative to the application root}';
+    protected $description = 'Admit fingerprinted shared identity facts using retained registry assignments; unresolved facts remain held.';
     private FoundationService $foundation;
 
     public function __construct(FoundationService $foundation)
@@ -20,7 +20,7 @@ final class BootstrapFoundationCommand extends Command
     public function handle(): int
     {
         try {
-            $result = $this->foundation->bootstrap((string)$this->argument('package'), base_path('resources/security_identity/foundation-source-basis-20260928-v1.registry.json'));
+            $result = $this->foundation->bootstrap((string)$this->argument('package'), base_path((string)$this->option('assignments')));
             $d = $result->document();
             $counts = array_count_values(array_column($d['entities'], 'entity_type'));
             $this->line(json_encode(['state' => 'BOUNDED_CORE_ADMITTED', 'entity_counts' => $counts, 'holds' => count($d['holds']), 'dependency_resolved' => false], JSON_THROW_ON_ERROR));
