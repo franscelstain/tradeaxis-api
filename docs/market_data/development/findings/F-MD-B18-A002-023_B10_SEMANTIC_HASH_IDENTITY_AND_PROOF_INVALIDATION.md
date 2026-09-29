@@ -105,3 +105,11 @@ The official IDX current-profile response captured at `2026-09-29 00:38:15 UTC` 
 The issuer, instrument and listing roots remain unchanged; v3 adds only LISTING, SYMBOL and BOARD successor revisions. Isolated MariaDB controls pass 5/79 for the consumer window, 7/96 for the listing path and 16/223 for the core, all with zero skips. Three production mechanisms were mutated and turned RED at the intended half-open interval, knowledge-cutoff and official-board source-extraction guards; production sources were restored byte-identically and controls returned GREEN.
 
 MD-DEP-0021 remains BLOCKING: foundation consumer readiness is proven for one instant, while controlled Market Data consumption and allocation-independent intake are not implemented or proven. No B10 predicate is promoted; B05 117/117, B10 1016/56/1072 and B18 100/13/113 formal 0 remain unchanged. The next bounded unit is Market Data consumer integration for the exact admitted instant, without changing artifact hashes.
+
+## 2026-09-29 bounded Market Data foundation intake — E-MD-B10-A002-009
+
+Market Data now has an explicit foundation-required read path through the shared `IdentityResolver` contract and `FoundationService`. At the E008 instant it propagates the retained issuer, instrument and listing UUID roots plus IDX/IKPM and Yahoo/IKPM.JK context. HELD, AMBIGUOUS, missing-root and missing-provider results block without consulting `tickers` or `md_*`, synthesizing `.JK`, or fabricating identity. The legacy projection path remains separate for B05 compatibility.
+
+Isolated MariaDB proof varies ticker IDs, Market Data surrogate rows and foundation surrogate allocations while producing identical consumer results. Four restored mutations prove allocation identity, fallback, temporal and propagation guards. Controls pass 5/71 integration, 16/223 core, 7/96 listing, 5/79 window and 9/104 B05 regression with zero skips and database residue.
+
+MD-DEP-0021 remains BLOCKING on artifact-side consumption and allocation-independent semantic hash proof. No artifact hash, manifest, seal, correction or predicate binding changed; B05 117/117, B10 1016/56/1072 and B18 100/13/113 formal 0 remain unchanged. Next bounded unit is bars/indicators/eligibility semantic artifact identity using the now-proven consumer result.

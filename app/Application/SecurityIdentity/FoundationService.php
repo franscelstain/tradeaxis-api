@@ -3,6 +3,7 @@
 namespace App\Application\SecurityIdentity;
 
 use App\Application\SecurityIdentity\Contracts\FoundationRegistry;
+use App\Application\SecurityIdentity\Contracts\IdentityResolver;
 use App\Application\SecurityIdentity\Contracts\IdentityResolution;
 use App\Domain\SecurityIdentity\RegistryAdmission;
 use App\Domain\SecurityIdentity\RegistryDocument;
@@ -10,7 +11,7 @@ use App\Domain\SecurityIdentity\TemporalIdentityResolution;
 use App\Infrastructure\Persistence\SecurityIdentity\FoundationRepository;
 use App\Infrastructure\Persistence\SecurityIdentity\FrozenSourcePackageReader;
 
-final class FoundationService
+final class FoundationService implements IdentityResolver
 {
     private FoundationRepository $repository;
     private FrozenSourcePackageReader $reader;

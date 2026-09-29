@@ -1,0 +1,103 @@
+{
+  "evidence_id": "E-MD-B10-A002-009",
+  "record_type": "EVIDENCE",
+  "role_scope": "CURRENT_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B10",
+  "attempt_id": "MD-B10-A002",
+  "work_id": "MD-B10-A002",
+  "baseline_id": "MD-B10-A002-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+  "change_impact_declaration": "CI-MD-B10-A002-001",
+  "issued_at": "2026-09-29T12:09:21+07:00",
+  "verdict": "MARKET_DATA_FOUNDATION_INTAKE_IMPLEMENTED_AND_PROVEN",
+  "checkpoint_verdict": "A_CONSUMER_INTEGRATION_COMPLETE_READY_FOR_B10_SEMANTIC_HASH_REMEDIATION",
+  "related_findings": ["F-MD-B18-A002-023"],
+  "related_evidence": ["E-MD-B10-A002-008", "E-MD-B10-A002-007", "E-MD-B10-A002-006", "E-MD-B10-A002-001", "E-MD-B05-A001-001"],
+  "related_decisions": ["D-MD-B10-A002-001", "D-MD-B10-A002-002"],
+  "related_dependencies": ["MD-DEP-0021", "MD-DEP-0020", "MD-DEP-0019"],
+  "supersedes": null,
+  "integration": {
+    "shared_contract": "App\\Application\\SecurityIdentity\\Contracts\\IdentityResolver",
+    "shared_implementation": "App\\Application\\SecurityIdentity\\FoundationService",
+    "market_data_surface": "App\\Infrastructure\\Persistence\\MarketData\\TemporalIdentityRepository::resolveFoundationProviderContext",
+    "container_binding": "App\\Providers\\SecurityIdentityServiceProvider",
+    "required_inputs": ["provider_namespace", "provider_symbol", "effective_at_utc", "knowledge_cutoff_utc"],
+    "legacy_projection_bypassed": true,
+    "legacy_path_preserved": true,
+    "provider_symbol_synthesis": false,
+    "ticker_id_returned": false,
+    "artifact_hashing_changed": false
+  },
+  "control": {
+    "effective_at_utc": "2026-09-29 00:38:15",
+    "knowledge_cutoff_utc": "2026-09-29 00:38:15",
+    "state": "RESOLVED",
+    "reason": "EVIDENCED_TEMPORAL_IDENTITY",
+    "issuer_id": "35ff26e0-a043-41c8-8c6e-f7f2d4227214",
+    "instrument_id": "93453e6d-87b4-4131-8379-a91fb1766fac",
+    "listing_id": "6eb68d44-81bf-4469-be4f-27ce32ef03d5",
+    "exchange_namespace": "IDX",
+    "exchange_symbol": "IKPM",
+    "provider_namespace": "YAHOO_FINANCE",
+    "provider_symbol": "IKPM.JK",
+    "board": "DEVELOPMENT",
+    "market_segment": "REGULAR"
+  },
+  "fail_closed": {
+    "before_window": "FOUNDATION_IDENTITY_HELD:LISTING_EVIDENCE_UNAVAILABLE",
+    "at_valid_to": "FOUNDATION_IDENTITY_HELD:LISTING_EVIDENCE_UNAVAILABLE",
+    "earlier_knowledge_cutoff": "FOUNDATION_IDENTITY_HELD:LIFECYCLE_OUTSIDE_VERIFIED_SCOPE",
+    "missing_provider_mapping": "FOUNDATION_IDENTITY_HELD:IDENTITY_OR_MAPPING_UNAVAILABLE",
+    "ambiguous_mapping": "FOUNDATION_IDENTITY_AMBIGUOUS:OVERLAPPING_PROVIDER_MAPPING",
+    "unresolved_or_missing_roots": "FOUNDATION_IDENTITY_INVALID:STABLE_ROOTS_REQUIRED",
+    "legacy_fallback": false
+  },
+  "allocation_independence": {
+    "result": "PASS",
+    "varied": ["ticker numeric IDs 1 versus 12", "md_* local surrogate histories", "si_entities and si_revisions local row allocation"],
+    "identical_fields": ["issuer_id", "instrument_id", "listing_id", "exchange_symbol", "provider_symbol", "effective_at", "knowledge_cutoff", "foundation_revisions"],
+    "repeated_request_deterministic": true
+  },
+  "execution": {
+    "phpunit_version": "9.6.34",
+    "driver": "mysql",
+    "server": "10.4.27-MariaDB",
+    "control_database": "tradeaxis_testing",
+    "consumer_integration": {"tests":5,"assertions":71,"errors":0,"failures":0,"skipped":0},
+    "foundation_core": {"tests":16,"assertions":223,"errors":0,"failures":0,"skipped":0},
+    "ikpm_listing": {"tests":7,"assertions":96,"errors":0,"failures":0,"skipped":0},
+    "ikpm_consumer_window": {"tests":5,"assertions":79,"errors":0,"failures":0,"skipped":0},
+    "b05_focused_regression": {"tests":9,"assertions":104,"errors":0,"failures":0,"skipped":0},
+    "production_probe_mechanisms": 4,
+    "production_negative_executions": 4,
+    "temporary_databases_remaining": 0,
+    "normal_database_mutated": false
+  },
+  "discriminating_probes": [
+    {"mechanism":"allocation_independent_listing_root","mutation":"Return local ticker_id as listing_id.","red":"Expected identical results; listing_id differed 1 versus 12.","restoration":"Production source restored to SHA-256 29575428e6efb0b4ad52672a100f9d8c9630f580833d3a6f0f66c94adf6c0c0a; GREEN 1/14."},
+    {"mechanism":"no_legacy_fallback_after_held","mutation":"Return a legacy fallback after HELD.","red":"Before-window guard observed no blocking exception.","restoration":"Production source restored to the same SHA-256; GREEN 1/17."},
+    {"mechanism":"effective_and_knowledge_coordinates","mutation":"Replace caller coordinates with the valid target instant.","red":"Before-window guard observed no blocking exception.","restoration":"Production source restored to the same SHA-256; GREEN 1/17."},
+    {"mechanism":"retained_root_propagation","mutation":"Drop issuer_id from downstream result.","red":"Expected retained issuer UUID; actual null.","restoration":"Production source restored to the same SHA-256; GREEN 1/21."}
+  ],
+  "raw_proof": {
+    "directory": "storage/app/market_data/evidence/MD-B10-A002/market-data-foundation-consumer-20260929-v1",
+    "manifest_sha256": "fe46d82683b963f7a3ae30642f91d182fe27c8cf7ce93c0fc0be23435ca71239",
+    "source_package": "foundation-source-basis-20260929-ikpm-current-window-v3",
+    "source_package_manifest_sha256": "f85c4ba3f0606177e58c3b94e2e7593819466df9c8cba238272cd1305405ac4f"
+  },
+  "governance_state": {
+    "b05": "PASS 117/117",
+    "b10": "1016 SATISFIED / 56 NOT_ASSESSED / 1072 mandatory",
+    "b18": "100 PROVEN / 13 INCOMPLETE / 113; formal SATISFIED 0/113",
+    "md_dep_0021": "BLOCKING",
+    "md_dep_0020": "BLOCKING",
+    "md_dep_0019": "BLOCKING",
+    "r0025": "INCOMPLETE",
+    "f018_started": false,
+    "promoted_rules": []
+  },
+  "dependency_result": "MD-DEP-0021 remains BLOCKING until B10 semantic artifact identity consumes the supplied roots, allocation-independent hash behavior is proven and successor closure conditions are satisfied.",
+  "next_resume_point": "MD-B10-A002 / MD-DEP-0021: implement the bounded artifact semantic-identity remediation for bars, indicators and eligibility using resolveFoundationProviderContext output; replace allocation-sensitive identity membership/order and bind configuration content identity while preserving historical hashes. Do not start publication-manifest/correction/seal remediation or promote predicates until discriminating proof is complete."
+}

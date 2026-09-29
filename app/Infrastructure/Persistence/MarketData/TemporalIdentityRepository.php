@@ -2,6 +2,7 @@
 
 namespace App\Infrastructure\Persistence\MarketData;
 
+use App\Application\SecurityIdentity\Contracts\IdentityResolver;
 use App\Domain\MarketData\MarketDataScope;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -10,6 +11,83 @@ use Illuminate\Support\Str;
 
 class TemporalIdentityRepository
 {
+    private $foundationIdentity;
+
+    public function __construct(IdentityResolver $foundationIdentity = null)
+    {
+        $this->foundationIdentity = $foundationIdentity;
+    }
+
+    /**
+     * Resolve the shared foundation handoff for consumers that require canonical identity.
+     *
+     * This method deliberately does not consult `tickers` or the `md_*` compatibility projection.
+     * HELD/AMBIGUOUS foundation results are blocking and never authorize provider-symbol synthesis
+     * or ticker-derived semantic roots. Legacy numeric IDs therefore remain outside this result.
+     */
+    public function resolveFoundationProviderContext(
+        string $providerNamespace,
+        string $providerSymbol,
+        string $effectiveAtUtc,
+        string $knowledgeCutoffUtc
+    ): array {
+        $resolver = $this->foundationIdentity;
+        if (!$resolver instanceof IdentityResolver) {
+            try {
+                $resolver = app(IdentityResolver::class);
+            } catch (\Throwable $e) {
+                throw new \RuntimeException('FOUNDATION_IDENTITY_DEPENDENCY_UNAVAILABLE', 0, $e);
+            }
+        }
+
+        try {
+            $resolved = $resolver->resolve(
+                trim($providerNamespace),
+                trim($providerSymbol),
+                trim($effectiveAtUtc),
+                trim($knowledgeCutoffUtc)
+            );
+        } catch (\Throwable $e) {
+            throw new \RuntimeException('FOUNDATION_IDENTITY_DEPENDENCY_UNAVAILABLE:'.$e->getMessage(), 0, $e);
+        }
+
+        if ($resolved->state !== 'RESOLVED') {
+            throw new \RuntimeException('FOUNDATION_IDENTITY_'.$resolved->state.':'.$resolved->reason);
+        }
+        if (!$resolved->issuerId || !$resolved->instrumentId || !$resolved->listingId) {
+            throw new \RuntimeException('FOUNDATION_IDENTITY_INVALID:STABLE_ROOTS_REQUIRED');
+        }
+
+        $required = [
+            'exchange_symbol', 'exchange_namespace', 'provider_namespace', 'provider_symbol',
+            'venue', 'market_segment', 'board', 'effective_at', 'knowledge_cutoff',
+        ];
+        foreach ($required as $field) {
+            if (!array_key_exists($field, $resolved->context) || $resolved->context[$field] === '') {
+                throw new \RuntimeException('FOUNDATION_IDENTITY_INVALID:'.$field);
+            }
+        }
+
+        return [
+            'identity_source' => 'SHARED_SECURITY_IDENTITY_FOUNDATION',
+            'resolution_state' => $resolved->state,
+            'resolution_reason' => $resolved->reason,
+            'issuer_id' => $resolved->issuerId,
+            'instrument_id' => $resolved->instrumentId,
+            'listing_id' => $resolved->listingId,
+            'exchange_symbol' => (string) $resolved->context['exchange_symbol'],
+            'exchange_namespace' => (string) $resolved->context['exchange_namespace'],
+            'provider_namespace' => (string) $resolved->context['provider_namespace'],
+            'provider_symbol' => (string) $resolved->context['provider_symbol'],
+            'venue' => (string) $resolved->context['venue'],
+            'market_segment' => (string) $resolved->context['market_segment'],
+            'board' => (string) $resolved->context['board'],
+            'effective_at' => (string) $resolved->context['effective_at'],
+            'knowledge_cutoff' => (string) $resolved->context['knowledge_cutoff'],
+            'foundation_revisions' => $resolved->context['revisions'] ?? [],
+        ];
+    }
+
     public function ensureLegacyProjection(array $tickerCodes = [])
     {
         $this->assertFoundationAvailable();
