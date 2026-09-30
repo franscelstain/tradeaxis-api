@@ -102,6 +102,7 @@ $app->singleton(
 $app->configure('app');
 $app->configure('database');
 $app->configure('market_data');
+$app->configure('market_data_runtime');
 
 /*
 |--------------------------------------------------------------------------

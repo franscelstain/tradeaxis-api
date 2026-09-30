@@ -1,0 +1,255 @@
+{
+  "evidence_id": "E-MD-B10-A002-010",
+  "record_type": "EVIDENCE",
+  "role_scope": "CURRENT_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B10",
+  "attempt_id": "MD-B10-A002",
+  "work_id": "MD-B10-A002",
+  "baseline_id": "MD-B10-A002-BL001",
+  "verification_epoch": "MD-B10-A002",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+  "change_impact_declaration": "CI-MD-B10-A002-001",
+  "issued_at": "2026-09-29T18:02:56+07:00",
+  "verdict": "BOUNDED_ARTIFACT_IDENTITY_REMEDIATION_IMPLEMENTED_AND_PROVEN",
+  "checkpoint_verdict": "A. BOUNDED ARTIFACT IDENTITY REMEDIATION IMPLEMENTED AND PROVEN",
+  "related_findings": [
+    "F-MD-B18-A002-023"
+  ],
+  "related_evidence": [
+    "E-MD-B10-A002-001",
+    "E-MD-B10-A002-009",
+    "E-MD-B05-A001-001"
+  ],
+  "related_decisions": [
+    "D-MD-B10-A002-001",
+    "D-MD-B10-A002-002"
+  ],
+  "related_dependencies": [
+    "MD-DEP-0021",
+    "MD-DEP-0020",
+    "MD-DEP-0019"
+  ],
+  "supersedes": null,
+  "scope": {
+    "included": [
+      "bars artifact semantic identity",
+      "indicators artifact semantic identity",
+      "eligibility artifact semantic identity",
+      "configuration snapshot content identity required by those artifacts",
+      "allocation-independent canonical ordering",
+      "explicit legacy-v1 versus corrected-v2 artifact hash profile"
+    ],
+    "excluded": [
+      "publication-manifest semantic identity",
+      "correction and supersession identity",
+      "reseal and active-publication switching",
+      "publication convergence",
+      "B10 predicate promotion",
+      "B18 or R0025 work"
+    ]
+  },
+  "bounded_predicate_scope": {
+    "direct_artifact_clauses": [
+      "MD-S005-R0001",
+      "MD-S005-R0019",
+      "MD-S005-R0021",
+      "MD-S005-R0022",
+      "MD-S005-R0023",
+      "MD-S005-R0024",
+      "MD-S005-R0025",
+      "MD-S005-R0026",
+      "MD-S005-R0030",
+      "MD-S005-R0031",
+      "MD-S005-R0035",
+      "MD-S005-R0038",
+      "MD-S005-R0039",
+      "MD-S005-R0040",
+      "MD-S005-R0042",
+      "MD-S005-R0043",
+      "MD-S005-R0044",
+      "MD-S005-R0046",
+      "MD-S005-R0047",
+      "MD-S005-R0050",
+      "MD-S005-R0053",
+      "MD-S005-R0056",
+      "MD-S005-R0059",
+      "MD-S005-R0075",
+      "MD-S005-R0076",
+      "MD-S005-R0077",
+      "MD-S005-R0078",
+      "MD-S005-R0080",
+      "MD-S005-R0086",
+      "MD-S005-R0087",
+      "MD-S005-R0092",
+      "MD-S005-R0098",
+      "MD-S019-R0006",
+      "MD-S019-R0007",
+      "MD-S019-R0008",
+      "MD-S019-R0014",
+      "MD-S019-R0015",
+      "MD-S045-R0056",
+      "MD-S045-R0059"
+    ],
+    "interpretation": "Only the bars/indicators/eligibility clauses of these predicates are implemented and locally proven. Predicates that also require nested-hash correctness, publication manifest, seal, correction, or full current-verification review remain NOT_ASSESSED.",
+    "status_change": "NONE",
+    "current_verification": {
+      "mandatory": 1072,
+      "satisfied": 1016,
+      "not_assessed": 56
+    }
+  },
+  "semantic_hash_contract": {
+    "profile": "market-data-semantic-hash/v2",
+    "legacy_profile": "market-data-row-hash/v1",
+    "algorithm": "SHA-256",
+    "framing": "UTF-8 bytes: profile|domain followed, for a non-empty set only, by LF and canonical rows; no trailing delimiter or LF",
+    "identity": [
+      "retained issuer root",
+      "retained instrument root",
+      "retained listing root"
+    ],
+    "ordering": "trade_date, retained listing root, then canonical row bytes",
+    "null_representation": "empty token under the existing locked serializer",
+    "excluded_volatile_identity": [
+      "ticker_id",
+      "local md listing_id",
+      "si row_id",
+      "run_id",
+      "publication_id",
+      "config_snapshot_id",
+      "source_observation_id",
+      "source_scale_assessment_id",
+      "numeric revision and factor ids"
+    ]
+  },
+  "artifacts": {
+    "bars": {
+      "semantic_members": [
+        "trade_date and retained roots",
+        "provider namespace and provider symbol supplied by the foundation",
+        "observation manifest content hash",
+        "RAW OHLCV, previous close, actual traded value and actual trade count",
+        "board, session, canonicalization version and RAW price-product code",
+        "quality state and canonical reasons",
+        "configuration content hash",
+        "source-scale state and assessment-set content hash"
+      ],
+      "adj_close": "EXCLUDED_FROM_SEMANTIC_HASH; retained only in source lineage/storage",
+      "fail_closed": "missing foundation identity, provider source, config-content equivalence, semantic key uniqueness, or non-clean quality reasons"
+    },
+    "indicators": {
+      "semantic_members": [
+        "trade_date and retained roots",
+        "observation, identity, status, event and factor-decision set hashes",
+        "indicator validity, values, annotations and null reasons",
+        "indicator/formula/product/liquidity versions",
+        "configuration content hash and factor-set content hash",
+        "ATR value and retained state reference",
+        "benchmark, sector, event and status semantic context"
+      ],
+      "fail_closed": "missing foundation/config/nested-content identity or factor-set content mismatch"
+    },
+    "eligibility": {
+      "semantic_members": [
+        "trade_date and retained roots",
+        "identity, status, event and market-structure set hashes",
+        "eligibility decision, reason and all consumer-visible states",
+        "canonical eligibility reasons",
+        "configuration content hash and read-model version"
+      ],
+      "fail_closed": "missing foundation/config/revision-set/read-model identity"
+    }
+  },
+  "historical_compatibility": {
+    "existing_rows": "NULL artifact_hash_profile is interpreted as market-data-row-hash/v1",
+    "new_governed_runs": "market-data-semantic-hash/v2",
+    "legacy_entry_point": "DeterministicHashService::hashRows remains byte-identical",
+    "sealed_history_rewritten": false,
+    "mass_rehash_performed": false,
+    "profile_consistency": "run and publication profiles must match at finalize"
+  },
+  "proof": {
+    "artifact_semantic_hash": {
+      "tests": 6,
+      "assertions": 18,
+      "skipped": 0
+    },
+    "allocation_independence_mariadb": {
+      "tests": 3,
+      "assertions": 12,
+      "skipped": 0,
+      "variation": "different ticker, md listing, config snapshot, source, publication and si surrogate allocation histories",
+      "result": "all three semantic hashes identical for equivalent facts"
+    },
+    "published_column_coverage": {
+      "tests": 23,
+      "assertions": 54,
+      "skipped": 0
+    },
+    "sensitivity": [
+      "changed retained listing root changes the owning artifact hash",
+      "changed bar OHLC semantic value changes bars hash",
+      "changed indicator value changes indicators hash",
+      "changed eligibility decision/reason changes eligibility hash",
+      "changed configuration content changes indicator and eligibility hashes"
+    ],
+    "equality": [
+      "different local allocation and insertion order do not change hashes",
+      "different config row ids with equal config content do not change hashes",
+      "different provider adj_close alone does not change bars hash",
+      "repeated hashing is deterministic"
+    ],
+    "regressions": {
+      "market_data_foundation_consumer": "5 tests / 71 assertions",
+      "foundation_core": "16 tests / 223 assertions",
+      "ikpm_listing": "7 tests / 96 assertions",
+      "ikpm_consumer_window": "5 tests / 79 assertions",
+      "b05_temporal_layer": "9 tests / 104 assertions"
+    }
+  },
+  "discriminating_probes": [
+    {
+      "mutation": "replace retained listing root with local listing allocation",
+      "red": "all three cross-database equality assertions fail",
+      "restored_sha256": "ddea071239bf6e9941e6dd62cf33a491ead8ee13239f9411b6d7a39c314ea89a"
+    },
+    {
+      "mutation": "replace indicator config content identity with a digest of config_snapshot_id",
+      "red": "indicator config-allocation equality assertion fails",
+      "restored_sha256": "ddea071239bf6e9941e6dd62cf33a491ead8ee13239f9411b6d7a39c314ea89a"
+    },
+    {
+      "mutation": "source bars semantic token from provider adj_close",
+      "red": "adj_close-only equality assertion fails",
+      "restored_sha256": "ddea071239bf6e9941e6dd62cf33a491ead8ee13239f9411b6d7a39c314ea89a"
+    },
+    {
+      "mutation": "replace retained listing root with one constant",
+      "red": "ARTIFACT_SEMANTIC_DUPLICATE_KEY guard fires before hashing",
+      "restored_sha256": "ddea071239bf6e9941e6dd62cf33a491ead8ee13239f9411b6d7a39c314ea89a"
+    }
+  ],
+  "raw_proof": {
+    "directory": "storage/app/market_data/evidence/MD-B10-A002/artifact-semantic-identity-20260929-v1",
+    "manifest_sha256": "b34ffb7c1977319bb21fc5cbed7d41b389581e2221f302b9c42332302f909c0b"
+  },
+  "preservation": {
+    "tests/Unit/MarketData/B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4",
+    "matches_E001": true
+  },
+  "governance_state": {
+    "b05": "PASS 117/117",
+    "b10": "1016 SATISFIED / 56 NOT_ASSESSED / 1072 mandatory",
+    "b18": "100 PROVEN / 13 INCOMPLETE / 113; formal SATISFIED 0/113",
+    "md_dep_0021": "BLOCKING",
+    "md_dep_0020": "BLOCKING",
+    "md_dep_0019": "BLOCKING",
+    "r0025": "INCOMPLETE",
+    "f018_started": false,
+    "promoted_rules": []
+  },
+  "dependency_result": "Foundation roots now drive the corrected bars/indicators/eligibility profile and allocation independence is proven, but publication-manifest/correction/seal integration, controlled normal-database deployment and full B10 reproof remain outstanding. MD-DEP-0021 and MD-DEP-0020 remain BLOCKING.",
+  "next_resume_point": "MD-B10-A002: remediate publication-manifest, correction and seal semantic identity using the versioned V2 bars, indicators and eligibility hashes; preserve legacy V1 sealed interpretation and leave all predicates NOT_ASSESSED until complete governed reproof. Same A002/BL001/CI; MD-DEP-0021/0020/0019 remain BLOCKING; R0025 and F-018 stay paused."
+}

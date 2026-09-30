@@ -1,0 +1,428 @@
+{
+    "evidence_id": "E-MD-B10-A002-012",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B10",
+    "attempt_id": "MD-B10-A002",
+    "work_id": "MD-B10-A002",
+    "baseline_id": "MD-B10-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "change_impact_declaration": "CI-MD-B10-A002-001",
+    "issued_at": "2026-09-30T23:25:56+07:00",
+    "verdict": "PUBLICATION_CORRECTION_SEAL_V2_REMEDIATION_IMPLEMENTED_AND_PROVEN",
+    "checkpoint_verdict": "A. PUBLICATION / CORRECTION / SEAL V2 REMEDIATION IMPLEMENTED AND PROVEN",
+    "supersedes": "E-MD-B10-A002-011",
+    "related_findings": [
+        "F-MD-B18-A002-023",
+        "F-MD-B10-A002-002",
+        "F-MD-B10-A002-001"
+    ],
+    "related_evidence": [
+        "E-MD-B10-A002-011",
+        "E-MD-B10-A002-010",
+        "E-MD-B10-A002-001",
+        "E-MD-B18-A002-074",
+        "E-MD-B05-A001-001"
+    ],
+    "related_decisions": [
+        "D-MD-B10-A002-001",
+        "D-MD-B10-A002-002",
+        "D-MD-B18-A002-004"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0021",
+        "MD-DEP-0020",
+        "MD-DEP-0019",
+        "MD-DEP-0015"
+    ],
+    "scope": {
+        "included": [
+            "correction of issued E-MD-B10-A002-011 (its bytes are not edited)",
+            "fix of the env() regression on the V2 profile-selection path",
+            "production-repository proof of V2 allocation independence for correction and plain first publications",
+            "promotion-path refusal of tampered V2 seal, manifest, correction, lineage and profile material",
+            "re-execution of E011's four service-level probes against the current test file",
+            "full classification of the 16 recovered failures with post-fix re-execution",
+            "migration and V1 compatibility verification"
+        ],
+        "excluded": [
+            "nested observation-manifest, factor-set and temporal revision-set producer remediation",
+            "sorted semantic manifest-reason production",
+            "controlled deployment of 000001-000003 to tradeaxis and of 000001 to tradeaxis_testing",
+            "remediation of F-MD-B10-A002-002",
+            "B10 predicate promotion or successor closure",
+            "B18 or R0025 work",
+            "line-ending normalization of E010 edits (reported, not changed)"
+        ]
+    },
+    "corrects": {
+        "record": "E-MD-B10-A002-011",
+        "record_sha256_at_correction": "f01ff75d9bd7c67c21e5214e08178d3633a4e84f29c5b523ee7300700f7f6dc2",
+        "corrections": [
+            {
+                "field": "proof.full_suite.classification; raw full_regression_classification.json row ConfigIsTheOnlyEnvReaderTest",
+                "inaccurate": "classified E. PRE-EXISTING / UNRELATED: \"EodRunRepository contains a direct env call introduced before this bounded publication unit\"",
+                "why": "HEAD 0bebd14 has no env() call in app/. The call is in the uncommitted MD-B10-A002 diff: removing E011's six edits from the pre-fix file reproduces E010's recorded SHA-256 18c0bf78..., which still contains it, and E011's own publicationSemanticProfile() calls it.",
+                "correct_statement": "A. PATCH REGRESSION of the MD-B10-A002 remediation diff, on the V2 profile-selection path. Fixed by this record; the guard passes 5/8."
+            },
+            {
+                "field": "proof.full_suite.classification (summary sentence)",
+                "inaccurate": "Fifteen failures are pre-existing, environment/deployment or inherited incomplete R0025 conditions; none is an unresolved publication/correction/seal regression.",
+                "why": "One of the fifteen was the unresolved env() regression above. Four static-guard failures were never recorded by any governed record: they were introduced by commits after the last governed full-suite baseline (E-MD-B18-A002-074, seven corpus-oracle failures only).",
+                "correct_statement": "2 A (both fixed), 8 D, 2 F and 4 E; the four E rows are recorded in F-MD-B10-A002-002. After the fix, 14 fail and none is caused by this unit."
+            },
+            {
+                "field": "proof.allocation_independence",
+                "inaccurate": "Two isolated MariaDB databases with different row, publication, run and correction allocations produced identical publication, correction and seal identities.",
+                "why": "PublicationCorrectionSealSemanticIdentityOnMariaDbTest hashes documents the test builds itself. They contain no allocated key, so they are equal whatever the allocations. The repository assembly that resolves predecessor and baseline ids and reads seal material back was not exercised. Probes P1-P3 leak an allocation through that assembly and leave every E011 V2 proof file green.",
+                "correct_statement": "E011 proved canonical-document equality at the service level. Production-path allocation independence is proven by this record for correction and plain flows."
+            },
+            {
+                "field": "discriminating_probes",
+                "inaccurate": "four probes recorded as red against the current tests, probe 3 as \"1 test / 2 assertions / 1 failure\"",
+                "why": "The probes ran against a superseded version of PublicationSemanticIdentityServiceTest: the PHPUnit result cache keeps the failure under the removed method name test_artifact_and_config_changes_are_semantically_sensitive. The current file cannot produce probe 3's count, because its seal assertion is the seventh assertion.",
+                "correct_statement": "Re-executed as S1-S4 against the current file: each is red (1, 1, 7 and 3 assertions at failure), and each restores to 4f820a22...."
+            },
+            {
+                "field": "raw full_regression_classification.json labels",
+                "inaccurate": "MigrationIntegrityAndDriftTest and B18ProductionPathReplayFixturesTest labelled E; the latter described as the normal production path; R0025 and the seven corpus-oracle failures labelled E",
+                "why": "Both migration failures are the governed undeployed-schema state. The production-path test runs on tradeaxis_testing, which lacks only 000001. R0025 and the oracle controls are governed expected failures.",
+                "correct_statement": "F, F, D and D respectively (rows in full_suite.classification)."
+            },
+            {
+                "field": "verification_epoch",
+                "inaccurate": "MD-B10-A002",
+                "why": "The registered verification epoch of E011 and of every B10-A002 record is MD-REBASELINE-20260820-001. E010 carries the same value and is not superseded here.",
+                "correct_statement": "MD-REBASELINE-20260820-001"
+            },
+            {
+                "field": "raw_proof",
+                "inaccurate": "the package reads as the proof of the executions E011 cites",
+                "why": "It holds JSON summaries only: no PHPUnit output or JUnit XML for any cited run. Its implementation binding also omits PublicationDiffService.php, which the reason-code fix changed.",
+                "correct_statement": "This record's package retains console output and JUnit XML for every execution it cites."
+            }
+        ],
+        "what_was_not_wrong": [
+            "the V2 publication, correction and seal contracts, and V1/V2 dispatch",
+            "the focused 90/1263 and regression 57/631 counts, reproduced exactly",
+            "the reason-code fix and the recovered 2600/37425/16 counts",
+            "E011 package integrity: manifest 0fb10dd1... and every member hash",
+            "migration additivity, preservation hashes and the B05/B10/B18 governance counts"
+        ]
+    },
+    "regression_fix": {
+        "defect": "EodRunRepository::artifactHashProfile() read env(MARKET_DATA_ARTIFACT_HASH_PROFILE) directly (ConfigIsTheOnlyEnvReaderTest).",
+        "why_not_config_market_data": "config/market_data.php is serialized whole into the resolved configuration snapshot whose content hash every run and V2 artifact binds, and PlatformConfigRegistry rejects unregistered keys (CONFIG_REGISTRY_KEY_MISMATCH).",
+        "change": {
+            "config/market_data_runtime.php": "new: artifact_hash_profile => env('MARKET_DATA_ARTIFACT_HASH_PROFILE', 'market-data-semantic-hash/v2')",
+            "bootstrap/app.php": "one line: $app->configure('market_data_runtime')",
+            "app/Infrastructure/Persistence/MarketData/EodRunRepository.php": "reads config(market_data_runtime.artifact_hash_profile); missing, blank or unknown values fail with ARTIFACT_HASH_PROFILE_UNSUPPORTED before any run row is written"
+        },
+        "behaviour_proven": [
+            "environment silent: the configuration default is market-data-semantic-hash/v2",
+            "phpunit.xml legacy opt-in reaches runtime through config",
+            "a V2 run is created when only config says V2 and the environment says V1",
+            "unknown, missing and blank values fail run creation closed with no run written"
+        ],
+        "tests": "ArtifactHashProfileConfigurationTest 6/13; ConfigIsTheOnlyEnvReaderTest 5/8",
+        "probes": [
+            "P5",
+            "P6",
+            "P7"
+        ]
+    },
+    "production_path_proof": {
+        "test": "tests/Unit/MarketData/PublicationSemanticIdentityProductionPathTest.php",
+        "engine": "SQLite mirror (UsesMarketDataSqlite) driving the production EodPublicationRepository, EodCorrectionRepository, EodRunRepository and PublicationSemanticIdentityService; the MariaDB E011 test remains service-level",
+        "result": "18 tests / 163 assertions / 0 skips",
+        "sequence": "getOrCreateCandidatePublication -> updateCandidateHashes (V2) -> bindCandidateAnalyticalProduct -> lineage binding -> prepareCandidateManifestForSeal -> sealCandidatePublication -> markSealed -> assertPublicationManifestHashValid -> markResealed -> promoteCandidateToCurrent -> markPublished (correction flow)",
+        "allocation_variation": "baseline run 25 vs 4025, candidate run 27 vs 3027 (opposite order), baseline publication 10 vs 810, correction 55 vs 9055, config snapshot 1 vs 71, factor set 1 vs 13, ticker 999999 vs 424242; history B adds five unrelated runs, publications and corrections and inserts the candidate rows first, so the auto-allocated candidate publication id also differs (every key is asserted different before identities are compared)",
+        "equality": [
+            "correction flow: identical publication manifest, correction and seal hashes",
+            "plain first publication: identical manifest and seal hashes; no correction identity"
+        ],
+        "sensitivity": "changing only the predecessor manifest changes the manifest, correction and seal hashes through the repository",
+        "tamper_refusal": {
+            "publication manifest hash": "FINALIZE_SEAL_FINGERPRINT_INVALID (correction and plain)",
+            "publication correction identity": "FINALIZE_SEAL_FINGERPRINT_INVALID (correction; also injected into a plain publication)",
+            "seal fingerprint on both sides": "FINALIZE_SEAL_FINGERPRINT_INVALID (correction and plain)",
+            "seal fingerprint on the run only": "FINALIZE_SEAL_FINGERPRINT_MISMATCH",
+            "artifact root on both sides": "CORRECTION_SEMANTIC_IDENTITY_MISMATCH for a correction (its identity binds the replacement roots and is verified first); DATASET_MANIFEST_INVALID for a plain publication",
+            "semantic predecessor re-pointed": "DATASET_MANIFEST_INVALID",
+            "correction reason": "CORRECTION_SEMANTIC_IDENTITY_MISMATCH",
+            "unknown publication profile": "PUBLICATION_SEMANTIC_PROFILE_MISMATCH",
+            "unknown artifact profile": "PUBLICATION_SEMANTIC_PROFILE_UNSUPPORTED",
+            "legacy artifact profile on the run": "FINALIZE_HASH_PROFILE_MISMATCH (no V2-to-V1 fallback)",
+            "pointer": "after every refusal the prior pointer is unchanged (correction) or absent (plain) and the candidate is not current"
+        },
+        "probes": [
+            "P1",
+            "P2",
+            "P3",
+            "P8",
+            "S1"
+        ]
+    },
+    "discriminating_probes": {
+        "P1": "predecessor-id digest in V2 lineage: allocation equality red (manifest and seal diverge); all four E011 V2 proof files stay green",
+        "P2": "baseline-id digest in V2 correction: allocation equality and predecessor sensitivity red; E011 files green",
+        "P3": "candidate publication id inside seal provenance: correction and plain allocation equality red; E011 files green",
+        "P8": "seal recomputation removed at promotion: exactly the six seal-material tamper cases red",
+        "S1": "artifact roots removed from the publication preimage: service, MariaDB and plain artifact tamper red",
+        "S2": "replacement roots removed from the correction preimage: service (assertion 1) and MariaDB red",
+        "S3": "manifest hash removed from seal material: service red at assertion 7",
+        "S4": "profile compatibility short-circuited: service red at assertion 3",
+        "P5": "env() read restored: configuration test 4 cases red and ConfigIsTheOnlyEnvReaderTest red",
+        "P6": "env-silent default set to V1: default test red",
+        "P7": "missing/blank profile falls back to V2: missing and blank cases red",
+        "restoration": "every target restored byte-identically (EodPublicationRepository b4850388..., PublicationSemanticIdentityService 4f820a22..., EodRunRepository 38704275..., config 0b64e78e...); post-probe controls green; zero residue"
+    },
+    "full_suite": {
+        "recovered": {
+            "tests": 2600,
+            "assertions": 37425,
+            "failures": 16,
+            "errors": 0,
+            "elapsed": "12:59:13.374"
+        },
+        "raw_output_retained": false,
+        "corroboration": "PHPUnit 9 records failures in .phpunit.result.cache and never clears them. The cache holds all 16 test ids with status 3 (failure): fifteen as a contiguous tail block in suite order, plus the R0025 family test, whose key already existed.",
+        "rerun": "not repeated (thirteen hours); every failing test was re-executed individually after the fix",
+        "classification_counts": {
+            "A": 2,
+            "D": 8,
+            "E": 4,
+            "F": 2
+        },
+        "classification": [
+            {
+                "test": "AliasNamingAndMeaningBoundaryTest::test_the_alias_meaning_repetition_gap_is_measured_on_the_identifier_not_the_word",
+                "assertion": "a new document may not use the alias identifier without repeating that it means data_usable",
+                "expected": "exactly the five grandfathered documents",
+                "actual": "the five plus records/evidence/E-MD-B10-A002-001_FINAL_SEMANTIC_HASH_AFFECTED_VERIFICATION_SCOPE_CORRECTION.json",
+                "classification": "E. PRE-EXISTING / UNRELATED",
+                "patch_relation": "none; E-MD-B10-A002-001 (issued 2026-09-28) was committed in 5a7670a and is byte-identical to HEAD",
+                "governance": "unrecorded until this record; now F-MD-B10-A002-002",
+                "action": "no edit of immutable E-MD-B10-A002-001; remediation under F-MD-B10-A002-002",
+                "post_fix": "FAIL 5/185 failures=1 errors=0 skipped=0"
+            },
+            {
+                "test": "B18ProductionPathReplayFixturesTest::test_the_whole_production_path_corpus_executes_and_passes_on_mariadb",
+                "assertion": "these repository migrations are not applied to the production-path database",
+                "expected": "[]",
+                "actual": "['2026_09_29_000001_create_shared_security_identity_foundation'] pending in tradeaxis_testing",
+                "classification": "F. DEVELOPMENT DATABASE MIGRATION DRIFT",
+                "patch_relation": "none; tradeaxis_testing carries this unit's 000003 and E010's 000002, and lacks only the committed foundation migration 000001 (5a7670a), which E006 deliberately kept off shared databases",
+                "governance": "MD-DEP-0021: normal databases remain undeployed; controlled deployment precedes dependency closure",
+                "action": "no ad hoc migration of the shared database",
+                "post_fix": "FAIL 1/5 failures=1 errors=0 skipped=0",
+                "e011_wording_corrected": "E011 raw package said \"normal production path\"; the test runs on tradeaxis_testing"
+            },
+            {
+                "test": "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+                "assertion": "exact-publication family s_f1_frozen_inputs_and_seal: verifier result",
+                "expected": "PASS",
+                "actual": "BLOCKED: REPLAY_FIXTURE_SELF_GENERATED (expectation derived from the run under verification)",
+                "classification": "D. EXPECTED CURRENT GOVERNANCE RED",
+                "patch_relation": "none; the test file is the inherited uncommitted R0025 work, preserved byte-identically",
+                "governance": "MD-S003-R0025 INCOMPLETE; MD-DEP-0020 and MD-DEP-0019 BLOCKING; first independent fixture under F-MD-B18-A002-017 not admitted",
+                "action": "preserve; no B18 work",
+                "post_fix": "FAIL 1/32 failures=1 errors=0 skipped=0"
+            },
+            {
+                "test": "ConfigIsTheOnlyEnvReaderTest::test_no_runtime_file_reads_the_environment_directly",
+                "assertion": "Environment variables are read in config/ and nowhere else.",
+                "expected": "[]",
+                "actual": "['app\\Infrastructure\\Persistence\\MarketData\\EodRunRepository.php calls env()']",
+                "classification": "A. PATCH REGRESSION",
+                "patch_relation": "MD-B10-A002 uncommitted remediation diff: EodRunRepository::artifactHashProfile() read env(MARKET_DATA_ARTIFACT_HASH_PROFILE); the read came in with the E010 artifact sub-unit (reconstruction reproduces E010's recorded SHA-256) and E011's publicationSemanticProfile() calls it; HEAD has no env() call in app/",
+                "governance": "E011 and its raw package classified this as E; corrected here",
+                "action": "profile moved to config/market_data_runtime.php (registered in bootstrap/app.php), outside the snapshot-hashed market_data tree; EodRunRepository reads config and fails closed on missing or unknown values",
+                "post_fix": "PASS 5/8 failures=0 errors=0 skipped=0"
+            },
+            {
+                "test": "DateDrivenCapabilityAndProviderAbstractionTest::test_the_provider_query_shape_lives_in_the_source_adapter",
+                "assertion": "exactly one adapter may carry provider transport shape",
+                "expected": "['app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php']",
+                "actual": "the adapter plus app/Infrastructure/Persistence/SecurityIdentity/FrozenSourcePackageReader.php",
+                "classification": "E. PRE-EXISTING / UNRELATED",
+                "patch_relation": "none; introduced by 5a7670a (shared foundation core), byte-identical to HEAD",
+                "governance": "unrecorded until this record; now F-MD-B10-A002-002",
+                "action": "no foundation change in this unit",
+                "post_fix": "FAIL 18/65 failures=1 errors=0 skipped=0"
+            },
+            {
+                "test": "DomainOwnershipSurfaceTest::test_no_surface_outside_the_market_data_tree_touches_a_market_data_table",
+                "assertion": "only the pinned legacy market-data models may reference a market-data table from outside the domain tree",
+                "expected": "the three pinned models",
+                "actual": "the three pinned models plus app/Infrastructure/Persistence/SecurityIdentity/FoundationRepository.php",
+                "classification": "E. PRE-EXISTING / UNRELATED",
+                "patch_relation": "none; introduced by 5a7670a (shared foundation core), byte-identical to HEAD",
+                "governance": "unrecorded until this record; now F-MD-B10-A002-002",
+                "action": "no foundation change in this unit",
+                "post_fix": "FAIL 27/238 failures=1 errors=0 skipped=0"
+            },
+            {
+                "test": "EmittedReasonCodeRegistrationTest::test_every_reason_code_emitted_by_the_runtime_is_registered",
+                "assertion": "every emitted reason code is registered",
+                "expected": "no unregistered code",
+                "actual": "CORRECTION_ARTIFACT_PROFILE_MISMATCH emitted but not registered (at recovery time)",
+                "classification": "A. PATCH REGRESSION",
+                "patch_relation": "this unit (PublicationDiffService mixed-profile branch)",
+                "governance": "fixed before E011 issue",
+                "action": "mixed profiles return INVALID with the already governed CORRECTION_ARTIFACT_HASH_INCOMPLETE (Reason_Codes_Seed.sql; active in tradeaxis and tradeaxis_testing; already emitted at HEAD); the unregistered code no longer appears anywhere",
+                "post_fix": "PASS 3/10 failures=0 errors=0 skipped=0"
+            },
+            {
+                "test": "LifecycleProofIsNotMockedTest::test_db_backed_tests_only_mock_the_external_source_boundary",
+                "assertion": "A DB-backed test may only stand in for the outside world.",
+                "expected": "[]",
+                "actual": "tests/Unit/MarketData/B18ReplayPersistedEvidenceBindingTest.php mocks EodPublicationRepository",
+                "classification": "E. PRE-EXISTING / UNRELATED",
+                "patch_relation": "none; introduced by b9e5091 (MD-B18-A002 F-017, 2026-09-25 08:50), byte-identical to HEAD",
+                "governance": "unrecorded until this record; now F-MD-B10-A002-002",
+                "action": "no B18 test change in this unit",
+                "post_fix": "FAIL 5/8 failures=1 errors=0 skipped=0"
+            },
+            {
+                "test": "MigrationIntegrityAndDriftTest::test_no_migration_file_remains_unapplied_where_a_database_is_reachable",
+                "assertion": "schema drift: migration files present but not applied",
+                "expected": "[]",
+                "actual": "000001 (committed foundation), 000002 (E010) and 000003 (this unit) unapplied in the normal tradeaxis database (the test reads .env)",
+                "classification": "F. DEVELOPMENT DATABASE MIGRATION DRIFT",
+                "patch_relation": "partial; the test already fails at HEAD on 000001, and the uncommitted 000002/000003 add to the pending list",
+                "governance": "MD-DEP-0021 controlled normal-database deployment; E011 raw package labelled it E",
+                "action": "no normal-database write",
+                "post_fix": "FAIL 10/25 failures=1 errors=0 skipped=0"
+            },
+            {
+                "test": "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_carries_a_non_positive_price",
+                "assertion": "population control: the detector must read a real deployed corpus",
+                "expected": "a populated deployed corpus in tradeaxis",
+                "actual": "tradeaxis holds 0 eod_bars, 0 eod_publications and 0 eod_runs",
+                "classification": "D. EXPECTED CURRENT GOVERNANCE RED",
+                "patch_relation": "none",
+                "governance": "D-MD-B18-A002-004 names these seven as the only expected failures on a clean instance; F-MD-B18-A002-011, MD-DEP-0015 BLOCKING, MD-DEP-0016; exactly the E-MD-B18-A002-074 baseline",
+                "action": "none; old-data recovery is not authorized",
+                "post_fix": "FAIL (file 10/18 failures=7 errors=0 skipped=0)"
+            },
+            {
+                "test": "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_violates_ohlc_ordering",
+                "assertion": "population control: the detector must read a real deployed corpus",
+                "expected": "a populated deployed corpus in tradeaxis",
+                "actual": "tradeaxis holds 0 eod_bars, 0 eod_publications and 0 eod_runs",
+                "classification": "D. EXPECTED CURRENT GOVERNANCE RED",
+                "patch_relation": "none",
+                "governance": "D-MD-B18-A002-004 names these seven as the only expected failures on a clean instance; F-MD-B18-A002-011, MD-DEP-0015 BLOCKING, MD-DEP-0016; exactly the E-MD-B18-A002-074 baseline",
+                "action": "none; old-data recovery is not authorized",
+                "post_fix": "FAIL (file 10/18 failures=7 errors=0 skipped=0)"
+            },
+            {
+                "test": "ProductionCorpusInvariantOracleTest::test_exactly_one_publication_is_current_per_trade_date",
+                "assertion": "population control: the detector must read a real deployed corpus",
+                "expected": "a populated deployed corpus in tradeaxis",
+                "actual": "tradeaxis holds 0 eod_bars, 0 eod_publications and 0 eod_runs",
+                "classification": "D. EXPECTED CURRENT GOVERNANCE RED",
+                "patch_relation": "none",
+                "governance": "D-MD-B18-A002-004 names these seven as the only expected failures on a clean instance; F-MD-B18-A002-011, MD-DEP-0015 BLOCKING, MD-DEP-0016; exactly the E-MD-B18-A002-074 baseline",
+                "action": "none; old-data recovery is not authorized",
+                "post_fix": "FAIL (file 10/18 failures=7 errors=0 skipped=0)"
+            },
+            {
+                "test": "ProductionCorpusInvariantOracleTest::test_no_readable_publication_rests_on_a_failed_run",
+                "assertion": "population control: the detector must read a real deployed corpus",
+                "expected": "a populated deployed corpus in tradeaxis",
+                "actual": "tradeaxis holds 0 eod_bars, 0 eod_publications and 0 eod_runs",
+                "classification": "D. EXPECTED CURRENT GOVERNANCE RED",
+                "patch_relation": "none",
+                "governance": "D-MD-B18-A002-004 names these seven as the only expected failures on a clean instance; F-MD-B18-A002-011, MD-DEP-0015 BLOCKING, MD-DEP-0016; exactly the E-MD-B18-A002-074 baseline",
+                "action": "none; old-data recovery is not authorized",
+                "post_fix": "FAIL (file 10/18 failures=7 errors=0 skipped=0)"
+            },
+            {
+                "test": "ProductionCorpusInvariantOracleTest::test_authoritative_factor_candidates_reach_an_explicit_applied_or_held_decision",
+                "assertion": "population control: the detector must read a real deployed corpus",
+                "expected": "a populated deployed corpus in tradeaxis",
+                "actual": "tradeaxis holds 0 eod_bars, 0 eod_publications and 0 eod_runs",
+                "classification": "D. EXPECTED CURRENT GOVERNANCE RED",
+                "patch_relation": "none",
+                "governance": "D-MD-B18-A002-004 names these seven as the only expected failures on a clean instance; F-MD-B18-A002-011, MD-DEP-0015 BLOCKING, MD-DEP-0016; exactly the E-MD-B18-A002-074 baseline",
+                "action": "none; old-data recovery is not authorized",
+                "post_fix": "FAIL (file 10/18 failures=7 errors=0 skipped=0)"
+            },
+            {
+                "test": "ProductionCorpusInvariantOracleTest::test_no_price_derived_factor_is_usable_as_an_adjustment",
+                "assertion": "population control: the detector must read a real deployed corpus",
+                "expected": "a populated deployed corpus in tradeaxis",
+                "actual": "tradeaxis holds 0 eod_bars, 0 eod_publications and 0 eod_runs",
+                "classification": "D. EXPECTED CURRENT GOVERNANCE RED",
+                "patch_relation": "none",
+                "governance": "D-MD-B18-A002-004 names these seven as the only expected failures on a clean instance; F-MD-B18-A002-011, MD-DEP-0015 BLOCKING, MD-DEP-0016; exactly the E-MD-B18-A002-074 baseline",
+                "action": "none; old-data recovery is not authorized",
+                "post_fix": "FAIL (file 10/18 failures=7 errors=0 skipped=0)"
+            },
+            {
+                "test": "ProductionCorpusInvariantOracleTest::test_every_history_row_binds_to_a_publication",
+                "assertion": "population control: the detector must read a real deployed corpus",
+                "expected": "a populated deployed corpus in tradeaxis",
+                "actual": "tradeaxis holds 0 eod_bars, 0 eod_publications and 0 eod_runs",
+                "classification": "D. EXPECTED CURRENT GOVERNANCE RED",
+                "patch_relation": "none",
+                "governance": "D-MD-B18-A002-004 names these seven as the only expected failures on a clean instance; F-MD-B18-A002-011, MD-DEP-0015 BLOCKING, MD-DEP-0016; exactly the E-MD-B18-A002-074 baseline",
+                "action": "none; old-data recovery is not authorized",
+                "post_fix": "FAIL (file 10/18 failures=7 errors=0 skipped=0)"
+            }
+        ],
+        "post_fix": "2 pass (the two A rows); 14 fail, every one governed (MD-DEP-0021, D-MD-B18-A002-004/MD-DEP-0015, MD-DEP-0020) or recorded (F-MD-B10-A002-002)",
+        "result_statement": "Not a full-suite pass. Both patch regressions are fixed. Every remaining failure is outside this patch and is governed or recorded."
+    },
+    "controls": {
+        "e011_publication_focused_set": "90 tests / 1263 assertions / 13 files / 0 failures / 0 errors / 0 skips",
+        "e011_regression_set": "57 tests / 631 assertions / 7 files / 0 failures / 0 errors / 0 skips",
+        "config_move_and_e010_artifact_surfaces": "85 tests / 235 assertions / 9 files / 0 failures / 0 errors / 0 skips",
+        "post_probe_final_controls": "68 tests / 372 assertions / 7 files / 0 failures / 0 errors / 0 skips"
+    },
+    "v1_compatibility": {
+        "payload": "publicationManifestSemanticPayloadV1 body is byte-identical to HEAD publicationManifestSemanticPayload (only the name changed)",
+        "legacy_hashing": "hashRows, serializeRows and hashCanonicalDocument bodies are identical to HEAD",
+        "dispatch": "NULL or market-data-row-hash/v1 selects market-data-publication-semantic/v1; unknown fails closed; a mixed run/publication profile fails closed",
+        "historical_rehash": false
+    },
+    "migration": {
+        "2026_09_29_000003": "additive only: seven nullable columns behind hasColumn guards, no data writes, down() drops only its own columns",
+        "isolated_mariadb": "PublicationSemanticIdentityMigrationOnMariaDbTest 1/14: legacy rows retained with NULL successor fields; rollback removes only new columns",
+        "tradeaxis_testing": "000002 batch 5 and 000003 batch 6 applied; all nine V2 columns present and nullable; zero persisted eod rows, so V1 row preservation there is vacuous and rests on the isolated test",
+        "tradeaxis": "not migrated: 000001-000003 unapplied and no V2 column present; controlled deployment remains under MD-DEP-0021"
+    },
+    "raw_proof": {
+        "directory": "storage/app/market_data/evidence/MD-B10-A002/publication-identity-production-path-and-regression-20260930-v1",
+        "manifest_sha256": "dad949b67b6769db392f70ec60e0f8cd247512d8475212ab6ebdd096cc6ba9cd",
+        "members": 221
+    },
+    "preservation": {
+        "tests/Unit/MarketData/B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+        "docs/market_data/development/implementation/tests/MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4",
+        "matches_E001_E010_E011": true,
+        "e011_unchanged_sha256": "f01ff75d9bd7c67c21e5214e08178d3633a4e84f29c5b523ee7300700f7f6dc2"
+    },
+    "observations_not_acted_on": [
+        "app/Application/MarketData/Services/MarketDataPipelineService.php is CRLF at HEAD (4238 lines); E010 added 80 LF-only lines, so the file is mixed. Behaviour is unaffected. It was not normalized, per the instruction not to normalize existing working-tree changes.",
+        "WORK_RECORD_REGISTRY rows for F-MD-B18-A002-023 and CI-MD-B10-A002-001 still described E010 after E011 issued; they are synchronized with this record."
+    ],
+    "governance_state": {
+        "b05": "PASS 117/117",
+        "b10": "1016 SATISFIED / 56 NOT_ASSESSED / 1072 mandatory",
+        "b18": "100 PROVEN / 13 INCOMPLETE / 113; formal SATISFIED 0/113",
+        "md_dep_0021": "BLOCKING",
+        "md_dep_0020": "BLOCKING",
+        "md_dep_0019": "BLOCKING",
+        "r0025": "INCOMPLETE",
+        "f018_started": false,
+        "promoted_rules": []
+    },
+    "governance_boundary": "This immutable record claims the executed results above. Registry, integrity and current-state gates run after registration and are reported in CI-MD-B10-A002-001.",
+    "dependency_result": "Successor publication, correction and seal identity is implemented and proven on the production repository path, and the one open remediation regression is fixed. MD-DEP-0021 remains BLOCKING on nested observation/factor/revision content identity, controlled deployment and complete 56-rule governed reproof. MD-DEP-0020 remains BLOCKING until successor B10 closure.",
+    "next_resume_point": "MD-B10-A002: remediate the remaining nested observation-manifest, factor-set and temporal revision-set semantic hash producers plus complete sorted semantic manifest reasons; preserve V1/V2 interpretation and keep all 56 predicates NOT_ASSESSED until a complete governed reproof. F-MD-B10-A002-002 must be resolved before the full-suite control of successor closure. Same A002/BL001/CI; MD-DEP-0021/0020/0019 remain BLOCKING; R0025 and F-018 stay paused."
+}

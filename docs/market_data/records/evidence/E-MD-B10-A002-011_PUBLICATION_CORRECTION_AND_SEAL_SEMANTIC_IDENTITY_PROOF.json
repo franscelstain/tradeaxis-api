@@ -1,0 +1,210 @@
+{
+  "evidence_id": "E-MD-B10-A002-011",
+  "record_type": "EVIDENCE",
+  "role_scope": "CURRENT_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B10",
+  "attempt_id": "MD-B10-A002",
+  "work_id": "MD-B10-A002",
+  "baseline_id": "MD-B10-A002-BL001",
+  "verification_epoch": "MD-B10-A002",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+  "change_impact_declaration": "CI-MD-B10-A002-001",
+  "issued_at": "2026-09-30T16:11:48+07:00",
+  "verdict": "PUBLICATION_CORRECTION_SEAL_V2_REMEDIATION_IMPLEMENTED_AND_PROVEN",
+  "checkpoint_verdict": "A. PUBLICATION / CORRECTION / SEAL V2 REMEDIATION IMPLEMENTED AND PROVEN",
+  "related_findings": [
+    "F-MD-B18-A002-023",
+    "F-MD-B10-A002-001"
+  ],
+  "related_evidence": [
+    "E-MD-B10-A002-010",
+    "E-MD-B10-A002-001",
+    "E-MD-B10-A002-009",
+    "E-MD-B05-A001-001"
+  ],
+  "related_decisions": [
+    "D-MD-B10-A002-001",
+    "D-MD-B10-A002-002"
+  ],
+  "related_dependencies": [
+    "MD-DEP-0021",
+    "MD-DEP-0020",
+    "MD-DEP-0019"
+  ],
+  "supersedes": null,
+  "scope": {
+    "included": [
+      "publication manifest V2 semantic identity",
+      "correction and republication V2 semantic identity",
+      "dataset seal V2 semantic fingerprint",
+      "explicit V1/V2 compatibility dispatch",
+      "additive publication/correction/seal profile persistence"
+    ],
+    "excluded": [
+      "already-proven V2 bars, indicators and eligibility contract changes",
+      "nested observation, factor and temporal revision-set producer remediation",
+      "sorted semantic manifest-reason production",
+      "controlled normal-database deployment",
+      "B10 predicate promotion or successor closure",
+      "B18 or R0025 work"
+    ]
+  },
+  "bounded_predicate_scope": {
+    "direct_clauses": [
+      "MD-S005-R0028",
+      "MD-S005-R0073",
+      "MD-S013-R0003",
+      "MD-S013-R0009",
+      "MD-S018-R0009",
+      "MD-S035-R0032",
+      "MD-S035-R0062",
+      "MD-S035-R0069",
+      "MD-S035-R0127",
+      "MD-S045-R0001",
+      "MD-S045-R0054",
+      "MD-S045-R0056",
+      "MD-S045-R0059"
+    ],
+    "interpretation": "The publication/correction/seal clauses are implemented and locally proven. Cross-cutting predicates still depend on corrected nested observation/factor/revision hashes, complete reason coverage, controlled deployment and governed complete-denominator reproof.",
+    "status_change": "NONE",
+    "current_verification": {
+      "mandatory": 1072,
+      "satisfied": 1016,
+      "not_assessed": 56
+    }
+  },
+  "contracts": {
+    "publication_v2": {
+      "profile": "market-data-publication-semantic/v2",
+      "algorithm": "SHA-256",
+      "artifact_roots": [
+        "market-data-semantic-hash/v2 bars",
+        "market-data-semantic-hash/v2 indicators",
+        "market-data-semantic-hash/v2 eligibility"
+      ],
+      "semantic_members": [
+        "market scope, requested/effective trade date and publication version",
+        "predecessor/supersedes/replaced manifest content hashes",
+        "observation manifest and configuration content hashes",
+        "identity/calendar/status/event/source-scale/market-structure/factor-decision/factor-set hashes",
+        "product, canonicalization, formula and read-model versions",
+        "artifact roots and row counts",
+        "quality, coverage, readiness and freshness state",
+        "correction semantic hash, promotion mode and publication target",
+        "dataset_seal_v2 and SHA-256 domain declaration"
+      ],
+      "excluded_volatile_identity": [
+        "publication_id",
+        "supersedes/previous/replaced numeric publication ids",
+        "correction_id",
+        "run_id",
+        "config_snapshot_id",
+        "all local allocation ids"
+      ]
+    },
+    "correction_v2": {
+      "semantic_members": [
+        "trade date and governed correction reason",
+        "baseline publication manifest hash",
+        "replacement bars/indicators/eligibility V2 roots",
+        "configuration content and observation manifest hashes",
+        "promotion mode and target"
+      ],
+      "immutability": "The frozen correction identity is persisted on correction and publication. Verification recomputes it and rejects reason, baseline, artifact, config, observation or mode drift.",
+      "excluded_volatile_identity": [
+        "correction_id",
+        "publication_id",
+        "run_id",
+        "config_snapshot_id"
+      ]
+    },
+    "seal_v2": {
+      "contract": "dataset_seal_v2",
+      "semantic_members": [
+        "publication manifest semantic hash",
+        "correction semantic hash",
+        "artifact and publication semantic profiles",
+        "seal contract and SHA-256 algorithm",
+        "provenance scope"
+      ],
+      "verification": "Run and publication fingerprints must both exist, match, and equal recomputed semantic material before current promotion."
+    }
+  },
+  "historical_compatibility": {
+    "legacy_dispatch": "NULL or market-data-row-hash/v1 artifact profile deliberately selects market-data-publication-semantic/v1.",
+    "v1_payload": "The legacy payload body remains unchanged; only its private method name changed to make dispatch explicit.",
+    "v2_dispatch": "A V2 artifact requires matching V2 run and publication profiles and V2 seal fingerprint.",
+    "fallback": "Unknown, mixed, missing or malformed V2 profile material fails closed; no V2-to-V1 retry occurs.",
+    "historical_rehash": false,
+    "historical_reseal": false
+  },
+  "proof": {
+    "focused_publication_controls": "90 tests / 1263 assertions / 0 skips / 0 failures / 0 errors",
+    "regression_controls": "57 tests / 631 assertions / 0 skips / 0 failures / 0 errors",
+    "allocation_independence": "Two isolated MariaDB databases with different row, publication, run and correction allocations produced identical publication, correction and seal identities.",
+    "ordering_and_determinism": "Canonical documents remain equal after associative member reordering and repeated computation.",
+    "sensitivity": [
+      "each bars, indicators and eligibility V2 root changes publication and correction identity",
+      "configuration content changes publication and correction identity",
+      "predecessor manifest changes publication and correction identity",
+      "correction reason changes correction identity",
+      "publication manifest changes seal fingerprint"
+    ],
+    "migration": "Additive isolated MariaDB fresh/upgrade/rollback proof passed 1 test / 14 assertions; legacy rows retain NULL successor fields; no normal database write.",
+    "full_suite": {
+      "recovered": true,
+      "tests": 2600,
+      "assertions": 37425,
+      "failures": 16,
+      "errors": 0,
+      "elapsed": "12:59:13.374",
+      "classification": "One patch regression was repaired and rerun green. Fifteen failures are pre-existing, environment/deployment or inherited incomplete R0025 conditions; none is an unresolved publication/correction/seal regression."
+    }
+  },
+  "discriminating_probes": [
+    {
+      "mutation": "remove V2 artifact roots from publication identity",
+      "red": "changed artifact root no longer changed manifest; 1 test / 1 assertion / 1 failure"
+    },
+    {
+      "mutation": "remove replacement artifact roots from correction identity",
+      "red": "changed replacement root no longer changed correction; 1 test / 1 assertion / 1 failure"
+    },
+    {
+      "mutation": "remove publication manifest hash from seal material",
+      "red": "changed manifest no longer changed seal; 1 test / 2 assertions / 1 failure"
+    },
+    {
+      "mutation": "bypass run/publication V2 profile compatibility",
+      "red": "mixed-profile guard did not throw; 1 test / 3 assertions / 1 failure"
+    }
+  ],
+  "restoration": {
+    "app/Application/MarketData/Services/PublicationSemanticIdentityService.php": "4f820a22c45eaa77c3db893b767a96437e342cca49be5e7ce1e2f400921e1d70",
+    "mutation_residue": false,
+    "post_restore_control": "PASS 6 tests / 22 assertions"
+  },
+  "raw_proof": {
+    "directory": "storage/app/market_data/evidence/MD-B10-A002/publication-correction-seal-semantic-identity-20260930-v1",
+    "manifest_sha256": "0fb10dd1e332e21bbe9fe18f464f86f8c1d8d692219442b21f644144d9e0aa34"
+  },
+  "preservation": {
+    "tests/Unit/MarketData/B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+    "docs/market_data/development/implementation/tests/MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4",
+    "matches_E001": true
+  },
+  "governance_state": {
+    "b05": "PASS 117/117",
+    "b10": "1016 SATISFIED / 56 NOT_ASSESSED / 1072 mandatory",
+    "b18": "100 PROVEN / 13 INCOMPLETE / 113; formal SATISFIED 0/113",
+    "md_dep_0021": "BLOCKING",
+    "md_dep_0020": "BLOCKING",
+    "md_dep_0019": "BLOCKING",
+    "r0025": "INCOMPLETE",
+    "f018_started": false,
+    "promoted_rules": []
+  },
+  "dependency_result": "End-to-end successor publication/correction/seal profile acceptance is implemented and locally proven. MD-DEP-0021 remains BLOCKING on nested observation/factor/revision content identity, controlled normal-database deployment and complete 56-rule governed reproof. MD-DEP-0020 remains BLOCKING until successor B10 closure.",
+  "next_resume_point": "MD-B10-A002: remediate the remaining nested observation-manifest, factor-set and temporal revision-set semantic hash producers plus complete sorted semantic manifest reasons; preserve V1/V2 interpretation and keep all 56 predicates NOT_ASSESSED until a complete governed reproof. Same A002/BL001/CI; MD-DEP-0021/0020/0019 remain BLOCKING; R0025 and F-018 stay paused."
+}

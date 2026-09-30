@@ -2,6 +2,7 @@
 
 namespace App\Infrastructure\Persistence\MarketData;
 
+use App\Application\MarketData\Services\PublicationSemanticIdentityService;
 use App\Models\EodDatasetCorrection;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -122,6 +123,7 @@ class EodCorrectionRepository
 
     public function markResealed($correctionId, $newRunId, $replacementPublicationId = null)
     {
+        $this->assertSemanticIdentityReady($correctionId, $replacementPublicationId);
         $now = Carbon::now(config('market_data.platform.timezone'));
 
         EodDatasetCorrection::query()
@@ -138,6 +140,7 @@ class EodCorrectionRepository
 
     public function markPublished($correctionId, $newRunId, $priorRunId = null, $finalOutcomeNote = null, $baselinePublicationId = null, $replacementPublicationId = null)
     {
+        $this->assertSemanticIdentityReady($correctionId, $replacementPublicationId);
         $now = Carbon::now(config('market_data.platform.timezone'));
 
         $payload = [
@@ -283,5 +286,23 @@ class EodCorrectionRepository
             ->update($payload);
 
         return $this->findById($correctionId);
+    }
+
+    private function assertSemanticIdentityReady($correctionId, $replacementPublicationId): void
+    {
+        $correction = DB::table('eod_dataset_corrections')->where('correction_id', $correctionId)->first();
+        $publication = $replacementPublicationId
+            ? DB::table('eod_publications')->where('publication_id', $replacementPublicationId)->first()
+            : null;
+        $publicationProfile = trim((string) ($publication->publication_semantic_profile ?? ''));
+        $correctionProfile = trim((string) ($correction->semantic_identity_profile ?? ''));
+        if ($publicationProfile === PublicationSemanticIdentityService::PROFILE_V2) {
+            if ($correctionProfile !== PublicationSemanticIdentityService::PROFILE_V2
+                || !preg_match('/^[a-f0-9]{64}$/', strtolower((string) ($correction->semantic_identity_hash ?? '')))) {
+                throw new \RuntimeException('CORRECTION_SEMANTIC_IDENTITY_MISSING: V2 replacement requires a bound correction identity.');
+            }
+        } elseif ($correctionProfile !== '' && $correctionProfile !== PublicationSemanticIdentityService::LEGACY_PROFILE_V1) {
+            throw new \RuntimeException('CORRECTION_SEMANTIC_PROFILE_MISMATCH: correction/publication profiles differ.');
+        }
     }
 }

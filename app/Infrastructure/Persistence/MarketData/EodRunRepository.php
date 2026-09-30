@@ -2,7 +2,9 @@
 
 namespace App\Infrastructure\Persistence\MarketData;
 
+use App\Application\MarketData\Services\ArtifactSemanticHashService;
 use App\Application\MarketData\Services\CoverageGateStateNormalizer;
+use App\Application\MarketData\Services\PublicationSemanticIdentityService;
 use App\Domain\MarketData\MarketDataScope;
 use App\Models\EodRun;
 use App\Models\EodRunEvent;
@@ -111,6 +113,8 @@ class EodRunRepository
                 'bars_batch_hash' => null,
                 'indicators_batch_hash' => null,
                 'eligibility_batch_hash' => null,
+                'artifact_hash_profile' => $this->artifactHashProfile(),
+                'publication_semantic_profile' => $this->publicationSemanticProfile(),
                 'config_version' => config('market_data.indicators.set_version'),
                 'config_hash' => $snapshot['config_hash'],
                 'config_snapshot_ref' => $snapshot['snapshot_uid'],
@@ -197,6 +201,8 @@ class EodRunRepository
             'stage' => 'INGEST_BARS',
             'source' => (string) $sourceMode,
             'request_mode' => 'replay_verify',
+            'artifact_hash_profile' => $this->artifactHashProfile(),
+            'publication_semantic_profile' => $this->publicationSemanticProfile(),
             'knowledge_cutoff_at' => $knowledgeCutoff,
             'config_version' => config('market_data.indicators.set_version'),
             'config_hash' => $snapshot['config_hash'],
@@ -298,6 +304,8 @@ class EodRunRepository
             'bars_batch_hash' => null,
             'indicators_batch_hash' => null,
             'eligibility_batch_hash' => null,
+            'artifact_hash_profile' => $this->artifactHashProfile(),
+            'publication_semantic_profile' => $this->publicationSemanticProfile(),
             'config_version' => $seedRun->config_version ?: config('market_data.indicators.set_version'),
             'config_hash' => $seedRun->config_hash,
             'config_snapshot_ref' => $seedRun->config_snapshot_ref,
@@ -594,10 +602,38 @@ class EodRunRepository
         $run->bars_batch_hash = $hashes['bars_batch_hash'];
         $run->indicators_batch_hash = $hashes['indicators_batch_hash'];
         $run->eligibility_batch_hash = $hashes['eligibility_batch_hash'];
+        if (isset($hashes['artifact_hash_profile'])) {
+            $run->artifact_hash_profile = $hashes['artifact_hash_profile'];
+            $run->publication_semantic_profile = (new PublicationSemanticIdentityService())
+                ->profileForArtifactProfile($hashes['artifact_hash_profile']);
+        }
         $run->updated_at = Carbon::now(config('market_data.platform.timezone'));
         $run->save();
 
         return $run->fresh();
+    }
+
+    private function artifactHashProfile(): string
+    {
+        // This selects the persisted serializer profile; it is not artifact content and therefore
+        // does not belong to the strategy-owned resolved configuration snapshot, so it is read
+        // from config/market_data_runtime.php. Production defaults to V2. Legacy
+        // verification/test harnesses opt into V1 explicitly. A missing value fails closed.
+        $profile = trim((string) config('market_data_runtime.artifact_hash_profile'));
+        if (!in_array($profile, [
+            ArtifactSemanticHashService::PROFILE_V2,
+            ArtifactSemanticHashService::LEGACY_PROFILE_V1,
+        ], true)) {
+            throw new \RuntimeException('ARTIFACT_HASH_PROFILE_UNSUPPORTED: '.($profile === '' ? 'NULL' : $profile));
+        }
+
+        return $profile;
+    }
+
+    private function publicationSemanticProfile(): string
+    {
+        return (new PublicationSemanticIdentityService())
+            ->profileForArtifactProfile($this->artifactHashProfile());
     }
 
     public function markSealed(EodRun $run, $sealedBy, $sealNote)

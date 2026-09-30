@@ -1,6 +1,7 @@
 <?php
 
 use App\Application\MarketData\Services\MarketDataPipelineService;
+use App\Application\MarketData\Services\ArtifactSemanticHashService;
 use Illuminate\Support\Facades\Schema;
 use Tests\Support\UsesMarketDataSqlite;
 
@@ -66,6 +67,24 @@ class PublishedColumnHashCoverageTest extends TestCase
             'bars' => ['eod_bars', 'eod_bars_history', MarketDataPipelineService::BARS_HASH_COLUMNS],
             'indicators' => ['eod_indicators', 'eod_indicators_history', MarketDataPipelineService::INDICATORS_HASH_COLUMNS],
             'eligibility' => ['eod_eligibility', 'eod_eligibility_history', MarketDataPipelineService::ELIGIBILITY_HASH_COLUMNS],
+        ];
+    }
+
+    public function semanticArtifactsV2(): array
+    {
+        return [
+            'bars' => ['eod_bars', ArtifactSemanticHashService::BARS_COLUMNS_V2, [
+                'ticker_id', 'listing_id', 'adj_close', 'source', 'config_snapshot_id',
+                'source_scale_assessment_id', 'trade_count_actual',
+            ]],
+            'indicators' => ['eod_indicators', ArtifactSemanticHashService::INDICATORS_COLUMNS_V2, [
+                'ticker_id', 'listing_id', 'sector_membership_id', 'config_snapshot_id', 'factor_set_id',
+            ]],
+            'eligibility' => ['eod_eligibility', ArtifactSemanticHashService::ELIGIBILITY_COLUMNS_V2, [
+                'ticker_id', 'listing_id', 'trading_status_revision_id',
+                'trading_status_source_observation_id', 'config_snapshot_id',
+                'price_band_revision_id', 'minimum_price_revision_id', 'tick_size_revision_id',
+            ]],
         ];
     }
 
@@ -185,5 +204,46 @@ class PublishedColumnHashCoverageTest extends TestCase
             [],
             array_values(array_intersect($hashColumns, MarketDataPipelineService::HASH_EXCLUDED_BOOKKEEPING_COLUMNS))
         );
+    }
+
+    /**
+     * V2 replaces allocation-bearing published columns with retained roots/content digests.  The
+     * explicit replacement list keeps the original "new columns cannot disappear" guard useful
+     * without pretending that database ids themselves are semantic content.
+     *
+     * @dataProvider semanticArtifactsV2
+     */
+    public function test_v2_classifies_every_published_column_as_direct_semantics_or_explicit_replacement(
+        string $table,
+        array $semanticColumns,
+        array $replacedColumns
+    ): void {
+        $direct = array_values(array_intersect($this->contentColumns($table), $semanticColumns));
+        $classified = array_values(array_unique(array_merge($direct, $replacedColumns)));
+        sort($classified);
+        $this->assertSame($this->contentColumns($table), $classified);
+    }
+
+    /** @dataProvider semanticArtifactsV2 */
+    public function test_v2_uses_retained_roots_and_content_hash_not_local_identity_or_config_ids(
+        string $table,
+        array $semanticColumns,
+        array $replacedColumns
+    ): void {
+        foreach (['issuer_root', 'instrument_root', 'listing_root', 'config_content_hash'] as $field) {
+            $this->assertContains($field, $semanticColumns);
+        }
+        foreach (['ticker_id', 'listing_id', 'config_snapshot_id'] as $field) {
+            $this->assertNotContains($field, $semanticColumns);
+        }
+    }
+
+    public function test_v2_bars_exclude_provider_adj_close_but_keep_raw_ohlcv(): void
+    {
+        $columns = ArtifactSemanticHashService::BARS_COLUMNS_V2;
+        $this->assertNotContains('adj_close', $columns);
+        foreach (['open', 'high', 'low', 'close', 'volume'] as $field) {
+            $this->assertContains($field, $columns);
+        }
     }
 }

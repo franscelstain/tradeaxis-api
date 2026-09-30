@@ -29,6 +29,20 @@ class PublicationDiffService
             ];
         }
 
+        $priorProfile = $this->artifactProfile($priorCurrent);
+        $candidateProfile = $this->artifactProfile($candidatePublication);
+        if ($priorProfile !== $candidateProfile) {
+            return [
+                'decision' => 'INVALID',
+                'changed_scope' => [],
+                'changed_fields' => [],
+                // The governed HASH_INCOMPLETE code already means deterministic comparison cannot
+                // be established. Mixed serializer profiles are exactly that condition.
+                'reason_code' => 'CORRECTION_ARTIFACT_HASH_INCOMPLETE',
+                'hash_context' => $this->hashContext($priorCurrent, $candidatePublication),
+            ];
+        }
+
         $missing = $this->missingMandatoryHashes($priorCurrent, $candidatePublication);
         if (! empty($missing)) {
             return [
@@ -103,6 +117,10 @@ class PublicationDiffService
             'candidate_publication_version' => $this->optionalInt($candidatePublication, 'publication_version'),
             'candidate_run_id' => $this->optionalInt($candidatePublication, 'run_id'),
             'hashes' => [],
+            'artifact_hash_profile' => [
+                'prior' => $this->artifactProfile($priorCurrent),
+                'candidate' => $this->artifactProfile($candidatePublication),
+            ],
         ];
 
         foreach (array_keys($this->hashFields) as $field) {
@@ -113,6 +131,18 @@ class PublicationDiffService
         }
 
         return $context;
+    }
+
+    private function artifactProfile($record): string
+    {
+        $profile = is_object($record) && property_exists($record, 'artifact_hash_profile')
+            ? trim((string) $record->artifact_hash_profile)
+            : '';
+        if ($profile === '') return ArtifactSemanticHashService::LEGACY_PROFILE_V1;
+        if (!in_array($profile, [ArtifactSemanticHashService::LEGACY_PROFILE_V1, ArtifactSemanticHashService::PROFILE_V2], true)) {
+            return 'UNSUPPORTED:'.$profile;
+        }
+        return $profile;
     }
 
     private function optionalInt($record, $field)

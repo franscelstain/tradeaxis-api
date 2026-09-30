@@ -13,6 +13,29 @@ class DeterministicHashService
     }
 
     /**
+     * Hash a versioned artifact domain without changing the byte meaning of legacy row hashes.
+     *
+     * The first line is the profile/domain discriminator.  A non-empty row set starts on the
+     * following line; neither form has a trailing newline.  Keeping this as a separate entry point
+     * is what lets historical hashes continue to use hashRows() byte-for-byte.
+     */
+    public function hashDomainRows(string $profile, string $domain, iterable $rows, array $columns)
+    {
+        foreach (['profile' => $profile, 'domain' => $domain] as $field => $token) {
+            $token = trim($token);
+            if ($token === '' || strpos($token, $this->delimiter()) !== false || preg_match('/[\r\n]/', $token)) {
+                throw new \RuntimeException('HASH_DOMAIN_TOKEN_INVALID: '.$field);
+            }
+        }
+
+        $header = trim($profile).$this->delimiter().trim($domain);
+        $body = $this->serializeRows($rows, $columns);
+        $preimage = $body === '' ? $header : $header.$this->lineSeparator().$body;
+
+        return hash($this->hashAlgorithm(), $preimage);
+    }
+
+    /**
      * Hash a semantic document whose identity is not a row collection. Keys are sorted
      * recursively, list members are canonicalized deterministically, and owned scalar field
      * formats reuse the same normalization rules as artifact hashing.
@@ -197,7 +220,7 @@ class DeterministicHashService
     private function stableRowKey(array $values, array $columns): string
     {
         $keyFields = [];
-        foreach (['trade_date', 'listing_id', 'ticker_id'] as $field) {
+        foreach (['trade_date', 'listing_root', 'instrument_root', 'listing_id', 'ticker_id'] as $field) {
             if (in_array($field, $columns, true)) {
                 $keyFields[] = $values[$field];
             }

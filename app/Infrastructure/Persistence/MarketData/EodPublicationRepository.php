@@ -6,6 +6,8 @@ use App\Domain\MarketData\MarketDataSemanticBindings;
 use App\Application\MarketData\Services\CoverageGateStateNormalizer;
 use App\Application\MarketData\Services\DeterministicHashService;
 use App\Application\MarketData\Services\MarketDataInvariantGuard;
+use App\Application\MarketData\Services\ArtifactSemanticHashService;
+use App\Application\MarketData\Services\PublicationSemanticIdentityService;
 use App\Models\EodRun;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -14,10 +16,12 @@ use App\Infrastructure\Persistence\MarketData\CorpusAdmissionRepository;
 class EodPublicationRepository
 {
     private $hashes;
+    private $semanticIdentities;
 
-    public function __construct(DeterministicHashService $hashes = null)
+    public function __construct(DeterministicHashService $hashes = null, PublicationSemanticIdentityService $semanticIdentities = null)
     {
         $this->hashes = $hashes ?: new DeterministicHashService();
+        $this->semanticIdentities = $semanticIdentities ?: new PublicationSemanticIdentityService($this->hashes);
     }
 
     public function findRawCurrentPublicationStateForTradeDate($tradeDate)
@@ -42,6 +46,7 @@ class EodPublicationRepository
                 'pub.bars_batch_hash',
                 'pub.indicators_batch_hash',
                 'pub.eligibility_batch_hash',
+                'pub.artifact_hash_profile',
                 'pub.config_snapshot_id',
                 'pub.observation_manifest_hash',
                 'pub.price_product_code as publication_price_product_code',
@@ -607,6 +612,11 @@ class EodPublicationRepository
                 'bars_batch_hash' => null,
                 'indicators_batch_hash' => null,
                 'eligibility_batch_hash' => null,
+                'artifact_hash_profile' => $run->artifact_hash_profile ?? null,
+                'publication_semantic_profile' => $run->publication_semantic_profile
+                    ?? $this->semanticIdentities->profileForArtifactProfile($run->artifact_hash_profile ?? null),
+                'correction_semantic_hash' => null,
+                'seal_fingerprint' => null,
                 'source_file_hash' => $run->source_file_hash ?? null,
                 'source_file_hash_algorithm' => $run->source_file_hash_algorithm ?? null,
                 'source_file_size_bytes' => $run->source_file_size_bytes ?? null,
@@ -664,12 +674,17 @@ class EodPublicationRepository
             ->where('publication_id', $publicationId)
             ->first();
 
+        $artifactProfile = $hashes['artifact_hash_profile'] ?? ($publication->artifact_hash_profile ?? null);
+        $publicationProfile = $this->semanticIdentities->profileForArtifactProfile($artifactProfile);
+
         DB::table('eod_publications')
             ->where('publication_id', $publicationId)
             ->update([
                 'bars_batch_hash' => $hashes['bars_batch_hash'],
                 'indicators_batch_hash' => $hashes['indicators_batch_hash'],
                 'eligibility_batch_hash' => $hashes['eligibility_batch_hash'],
+                'artifact_hash_profile' => $artifactProfile,
+                'publication_semantic_profile' => $publicationProfile,
                 'updated_at' => $now,
             ]);
 
@@ -680,6 +695,8 @@ class EodPublicationRepository
                     'bars_batch_hash' => $hashes['bars_batch_hash'],
                     'indicators_batch_hash' => $hashes['indicators_batch_hash'],
                     'eligibility_batch_hash' => $hashes['eligibility_batch_hash'],
+                    'artifact_hash_profile' => $artifactProfile,
+                    'publication_semantic_profile' => $publicationProfile,
                     'updated_at' => $now,
                 ]);
         }
@@ -778,13 +795,22 @@ class EodPublicationRepository
 
             $context = $this->publicationManifestContext($publicationId);
             $this->assertPublicationManifestContextComplete($context);
-            $hash = $this->hashes->hashCanonicalDocument($this->publicationManifestSemanticPayload($context, 'READABLE'));
+            $profile = $this->assertSemanticProfilesCompatible($context);
+            $correctionHash = $profile === PublicationSemanticIdentityService::PROFILE_V2
+                ? $this->prepareCorrectionSemanticIdentity($context)
+                : null;
+            $context->correction_semantic_hash = $correctionHash;
+            $hash = $profile === PublicationSemanticIdentityService::PROFILE_V2
+                ? $this->semanticIdentities->publicationHash($this->publicationManifestSemanticPayloadV2($context, 'READABLE'))
+                : $this->hashes->hashCanonicalDocument($this->publicationManifestSemanticPayloadV1($context, 'READABLE'));
             $now = Carbon::now(config('market_data.platform.timezone'));
 
             DB::table('eod_publications')
                 ->where('publication_id', $publicationId)
                 ->update([
                     'publication_manifest_hash' => $hash,
+                    'publication_semantic_profile' => $profile,
+                    'correction_semantic_hash' => $correctionHash,
                     'readiness_state' => 'READABLE',
                     'updated_at' => $now,
                 ]);
@@ -811,9 +837,17 @@ class EodPublicationRepository
             throw new \RuntimeException('DATASET_MANIFEST_INVALID: readiness_state is missing.');
         }
 
-        $expected = $this->hashes->hashCanonicalDocument(
-            $this->publicationManifestSemanticPayload($context, $readiness)
-        );
+        $profile = $this->assertSemanticProfilesCompatible($context);
+        if ($profile === PublicationSemanticIdentityService::PROFILE_V2) {
+            $expectedCorrectionHash = $this->prepareCorrectionSemanticIdentity($context, false);
+            $storedCorrectionHash = $context->correction_semantic_hash ?: null;
+            if ($expectedCorrectionHash !== $storedCorrectionHash) {
+                throw new \RuntimeException('CORRECTION_SEMANTIC_IDENTITY_MISMATCH: publication binding differs from correction facts.');
+            }
+        }
+        $expected = $profile === PublicationSemanticIdentityService::PROFILE_V2
+            ? $this->semanticIdentities->publicationHash($this->publicationManifestSemanticPayloadV2($context, $readiness))
+            : $this->hashes->hashCanonicalDocument($this->publicationManifestSemanticPayloadV1($context, $readiness));
 
         if (! hash_equals($stored, $expected)) {
             throw new \RuntimeException('DATASET_MANIFEST_INVALID: publication_manifest_hash does not match canonical semantic manifest content.');
@@ -837,6 +871,8 @@ class EodPublicationRepository
                 'run.bars_rows_written', 'run.indicators_rows_written', 'run.eligibility_rows_written',
                 'run.source as source_mode', 'run.source_name', 'run.source_provider',
                 'run.promote_mode', 'run.publish_target', 'run.correction_id', 'run.final_reason_code',
+                'run.artifact_hash_profile as run_artifact_hash_profile',
+                'run.publication_semantic_profile as run_publication_semantic_profile',
                 'run.coverage_universe_count', 'run.coverage_expected_count', 'run.coverage_available_count',
                 'run.coverage_missing_count', 'run.coverage_min_threshold', 'run.coverage_threshold_mode',
                 'run.coverage_universe_basis', 'run.coverage_contract_version',
@@ -894,7 +930,7 @@ class EodPublicationRepository
         }
     }
 
-    private function publicationManifestSemanticPayload($context, string $readinessState): array
+    private function publicationManifestSemanticPayloadV1($context, string $readinessState): array
     {
         $canonicalizationVersion = (string) DB::table('eod_bars_history')
             ->where('publication_id', (int) $context->publication_id)
@@ -961,6 +997,140 @@ class EodPublicationRepository
         ];
     }
 
+    private function publicationManifestSemanticPayloadV2($context, string $readinessState): array
+    {
+        $canonicalizationVersion = (string) DB::table('eod_bars_history')
+            ->where('publication_id', (int) $context->publication_id)
+            ->whereNotNull('canonicalization_version')->where('canonicalization_version', '<>', '')
+            ->distinct()->value('canonicalization_version');
+        $freshness = strtoupper(trim((string) ($context->freshness_state ?? '')));
+        if (!in_array($freshness, ['FRESH', 'STALE', 'DEGRADED', 'NOT_AVAILABLE'], true)) $freshness = 'NOT_AVAILABLE';
+
+        return [
+            'market_scope' => 'IDX_REGULAR_EOD',
+            'trade_date' => (string) $context->trade_date,
+            'trade_date_requested' => (string) $context->trade_date_requested,
+            'trade_date_effective' => (string) ($context->trade_date_effective ?: $context->trade_date),
+            'publication_version' => (string) $context->publication_version,
+            'lineage' => [
+                'supersedes_manifest_hash' => $this->manifestHashForPublicationId($context->supersedes_publication_id),
+                'previous_manifest_hash' => $this->manifestHashForPublicationId($context->previous_publication_id),
+                'replaced_manifest_hash' => $this->manifestHashForPublicationId($context->replaced_publication_id),
+            ],
+            'artifact_hash_profile' => ArtifactSemanticHashService::PROFILE_V2,
+            'observation_manifest_hash' => strtolower((string) $context->observation_manifest_hash),
+            'config_content_hash' => strtolower((string) $context->config_snapshot_hash),
+            'config_registry_revision' => (string) $context->config_registry_revision,
+            'identity_revision_set_hash' => strtolower((string) $context->identity_revision_set_hash),
+            'calendar_revision_set_hash' => strtolower((string) $context->calendar_revision_set_hash),
+            'status_revision_set_hash' => strtolower((string) $context->status_revision_set_hash),
+            'event_revision_set_hash' => strtolower((string) $context->event_revision_set_hash),
+            'source_scale_assessment_set_hash' => strtolower((string) $context->source_scale_assessment_set_hash),
+            'market_structure_revision_set_hash' => strtolower((string) $context->market_structure_revision_set_hash),
+            'factor_decision_set_hash' => strtolower((string) $context->factor_decision_set_hash),
+            'factor_set_hash' => strtolower((string) $context->factor_set_hash),
+            'price_product_code' => (string) $context->price_product_code,
+            'price_product_version' => (string) $context->price_product_version,
+            'canonicalization_version' => $canonicalizationVersion,
+            'formula_version' => (string) $context->lineage_formula_version,
+            'read_model_version' => (string) $context->lineage_read_model_version,
+            'artifacts' => [
+                'bars' => strtolower((string) $context->bars_batch_hash),
+                'indicators' => strtolower((string) $context->indicators_batch_hash),
+                'eligibility' => strtolower((string) $context->eligibility_batch_hash),
+            ],
+            'row_counts' => [
+                'bars' => (int) $context->bars_rows_written,
+                'indicators' => (int) $context->indicators_rows_written,
+                'eligibility' => (int) $context->eligibility_rows_written,
+            ],
+            'quality_state' => strtoupper((string) ($context->quality_gate_state ?? '')),
+            'coverage_gate_state' => CoverageGateStateNormalizer::normalize($context->coverage_gate_state),
+            'coverage_ratio' => $context->coverage_ratio === null ? null : (string) $context->coverage_ratio,
+            'readiness_state' => $readinessState,
+            'freshness_state' => $freshness,
+            'correction_lineage' => [
+                'correction_semantic_hash' => $context->correction_semantic_hash ?: null,
+                'promote_mode' => (string) ($context->promote_mode ?? ''),
+                'publish_target' => (string) ($context->publish_target ?? ''),
+            ],
+            'seal_contract_version' => PublicationSemanticIdentityService::SEAL_CONTRACT_V2,
+            'seal_hash_algorithm' => 'SHA-256',
+        ];
+    }
+
+    private function assertSemanticProfilesCompatible($context): string
+    {
+        return $this->semanticIdentities->assertCompatible(
+            $context->artifact_hash_profile ?? null,
+            $context->run_publication_semantic_profile ?? null,
+            $context->publication_semantic_profile ?? null
+        );
+    }
+
+    private function manifestHashForPublicationId($publicationId): ?string
+    {
+        if ($publicationId === null || (int) $publicationId <= 0) return null;
+        $hash = strtolower(trim((string) DB::table('eod_publications')
+            ->where('publication_id', (int) $publicationId)->value('publication_manifest_hash')));
+        if (!preg_match('/^[a-f0-9]{64}$/', $hash)) {
+            throw new \RuntimeException('PUBLICATION_SEMANTIC_LINEAGE_UNRESOLVED: predecessor manifest hash missing.');
+        }
+        return $hash;
+    }
+
+    private function prepareCorrectionSemanticIdentity($context, bool $persist = true): ?string
+    {
+        if ($context->correction_id === null || (int) $context->correction_id <= 0) return null;
+        $correction = DB::table('eod_dataset_corrections')->where('correction_id', (int) $context->correction_id)->first();
+        if (!$correction) throw new \RuntimeException('CORRECTION_SEMANTIC_IDENTITY_MISSING: correction row not found.');
+        $baselineHash = $this->manifestHashForPublicationId($correction->baseline_publication_id ?? null);
+        if ($baselineHash === null) throw new \RuntimeException('CORRECTION_SEMANTIC_BASELINE_MISSING.');
+
+        $payload = [
+            'trade_date' => (string) $context->trade_date,
+            'reason_code' => strtoupper(trim((string) $correction->correction_reason_code)),
+            'baseline_publication_manifest_hash' => $baselineHash,
+            'replacement_artifact_hashes' => [
+                'bars' => strtolower((string) $context->bars_batch_hash),
+                'indicators' => strtolower((string) $context->indicators_batch_hash),
+                'eligibility' => strtolower((string) $context->eligibility_batch_hash),
+            ],
+            'config_content_hash' => strtolower((string) $context->config_snapshot_hash),
+            'observation_manifest_hash' => strtolower((string) $context->observation_manifest_hash),
+            'promote_mode' => (string) ($context->promote_mode ?? ''),
+            'publish_target' => (string) ($context->publish_target ?? ''),
+        ];
+        $hash = $this->semanticIdentities->correctionHash($payload);
+        $existingProfile = trim((string) ($correction->semantic_identity_profile ?? ''));
+        $existingHash = strtolower(trim((string) ($correction->semantic_identity_hash ?? '')));
+        if (($existingProfile !== '' && $existingProfile !== PublicationSemanticIdentityService::PROFILE_V2)
+            || ($existingHash !== '' && !hash_equals($existingHash, $hash))) {
+            throw new \RuntimeException('CORRECTION_SEMANTIC_IDENTITY_MISMATCH: existing identity is incompatible.');
+        }
+        if ($persist) {
+            DB::table('eod_dataset_corrections')->where('correction_id', (int) $context->correction_id)->update([
+                'semantic_identity_profile' => PublicationSemanticIdentityService::PROFILE_V2,
+                'semantic_identity_hash' => $hash,
+                'updated_at' => Carbon::now(config('market_data.platform.timezone')),
+            ]);
+        }
+        return $hash;
+    }
+
+    private function sealFingerprintPayload($context, string $scope): array
+    {
+        return [
+            'publication_manifest_hash' => strtolower((string) $context->publication_manifest_hash),
+            'correction_semantic_hash' => $context->correction_semantic_hash ?: null,
+            'artifact_hash_profile' => ArtifactSemanticHashService::PROFILE_V2,
+            'publication_semantic_profile' => PublicationSemanticIdentityService::PROFILE_V2,
+            'seal_contract_version' => PublicationSemanticIdentityService::SEAL_CONTRACT_V2,
+            'seal_hash_algorithm' => 'SHA-256',
+            'provenance_scope' => $scope,
+        ];
+    }
+
     public function sealCandidatePublication(EodRun $run, $sealedBy, $sealNote = null)
     {
         return DB::transaction(function () use ($run) {
@@ -997,6 +1167,18 @@ class EodPublicationRepository
             $this->assertReplayDeterminismBeforeSeal($candidate, $run);
 
             $now = Carbon::now(config('market_data.platform.timezone'));
+            $manifestContext = $this->publicationManifestContext($candidate->publication_id);
+            $profile = $this->assertSemanticProfilesCompatible($manifestContext);
+            $scope = $this->sealProvenanceScope($candidate, $run);
+            $sealFingerprint = $profile === PublicationSemanticIdentityService::PROFILE_V2
+                ? $this->semanticIdentities->sealFingerprint($this->sealFingerprintPayload($manifestContext, $scope))
+                : null;
+
+            if ($profile === PublicationSemanticIdentityService::PROFILE_V2
+                && $manifestContext->correction_id !== null
+                && empty($manifestContext->correction_semantic_hash)) {
+                throw new \RuntimeException('SEAL_SEMANTIC_PROFILE_MISMATCH: V2 correction seal lacks correction semantic identity.');
+            }
 
             $this->assertPublicationMutable($candidate->publication_id);
 
@@ -1006,7 +1188,8 @@ class EodPublicationRepository
                     'seal_state' => 'SEALED',
                     // Recorded on the publication, not inferred later: a consumer must be able to
                     // see what this seal covers without reconstructing which run produced it.
-                    'seal_provenance_scope' => $this->sealProvenanceScope($candidate, $run),
+                    'seal_provenance_scope' => $scope,
+                    'seal_fingerprint' => $sealFingerprint,
                     'source_file_hash' => $run->source_file_hash ?? null,
                     'source_file_hash_algorithm' => $run->source_file_hash_algorithm ?? null,
                     'source_file_size_bytes' => $run->source_file_size_bytes ?? null,
@@ -1014,6 +1197,12 @@ class EodPublicationRepository
                     'sealed_at' => $now,
                     'updated_at' => $now,
                 ]);
+
+            DB::table('eod_runs')->where('run_id', $run->run_id)->update([
+                'publication_semantic_profile' => $profile,
+                'seal_fingerprint' => $sealFingerprint,
+                'updated_at' => $now,
+            ]);
 
             return DB::table('eod_publications')->where('publication_id', $candidate->publication_id)->first();
         });
@@ -1490,6 +1679,39 @@ class EodPublicationRepository
 
     private function assertSealedPublicationMatchesRunHashes($publication, $run): void
     {
+        $publicationProfile = trim((string) ($publication->artifact_hash_profile ?? ''));
+        $runProfile = trim((string) ($run->artifact_hash_profile ?? ''));
+        $publicationProfile = $publicationProfile === ''
+            ? \App\Application\MarketData\Services\ArtifactSemanticHashService::LEGACY_PROFILE_V1
+            : $publicationProfile;
+        $runProfile = $runProfile === ''
+            ? \App\Application\MarketData\Services\ArtifactSemanticHashService::LEGACY_PROFILE_V1
+            : $runProfile;
+        if (!hash_equals($publicationProfile, $runProfile)) {
+            throw new \RuntimeException('FINALIZE_HASH_PROFILE_MISMATCH: artifact hash profiles differ between run and publication candidate.');
+        }
+        $this->semanticIdentities->assertCompatible(
+            $publicationProfile,
+            $run->publication_semantic_profile ?? null,
+            $publication->publication_semantic_profile ?? null
+        );
+
+        if ($this->semanticIdentities->profileForArtifactProfile($publicationProfile) === PublicationSemanticIdentityService::PROFILE_V2) {
+            $publicationSeal = strtolower(trim((string) ($publication->seal_fingerprint ?? '')));
+            $runSeal = strtolower(trim((string) ($run->seal_fingerprint ?? '')));
+            if (!preg_match('/^[a-f0-9]{64}$/', $publicationSeal) || !hash_equals($publicationSeal, $runSeal)) {
+                throw new \RuntimeException('FINALIZE_SEAL_FINGERPRINT_MISMATCH: V2 run/publication seal fingerprints differ.');
+            }
+            $context = $this->publicationManifestContext($publication->publication_id);
+            $expectedSeal = $this->semanticIdentities->sealFingerprint($this->sealFingerprintPayload(
+                $context,
+                (string) ($publication->seal_provenance_scope ?? '')
+            ));
+            if (!hash_equals($publicationSeal, $expectedSeal)) {
+                throw new \RuntimeException('FINALIZE_SEAL_FINGERPRINT_INVALID: stored V2 seal material is not canonical.');
+            }
+        }
+
         foreach (['bars_batch_hash', 'indicators_batch_hash', 'eligibility_batch_hash'] as $hashField) {
             $publicationHash = (string) ($publication->{$hashField} ?? '');
             $runHash = (string) ($run->{$hashField} ?? '');
@@ -1915,7 +2137,11 @@ class EodPublicationRepository
             'bars_batch_hash' => $context->bars_batch_hash,
             'indicators_batch_hash' => $context->indicators_batch_hash,
             'eligibility_batch_hash' => $context->eligibility_batch_hash,
+            'artifact_hash_profile' => $context->artifact_hash_profile,
+            'publication_semantic_profile' => $context->publication_semantic_profile,
             'publication_manifest_hash' => $context->publication_manifest_hash,
+            'correction_semantic_hash' => $context->correction_semantic_hash,
+            'seal_fingerprint' => $context->seal_fingerprint,
             'bars_rows_written' => $context->bars_rows_written === null ? null : (int) $context->bars_rows_written,
             'indicators_rows_written' => $context->indicators_rows_written === null ? null : (int) $context->indicators_rows_written,
             'eligibility_rows_written' => $context->eligibility_rows_written === null ? null : (int) $context->eligibility_rows_written,
@@ -1935,7 +2161,9 @@ class EodPublicationRepository
             'hash_delimiter' => config('market_data.hash.delimiter', '|'),
             'hash_line_separator' => config('market_data.hash.line_separator', "\n"),
             'hash_null_token' => DeterministicHashService::NULL_TOKEN,
-            'canonical_ordering_rule' => 'trade_date ASC, ticker_id ASC; DeterministicHashService canonical ordering',
+            'canonical_ordering_rule' => ($context->artifact_hash_profile === ArtifactSemanticHashService::PROFILE_V2)
+                ? 'Artifact V2 retained-root semantic ordering; no local allocation keys'
+                : 'trade_date ASC, ticker_id ASC; DeterministicHashService canonical ordering',
             'component_hashes' => [
                 'bars_batch_hash' => $context->bars_batch_hash,
                 'indicators_batch_hash' => $context->indicators_batch_hash,

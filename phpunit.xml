@@ -13,5 +13,6 @@
         <env name="APP_ENV" value="testing"/>
         <env name="CACHE_DRIVER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="MARKET_DATA_ARTIFACT_HASH_PROFILE" value="market-data-row-hash/v1"/>
     </php>
 </phpunit>

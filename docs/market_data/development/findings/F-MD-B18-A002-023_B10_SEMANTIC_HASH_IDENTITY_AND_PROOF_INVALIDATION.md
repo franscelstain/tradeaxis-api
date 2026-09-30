@@ -113,3 +113,31 @@ Market Data now has an explicit foundation-required read path through the shared
 Isolated MariaDB proof varies ticker IDs, Market Data surrogate rows and foundation surrogate allocations while producing identical consumer results. Four restored mutations prove allocation identity, fallback, temporal and propagation guards. Controls pass 5/71 integration, 16/223 core, 7/96 listing, 5/79 window and 9/104 B05 regression with zero skips and database residue.
 
 MD-DEP-0021 remains BLOCKING on artifact-side consumption and allocation-independent semantic hash proof. No artifact hash, manifest, seal, correction or predicate binding changed; B05 117/117, B10 1016/56/1072 and B18 100/13/113 formal 0 remain unchanged. Next bounded unit is bars/indicators/eligibility semantic artifact identity using the now-proven consumer result.
+
+## 2026-09-29 bounded artifact semantic identity checkpoint — E-MD-B10-A002-010
+
+The bars, indicators and eligibility artifact primitive is now implemented and locally proven under explicit `market-data-semantic-hash/v2`. It consumes the retained foundation issuer/instrument/listing roots exposed by E009, binds immutable configuration content, excludes allocation IDs and provider `adj_close`, and orders by stable semantic identity and canonical bytes. Historical NULL-profile rows remain `market-data-row-hash/v1`; no sealed history is rewritten.
+
+Equivalent facts under different ticker, Market Data, foundation and config allocations produce identical hashes for all three artifacts; changed bar, indicator, eligibility, config or retained listing semantics change the owning hash. Four production mutations were caught and restored byte-identically. The inherited R0025 files still match the E001 fingerprints.
+
+The finding remains OPEN. E010 proves bounded artifact clauses only. Publication-manifest, nested lineage production, correction, seal and full current-verification review remain outstanding; all 56 affected predicates stay NOT_ASSESSED. MD-DEP-0021 remains BLOCKING on controlled normal-database deployment and end-to-end successor-profile acceptance. MD-DEP-0020 continues to block B18/R0025 until complete B10 reproof and successor closure.
+
+Single next bounded work: same MD-B10-A002 / BL001 / CI, remediate publication-manifest, correction and seal semantic identity using the versioned V2 artifact hashes while preserving legacy V1 interpretation. Do not promote predicates until complete governed reproof.
+
+## 2026-09-30 publication/correction/seal successor-profile progress — E-MD-B10-A002-011
+
+V2 publication, correction/republication and seal semantic identity is implemented and locally proven. The publication preimage uses V2 bars/indicators/eligibility roots, stable predecessor manifest hashes and configuration/nested content hashes; correction uses semantic baseline/replacement/reason material; seal binds their semantic fingerprints. Numeric publication/correction/run/config row identities do not enter V2 identity. Explicit profile dispatch preserves the V1 payload and fails closed on unknown, missing or mixed V2 material; historical hashes are not reinterpreted or rewritten.
+
+Two isolated MariaDB histories with different publication/run/correction/local allocations converge on identical V2 publication, correction and seal values. Meaningful artifact, configuration, lineage and correction changes diverge. Four probes removed critical semantic members or profile enforcement, each turned the intended assertion RED, and the production service was restored byte-identically. Additive migration compatibility and focused shared-repository regression are green.
+
+The finding remains OPEN and its final 56-rule scope is unchanged. E011 proves the bounded publication/correction/seal clauses, but nested observation/factor/temporal revision-set producer identity, sorted semantic reason coverage, controlled deployment and complete-denominator reproof remain. No predicate is promoted; B05 117/117, B10 1016/56/1072 and B18 100/13/113 formal 0 remain unchanged. MD-DEP-0021 and MD-DEP-0020 remain BLOCKING.
+
+## 2026-09-30 E011 correction, env-reader fix and production-path proof — E-MD-B10-A002-012
+
+E-MD-B10-A002-012 supersedes E011 without editing it. Verifying E011 showed that its full-suite classification called one remediation regression pre-existing: `EodRunRepository` read `env('MARKET_DATA_ARTIFACT_HASH_PROFILE')` directly, the read entered with the E010 sub-unit, and E011's profile selection calls it. The switch now lives in `config/market_data_runtime.php`, outside the snapshot-hashed `market_data` tree; run creation reads it through `config()` and fails closed on a missing or unknown value.
+
+E011's allocation-independence test hashed documents that contain no allocated key, so it could not detect a leak in the repository assembly. `PublicationSemanticIdentityProductionPathTest` now drives the production repository path from candidate to promotion in two histories with different local keys and insertion order, for a correction republication and a plain first publication. All three identities converge, a changed predecessor diverges, and fifteen out-of-band tampering cases stop promotion with the check that owns the material. Probes P1-P3 leak an allocation through the repository: each leaves every E011 V2 proof file green and turns the new test red.
+
+The 16 recovered failures are 2 A (both fixed), 8 D, 2 F and 4 E. The four E rows are static-guard regressions from committed units after the E-MD-B18-A002-074 baseline and are recorded as F-MD-B10-A002-002.
+
+The finding remains OPEN and its 56-rule scope is unchanged. Nested observation/factor/temporal revision-set producer identity, sorted semantic reasons, controlled deployment and complete reproof remain. No predicate is promoted; B05 117/117, B10 1016/56/1072 and B18 100/13/113 formal 0 are unchanged. MD-DEP-0021 and MD-DEP-0020 remain BLOCKING.

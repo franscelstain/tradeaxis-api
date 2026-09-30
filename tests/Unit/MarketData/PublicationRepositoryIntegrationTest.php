@@ -2,6 +2,8 @@
 
 use App\Models\EodRun;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
+use App\Application\MarketData\Services\ArtifactSemanticHashService;
+use App\Application\MarketData\Services\PublicationSemanticIdentityService;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\UsesMarketDataSqlite;
 
@@ -812,6 +814,87 @@ class PublicationRepositoryIntegrationTest extends TestCase
         (new EodPublicationRepository())->restorePriorCurrentPublication('2026-03-20', 10, 25);
     }
 
+
+    public function test_v2_manifest_and_correction_identity_are_persisted_without_numeric_lineage_in_the_hash(): void
+    {
+        $baselineHash = hash('sha256', 'stable-baseline-manifest');
+        DB::table('eod_publications')->where('publication_id', 10)->update(['publication_manifest_hash' => $baselineHash]);
+        DB::table('eod_runs')->where('run_id', 27)->update([
+            'artifact_hash_profile' => ArtifactSemanticHashService::PROFILE_V2,
+            'publication_semantic_profile' => PublicationSemanticIdentityService::PROFILE_V2,
+            'correction_id' => 55,
+            'promote_mode' => 'correction_current',
+            'publish_target' => 'current_replace',
+        ]);
+        DB::table('eod_dataset_corrections')->insert([
+            'correction_id' => 55, 'trade_date' => '2026-03-20',
+            'baseline_publication_id' => 10, 'correction_reason_code' => 'SOURCE_CORRECTION',
+            'status' => 'APPROVED', 'requested_by' => 'test',
+            'requested_at' => '2026-03-20 17:00:00', 'created_at' => '2026-03-20 17:00:00',
+            'updated_at' => '2026-03-20 17:00:00',
+        ]);
+
+        $repository = new EodPublicationRepository();
+        $candidate = $repository->getOrCreateCandidatePublication(EodRun::query()->findOrFail(27), 10);
+        $repository->updateCandidateHashes($candidate->publication_id, [
+            'bars_batch_hash' => hash('sha256', 'v2-bars'),
+            'indicators_batch_hash' => hash('sha256', 'v2-indicators'),
+            'eligibility_batch_hash' => hash('sha256', 'v2-eligibility'),
+            'artifact_hash_profile' => ArtifactSemanticHashService::PROFILE_V2,
+        ]);
+        $repository->bindCandidateAnalyticalProduct(
+            $candidate->publication_id,
+            27,
+            'STRUCTURAL_ADJUSTED',
+            'structural_adjusted_v1',
+            hash('sha256', 'publication-repository-new'),
+            1
+        );
+        $this->bindStageEightGovernance($candidate->publication_id, hash('sha256', 'publication-repository-new'));
+
+        $publication = DB::table('eod_publications')->where('publication_id', $candidate->publication_id)->first();
+        $correction = DB::table('eod_dataset_corrections')->where('correction_id', 55)->first();
+        $this->assertSame(PublicationSemanticIdentityService::PROFILE_V2, $publication->publication_semantic_profile);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $publication->publication_manifest_hash);
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $publication->correction_semantic_hash);
+        $this->assertSame($publication->correction_semantic_hash, $correction->semantic_identity_hash);
+        $this->assertTrue($repository->assertPublicationManifestHashValid($candidate->publication_id));
+
+        DB::table('eod_dataset_corrections')->where('correction_id', 55)->update(['correction_reason_code' => 'OTHER_REASON']);
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('CORRECTION_SEMANTIC_IDENTITY_MISMATCH');
+        $repository->assertPublicationManifestHashValid($candidate->publication_id);
+    }
+
+    public function test_v2_current_promotion_fails_closed_when_seal_fingerprint_is_missing(): void
+    {
+        DB::table('eod_runs')->where('run_id', 27)->update([
+            'artifact_hash_profile' => ArtifactSemanticHashService::PROFILE_V2,
+            'publication_semantic_profile' => PublicationSemanticIdentityService::PROFILE_V2,
+            'bars_batch_hash' => hash('sha256', 'v2-bars'),
+            'indicators_batch_hash' => hash('sha256', 'v2-indicators'),
+            'eligibility_batch_hash' => hash('sha256', 'v2-eligibility'),
+            'seal_fingerprint' => null,
+        ]);
+        DB::table('eod_publications')->insert([
+            'publication_id' => 11, 'trade_date' => '2026-03-20', 'run_id' => 27,
+            'publication_version' => 2, 'is_current' => 0, 'supersedes_publication_id' => 10,
+            'previous_publication_id' => 10, 'replaced_publication_id' => 10,
+            'seal_state' => 'SEALED', 'sealed_at' => '2026-03-20 18:00:00',
+            'bars_batch_hash' => hash('sha256', 'v2-bars'),
+            'indicators_batch_hash' => hash('sha256', 'v2-indicators'),
+            'eligibility_batch_hash' => hash('sha256', 'v2-eligibility'),
+            'artifact_hash_profile' => ArtifactSemanticHashService::PROFILE_V2,
+            'publication_semantic_profile' => PublicationSemanticIdentityService::PROFILE_V2,
+            'publication_manifest_hash' => hash('sha256', 'v2-manifest'),
+            'readiness_state' => 'READABLE', 'seal_fingerprint' => null,
+            'created_at' => '2026-03-20 18:00:00', 'updated_at' => '2026-03-20 18:00:00',
+        ]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('FINALIZE_SEAL_FINGERPRINT_MISMATCH');
+        (new EodPublicationRepository())->promoteCandidateToCurrent(EodRun::query()->findOrFail(27), 10, true);
+    }
 
     private function bindStageEightGovernance($publicationId, $factorHash): void
     {

@@ -887,6 +887,9 @@ trait UsesMarketDataSqlite
             $table->string('bars_batch_hash')->nullable();
             $table->string('indicators_batch_hash')->nullable();
             $table->string('eligibility_batch_hash')->nullable();
+            $table->string('artifact_hash_profile', 64)->nullable();
+            $table->string('publication_semantic_profile', 64)->nullable();
+            $table->string('seal_fingerprint', 64)->nullable();
             $table->string('config_version')->nullable();
             $table->string('config_hash')->nullable();
             $table->string('config_snapshot_ref')->nullable();
@@ -968,6 +971,8 @@ trait UsesMarketDataSqlite
             $table->integer('replacement_publication_id')->nullable();
             $table->string('correction_reason_code');
             $table->text('correction_reason_note')->nullable();
+            $table->string('semantic_identity_profile', 64)->nullable();
+            $table->string('semantic_identity_hash', 64)->nullable();
             $table->string('status');
             $table->string('requested_by')->nullable();
             $table->dateTime('requested_at')->nullable();
@@ -1004,6 +1009,10 @@ trait UsesMarketDataSqlite
             $table->string('bars_batch_hash')->nullable();
             $table->string('indicators_batch_hash')->nullable();
             $table->string('eligibility_batch_hash')->nullable();
+            $table->string('artifact_hash_profile', 64)->nullable();
+            $table->string('publication_semantic_profile', 64)->nullable();
+            $table->string('correction_semantic_hash', 64)->nullable();
+            $table->string('seal_fingerprint', 64)->nullable();
             $table->string('source_file_hash')->nullable();
             $table->string('source_file_hash_algorithm')->nullable();
             $table->bigInteger('source_file_size_bytes')->nullable();

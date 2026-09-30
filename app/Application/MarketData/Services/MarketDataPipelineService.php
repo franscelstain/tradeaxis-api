@@ -16,7 +16,7 @@ use App\Models\EodRun;
 class MarketDataPipelineService
 {
     /**
-     * The columns that make up each artifact's content hash.
+     * Legacy V1 columns retained solely for historical hash interpretation.
      *
      * These define what "the same dataset" means. A published column left out of its list makes
      * two publications that differ in that column hash identically, and a correction that
@@ -27,9 +27,8 @@ class MarketDataPipelineService
      * record who wrote a row, not what was written, and including them would make every
      * recompute of identical data look like a change.
      *
-     * PublishedColumnHashCoverageTest reads these constants and checks them against the live
-     * table definitions, so a column added to an artifact table cannot quietly fall outside the
-     * hash that is supposed to cover it.
+     * New governed runs use ArtifactSemanticHashService::PROFILE_V2.  These constants must remain
+     * byte-stable because sealed pre-remediation publications were issued with this field set.
      */
     const HASH_EXCLUDED_BOOKKEEPING_COLUMNS = [
         'run_id',
@@ -163,6 +162,7 @@ class MarketDataPipelineService
     private $impactReprocess;
     private $governanceBindings;
     private $inputBindings;
+    private $artifactSemanticHashes;
 
     private $liquidityLabels;
 
@@ -183,7 +183,8 @@ class MarketDataPipelineService
         MarketDataImpactReprocessExecutor $impactReprocess = null,
         PublicationGovernanceBindingService $governanceBindings = null,
         LiquidityMetricLabelService $liquidityLabels = null,
-        PublicationInputBindingService $inputBindings = null
+        PublicationInputBindingService $inputBindings = null,
+        ArtifactSemanticHashService $artifactSemanticHashes = null
     ) {
         $this->runs = $runs;
         $this->barsIngest = $barsIngest;
@@ -202,6 +203,7 @@ class MarketDataPipelineService
         $this->governanceBindings = $governanceBindings ?: app(PublicationGovernanceBindingService::class);
         $this->liquidityLabels = $liquidityLabels ?: new LiquidityMetricLabelService();
         $this->inputBindings = $inputBindings ?: app(PublicationInputBindingService::class);
+        $this->artifactSemanticHashes = $artifactSemanticHashes ?: app(ArtifactSemanticHashService::class);
     }
 
     public function startStage(MarketDataStageInput $input)
@@ -977,29 +979,12 @@ class MarketDataPipelineService
             // secondary or best-effort step.
             $this->inputBindings->bind($run, $candidatePublication->publication_id, $input->requestedDate);
 
-            $hashes = [
-                'bars_batch_hash' => $this->hashForTable(
-                    $useHistory ? 'eod_bars_history' : 'eod_bars',
-                    'trade_date',
-                    $input->requestedDate,
-                    self::BARS_HASH_COLUMNS,
-                    $useHistory ? ['publication_id' => $candidatePublication->publication_id] : []
-                ),
-                'indicators_batch_hash' => $this->hashForTable(
-                    $useHistory ? 'eod_indicators_history' : 'eod_indicators',
-                    'trade_date',
-                    $input->requestedDate,
-                    self::INDICATORS_HASH_COLUMNS,
-                    $useHistory ? ['publication_id' => $candidatePublication->publication_id] : []
-                ),
-                'eligibility_batch_hash' => $this->hashForTable(
-                    $useHistory ? 'eod_eligibility_history' : 'eod_eligibility',
-                    'trade_date',
-                    $input->requestedDate,
-                    self::ELIGIBILITY_HASH_COLUMNS,
-                    $useHistory ? ['publication_id' => $candidatePublication->publication_id] : []
-                ),
-            ];
+            $hashes = $this->hashArtifactSet(
+                $run,
+                $candidatePublication,
+                $input->requestedDate,
+                $useHistory
+            );
 
             $run = $this->runs->storeHashes($run, $hashes);
             $this->publications->updateCandidateHashes($candidatePublication->publication_id, $hashes);
@@ -1017,7 +1002,10 @@ class MarketDataPipelineService
                     'hash_delimiter' => config('market_data.hash.delimiter', '|'),
                     'hash_line_separator' => config('market_data.hash.line_separator', "\n"),
                     'hash_null_token' => $this->hashes->nullToken(),
-                    'canonical_ordering_rule' => 'trade_date ASC, ticker_id ASC plus DeterministicHashService canonical sort',
+                    'artifact_hash_profile' => $hashes['artifact_hash_profile'],
+                    'canonical_ordering_rule' => $hashes['artifact_hash_profile'] === ArtifactSemanticHashService::PROFILE_V2
+                        ? 'trade_date ASC, retained listing root ASC, canonical row bytes ASC'
+                        : 'legacy-v1: trade_date ASC, ticker_id ASC plus DeterministicHashService canonical sort',
                 ]
             );
 
@@ -1191,20 +1179,12 @@ class MarketDataPipelineService
                         ]
                     );
 
-                    $snapshotHashes = [
-                        'bars_batch_hash' => $this->hashForTable(
-                            'eod_bars_history', 'trade_date', $input->requestedDate, self::BARS_HASH_COLUMNS,
-                            ['publication_id' => $candidate->publication_id]
-                        ),
-                        'indicators_batch_hash' => $this->hashForTable(
-                            'eod_indicators_history', 'trade_date', $input->requestedDate, self::INDICATORS_HASH_COLUMNS,
-                            ['publication_id' => $candidate->publication_id]
-                        ),
-                        'eligibility_batch_hash' => $this->hashForTable(
-                            'eod_eligibility_history', 'trade_date', $input->requestedDate, self::ELIGIBILITY_HASH_COLUMNS,
-                            ['publication_id' => $candidate->publication_id]
-                        ),
-                    ];
+                    $snapshotHashes = $this->hashArtifactSet(
+                        $run,
+                        $candidate,
+                        $input->requestedDate,
+                        true
+                    );
                     foreach ($snapshotHashes as $field => $snapshotHash) {
                         if (! hash_equals((string) $run->{$field}, (string) $snapshotHash)) {
                             throw new \RuntimeException(
@@ -4189,6 +4169,56 @@ class MarketDataPipelineService
             ->get();
 
         return $this->hashes->hashRows($rows, $columns);
+    }
+
+    private function hashArtifactSet($run, $publication, $requestedDate, bool $useHistory): array
+    {
+        $profile = trim((string) ($run->artifact_hash_profile ?? ''));
+        if ($profile === '') {
+            $profile = ArtifactSemanticHashService::LEGACY_PROFILE_V1;
+        }
+        if (!in_array($profile, [
+            ArtifactSemanticHashService::LEGACY_PROFILE_V1,
+            ArtifactSemanticHashService::PROFILE_V2,
+        ], true)) {
+            throw new \RuntimeException('ARTIFACT_HASH_PROFILE_UNSUPPORTED: '.$profile);
+        }
+
+        $where = $useHistory ? ['publication_id' => $publication->publication_id] : [];
+        if ($profile === ArtifactSemanticHashService::PROFILE_V2) {
+            $barsTable = $useHistory ? 'eod_bars_history' : 'eod_bars';
+            $indicatorsTable = $useHistory ? 'eod_indicators_history' : 'eod_indicators';
+            $eligibilityTable = $useHistory ? 'eod_eligibility_history' : 'eod_eligibility';
+
+            return [
+                'bars_batch_hash' => $this->artifactSemanticHashes->hashStoredArtifact(
+                    'bars', $barsTable, $requestedDate, $run, $publication, $where
+                ),
+                'indicators_batch_hash' => $this->artifactSemanticHashes->hashStoredArtifact(
+                    'indicators', $indicatorsTable, $requestedDate, $run, $publication, $where
+                ),
+                'eligibility_batch_hash' => $this->artifactSemanticHashes->hashStoredArtifact(
+                    'eligibility', $eligibilityTable, $requestedDate, $run, $publication, $where
+                ),
+                'artifact_hash_profile' => ArtifactSemanticHashService::PROFILE_V2,
+            ];
+        }
+
+        return [
+            'bars_batch_hash' => $this->hashForTable(
+                $useHistory ? 'eod_bars_history' : 'eod_bars',
+                'trade_date', $requestedDate, self::BARS_HASH_COLUMNS, $where
+            ),
+            'indicators_batch_hash' => $this->hashForTable(
+                $useHistory ? 'eod_indicators_history' : 'eod_indicators',
+                'trade_date', $requestedDate, self::INDICATORS_HASH_COLUMNS, $where
+            ),
+            'eligibility_batch_hash' => $this->hashForTable(
+                $useHistory ? 'eod_eligibility_history' : 'eod_eligibility',
+                'trade_date', $requestedDate, self::ELIGIBILITY_HASH_COLUMNS, $where
+            ),
+            'artifact_hash_profile' => ArtifactSemanticHashService::LEGACY_PROFILE_V1,
+        ];
     }
 
     private function resolveCoverageEdgeCaseReasonCode($run, $requestedDate)

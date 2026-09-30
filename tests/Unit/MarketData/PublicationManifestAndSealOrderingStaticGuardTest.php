@@ -45,7 +45,9 @@ class PublicationManifestAndSealOrderingStaticGuardTest extends TestCase
     {
         $source = $this->read('app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php');
         $start = strpos($source, 'private function publicationManifestSemanticPayload');
-        $end = strpos($source, 'public function sealCandidatePublication', $start);
+        // The legacy payload remains an independently dispatched V1 verifier. Keep this guard
+        // scoped to that function; V2 has its own allocation-independent static guard.
+        $end = strpos($source, 'private function publicationManifestSemanticPayloadV2', $start);
         $method = substr($source, $start, $end - $start);
         $returnStart = strpos($method, 'return [');
         $payload = substr($method, $returnStart);

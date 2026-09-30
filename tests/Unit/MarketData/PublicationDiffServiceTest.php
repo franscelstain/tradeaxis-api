@@ -1,6 +1,7 @@
 <?php
 
 use App\Application\MarketData\Services\PublicationDiffService;
+use App\Application\MarketData\Services\ArtifactSemanticHashService;
 use PHPUnit\Framework\TestCase;
 
 class PublicationDiffServiceTest extends TestCase
@@ -47,6 +48,22 @@ class PublicationDiffServiceTest extends TestCase
         $this->assertSame('INVALID', $comparison['decision']);
         $this->assertSame('CORRECTION_ARTIFACT_HASH_INCOMPLETE', $comparison['reason_code']);
         $this->assertFalse($service->isUnchanged($prior, $candidate));
+    }
+
+    public function test_compare_fails_closed_when_artifact_profiles_are_mixed()
+    {
+        $service = new PublicationDiffService();
+        $prior = (object) [
+            'artifact_hash_profile' => ArtifactSemanticHashService::LEGACY_PROFILE_V1,
+            'bars_batch_hash' => 'HB', 'indicators_batch_hash' => 'HI', 'eligibility_batch_hash' => 'HE',
+        ];
+        $candidate = (object) [
+            'artifact_hash_profile' => ArtifactSemanticHashService::PROFILE_V2,
+            'bars_batch_hash' => 'HB', 'indicators_batch_hash' => 'HI', 'eligibility_batch_hash' => 'HE',
+        ];
+        $comparison = $service->compare($prior, $candidate);
+        $this->assertSame('INVALID', $comparison['decision']);
+        $this->assertSame('CORRECTION_ARTIFACT_HASH_INCOMPLETE', $comparison['reason_code']);
     }
 
 }
