@@ -40,6 +40,21 @@ class DomainOwnershipSurfaceTest extends TestCase
     ];
 
     /**
+     * Tables the schema reader returns that Market Data does not own. `D-MD-B10-A002-001` places
+     * the shared security-identity foundation outside Market Data ownership and
+     * `D-MD-B10-A002-002` names its canonical persistence: these four tables, written only through
+     * the foundation repository. They are excluded from the market-data population by name, and
+     * only while the foundation migration creates exactly these and nothing else, the base
+     * Market Data schema defines none of them, and no surface but the foundation repository
+     * touches them (`D-MD-B10-A002-004`).
+     */
+    private const SHARED_FOUNDATION_TABLES = ['si_entities', 'si_holds', 'si_packages', 'si_revisions'];
+
+    private const SHARED_FOUNDATION_MIGRATION = 'database/migrations/2026_09_29_000001_create_shared_security_identity_foundation.php';
+
+    private const SHARED_FOUNDATION_PERSISTENCE = 'app/Infrastructure/Persistence/SecurityIdentity/FoundationRepository.php';
+
+    /**
      * rule id => [label, table => distinguishing columns, owning market-data classes]
      *
      * A distinguishing column is one that carries the artifact's meaning. `eod_indicators` existing
@@ -286,7 +301,10 @@ class DomainOwnershipSurfaceTest extends TestCase
      */
     public function test_no_surface_outside_the_market_data_tree_touches_a_market_data_table(): void
     {
-        $tables = array_keys($this->schemaColumnMap());
+        $allTables = array_keys($this->schemaColumnMap());
+        $foundation = $this->sharedFoundationTables();
+        $this->assertSame([], array_values(array_diff($foundation, $allTables)), 'the foundation tables must be on the schema surface they are excluded from');
+        $tables = array_values(array_diff($allTables, $foundation));
         $this->assertGreaterThan(45, count($tables), 'the table list must be populated before it is searched for');
 
         $pattern = '/\b('.implode('|', array_map('preg_quote', $tables)).')\b/';
@@ -315,6 +333,68 @@ class DomainOwnershipSurfaceTest extends TestCase
             $offenders,
             'only the pinned legacy market-data models may reference a market-data table from outside the domain tree'
         );
+    }
+
+    /**
+     * The other half of excluding the foundation tables: they have exactly one owner too. Any
+     * surface other than the foundation repository that names one fails here, including one inside
+     * the market-data tree, which must consume the foundation through its resolution contract.
+     */
+    public function test_the_shared_foundation_tables_are_touched_only_by_the_foundation_repository(): void
+    {
+        $pattern = '/\b('.implode('|', array_map('preg_quote', $this->sharedFoundationTables())).')\b/';
+
+        $touching = [];
+        $scanned = 0;
+        $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($this->repositoryRoot().'/app', FilesystemIterator::SKIP_DOTS));
+        foreach ($files as $file) {
+            if (! $file->isFile() || substr($file->getFilename(), -4) !== '.php') {
+                continue;
+            }
+            $scanned++;
+            if (preg_match($pattern, $this->stripPhpComments((string) file_get_contents($file->getPathname())))) {
+                $touching[] = str_replace('\\', '/', substr($file->getPathname(), strlen($this->repositoryRoot()) + 1));
+            }
+        }
+        sort($touching);
+
+        $this->assertGreaterThan(100, $scanned, 'the application scan must reach the whole app tree');
+        $this->assertSame([self::SHARED_FOUNDATION_PERSISTENCE], $touching, 'only the foundation repository may touch the foundation tables');
+    }
+
+    /**
+     * The excluded set, re-derived from the foundation migration so it cannot widen silently: the
+     * migration must create exactly the pinned tables, no other migration may create or alter
+     * them, and the base Market Data schema may not define them.
+     *
+     * @return array<int,string>
+     */
+    private function sharedFoundationTables(): array
+    {
+        $root = $this->repositoryRoot();
+        $created = [];
+        foreach (glob($root.'/database/migrations/*.php') as $migration) {
+            $relative = 'database/migrations/'.basename($migration);
+            preg_match_all("/Schema::(create|table)\(\s*'([a-z0-9_]+)'/", $this->stripPhpComments((string) file_get_contents($migration)), $m, PREG_SET_ORDER);
+            foreach ($m as $call) {
+                if ($relative === self::SHARED_FOUNDATION_MIGRATION) {
+                    if ($call[1] === 'create') {
+                        $created[] = $call[2];
+                    }
+                    continue;
+                }
+                $this->assertNotContains($call[2], self::SHARED_FOUNDATION_TABLES, $relative.' may not create or alter a foundation table');
+            }
+        }
+        sort($created);
+        $this->assertSame(self::SHARED_FOUNDATION_TABLES, $created, 'the foundation migration must create exactly the governed foundation tables');
+
+        $baseSchema = $this->stripSqlComments((string) file_get_contents($this->baseSchemaPath()));
+        foreach (self::SHARED_FOUNDATION_TABLES as $table) {
+            $this->assertDoesNotMatchRegularExpression('/CREATE TABLE(?: IF NOT EXISTS)?\s+`?'.$table.'`?\s*\(/i', $baseSchema, 'the base Market Data schema may not define '.$table);
+        }
+
+        return self::SHARED_FOUNDATION_TABLES;
     }
 
     /**

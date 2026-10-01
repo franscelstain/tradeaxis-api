@@ -38,6 +38,27 @@ class RunInputCaptureRepository
         return hash('sha256', self::canonicalJson(['schema_version' => self::VERSION, 'component_key' => $component, 'selection_context' => $selection]));
     }
 
+    /**
+     * Selection keys that scope a capture to the run that took it. They are local allocation
+     * identifiers, not part of what was selected: the slot keeps them because a slot is a per-run
+     * storage identity, but an identity derived from captures must not (D-MD-B10-A002-005).
+     */
+    public const RUN_SCOPE_SELECTION_KEYS = ['config_snapshot_id', 'publication_id', 'run_id'];
+
+    /** Content identity of a verified capture payload, without its run-scope selection keys. */
+    public static function semanticPayloadHash(array $payload): string
+    {
+        $selection = $payload['selection_context'] ?? null;
+        if (! is_array($selection) || ! isset($payload['component_key']) || ! isset($payload['rows']) || ! is_array($payload['rows'])) {
+            throw new \InvalidArgumentException('INPUT_CAPTURE_SEMANTIC_PAYLOAD_INVALID');
+        }
+        return hash('sha256', self::canonicalJson([
+            'schema_version' => $payload['schema_version'] ?? null, 'component_key' => $payload['component_key'],
+            'selection_context' => array_diff_key($selection, array_flip(self::RUN_SCOPE_SELECTION_KEYS)),
+            'rows' => $payload['rows'], 'empty_basis' => $payload['empty_basis'] ?? null,
+        ]));
+    }
+
     public function capture(int $runId, string $stage, string $component, array $selection, array $rows, ?array $emptyBasis = null, array $audit = []): array
     {
         if ($runId <= 0 || ! preg_match('/^[A-Z][A-Z0-9_]{0,31}$/D', $stage)

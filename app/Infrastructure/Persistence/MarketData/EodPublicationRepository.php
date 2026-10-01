@@ -8,6 +8,7 @@ use App\Application\MarketData\Services\DeterministicHashService;
 use App\Application\MarketData\Services\MarketDataInvariantGuard;
 use App\Application\MarketData\Services\ArtifactSemanticHashService;
 use App\Application\MarketData\Services\PublicationSemanticIdentityService;
+use App\Application\MarketData\Services\SemanticNestedIdentityService;
 use App\Models\EodRun;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -599,6 +600,19 @@ class EodPublicationRepository
                     ->where('publication_id', (int) $supersedesPublicationId)
                     ->value('observation_manifest_hash');
             }
+            // The V2 observation manifest follows exactly the same inheritance as V1: a candidate that
+            // acquired nothing describes its predecessor's acquisition set. It is never derived from V1.
+            $semanticObservationManifestHash = null;
+            if (trim((string) ($run->artifact_hash_profile ?? '')) === ArtifactSemanticHashService::PROFILE_V2) {
+                $semanticObservationManifestHash = $run->semantic_observation_manifest_hash ?? null;
+            }
+            if ($semanticObservationManifestHash === null
+                && trim((string) ($run->artifact_hash_profile ?? '')) === ArtifactSemanticHashService::PROFILE_V2
+                && $supersedesPublicationId) {
+                $semanticObservationManifestHash = DB::table('eod_publications')
+                    ->where('publication_id', (int) $supersedesPublicationId)
+                    ->value('semantic_observation_manifest_hash');
+            }
 
             $publicationId = DB::table('eod_publications')->insertGetId([
                 'trade_date' => $run->trade_date_requested,
@@ -633,7 +647,9 @@ class EodPublicationRepository
                 'sealed_at' => null,
                 'created_at' => $now,
                 'updated_at' => $now,
-            ]);
+            ] + ($semanticObservationManifestHash !== null
+                ? ['semantic_observation_manifest_hash' => $semanticObservationManifestHash]
+                : []));
 
             return DB::table('eod_publications')->where('publication_id', $publicationId)->first();
         });
@@ -710,14 +726,18 @@ class EodPublicationRepository
      * refuse the candidate. The observation manifest is bound regardless, because which
      * observations produced a candidate is knowable even when the configuration is not.
      */
-    public function bindCandidateAcquisitionProvenance($publicationId, $runId, $observationManifestHash, $configSnapshotId)
+    public function bindCandidateAcquisitionProvenance($publicationId, $runId, $observationManifestHash, $configSnapshotId, $semanticObservationManifestHash = null)
     {
         $now = Carbon::now(config('market_data.platform.timezone'));
+        // The V2 manifest is written only for V2 runs, beside -- never instead of -- the V1 manifest.
+        $semantic = $semanticObservationManifestHash === null
+            ? []
+            : ['semantic_observation_manifest_hash' => $semanticObservationManifestHash];
 
         DB::table('eod_runs')->where('run_id', $runId)->update([
             'observation_manifest_hash' => $observationManifestHash,
             'updated_at' => $now,
-        ]);
+        ] + $semantic);
 
         DB::table('eod_publications')->where('publication_id', $publicationId)->update([
             'config_snapshot_id' => $configSnapshotId,
@@ -725,7 +745,7 @@ class EodPublicationRepository
             'read_model_version' => 'market_data_read_product_v1',
             'readiness_state' => 'BUILDING',
             'updated_at' => $now,
-        ]);
+        ] + $semantic);
     }
 
     /**
@@ -876,10 +896,21 @@ class EodPublicationRepository
                 'run.coverage_universe_count', 'run.coverage_expected_count', 'run.coverage_available_count',
                 'run.coverage_missing_count', 'run.coverage_min_threshold', 'run.coverage_threshold_mode',
                 'run.coverage_universe_basis', 'run.coverage_contract_version',
+                'run.coverage_reason_code',
                 'lineage.identity_revision_set_hash', 'lineage.calendar_revision_set_hash',
                 'lineage.status_revision_set_hash', 'lineage.event_revision_set_hash',
                 'lineage.formula_version as lineage_formula_version',
                 'lineage.build_id as lineage_build_id', 'lineage.read_model_version as lineage_read_model_version',
+                'lineage.semantic_nested_identity_version as lineage_semantic_nested_identity_version',
+                'lineage.semantic_observation_manifest_hash as lineage_semantic_observation_manifest_hash',
+                'lineage.semantic_identity_revision_set_hash as lineage_semantic_identity_revision_set_hash',
+                'lineage.semantic_calendar_revision_set_hash as lineage_semantic_calendar_revision_set_hash',
+                'lineage.semantic_status_revision_set_hash as lineage_semantic_status_revision_set_hash',
+                'lineage.semantic_event_revision_set_hash as lineage_semantic_event_revision_set_hash',
+                'lineage.semantic_source_scale_assessment_set_hash as lineage_semantic_source_scale_assessment_set_hash',
+                'lineage.semantic_market_structure_revision_set_hash as lineage_semantic_market_structure_revision_set_hash',
+                'lineage.semantic_factor_decision_set_hash as lineage_semantic_factor_decision_set_hash',
+                'lineage.semantic_factor_set_hash as lineage_semantic_factor_set_hash',
                 'cfg.config_hash as config_snapshot_hash', 'cfg.registry_revision as config_registry_revision'
             ])
             ->first();
@@ -1005,6 +1036,7 @@ class EodPublicationRepository
             ->distinct()->value('canonicalization_version');
         $freshness = strtoupper(trim((string) ($context->freshness_state ?? '')));
         if (!in_array($freshness, ['FRESH', 'STALE', 'DEGRADED', 'NOT_AVAILABLE'], true)) $freshness = 'NOT_AVAILABLE';
+        $nested = $this->semanticNestedIdentities($context);
 
         return [
             'market_scope' => 'IDX_REGULAR_EOD',
@@ -1018,17 +1050,21 @@ class EodPublicationRepository
                 'replaced_manifest_hash' => $this->manifestHashForPublicationId($context->replaced_publication_id),
             ],
             'artifact_hash_profile' => ArtifactSemanticHashService::PROFILE_V2,
-            'observation_manifest_hash' => strtolower((string) $context->observation_manifest_hash),
+            // Nested members are the V2 semantic identities (D-MD-B10-A002-003), never the
+            // allocation-bearing V1 columns that share their names.
+            'nested_identity_version' => SemanticNestedIdentityService::VERSION,
+            'observation_manifest_hash' => $nested['observation_manifest_hash'],
             'config_content_hash' => strtolower((string) $context->config_snapshot_hash),
             'config_registry_revision' => (string) $context->config_registry_revision,
-            'identity_revision_set_hash' => strtolower((string) $context->identity_revision_set_hash),
-            'calendar_revision_set_hash' => strtolower((string) $context->calendar_revision_set_hash),
-            'status_revision_set_hash' => strtolower((string) $context->status_revision_set_hash),
-            'event_revision_set_hash' => strtolower((string) $context->event_revision_set_hash),
-            'source_scale_assessment_set_hash' => strtolower((string) $context->source_scale_assessment_set_hash),
-            'market_structure_revision_set_hash' => strtolower((string) $context->market_structure_revision_set_hash),
-            'factor_decision_set_hash' => strtolower((string) $context->factor_decision_set_hash),
-            'factor_set_hash' => strtolower((string) $context->factor_set_hash),
+            'identity_revision_set_hash' => $nested['identity_revision_set_hash'],
+            'calendar_revision_set_hash' => $nested['calendar_revision_set_hash'],
+            'status_revision_set_hash' => $nested['status_revision_set_hash'],
+            'event_revision_set_hash' => $nested['event_revision_set_hash'],
+            'source_scale_assessment_set_hash' => $nested['source_scale_assessment_set_hash'],
+            'market_structure_revision_set_hash' => $nested['market_structure_revision_set_hash'],
+            'factor_decision_set_hash' => $nested['factor_decision_set_hash'],
+            'factor_set_hash' => $nested['factor_set_hash'],
+            'semantic_reasons' => $this->publicationScopeReasons($context),
             'price_product_code' => (string) $context->price_product_code,
             'price_product_version' => (string) $context->price_product_version,
             'canonicalization_version' => $canonicalizationVersion,
@@ -1057,6 +1093,54 @@ class EodPublicationRepository
             'seal_contract_version' => PublicationSemanticIdentityService::SEAL_CONTRACT_V2,
             'seal_hash_algorithm' => 'SHA-256',
         ];
+    }
+
+    /** The V2 nested semantic identities bound on the lineage row; incomplete is invalid. */
+    private function semanticNestedIdentities($context): array
+    {
+        if (($context->lineage_semantic_nested_identity_version ?? null) !== SemanticNestedIdentityService::VERSION) {
+            throw new \RuntimeException('DATASET_MANIFEST_INVALID: V2 nested semantic identity is not bound (semantic_nested_identity_version).');
+        }
+        $nested = [];
+        $missing = [];
+        foreach (SemanticNestedIdentityService::LINEAGE_COLUMNS as $member => $column) {
+            $value = strtolower(trim((string) ($context->{'lineage_'.$column} ?? '')));
+            if (preg_match('/^[a-f0-9]{64}$/', $value) !== 1) {
+                $missing[] = $column;
+            }
+            $nested[$member] = $value;
+        }
+        if ($missing !== []) {
+            throw new \RuntimeException('DATASET_MANIFEST_INVALID: V2 nested semantic identity incomplete: '.implode(',', $missing));
+        }
+
+        return $nested;
+    }
+
+    /**
+     * Publication-scope semantic reasons (D-MD-B10-A002-003 decision 2): only reasons the manifest
+     * itself owns. Reasons already bound in nested or artifact identities are not repeated, and
+     * terminal, read-time, verification and unregistered codes never enter. Today that is the
+     * coverage reason, which must agree with the bound coverage state under the locked mapping.
+     * Order is not semantic; members are deduplicated and canonically sorted.
+     */
+    private function publicationScopeReasons($context): array
+    {
+        $coverageState = CoverageGateStateNormalizer::normalize($context->coverage_gate_state ?? null);
+        $coverageReason = strtoupper(trim((string) ($context->coverage_reason_code ?? '')));
+        if ($coverageReason === '') {
+            throw new \RuntimeException('DATASET_MANIFEST_INVALID: publication semantic reason set incomplete: coverage_reason_code');
+        }
+        $mapped = [
+            'PASS' => ['COVERAGE_THRESHOLD_MET'],
+            'FAIL' => ['COVERAGE_BELOW_THRESHOLD', 'RUN_COVERAGE_LOW'],
+            'NOT_EVALUABLE' => ['RUN_COVERAGE_NOT_EVALUABLE'],
+        ];
+        if (!in_array($coverageReason, $mapped[$coverageState] ?? [], true)) {
+            throw new \RuntimeException('DATASET_MANIFEST_INVALID: coverage_reason_code '.$coverageReason.' contradicts coverage state '.$coverageState.'.');
+        }
+
+        return $this->semanticIdentities->canonicalReasonSet([$coverageReason]);
     }
 
     private function assertSemanticProfilesCompatible($context): string
@@ -1097,7 +1181,7 @@ class EodPublicationRepository
                 'eligibility' => strtolower((string) $context->eligibility_batch_hash),
             ],
             'config_content_hash' => strtolower((string) $context->config_snapshot_hash),
-            'observation_manifest_hash' => strtolower((string) $context->observation_manifest_hash),
+            'observation_manifest_hash' => $this->semanticNestedIdentities($context)['observation_manifest_hash'],
             'promote_mode' => (string) ($context->promote_mode ?? ''),
             'publish_target' => (string) ($context->publish_target ?? ''),
         ];

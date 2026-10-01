@@ -257,19 +257,23 @@ class ArtifactSemanticHashService
             throw new \RuntimeException('ARTIFACT_CONFIG_CONTENT_MISMATCH: run and immutable snapshot differ.');
         }
 
-        return [
+        // V2 artifacts consume only the V2 nested semantic identities (D-MD-B10-A002-003). The V1
+        // nested columns carry allocated keys and are never a fallback.
+        if (($lineage->semantic_nested_identity_version ?? null) !== SemanticNestedIdentityService::VERSION) {
+            throw new \RuntimeException('ARTIFACT_SEMANTIC_CONTEXT_INCOMPLETE: semantic_nested_identity_version');
+        }
+        $context = [
             'config_snapshot_id' => $configSnapshotId,
             'config_content_hash' => $configHash,
-            'observation_manifest_hash' => strtolower((string) $lineage->observation_manifest_hash),
-            'identity_revision_set_hash' => strtolower((string) $lineage->identity_revision_set_hash),
-            'status_revision_set_hash' => strtolower((string) $lineage->status_revision_set_hash),
-            'event_revision_set_hash' => strtolower((string) $lineage->event_revision_set_hash),
-            'source_scale_assessment_set_hash' => strtolower((string) $lineage->source_scale_assessment_set_hash),
-            'market_structure_revision_set_hash' => strtolower((string) $lineage->market_structure_revision_set_hash),
-            'factor_decision_set_hash' => strtolower((string) $lineage->factor_decision_set_hash),
-            'factor_set_hash' => strtolower((string) $this->value($publication, 'factor_set_hash')),
+            // Rows still carry the V1 factor-set binding; it is checked, never hashed.
+            'factor_set_row_binding_hash' => strtolower((string) $this->value($publication, 'factor_set_hash')),
             'read_model_version' => (string) ($lineage->read_model_version ?: $this->value($publication, 'read_model_version')),
         ];
+        foreach (SemanticNestedIdentityService::LINEAGE_COLUMNS as $member => $column) {
+            $context[$member] = strtolower(trim((string) ($lineage->{$column} ?? '')));
+        }
+
+        return $context;
     }
 
     private function loadFoundationIdentities(
@@ -298,30 +302,83 @@ class ArtifactSemanticHashService
                 $row,
                 $extraWhere
             );
-            $sourceObservationId = (int) $this->value($bar, 'source_observation_id');
-            if ($sourceObservationId <= 0) {
-                throw new \RuntimeException('ARTIFACT_SOURCE_OBSERVATION_REQUIRED: '.$artifact.':'.$localKey);
-            }
-
-            $source = DB::table('md_source_observation_rows')
-                ->where('source_observation_id', $sourceObservationId)
-                ->where('listing_id', (int) $row['listing_id'])
-                ->where('trade_date', $tradeDate)
-                ->orderBy('source_observation_row_id')
-                ->first();
-            if (!$source || trim((string) $source->provider) === '' || trim((string) $source->provider_symbol) === '') {
-                throw new \RuntimeException('ARTIFACT_PROVIDER_SOURCE_REQUIRED: '.$artifact.':'.$localKey);
-            }
-
-            $identities[$localKey] = $this->identities->resolveFoundationProviderContext(
-                (string) $source->provider,
-                (string) $source->provider_symbol,
+            $identities[$localKey] = $this->resolveBarIdentity(
+                $bar,
+                (int) $row['listing_id'],
+                $tradeDate,
                 $coordinate,
-                $coordinate
+                $artifact,
+                $localKey
             );
         }
 
         return $identities;
+    }
+
+    /**
+     * Retained foundation roots for listings, resolved through the same candidate bar and provider
+     * source row that artifact rows use, so nested semantic sets and artifacts agree on identity.
+     * Keys are the local listing ids the caller navigated with; only the values are semantic.
+     *
+     * @return array<int,array{issuer_root:string,instrument_root:string,listing_root:string}>
+     */
+    public function resolveListingRoots(
+        string $barTable,
+        string $tradeDate,
+        array $listingIds,
+        $run,
+        array $extraWhere = []
+    ): array {
+        $coordinate = $this->knowledgeCoordinate($run);
+        $roots = [];
+        foreach ($listingIds as $listingId) {
+            $listingId = (int) $listingId;
+            if (isset($roots[$listingId])) {
+                continue;
+            }
+            $row = ['trade_date' => $tradeDate, 'listing_id' => $listingId];
+            $localKey = $this->localIdentityKey($row);
+            $identity = $this->assertIdentity($this->resolveBarIdentity(
+                $this->matchingBar($barTable, $tradeDate, $row, $extraWhere),
+                $listingId,
+                $tradeDate,
+                $coordinate,
+                'nested',
+                $localKey
+            ));
+            $roots[$listingId] = [
+                'issuer_root' => (string) $identity['issuer_id'],
+                'instrument_root' => (string) $identity['instrument_id'],
+                'listing_root' => (string) $identity['listing_id'],
+            ];
+        }
+
+        return $roots;
+    }
+
+    private function resolveBarIdentity($bar, int $listingId, string $tradeDate, string $coordinate, string $artifact, string $localKey): array
+    {
+        $sourceObservationId = (int) $this->value($bar, 'source_observation_id');
+        if ($sourceObservationId <= 0) {
+            throw new \RuntimeException('ARTIFACT_SOURCE_OBSERVATION_REQUIRED: '.$artifact.':'.$localKey);
+        }
+
+        $source = DB::table('md_source_observation_rows')
+            ->where('source_observation_id', $sourceObservationId)
+            ->where('listing_id', $listingId)
+            ->where('trade_date', $tradeDate)
+            ->orderBy('source_observation_row_id')
+            ->first();
+        if (!$source || trim((string) $source->provider) === '' || trim((string) $source->provider_symbol) === '') {
+            throw new \RuntimeException('ARTIFACT_PROVIDER_SOURCE_REQUIRED: '.$artifact.':'.$localKey);
+        }
+
+        return $this->identities->resolveFoundationProviderContext(
+            (string) $source->provider,
+            (string) $source->provider_symbol,
+            $coordinate,
+            $coordinate
+        );
     }
 
     private function matchingBar(
@@ -405,7 +462,8 @@ class ArtifactSemanticHashService
             $semantic[$field] = $row[$field] ?? null;
         }
         $rowFactorHash = strtolower(trim((string) ($row['factor_set_hash'] ?? '')));
-        if ($rowFactorHash !== '' && !hash_equals($context['factor_set_hash'], $rowFactorHash)) {
+        $rowFactorBinding = (string) ($context['factor_set_row_binding_hash'] ?? $context['factor_set_hash']);
+        if ($rowFactorHash !== '' && !hash_equals($rowFactorBinding, $rowFactorHash)) {
             throw new \RuntimeException('ARTIFACT_FACTOR_SET_CONTENT_MISMATCH');
         }
         $semantic['config_content_hash'] = $context['config_content_hash'];

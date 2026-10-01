@@ -14,6 +14,16 @@ use PHPUnit\Framework\TestCase;
  */
 class AliasNamingAndMeaningBoundaryTest extends TestCase
 {
+    /**
+     * Issued evidence admitted to the measured result by `D-MD-B10-A002-004`, each at the exact
+     * bytes it was issued with. `E-MD-B10-A002-001` is `IMMUTABLE_AFTER_ISSUE` and cannot be
+     * edited; its one alias-identifier line is a verbatim quotation of an existing test assertion
+     * against the preserved `eod_eligibility.eligible` column. A changed byte voids the admission.
+     */
+    private const ADMITTED_ISSUED_EVIDENCE = [
+        'records/evidence/E-MD-B10-A002-001_FINAL_SEMANTIC_HASH_AFFECTED_VERIFICATION_SCOPE_CORRECTION.json' => '4a371ba393c9a209f2f3dd5e70c84612116412186a20e88f740b576835921887',
+    ];
+
     private function root(): string
     {
         return dirname(__DIR__, 3);
@@ -133,17 +143,34 @@ class AliasNamingAndMeaningBoundaryTest extends TestCase
         [$usingDocs, $withoutRepetition] = $this->aliasIdentifierScan();
 
         $this->assertGreaterThan(15, count($usingDocs), 'the scan must reach the documents that use the alias');
+        $expected = array_merge([
+            'authority/strategy/book/CONSUMER_READ_CONTRACT_LOCKED.md',
+            'authority/strategy/registry/Volume_and_Turnover_Normalization_LOCKED.md',
+            'development/implementation/CI-MD-B01-A010-001_TERM_OWNERSHIP_AND_SCHEMA_SURFACE.md',
+            'records/evidence/E-MD-B00-A001-001_BASELINE_INVENTORY.md',
+            'records/evidence/E-MD-B01-A002-001_DATE_DRIVEN_AND_PROVIDER_ABSTRACTION.json',
+        ], array_keys(self::ADMITTED_ISSUED_EVIDENCE));
+        sort($expected);
         $this->assertSame(
-            [
-                'authority/strategy/book/CONSUMER_READ_CONTRACT_LOCKED.md',
-                'authority/strategy/registry/Volume_and_Turnover_Normalization_LOCKED.md',
-                'development/implementation/CI-MD-B01-A010-001_TERM_OWNERSHIP_AND_SCHEMA_SURFACE.md',
-                'records/evidence/E-MD-B00-A001-001_BASELINE_INVENTORY.md',
-                'records/evidence/E-MD-B01-A002-001_DATE_DRIVEN_AND_PROVIDER_ABSTRACTION.json',
-            ],
+            $expected,
             $withoutRepetition,
             'a new document may not use the alias identifier without repeating that it means data_usable'
         );
+    }
+
+    /**
+     * An admission by decision is an admission of issued bytes, not of a path: each admitted record
+     * must still hash to the value it was issued with, so a rewritten record would fail here and
+     * fall back to the measurement above as an unadmitted document.
+     */
+    public function test_admitted_issued_evidence_is_admitted_only_at_its_issued_bytes(): void
+    {
+        $this->assertNotEmpty(self::ADMITTED_ISSUED_EVIDENCE);
+        foreach (self::ADMITTED_ISSUED_EVIDENCE as $relative => $issuedSha256) {
+            $body = $this->read('docs/market_data/'.$relative);
+            $this->assertSame($issuedSha256, hash('sha256', $body), $relative.' no longer has its issued bytes');
+            $this->assertTrue($this->usesAliasIdentifier($body), $relative.' must still be an alias user for its admission to mean anything');
+        }
     }
 
     /**

@@ -424,13 +424,22 @@ class EodBarsIngestService
         // whether or not a config snapshot exists. Withholding it alongside the config binding was
         // the same conflation: it left the candidate unable to state its own acquisition set.
         $manifestHash = $this->observations->manifestHashForObservationIds(array_column($sourceRows, 'source_observation_id'));
+        // V2 runs also bind the semantic observation manifest over the same root observations
+        // (D-MD-B10-A002-003). It is a content-only read: no producer selection is repeated.
+        $semanticManifestHash = trim((string) ($run->artifact_hash_profile ?? '')) === ArtifactSemanticHashService::PROFILE_V2
+            ? app(SemanticObservationIdentityService::class)->manifestHashForObservationIds(array_column($sourceRows, 'source_observation_id'))
+            : null;
         $this->publications->bindCandidateAcquisitionProvenance(
             $candidatePublication->publication_id,
             $run->run_id,
             $manifestHash,
-            $configSnapshotId
+            $configSnapshotId,
+            $semanticManifestHash
         );
         $run->observation_manifest_hash = $manifestHash;
+        if ($semanticManifestHash !== null) {
+            $run->semantic_observation_manifest_hash = $semanticManifestHash;
+        }
         if (! is_array($barMutationSummary)) {
             $barMutationSummary = $this->defaultBarMutationSummary($requestedDate, $candidatePublication->publication_id, $validRows, $useHistory);
         }

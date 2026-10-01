@@ -141,3 +141,17 @@ E011's allocation-independence test hashed documents that contain no allocated k
 The 16 recovered failures are 2 A (both fixed), 8 D, 2 F and 4 E. The four E rows are static-guard regressions from committed units after the E-MD-B18-A002-074 baseline and are recorded as F-MD-B10-A002-002.
 
 The finding remains OPEN and its 56-rule scope is unchanged. Nested observation/factor/temporal revision-set producer identity, sorted semantic reasons, controlled deployment and complete reproof remain. No predicate is promoted; B05 117/117, B10 1016/56/1072 and B18 100/13/113 formal 0 are unchanged. MD-DEP-0021 and MD-DEP-0020 remain BLOCKING.
+
+## 2026-10-01 owner membership decision — D-MD-B10-A002-003
+
+The remaining producers stopped on two membership questions that authority leaves open: whether a pipeline-derived assessment's `recorded_at` belongs in V2 identity, and which reasons the manifest-level sorted reason set holds. The owner decided both in D-MD-B10-A002-003. Platform-created assessments, factor sets and decisions hash their content, and `recorded_at` stays provenance and visibility time. Source-fact revisions keep governed knowledge time in the semantic revision tuple. The manifest binds a deduplicated, canonically sorted publication-scope reason set that holds the coverage reason and duplicates nothing already bound in a nested or artifact hash.
+
+The finding remains OPEN and its 56-rule scope is unchanged. The nested producers are not implemented yet. No predicate is promoted; MD-DEP-0021 and MD-DEP-0020 remain BLOCKING.
+
+## 2026-10-01 V2 nested semantic producers — E-MD-B10-A002-013
+
+Under D-MD-B10-A002-003, E-MD-B10-A002-013 implements the remaining semantic producers additively: a V2 observation manifest bound at ingest beside V1, and V2 identity-board, calendar, trading-status, market-structure, event, source-scale, factor-decision and factor-set identities derived at the hash stage. Per-listing sets carry retained foundation roots, source-fact revisions carry their governed knowledge time, and platform-created records carry content only. V2 artifacts, the V2 manifest and the V2 correction identity read only these identities, and the manifest binds the publication-scope reason set (the coverage reason). V1 columns and their consumers are unchanged.
+
+On isolated MariaDB databases with the retained IKPM root, the real producers give identical V2 identities, V2 bars artifact and V2 manifest across histories that differ in every local key, key order, insertion order and producer clock, while every V1 nested hash differs. Genuine semantic changes move exactly their owning identities, and thirteen mutation probes turned the intended assertions red. F-MD-B10-A002-003 records the cutoff exposure decision 1A asked for.
+
+The finding remains OPEN and its 56-rule scope is unchanged. Controlled deployment, F-MD-B10-A002-002 and the complete governed reproof remain. No predicate is promoted; MD-DEP-0021 and MD-DEP-0020 remain BLOCKING.

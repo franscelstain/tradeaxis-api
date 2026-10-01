@@ -1582,6 +1582,8 @@ trait UsesMarketDataSqlite
         (new \AddProducerBoundInputCaptures())->up();
         require_once dirname(__DIR__, 2).'/database/migrations/2026_09_21_000001_add_publication_lineage_binding_seal_immutability.php';
         (new \AddPublicationLineageBindingSealImmutability())->up();
+        require_once dirname(__DIR__, 2).'/database/migrations/2026_10_01_000001_add_semantic_nested_identity.php';
+        (new \AddSemanticNestedIdentity())->up();
         $this->seedMarketDataSectorTaxonomy();
     }
 

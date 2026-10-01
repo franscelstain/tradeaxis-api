@@ -6,8 +6,8 @@ use App\Infrastructure\Persistence\MarketData\EodCorrectionRepository;
 use App\Infrastructure\Persistence\MarketData\EodEvidenceRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\ReplayResultRepository;
+use App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository;
 use Illuminate\Support\Facades\DB;
-use Mockery as m;
 use Tests\Support\UsesMarketDataSqlite;
 
 // Test classes are not autoloaded, so a single-file run needs the borrowed fixture class loaded.
@@ -25,9 +25,11 @@ require_once __DIR__.'/B18ReplayComparisonExhaustivenessTest.php';
  *   `ReplayVerificationService` -> `ReplayResultRepository::upsertMetric()` -> `md_replay_daily_metrics`
  *   -> `EodEvidenceRepository::findReplayMetric()` -> `MarketDataEvidenceExportService`
  *
- * Only what the writer *consumes* is stubbed (the run, the publication, and the already-verified
- * bound-input context Reader projects) -- those are the canonical sources each identity is asserted
- * against. Two questions are asked of every frozen identity:
+ * What the writer *consumes* is persisted, not stubbed: the run, the sealed publication with its
+ * pointer and eligibility rows, the lineage binding, and the input captures behind the VERIFIED
+ * bound context, written through the real capture writer and read back by the real evidence and
+ * publication repositories (`F-MD-B10-A002-002`). Those rows are the canonical sources each identity
+ * is asserted against. Two questions are asked of every frozen identity:
  *
  *  - is it recorded, and does the export reproduce exactly what was persisted? (`R0023`, `R0004`)
  *  - does it follow its own canonical source and nothing else? Perturbing exactly one source must
@@ -67,7 +69,6 @@ class B18ReplayPersistedEvidenceBindingTest extends TestCase
 
     protected function tearDown(): void
     {
-        m::close();
         $this->tearDownMarketDataSqlite();
         parent::tearDown();
     }
@@ -170,7 +171,20 @@ class B18ReplayPersistedEvidenceBindingTest extends TestCase
         }
     }
 
-    /** @return array<string,array{0:array,1:array,2:?string,3:array<int,string>,4:array<string,string>}> */
+    /**
+     * Expected moves are what the production derivation does with one changed persisted source. A
+     * dependent identity may move only because its governed semantic input changed
+     * (D-MD-B10-A002-005):
+     *
+     *  - the `registry_versions` capture holds the read-model, serialization and build versions, and
+     *    its payload hash is the formula and reason registry identity, so changing any of those
+     *    versions also moves the two registry hashes -- the same semantic capture;
+     *  - a run bound to another configuration snapshot id with identical content moves only the
+     *    recorded id. Producers capture under a selection that names the snapshot id, but the
+     *    temporal and event/factor identities are built from content without the run-scope keys.
+     *
+     * @return array<string,array{0:array,1:array,2:?string,3:array<int,string>,4:array<string,string>}>
+     */
     public function canonicalSourcePerturbations(): array
     {
         return [
@@ -216,17 +230,17 @@ class B18ReplayPersistedEvidenceBindingTest extends TestCase
             ],
             'read-model version' => [
                 [], [], 'read_model',
-                ['read_model_version'],
+                ['read_model_version', 'formula_registry_hash', 'reason_registry_hash'],
                 ['read_model_version' => 'market_data_read_product_v2_probe'],
             ],
             'serialization version' => [
                 [], [], 'serialization',
-                ['serialization_version'],
+                ['serialization_version', 'formula_registry_hash', 'reason_registry_hash'],
                 ['serialization_version' => 'canonical_json_v2_probe'],
             ],
             'executable build' => [
                 [], [], 'build',
-                ['executable_build_identity'],
+                ['executable_build_identity', 'formula_registry_hash', 'reason_registry_hash'],
                 ['executable_build_identity' => 'sha256:other_build'],
             ],
         ];
@@ -328,23 +342,21 @@ class B18ReplayPersistedEvidenceBindingTest extends TestCase
     // ---- harness ---------------------------------------------------------------------------------
 
     /**
-     * Runs the real verifier and the real writer once, then reads the persisted row back and exports
-     * it through the real evidence repository.
+     * Persists one world, runs the real verifier and the real writer once, then reads the persisted
+     * row back and exports it through the real evidence repository. No repository is replaced: the
+     * verifier reads the run, the sealed publication, its pointer, eligibility rows, lineage binding
+     * and the captures behind the bound context from the database.
      *
-     * @param array<string,mixed> $run      overrides on the run row the verifier reads
-     * @param array<string,mixed> $manifest overrides on the publication build manifest
+     * @param array<string,mixed> $run      overrides on the persisted run row
+     * @param array<string,mixed> $manifest overrides on the persisted publication/lineage sources
      * @return array{row:object,bound:array<string,mixed>,result_json:array<string,mixed>}
      */
     private function persist(array $run = [], array $manifest = [], ?string $contextMutator = null): array
     {
-        $evidence = $this->borrow('mocks', true, $run, [])[0];
-        $publications = m::mock(EodPublicationRepository::class);
-        $publications->shouldReceive('buildManifestByPublicationId')
-            ->andReturn((object) $this->manifest($manifest, $contextMutator));
-
+        $this->persistWorld($run, $manifest, $contextMutator);
         $fixtureDir = $this->borrow('fixtureDir', [], true);
 
-        $result = (new ReplayVerificationService($evidence, $publications, new ReplayResultRepository()))
+        $result = (new ReplayVerificationService(new EodEvidenceRepository(), new EodPublicationRepository(), new ReplayResultRepository()))
             ->verifyRunAgainstFixture(self::RUN_ID, $fixtureDir);
 
         $row = DB::table('md_replay_daily_metrics')->where('replay_id', $result['replay_id'])->first();
@@ -360,24 +372,83 @@ class B18ReplayPersistedEvidenceBindingTest extends TestCase
         return ['row' => $row, 'bound' => $json['bound_inputs'], 'result_json' => $json];
     }
 
-    /** The VERIFIED bound context and build manifest Reader would project for the publication. */
-    private function manifest(array $override, ?string $contextMutator): array
+    /**
+     * One coherent world per scenario, written in production order: the run, its input captures
+     * through the real capture writer (which refuses once the run has a sealed publication), then
+     * the sealed publication, its lineage binding and bound context, the pointer and the
+     * eligibility rows. The publication carries the run's own artifact hashes, configuration and
+     * factor-set hash, as a sealed production publication does; like the borrowed fixture's run, it
+     * declares no analytical product or factor-set row. A perturbation changes a persisted source,
+     * so Reader and the manifest builder derive each identity from stored content.
+     *
+     * @param array<string,mixed> $runOverride
+     * @param array<string,mixed> $manifestOverride
+     */
+    private function persistWorld(array $runOverride, array $manifestOverride, ?string $contextMutator): void
     {
-        $components = [
-            ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('u', 64)],
-            ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('n', 64)],
-            ['stage_code' => 'RUN_CONTEXT', 'component_key' => 'registry_versions', 'slot_hash' => str_repeat('3', 64), 'payload_hash' => str_repeat('r', 64)],
+        // A sealed binding is immutable (the schema refuses to delete it), so each scenario starts
+        // from a fresh database instead of rewriting the previous one.
+        $this->tearDownMarketDataSqlite();
+        $this->bootMarketDataSqlite();
+
+        $run = array_merge($this->borrow('runRow'), $runOverride);
+        $run['factor_set_hash'] = $manifestOverride['factor_set_hash'] ?? $run['factor_set_hash'];
+        $configSnapshotId = (int) $run['config_snapshot_id'];
+        $sealedAt = self::TRADE_DATE.' 17:30:00';
+
+        DB::table('eod_runs')->insert($run + [
+            'knowledge_cutoff_at' => self::TRADE_DATE.' 17:00:00',
+            'lifecycle_state' => 'COMPLETED',
+            'quality_gate_state' => 'PASS',
+            'stage' => 'FINALIZE',
+            'publication_id' => self::PUBLICATION_ID,
+            'is_current_publication' => 1,
+            'started_at' => self::TRADE_DATE.' 17:01:00',
+            'created_at' => self::TRADE_DATE.' 17:01:00',
+            'updated_at' => self::TRADE_DATE.' 17:30:00',
+        ]);
+        DB::table('md_config_snapshots')->insert([
+            'config_snapshot_id' => $configSnapshotId,
+            'snapshot_uid' => hash('sha256', 'b18-persisted-evidence-config-'.$configSnapshotId),
+            'snapshot_schema_version' => 'market_data_config_snapshot_v1',
+            'serialization_version' => 'canonical_json_v1',
+            'resolved_config_json' => '{}',
+            'config_hash' => $run['config_hash'],
+            'registry_revision' => 'platform_config_registry_v2',
+            'effective_at' => self::TRADE_DATE.' 00:00:00',
+            'recorded_at' => self::TRADE_DATE.' 16:00:00',
+            'build_id' => 'test-build',
+            'environment_profile' => 'testing',
+            'resolver_version' => 'test-resolver-v1',
+            'created_at' => self::TRADE_DATE.' 16:00:00',
+        ]);
+
+        // Inputs, captured before the seal exactly as the producers capture them.
+        $owningRun = DB::table('eod_runs')->where('run_id', self::RUN_ID)->first();
+        $captures = new RunInputCaptureRepository();
+        $universe = [
+            ['ticker_id' => 1, 'listing_id' => 1001, 'ticker_code' => 'AAAA'],
+            ['ticker_id' => 2, 'listing_id' => 1002, 'ticker_code' => 'BBBB'],
         ];
+        if ($contextMutator === 'universe') {
+            $universe[] = ['ticker_id' => 3, 'listing_id' => 1003, 'ticker_code' => 'CCCC'];
+        }
         $registry = [
-            'read_model_version' => 'market_data_read_product_v1',
+            'registry_contract' => 'producer_registry_content_v1',
+            'reason_registry_source' => 'eod_reason_codes',
+            'reason_entries' => [['code' => 'ELIG_NOT_ENOUGH_HISTORY', 'category' => 'ELIGIBILITY', 'description' => 'insufficient history', 'severity' => 'WARN', 'is_active' => true]],
+            'indicator_set_version' => 'eod_indicators_v1',
+            'coverage_contract_version' => 'coverage_gate_v1',
+            'eligibility_contract_version' => 'eligibility_snapshot_v1',
+            'config_registry_revision' => 'platform_config_registry_v2',
+            'config_resolver_version' => 'test-resolver-v1',
             'serialization_version' => 'canonical_json_v1_probe',
+            'read_model_version' => 'market_data_read_product_v1',
+            'implementation_identities' => [],
             'executable_build' => ['build_id' => 'sha256:probe_build_identity'],
         ];
-
-        if ($contextMutator === 'universe') {
-            $components[0]['payload_hash'] = str_repeat('x', 64);
-        } elseif ($contextMutator === 'registry') {
-            $components[2]['payload_hash'] = str_repeat('q', 64);
+        if ($contextMutator === 'registry') {
+            $registry['reason_entries'][] = ['code' => 'ELIG_STALE_PRICE', 'category' => 'ELIGIBILITY', 'description' => 'stale price', 'severity' => 'WARN', 'is_active' => true];
         } elseif ($contextMutator === 'read_model') {
             $registry['read_model_version'] = 'market_data_read_product_v2_probe';
         } elseif ($contextMutator === 'serialization') {
@@ -385,23 +456,97 @@ class B18ReplayPersistedEvidenceBindingTest extends TestCase
         } elseif ($contextMutator === 'build') {
             $registry['executable_build']['build_id'] = 'sha256:other_build';
         }
+        $registry['reason_registry_hash'] = hash('sha256', RunInputCaptureRepository::canonicalJson($registry['reason_entries']));
 
-        return array_merge([
-            'bound_input_context' => [
-                'available' => true, 'status' => 'VERIFIED', 'schema_version' => 'md_publication_inputs_v2',
-                'reason' => null, 'bound_input_context_hash' => str_repeat('f', 64),
-                'components' => $components,
-                'scope' => [], 'component_manifest' => ['status' => 'COMPLETE'],
-                'registry_content' => $registry,
-            ],
+        $captured = [
+            $captures->captureForProducer($owningRun, 'ELIGIBILITY', 'universe_identity', 'eligibility-universe/v1', $universe),
+            $captures->captureForProducer($owningRun, 'ELIGIBILITY', 'ancillary', 'eligibility-materialized-inputs/v1',
+                [['dormant_ticker_ids' => [], 'delivered_ticker_ids' => [1, 2]]], ['publication_id' => self::PUBLICATION_ID, 'use_history' => true]),
+            $captures->capture(self::RUN_ID, 'RUN_CONTEXT', 'registry_versions',
+                ['operation' => 'producer-registry-build/v1', 'knowledge_cutoff_at' => (string) $owningRun->knowledge_cutoff_at], [$registry]),
+        ];
+        $components = array_map(static function (array $capture): array {
+            return [
+                'stage_code' => $capture['stage_code'], 'component_key' => $capture['component_key'],
+                'slot_hash' => $capture['slot_hash'], 'payload_hash' => $capture['payload_hash'],
+                'member_count' => (int) $capture['member_count'], 'source_run_id' => self::RUN_ID,
+            ];
+        }, $captured);
+        $boundContextJson = json_encode([
+            'schema_version' => 'md_publication_inputs_v2',
+            'scope' => ['config_snapshot_id' => $configSnapshotId, 'publication_id' => self::PUBLICATION_ID, 'trade_date' => self::TRADE_DATE],
+            'components' => $components,
+            'component_manifest' => ['status' => 'COMPLETE'],
+        ]);
+
+        $sources = array_merge([
             'identity_revision_set_hash' => str_repeat('a', 64),
             'calendar_revision_set_hash' => str_repeat('b', 64),
             'status_revision_set_hash' => str_repeat('c', 64),
             'event_revision_set_hash' => str_repeat('d', 64),
             'source_scale_assessment_set_hash' => str_repeat('e', 64),
             'factor_decision_set_hash' => str_repeat('f', 64),
-            'factor_set_hash' => str_repeat('4', 64),
-        ], $override);
+        ], array_diff_key($manifestOverride, ['factor_set_hash' => true]));
+
+        DB::table('eod_publications')->insert([
+            'publication_id' => self::PUBLICATION_ID,
+            'trade_date' => self::TRADE_DATE,
+            'run_id' => self::RUN_ID,
+            'publication_version' => (int) $run['publication_version'],
+            'is_current' => 1,
+            'seal_state' => 'SEALED',
+            'bars_batch_hash' => $run['bars_batch_hash'],
+            'indicators_batch_hash' => $run['indicators_batch_hash'],
+            'eligibility_batch_hash' => $run['eligibility_batch_hash'],
+            'config_snapshot_id' => $configSnapshotId,
+            'factor_set_hash' => $run['factor_set_hash'],
+            'observation_manifest_hash' => $run['observation_manifest_hash'],
+            'source_scale_assessment_set_hash' => $sources['source_scale_assessment_set_hash'],
+            'factor_decision_set_hash' => $sources['factor_decision_set_hash'],
+            'sealed_at' => $sealedAt,
+            'created_at' => self::TRADE_DATE.' 17:10:00',
+            'updated_at' => $sealedAt,
+        ]);
+        DB::table('md_publication_lineage_bindings')->insert([
+            'publication_id' => self::PUBLICATION_ID,
+            'config_snapshot_id' => $configSnapshotId,
+            'observation_manifest_hash' => $run['observation_manifest_hash'],
+            'identity_revision_set_hash' => $sources['identity_revision_set_hash'],
+            'calendar_revision_set_hash' => $sources['calendar_revision_set_hash'],
+            'status_revision_set_hash' => $sources['status_revision_set_hash'],
+            'event_revision_set_hash' => $sources['event_revision_set_hash'],
+            'source_scale_assessment_set_hash' => $sources['source_scale_assessment_set_hash'],
+            'factor_decision_set_hash' => $sources['factor_decision_set_hash'],
+            'formula_version' => 'eod_indicators_v1',
+            'build_id' => 'test-build',
+            'read_model_version' => 'market_data_read_product_v1',
+            'bound_input_schema_version' => 'md_publication_inputs_v2',
+            'bound_input_context_json' => $boundContextJson,
+            'bound_input_context_hash' => hash('sha256', $boundContextJson),
+            'bound_input_capture_manifest_json' => '{}',
+            'created_at' => self::TRADE_DATE.' 17:10:00',
+        ]);
+        DB::table('eod_current_publication_pointer')->insert([
+            'trade_date' => self::TRADE_DATE,
+            'publication_id' => self::PUBLICATION_ID,
+            'run_id' => self::RUN_ID,
+            'publication_version' => (int) $run['publication_version'],
+            'sealed_at' => $sealedAt,
+            'updated_at' => $sealedAt,
+        ]);
+
+        // Ten eligibility rows: seven usable, three held for history, the counts the fixture expects.
+        for ($tickerId = 1; $tickerId <= 10; $tickerId++) {
+            DB::table('eod_eligibility')->insert([
+                'trade_date' => self::TRADE_DATE,
+                'ticker_id' => $tickerId,
+                'eligible' => $tickerId <= 7 ? 1 : 0,
+                'reason_code' => $tickerId <= 7 ? null : 'ELIG_NOT_ENOUGH_HISTORY',
+                'run_id' => self::RUN_ID,
+                'publication_id' => self::PUBLICATION_ID,
+                'created_at' => self::TRADE_DATE.' 17:20:00',
+            ]);
+        }
     }
 
     /** Calls a private fixture helper of the exhaustiveness guard, so the fixture is defined once. */

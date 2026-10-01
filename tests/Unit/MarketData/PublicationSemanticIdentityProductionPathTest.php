@@ -2,6 +2,7 @@
 
 use App\Application\MarketData\Services\ArtifactSemanticHashService;
 use App\Application\MarketData\Services\PublicationSemanticIdentityService;
+use App\Application\MarketData\Services\SemanticNestedIdentityService;
 use App\Infrastructure\Persistence\MarketData\EodCorrectionRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\EodRunRepository;
@@ -455,6 +456,7 @@ class PublicationSemanticIdentityProductionPathTest extends TestCase
             'terminal_status' => 'SUCCESS',
             'publishability_state' => 'READABLE',
             'coverage_gate_state' => 'PASS',
+            'coverage_reason_code' => 'COVERAGE_THRESHOLD_MET',
             'coverage_universe_count' => 100,
             'coverage_available_count' => 100,
             'coverage_missing_count' => 0,
@@ -566,7 +568,10 @@ class PublicationSemanticIdentityProductionPathTest extends TestCase
             'bound_input_context_hash' => hash('sha256', $boundInputContextJson),
             'bound_input_capture_manifest_json' => '{}',
             'created_at' => '2026-03-20 17:10:00',
-        ]);
+            // Hand-set V2 nested identities: this test proves the publication layer; the nested
+            // producers are proven through their own production path.
+            'semantic_nested_identity_version' => SemanticNestedIdentityService::VERSION,
+        ] + $this->semanticNestedIdentities());
         DB::table('eod_runs')->where('run_id', $publication->run_id)->update([
             'config_snapshot_id' => $ids['config_snapshot'],
             'observation_manifest_hash' => $observationManifestHash,
@@ -590,5 +595,15 @@ class PublicationSemanticIdentityProductionPathTest extends TestCase
             EodRun::query()->findOrFail($publication->run_id),
             $publicationId
         );
+    }
+
+    private function semanticNestedIdentities(): array
+    {
+        $identities = [];
+        foreach (SemanticNestedIdentityService::LINEAGE_COLUMNS as $column) {
+            $identities[$column] = hash('sha256', 'test-'.$column);
+        }
+
+        return $identities;
     }
 }

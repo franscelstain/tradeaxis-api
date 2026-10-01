@@ -284,7 +284,24 @@ class PublicationGovernanceBindingService
 
     private function calendarRevisionSetHash($tradeDate, $knownAt): string
     {
-        $rows = DB::table('md_market_calendar_revisions as revision')
+        $rows = array_map(function ($row) {
+            return [
+                'calendar_revision_id' => (int) $row->calendar_revision_id,
+                'revision_uid' => (string) $row->revision_uid,
+                'session_state' => (string) $row->session_state,
+            ];
+        }, $this->calendarRevisionsForTradeDate($tradeDate, $knownAt));
+
+        return $this->hashRows('calendar-revision-set/v1', $rows);
+    }
+
+    /**
+     * The calendar revisions known at the run's cutoff for one trade date. Shared with the V2
+     * semantic calendar set so both identities describe the same selected population.
+     */
+    public function calendarRevisionsForTradeDate($tradeDate, $knownAt): array
+    {
+        return DB::table('md_market_calendar_revisions as revision')
             ->where('revision.cal_date', $tradeDate)
             ->where('revision.recorded_at', '<=', $knownAt)
             ->whereNotExists(function ($sub) use ($knownAt) {
@@ -295,16 +312,7 @@ class PublicationGovernanceBindingService
             })
             ->orderBy('revision.calendar_revision_id')
             ->get()
-            ->map(function ($row) {
-                return [
-                    'calendar_revision_id' => (int) $row->calendar_revision_id,
-                    'revision_uid' => (string) $row->revision_uid,
-                    'session_state' => (string) $row->session_state,
-                ];
-            })
             ->all();
-
-        return $this->hashRows('calendar-revision-set/v1', $rows);
     }
 
     private function statusRevisionSetHash(array $rows): string

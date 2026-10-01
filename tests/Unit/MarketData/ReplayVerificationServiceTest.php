@@ -402,16 +402,16 @@ class ReplayVerificationServiceTest extends TestCase
     public function test_temporal_identity_and_event_factor_hash_are_domain_isolated_by_component(): void
     {
         $baseline = $this->actualBoundInputContextForComponents([
-            ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('u', 64)],
-            ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('n', 64)],
+            ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('u', 64), 'semantic_payload_hash' => hash('sha256', str_repeat('u', 64))],
+            ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('n', 64), 'semantic_payload_hash' => hash('sha256', str_repeat('n', 64))],
         ]);
         $changedUniverse = $this->actualBoundInputContextForComponents([
-            ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('v', 64)],
-            ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('n', 64)],
+            ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('v', 64), 'semantic_payload_hash' => hash('sha256', str_repeat('v', 64))],
+            ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('n', 64), 'semantic_payload_hash' => hash('sha256', str_repeat('n', 64))],
         ]);
         $changedAncillary = $this->actualBoundInputContextForComponents([
-            ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('u', 64)],
-            ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('m', 64)],
+            ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('u', 64), 'semantic_payload_hash' => hash('sha256', str_repeat('u', 64))],
+            ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('m', 64), 'semantic_payload_hash' => hash('sha256', str_repeat('m', 64))],
         ]);
 
         $this->assertNotSame('', $baseline['temporal_identity_hash'], 'universe_identity component must produce a real, non-empty hash');
@@ -428,6 +428,47 @@ class ReplayVerificationServiceTest extends TestCase
             'changing only ancillary must not bleed into temporal_identity_hash');
         $this->assertNotSame($baseline['event_factor_hash'], $changedAncillary['event_factor_hash'],
             'changing the ancillary component (which carries contamination content) must change event_factor_hash');
+    }
+
+    /**
+     * D-MD-B10-A002-005: a dependent identity may move only because its governed semantic input
+     * changed. Slot and payload hashes carry the capture's run-scope keys (configuration snapshot,
+     * publication and run ids), so two captures of the same content under other local ids differ
+     * there and agree on Reader's semantic payload hash. The identities follow the semantic hash,
+     * and a component without one leaves its identity empty instead of falling back to the
+     * allocation-bearing hashes.
+     */
+    public function test_temporal_and_event_factor_identity_ignore_run_scope_allocation(): void
+    {
+        $semanticUniverse = hash('sha256', 'universe content');
+        $semanticAncillary = hash('sha256', 'ancillary content');
+        $baseline = $this->actualBoundInputContextForComponents([
+            ['stage_code' => 'ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('a', 64), 'semantic_payload_hash' => $semanticUniverse],
+            ['stage_code' => 'ELIGIBILITY', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('b', 64), 'semantic_payload_hash' => $semanticAncillary],
+        ]);
+        $reallocated = $this->actualBoundInputContextForComponents([
+            ['stage_code' => 'ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('3', 64), 'payload_hash' => str_repeat('c', 64), 'semantic_payload_hash' => $semanticUniverse],
+            ['stage_code' => 'ELIGIBILITY', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('4', 64), 'payload_hash' => str_repeat('d', 64), 'semantic_payload_hash' => $semanticAncillary],
+        ]);
+        $changedContent = $this->actualBoundInputContextForComponents([
+            ['stage_code' => 'ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('a', 64), 'semantic_payload_hash' => hash('sha256', 'other universe content')],
+            ['stage_code' => 'ELIGIBILITY', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('b', 64), 'semantic_payload_hash' => $semanticAncillary],
+        ]);
+        $withoutSemantic = $this->actualBoundInputContextForComponents([
+            ['stage_code' => 'ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('a', 64)],
+            ['stage_code' => 'ELIGIBILITY', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('b', 64), 'semantic_payload_hash' => $semanticAncillary],
+        ]);
+
+        $this->assertNotSame('', $baseline['temporal_identity_hash']);
+        $this->assertSame($baseline['temporal_identity_hash'], $reallocated['temporal_identity_hash'],
+            'other slot and payload hashes over the same content must not move the temporal identity');
+        $this->assertSame($baseline['event_factor_hash'], $reallocated['event_factor_hash'],
+            'other slot and payload hashes over the same content must not move the event/factor identity');
+        $this->assertNotSame($baseline['temporal_identity_hash'], $changedContent['temporal_identity_hash'],
+            'changed content must move the temporal identity');
+        $this->assertSame($baseline['event_factor_hash'], $changedContent['event_factor_hash']);
+        $this->assertSame('', $withoutSemantic['temporal_identity_hash'],
+            'a component without a semantic payload hash leaves the identity unavailable');
     }
 
     /**
@@ -1547,8 +1588,8 @@ class ReplayVerificationServiceTest extends TestCase
                 'reason' => null,
                 'bound_input_context_hash' => str_repeat('f', 64),
                 'components' => [
-                    ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('u', 64)],
-                    ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('n', 64)],
+                    ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('u', 64), 'semantic_payload_hash' => hash('sha256', str_repeat('u', 64))],
+                    ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('n', 64), 'semantic_payload_hash' => hash('sha256', str_repeat('n', 64))],
                     ['stage_code' => 'RUN_CONTEXT', 'component_key' => 'registry_versions', 'slot_hash' => str_repeat('3', 64), 'payload_hash' => str_repeat('r', 64)],
                 ],
                 'scope' => [],

@@ -318,7 +318,7 @@ class PublicationInputBindingService
         $seedRunId = $this->captures->resolveSeedRunId((int) $run->run_id);
         $sourceCaptureCache = [];
         $registryVersionsContent = null;
-        foreach ($bundle['components'] as $component) {
+        foreach ($bundle['components'] as $index => $component) {
             foreach (['stage_code', 'component_key', 'slot_hash', 'payload_hash', 'source_run_id'] as $field) {
                 if (! array_key_exists($field, $component)) {
                     throw new \RuntimeException('INPUT_CAPTURE_SEAL_VERIFICATION_COMPONENT_MALFORMED: missing '.$field);
@@ -357,8 +357,12 @@ class PublicationInputBindingService
             // just never decoded past this point before. Decoding here, once, after the exact same
             // payload_hash check every other component already passed, adds no new trust: it reads
             // only content already proven immutable and unaltered.
+            // D-MD-B10-A002-005: identities derived from this projection read the component's
+            // content without the run-scope keys its slot carries, so re-allocating a run's
+            // configuration snapshot or publication with identical content moves none of them.
+            $decoded = $this->captures->verify($actualRow);
+            $bundle['components'][$index]['semantic_payload_hash'] = RunInputCaptureRepository::semanticPayloadHash($decoded);
             if ($registryVersionsContent === null && $component['component_key'] === 'registry_versions') {
-                $decoded = $this->captures->verify($actualRow);
                 $registryVersionsContent = $decoded['rows'][0] ?? [];
             }
         }

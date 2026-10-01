@@ -2,6 +2,7 @@
 
 use App\Application\MarketData\Services\ArtifactSemanticHashService;
 use App\Application\MarketData\Services\DeterministicHashService;
+use App\Application\MarketData\Services\SemanticNestedIdentityService;
 use App\Application\SecurityIdentity\FoundationService;
 use App\Infrastructure\Persistence\MarketData\TemporalIdentityRepository;
 use App\Infrastructure\Persistence\SecurityIdentity\FoundationRepository;
@@ -93,6 +94,10 @@ class ArtifactSemanticIdentityOnMariaDbTest extends TestCase
             $table->char('market_structure_revision_set_hash', 64);
             $table->char('factor_decision_set_hash', 64);
             $table->string('read_model_version', 64);
+            $table->string('semantic_nested_identity_version', 64)->nullable();
+            foreach (SemanticNestedIdentityService::LINEAGE_COLUMNS as $column) {
+                $table->char($column, 64)->nullable();
+            }
         });
         $schema->create('md_source_observation_rows', function (Blueprint $table): void {
             $table->bigIncrements('source_observation_row_id');
@@ -213,7 +218,13 @@ class ArtifactSemanticIdentityOnMariaDbTest extends TestCase
             'market_structure_revision_set_hash' => hash('sha256', 'market-structure'),
             'factor_decision_set_hash' => hash('sha256', 'factor-decisions'),
         ];
-        $connection->table('md_publication_lineage_bindings')->insert(array_merge($hashes, [
+        // V2 artifacts read only the V2 nested identities (D-MD-B10-A002-003). They are hand-set here
+        // because this test proves the artifact layer; the nested producers have their own proof.
+        $semantic = ['semantic_nested_identity_version' => SemanticNestedIdentityService::VERSION];
+        foreach (SemanticNestedIdentityService::LINEAGE_COLUMNS as $member => $column) {
+            $semantic[$column] = hash('sha256', 'semantic-'.$member);
+        }
+        $connection->table('md_publication_lineage_bindings')->insert(array_merge($hashes, $semantic, [
             'publication_id' => $publicationId,
             'read_model_version' => 'market_data_read_product_v1',
         ]));

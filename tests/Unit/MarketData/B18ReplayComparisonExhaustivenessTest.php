@@ -1081,8 +1081,8 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
             'available' => true, 'status' => 'VERIFIED', 'schema_version' => 'md_publication_inputs_v2',
             'reason' => null, 'bound_input_context_hash' => str_repeat('f', 64),
             'components' => [
-                ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('u', 64)],
-                ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('n', 64)],
+                ['stage_code' => 'COMPUTE_ELIGIBILITY', 'component_key' => 'universe_identity', 'slot_hash' => str_repeat('1', 64), 'payload_hash' => str_repeat('u', 64), 'semantic_payload_hash' => hash('sha256', str_repeat('u', 64))],
+                ['stage_code' => 'COMPUTE_INDICATORS', 'component_key' => 'ancillary', 'slot_hash' => str_repeat('2', 64), 'payload_hash' => str_repeat('n', 64), 'semantic_payload_hash' => hash('sha256', str_repeat('n', 64))],
                 // F-MD-B18-A002-021 (closing review): a real registry_versions component, so
                 // formula_registry_hash/reason_registry_hash resolve from genuine content here
                 // too, rather than the permanently-empty value an absent component would give --

@@ -1184,11 +1184,11 @@ class ReplayVerificationService
      * derives exclusively from C11 market-structure/board content -- the wrong domain for
      * `MD-S050-R0008`/`MD-S019-R0067`'s "temporal universe/listing/symbol/provider mappings". It now
      * reads a `componentGroupHash()` over the bound context's own `universe_identity` (C02) capture
-     * references instead -- already-verified, already-immutable `md_run_input_captures` slot/payload
-     * identities Reader already exposes, no Binding change needed. Because each `universe_identity`
-     * slot's `slot_hash` covers its full `selection_context` (which the C1 capture contract requires
-     * to include `dataset_start`), this single hash also carries "intentional dataset boundary"
-     * without a separate field. `event_factor_hash` gained a fifth member the same way: a
+     * references instead -- already-verified, already-immutable `md_run_input_captures` content
+     * Reader already exposes, no Binding change needed. Because each member's semantic payload hash
+     * covers the capture's `selection_context` (which the C1 capture contract requires to include
+     * `dataset_start`), this single hash also carries "intentional dataset boundary" without a
+     * separate field; the run-scope allocation keys are left out (D-MD-B10-A002-005). `event_factor_hash` gained a fifth member the same way: a
      * `componentGroupHash()` over the `ancillary` (C09) capture, whose own payload already contains
      * `contamination` (and `price_scale_breaks`) content (`ProducerAncillaryCapture::deriveContamination`/
      * `derivePriceScaleBreaks`) -- the missing "contamination decisions" member of `MD-S050-R0012`.
@@ -1261,12 +1261,12 @@ class ReplayVerificationService
 
     /**
      * A deterministic identity for every already-verified `md_run_input_captures` reference the
-     * bound context names for one `$componentKey` -- read-only over Reader's own `components` list
-     * (`stage_code`/`component_key`/`slot_hash`/`payload_hash`), never a new query or a raw-capture
-     * decode. `slot_hash` already covers that slot's full `selection_context` and `payload_hash`
-     * already covers its full content, so grouping and hashing these tuples binds both "which slice
-     * was consumed" and "with what content" for the named domain, without inventing a new digest
-     * algorithm or reopening Binding to persist a new column.
+     * bound context names for one `$componentKey` -- read-only over Reader's own `components` list,
+     * never a new query. Each member is Reader's `semantic_payload_hash`: the verified payload's
+     * selection (including `dataset_start`) and content, without the run-scope keys
+     * (`RunInputCaptureRepository::RUN_SCOPE_SELECTION_KEYS`) that make a slot and payload hash
+     * local to the run that captured them. It binds "which slice was consumed" and "with what
+     * content" for the named domain without binding where the run's rows were allocated.
      */
     private function componentGroupHash(array $components, string $componentKey): ?string
     {
@@ -1275,17 +1275,24 @@ class ReplayVerificationService
             if (($component['component_key'] ?? null) !== $componentKey) {
                 continue;
             }
+            // D-MD-B10-A002-005: the slot and payload hashes carry the run-scope selection keys
+            // (configuration snapshot, publication and run ids), so they are local allocation. The
+            // member is Reader's semantic payload hash instead; without it the identity is
+            // unavailable, never rebuilt from the allocation-bearing hashes.
+            $semantic = strtolower((string) ($component['semantic_payload_hash'] ?? ''));
+            if (preg_match('/^[a-f0-9]{64}$/', $semantic) !== 1) {
+                return null;
+            }
             $matching[] = [
                 'stage_code' => (string) ($component['stage_code'] ?? ''),
-                'slot_hash' => (string) ($component['slot_hash'] ?? ''),
-                'payload_hash' => (string) ($component['payload_hash'] ?? ''),
+                'semantic_payload_hash' => $semantic,
             ];
         }
         if ($matching === []) {
             return null;
         }
         usort($matching, static function ($a, $b) {
-            return $a['slot_hash'] <=> $b['slot_hash'];
+            return [$a['stage_code'], $a['semantic_payload_hash']] <=> [$b['stage_code'], $b['semantic_payload_hash']];
         });
 
         return $this->canonicalHash(['component_key' => $componentKey, 'members' => $matching]);

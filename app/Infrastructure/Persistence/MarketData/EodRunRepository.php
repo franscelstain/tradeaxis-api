@@ -347,6 +347,13 @@ class EodRunRepository
         $payload['config_hash'] = $snapshot['config_hash'];
         $payload['config_snapshot_ref'] = $snapshot['snapshot_uid'];
 
+        // A V2 promote run inherits the seed's V2 observation manifest exactly as it inherits the V1
+        // one; a V1 seed has none, and the V2 nested binding then fails closed instead of guessing.
+        if ($payload['artifact_hash_profile'] === \App\Application\MarketData\Services\ArtifactSemanticHashService::PROFILE_V2
+            && ! empty($seedRun->semantic_observation_manifest_hash)) {
+            $payload['semantic_observation_manifest_hash'] = $seedRun->semantic_observation_manifest_hash;
+        }
+
         foreach ($overrides as $key => $value) {
             $payload[$key] = $value;
         }

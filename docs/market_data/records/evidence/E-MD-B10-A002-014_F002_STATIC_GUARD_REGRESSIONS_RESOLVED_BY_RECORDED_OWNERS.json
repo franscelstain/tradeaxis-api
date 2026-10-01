@@ -1,0 +1,150 @@
+{
+    "evidence_id": "E-MD-B10-A002-014",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B10",
+    "attempt_id": "MD-B10-A002",
+    "work_id": "MD-B10-A002",
+    "baseline_id": "MD-B10-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "issued_at": "2026-10-01T13:13:38+07:00",
+    "change_impact_declaration": "CI-MD-B10-A002-001",
+    "verdict": "F_MD_B10_A002_002_MEMBERS_RESOLVED_BY_RECORDED_OWNERS",
+    "checkpoint_verdict": "F-MD-B10-A002-002 RESOLVED; full-suite confirmation remains the B10 successor closure control",
+    "supersedes": [],
+    "related_findings": [
+        "F-MD-B10-A002-002",
+        "F-MD-B18-A002-023",
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-087",
+        "E-MD-B10-A002-013",
+        "E-MD-B10-A002-012",
+        "E-MD-B10-A002-001",
+        "CI-MD-B10-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B10-A002-004",
+        "D-MD-B10-A002-002",
+        "D-MD-B10-A002-001",
+        "D-MD-20260822-04"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0021",
+        "MD-DEP-0020",
+        "MD-DEP-0019"
+    ],
+    "scope": "Resolve the four F-MD-B10-A002-002 members through their recorded owners: the alias member by governed decision (E-MD-B10-A002-001 is immutable), the provider-shape and domain-ownership members by the shared security-identity foundation owner (correlated through the same MD-B10-A002/BL001/CI under D-MD-B10-A002-001), the lifecycle member by MD-B18-A002 (recorded in E-MD-B18-A002-087). No attempt or baseline was created; no predicate changes status.",
+    "members": {
+        "AliasNamingAndMeaningBoundaryTest::test_the_alias_meaning_repetition_gap_is_measured_on_the_identifier_not_the_word": {
+            "owner": "governed decision D-MD-B10-A002-004 (MD-B10-A002)",
+            "cause": "E-MD-B10-A002-001 (IMMUTABLE_AFTER_ISSUE) quotes one existing test assertion verbatim, naming the preserved eod_eligibility.eligible column; it has no data-usability repetition and cannot be edited.",
+            "resolution": "ADMITTED_AT_ISSUED_BYTES: the record joins the pinned measured set through ADMITTED_ISSUED_EVIDENCE keyed by its issued SHA-256 4a371ba393c9a209f2f3dd5e70c84612116412186a20e88f740b576835921887 (the hash E-MD-B10-A002-002..005 already record); a new test fails when the record no longer has those bytes or no longer uses the identifier.",
+            "guard_change": "admission constant plus test_admitted_issued_evidence_is_admitted_only_at_its_issued_bytes; the five existing pinned documents and the word-sense test are unchanged",
+            "result": "OK (6 tests, 188 assertions)",
+            "probes": {
+                "A1": "a new, unadmitted document uses the alias identifier without repeating its meaning -> AliasNamingAndMeaningBoundaryTest.php [test_the_alias_meaning_repetition_gap_is_measured_on_the_identifier_not_the_word]: Tests: 1, Assertions: 2, Failures: 1.; restored temporary file deleted=yes",
+                "A2": "the admission is pinned to bytes other than the issued E-MD-B10-A002-001 bytes -> AliasNamingAndMeaningBoundaryTest.php [test_admitted_issued_evidence_is_admitted_only_at_its_issued_bytes]: Tests: 1, Assertions: 2, Failures: 1.; restored 2e5a182d1ce7f66a byte-identical=yes"
+            }
+        },
+        "DateDrivenCapabilityAndProviderAbstractionTest::test_the_provider_query_shape_lives_in_the_source_adapter": {
+            "owner": "shared security-identity foundation (D-MD-B10-A002-001), same MD-B10-A002 correlation",
+            "cause": "FrozenSourcePackageReader::readIkpmListing wrote the provider chart request URL as a code literal to look up the admitted record.",
+            "resolution": "CODE_REPAIRED: each source locator is read from its own extract member of the fingerprinted package (manifest hash pinned by constant, members fingerprint-verified), the two locators must differ, and the acquisition manifest must list exactly those two locators; any disagreement raises SOURCE_RECORD_BINDING_INVALID. The guard is unchanged.",
+            "output_preserved": "FoundationRegistry documents for all three governed packages are byte-identical before and after (serialized sha256: core 501a08e3e9662904b3b1290cc5ec5ca6d0fc9355d9bc03a48b54c24888e4779e, listing abf2d143f9fcb28b93dabef694c6a3848fe7120072cdef38dc4b479d6965a254, current 4f8c6d99b4122eef7a0036facb3743615588fc75e9fc09727412dcd2a4e3b7a8)",
+            "result": "OK (18 tests, 65 assertions)",
+            "probes": {
+                "D1": "the provider request URL is written back into the foundation reader as a literal -> DateDrivenCapabilityAndProviderAbstractionTest.php [test_the_provider_query_shape_lives_in_the_source_adapter]: Tests: 1, Assertions: 3, Failures: 1.; restored 1b66b90286f2a4a6 byte-identical=yes",
+                "D2": "the reader takes both locators from one extract -> reader_snapshot.php: SOURCE_RECORD_BINDING_INVALID raised; restored byte-identical=yes (raw probes/D2-0-reader.txt)"
+            }
+        },
+        "DomainOwnershipSurfaceTest::test_no_surface_outside_the_market_data_tree_touches_a_market_data_table": {
+            "owner": "shared security-identity foundation (D-MD-B10-A002-001/002), refinement governed by D-MD-B10-A002-004",
+            "cause": "The guard population is every table the schema reader returns, so the foundation migration's si_packages, si_entities, si_revisions and si_holds counted as Market Data tables; FoundationRepository reads its own tables.",
+            "resolution": "GUARD_POPULATION_CORRECTED: the four foundation tables are excluded by name only while the foundation migration creates exactly them, no other migration creates or alters them, and the base Market Data schema defines none; a new test requires FoundationRepository to be the only application surface touching them. The pinned legacy model set is unchanged.",
+            "result": "OK (28 tests, 523 assertions)",
+            "probes": {
+                "O1": "the foundation repository starts reading a real Market Data table -> DomainOwnershipSurfaceTest.php [test_no_surface_outside_the_market_data_tree_touches_a_market_data_table]: Tests: 1, Assertions: 145, Failures: 1.; restored b8be9bab41dc66ad byte-identical=yes",
+                "O2": "a Market Data service reads a foundation table directly -> DomainOwnershipSurfaceTest.php [test_the_shared_foundation_tables_are_touched_only_by_the_foundation_repository]: Tests: 1, Assertions: 143, Failures: 1.; restored 09b8708feefc9715 byte-identical=yes",
+                "O3": "the excluded foundation set is widened to hide a Market Data table -> DomainOwnershipSurfaceTest.php [test_no_surface_outside_the_market_data_tree_touches_a_market_data_table]: Tests: 1, Assertions: 137, Failures: 1.; restored 698127ccb4ce900f byte-identical=yes"
+            }
+        },
+        "LifecycleProofIsNotMockedTest::test_db_backed_tests_only_mock_the_external_source_boundary": {
+            "owner": "MD-B18-A002 (F-MD-B18-A002-017 G01-B surface)",
+            "resolution": "MOCKS_REPLACED_BY_PERSISTED_WORLD: recorded in E-MD-B18-A002-087. The guard is unchanged.",
+            "result": "OK (5 tests, 8 assertions)"
+        }
+    },
+    "files": {
+        "app/Infrastructure/Persistence/SecurityIdentity/FrozenSourcePackageReader.php": {
+            "sha256": "1b66b90286f2a4a61cf78220b746f634c3c11fc3ababd52a0ecd9f4c178ad6c4",
+            "bytes": 26656,
+            "crlf_lines": 0,
+            "lf_lines": 394,
+            "pre_unit_sha256": "322886cce010f8ee36b2fd8a8d290b4da2acfb786fbbc29e4e9e79fa5b85812e"
+        },
+        "tests/Unit/MarketData/AliasNamingAndMeaningBoundaryTest.php": {
+            "sha256": "2e5a182d1ce7f66a1e9304bd1dbf024194b299b3c382c6e943efbf3b8b907df5",
+            "bytes": 13502,
+            "crlf_lines": 0,
+            "lf_lines": 289,
+            "pre_unit_sha256": "b75a96d01a7374f786639c83971bf449927e5aec2001c3e1ff605e75f3f69f23"
+        },
+        "tests/Unit/MarketData/DomainOwnershipSurfaceTest.php": {
+            "sha256": "698127ccb4ce900fc30effa58b614f7e4706f2f91c22a2ad47b9c6098f42ce5c",
+            "bytes": 22979,
+            "crlf_lines": 0,
+            "lf_lines": 432,
+            "pre_unit_sha256": "10a3ee4325a6a174a682c1264316801c2dd6cae610eb5018881e3d7d8cc11308"
+        }
+    },
+    "focused_controls": {
+        "DateDrivenCapabilityAndProviderAbstractionTest": "OK (18 tests, 65 assertions)",
+        "DomainOwnershipSurfaceTest": "OK (28 tests, 523 assertions)",
+        "AliasNamingAndMeaningBoundaryTest": "OK (6 tests, 188 assertions)",
+        "LifecycleProofIsNotMockedTest": "OK (5 tests, 8 assertions)",
+        "B18ReplayPersistedEvidenceBindingTest": "OK (17 tests, 156 assertions)",
+        "B18ReplayComparisonExhaustivenessTest": "OK (77 tests, 563 assertions)",
+        "B18ReplayEvidenceSelfExplanationTest": "OK (14 tests, 143 assertions)",
+        "B18AsKnownModeIsolationTest": "OK (16 tests, 89 assertions)",
+        "B18AsKnownSnapshotIsolationTest": "OK (3 tests, 27 assertions)",
+        "ReplayVerificationServiceTest": "OK (22 tests, 89 assertions)",
+        "PromotedPredicateProofGateTest": "OK (8 tests, 22 assertions)",
+        "TestCoverageBehavioralStaticGuardTest": "OK (1 test, 19 assertions)",
+        "MarketDataFoundationIdentityConsumerOnMariaDbTest": "OK (5 tests, 71 assertions)",
+        "ArtifactSemanticIdentityOnMariaDbTest": "OK (3 tests, 12 assertions)",
+        "SemanticNestedIdentityOnMariaDbTest": "OK (20 tests, 172 assertions)",
+        "ProviderNeutralBoundaryTest": "OK (8 tests, 15 assertions)",
+        "LegacyTickerAliasBoundaryTest": "OK (10 tests, 30 assertions)",
+        "ScopeProductAndTimeBoundaryTest": "OK (25 tests, 586 assertions)",
+        "FoundationCoreOnMariaDbTest": "OK (16 tests, 223 assertions)",
+        "IkpmListingAdmissionOnMariaDbTest": "OK (7 tests, 96 assertions)",
+        "IkpmConsumerWindowOnMariaDbTest": "OK (5 tests, 79 assertions)"
+    },
+    "raw_proof": {
+        "package": "storage/app/market_data/evidence/MD-B10-A002/f002-resolution-20261001-v1",
+        "manifest": "storage/app/market_data/evidence/MD-B10-A002/f002-resolution-20261001-v1/manifest.json",
+        "manifest_sha256": "5ac4cfce1ee174baff8ba1382c07acdb13e0f944fbbb082c78af17eb4c22e6ad"
+    },
+    "preservation": {
+        "E-MD-B10-A002-001": "4a371ba393c9a209f2f3dd5e70c84612116412186a20e88f740b576835921887",
+        "B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+        "MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4",
+        "E010_E011_E012_E013": "byte-identical to their issued bytes"
+    },
+    "governance_state": {
+        "b05": "117/117",
+        "b10": "1016 SATISFIED / 56 NOT_ASSESSED / 1072 mandatory",
+        "b18": "100/113 reviewed basis, formal 0/113, NOT_READY",
+        "dependencies": "MD-DEP-0021, MD-DEP-0020, MD-DEP-0019 BLOCKING",
+        "r0025_f018": "paused",
+        "f_md_b10_a002_003": "OPEN, owner MD-B18-A002"
+    },
+    "full_suite": "Not run in this unit. F-MD-B10-A002-002 closes on a full MarketData suite failing only governed expected states; that run is the B10 successor closure control after MD-DEP-0021 controlled deployment.",
+    "governance_boundary": "This immutable record claims the executed results above. Registry, integrity and current-state gates run after registration and are reported in CI-MD-B10-A002-001.",
+    "dependency_result": "F-MD-B10-A002-002, the precondition for the successor full-suite control, is resolved by its owners. MD-DEP-0021 remains BLOCKING on controlled deployment and the complete 56-rule governed reproof; it was not started.",
+    "next_resume_point": "MD-B10-A002: controlled deployment under MD-DEP-0021, then the complete governed reproof of the 56 affected predicates against E-MD-B10-A002-010..014 and a full MarketData suite failing only governed expected states. Same A002/BL001/CI. MD-DEP-0021/0020/0019 remain BLOCKING; R0025 and F-018 stay paused; F-MD-B10-A002-003 waits for MD-B18-A002."
+}

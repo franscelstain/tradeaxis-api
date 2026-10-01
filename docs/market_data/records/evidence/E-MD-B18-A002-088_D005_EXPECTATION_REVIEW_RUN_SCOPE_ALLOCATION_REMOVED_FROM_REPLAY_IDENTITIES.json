@@ -1,0 +1,235 @@
+{
+    "evidence_id": "E-MD-B18-A002-088",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "issued_at": "2026-10-01T16:56:55+07:00",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "THREE_REGISTRY_EXPECTATIONS_APPROVED_CONFIG_SNAPSHOT_EXPECTATION_REJECTED_AND_IMPLEMENTATION_FIXED",
+    "evidence_scope": "D_MD_B10_A002_005_REVIEW_OF_E_MD_B18_A002_087_EXPECTATION_CORRECTIONS",
+    "ci_id": "CI-MD-B18-A002-001",
+    "related_findings": [
+        "F-MD-B10-A002-004",
+        "F-MD-B10-A002-002",
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-087",
+        "E-MD-B18-A002-075",
+        "E-MD-B10-A002-014"
+    ],
+    "related_decisions": [
+        "D-MD-B10-A002-005",
+        "D-MD-B10-A002-004"
+    ],
+    "dependencies": [
+        "MD-DEP-0017",
+        "MD-DEP-0020"
+    ],
+    "schema_changed": false,
+    "production_code_changed": true,
+    "rule": "D-MD-B10-A002-005: a dependent hash may move only because its governed semantic input changes; a local config_snapshot_id, database allocation or other volatile identifier with identical semantic content is never a valid reason.",
+    "verification": {
+        "method": "Each perturbation ran on the persisted production world of B18ReplayPersistedEvidenceBindingTest. A diagnostic read the bound components back through Reader and the real capture verifier, and compared decoded selection keys, rows, slot and payload hashes and the configuration content against the baseline (raw diagnostics/B18ExpectationDependencyDiagnosticTest.php).",
+        "read-model version": {
+            "moved": [
+                "formula_registry_hash",
+                "read_model_version",
+                "reason_registry_hash"
+            ],
+            "changed_input": "registry_versions capture rows (read_model_version); no selection key, no other component, configuration content unchanged",
+            "semantic_dependency": "formula_registry_hash and reason_registry_hash are the payload hash of the same registry_versions capture that holds read_model_version (ReplayVerificationService::actualBoundInputContext)",
+            "disposition": "APPROVED"
+        },
+        "serialization version": {
+            "moved": [
+                "formula_registry_hash",
+                "reason_registry_hash",
+                "serialization_version"
+            ],
+            "changed_input": "registry_versions capture rows (serialization_version)",
+            "semantic_dependency": "same registry capture",
+            "disposition": "APPROVED"
+        },
+        "executable build": {
+            "moved": [
+                "executable_build_identity",
+                "formula_registry_hash",
+                "reason_registry_hash"
+            ],
+            "changed_input": "registry_versions capture rows (executable_build.build_id)",
+            "semantic_dependency": "same registry capture",
+            "disposition": "APPROVED"
+        },
+        "configuration snapshot id": {
+            "moved_before_fix": [
+                "config_snapshot_id",
+                "event_factor_hash",
+                "temporal_identity_hash"
+            ],
+            "changed_input": "only the local config_snapshot_id inside the universe_identity and ancillary capture selections (7001 -> 7002); captured rows identical; configuration content hash identical",
+            "disposition": "NOT_APPROVED: the temporal and event/factor identities moved only because of a local identifier",
+            "fix": "implementation",
+            "moved_after_fix": [
+                "config_snapshot_id"
+            ]
+        }
+    },
+    "implementation_fix": {
+        "RunInputCaptureRepository": "RUN_SCOPE_SELECTION_KEYS = [config_snapshot_id, publication_id, run_id] and semanticPayloadHash(): sha256 of the verified payload schema version, component key, selection without those keys, rows and empty basis. Slots, payloads and the capture writer are unchanged.",
+        "PublicationInputBindingService::verifyBoundContext": "every verified component in the returned projection carries semantic_payload_hash; nothing is persisted, Binding and Seal outcomes are unchanged",
+        "ReplayVerificationService::componentGroupHash": "members are stage_code plus semantic_payload_hash; a component without a valid semantic hash leaves the identity unavailable (empty, so admission blocks), never a fallback to slot/payload hashes",
+        "historical_captures": "the semantic hash is computed when Reader reads, so existing captures need no rewrite"
+    },
+    "test_changes": {
+        "B18ReplayPersistedEvidenceBindingTest": "'configuration snapshot id' expectation restored to [config_snapshot_id]; the docblock states the rule; the three registry sets stay as E-MD-B18-A002-087 recorded them",
+        "ReplayVerificationServiceTest": "new test_temporal_and_event_factor_identity_ignore_run_scope_allocation; mocked VERIFIED components carry semantic_payload_hash as Reader now projects (8 component literals)",
+        "B18ReplayComparisonExhaustivenessTest": "mocked VERIFIED components carry semantic_payload_hash (2 component literals); no assertion changed",
+        "CaptureSemanticPayloadIdentityTest": "new DB-backed test through the real capture writer: same content under other config snapshot, publication and run ids has one semantic hash; changed content or semantic selection moves it"
+    },
+    "probes": {
+        "S1": "the configuration snapshot id is no longer a run-scope key, so it reaches the semantic payload hash -> B18ReplayPersistedEvidenceBindingTest.php [test_each_frozen_identity_follows_only_its_own_canonical_source]: Tests: 11, Assertions: 61, Failures: 1. | CaptureSemanticPayloadIdentityTest.php: Tests: 2, Assertions: 6, Failures: 2.; restored fd058f563173e531 byte-identical=yes",
+        "S2": "the verifier groups slot and payload hashes again instead of the semantic payload hash -> B18ReplayPersistedEvidenceBindingTest.php [test_each_frozen_identity_follows_only_its_own_canonical_source]: Tests: 11, Assertions: 61, Failures: 1. | ReplayVerificationServiceTest.php [test_temporal_and_event_factor_identity_ignore_run_scope_allocation]: Tests: 1, Assertions: 2, Failures: 1.; restored 6a52dbc621e1532a byte-identical=yes",
+        "S3": "a component without a semantic payload hash falls back to its payload hash -> ReplayVerificationServiceTest.php [test_temporal_and_event_factor_identity_ignore_run_scope_allocation]: Tests: 1, Assertions: 6, Failures: 1.; restored 6a52dbc621e1532a byte-identical=yes",
+        "S4": "the semantic payload hash omits the captured rows -> CaptureSemanticPayloadIdentityTest.php: Tests: 2, Assertions: 4, Failures: 1.; restored fd058f563173e531 byte-identical=yes",
+        "S5": "Reader stops projecting the semantic payload hash -> B18ReplayPersistedEvidenceBindingTest.php: Tests: 17, Assertions: 125, Failures: 3.; restored ae65e81c38ee0cda byte-identical=yes"
+    },
+    "regression": {
+        "files": 51,
+        "results": {
+            "B18AntiFutureResolutionTest": "OK (4 tests, 10 assertions)",
+            "B18AntiSurvivorshipFixtureCorpusTest": "OK (10 tests, 47 assertions)",
+            "B18AsKnownModeIsolationTest": "OK (16 tests, 89 assertions)",
+            "B18AsKnownSnapshotIsolationTest": "OK (3 tests, 27 assertions)",
+            "B18AsKnownTemporalSequenceTest": "OK (5 tests, 12 assertions)",
+            "B18BeforeSealValidationTest": "OK (10 tests, 28 assertions)",
+            "B18ConfigEffectiveTimeSelectionTest": "OK (8 tests, 19 assertions)",
+            "B18CorrectionReadPathScenarioTest": "OK (12 tests, 29 assertions)",
+            "B18DegradedObservationDefectCorpusTest": "OK (7 tests, 23 assertions)",
+            "B18DeterminismAcrossConditionsTest": "OK (5 tests, 11 assertions)",
+            "B18LongChainWilderAtrOracleTest": "OK (5 tests, 17 assertions)",
+            "B18PointInTimeInputContractTest": "OK (8 tests, 19 assertions)",
+            "B18PriceAndExecutionBoundaryTest": "OK (4 tests, 8 assertions)",
+            "B18ProducerCalendarRegistryTest": "OK (8 tests, 49 assertions)",
+            "B18ProducerEventFactorCaptureTest": "OK (7 tests, 43 assertions)",
+            "B18ProducerInputCaptureMariaDbTest": "OK (12 tests, 51 assertions)",
+            "B18ProducerInputCaptureTest": "OK (9 tests, 34 assertions)",
+            "B18ProducerInputSchemaSurfaceTest": "OK (1 test, 55 assertions)",
+            "B18ProducerRawInputLineageTest": "OK (12 tests, 206 assertions)",
+            "B18ProducerSourceObservationJournalTest": "OK (7 tests, 42 assertions)",
+            "B18ProducerSourceObservationPopulationTest": "OK (12 tests, 68 assertions)",
+            "B18ProducerTemporalPopulationTest": "OK (16 tests, 125 assertions)",
+            "B18ProducerTradingStatusPopulationTest": "OK (22 tests, 140 assertions)",
+            "B18ProductionPathReplayFixturesTest": "Tests: 13, Assertions: 61, Failures: 1.",
+            "B18ReleaseCandidateAcceptanceAggregateTest": "OK (43 tests, 1292 assertions)",
+            "B18ReleaseCandidateCriteriaTest": "OK (8 tests, 27 assertions)",
+            "B18ReplayAdmissibilityBoundaryTest": "OK (4 tests, 10 assertions)",
+            "B18ReplayBoundInputIdentityContractTest": "OK (3 tests, 10 assertions)",
+            "B18ReplayComparisonExhaustivenessTest": "OK (77 tests, 563 assertions)",
+            "B18ReplayContractStaticGuardTest": "OK (18 tests, 72 assertions)",
+            "B18ReplayEvidencePreservationContractTest": "OK (3 tests, 10 assertions)",
+            "B18ReplayEvidenceSelfExplanationTest": "OK (14 tests, 143 assertions)",
+            "B18ReplayPersistedEvidenceBindingTest": "OK (17 tests, 156 assertions)",
+            "B18ReplayRerunDeterminismTest": "OK (7 tests, 18 assertions)",
+            "B18ReplayVerdictConsumerBoundaryTest": "OK (5 tests, 48 assertions)",
+            "B18ScenarioFamiliesOnMariaDbTest": "Tests: 12, Assertions: 482, Failures: 1.",
+            "CaptureSemanticPayloadIdentityTest": "OK (2 tests, 6 assertions)",
+            "ReplayVerificationServiceTest": "OK (23 tests, 95 assertions)",
+            "ReplayResultRepositoryIntegrationTest": "OK (26 tests, 89 assertions)",
+            "PublicationRepositoryIntegrationTest": "OK (28 tests, 140 assertions)",
+            "MarketDataPipelineIntegrationTest": "OK (82 tests, 6148 assertions)",
+            "LifecycleProofIsNotMockedTest": "OK (5 tests, 8 assertions)",
+            "PromotedPredicateProofGateTest": "OK (8 tests, 22 assertions)",
+            "TestCoverageBehavioralStaticGuardTest": "OK (1 test, 19 assertions)",
+            "SemanticNestedIdentityOnMariaDbTest": "OK (20 tests, 172 assertions)",
+            "ArtifactSemanticIdentityOnMariaDbTest": "OK (3 tests, 12 assertions)",
+            "MarketDataFoundationIdentityConsumerOnMariaDbTest": "OK (5 tests, 71 assertions)",
+            "PublicationSemanticIdentityProductionPathTest": "OK (18 tests, 163 assertions)",
+            "DateDrivenCapabilityAndProviderAbstractionTest": "OK (18 tests, 65 assertions)",
+            "DomainOwnershipSurfaceTest": "OK (28 tests, 523 assertions)",
+            "AliasNamingAndMeaningBoundaryTest": "OK (6 tests, 188 assertions)"
+        },
+        "failing": [
+            "B18ProductionPathReplayFixturesTest",
+            "B18ScenarioFamiliesOnMariaDbTest"
+        ]
+    },
+    "residual": "F-MD-B10-A002-004 (PARTIALLY_RESOLVED, owner MD-B18-A002): captured universe rows and status selections still carry V1 local entity ids (ticker_id, issuer_id, instrument_id, listing_id), so the temporal and ancillary identities still move under listing re-allocation (raw diagnostics/residual_entity_ids.json). Resolution needs retained foundation roots in B18 replay identities on the MD-DEP-0020 return path.",
+    "files": {
+        "app/Infrastructure/Persistence/MarketData/RunInputCaptureRepository.php": {
+            "sha256": "fd058f563173e531ac730ea8035f2747ccf4137337123d6f2bb406d8250781c8",
+            "bytes": 12461,
+            "crlf_lines": 0,
+            "lf_lines": 219,
+            "pre_fix_sha256": "d8df492df7e65d7f35e47b755ecb9b77be8a4769d48b95fcbea8cabb94fdbb5b"
+        },
+        "app/Application/MarketData/Services/PublicationInputBindingService.php": {
+            "sha256": "ae65e81c38ee0cda382b024fba42aae4fa71a4d46bba33ca4b3f072ade228884",
+            "bytes": 32438,
+            "crlf_lines": 0,
+            "lf_lines": 498,
+            "pre_fix_sha256": "b5abe4233de9da3adc993344ac9046f490d620022d2488d807430e6ac2e2758a"
+        },
+        "app/Application/MarketData/Services/ReplayVerificationService.php": {
+            "sha256": "6a52dbc621e1532afbb56dff5d27f1ab85014b3d6563267128a13c09dbb0a432",
+            "bytes": 176557,
+            "crlf_lines": 0,
+            "lf_lines": 2678,
+            "pre_fix_sha256": "b6d5ff829ba412a7f00659b62c12c899892dad5bc2aa35ffef5de36a3716a04d"
+        },
+        "tests/Unit/MarketData/B18ReplayPersistedEvidenceBindingTest.php": {
+            "sha256": "6627a26c1172ba431c857093b88956980e4e40f03fc4cf4500544edd2b38c0d8",
+            "bytes": 29790,
+            "crlf_lines": 0,
+            "lf_lines": 560,
+            "pre_fix_sha256": "fb464bea4d977400c272981913b66a6ff4f904fec0ae4ca4a8928d336122549f"
+        },
+        "tests/Unit/MarketData/ReplayVerificationServiceTest.php": {
+            "sha256": "c97496fb4c95f478428cbe54c643779340e8f3daffde35dbc3bf5d3d5075b4fa",
+            "bytes": 107873,
+            "crlf_lines": 0,
+            "lf_lines": 1881,
+            "pre_fix_sha256": "1d671cb66b503a414b28521cde5228465581498ec4b729af680c2aaeeff0787e"
+        },
+        "tests/Unit/MarketData/B18ReplayComparisonExhaustivenessTest.php": {
+            "sha256": "4e506071a5844249bc3a47eed907996fb262da97f138b23460fbee2004193b0c",
+            "bytes": 76812,
+            "crlf_lines": 0,
+            "lf_lines": 1436,
+            "pre_fix_sha256": "9c4fcee2c0b958cab1a5f66d5f47fa6f2bfa272eabd849b75074eb3e277f536c"
+        },
+        "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php": {
+            "sha256": "ffa6c46d8f626ac14227deb5399e4361859e0ad543faddbf88e0a757cbd10ec9",
+            "bytes": 207531,
+            "crlf_lines": 0,
+            "lf_lines": 1134,
+            "pre_fix_sha256": "1ff028035f7d7a11779e41e4456b7ae8e6139ea83d2012bbef49fb693f159d72"
+        },
+        "tests/Unit/MarketData/CaptureSemanticPayloadIdentityTest.php": {
+            "sha256": "98f711bcdef3f783d11783d7bf3c4673e745ce5d43a7ae990ea238a8aafd73cf",
+            "bytes": 3910,
+            "crlf_lines": 0,
+            "lf_lines": 80,
+            "pre_fix_sha256": null
+        }
+    },
+    "predicate_state": {
+        "reviewed_basis": "100/113 unchanged; bound test names unchanged; MD-S050-R0008 and MD-S003-R0023 basis texts describe the semantic payload hash",
+        "formal": "0/113 unchanged"
+    },
+    "preserved_unchanged": [
+        "E-MD-B18-A002-087",
+        "E-MD-B18-A002-075",
+        "B18ScenarioFamiliesOnMariaDbTest.php",
+        "MarketDataReplayVerificationAcceptanceAggregate.php"
+    ],
+    "boundary": "Owner-directed fix on the MD-B18-A002 replay verification surface under D-MD-B10-A002-005. R0025 and F-018 not resumed; no dependency status change; MD-DEP-0021 not started.",
+    "raw_proof": {
+        "package": "storage/app/market_data/evidence/MD-B10-A002/b18-expectation-semantic-review-20261001-v1",
+        "manifest_sha256": "a1c32d47991491c4fc026a7b464c7bd6743b6b8c9b472e03d6aca6f219b64531"
+    },
+    "no_commit_or_push": true
+}

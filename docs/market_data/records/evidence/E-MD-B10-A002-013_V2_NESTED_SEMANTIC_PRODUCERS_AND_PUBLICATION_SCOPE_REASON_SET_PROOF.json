@@ -1,0 +1,365 @@
+{
+    "evidence_id": "E-MD-B10-A002-013",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B10",
+    "attempt_id": "MD-B10-A002",
+    "work_id": "MD-B10-A002",
+    "baseline_id": "MD-B10-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "change_impact_declaration": "CI-MD-B10-A002-001",
+    "issued_at": "2026-10-01T11:19:20+07:00",
+    "verdict": "V2_NESTED_SEMANTIC_PRODUCERS_AND_PUBLICATION_SCOPE_REASON_SET_IMPLEMENTED_AND_PROVEN",
+    "checkpoint_verdict": "A. REMAINING B10 SEMANTIC PRODUCERS IMPLEMENTED AND PROVEN",
+    "supersedes": null,
+    "related_findings": [
+        "F-MD-B18-A002-023",
+        "F-MD-B10-A002-003",
+        "F-MD-B10-A002-002",
+        "F-MD-B10-A002-001"
+    ],
+    "related_evidence": [
+        "E-MD-B10-A002-012",
+        "E-MD-B10-A002-010",
+        "E-MD-B10-A002-001",
+        "CI-MD-B10-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B10-A002-003",
+        "D-MD-B10-A002-002",
+        "D-MD-B10-A002-001"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0021",
+        "MD-DEP-0020",
+        "MD-DEP-0019"
+    ],
+    "authority_resolution": {
+        "question_a": "A3: authority defines recorded_at as the time the platform learned a fact (Point_In_Time_Backtest_Input_Contract_LOCKED.md:38; Replay_Verification_Contract_LOCKED.md:15, :54) and excludes execution timestamps unless semantic (Audit_Hash_and_Reproducibility_Contract_LOCKED.md:46, :133), but never classifies a run-derived source-scale assessment as a learned fact or a run output. Genuine gap.",
+        "question_b": "Audit_Hash_and_Reproducibility_Contract_LOCKED.md:114 requires sorted reasons and E-MD-B10-A002-001 (R0071) a separate frozen reason binding; no authority enumerates the members. Exclusions, set semantics and the already-bound families were settled by authority.",
+        "gate_result": "B (genuine gaps); implementation stopped until the owner decided.",
+        "owner_decision": "D-MD-B10-A002-003 (APPROVED, issued 2026-10-01T06:47:04+07:00): 1A platform-created records hash content, recorded_at is provenance and visibility time; 1B source-fact knowledge time is part of the revision tuple; 2 the manifest binds a deduplicated, canonically sorted publication-scope reason set holding the coverage reason."
+    },
+    "scope": {
+        "included": [
+            "V2 observation manifest producer and its inheritance",
+            "V2 factor-set identity and its nested event, source-scale and factor-decision sets",
+            "V2 identity-board, calendar, trading-status and market-structure revision sets",
+            "publication-scope manifest reason set",
+            "consumers: V2 artifacts, V2 publication manifest and V2 correction identity read only the V2 nested identities",
+            "additive migration 2026_10_01_000001 applied to tradeaxis_testing only",
+            "production-path allocation, sensitivity, fail-closed and mutation proof",
+            "recording of the fallback exposure decision 1A asked for (F-MD-B10-A002-003)"
+        ],
+        "excluded": [
+            "B10 predicate promotion or successor closure",
+            "controlled deployment to the normal tradeaxis database",
+            "remediation of F-MD-B10-A002-002 or F-MD-B10-A002-003",
+            "B18, R0025 or F-018 work",
+            "changes to V1 nested columns, their derivation or their consumers"
+        ]
+    },
+    "computation_location": {
+        "nested_revision_and_factor_sets": "Hash stage, after V1 governance binding and C1 input binding and before any V2 artifact hash (MarketDataPipelineService::completeHash), outside ProducerInputScope. Revalidated: these sets read the governance state V1 binding materializes.",
+        "observation_manifest": "Revalidated and moved to ingest: the population is fixed there (the root observations of the consumed source rows) and nothing at the hash stage records it except the V1 hash. EodBarsIngestService computes the V2 manifest beside V1 from the same ids through the sanctioned content-only ProducerSourceObservationPopulation::immutablePopulation read; no capture, journal or producer selection is added. Corrections and derived promote runs inherit it exactly as V1."
+    },
+    "implementation": {
+        "observation_manifest": "market-data-observation-manifest/v2 over entries carrying payload hash and reference, provider, provider symbol and mapping revision, requested trade/start/end dates, source and acquisition timestamps, adapter, schema fingerprint and provider schema version, outcome, validation state and reason (Audit_Hash:99); parent capture and superseded observation referenced by their own entry hashes. observation_uid, run/attempt/batch ids and local keys excluded. Entries are a canonical set.",
+        "factor_set": "market-data-adjustment-factor-set/v2: product, formula version, state, config content hash, window, decisions (event identity, source payload hash, assessment content hash, scale state, decision, reason, ex-date, candidate factors) and applied factors (event identity, effective interval, factors). config_snapshot_id, listing/event/observation/assessment ids and recorded_at/created_at excluded (1A). The persisted rows are first proven to be exactly the V1 factor-set content (SEMANTIC_FACTOR_SET_V1_CONTENT_MISMATCH otherwise).",
+        "nested_sets": {
+            "identity_board": "retained foundation roots, normalized board, board identity knowledge time (1B), resolution state",
+            "calendar": "revision_uid, market/segment/date, session facts and times, provenance, source payload hash, recorded_at (1B), superseded revision_uid; same selection as V1 (extracted calendarRevisionsForTradeDate)",
+            "status": "foundation roots, expectation and temporal status, trading-status revision tuple (status facts, effective interval, provenance, payload hashes, recorded_at and retracted_at (1B), superseded tuple hash), status source payload hash",
+            "market_structure": "foundation roots, resolution, board, board knowledge time, reason, band/floor/tick rule tuples (rule_uid, revision number, scope, effective interval, verification, source identity, content hash, recorded_at (1B), superseded rule key)",
+            "event": "per decision: event_uid plus revision_number, action type, lifecycle and verification state, ex/cum/record/payment dates, terms content hash, effective_at, recorded_at (1B), source payload hash, superseded event key",
+            "source_scale": "per decision: event key, decision state and the assessment content hash (provider, event key, state, scale effective date, version, revision number, evidence schema/classification/reason, evidence observation entry hashes, superseded assessment hash); recorded_at, created_at, assessment_uid and evidence-id hash excluded (1A)",
+            "factor_decision": "per decision: event key, decision state, candidate factors, reason code, assessment content hash"
+        },
+        "manifest_reasons": "semantic_reasons = canonical set of publication-scope reasons: today the coverage reason, which must agree with the bound coverage state under the locked mapping (Coverage_Gate_Enforcement_Contract_LOCKED.md:77-81). Deduplicated, sorted, registry-shaped. Reasons bound in nested or artifact hashes are not repeated; final_reason_code, read-time, verification and unregistered codes are excluded (decision 2).",
+        "consumers": "ArtifactSemanticHashService reads only the V2 nested columns (V1 factor-set hash kept only as the row binding check). The V2 publication payload carries nested_identity_version, the V2 nested hashes and semantic_reasons; the V2 correction identity carries the V2 observation manifest. Missing V2 identities fail closed; there is no V1 fallback.",
+        "persistence": "database/migrations/2026_10_01_000001_add_semantic_nested_identity.php: nullable semantic_observation_manifest_hash on eod_runs and eod_publications; semantic_nested_identity_version plus nine semantic_* hash columns on md_publication_lineage_bindings; hasColumn guards; down() drops only its own columns. SQLite mirror applies the same migration.",
+        "v1_preserved": "V1 nested columns, their derivations, PublicationInputBindingService compatibility checks and every V1 payload are unchanged; V2 columns are written only for V2-profile runs.",
+        "files": {
+            "app/Application/MarketData/Services/SemanticNestedIdentityService.php": {
+                "sha256": "66c4f1d66aa0f69de063eea6791622a646a22ee573e6e89bc9473f74583b7dbb",
+                "bytes": 36363,
+                "crlf_lines": 0,
+                "lf_lines": 730
+            },
+            "app/Application/MarketData/Services/SemanticObservationIdentityService.php": {
+                "sha256": "8089df836289c079dc724209b2b6a4ced28340e3fe30004ebf60ca7a6a36ebfc",
+                "bytes": 7991,
+                "crlf_lines": 0,
+                "lf_lines": 204
+            },
+            "app/Application/MarketData/Services/ArtifactSemanticHashService.php": {
+                "sha256": "b6fb117413240896da288e1ecb62af79b57d477e36ba34679156e0f2cee737d7",
+                "bytes": 24354,
+                "crlf_lines": 0,
+                "lf_lines": 629
+            },
+            "app/Application/MarketData/Services/EodBarsIngestService.php": {
+                "sha256": "ef8a195b180ce56eb4d4afe2f12088a3cc703c1416fce7c93db9daae374b9cbf",
+                "bytes": 58567,
+                "crlf_lines": 0,
+                "lf_lines": 1142
+            },
+            "app/Application/MarketData/Services/MarketDataPipelineService.php": {
+                "sha256": "eb9426c60784df5c5f5454c1d61a328e9827241178a25808427e7d394758a7d3",
+                "bytes": 213115,
+                "crlf_lines": 4194,
+                "lf_lines": 83
+            },
+            "app/Application/MarketData/Services/PublicationGovernanceBindingService.php": {
+                "sha256": "396101213ea2105f97c77673bd56b5f3cf8805b2d772fc6c541acdb58e685c30",
+                "bytes": 16631,
+                "crlf_lines": 0,
+                "lf_lines": 344
+            },
+            "app/Application/MarketData/Services/PublicationSemanticIdentityService.php": {
+                "sha256": "2e8334745f98e447a194e6410ced6b6049c18d04bfd97b39e96020aad1fcde57",
+                "bytes": 4065,
+                "crlf_lines": 0,
+                "lf_lines": 111
+            },
+            "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php": {
+                "sha256": "ec03556d7e07b81879835516a2d25b7d593fc9444d9e55606d00858868141725",
+                "bytes": 119759,
+                "crlf_lines": 0,
+                "lf_lines": 2302
+            },
+            "app/Infrastructure/Persistence/MarketData/EodRunRepository.php": {
+                "sha256": "ae617af27699d6c7cdcbac43873c1f93665b625e7ccab4c855f9c537bcac3e3c",
+                "bytes": 35739,
+                "crlf_lines": 0,
+                "lf_lines": 872
+            },
+            "database/migrations/2026_10_01_000001_add_semantic_nested_identity.php": {
+                "sha256": "0f0f96df1d72bdd926368e5b21283a473313009848db1ddbfc90b78d3f19fbc6",
+                "bytes": 2827,
+                "crlf_lines": 0,
+                "lf_lines": 65
+            },
+            "tests/Support/UsesMarketDataSqlite.php": {
+                "sha256": "d155c2f308b2c8a3e1185194648443d0557e988064e3b55f2aeed79e5fc61256",
+                "bytes": 181032,
+                "crlf_lines": 0,
+                "lf_lines": 2358
+            },
+            "tests/Unit/MarketData/SemanticNestedIdentityOnMariaDbTest.php": {
+                "sha256": "11f750345efdd15da10b9d933ef23b454f6e44d40cdce16349f1b6c9441bd46f",
+                "bytes": 46403,
+                "crlf_lines": 0,
+                "lf_lines": 746
+            },
+            "tests/Unit/MarketData/SemanticNestedIdentityPipelineWiringTest.php": {
+                "sha256": "46b92f68c7f6a775aa039e4e9fd9e2aff4061d2d63172083763ada3e726be779",
+                "bytes": 4838,
+                "crlf_lines": 0,
+                "lf_lines": 103
+            },
+            "tests/Unit/MarketData/PublicationScopeReasonSetTest.php": {
+                "sha256": "78dd1474832b6b364fe74da4dfa3a6300f464a5ed19733c938b14b5be0f0eaaf",
+                "bytes": 2390,
+                "crlf_lines": 0,
+                "lf_lines": 59
+            },
+            "tests/Unit/MarketData/ArtifactSemanticIdentityOnMariaDbTest.php": {
+                "sha256": "6797132f09635580d25c41ef1b9cfc21e83f4db7da6513adadc3a3e5bc196c15",
+                "bytes": 19172,
+                "crlf_lines": 0,
+                "lf_lines": 372
+            },
+            "tests/Unit/MarketData/PublicationSemanticIdentityProductionPathTest.php": {
+                "sha256": "dc0bf46c3ad67396030a739c8f8b0984d503267a37581f7e72ba7fa89f7c2a7b",
+                "bytes": 30894,
+                "crlf_lines": 0,
+                "lf_lines": 609
+            },
+            "tests/Unit/MarketData/PublicationRepositoryIntegrationTest.php": {
+                "sha256": "68e6782ad943808424542b58e379e8f7549f01d6c62243325bf349ff87f1d6a5",
+                "bytes": 48660,
+                "crlf_lines": 0,
+                "lf_lines": 1024
+            },
+            "docs/market_data/development/implementation/db/DB_FIELDS_AND_METADATA.md": {
+                "sha256": "37264a4d3ff9cf230aeb2293896087be5df0b20fa119d75b8dd08a91d8cc0516",
+                "bytes": 30570,
+                "crlf_lines": 0,
+                "lf_lines": 578
+            }
+        }
+    },
+    "predicate_mapping": {
+        "observation_manifest": [
+            "MD-S005-R0026",
+            "MD-S005-R0031",
+            "MD-S005-R0035",
+            "MD-S005-R0061",
+            "MD-S005-R0062"
+        ],
+        "factor_set": [
+            "MD-S005-R0024",
+            "MD-S005-R0043",
+            "MD-S005-R0069"
+        ],
+        "nested_temporal": [
+            "MD-S005-R0068"
+        ],
+        "manifest_reasons": [
+            "MD-S005-R0071"
+        ],
+        "verified_against": "E-MD-B10-A002-001 predicate_review defect mechanisms source_binding, nested_factor, nested_temporal and manifest_reasons",
+        "review_note": "Bar rows now bind the V2 observation-manifest identity, whose entries carry source and acquisition timestamps. Whether that transitive binding meets R0031 and the conditional R0035 per bar row is for the governed reproof to decide; no predicate is promoted here."
+    },
+    "production_path_proof": {
+        "test": "tests/Unit/MarketData/SemanticNestedIdentityOnMariaDbTest.php",
+        "substrate": "isolated MariaDB databases whose tables are cloned (CREATE TABLE LIKE) from the migrated tradeaxis_testing schema; retained IKPM foundation packages bootstrapped; dropped after each test",
+        "producers_executed": "SourceObservationRepository::manifestHashForObservationIds (V1) and SemanticObservationIdentityService (V2) over the same roots; EodPublicationRepository::bindCandidateAcquisitionProvenance; AdjustmentFactorSetService::produceForPublication (event selection, pipeline-derived UNKNOWN assessments, factor set; invoked without its C1 capture wrapper); EodPublicationRepository::bindCandidateAnalyticalProduct; PublicationGovernanceBindingService::bind; SemanticNestedIdentityService::bind; ArtifactSemanticHashService::hashStoredArtifact (bars); EodPublicationRepository::prepareCandidateManifestForSeal",
+        "histories_differ_in": "every listing, instrument, ticker, publication, run, config, observation, event, calendar, status, rule and mapping key; the relative order of multi-row keys is reversed; producer-allocated tables start 9000 higher; insertion order is reversed; observation_uid values differ; producers run at 2026-09-29 01:00:00 versus 2026-09-30 11:11:11, so assessment recorded_at differs (asserted)",
+        "non_vacuity": "two HELD_SOURCE_SCALE_UNKNOWN decisions with candidate factors 0.2 and 2.0, two UNKNOWN assessments recorded after the run cutoff, binding RESOLVED_STANDARD_BOARD, one selected calendar revision",
+        "result": "all nine V2 nested identities, the V2 bars artifact hash and the V2 publication manifest hash are identical across histories, while all nine V1 nested hashes differ"
+    },
+    "sensitivity_proof": {
+        "observation acquisition time / adapter version": "observation manifest, source-scale, factor-decision and factor-set identities move (evidence entries follow the observation)",
+        "rejected observation reason": "observation manifest only",
+        "event terms": "event, factor-decision and factor-set identities",
+        "event knowledge time (1B)": "event identity only",
+        "calendar knowledge time (1B) / session close": "calendar identity only",
+        "status knowledge time (1B) / effective interval": "status identity only",
+        "board identity knowledge time (1B)": "identity-board and market-structure identities",
+        "market-structure rule content / knowledge time (1B)": "market-structure identity only",
+        "assessment and factor-set wall clock (1A)": "no identity moves and the manifest is unchanged",
+        "retained listing root": "identity-board, status and market-structure identities only",
+        "platform timestamps rewritten after production (1A)": "no identity moves",
+        "manifest reason": "payload carries [\"COVERAGE_THRESHOLD_MET\"]; a contradicting or missing coverage reason makes the manifest invalid; reason-set unit test proves dedupe, order independence and membership sensitivity"
+    },
+    "fail_closed": {
+        "V2 nested identity changed out of band": "DATASET_MANIFEST_INVALID",
+        "factor decision changed after the factor set was recorded": "SEMANTIC_FACTOR_SET_V1_CONTENT_MISMATCH",
+        "sealed publication with changed governance state": "SEMANTIC_NESTED_SEALED_PUBLICATION_IMMUTABLE (unchanged state is confirmed)",
+        "V2 candidate without V2 observation manifest": "SEMANTIC_OBSERVATION_MANIFEST_MISSING",
+        "V2 artifact without V2 nested identity": "ARTIFACT_SEMANTIC_CONTEXT_INCOMPLETE: semantic_nested_identity_version",
+        "listing outside the foundation": "FOUNDATION_IDENTITY_HELD",
+        "hash stage wiring": "SemanticNestedIdentityPipelineWiringTest: V2 order governance, input, nested, then the three artifacts; V1 never derives nested identity"
+    },
+    "discriminating_probes": {
+        "N1": "observation_uid (random per history) re-enters the V2 observation entry -> SemanticNestedIdentityOnMariaDbTest.php [test_v2_nested_identities_ignore_allocation_insertion_order_and_execution_clock]: Tests: 1, Assertions: 35, Failures: 1.; restored 8089df836289c079 byte-identical=yes",
+        "N2": "a digest of the local listing id replaces the retained listing root in the identity set -> SemanticNestedIdentityOnMariaDbTest.php [test_v2_nested_identities_ignore_allocation_insertion_order_and_execution_clock]: Tests: 1, Assertions: 35, Failures: 1.; restored 66c4f1d66aa0f69d byte-identical=yes",
+        "N3": "assessment recorded_at enters the assessment identity (violates 1A) -> SemanticNestedIdentityOnMariaDbTest.php [test_v2_nested_identities_ignore_allocation_insertion_order_and_execution_clock]: Tests: 1, Assertions: 35, Failures: 1. | SemanticNestedIdentityOnMariaDbTest.php [test_a_genuine_semantic_change_moves_exactly_the_owning_identities@assessment and factor-set wall clock]: Tests: 1, Assertions: 5, Failures: 1.; restored 66c4f1d66aa0f69d byte-identical=yes",
+        "N4": "calendar revision knowledge time dropped from the calendar tuple (violates 1B) -> SemanticNestedIdentityOnMariaDbTest.php [test_a_genuine_semantic_change_moves_exactly_the_owning_identities@calendar knowledge time]: Tests: 1, Assertions: 5, Failures: 1.; restored 66c4f1d66aa0f69d byte-identical=yes",
+        "N5": "the local factor_set_id enters the V2 factor-set content -> SemanticNestedIdentityOnMariaDbTest.php [test_v2_nested_identities_ignore_allocation_insertion_order_and_execution_clock]: Tests: 1, Assertions: 35, Failures: 1.; restored 66c4f1d66aa0f69d byte-identical=yes",
+        "N6": "observation manifest hashed in local-id read order instead of canonical set order -> SemanticNestedIdentityOnMariaDbTest.php [test_v2_nested_identities_ignore_allocation_insertion_order_and_execution_clock]: Tests: 1, Assertions: 35, Failures: 1.; restored 8089df836289c079 byte-identical=yes",
+        "N7": "the coverage reason is omitted from the publication-scope reason set -> SemanticNestedIdentityOnMariaDbTest.php [test_the_manifest_binds_the_publication_scope_reason_set_and_refuses_a_contradicting_reason]: Tests: 1, Assertions: 4, Failures: 1.; restored ec03556d7e07b818 byte-identical=yes",
+        "N8": "duplicate elimination removed from the canonical reason set -> PublicationScopeReasonSetTest.php: Tests: 6, Assertions: 11, Failures: 2.; restored 2e8334745f98e447 byte-identical=yes",
+        "N9": "V2 artifacts read the allocation-bearing V1 source-scale column -> SemanticNestedIdentityOnMariaDbTest.php [test_v2_nested_identities_ignore_allocation_insertion_order_and_execution_clock]: Tests: 1, Assertions: 36, Failures: 1.; restored b6fb117413240896 byte-identical=yes",
+        "N10": "the hash stage no longer derives V2 nested identity before artifact hashing -> SemanticNestedIdentityPipelineWiringTest.php: Tests: 2, Assertions: 2, Failures: 1.; restored eb9426c60784df5c byte-identical=yes",
+        "N11": "the V1 factor-set content recomputation no longer refuses changed decisions -> SemanticNestedIdentityOnMariaDbTest.php [test_out_of_band_nested_identity_changes_fail_closed]: Tests: 1, Assertions: 5, Failures: 1.; restored 66c4f1d66aa0f69d byte-identical=yes",
+        "N12": "a sealed publication accepts a changed V2 nested identity -> SemanticNestedIdentityOnMariaDbTest.php [test_a_sealed_publication_can_only_confirm_its_nested_identity]: Tests: 1, Assertions: 5, Failures: 1.; restored 66c4f1d66aa0f69d byte-identical=yes",
+        "N13": "a V2 candidate without a V2 observation manifest is accepted -> SemanticNestedIdentityOnMariaDbTest.php [test_missing_v2_inputs_fail_closed_instead_of_falling_back_to_v1]: Tests: 1, Assertions: 4, Failures: 1.; restored 66c4f1d66aa0f69d byte-identical=yes",
+        "superseded_run": "A first run of N1-N11 left N11 green: the fail-closed helper called fail() inside a try that caught RuntimeException, and PHPUnit failures are RuntimeExceptions whose message carried the expected code. The helper now asserts outside the try; all probes were re-run against the final test file and the first run is kept under probes/superseded-run1-before-failclosed-helper-fix.",
+        "post_probe_controls": "11 files / 99 tests / 577 assertions; only the known F-MD-B10-A002-002 LifecycleProofIsNotMockedTest member fails"
+    },
+    "regression": {
+        "focused_set": "74 MarketData files run one per invocation: 714 tests / 12603 assertions; failures only DomainOwnershipSurfaceTest (F-MD-B10-A002-002 row 3, identical actual set), B18ProductionPathReplayFixturesTest (2026_09_29_000001 not on tradeaxis_testing, MD-DEP-0021, identical) and MigrationIntegrityAndDriftTest (normal tradeaxis drift, now 2026_09_29_000001-000003 and 2026_10_01_000001, MD-DEP-0021)",
+        "security_identity": "FoundationCoreOnMariaDbTest 16/223, IkpmConsumerWindowOnMariaDbTest 5/79, IkpmListingAdmissionOnMariaDbTest 7/96, all green",
+        "pipeline_integration": "MarketDataPipelineIntegrationTest 82 tests / 6148 assertions green on the V1 default profile",
+        "fixture_updates": "E010 ArtifactSemanticIdentityOnMariaDbTest, E012 PublicationSemanticIdentityProductionPathTest and PublicationRepositoryIntegrationTest now hand-set V2 nested identities (and the coverage reason) because they prove the artifact and publication layers; before the update they failed closed exactly on the new requirement",
+        "superseded_versions": "the focused set ran SemanticNestedIdentityOnMariaDbTest and the wiring test before their final edits; both were re-run as final versions in postprobe"
+    },
+    "f_md_b10_a002_002_classification": {
+        "AliasNamingAndMeaningBoundaryTest (E-MD-B10-A002-001)": "STILL REQUIRED FOR SUCCESSOR FULL-SUITE CLOSURE; needs a governed decision because E-MD-B10-A002-001 is immutable",
+        "DateDrivenCapabilityAndProviderAbstractionTest (FrozenSourcePackageReader)": "OWNED ELSEWHERE: shared security-identity foundation surface (D-MD-B10-A002-001/002 owner role)",
+        "DomainOwnershipSurfaceTest (FoundationRepository)": "OWNED ELSEWHERE: shared security-identity foundation surface",
+        "LifecycleProofIsNotMockedTest (B18ReplayPersistedEvidenceBindingTest)": "OWNED ELSEWHERE: MD-B18-A002 (F-017 surface, paused)",
+        "directly_resolved_by_this_unit": "none; all four re-executed with identical actual sets, and this unit added no member (the wiring test is not DB-backed)",
+        "finding_update": "not materially changed; F-MD-B10-A002-002 file left as issued"
+    },
+    "fallback_exposure": {
+        "finding": "F-MD-B10-A002-003 (OPEN, owner MD-B18-A002)",
+        "mechanism": "recordUnknownAssessment returns an existing assessment by uid and factor sets are reused by uid regardless of recorded_at; the C1 capture verifier admits the fallback without a cutoff check",
+        "reproduction": {
+            "scenario": "later run with an earlier knowledge cutoff reuses a pipeline-derived assessment recorded after that cutoff",
+            "run_1": {
+                "knowledge_cutoff_at": "2026-09-29 00:38:15",
+                "executed_at": "2026-09-29 01:00:00",
+                "factor_set_hash": "9c3f9a142d1fca3cbe18ceed4ab05e9ed85f14e15b6a9aecdbc8957c08c8b6cf"
+            },
+            "assessments_recorded_by_run_1": [
+                {
+                    "assessment_id": 1,
+                    "recorded_at": "2026-09-29 01:00:00",
+                    "state": "UNKNOWN"
+                },
+                {
+                    "assessment_id": 2,
+                    "recorded_at": "2026-09-29 01:00:00",
+                    "state": "UNKNOWN"
+                }
+            ],
+            "run_2": {
+                "request_mode": "replay_verify",
+                "knowledge_cutoff_at": "2026-09-29 00:38:15",
+                "executed_at": "2026-09-30 09:05:00",
+                "factor_set_hash": "9c3f9a142d1fca3cbe18ceed4ab05e9ed85f14e15b6a9aecdbc8957c08c8b6cf"
+            },
+            "assessments_bound_by_run_2": [
+                {
+                    "assessment_id": 1,
+                    "recorded_at": "2026-09-29 01:00:00",
+                    "recorded_after_run_2_cutoff": true
+                },
+                {
+                    "assessment_id": 2,
+                    "recorded_at": "2026-09-29 01:00:00",
+                    "recorded_after_run_2_cutoff": true
+                }
+            ],
+            "new_assessments_created_by_run_2": 0
+        },
+        "v2_treatment": "not normalized: recorded_at and local ids are not V2 members, and no V2 rule admits consumption before recorded_at"
+    },
+    "migration": {
+        "2026_10_01_000001": "additive only: nullable columns behind hasColumn guards, no data writes, down() drops only its own columns",
+        "tradeaxis_testing": "applied alone with --path (batch 7); 2026_09_29_000001 deliberately left unapplied as before",
+        "tradeaxis": "not migrated; 2026_09_29_000001-000003 and 2026_10_01_000001 await controlled deployment under MD-DEP-0021"
+    },
+    "full_suite": {
+        "run": false,
+        "reason": "not required at this checkpoint; the complete-suite control belongs to successor closure, which F-MD-B10-A002-002 and MD-DEP-0021 deployment still gate"
+    },
+    "raw_proof": {
+        "directory": "storage/app/market_data/evidence/MD-B10-A002/nested-semantic-producers-20261001-v1",
+        "manifest_sha256": "e490eafb905732587e5a69eda8dfae092d581e211d749c366d62eae70c37005f",
+        "members": 281
+    },
+    "preservation": {
+        "tests/Unit/MarketData/B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+        "docs/market_data/development/implementation/tests/MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4",
+        "docs/market_data/records/decisions/D-MD-B10-A002-003_APPROVED_V2_KNOWLEDGE_TIME_AND_PUBLICATION_SCOPE_REASON_SET.md": "2e79dba38183c8ade1dc874ed1c156cdb2cbc16ca36f0b1dcbeb754615fced1e",
+        "docs/market_data/records/evidence/E-MD-B10-A002-010_BOUNDED_ARTIFACT_SEMANTIC_IDENTITY_PROOF.json": "dc71a8b5249249dc778227a1cec41125eff875cffc9631e82e5453fc03bc6844",
+        "docs/market_data/records/evidence/E-MD-B10-A002-011_PUBLICATION_CORRECTION_AND_SEAL_SEMANTIC_IDENTITY_PROOF.json": "f01ff75d9bd7c67c21e5214e08178d3633a4e84f29c5b523ee7300700f7f6dc2",
+        "docs/market_data/records/evidence/E-MD-B10-A002-012_E011_CORRECTION_ENV_REGRESSION_FIX_AND_PRODUCTION_PATH_IDENTITY_PROOF.json": "d8627ccd97b42aebd751d8424d5cffe38dbba04a286860a25acfbeb8dbdacb0f",
+        "matches_E012_preservation": true
+    },
+    "observations_not_acted_on": [
+        "MarketDataPipelineService.php stays mixed CRLF/LF; new lines follow the line ending of their neighbours (6 CRLF in completeHash, 3 LF in the E010 constructor block).",
+        "tradeaxis_testing still lacks the shared foundation migration 2026_09_29_000001, so B18ProductionPathReplayFixturesTest keeps its known failure."
+    ],
+    "governance_state": {
+        "b05": "PASS 117/117",
+        "b10": "1016 SATISFIED / 56 NOT_ASSESSED / 1072 mandatory",
+        "b18": "100 PROVEN / 13 INCOMPLETE / 113; formal SATISFIED 0/113",
+        "md_dep_0021": "BLOCKING",
+        "md_dep_0020": "BLOCKING",
+        "md_dep_0019": "BLOCKING",
+        "r0025": "INCOMPLETE",
+        "f018_started": false,
+        "promoted_rules": []
+    },
+    "governance_boundary": "This immutable record claims the executed results above. Registry, integrity and current-state gates run after registration and are reported in CI-MD-B10-A002-001.",
+    "dependency_result": "The remaining nested semantic producers and the publication-scope reason set are implemented and proven on the production producer path. MD-DEP-0021 remains BLOCKING on controlled deployment and the complete 56-rule governed reproof; MD-DEP-0020 remains BLOCKING until successor B10 closure.",
+    "next_resume_point": "MD-B10-A002: complete governed reproof of the 56 affected predicates against E-MD-B10-A002-010..013, predicate by predicate and without promotion until the closure gates hold: F-MD-B10-A002-002 resolved by its surface owners, controlled deployment under MD-DEP-0021, then a full MarketData suite failing only governed expected states. Same A002/BL001/CI. MD-DEP-0021/0020/0019 remain BLOCKING; R0025 and F-018 stay paused; F-MD-B10-A002-003 waits for MD-B18-A002."
+}

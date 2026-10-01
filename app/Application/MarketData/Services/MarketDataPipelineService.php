@@ -163,6 +163,7 @@ class MarketDataPipelineService
     private $governanceBindings;
     private $inputBindings;
     private $artifactSemanticHashes;
+    private $semanticNestedIdentities;
 
     private $liquidityLabels;
 
@@ -184,7 +185,8 @@ class MarketDataPipelineService
         PublicationGovernanceBindingService $governanceBindings = null,
         LiquidityMetricLabelService $liquidityLabels = null,
         PublicationInputBindingService $inputBindings = null,
-        ArtifactSemanticHashService $artifactSemanticHashes = null
+        ArtifactSemanticHashService $artifactSemanticHashes = null,
+        SemanticNestedIdentityService $semanticNestedIdentities = null
     ) {
         $this->runs = $runs;
         $this->barsIngest = $barsIngest;
@@ -204,6 +206,7 @@ class MarketDataPipelineService
         $this->liquidityLabels = $liquidityLabels ?: new LiquidityMetricLabelService();
         $this->inputBindings = $inputBindings ?: app(PublicationInputBindingService::class);
         $this->artifactSemanticHashes = $artifactSemanticHashes ?: app(ArtifactSemanticHashService::class);
+        $this->semanticNestedIdentities = $semanticNestedIdentities ?: app(SemanticNestedIdentityService::class);
     }
 
     public function startStage(MarketDataStageInput $input)
@@ -978,6 +981,12 @@ class MarketDataPipelineService
             // fail this stage closed exactly like the V1 governance binding above — it is not a
             // secondary or best-effort step.
             $this->inputBindings->bind($run, $candidatePublication->publication_id, $input->requestedDate);
+
+            // V2 nested semantic identities (D-MD-B10-A002-003) are derived from the governance state
+            // bound above and must exist before V2 artifacts hash; V1 runs keep only the V1 columns.
+            if (trim((string) ($run->artifact_hash_profile ?? '')) === ArtifactSemanticHashService::PROFILE_V2) {
+                $this->semanticNestedIdentities->bind($run, $candidatePublication, $input->requestedDate, $useHistory);
+            }
 
             $hashes = $this->hashArtifactSet(
                 $run,

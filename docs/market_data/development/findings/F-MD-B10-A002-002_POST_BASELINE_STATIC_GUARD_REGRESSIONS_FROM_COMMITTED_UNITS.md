@@ -4,9 +4,9 @@
 - Stage / Attempt / Baseline / Epoch: MD-B10 / MD-B10-A002 / MD-B10-A002-BL001 / MD-REBASELINE-20260820-001
 - Raised: 2026-09-30T23:20:20+07:00
 - Severity: P2 - full-suite regression control / successor closure precondition
-- Status: OPEN
+- Status: `RESOLVED — MEMBERS_REMEDIATED_BY_RECORDED_OWNERS; FULL-SUITE_CLOSURE_CONFIRMATION_CARRIED_BY_THE_B10_SUCCESSOR_CLOSURE_CONTROL`
 - Class: UNRECORDED_REGRESSION
-- Related: E-MD-B10-A002-012, E-MD-B10-A002-011, E-MD-B10-A002-001, CI-MD-B10-A002-001, F-MD-B18-A002-011, D-MD-B18-A002-004
+- Related: E-MD-B10-A002-012, E-MD-B10-A002-011, E-MD-B10-A002-001, CI-MD-B10-A002-001, F-MD-B18-A002-011, D-MD-B18-A002-004, D-MD-B10-A002-004, E-MD-B10-A002-014, E-MD-B18-A002-087
 
 ## Observed
 
@@ -36,3 +36,22 @@ Each was re-executed after the E012 fix and still fails with the same actual/exp
 ## Orchestration
 
 Recording only; no source, test, guard or evidence change was made under this finding. It is not an MD-DEP-0021 blocker and creates no parallel executable resume point. It is a precondition for the full-suite regression control that MD-B10 successor closure requires.
+
+## 2026-10-01 resolved by the recorded owners — D-MD-B10-A002-004, E-MD-B10-A002-014, E-MD-B18-A002-087
+
+Each member was resolved in the unit that owns its surface, in the same MD-B10-A002 / BL001 / CI. No attempt or baseline was created and no predicate changed status.
+
+| Member | Owner | Resolution |
+|---|---|---|
+| Alias repetition guard | governed decision `D-MD-B10-A002-004` | `E-MD-B10-A002-001` stays byte-identical. It is admitted to the pinned measured set as issued evidence, keyed by its issued SHA-256; a new test fails if those bytes change. Its one alias line quotes an existing test assertion against the preserved column. |
+| Provider query shape guard | shared security-identity foundation (`D-MD-B10-A002-001`) | Code repaired: `FrozenSourcePackageReader` takes each source locator from its fingerprinted extract and requires the acquisition manifest to agree, instead of carrying the provider request URL as a literal. Reader output is byte-identical for all three governed packages. The guard is unchanged. |
+| Domain ownership guard | shared security-identity foundation, refinement governed by `D-MD-B10-A002-004` | The guard's population counted the foundation's own `si_*` tables as Market Data tables. They are excluded by name only while the foundation migration creates exactly them, no other migration touches them and the base schema defines none; a new test requires the foundation repository to be their only toucher. |
+| Lifecycle mocking guard | MD-B18-A002 | `B18ReplayPersistedEvidenceBindingTest` now persists its world (run, captures through the real capture writer, sealed publication, lineage binding and bound context, pointer, eligibility rows) and uses the real repositories. Four perturbation sets now state the production coupling the mocks had hidden. The guard is unchanged. |
+
+Proof: all four guards pass on the repaired surfaces. Ten probes each turned the intended assertion red and were restored byte-identically: an unadmitted alias document, a changed admission hash, the provider URL written back, both locators taken from one extract, a Market Data table read by the foundation repository, a foundation table read by a Market Data service, a widened exclusion set, a re-added repository mock, the writer dropping `event_factor_hash`, and the manifest builder dropping the factor-set hash. The last stayed green against the pre-unit mocked test. Focused controls pass: 18 Market Data files and the three SecurityIdentity MariaDB files. Raw package: `storage/app/market_data/evidence/MD-B10-A002/f002-resolution-20261001-v1`.
+
+Closure condition unchanged: the finding closes when a full MarketData suite fails only on governed expected states. That run is the B10 successor closure control after `MD-DEP-0021` controlled deployment; it was not run in this unit.
+
+## 2026-10-01 owner review — D-MD-B10-A002-005, E-MD-B18-A002-088
+
+The owner approved `D-MD-B10-A002-004` with its bounded interpretation: the alias exception covers only the byte-pinned `E-MD-B10-A002-001` content, and the `si_*` exclusion holds only while the migration-ownership and reverse-access guards prove foundation ownership. The owner also reviewed the four perturbation sets `E-MD-B18-A002-087` corrected, under one rule: a dependent hash may move only because its governed semantic input changes. The three registry sets are approved because they bind the same `registry_versions` capture. The configuration-snapshot set is not approved: it moved only because of a local id. The implementation was fixed and the expectation restored to `[config_snapshot_id]`. The residual V1 entity ids in captured content are `F-MD-B10-A002-004`, owned by MD-B18-A002. This finding's status and closure condition are unchanged.

@@ -178,6 +178,29 @@ A blocked campaign and an unsealed failed candidate are immutable execution evid
 publication. They must have a terminal correction/run reason, and normal reads continue to follow
 the unchanged current pointer until a readable sealed replacement succeeds.
 
+### V2 semantic nested identity (D-MD-B10-A002-003)
+
+The V1 set hashes above still serialize local listing, revision, observation and assessment keys, and
+replay, input binding, as-known replay and evidence export keep reading them. A publication whose run
+uses `artifact_hash_profile = market-data-semantic-hash/v2` additionally carries allocation-independent
+identities beside them:
+
+- `eod_runs.semantic_observation_manifest_hash` and `eod_publications.semantic_observation_manifest_hash`:
+  the V2 observation manifest over the same root observations as the V1 manifest. Ingest binds it, and a
+  candidate that acquired nothing inherits it exactly as it inherits the V1 manifest.
+- `md_publication_lineage_bindings.semantic_nested_identity_version` (`market-data-semantic-nested/v2`)
+  with `semantic_observation_manifest_hash`, `semantic_identity_revision_set_hash`,
+  `semantic_calendar_revision_set_hash`, `semantic_status_revision_set_hash`,
+  `semantic_event_revision_set_hash`, `semantic_source_scale_assessment_set_hash`,
+  `semantic_market_structure_revision_set_hash`, `semantic_factor_decision_set_hash` and
+  `semantic_factor_set_hash`. The hash stage derives them after governance binding and before any V2
+  artifact hash.
+
+Per-listing sets carry the retained foundation roots, source-fact revisions carry their governed knowledge
+time, and platform-created assessments, decisions and factor sets carry content only. V2 artifacts and the
+V2 publication manifest read only these columns and fail closed when one is missing. NULL means "not a V2
+publication", never an empty set.
+
 ### Stage 8 conformant-corpus admission boundary
 
 `md_corpus_admission_decisions` separates the intentional dataset start from the earliest measured

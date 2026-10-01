@@ -136,17 +136,25 @@ final class FrozenSourcePackageReader
         $records = $admitted['records'] ?? [];
         if (count($records) !== 2) { throw new \DomainException('SOURCE_RECORD_BINDING_INVALID'); }
         $records = array_column($records, null, 'source_record');
-        $idxUrl = 'https://www.idnfinancials.com/id/fs3/content/announcements/2023/IKPM/20231108_IKPM_IPO.pdf';
-        $yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/IKPM.JK?range=1mo&interval=1d';
-        if (!isset($records[$idxUrl], $records[$yahooUrl])) { throw new \DomainException('SOURCE_RECORD_BINDING_INVALID'); }
+        // Source locators are provenance carried by the fingerprinted package (manifest hash checked
+        // above), not request shape written into persistence code; provider transport stays in the
+        // source adapter. Each extract names its own record and the acquisition manifest must agree.
+        $idxUrl = $members['idx_listing_announcement_extract.json']['source_url'] ?? null;
+        $yahooUrl = $members['yahoo_chart_extract.json']['source_url'] ?? null;
+        $acquired = array_column($members['acquisition_manifest.json']['sources'] ?? [], 'locator');
+        sort($acquired);
+        $extracted = [$idxUrl, $yahooUrl];
+        sort($extracted);
+        if (!is_string($idxUrl) || !is_string($yahooUrl) || $idxUrl === $yahooUrl || $acquired !== $extracted
+            || !isset($records[$idxUrl], $records[$yahooUrl])) {
+            throw new \DomainException('SOURCE_RECORD_BINDING_INVALID');
+        }
         $idx = $records[$idxUrl];
         $yahoo = $records[$yahooUrl];
-        if (($members['idx_listing_announcement_extract.json']['source_url'] ?? null) !== $idxUrl
-            || ($members['idx_listing_announcement_extract.json']['source_field_values'] ?? null) !== $idx['facts']) {
+        if (($members['idx_listing_announcement_extract.json']['source_field_values'] ?? null) !== $idx['facts']) {
             throw new \DomainException('SOURCE_EXTRACTION_MISMATCH');
         }
-        if (($members['yahoo_chart_extract.json']['source_url'] ?? null) !== $yahooUrl
-            || ($members['yahoo_chart_extract.json']['source_field_values'] ?? null) !== $yahoo['facts']
+        if (($members['yahoo_chart_extract.json']['source_field_values'] ?? null) !== $yahoo['facts']
             || ($members['yahoo_chart_extract.json']['raw_sha256'] ?? null) !== hash('sha256', $this->bytes($directory.'/yahoo_chart_response.json'))
             || ($members['yahoo_chart_extract.json']['raw_bytes'] ?? null) !== strlen($this->bytes($directory.'/yahoo_chart_response.json'))) {
             throw new \DomainException('SOURCE_EXTRACTION_MISMATCH');

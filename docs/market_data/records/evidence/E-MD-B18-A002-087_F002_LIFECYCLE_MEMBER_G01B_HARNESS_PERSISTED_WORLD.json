@@ -1,0 +1,90 @@
+{
+    "evidence_id": "E-MD-B18-A002-087",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "issued_at": "2026-10-01T13:13:38+07:00",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "verdict": "G01B_PROOF_HARNESS_MOCKS_REPLACED_BY_PERSISTED_WORLD_R0023_R0004_BASIS_RETAINED",
+    "evidence_scope": "F_MD_B10_A002_002_LIFECYCLE_MEMBER_B18_REPLAY_PERSISTED_EVIDENCE_BINDING_TEST",
+    "ci_id": "CI-MD-B18-A002-001",
+    "related_findings": [
+        "F-MD-B10-A002-002",
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-075",
+        "E-MD-B10-A002-014"
+    ],
+    "related_decisions": [
+        "D-MD-B10-A002-004"
+    ],
+    "dependencies": [
+        "MD-DEP-0017",
+        "MD-DEP-0020"
+    ],
+    "schema_changed": false,
+    "production_code_changed": false,
+    "trigger": "F-MD-B10-A002-002 row 4: LifecycleProofIsNotMockedTest fails because tests/Unit/MarketData/B18ReplayPersistedEvidenceBindingTest.php (b9e5091, E-MD-B18-A002-075) mocks EodPublicationRepository inside a DB-backed test. The same harness also borrowed a mocked EodEvidenceRepository from B18ReplayComparisonExhaustivenessTest, which the guard cannot see because the mock is created in another file.",
+    "remediation": {
+        "harness": "persist() now writes one coherent world per scenario on a fresh SQLite mirror (a sealed binding is immutable, so worlds are not rewritten): the run row, its input captures through the real RunInputCaptureRepository writer before the seal (universe_identity and ancillary through captureForProducer with production operation names, registry_versions through capture), then the sealed publication, its lineage binding and VERIFIED bound context (hash over the stored JSON), the current pointer and ten eligibility rows. The real EodEvidenceRepository and EodPublicationRepository read it; no repository, service or writer is mocked.",
+        "fixture_alignment": "The borrowed expected fixture declares a run with no analytical product or factor-set row; the persisted publication follows that declaration (price product and factor_set_id null), as the mocked rows did.",
+        "expectation_corrections": {
+            "basis": "Four perturbation sets in canonicalSourcePerturbations() asserted that a single identity moved because the mocks let one stubbed value change while its production siblings stayed fixed. With persisted sources the production derivation decides, and the sets now state its exact result.",
+            "read-model version": "[read_model_version] -> [read_model_version, formula_registry_hash, reason_registry_hash]: the version lives in the registry_versions capture whose payload hash is the formula and reason registry identity (ReplayVerificationService::actualBoundInputContext).",
+            "serialization version": "[serialization_version] -> [serialization_version, formula_registry_hash, reason_registry_hash], same capture.",
+            "executable build": "[executable_build_identity] -> [executable_build_identity, formula_registry_hash, reason_registry_hash], same capture.",
+            "configuration snapshot id": "[config_snapshot_id] -> [config_snapshot_id, temporal_identity_hash, event_factor_hash]: captureForProducer puts the run configuration snapshot in every producer selection, so another snapshot means other universe and ancillary slots.",
+            "unchanged": "Every other set, every exact-value assertion, the drift test, the factor/formula independence test, the lineage test and the date test are unchanged and pass on the persisted world.",
+            "predicate_effect": "None. MD-S003-R0023 requires the frozen identities to be recorded and exported; MD-S004-R0004 requires factor and formula identity bound independently. Both still hold with exact assertions. The negative half still catches a constant, a live read or one identity standing in for another: each identity follows a persisted source, and the factor/formula pair moves independently."
+        },
+        "proof_basis": "MarketDataReplayVerificationProofBasis.php MD-S003-R0023 basis text: the clause describing stubbed inputs now describes the persisted world and names this record. Positive/negative test names are unchanged."
+    },
+    "probes": {
+        "L1": "the DB-backed B18 binding test mocks the publication repository again -> LifecycleProofIsNotMockedTest.php [test_db_backed_tests_only_mock_the_external_source_boundary]: Tests: 1, Assertions: 1, Failures: 1.; restored fb464bea4d977400 byte-identical=yes",
+        "L2": "E-MD-B18-A002-075 probe P1 repeated: the writer persists event_factor_hash as null -> B18ReplayPersistedEvidenceBindingTest.php: Tests: 17, Assertions: 130, Failures: 4.; restored 18dff3a8416b9954 byte-identical=yes (E-MD-B18-A002-075 probe P1 repeated)",
+        "L3": "the publication manifest builder stops carrying the factor-set hash (invisible while the repository was mocked) -> B18ReplayPersistedEvidenceBindingTest.php: Tests: 17, Assertions: 153, Failures: 2.; restored ec03556d7e07b818 byte-identical=yes",
+        "L3_against_pre_unit_test": "the same manifest-builder mutation run against the pre-unit mocked test file (sha256 3b76044fd1b72009d1f479eeeb7581a392fd85ce1fd0e90a636692def831c008): OK (17 tests, 156 assertions) -- the mocked repository hid the manifest builder entirely (raw probes/L3-pre-unit-mocked-test.txt)"
+    },
+    "validation": {
+        "B18ReplayPersistedEvidenceBindingTest": "OK (17 tests, 156 assertions)",
+        "LifecycleProofIsNotMockedTest": "OK (5 tests, 8 assertions)",
+        "B18ReplayComparisonExhaustivenessTest": "OK (77 tests, 563 assertions)",
+        "B18ReplayEvidenceSelfExplanationTest": "OK (14 tests, 143 assertions)",
+        "B18AsKnownModeIsolationTest": "OK (16 tests, 89 assertions)",
+        "B18AsKnownSnapshotIsolationTest": "OK (3 tests, 27 assertions)",
+        "ReplayVerificationServiceTest": "OK (22 tests, 89 assertions)",
+        "PromotedPredicateProofGateTest": "OK (8 tests, 22 assertions)",
+        "TestCoverageBehavioralStaticGuardTest": "OK (1 test, 19 assertions)"
+    },
+    "test_sha256": {
+        "B18ReplayPersistedEvidenceBindingTest.php": {
+            "before": "3b76044fd1b72009d1f479eeeb7581a392fd85ce1fd0e90a636692def831c008",
+            "after": "fb464bea4d977400c272981913b66a6ff4f904fec0ae4ca4a8928d336122549f"
+        },
+        "MarketDataReplayVerificationProofBasis.php": {
+            "before": "e7baa84294d4f2f7e96de02f3f30fb4c2ab27929de01d51882720a461e8ac6dc",
+            "after": "1ff028035f7d7a11779e41e4456b7ae8e6139ea83d2012bbef49fb693f159d72"
+        }
+    },
+    "predicate_state": {
+        "MD-S003-R0023": "PROVEN, unchanged (basis retained, harness corrected)",
+        "MD-S004-R0004": "PROVEN, unchanged",
+        "b18_readiness": "100/113 reviewed basis, formal 0/113, NOT_READY, unchanged"
+    },
+    "preserved_unchanged": [
+        "E-MD-B18-A002-075",
+        "B18ScenarioFamiliesOnMariaDbTest.php",
+        "MarketDataReplayVerificationAcceptanceAggregate.php",
+        "B18ReplayComparisonExhaustivenessTest.php"
+    ],
+    "boundary": "Bounded F-MD-B10-A002-002 member work on the MD-B18-A002 surface. It does not resume F-017/R0025 or F-018 and changes no B18 dependency. F-017 stays OPEN on MD-S003-R0025 and MD-S050-R0005.",
+    "raw_proof": {
+        "package": "storage/app/market_data/evidence/MD-B10-A002/f002-resolution-20261001-v1",
+        "manifest_sha256": "5ac4cfce1ee174baff8ba1382c07acdb13e0f944fbbb082c78af17eb4c22e6ad"
+    },
+    "no_commit_or_push": true
+}

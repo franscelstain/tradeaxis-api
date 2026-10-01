@@ -4,6 +4,7 @@ use App\Models\EodRun;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Application\MarketData\Services\ArtifactSemanticHashService;
 use App\Application\MarketData\Services\PublicationSemanticIdentityService;
+use App\Application\MarketData\Services\SemanticNestedIdentityService;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\UsesMarketDataSqlite;
 
@@ -978,12 +979,22 @@ class PublicationRepositoryIntegrationTest extends TestCase
                 'bound_input_context_hash' => hash('sha256', $boundInputContextJson),
                 'bound_input_capture_manifest_json' => '{}',
                 'created_at' => '2026-03-20 17:10:00',
-            ]
+                // The V2 nested semantic identities are hand-set for the same reason: this fixture
+                // exercises the publication layer, and SemanticNestedIdentityService has its own
+                // production-path proof. V1 publications ignore these columns.
+                'semantic_nested_identity_version' => SemanticNestedIdentityService::VERSION,
+            ] + array_combine(
+                array_values(SemanticNestedIdentityService::LINEAGE_COLUMNS),
+                array_map(static function ($column) {
+                    return hash('sha256', 'test-'.$column);
+                }, array_values(SemanticNestedIdentityService::LINEAGE_COLUMNS))
+            )
         );
 
         DB::table('eod_runs')->where('run_id', $publication->run_id)->update([
             'config_snapshot_id' => 1,
             'observation_manifest_hash' => $observationManifestHash,
+            'coverage_reason_code' => 'COVERAGE_THRESHOLD_MET',
             'bars_batch_hash' => $publication->bars_batch_hash,
             'indicators_batch_hash' => $publication->indicators_batch_hash,
             'eligibility_batch_hash' => $publication->eligibility_batch_hash,

@@ -52,6 +52,26 @@ class PublicationSemanticIdentityService
         return $expected;
     }
 
+    /**
+     * A reason set as the manifest binds it: registry-shaped codes, each once, canonically sorted.
+     * Order is not semantic (D-MD-B10-A002-003 decision 2).
+     */
+    public function canonicalReasonSet(array $reasons): array
+    {
+        $set = [];
+        foreach ($reasons as $reason) {
+            $code = strtoupper(trim((string) $reason));
+            if (preg_match('/^[A-Z][A-Z0-9_]*$/', $code) !== 1) {
+                throw new \RuntimeException('SEMANTIC_REASON_CODE_INVALID: '.$code);
+            }
+            $set[$code] = true;
+        }
+        $codes = array_keys($set);
+        sort($codes, SORT_STRING);
+
+        return $codes;
+    }
+
     public function publicationHash(array $payload): string
     {
         return $this->hashDocument('publication_manifest', $payload);
