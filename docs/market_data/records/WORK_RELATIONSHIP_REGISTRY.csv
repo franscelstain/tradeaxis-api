@@ -875,3 +875,25 @@ MD-REL-0873,CI-MD-B10-A002-001,F-MD-B10-A002-004,RELATED,New finding disclosed; 
 MD-REL-0874,CI-MD-B10-A002-001,E-MD-B18-A002-088,CARRIED_FROM,The impact declaration carries the owner-directed fix on the MD-B18-A002 surface.,,2026-10-01T16:56:55+07:00,Same A002/BL001; no predicate promotion.
 MD-REL-0875,D-MD-B10-A002-005,E-MD-B18-A002-088,CARRIED_FROM,The decision is applied by the owner-directed review evidence on the MD-B18-A002 surface.,,2026-10-01T16:39:17+07:00,Same A002/BL001; no predicate promotion.
 MD-REL-0876,F-MD-B10-A002-004,E-MD-B18-A002-088,CARRIED_FROM,The resolved part and the residual are recorded by that evidence.,,2026-10-01T16:39:53+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0877,E-MD-B10-A002-015,E-MD-B10-A002-014,DERIVED_FROM,Deploys what the F-002 resolution and the nested producers made ready.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0878,E-MD-B10-A002-015,E-MD-B10-A002-013,DERIVED_FROM,Deploys the migration of the nested semantic identity columns.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0879,E-MD-B10-A002-015,E-MD-B10-A002-012,RELATED,"Publication, correction and seal identity migration deployed.",,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0880,E-MD-B10-A002-015,E-MD-B10-A002-009,RELATED,Foundation consumer contract accepted on the deployed database.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0881,E-MD-B10-A002-015,E-MD-B10-A002-008,RELATED,The consumer-ready instant resolves on the deployed database.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0882,E-MD-B10-A002-015,E-MD-B10-A002-007,RELATED,IKPM listing package bootstrapped on the normal database.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0883,E-MD-B10-A002-015,E-MD-B10-A002-006,RELATED,Foundation core migration and bootstrap deployed.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0884,E-MD-B10-A002-015,D-MD-B10-A002-005,DEPENDS_ON,Executes the next canonical unit after the owner review.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0885,E-MD-B10-A002-015,D-MD-B10-A002-004,RELATED,Foundation table ownership holds in the deployed state.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0886,E-MD-B10-A002-015,D-MD-B10-A002-003,RELATED,Deploys the V2 nested columns it decided.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0887,E-MD-B10-A002-015,D-MD-B10-A002-002,DEPENDS_ON,Deploys the foundation persistence and retained registry it accepted.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0888,E-MD-B10-A002-015,D-MD-B10-A002-001,RELATED,Foundation delivery under the shared-foundation owner.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0889,E-MD-B10-A002-015,F-MD-B10-A002-002,RELATED,Focused members re-run green in the deployed state; successor full-suite closure pending.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0890,E-MD-B10-A002-015,F-MD-B10-A002-003,RELATED,Residual not exposed or remediated by deployment; owner MD-B18-A002.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0891,E-MD-B10-A002-015,F-MD-B10-A002-004,RELATED,Residual not exposed or remediated by deployment; owner MD-B18-A002.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0892,E-MD-B10-A002-015,F-MD-B18-A002-023,DEPENDS_ON,Deployment progress on the open semantic-hash finding.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0893,E-MD-B10-A002-015,E-MD-B18-A002-088,CARRIED_FROM,Deployed state keeps the replay identity fix in force.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0894,E-MD-B10-A002-015,E-MD-B18-A002-087,CARRIED_FROM,The B18 harness members re-run green in the deployed state.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0895,E-MD-B10-A002-015,CI-MD-B10-A002-001,RELATED,Same mutable impact declaration records the deployment.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0896,E-MD-B10-A002-015,MD-B10-A002-BL001,RELATED,The same immutable remediation baseline is retained.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0897,CI-MD-B10-A002-001,E-MD-B10-A002-015,RELATED,"Impact declaration identifies the deployment, bootstrap and acceptance.",,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0898,F-MD-B18-A002-023,E-MD-B10-A002-015,RELATED,The open finding records the controlled deployment; reproof and closure remain.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.

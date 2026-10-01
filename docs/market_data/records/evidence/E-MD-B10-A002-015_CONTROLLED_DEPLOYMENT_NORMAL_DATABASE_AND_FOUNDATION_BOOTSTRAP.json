@@ -1,0 +1,480 @@
+{
+    "evidence_id": "E-MD-B10-A002-015",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B10",
+    "attempt_id": "MD-B10-A002",
+    "work_id": "MD-B10-A002",
+    "baseline_id": "MD-B10-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "change_impact_declaration": "CI-MD-B10-A002-001",
+    "issued_at": "2026-10-01T17:29:42+07:00",
+    "verdict": "CONTROLLED_DEPLOYMENT_COMPLETE_ON_NORMAL_TRADEAXIS_ACCEPTANCE_PASSED_DEPENDENCY_STILL_BLOCKING",
+    "checkpoint_verdict": "A. CONTROLLED DEPLOYMENT COMPLETE - READY FOR COMPLETE B10 REPROOF",
+    "supersedes": [],
+    "related_findings": [
+        "F-MD-B18-A002-023",
+        "F-MD-B10-A002-002",
+        "F-MD-B10-A002-003",
+        "F-MD-B10-A002-004"
+    ],
+    "related_evidence": [
+        "E-MD-B10-A002-014",
+        "E-MD-B10-A002-013",
+        "E-MD-B10-A002-012",
+        "E-MD-B10-A002-009",
+        "E-MD-B10-A002-008",
+        "E-MD-B10-A002-007",
+        "E-MD-B10-A002-006",
+        "E-MD-B18-A002-088",
+        "E-MD-B18-A002-087",
+        "CI-MD-B10-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B10-A002-005",
+        "D-MD-B10-A002-004",
+        "D-MD-B10-A002-003",
+        "D-MD-B10-A002-002",
+        "D-MD-B10-A002-001"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0021",
+        "MD-DEP-0020",
+        "MD-DEP-0019"
+    ],
+    "authorization": "Explicit owner instruction for this unit: controlled deployment under MD-DEP-0021 against the normal local tradeaxis development database; no 56-predicate reproof, no promotion, no B18/R0025/F-018, no destructive command, no push.",
+    "canonical_resolution_criterion": "E-MD-B10-A002-003 dependency_state: actual owner and governed immutable identity delivery supplied, consumer binding retained/frozen, allocation-independent import/rebuild and temporal/fail-closed acceptance executed successfully. The dependency registry resume trigger additionally requires the complete governed reproof of the 56 predicates and the successor full-suite control.",
+    "pre_deployment_state": {
+        "mariadb_version": "10.4.27-MariaDB",
+        "database": "tradeaxis",
+        "captured_at": "2026-10-01T17:22:08+07:00",
+        "migration_files": 79,
+        "applied": 75,
+        "max_batch": 4,
+        "pending": [
+            "2026_09_29_000001_create_shared_security_identity_foundation",
+            "2026_09_29_000002_add_artifact_semantic_hash_profile",
+            "2026_09_29_000003_add_publication_semantic_identity_profile",
+            "2026_10_01_000001_add_semantic_nested_identity"
+        ],
+        "orphans": [],
+        "tables": 63,
+        "rows": 570,
+        "populated_tables": {
+            "eod_reason_codes": 437,
+            "market_benchmarks": 12,
+            "market_data_corporate_action_types": 20,
+            "market_data_sectors": 12,
+            "market_data_trading_status_event_types": 6,
+            "md_liquidity_metric_labels": 5,
+            "md_trading_status_source_registry": 3,
+            "migrations": 75
+        },
+        "market_data_and_publication_tables": "every eod_*, md_publication_*, md_listings, tickers and eod_bars table held 0 rows: the normal database holds registry and seed data only, so no V1 publication existed to migrate",
+        "target_objects_pre_existing": "none: no si_* table and none of the 26 added columns existed",
+        "tradeaxis_testing_pending_before": [
+            "2026_09_29_000001_create_shared_security_identity_foundation"
+        ],
+        "artifacts": [
+            "pre/state.json",
+            "pre/row_fingerprints.json",
+            "pre/tradeaxis_pre_deployment.sql",
+            "pre/migration_file_sha256.txt"
+        ]
+    },
+    "backup": {
+        "kind": "mysqldump --single-transaction --routines --triggers --events, schema and data, of tradeaxis before any write",
+        "file": "storage/app/market_data/evidence/MD-B10-A002/controlled-deployment-20261001-v1/pre/tradeaxis_pre_deployment.sql",
+        "sha256": "b635c57443e88a152aa9ab8f8add135692542fe24e01500f526e134a8bcf9872",
+        "bytes": 224322,
+        "restore_verified": "restored into a scratch database and row fingerprints over all 63 tables matched the live pre-deployment fingerprints (pre/backup_restore_fingerprints.json); the scratch database was dropped",
+        "recovery_path": "restore this dump. Do not run migrate:rollback: batch 5 would drop the V2 columns and then stop at the foundation migration, which refuses once the foundation holds rows."
+    },
+    "migration_safety_review": {
+        "2026_09_29_000001_create_shared_security_identity_foundation": {
+            "purpose": "Shared Security Identity Foundation canonical persistence (D-MD-B10-A002-002): si_packages, si_entities, si_revisions, si_holds",
+            "kind": "ADDITIVE: four new InnoDB tables, six foreign keys, unique/lookup indexes; no existing object touched",
+            "order": 1,
+            "rollback": "down() refuses (FOUNDATION_HISTORY_PRESENT) once si_packages has rows, by design; with the foundation bootstrapped it can no longer be rolled back",
+            "data_impact": "none on existing tables; the four tables start empty",
+            "sha256": "26e1c13d98627fb19b148c77074e02eaaf97c2b3d758fc4b5c41b18a3ef74476"
+        },
+        "2026_09_29_000002_add_artifact_semantic_hash_profile": {
+            "purpose": "V2 artifact hash profile marker on eod_runs and eod_publications",
+            "kind": "ADDITIVE: one nullable varchar(64) per table, hasColumn-guarded",
+            "order": 2,
+            "rollback": "down() drops the added columns; any V2 profile marker values written after deployment would be lost",
+            "data_impact": "none: existing rows keep NULL, which means legacy V1 interpretation",
+            "sha256": "45eaace91a8395b94eecb2525075124203c09f75741c9209f671c86f542d8655"
+        },
+        "2026_09_29_000003_add_publication_semantic_identity_profile": {
+            "purpose": "V2 publication/correction/seal identity: publication_semantic_profile, seal_fingerprint, correction_semantic_hash, semantic_identity_profile/hash",
+            "kind": "ADDITIVE: nullable columns on eod_runs, eod_publications, eod_dataset_corrections, hasColumn-guarded",
+            "order": 3,
+            "rollback": "down() drops the added columns; V2 values written after deployment would be lost",
+            "data_impact": "none: existing rows keep NULL = V1 interpretation",
+            "sha256": "899d3fce595a23811b6b0f33069a6b13ff89db273ac6e0390e4ceb40d1553f72"
+        },
+        "2026_10_01_000001_add_semantic_nested_identity": {
+            "purpose": "V2 nested semantic identities (D-MD-B10-A002-003): semantic_observation_manifest_hash on eod_runs/eod_publications and ten V2 columns on md_publication_lineage_bindings",
+            "kind": "ADDITIVE: nullable columns, hasColumn-guarded; V1 columns untouched",
+            "order": 4,
+            "rollback": "down() drops the added columns; V2 identities written after deployment would be lost",
+            "data_impact": "none: NULL means not a V2 publication, never an empty set",
+            "sha256": "0f0f96df1d72bdd926368e5b21283a473313009848db1ddbfc90b78d3f19fbc6"
+        }
+    },
+    "safety_conclusion": "All four migrations are additive and match the semantics already proven on tradeaxis_testing and the isolated MariaDB databases (E006-E013). No destructive table replacement, no data rewrite, V2 columns nullable with NULL = V1.",
+    "rehearsal": {
+        "method": "The backup was restored into a scratch database and the identical commands were run there first: four migrations, three-package bootstrap, acceptance, idempotence rerun; a second scratch copy ran the V1 preservation drill; a third scratch database with binary collation produced the registry export for the collation comparison. All scratch databases were dropped.",
+        "result": "every outcome of the rehearsal was reproduced exactly on the normal database: 67 tables, 600 rows, registry export sha256 eeb7fbde7bd581481b250c4f7ffd33d3c819027f686f8e5147cbf16042652d94",
+        "artifacts": [
+            "rehearsal/"
+        ]
+    },
+    "deployment_execution": {
+        "command": "php artisan migrate --force",
+        "database": "tradeaxis (default .env connection; checked before execution)",
+        "order": [
+            "2026_09_29_000001_create_shared_security_identity_foundation",
+            "2026_09_29_000002_add_artifact_semantic_hash_profile",
+            "2026_09_29_000003_add_publication_semantic_identity_profile",
+            "2026_10_01_000001_add_semantic_nested_identity"
+        ],
+        "result": "command: php artisan migrate --force\ndatabase: tradeaxis\nstart: 2026-10-01T17:25:47+0700\nMigrating: 2026_09_29_000001_create_shared_security_identity_foundation\nMigrated:  2026_09_29_000001_create_shared_security_identity_foundation (196.40ms)\nMigrating: 2026_09_29_000002_add_artifact_semantic_hash_profile\nMigrated:  2026_09_29_000002_add_artifact_semantic_hash_profile (26.78ms)\nMigrating: 2026_09_29_000003_add_publication_semantic_identity_profile\nMigrated:  2026_09_29_000003_add_publication_semantic_identity_profile (24.68ms)\nMigrating: 2026_10_01_000001_add_semantic_nested_identity\nMigrated:  2026_10_01_000001_add_semantic_nested_identity (40.46ms)\nexit=0\nend: 2026-10-01T17:25:48+0700\n",
+        "batch_assigned": 5,
+        "rerun": "Nothing to migrate.",
+        "forbidden_commands_used": "none: no migrate:fresh/reset, db:wipe, DROP/TRUNCATE of governed tables, manual schema recreation or forced migration-table edit"
+    },
+    "post_deployment_schema": {
+        "verification": "post/schema_verification.json: 43 checks, all_ok=true",
+        "tables_created": [
+            "si_packages",
+            "si_entities",
+            "si_revisions",
+            "si_holds"
+        ],
+        "columns_added": {
+            "eod_runs": 4,
+            "eod_publications": 5,
+            "eod_dataset_corrections": 2,
+            "md_publication_lineage_bindings": 10
+        },
+        "parity": "the 21 governed V2 columns are definition-identical to the migrated tradeaxis_testing schema, and every table column set is identical to the rehearsal result",
+        "checker_correction": "The first run of the schema checker reported 21 failures because MariaDB 10.4 returns the default of a nullable column as the string NULL; the schema was right and the assertion wrong. The checker was corrected and re-run; the first output is kept as post/schema_verification.first-run-checker-default-null-mismatch.json.",
+        "check_table": "CHECK TABLE status OK on the four foundation tables, the four altered tables and migrations (post/check_table.txt)",
+        "mariadb_error_log": "no entry after the 2026-09-28 23:29 server start"
+    },
+    "preservation": {
+        "pre_tables": 63,
+        "final_tables": 67,
+        "pre_rows": 570,
+        "final_rows": 600,
+        "pre_existing_tables_with_changed_row_content_over_pre_columns": [
+            "migrations"
+        ],
+        "row_count_changes": {
+            "migrations": [
+                75,
+                79
+            ],
+            "si_entities": [
+                null,
+                4
+            ],
+            "si_holds": [
+                null,
+                9
+            ],
+            "si_packages": [
+                null,
+                3
+            ],
+            "si_revisions": [
+                null,
+                10
+            ]
+        },
+        "no_unexpected_loss": true,
+        "row_fingerprint_basis": "sha256 of every row over the columns each table had before deployment, 63 tables"
+    },
+    "foundation_bootstrap": {
+        "path": "canonical CLI security-identity:bootstrap through FoundationService, one package at a time, no direct SQL",
+        "packages": [
+            {
+                "version": "foundation-source-basis-20260928-v1",
+                "manifest_sha256": "ffa6acc11d41a2e219719dc035d381844983407210a3d2c39e5c9e52c7f2f45b",
+                "assignments_sha256": "dc86d2a9453b3edaaa32736e4ea5022152916bd97c62c13a84c8e4b29953b4aa"
+            },
+            {
+                "version": "foundation-source-basis-20260929-ikpm-listing-v2",
+                "manifest_sha256": "9b31ec1a99e0ca18d2b82ef13e69d5bae872b7f75021d9ee1e4cf8ddcdafe47c",
+                "assignments_sha256": "df8783af5f2cc4c463686db73e2cd64bc45281798516408b3741e0313b30b20f"
+            },
+            {
+                "version": "foundation-source-basis-20260929-ikpm-current-window-v3",
+                "manifest_sha256": "f85c4ba3f0606177e58c3b94e2e7593819466df9c8cba238272cd1305405ac4f",
+                "assignments_sha256": "c3d9206fdb6d77e21264cccf279fe23d1ac8a790a0e8db8232c8018a784f2818"
+            }
+        ],
+        "scope": "the three already-admitted bounded packages only (IKPM). No IDX universe population, no new identities, no source reacquisition, no new root generated.",
+        "row_counts": {
+            "si_packages": 3,
+            "si_entities": 4,
+            "si_revisions": 10,
+            "si_holds": 9
+        },
+        "retained_roots": {
+            "issuer": "35ff26e0-a043-41c8-8c6e-f7f2d4227214",
+            "instrument": "93453e6d-87b4-4131-8379-a91fb1766fac",
+            "listing": "6eb68d44-81bf-4469-be4f-27ce32ef03d5"
+        },
+        "registry_export_sha256": "eeb7fbde7bd581481b250c4f7ffd33d3c819027f686f8e5147cbf16042652d94",
+        "output": "== foundation-source-basis-20260928-v1 start 17:26:32\ncommand: php artisan security-identity:bootstrap storage/app/market_data/evidence/MD-B10-A002/foundation-source-basis-20260928-v1 --assignments=resources/security_identity/foundation-source-basis-20260928-v1.registry.json\n{\"state\":\"BOUNDED_CORE_ADMITTED\",\"entity_counts\":{\"ISSUER\":2,\"INSTRUMENT\":1},\"holds\":3,\"dependency_resolved\":false}\r\nexit=0\n== foundation-source-basis-20260929-ikpm-listing-v2 start 17:26:33\ncommand: php artisan security-identity:bootstrap storage/app/market_data/evidence/MD-B10-A002/foundation-source-basis-20260929-ikpm-listing-v2 --assignments=resources/security_identity/foundation-source-basis-20260929-ikpm-listing-v2.registry.json\n{\"state\":\"BOUNDED_CORE_ADMITTED\",\"entity_counts\":{\"ISSUER\":2,\"LISTING\":1,\"INSTRUMENT\":1},\"holds\":6,\"dependency_resolved\":false}\r\nexit=0\n== foundation-source-basis-20260929-ikpm-current-window-v3 start 17:26:33\ncommand: php artisan security-identity:bootstrap storage/app/market_data/evidence/MD-B10-A002/foundation-source-basis-20260929-ikpm-current-window-v3 --assignments=resources/security_identity/foundation-source-basis-20260929-ikpm-current-window-v3.registry.json\n{\"state\":\"BOUNDED_CORE_ADMITTED\",\"entity_counts\":{\"ISSUER\":2,\"LISTING\":1,\"INSTRUMENT\":1},\"holds\":9,\"dependency_resolved\":false}\r\nexit=0"
+    },
+    "idempotence": {
+        "migrate_rerun": "Nothing to migrate.",
+        "bootstrap_rerun": "all three packages re-admitted with exit 0; row counts, entities, packages and the registry export hash identical to the first run (identical)",
+        "publication_state": "every eod_* and publication table still has 0 rows: deployment produced no publication semantic state",
+        "collation_independence": "registry export of the same three packages under a utf8mb4_bin scratch database equals the utf8mb4_unicode_ci export of the normal database (rehearsal/bin_collation_export.txt)"
+    },
+    "normal_database_acceptance": {
+        "script": "tooling/foundation_acceptance.php, read-only, default container binding on the deployed database",
+        "foundation": [
+            "PASS three governed packages present",
+            "PASS retained roots exactly the governed roots",
+            "PASS listing parent is the retained instrument",
+            "PASS instrument parent is the retained issuer",
+            "PASS foundation resolves the governed instant to the retained roots",
+            "PASS before the interval is HELD LISTING_EVIDENCE_UNAVAILABLE",
+            "PASS after the interval is HELD LISTING_EVIDENCE_UNAVAILABLE",
+            "PASS earlier knowledge cutoff is HELD",
+            "PASS Market Data receives foundation identity source",
+            "PASS Market Data receives the retained roots",
+            "PASS Market Data context carries no ticker_id or local allocation key",
+            "PASS four foundation revisions propagated",
+            "PASS before/after/earlier-knowledge/synthesized symbol all fail closed with FOUNDATION_IDENTITY_HELD",
+            "PASS acceptance created no legacy ticker or listing rows (no legacy fallback/projection)"
+        ],
+        "resolution": {
+            "inside": {
+                "state": "RESOLVED",
+                "reason": "EVIDENCED_TEMPORAL_IDENTITY",
+                "issuer": "35ff26e0-a043-41c8-8c6e-f7f2d4227214",
+                "instrument": "93453e6d-87b4-4131-8379-a91fb1766fac",
+                "listing": "6eb68d44-81bf-4469-be4f-27ce32ef03d5"
+            },
+            "before": {
+                "state": "HELD",
+                "reason": "LISTING_EVIDENCE_UNAVAILABLE",
+                "issuer": null,
+                "instrument": null,
+                "listing": null
+            },
+            "after": {
+                "state": "HELD",
+                "reason": "LISTING_EVIDENCE_UNAVAILABLE",
+                "issuer": null,
+                "instrument": null,
+                "listing": null
+            },
+            "earlier_knowledge": {
+                "state": "HELD",
+                "reason": "LIFECYCLE_OUTSIDE_VERIFIED_SCOPE",
+                "issuer": null,
+                "instrument": null,
+                "listing": null
+            }
+        },
+        "market_data_context": {
+            "identity_source": "SHARED_SECURITY_IDENTITY_FOUNDATION",
+            "resolution_state": "RESOLVED",
+            "resolution_reason": "EVIDENCED_TEMPORAL_IDENTITY",
+            "issuer_id": "35ff26e0-a043-41c8-8c6e-f7f2d4227214",
+            "instrument_id": "93453e6d-87b4-4131-8379-a91fb1766fac",
+            "listing_id": "6eb68d44-81bf-4469-be4f-27ce32ef03d5",
+            "exchange_symbol": "IKPM",
+            "exchange_namespace": "IDX",
+            "provider_namespace": "YAHOO_FINANCE",
+            "provider_symbol": "IKPM.JK",
+            "venue": "IDX",
+            "market_segment": "REGULAR",
+            "board": "DEVELOPMENT",
+            "effective_at": "2026-09-29 00:38:15",
+            "knowledge_cutoff": "2026-09-29 00:38:15",
+            "foundation_revisions": {
+                "PROVIDER_MAPPING": {
+                    "data": {
+                        "namespace": "YAHOO_FINANCE",
+                        "symbol": "IKPM.JK"
+                    },
+                    "identity_id": "6eb68d44-81bf-4469-be4f-27ce32ef03d5",
+                    "known_at": "2026-09-28 18:35:16",
+                    "package_hash": "9b31ec1a99e0ca18d2b82ef13e69d5bae872b7f75021d9ee1e4cf8ddcdafe47c",
+                    "recorded_at": "2026-09-28 18:35:16",
+                    "revision_id": "4ccda414-4c16-4ab2-b8c1-78058ce98bb3",
+                    "revision_type": "PROVIDER_MAPPING",
+                    "source_locator": "https://query1.finance.yahoo.com/v8/finance/chart/IKPM.JK?range=1mo&interval=1d",
+                    "state": "ADMITTED",
+                    "supersedes_revision_id": null,
+                    "valid_from": "2026-09-28 18:35:16",
+                    "valid_to": null
+                },
+                "LISTING": {
+                    "data": {
+                        "change_reason": "CURRENT_OFFICIAL_PROFILE_SNAPSHOT",
+                        "continuity": "ESTABLISHED",
+                        "history_verified_through": "2026-09-29 00:38:15",
+                        "listing_state": "LISTED",
+                        "venue": "IDX"
+                    },
+                    "identity_id": "6eb68d44-81bf-4469-be4f-27ce32ef03d5",
+                    "known_at": "2026-09-29 00:38:15",
+                    "package_hash": "f85c4ba3f0606177e58c3b94e2e7593819466df9c8cba238272cd1305405ac4f",
+                    "recorded_at": "2026-09-29 00:38:15",
+                    "revision_id": "16a6f540-5a4b-4bfd-be1c-0e810a84f665",
+                    "revision_type": "LISTING",
+                    "source_locator": "https://idx.id/primary/ListedCompany/GetCompanyProfilesDetail?KodeEmiten=IKPM&language=id-id",
+                    "state": "ADMITTED",
+                    "supersedes_revision_id": "214a9276-5359-4d7f-9fd2-597215001e29",
+                    "valid_from": "2026-09-29 00:38:15",
+                    "valid_to": "2026-09-29 00:38:16"
+                },
+                "SYMBOL": {
+                    "data": {
+                        "namespace": "IDX",
+                        "symbol": "IKPM"
+                    },
+                    "identity_id": "6eb68d44-81bf-4469-be4f-27ce32ef03d5",
+                    "known_at": "2026-09-29 00:38:15",
+                    "package_hash": "f85c4ba3f0606177e58c3b94e2e7593819466df9c8cba238272cd1305405ac4f",
+                    "recorded_at": "2026-09-29 00:38:15",
+                    "revision_id": "b8f5a00c-2717-456a-9fee-abd4962fcd09",
+                    "revision_type": "SYMBOL",
+                    "source_locator": "https://idx.id/primary/ListedCompany/GetCompanyProfilesDetail?KodeEmiten=IKPM&language=id-id",
+                    "state": "ADMITTED",
+                    "supersedes_revision_id": "71d11fb5-45ea-41be-9efd-e10d440911e7",
+                    "valid_from": "2026-09-29 00:38:15",
+                    "valid_to": "2026-09-29 00:38:16"
+                },
+                "BOARD": {
+                    "data": {
+                        "board": "DEVELOPMENT",
+                        "market_segment": "REGULAR"
+                    },
+                    "identity_id": "6eb68d44-81bf-4469-be4f-27ce32ef03d5",
+                    "known_at": "2026-09-29 00:38:15",
+                    "package_hash": "f85c4ba3f0606177e58c3b94e2e7593819466df9c8cba238272cd1305405ac4f",
+                    "recorded_at": "2026-09-29 00:38:15",
+                    "revision_id": "d85d86ab-cc5e-4ded-a993-7fa19ec4e7e2",
+                    "revision_type": "BOARD",
+                    "source_locator": "https://idx.id/primary/ListedCompany/GetCompanyProfilesDetail?KodeEmiten=IKPM&language=id-id",
+                    "state": "ADMITTED",
+                    "supersedes_revision_id": "44334144-1ff3-494c-8b10-8a15c3094d50",
+                    "valid_from": "2026-09-29 00:38:15",
+                    "valid_to": "2026-09-29 00:38:16"
+                }
+            }
+        },
+        "market_data_fail_closed": {
+            "before": "FOUNDATION_IDENTITY_HELD:LISTING_EVIDENCE_UNAVAILABLE",
+            "after": "FOUNDATION_IDENTITY_HELD:LISTING_EVIDENCE_UNAVAILABLE",
+            "earlier_knowledge": "FOUNDATION_IDENTITY_HELD:LIFECYCLE_OUTSIDE_VERIFIED_SCOPE",
+            "synthesized_exchange_symbol_as_provider": "FOUNDATION_IDENTITY_HELD:IDENTITY_OR_MAPPING_UNAVAILABLE"
+        },
+        "no_fallback": "tickers and md_listings counts unchanged by the acceptance; the context carries no ticker_id; the exchange symbol used as a provider symbol is HELD, never synthesized",
+        "scope_boundary": "accepted at the resolver and consumer-contract boundary on the deployed database. The normal database holds no EOD bars, so no bars intake was executed there; intake of bars on the foundation roots is covered by the isolated MariaDB proofs E009-E013.",
+        "after_rerun": "all_ok=true"
+    },
+    "v1_v2_compatibility": {
+        "normal_database": "no V1 rows exist there (all publication tables empty); the added columns are NULL-default by schema",
+        "drill": "scratch copy of the pre-deployment backup seeded with one V1-shaped row in each of eod_runs, eod_publications, md_publication_lineage_bindings and eod_dataset_corrections, migrated with the four migrations: all rows identical over the pre-deployment columns, every added column NULL (true, rehearsal/v1_preservation.json)",
+        "v2_and_fail_closed": "V2 profile writes, unknown/incomplete V2 fail-closed and no historical rehash are exercised by the post-deployment controls below on the migrated MariaDB schema; no mass rehash was run and no historical hash was rewritten"
+    },
+    "migration_and_drift_guards": {
+        "before": "MigrationIntegrityAndDriftTest failed: 000001-000003 and 2026_10_01_000001 unapplied on tradeaxis; B18ProductionPathReplayFixturesTest failed: 000001 unapplied on tradeaxis_testing (E-MD-B10-A002-013/014 post-registration runs)",
+        "after": {
+            "MigrationIntegrityAndDriftTest": "OK (10 tests, 25 assertions)",
+            "B18ProductionPathReplayFixturesTest": "OK (13 tests, 100 assertions)"
+        },
+        "correct_reason": "both assert an empty pending set against the applied-migration record of the database they read; neither test file was modified and no expected migration was removed. The drift test reads the .env database (tradeaxis); the production-path corpus reads tradeaxis_testing."
+    },
+    "test_database_synchronization": {
+        "scope": "tradeaxis_testing only, one already-governed migration; not part of the normal-database authorization and recorded separately",
+        "command": "command: php artisan migrate --env=testing --force --path=database/migrations/2026_09_29_000001_create_shared_security_identity_foundation.php\nMigrating: 2026_09_29_000001_create_shared_security_identity_foundation\nMigrated:  2026_09_29_000001_create_shared_security_identity_foundation (204.76ms)\nexit=0",
+        "backup": {
+            "file": "storage/app/market_data/evidence/MD-B10-A002/controlled-deployment-20261001-v1/testing-db/tradeaxis_testing_pre_sync.sql",
+            "sha256": "f120135ecde0220c143e3343fdd8fa2173feec67c81a69d2602281c8125df367"
+        },
+        "preservation": "row content of every pre-existing table unchanged except migrations (testing-db/*row_fingerprints.json)",
+        "bootstrap": "not run: the production-path guard reads only the migration record and the isolated foundation tests create their own databases"
+    },
+    "f_md_b10_a002_002_control": {
+        "members_in_deployed_state": {
+            "DateDrivenCapabilityAndProviderAbstractionTest": "OK (18 tests, 65 assertions)",
+            "DomainOwnershipSurfaceTest": "OK (28 tests, 523 assertions)",
+            "AliasNamingAndMeaningBoundaryTest": "OK (6 tests, 188 assertions)",
+            "LifecycleProofIsNotMockedTest": "OK (5 tests, 8 assertions)"
+        },
+        "wording": "F-MD-B10-A002-002: RESOLVED. Successor full-suite closure: PENDING (not run in this unit)."
+    },
+    "focused_controls": {
+        "MigrationIntegrityAndDriftTest": "OK (10 tests, 25 assertions)",
+        "B18ProductionPathReplayFixturesTest": "OK (13 tests, 100 assertions)",
+        "MarketDataFoundationIdentityConsumerOnMariaDbTest": "OK (5 tests, 71 assertions)",
+        "ArtifactSemanticIdentityOnMariaDbTest": "OK (3 tests, 12 assertions)",
+        "ArtifactHashProfileConfigurationTest": "OK (6 tests, 13 assertions)",
+        "SemanticNestedIdentityOnMariaDbTest": "OK (20 tests, 172 assertions)",
+        "SemanticNestedIdentityPipelineWiringTest": "OK (2 tests, 2 assertions)",
+        "PublicationScopeReasonSetTest": "OK (6 tests, 14 assertions)",
+        "PublicationSemanticIdentityProductionPathTest": "OK (18 tests, 163 assertions)",
+        "PublicationRepositoryIntegrationTest": "OK (28 tests, 140 assertions)",
+        "DateDrivenCapabilityAndProviderAbstractionTest": "OK (18 tests, 65 assertions)",
+        "DomainOwnershipSurfaceTest": "OK (28 tests, 523 assertions)",
+        "AliasNamingAndMeaningBoundaryTest": "OK (6 tests, 188 assertions)",
+        "LifecycleProofIsNotMockedTest": "OK (5 tests, 8 assertions)",
+        "B18ReplayPersistedEvidenceBindingTest": "OK (17 tests, 156 assertions)",
+        "CaptureSemanticPayloadIdentityTest": "OK (2 tests, 6 assertions)",
+        "ReplayVerificationServiceTest": "OK (23 tests, 95 assertions)",
+        "ConfigIsTheOnlyEnvReaderTest": "OK (5 tests, 8 assertions)",
+        "secid-FoundationCoreOnMariaDbTest": "OK (16 tests, 223 assertions)",
+        "secid-IkpmListingAdmissionOnMariaDbTest": "OK (7 tests, 96 assertions)",
+        "secid-IkpmConsumerWindowOnMariaDbTest": "OK (5 tests, 79 assertions)"
+    },
+    "focused_controls_failing": [],
+    "b18_residuals": "F-MD-B10-A002-003 and F-MD-B10-A002-004 were neither exposed nor remediated by deployment; both stay owned by MD-B18-A002.",
+    "full_suite": "Not run. MD-DEP-0021 places the successor full-suite control after controlled deployment as part of the closure gates, and the deployment unit forbids starting it unless governance requires it as deployment acceptance; it does not.",
+    "md_dep_0021_disposition": {
+        "SCHEMA_DEPLOYED": "YES (4 migrations, batch 5, normal tradeaxis)",
+        "FOUNDATION_BOOTSTRAPPED": "YES (three governed packages, retained roots exact)",
+        "NORMAL_DB_ACCEPTANCE_PASSED": "YES (14 checks, all_ok=true)",
+        "MARKET_DATA_INTAKE_ACCEPTED": "YES at the foundation-required identity boundary on the deployed database; no EOD bars exist there",
+        "ALLOCATION_INDEPENDENT_DEPLOYMENT_PROVEN": "YES at deployment level (idempotent re-run, registry export identical to the rehearsal and across collations, retained roots unchanged, no duplicate rows); isolated MariaDB proofs E006-E013 carry the allocation-history convergence",
+        "B10_REPROOF_COMPLETE": "NO (56 predicates NOT_ASSESSED, not started)",
+        "SUCCESSOR_FULL_SUITE_CONTROL": "NO (pending)",
+        "DEPENDENCY_RESOLVED": "NO",
+        "status": "BLOCKING, unchanged",
+        "remaining": "complete governed reproof of the 56 predicates, the successor full MarketData suite failing only governed expected states, then B10 successor closure; MD-DEP-0020 and MD-DEP-0019 are separate and unchanged"
+    },
+    "predicate_state": {
+        "b05": "117/117 PASS",
+        "b10": "1016 SATISFIED / 56 NOT_ASSESSED / 1072 mandatory",
+        "b18": "100/113 reviewed basis, formal 0/113, NOT_READY",
+        "r0025": "INCOMPLETE, paused",
+        "f018": "not started, paused"
+    },
+    "preservation_files": {
+        "B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+        "MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4",
+        "E010_to_E014_E087_E088": "byte-identical to their issued bytes"
+    },
+    "raw_proof": {
+        "package": "storage/app/market_data/evidence/MD-B10-A002/controlled-deployment-20261001-v1",
+        "manifest_sha256": "05b52f0bee15299e249742aba0fca46797cce67707d6f6dfd354d29b5f787a71"
+    },
+    "governance_boundary": "This immutable record claims the executed results above. Registry, integrity and current-state gates run after registration and are reported in CI-MD-B10-A002-001.",
+    "next_resume_point": "MD-B10-A002: complete governed reproof of the 56 affected predicates against E-MD-B10-A002-010..015, predicate by predicate and without promotion until the closure gates hold: the successor full MarketData suite failing only governed expected states (which also confirms F-MD-B10-A002-002 closure). Controlled deployment is done (E-MD-B10-A002-015). Same A002/BL001/CI. MD-DEP-0021/0020/0019 remain BLOCKING; R0025 and F-018 stay paused; F-MD-B10-A002-003 and F-MD-B10-A002-004 wait for MD-B18-A002.",
+    "no_commit_or_push": true
+}

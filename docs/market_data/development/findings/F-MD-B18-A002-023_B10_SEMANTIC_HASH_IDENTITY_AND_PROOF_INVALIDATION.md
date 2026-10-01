@@ -155,3 +155,7 @@ Under D-MD-B10-A002-003, E-MD-B10-A002-013 implements the remaining semantic pro
 On isolated MariaDB databases with the retained IKPM root, the real producers give identical V2 identities, V2 bars artifact and V2 manifest across histories that differ in every local key, key order, insertion order and producer clock, while every V1 nested hash differs. Genuine semantic changes move exactly their owning identities, and thirteen mutation probes turned the intended assertions red. F-MD-B10-A002-003 records the cutoff exposure decision 1A asked for.
 
 The finding remains OPEN and its 56-rule scope is unchanged. Controlled deployment, F-MD-B10-A002-002 and the complete governed reproof remain. No predicate is promoted; MD-DEP-0021 and MD-DEP-0020 remain BLOCKING.
+
+## 2026-10-01 controlled deployment — E-MD-B10-A002-015
+
+The B10 successor schema and the Shared Security Identity Foundation are deployed on the normal `tradeaxis` database: four additive migrations (batch 5) and the three governed IKPM packages bootstrapped with exact retained roots, idempotent on re-run, with foundation and Market Data identity-intake acceptance passed there. Existing rows are preserved. The finding remains OPEN with its 56-rule scope unchanged: the complete governed reproof and the successor full-suite control remain. No predicate is promoted; MD-DEP-0021 and MD-DEP-0020 remain BLOCKING.
