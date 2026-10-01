@@ -159,3 +159,7 @@ The finding remains OPEN and its 56-rule scope is unchanged. Controlled deployme
 ## 2026-10-01 controlled deployment — E-MD-B10-A002-015
 
 The B10 successor schema and the Shared Security Identity Foundation are deployed on the normal `tradeaxis` database: four additive migrations (batch 5) and the three governed IKPM packages bootstrapped with exact retained roots, idempotent on re-run, with foundation and Market Data identity-intake acceptance passed there. Existing rows are preserved. The finding remains OPEN with its 56-rule scope unchanged: the complete governed reproof and the successor full-suite control remain. No predicate is promoted; MD-DEP-0021 and MD-DEP-0020 remain BLOCKING.
+
+## 2026-10-01 complete reproof — E-MD-B10-A002-016
+
+The complete reproof of the 56 affected predicates ran against the deployed implementation: 31 are `PROVEN_CURRENT` and 25 are `INCOMPLETE`. `F-MD-B10-A002-005` records five V2 coverage gaps (stored bar timestamps, the ATR recursive-state reference, sector membership revision identity, eligibility freshness, the correction comparison's calendar binding) and the missing negative proof. This finding remains OPEN with its 56-rule scope unchanged. Nothing is promoted; `MD-DEP-0021` and `MD-DEP-0020` stay BLOCKING, and the return to B18 stays blocked until the remediation, the successor full-suite re-run and a reproof that proves all 56.

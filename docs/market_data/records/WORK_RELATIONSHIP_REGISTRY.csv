@@ -897,3 +897,38 @@ MD-REL-0895,E-MD-B10-A002-015,CI-MD-B10-A002-001,RELATED,Same mutable impact dec
 MD-REL-0896,E-MD-B10-A002-015,MD-B10-A002-BL001,RELATED,The same immutable remediation baseline is retained.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
 MD-REL-0897,CI-MD-B10-A002-001,E-MD-B10-A002-015,RELATED,"Impact declaration identifies the deployment, bootstrap and acceptance.",,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
 MD-REL-0898,F-MD-B18-A002-023,E-MD-B10-A002-015,RELATED,The open finding records the controlled deployment; reproof and closure remain.,,2026-10-01T17:29:42+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0899,E-MD-B10-A002-016,E-MD-B10-A002-001,DERIVED_FROM,Reproves the final 56-predicate affected scope that record fixed.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0900,E-MD-B10-A002-016,E-MD-B10-A002-010,RELATED,Re-derives the artifact identity claims against authority.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0901,E-MD-B10-A002-016,E-MD-B10-A002-011,RELATED,"Re-derives the publication, correction and seal identity claims.",,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0902,E-MD-B10-A002-016,E-MD-B10-A002-012,RELATED,Uses its production-path proof for allocation independence.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0903,E-MD-B10-A002-016,E-MD-B10-A002-013,RELATED,Re-derives the nested semantic identity claims.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0904,E-MD-B10-A002-016,E-MD-B10-A002-014,RELATED,Confirms the F-002 members in the successor full suite.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0905,E-MD-B10-A002-016,E-MD-B10-A002-015,DERIVED_FROM,Re-verifies the deployed state; no deployment repeated.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0906,E-MD-B10-A002-016,E-MD-B18-A002-087,CARRIED_FROM,The full suite re-runs its harness members.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0907,E-MD-B10-A002-016,E-MD-B18-A002-088,CARRIED_FROM,The full suite re-runs the replay identity fix.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0908,E-MD-B10-A002-016,F-MD-B10-A002-005,RELATED,Records the gaps the reproof found.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0909,E-MD-B10-A002-016,F-MD-B10-A002-002,RELATED,Successor full-suite confirmation of the resolved finding.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0910,E-MD-B10-A002-016,F-MD-B10-A002-003,RELATED,Non-impact on the 56 recorded; owner MD-B18-A002.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0911,E-MD-B10-A002-016,F-MD-B10-A002-004,RELATED,Non-impact on the 56 recorded; owner MD-B18-A002.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0912,E-MD-B10-A002-016,F-MD-B18-A002-023,DEPENDS_ON,Reproof progress on the open semantic-hash finding.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0913,E-MD-B10-A002-016,D-MD-B10-A002-005,DEPENDS_ON,Executes the next canonical unit after the owner review and deployment.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0914,E-MD-B10-A002-016,D-MD-B10-A002-004,RELATED,Guard dispositions hold in the successor suite.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0915,E-MD-B10-A002-016,D-MD-B10-A002-003,RELATED,Membership decisions applied; knowledge-time rule reused for G3.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0916,E-MD-B10-A002-016,D-MD-B18-A002-004,DEPENDS_ON,Governs the seven oracle population controls classified as expected.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0917,E-MD-B10-A002-016,CI-MD-B10-A002-001,RELATED,Same mutable impact declaration records the reproof.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0918,E-MD-B10-A002-016,MD-B10-A002-BL001,RELATED,The same immutable remediation baseline is retained.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0919,F-MD-B10-A002-005,E-MD-B10-A002-016,DERIVED_FROM,Raised by the complete reproof.,,2026-10-01T23:24:15+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0920,F-MD-B10-A002-005,E-MD-B10-A002-001,RELATED,The 56-rule scope it remediates.,,2026-10-01T23:24:15+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0921,F-MD-B10-A002-005,E-MD-B10-A002-010,RELATED,Artifact identity that G1-G4 and the proof gaps extend.,,2026-10-01T23:24:15+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0922,F-MD-B10-A002-005,E-MD-B10-A002-011,RELATED,Comparison and manifest identity that G5 and the proof gaps extend.,,2026-10-01T23:24:15+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0923,F-MD-B10-A002-005,E-MD-B10-A002-013,RELATED,Nested identities the proof gaps cover.,,2026-10-01T23:24:15+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0924,F-MD-B10-A002-005,E-MD-B10-A002-015,RELATED,Deployment is valid and not the cause.,,2026-10-01T23:24:15+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0925,F-MD-B10-A002-005,D-MD-B10-A002-003,DEPENDS_ON,G3 applies its knowledge-time rule to sector membership revisions.,,2026-10-01T23:24:15+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0926,F-MD-B10-A002-005,D-MD-B10-A002-005,DEPENDS_ON,Opened under the semantic-dependency rule and the deployment unit.,,2026-10-01T23:24:15+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0927,F-MD-B10-A002-005,F-MD-B18-A002-023,DEPENDS_ON,Remediation gates the closure of the open semantic-hash finding.,,2026-10-01T23:24:15+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0928,F-MD-B10-A002-005,F-MD-B10-A002-002,RELATED,F-002 stays resolved; this finding is separate.,,2026-10-01T23:24:15+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0929,F-MD-B10-A002-005,CI-MD-B10-A002-001,RELATED,Same impact declaration; no parallel track.,,2026-10-01T23:24:15+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0930,CI-MD-B10-A002-001,E-MD-B10-A002-016,RELATED,Impact declaration identifies the reproof.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0931,CI-MD-B10-A002-001,F-MD-B10-A002-005,RELATED,New finding disclosed; it is the single next executable work.,,2026-10-01T23:24:15+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0932,F-MD-B18-A002-023,E-MD-B10-A002-016,RELATED,The open finding records the reproof; remediation and re-proof remain.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0933,F-MD-B10-A002-002,E-MD-B10-A002-016,RELATED,Successor full-suite confirmation evidence.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
