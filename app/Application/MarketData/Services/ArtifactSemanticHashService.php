@@ -26,6 +26,8 @@ class ArtifactSemanticHashService
         'provider_namespace',
         'provider_symbol',
         'observation_manifest_hash',
+        'source_timestamp',
+        'acquired_at',
         'open',
         'high',
         'low',
@@ -59,6 +61,7 @@ class ArtifactSemanticHashService
         'invalid_reason_code',
         'indicator_set_version',
         'sector_code',
+        'sector_membership_revision_hash',
         'dv20_idr',
         'atr14_pct',
         'vol_ratio',
@@ -101,6 +104,14 @@ class ArtifactSemanticHashService
         'null_reasons_json',
     ];
 
+    /** Consumer freshness vocabulary (Downstream_Consumer_Read_Model_Contract_LOCKED.md:55). */
+    public const SECTOR_REVISION_SCHEMA = 'market-data-sector-membership-revision/v2';
+
+    /** Sector_Classification_Contract_LOCKED.md: only these classes may establish a membership. */
+    private const SECTOR_AUTHORITATIVE_CLASSES = ['EXCHANGE_AUTHORITATIVE', 'OPERATOR_ENTERED'];
+
+    public const FRESHNESS_STATES = ['FRESH', 'STALE', 'DEGRADED', 'NOT_AVAILABLE'];
+
     public const ELIGIBILITY_COLUMNS_V2 = [
         'trade_date',
         'issuer_root',
@@ -123,6 +134,7 @@ class ArtifactSemanticHashService
         'price_basis_state',
         'contamination_state',
         'indicator_state',
+        'freshness_state',
         'eligibility_reasons_json',
         'config_content_hash',
         'read_model_version',
@@ -162,6 +174,12 @@ class ArtifactSemanticHashService
 
         $context = $this->loadSemanticContext($run, $publication);
         $context['config_content_by_snapshot_id'] = $this->loadRowConfigContent($rows);
+        if ($artifact === 'indicators') {
+            $context['sector_membership_revision_by_local_key'] = $this->loadSectorMembershipRevisions(
+                $rows,
+                $this->knowledgeCoordinate($run)
+            );
+        }
         $identities = $this->loadFoundationIdentities(
             $artifact,
             $table,
@@ -222,6 +240,18 @@ class ArtifactSemanticHashService
         );
     }
 
+    /**
+     * Freshness is a consumer-visible semantic state, never a timing value. Anything outside the
+     * governed vocabulary is NOT_AVAILABLE ("no consumer-safe result"), so an unknown or
+     * unevaluated state can never be hashed as FRESH.
+     */
+    public static function normalizeFreshnessState($value): string
+    {
+        $state = strtoupper(trim((string) $value));
+
+        return in_array($state, self::FRESHNESS_STATES, true) ? $state : 'NOT_AVAILABLE';
+    }
+
     public function columns(string $artifact): array
     {
         $this->assertArtifact($artifact);
@@ -268,6 +298,8 @@ class ArtifactSemanticHashService
             // Rows still carry the V1 factor-set binding; it is checked, never hashed.
             'factor_set_row_binding_hash' => strtolower((string) $this->value($publication, 'factor_set_hash')),
             'read_model_version' => (string) ($lineage->read_model_version ?: $this->value($publication, 'read_model_version')),
+            // The run's frozen freshness state, normalised exactly as the publication manifest does.
+            'freshness_state' => self::normalizeFreshnessState($this->value($run, 'freshness_state')),
         ];
         foreach (SemanticNestedIdentityService::LINEAGE_COLUMNS as $member => $column) {
             $context[$member] = strtolower(trim((string) ($lineage->{$column} ?? '')));
@@ -416,6 +448,11 @@ class ArtifactSemanticHashService
             'provider_namespace' => $identity['provider_namespace'],
             'provider_symbol' => $identity['provider_symbol'],
             'observation_manifest_hash' => $context['observation_manifest_hash'],
+            // The set-level manifest hash cannot say which observation produced which bar, so each
+            // bar binds its own consumer-visible provider and acquisition timestamps
+            // (Audit_Hash_and_Reproducibility_Contract_LOCKED.md:59, Downstream_Consumer_Read_Model_Contract_LOCKED.md:27).
+            'source_timestamp' => $row['source_timestamp'] ?? null,
+            'acquired_at' => $row['acquired_at'] ?? null,
             'open' => $row['open'] ?? null,
             'high' => $row['high'] ?? null,
             'low' => $row['low'] ?? null,
@@ -446,6 +483,15 @@ class ArtifactSemanticHashService
             'event_revision_set_hash' => $context['event_revision_set_hash'],
             'factor_decision_set_hash' => $context['factor_decision_set_hash'],
         ];
+        $semantic['sector_membership_revision_hash'] = $this->sectorRevisionMember($row, $context);
+        $hasAtr = trim((string) ($row['atr14'] ?? '')) !== '';
+        $hasAtrReference = trim((string) ($row['atr_state_ref'] ?? '')) !== '';
+        if ($hasAtr && ! $hasAtrReference) {
+            throw new \RuntimeException('ARTIFACT_ATR_STATE_REFERENCE_REQUIRED');
+        }
+        if (! $hasAtr && $hasAtrReference) {
+            throw new \RuntimeException('ARTIFACT_ATR_STATE_REFERENCE_WITHOUT_VALUE');
+        }
         foreach ([
             'is_valid', 'invalid_reason_code', 'indicator_set_version', 'sector_code',
             'dv20_idr', 'atr14_pct', 'vol_ratio', 'roc5', 'roc10', 'roc20', 'hh20', 'll20',
@@ -489,10 +535,148 @@ class ArtifactSemanticHashService
         ] as $field) {
             $semantic[$field] = $row[$field] ?? null;
         }
+        $semantic['freshness_state'] = $context['freshness_state'];
         $semantic['config_content_hash'] = $context['config_content_hash'];
         $semantic['read_model_version'] = $context['read_model_version'];
 
         return $semantic;
+    }
+
+    /**
+     * The sector-membership revision a stored indicator row was computed under. The row carries
+     * only a local navigation id; the identity bound into the artifact is the revision's content
+     * tuple with its knowledge time (D-MD-B10-A002-003 1B, Sector_Classification_Contract_LOCKED.md:
+     * "binds the membership revision used"). UNKNOWN sector rows bind no revision.
+     *
+     * @return array<string,?string> local identity key => revision content hash or null
+     */
+    private function loadSectorMembershipRevisions(array $rows, string $knowledgeCutoff): array
+    {
+        $revisions = [];
+        foreach ($rows as $row) {
+            $row = (array) $row;
+            $key = $this->localIdentityKey($row);
+            $membershipId = (int) ($row['sector_membership_id'] ?? 0);
+            $sectorCode = $this->sectorCode($row['sector_code'] ?? null);
+            if ($membershipId <= 0) {
+                if ($sectorCode !== null && $sectorCode !== 'UNKNOWN') {
+                    throw new \RuntimeException('ARTIFACT_SECTOR_MEMBERSHIP_REVISION_REQUIRED: '.$key);
+                }
+                $revisions[$key] = null;
+                continue;
+            }
+
+            $revision = $this->sectorRevisionDocument(
+                $membershipId,
+                (int) $row['listing_id'],
+                $knowledgeCutoff,
+                []
+            );
+            if ($sectorCode !== $revision['content']['sector_code']) {
+                throw new \RuntimeException('ARTIFACT_SECTOR_MEMBERSHIP_CODE_MISMATCH: '.$key);
+            }
+            $revisions[$key] = $this->hashes->hashCanonicalDocument($revision);
+        }
+
+        return $revisions;
+    }
+
+    private function sectorRevisionDocument(int $membershipId, int $listingId, string $knowledgeCutoff, array $path): array
+    {
+        if (isset($path[$membershipId]) || count($path) > 64) {
+            throw new \RuntimeException('ARTIFACT_SECTOR_MEMBERSHIP_SUPERSESSION_CYCLE');
+        }
+        $path[$membershipId] = true;
+
+        $membership = DB::table(config('market_data.sectors.membership_table', 'ticker_sector_memberships'))
+            ->where('membership_id', $membershipId)
+            ->first();
+        if (! $membership) {
+            throw new \RuntimeException('ARTIFACT_SECTOR_MEMBERSHIP_REVISION_MISSING');
+        }
+        if ((int) $membership->listing_id !== $listingId) {
+            throw new \RuntimeException('ARTIFACT_SECTOR_MEMBERSHIP_LISTING_MISMATCH');
+        }
+        if (! in_array((string) $membership->source_authority_class, self::SECTOR_AUTHORITATIVE_CLASSES, true)) {
+            throw new \RuntimeException('ARTIFACT_SECTOR_MEMBERSHIP_NOT_AUTHORITATIVE');
+        }
+        $recordedAt = substr(trim((string) $membership->recorded_at), 0, 19);
+        if ($recordedAt === '' || $recordedAt > $knowledgeCutoff) {
+            throw new \RuntimeException('ARTIFACT_SECTOR_MEMBERSHIP_AFTER_KNOWLEDGE_CUTOFF');
+        }
+
+        $classificationSystem = strtoupper(trim((string) $membership->classification_system));
+        $sectorCode = $this->sectorCode($membership->sector_code);
+        $master = DB::table(config('market_data.sectors.table', 'market_data_sectors'))
+            ->where('classification_system', $classificationSystem)
+            ->where('sector_code', $sectorCode)
+            ->first();
+        $indexCode = $master && $master->sector_index_code !== null
+            ? strtoupper(trim((string) $master->sector_index_code))
+            : null;
+
+        $superseded = null;
+        if ($membership->supersedes_membership_id !== null && (int) $membership->supersedes_membership_id > 0) {
+            $superseded = $this->hashes->hashCanonicalDocument($this->sectorRevisionDocument(
+                (int) $membership->supersedes_membership_id,
+                $listingId,
+                $knowledgeCutoff,
+                $path
+            ));
+        }
+
+        // No local ids: the instrument is bound by the row's foundation roots, the supersession
+        // by the content hash of the revision it replaced.
+        return [
+            'schema_version' => self::SECTOR_REVISION_SCHEMA,
+            'content' => [
+                'classification_system' => $classificationSystem,
+                'sector_code' => $sectorCode,
+                'sector_index_code' => $indexCode === '' ? null : $indexCode,
+                'effective_from' => substr(trim((string) $membership->effective_from), 0, 10),
+                'effective_to' => $membership->effective_to === null ? null : substr(trim((string) $membership->effective_to), 0, 10),
+                'source_name' => trim((string) $membership->source_name),
+                'source_ref' => $membership->source_ref === null ? null : trim((string) $membership->source_ref),
+                'source_authority_class' => (string) $membership->source_authority_class,
+                'recorded_at' => $recordedAt,
+                'operator_name' => $membership->operator_name === null ? null : trim((string) $membership->operator_name),
+                'reason_code' => $membership->reason_code === null ? null : trim((string) $membership->reason_code),
+                'supersedes_revision_hash' => $superseded,
+            ],
+        ];
+    }
+
+    private function sectorRevisionMember(array $row, array $context): ?string
+    {
+        $key = $this->localIdentityKey($row);
+        $revisions = $context['sector_membership_revision_by_local_key'];
+        if (! array_key_exists($key, $revisions)) {
+            throw new \RuntimeException('ARTIFACT_SECTOR_MEMBERSHIP_REVISION_MISSING: '.$key);
+        }
+        $revision = $revisions[$key];
+        $sectorCode = $this->sectorCode($row['sector_code'] ?? null);
+        if ($revision === null) {
+            if ($sectorCode !== null && $sectorCode !== 'UNKNOWN') {
+                throw new \RuntimeException('ARTIFACT_SECTOR_MEMBERSHIP_REVISION_REQUIRED: '.$key);
+            }
+
+            return null;
+        }
+        if (preg_match('/^[a-f0-9]{64}$/', (string) $revision) !== 1) {
+            throw new \RuntimeException('ARTIFACT_SECTOR_MEMBERSHIP_REVISION_INVALID: '.$key);
+        }
+        if ($sectorCode === null || $sectorCode === 'UNKNOWN') {
+            throw new \RuntimeException('ARTIFACT_SECTOR_MEMBERSHIP_CODE_MISMATCH: '.$key);
+        }
+
+        return (string) $revision;
+    }
+
+    private function sectorCode($value): ?string
+    {
+        $code = strtoupper(trim((string) $value));
+
+        return $code === '' ? null : $code;
     }
 
     private function roots(array $row, array $identity): array
@@ -515,6 +699,9 @@ class ArtifactSemanticHashService
                 'observation_manifest_hash', 'identity_revision_set_hash', 'status_revision_set_hash',
                 'event_revision_set_hash', 'factor_decision_set_hash', 'factor_set_hash',
             ]);
+            if (! is_array($context['sector_membership_revision_by_local_key'] ?? null)) {
+                throw new \RuntimeException('ARTIFACT_SEMANTIC_CONTEXT_INCOMPLETE: sector_membership_revision_by_local_key');
+            }
         } else {
             $required = array_merge($required, [
                 'identity_revision_set_hash', 'status_revision_set_hash', 'event_revision_set_hash',
@@ -522,6 +709,9 @@ class ArtifactSemanticHashService
             ]);
             if (trim((string) ($context['read_model_version'] ?? '')) === '') {
                 throw new \RuntimeException('ARTIFACT_SEMANTIC_CONTEXT_INCOMPLETE: read_model_version');
+            }
+            if (! in_array((string) ($context['freshness_state'] ?? ''), self::FRESHNESS_STATES, true)) {
+                throw new \RuntimeException('ARTIFACT_SEMANTIC_CONTEXT_INCOMPLETE: freshness_state');
             }
         }
         foreach ($required as $field) {

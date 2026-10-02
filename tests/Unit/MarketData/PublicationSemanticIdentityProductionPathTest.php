@@ -606,4 +606,155 @@ class PublicationSemanticIdentityProductionPathTest extends TestCase
 
         return $identities;
     }
+
+    // ------------------------------------------------------------------
+    // F-MD-B10-A002-005: negative proof for the manifest members the complete reproof
+    // (E-MD-B10-A002-016) found only presence-proven. MD-S005-R0071 requires row counts and
+    // quality, readiness and freshness states; MD-S045-R0001 requires the manifest to be one
+    // compact deterministic identity object whose members include correction lineage and the seal
+    // contract version. Each case changes the persisted source of one member after the candidate
+    // sealed, and the repository's own manifest verification must stop on the hash.
+    // ------------------------------------------------------------------
+
+    public function manifestMemberSources(): array
+    {
+        return [
+            'row_counts.bars' => ['eod_runs', ['bars_rows_written' => 3]],
+            'row_counts.indicators' => ['eod_runs', ['indicators_rows_written' => 3]],
+            'row_counts.eligibility' => ['eod_runs', ['eligibility_rows_written' => 3]],
+            'quality_state' => ['eod_runs', ['quality_gate_state' => 'FAIL']],
+            'freshness_state' => ['eod_runs', ['freshness_state' => 'STALE']],
+            'readiness_state' => ['eod_publications', ['readiness_state' => 'HELD']],
+            'coverage_ratio' => ['eod_runs', ['coverage_ratio' => 0.5]],
+            // A correction run's lineage is also guarded by the correction identity, which would
+            // refuse first; a plain run isolates the manifest's own lineage member.
+            'correction_lineage.promote_mode' => ['eod_runs', ['promote_mode' => 'correction_history_only'], 'plain'],
+            'correction_lineage.publish_target' => ['eod_runs', ['publish_target' => 'history_only'], 'plain'],
+        ];
+    }
+
+    /**
+     * @dataProvider manifestMemberSources
+     */
+    public function test_each_manifest_member_follows_its_persisted_source(string $table, array $change, string $flow = 'correction'): void
+    {
+        $publicationId = $this->sealedCandidate(self::ALLOCATION_A, $flow, 'stable-predecessor-manifest');
+        $repository = new EodPublicationRepository();
+        $this->assertTrue($repository->assertPublicationManifestHashValid($publicationId), 'control: the sealed manifest verifies');
+
+        $where = $table === 'eod_runs'
+            ? ['run_id' => self::ALLOCATION_A['candidate_run']]
+            : ['publication_id' => $publicationId];
+        $original = (array) DB::table($table)->where($where)->first();
+        DB::table($table)->where($where)->update($change);
+        try {
+            $repository->assertPublicationManifestHashValid($publicationId);
+            $this->fail('A changed '.key($change).' still verified against the sealed manifest hash.');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('publication_manifest_hash does not match', $e->getMessage(), key($change));
+        } finally {
+            DB::table($table)->where($where)->update(array_intersect_key($original, $change));
+        }
+
+        $this->assertTrue($repository->assertPublicationManifestHashValid($publicationId), 'control: the restored source verifies again');
+    }
+
+    public function test_the_manifest_binds_the_seal_contract_and_every_governed_member_exactly(): void
+    {
+        $publicationId = $this->sealedCandidate(self::ALLOCATION_A, 'correction', 'stable-predecessor-manifest');
+        $repository = new EodPublicationRepository();
+
+        $context = $this->invokePrivate($repository, 'publicationManifestContext', [$publicationId]);
+        $context->correction_semantic_hash = DB::table('eod_publications')
+            ->where('publication_id', $publicationId)->value('correction_semantic_hash');
+        $payload = $this->invokePrivate($repository, 'publicationManifestSemanticPayloadV2', [$context, 'READABLE']);
+
+        // Audit_Hash_and_Reproducibility_Contract_LOCKED.md:106-120, member by member.
+        $governed = [
+            'scope and dates' => ['market_scope', 'trade_date', 'trade_date_requested', 'trade_date_effective'],
+            'publication version and supersession' => ['publication_version', 'lineage'],
+            'artifact and observation-manifest hashes' => ['artifacts', 'observation_manifest_hash', 'artifact_hash_profile'],
+            'full config snapshot' => ['config_content_hash', 'config_registry_revision'],
+            'temporal revision sets' => ['identity_revision_set_hash', 'calendar_revision_set_hash', 'status_revision_set_hash'],
+            'event, factor and market structure sets' => [
+                'event_revision_set_hash', 'factor_set_hash', 'factor_decision_set_hash',
+                'source_scale_assessment_set_hash', 'market_structure_revision_set_hash',
+            ],
+            'versions' => [
+                'price_product_code', 'price_product_version', 'canonicalization_version',
+                'formula_version', 'read_model_version', 'nested_identity_version',
+            ],
+            'counts and states and sorted reasons' => [
+                'row_counts', 'quality_state', 'coverage_gate_state', 'coverage_ratio',
+                'readiness_state', 'freshness_state', 'semantic_reasons',
+            ],
+            'seal algorithm/version and correction lineage' => ['seal_contract_version', 'seal_hash_algorithm', 'correction_lineage'],
+        ];
+        $expected = [];
+        foreach ($governed as $members) {
+            $expected = array_merge($expected, $members);
+        }
+        sort($expected, SORT_STRING);
+        $actual = array_keys($payload);
+        sort($actual, SORT_STRING);
+        $this->assertSame($expected, $actual, 'the V2 manifest carries exactly the governed members');
+
+        $this->assertSame(PublicationSemanticIdentityService::SEAL_CONTRACT_V2, $payload['seal_contract_version']);
+        $this->assertSame('dataset_seal_v2', $payload['seal_contract_version']);
+        $this->assertSame('SHA-256', $payload['seal_hash_algorithm']);
+        $this->assertSame(['bars' => 2, 'indicators' => 2, 'eligibility' => 2], $payload['row_counts']);
+        $this->assertSame('PASS', $payload['quality_state']);
+        $this->assertSame('READABLE', $payload['readiness_state']);
+        $this->assertSame('NOT_AVAILABLE', $payload['freshness_state'], 'an unevaluated run is NOT_AVAILABLE, never FRESH');
+        $this->assertSame(['COVERAGE_THRESHOLD_MET'], $payload['semantic_reasons']);
+        $this->assertSame(
+            ['correction_semantic_hash', 'promote_mode', 'publish_target'],
+            array_keys($payload['correction_lineage'])
+        );
+        $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', (string) $payload['correction_lineage']['correction_semantic_hash']);
+
+        // Every member really is hashed: changing any one top-level member changes the identity.
+        $baseline = (new PublicationSemanticIdentityService())->publicationHash($payload);
+        $this->assertSame(
+            DB::table('eod_publications')->where('publication_id', $publicationId)->value('publication_manifest_hash'),
+            $baseline,
+            'the persisted manifest hash is this payload'
+        );
+        foreach ($payload as $member => $value) {
+            $changed = $payload;
+            $changed[$member] = $this->changedMember($value, $member);
+            $this->assertNotSame(
+                $baseline,
+                (new PublicationSemanticIdentityService())->publicationHash($changed),
+                $member.' must be part of the manifest identity'
+            );
+        }
+    }
+
+    private function changedMember($value, string $member)
+    {
+        if (is_array($value)) {
+            return ['changed-member' => $member];
+        }
+        $text = (string) $value;
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $text) === 1) {
+            return '2001-02-03';
+        }
+        if (preg_match('/^[a-f0-9]{64}$/', $text) === 1) {
+            return hash('sha256', 'changed-'.$member);
+        }
+        if (is_numeric($text)) {
+            return (string) ((float) $text + 1);
+        }
+
+        return $text.'-changed';
+    }
+
+    private function invokePrivate(object $object, string $method, array $arguments)
+    {
+        $reflection = new ReflectionMethod($object, $method);
+        $reflection->setAccessible(true);
+
+        return $reflection->invokeArgs($object, $arguments);
+    }
 }

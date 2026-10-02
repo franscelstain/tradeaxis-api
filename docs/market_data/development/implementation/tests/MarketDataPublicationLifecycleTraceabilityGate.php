@@ -1,12 +1,17 @@
 <?php
 require_once __DIR__.'/MarketDataPublicationLifecycleTraceabilitySpec.php';
+require_once __DIR__.'/MarketDataB10SuccessorBinding.php';
 
 final class MarketDataPublicationLifecycleTraceabilityGate
 {
-    public static function validate(string $root, bool $bound = false): array
+    /**
+     * Overrides (tests and the successor binder): rows, successors, scopes, evidence_dir. `successors => []`
+     * is the original MD-B10-A001 behaviour: every bound row carries one A001 evidence id.
+     */
+    public static function validate(string $root, bool $bound = false, array $overrides = []): array
     {
-        $rows = MarketDataPublicationLifecycleTraceabilitySpec::rows($root);
-        $mandatory = MarketDataPublicationLifecycleTraceabilitySpec::mandatory($root);
+        $rows = isset($overrides['rows']) ? $overrides['rows'] : MarketDataPublicationLifecycleTraceabilitySpec::rows($root);
+        $mandatory = MarketDataPublicationLifecycleTraceabilitySpec::mandatoryFrom($rows);
         $optional = array_filter($rows, static function ($r) {
             return $r['active'] === 'YES' && $r['primary_stage'] === 'MD-B10'
                 && $r['applicability'] === 'OPTIONAL_CAPABILITY';
@@ -24,16 +29,22 @@ final class MarketDataPublicationLifecycleTraceabilityGate
             return $r['active'] === 'YES' && $r['primary_stage'] === 'MD-B10'
                 && in_array($r['applicability'], ['MANDATORY_OR_CONDITIONAL', 'CONDITIONAL_PENDING', 'APPLICABILITY_PENDING'], true);
         });
-        $invalidMandatory = array_filter($mandatory, static function ($r) use ($bound) {
+
+        $scopeErrors = [];
+        $successors = array_key_exists('successors', $overrides) ? $overrides['successors'] : MarketDataB10SuccessorBinding::profiles();
+        $scopeMap = $bound ? MarketDataB10SuccessorBinding::scopeMap($root, $overrides, $scopeErrors) : [];
+        $invalidMandatory = array_filter($mandatory, static function ($r) use ($bound, $scopeMap, $successors) {
             if ($bound) {
+                $pattern = MarketDataB10SuccessorBinding::patternFor((string) $r['rule_id'], $scopeMap, $successors);
+
                 return $r['coverage_status'] !== 'SATISFIED'
-                    || ! preg_match('/^E-MD-B10-A001-\d{3}$/', trim((string) $r['current_evidence_ids']));
+                    || ! preg_match($pattern, trim((string) $r['current_evidence_ids']));
             }
 
             return $r['coverage_status'] !== 'NOT_ASSESSED' || trim((string) $r['current_evidence_ids']) !== '';
         });
 
-        $errors = [];
+        $errors = $scopeErrors;
         if (count($mandatory) !== MarketDataPublicationLifecycleTraceabilitySpec::EXPECTED_DENOMINATOR) {
             $errors[] = 'mandatory denominator must be '.MarketDataPublicationLifecycleTraceabilitySpec::EXPECTED_DENOMINATOR;
         }
@@ -51,7 +62,7 @@ final class MarketDataPublicationLifecycleTraceabilityGate
         }
         if (count($invalidMandatory) !== 0) {
             $errors[] = $bound
-                ? 'B10 closure mandatory rows must be SATISFIED and bound to one current B10 evidence ID'
+                ? 'B10 closure mandatory rows must be SATISFIED and bound to the current B10 evidence of the attempt that owns each row'
                 : 'B10 stage-entry mandatory rows must remain NOT_ASSESSED/unbound before runtime proof';
         }
 

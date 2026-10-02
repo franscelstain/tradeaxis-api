@@ -1,0 +1,1670 @@
+{
+    "evidence_id": "E-MD-B10-A002-017",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B10",
+    "attempt_id": "MD-B10-A002",
+    "work_id": "MD-B10-A002",
+    "baseline_id": "MD-B10-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "change_impact_declaration": "CI-MD-B10-A002-001",
+    "issued_at": "2026-10-02T03:41:00+07:00",
+    "verdict": "ALL_56_PROVEN_CURRENT_AFTER_REMEDIATION_PROMOTION_BLOCKED_BY_MISSING_GOVERNED_MECHANISM",
+    "checkpoint_verdict": "B10 CLOSURE STILL BLOCKED",
+    "b10_result": "B. ALL 56 PROVEN BUT PROMOTION/CLOSURE BLOCKED",
+    "supersedes": [],
+    "related_findings": [
+        "F-MD-B10-A002-005",
+        "F-MD-B10-A002-006",
+        "F-MD-B10-A002-002",
+        "F-MD-B10-A002-003",
+        "F-MD-B10-A002-004",
+        "F-MD-B18-A002-023"
+    ],
+    "related_evidence": [
+        "E-MD-B10-A002-016",
+        "E-MD-B10-A002-015",
+        "E-MD-B10-A002-013",
+        "E-MD-B10-A002-012",
+        "E-MD-B10-A002-011",
+        "E-MD-B10-A002-010",
+        "E-MD-B10-A002-001",
+        "E-MD-B18-A002-087",
+        "E-MD-B18-A002-088",
+        "CI-MD-B10-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B10-A002-003",
+        "D-MD-B10-A002-005",
+        "D-MD-B10-A002-004",
+        "D-MD-B18-A002-004"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0021",
+        "MD-DEP-0020",
+        "MD-DEP-0019"
+    ],
+    "method": "Remediation of the 25 rows E-MD-B10-A002-016 found INCOMPLETE, then a re-evaluation of all 56. Every proof is a mutation probe: one member or mechanism is removed or violated in production code, the covering tests are run one file per PHPUnit invocation, and the production file is restored from a byte copy and verified by SHA-256 (all restored). A probe counts as RED_INTENDED when a covering test FAILS (assertion) and it is the test named for that member; RED_BEHAVIOR when any non-guard test fails; the column-coverage guard alone proves column membership only. Errors without an assertion failure are never counted, except one reviewed case recorded below. The probe runs were repeated three times because the first runs found defects in the proof itself, all fixed and recorded in process_findings.",
+    "denominator": {
+        "source": "E-MD-B10-A002-001 affected_current_predicates and the traceability matrix NOT_ASSESSED set for primary MD-B10",
+        "count": 56,
+        "extra": [],
+        "missing": [],
+        "all_not_assessed_before_and_after": true
+    },
+    "starting_gap_set": {
+        "count": 25,
+        "implementation_gaps_G1_G5": 14,
+        "negative_proof_gaps": 11
+    },
+    "result_counts": {
+        "PROVEN_CURRENT": 56,
+        "INCOMPLETE": 0,
+        "BLOCKED": 0,
+        "AUTHORITY_GAP": 0
+    },
+    "focused_25_result": [
+        {
+            "rule_id": "MD-S005-R0001",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0024",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0025",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0026",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0031",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0035",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0038",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0046",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0047",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0050",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0056",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0059",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0062",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0071",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0075",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0076",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0077",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0078",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0087",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0092",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S005-R0105",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S018-R0009",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S019-R0015",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S035-R0032",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        },
+        {
+            "rule_id": "MD-S045-R0001",
+            "e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT"
+        }
+    ],
+    "regressions_among_the_prior_31": [],
+    "matrix": [
+        {
+            "rule_id": "MD-S005-R0001",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:5 Define deterministic content identity for publication-bound market-data artifacts. Hashes must detect a change in consumer-visible values **or their semantic meaning/lineage**, while ignoring volatile execution metadata that cannot change interpretation.",
+            "original_defect": "allocation_artifacts",
+            "successor_implementation": "V2 artifact/manifest identity: per-bar source/acquisition timestamps (G1), ATR chain reference (G2), sector membership revision (G3), eligibility freshness (G4)",
+            "negative_proof_members": [],
+            "gaps_closed": {
+                "G1": {
+                    "BARS.source_timestamp": "RED_INTENDED",
+                    "BARS.acquired_at": "RED_INTENDED",
+                    "G1_bar_row_omits_acquired_at_value": "RED_INTENDED",
+                    "G1_bar_row_omits_source_timestamp_value": "RED_INTENDED"
+                },
+                "G2": {
+                    "INDICATORS.atr_state_ref": "RED_INTENDED",
+                    "G2_reference_never_assigned": "RED_INTENDED",
+                    "G2_chain_content_removed_from_reference": "RED_INTENDED",
+                    "G2_quarantined_atr_keeps_its_reference": "RED_INTENDED",
+                    "G2_reference_not_persisted": "RED_FAIL_CLOSED",
+                    "G2_atr_value_without_reference_accepted": "RED_INTENDED",
+                    "G2_reference_without_atr_value_accepted": "RED_INTENDED"
+                },
+                "G3": {
+                    "INDICATORS.sector_membership_revision_hash": "RED_INTENDED",
+                    "G3_cutoff_check_removed": "RED_INTENDED",
+                    "G3_supersession_chain_dropped": "RED_INTENDED",
+                    "G3_authority_class_check_removed": "RED_INTENDED",
+                    "G3_listing_binding_check_removed": "RED_INTENDED",
+                    "G3_code_mismatch_check_removed": "RED_INTENDED",
+                    "G3_concrete_sector_without_revision_accepted": "RED_INTENDED",
+                    "G3_local_membership_id_leaks_into_revision": "RED_INTENDED",
+                    "G3_knowledge_time_removed_from_revision": "RED_INTENDED"
+                },
+                "G4": {
+                    "ELIGIBILITY.freshness_state": "RED_INTENDED",
+                    "G4_unknown_freshness_passes_through": "RED_INTENDED",
+                    "G4_unknown_freshness_becomes_fresh": "RED_INTENDED",
+                    "G4_context_assertion_removed": "RED_INTENDED",
+                    "G4_freshness_leaks_into_bars_and_indicators": "RED_INTENDED"
+                }
+            },
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0019",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:31 - rows sort by the complete stable artifact key.",
+            "original_defect": "allocation_artifacts",
+            "successor_implementation": "DeterministicHashService::serializeRows sorts by stable row key",
+            "negative_proof_members": {
+                "L7_input_row_order_leaks_into_hash": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0021",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:37 Artifact hashes use stable domain/revision/content identities, not volatile database surrogate IDs when those IDs can differ across equivalent rebuilds.",
+            "original_defect": "allocation_artifacts",
+            "successor_implementation": "retained roots + content hashes; no local ids in prepared rows",
+            "negative_proof_members": {
+                "L1_local_listing_id_in_bars_identity": "RED_BEHAVIOR",
+                "L2_local_ticker_id_in_identity": "RED_BEHAVIOR",
+                "L3_run_id_and_publication_id_in_bars": "RED_BEHAVIOR",
+                "L4_config_snapshot_id_instead_of_content_hash_in_indicators": "RED_BEHAVIOR",
+                "L6_local_revision_id_in_eligibility": "RED_BEHAVIOR",
+                "L11_sector_membership_local_id_in_indicator_row": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0022",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:41 - stable `listing_id` is included;",
+            "original_defect": "allocation_artifacts",
+            "successor_implementation": "retained issuer/instrument/listing roots in every V2 row",
+            "negative_proof_members": {
+                "BARS.listing_root": "RED_BEHAVIOR",
+                "INDICATORS.listing_root": "RED_COVERAGE_GUARD_ONLY",
+                "ELIGIBILITY.listing_root": "RED_COVERAGE_GUARD_ONLY"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0023",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:42 - config snapshot **content hash** is included;",
+            "original_defect": "artifact_config",
+            "successor_implementation": "config_content_hash in every V2 row; snapshot id excluded",
+            "negative_proof_members": {
+                "BARS.config_content_hash": "RED_COVERAGE_GUARD_ONLY",
+                "INDICATORS.config_content_hash": "RED_BEHAVIOR",
+                "ELIGIBILITY.config_content_hash": "RED_BEHAVIOR",
+                "L4_config_snapshot_id_instead_of_content_hash_in_indicators": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0024",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:43 - factor-set content hash/revision identity is included;",
+            "original_defect": "nested_factor",
+            "successor_implementation": "V2 factor set content hash and factor-decision set hash in indicators",
+            "negative_proof_members": {
+                "INDICATORS.factor_set_hash": "RED_BEHAVIOR",
+                "INDICATORS.factor_decision_set_hash": "RED_INTENDED"
+            },
+            "gaps_closed": [],
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0025",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:44 - formula/registry/read-model version is included;",
+            "original_defect": "artifact_versions",
+            "successor_implementation": "formula/indicator/read-model/canonicalization versions in V2 rows",
+            "negative_proof_members": {
+                "INDICATORS.formula_version": "RED_BEHAVIOR",
+                "INDICATORS.indicator_set_version": "RED_BEHAVIOR",
+                "INDICATORS.price_product_version": "RED_BEHAVIOR",
+                "INDICATORS.liquidity_formula_version": "RED_BEHAVIOR",
+                "ELIGIBILITY.read_model_version": "RED_INTENDED",
+                "BARS.canonicalization_version": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0026",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:45 - source observation or observation-manifest content hash is included;",
+            "original_defect": "source_binding",
+            "successor_implementation": "V2 observation manifest hash (SemanticObservationIdentityService) in bars and indicators",
+            "negative_proof_members": {
+                "BARS.observation_manifest_hash": "RED_INTENDED",
+                "INDICATORS.observation_manifest_hash": "RED_INTENDED"
+            },
+            "gaps_closed": [],
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0028",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:48 The manifest may record surrogate IDs for navigation, but reproducible semantic comparison uses the stable hashes/revisions.",
+            "original_defect": "manifest_relations",
+            "successor_implementation": "V2 manifest uses manifest hashes for lineage; numeric ids rejected by assertNoVolatileMembers",
+            "negative_proof_members": {
+                "L8_numeric_publication_id_in_v2_manifest": "RED_BEHAVIOR",
+                "L9_numeric_supersedes_publication_id_in_v2_manifest": "RED_BEHAVIOR",
+                "MANIFEST.lineage": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0030",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:54 1. trade date and stable listing identity;",
+            "original_defect": "allocation_artifacts",
+            "successor_implementation": "trade_date + retained listing root",
+            "negative_proof_members": {
+                "BARS.trade_date": "RED_COVERAGE_GUARD_ONLY",
+                "BARS.listing_root": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0031",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:55 2. source observation/manifest content identity;",
+            "original_defect": "source_binding",
+            "successor_implementation": "observation_manifest_hash is a direct bar member",
+            "negative_proof_members": {
+                "BARS.observation_manifest_hash": "RED_INTENDED",
+                "MANIFEST.observation_manifest_hash": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": "DISPOSITION: SATISFIED BY TRANSITIVE SEMANTIC BINDING, now with negative proof. The V2 bar row carries the manifest content hash directly (authority: observation OR manifest content hash); the per-observation content is bound through that hash."
+        },
+        {
+            "rule_id": "MD-S005-R0035",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:59 6. source timestamp and acquisition timestamp when consumer-visible availability semantics require them;",
+            "original_defect": "source_binding",
+            "successor_implementation": "each V2 bar row binds its own source_timestamp and acquired_at (G1)",
+            "negative_proof_members": [],
+            "gaps_closed": {
+                "G1": {
+                    "BARS.source_timestamp": "RED_INTENDED",
+                    "BARS.acquired_at": "RED_INTENDED",
+                    "G1_bar_row_omits_acquired_at_value": "RED_INTENDED",
+                    "G1_bar_row_omits_source_timestamp_value": "RED_INTENDED"
+                }
+            },
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": "DISPOSITION: the direct field the authority requires is now a bar member. Condition satisfied: the read model exposes both timestamps per row."
+        },
+        {
+            "rule_id": "MD-S005-R0038",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:62 9. quality state and sorted reason/annotation set;",
+            "original_defect": "bar_annotations",
+            "successor_implementation": "quality_state + quality_reasons_json in V2 bars; non-clean without reasons fails closed",
+            "negative_proof_members": {
+                "BARS.quality_state": "RED_BEHAVIOR",
+                "BARS.quality_reasons_json": "RED_INTENDED"
+            },
+            "gaps_closed": [],
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0039",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:63 10. configuration snapshot content hash.",
+            "original_defect": "artifact_config",
+            "successor_implementation": "config_content_hash in V2 bars",
+            "negative_proof_members": {
+                "BARS.config_content_hash": "RED_COVERAGE_GUARD_ONLY"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0040",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:65 Provider `adj_close` is source-observation lineage only. It is not canonical RAW close or a structural product and is not serialized as an analytical bar field.",
+            "original_defect": "adj_close",
+            "successor_implementation": "adj_close absent from BARS_COLUMNS_V2",
+            "negative_proof_members": {
+                "L5_adj_close_enters_bars_hash": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0042",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:71 1. trade date and stable listing identity;",
+            "original_defect": "allocation_artifacts",
+            "successor_implementation": "trade_date + retained listing root in indicators",
+            "negative_proof_members": {
+                "INDICATORS.trade_date": "RED_COVERAGE_GUARD_ONLY",
+                "INDICATORS.listing_root": "RED_COVERAGE_GUARD_ONLY"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0043",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:72 2. price-product code/version and factor-set content hash;",
+            "original_defect": "nested_factor",
+            "successor_implementation": "price_product_code/version + factor_set_hash in indicators",
+            "negative_proof_members": {
+                "INDICATORS.price_product_code": "RED_COVERAGE_GUARD_ONLY",
+                "INDICATORS.price_product_version": "RED_BEHAVIOR",
+                "INDICATORS.factor_set_hash": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0044",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:73 3. formula/indicator registry version and configuration snapshot content hash;",
+            "original_defect": "artifact_config",
+            "successor_implementation": "formula/indicator registry version + config content hash in indicators",
+            "negative_proof_members": {
+                "INDICATORS.formula_version": "RED_BEHAVIOR",
+                "INDICATORS.indicator_set_version": "RED_BEHAVIOR",
+                "INDICATORS.config_content_hash": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0046",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:75 5. Wilder ATR value/percentage and stable recursive-state reference;",
+            "original_defect": "atr_context",
+            "successor_implementation": "atr14 hashed with the production-assigned recursive-state reference (G2)",
+            "negative_proof_members": {
+                "INDICATORS.atr14": "RED_BEHAVIOR"
+            },
+            "gaps_closed": {
+                "G2": {
+                    "INDICATORS.atr_state_ref": "RED_INTENDED",
+                    "G2_reference_never_assigned": "RED_INTENDED",
+                    "G2_chain_content_removed_from_reference": "RED_INTENDED",
+                    "G2_quarantined_atr_keeps_its_reference": "RED_INTENDED",
+                    "G2_reference_not_persisted": "RED_FAIL_CLOSED",
+                    "G2_atr_value_without_reference_accepted": "RED_INTENDED",
+                    "G2_reference_without_atr_value_accepted": "RED_INTENDED"
+                }
+            },
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0047",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:76 6. benchmark/sector revision identities and dependent values when present;",
+            "original_defect": "indicator_revisions",
+            "successor_implementation": "sector_code, its membership revision identity (G3) and dependent values hashed",
+            "negative_proof_members": {
+                "INDICATORS.sector_code": "RED_BEHAVIOR"
+            },
+            "gaps_closed": {
+                "G3": {
+                    "INDICATORS.sector_membership_revision_hash": "RED_INTENDED",
+                    "G3_cutoff_check_removed": "RED_INTENDED",
+                    "G3_supersession_chain_dropped": "RED_INTENDED",
+                    "G3_authority_class_check_removed": "RED_INTENDED",
+                    "G3_listing_binding_check_removed": "RED_INTENDED",
+                    "G3_code_mismatch_check_removed": "RED_INTENDED",
+                    "G3_concrete_sector_without_revision_accepted": "RED_INTENDED",
+                    "G3_local_membership_id_leaks_into_revision": "RED_INTENDED",
+                    "G3_knowledge_time_removed_from_revision": "RED_INTENDED"
+                }
+            },
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": "The benchmark series has no revision identity in the data model (market_benchmark_bars carries no knowledge time or supersession); the requirement is conditional (\"when present\"), and its dependent values are bound."
+        },
+        {
+            "rule_id": "MD-S005-R0050",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:79 9. event/status context revisions exposed by the indicator contract.",
+            "original_defect": "indicator_revisions",
+            "successor_implementation": "V2 status and event revision-set hashes in indicators",
+            "negative_proof_members": {
+                "INDICATORS.status_revision_set_hash": "RED_INTENDED",
+                "INDICATORS.event_revision_set_hash": "RED_INTENDED"
+            },
+            "gaps_closed": [],
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0053",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:87 1. trade date and stable listing identity;",
+            "original_defect": "allocation_artifacts",
+            "successor_implementation": "trade_date + retained listing root in eligibility",
+            "negative_proof_members": {
+                "ELIGIBILITY.trade_date": "RED_COVERAGE_GUARD_ONLY",
+                "ELIGIBILITY.listing_root": "RED_COVERAGE_GUARD_ONLY"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0056",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:90 4. canonical quality, liquidity, temporal status, event-risk, and freshness states;",
+            "original_defect": "eligibility_freshness",
+            "successor_implementation": "quality/liquidity/status/event-risk states and the frozen freshness state (G4) hashed",
+            "negative_proof_members": {
+                "ELIGIBILITY.canonical_quality_state": "RED_BEHAVIOR",
+                "ELIGIBILITY.liquidity_state": "RED_BEHAVIOR",
+                "ELIGIBILITY.temporal_status_state": "RED_BEHAVIOR",
+                "ELIGIBILITY.event_risk_state": "RED_BEHAVIOR"
+            },
+            "gaps_closed": {
+                "G4": {
+                    "ELIGIBILITY.freshness_state": "RED_INTENDED",
+                    "G4_unknown_freshness_passes_through": "RED_INTENDED",
+                    "G4_unknown_freshness_becomes_fresh": "RED_INTENDED",
+                    "G4_context_assertion_removed": "RED_INTENDED",
+                    "G4_freshness_leaks_into_bars_and_indicators": "RED_INTENDED"
+                }
+            },
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0059",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:93 7. configuration, publication/read-model, and relevant revision content identities.",
+            "original_defect": "artifact_config",
+            "successor_implementation": "config content, read-model version and V2 revision-set hashes in eligibility",
+            "negative_proof_members": {
+                "ELIGIBILITY.config_content_hash": "RED_BEHAVIOR",
+                "ELIGIBILITY.read_model_version": "RED_INTENDED",
+                "ELIGIBILITY.identity_revision_set_hash": "RED_INTENDED",
+                "ELIGIBILITY.status_revision_set_hash": "RED_INTENDED",
+                "ELIGIBILITY.event_revision_set_hash": "RED_INTENDED",
+                "ELIGIBILITY.market_structure_revision_set_hash": "RED_INTENDED"
+            },
+            "gaps_closed": [],
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0061",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:99 The observation manifest deterministically lists every accepted, rejected, stale, schema-invalid, missing, and superseding observation outcome relevant to the run/publication. Each entry uses payload hash/reference, provider/mapping revision, requested/selected date, timestamps, adapter/schema version, outcome, and reason without secrets.",
+            "original_defect": "source_binding",
+            "successor_implementation": "V2 observation manifest entries: payload hash/ref, provider/mapping revision, dates, timestamps, adapter/schema versions, outcome, validation, reason, parent/superseded chain",
+            "negative_proof_members": [
+                "SemanticNestedIdentityOnMariaDbTest semanticChanges (acquisition time, adapter, rejected reason)",
+                "E-MD-B10-A002-013 probes N1, N6, N13"
+            ],
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": "Population = selected observations plus parent/supersede ancestry; every outcome in the population is listed regardless of state."
+        },
+        {
+            "rule_id": "MD-S005-R0062",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:101 Refetching creates a new observation identity. A changed accepted observation changes the observation manifest and every dependent publication context even when rounded output values happen to remain equal.",
+            "original_defect": "source_binding",
+            "successor_implementation": "changed observation changes manifest and every dependent context",
+            "negative_proof_members": {
+                "BARS.observation_manifest_hash": "RED_INTENDED",
+                "INDICATORS.observation_manifest_hash": "RED_INTENDED",
+                "MANIFEST.observation_manifest_hash": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0068",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:111 - temporal identity/calendar/status revision-set hashes;",
+            "original_defect": "nested_temporal",
+            "successor_implementation": "V2 identity/calendar/status revision-set hashes in the manifest",
+            "negative_proof_members": {
+                "MANIFEST.identity_revision_set_hash": "RED_BEHAVIOR",
+                "MANIFEST.calendar_revision_set_hash": "RED_BEHAVIOR",
+                "MANIFEST.status_revision_set_hash": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0069",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:112 - corporate-action event and factor-set hashes;",
+            "original_defect": "nested_factor",
+            "successor_implementation": "V2 event revision-set and factor-set hashes in the manifest",
+            "negative_proof_members": {
+                "MANIFEST.event_revision_set_hash": "RED_BEHAVIOR",
+                "MANIFEST.factor_set_hash": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0071",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:114 - row counts, quality/readiness/freshness states, and sorted reasons;",
+            "original_defect": "manifest_reasons",
+            "successor_implementation": "row counts, quality/readiness/freshness and the publication-scope reason set in the manifest",
+            "negative_proof_members": {
+                "MANIFEST.row_counts": "RED_INTENDED",
+                "MANIFEST.quality_state": "RED_INTENDED",
+                "MANIFEST.readiness_state": "RED_INTENDED",
+                "MANIFEST.freshness_state": "RED_INTENDED",
+                "MANIFEST.semantic_reasons": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0073",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:117 The manifest records operational IDs and seal timestamps for audit navigation, but volatile values must be separated from the canonical semantic-hash payload when they would prevent identical replay comparison.",
+            "original_defect": "manifest_relations",
+            "successor_implementation": "volatile ids separated from the semantic manifest payload",
+            "negative_proof_members": {
+                "L8_numeric_publication_id_in_v2_manifest": "RED_BEHAVIOR",
+                "L9_numeric_supersedes_publication_id_in_v2_manifest": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0075",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:123 - every consumer-visible value;",
+            "original_defect": "complete_coverage",
+            "successor_implementation": "every consumer-visible value hashed, including the per-bar timestamps (G1)",
+            "negative_proof_members": [],
+            "gaps_closed": {
+                "G1": {
+                    "BARS.source_timestamp": "RED_INTENDED",
+                    "BARS.acquired_at": "RED_INTENDED",
+                    "G1_bar_row_omits_acquired_at_value": "RED_INTENDED",
+                    "G1_bar_row_omits_source_timestamp_value": "RED_INTENDED"
+                }
+            },
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0076",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:124 - every annotation, reason, null state, basis, unit, revision, and config choice that can change interpretation;",
+            "original_defect": "complete_coverage",
+            "successor_implementation": "annotations/reasons/null states/config hashed; ATR chain reference (G2) and sector revision (G3) now bound",
+            "negative_proof_members": [],
+            "gaps_closed": {
+                "G2": {
+                    "INDICATORS.atr_state_ref": "RED_INTENDED",
+                    "G2_reference_never_assigned": "RED_INTENDED",
+                    "G2_chain_content_removed_from_reference": "RED_INTENDED",
+                    "G2_quarantined_atr_keeps_its_reference": "RED_INTENDED",
+                    "G2_reference_not_persisted": "RED_FAIL_CLOSED",
+                    "G2_atr_value_without_reference_accepted": "RED_INTENDED",
+                    "G2_reference_without_atr_value_accepted": "RED_INTENDED"
+                },
+                "G3": {
+                    "INDICATORS.sector_membership_revision_hash": "RED_INTENDED",
+                    "G3_cutoff_check_removed": "RED_INTENDED",
+                    "G3_supersession_chain_dropped": "RED_INTENDED",
+                    "G3_authority_class_check_removed": "RED_INTENDED",
+                    "G3_listing_binding_check_removed": "RED_INTENDED",
+                    "G3_code_mismatch_check_removed": "RED_INTENDED",
+                    "G3_concrete_sector_without_revision_accepted": "RED_INTENDED",
+                    "G3_local_membership_id_leaks_into_revision": "RED_INTENDED",
+                    "G3_knowledge_time_removed_from_revision": "RED_INTENDED"
+                }
+            },
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0077",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:125 - row membership and stable ordering;",
+            "original_defect": "allocation_artifacts",
+            "successor_implementation": "row membership by semantic key with duplicate-key refusal; stable ordering",
+            "negative_proof_members": {
+                "L7_input_row_order_leaks_into_hash": "RED_BEHAVIOR",
+                "L10_duplicate_semantic_key_refusal_removed": "RED_INTENDED"
+            },
+            "gaps_closed": [],
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0078",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:126 - lineage content hashes required to reproduce the product.",
+            "original_defect": "complete_coverage",
+            "successor_implementation": "lineage content hashes in artifacts and manifest, including ATR chain reference (G2) and sector revision (G3)",
+            "negative_proof_members": [],
+            "gaps_closed": {
+                "G2": {
+                    "INDICATORS.atr_state_ref": "RED_INTENDED",
+                    "G2_reference_never_assigned": "RED_INTENDED",
+                    "G2_chain_content_removed_from_reference": "RED_INTENDED",
+                    "G2_quarantined_atr_keeps_its_reference": "RED_INTENDED",
+                    "G2_reference_not_persisted": "RED_FAIL_CLOSED",
+                    "G2_atr_value_without_reference_accepted": "RED_INTENDED",
+                    "G2_reference_without_atr_value_accepted": "RED_INTENDED"
+                },
+                "G3": {
+                    "INDICATORS.sector_membership_revision_hash": "RED_INTENDED",
+                    "G3_cutoff_check_removed": "RED_INTENDED",
+                    "G3_supersession_chain_dropped": "RED_INTENDED",
+                    "G3_authority_class_check_removed": "RED_INTENDED",
+                    "G3_listing_binding_check_removed": "RED_INTENDED",
+                    "G3_code_mismatch_check_removed": "RED_INTENDED",
+                    "G3_concrete_sector_without_revision_accepted": "RED_INTENDED",
+                    "G3_local_membership_id_leaks_into_revision": "RED_INTENDED",
+                    "G3_knowledge_time_removed_from_revision": "RED_INTENDED"
+                }
+            },
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0080",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:130 - `run_id` and auto-increment navigation IDs;",
+            "original_defect": "allocation_artifacts",
+            "successor_implementation": "run_id, publication id and auto-increment ids absent from V2 identity",
+            "negative_proof_members": {
+                "L3_run_id_and_publication_id_in_bars": "RED_BEHAVIOR",
+                "L8_numeric_publication_id_in_v2_manifest": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0086",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:140 - An unchanged rebuild with identical stable inputs/versions produces identical artifact hashes and must not create a fake corrected publication.",
+            "original_defect": "allocation_artifacts",
+            "successor_implementation": "equivalent rebuild gives identical V2 hashes; unchanged rebuild is a no-op in PublicationDiffService/pipeline",
+            "negative_proof_members": {
+                "L1_local_listing_id_in_bars_identity": "RED_BEHAVIOR",
+                "L2_local_ticker_id_in_identity": "RED_BEHAVIOR",
+                "L3_run_id_and_publication_id_in_bars": "RED_BEHAVIOR",
+                "L4_config_snapshot_id_instead_of_content_hash_in_indicators": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": "No-op decision proven by composition: V1-profile pipeline decision tests plus V2 hash equality and the G5 comparison tests; no single V2 pipeline no-op test."
+        },
+        {
+            "rule_id": "MD-S005-R0087",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:141 - Any changed consumer value, reason, row set, observation manifest, config, factor, formula, product, or semantic revision creates a distinct publication context and relevant hash change.",
+            "original_defect": "complete_coverage",
+            "successor_implementation": "changed value/reason/row set/observation/config/factor/formula/product/revision changes the context",
+            "negative_proof_members": [],
+            "gaps_closed": {
+                "G1": {
+                    "BARS.source_timestamp": "RED_INTENDED",
+                    "BARS.acquired_at": "RED_INTENDED",
+                    "G1_bar_row_omits_acquired_at_value": "RED_INTENDED",
+                    "G1_bar_row_omits_source_timestamp_value": "RED_INTENDED"
+                },
+                "G3": {
+                    "INDICATORS.sector_membership_revision_hash": "RED_INTENDED",
+                    "G3_cutoff_check_removed": "RED_INTENDED",
+                    "G3_supersession_chain_dropped": "RED_INTENDED",
+                    "G3_authority_class_check_removed": "RED_INTENDED",
+                    "G3_listing_binding_check_removed": "RED_INTENDED",
+                    "G3_code_mismatch_check_removed": "RED_INTENDED",
+                    "G3_concrete_sector_without_revision_accepted": "RED_INTENDED",
+                    "G3_local_membership_id_leaks_into_revision": "RED_INTENDED",
+                    "G3_knowledge_time_removed_from_revision": "RED_INTENDED"
+                },
+                "G5": {
+                    "G5_calendar_binding_removed_from_comparison": "RED_INTENDED",
+                    "G5_unresolved_binding_tolerated": "RED_INTENDED",
+                    "G5_v1_publications_compared_with_the_calendar_binding": "RED_INTENDED",
+                    "G5_lineage_lookup_by_publication_removed": "RED_INTENDED"
+                }
+            },
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0092",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:150 2. a changed value, reason, row membership, config key, observation, factor, formula, or revision changes the expected hash/context;",
+            "original_defect": "complete_coverage",
+            "successor_implementation": "fixtures vary value, reason, membership, config key, observation, factor, formula, revision",
+            "negative_proof_members": {
+                "BARS.observation_manifest_hash": "RED_INTENDED",
+                "INDICATORS.factor_decision_set_hash": "RED_INTENDED",
+                "INDICATORS.status_revision_set_hash": "RED_INTENDED",
+                "INDICATORS.event_revision_set_hash": "RED_INTENDED"
+            },
+            "gaps_closed": {
+                "G1": {
+                    "BARS.source_timestamp": "RED_INTENDED",
+                    "BARS.acquired_at": "RED_INTENDED",
+                    "G1_bar_row_omits_acquired_at_value": "RED_INTENDED",
+                    "G1_bar_row_omits_source_timestamp_value": "RED_INTENDED"
+                },
+                "G3": {
+                    "INDICATORS.sector_membership_revision_hash": "RED_INTENDED",
+                    "G3_cutoff_check_removed": "RED_INTENDED",
+                    "G3_supersession_chain_dropped": "RED_INTENDED",
+                    "G3_authority_class_check_removed": "RED_INTENDED",
+                    "G3_listing_binding_check_removed": "RED_INTENDED",
+                    "G3_code_mismatch_check_removed": "RED_INTENDED",
+                    "G3_concrete_sector_without_revision_accepted": "RED_INTENDED",
+                    "G3_local_membership_id_leaks_into_revision": "RED_INTENDED",
+                    "G3_knowledge_time_removed_from_revision": "RED_INTENDED"
+                },
+                "G5": {
+                    "G5_calendar_binding_removed_from_comparison": "RED_INTENDED",
+                    "G5_unresolved_binding_tolerated": "RED_INTENDED",
+                    "G5_v1_publications_compared_with_the_calendar_binding": "RED_INTENDED",
+                    "G5_lineage_lookup_by_publication_removed": "RED_INTENDED"
+                }
+            },
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0098",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:156 8. provider `adj_close`, direct repair metadata, and omitted annotations cannot silently enter/escape hash coverage.",
+            "original_defect": "adj_close",
+            "successor_implementation": "adj_close excluded; PublishedColumnHashCoverageTest derives published columns against the V2 lists",
+            "negative_proof_members": {
+                "L5_adj_close_enters_bars_hash": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S005-R0105",
+            "authority": "authority/strategy/book/Audit_Hash_and_Reproducibility_Contract_LOCKED.md:169 A candidate cannot seal when required semantic bindings are null, inconsistent across artifact families, or absent from the manifest/hash contract. Green proof under a narrower legacy field list is superseded.",
+            "original_defect": "complete_coverage",
+            "successor_implementation": "seal refuses null/inconsistent bindings; the hash contract now carries G1-G4",
+            "negative_proof_members": [],
+            "gaps_closed": {
+                "G1": {
+                    "BARS.source_timestamp": "RED_INTENDED",
+                    "BARS.acquired_at": "RED_INTENDED",
+                    "G1_bar_row_omits_acquired_at_value": "RED_INTENDED",
+                    "G1_bar_row_omits_source_timestamp_value": "RED_INTENDED"
+                },
+                "G2": {
+                    "INDICATORS.atr_state_ref": "RED_INTENDED",
+                    "G2_reference_never_assigned": "RED_INTENDED",
+                    "G2_chain_content_removed_from_reference": "RED_INTENDED",
+                    "G2_quarantined_atr_keeps_its_reference": "RED_INTENDED",
+                    "G2_reference_not_persisted": "RED_FAIL_CLOSED",
+                    "G2_atr_value_without_reference_accepted": "RED_INTENDED",
+                    "G2_reference_without_atr_value_accepted": "RED_INTENDED"
+                },
+                "G3": {
+                    "INDICATORS.sector_membership_revision_hash": "RED_INTENDED",
+                    "G3_cutoff_check_removed": "RED_INTENDED",
+                    "G3_supersession_chain_dropped": "RED_INTENDED",
+                    "G3_authority_class_check_removed": "RED_INTENDED",
+                    "G3_listing_binding_check_removed": "RED_INTENDED",
+                    "G3_code_mismatch_check_removed": "RED_INTENDED",
+                    "G3_concrete_sector_without_revision_accepted": "RED_INTENDED",
+                    "G3_local_membership_id_leaks_into_revision": "RED_INTENDED",
+                    "G3_knowledge_time_removed_from_revision": "RED_INTENDED"
+                },
+                "G4": {
+                    "ELIGIBILITY.freshness_state": "RED_INTENDED",
+                    "G4_unknown_freshness_passes_through": "RED_INTENDED",
+                    "G4_unknown_freshness_becomes_fresh": "RED_INTENDED",
+                    "G4_context_assertion_removed": "RED_INTENDED",
+                    "G4_freshness_leaks_into_bars_and_indicators": "RED_INTENDED"
+                }
+            },
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S013-R0003",
+            "authority": "authority/strategy/book/Correction_Lifecycle_Safety_Contract.md:11 A correction may only publish a replacement when the baseline is resolved from the current readable pointer contract, the baseline publication is `SUCCESS + READABLE + SEALED + coverage PASS`, candidate artifacts are complete and deterministically different from the baseline, reseal is valid, candidate publication linkage is valid, and the post-switch pointer resolver returns the same candidate publication/run/version. If any check fails, the correction must not switch pointer and must preserve the previous current readable publication.",
+            "original_defect": "correction_semantic_comparison",
+            "successor_implementation": "V2 correction identity, reseal and promotion refuse tampered material and leave the pointer unchanged",
+            "negative_proof_members": [
+                "PublicationSemanticIdentityProductionPathTest tampered sealed material",
+                "PublicationCorrectionSealSemanticIdentityOnMariaDbTest",
+                "E-MD-B10-A002-011/012 probes S1-S4, P8",
+                "PublicationDiffServiceTest",
+                "PublicationCorrectionCalendarBindingTest"
+            ],
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S013-R0009",
+            "authority": "authority/strategy/book/Correction_Lifecycle_Safety_Contract.md:31 A changed correction must have complete non-empty baseline and candidate hashes, deterministic changed scope, valid manifest/hash context, valid candidate publication, valid run-correction-publication linkage, and valid post-switch pointer resolution. Reseal is only valid for changed artifacts. A changed correction cannot become readable until the candidate publication is sealed, current, pointer-resolved, and mirrored by the run.",
+            "original_defect": "correction_semantic_comparison",
+            "successor_implementation": "complete non-empty hashes, deterministic changed scope, valid manifest/hash context, mixed profiles fail closed",
+            "negative_proof_members": [
+                "PublicationDiffServiceTest",
+                "PublicationSemanticIdentityServiceTest",
+                "PublicationSemanticIdentityProductionPathTest",
+                "PublicationCorrectionCalendarBindingTest"
+            ],
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S018-R0009",
+            "authority": "authority/strategy/book/Dataset_Seal_and_Freeze_Contract_LOCKED.md:14 - every publication-bound row snapshot is complete and hash-covered",
+            "original_defect": "seal_semantic_coverage",
+            "successor_implementation": "seal fingerprint recomputed at promotion; V2 artifact hashes recomputed from stored rows including bar timestamps",
+            "negative_proof_members": [],
+            "gaps_closed": {
+                "G1": {
+                    "BARS.source_timestamp": "RED_INTENDED",
+                    "BARS.acquired_at": "RED_INTENDED",
+                    "G1_bar_row_omits_acquired_at_value": "RED_INTENDED",
+                    "G1_bar_row_omits_source_timestamp_value": "RED_INTENDED"
+                }
+            },
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S019-R0006",
+            "authority": "authority/strategy/book/Determinism_Invariants_LOCKED.md:14 - `bars_batch_hash` must be identical",
+            "original_defect": "artifact_invariance_and_sensitivity",
+            "successor_implementation": "bars equality across allocations",
+            "negative_proof_members": {
+                "L1_local_listing_id_in_bars_identity": "RED_BEHAVIOR",
+                "L2_local_ticker_id_in_identity": "RED_BEHAVIOR",
+                "L3_run_id_and_publication_id_in_bars": "RED_BEHAVIOR",
+                "L5_adj_close_enters_bars_hash": "RED_BEHAVIOR",
+                "L7_input_row_order_leaks_into_hash": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S019-R0007",
+            "authority": "authority/strategy/book/Determinism_Invariants_LOCKED.md:15 - `indicators_batch_hash` must be identical",
+            "original_defect": "artifact_invariance_and_sensitivity",
+            "successor_implementation": "indicators equality across allocations",
+            "negative_proof_members": {
+                "L2_local_ticker_id_in_identity": "RED_BEHAVIOR",
+                "L4_config_snapshot_id_instead_of_content_hash_in_indicators": "RED_BEHAVIOR",
+                "L7_input_row_order_leaks_into_hash": "RED_BEHAVIOR",
+                "L11_sector_membership_local_id_in_indicator_row": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S019-R0008",
+            "authority": "authority/strategy/book/Determinism_Invariants_LOCKED.md:16 - `eligibility_batch_hash` must be identical",
+            "original_defect": "artifact_invariance_and_sensitivity",
+            "successor_implementation": "eligibility equality across allocations",
+            "negative_proof_members": {
+                "L2_local_ticker_id_in_identity": "RED_BEHAVIOR",
+                "L6_local_revision_id_in_eligibility": "RED_BEHAVIOR",
+                "L7_input_row_order_leaks_into_hash": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S019-R0014",
+            "authority": "authority/strategy/book/Determinism_Invariants_LOCKED.md:27 and all semantic bindings remain identical, then artifact content hashes must remain identical.",
+            "original_defect": "artifact_invariance_and_sensitivity",
+            "successor_implementation": "run_id/timestamps alone do not change artifact hashes",
+            "negative_proof_members": {
+                "L3_run_id_and_publication_id_in_bars": "RED_BEHAVIOR",
+                "L8_numeric_publication_id_in_v2_manifest": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S019-R0015",
+            "authority": "authority/strategy/book/Determinism_Invariants_LOCKED.md:30 If any consumer-visible artifact content for D changes, then the relevant artifact hash must change.",
+            "original_defect": "artifact_invariance_and_sensitivity",
+            "successor_implementation": "changed consumer-visible content changes the relevant hash, including per-bar timestamps",
+            "negative_proof_members": [],
+            "gaps_closed": {
+                "G1": {
+                    "BARS.source_timestamp": "RED_INTENDED",
+                    "BARS.acquired_at": "RED_INTENDED",
+                    "G1_bar_row_omits_acquired_at_value": "RED_INTENDED",
+                    "G1_bar_row_omits_source_timestamp_value": "RED_INTENDED"
+                }
+            },
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S035-R0032",
+            "authority": "authority/strategy/book/Historical_Correction_and_Reseal_Contract_LOCKED.md:46 Metadata-equivalent content with a different output-affecting binding is not unchanged. Hash/equality comparison must cover every protected field and version defined by the seal contract.",
+            "original_defect": "correction_semantic_comparison",
+            "successor_implementation": "PublicationDiffService compares the three artifact hashes, the profile and the calendar revision binding (G5)",
+            "negative_proof_members": [],
+            "gaps_closed": {
+                "G5": {
+                    "G5_calendar_binding_removed_from_comparison": "RED_INTENDED",
+                    "G5_unresolved_binding_tolerated": "RED_INTENDED",
+                    "G5_v1_publications_compared_with_the_calendar_binding": "RED_INTENDED",
+                    "G5_lineage_lookup_by_publication_removed": "RED_INTENDED"
+                }
+            },
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S035-R0062",
+            "authority": "authority/strategy/book/Historical_Correction_and_Reseal_Contract_LOCKED.md:86 - consumer-visible content for D has changed in a materially relevant way",
+            "original_defect": "correction_semantic_comparison",
+            "successor_implementation": "version increases only through a changed hash decision, new seal and promotion",
+            "negative_proof_members": [
+                "PublicationDiffServiceTest",
+                "PublicationCorrectionCalendarBindingTest",
+                "MarketDataPipelineIntegrationTest (V1-profile pipeline)",
+                "PublicationSealPointerLifecycleTest"
+            ],
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": "Proven by composition; decision code is profile-agnostic."
+        },
+        {
+            "rule_id": "MD-S035-R0069",
+            "authority": "authority/strategy/book/Historical_Correction_and_Reseal_Contract_LOCKED.md:94 - unchanged content was recomputed",
+            "original_defect": "correction_semantic_comparison",
+            "successor_implementation": "unchanged recompute does not increase the version",
+            "negative_proof_members": [
+                "PublicationDiffServiceTest",
+                "PublicationCorrectionCalendarBindingTest (same calendar, other allocation: UNCHANGED)",
+                "MarketDataPipelineIntegrationTest unchanged rerun (V1-profile pipeline)"
+            ],
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": "Proven by composition; decision code is profile-agnostic and V2 hash equality is proven."
+        },
+        {
+            "rule_id": "MD-S035-R0127",
+            "authority": "authority/strategy/book/Historical_Correction_and_Reseal_Contract_LOCKED.md:173 - unchanged rerun does not create fake correction publication",
+            "original_defect": "correction_semantic_comparison",
+            "successor_implementation": "unchanged rerun creates no correction publication",
+            "negative_proof_members": [
+                "PublicationDiffServiceTest",
+                "PublicationCorrectionCalendarBindingTest",
+                "MarketDataPipelineIntegrationTest unchanged rerun (V1-profile pipeline)"
+            ],
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": "Proven by composition; no single V2 pipeline no-op test."
+        },
+        {
+            "rule_id": "MD-S045-R0001",
+            "authority": "authority/strategy/book/Publication_Manifest_Contract_LOCKED.md:4 Define the publication manifest as the compact deterministic identity object for one readable publication.",
+            "original_defect": "manifest_semantic_identity",
+            "successor_implementation": "V2 manifest binds scope, versions, lineage, observation/config/nested hashes, artifact hashes, readiness/freshness, row counts, correction linkage, seal contract",
+            "negative_proof_members": {
+                "MANIFEST.artifacts": "RED_BEHAVIOR",
+                "MANIFEST.observation_manifest_hash": "RED_BEHAVIOR",
+                "MANIFEST.config_content_hash": "RED_BEHAVIOR",
+                "MANIFEST.factor_set_hash": "RED_BEHAVIOR",
+                "MANIFEST.readiness_state": "RED_INTENDED",
+                "MANIFEST.correction_lineage": "RED_INTENDED",
+                "MANIFEST.row_counts": "RED_INTENDED",
+                "MANIFEST.seal_contract_version": "RED_INTENDED"
+            },
+            "gaps_closed": [],
+            "proof_standard": "STRICT_BEHAVIOURAL (remediation scope)",
+            "previous_result_e016": "INCOMPLETE",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S045-R0054",
+            "authority": "authority/strategy/book/Publication_Manifest_Contract_LOCKED.md:68 - observation/revision/factor/config hashes: stable semantic inputs needed to reproduce output",
+            "original_defect": "manifest_semantic_identity",
+            "successor_implementation": "stable semantic input hashes in the manifest",
+            "negative_proof_members": {
+                "MANIFEST.observation_manifest_hash": "RED_BEHAVIOR",
+                "MANIFEST.config_content_hash": "RED_BEHAVIOR",
+                "MANIFEST.identity_revision_set_hash": "RED_BEHAVIOR",
+                "MANIFEST.calendar_revision_set_hash": "RED_BEHAVIOR",
+                "MANIFEST.status_revision_set_hash": "RED_BEHAVIOR",
+                "MANIFEST.event_revision_set_hash": "RED_BEHAVIOR",
+                "MANIFEST.factor_set_hash": "RED_BEHAVIOR",
+                "MANIFEST.factor_decision_set_hash": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S045-R0056",
+            "authority": "authority/strategy/book/Publication_Manifest_Contract_LOCKED.md:70 - artifact hashes: content identity of bars/indicators/eligibility",
+            "original_defect": "manifest_semantic_identity",
+            "successor_implementation": "artifact hashes in the manifest",
+            "negative_proof_members": {
+                "MANIFEST.artifacts": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        },
+        {
+            "rule_id": "MD-S045-R0059",
+            "authority": "authority/strategy/book/Publication_Manifest_Contract_LOCKED.md:75 1. Same consumer-visible publication content must imply the same relevant artifact hashes.",
+            "original_defect": "manifest_semantic_identity",
+            "successor_implementation": "same content implies same hashes (allocation independent)",
+            "negative_proof_members": {
+                "L1_local_listing_id_in_bars_identity": "RED_BEHAVIOR",
+                "L2_local_ticker_id_in_identity": "RED_BEHAVIOR",
+                "L3_run_id_and_publication_id_in_bars": "RED_BEHAVIOR",
+                "L8_numeric_publication_id_in_v2_manifest": "RED_BEHAVIOR"
+            },
+            "gaps_closed": [],
+            "proof_standard": "E016_CRITERION_RECHECK (previously proven)",
+            "previous_result_e016": "PROVEN_CURRENT",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null,
+            "note": null
+        }
+    ],
+    "gap_resolutions": {
+        "G1": {
+            "implementation": "BARS_COLUMNS_V2 gains source_timestamp and acquired_at; each bar row binds its own stored values (ArtifactSemanticHashService::prepareBarsRow). A null timestamp is bound as null, a distinct fact. V1 untouched.",
+            "production_path": "ArtifactSemanticIdentityOnMariaDbTest: hashStoredArtifact over stored rows with retained foundation roots, two databases with different local allocation",
+            "equality": "same governed timestamps under different local ids and different insertion/allocation histories: identical bars hash",
+            "sensitivity": "acquired_at and source_timestamp each move only the bars hash; swapping acquired_at or source_timestamp between two listings (the E016 demonstration) is detected",
+            "negative_proof": [
+                "BARS.source_timestamp",
+                "BARS.acquired_at",
+                "G1_bar_row_omits_acquired_at_value",
+                "G1_bar_row_omits_source_timestamp_value"
+            ]
+        },
+        "G2": {
+            "implementation": "IndicatorVectorService now assigns atr_state_ref: content-addressed atr-state/v1:<sha256> over the window, the formula version and every (date, high, low, close basis) the Wilder recursion consumed, in order. The runtime recomputes from the stable chain, which Indicator_Registry_Baseline_LOCKED.md:47 and EOD_Indicators_Formula_Spec.md:71 allow; the first entry is the seed boundary. The reference is withdrawn with a quarantined ATR. The V2 artifact refuses an ATR value without its reference and a reference without a value.",
+            "production_path": "IndicatorAtrStateReferenceTest drives IndicatorVectorService::buildRow; MarketDataPipelineIntegrationTest::test_run_daily_persists_the_atr_state_reference_with_the_atr_value_and_it_follows_the_chain drives the full pipeline and reads the stored current and history rows",
+            "equality": "same chain under different ticker, publication and run ids and with non-semantic bar members changed: same reference",
+            "sensitivity": "a changed historical high or close, window, formula version, price basis, seed boundary, and an input change the rounded ATR does not show, each change the reference",
+            "fail_closed": "no ATR means no reference; a quarantined ATR withdraws its reference; V2 refuses a value without a reference and a reference without a value",
+            "negative_proof": [
+                "INDICATORS.atr_state_ref",
+                "G2_reference_never_assigned",
+                "G2_chain_content_removed_from_reference",
+                "G2_window_removed_from_reference",
+                "G2_formula_version_removed_from_reference",
+                "G2_provider_adj_close_leaks_into_reference",
+                "G2_quarantined_atr_keeps_its_reference",
+                "G2_atr_value_without_reference_accepted",
+                "G2_reference_without_atr_value_accepted",
+                "G2_reference_not_persisted"
+            ]
+        },
+        "G3": {
+            "implementation": "INDICATORS_COLUMNS_V2 gains sector_membership_revision_hash: the content hash of the membership revision the row used (classification system, sector code, sector index mapping, effective interval, source, source reference, source authority class, recorded_at, operator, reason, and the content hash of the revision it supersedes), with no local id. Fail-closed: revision after the run knowledge cutoff, non-authoritative class, other listing, other sector code, missing revision, supersession cycle, and a concrete sector without a revision are all refused. UNKNOWN binds no revision. Applies D-MD-B10-A002-003 1B.",
+            "production_path": "ArtifactSemanticIdentityOnMariaDbTest reads the stored ticker_sector_memberships and market_data_sectors rows through hashStoredArtifact in two databases with different membership ids",
+            "equality": "same membership content and supersession under different membership ids: same indicators hash",
+            "sensitivity": "source_ref, effective_from, effective_to, source_name, authority class, knowledge time, the superseded revision content and knowledge time, and the sector index mapping each move only the indicators hash",
+            "negative_proof": [
+                "INDICATORS.sector_membership_revision_hash",
+                "G3_cutoff_check_removed",
+                "G3_supersession_chain_dropped",
+                "G3_authority_class_check_removed",
+                "G3_listing_binding_check_removed",
+                "G3_code_mismatch_check_removed",
+                "G3_concrete_sector_without_revision_accepted",
+                "G3_local_membership_id_leaks_into_revision",
+                "G3_knowledge_time_removed_from_revision",
+                "G3_sector_index_mapping_removed_from_revision",
+                "G3_effective_interval_removed_from_revision",
+                "L11_sector_membership_local_id_in_indicator_row"
+            ],
+            "benchmark_note": "market_benchmark_bars carries no knowledge time or supersession, so no benchmark revision identity exists to bind (MD-S005-R0047 is conditional: \"when present\"); its dependent values are bound."
+        },
+        "G4": {
+            "implementation": "ELIGIBILITY_COLUMNS_V2 gains freshness_state: the run freshness state normalised exactly as the publication manifest normalises it (FRESH, STALE, DEGRADED, NOT_AVAILABLE; anything else, including NOT_EVALUATED, is NOT_AVAILABLE and can never be hashed as FRESH). It is eligibility-only and no timing value enters.",
+            "production_path": "ArtifactSemanticIdentityOnMariaDbTest passes run objects with different freshness states through hashStoredArtifact",
+            "equality": "allocation independent",
+            "sensitivity": "FRESH, STALE, DEGRADED and NOT_AVAILABLE each give a different eligibility hash and never move bars or indicators",
+            "fail_closed": "a context with no or an ungoverned freshness state is refused",
+            "negative_proof": [
+                "ELIGIBILITY.freshness_state",
+                "G4_unknown_freshness_passes_through",
+                "G4_unknown_freshness_becomes_fresh",
+                "G4_context_assertion_removed",
+                "G4_freshness_leaks_into_bars_and_indicators"
+            ]
+        },
+        "G5": {
+            "implementation": "PublicationDiffService compares the V2 calendar revision binding (semantic_calendar_revision_set_hash from the publication lineage) in addition to the three artifact hashes; an unresolved binding makes the comparison INVALID, never UNCHANGED; V1 and mixed profiles keep their previous behaviour. changed_scope gains \"calendar\".",
+            "production_path": "PublicationCorrectionCalendarBindingTest reads real eod_publications and md_publication_lineage_bindings rows as the pipeline does",
+            "equality": "same calendar under different publication ids and versions: UNCHANGED",
+            "sensitivity": "a calendar-only difference with every artifact hash equal is CHANGED with scope calendar",
+            "negative_proof": [
+                "G5_calendar_binding_removed_from_comparison",
+                "G5_unresolved_binding_tolerated",
+                "G5_v1_publications_compared_with_the_calendar_binding",
+                "G5_lineage_lookup_by_publication_removed"
+            ]
+        }
+    },
+    "eleven_negative_proof_predicates": {
+        "MD-S005-R0024": "INDICATORS.factor_decision_set_hash RED_INTENDED; INDICATORS.factor_set_hash behaviour test added",
+        "MD-S005-R0025": "ELIGIBILITY.read_model_version RED_INTENDED; formula, indicator-set, price-product, liquidity-formula and canonicalization versions each moved by a member test",
+        "MD-S005-R0026": "BARS and INDICATORS observation_manifest_hash RED_INTENDED (context member provider)",
+        "MD-S005-R0031": "BARS.observation_manifest_hash RED_INTENDED; MANIFEST.observation_manifest_hash caught. R0031 and R0062 share the observation_manifest_hash mechanism; the overlap is explicit.",
+        "MD-S005-R0038": "BARS.quality_reasons_json RED_INTENDED (set is canonicalised, not ordered; a dropped or different reason moves the hash); BARS.quality_state member test",
+        "MD-S005-R0050": "INDICATORS.status_revision_set_hash and event_revision_set_hash RED_INTENDED",
+        "MD-S005-R0059": "ELIGIBILITY read_model_version and identity/status/event/market_structure revision-set hashes RED_INTENDED",
+        "MD-S005-R0062": "observation_manifest_hash in bars, indicators and the manifest caught; a changed observation moves the manifest hash (SemanticNestedIdentityOnMariaDbTest, E013) and the manifest hash moves the artifacts (this unit): composition, both halves proven on the production loader",
+        "MD-S005-R0071": "MANIFEST.row_counts, quality_state, readiness_state, freshness_state RED_INTENDED at PublicationSemanticIdentityProductionPathTest::test_each_manifest_member_follows_its_persisted_source (the sealed manifest stops verifying when the persisted source of each member changes)",
+        "MD-S005-R0077": "L10_duplicate_semantic_key_refusal_removed RED_INTENDED; L7 row order RED",
+        "MD-S045-R0001": "MANIFEST.readiness_state, correction_lineage, row_counts, seal_contract_version RED_INTENDED (seal_contract_version through test_the_manifest_binds_the_seal_contract_and_every_governed_member_exactly, which also fixes the exact governed member set)"
+    },
+    "member_coverage": {
+        "artifact_members": {
+            "members": 106,
+            "caught": 106,
+            "caught_by_behavioural_test": 41,
+            "caught_only_by_column_coverage_guard": 65,
+            "not_caught": [],
+            "note": "E016 had 102 members, 86 caught and 16 not caught. The four new members (source_timestamp, acquired_at, sector_membership_revision_hash, freshness_state) bring the list to 106, and the 16 uncaught members now have value-sensitivity tests (the five not required by any of the 56 were added too, to leave no V2 member presence-only without a decision)."
+        },
+        "manifest_members": {
+            "members": 35,
+            "caught": 35,
+            "not_caught": [],
+            "note": "E016: 35 members, 15 caught, 20 not caught."
+        },
+        "duplicate_semantic_keys": "proven: removing the refusal turns ArtifactSemanticHashServiceTest::test_row_membership_refuses_two_rows_that_resolve_to_one_semantic_key red (L10)",
+        "probe_counts": {
+            "required_artifacts": {
+                "RED_INTENDED": 16
+            },
+            "required_manifest": {
+                "RED_INTENDED": 6
+            },
+            "behavior": {
+                "RED_ERROR_ONLY": 1,
+                "RED_INTENDED": 29
+            },
+            "leaks": {
+                "RED_BEHAVIOR": 9
+            },
+            "all_artifacts": {
+                "RED_BEHAVIOR": 106
+            },
+            "all_manifest": {
+                "RED_BEHAVIOR": 35
+            },
+            "l7": {
+                "RED_BEHAVIOR": 1
+            }
+        },
+        "all_probe_targets_restored_byte_identical": true
+    },
+    "process_findings": {
+        "vacuous_closure": "The first probe pass found four G3 check-removal probes NOT_CAUGHT. Cause: a closure called $this->fail(\"Expected \".$code) inside try/catch(RuntimeException); PHPUnit failure exceptions are RuntimeExceptions and the message contained the code. Rewritten to record the refusal and assert after the try; all four probes then went RED_INTENDED.",
+        "equivalent_mutant": "G2 seed_origin was redundant (a longer stable series always changes the consumed chain itself), so its removal could not be observed. The member was removed from the reference rather than kept untested.",
+        "probe_design": "L1, L3, L4, L11, the G4 leak and the G4 context probe were redefined because they tripped a format validator (date or content-hash member) before reaching the equality assertion; they now leak through plain text members.",
+        "static_guard_regression": "The first full-suite run had 10 failures: the 8 governed ones plus two guards (CanonicalScopeFrontierAndDecisionGradeTest, TermOwnershipAndPriceProductTest) that enumerate private IndicatorVectorService methods with a $window parameter. The new helper atrStateReference declared one, and the guards counted it as a windowed computation without a warm-up guard. The parameter was renamed (the helper is not windowed); the guards were not touched; the full suite was rerun.",
+        "rejected_strictness": "A rule refusing a bar with a null acquired_at was tried and removed: it broke 20 unrelated nested-identity tests and no affected predicate requires it. A null timestamp is the consumer-visible value and is bound as null.",
+        "probe_runs": "first-pass, second-pass and third-pass probe results are retained in the package; the final results are matrix/probes_*.json"
+    },
+    "full_suite": {
+        "command": "php vendor/bin/phpunit --do-not-cache-result --log-junit storage/app/market_data/evidence/MD-B10-A002/remediation-reproof-20261002-v1/full-suite/junit.xml tests/Unit/MarketData",
+        "environment": "start_clock=2026-10-01T22:11:29+02:00\nPHP 7.4.33 (cli) (built: Nov  2 2022 16:00:55) ( ZTS Visual C++ 2017 x64 )\nPHPUnit 9.6.34 by Sebastian Bergmann and contributors.\r\n\r\nAPP_ENV=testing (phpunit.xml)  MARKET_DATA_ARTIFACT_HASH_PROFILE=market-data-row-hash/v1 (phpunit.xml)\ndatabase: tradeaxis_testing (MariaDB 10.4.27-MariaDB)\nHEAD=a4ebd51cbae39eb7c58eacedd6c1919bc73deca2 branch=master\ncommand: php vendor/bin/phpunit --do-not-cache-result --log-junit storage/app/market_data/evidence/MD-B10-A002/remediation-reproof-20261002-v1/full-suite/junit.xml tests/Unit/MarketData\n--- file hashes at start (final code and tests) ---\n6785b3dae729b0acf6fd55dcfbc491164c50a9b0df3c90aa0f324534be580658 *app/Application/MarketData/Services/ArtifactSemanticHashService.php\n9148056cd4a6fee8f2d392c969b4af490133189278e650414908494b96580cf2 *app/Application/MarketData/Services/IndicatorVectorService.php\n5cdbf4e47d07b906d2adeaefac092f86b3d8d7eb3d5acdeb3ecbfd17cd498716 *app/Application/MarketData/Services/PublicationDiffService.php\n4ad016f67cd76414439fcc8ca887427aefaf5ddc7a4463ef78d4f3cfe198f499 *tests/Unit/MarketData/ArtifactSemanticHashServiceTest.php\n23f1228f50f8a754a00950035a8f75d6ac652168c472e12015c758762ada7bb0 *tests/Unit/MarketData/ArtifactSemanticIdentityOnMariaDbTest.php\nfb3d09a9a52ccdb0a82b515ae25e239ed811805ea340a0628aa3f8b8054e6445 *tests/Unit/MarketData/PublicationSemanticIdentityProductionPathTest.php\n780e3c6889693568d8a80ba97457677a970e287d08c72fd022f2f4aff79a2af0 *tests/Unit/MarketData/IndicatorAtrStateReferenceTest.php\n4572fa54ad6a9df98b35b69e5b9c83cc29325b0c79fa02a81b21ee16c5a2dbe3 *tests/Unit/MarketData/PublicationCorrectionCalendarBindingTest.php\n8915f94fedcdd3e067606058dded7cc33c9890f9668951bb7d775e0f6882231f *tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php\n--- git status (tracked) ---\n M app/Application/MarketData/Services/ArtifactSemanticHashService.php\n M app/Application/MarketData/Services/IndicatorVectorService.php\n M app/Application/MarketData/Services/PublicationDiffService.php\n M docs/market_data/development/implementation/tests/MarketDataReplayVerificationAcceptanceAggregate.php\n M tests/Unit/MarketData/ArtifactSemanticHashServiceTest.php\n M tests/Unit/MarketData/ArtifactSemanticIdentityOnMariaDbTest.php\n M tests/Unit/MarketData/B18ScenarioFamiliesOnMariaDbTest.php\n M tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php\n M tests/Unit/MarketData/PublicationSemanticIdentityProductionPathTest.php\nend_clock=2026-10-01T22:36:11+02:00\n",
+        "tests": 2733,
+        "assertions": 38615,
+        "errors": 0,
+        "warnings": 0,
+        "skipped": 0,
+        "failures": 8,
+        "exit": 1,
+        "phpunit_time_seconds": 1471.5,
+        "raw": [
+            "full-suite/raw_output.txt",
+            "full-suite/junit.xml",
+            "full-suite/exit.txt",
+            "full-suite/environment.txt"
+        ],
+        "earlier_run": "full-suite-run1-before-guard-fix: 2733 tests, 38614 assertions, 10 failures (the 8 below plus the two static guards fixed above)",
+        "note": "phpunit.xml selects the V1 artifact profile for the suite; V2 is proven by its dedicated tests. Compared with E016 (2660 tests, 38263 assertions): +73 tests, +352 assertions."
+    },
+    "full_suite_failure_classification": [
+        {
+            "n": 1,
+            "test": "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+            "assertion": "B18ScenarioFamiliesOnMariaDbTest.php:387 (via 334): replay status of s_f1_frozen_inputs_and_seal",
+            "actual": "BLOCKED: REPLAY_FIXTURE_SELF_GENERATED",
+            "expected": "PASS",
+            "class": "C. B18/R0025 GOVERNED EXPECTED STATE",
+            "owner": "MD-B18-A002",
+            "record": "E-MD-B18-A002-082, E-MD-B18-A002-085, D-MD-B18-A002-011, F-MD-B18-A002-017; identical failure in E-MD-B10-A002-016",
+            "closure_impact": "none for B10; R0025 stays INCOMPLETE and paused"
+        },
+        {
+            "n": 2,
+            "test": "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_carries_a_non_positive_price",
+            "assertion": "ProductionCorpusInvariantOracleTest.php:74",
+            "actual": "0 (empty deployed corpus)",
+            "expected": "greater than 0 (greater than 1000000 for the history corpus control)",
+            "class": "D. OTHER GOVERNED EXPECTED STATE",
+            "owner": "database owner; MD-DEP-0015/MD-DEP-0016 recovery track",
+            "record": "D-MD-B18-A002-004; E-MD-B18-A002-074; identical failure and line in E-MD-B10-A002-016",
+            "closure_impact": "none: expected until a real corpus is recovered; unrelated to the 56"
+        },
+        {
+            "n": 3,
+            "test": "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_violates_ohlc_ordering",
+            "assertion": "ProductionCorpusInvariantOracleTest.php:87",
+            "actual": "0 (empty deployed corpus)",
+            "expected": "greater than 0 (greater than 1000000 for the history corpus control)",
+            "class": "D. OTHER GOVERNED EXPECTED STATE",
+            "owner": "database owner; MD-DEP-0015/MD-DEP-0016 recovery track",
+            "record": "D-MD-B18-A002-004; E-MD-B18-A002-074; identical failure and line in E-MD-B10-A002-016",
+            "closure_impact": "none: expected until a real corpus is recovered; unrelated to the 56"
+        },
+        {
+            "n": 4,
+            "test": "ProductionCorpusInvariantOracleTest::test_exactly_one_publication_is_current_per_trade_date",
+            "assertion": "ProductionCorpusInvariantOracleTest.php:104",
+            "actual": "0 (empty deployed corpus)",
+            "expected": "greater than 0 (greater than 1000000 for the history corpus control)",
+            "class": "D. OTHER GOVERNED EXPECTED STATE",
+            "owner": "database owner; MD-DEP-0015/MD-DEP-0016 recovery track",
+            "record": "D-MD-B18-A002-004; E-MD-B18-A002-074; identical failure and line in E-MD-B10-A002-016",
+            "closure_impact": "none: expected until a real corpus is recovered; unrelated to the 56"
+        },
+        {
+            "n": 5,
+            "test": "ProductionCorpusInvariantOracleTest::test_no_readable_publication_rests_on_a_failed_run",
+            "assertion": "ProductionCorpusInvariantOracleTest.php:125",
+            "actual": "0 (empty deployed corpus)",
+            "expected": "greater than 0 (greater than 1000000 for the history corpus control)",
+            "class": "D. OTHER GOVERNED EXPECTED STATE",
+            "owner": "database owner; MD-DEP-0015/MD-DEP-0016 recovery track",
+            "record": "D-MD-B18-A002-004; E-MD-B18-A002-074; identical failure and line in E-MD-B10-A002-016",
+            "closure_impact": "none: expected until a real corpus is recovered; unrelated to the 56"
+        },
+        {
+            "n": 6,
+            "test": "ProductionCorpusInvariantOracleTest::test_authoritative_factor_candidates_reach_an_explicit_applied_or_held_decision",
+            "assertion": "ProductionCorpusInvariantOracleTest.php:175",
+            "actual": "0 (empty deployed corpus)",
+            "expected": "greater than 0 (greater than 1000000 for the history corpus control)",
+            "class": "D. OTHER GOVERNED EXPECTED STATE",
+            "owner": "database owner; MD-DEP-0015/MD-DEP-0016 recovery track",
+            "record": "D-MD-B18-A002-004; E-MD-B18-A002-074; identical failure and line in E-MD-B10-A002-016",
+            "closure_impact": "none: expected until a real corpus is recovered; unrelated to the 56"
+        },
+        {
+            "n": 7,
+            "test": "ProductionCorpusInvariantOracleTest::test_no_price_derived_factor_is_usable_as_an_adjustment",
+            "assertion": "ProductionCorpusInvariantOracleTest.php:244",
+            "actual": "0 (empty deployed corpus)",
+            "expected": "greater than 0 (greater than 1000000 for the history corpus control)",
+            "class": "D. OTHER GOVERNED EXPECTED STATE",
+            "owner": "database owner; MD-DEP-0015/MD-DEP-0016 recovery track",
+            "record": "D-MD-B18-A002-004; E-MD-B18-A002-074; identical failure and line in E-MD-B10-A002-016",
+            "closure_impact": "none: expected until a real corpus is recovered; unrelated to the 56"
+        },
+        {
+            "n": 8,
+            "test": "ProductionCorpusInvariantOracleTest::test_every_history_row_binds_to_a_publication",
+            "assertion": "ProductionCorpusInvariantOracleTest.php:259",
+            "actual": "0 (empty deployed corpus)",
+            "expected": "greater than 0 (greater than 1000000 for the history corpus control)",
+            "class": "D. OTHER GOVERNED EXPECTED STATE",
+            "owner": "database owner; MD-DEP-0015/MD-DEP-0016 recovery track",
+            "record": "D-MD-B18-A002-004; E-MD-B18-A002-074; identical failure and line in E-MD-B10-A002-016",
+            "closure_impact": "none: expected until a real corpus is recovered; unrelated to the 56"
+        }
+    ],
+    "failure_class_counts": {
+        "A. B10 regression": 0,
+        "B. B10 proof gap": 0,
+        "C. B18/R0025 governed expected": 1,
+        "D. other governed expected": 7,
+        "E. pre-existing unrelated": 0,
+        "F. new unowned defect": 0,
+        "G. environment": 0
+    },
+    "full_suite_closure_condition": "SATISFIED: every failure is one of the eight governed expected states recorded in E-MD-B10-A002-016 and none touches a B10 predicate. The two B10 regressions the first run found were fixed and the suite rerun.",
+    "f_md_b10_a002_002_confirmation": {
+        "status": "F-002 RESOLVED; successor full-suite closure CONFIRMED again after the remediation",
+        "members": {
+            "DateDrivenCapabilityAndProviderAbstractionTest": "18 tests, 0 failures",
+            "DomainOwnershipSurfaceTest": "28 tests, 0 failures",
+            "AliasNamingAndMeaningBoundaryTest": "6 tests, 0 failures",
+            "LifecycleProofIsNotMockedTest": "5 tests, 0 failures"
+        },
+        "also_green": "MigrationIntegrityAndDriftTest 10/10, B18ProductionPathReplayFixturesTest 13/13, B18ReplayPersistedEvidenceBindingTest 17/17, SemanticNestedIdentityOnMariaDbTest 20/20, PublishedColumnHashCoverageTest 23/23"
+    },
+    "e010_e016_regression": "The suite includes every E010-E013 test file (artifact, publication/correction/seal, production-path allocation, nested identity) and they are green; the E016 raw package is unchanged.",
+    "b18_owned_findings_non_impact": {
+        "F-MD-B10-A002-003": "still no impact on the 56; owner MD-B18-A002",
+        "F-MD-B10-A002-004": "still no impact on the 56; owner MD-B18-A002"
+    },
+    "deployment_verification": {
+        "result": "E-MD-B10-A002-015 state unchanged: 79/79 migrations, batch 5, 67 tables, schema hash e3b4adcc6006a86f32b3f32152b33af2c853addc8bef43b354a38fe4b0afd96c, Market Data tables empty. The remediation changes only application code and tests: no migration, no schema change and no write to the normal database.",
+        "artifacts": "deployment-recheck/state.json"
+    },
+    "promotion_gate": {
+        "1_all_56_PROVEN_CURRENT": "PASS (56 of 56)",
+        "2_full_suite_only_governed_expected_states": "PASS (8 failures, all governed expected)",
+        "3_F002_closure_confirmed": "PASS",
+        "4_F_MD_B10_A002_005_RESOLVED": "PASS (resolved by this evidence)",
+        "5_no_B10_owned_blocker_remains": "FAIL: F-MD-B10-A002-006 (the governed binder cannot bind the A002 subset)",
+        "6_governance_integrity_gates": "PASS (reported in the CI after registration)",
+        "7_governance_permits_atomic_promotion_now": "FAIL: no governed mechanism exists for the 56-row A002 subset",
+        "binder": "NOT APPLIED. validate-only reports 1016 COVERAGE_STATUS_INVALID and 1016 PREMATURE_EVIDENCE_BINDING (the A001 tool expects all 1072 rows pristine) and an A002 evidence id is refused before the evidence is read. The matrix was not written (byte-identical). No manual status edit was made.",
+        "binder_raw": [
+            "binder/validate_only.json",
+            "binder/evidence_id_a002.err"
+        ]
+    },
+    "dependency_disposition": {
+        "MD-DEP-0021": "BLOCKING, unchanged: the 56 are proven but not promoted; closure conditions are evaluated only after governed promotion",
+        "MD-DEP-0020": "BLOCKING, unchanged: B10 closure not reached",
+        "MD-DEP-0019": "BLOCKING, unchanged (B18/R0025, database owner)"
+    },
+    "predicate_state": {
+        "b05": "117/117 PASS",
+        "b10": "1016 SATISFIED / 56 NOT_ASSESSED / 1072 mandatory (56 PROVEN_CURRENT in this evidence, not yet bound)",
+        "b18": "100/113 reviewed basis, formal 0/113",
+        "r0025": "INCOMPLETE, paused",
+        "f018": "not started"
+    },
+    "changed_files_sha256": {
+        "app/Application/MarketData/Services/ArtifactSemanticHashService.php": "6785b3dae729b0acf6fd55dcfbc491164c50a9b0df3c90aa0f324534be580658",
+        "app/Application/MarketData/Services/IndicatorVectorService.php": "9148056cd4a6fee8f2d392c969b4af490133189278e650414908494b96580cf2",
+        "app/Application/MarketData/Services/PublicationDiffService.php": "5cdbf4e47d07b906d2adeaefac092f86b3d8d7eb3d5acdeb3ecbfd17cd498716",
+        "tests/Unit/MarketData/ArtifactSemanticHashServiceTest.php": "4ad016f67cd76414439fcc8ca887427aefaf5ddc7a4463ef78d4f3cfe198f499",
+        "tests/Unit/MarketData/ArtifactSemanticIdentityOnMariaDbTest.php": "23f1228f50f8a754a00950035a8f75d6ac652168c472e12015c758762ada7bb0",
+        "tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php": "8915f94fedcdd3e067606058dded7cc33c9890f9668951bb7d775e0f6882231f",
+        "tests/Unit/MarketData/PublicationSemanticIdentityProductionPathTest.php": "fb3d09a9a52ccdb0a82b515ae25e239ed811805ea340a0628aa3f8b8054e6445",
+        "tests/Unit/MarketData/IndicatorAtrStateReferenceTest.php": "780e3c6889693568d8a80ba97457677a970e287d08c72fd022f2f4aff79a2af0",
+        "tests/Unit/MarketData/PublicationCorrectionCalendarBindingTest.php": "4572fa54ad6a9df98b35b69e5b9c83cc29325b0c79fa02a81b21ee16c5a2dbe3"
+    },
+    "preservation": {
+        "B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+        "MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4",
+        "issued_evidence": "E010-E016, E087 and E088 byte-identical to their issued bytes",
+        "traceability_matrix": "STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv byte-identical (no binder write)"
+    },
+    "raw_proof": {
+        "package": "storage/app/market_data/evidence/MD-B10-A002/remediation-reproof-20261002-v1",
+        "manifest_sha256": "626c60a913f5a3fbec2a66fb3de62fb711f73e0bb2c635acfba626136afc496f"
+    },
+    "governance_boundary": "This immutable record claims the executed results above. Registry, integrity and current-state gates run after registration and are reported in CI-MD-B10-A002-001.",
+    "next_resume_point": "MD-B10-A002: provide the governed current-verification promotion mechanism for the 56 affected rows that F-MD-B10-A002-006 records (a binder and gate for the A002 subset that bind E-MD-B10-A002-017 to exactly those 56 rows, atomically and fail-closed, leaving the other 1016 untouched, with a self-test), run it, and only then evaluate MD-DEP-0021 and MD-DEP-0020 against their resolution conditions. Same A002/BL001/CI. MD-DEP-0021/0020/0019 remain BLOCKING; R0025 and F-018 stay paused; F-MD-B10-A002-003 and F-MD-B10-A002-004 wait for MD-B18-A002.",
+    "no_commit_or_push": true
+}

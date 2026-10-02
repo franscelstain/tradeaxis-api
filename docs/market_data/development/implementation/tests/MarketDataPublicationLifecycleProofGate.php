@@ -1,11 +1,19 @@
 <?php
 require_once __DIR__.'/MarketDataPublicationLifecycleProofSpec.php';
 require_once __DIR__.'/MarketDataB10MigrationStaticGate.php';
+require_once __DIR__.'/MarketDataB10SuccessorBinding.php';
 
 final class MarketDataPublicationLifecycleProofGate
 {
+    /**
+     * Overrides: rows, entries, families, evidence_payload (the predecessor evidence), relationships, and for the
+     * successor model successors, scopes (attempt => affected rule ids), successor_payloads (attempt => payload),
+     * evidence_dir, package_base. `successors => []` is the original MD-B10-A001 behaviour: one A001 evidence
+     * id binds every row.
+     */
     public static function validate(string $root, bool $bound = false, array $overrides = []): array
     {
+        $successors = array_key_exists('successors', $overrides) ? $overrides['successors'] : MarketDataB10SuccessorBinding::profiles();
         $rows = isset($overrides['rows']) ? $overrides['rows'] : MarketDataPublicationLifecycleTraceabilitySpec::rows($root);
         $denominator = array_values(array_filter($rows, static function ($r) {
             return ($r['active'] ?? '') === 'YES'
@@ -16,6 +24,7 @@ final class MarketDataPublicationLifecycleProofGate
         $entries = isset($overrides['entries']) ? $overrides['entries'] : MarketDataPublicationLifecycleProofSpec::entries($root);
         $families = isset($overrides['families']) ? $overrides['families'] : MarketDataPublicationLifecycleProofSpec::families();
         $errors = [];
+        $scopeMap = $bound ? MarketDataB10SuccessorBinding::scopeMap($root, $overrides, $errors) : [];
 
         if (count($denominator) !== MarketDataPublicationLifecycleProofSpec::EXPECTED_DENOMINATOR) {
             $errors[] = 'DENOMINATOR_MISMATCH: '.count($denominator);
@@ -42,7 +51,8 @@ final class MarketDataPublicationLifecycleProofGate
                 $errors[] = 'PREMATURE_EVIDENCE_BINDING: '.$rid;
             }
             if ($bound) {
-                if (! preg_match('/^E-MD-B10-A001-\d{3}$/', $evidence)) {
+                $pattern = MarketDataB10SuccessorBinding::patternFor($rid, $scopeMap, $successors);
+                if (! preg_match($pattern, $evidence)) {
                     $errors[] = 'BOUND_EVIDENCE_ID_INVALID: '.$rid.'='.$evidence;
                 }
             }
@@ -151,17 +161,57 @@ final class MarketDataPublicationLifecycleProofGate
         self::checkImplementationInvariants($root, $errors);
 
         if ($bound) {
-            $evidenceIds = array_values(array_unique(array_map(static function ($r) {
-                return trim((string) ($r['current_evidence_ids'] ?? ''));
-            }, $denominator)));
-            if (count($evidenceIds) !== 1 || ! preg_match('/^E-MD-B10-A001-\d{3}$/', $evidenceIds[0] ?? '')) {
-                $errors[] = 'BOUND_EVIDENCE_NOT_ATOMIC';
-            } else {
-                $payload = $overrides['evidence_payload'] ?? self::loadEvidence($root, $evidenceIds[0], $errors);
+            // Each attempt that owns rows binds them to exactly one evidence record: the predecessor to its own
+            // (every row outside a successor scope), each successor to the one that proved its reopened scope.
+            $groups = ['' => []];
+            foreach ($successors as $attempt => $_profile) {
+                $groups[$attempt] = [];
+            }
+            foreach ($denominator as $row) {
+                $owner = isset($scopeMap[(string) $row['rule_id']]) && isset($groups[$scopeMap[(string) $row['rule_id']]])
+                    ? $scopeMap[(string) $row['rule_id']] : '';
+                $groups[$owner][trim((string) ($row['current_evidence_ids'] ?? ''))] = true;
+            }
+            $relationships = isset($overrides['relationships']) && is_array($overrides['relationships'])
+                ? $overrides['relationships']
+                : (isset($overrides['evidence_dir']) || isset($overrides['package_base']) || isset($overrides['relationships_path'])
+                    ? MarketDataB10SuccessorBinding::loadRelationships(MarketDataB10SuccessorBinding::paths($root, $overrides)['relationships'])
+                    : self::loadRelationships($root));
+            foreach ($groups as $owner => $ids) {
+                $ids = array_keys($ids);
+                if ($owner !== '' && $ids === []) {
+                    continue;
+                }
+                $expectedPattern = $owner === '' ? MarketDataB10SuccessorBinding::PREDECESSOR_PATTERN : $successors[$owner]['evidence_pattern'];
+                if (count($ids) !== 1 || ! preg_match($expectedPattern, $ids[0] ?? '')) {
+                    $errors[] = 'BOUND_EVIDENCE_NOT_ATOMIC'.($owner === '' ? '' : ': '.$owner);
+                    continue;
+                }
+                if ($owner === '') {
+                    $payload = $overrides['evidence_payload'] ?? self::loadEvidence($root, $ids[0], $errors);
+                    if (is_array($payload)) {
+                        self::validateEvidencePayload($payload, $ids[0], $errors);
+                        self::validateBoundRelationships($relationships, $ids[0], $errors);
+                    }
+                    continue;
+                }
+                $profile = $successors[$owner];
+                $paths = MarketDataB10SuccessorBinding::paths($root, $overrides);
+                $payload = $overrides['successor_payloads'][$owner] ?? null;
+                if ($payload === null) {
+                    $payload = MarketDataB10SuccessorBinding::loadEvidence($paths['evidence_dir'], $ids[0], $errors)['payload'];
+                }
                 if (is_array($payload)) {
-                    self::validateEvidencePayload($payload, $evidenceIds[0], $errors);
-                    $relationships = $overrides['relationships'] ?? self::loadRelationships($root);
-                    self::validateBoundRelationships($relationships, $evidenceIds[0], $errors);
+                    $affected = array_keys(array_filter($scopeMap, static function ($attempt) use ($owner) { return $attempt === $owner; }));
+                    foreach (MarketDataB10SuccessorBinding::validateSuccessorEvidence($payload, $ids[0], $profile, $affected) as $e) {
+                        $errors[] = $e;
+                    }
+                    foreach (MarketDataB10SuccessorBinding::verifyPackage($payload, $paths, false) as $e) {
+                        $errors[] = $e;
+                    }
+                    foreach (MarketDataB10SuccessorBinding::verifyRelationships($relationships, $ids[0], $profile) as $e) {
+                        $errors[] = $e;
+                    }
                 }
             }
         }

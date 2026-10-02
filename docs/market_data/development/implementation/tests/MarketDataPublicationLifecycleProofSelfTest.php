@@ -7,11 +7,13 @@ $entries = MarketDataPublicationLifecycleProofSpec::entries($root);
 $families = MarketDataPublicationLifecycleProofSpec::families();
 $checks = [];
 
+// The closure state is recognised by status alone; which evidence record each row must carry is the gate's own job
+// (the predecessor's for every row outside a successor scope, the successor's inside it), so a state in which the
+// evidence is wrong still reaches the gate as bound and fails there.
 $mandatoryCurrent = MarketDataPublicationLifecycleTraceabilitySpec::mandatory($root);
 $boundControl = $mandatoryCurrent !== [];
 foreach ($mandatoryCurrent as $row) {
-    if (($row['coverage_status'] ?? '') !== 'SATISFIED'
-        || ! preg_match('/^E-MD-B10-A001-\d{3}$/', trim((string) ($row['current_evidence_ids'] ?? '')))) {
+    if (($row['coverage_status'] ?? '') !== 'SATISFIED') {
         $boundControl = false;
         break;
     }
@@ -91,12 +93,23 @@ function mdB10GoodRelationships(string $evidenceId): array
     ];
 }
 
+// Control for 6-8: in the original one-record model, a well-formed synthetic binding with good evidence passes.
+$legacyId = 'E-MD-B10-A001-998';
+$legacyControl = MarketDataPublicationLifecycleProofGate::validate($root, true, [
+    'rows' => mdB10SyntheticBoundRows($rows, $legacyId),
+    'evidence_payload' => mdB10GoodEvidence($legacyId),
+    'relationships' => mdB10GoodRelationships($legacyId),
+    'successors' => [],
+]);
+$checks['control_legacy_one_record_model_passes'] = $legacyControl['status'] === 'PASS';
+
 // 6. Evidence identity is malformed.
 $badId = 'BAD-EVIDENCE';
 $checks['malformed_evidence_identity'] = mdB10FailsClosed($root, [
     'rows' => mdB10SyntheticBoundRows($rows, $badId),
     'evidence_payload' => mdB10GoodEvidence($badId),
     'relationships' => mdB10GoodRelationships($badId),
+    'successors' => [],
 ], true);
 
 // 7. Evidence is stale/wrong attempt despite a syntactically valid ID.
@@ -107,6 +120,7 @@ $checks['stale_evidence_scope'] = mdB10FailsClosed($root, [
     'rows' => mdB10SyntheticBoundRows($rows, $eid),
     'evidence_payload' => $stale,
     'relationships' => mdB10GoodRelationships($eid),
+    'successors' => [],
 ], true);
 
 // 8. Current evidence is missing a required relationship to the CI.
@@ -116,6 +130,7 @@ $checks['invalid_evidence_relationship'] = mdB10FailsClosed($root, [
     'relationships' => [
         ['source_record_id' => $eid, 'target_record_id' => 'MD-B10-A001-BL001', 'relationship_type' => 'DEPENDS_ON'],
     ],
+    'successors' => [],
 ], true);
 
 // 9. Denominator is silently reduced.
@@ -191,11 +206,12 @@ foreach ($checks as $name => $passed) {
     }
 }
 
+$controls = count(array_filter(array_keys($checks), static function ($n) { return strpos($n, 'control') === 0; }));
 $result = [
     'status' => $failed === [] ? 'PASS' : 'FAIL',
     'total' => count($checks),
-    'controls' => 1,
-    'fail_closed_mutations' => count($checks) - 1,
+    'controls' => $controls,
+    'fail_closed_mutations' => count($checks) - $controls,
     'checks' => $checks,
     'failed_checks' => $failed,
 ];

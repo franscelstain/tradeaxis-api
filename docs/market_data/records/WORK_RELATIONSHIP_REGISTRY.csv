@@ -932,3 +932,62 @@ MD-REL-0930,CI-MD-B10-A002-001,E-MD-B10-A002-016,RELATED,Impact declaration iden
 MD-REL-0931,CI-MD-B10-A002-001,F-MD-B10-A002-005,RELATED,New finding disclosed; it is the single next executable work.,,2026-10-01T23:24:15+07:00,Same A002/BL001; no predicate promotion.
 MD-REL-0932,F-MD-B18-A002-023,E-MD-B10-A002-016,RELATED,The open finding records the reproof; remediation and re-proof remain.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
 MD-REL-0933,F-MD-B10-A002-002,E-MD-B10-A002-016,RELATED,Successor full-suite confirmation evidence.,,2026-10-01T23:25:37+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0934,E-MD-B10-A002-017,E-MD-B10-A002-016,DERIVED_FROM,Remediates the 25 incomplete rows that reproof found and re-evaluates all 56.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0935,E-MD-B10-A002-017,E-MD-B10-A002-001,DERIVED_FROM,Reproves the final 56-predicate affected scope that record fixed.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0936,E-MD-B10-A002-017,E-MD-B10-A002-010,RELATED,Extends the V2 artifact identity with the G1-G4 members and their negative proof.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0937,E-MD-B10-A002-017,E-MD-B10-A002-011,RELATED,Extends the correction comparison (G5) and proves the manifest members individually.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0938,E-MD-B10-A002-017,E-MD-B10-A002-012,RELATED,Reuses its production-path discipline for the new members.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0939,E-MD-B10-A002-017,E-MD-B10-A002-013,RELATED,Nested identities stay green and are bound by the artifact members proven here.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0940,E-MD-B10-A002-017,E-MD-B10-A002-015,DERIVED_FROM,Re-verifies the deployed state; no deployment repeated and none needed.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0941,E-MD-B10-A002-017,E-MD-B18-A002-087,CARRIED_FROM,The full suite re-runs its harness members.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0942,E-MD-B10-A002-017,E-MD-B18-A002-088,CARRIED_FROM,The full suite re-runs the replay identity fix.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0943,E-MD-B10-A002-017,F-MD-B10-A002-005,RELATED,Resolves the finding that owned the 25 incomplete rows.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0944,E-MD-B10-A002-017,F-MD-B10-A002-006,RELATED,Records the missing promotion mechanism it found.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0945,E-MD-B10-A002-017,F-MD-B10-A002-002,RELATED,Successor full-suite confirmation holds after the remediation.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0946,E-MD-B10-A002-017,F-MD-B10-A002-003,RELATED,Non-impact on the 56 holds; owner MD-B18-A002.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0947,E-MD-B10-A002-017,F-MD-B10-A002-004,RELATED,Non-impact on the 56 holds; owner MD-B18-A002.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0948,E-MD-B10-A002-017,F-MD-B18-A002-023,DEPENDS_ON,Remediation progress on the open semantic-hash finding.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0949,E-MD-B10-A002-017,D-MD-B10-A002-005,DEPENDS_ON,Executes the next canonical unit after the owner review.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0950,E-MD-B10-A002-017,D-MD-B10-A002-004,RELATED,Guard dispositions hold in the successor suite.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0951,E-MD-B10-A002-017,D-MD-B10-A002-003,RELATED,Knowledge-time rule 1B applied to sector membership revisions (G3).,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0952,E-MD-B10-A002-017,D-MD-B18-A002-004,DEPENDS_ON,Governs the seven oracle population controls classified as expected.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0953,E-MD-B10-A002-017,CI-MD-B10-A002-001,RELATED,Same mutable impact declaration records the remediation.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0954,E-MD-B10-A002-017,MD-B10-A002-BL001,RELATED,The same immutable remediation baseline is retained.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0955,F-MD-B10-A002-006,E-MD-B10-A002-017,DERIVED_FROM,Raised by the remediation reproof when promotion was attempted read-only.,,2026-10-02T03:38:43+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0956,F-MD-B10-A002-006,F-MD-B10-A002-005,RELATED,Promotion of the proven rows is the work left after that finding.,,2026-10-02T03:38:43+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0957,F-MD-B10-A002-006,F-MD-B18-A002-023,DEPENDS_ON,Gates the closure of the open semantic-hash finding.,,2026-10-02T03:38:43+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0958,F-MD-B10-A002-006,D-MD-B10-A002-005,DEPENDS_ON,Opened under the semantic-dependency rule and the owner review.,,2026-10-02T03:38:43+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0959,F-MD-B10-A002-006,CI-MD-B10-A002-001,RELATED,Same impact declaration; no parallel track.,,2026-10-02T03:38:43+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0960,F-MD-B10-A002-005,E-MD-B10-A002-017,DERIVED_FROM,Resolved by the remediation reproof.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0961,CI-MD-B10-A002-001,E-MD-B10-A002-017,RELATED,Impact declaration identifies the remediation reproof.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0962,CI-MD-B10-A002-001,F-MD-B10-A002-006,RELATED,New finding disclosed; it is the single next executable work.,,2026-10-02T03:38:43+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0963,F-MD-B18-A002-023,E-MD-B10-A002-017,RELATED,The open finding records the remediation; the governed promotion remains.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0964,F-MD-B10-A002-002,E-MD-B10-A002-017,RELATED,Successor full-suite confirmation evidence after remediation.,,2026-10-02T03:41:00+07:00,Same A002/BL001; no predicate promotion.
+MD-REL-0965,E-MD-B10-A002-018,E-MD-B10-A002-017,DERIVED_FROM,Promotes exactly the 56 predicates that evidence proved; no new semantic proof.,,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0966,E-MD-B10-A002-018,E-MD-B10-A002-001,DERIVED_FROM,The scope record fixes the affected set and the retained binding of each unaffected row that the binder enforces.,,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0967,E-MD-B10-A002-018,E-MD-B10-A001-001,CARRIED_FROM,"The 1016 unaffected rows keep this evidence binding, byte for byte.",,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0968,E-MD-B10-A002-018,SC-MD-B10-A001-001,RELATED,The predecessor closure stays immutable; its sufficiency for the 56 reopened rows is superseded by the A002 closure.,,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0969,E-MD-B10-A002-018,F-MD-B10-A002-006,REMEDIATES,"Delivers the governed successor binder, gates and self-test that finding required.",,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0970,E-MD-B10-A002-018,F-MD-B10-A002-001,REMEDIATES,"Reconciles the moved-row expectation to the measured zero, separately from the binder.",,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0971,E-MD-B10-A002-018,F-MD-B18-A002-023,REMEDIATES,Completes the revalidation and closure that finding requires of B10.,,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0972,E-MD-B10-A002-018,F-MD-B10-A002-005,RELATED,Its resolution is the proof that was promoted.,,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0973,E-MD-B10-A002-018,F-MD-B10-A002-002,RELATED,Successor full-suite confirmation (E017) is the closure control; not rerun.,,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0974,E-MD-B10-A002-018,F-MD-B10-A002-003,RELATED,Non-impact on the 56 holds; owner MD-B18-A002.,,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0975,E-MD-B10-A002-018,F-MD-B10-A002-004,RELATED,Non-impact on the 56 holds; owner MD-B18-A002.,,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0976,E-MD-B10-A002-018,D-MD-B10-A002-005,DEPENDS_ON,Executes the next canonical unit after the owner review.,,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0977,E-MD-B10-A002-018,CI-MD-B10-A002-001,RELATED,Same mutable impact declaration records the promotion.,,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0978,E-MD-B10-A002-018,MD-B10-A002-BL001,RELATED,The same immutable remediation baseline is retained.,,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0979,SC-MD-B10-A002-001,E-MD-B10-A002-018,DEPENDS_ON,Closure rests on the successor promotion evidence.,,2026-10-02T08:28:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0980,SC-MD-B10-A002-001,E-MD-B10-A002-017,DEPENDS_ON,Closure rests on the executed proof of the 56 reopened predicates.,,2026-10-02T08:28:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0981,SC-MD-B10-A002-001,E-MD-B10-A002-001,DEPENDS_ON,Closure is measured against the final affected scope.,,2026-10-02T08:28:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0982,SC-MD-B10-A002-001,E-MD-B10-A001-001,CARRIED_FROM,The 1016 retained rows keep this evidence binding.,,2026-10-02T08:28:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0983,SC-MD-B10-A002-001,SC-MD-B10-A001-001,RELATED,Successor closure of the same stage; the predecessor stays immutable.,,2026-10-02T08:28:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0984,SC-MD-B10-A002-001,MD-B10-A002-BL001,DEPENDS_ON,Closure is measured against the retained successor baseline.,,2026-10-02T08:28:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0985,SC-MD-B10-A002-001,CI-MD-B10-A002-001,DEPENDS_ON,Closure includes the full impact scope and remediation lineage.,,2026-10-02T08:28:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0986,SC-MD-B10-A002-001,SC-MD-B09-A003-001,DEPENDS_ON,MD-B10 closure follows the closed MD-B09 predecessor stage; B09 contributes no inherited B10 predicate proof.,,2026-10-02T08:28:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0987,F-MD-B10-A002-006,E-MD-B10-A002-018,DERIVED_FROM,Resolved by the successor promotion mechanism.,,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0988,F-MD-B10-A002-001,E-MD-B10-A002-018,DERIVED_FROM,Resolved by the reconciled moved-row expectation.,,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0989,F-MD-B18-A002-023,E-MD-B10-A002-018,DERIVED_FROM,Resolved by the governed promotion and the B10 closure.,,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0990,F-MD-B18-A002-023,SC-MD-B10-A002-001,RELATED,The B10 closure the finding required.,,2026-10-02T08:28:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0991,CI-MD-B10-A002-001,E-MD-B10-A002-018,RELATED,Impact declaration identifies the promotion evidence.,,2026-10-02T08:27:26+07:00,Same A002/BL001; governed successor promotion and closure.
+MD-REL-0992,CI-MD-B10-A002-001,SC-MD-B10-A002-001,RELATED,Impact declaration identifies the stage closure.,,2026-10-02T08:28:26+07:00,Same A002/BL001; governed successor promotion and closure.

@@ -257,6 +257,39 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
 
 
+    /**
+     * F-MD-B10-A002-005 G2 through the production pipeline: the indicator producer assigns the ATR
+     * recursive-state reference, the artifact repository persists it beside the ATR value, and the
+     * reference follows the chain. The unit-level producer test covers the formula inputs; this
+     * proves the value reaches the stored current and history rows.
+     */
+    public function test_run_daily_persists_the_atr_state_reference_with_the_atr_value_and_it_follows_the_chain(): void
+    {
+        $references = [];
+        foreach (['stable' => 100.0, 'shifted chain' => 100.5] as $label => $startClose) {
+            $this->bootMarketDataSqlite();
+            Carbon::setTestNow('2026-03-25 10:30:00');
+            $this->seedMarketCalendarRange('2025-01-01', '2026-12-31');
+            $this->seedTicker(1, 'BBCA');
+            $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, $startClose, 1000);
+            $this->writeBarsFixture('2026-03-20', [[
+                'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20', 'open' => 121, 'high' => 125, 'low' => 120,
+                'close' => 124, 'volume' => 2000, 'adj_close' => 124, 'captured_at' => '2026-03-20T17:20:00+07:00',
+            ]]);
+
+            $run = $this->makePipeline()->runDaily('2026-03-20', 'manual_file');
+            $this->assertSame('SUCCESS', $run->terminal_status, $label);
+
+            $current = DB::table('eod_indicators')->where('trade_date', '2026-03-20')->first();
+            $history = DB::table('eod_indicators_history')->where('publication_id', $run->publication_id)->first();
+            $this->assertNotNull($current->atr14, $label.': precondition, an ATR value was published');
+            $this->assertMatchesRegularExpression('/^atr-state\/v1:[a-f0-9]{64}$/', (string) $current->atr_state_ref, $label);
+            $this->assertSame($current->atr_state_ref, $history->atr_state_ref, $label.': current and history agree');
+            $references[$label] = [$current->atr_state_ref];
+        }
+
+        $this->assertNotSame($references['stable'][0], $references['shifted chain'][0], 'a different chain is a different reference');
+    }
     public function test_promote_daily_without_force_replace_holds_when_valid_current_exists(): void
     {
         $this->seedTicker(1, 'BBCA');

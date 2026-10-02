@@ -141,6 +141,8 @@ class IndicatorVectorService
             'adv20_close_volume_proxy_idr' => $values['adv20_close_volume_proxy_idr'],
             'adv20_traded_value_idr_actual' => $values['adv20_traded_value_idr_actual'],
             'atr14' => $values['atr14'],
+            // A quarantined ATR is withdrawn together with the chain reference that identified it.
+            'atr_state_ref' => $values['atr14'] !== null ? ($values['atr_state_ref'] ?? null) : null,
             'atr14_pct' => $values['atr14_pct'],
             'vol_ratio' => $values['vol_ratio'],
             'roc5' => $values['roc5'],
@@ -314,7 +316,8 @@ class IndicatorVectorService
         $currentBar = $bars[$index];
         $priceBasisCurrent = $this->priceBasis($currentBar, $config);
         $dv20Idr = $this->averageTurnover($rawBars, $index, $dvWindow, $config);
-        $atr = $this->wilderAtr($bars, $index, $atrWindow, $config, $atrSeries);
+        $atrState = $this->wilderAtr($bars, $index, $atrWindow, $config, $atrSeries);
+        $atr = $atrState === null ? null : $atrState['atr'];
         $priorVolAverage = $this->priorVolumeAverage($bars, $index, $volLookback);
         $hh20 = $this->windowExtreme($bars, $index, $hhWindow, 'high', 'max');
         $ll20 = $this->windowExtreme($bars, $index, $hhWindow, 'low', 'min');
@@ -350,6 +353,14 @@ class IndicatorVectorService
              * was permanently NULL in a column the artifact hash already knew the scale of.
              */
             'atr14' => $atr !== null ? round($atr, 10) : null,
+            /*
+             * Indicator_Registry_Baseline_LOCKED.md:47 and EOD_Indicators_Formula_Spec.md:63-71
+             * allow either persisted versioned state or recomputation from the stable chain. This
+             * runtime recomputes, so the reference identifies the chain the value was recomputed
+             * from. Audit_Hash_and_Reproducibility_Contract_LOCKED.md:75 requires it beside the
+             * ATR value.
+             */
+            'atr_state_ref' => $atrState === null ? null : $atrState['ref'],
             'atr14_pct' => $atr !== null && $priceBasisCurrent > 0 ? round($atr / $priceBasisCurrent, 10) : null,
             'vol_ratio' => $priorVolAverage !== null
                 && $priorVolAverage > 0
@@ -964,7 +975,37 @@ class IndicatorVectorService
             $atr = (($atr * ($window - 1)) + $trValues[$i]) / $window;
         }
 
-        return $atr;
+        return ['atr' => $atr, 'ref' => $this->atrStateReference($bars, $index, $window, $config)];
+    }
+
+    /**
+     * Content-addressed identity of the recursion chain an ATR value was recomputed from: the window,
+     * the formula version and every (date, high, low, close) the recursion consumed, in order. The
+     * first entry is the seed boundary, so a loaded-window fallback and a stable series from the
+     * dataset boundary name different chains. A changed historical true range, a different seed
+     * boundary or a different price basis changes it; an input change the rounded ATR does not show
+     * still does. No local id enters.
+     */
+    private function atrStateReference(array $bars, $index, $atrWindowDays, array $config): string
+    {
+        $chain = [];
+        for ($i = 0; $i <= $index; $i++) {
+            // Bar 0 only supplies the first previous close; its high and low never reach a true range.
+            $chain[] = [
+                (string) $bars[$i]['trade_date'],
+                $i === 0 ? null : sprintf('%.10F', (float) $bars[$i]['high']),
+                $i === 0 ? null : sprintf('%.10F', (float) $bars[$i]['low']),
+                sprintf('%.10F', $this->priceBasis($bars[$i], $config)),
+            ];
+        }
+
+        return 'atr-state/v1:'.hash('sha256', json_encode([
+            'schema' => 'market-data-atr-recursive-state/v1',
+            'method' => 'WILDER_STABLE_SEED',
+            'atr_window_days' => (int) $atrWindowDays,
+            'formula_version' => (string) ($config['formula_version'] ?? $config['set_version'] ?? ''),
+            'chain' => $chain,
+        ], JSON_UNESCAPED_SLASHES));
     }
 
     private function priorVolumeAverage(array $bars, $index, $lookback)

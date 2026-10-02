@@ -4,9 +4,9 @@
 - Stage / Attempt / Baseline / Epoch: MD-B10 / MD-B10-A002 / MD-B10-A002-BL001 / MD-REBASELINE-20260820-001
 - Raised: 2026-10-01T23:24:15+07:00
 - Severity: P1 - blocks promotion of the 56 affected predicates and B10 successor closure
-- Status: OPEN
+- Status: RESOLVED - remediated and proven by E-MD-B10-A002-017; promotion of the 56 is blocked by F-MD-B10-A002-006, not by this finding
 - Class: PROOF_AND_IMPLEMENTATION_GAP
-- Related: E-MD-B10-A002-016, E-MD-B10-A002-015, E-MD-B10-A002-013, E-MD-B10-A002-012, E-MD-B10-A002-011, E-MD-B10-A002-010, E-MD-B10-A002-001, F-MD-B18-A002-023, CI-MD-B10-A002-001, MD-DEP-0020, MD-DEP-0021
+- Related: E-MD-B10-A002-017, E-MD-B10-A002-016, E-MD-B10-A002-015, E-MD-B10-A002-013, E-MD-B10-A002-012, E-MD-B10-A002-011, E-MD-B10-A002-010, E-MD-B10-A002-001, F-MD-B18-A002-023, CI-MD-B10-A002-001, MD-DEP-0020, MD-DEP-0021
 - Remediation owner: MD-B10-A002 (B10-owned; same attempt, baseline and impact declaration)
 
 ## Observed
@@ -56,3 +56,19 @@ Changing the V2 payloads invalidates the hash expectations of `E010`-`E013`, so 
 ## Orchestration
 
 Opened by the reproof under `MD-DEP-0021` and `MD-DEP-0020`; both stay BLOCKING. It creates the single next executable work for MD-B10-A002 and pauses nothing already paused (R0025 and F-018 stay paused).
+
+## Resolution
+
+Resolved 2026-10-02T03:41:00+07:00 by `E-MD-B10-A002-017`, in the same A002 / BL001 / CI, with no new attempt and no new baseline.
+
+| Gap | Resolution | Proof |
+|---|---|---|
+| G1 | Each V2 bar binds its own `source_timestamp` and `acquired_at`. A null is bound as null. | Stored rows through `hashStoredArtifact` in two databases with different allocation; each timestamp moves only the bars hash; swapping `acquired_at` or `source_timestamp` between listings is detected. |
+| G2 | `IndicatorVectorService` assigns `atr_state_ref`, a content hash of the Wilder recursion chain the value was recomputed from (window, formula version, every date, high, low and close basis consumed). It is withdrawn with a quarantined ATR. V2 refuses an ATR value without its reference and a reference without a value. | `IndicatorAtrStateReferenceTest` on the production row builder, and a full `runDaily` pipeline test that reads the stored current and history rows. |
+| G3 | V2 indicators bind `sector_membership_revision_hash`, the content hash of the membership revision used (including its knowledge time and the revision it supersedes), with no local id. Revisions after the run cutoff, non-authoritative revisions, another listing, another sector code, a missing revision and a supersession cycle are refused. | Stored `ticker_sector_memberships` rows through the production loader in two databases with different membership ids. |
+| G4 | V2 eligibility binds `freshness_state`, normalised as the manifest normalises it; an unevaluated or unknown state is `NOT_AVAILABLE` and never `FRESH`. | Run objects with each state through `hashStoredArtifact`; only the eligibility hash moves. |
+| G5 | `PublicationDiffService` compares the V2 calendar revision binding as well; an unresolved binding is `INVALID`, never `UNCHANGED`; V1 and mixed profiles are unchanged. | `PublicationCorrectionCalendarBindingTest` on real publication and lineage rows. |
+
+The missing negative proof is closed. All 106 V2 artifact members (the four new ones included) and all 35 manifest members turn a covering test red when removed, 41 artifact members by a behavioural test and 65 by the column-coverage guard (membership only). The duplicate semantic key refusal has its own test and probe. The eleven predicates and their mechanisms are listed in the evidence.
+
+Criteria: G1 to G5 implemented and proven; the eleven negative proofs discriminating; the affected rows re-evaluated (56 of 56 `PROVEN_CURRENT`, no regression among the prior 31); no new gap in these rows. The successor full suite ran on the remediated code. `F-MD-B10-A002-006` records the one remaining blocker, and it is about promotion, not about these rows.

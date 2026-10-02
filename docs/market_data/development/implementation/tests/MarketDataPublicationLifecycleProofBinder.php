@@ -89,6 +89,8 @@ if ($seen !== MarketDataPublicationLifecycleProofSpec::EXPECTED_DENOMINATOR) {
 $boundResult = MarketDataPublicationLifecycleProofGate::validate($root, true, [
     'rows' => $rows,
     'evidence_payload' => $payload,
+    // MD-B10-A001 binds all 1072 rows to one A001 record; successor attempts bind through MarketDataB10SuccessorBinder.
+    'successors' => [],
 ]);
 if ($boundResult['status'] !== 'PASS') {
     throw new RuntimeException('B10 bound validation failed: '.implode('; ', $boundResult['errors']));

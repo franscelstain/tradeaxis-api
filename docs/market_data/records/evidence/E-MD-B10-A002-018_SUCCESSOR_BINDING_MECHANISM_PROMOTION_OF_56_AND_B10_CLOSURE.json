@@ -1,0 +1,437 @@
+{
+    "evidence_id": "E-MD-B10-A002-018",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B10",
+    "attempt_id": "MD-B10-A002",
+    "work_id": "MD-B10-A002",
+    "baseline_id": "MD-B10-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "change_impact_declaration": "CI-MD-B10-A002-001",
+    "issued_at": "2026-10-02T08:27:26+07:00",
+    "verdict": "SUCCESSOR_BINDING_MECHANISM_IMPLEMENTED_PROVEN_56_ROWS_PROMOTED_B10_CLOSURE_CRITERIA_MET",
+    "checkpoint_verdict": "READY TO RETURN TO B18/R0025",
+    "b10_result": "A. GOVERNED PROMOTION COMPLETE — B10 CLOSED",
+    "supersedes": [],
+    "related_findings": [
+        "F-MD-B10-A002-006",
+        "F-MD-B10-A002-001",
+        "F-MD-B10-A002-005",
+        "F-MD-B10-A002-002",
+        "F-MD-B10-A002-003",
+        "F-MD-B10-A002-004",
+        "F-MD-B18-A002-023"
+    ],
+    "related_evidence": [
+        "E-MD-B10-A002-017",
+        "E-MD-B10-A002-016",
+        "E-MD-B10-A002-015",
+        "E-MD-B10-A002-013",
+        "E-MD-B10-A002-012",
+        "E-MD-B10-A002-011",
+        "E-MD-B10-A002-010",
+        "E-MD-B10-A002-001",
+        "E-MD-B10-A001-001",
+        "SC-MD-B10-A001-001",
+        "CI-MD-B10-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B10-A002-005",
+        "D-MD-B10-A002-003",
+        "D-MD-B10-A002-001"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0021",
+        "MD-DEP-0020",
+        "MD-DEP-0019"
+    ],
+    "scope": "Governed successor promotion tooling only. No production, schema, strategy, runtime or test-of-product change; E-MD-B10-A002-017 already holds the successor implementation and its full-suite result.",
+    "current_binder_defect": {
+        "tool": "MarketDataPublicationLifecycleProofBinder with MarketDataPublicationLifecycleProofGate, MarketDataPublicationLifecycleTraceabilityGate and MarketDataPublicationLifecycleProofSelfTest",
+        "technical_hard_coding": [
+            "attempt identity: the binder, the proof spec and the gates name MD-B10-A001 / MD-B10-A001-BL001 / CI-MD-B10-A001-001",
+            "evidence id: --evidence-id accepted only /^E-MD-B10-A001-\\d{3}$/, and the gates matched the same pattern for every bound row",
+            "one record: BOUND_EVIDENCE_NOT_ATOMIC required exactly one distinct evidence id across all 1072 rows",
+            "pristine start: the binder refused any row that was not NOT_ASSESSED with no evidence (so 1016 satisfied rows were \"non-pristine\" and 56 rows could never be bound alone)",
+            "denominator-wide write: it rebound every denominator row and rewrote the matrix through fputcsv, which re-quotes lines other tools had written differently",
+            "evidence payload validation: attempt, baseline, change impact and mandatory_satisfied=1072 were constants of A001",
+            "moved-row expectation: EXPECTED_MOVED = 1 although the measured value is 0 (F-MD-B10-A002-001)",
+            "self-test control: the bound control was recognised by the A001 evidence pattern"
+        ],
+        "governance_semantics": [
+            "a bound B10 row needs current correlation-first evidence tied to a valid Attempt/Baseline/Epoch (traceability standard section 6)",
+            "a prior SATISFIED carries forward only when the existing evidence still proves the exact predicate, otherwise the row is NOT_ASSESSED until re-proven (section 9)",
+            "closure needs every denominator row SATISFIED (stage closure manifest standard)",
+            "the denominator stays 1072 and no row of another stage may change"
+        ],
+        "separation": "Only the first list was changed. Nothing in the second list was relaxed: every semantic is still enforced, now per owning attempt."
+    },
+    "governance_successor_binding_model": {
+        "answer": "B. CURRENT AUTHORITY DEFINES THE REBINDING, BUT THE TOOLING DID NOT IMPLEMENT IT",
+        "basis": [
+            "STRATEGY_IMPLEMENTATION_TRACEABILITY_STANDARD.md section 6 and section 9 define what makes a row SATISFIED and when a prior SATISFIED may be carried forward or returns to NOT_ASSESSED to be re-proven",
+            "E-MD-B10-A002-001 is the governed successor scope record: per predicate it fixes required_current_status and current_evidence_binding (1016 unaffected stay SATISFIED on E-MD-B10-A001-001, 56 affected are NOT_ASSESSED) and CI-MD-B10-A002-001 retains the A002/BL001 attempt",
+            "STAGE_CLOSURE_MANIFEST_STANDARD.md requires every denominator row SATISFIED at closure and lists the governed evidence ids (plural)",
+            "precedent in the canonical matrix: MD-B07, MD-B08, MD-B09, MD-B11 and MD-B12 closed with rows bound to evidence of more than one attempt (for example MD-B11: 138 on A001, 34 on A002, 30 on A003), through binders that select the evidence per row from a remediated-rule set"
+        ],
+        "why_not_A": "No governance document describes the tool or the sequence for a subset; the rules above define the end state and the evidence each row needs, not the mechanism.",
+        "why_not_C": "Authority is not silent: sections 6 and 9 plus E-MD-B10-A002-001 determine every row's required state and evidence. Atomicity is a safety property of the writer (the user invariants and section 10 \"no pass-by-matrix manipulation\"), not new promotion semantics.",
+        "why_not_D": "Nothing requires a rebinding of the 1016: section 9 permits carry-forward, and E-MD-B10-A002-001 records each retained binding with its reason.",
+        "no_owner_decision_needed": true
+    },
+    "f001_relationship": {
+        "answer": "B for promotion, with a consequence for closure: a separate pre-existing tooling defect that does not prevent a valid successor binding; the B10 traceability gate cannot pass in bound mode while it stands, so it was reconciled separately and not folded into F-MD-B10-A002-006",
+        "defect": "MarketDataPublicationLifecycleTraceabilitySpec::EXPECTED_MOVED was 1; the measured number of active rows owned by another stage that name MD-B10 as supporting is 0 at HEAD 800774357215eb86489a3750bc25c26abe26fe1b and on the current matrix",
+        "resolution": "EXPECTED_MOVED = 0. The other expectations (denominator 1072, optional 1, reference 239, pending 0, mandatory states) are still enforced. A genuinely moved row still fails closed (self-test cases f001_*, probes G04 and G05). No matrix row was added or changed for it.",
+        "stage_entry_message": "The traceability gate default mode still reports B10 stage-entry rows must be NOT_ASSESSED; that is the PRE_RUNTIME mode and is not a closure check. Closure uses --bound."
+    },
+    "successor_binder_design": {
+        "files": {
+            "docs/market_data/development/implementation/tests/MarketDataB10SuccessorBinding.php": "NEW: the successor-binding library (scope, evidence, package and relationship verification, plan, atomic apply)",
+            "docs/market_data/development/implementation/tests/MarketDataB10SuccessorBinder.php": "NEW: the CLI (validate-only by default, --apply, test hooks on temporary copies only)",
+            "docs/market_data/development/implementation/tests/MarketDataB10SuccessorBinderSelfTest.php": "NEW: drives the real binder process against temporary copies; controls first",
+            "docs/market_data/development/implementation/tests/MarketDataPublicationLifecycleProofGate.php": "successor-aware bound mode (one evidence record per owning attempt); legacy model when successors is []",
+            "docs/market_data/development/implementation/tests/MarketDataPublicationLifecycleTraceabilityGate.php": "successor-aware bound mode; rows/successors overrides",
+            "docs/market_data/development/implementation/tests/MarketDataPublicationLifecycleTraceabilitySpec.php": "EXPECTED_MOVED reconciled 1 -> 0 (F-MD-B10-A002-001); mandatoryFrom()",
+            "docs/market_data/development/implementation/tests/MarketDataPublicationLifecycleProofBinder.php": "A001 binder pinned to the legacy one-record model (successors => [])",
+            "docs/market_data/development/implementation/tests/MarketDataPublicationLifecycleProofSelfTest.php": "bound control by status; legacy-model control; the three evidence-shape mutations run in the legacy model"
+        },
+        "attempt_and_baseline": "a registry of successor attempts (MD-B10-A002 / MD-B10-A002-BL001 / CI-MD-B10-A002-001) with its scope evidence and evidence-id pattern; an unregistered attempt, the predecessor, or an evidence id of another attempt is refused",
+        "affected_set": "derived from the governed scope evidence (affected_current_predicates), cross-checked against the successor evidence matrix; nothing is hard-coded to 56 or to E017",
+        "unaffected_preservation": "every unaffected row must be SATISFIED on exactly the evidence the scope record names for it, and every non-affected line is emitted byte-for-byte (a line written by a different tool keeps its own quoting style; a line neither style reproduces is refused)",
+        "evidence": "immutable; attempt/baseline/change impact/epoch/freeze match the registry; result_counts PROVEN_CURRENT equals the affected count with no INCOMPLETE/BLOCKED/AUTHORITY_GAP; its matrix proves exactly the affected rules; related to the scope evidence; relationships to its baseline, change impact and scope evidence registered; the raw package manifest hash and every member hash match, and no unlisted member exists",
+        "atomicity": "plan first with the B10 proof and traceability gates run on the planned post-state; the temporary file is hash-verified, replaces the matrix, is read back and run through the gates again; any failure restores the original bytes; failure injection exists only on a non-canonical matrix and with MD_B10_BINDER_TEST=1",
+        "idempotence": "an already promoted state is reported as already bound and nothing is written; a partial state is refused",
+        "a001_behaviour": "preserved: with no successor registry (successors => []) the gates keep the original one-record model, and the A001 binder is pinned to it"
+    },
+    "validate_only_result": {
+        "canonical": {
+            "mode": "VALIDATE_ONLY",
+            "status": "PASS",
+            "attempt": "MD-B10-A002",
+            "evidence_id": "E-MD-B10-A002-017",
+            "canonical_matrix": true,
+            "already_bound": false,
+            "diagnostics": {
+                "denominator": 1072,
+                "affected": 56,
+                "affected_not_assessed": 56,
+                "affected_already_on_successor": 0,
+                "unaffected_satisfied_on_predecessor": 1016,
+                "unaffected_unexpected": 0,
+                "matrix_lines": 6501,
+                "planned_changed_lines": 56,
+                "post_state_satisfied": 1072
+            },
+            "errors": [],
+            "planned_changed_rules": 56,
+            "matrix_sha256_before": "fc07966ebaef23d3a8184984bbd2d82d9487e1450e5eea74a0faeb5af8be0476",
+            "matrix_sha256_planned_after": "61aa831c9f4fad62267f95899b4c3b0a188e22fc9c9c38ce77df53e866720d4f",
+            "note": "Nothing was written. Pass --apply to promote exactly the planned rules."
+        },
+        "raw": "validate-only/validate_only_canonical.json"
+    },
+    "negative_and_atomicity_proof": {
+        "self_test_before_promotion": {
+            "status": "PASS",
+            "total": 53,
+            "controls": 7,
+            "fail_closed_cases": 46,
+            "raw": "selftest/binder_selftest_run3.json"
+        },
+        "self_test_after_promotion": {
+            "status": "PASS",
+            "total": 54,
+            "controls": 8,
+            "fail_closed_cases": 46,
+            "note": "run against the pristine pre-promotion matrix; adds the control that the promoted canonical matrix is recognised as already bound",
+            "raw": "selftest/binder_selftest_after_promotion.json"
+        },
+        "cases": [
+            "control_validate_only_passes_and_writes_nothing",
+            "control_apply_promotes_exactly_the_reopened_rules",
+            "control_apply_end_state_is_1072_satisfied_with_the_successor_evidence_on_the_reopened_rows",
+            "control_apply_changes_only_the_three_governed_fields",
+            "control_apply_is_idempotent",
+            "control_post_state_satisfies_the_b10_proof_gate_bound",
+            "control_post_state_satisfies_the_b10_traceability_gate_bound",
+            "wrong_attempt_not_registered",
+            "predecessor_attempt_is_not_a_successor",
+            "invalid_evidence_id",
+            "predecessor_evidence_id_refused",
+            "wrong_baseline_in_successor_evidence",
+            "wrong_attempt_in_successor_evidence",
+            "wrong_change_impact_in_successor_evidence",
+            "successor_evidence_not_immutable",
+            "only_55_of_56_proven_in_the_evidence",
+            "evidence_proves_a_57th_rule",
+            "one_affected_rule_not_proven_in_the_evidence",
+            "evidence_counts_report_an_incomplete_rule",
+            "scope_record_lists_only_55_affected",
+            "scope_record_adds_an_unaffected_rule_as_57th",
+            "one_affected_row_already_satisfied_on_the_predecessor",
+            "one_affected_row_in_an_unknown_status",
+            "partial_promotion_state_is_refused",
+            "denominator_mismatch_one_mandatory_row_deactivated",
+            "unaffected_row_evidence_rewritten",
+            "unaffected_row_returned_to_not_assessed",
+            "unaffected_row_bound_to_the_successor_evidence",
+            "matrix_has_crlf_line_endings",
+            "successor_evidence_not_correlated_to_its_baseline",
+            "corrupted_manifest_hash_in_the_evidence",
+            "missing_raw_package_linkage",
+            "missing_successor_evidence_record",
+            "package_member_modified_after_issue",
+            "package_gains_an_unlisted_member",
+            "failure_injected_after_temp_rolls_back_to_the_original_bytes",
+            "failure_injected_after_rename_rolls_back_to_the_original_bytes",
+            "failure_injected_after_readback_rolls_back_to_the_original_bytes",
+            "failure_injection_is_refused_outside_the_test_environment",
+            "plan_is_refused_when_the_post_state_gates_fail",
+            "post_write_verification_failure_restores_the_original_bytes",
+            "a_matrix_that_changed_since_the_plan_is_not_overwritten",
+            "gate_refuses_a_reopened_rule_left_on_the_predecessor_evidence",
+            "gate_refuses_an_unaffected_rule_bound_to_the_successor_evidence",
+            "gate_refuses_two_successor_evidence_ids",
+            "gate_refuses_a_not_assessed_row_in_the_closure_state",
+            "traceability_gate_refuses_a_successor_row_without_successor_evidence",
+            "f001_moved_count_is_zero_on_the_canonical_shape",
+            "f001_a_genuinely_moved_row_still_fails_closed",
+            "f001_the_other_traceability_counts_are_still_enforced",
+            "a001_legacy_mode_all_rows_on_one_a001_record_still_passes_the_traceability_gate",
+            "a001_legacy_mode_still_refuses_a_malformed_evidence_binding",
+            "canonical_matrix_was_never_written"
+        ],
+        "mutation_probes": {
+            "count": 32,
+            "verdicts": {
+                "RED_INTENDED": 32
+            },
+            "each": {
+                "P01_denominator_check_removed": "RED_INTENDED",
+                "P02_affected_row_state_not_reported": "RED_INTENDED",
+                "P03_partial_promotion_check_removed": "RED_INTENDED",
+                "P04_unaffected_row_check_removed": "RED_INTENDED",
+                "P05_evidence_immutability_not_checked": "RED_INTENDED",
+                "P06_rule_proven_result_not_checked": "RED_INTENDED",
+                "P07_missing_rules_not_checked": "RED_INTENDED",
+                "P08_extra_rules_not_checked": "RED_INTENDED",
+                "P09_result_counts_not_checked": "RED_INTENDED",
+                "P10_evidence_baseline_not_checked": "RED_INTENDED",
+                "P11_evidence_change_impact_not_checked": "RED_INTENDED",
+                "P12_evidence_attempt_not_checked": "RED_INTENDED",
+                "P13_scope_counts_not_cross_checked": "RED_INTENDED",
+                "P14_package_manifest_hash_not_checked": "RED_INTENDED",
+                "P15_package_members_not_verified": "RED_INTENDED",
+                "P16_package_member_set_not_checked": "RED_INTENDED",
+                "P17_relationships_not_checked": "RED_INTENDED",
+                "P18_crlf_not_refused": "RED_INTENDED",
+                "P19_no_rollback_after_failure": "RED_INTENDED",
+                "P20_failure_injection_allowed_anywhere": "RED_INTENDED",
+                "P21_matrix_drift_since_plan_not_checked": "RED_INTENDED",
+                "P22_post_state_gates_ignored_in_plan": "RED_INTENDED",
+                "P23_post_write_verification_skipped": "RED_INTENDED",
+                "P24_idempotent_shortcut_removed": "RED_INTENDED",
+                "P25_changed_field_set_widened": "RED_INTENDED",
+                "P26_every_rule_rebound_not_only_the_reopened_ones": "RED_INTENDED",
+                "G01_proof_gate_demands_the_predecessor_pattern_for_every_row": "RED_INTENDED",
+                "G02_proof_gate_does_not_require_one_record_per_attempt": "RED_INTENDED",
+                "G03_traceability_gate_demands_the_predecessor_pattern_for_every_row": "RED_INTENDED",
+                "G04_moved_count_expectation_reverted_to_one": "RED_INTENDED",
+                "G05_moved_rows_not_counted": "RED_INTENDED",
+                "G06_successor_scope_ignored_by_the_gate": "RED_INTENDED"
+            },
+            "restored_byte_identical": true,
+            "first_pass": "The first pass caught 30 of 32: P01 (a removed denominator check hidden behind the closure gate that repeats the error) and G04 (a reverted moved-count expectation the f001 check could not see). Both were weaknesses of the self-test, not of the binder: the diagnostic must now be the one the binder itself raises, and the f001 case rejects any moved-count error. First and second passes are retained in the package.",
+            "first_pass_not_caught": [
+                "P01_denominator_check_removed",
+                "G04_moved_count_expectation_reverted_to_one"
+            ]
+        },
+        "proof_of_old_gate_behaviour": {
+            "b10_proof_self_test": {
+                "status": "PASS",
+                "total": 16,
+                "controls": 2
+            }
+        }
+    },
+    "promotion_result": {
+        "executed": true,
+        "command": "php docs/market_data/development/implementation/tests/MarketDataB10SuccessorBinder.php --attempt=MD-B10-A002 --evidence-id=E-MD-B10-A002-017 --apply",
+        "apply": {
+            "mode": "APPLY",
+            "status": "PASS",
+            "attempt": "MD-B10-A002",
+            "evidence_id": "E-MD-B10-A002-017",
+            "canonical_matrix": true,
+            "already_bound": false,
+            "diagnostics": {
+                "denominator": 1072,
+                "affected": 56,
+                "affected_not_assessed": 56,
+                "affected_already_on_successor": 0,
+                "unaffected_satisfied_on_predecessor": 1016,
+                "unaffected_unexpected": 0,
+                "matrix_lines": 6501,
+                "planned_changed_lines": 56,
+                "post_state_satisfied": 1072
+            },
+            "errors": [],
+            "planned_changed_rules": 56,
+            "matrix_sha256_before": "fc07966ebaef23d3a8184984bbd2d82d9487e1450e5eea74a0faeb5af8be0476",
+            "matrix_sha256_planned_after": "61aa831c9f4fad62267f95899b4c3b0a188e22fc9c9c38ce77df53e866720d4f",
+            "write": {
+                "applied": true,
+                "rolled_back": false,
+                "errors": []
+            },
+            "matrix_sha256_after": "61aa831c9f4fad62267f95899b4c3b0a188e22fc9c9c38ce77df53e866720d4f"
+        },
+        "verification": {
+            "matrix_sha256_before": "fc07966ebaef23d3a8184984bbd2d82d9487e1450e5eea74a0faeb5af8be0476",
+            "matrix_sha256_after": "61aa831c9f4fad62267f95899b4c3b0a188e22fc9c9c38ce77df53e866720d4f",
+            "bytes_before": 5260293,
+            "bytes_after": 5278093,
+            "data_lines_before": 6501,
+            "data_lines_after": 6501,
+            "header_identical": true,
+            "lines_byte_identical": 6445,
+            "lines_changed": 56,
+            "changed_rules_equal_the_reopened_scope": true,
+            "changed_fields": {
+                "coverage_status": 56,
+                "current_evidence_ids": 56,
+                "notes": 56
+            },
+            "only_governed_fields_changed": true,
+            "before": {
+                "mandatory": 1072,
+                "SATISFIED": 1016,
+                "NOT_ASSESSED": 56,
+                "other": 0
+            },
+            "after": {
+                "mandatory": 1072,
+                "SATISFIED": 1072,
+                "NOT_ASSESSED": 0,
+                "other": 0
+            },
+            "unaffected_1016_rows_byte_identical": 1016,
+            "every_other_matrix_line_byte_identical": true,
+            "foreign_stage_rows_changed": 0,
+            "errors": [],
+            "status": "PASS"
+        },
+        "before": {
+            "mandatory": 1072,
+            "SATISFIED": 1016,
+            "NOT_ASSESSED": 56,
+            "other": 0
+        },
+        "after": {
+            "mandatory": 1072,
+            "SATISFIED": 1072,
+            "NOT_ASSESSED": 0,
+            "other": 0
+        },
+        "rows_changed": 56,
+        "matrix_sha256_before": "fc07966ebaef23d3a8184984bbd2d82d9487e1450e5eea74a0faeb5af8be0476",
+        "matrix_sha256_after": "61aa831c9f4fad62267f95899b4c3b0a188e22fc9c9c38ce77df53e866720d4f",
+        "raw": [
+            "promotion/apply_canonical.json",
+            "promotion/promotion_verification.json",
+            "promotion/matrix_before.csv"
+        ]
+    },
+    "post_bind_gates": {
+        "B10_proof_gate_bound": {
+            "status": "PASS",
+            "denominator": 1072,
+            "runtime_pending": 0,
+            "errors": 0
+        },
+        "B10_traceability_gate_bound": {
+            "status": "PASS",
+            "mandatory": 1072,
+            "moved": 0,
+            "reference": 239,
+            "optional": 1
+        },
+        "classification": "PASS",
+        "applicability": "PASS",
+        "b05_temporal_identity_proof": "PASS",
+        "relationship": "PASS",
+        "b18_readiness": {
+            "status": "FAIL",
+            "note": "unchanged: 100/113 reviewed basis, formal 0/113; not a B10 condition"
+        },
+        "matrix_readers": "13 matrix-reading PHPUnit files green: see post-bind/runs/matrixreaders-summary.txt",
+        "documentation_relationship_selftest_currentstate_and_docscan": "run after registration and reported in CI-MD-B10-A002-001"
+    },
+    "residue_review": {
+        "verdict": "CONFORMANT_WITH_CONTROLLED_COMPATIBILITY",
+        "reachable_behaviour_checked": [
+            "governed runs default to market-data-semantic-hash/v2 (config/market_data_runtime.php); V1 is opt-in by explicit configuration or by the stored profile of a historical run, and any other value fails run creation",
+            "a malformed or incomplete V2 context fails closed and never falls back to V1 (ArtifactSemanticHashServiceTest, SemanticNestedIdentityOnMariaDbTest, PublicationCorrectionCalendarBindingTest in the E017 full suite)",
+            "mixed V1/V2 correction comparisons are INVALID, never UNCHANGED",
+            "sealed historical digests are not rewritten; V1 remains the interpretation of V1-sealed publications",
+            "a listing without a retained foundation identity is HELD and fails closed (FOUNDATION_IDENTITY_HELD); nothing is substituted"
+        ],
+        "controlled_compatibility": "V1 profile and historical sealed digests, kept deliberately (E011-E013, E017).",
+        "not_a_b10_residue": "F-MD-B10-A002-003 (platform-created factor records bound before their recorded_at) and F-MD-B10-A002-004 (V1 entity ids in captured replay content) concern as-known visibility and replay capture, are routed to MD-B18-A002 by D-MD-B10-A002-003 and their own records, and none of the 56 predicates depends on them (E017)."
+    },
+    "closure_evaluation": {
+        "stage_done_criteria": {
+            "objective and exit criterion (candidate/sealed/readable/superseded separated; a failed correction does not change the pointer)": "MET: retained A001 proof for the unaffected rows plus the A002 production-path tamper and promotion-refusal tests in the E017 suite",
+            "required strategy coverage": "MET: 1072 of 1072 mandatory SATISFIED; 0 NOT_ASSESSED; 0 pending applicability; 0 transitional; optional 1 not requested; moved 0; reference 239",
+            "current baseline": "MET: MD-B10-A002-BL001 retained (CI section 3 permits the scope correction)",
+            "current evidence": "MET: 56 rows on E-MD-B10-A002-017 (raw package manifest verified), 1016 retained on E-MD-B10-A001-001 as E-MD-B10-A002-001 records per predicate",
+            "conformant residue": "MET: CONFORMANT_WITH_CONTROLLED_COMPATIBILITY (residue_review)",
+            "change impact declaration current": "MET: CI-MD-B10-A002-001 ISSUED and current",
+            "integrity and governance gates": "MET after registration: reported in CI-MD-B10-A002-001",
+            "closure manifest": "SC-MD-B10-A002-001 issued with this evidence",
+            "successor full suite": "MET by E-MD-B10-A002-017: 2733 tests, 38615 assertions, 8 failures, all governed expected states; this unit changes only governance tooling and the matrix, so no suite was rerun; the 13 matrix-reading PHPUnit files were rerun after the promotion and the 37 document-reading files are rerun after registration (reported in the CI)"
+        },
+        "dependencies": {
+            "MD-DEP-0021": "RESOLVED. Its resume trigger (foundation delivery for the consumed scope: production deployment and Market Data intake acceptance, then allocation-independent acceptance before B10 use) is met by E-MD-B10-A002-015 and E-MD-B10-A002-010..018. Coverage boundary, stated and not hidden: the retained foundation identity covers the IKPM listing at one admitted instant; every other listing or time is HELD by design and B10 fails closed for it. Widening the foundation data is data stewardship by its owner and no B10 closure condition.",
+            "MD-DEP-0020": "RESOLVED. Its resume trigger (nested semantic hashes, controlled deployment, all 56 revalidated, successor B10 closure) is met. Return to MD-B18-A002; no proof is inherited by B18.",
+            "MD-DEP-0019": "BLOCKING, unchanged (database owner, B18/R0025). Not resolved here."
+        }
+    },
+    "f006_state": "RESOLVED: the mechanism exists, is proven fail-closed and atomic, and was executed once on the canonical records",
+    "f001_state": "RESOLVED: expectation reconciled to the measured 0 with fail-closed proof; it did not block the binding and is recorded separately",
+    "full_suite": "Not rerun by design: no production or runtime code changed. E-MD-B10-A002-017 holds the successor full-suite result (2733 tests, 38615 assertions, 8 failures, all governed expected states).",
+    "predicate_state": {
+        "b05": "117/117 PASS",
+        "b10": "1072 SATISFIED / 0 NOT_ASSESSED / 1072 mandatory",
+        "b18": "100/113 reviewed basis, formal 0/113",
+        "r0025": "INCOMPLETE, paused",
+        "f018": "not started"
+    },
+    "changed_files_sha256": {
+        "docs/market_data/development/implementation/tests/MarketDataB10SuccessorBinding.php": "8a391ddbaeda00ea1b3bd6a4a2392a2f730ed7a246b759c182b7b075d561da93",
+        "docs/market_data/development/implementation/tests/MarketDataB10SuccessorBinder.php": "74e846509c4a1468584b6a1720e3ff571cf7a83ae07e3e8a2f423f2649d14375",
+        "docs/market_data/development/implementation/tests/MarketDataB10SuccessorBinderSelfTest.php": "2e699ce23880682f01d6eccdeb762c836e313b5ecf943193e79f11bd630d3000",
+        "docs/market_data/development/implementation/tests/MarketDataPublicationLifecycleProofGate.php": "33c74261eb1fd1c6576b74f15ab3ba0e48c181471f80f3ec9727269db833bae9",
+        "docs/market_data/development/implementation/tests/MarketDataPublicationLifecycleTraceabilityGate.php": "b1267afef2ead5bb6f99ca487331a72d6cf61aaa8a40d3f8fdbb59406790998c",
+        "docs/market_data/development/implementation/tests/MarketDataPublicationLifecycleTraceabilitySpec.php": "0861658093e655e6bdcd161ec4adba3017fe0672ea6d731b43167f4bed79a3ea",
+        "docs/market_data/development/implementation/tests/MarketDataPublicationLifecycleProofBinder.php": "2cd8085589f117fb75dfaf2be8a77eb39ba28f951b3e7d9e744fd9607764fa8d",
+        "docs/market_data/development/implementation/tests/MarketDataPublicationLifecycleProofSelfTest.php": "c3c66b2e7c92dde964480ce2aa2adcbeb69c87355e2fd785632d334c14e8b674"
+    },
+    "preservation": {
+        "B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+        "MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4",
+        "issued_evidence": "E010-E017, E087 and E088 byte-identical to their issued bytes",
+        "traceability_matrix": "only the 56 reopened lines changed, and only coverage_status, current_evidence_ids and notes; every other line is byte-identical"
+    },
+    "raw_proof": {
+        "package": "storage/app/market_data/evidence/MD-B10-A002/successor-binding-20261002-v1",
+        "manifest_sha256": "ff14bf149a2463cd1aae000eb443a88bad32f035446ebc01c789ef1bf0271a3d"
+    },
+    "governance_boundary": "This immutable record claims the executed results above. Registry, integrity and current-state gates run after registration and are reported in CI-MD-B10-A002-001.",
+    "next_resume_point": "MD-B18-A002: return to F-MD-B18-A002-017 (first independent R0025 fixture, MD-S003-R0025); MD-DEP-0020 is resolved and B10 is closed, but the attempt stays blocked on MD-DEP-0019 until the database owner starts and verifies an intact MariaDB instance (integrity check per MD-DEP-0015, log read before any write-capable test) and the MD-S003-R0025 acceptance aggregate runs with zero skips. R0025 and F-018 stay paused; F-MD-B10-A002-003 and F-MD-B10-A002-004 are owned by MD-B18-A002.",
+    "no_commit_or_push": true
+}

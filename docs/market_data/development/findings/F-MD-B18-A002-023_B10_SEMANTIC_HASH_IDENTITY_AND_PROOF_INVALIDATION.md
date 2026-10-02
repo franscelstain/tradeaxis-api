@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-09-27T11:37:01+07:00
 - Severity: `P1` for current verification and the blocked R0025 independent fixture
-- Status: `OPEN`
+- Status: `RESOLVED` - closed by `E-MD-B10-A002-018` and `SC-MD-B10-A002-001`
 - Class: `IMPLEMENTATION_AND_PROOF_DEFECT` in the `MD-B10` audit-hash surface
 - Related: `E-MD-B18-A002-086`, `E-MD-B10-A001-001`, `SC-MD-B10-A001-001`, `F-MD-B18-A002-017`, `MD-DEP-0020`
 
@@ -163,3 +163,13 @@ The B10 successor schema and the Shared Security Identity Foundation are deploye
 ## 2026-10-01 complete reproof — E-MD-B10-A002-016
 
 The complete reproof of the 56 affected predicates ran against the deployed implementation: 31 are `PROVEN_CURRENT` and 25 are `INCOMPLETE`. `F-MD-B10-A002-005` records five V2 coverage gaps (stored bar timestamps, the ATR recursive-state reference, sector membership revision identity, eligibility freshness, the correction comparison's calendar binding) and the missing negative proof. This finding remains OPEN with its 56-rule scope unchanged. Nothing is promoted; `MD-DEP-0021` and `MD-DEP-0020` stay BLOCKING, and the return to B18 stays blocked until the remediation, the successor full-suite re-run and a reproof that proves all 56.
+
+## 2026-10-02 remediation reproof — E-MD-B10-A002-017
+
+The five V2 gaps and the missing negative proof that `F-MD-B10-A002-005` recorded are remediated, and all 56 affected predicates are `PROVEN_CURRENT`. This finding remains OPEN with its 56-rule scope unchanged: none is promoted, because the governed B10 binder cannot bind the A002 subset (`F-MD-B10-A002-006`). `MD-DEP-0021` and `MD-DEP-0020` stay BLOCKING and the return to B18 stays blocked until that mechanism exists, the 56 are bound and the closure conditions are evaluated.
+
+## 2026-10-02 governed promotion and B10 closure - E-MD-B10-A002-018, SC-MD-B10-A002-001
+
+The remediation this finding required is complete. The 56 affected predicates were proven `PROVEN_CURRENT` (`E-MD-B10-A002-017`) and promoted atomically through the governed successor binder: before 1016 / 56 / 1072, after 1072 / 0 / 1072, with the 1016 unaffected rows byte-identical. `MD-B10` is closed under `MD-B10-A002` at 1072/1072 (`SC-MD-B10-A002-001`), residue `CONFORMANT_WITH_CONTROLLED_COMPATIBILITY`. B05 stays 117/117. `MD-DEP-0021` and `MD-DEP-0020` are resolved.
+
+Boundaries carried forward and not closed here: the foundation identity covers the IKPM listing at one admitted instant, everything else is HELD by design; `F-MD-B10-A002-003` and `F-MD-B10-A002-004` are owned by `MD-B18-A002`; `MD-DEP-0019` (database owner, `MD-S003-R0025`) stays BLOCKING. `MD-B18-A002` returns to `F-MD-B18-A002-017` / R0025 when that dependency allows it; no B10 proof is inherited by B18.

@@ -59,3 +59,7 @@ The owner approved `D-MD-B10-A002-004` with its bounded interpretation: the alia
 ## 2026-10-01 successor full-suite confirmation — E-MD-B10-A002-016
 
 The successor full MarketData suite (2660 tests, 38263 assertions, complete raw output retained) shows the four members green in the deployed state: the alias guard 6/6, the provider-shape guard 18/18, the domain-ownership guard 28/28 and the lifecycle-mocking guard 5/5. The migration drift guard and the production-path corpus guard are green too. The eight remaining failures are governed expected states (`D-MD-B18-A002-004`; `E-MD-B18-A002-082`, `085`). Status stays RESOLVED and successor full-suite closure is confirmed for that run. The suite must be re-run after the remediation `F-MD-B10-A002-005` records changes code.
+
+## 2026-10-02 successor full-suite confirmation after the remediation — E-MD-B10-A002-017
+
+The successor full MarketData suite was rerun on the remediated code (2733 tests, 38615 assertions, complete raw output retained). The four members are green: the alias guard 6/6, the provider-shape guard 18/18, the domain-ownership guard 28/28 and the lifecycle-mocking guard 5/5, with the migration drift guard 10/10. The eight failures are the governed expected states of `E-MD-B10-A002-016`. Status stays RESOLVED and successor full-suite closure is confirmed again.
