@@ -85,6 +85,9 @@ final class MarketDataReplayVerificationAcceptanceAggregate
             'MD-S003-R0025' => [
                 $map('MD-S003 required scenario families (MariaDB)', 'B18ScenarioFamiliesOnMariaDbTest', 'familyMap',
                     ['B18ScenarioFamiliesOnMariaDbTest::test_the_family_map_names_exactly_the_families_the_contract_requires',
+                        'B18ScenarioFamiliesOnMariaDbTest::test_the_bullet_map_names_exactly_the_bullets_the_contract_names',
+                        'B18ScenarioFamiliesOnMariaDbTest::test_every_bullet_names_one_existing_scenario_and_every_scenario_is_mapped_once',
+                        'B18ScenarioFamiliesOnMariaDbTest::test_every_family_test_runs_its_own_family_through_the_bullet_map',
                         'B18ScenarioFamiliesOnMariaDbTest::test_these_scenarios_really_run_on_mariadb'], true),
             ],
             'MD-S004-R0002' => [

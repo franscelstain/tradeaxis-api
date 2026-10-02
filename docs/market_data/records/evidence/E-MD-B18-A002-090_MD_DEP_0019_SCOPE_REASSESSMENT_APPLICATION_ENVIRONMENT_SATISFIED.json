@@ -1,0 +1,319 @@
+{
+    "evidence_id": "E-MD-B18-A002-090",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-02T11:09:58+07:00",
+    "verdict": "MD_DEP_0019_SATISFIED_E089_INTERPRETATION_EXCEEDED_AUTHORITY_SCOPE_CORRECTION",
+    "md_dep_0019_result": "A. MD-DEP-0019 ALREADY SATISFIED — PREVIOUS INTERPRETATION TOO BROAD",
+    "f024_disposition": "RESOLVED (registry state) by SUPERSEDED_BY_SCOPE_CORRECTION: the blocking determination is withdrawn; the observations stay recorded",
+    "checkpoint_verdict": "READY TO RESUME R0025",
+    "related_findings": [
+        "F-MD-B18-A002-024",
+        "F-MD-B18-A002-017",
+        "F-MD-B18-A002-012",
+        "F-MD-B10-A002-003",
+        "F-MD-B10-A002-004"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-089",
+        "E-MD-B18-A002-082",
+        "E-MD-B18-A002-010",
+        "E-MD-B10-A002-018",
+        "SC-MD-B10-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-012",
+        "D-MD-B18-A002-003"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0019",
+        "MD-DEP-0015",
+        "MD-DEP-0016",
+        "MD-DEP-0020",
+        "MD-DEP-0021"
+    ],
+    "scope": "Read-only reassessment of the MD-DEP-0019 contract against current authority, and the correction of E-MD-B18-A002-089's conclusion. No restart, repair, reinstall or write to MariaDB; no repository, test or schema change; no B10 binder or reproof; no R0025 work.",
+    "e089_relationship": {
+        "raw_observations": "valid and unchanged; verified against the retained package (18 files match the manifest, application integrity, migrations, aggregate and negative-run statuses match what E089 states)",
+        "corrected": "only E089's conclusion and scope: it read \"intact instance\" as including the mysql system schema, Aria repair history, .BAK files and a log that reaches ready for connections, and so kept MD-DEP-0019 BLOCKING. Authority requires none of those.",
+        "disclosed_side_effect": "E089 ran CHECK TABLE on mysql.* tables. E-MD-B18-A002-010 deliberately did not, and on a crashed Aria table the first CHECK triggers the server's auto-repair, which happened to mysql.db (db.MAD-261002091504.BAK). This was a verification-induced change to a system table that no requirement called for. It does not affect any application table.",
+        "e089_not_edited": true
+    },
+    "observation_versus_governed_impact": {
+        "OBSERVATION": "mysql.db (Aria) had a local system-schema issue: datafile 8505 vs 8192 bytes holding server log text, repaired by the server; the error log stops at Server socket created since 2026-09-14 13:24:15; the system schema has repairs no governed record states.",
+        "GOVERNED_IMPACT": "does not block B18 application database execution proof: no application table, migration, connection or MariaDB-backed member depends on it, and every one of those was verified directly."
+    },
+    "exact_authority_contract": [
+        {
+            "requirement": "The owner starts the MariaDB instance",
+            "source": "MD-DEP-0019 resume_trigger: \"The owner starts an intact MariaDB instance\"",
+            "exact_scope": "the server process under owner action",
+            "mandatory": "MANDATORY",
+            "proves": "the process is available and was started by the owner, not by B18",
+            "does_not_prove": "integrity of anything, schema state or any test result",
+            "state": "MET: started 2026-09-28 23:29:01 by the owner, uptime continuous at both E089 and this reassessment (301109 s)"
+        },
+        {
+            "requirement": "Integrity check per MD-DEP-0015",
+            "source": "MD-DEP-0019 resume_trigger \"(integrity check per MD-DEP-0015 ...)\"; MD-DEP-0015 impact/resume_trigger \"integrity (72/72 migrations, CHECK TABLE clean)\"; D-MD-B18-A002-003 \"an integrity check of both databases' tables reports clean\" and \"both databases are created and fully migrated\"",
+            "exact_scope": "the tables of the two application databases, tradeaxis and tradeaxis_testing, and their migrations",
+            "mandatory": "MANDATORY",
+            "proves": "application schema and table integrity and migration completeness",
+            "does_not_prove": "anything about the mysql system schema, Aria files, the server log or repair history, none of which these texts name",
+            "state": "MET: 134 of 134 application tables CHECK TABLE OK in the first pass and in a later pass; 79 of 79 migrations equal the 79 files in both databases"
+        },
+        {
+            "requirement": "Log read before any write-capable test",
+            "source": "MD-DEP-0019 resume_trigger \"(... log read before any write-capable test)\"",
+            "exact_scope": "reading the MariaDB error log before a test that writes",
+            "mandatory": "MANDATORY (an act of reading)",
+            "proves": "the log was examined for crash-recovery or integrity errors before writing",
+            "does_not_prove": "that the log is complete after startup, or that nothing happened that the log omits",
+            "state": "MET: read first in E089; it shows InnoDB crash recovery completed at the 2026-09-28 23:29 start and no error since"
+        },
+        {
+            "requirement": "Application database availability for the proof",
+            "source": "D-MD-B18-A002-003 guard design: driver mysql, version contains MariaDB, expected database, no pending migration; UsesMarketDataMariaDb trait skips on unreachable connection or stale schema",
+            "exact_scope": "the connection the B18 tests actually use (tradeaxis_testing by default)",
+            "mandatory": "MANDATORY",
+            "proves": "the MariaDB-backed members can run",
+            "does_not_prove": "that any member passes",
+            "state": "MET: connection ok, 79/79 migrations, no member skipped"
+        },
+        {
+            "requirement": "Zero-skip acceptance aggregate for MD-S003-R0025",
+            "source": "MD-DEP-0019 resume_trigger \"the acceptance aggregate is run for MD-S003-R0025 with zero skips\"; impact \"a skip is never a pass\"",
+            "exact_scope": "running the aggregate so that every member executes on MariaDB",
+            "mandatory": "MANDATORY",
+            "proves": "the environment lets the six families execute",
+            "does_not_prove": "that R0025 passes or that any family clause is proven",
+            "state": "MET: 0 skipped; 10 passed, 1 failed with REPLAY_FIXTURE_SELF_GENERATED (an R0025 proof matter, not an availability one: the failure text does not mention the database)"
+        },
+        {
+            "requirement": "Family clauses get their own discriminating probes before PROVEN",
+            "source": "MD-DEP-0019 resume_trigger, last clause: \"before the predicate can move to PROVEN\"",
+            "exact_scope": "the predicate MD-S003-R0025, not the environment",
+            "mandatory": "MANDATORY for promotion of the predicate; not an environment condition",
+            "proves": "predicate-level sufficiency when done",
+            "does_not_prove": "anything about the database",
+            "state": "NOT YET DONE; stays with F-MD-B18-A002-017 and D-MD-B18-A002-011. This reading of the clause is the single interpretive point; the dependency notes say \"Environment state only; no semantic substitution\"."
+        },
+        {
+            "requirement": "Clean provenance, old data untouched",
+            "source": "D-MD-B18-A002-003 decision 2 (through MD-DEP-0015)",
+            "exact_scope": "the instance comes from the XAMPP template, not from data_260914, which is never touched, repaired or copied from",
+            "mandatory": "IMPLIED (MD-DEP-0015 criterion)",
+            "proves": "origin of the instance",
+            "does_not_prove": "that the instance has had no later internal maintenance",
+            "state": "MET: data_260914 newest file 2026-09-14 09:52 (Jakarta), nothing newer; the mysql system files date from the 2026-09-14 13:17 template build; the 2026-09-28 repair used a backup of that same instance"
+        },
+        {
+            "requirement": "Full suite green with zero skips",
+            "source": "D-MD-B18-A002-003; MD-DEP-0015 resume_trigger; D-MD-B18-A002-004",
+            "exact_scope": "MD-DEP-0015, which gates B18 closure",
+            "mandatory": "MANDATORY for MD-DEP-0015 only",
+            "proves": "closure-level full-suite criterion",
+            "does_not_prove": "anything required of MD-DEP-0019",
+            "state": "UNMET: seven deployed-corpus oracle controls fail until MD-DEP-0016 recovery; does not block R0025 proof work"
+        },
+        {
+            "requirement": "mysql system schema / Aria integrity",
+            "source": "none found: not in MD-DEP-0019, MD-DEP-0015, D-MD-B18-A002-003, the dependency standard, the runtime evidence standard or any strategy text; E-MD-B18-A002-010 accepted the rebuilt instance with \"CHECK TABLE on system tables deliberately not run\" and mysql.db read by SELECT",
+            "exact_scope": "(none)",
+            "mandatory": "NOT REQUIRED",
+            "proves": "(n/a)",
+            "does_not_prove": "(n/a)",
+            "state": "no requirement to meet"
+        }
+    ],
+    "md_dep_0019_contract_quoted": {
+        "owner": "database owner (explicit user decision to start and verify the MariaDB instance)",
+        "resume_trigger": "The owner starts an intact MariaDB instance (integrity check per MD-DEP-0015, log read before any write-capable test), then the acceptance aggregate is run for MD-S003-R0025 with zero skips, and the family clauses receive their own discriminating probes before the predicate can move to PROVEN. The runner and the eight members already exist. Update 2026-10-02 (E-MD-B18-A002-089): F-MD-B18-A002-024 must also be resolved (mysql.db Aria corruption and a MariaDB error log that stops at startup), so that the required log read and integrity check are informative.",
+        "notes_first_sentences": "Environment state only; no semantic substitution."
+    },
+    "md_dep_0015_contract_quoted": {
+        "owner": "database owner (explicit user recovery decision)",
+        "resume_trigger": "Resolve when the user decision on F-MD-B18-A002-011 is executed and the full suite runs green with zero skips on the clean instance; availability, integrity and runtime proof are already recorded in E-MD-B18-A002-009."
+    },
+    "previous_interpretation_review": {
+        "mysql_system_schema": {
+            "class": "OUT OF SCOPE",
+            "note": "readability by SELECT and a working login are supporting evidence only; no text requires its integrity; the precedent E010 deliberately did not CHECK it"
+        },
+        "mysql_db": {
+            "class": "OUT OF SCOPE",
+            "note": "a per-database privilege table; the application connects as root with global privileges (mysql.global_priv, 5 rows, readable)"
+        },
+        "aria_repair_history": {
+            "class": "OUT OF SCOPE",
+            "note": "what is required is the instance origin (implied clean provenance), which is intact; internal maintenance of a local server is not named by any authority"
+        },
+        "bak_files": {
+            "class": "OUT OF SCOPE",
+            "note": "artifacts of the server's own Aria recovery in data\\mysql"
+        },
+        "ready_for_connections_log": {
+            "class": "SUPPORTING ONLY",
+            "note": "the requirement is a log READ (met); a log that reaches ready for connections is not required. Its blind spot after startup is a limitation that the direct application integrity and execution evidence covers"
+        },
+        "application_db_health": {
+            "class": "REQUIRED",
+            "note": "D-MD-B18-A002-003 integrity of both databases' tables; met"
+        },
+        "zero_skip_r0025_execution": {
+            "class": "REQUIRED",
+            "note": "MD-DEP-0019 resume_trigger; met"
+        }
+    },
+    "prior_interpretation_exceeded_authority": true,
+    "application_database_execution_state": {
+        "readonly_confirmation_at_reassessment": {
+            "captured_at": "2026-10-02T11:07:30+07:00",
+            "statements": "SELECT and SHOW only",
+            "version": "10.4.27-MariaDB",
+            "uptime_seconds": 301109,
+            "server_now": "2026-10-02 11:07:30",
+            "databases": [
+                "information_schema",
+                "mysql",
+                "performance_schema",
+                "test",
+                "tradeaxis",
+                "tradeaxis_testing"
+            ],
+            "migration_files": 79,
+            "migrations": {
+                "tradeaxis": {
+                    "applied": 79,
+                    "equal_to_files": true,
+                    "tables": 67
+                },
+                "tradeaxis_testing": {
+                    "applied": 79,
+                    "equal_to_files": true,
+                    "tables": 67
+                }
+            },
+            "application_connection_ok": true,
+            "mysql_db_readable_by_select": 0,
+            "global_priv_rows": 5,
+            "aria_bak_files": 13,
+            "old_data_directory_newest_mtime": "2026-09-14T04:52:21+02:00",
+            "tradeaxis_testing_source_observations": 560
+        },
+        "e089_raw_verification": {
+            "package_manifest_files": 18,
+            "package_files_not_matching_manifest": [],
+            "e089_recorded_manifest_sha256": "96a7352f05b5de526eb31012ac835e991a1b3f89dcaea09c2bc83b35f88ee0a5",
+            "manifest_sha256_now": "96a7352f05b5de526eb31012ac835e991a1b3f89dcaea09c2bc83b35f88ee0a5",
+            "application_integrity_first_pass": {
+                "application_tables_checked": 134,
+                "application_tables_not_ok": 0
+            },
+            "application_integrity_later_pass": {
+                "application_tables_checked": 134,
+                "application_tables_not_ok": 0
+            },
+            "system_tables_not_ok_first_pass": [
+                "db"
+            ],
+            "system_tables_not_ok_later_pass": [],
+            "migrations": {
+                "tradeaxis": {
+                    "applied": 79,
+                    "missing": [],
+                    "unknown": []
+                },
+                "tradeaxis_testing": {
+                    "applied": 79,
+                    "missing": [],
+                    "unknown": []
+                },
+                "files": 79
+            },
+            "r0025_aggregate_with_environment_ok": {
+                "verdict": "RED",
+                "statuses": {
+                    "FAILED": 1,
+                    "PASSED": 10
+                }
+            },
+            "failed_member_reason": "FAILED",
+            "failed_member_message_names_fixture_self_generated": true,
+            "failed_member_message_mentions_database_unavailability": false,
+            "negative_wrong_database": {
+                "verdict": "RED",
+                "statuses": {
+                    "SKIPPED": 11
+                }
+            },
+            "negative_unreachable_port": {
+                "verdict": "RED",
+                "statuses": {
+                    "SKIPPED": 11
+                }
+            },
+            "precondition_tests": {
+                "MigrationIntegrityAndDriftTest": "OK (10 tests, 25 assertions)",
+                "OpsEnvironmentBaselineStaticGuardTest": "OK (4 tests, 22 assertions)",
+                "B18ProductionPathReplayFixturesTest": "OK (13 tests, 100 assertions)"
+            }
+        },
+        "tradeaxis": "67 InnoDB tables, all CHECK TABLE OK (E089), 79/79 migrations equal to files, reachable",
+        "tradeaxis_testing": "67 InnoDB tables, all CHECK TABLE OK (E089), 79/79 migrations equal to files, reachable, the default B18 test database",
+        "b18_mariadb_execution": "B18ProductionPathReplayFixturesTest 13 tests / 100 assertions OK; the six MD-S003 family members and five authority-binding guards executed on MariaDB",
+        "r0025_zero_skip_state": "11 items: 10 PASSED, 1 FAILED (REPLAY_FIXTURE_SELF_GENERATED), 0 SKIPPED. Not an environment fault, not claimed as proof.",
+        "negative_runs": "wrong database and unreachable port both give 11 of 11 SKIPPED and RED; the zero-skip condition discriminates",
+        "reproducibility_caveat": "The state is a point-in-time execution on a verified instance. Environment fragility (the local server writing log text into an Aria file) is the owner's maintenance matter under D-MD-B18-A002-012; if the server is replaced or restored, the application state is revalidated and the aggregate repeated."
+    },
+    "md_dep_0015_disposition": {
+        "status": "BLOCKING, unchanged",
+        "requires": "clean provenance; no application residue; both databases created and fully migrated; targeted tests and the full suite with zero skips; an integrity check of both databases' tables clean (D-MD-B18-A002-003)",
+        "met_now": [
+            "provenance (origin intact, data_260914 untouched)",
+            "no application residue (only tradeaxis and tradeaxis_testing besides system databases)",
+            "both databases migrated 79/79",
+            "application tables CHECK TABLE OK 134/134"
+        ],
+        "unmet": "the full suite with zero skips: seven deployed-corpus oracle controls fail until the MD-DEP-0016 recovery (D-MD-B18-A002-004). E089 and this record did not run the full suite and do not satisfy this criterion.",
+        "relationship": "separate from MD-DEP-0019. It gates B18 closure; it does not gate MD-DEP-0019 or the R0025 proof work, whose execution it never required (its own text records availability, integrity and runtime proof as done)."
+    },
+    "local_infrastructure_replaceability": "No current authority prohibits treating local MariaDB/XAMPP as replaceable. D-MD-B18-A002-012 records the boundary: the owner may repair or replace the local server provided the application database state needed for governed proof is preserved or restored and revalidated. data_260914 stays untouched. Not a production HA/DR audit. Reinstall is an allowed owner option, not Market Data work, and was not done.",
+    "f024_reassessment": {
+        "directly_invalidates_application_db_proof": "NO: application tables were checked directly and are intact",
+        "prevents_b18_executing_correctly": "NO: the MariaDB-backed members ran with zero skips",
+        "authority_required_environmental_uncertainty": "NO: no authority requirement names the system schema, Aria, .BAK files or log completeness",
+        "classification": "D. local infrastructure maintenance concern outside the current Market Data proof boundary",
+        "disposition": "RESOLVED in the finding registry (nearest governed lifecycle state; the registry has no SUPERSEDED state), recorded as superseded by this scope correction; observations retained"
+    },
+    "b18_resume_decision": "MD-DEP-0019 RESOLVED. Next work, derived from the stage register: F-MD-B18-A002-017 / MD-S003-R0025, building and independently reviewing the first golden fixture under D-MD-B18-A002-011 and giving the six family clauses their own discriminating probes. Other blockers: MD-DEP-0015 (closure only) and MD-DEP-0017 remain BLOCKING in the registry as before; neither was named as a precondition for starting the R0025 fixture work.",
+    "not_done": [
+        "no MariaDB restart, repair, REPAIR TABLE, aria_chk, .BAK deletion, mysql.* change, reinstall, migrate:fresh, db:wipe or drop",
+        "no CHECK TABLE (read-only SELECT and SHOW only)",
+        "no R0025 work, no full B18 suite, no B10 binder or reproof",
+        "protected R0025 files unchanged",
+        "F018 not started"
+    ],
+    "preservation": {
+        "B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+        "MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4",
+        "traceability_matrix": "61aa831c9f4fad62267f95899b4c3b0a188e22fc9c9c38ce77df53e866720d4f",
+        "E-MD-B10-A002-018": "ac33817f569fd3a2ea9aab871c19832670d048f7652c74296e5818781b426282",
+        "SC-MD-B10-A002-001": "cbea5d9b02edac50500b660d918bc49c17039b175a36b55b865933fbf9b3aa4d",
+        "E-MD-B18-A002-089": "20ec97e58c2f9d5a37653bbf00b2ed82f35958f1e106c0d174e637ecd0b582f6"
+    },
+    "raw_proof": {
+        "package": "storage/app/market_data/evidence/MD-B18-A002/dep0019-scope-reassessment-20261002-v1",
+        "manifest_sha256": "d0409135708e5a92170ee0bde430401168ed4dbf40cd2dc861622af01ad5db9f"
+    },
+    "next_resume_point": "MD-B18-A002: F-MD-B18-A002-017 / MD-S003-R0025. MD-DEP-0019 is resolved (E-MD-B18-A002-090, D-MD-B18-A002-012): the MariaDB environment executes the six scenario families with zero skips, and the one failing member is REPLAY_FIXTURE_SELF_GENERATED. Build, independently review and have the owner approve the first R0025 golden fixture under D-MD-B18-A002-011 (frozen inputs, independent derivation, reviewer and approval before any proof claim), then bind it to the exact-publication member and give the six family clauses their own discriminating probes before MD-S003-R0025 can move to PROVEN. MD-DEP-0015 (full suite waits on the corpus oracle via MD-DEP-0016) still gates B18 closure, not this work. F-018 stays not started; F-MD-B10-A002-003 and F-MD-B10-A002-004 stay with MD-B18-A002; B10 stays closed.",
+    "no_commit_or_push": true
+}

@@ -1,0 +1,283 @@
+{
+    "evidence_id": "E-MD-B18-A002-089",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-02T09:20:42+07:00",
+    "verdict": "MD_DEP_0019_STILL_BLOCKING_ENVIRONMENT_DEFECT_FOUND_APPLICATION_DATA_INTACT",
+    "md_dep_0019_result": "B. MD-DEP-0019 STILL BLOCKING — ENVIRONMENT DEFECT FOUND",
+    "checkpoint_verdict": "MD-DEP-0019 STILL BLOCKING",
+    "related_findings": [
+        "F-MD-B18-A002-024",
+        "F-MD-B18-A002-017",
+        "F-MD-B18-A002-012",
+        "F-MD-B10-A002-003",
+        "F-MD-B10-A002-004"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-082",
+        "E-MD-B18-A002-083",
+        "E-MD-B18-A002-084",
+        "E-MD-B18-A002-085",
+        "E-MD-B18-A002-010",
+        "E-MD-B10-A002-018",
+        "SC-MD-B10-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-003",
+        "D-MD-B18-A002-011"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0019",
+        "MD-DEP-0015",
+        "MD-DEP-0016",
+        "MD-DEP-0020",
+        "MD-DEP-0021"
+    ],
+    "scope": "Environment verification of the running MariaDB instance against MD-DEP-0019 only. No repository, test, schema, migration or data change; no B10 binder or reproof; no R0025 proof work.",
+    "contract": {
+        "owner": "database owner (explicit user decision to start and verify the MariaDB instance)",
+        "consumer_and_proof_owner": "MD-B18-A002 (F-MD-B18-A002-017, MD-S003-R0025)",
+        "blocker": "MariaDB was unreachable on 2026-09-26 so the six MD-S003 scenario families could not run on MariaDB production semantics; the acceptance aggregate was RED with all eight members SKIPPED",
+        "resume_trigger": "The owner starts an intact MariaDB instance (integrity check per MD-DEP-0015, log read before any write-capable test), then the acceptance aggregate is run for MD-S003-R0025 with zero skips, and the family clauses receive their own discriminating probes before the predicate can move to PROVEN.",
+        "intact_meaning_source": "D-MD-B18-A002-003 (the integrity criterion of MD-DEP-0015: both application databases created, fully migrated, an integrity check of both databases' tables reports clean, clean provenance, no application residue) plus MD-DEP-0019's log-read requirement. The system schema is read as part of \"instance\"; the dependency does not name it.",
+        "separation": "Environment acceptance is reported apart from R0025 acceptance. Resolving the dependency does not prove R0025, and does not resolve F-MD-B10-A002-003 or F-MD-B10-A002-004.",
+        "b10_relation": "MD-DEP-0019 belongs to the B18 continuation path and does not block B10 (closed, SC-MD-B10-A002-001)."
+    },
+    "instance": {
+        "version": "10.4.27-MariaDB",
+        "version_comment": "mariadb.org binary distribution",
+        "datadir": "D:\\xampp\\mysql\\data\\",
+        "port": "3306",
+        "uptime_seconds": 294619,
+        "server_now": "2026-10-02 09:19:20",
+        "started_at_server_clock": "2026-09-28 23:29:01",
+        "mysql_pid_file": "20568",
+        "databases": [
+            "information_schema",
+            "mysql",
+            "performance_schema",
+            "test",
+            "tradeaxis",
+            "tradeaxis_testing"
+        ],
+        "application_connection": {
+            "DB_CONNECTION": "mysql",
+            "DB_HOST": "127.0.0.1",
+            "DB_PORT": "3306",
+            "DB_DATABASE": "tradeaxis",
+            "testing_database": "tradeaxis_testing (MARKET_DATA_MARIADB_TEST_DATABASE default)"
+        },
+        "engines": {
+            "tradeaxis": {
+                "InnoDB": "67"
+            },
+            "tradeaxis_testing": {
+                "InnoDB": "67"
+            },
+            "mysql": {
+                "Aria": "24",
+                "CSV": "2",
+                "InnoDB": "4"
+            }
+        },
+        "mysql_db_rows_now": 0
+    },
+    "error_log": {
+        "summary": {
+            "path": "D:/xampp/mysql/data/mysql_error.log",
+            "lines": 727,
+            "sha256": "fec7032ba46cbdefefcc501077815e8dcd4a939a81f64e7c57133e3462c53f17",
+            "last_modified": "2026-09-28T18:29:02+02:00",
+            "server_socket_created_events": 28,
+            "ready_for_connections_events": 5,
+            "ready_for_connections_lines": [
+                "87: 2026-09-14 13:19:00 0 [Note] D:\\xampp\\mysql\\bin\\mysqld.exe: ready for connection",
+                "118: 2026-09-14 13:21:10 0 [Note] D:\\xampp\\mysql\\bin\\mysqld.exe: ready for connection",
+                "149: 2026-09-14 13:22:30 0 [Note] mysql\\bin\\mysqld: ready for connections.",
+                "180: 2026-09-14 13:23:24 0 [Note] mysql\\bin\\mysqld: ready for connections.",
+                "211: 2026-09-14 13:24:15 0 [Note] mysql\\bin\\mysqld: ready for connections."
+            ],
+            "last_line": "2026-09-28 23:29:02 0 [Note] Server socket created on IP: '::'.",
+            "aria_error_lines": [
+                "403: 2026-09-28 10:43:36 0 [ERROR] mysqld.exe: Aria recovery failed. Please run aria_chk -r on all Aria tables and delete all aria_log.######## f",
+                "404: 2026-09-28 10:43:36 0 [ERROR] Plugin 'Aria' init function returned error.",
+                "405: 2026-09-28 10:43:36 0 [ERROR] Plugin 'Aria' registration as a STORAGE ENGINE failed.",
+                "427: 2026-09-28 10:43:45 0 [ERROR] mysqld.exe: Aria recovery failed. Please run aria_chk -r on all Aria tables and delete all aria_log.######## f",
+                "428: 2026-09-28 10:43:45 0 [ERROR] Plugin 'Aria' init function returned error.",
+                "429: 2026-09-28 10:43:45 0 [ERROR] Plugin 'Aria' registration as a STORAGE ENGINE failed.",
+                "450: 2026-09-28 10:43:51 0 [ERROR] mysqld.exe: Aria recovery failed. Please run aria_chk -r on all Aria tables and delete all aria_log.######## f",
+                "451: 2026-09-28 10:43:51 0 [ERROR] Plugin 'Aria' init function returned error.",
+                "452: 2026-09-28 10:43:51 0 [ERROR] Plugin 'Aria' registration as a STORAGE ENGINE failed.",
+                "473: 2026-09-28 10:43:54 0 [ERROR] mysqld.exe: Aria recovery failed. Please run aria_chk -r on all Aria tables and delete all aria_log.######## f",
+                "474: 2026-09-28 10:43:54 0 [ERROR] Plugin 'Aria' init function returned error.",
+                "475: 2026-09-28 10:43:54 0 [ERROR] Plugin 'Aria' registration as a STORAGE ENGINE failed."
+            ],
+            "bad_file_descriptor_lines": 0
+        },
+        "reading": "The log was read before any test. It holds no entry after 2026-09-28 23:29:02 and reaches ready for connections only on 2026-09-14; 23 of the 28 starts end at Server socket created. It therefore cannot show anything that happened after socket creation."
+    },
+    "application_databases": {
+        "integrity": {
+            "first_pass": {
+                "tables_checked": 164,
+                "not_ok": 1
+            },
+            "later_pass": {
+                "tables_checked": 164,
+                "per_database": {
+                    "tradeaxis": 67,
+                    "tradeaxis_testing": 67,
+                    "mysql": 30
+                },
+                "not_ok": 0
+            }
+        },
+        "application_tables_not_ok": 0,
+        "migrations": {
+            "tradeaxis": {
+                "applied": 79,
+                "missing_from_db": [],
+                "unknown_in_db": [],
+                "rowcounts": {
+                    "md_eod_runs": "ERR",
+                    "md_replay_daily_metrics": 0,
+                    "md_source_observations": 0
+                }
+            },
+            "tradeaxis_testing": {
+                "applied": 79,
+                "missing_from_db": [],
+                "unknown_in_db": [],
+                "rowcounts": {
+                    "md_eod_runs": "ERR",
+                    "md_replay_daily_metrics": 0,
+                    "md_source_observations": 560
+                }
+            },
+            "files": 79
+        },
+        "precondition_tests": {
+            "MigrationIntegrityAndDriftTest": "OK (10 tests, 25 assertions)",
+            "OpsEnvironmentBaselineStaticGuardTest": "OK (4 tests, 22 assertions)",
+            "B18ProductionPathReplayFixturesTest": "OK (13 tests, 100 assertions)"
+        },
+        "rowcount_note": "tradeaxis_testing holds 560 source observations created between 2026-09-14 and 2026-10-02 03:20:32, before this verification; this verification added none (its MariaDB tests run in rolled-back transactions)."
+    },
+    "defect_found": {
+        "finding": "F-MD-B18-A002-024",
+        "mysql_db_first_check": [
+            {
+                "db": "mysql",
+                "table": "db",
+                "engine": "Aria",
+                "msg": [
+                    "warning: Size of datafile is: 8505       Expected: 8192",
+                    "error: Page 0:  Got error: 176 when reading datafile",
+                    "error: Corrupt"
+                ]
+            }
+        ],
+        "self_repair_during_verification": "The first CHECK TABLE of mysql.db reported corruption and the server repaired the table on that access: db.MAD-261002091504.BAK (8505 bytes) was created. Only CHECK TABLE and SELECT statements were issued; the repair is the server's Aria auto-recovery, not an action chosen by this verification. The backup is preserved.",
+        "corrupt_file_content": {
+            "bytes": 8505,
+            "printable_strings": [
+                "2026-09-28 11:38:17 0 [Note] InnoDB: Buffer pool(s) load completed at 260928 11:38:17",
+                "2026-09-28 23:29:03 0 [Note] Reading of all Master_info entries succeeded",
+                "2026-09-28 23:29:03 0 [Note] Added new Master_info '' to hash table",
+                "2026-09-28 23:29:03 0 [Note] d:\\xampp\\mysql\\bin\\mysqld.exe: ready for connections.",
+                "Version: '10.4.27-MariaDB'  socket: ''  port: 3306  mariadb.org binary distribution"
+            ],
+            "reading": "the file held mysqld startup log lines (2026-09-28 11:38:17 and 23:29:03), not table rows"
+        },
+        "earlier_repair_backup": {
+            "db.MAD-260924064836.BAK": [
+                "%test",
+                "%test\\_%",
+                "Yv2026-09-21  7:38:16 0 [Note] Reading of all Master_info entries succeeded",
+                "2026-09-21  7:38:16 0 [Note] Added new Master_info '' to hash table",
+                "2026-09-21  7:38:16 0 [Note] d:\\xampp\\mysql\\bin\\mysqld.exe: ready for connections.",
+                "Version: '10.4.27-MariaDB'  socket: ''  port: 3306  mariadb.org binary distribution"
+            ]
+        },
+        "aria_bak_files_in_data_mysql": 13,
+        "unrecorded_repairs": [
+            "2026-09-24 06:48 mysql.db",
+            "2026-09-28 11:36 eleven Aria system tables (backup_mysql_system_20260928 also exists)",
+            "2026-10-02 09:15 mysql.db"
+        ],
+        "effect": "mysql.db has 0 rows now (default %test grants lost); root uses global privileges, so no application path is affected.",
+        "prior_art": "The 2026-09-14 health audit tied Aria Bad file descriptor errors to a detached or hidden Windows launch (MDEV-29117) without proving a cause for the InnoDB history."
+    },
+    "environment_acceptance": {
+        "minimum_controls_run": [
+            "log read",
+            "live instance facts",
+            "CHECK TABLE of 164 tables (two passes after the first)",
+            "migration state of both databases against the 79 files",
+            "MigrationIntegrityAndDriftTest",
+            "OpsEnvironmentBaselineStaticGuardTest",
+            "B18ProductionPathReplayFixturesTest",
+            "the MD-S003-R0025 acceptance aggregate for the zero-skip condition"
+        ],
+        "acceptance_aggregate_positive": {
+            "verdict": "RED",
+            "statuses": {
+                "FAILED": 1,
+                "PASSED": 10
+            },
+            "guards_executed": 11,
+            "reading": "zero skips; six family members on MariaDB, five authority-binding guards; the one failure is REPLAY_FIXTURE_SELF_GENERATED in the exact-publication member, the first-independent-fixture condition of F-MD-B18-A002-017/D-MD-B18-A002-011. It is an R0025 predicate state, not an environment fault, and is not claimed as proof."
+        },
+        "not_done": [
+            "no restart, stop, repair or recovery of the instance by this verification",
+            "no R0025 probe campaign",
+            "no full B18 suite",
+            "no change to the protected R0025 files",
+            "F018 not started",
+            "no B10 binder, reproof or gate rerun beyond preservation hashes"
+        ]
+    },
+    "negative_proof": {
+        "method": "the same aggregate with a wrong target, in a child environment only; nothing was created or dropped",
+        "wrong_database_tradeaxis_env_probe_missing": {
+            "verdict": "RED",
+            "statuses": {
+                "SKIPPED": 11
+            },
+            "guards_executed": 11
+        },
+        "unreachable_port_3399": {
+            "verdict": "RED",
+            "statuses": {
+                "SKIPPED": 11
+            },
+            "guards_executed": 11
+        },
+        "reading": "with the environment wrong, every member is SKIPPED and the verdict is RED; a skip is never converted into a pass, so the zero-skip condition discriminates."
+    },
+    "preservation": {
+        "B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+        "MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4",
+        "traceability_matrix": "61aa831c9f4fad62267f95899b4c3b0a188e22fc9c9c38ce77df53e866720d4f",
+        "E-MD-B10-A002-018": "ac33817f569fd3a2ea9aab871c19832670d048f7652c74296e5818781b426282",
+        "SC-MD-B10-A002-001": "cbea5d9b02edac50500b660d918bc49c17039b175a36b55b865933fbf9b3aa4d",
+        "b10": "B10 1072/1072, MD-DEP-0020 RESOLVED and MD-DEP-0021 RESOLVED are not touched; the matrix hash is unchanged.",
+        "f_md_b10_a002_003_004": "unchanged; the database verification does not bear on either. Relationship recorded only."
+    },
+    "md_dep_0019_status": "BLOCKING, unchanged. Application data and the zero-skip run are clean; the instance is not intact (F-MD-B18-A002-024) and the log read the dependency requires is uninformative after startup.",
+    "owner_action_required": "Restart mysqld as the 2026-09-14 audit verified (not detached and hidden), confirm the error log reaches ready for connections and no .BAK appears, record the system-table repairs, then repeat this verification. See F-MD-B18-A002-024.",
+    "raw_proof": {
+        "package": "storage/app/market_data/evidence/MD-B18-A002/mariadb-env-verification-20261002-v1",
+        "manifest_sha256": "96a7352f05b5de526eb31012ac835e991a1b3f89dcaea09c2bc83b35f88ee0a5"
+    },
+    "next_resume_point": "MD-B18-A002: MD-DEP-0019 stays BLOCKING after E-MD-B18-A002-089 (environment defect F-MD-B18-A002-024: mysql.db Aria corruption and a MariaDB error log that stops at startup). The database owner restarts mysqld the way the 2026-09-14 audit verified, confirms the error log reaches ready for connections and no Aria .BAK repair file appears, and the environment verification (164-table CHECK TABLE, migration state, zero-skip MD-S003-R0025 aggregate with the log read first) is repeated clean; only then return to F-MD-B18-A002-017 / R0025 (first independent fixture under D-MD-B18-A002-011). R0025 and F-018 stay paused; F-MD-B10-A002-003 and F-MD-B10-A002-004 are owned by MD-B18-A002 and unchanged; B10 stays closed.",
+    "no_commit_or_push": true
+}
