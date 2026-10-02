@@ -1,0 +1,326 @@
+{
+    "evidence_id": "E-MD-B18-A002-091",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-02T11:48:07+07:00",
+    "verdict": "R0025_STILL_INCOMPLETE_FIRST_INDEPENDENT_FIXTURE_CANNOT_BE_AUTHORED_WITHOUT_OWNER_DECISION",
+    "r0025_result": "D. AUTHORITY GAP: the independent fixture requirement cannot be implemented without an owner decision on the fixture world",
+    "checkpoint_verdict": "OWNER / AUTHORITY DECISION REQUIRED",
+    "related_findings": [
+        "F-MD-B18-A002-025",
+        "F-MD-B18-A002-017",
+        "F-MD-B10-A002-003",
+        "F-MD-B10-A002-004"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-085",
+        "E-MD-B18-A002-082",
+        "E-MD-B18-A002-088",
+        "E-MD-B18-A002-089",
+        "E-MD-B18-A002-090",
+        "E-MD-B10-A002-018",
+        "SC-MD-B10-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-011",
+        "D-MD-B18-A002-012",
+        "D-MD-B10-A002-005"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0019",
+        "MD-DEP-0015",
+        "MD-DEP-0017"
+    ],
+    "scope": "Assessment of the first independent MD-S003-R0025 fixture under D-MD-B18-A002-011. Diagnostics ran the real production path in rolled-back MariaDB transactions and wrote only to this raw package. No production, test, schema, matrix or protected-file change; no fixture package authored; no B10 binder or reproof; F-018 not started.",
+    "starting_state": {
+        "predicate": "MD-S003-R0025",
+        "authority_text": "All required scenario families pass on MariaDB production semantics and the supported test mirror. Any missing family remains an open proof gap; historical green results for superseded rules do not close it.",
+        "matrix_status": "NOT_ASSESSED (formal); proof basis INCOMPLETE; B18 100/113 reviewed basis, formal 0/113",
+        "aggregate_items": 11,
+        "distinct_guards": 11,
+        "family_members": 6,
+        "authority_binding_guards": 5,
+        "status_counts": {
+            "FAILED": 1,
+            "PASSED": 10
+        },
+        "verdict": "RED",
+        "skipped": 0,
+        "failing_member": "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb (bullet \"verify frozen observations, temporal revisions, config, factors, formulas, artifacts, hashes, manifest, seal, reasons, and terminal state;\", scenario s_f1_frozen_inputs_and_seal)",
+        "failure": "REPLAY_FIXTURE_SELF_GENERATED: expectation was derived from the run under verification; a match proves only that the run equals itself.",
+        "members": [
+            {
+                "role": "member",
+                "guard": "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+                "status": "FAILED",
+                "assertions": 32
+            },
+            {
+                "role": "member",
+                "guard": "B18ScenarioFamiliesOnMariaDbTest::test_degraded_acquisition_family_on_mariadb",
+                "status": "PASSED",
+                "assertions": 68
+            },
+            {
+                "role": "member",
+                "guard": "B18ScenarioFamiliesOnMariaDbTest::test_temporal_identity_and_status_family_on_mariadb",
+                "status": "PASSED",
+                "assertions": 40
+            },
+            {
+                "role": "member",
+                "guard": "B18ScenarioFamiliesOnMariaDbTest::test_corporate_actions_and_indicators_family_on_mariadb",
+                "status": "PASSED",
+                "assertions": 77
+            },
+            {
+                "role": "member",
+                "guard": "B18ScenarioFamiliesOnMariaDbTest::test_correction_and_read_path_family_on_mariadb",
+                "status": "PASSED",
+                "assertions": 180
+            },
+            {
+                "role": "member",
+                "guard": "B18ScenarioFamiliesOnMariaDbTest::test_as_known_isolation_family_on_mariadb",
+                "status": "PASSED",
+                "assertions": 30
+            },
+            {
+                "role": "authority_binding",
+                "guard": "B18ScenarioFamiliesOnMariaDbTest::test_the_family_map_names_exactly_the_families_the_contract_requires",
+                "status": "PASSED",
+                "assertions": 3
+            },
+            {
+                "role": "authority_binding",
+                "guard": "B18ScenarioFamiliesOnMariaDbTest::test_the_bullet_map_names_exactly_the_bullets_the_contract_names",
+                "status": "PASSED",
+                "assertions": 16
+            },
+            {
+                "role": "authority_binding",
+                "guard": "B18ScenarioFamiliesOnMariaDbTest::test_every_bullet_names_one_existing_scenario_and_every_scenario_is_mapped_once",
+                "status": "PASSED",
+                "assertions": 24
+            },
+            {
+                "role": "authority_binding",
+                "guard": "B18ScenarioFamiliesOnMariaDbTest::test_every_family_test_runs_its_own_family_through_the_bullet_map",
+                "status": "PASSED",
+                "assertions": 6
+            },
+            {
+                "role": "authority_binding",
+                "guard": "B18ScenarioFamiliesOnMariaDbTest::test_these_scenarios_really_run_on_mariadb",
+                "status": "PASSED",
+                "assertions": 5
+            }
+        ],
+        "environment": "MariaDB reachable, zero environment skips (E-MD-B18-A002-089/090); environment availability is not the blocker.",
+        "partial_files_sha256_unchanged": {
+            "B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+            "MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4"
+        },
+        "raw": "aggregate/r0025_aggregate_start_of_unit.json"
+    },
+    "d011_contract": {
+        "sources": [
+            "D-MD-B18-A002-011",
+            "RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md section 6A",
+            "Golden_Fixtures_Specification.md \"First independent R0025 fixture\"",
+            "Fixture_Package_Manifest_LOCKED.md first-package paragraph"
+        ],
+        "chain": "frozen inputs -> independently derived expected semantics -> independent review -> owner approval -> immutable versioned package -> target verification",
+        "authored_independently": "the expected semantics, from frozen source inputs, observations, master revisions and configuration, by manual calculation, a reviewed spreadsheet or calculation artifact, or a separate reference implementation with identified method and version and derivation evidence traceable to those inputs",
+        "production_path_reusable": "the actual side only: capture, publication assembly, semantic hashing, persistence and verification stay the real production path; an already executed target may be verified against the approved package",
+        "must_not_come_from_the_target": "the produced publication row, hash, replay output, serializer output or repository result; a different run_id, a relabelled output, a free-form fixture_source or an expected-file presence is not independence",
+        "allowed_semantic_inputs": "frozen inputs and authority text only; target output may be read for comparison after the independent values exist",
+        "circular_evidence": "REPLAY_FIXTURE_SELF_GENERATED: a fixture family runtime_generated_* or a fixture_source naming the run under verification",
+        "fail_closed": "REPLAY_FIXTURE_SELF_GENERATED stays fail-closed; missing expected proof is BLOCKED (REPLAY_EXPECTED_PROOF_INCOMPLETE); a skip is never a pass",
+        "package_requirements": "manifest binds frozen-input identity and lineage, oracle/method ID and version, derivation reference, fixture version, expected-content identity, canonical SHA-256 of every file; volatile operational identities must not enter semantic expected-content hashes",
+        "admission_requirements": "a governed review record naming reviewer identity, derivation evidence, owner approval and the approved package and manifest fingerprint, issued BEFORE the proof claim; the later target-verification record cites that fingerprint and names the run and publication",
+        "not_weakened": "nothing in this unit relaxes D011 or removes the self-generated rejection"
+    },
+    "circularity_root_cause": {
+        "path": {
+            "INPUT": "tests/Unit/MarketData/B18ScenarioFamiliesOnMariaDbTest.php:558 builds one ticker R25X, one frozen source file (one bar, SHA-256 af33c552...), IDX calendar rows, then runs the real MarketDataPipelineService::runDaily",
+            "FIXTURE CREATION": "tests/Unit/MarketData/B18ScenarioFamiliesOnMariaDbTest.php:748 calls ReplayVerificationService::generateFixtureFromRun on that same run and publication",
+            "EXPECTATION CREATION": "ReplayVerificationService.php:584 reads the target run's actual state, then :661 copies it into expected_replay_result.json; the manifest is stamped fixture_family=runtime_generated_diagnostic_case and fixture_source=generated_from_run_<id>_publication_<id>",
+            "REPLAY EXECUTION": "tests/Unit/MarketData/B18ScenarioFamiliesOnMariaDbTest.php:750 verifies the same run against that package",
+            "ACTUAL PUBLICATION": "buildActualReplayState on the same run and publication (the real production path, correct as it is)",
+            "COMPARISON": "ReplayVerificationService.php:2450 refuses before comparing: family runtime_generated_* or a fixture_source naming the run under verification gives REPLAY_FIXTURE_SELF_GENERATED, replay_status BLOCKED"
+        },
+        "circularity_point": "buildExpectedReplayResultFromActual consumes buildActualReplayState of the very run being verified: expected := actual. The test supplies no other expectation.",
+        "diagnostic_not_patched": "The rejection is correct and stays; it is the behaviour R0025 requires. The member fails because it feeds the verifier its own output, not because of a verifier fault."
+    },
+    "independence_feasibility": {
+        "expected_file_leaf_fields": 134,
+        "classification": {
+            "ALLOCATION_BOUND_HASH_V1": 8,
+            "CONFIGURATION_CONTENT_HASH_NEEDS_FROZEN_CONFIGURATION": 1,
+            "INDEPENDENTLY_DERIVABLE_FROM_FROZEN_FILE": 3,
+            "NOT_EXPECTED_CONTENT": 1,
+            "SEMANTIC_DERIVABLE_FROM_AUTHORITY_AND_FROZEN_INPUT": 94,
+            "TARGET_OPERATIONAL_ID": 27
+        },
+        "meaning": {
+            "SEMANTIC_DERIVABLE_FROM_AUTHORITY_AND_FROZEN_INPUT": "terminal status, publishability, coverage counts and ratio, thresholds, gate state, reason codes, source mode and file facts, seal state, pointer and fallback state, price product, resolution mode: authorable now from the contracts and the one-bar frozen input",
+            "INDEPENDENTLY_DERIVABLE_FROM_FROZEN_FILE": "source_file_hash and source_identity: SHA-256 of the frozen file bytes",
+            "TARGET_OPERATIONAL_ID": "run, publication, factor-set, pointer and scope ids: allocated per run; D011 requires them bound by the target-verification record, never authored as expected truth; the verifier has no placeholder for target-bound identities today",
+            "ALLOCATION_BOUND_HASH_V1": "bars, indicators, eligibility and factor-set hashes: serialize local ids (listing_id, config_snapshot_id, sector and status revision ids)",
+            "CONFIGURATION_CONTENT_HASH_NEEDS_FROZEN_CONFIGURATION": "config identity: stable across allocations, but production resolves the live registry; an independent value needs a frozen configuration input the pipeline does not accept"
+        },
+        "executed_allocation_proof": {
+            "method": "the same frozen world (same file, same bar, same configuration) run twice in separate processes through the real pipeline in rolled-back MariaDB transactions; auto-increment advanced between them",
+            "hashes": {
+                "bars_batch_hash": {
+                    "first": "41a08480563a9022f53056af5984e1b549af73ebf739a0faf68ab235d76eaaf1",
+                    "second": "30ad9f5b94102caeecf54bb0692ced65b46c0cfc6bca3ab9081dc03fb6d3f737",
+                    "equal": false
+                },
+                "indicators_batch_hash": {
+                    "first": "65629f3e8ae8c8a65eba8142f12862059017b3cc54eeef8cdd428e77e1c0548d",
+                    "second": "e53d90d2ddb7135e0ae1b8bbfa6fb2050a43bc950fece443e4841f8e7c95847a",
+                    "equal": false
+                },
+                "eligibility_batch_hash": {
+                    "first": "3924aa63e03060046c85bd05e497f3c255048c5f8be2d0a4f3edd91db04fc124",
+                    "second": "d96442c4443b66d001eb6f0ded6cc541c9f13ad60586a4871f69ebcec6066dab",
+                    "equal": false
+                },
+                "factor_set_hash": {
+                    "first": "9ecf10afc00b82657b3cfef8b9d8bbbd8d4bd891f86786c6878a8ccb3e1e5d5a",
+                    "second": "71d3f7be20fea677a08f79a7c063a88ac0928ce5bbdadc42719598c4a0c51cd4",
+                    "equal": false
+                },
+                "source_file_hash": {
+                    "first": "af33c552aba1183a69b717a183faa053d39acabb0428804b2d54b41330eecc0e",
+                    "second": "af33c552aba1183a69b717a183faa053d39acabb0428804b2d54b41330eecc0e",
+                    "equal": true
+                },
+                "observation_manifest_hash": {
+                    "first": "2ad6b07d84745813a4afda17be6c750279ea76432ab21b3606daeb789a2086a9",
+                    "second": "052940f222105ea3d47c71fbf9b7b202edd731069b745b3d3653ed65e4d830e1",
+                    "equal": false
+                },
+                "publication_manifest_hash": {
+                    "first": "da1757c0be40a1493bd43c895193db58afb14dfba94b8fce7702c1b626767604",
+                    "second": "0422eaab8267d8657ca0715ca21e2c1fa5d2a093867b457e097f2bee91befc1b",
+                    "equal": false
+                },
+                "id:run_id": [
+                    991430,
+                    991431
+                ],
+                "id:publication_id": [
+                    990816,
+                    990817
+                ],
+                "id:config_snapshot_id": [
+                    2276,
+                    2277
+                ],
+                "id:factor_set_id": [
+                    626,
+                    627
+                ],
+                "id:listing_id": [
+                    2073,
+                    2074
+                ],
+                "expected.config_identity": {
+                    "first": "6e00844a2b3d91e989e7d231a7dc34ffb6f8a52d69f145e71842f76a74232f98",
+                    "second": "6e00844a2b3d91e989e7d231a7dc34ffb6f8a52d69f145e71842f76a74232f98",
+                    "equal": true
+                }
+            },
+            "reading": "identical semantic inputs give different bars, indicators, eligibility, factor-set, observation-manifest and publication-manifest hashes; only the source file hash and the config identity are stable. A literal independently authored hash for this world is impossible: it would be wrong on the next run."
+        },
+        "profile": "the test environment runs market-data-row-hash/v1 (phpunit.xml); production defaults to v2. V2 hashes drop local ids but require a retained foundation identity per listing, and R25X has none (a listing without one is HELD).",
+        "consequence": "An expectation that satisfies section 6A (\"volatile operational identities MUST NOT be substituted into semantic expected-content hashes\") needs a world whose hashes are allocation-independent: a V2 run over a listing with a retained identity. No such end-to-end pipeline world exists in the tests; V2 tests seed rows and hash stored artifacts, drive the repositories directly, or mock the pipeline.",
+        "raw": [
+            "diagnostics/allocation_dependence.json",
+            "diagnostics/expected_field_classification.json",
+            "diagnostics/world_dump_first.json",
+            "diagnostics/world_dump_second.json",
+            "diagnostics/R0025DumpTest.php"
+        ]
+    },
+    "f003_impact": {
+        "verdict": "NOT AFFECTED; leave OPEN for its B18 predicate owners",
+        "basis": "F-MD-B10-A002-003 concerns a later run, with an earlier knowledge cutoff, reusing a platform-created assessment or factor set recorded after that cutoff through AdjustmentFactorSetService::produceForPublication. The R0025 scenarios never run that path across runs: the exact-publication scenario is one producing run consuming its own records, and the as-known family captures through AsKnownReplaySnapshotService (a read) over rows inserted by the test, which differ only in recorded_at. grep of the test finds no produceForPublication, createAsKnownReplayRun or replay_verify use.",
+        "owners": "MD-S004-R0002, MD-S050-R0028 and MD-S019-R0074 (as the finding names); their proof basis is not changed here",
+        "caveat": "The family bullet that factor revisions are invisible before their recorded time is proven at the snapshot-service level; an end-to-end as-known replay run that binds a producer-reused record is not exercised and is the finding's own subject."
+    },
+    "f004_impact": {
+        "verdict": "AFFECTED, as a prerequisite of the independent exact-publication fixture only",
+        "basis": "The exact-publication bullet requires verifying frozen temporal revisions and factors. An independent expected value for temporal_identity_hash or event_factor_hash must not move with allocation (D-MD-B10-A002-005, section 6A). Captured replay content still carries V1 ticker_id, issuer_id, instrument_id and listing_id, so those identities move when listings are re-allocated. The current member does not assert them (BOUND_INPUT_FIELDS are checked for presence only), which is why it was not exposed before.",
+        "required_direction": "For V2-profile publications, build replay frozen identities from retained foundation roots and content, fail closed (BLOCKED) when a listing has no retained identity, and prove it with an allocation-history probe; keep V1-profile interpretation unchanged. Do not drop keys and do not substitute ticker or listing ids.",
+        "not_done_here": "Not implemented in this unit: it can only be validated on the V2 retained-identity world that the owner decision below chooses, and no such end-to-end world exists yet."
+    },
+    "owner_decision_package": {
+        "minimum_questions": [
+            {
+                "id": "Q1",
+                "question": "Which world carries the first independent exact-publication golden?",
+                "why_authority_does_not_decide": "Section 6A forbids operational ids in expected-content hashes, which excludes the current V1 world; Golden_Fixtures_Specification says synthetic cases are labelled and cannot replace required real-market semantic cases; the only retained foundation identity is IKPM at one admitted instant. Authority does not say whether the exact-publication golden is a real-market case.",
+                "options": {
+                    "A": "A synthetic, labelled retained-identity world on the V2 profile (independently declared roots, as tests/Support/SecurityIdentityFixture does), with literal allocation-independent expected hashes from a separate reference implementation. Fastest and fully controlled; needs the owner to accept that the first R0025 golden is synthetic.",
+                    "B": "A real-market frozen IKPM case at its admitted instant on V2: a sanitized frozen bar with source, retrieval time and licensing notes. Most authentic; needs data stewardship by the foundation owner first.",
+                    "C": "Keep the V1 world and assert only allocation-independent fields (about 94 semantic leaves, the file hash) with the allocation-bound hashes checked by recomputation from stored rows instead of literals. Smallest change; weakens what the bullet says (\"hashes, manifest\") and needs authority to accept recomputation as an independent oracle."
+                },
+                "recommendation": "A for the first package, with the real-market IKPM case kept as its own later mandatory family; the owner decides"
+            },
+            {
+                "id": "Q2",
+                "question": "Who is the independent reviewer, and does the owner approve the package fingerprint once it exists?",
+                "why_authority_does_not_decide": "D011 requires reviewer identity and owner approval before admission. The author of a package cannot be its independent reviewer, and no approval can precede the package.",
+                "needed": "a named reviewer and, after review, an approval record bound to the package and manifest fingerprint"
+            },
+            {
+                "id": "Q3",
+                "question": "Confirm the F-MD-B10-A002-004 direction: retained-root replay identities for V2-profile publications only, fail closed without a retained identity, V1 unchanged.",
+                "why_authority_does_not_decide": "The finding says \"retained roots, not key filters\" but does not scope it to a profile; applying it to V1 publications would turn every existing non-foundation B18 fixture world BLOCKED.",
+                "recommendation": "V2 only"
+            }
+        ],
+        "work_after_decision": [
+            "implement the F-004 residual for V2 publications and prove it with an allocation-history probe",
+            "build the chosen V2 retained-identity pipeline world",
+            "add verifier support for target-bound operational identities and an admission check for independent packages (manifest oracle fields, no runtime_generated family)",
+            "author the package and its separate reference oracle, with derivation evidence",
+            "review and approval record; then the target-verification member, its sensitivity, independence and anti-circularity probes, and the R0025 aggregate"
+        ]
+    },
+    "f017_state": "OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE, unchanged. It owns MD-S003-R0025 and MD-S050-R0005; neither is proven, and MD-S050-R0005 stays IMPLEMENTATION_DEPENDENCY_UNAVAILABLE, so the finding could not close even if R0025 did.",
+    "positive_independence_sensitivity_anticircularity_probes": "Not run. There is no independent package to be positive, independent or sensitive. The only anti-circularity evidence is the existing, correct behaviour: the self-generated package is rejected (REPLAY_FIXTURE_SELF_GENERATED) and the aggregate is RED, retained in aggregate/.",
+    "formal_current_verification": "No promotion. MD-S003-R0025 stays NOT_ASSESSED with proof basis INCOMPLETE; B18 stays 100/113 reviewed and 0/113 formal SATISFIED.",
+    "md_dep_0015_and_0017": "unchanged: MD-DEP-0015 still gates B18 closure (full suite, corpus oracle) and MD-DEP-0017 stays governed independently; this assessment found no new relationship beyond F-017.",
+    "not_done": [
+        "no fixture package authored (an unreviewable package would be a self-built oracle)",
+        "no production, test or schema change",
+        "no protected file change",
+        "no F-018 work",
+        "no B10 binder, reproof or gate rerun beyond preservation hashes"
+    ],
+    "preservation": {
+        "B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+        "MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4",
+        "traceability_matrix": "61aa831c9f4fad62267f95899b4c3b0a188e22fc9c9c38ce77df53e866720d4f",
+        "b10": "B10 1072/1072, SC-MD-B10-A002-001, E-MD-B10-A002-018, MD-DEP-0020 and MD-DEP-0021 unchanged"
+    },
+    "raw_proof": {
+        "package": "storage/app/market_data/evidence/MD-B18-A002/r0025-independent-fixture-assessment-20261002-v1",
+        "manifest_sha256": "224a5731faba19dcd884919eed05f20b1ed8ea1205aff017bb8489d07bed7d1e"
+    },
+    "next_resume_point": "MD-B18-A002: F-MD-B18-A002-017 / MD-S003-R0025 waits on an owner decision (E-MD-B18-A002-091, F-MD-B18-A002-025). R0025 is INCOMPLETE because its exact-publication member verifies a fixture built from its own run (REPLAY_FIXTURE_SELF_GENERATED, correctly rejected), and a D-MD-B18-A002-011 independent fixture cannot carry allocation-independent hashes in the current V1 world. The owner decides Q1 (the world for the first independent golden: synthetic V2 retained identity, real-market IKPM V2, or V1 with recomputed hashes), names the independent reviewer (Q2) and confirms the F-MD-B10-A002-004 direction (Q3: retained-root replay identities for V2 publications only). After that: F-004 residual, the V2 world, verifier support for target-bound identities, the package and its reference oracle, review and approval, then the member probes and the aggregate. MD-DEP-0019 is resolved; MD-DEP-0015 still gates closure; F-018 is not started; B10 stays closed.",
+    "no_commit_or_push": true
+}

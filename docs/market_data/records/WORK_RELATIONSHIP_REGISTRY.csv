@@ -1039,3 +1039,31 @@ MD-REL-1037,CI-MD-B18-A002-001,E-MD-B18-A002-090,RELATED,Impact declaration iden
 MD-REL-1038,CI-MD-B18-A002-001,D-MD-B18-A002-012,RELATED,Impact declaration identifies the clarification.,D-MD-B18-A002-012,2026-10-02T11:08:27+07:00,Same B18-A002/BL001; MD-DEP-0019 scope correction.
 MD-REL-1039,F-MD-B18-A002-017,E-MD-B18-A002-090,RELATED,The finding records the dependency resolution; no predicate promoted.,D-MD-B18-A002-012,2026-10-02T11:09:58+07:00,Same B18-A002/BL001; MD-DEP-0019 scope correction.
 MD-REL-1040,F-MD-B18-A002-017,D-MD-B18-A002-012,RELATED,The finding records the environment boundary.,D-MD-B18-A002-012,2026-10-02T11:08:27+07:00,Same B18-A002/BL001; MD-DEP-0019 scope correction.
+MD-REL-1041,E-MD-B18-A002-091,F-MD-B18-A002-025,RELATED,Records the fixture-admission gap the assessment found.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1042,E-MD-B18-A002-091,F-MD-B18-A002-017,RELATED,Assessment of the finding's remaining MariaDB predicate; no predicate promoted.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1043,E-MD-B18-A002-091,F-MD-B10-A002-003,RELATED,Non-impact recorded: no R0025 scenario runs the producer reuse path.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1044,E-MD-B18-A002-091,F-MD-B10-A002-004,RELATED,Impact recorded: prerequisite of the independent exact-publication fixture.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1045,E-MD-B18-A002-091,D-MD-B18-A002-011,DEPENDS_ON,Applies the independent-fixture contract it defines; does not weaken it.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1046,E-MD-B18-A002-091,D-MD-B18-A002-012,RELATED,The environment boundary under which the zero-skip run was taken.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1047,E-MD-B18-A002-091,D-MD-B10-A002-005,RELATED,Allocation-independence rule for dependent hashes applied to the expected side.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1048,E-MD-B18-A002-091,E-MD-B18-A002-085,RELATED,Authority fit that this assessment tries to implement.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1049,E-MD-B18-A002-091,E-MD-B18-A002-082,RELATED,Aggregate it first reported blocked; now runs with zero skips.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1050,E-MD-B18-A002-091,E-MD-B18-A002-088,RELATED,Resolved part of the replay identity allocation fix; the residual remains.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1051,E-MD-B18-A002-091,E-MD-B18-A002-089,RELATED,"Environment verification, scope-corrected by E090.",,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1052,E-MD-B18-A002-091,E-MD-B18-A002-090,RELATED,Resolved the environment dependency this unit builds on.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1053,E-MD-B18-A002-091,CI-MD-B18-A002-001,RELATED,Same impact declaration records the assessment.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1054,E-MD-B18-A002-091,MD-B18-A002-BL001,RELATED,Same B18 baseline; no new attempt.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1055,E-MD-B18-A002-091,E-MD-B10-A002-018,RELATED,Preservation check only: B10 closure unchanged.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1056,E-MD-B18-A002-091,SC-MD-B10-A002-001,RELATED,Preservation check only: B10 closure unchanged.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1057,F-MD-B18-A002-025,E-MD-B18-A002-091,DERIVED_FROM,Raised by the R0025 independent-fixture assessment.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1058,F-MD-B18-A002-025,F-MD-B18-A002-017,RELATED,Blocks the finding's remaining MariaDB predicate from PROVEN.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1059,F-MD-B18-A002-025,F-MD-B10-A002-004,RELATED,Its residual is a prerequisite of the independent fixture.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1060,F-MD-B18-A002-025,F-MD-B10-A002-003,RELATED,Related only: not exercised by R0025.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1061,F-MD-B18-A002-025,E-MD-B18-A002-085,RELATED,Authority-fit review of the independent fixture.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1062,F-MD-B18-A002-025,D-MD-B18-A002-011,DEPENDS_ON,The independent-fixture decision it implements.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1063,F-MD-B18-A002-017,E-MD-B18-A002-091,RELATED,The finding records the assessment.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1064,F-MD-B18-A002-017,F-MD-B18-A002-025,RELATED,The finding records the new fixture-admission gap.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1065,F-MD-B10-A002-003,E-MD-B18-A002-091,RELATED,The finding records the R0025 non-impact.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1066,F-MD-B10-A002-004,E-MD-B18-A002-091,RELATED,The finding records the R0025 impact.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1067,CI-MD-B18-A002-001,E-MD-B18-A002-091,RELATED,Impact declaration identifies the assessment.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.
+MD-REL-1068,CI-MD-B18-A002-001,F-MD-B18-A002-025,RELATED,New finding disclosed.,,2026-10-02T11:48:07+07:00,Same B18-A002/BL001; R0025 independent-fixture assessment.

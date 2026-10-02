@@ -41,3 +41,7 @@ Removing them is not a key filter. Listings need a retained identity, and the sh
 ## Closure
 
 Resolved when replay frozen identities are built from retained roots and content, and an allocation-history probe shows identical identities for identical semantic inputs.
+
+## 2026-10-02 R0025 impact — E-MD-B18-A002-091
+
+Affected, as a prerequisite of the first independent exact-publication fixture. The family bullet verifies frozen temporal revisions and factors, so an independent expectation of `temporal_identity_hash` or `event_factor_hash` cannot move with allocation, and captured replay content still carries V1 entity ids. The current member does not assert those identities (the bound-input fields are checked for presence only), which is why it was not exposed earlier. The direction the owner is asked to confirm (`E-MD-B18-A002-091`, Q3): retained-root replay identities for V2-profile publications, failing closed (`BLOCKED`) when a listing has no retained identity, V1 interpretation unchanged, no key dropping, no ticker or listing id substitution. Not implemented in this unit: it can only be validated on the allocation-independent world the owner chooses. The finding stays `PARTIALLY_RESOLVED`.
