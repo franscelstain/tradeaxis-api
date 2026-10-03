@@ -72,3 +72,7 @@ there.
 ## 2026-10-02 R0025 impact — E-MD-B18-A002-091
 
 Not affected. The `MD-S003-R0025` scenarios never run `AdjustmentFactorSetService::produceForPublication` across runs: the exact-publication scenario is one producing run consuming its own records, and the as-known family captures through `AsKnownReplaySnapshotService` (a read) over rows the test inserts, which differ only in `recorded_at`. No scenario uses `createAsKnownReplayRun` or `replay_verify`. The finding stays `OPEN` for `MD-S004-R0002`, `MD-S050-R0028` and `MD-S019-R0074`. The R0025 family bullet on factor revisions is proven at the snapshot-service level only, and an end-to-end as-known replay that binds a producer-reused record remains this finding's own subject.
+
+## 2026-10-02 R0025 impact — E-MD-B18-A002-092
+
+Still not exercised. The synthetic V2 world runs one producing run that consumes its own factor and assessment records; no later run, no earlier cutoff, no `createAsKnownReplayRun` or `replay_verify`. Non-impact only; the finding stays `OPEN` for its predicate owners.

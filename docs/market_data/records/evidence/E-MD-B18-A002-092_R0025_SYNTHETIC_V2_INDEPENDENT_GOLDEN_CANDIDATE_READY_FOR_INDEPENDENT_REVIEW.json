@@ -1,0 +1,429 @@
+{
+    "evidence_id": "E-MD-B18-A002-092",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-02T13:45:27+07:00",
+    "verdict": "CANDIDATE_INDEPENDENT_R0025_V2_GOLDEN_PACKAGE_READY_FOR_INDEPENDENT_REVIEW_R0025_STILL_INCOMPLETE_NOT_PROOF",
+    "checkpoint_verdict": "CANDIDATE READY FOR INDEPENDENT REVIEW",
+    "candidate_match_statement": "CANDIDATE MATCHES — NOT YET ADMITTED AS PROOF",
+    "related_findings": [
+        "F-MD-B18-A002-025",
+        "F-MD-B18-A002-026",
+        "F-MD-B18-A002-017",
+        "F-MD-B10-A002-004",
+        "F-MD-B10-A002-003"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-091",
+        "E-MD-B18-A002-085",
+        "E-MD-B18-A002-088",
+        "E-MD-B18-A002-090",
+        "E-MD-B10-A002-010",
+        "E-MD-B10-A002-018",
+        "SC-MD-B10-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-013",
+        "D-MD-B18-A002-011",
+        "D-MD-B18-A002-012",
+        "D-MD-B10-A002-005"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0015",
+        "MD-DEP-0017"
+    ],
+    "scope": "Authoring of the first independent MD-S003-R0025 golden fixture CANDIDATE (synthetic V2 world), the minimum production and test support it needs, and its pre-review controls. The package is not reviewed, not approved and not proof. No R0025 binding, no promotion, no F-017 resolution, no F-018 work, no B10 binder or reproof.",
+    "owner_decision_recording": {
+        "canonical_decision": "D-MD-B18-A002-013",
+        "Q1_world": "A. synthetic, explicitly labelled V2 world; fixed independently declared retained roots; literal semantic expectations; no real-market IKPM; no V1 recomputation",
+        "Q2_review_model": "author = the coding Agent; independent reviewer = a separate TradeAxis reviewer or coordinator; owner approver = the project owner; this unit stops at the candidate, derivation evidence and fingerprint",
+        "Q3_f004_direction": "confirmed: retained-root replay identity for V2-profile publications only; fail closed; no local-id substitution; V1 unchanged"
+    },
+    "synthetic_world": {
+        "label": "SYNTHETIC_TEST_WORLD_NOT_A_REAL_INSTRUMENT",
+        "world_version": "r0025-synthetic-v2/1",
+        "profile": "market-data-semantic-hash/v2",
+        "fixed_inputs": {
+            "trade_date": "2026-03-23",
+            "run_clock": "2026-03-25 10:30:00",
+            "listing": "SYNV2 / yahoo_finance / SYNV2.JK, venue SYNTHETIC_VENUE, board SYNTHETIC_BOARD",
+            "bar": "open 100, high 110, low 95, close 105, volume 1000 (one bar, no history)",
+            "calendar": "IDX REGULAR Monday to Friday, 2026-02-20 to 2026-03-23"
+        },
+        "retained_roots": {
+            "issuer_root": "5a000000-0000-4000-8000-000000000001",
+            "instrument_root": "5a000000-0000-4000-8000-000000000002",
+            "listing_root": "5a000000-0000-4000-8000-000000000003"
+        },
+        "foundation_admission_path": "FoundationService::restore of inputs/foundation_registry.json under its own sha256 (the canonical test admission of a fingerprinted registry); resolution through the production TemporalIdentityRepository::resolveFoundationProviderContext; roots are fixed literals and never generated from an id, a row, a run or a publication",
+        "actual_side": "real production path: provider response bytes -> PublicApiEodBarsAdapter -> MarketDataPipelineService::runDaily -> artifacts -> publication -> seal -> replay verification; only the HTTP transport returns the frozen bytes"
+    },
+    "f004_v2_remediation": {
+        "implemented": [
+            "source_observation_manifest_hash: a V2 publication consumes semantic_observation_manifest_hash",
+            "temporal_identity_hash: a V2 publication consumes the retained-root semantic identity revision set (composite with the profile)",
+            "calendar_status_hash: a V2 publication consumes the semantic calendar and status revision sets",
+            "publication and lineage factor_set_hash: a V2 publication consumes the semantic factor-set hash",
+            "fail closed: a V2 publication whose lineage lacks any semantic member leaves these identities unavailable (empty) so the replay is BLOCKED; the V1 value is never substituted and V2 is never downgraded"
+        ],
+        "not_implemented": [
+            "event_factor_hash still binds the ancillary captures, which carry materialized rows with local ids (listing_id, ticker_id, source_observation_id, run and publication ids); not asserted by the package and left as the open part of F-MD-B10-A002-004"
+        ],
+        "v1_preservation": "V1-profile publications return null from the V2 lineage rule and keep every V1 value; control test_a_v1_profile_run_keeps_its_historical_interpretation; probe P11; full suite",
+        "closure_criterion": "Resolved when replay frozen identities are built from retained roots and content, and an allocation-history probe shows identical identities for identical semantic inputs: met for four of the five identities of a V2 publication; the ancillary member of event_factor_hash is not"
+    },
+    "v2_pipeline_defect_found_and_fixed": "F-MD-B18-A002-026: eligibility rows of a V2 run were not bound to the configuration snapshot, so a V2 run could never seal; fixed for V2 only (V1 rows keep NULL). B10 closure not reopened.",
+    "field_classification": {
+        "counts": {
+            "LITERAL_SEMANTIC_EXPECTATION": 99,
+            "DERIVED_FROM_FROZEN_INPUT": 21,
+            "TARGET_BOUND_OPERATIONAL": 20,
+            "NOT_ASSERTED_BOUND_INPUTS": 4,
+            "REASON_CODE_COUNT_ROWS": 2
+        },
+        "file": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v1/derivation/field_classification.json",
+        "not_asserted_bound_inputs": [
+            "event_factor_hash",
+            "formula_registry_hash",
+            "reason_registry_hash",
+            "executable_build_identity"
+        ],
+        "target_bound_paths": [
+            "expected_replay_resolution_context.replay_selector_id",
+            "expected_replay_resolution_context.publication_id",
+            "expected_replay_resolution_context.publication_run_id",
+            "expected_replay_resolution_context.run_id",
+            "expected_replay_resolution_context.artifact_scope",
+            "expected_replay_resolution_context.coverage_basis_publication_id",
+            "expected_replay_resolution_context.coverage_basis_run_id",
+            "expected_coverage_context.coverage_basis_publication_id",
+            "expected_coverage_context.candidate_publication_id",
+            "expected_artifact_context.artifact_scope",
+            "expected_publication_context.publication_id",
+            "expected_publication_context.publication_run_id",
+            "expected_publication_context.factor_set_id",
+            "expected_pointer_context.pointer_publication_id",
+            "expected_pointer_context.pointer_run_id",
+            "expected_lineage.run_id",
+            "expected_lineage.publication_id",
+            "expected_lineage.current_publication_id",
+            "expected_lineage.publication_run_id",
+            "expected_lineage.factor_set_id"
+        ],
+        "vocabulary_note": "Labels such as CURRENT_READABLE_PUBLICATION_AUDIT, MIRROR_VALID, API_FREE, FAIL_CLOSED_BOARD_UNKNOWN or temporal_provider_mapping_v1 are not defined by any authority text; they are the implementation vocabulary. What is independent is the choice of which label applies to the frozen scenario."
+    },
+    "reference_oracle": {
+        "method": "r0025-synthetic-v2-reference-oracle",
+        "version": "1.0.0",
+        "source": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v1/derivation/reference_oracle.php",
+        "inputs": {
+            "synthetic_world.json": "16f98ebb1cd7daf7031976d930acf9a2c52bf8eba37c1ad58b598ef738059156",
+            "provider_response.json": "8ab35be69d1223c7bcb6220d8937fbd703ce3f44c1a860489f865d5b31019fd3",
+            "frozen_config_content.txt": "8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0"
+        },
+        "literal_outputs": {
+            "bars_batch_hash": "6a981c3a417a19b59f401690c53585a06dc0a9156c252fa82975333309ccb1e9",
+            "indicators_batch_hash": "0668bcc2c7ae9b30536ab5f069856c65688722c6b6cdc08938b2f3c827238019",
+            "eligibility_batch_hash": "42722d5ddeaa78896b81921e25d1c7d8d72de1e914a7a1ee24f8ae5ff2bf9269",
+            "nested_members": {
+                "observation_manifest_hash": "fa1a57ddea92bc605dcb4537341c7f2a8db99c52f42f2384b058eb50b69c9ef3",
+                "identity_revision_set_hash": "fc581f41d529036c9886bdac8b21e700503321e5b6f3661f19771ade97fc586b",
+                "calendar_revision_set_hash": "ef256ac9af24d297d5fbe6fd3c97219ea5565181050b69f95050fff3c6a9065e",
+                "status_revision_set_hash": "083483df0e9a825eb0b7fd7cf9cea9f9606c9d28f04f4d249442681ad01af81e",
+                "event_revision_set_hash": "e26c3c22bba3187fa8cf14dfd0c888e60cafefac630b2534df9a8582859f7c82",
+                "source_scale_assessment_set_hash": "ebb520fa38efc571ae42c68e4871f3f671018ee9cede1d7c81527ba0799f5936",
+                "market_structure_revision_set_hash": "d313d45ada9589003ac3a8af2f962d5fea02850d35bb2e5fc14120bd4fc4f8e6",
+                "factor_decision_set_hash": "648a63777d0a173941fb8e31e045edfdac5dd2aff96942ecb528d0cbd2e7fb30",
+                "factor_set_hash": "f76a54ae5251685f2bcff60bce22fc66f250408350583b86c57bde953baf74e0"
+            },
+            "replay_composites": {
+                "temporal_identity_hash": "a9233bcee067ad6f1715494c0bd5b587e49fa69e08b2a1085bc5509dc1b2e51b",
+                "calendar_status_hash": "2c7dc9f896cee8e1233ac0899d63316b5f2ccfb779cd6553f2fe3fa52e801dcf"
+            },
+            "config_content_sha256": "8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0"
+        },
+        "independence": "a separate implementation with no application include, no database, no read of any run, publication, lineage binding, artifact row, observation row or replay output; it calls none of ArtifactSemanticHashService, SemanticNestedIdentityService, SemanticObservationIdentityService, DeterministicHashService, the publication serializer, the manifest builder or the replay verifier (a control scans its source)",
+        "honest_disclosure": "the author read the production services while transcribing the V2 member lists, the nested document members and the implementation vocabulary; no production hash was an input, and the candidate-versus-actual comparison was made after the oracle output existed. The oracle matched every artifact hash, every nested identity and both replay composites on its first run against the production path; that agreement is evidence about the transcription, which the independent reviewer must re-check against the governed records.",
+        "transcription_points": [
+            "column order of the three V2 artifacts",
+            "members of the nine nested set documents",
+            "implementation vocabulary labels that no authority text defines"
+        ]
+    },
+    "two_allocation_stability": {
+        "allocation_a": "default (natural allocation)",
+        "allocation_b": {
+            "ticker_id": 975777,
+            "preconsume": 41,
+            "calendar_order": "desc"
+        },
+        "semantic_comparison": {
+            "artifact_hashes_equal": true,
+            "nested_equal": true,
+            "bound_inputs_equal": true,
+            "factor_set_hash_equal": true,
+            "equal_to_oracle_artifacts": true,
+            "equal_to_oracle_nested": true,
+            "operational_identities_differ": {
+                "run_id": true,
+                "publication_id": true,
+                "ticker_id": true,
+                "listing_id": true,
+                "config_snapshot_id": true,
+                "factor_set_id": true
+            }
+        },
+        "operational_identities_a": {
+            "run_id": 991548,
+            "publication_id": 991336,
+            "ticker_id": 975100,
+            "listing_id": 2232,
+            "config_snapshot_id": 2807,
+            "factor_set_id": 755
+        },
+        "operational_identities_b": {
+            "run_id": 991549,
+            "publication_id": 991378,
+            "ticker_id": 975777,
+            "listing_id": 2233,
+            "config_snapshot_id": 2849,
+            "factor_set_id": 756
+        },
+        "result": "retained semantic hashes and expectations are identical across the layouts and equal to the oracle literals; only operational identities differ. No allocation leak remains in any asserted value.",
+        "residual_leak_outside_the_package": "the V1 sets and the ancillary member of event_factor_hash still move with allocation; the package asserts none of them"
+    },
+    "anti_circularity": {
+        "controls": [
+            "manifest family independent_golden_synthetic_v2, source independent_derivation:..., no run id in the source, no reviewer, no approval",
+            "a different actual output (provider close tampered) is judged against the same, byte-identical expectation and mismatches",
+            "a package built by generateFixtureFromRun from the run under test is refused REPLAY_FIXTURE_SELF_GENERATED; relabelling its family or rewording its source does not admit it",
+            "the oracle source contains no application import (scan)",
+            "the package files are byte-identical before and after every verification and every mutation (mutations run on copies)"
+        ],
+        "self_generated_guard": "unchanged and first in order; probes P12 and P13 turn their controls red"
+    },
+    "sensitivity": {
+        "method": "one mutation at a time on a byte copy of the package inputs, then the oracle is re-run",
+        "results": {
+            "bar close": [
+                "artifact:bars"
+            ],
+            "bar volume": [
+                "artifact:bars"
+            ],
+            "retained listing root": "bars, indicators, eligibility, identity set and temporal identity change; the empty event set does not",
+            "calendar session close": [
+                "composite:calendar_status_hash",
+                "nested:calendar_revision_set_hash"
+            ],
+            "configuration value": "all three artifacts and the factor set change",
+            "provider response": "observation manifest and the bars and indicators artifacts change"
+        },
+        "not_applicable": "factor, status and event inputs: the world freezes none (no corporate action, status revision or sector context); the factor-set document does bind the configuration content hash, covered by the configuration mutation"
+    },
+    "candidate_package": {
+        "path": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v1",
+        "version": "candidate-1",
+        "status": "CANDIDATE_AWAITING_INDEPENDENT_REVIEW",
+        "manifest_sha256": "da2e52dae945c7fdcf2942782aac21cf934984f3fb0059561879ade5cc6fca82",
+        "package_fingerprint": "05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0",
+        "files": 14,
+        "family": "independent_golden_synthetic_v2",
+        "fingerprint_algorithm": "sha256 over lines \"<sha256>  <relative path>\\n\" for every file including manifest.json, ordered by path",
+        "target_bound_declaration": "closed list of 20 paths in ReplayVerificationService::TARGET_BOUND_PATHS"
+    },
+    "candidate_vs_actual_diagnostic": {
+        "result": "MATCH: 0 mismatches over the fields the verifier compares",
+        "comparison_note": "CANDIDATE MATCHES — NOT YET ADMITTED AS PROOF",
+        "admission": "NOT_ADMISSIBLE",
+        "replay_status": "BLOCKED",
+        "refusal": "REPLAY_INDEPENDENT_REVIEW_REQUIRED: package fingerprint 05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0 has no independent review and owner approval bound to it; a candidate package is not proof.",
+        "fields_compared": 114,
+        "raw": "diagnostics/candidate_vs_actual_allocation_a.json"
+    },
+    "verifier_support": "Added only: V2 semantic identities, the independent-package gate (a package of an independent family is BLOCKED with REPLAY_INDEPENDENT_REVIEW_REQUIRED unless an approved fingerprint equal to its own is passed; provenance, per-file hashes and unbound files are checked first), and the closed list of target-bound operational identities. The self-generated rejection is not weakened.",
+    "mutation_probes": {
+        "count": 15,
+        "red_at_intended_control": 15,
+        "verdicts": {
+            "P01_v2_temporal_identity_falls_back_to_v1": {
+                "first_pass": "RED_INTENDED",
+                "covering": [
+                    "test_two_allocation_layouts_give_identical_semantic_identities_and_the_oracle_literals",
+                    "test_candidate_matches_the_actual_publication_but_is_not_admitted_as_proof"
+                ],
+                "restored_byte_identical": true
+            },
+            "P02_v2_factor_identity_uses_the_v1_hash": {
+                "first_pass": "RED_INTENDED",
+                "covering": [
+                    "test_two_allocation_layouts_give_identical_semantic_identities_and_the_oracle_literals",
+                    "test_candidate_matches_the_actual_publication_but_is_not_admitted_as_proof"
+                ],
+                "restored_byte_identical": true
+            },
+            "P03_independent_package_admitted_without_approval": {
+                "first_pass": "RED_INTENDED",
+                "covering": [
+                    "test_candidate_matches_the_actual_publication_but_is_not_admitted_as_proof",
+                    "test_the_admission_mechanism_admits_only_the_exact_fingerprint_and_refuses_any_damaged_package"
+                ],
+                "restored_byte_identical": true
+            },
+            "P04_changed_file_not_detected": {
+                "first_pass": "RED_INTENDED",
+                "covering": [
+                    "test_the_admission_mechanism_admits_only_the_exact_fingerprint_and_refuses_any_damaged_package"
+                ],
+                "restored_byte_identical": true
+            },
+            "P05_unbound_file_not_detected": {
+                "first_pass": "RED_INTENDED",
+                "covering": [
+                    "test_the_admission_mechanism_admits_only_the_exact_fingerprint_and_refuses_any_damaged_package"
+                ],
+                "restored_byte_identical": true
+            },
+            "P06_missing_provenance_not_detected": {
+                "first_pass": "RED_INTENDED",
+                "covering": [
+                    "test_the_admission_mechanism_admits_only_the_exact_fingerprint_and_refuses_any_damaged_package"
+                ],
+                "restored_byte_identical": true
+            },
+            "P07_marker_allowed_on_any_path": {
+                "first_pass": "RED_INTENDED",
+                "covering": [
+                    "test_a_target_marker_is_a_closed_list_and_never_a_wildcard"
+                ],
+                "restored_byte_identical": true
+            },
+            "P08_marker_declaration_not_compared": {
+                "first_pass": "RED_INTENDED",
+                "covering": [
+                    "test_a_target_marker_is_a_closed_list_and_never_a_wildcard"
+                ],
+                "restored_byte_identical": true
+            },
+            "P09_factor_set_reference_not_checked": {
+                "first_pass": "RED_INTENDED",
+                "covering": [
+                    "test_a_target_bound_factor_set_must_be_the_one_the_lineage_binding_names"
+                ],
+                "restored_byte_identical": true
+            },
+            "P10_v2_eligibility_not_bound_to_config": {
+                "first_pass": "RED_INTENDED",
+                "covering": [
+                    "test_the_world_runs_the_real_v2_pipeline_and_seals_a_publication"
+                ],
+                "restored_byte_identical": true
+            },
+            "P11_v1_eligibility_bound_to_config": {
+                "first_pass": "RED_INTENDED",
+                "covering": [
+                    "test_a_v1_profile_run_keeps_its_historical_interpretation"
+                ],
+                "restored_byte_identical": true
+            },
+            "P12_self_generated_family_not_refused": {
+                "first_pass": "NOT_CAUGHT",
+                "covering": [
+                    "test_a_fixture_built_from_the_run_under_verification_is_still_refused_as_self_generated"
+                ],
+                "restored_byte_identical": true,
+                "rerun_after_control_added": "RED_INTENDED"
+            },
+            "P13_self_generated_source_not_refused": {
+                "first_pass": "RED_INTENDED",
+                "covering": [
+                    "test_a_fixture_built_from_the_run_under_verification_is_still_refused_as_self_generated"
+                ],
+                "restored_byte_identical": true
+            },
+            "P14_incomplete_v2_lineage_treated_as_complete": {
+                "first_pass": "RED_INTENDED",
+                "covering": [
+                    "test_the_v2_replay_identities_fail_closed_when_a_v2_publication_lacks_a_semantic_member"
+                ],
+                "restored_byte_identical": true
+            },
+            "P15_fingerprint_ignores_the_path": {
+                "first_pass": "RED_INTENDED",
+                "covering": [
+                    "test_the_manifest_binds_every_file_and_the_recorded_fingerprint_is_the_package_fingerprint",
+                    "test_the_admission_mechanism_admits_only_the_exact_fingerprint_and_refuses_any_damaged_package"
+                ],
+                "restored_byte_identical": true
+            }
+        },
+        "note": "The first pass caught 14 of 15: P12 (the self-generated family check) was shadowed by the source check. A control was added that rewords the source while the family stays generated, and P12 was rerun and caught. Every file was restored from a byte copy and its sha256 verified."
+    },
+    "regression": {
+        "full_marketdata_suite": {
+            "tests": 2748,
+            "assertions": 38708,
+            "failures": 10,
+            "failing_tests": [
+                "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+                "GovernanceGateReadOnlyExecutionTest::test_gate_execution_preserves_every_document",
+                "GovernanceGateReadOnlyExecutionTest::test_governance_self_test_remains_fail_closed_without_changing_documents",
+                "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_carries_a_non_positive_price",
+                "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_violates_ohlc_ordering",
+                "ProductionCorpusInvariantOracleTest::test_exactly_one_publication_is_current_per_trade_date",
+                "ProductionCorpusInvariantOracleTest::test_no_readable_publication_rests_on_a_failed_run",
+                "ProductionCorpusInvariantOracleTest::test_authoritative_factor_candidates_reach_an_explicit_applied_or_held_decision",
+                "ProductionCorpusInvariantOracleTest::test_no_price_derived_factor_is_usable_as_an_adjustment",
+                "ProductionCorpusInvariantOracleTest::test_every_history_row_binds_to_a_publication"
+            ],
+            "reading": "the 8 governed expected failures (the exact-publication member of B18ScenarioFamiliesOnMariaDbTest and the seven ProductionCorpusInvariantOracleTest population controls) and 2 GovernanceGateReadOnlyExecutionTest failures that are caused by the documentation gate seeing the new, not yet registered record; they clear once the records are registered (rerun in the post-registration validation)",
+            "baseline": "E-MD-B10-A002-017: 2733 tests, 38615 assertions, 8 failures; this run adds the 15 candidate controls"
+        },
+        "r0025_aggregate": {
+            "verdict": "RED",
+            "statuses": {
+                "FAILED": 1,
+                "PASSED": 10
+            },
+            "skipped": 0,
+            "reading": "unchanged: the exact-publication member still verifies a fixture built from its own run and is refused REPLAY_FIXTURE_SELF_GENERATED; it was not changed in this unit"
+        }
+    },
+    "f003_impact": "Not exercised: the synthetic world has one producing run consuming its own factor and assessment records; no later run, no earlier cutoff, no createAsKnownReplayRun or replay_verify. Non-impact recorded only; F-MD-B10-A002-003 stays OPEN for its predicate owners.",
+    "f004_state": "PARTIALLY_RESOLVED, unchanged in state: the V2 universe, calendar/status, observation and factor identities are retained-root and content based and allocation-independent; the ancillary member of event_factor_hash and the V1 captured content remain",
+    "f025_state": "OPEN, progressed: owner world decision recorded (D-MD-B18-A002-013); candidate fixture exists; independent review, owner approval bound to the fingerprint and the admissible proof run are outstanding",
+    "r0025_state": "INCOMPLETE / NOT_ASSESSED. No review, no approval, no proof claim, no binding, no promotion; B18 100/113 reviewed, formal 0/113; F-017 open; F-018 not started.",
+    "review_material": {
+        "raw_index": "storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261002-v1/REVIEW_INDEX.md",
+        "package": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v1/",
+        "fingerprint": "05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0"
+    },
+    "not_done": [
+        "no self-review and no owner approval",
+        "no R0025 proof claim, binding or promotion",
+        "B18ScenarioFamiliesOnMariaDbTest.php and the acceptance aggregate are unchanged (their hashes are the preserved values)",
+        "F-018 not started",
+        "no B10 binder, reproof or gate; B10 records untouched",
+        "no MariaDB change; no push, no commit"
+    ],
+    "preservation": {
+        "B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+        "MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4",
+        "traceability_matrix": "61aa831c9f4fad62267f95899b4c3b0a188e22fc9c9c38ce77df53e866720d4f",
+        "b10": "B10 1072/1072, SC-MD-B10-A002-001, E-MD-B10-A002-018, MD-DEP-0020 and MD-DEP-0021 unchanged"
+    },
+    "raw_proof": {
+        "package": "storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261002-v1",
+        "manifest_sha256": "47d5379eef48961ebb09df792f9fe223a46a418f272c660b37cead5540610b1c"
+    },
+    "next_resume_point": "MD-B18-A002: independent review of the candidate package tests/fixtures/replay/r0025-synthetic-v2-candidate-v1 (fingerprint 05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0, manifest sha256 da2e52dae945c7fdcf2942782aac21cf934984f3fb0059561879ade5cc6fca82) by a TradeAxis reviewer who is not the authoring Agent, using storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261002-v1/REVIEW_INDEX.md; then the project owner approves or rejects the reviewed fingerprint in a governed record. Only after both does the exact-publication member of the MD-S003-R0025 aggregate verify the executed target against the approved package (a target-verification record citing the approved fingerprint), with its own positive, independence, sensitivity and anti-circularity probes. MD-S003-R0025 stays INCOMPLETE until then; F-MD-B18-A002-025 and F-MD-B18-A002-017 stay open; F-018 is not started; MD-DEP-0015 and MD-DEP-0017 are unchanged; B10 stays closed.",
+    "no_commit_or_push": true
+}

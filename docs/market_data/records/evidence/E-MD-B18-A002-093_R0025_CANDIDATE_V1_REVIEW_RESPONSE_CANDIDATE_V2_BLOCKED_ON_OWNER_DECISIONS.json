@@ -1,0 +1,338 @@
+{
+    "evidence_id": "E-MD-B18-A002-093",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-03T08:45:44+07:00",
+    "verdict": "CANDIDATE_V2_NOT_PRODUCED_OWNER_AUTHORITY_DECISION_REQUIRED_R0025_STILL_INCOMPLETE_NOT_PROOF",
+    "checkpoint_verdict": "CANDIDATE-V2 NOT READY — OWNER / AUTHORITY DECISION REQUIRED",
+    "related_findings": [
+        "F-MD-B18-A002-025",
+        "F-MD-B18-A002-027",
+        "F-MD-B18-A002-028",
+        "F-MD-B18-A002-029",
+        "F-MD-B10-A002-004",
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-092",
+        "E-MD-B18-A002-091",
+        "E-MD-B07-A001-001",
+        "SC-MD-B10-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-013",
+        "D-MD-B18-A002-011",
+        "D-MD-B10-A002-005",
+        "D-MD-B18-A002-006"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0015",
+        "MD-DEP-0017"
+    ],
+    "scope": "Response to the independent review of candidate-v1 (CHANGES REQUIRED BEFORE APPROVAL). Traces the eleven replay bound inputs and the provider timestamp on the real production path, fixes the vacuous wrong-fingerprint control, and stops because producing candidate-v2 needs four owner decisions. Candidate-v2 is not produced; no review, no approval, no proof claim, no promotion, no F-018.",
+    "starting_state": {
+        "head": "37246d9",
+        "candidate_v1_fingerprint": "05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0",
+        "candidate_v1_status": "CANDIDATE_AWAITING_INDEPENDENT_REVIEW, independent review returned CHANGES REQUIRED BEFORE APPROVAL; never to be approved, edited or reused under its fingerprint",
+        "protected_files": {
+            "tests/Unit/MarketData/B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+            "docs/market_data/development/implementation/tests/MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4"
+        },
+        "review_record_note": "The review findings arrived in the owner instruction of this unit; no separate review record file exists. They are recorded here and in F-MD-B18-A002-025. E-MD-B18-A002-092 is not edited."
+    },
+    "independent_review_findings_addressed": {
+        "IR-1": "Traced, not closed. Seven of eleven inputs are independently derivable and were already asserted; four cannot be asserted without owner decisions Q4, Q5, Q7 (see all_eleven_bound_inputs). No NULL expectation or empty hash was substituted.",
+        "IR-2": "Traced and classified OUTCOME B (production defect with an authority gap), F-MD-B18-A002-027; not fixed, owner decision Q6.",
+        "IR-3": "Fixed and proven by probe P1; F-MD-B18-A002-029 RESOLVED."
+    },
+    "all_eleven_bound_inputs": [
+        {
+            "n": 1,
+            "input": "source_observation_manifest_hash",
+            "classification": "INDEPENDENTLY DERIVED SEMANTIC HASH",
+            "frozen_source": "frozen provider response + world",
+            "independent_derivation": "candidate-v1 oracle: observation manifest V2 over the two envelope entries",
+            "literal_expectation": "fa1a57dd…9ef3 (asserted in v1)",
+            "actual_production_source": "semantic nested identity observation_manifest of the lineage binding",
+            "comparison_result": "MATCH in v1; depends on Q6 only if the owner decides the envelope must carry a timestamp",
+            "stable_across_two_allocation_layouts": true,
+            "actual_value_layout_a": "fa1a57ddea92bc605dcb4537341c7f2a8db99c52f42f2384b058eb50b69c9ef3"
+        },
+        {
+            "n": 2,
+            "input": "canonical_raw_input_hash",
+            "classification": "INDEPENDENTLY DERIVED SEMANTIC HASH",
+            "frozen_source": "frozen bar",
+            "independent_derivation": "candidate-v1 oracle: V2 bars artifact",
+            "literal_expectation": "6a981c3a…b1e9 (asserted in v1)",
+            "actual_production_source": "bars_batch_hash of the run",
+            "comparison_result": "MATCH in v1; the literal changes if Q6 option A is chosen (source_timestamp column)",
+            "stable_across_two_allocation_layouts": true,
+            "actual_value_layout_a": "6a981c3a417a19b59f401690c53585a06dc0a9156c252fa82975333309ccb1e9"
+        },
+        {
+            "n": 3,
+            "input": "temporal_identity_hash",
+            "classification": "INDEPENDENTLY DERIVED SEMANTIC HASH",
+            "frozen_source": "retained roots + listing",
+            "independent_derivation": "candidate-v1 oracle composite of the identity revision set",
+            "literal_expectation": "a9233bce…e51b (asserted in v1)",
+            "actual_production_source": "semanticV2TemporalIdentity",
+            "comparison_result": "MATCH in v1",
+            "stable_across_two_allocation_layouts": true,
+            "actual_value_layout_a": "a9233bcee067ad6f1715494c0bd5b587e49fa69e08b2a1085bc5509dc1b2e51b"
+        },
+        {
+            "n": 4,
+            "input": "calendar_status_hash",
+            "classification": "INDEPENDENTLY DERIVED SEMANTIC HASH",
+            "frozen_source": "frozen calendar rule",
+            "independent_derivation": "candidate-v1 oracle composite of calendar and status sets",
+            "literal_expectation": "2c7dc9f8…1dcf (asserted in v1)",
+            "actual_production_source": "semanticV2CalendarStatus",
+            "comparison_result": "MATCH in v1",
+            "stable_across_two_allocation_layouts": true,
+            "actual_value_layout_a": "2c7dc9f896cee8e1233ac0899d63316b5f2ccfb779cd6553f2fe3fa52e801dcf"
+        },
+        {
+            "n": 5,
+            "input": "event_factor_hash",
+            "classification": "NOT DERIVABLE WITHOUT OWNER DECISION (Q7)",
+            "frozen_source": "frozen empty event and factor state",
+            "independent_derivation": "the four nested members (event, source-scale, factor-decision, factor-set) are literal in the oracle; the fifth member (ancillary group hash) is allocation-bound",
+            "literal_expectation": "none: not asserted in v1; no empty hash was invented",
+            "actual_production_source": "semanticV2EventFactor with the ancillary group hash",
+            "comparison_result": "VARIES across layouts (07c7ba2e… vs 0584fe8c…); cannot be asserted",
+            "stable_across_two_allocation_layouts": false,
+            "actual_value_layout_a": "07c7ba2ecc369b36f6345e6ca96bca47aad93746bc380d08e30de3bfa380071f"
+        },
+        {
+            "n": 6,
+            "input": "config_snapshot_hash",
+            "classification": "SOURCE FROZEN FACT",
+            "frozen_source": "frozen_config_content.txt",
+            "independent_derivation": "sha256 of the frozen content",
+            "literal_expectation": "8d0dd54f…a4c0 (asserted in v1)",
+            "actual_production_source": "configIdentityForRun",
+            "comparison_result": "MATCH in v1",
+            "stable_across_two_allocation_layouts": true,
+            "actual_value_layout_a": "8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0"
+        },
+        {
+            "n": 7,
+            "input": "formula_registry_hash",
+            "classification": "NOT DERIVABLE WITHOUT OWNER DECISION (Q4)",
+            "frozen_source": "registry content is not frozen in the package",
+            "independent_derivation": "cannot be derived independently: payload includes the whole build, PHP version, SAPI and the gzip archive hash",
+            "literal_expectation": "none",
+            "actual_production_source": "payload_hash of the registry_versions capture (approved semantics, D-MD-B10-A002-005)",
+            "comparison_result": "not asserted; equals reason_registry_hash",
+            "stable_across_two_allocation_layouts": true,
+            "actual_value_layout_a": "23689bb20070081073ecfe36f374893a10df7feeafaf481b47afa7425ce9d3ec"
+        },
+        {
+            "n": 8,
+            "input": "reason_registry_hash",
+            "classification": "NOT DERIVABLE WITHOUT OWNER DECISION (Q4)",
+            "frozen_source": "reason entries (437 rows of eod_reason_codes in the test database) are not frozen in the package",
+            "independent_derivation": "the payload has a semantic reason_registry_hash (ec892c55…33d7) independent of the build; no consumer reads it",
+            "literal_expectation": "none",
+            "actual_production_source": "same registry_versions payload_hash as the formula identity",
+            "comparison_result": "not asserted; equals formula_registry_hash",
+            "stable_across_two_allocation_layouts": true,
+            "actual_value_layout_a": "23689bb20070081073ecfe36f374893a10df7feeafaf481b47afa7425ce9d3ec"
+        },
+        {
+            "n": 9,
+            "input": "read_model_version",
+            "classification": "SOURCE FROZEN FACT (literal)",
+            "frozen_source": "registry capture literal market_data_read_product_v1",
+            "independent_derivation": "literal",
+            "literal_expectation": "market_data_read_product_v1 (asserted in v1)",
+            "actual_production_source": "registry_content.read_model_version",
+            "comparison_result": "MATCH in v1",
+            "stable_across_two_allocation_layouts": true,
+            "actual_value_layout_a": "market_data_read_product_v1"
+        },
+        {
+            "n": 10,
+            "input": "serialization_version",
+            "classification": "SOURCE FROZEN FACT (literal)",
+            "frozen_source": "config key serialization version",
+            "independent_derivation": "literal",
+            "literal_expectation": "canonical_json_v1 (asserted in v1)",
+            "actual_production_source": "registry_content.serialization_version",
+            "comparison_result": "MATCH in v1",
+            "stable_across_two_allocation_layouts": true,
+            "actual_value_layout_a": "canonical_json_v1"
+        },
+        {
+            "n": 11,
+            "input": "executable_build_identity",
+            "classification": "NOT DERIVABLE WITHOUT OWNER DECISION (Q5)",
+            "frozen_source": "no frozen build manifest exists",
+            "independent_derivation": "cannot be frozen apart from the executing tree",
+            "literal_expectation": "none",
+            "actual_production_source": "registry_content.executable_build.build_id (whole-tree hash)",
+            "comparison_result": "not asserted; measured sha256:608008e9…5320 on this tree, stable across layouts, moves with any source edit",
+            "stable_across_two_allocation_layouts": true,
+            "actual_value_layout_a": "sha256:608008e96f0adf4022fbed84d4c325afed61499be79b2f12963e327c6d345320"
+        }
+    ],
+    "event_factor_identity": {
+        "finding": "The V2 composite binds four semantic nested members plus the ancillary group hash. The ancillary captures carry ticker_ids selections and full bar copies with local ids, so the value differs between layouts (a 07c7ba2e…, b 0584fe8c…) while every other input is equal. The only contamination decision content is three empty lists in the frozen world.",
+        "f004_residual_classified": "ancillary group member of event_factor_hash for V2 (dormancy, eligibility-input and indicator-dependency captures); the V1 captured content is out of scope",
+        "implemented": "nothing",
+        "decision": "Q7"
+    },
+    "formula_registry_identity": {
+        "finding": "Equal to the whole registry_versions payload hash; build-bound; not derivable from frozen registry content",
+        "decision": "Q4",
+        "finding_record": "F-MD-B18-A002-028"
+    },
+    "reason_registry_identity": {
+        "finding": "Same value as the formula identity. The payload holds a build-independent semantic reason_registry_hash (ec892c55…33d7, SHA-256 of 437 canonical reason entries read from the test database table) that no consumer reads",
+        "decision": "Q4",
+        "finding_record": "F-MD-B18-A002-028"
+    },
+    "executable_build_identity": {
+        "finding": "sha256 of the whole app, config, bootstrap, vendor tree plus composer files; no governed freeze mechanism",
+        "measured_on_this_tree": "sha256:608008e96f0adf4022fbed84d4c325afed61499be79b2f12963e327c6d345320",
+        "decision": "Q5",
+        "finding_record": "F-MD-B18-A002-028"
+    },
+    "source_timestamp_trace": {
+        "final_classification": "PRODUCTION IMPLEMENTATION DEFECT (OUTCOME B), owner decision required for the fix",
+        "A_timestamp_present": "1774231200, a chart-series bar timestamp (2026-03-23 02:00:00 UTC, 09:00:00 Asia/Jakarta)",
+        "B_semantic_time": "the bar's own instant, not provider observation time",
+        "C_authority": "Source_Data_Acquisition_Contract_LOCKED.md:114 and :162; Audit_Hash_and_Reproducibility_Contract_LOCKED.md:59; Downstream_Consumer_Read_Model_Contract_LOCKED.md:27; none says which instant is the source timestamp of a series-only payload",
+        "D_production": "dropped by the adapter after deriving trade_date; envelope NULL; normalized row stores the acquisition clock (2026-03-25 10:30:00) as source_timestamp; bar NULL; retained only inside the payload bytes (payload_hash)",
+        "E_why_v1_oracle_used_null": "the author transcribed what production produced; the frozen provider_timestamp_unix was never used by the oracle, so the oracle was not independent on this point",
+        "bar_vs_envelope": "a bar source_timestamp need not be non-NULL as a rule; the finding is that a provider instant exists and is not carried while the acquisition clock sits under the provider name",
+        "raw": "storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261003-v2-review-response/diagnostics/provider_timestamp_trace.json",
+        "finding_record": "F-MD-B18-A002-027",
+        "decision": "Q6"
+    },
+    "b10_impact_review": {
+        "changes_made_in_this_unit": "test code only (R0025SyntheticV2CandidateFixtureTest.php) and governed records: NOT_B10_SEMANTIC. No semantic producer, hash service, nested-identity service, publication identity service, registry or build producer was changed.",
+        "proposed_changes": {
+            "Q4": "A touches the replay verifier (and, only if a Reader projection is added, the registry capture projection). Expected B10_IMPLEMENTATION_BUT_NO_PROOF_INVALIDATION when the capture content and the manifest inputs are unchanged; to be proven by the affected B10 revalidation when implemented. Not assessed as invalidating; not implemented.",
+            "Q5": "A is a verifier-only closed-list extension (NOT_B10_SEMANTIC). B adds a governed build-freeze mechanism around ProducerRegistrySnapshot and is B10_PROOF_REVALIDATION_REQUIRED if the captured registry content changes.",
+            "Q6": "Either option changes what acquisition and import write and what the V2 bars artifact or the producer source-observation capture contains: B10_PROOF_REVALIDATION_REQUIRED until shown otherwise. B10 proofs that build rows directly are expected unaffected; this must be proven. MD-S053-R0068 (MD-B07) is not reassessed here.",
+            "Q7": "Replay verifier plus a V2 capture projection reader; the V1 capture and the sealed manifest are untouched. Expected B10_IMPLEMENTATION_BUT_NO_PROOF_INVALIDATION; to be proven by the affected B10 revalidation when implemented."
+        },
+        "note": "These are assessments for the decision, not proofs. B10 is neither assumed closed nor reopened; the affected revalidation path runs when a semantic B10 producer changes."
+    },
+    "foundation_fingerprint_test_fix": {
+        "defect": "try { restore(wrong fingerprint); $this->fail(); } catch (\\Throwable) { assertNotSame('', message) } — PHPUnit's own failure is a Throwable",
+        "finding_record": "F-MD-B18-A002-029",
+        "fix": "thrownBy() helper wraps only the production call; assertions outside; exact class DomainException and exact reason REGISTRY_FINGERPRINT_MISMATCH; malformed fingerprint gives REGISTRY_APPROVED_FINGERPRINT_REQUIRED; four sibling sites restructured",
+        "probe_P1": {
+            "mutation": "FrozenSourcePackageReader::verifiedBytes fingerprint comparison disabled",
+            "sha256_before": "1b66b90286f2a4a61cf78220b746f634c3c11fc3ababd52a0ecd9f4c178ad6c4",
+            "sha256_mutated": "cbddbad0bd809d76a2c701829022950b9b29ea8a18dfcb1941069fe4026148b1",
+            "sha256_restored": "1b66b90286f2a4a61cf78220b746f634c3c11fc3ababd52a0ecd9f4c178ad6c4",
+            "restored_byte_identical": true,
+            "control_as_found_under_mutation": "GREEN (vacuous, review finding reproduced)",
+            "fixed_control_under_mutation": "RED at \"a wrong fingerprint was accepted\" (assertNotNull)",
+            "fixed_control_after_restore": "GREEN",
+            "raw": "storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261003-v2-review-response/probes/"
+        },
+        "candidate_controls": {
+            "tests": 15,
+            "assertions": 152,
+            "result": "green"
+        }
+    },
+    "reference_oracle": "Not extended. Extending it to the eleven would require the choices of Q4, Q5 and Q7; candidate-v1's oracle and package are unchanged.",
+    "two_allocation_stability": {
+        "layouts": "default, and ticker 975777 with 41 preconsumed ids and calendar rows inserted in reverse",
+        "compared": "all eleven bound inputs of candidate-v1's world",
+        "result": "ten equal, event_factor_hash differs",
+        "leak": "event_factor_hash (ancillary group member); STOP condition of the instruction: candidate-v2 not ready",
+        "raw": "storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261003-v2-review-response/diagnostics/eleven_bound_inputs_two_layouts.json"
+    },
+    "sensitivity_and_mutation_probes": {
+        "run": [
+            "P1"
+        ],
+        "not_run": "P2 to P9 need candidate-v2 and its oracle; none was run or simulated",
+        "provider_timestamp_control": "not run; waits for Q6"
+    },
+    "candidate_v2_package": "NOT CREATED",
+    "candidate_v2_vs_actual": "NOT RUN. Candidate-v1 vs actual remains \"CANDIDATE MATCHES — NOT YET ADMITTED AS PROOF\" for the seven inputs it asserts (E-MD-B18-A002-092); it is superseded by the review.",
+    "owner_decision_package": {
+        "Q4": {
+            "title": "Formula and reason registry identity of a V2-profile replay",
+            "facts": "Both identities are today the payload hash of the whole registry_versions capture (D-MD-B10-A002-005, D-MD-B18-A002-006), a payload that contains the whole executable build. They cannot be derived from frozen registry content and move with any source edit (F-MD-B18-A002-028).",
+            "options": {
+                "A": "Split for V2-profile replay only. reason_registry_hash = the capture payload's own semantic reason_registry_hash (SHA-256 of the canonical reason entries). formula_registry_hash = SHA-256 of the canonical document {registry_contract, semantic_versions, indicator_set_version, coverage_contract_version, eligibility_contract_version, config_registry_revision, config_resolver_version, serialization_version, read_model_version} from the same capture. The implementation file hashes and the build stay only in executable_build_identity. V1 keeps the whole-payload value. Both still bind the same captured registry content, so the D-MD-B10-A002-005 rule is respected.",
+                "B": "Keep the approved whole-payload identity for both, and make the golden release-bound: the oracle re-derives the payload including the build, and every approval is valid only for one frozen build, so any application or vendor edit needs a new candidate, review and approval."
+            },
+            "recommendation": "A. B cannot give an independently reviewable literal that survives the next edit, and the two identities remain indistinguishable under it.",
+            "b10_assessment": "A touches the replay verifier (and, only if a Reader projection is added, the registry capture projection). Expected B10_IMPLEMENTATION_BUT_NO_PROOF_INVALIDATION when the capture content and the manifest inputs are unchanged; to be proven by the affected B10 revalidation when implemented. Not assessed as invalidating; not implemented."
+        },
+        "Q5": {
+            "title": "Executable build identity in an independent golden",
+            "facts": "executable_build_identity is sha256 of the whole app/config/bootstrap/vendor tree plus composer files (today sha256:608008e96f0adf4022fbed84d4c325afed61499be79b2f12963e327c6d345320). No mechanism freezes a governed build apart from the executing build, and the review forbids asserting whatever build executes.",
+            "options": {
+                "A": "A closed target-bound kind \"executable_build\": the package asserts the mechanism, not a literal (schema php_source_build_v1, sha256: plus 64 hex, retained archive present and its hash verified, build equals the build recorded in the evidence record of the run) and carries a mandatory discriminating build-mismatch control. This lifts the instruction that none of the eleven may be a target marker for this one input.",
+                "B": "A frozen release build: the owner designates a release build, the package asserts that literal, and the admitted proof runs only on that build; any later edit makes the approval stale and requires a new candidate version."
+            },
+            "recommendation": "A. The Replay contract (Replay_Verification_Contract_LOCKED.md:62) preserves build identity as evidence of the executing build; it is not a semantic expectation of the data. B makes every unrelated commit a re-approval.",
+            "b10_assessment": "A is a verifier-only closed-list extension (NOT_B10_SEMANTIC). B adds a governed build-freeze mechanism around ProducerRegistrySnapshot and is B10_PROOF_REVALIDATION_REQUIRED if the captured registry content changes."
+        },
+        "Q6": {
+            "title": "Source timestamp of a series-only provider payload (F-MD-B18-A002-027)",
+            "facts": "The only provider timestamp is the chart-series bar instant (2026-03-23 09:00:00 Asia/Jakarta). The adapter drops it after deriving trade_date; the normalized row stores the acquisition clock as source_timestamp; the bar and envelope have NULL.",
+            "options": {
+                "A": "The per-bar provider instant is the source timestamp of the normalized row and the bar, converted to the platform timezone (Y-m-d H:i:s). The acquisition clock stays only in acquired_at/captured_at. The envelope stays NULL because the payload has no response-level observation time (to be stated in the contract note).",
+                "B": "The series instant is data time, already bound through payload_hash, so the bar keeps a NULL source_timestamp; only the mislabelling is removed (the normalized row's source_timestamp becomes NULL instead of the acquisition clock)."
+            },
+            "recommendation": "A. It gives the consumer-visible source timestamp a provider fact instead of an empty column, and it removes the mislabel.",
+            "b10_assessment": "Either option changes what acquisition and import write and what the V2 bars artifact or the producer source-observation capture contains: B10_PROOF_REVALIDATION_REQUIRED until shown otherwise. B10 proofs that build rows directly are expected unaffected; this must be proven. MD-S053-R0068 (MD-B07) is not reassessed here."
+        },
+        "Q7": {
+            "title": "V2 event_factor_hash membership (F-MD-B10-A002-004 residual)",
+            "facts": "The V2 composite includes the whole ancillary group hash. The ancillary captures carry ticker_ids selections, bars keyed by ticker id and full bar copies with listing_id, ticker_id, run_id, publication_id and source_observation_id, so event_factor_hash differs between two allocation layouts of identical semantic content (07c7ba2e… against 0584fe8c…). The only contamination decision content is the contamination, price_scale_breaks and event_risk_contexts members of the indicator-materialized-dependencies capture, empty in the frozen world.",
+            "options": {
+                "A": "For V2 replace the ancillary group member by a contamination-decision projection {contamination, price_scale_breaks, event_risk_contexts} of that capture, re-keyed by retained listing root, failing closed if any local *_id remains in a non-empty entry. The dormancy, eligibility-input and benchmark/sector copies are excluded (operational copies of data already bound by the artifact hashes). The frozen empty world projects to three empty lists; the oracle defines the projection preimage and the literal.",
+                "B": "Keep the whole ancillary group. The identity then cannot be allocation-independent and cannot be asserted, which leaves IR-1 unsatisfied for event_factor_hash."
+            },
+            "recommendation": "A, V2 only, V1 unchanged, consistent with D-MD-B18-A002-013 Q3. The owner should also say whether sector and benchmark contexts belong in this identity (recommended: no, they are not event or factor facts).",
+            "b10_assessment": "Replay verifier plus a V2 capture projection reader; the V1 capture and the sealed manifest are untouched. Expected B10_IMPLEMENTATION_BUT_NO_PROOF_INVALIDATION; to be proven by the affected B10 revalidation when implemented."
+        }
+    },
+    "f004_state": "PARTIALLY_RESOLVED, unchanged. The residual is classified exactly above and needs Q7.",
+    "f025_state": "OPEN. Candidate-v1 reviewed CHANGES REQUIRED; candidate-v2 waits for Q4 to Q7.",
+    "r0025_state": "INCOMPLETE / NOT_ASSESSED. No approval, no proof claim, no binding, no promotion; B18 100/113 reviewed, formal 0/113; F-017 open; F-018 not started.",
+    "preservation": {
+        "candidate_v1_fingerprint_recomputed": "05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0",
+        "E-MD-B18-A002-092": "not edited",
+        "B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f78…efe2 unchanged",
+        "MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b…58dd4 unchanged",
+        "production_files_changed_in_this_unit": "none (FrozenSourcePackageReader.php was mutated by probe P1 and restored byte-identical, 1b66b902…ad6c4)"
+    },
+    "raw_proof": {
+        "package": "storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261003-v2-review-response",
+        "manifest_sha256": "0dea07e4229b09708e21ebbc8ab6d53116dd5ad8a254fab28a61e754c4c78b40"
+    },
+    "not_done": [
+        "candidate-v2 package",
+        "event/factor, formula, reason and build derivation in the oracle",
+        "probes P2 to P9",
+        "candidate-v2 diagnostic against the actual publication",
+        "full MarketData suite (no production code changed)",
+        "independent review, owner approval, admitted proof, F-018"
+    ],
+    "next_resume_point": "MD-B18-A002: owner decision on Q4 (formula and reason registry identity), Q5 (executable build identity in an independent golden), Q6 (source timestamp of a series-only payload) and Q7 (V2 event_factor_hash membership) in E-MD-B18-A002-093, then author candidate-v2 (r0025-synthetic-v2-candidate-v2) as a distinct package; candidate-v1 (fingerprint 05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0) must not be approved.",
+    "no_commit_or_push": 1
+}

@@ -5,6 +5,7 @@ namespace App\Application\MarketData\Services;
 use App\Infrastructure\Persistence\MarketData\EodEvidenceRepository;
 use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\ReplayResultRepository;
+use Illuminate\Support\Facades\DB;
 
 class ReplayVerificationService
 {
@@ -36,6 +37,43 @@ class ReplayVerificationService
      * same literal `replayAdmissibility()` blocks on, instead of a second, driftable copy.
      */
     public const CONFIG_IDENTITY_UNRECORDED = 'CONFIG_IDENTITY_UNRECORDED';
+
+    /**
+     * Independently authored golden packages (D-MD-B18-A002-011, runtime evidence standard section 6A) carry a manifest family with this prefix.
+     * Such a package is never admissible as proof until a governed approval is bound to its exact file fingerprint.
+     */
+    public const INDEPENDENT_FAMILY_PREFIX = 'independent_golden_';
+
+    public const TARGET_BOUND_MARKER_PREFIX = '@TARGET:';
+
+    /**
+     * Operational identities of the execution instance. A golden package must not author them (they are allocated per run); it may state
+     * a marker at exactly these paths and nowhere else, and the marker is bound from the target the caller named. This is a closed list,
+     * not a wildcard: a marker on any other path, a declaration that differs from the markers present, or a kind that does not match the
+     * path is a fixture schema error, and every semantic field keeps its literal expectation.
+     */
+    private const TARGET_BOUND_PATHS = [
+        'expected_replay_resolution_context.replay_selector_id' => 'publication_id',
+        'expected_replay_resolution_context.publication_id' => 'publication_id',
+        'expected_replay_resolution_context.publication_run_id' => 'run_id',
+        'expected_replay_resolution_context.run_id' => 'run_id',
+        'expected_replay_resolution_context.artifact_scope' => 'artifact_scope',
+        'expected_replay_resolution_context.coverage_basis_publication_id' => 'publication_id',
+        'expected_replay_resolution_context.coverage_basis_run_id' => 'run_id',
+        'expected_coverage_context.coverage_basis_publication_id' => 'publication_id',
+        'expected_coverage_context.candidate_publication_id' => 'publication_id',
+        'expected_artifact_context.artifact_scope' => 'artifact_scope',
+        'expected_publication_context.publication_id' => 'publication_id',
+        'expected_publication_context.publication_run_id' => 'run_id',
+        'expected_publication_context.factor_set_id' => 'factor_set_id',
+        'expected_pointer_context.pointer_publication_id' => 'publication_id',
+        'expected_pointer_context.pointer_run_id' => 'run_id',
+        'expected_lineage.run_id' => 'run_id',
+        'expected_lineage.publication_id' => 'publication_id',
+        'expected_lineage.current_publication_id' => 'publication_id',
+        'expected_lineage.publication_run_id' => 'run_id',
+        'expected_lineage.factor_set_id' => 'factor_set_id',
+    ];
 
     private $evidence;
     private $publications;
@@ -70,13 +108,15 @@ class ReplayVerificationService
         $this->asKnownExecution = $asKnownExecution;
     }
 
-    public function verifyRunAgainstFixture($runId, $fixturePath, $replayId = null, $publicationId = null)
+    public function verifyRunAgainstFixture($runId, $fixturePath, $replayId = null, $publicationId = null, $approvedFixtureFingerprint = null)
     {
         $fixture = $this->loadFixturePackage($fixturePath);
         $run = $this->evidence->findRunById($runId);
         if (! $run) {
             throw new \RuntimeException('REPLAY_ACTUAL_PROOF_INCOMPLETE: Run not found for replay verification.');
         }
+        $independentGate = $this->independentPackageGate($fixture, $fixturePath, $approvedFixtureFingerprint);
+        $fixture['expected_replay_result'] = $this->bindTargetOperationalFields($fixture, $run, $publicationId);
 
         $declaredMode = ReplayMode::normalize($fixture['manifest']['replay_mode'] ?? ReplayMode::PUBLICATION_EXACT);
         if ($declaredMode !== ReplayMode::PUBLICATION_EXACT) {
@@ -98,6 +138,10 @@ class ReplayVerificationService
         $comparison = $this->compareExpectedAndActual($fixture, $actual, $expectedContext);
         $replayStatus = $this->replayStatusForComparison($comparison['comparison_result']);
         $admissibility = $this->replayAdmissibility($run, $publication, $fixture, $actual['context']['actual_bound_input_context']);
+        // The independent-package gate never replaces the self-generated rejection above; it only adds its own refusal after it.
+        if ($admissibility === null && $independentGate !== null) {
+            $admissibility = $independentGate;
+        }
         if ($admissibility !== null) {
             $replayStatus = 'BLOCKED';
             $comparison['comparison_result'] = 'NOT_ADMISSIBLE';
@@ -872,6 +916,12 @@ class ReplayVerificationService
             ? (int) $publication->factor_set_id
             : null;
         $factorSetHash = $publication->factor_set_hash ?? ($run->factor_set_hash ?? null);
+        // F-MD-B10-A002-004 (V2 only): a V2 publication's factor identity is the semantic factor-set hash. The V1 hash binds
+        // local ids, so it moves with allocation. Unavailable stays null and is never completed from the V1 value.
+        $semanticV2 = $this->semanticV2Lineage($publication);
+        if ($semanticV2 !== null) {
+            $factorSetHash = $semanticV2['members']['factor_set_hash'];
+        }
         $requestMode = $run->request_mode ?? ($notes['request_mode'] ?? null);
         $coverageBasisPublicationId = isset($notes['coverage_basis_publication_id']) && $notes['coverage_basis_publication_id'] !== '' ? (int) $notes['coverage_basis_publication_id'] : null;
         $coverageBasisRunId = isset($notes['coverage_basis_run_id']) && $notes['coverage_basis_run_id'] !== '' ? (int) $notes['coverage_basis_run_id'] : (isset($run->run_id) ? (int) $run->run_id : null);
@@ -1210,17 +1260,27 @@ class ReplayVerificationService
             }
         }
 
+        $semanticV2 = $this->semanticV2Lineage($publication);
+
         return [
-            'source_observation_manifest_hash' => (string) ($run->observation_manifest_hash ?? ''),
+            'source_observation_manifest_hash' => $semanticV2 !== null
+                ? (string) ($semanticV2['members']['observation_manifest_hash'] ?? '')
+                : (string) ($run->observation_manifest_hash ?? ''),
             'canonical_raw_input_hash' => (string) ($run->bars_batch_hash ?? ''),
-            'temporal_identity_hash' => (string) ($this->componentGroupHash($components, 'universe_identity') ?? ''),
-            'calendar_status_hash' => $manifest
+            'temporal_identity_hash' => $semanticV2 !== null
+                ? $this->semanticV2TemporalIdentity($semanticV2)
+                : (string) ($this->componentGroupHash($components, 'universe_identity') ?? ''),
+            'calendar_status_hash' => $semanticV2 !== null
+                ? $this->semanticV2CalendarStatus($semanticV2)
+                : ($manifest
                 ? $this->canonicalHash([
                     'calendar_revision_set_hash' => (string) ($manifest->calendar_revision_set_hash ?? ''),
                     'status_revision_set_hash' => (string) ($manifest->status_revision_set_hash ?? ''),
                 ])
-                : '',
-            'event_factor_hash' => $manifest
+                : ''),
+            'event_factor_hash' => $semanticV2 !== null
+                ? $this->semanticV2EventFactor($semanticV2, $this->componentGroupHash($components, 'ancillary'))
+                : ($manifest
                 ? $this->canonicalHash([
                     'event_revision_set_hash' => (string) ($manifest->event_revision_set_hash ?? ''),
                     'source_scale_assessment_set_hash' => (string) ($manifest->source_scale_assessment_set_hash ?? ''),
@@ -1228,7 +1288,7 @@ class ReplayVerificationService
                     'factor_set_hash' => (string) ($manifest->factor_set_hash ?? ''),
                     'ancillary_contamination_hash' => (string) ($this->componentGroupHash($components, 'ancillary') ?? ''),
                 ])
-                : '',
+                : ''),
             'config_snapshot_hash' => $this->configIdentityForRun($run),
             // `registry_versions` (C10) is the one already-captured, already-verified component
             // carrying both formula/build identity and the real reason-registry snapshot; splitting
@@ -1257,6 +1317,72 @@ class ReplayVerificationService
                 ? (string) $boundContext['registry_content']['executable_build']['build_id']
                 : '',
         ];
+    }
+
+    /**
+     * F-MD-B10-A002-004 residual, V2-profile publications only. The V2 nested semantic identities of the
+     * publication's lineage binding are built from retained foundation roots and content, never local ids
+     * (D-MD-B10-A002-003/-005), so the replay frozen identities of a V2 publication consume them instead of
+     * the V1 sets that bind local allocation. A publication that is not V2 returns null and keeps the V1
+     * interpretation unchanged. A V2 publication whose lineage lacks any member returns an incomplete
+     * result: the identity is then unavailable (empty), the replay is BLOCKED, and the V1 value is never
+     * substituted and V2 is never silently downgraded.
+     *
+     * @return array{members:array<string,?string>,complete:bool}|null
+     */
+    private function semanticV2Lineage($publication): ?array
+    {
+        if (! $publication || empty($publication->publication_id)
+            || trim((string) ($publication->artifact_hash_profile ?? '')) !== ArtifactSemanticHashService::PROFILE_V2) {
+            return null;
+        }
+        $row = DB::table('md_publication_lineage_bindings')->where('publication_id', (int) $publication->publication_id)->first();
+        $members = [];
+        $complete = $row !== null && ($row->semantic_nested_identity_version ?? null) === SemanticNestedIdentityService::VERSION;
+        foreach (SemanticNestedIdentityService::LINEAGE_COLUMNS as $member => $column) {
+            $value = $row ? strtolower(trim((string) ($row->{$column} ?? ''))) : '';
+            if (preg_match('/^[a-f0-9]{64}$/', $value) !== 1) {
+                $value = null;
+                $complete = false;
+            }
+            $members[$member] = $value;
+        }
+
+        return ['members' => $members, 'complete' => $complete];
+    }
+
+    private function semanticV2TemporalIdentity(array $v2): string
+    {
+        $member = $v2['members']['identity_revision_set_hash'] ?? null;
+
+        return $v2['complete'] && $member !== null
+            ? $this->canonicalHash(['component_key' => 'universe_identity', 'profile' => ArtifactSemanticHashService::PROFILE_V2, 'identity_revision_set_hash' => $member])
+            : '';
+    }
+
+    private function semanticV2CalendarStatus(array $v2): string
+    {
+        return $v2['complete']
+            ? $this->canonicalHash([
+                'profile' => ArtifactSemanticHashService::PROFILE_V2,
+                'calendar_revision_set_hash' => $v2['members']['calendar_revision_set_hash'],
+                'status_revision_set_hash' => $v2['members']['status_revision_set_hash'],
+            ])
+            : '';
+    }
+
+    private function semanticV2EventFactor(array $v2, ?string $ancillaryGroupHash): string
+    {
+        return $v2['complete']
+            ? $this->canonicalHash([
+                'profile' => ArtifactSemanticHashService::PROFILE_V2,
+                'event_revision_set_hash' => $v2['members']['event_revision_set_hash'],
+                'source_scale_assessment_set_hash' => $v2['members']['source_scale_assessment_set_hash'],
+                'factor_decision_set_hash' => $v2['members']['factor_decision_set_hash'],
+                'factor_set_hash' => $v2['members']['factor_set_hash'],
+                'ancillary_contamination_hash' => (string) ($ancillaryGroupHash ?? ''),
+            ])
+            : '';
     }
 
     /**
@@ -2429,6 +2555,154 @@ class ReplayVerificationService
         }
         usort($normalized, function ($left, $right) { return strcmp($left['reason_code'], $right['reason_code']); });
         return $normalized;
+    }
+
+    /**
+     * Fingerprint of an independently authored package: SHA-256 over one line per file, "<sha256>  <relative path>\n", every file under the package
+     * directory (manifest.json included) ordered by path. Approval is bound to this value; it changes if any byte of any file changes.
+     */
+    public function fixturePackageFingerprint($fixturePath): string
+    {
+        $root = rtrim(str_replace('\\', '/', (string) $fixturePath), '/');
+        $files = [];
+        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS));
+        foreach ($iterator as $file) {
+            if ($file->isFile()) {
+                $files[substr(str_replace('\\', '/', $file->getPathname()), strlen($root) + 1)] = hash_file('sha256', $file->getPathname());
+            }
+        }
+        ksort($files, SORT_STRING);
+        $lines = '';
+        foreach ($files as $relative => $sha) {
+            $lines .= $sha.'  '.$relative."\n";
+        }
+
+        return hash('sha256', $lines);
+    }
+
+    private function isIndependentPackage(array $manifest): bool
+    {
+        return strpos((string) ($manifest['fixture_family'] ?? ''), self::INDEPENDENT_FAMILY_PREFIX) === 0;
+    }
+
+    /**
+     * Gate for independently authored packages. Returns an admissibility refusal, or null when the package may be believed as proof.
+     * Three refusals, in order: a package whose provenance or file hashes are incomplete or wrong (fail closed, never repaired), then a package
+     * without an approval bound to its exact fingerprint (a candidate is never proof). The self-generated rejection in replayAdmissibility()
+     * runs before and independently of this gate.
+     */
+    private function independentPackageGate(array $fixture, $fixturePath, $approvedFingerprint): ?array
+    {
+        $manifest = $fixture['manifest'];
+        if (! $this->isIndependentPackage($manifest)) {
+            return null;
+        }
+        $provenance = $manifest['independent_provenance'] ?? null;
+        $required = ['oracle_id', 'oracle_version', 'derivation_reference', 'frozen_input_identity', 'expected_content_identity', 'world_label'];
+        if (! is_array($provenance)) {
+            return ['reason' => 'REPLAY_FIXTURE_PROVENANCE_INCOMPLETE: an independent package must declare independent_provenance.'];
+        }
+        foreach ($required as $field) {
+            if (! isset($provenance[$field]) || trim((string) (is_array($provenance[$field]) ? json_encode($provenance[$field]) : $provenance[$field])) === '' || $provenance[$field] === []) {
+                return ['reason' => 'REPLAY_FIXTURE_PROVENANCE_INCOMPLETE: independent_provenance.'.$field.' is missing.'];
+            }
+        }
+        $declared = $manifest['files_sha256'] ?? null;
+        if (! is_array($declared) || $declared === []) {
+            return ['reason' => 'REPLAY_FIXTURE_PROVENANCE_INCOMPLETE: an independent package must bind a sha256 for every file.'];
+        }
+        $root = rtrim(str_replace('\\', '/', (string) $fixturePath), '/');
+        foreach ($declared as $relative => $sha) {
+            if (! is_file($root.'/'.$relative) || hash_file('sha256', $root.'/'.$relative) !== $sha) {
+                return ['reason' => 'REPLAY_FIXTURE_PACKAGE_TAMPERED: '.$relative.' does not match the sha256 the manifest binds.'];
+            }
+        }
+        $actualFiles = [];
+        $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS));
+        foreach ($iterator as $file) {
+            $relative = substr(str_replace('\\', '/', $file->getPathname()), strlen($root) + 1);
+            if ($file->isFile() && $relative !== 'manifest.json' && ! isset($declared[$relative])) {
+                return ['reason' => 'REPLAY_FIXTURE_PACKAGE_TAMPERED: '.$relative.' is in the package but not bound by the manifest.'];
+            }
+        }
+        $fingerprint = $this->fixturePackageFingerprint($fixturePath);
+        if ($approvedFingerprint === null || ! hash_equals($fingerprint, strtolower((string) $approvedFingerprint))) {
+            return ['reason' => 'REPLAY_INDEPENDENT_REVIEW_REQUIRED: package fingerprint '.$fingerprint.' has no independent review and owner approval bound to it; a candidate package is not proof.'];
+        }
+
+        return null;
+    }
+
+    /**
+     * Binds the operational identities of the target into an independent package's expected result.
+     *
+     * Only markers at the closed TARGET_BOUND_PATHS are bound, each from the target the caller named (run id, explicit publication id) or from the
+     * publication row itself (factor set id, which must also be the factor set the publication's lineage binding names). Every other expected
+     * field is untouched, and a package without markers is returned unchanged. A marker is never a wildcard for a semantic field.
+     */
+    private function bindTargetOperationalFields(array $fixture, $run, $publicationId): array
+    {
+        $expected = $fixture['expected_replay_result'];
+        $found = [];
+        $walk = function ($node, string $path) use (&$walk, &$found) {
+            if (is_array($node)) {
+                foreach ($node as $key => $child) {
+                    $walk($child, $path === '' ? (string) $key : $path.'.'.$key);
+                }
+
+                return;
+            }
+            if (is_string($node) && strpos($node, self::TARGET_BOUND_MARKER_PREFIX) === 0) {
+                $found[$path] = substr($node, strlen(self::TARGET_BOUND_MARKER_PREFIX));
+            }
+        };
+        $walk($expected, '');
+        $declared = $fixture['manifest']['target_bound_fields'] ?? [];
+        if ($found === [] && $declared === []) {
+            return $expected;
+        }
+        if (! $this->isIndependentPackage($fixture['manifest'])) {
+            throw new \RuntimeException('REPLAY_FIXTURE_SCHEMA_MISMATCH: target-bound markers are only allowed in an independent package.');
+        }
+        ksort($found);
+        $declaredSorted = is_array($declared) ? $declared : [];
+        ksort($declaredSorted);
+        if ($found !== $declaredSorted) {
+            throw new \RuntimeException('REPLAY_FIXTURE_SCHEMA_MISMATCH: the manifest target_bound_fields differ from the markers present.');
+        }
+        foreach ($found as $path => $kind) {
+            if (! isset(self::TARGET_BOUND_PATHS[$path]) || self::TARGET_BOUND_PATHS[$path] !== $kind) {
+                throw new \RuntimeException('REPLAY_FIXTURE_SCHEMA_MISMATCH: '.$path.' may not be target-bound as "'.$kind.'".');
+            }
+        }
+        if ($publicationId === null || (int) $publicationId <= 0) {
+            throw new \RuntimeException('REPLAY_EXPLICIT_PUBLICATION_REQUIRED: target-bound identities need the explicit publication id of the target.');
+        }
+        $publication = $this->resolveExplicitFixturePublication($run, (int) $publicationId);
+        if (! $publication) {
+            throw new \RuntimeException('REPLAY_TARGET_BOUND_REFERENCE_INVALID: the named publication does not resolve for the run.');
+        }
+        $factorSetId = isset($publication->factor_set_id) ? (int) $publication->factor_set_id : 0;
+        $lineageFactorSetId = (int) DB::table('md_publication_lineage_bindings')->where('publication_id', (int) $publication->publication_id)->value('factor_set_id');
+        $bound = [
+            'run_id' => (int) $run->run_id,
+            'publication_id' => (int) $publication->publication_id,
+            'artifact_scope' => 'publication:'.(int) $publication->publication_id,
+            'factor_set_id' => $factorSetId,
+        ];
+        if (in_array('factor_set_id', $found, true) && ($factorSetId <= 0 || $factorSetId !== $lineageFactorSetId)) {
+            throw new \RuntimeException('REPLAY_TARGET_BOUND_REFERENCE_INVALID: the publication factor set is not the one its lineage binding names.');
+        }
+        foreach ($found as $path => $kind) {
+            $cursor = &$expected;
+            foreach (explode('.', $path) as $part) {
+                $cursor = &$cursor[$part];
+            }
+            $cursor = $bound[$kind];
+            unset($cursor);
+        }
+
+        return $expected;
     }
 
     /**

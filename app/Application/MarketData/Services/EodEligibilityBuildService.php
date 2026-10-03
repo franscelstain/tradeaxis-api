@@ -171,6 +171,11 @@ class EodEligibilityBuildService
                 'contamination_state' => $this->contaminationState($indicator),
                 'indicator_state' => $this->indicatorState($indicator),
                 'eligibility_reasons_json' => json_encode(array_values(array_unique($reasons))),
+                // V2 artifacts bind every row to the immutable configuration snapshot content (ArtifactSemanticHashService::assertRowConfigContent).
+                // V1 rows keep their historical NULL so V1 hashes stay byte-identical.
+                'config_snapshot_id' => trim((string) ($run->artifact_hash_profile ?? '')) === ArtifactSemanticHashService::PROFILE_V2
+                    ? ((int) ($run->config_snapshot_id ?? 0) ?: null)
+                    : null,
                 'run_id' => $run->run_id,
                 'publication_id' => $candidatePublication->publication_id,
                 'created_at' => $now,
