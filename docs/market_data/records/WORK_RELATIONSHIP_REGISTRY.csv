@@ -1373,3 +1373,24 @@ MD-REL-1372,F-MD-B18-A002-033,SC-MD-B10-A003-001,RELATED,B10 closure under the c
 MD-REL-1373,CI-MD-B10-A003-001,E-MD-B10-A003-003,RELATED,Promotion evidence of the declaration.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
 MD-REL-1374,CI-MD-B10-A003-001,SC-MD-B10-A003-001,RELATED,Closure of the declaration.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
 MD-REL-1375,F-MD-B10-A003-002,E-MD-B10-A003-003,RELATED,Carried forward at closure.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1376,E-MD-B18-A002-099,E-MD-B18-A002-097,DEPENDS_ON,Answers the review of candidate-v3 and its blocker.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1377,E-MD-B18-A002-099,E-MD-B18-A002-098,DEPENDS_ON,The corrected authority the freshness derivation applies.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1378,E-MD-B18-A002-099,E-MD-B18-A002-096,DERIVED_FROM,Candidate-v3 that candidate-v4 supersedes; not edited.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1379,E-MD-B18-A002-099,E-MD-B10-A003-003,DEPENDS_ON,The conformant V2 producers the real target comparison runs against.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1380,E-MD-B18-A002-099,SC-MD-B10-A003-001,RELATED,"Preservation: B10 closed 1072/1072, no producer changed.",D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1381,E-MD-B18-A002-099,F-MD-B18-A002-032,RELATED,Answers the freshness blocker; closes with the review.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1382,E-MD-B18-A002-099,F-MD-B18-A002-025,RELATED,Progress: candidate-v4 awaits review.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1383,E-MD-B18-A002-099,F-MD-B18-A002-033,RELATED,Pre-activation conformance exercised; activated-world rows not touched.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1384,E-MD-B18-A002-099,F-MD-B10-A003-002,RELATED,Marker reachability not touched; stays open.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1385,E-MD-B18-A002-099,F-MD-B18-A002-031,RELATED,Manifest hash coverage preserved on an independent freshness member.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1386,E-MD-B18-A002-099,F-MD-B18-A002-030,RELATED,Locked assertion layers preserved.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1387,E-MD-B18-A002-099,F-MD-B18-A002-017,RELATED,Remaining MariaDB predicate; unchanged.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1388,E-MD-B18-A002-099,D-MD-B18-A002-015,DEPENDS_ON,The owner decision (Direction D) applied.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1389,E-MD-B18-A002-099,D-MD-B18-A002-014,DEPENDS_ON,The owner decisions Q4 to Q7 candidate-v4 preserves.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1390,E-MD-B18-A002-099,D-MD-B18-A002-013,DEPENDS_ON,The synthetic world and review model.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1391,E-MD-B18-A002-099,D-MD-B18-A002-011,DEPENDS_ON,The independent-fixture admission contract.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1392,E-MD-B18-A002-099,CI-MD-B18-A002-001,RELATED,Same impact declaration records the candidate.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1393,E-MD-B18-A002-099,MD-B18-A002-BL001,RELATED,Same B18 baseline; no new attempt.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1394,F-MD-B18-A002-032,E-MD-B18-A002-099,RELATED,Candidate-v4 answers the finding.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1395,F-MD-B18-A002-025,E-MD-B18-A002-099,RELATED,Progress recorded.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1396,CI-MD-B18-A002-001,E-MD-B18-A002-099,RELATED,Impact declaration identifies the candidate.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.

@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-10-04T23:42:39+07:00
 - Severity: `P1` for `MD-S003-R0025`; the replay contract's PASS rule names the manifest
-- Status: `OPEN` — coverage established in candidate-v3 (`E-MD-B18-A002-096`); closes when candidate-v3 passes independent review
+- Status: `OPEN` — coverage established in candidate-v3 (`E-MD-B18-A002-096`, mechanics reviewed PASS) and preserved in candidate-v4 (`E-MD-B18-A002-099`); closes when a corrected package passes independent review
 - Class: `PROOF_BASIS_STRUCTURAL_AND_EXECUTABLE_GAP`
 - Related: `E-MD-B18-A002-095`, `E-MD-B18-A002-094`, `F-MD-B18-A002-025`, `F-MD-B18-A002-017`, `D-MD-B18-A002-011`
 - Remediation owner: `MD-B18-A002`

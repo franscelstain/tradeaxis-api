@@ -64,3 +64,7 @@ Candidate-v3 (fingerprint `8a218f5befc0b1c6f278d20ee86a798ca29185ad4522e8b8a00ee
 ## 2026-10-05 authority correction — E-MD-B18-A002-098
 
 The owner selected Direction D (`D-MD-B18-A002-015`) and the strategy was corrected by `DOC-CHG-20261005-001` (successor freeze `MD-STRATEGY-FREEZE-20261005-001`). Candidate-v3 stays reviewed `CHANGES REQUIRED`, immutable and never approved. Candidate-v4 is blocked on the bounded `MD-B10` remediation `F-MD-B18-A002-033` because the target must emit the corrected state before an independent expectation of it can be reproduced. Conditions 4 and 5 of this finding are outstanding. The finding stays `OPEN`.
+
+## 2026-10-05 candidate-v4 — E-MD-B18-A002-099
+
+Candidate-v4, `tests/fixtures/replay/r0025-synthetic-v2-candidate-v4` (fingerprint `d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00`, manifest sha256 `6ce59c64e458638691504ea1de2d7726e4dae15ae53cfb77d65b1e2c9c2d8c32`), answers the review of candidate-v3 (`E-MD-B18-A002-097`) and preserves every reviewed-PASS property. It matches the actual publication with zero mismatches and is not proof: no independent review and no owner approval is bound to it, and the verifier answers `REPLAY_INDEPENDENT_REVIEW_REQUIRED`. Candidate-v1, candidate-v2 and candidate-v3 stay rejected and never approved. Conditions 4 and 5 of this finding are outstanding. The finding stays `OPEN`.

@@ -1,0 +1,11 @@
+{
+    "label": "FROZEN_REGISTRY_LITERALS_COMPILED_INTO_THE_IMPLEMENTATION",
+    "registry_contract": {
+        "value": "producer_registry_content_v1",
+        "source": "literal of the producer registry capture (its exact bytes are the identity); no configuration key exists for it"
+    },
+    "read_model_version": {
+        "value": "market_data_read_product_v1",
+        "source": "the one read-model identity the read product and the publication manifest already set; no configuration key exists for it"
+    }
+}

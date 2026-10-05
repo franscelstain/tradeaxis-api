@@ -14,8 +14,8 @@ use Tests\Support\R0025SyntheticV2World;
 use Tests\Support\UsesMarketDataMariaDb;
 
 /**
- * Controls of the CANDIDATE independent R0025 golden fixture, candidate-v3 (package `tests/fixtures/replay/r0025-synthetic-v2-candidate-v3`).
- * Candidate-v1 and candidate-v2 (`.../r0025-synthetic-v2-candidate-v1`, `.../-v2`, both reviewed CHANGES REQUIRED, never approved) are retained untouched; their preservation is controlled below.
+ * Controls of the CANDIDATE independent R0025 golden fixture, candidate-v4 (package `tests/fixtures/replay/r0025-synthetic-v2-candidate-v4`), a PRE-ACTIVATION candidate.
+ * Candidate-v1, -v2 and -v3 (`.../r0025-synthetic-v2-candidate-v1`, `-v2`, `-v3`, all reviewed CHANGES REQUIRED, never approved) are retained untouched; their preservation is controlled below.
  *
  * The package is `CANDIDATE_AWAITING_INDEPENDENT_REVIEW`: nothing here approves it, and none of these tests is the governed R0025
  * proof. They show that the synthetic V2 world runs through the real production path, that its retained identities and semantic
@@ -253,7 +253,7 @@ class R0025SyntheticV2CandidateFixtureTest extends TestCase
         $w = R0025SyntheticV2World::build();
         $verifier = $this->verifier();
         $fingerprint = $verifier->fixturePackageFingerprint($this->package());
-        $this->assertSame(trim((string) file_get_contents(dirname($this->package()).'/r0025-synthetic-v2-candidate-v3.fingerprint.txt')), $fingerprint, 'the recorded fingerprint is not the package fingerprint');
+        $this->assertSame(trim((string) file_get_contents(dirname($this->package()).'/r0025-synthetic-v2-candidate-v4.fingerprint.txt')), $fingerprint, 'the recorded fingerprint is not the package fingerprint');
 
         $admitted = $verifier->verifyRunAgainstFixture($w['run_id'], $this->package(), null, $w['publication_id'], $fingerprint);
         $this->assertSame('PASS', $admitted['replay_status']);
@@ -850,7 +850,7 @@ class R0025SyntheticV2CandidateFixtureTest extends TestCase
         $actual = $this->verifier()->verifyRunAgainstFixture($w['run_id'], $this->package(), null, $w['publication_id'])['actual_context']['actual_bound_input_context']['executable_build_identity'];
         $frozen = $this->packageJson('inputs/frozen_build_identity.json');
         $this->assertSame($frozen['build_id'], $this->packageJson('expected/expected_replay_result.json')['expected_bound_input_context']['executable_build_identity']);
-        $this->assertSame($frozen['build_id'], $actual, 'the executing build is not the build candidate-v2 was frozen from');
+        $this->assertSame($frozen['build_id'], $actual, 'the executing build is not the build candidate-v4 was frozen from');
         // the frozen manifest is the manifest of this tree, file by file
         $root = base_path();
         $checked = 0;
@@ -864,9 +864,10 @@ class R0025SyntheticV2CandidateFixtureTest extends TestCase
         $this->assertSame($frozen['file_count'], $checked);
     }
 
-    public function test_candidate_v1_and_candidate_v2_are_preserved_byte_for_byte_and_are_different_packages(): void
+    public function test_candidate_v1_v2_and_v3_are_preserved_byte_for_byte_and_are_different_packages(): void
     {
-        $history = [R0025SyntheticV2World::PACKAGE_V1 => '05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0', R0025SyntheticV2World::PACKAGE_V2 => 'bbd8c73953eb1397a49ba651e8b66b5b6cf914dd0790142d2a706bb8a49edb9f'];
+        $history = [R0025SyntheticV2World::PACKAGE_V1 => '05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0', R0025SyntheticV2World::PACKAGE_V2 => 'bbd8c73953eb1397a49ba651e8b66b5b6cf914dd0790142d2a706bb8a49edb9f',
+            R0025SyntheticV2World::PACKAGE_V3 => '8a218f5befc0b1c6f278d20ee86a798ca29185ad4522e8b8a00ee069cec9b85e'];
         foreach ($history as $path => $fingerprint) {
             $dir = base_path($path);
             $this->assertSame($fingerprint, $this->verifier()->fixturePackageFingerprint($dir), $path.' changed; it was reviewed CHANGES REQUIRED and must not be edited');
@@ -875,13 +876,15 @@ class R0025SyntheticV2CandidateFixtureTest extends TestCase
             foreach ($manifest['files_sha256'] as $relative => $sha) {
                 $this->assertSame($sha, hash_file('sha256', $dir.'/'.$relative), $path.'/'.$relative);
             }
-            $this->assertNotSame($fingerprint, $this->verifier()->fixturePackageFingerprint($this->package()), 'candidate-v3 must be a distinct package');
+            $this->assertNotSame($fingerprint, $this->verifier()->fixturePackageFingerprint($this->package()), 'candidate-v4 must be a distinct package');
         }
         $this->assertSame('ed1d102ced928d7143f29e717f93dd1a6a8f6872406de7a103741520ca08bb42', hash_file('sha256', base_path(R0025SyntheticV2World::PACKAGE_V2).'/manifest.json'));
+        $this->assertSame('266009f117ebcefdd9a0827b02f037eba415f43e655fd684fed3bcf89a1a5cf5', hash_file('sha256', base_path(R0025SyntheticV2World::PACKAGE_V3).'/manifest.json'));
         $manifest = $this->packageJson('manifest.json');
-        $this->assertSame('candidate-3', $manifest['fixture_version']);
-        $this->assertSame('bbd8c73953eb1397a49ba651e8b66b5b6cf914dd0790142d2a706bb8a49edb9f', $manifest['supersedes_candidate']['fingerprint']);
-        $this->assertSame('05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0', $manifest['supersedes_candidate']['earlier']['fingerprint']);
+        $this->assertSame('candidate-4', $manifest['fixture_version']);
+        $this->assertSame('8a218f5befc0b1c6f278d20ee86a798ca29185ad4522e8b8a00ee069cec9b85e', $manifest['supersedes_candidate']['fingerprint']);
+        $this->assertSame('bbd8c73953eb1397a49ba651e8b66b5b6cf914dd0790142d2a706bb8a49edb9f', $manifest['supersedes_candidate']['earlier']['fingerprint']);
+        $this->assertSame('05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0', $manifest['supersedes_candidate']['earlier']['earlier']['fingerprint']);
     }
 
     // ------------------------------------------------------------------------------- 8c. candidate-v3: locked assertion layers (F-MD-B18-A002-030)
@@ -1131,7 +1134,7 @@ class R0025SyntheticV2CandidateFixtureTest extends TestCase
         }
         ksort($actual, SORT_STRING);
         $this->assertSame($actual, $manifest['files_sha256']);
-        $this->assertSame(trim((string) file_get_contents(dirname($this->package()).'/r0025-synthetic-v2-candidate-v3.fingerprint.txt')), $this->verifier()->fixturePackageFingerprint($this->package()));
+        $this->assertSame(trim((string) file_get_contents(dirname($this->package()).'/r0025-synthetic-v2-candidate-v4.fingerprint.txt')), $this->verifier()->fixturePackageFingerprint($this->package()));
         $classification = $this->packageJson('derivation/field_classification.json');
         $this->assertSame(['LITERAL_SEMANTIC_EXPECTATION', 'DERIVED_FROM_FROZEN_INPUT', 'TARGET_BOUND_OPERATIONAL'], array_keys(array_intersect_key($classification['counts'], array_flip(['LITERAL_SEMANTIC_EXPECTATION', 'DERIVED_FROM_FROZEN_INPUT', 'TARGET_BOUND_OPERATIONAL']))));
         $expected = $this->packageJson('expected/expected_replay_result.json');
@@ -1165,5 +1168,315 @@ class R0025SyntheticV2CandidateFixtureTest extends TestCase
         ksort($hashes);
 
         return $hashes;
+    }
+
+    // ------------------------------------------------------------------------------- 9. candidate-v4: the pre-activation freshness expectation (F-MD-B18-A002-032)
+    //
+    // Owner decision D-MD-B18-A002-015 and the controlled correction DOC-CHG-20261005-001: a READABLE publication whose requested trade date precedes the
+    // effective activation marker is NOT_APPLICABLE. Candidate-v4 freezes the activation context and the publication facts; the independent oracle derives
+    // the state from them and from the authority's ordered table. These controls prove the derivation, its sensitivity, that the oracle cannot take the value
+    // from the target, and that the real target (MD-B10-A003 runtime) produces it. They prove no activated-world evaluation (FRESH, STALE, DEGRADED).
+
+    private function runOracleRaw(string $dir): array
+    {
+        $out = [];
+        $code = 0;
+        exec('"'.PHP_BINARY.'" '.escapeshellarg($dir.'/derivation/reference_oracle.php').' 2>&1', $out, $code);
+
+        return ['exit' => $code, 'text' => implode("\n", $out), 'output' => $code === 0 ? json_decode((string) file_get_contents($dir.'/derivation/oracle_output.json'), true) : null];
+    }
+
+    /** Edits the frozen activation context of a package copy: the world declaration and the frozen configuration together (the oracle refuses them apart). */
+    private function setActivation(string $dir, ?string $marker, ?bool $gates = null, array $facts = []): void
+    {
+        $world = json_decode((string) file_get_contents($dir.'/inputs/synthetic_world.json'), true);
+        $world['operational_activation']['operational_start_date'] = $marker;
+        $world['publication_facts']['activated_operational_freshness_gates_pass'] = $gates;
+        foreach ($facts as $key => $value) {
+            $world['publication_facts'][$key] = $value;
+        }
+        file_put_contents($dir.'/inputs/synthetic_world.json', json_encode($world, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        $config = (string) file_get_contents($dir.'/inputs/frozen_config_content.txt');
+        $this->assertSame(1, substr_count($config, '"operational_start_date":null'), 'control: the frozen configuration carries the marker once');
+        file_put_contents($dir.'/inputs/frozen_config_content.txt', str_replace('"operational_start_date":null', '"operational_start_date":'.($marker === null ? 'null' : '"'.$marker.'"'), $config));
+    }
+
+    public function test_candidate_v4_freezes_a_pre_activation_context_and_expects_the_independently_derived_not_applicable(): void
+    {
+        $world = $this->packageJson('inputs/synthetic_world.json');
+        $this->assertNull($world['operational_activation']['operational_start_date']);
+        $this->assertSame('NO_MARKER_EFFECTIVE', $world['operational_activation']['marker_state']);
+        $this->assertSame('2026-03-23', $world['trade_date'], 'the requested trade date is frozen');
+        $facts = $world['publication_facts'];
+        $this->assertTrue($facts['requested_publication_is_returned']);
+        $this->assertTrue($facts['all_readable_conditions_hold']);
+        $this->assertFalse($facts['prior_date_fallback_returned']);
+        $this->assertFalse($facts['activated_degraded_condition_declared']);
+        $this->assertNull($facts['activated_operational_freshness_gates_pass'], 'no gate is assessed while operational freshness is not in force');
+        $config = json_decode((string) file_get_contents($this->package().'/inputs/frozen_config_content.txt'), true);
+        $this->assertArrayHasKey('operational_start_date', $config['resolved_config']['scope']);
+        $this->assertNull($config['resolved_config']['scope']['operational_start_date'], 'the frozen configuration agrees with the world declaration');
+
+        $out = $this->packageJson('derivation/oracle_output.json');
+        $this->assertSame('NOT_APPLICABLE', $out['freshness_derivation']['state']);
+        $this->assertSame(4, $out['freshness_derivation']['row'], 'row 4 of the ordered table decides: READABLE, no degraded condition, freshness not in force');
+        $this->assertFalse($out['freshness_derivation']['in_force']);
+        $payload = $this->packageJson('expected/expected_publication_manifest.json')['payload'];
+        $this->assertSame('NOT_APPLICABLE', $payload['freshness_state']);
+        $this->assertSame('READABLE', $payload['readiness_state']);
+        $this->assertCount(35, $payload, 'the manifest inventory is unchanged');
+        $this->assertNotSame('NOT_AVAILABLE', $payload['freshness_state']);
+
+        $expected = $this->packageJson('expected/expected_replay_result.json');
+        $this->assertSame($out['publication_manifest']['hash'], $expected['expected_publication_context']['publication_manifest_hash']);
+        $this->assertSame($out['artifacts']['eligibility']['sha256'], $expected['expected_artifact_context']['eligibility_batch_hash']);
+        $v3 = json_decode((string) file_get_contents(base_path(R0025SyntheticV2World::PACKAGE_V3).'/expected/expected_replay_result.json'), true);
+        $this->assertSame('56e44a75683bf3a1734c333c10855be3f3b123d6ba5ac2c1e192cb537a11c2f2', $v3['expected_publication_context']['publication_manifest_hash'], 'control: candidate-v3 literal');
+        $this->assertNotSame($v3['expected_publication_context']['publication_manifest_hash'], $expected['expected_publication_context']['publication_manifest_hash'], 'no candidate-v3 manifest hash is reused');
+        $this->assertNotSame($v3['expected_artifact_context']['eligibility_batch_hash'], $expected['expected_artifact_context']['eligibility_batch_hash'], 'no candidate-v3 eligibility hash is reused');
+        foreach (['bars_batch_hash', 'indicators_batch_hash'] as $unchanged) {
+            $this->assertSame($v3['expected_artifact_context'][$unchanged], $expected['expected_artifact_context'][$unchanged], $unchanged.' does not bind freshness');
+        }
+    }
+
+    public function test_the_real_target_emits_the_corrected_freshness_and_equals_the_independent_expectation(): void
+    {
+        $w = R0025SyntheticV2World::build();
+        $run = DB::table('eod_runs')->where('run_id', $w['run_id'])->first();
+        $this->assertSame('NOT_APPLICABLE', $run->freshness_state, 'the production run creator decides NOT_APPLICABLE for a pre-activation date');
+        $this->assertNull($run->operational_start_date);
+
+        $result = $this->verifier()->verifyRunAgainstFixture($w['run_id'], $this->package(), null, $w['publication_id']);
+        $this->assertSame([], array_column($result['mismatches'], 'field'), 'expected NOT_APPLICABLE against actual NOT_APPLICABLE: no field may differ');
+        $this->assertSame(0, $result['mismatch_count']);
+        $expected = $this->packageJson('expected/expected_replay_result.json');
+        $this->assertSame($expected['expected_artifact_context']['eligibility_batch_hash'], $result['actual_context']['actual_artifact_context']['eligibility_batch_hash']);
+        $this->assertSame($expected['expected_publication_context']['publication_manifest_hash'], $result['actual_context']['actual_publication_context']['publication_manifest_hash']);
+        $view = (array) (new EodPublicationRepository())->buildManifestByPublicationId($w['publication_id']);
+        $this->assertSame('NOT_APPLICABLE', $view['freshness_state']);
+        $this->assertSame('READABLE', $view['readiness_state']);
+        // the expectation is the oracle's, written before any run, and the target was not allowed to edit it
+        $this->assertSame($this->packageJson('derivation/oracle_output.json')['freshness_derivation']['state'], $run->freshness_state);
+    }
+
+    public function test_a_target_with_the_wrong_freshness_state_gives_field_specific_mismatches_and_no_build_noise(): void
+    {
+        $first = true;
+        foreach (['NOT_AVAILABLE', 'FRESH', 'STALE', 'DEGRADED'] as $wrong) {
+            if (! $first) {
+                $this->freshTransaction();
+            }
+            $first = false;
+            $w = R0025SyntheticV2World::build(['run_freshness_label' => $wrong]);
+            $this->assertSame($wrong, DB::table('eod_runs')->where('run_id', $w['run_id'])->value('freshness_state'), 'control: the pipeline sealed a publication with the deliberately wrong state');
+            $result = $this->verifier()->verifyRunAgainstFixture($w['run_id'], $this->package(), null, $w['publication_id']);
+            // The executing build is a separately controlled bound input (test_the_publication_bound_build_identity_is_the_frozen_build_identity). It is excluded here only so that this
+            // control stays red/green for freshness alone when a probe edits application code, which changes the build identity and nothing else.
+            $byField = [];
+            foreach ($result['mismatches'] as $mismatch) {
+                $byField[$mismatch['field']] = $mismatch;
+            }
+            unset($byField['executable_build_identity']);
+            $fields = array_keys($byField);
+            sort($fields);
+            $this->assertSame($this->wrongFreshnessMismatchFields(), $fields, $wrong.': exactly these fields differ, and no other');
+            $expected = $this->packageJson('expected/expected_replay_result.json');
+            $publication = DB::table('eod_publications')->where('publication_id', $w['publication_id'])->first();
+            $this->assertSame($expected['expected_artifact_context']['eligibility_batch_hash'], $byField['eligibility_batch_hash']['expected'], $wrong.': the expectation is the independent literal');
+            $this->assertSame($publication->eligibility_batch_hash, $byField['eligibility_batch_hash']['actual'], $wrong.': the actual is what the pipeline sealed for that state');
+            $this->assertSame($expected['expected_publication_context']['publication_manifest_hash'], $byField['publication_manifest_hash']['expected']);
+            $this->assertSame($publication->publication_manifest_hash, $byField['publication_manifest_hash']['actual']);
+            $this->assertNotSame($byField['publication_manifest_hash']['expected'], $byField['publication_manifest_hash']['actual']);
+            $this->assertNotSame('', (string) $byField['eligibility_batch_hash']['reason_code']);
+            $this->assertNotSame('PASS', $result['replay_status']);
+        }
+    }
+
+    /** The fields a deliberately wrong freshness state makes differ (the eligibility artifact hash and what binds it, and the manifest hash). */
+    private function wrongFreshnessMismatchFields(): array
+    {
+        return ['eligibility_batch_hash', 'lineage', 'publication_manifest_hash'];
+    }
+
+    public function test_the_actual_eligibility_and_manifest_hashes_follow_the_governed_freshness_binding(): void
+    {
+        $hashes = [];
+        $first = true;
+        foreach (['NOT_APPLICABLE' => null, 'NOT_AVAILABLE' => 'NOT_AVAILABLE', 'FRESH' => 'FRESH', 'STALE' => 'STALE', 'DEGRADED' => 'DEGRADED'] as $state => $forced) {
+            if (! $first) {
+                $this->freshTransaction();
+            }
+            $first = false;
+            $w = R0025SyntheticV2World::build($forced === null ? [] : ['run_freshness_label' => $forced]);
+            $publication = DB::table('eod_publications')->where('publication_id', $w['publication_id'])->first();
+            $hashes[$state] = ['eligibility' => $publication->eligibility_batch_hash, 'bars' => $publication->bars_batch_hash, 'indicators' => $publication->indicators_batch_hash, 'manifest' => $publication->publication_manifest_hash];
+        }
+        $this->assertCount(5, array_unique(array_column($hashes, 'eligibility')), 'every governed state gives its own eligibility batch hash');
+        $this->assertCount(5, array_unique(array_column($hashes, 'manifest')), 'every governed state gives its own publication manifest hash');
+        $this->assertCount(1, array_unique(array_column($hashes, 'bars')), 'the bars artifact does not bind freshness');
+        $this->assertCount(1, array_unique(array_column($hashes, 'indicators')), 'the indicators artifact does not bind freshness');
+        // NOT_APPLICABLE and NOT_AVAILABLE are distinguishable, and candidate-v3 (which expected NOT_AVAILABLE) is exactly the NOT_AVAILABLE binding of this world.
+        $this->assertNotSame($hashes['NOT_APPLICABLE']['manifest'], $hashes['NOT_AVAILABLE']['manifest']);
+        $v3 = json_decode((string) file_get_contents(base_path(R0025SyntheticV2World::PACKAGE_V3).'/expected/expected_replay_result.json'), true);
+        $this->assertSame($v3['expected_artifact_context']['eligibility_batch_hash'], $hashes['NOT_AVAILABLE']['eligibility'], 'the independent v3 literal is the NOT_AVAILABLE binding of this world');
+        $this->assertSame($v3['expected_publication_context']['publication_manifest_hash'], $hashes['NOT_AVAILABLE']['manifest']);
+        // and candidate-v4 is the NOT_APPLICABLE binding
+        $expected = $this->packageJson('expected/expected_replay_result.json');
+        $this->assertSame($expected['expected_artifact_context']['eligibility_batch_hash'], $hashes['NOT_APPLICABLE']['eligibility']);
+        $this->assertSame($expected['expected_publication_context']['publication_manifest_hash'], $hashes['NOT_APPLICABLE']['manifest']);
+    }
+
+    public function test_the_oracle_freshness_follows_the_frozen_activation_context_and_only_through_freshness(): void
+    {
+        $packageBefore = $this->fileHashes();
+        $base = $this->packageJson('derivation/oracle_output.json');
+
+        // control: a marker after the requested date leaves freshness NOT_APPLICABLE (never backdated); the configuration moves, freshness does not
+        $control = $this->copyPackage();
+        $this->setActivation($control, '2026-04-01');
+        $a = $this->runOracleRaw($control);
+        $this->assertSame(0, $a['exit'], $a['text']);
+        $this->assertSame('NOT_APPLICABLE', $a['output']['freshness_derivation']['state']);
+        $this->assertFalse($a['output']['freshness_derivation']['in_force']);
+
+        // the activation applicability changes: in force from 2026-03-01 with the activated gates passing
+        $active = $this->copyPackage();
+        $this->setActivation($active, '2026-03-01', true);
+        $b = $this->runOracleRaw($active);
+        $this->assertSame(0, $b['exit'], $b['text']);
+        $this->assertSame('FRESH', $b['output']['freshness_derivation']['state'], 'the derivation moves with the frozen activation applicability');
+        $this->assertSame(5, $b['output']['freshness_derivation']['row']);
+        $this->assertTrue($b['output']['freshness_derivation']['in_force']);
+        $this->assertSame('FRESH', $b['output']['publication_manifest']['payload']['freshness_state']);
+
+        // between these two worlds (same configuration change, different freshness) exactly the freshness-dependent values differ
+        $this->assertNotSame($a['output']['artifacts']['eligibility']['sha256'], $b['output']['artifacts']['eligibility']['sha256'], 'the eligibility batch hash moves with the governed freshness binding');
+        $this->assertNotSame($a['output']['publication_manifest']['hash'], $b['output']['publication_manifest']['hash'], 'the publication manifest hash moves accordingly');
+        // the frozen configuration content is itself a bound row value, so a changed marker moves it: isolate freshness with two worlds that share one configuration
+        $degraded = $this->copyPackage();
+        $this->setActivation($degraded, '2026-03-01', true, ['activated_degraded_condition_declared' => true]);
+        $d = $this->runOracleRaw($degraded);
+        $this->assertSame(0, $d['exit'], $d['text']);
+        $this->assertSame('DEGRADED', $d['output']['freshness_derivation']['state']);
+        $this->assertSame(3, $d['output']['freshness_derivation']['row']);
+        $this->assertNotSame($b['output']['artifacts']['eligibility']['sha256'], $d['output']['artifacts']['eligibility']['sha256'], 'same configuration, other freshness: the eligibility hash moves');
+        $this->assertNotSame($b['output']['publication_manifest']['hash'], $d['output']['publication_manifest']['hash'], 'same configuration, other freshness: the manifest hash moves');
+        $this->assertSame($b['output']['artifacts']['bars']['sha256'], $d['output']['artifacts']['bars']['sha256'], 'bars do not bind freshness');
+        $this->assertSame($b['output']['artifacts']['indicators']['sha256'], $d['output']['artifacts']['indicators']['sha256'], 'indicators do not bind freshness');
+        $this->assertSame($b['output']['nested_members'], $d['output']['nested_members'], 'no nested identity binds freshness');
+        $this->assertNotSame($base['publication_manifest']['hash'], $b['output']['publication_manifest']['hash']);
+
+        // the boundary and the unrepresented combinations are refused, never guessed
+        foreach (['2026-03-23' => 'the marker date itself is in force and no gate is declared', '2026-03-01' => 'in force with no gate result declared'] as $marker => $why) {
+            $copy = $this->copyPackage();
+            $this->setActivation($copy, $marker, null);
+            $refused = $this->runOracleRaw($copy);
+            $this->assertSame(3, $refused['exit'], $why.': '.$refused['text']);
+            $this->assertStringContainsString('fail-safe default', $refused['text']);
+        }
+        $fallback = $this->copyPackage();
+        $this->setActivation($fallback, null, null, ['prior_date_fallback_returned' => true]);
+        $this->assertSame(3, $this->runOracleRaw($fallback)['exit'], 'a prior-date fallback decides STALE or DEGRADED by facts the world does not declare');
+        $disagree = $this->copyPackage();
+        $world = json_decode((string) file_get_contents($disagree.'/inputs/synthetic_world.json'), true);
+        $world['operational_activation']['operational_start_date'] = '2026-04-01';
+        file_put_contents($disagree.'/inputs/synthetic_world.json', json_encode($world, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        $this->assertSame(2, $this->runOracleRaw($disagree)['exit'], 'the world and the frozen configuration must agree on the marker');
+
+        $this->assertSame($packageBefore, $this->fileHashes(), 'every probe ran on a byte copy');
+    }
+
+    public function test_not_applicable_and_not_available_are_distinguishable_in_the_oracle_and_the_old_literal_is_the_not_available_derivation(): void
+    {
+        $notReadable = $this->copyPackage();
+        $this->setActivation($notReadable, null, null, ['requested_publication_is_returned' => false]);
+        $r = $this->runOracleRaw($notReadable);
+        $this->assertSame(0, $r['exit'], $r['text']);
+        $this->assertSame('NOT_AVAILABLE', $r['output']['freshness_derivation']['state']);
+        $this->assertSame(1, $r['output']['freshness_derivation']['row']);
+        $this->assertSame('NOT_READABLE', $r['output']['publication_manifest']['payload']['readiness_state']);
+        $base = $this->packageJson('derivation/oracle_output.json');
+        $this->assertNotSame($base['artifacts']['eligibility']['sha256'], $r['output']['artifacts']['eligibility']['sha256']);
+        $this->assertNotSame($base['publication_manifest']['hash'], $r['output']['publication_manifest']['hash']);
+        // the eligibility row of that world differs from candidate-v4 only in freshness: it is candidate-v3's literal
+        $v3 = json_decode((string) file_get_contents(base_path(R0025SyntheticV2World::PACKAGE_V3).'/derivation/oracle_output.json'), true);
+        $this->assertSame($v3['artifacts']['eligibility']['sha256'], $r['output']['artifacts']['eligibility']['sha256']);
+    }
+
+    public function test_the_oracle_cannot_obtain_the_freshness_state_from_the_target(): void
+    {
+        $source = (string) file_get_contents($this->package().'/derivation/reference_oracle.php');
+        $code = preg_replace('~^\s*//.*$~m', '', preg_replace('~/\*.*?\*/~s', '', $source));
+        foreach (['normalizeFreshnessState', 'runLabelFor', 'FreshnessState', 'eod_runs', 'eod_publications', 'buildExpectedReplayResultFromActual', 'verifyRunAgainstFixture', 'storage_path', 'base_path', 'config(', 'actual_context', 'actual_publication_context'] as $forbidden) {
+            $this->assertStringNotContainsString($forbidden, $code, 'the oracle must not reference '.$forbidden);
+        }
+        $this->assertSame(0, preg_match("/@TARGET:[a-z_]*manifest/", (string) file_get_contents($this->package().'/expected/expected_replay_result.json')), 'the manifest hash is never target-bound');
+        // the only assignments of a freshness value derive it from the table
+        $this->assertSame(2, preg_match_all("/'freshness_state' => \\\$freshness\['state'\]/", $code), 'the eligibility row and the manifest member take the derived state');
+        $this->assertSame(0, preg_match("/'freshness_state' => '[A-Z_]{4,}'/", $code), 'no freshness literal may be written into a row or the manifest');
+        $this->assertSame(1, preg_match('/function deriveFreshness.*?\n}\n/s', $code, $fn), 'the derivation is one function');
+        $this->assertSame(4, preg_match_all("/'state' => '(NOT_AVAILABLE|NOT_APPLICABLE|DEGRADED|FRESH)'/", $code), 'state literals exist only as the rows of the ordered table');
+        $this->assertSame(4, preg_match_all("/'state' => '(NOT_AVAILABLE|NOT_APPLICABLE|DEGRADED|FRESH)'/", $fn[0]), 'and all of them are inside the derivation function');
+        // the oracle runs from a directory outside the repository, with the frozen inputs alone, and reproduces the package
+        $outside = sys_get_temp_dir().DIRECTORY_SEPARATOR.'r0025-v4-oracle-'.bin2hex(random_bytes(4));
+        $this->copies[] = $outside;
+        $this->copyTree($this->package(), $outside);
+        $r = $this->runOracleRaw($outside);
+        $this->assertSame(0, $r['exit'], $r['text']);
+        $this->assertSame(hash_file('sha256', $this->package().'/derivation/oracle_output.json'), hash_file('sha256', $outside.'/derivation/oracle_output.json'));
+        $this->assertSame(hash_file('sha256', $this->package().'/expected/expected_replay_result.json'), hash_file('sha256', $outside.'/expected/expected_replay_result.json'));
+    }
+
+    public function test_the_publication_version_representation_and_the_canonicalization_version_are_frozen_inputs_with_a_basis(): void
+    {
+        $declaration = $this->packageJson('inputs/frozen_manifest_member_representation.json')['members']['publication_version'];
+        $this->assertSame('TEXT_BASE10', $declaration['representation']);
+        $producer = $declaration['producer_source'];
+        // the declaration agrees with the frozen build manifest
+        $line = null;
+        foreach (explode("\n", (string) file_get_contents($this->package().'/inputs/frozen_build_manifest.txt')) as $l) {
+            if (substr($l, 66) === $producer['path']) {
+                $line = $l;
+            }
+        }
+        $this->assertNotNull($line, 'the producer file is part of the frozen build');
+        $this->assertSame($producer['sha256_in_frozen_build_manifest'], substr($line, 0, 64));
+        // and with the producer source of this tree (the tree the candidate is frozen to)
+        $sourceFile = base_path($producer['path']);
+        $this->assertSame($producer['sha256_in_frozen_build_manifest'], hash_file('sha256', $sourceFile), 'the producer is not the frozen build');
+        $lines = explode("\n", (string) file_get_contents($sourceFile));
+        $this->assertSame($producer['text'], trim($lines[$producer['line'] - 1]), 'the recorded rendering line is the producer line');
+        $this->assertStringStartsWith("'publication_version' => (string)", $producer['text']);
+        $this->assertSame('1', $this->packageJson('expected/expected_publication_manifest.json')['payload']['publication_version']);
+
+        // the declaration is load-bearing: the other representation gives another preimage; a declaration that disagrees with the frozen build is refused
+        $integer = $this->copyPackage();
+        $decl = json_decode((string) file_get_contents($integer.'/inputs/frozen_manifest_member_representation.json'), true);
+        $decl['members']['publication_version']['representation'] = 'INTEGER';
+        file_put_contents($integer.'/inputs/frozen_manifest_member_representation.json', json_encode($decl, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        $r = $this->runOracleRaw($integer);
+        $this->assertSame(0, $r['exit'], $r['text']);
+        $this->assertSame(1, $r['output']['publication_manifest']['payload']['publication_version']);
+        $this->assertNotSame($this->packageJson('derivation/oracle_output.json')['publication_manifest']['hash'], $r['output']['publication_manifest']['hash']);
+        $wrong = $this->copyPackage();
+        $decl = json_decode((string) file_get_contents($wrong.'/inputs/frozen_manifest_member_representation.json'), true);
+        $decl['members']['publication_version']['producer_source']['sha256_in_frozen_build_manifest'] = str_repeat('0', 64);
+        file_put_contents($wrong.'/inputs/frozen_manifest_member_representation.json', json_encode($decl, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        $this->assertSame(2, $this->runOracleRaw($wrong)['exit']);
+
+        // canonicalization_version comes from the frozen configuration
+        $config = $this->copyPackage();
+        $f = $config.'/inputs/frozen_config_content.txt';
+        $this->assertSame(1, substr_count((string) file_get_contents($f), '"canonicalization_version":"idx_regular_raw_v2"'));
+        file_put_contents($f, str_replace('"canonicalization_version":"idx_regular_raw_v2"', '"canonicalization_version":"idx_regular_raw_v3"', (string) file_get_contents($f)));
+        $c = $this->runOracleRaw($config);
+        $this->assertSame(0, $c['exit'], $c['text']);
+        $this->assertSame('idx_regular_raw_v3', $c['output']['publication_manifest']['payload']['canonicalization_version']);
+        $this->assertNotSame($this->packageJson('derivation/oracle_output.json')['artifacts']['bars']['sha256'], $c['output']['artifacts']['bars']['sha256'], 'the bars row carries the frozen canonicalization version');
+        $absent = $this->copyPackage();
+        $f = $absent.'/inputs/frozen_config_content.txt';
+        file_put_contents($f, str_replace('"canonicalization_version":"idx_regular_raw_v2",', '', (string) file_get_contents($f)));
+        $this->assertSame(2, $this->runOracleRaw($absent)['exit'], 'a frozen configuration without the version is refused, not defaulted');
+        $this->assertSame(0, preg_match("/'idx_regular_raw_v\d'/", (string) file_get_contents($this->package().'/derivation/reference_oracle.php')), 'no canonicalization version literal in the oracle');
     }
 }

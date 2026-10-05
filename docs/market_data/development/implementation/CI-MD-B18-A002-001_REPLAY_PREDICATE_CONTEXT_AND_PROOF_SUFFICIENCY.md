@@ -1080,3 +1080,7 @@ Same A002/BL001/CI. `MD-B10-A003` (baseline `MD-B10-A003-BL001`, `CI-MD-B10-A003
 ## 2026-10-05 MD-B10-A003 closed
 
 Same A002/BL001/CI. `MD-B10-A003` closed `1072/1072` (`SC-MD-B10-A003-001`); `MD-DEP-0022` resolved; `MD-B18-A002` returns to candidate-v4. No B18 row, candidate or expected hash changed.
+
+## 2026-10-05 candidate-v4 — E-MD-B18-A002-099
+
+Same A002/BL001/CI. Candidate-v4 answers the blocking review point of candidate-v3 (`F-MD-B18-A002-032`) and the two non-blocking points. No file of `app/`, `config/`, `bootstrap/`, `vendor/` or composer changed in this unit (`NOT_B10_SEMANTIC`); the changes are the fixture package, the fixture test controls and the test-support world. The 21 B10 covering test files were re-executed inside the full MarketData suite (2826 tests, the same 8 governed expected failures, not a full-suite PASS). B10 stays closed 1072/1072; `MD-S003-R0025`, `F-MD-B18-A002-025` and `F-MD-B18-A002-017` stay open; B18 stays 100/113 reviewed and 0/113 formal `SATISFIED`; no matrix, predicate or protected-file change; B17 untouched. Raw package: `storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261005-v4-candidate`.

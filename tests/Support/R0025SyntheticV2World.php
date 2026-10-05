@@ -40,8 +40,9 @@ use Illuminate\Support\Facades\DB;
  */
 final class R0025SyntheticV2World
 {
-    /** The candidate package whose frozen inputs the world is built from. Candidate-v1 and candidate-v2 were reviewed CHANGES REQUIRED and are retained untouched. */
-    public const PACKAGE = 'tests/fixtures/replay/r0025-synthetic-v2-candidate-v3';
+    /** The candidate package whose frozen inputs the world is built from. Candidate-v1, -v2 and -v3 were reviewed CHANGES REQUIRED and are retained untouched. */
+    public const PACKAGE = 'tests/fixtures/replay/r0025-synthetic-v2-candidate-v4';
+    public const PACKAGE_V3 = 'tests/fixtures/replay/r0025-synthetic-v2-candidate-v3';
     public const PACKAGE_V2 = 'tests/fixtures/replay/r0025-synthetic-v2-candidate-v2';
     public const PACKAGE_V1 = 'tests/fixtures/replay/r0025-synthetic-v2-candidate-v1';
 
@@ -59,7 +60,10 @@ final class R0025SyntheticV2World
     /**
      * Builds the world inside the caller's transaction and runs the real pipeline once.
      *
-     * @param array{ticker_id?:int,preconsume?:int,calendar_order?:string,retained_registry?:bool,tamper_response?:string,profile?:string,run_clock?:string} $layout
+     * `run_freshness_label` (TEST SUPPORT, candidate-v4 sensitivity): forces the freshness label the real run creator would write, through a model event, so that the
+     * real pipeline seals a publication whose freshness is deliberately wrong. It changes nothing in application code.
+     *
+     * @param array{ticker_id?:int,preconsume?:int,calendar_order?:string,retained_registry?:bool,tamper_response?:string,profile?:string,run_clock?:string,run_freshness_label?:string} $layout
      *
      * @return array<string,mixed>
      */
@@ -148,7 +152,19 @@ final class R0025SyntheticV2World
             new CoverageGateEvaluator(new TickerMasterRepository(), $artifacts)
         );
 
-        $run = $pipeline->runDaily($date, 'api');
+        $forcedLabel = $layout['run_freshness_label'] ?? null;
+        if ($forcedLabel !== null) {
+            \App\Models\EodRun::creating(static function ($model) use ($forcedLabel) {
+                $model->freshness_state = $forcedLabel;
+            });
+        }
+        try {
+            $run = $pipeline->runDaily($date, 'api');
+        } finally {
+            if ($forcedLabel !== null) {
+                \App\Models\EodRun::getEventDispatcher()->forget('eloquent.creating: '.\App\Models\EodRun::class);
+            }
+        }
         $publication = $db->table('eod_publications')->where('run_id', $run->run_id)->first();
 
         return [

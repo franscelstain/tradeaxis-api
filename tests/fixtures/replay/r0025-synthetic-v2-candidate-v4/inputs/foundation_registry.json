@@ -1,0 +1,215 @@
+{
+    "registry_version": "security-identity-registry/v1",
+    "packages": [
+        {
+            "package_hash": "7293294f258628f39baa38e55435f2860050cca4d996d12659296246ba30d0d8",
+            "package_version": "test-only-r0025-synthetic-v2/1",
+            "recorded_at": "2020-01-01 00:00:00",
+            "admission_evidence": "TEST_ONLY_NOT_PRODUCTION_ADMISSION",
+            "sources": {
+                "test-only://r0025-synthetic-v2-world/v1/profile": {
+                    "facts": {
+                        "name": "Synthetic issuer",
+                        "valid_from": "2020-01-01 00:00:00",
+                        "valid_to": null
+                    },
+                    "admitted_fields": [
+                        "name"
+                    ],
+                    "evidence_class": "PRIMARY_MASTER_EVIDENCE",
+                    "source_revision": "synthetic-v1",
+                    "source_known_at": "2020-01-01 00:00:00",
+                    "captured_at": "2020-01-01 00:00:00",
+                    "review_reference": "TEST_ONLY_INDEPENDENT_DECLARATION"
+                },
+                "test-only://r0025-synthetic-v2-world/v1/listing": {
+                    "facts": {
+                        "venue": "SYNTHETIC_VENUE",
+                        "continuity": "NEW_LISTING",
+                        "history_verified_through": "2030-01-01 00:00:00",
+                        "listing_state": "LISTED",
+                        "change_reason": "SYNTHETIC_INITIAL_ADMISSION",
+                        "valid_from": "2020-01-01 00:00:00",
+                        "valid_to": null
+                    },
+                    "admitted_fields": [
+                        "venue",
+                        "continuity",
+                        "history_verified_through",
+                        "listing_state",
+                        "change_reason"
+                    ],
+                    "evidence_class": "PRIMARY_MASTER_EVIDENCE",
+                    "source_revision": "synthetic-v1",
+                    "source_known_at": "2020-01-01 00:00:00",
+                    "captured_at": "2020-01-01 00:00:00",
+                    "review_reference": "TEST_ONLY_INDEPENDENT_DECLARATION"
+                },
+                "test-only://r0025-synthetic-v2-world/v1/symbol": {
+                    "facts": {
+                        "namespace": "IDX",
+                        "symbol": "SYNV2",
+                        "valid_from": "2020-01-01 00:00:00",
+                        "valid_to": null
+                    },
+                    "admitted_fields": [
+                        "namespace",
+                        "symbol"
+                    ],
+                    "evidence_class": "PRIMARY_MASTER_EVIDENCE",
+                    "source_revision": "synthetic-v1",
+                    "source_known_at": "2020-01-01 00:00:00",
+                    "captured_at": "2020-01-01 00:00:00",
+                    "review_reference": "TEST_ONLY_INDEPENDENT_DECLARATION"
+                },
+                "test-only://r0025-synthetic-v2-world/v1/board": {
+                    "facts": {
+                        "market_segment": "SYNTHETIC_SEGMENT",
+                        "board": "SYNTHETIC_BOARD",
+                        "valid_from": "2020-01-01 00:00:00",
+                        "valid_to": null
+                    },
+                    "admitted_fields": [
+                        "market_segment",
+                        "board"
+                    ],
+                    "evidence_class": "PRIMARY_MASTER_EVIDENCE",
+                    "source_revision": "synthetic-v1",
+                    "source_known_at": "2020-01-01 00:00:00",
+                    "captured_at": "2020-01-01 00:00:00",
+                    "review_reference": "TEST_ONLY_INDEPENDENT_DECLARATION"
+                },
+                "test-only://r0025-synthetic-v2-world/v1/provider_mapping": {
+                    "facts": {
+                        "namespace": "yahoo_finance",
+                        "symbol": "SYNV2.JK",
+                        "valid_from": "2020-01-01 00:00:00",
+                        "valid_to": null
+                    },
+                    "admitted_fields": [
+                        "namespace",
+                        "symbol"
+                    ],
+                    "evidence_class": "PRIMARY_MASTER_EVIDENCE",
+                    "source_revision": "synthetic-v1",
+                    "source_known_at": "2020-01-01 00:00:00",
+                    "captured_at": "2020-01-01 00:00:00",
+                    "review_reference": "TEST_ONLY_INDEPENDENT_DECLARATION"
+                }
+            }
+        }
+    ],
+    "entities": [
+        {
+            "identity_id": "5a000000-0000-4000-8000-000000000001",
+            "entity_type": "ISSUER",
+            "parent_identity_id": null,
+            "package_hash": "7293294f258628f39baa38e55435f2860050cca4d996d12659296246ba30d0d8",
+            "source_locator": "test-only://r0025-synthetic-v2-world/v1/listing"
+        },
+        {
+            "identity_id": "5a000000-0000-4000-8000-000000000002",
+            "entity_type": "INSTRUMENT",
+            "parent_identity_id": "5a000000-0000-4000-8000-000000000001",
+            "package_hash": "7293294f258628f39baa38e55435f2860050cca4d996d12659296246ba30d0d8",
+            "source_locator": "test-only://r0025-synthetic-v2-world/v1/listing"
+        },
+        {
+            "identity_id": "5a000000-0000-4000-8000-000000000003",
+            "entity_type": "LISTING",
+            "parent_identity_id": "5a000000-0000-4000-8000-000000000002",
+            "package_hash": "7293294f258628f39baa38e55435f2860050cca4d996d12659296246ba30d0d8",
+            "source_locator": "test-only://r0025-synthetic-v2-world/v1/listing"
+        }
+    ],
+    "revisions": [
+        {
+            "revision_id": "5b000000-0000-4000-8000-000000000001",
+            "identity_id": "5a000000-0000-4000-8000-000000000001",
+            "revision_type": "PROFILE",
+            "state": "ADMITTED",
+            "valid_from": "2020-01-01 00:00:00",
+            "valid_to": null,
+            "known_at": "2020-01-01 00:00:00",
+            "recorded_at": "2020-01-01 00:00:00",
+            "package_hash": "7293294f258628f39baa38e55435f2860050cca4d996d12659296246ba30d0d8",
+            "source_locator": "test-only://r0025-synthetic-v2-world/v1/profile",
+            "supersedes_revision_id": null,
+            "data": {
+                "name": "Synthetic issuer"
+            }
+        },
+        {
+            "revision_id": "5b000000-0000-4000-8000-000000000002",
+            "identity_id": "5a000000-0000-4000-8000-000000000003",
+            "revision_type": "LISTING",
+            "state": "ADMITTED",
+            "valid_from": "2020-01-01 00:00:00",
+            "valid_to": null,
+            "known_at": "2020-01-01 00:00:00",
+            "recorded_at": "2020-01-01 00:00:00",
+            "package_hash": "7293294f258628f39baa38e55435f2860050cca4d996d12659296246ba30d0d8",
+            "source_locator": "test-only://r0025-synthetic-v2-world/v1/listing",
+            "supersedes_revision_id": null,
+            "data": {
+                "venue": "SYNTHETIC_VENUE",
+                "continuity": "NEW_LISTING",
+                "history_verified_through": "2030-01-01 00:00:00",
+                "listing_state": "LISTED",
+                "change_reason": "SYNTHETIC_INITIAL_ADMISSION"
+            }
+        },
+        {
+            "revision_id": "5b000000-0000-4000-8000-000000000003",
+            "identity_id": "5a000000-0000-4000-8000-000000000003",
+            "revision_type": "SYMBOL",
+            "state": "ADMITTED",
+            "valid_from": "2020-01-01 00:00:00",
+            "valid_to": null,
+            "known_at": "2020-01-01 00:00:00",
+            "recorded_at": "2020-01-01 00:00:00",
+            "package_hash": "7293294f258628f39baa38e55435f2860050cca4d996d12659296246ba30d0d8",
+            "source_locator": "test-only://r0025-synthetic-v2-world/v1/symbol",
+            "supersedes_revision_id": null,
+            "data": {
+                "namespace": "IDX",
+                "symbol": "SYNV2"
+            }
+        },
+        {
+            "revision_id": "5b000000-0000-4000-8000-000000000004",
+            "identity_id": "5a000000-0000-4000-8000-000000000003",
+            "revision_type": "BOARD",
+            "state": "ADMITTED",
+            "valid_from": "2020-01-01 00:00:00",
+            "valid_to": null,
+            "known_at": "2020-01-01 00:00:00",
+            "recorded_at": "2020-01-01 00:00:00",
+            "package_hash": "7293294f258628f39baa38e55435f2860050cca4d996d12659296246ba30d0d8",
+            "source_locator": "test-only://r0025-synthetic-v2-world/v1/board",
+            "supersedes_revision_id": null,
+            "data": {
+                "market_segment": "SYNTHETIC_SEGMENT",
+                "board": "SYNTHETIC_BOARD"
+            }
+        },
+        {
+            "revision_id": "5b000000-0000-4000-8000-000000000005",
+            "identity_id": "5a000000-0000-4000-8000-000000000003",
+            "revision_type": "PROVIDER_MAPPING",
+            "state": "ADMITTED",
+            "valid_from": "2020-01-01 00:00:00",
+            "valid_to": null,
+            "known_at": "2020-01-01 00:00:00",
+            "recorded_at": "2020-01-01 00:00:00",
+            "package_hash": "7293294f258628f39baa38e55435f2860050cca4d996d12659296246ba30d0d8",
+            "source_locator": "test-only://r0025-synthetic-v2-world/v1/provider_mapping",
+            "supersedes_revision_id": null,
+            "data": {
+                "namespace": "yahoo_finance",
+                "symbol": "SYNV2.JK"
+            }
+        }
+    ],
+    "holds": []
+}
