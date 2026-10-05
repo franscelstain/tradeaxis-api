@@ -1088,3 +1088,7 @@ Same A002/BL001/CI. Candidate-v4 answers the blocking review point of candidate-
 ## 2026-10-05 candidate-v4 independent review — E-MD-B18-A002-100
 
 Same A002/BL001/CI. Governance recording only: no candidate, runtime, application or test change. Candidate-v4 independently reviewed PASS; not owner-approved. B10 stays closed 1072/1072; B17 stays 244/257; `MD-S003-R0025`, `F-MD-B18-A002-025` and `F-MD-B18-A002-017` stay open; B18 stays 100/113 reviewed and 0/113 formal `SATISFIED`.
+
+## 2026-10-05 candidate-v4 owner approval — D-MD-B18-A002-016
+
+Same A002/BL001/CI. Governance recording only: no candidate, runtime, application or test change. Candidate-v4 owner approved, bound to its exact fingerprint; admission / binding is the next separate operation. B10 stays closed 1072/1072; B17 stays 244/257; `MD-S003-R0025`, `F-MD-B18-A002-025` and `F-MD-B18-A002-017` stay open; B18 stays 100/113 reviewed and 0/113 formal `SATISFIED`; `F-018` not started.

@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-10-05T12:24:15+07:00
 - Severity: `P1` for `MD-S003-R0025`; `freshness_state` is one of the 35 members of the publication manifest preimage
-- Status: `OPEN` — authority corrected (`DOC-CHG-20261005-001`); candidate-v4 (`E-MD-B18-A002-099`) derives the state independently and was independently reviewed PASS (`E-MD-B18-A002-100`); stays open until admission / reconciliation after owner approval
+- Status: `OPEN` — authority corrected (`DOC-CHG-20261005-001`); candidate-v4 (`E-MD-B18-A002-099`) derives the state independently and was independently reviewed PASS (`E-MD-B18-A002-100`) and owner approved (`D-MD-B18-A002-016`); stays open until admission / reconciliation
 - Class: `PROOF_BASIS_AUTHORITY_GAP`
 - Related: `E-MD-B18-A002-097`, `E-MD-B18-A002-096`, `F-MD-B18-A002-031`, `F-MD-B18-A002-025`, `D-MD-B18-A002-013`, `D-MD-B18-A002-011`
 - Remediation owner: `MD-B18-A002` (owner decision required first)
@@ -41,3 +41,7 @@ Candidate-v4, `tests/fixtures/replay/r0025-synthetic-v2-candidate-v4` (fingerpri
 ## 2026-10-05 candidate-v4 independently reviewed PASS — E-MD-B18-A002-100
 
 An independent-review Agent that is not the authoring Agent (identity as relayed in the project instruction; no name, session or model identifier was supplied and none is invented) returned PASS for candidate-v4 (fingerprint `d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00`): no blocking finding, no owner or authority decision required, no candidate-v5 required. The candidate is not owner-approved; no admission or promotion follows from the review. The finding stays `OPEN` until admission / reconciliation. Annotation: the authoring session's prose "37 probes, all RED_INTENDED" refers to the 37 successful probes of the main run; the main run also had one `ANCHOR_ERROR` (F5), and F5's re-run with a unique anchor was `RED_INTENDED`, so final unique successful coverage is 38 (the main run itself is not 38/38).
+
+## 2026-10-05 candidate-v4 owner approval — D-MD-B18-A002-016
+
+Candidate-v4 (fingerprint `d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00`) is owner approved (exact-fingerprint-bound) after the independent review PASS `E-MD-B18-A002-100`. It is not yet admitted or bound as proof; the finding stays `OPEN` until admission / reconciliation.

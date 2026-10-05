@@ -15,20 +15,6 @@
 - Verified coverage: **76.27% FINAL**
 - Optional capability rules: **63**
 
-## Current executable stage
-
-- Stage: `MD-B17`
-- Latest attempt / baseline: `MD-B17-A002` / `MD-B17-A002-BL001`
-- State / verdict: `IN_PROGRESS` / `REVALIDATION_REQUIRED` — closure sufficiency under `MD-STRATEGY-FREEZE-20260925-001` withdrawn for 13 rows by `E-MD-B18-A002-098` (`DOC-CHG-20261005-001`); no successor attempt opened
-- Residue/rework: `CONFORMANT_WITH_FAIL_CLOSED_LEGACY_SNAPSHOT_BOUNDARY`
-- Dependency: `MD-DEP-0004` discharged for B17
-- Open finding: none — `F-MD-B17-A001-001` remains RESOLVED; `F-MD-B18-A002-033` OPEN (read surface emits no `freshness_state`; 13 rows to prove)
-- Change Impact Declaration: `CI-MD-B17-A002-001` — ISSUED
-- Denominator: **257** (PROVISIONAL — 33 reference-only rows carry no recorded stage-entry decision, so an obligation may still be filed as reference and the denominator can only grow)
-- SATISFIED / NOT_ASSESSED: **244 / 13**
-- Mandatory / conditional-applicable: **257 / 0**
-- Conditional-not-applicable / conditional-pending / transitional: **2 / 0 / 0**
-
 ## Stage state index
 
 | Stage | Lifecycle | Verdict | Latest attempt | Baseline | Integrity gate |
@@ -62,10 +48,10 @@
 - Open findings across every stage: `F-MD-B00-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A001-001` — PARTIALLY_RESOLVED; `F-MD-B01-A014-001` — OPEN; `F-MD-B10-A002-003` — OPEN; `F-MD-B10-A002-004` — PARTIALLY_RESOLVED; `F-MD-B10-A003-002` — OPEN; `F-MD-B14-A001-001` — OPEN; `F-MD-B18-A002-003` — OPEN; `F-MD-B18-A002-004` — PARTIALLY_RESOLVED; `F-MD-B18-A002-005` — OPEN; `F-MD-B18-A002-011` — PARTIALLY_RESOLVED; `F-MD-B18-A002-013` — OPEN; `F-MD-B18-A002-017` — OPEN; `F-MD-B18-A002-018` — OPEN; `F-MD-B18-A002-025` — OPEN; `F-MD-B18-A002-028` — OPEN; `F-MD-B18-A002-030` — OPEN; `F-MD-B18-A002-031` — OPEN; `F-MD-B18-A002-032` — OPEN; `F-MD-B18-A002-033` — OPEN; `F-MD-B19-A001-002` — OPEN — total **21**
 - Open dependencies: `MD-DEP-0003` — OPEN_NON_BLOCKING; owner `owning stages MD-B03/B15/B17/B19/B21/B22`; `MD-DEP-0004` — OPEN_NON_BLOCKING; owner `each stage at entry`; `MD-DEP-0009` — BLOCKING; owner `MD-B18`; `MD-DEP-0010` — OPEN_NON_BLOCKING; owner `MD-B21`; `MD-DEP-0011` — OPEN_NON_BLOCKING; owner `MD-B22 with MD-B18 supporting`; `MD-DEP-0015` — BLOCKING; owner `database owner (explicit user recovery decision)`; `MD-DEP-0016` — OPEN_NON_BLOCKING; owner `database owner (separate recovery track)`; `MD-DEP-0017` — BLOCKING; owner `MD-B18 approved bounded remediation under D-MD-B18-A002-005`
 - Classification entry obligation (`MD-DEP-0004`), reference-only rows in mixed-classification runs by stage: `MD-B20` 9 — total **9**
-- Registered current work records: **400** (BASELINE_LOCK=53, CHANGE_IMPACT_DECLARATION=48, DECISION=28, EVIDENCE=179, FINDING=61, STAGE_CLOSURE=5, STAGE_CLOSURE_MANIFEST=26)
+- Registered current work records: **401** (BASELINE_LOCK=53, CHANGE_IMPACT_DECLARATION=48, DECISION=29, EVIDENCE=179, FINDING=61, STAGE_CLOSURE=5, STAGE_CLOSURE_MANIFEST=26)
 
 ## Exact resume
 
-- Single exact next executable resume point: OWNER APPROVAL OF EXACT CANDIDATE-V4 FINGERPRINT: the project owner decides whether to approve candidate-v4 (tests/fixtures/replay/r0025-synthetic-v2-candidate-v4, fingerprint d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00, manifest sha256 6ce59c64e458638691504ea1de2d7726e4dae15ae53cfb77d65b1e2c9c2d8c32, valid only for frozen build sha256:7a1ed5c78cc37a978df0441b565815f3e435fdceafd2045eb202d716ce16d8cf) as a governed owner-approval record bound to that fingerprint (Runtime Evidence Standard 6A); approval is a separate record, is not implied by the independent review, and does not promote MD-S003-R0025. Candidate-v1, candidate-v2 and candidate-v3 must not be approved. MD-B17-A003 remains a separate bounded work unit and is not a prerequisite.
+- Single exact next executable resume point: R0025 PROOF ADMISSION / BINDING OF THE APPROVED CANDIDATE-V4: a separate bounded governed operation (D-MD-B18-A002-016 approves the exact fingerprint d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00 only) that supplies the approved fingerprint to the replay verification path, binds the approved candidate to the executed target through the governed verification (Runtime Evidence Standard 6A: approval and package freeze precede the governed verification/proof claim), and then reconciles MD-S003-R0025 and the findings F-MD-B18-A002-025, F-MD-B18-A002-032, F-MD-B18-A002-030, F-MD-B18-A002-031 under their own closure rules. It must not edit candidate-v4 (any change invalidates the approval), must not reopen B10 (1072/1072) or touch B17 (244/257), and F-018 stays NOT STARTED. Candidate-v1, candidate-v2 and candidate-v3 must not be approved.
 - Current stage source: `MD_IMPLEMENTATION_STAGE_REGISTER.md`
 - Pre-epoch W00..W22 verdicts: **historical-only**

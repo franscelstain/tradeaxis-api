@@ -72,3 +72,7 @@ Candidate-v4, `tests/fixtures/replay/r0025-synthetic-v2-candidate-v4` (fingerpri
 ## 2026-10-05 candidate-v4 independent review — E-MD-B18-A002-100
 
 Candidate-v4 (fingerprint `d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00`, manifest sha256 `6ce59c64e458638691504ea1de2d7726e4dae15ae53cfb77d65b1e2c9c2d8c32`) was independently reviewed PASS by a reviewer who is not the authoring Agent. It is not owner-approved and is not proof: the verifier still answers `REPLAY_INDEPENDENT_REVIEW_REQUIRED` without an approved fingerprint. Candidate-v1, candidate-v2 and candidate-v3 stay rejected and never approved. Outstanding: owner approval bound to the exact fingerprint, then the admissible proof run. The finding stays `OPEN`.
+
+## 2026-10-05 candidate-v4 owner approval — D-MD-B18-A002-016
+
+The project owner approved candidate-v4 (fingerprint `d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00`, frozen build `sha256:7a1ed5c78cc37a978df0441b565815f3e435fdceafd2045eb202d716ce16d8cf`) after the independent review PASS (`E-MD-B18-A002-100`). The approval is bound to that exact fingerprint; any change to the fingerprint, the frozen build, the package or the reviewed content invalidates it for the changed candidate. The approval does not promote `MD-S003-R0025`, which stays `INCOMPLETE / NOT_ASSESSED`; admission and binding of the approved candidate are a separate governed operation. The finding stays `OPEN`.

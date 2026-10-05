@@ -1415,3 +1415,18 @@ MD-REL-1414,E-MD-B18-A002-100,MD-B18-A002-BL001,RELATED,Same B18 baseline; no ne
 MD-REL-1415,F-MD-B18-A002-032,E-MD-B18-A002-100,RELATED,Review PASS recorded.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
 MD-REL-1416,F-MD-B18-A002-025,E-MD-B18-A002-100,RELATED,Progress recorded.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
 MD-REL-1417,CI-MD-B18-A002-001,E-MD-B18-A002-100,RELATED,Impact declaration identifies the review.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1418,D-MD-B18-A002-016,E-MD-B18-A002-100,DEPENDS_ON,Approves the candidate that this independent review passed; the review precedes the approval.,D-MD-B18-A002-016,2026-10-05T19:43:16+07:00,Same B18-A002/BL001; candidate-v4 owner approval.
+MD-REL-1419,D-MD-B18-A002-016,E-MD-B18-A002-099,DEPENDS_ON,The candidate authoring record of the approved package.,D-MD-B18-A002-016,2026-10-05T19:43:16+07:00,Same B18-A002/BL001; candidate-v4 owner approval.
+MD-REL-1420,D-MD-B18-A002-016,D-MD-B18-A002-011,DEPENDS_ON,Independent-fixture admission contract: owner approval bound to the reviewed fingerprint.,D-MD-B18-A002-016,2026-10-05T19:43:16+07:00,Same B18-A002/BL001; candidate-v4 owner approval.
+MD-REL-1421,D-MD-B18-A002-016,D-MD-B18-A002-013,DEPENDS_ON,"Review model Q2: author, separate reviewer, owner approver.",D-MD-B18-A002-016,2026-10-05T19:43:16+07:00,Same B18-A002/BL001; candidate-v4 owner approval.
+MD-REL-1422,D-MD-B18-A002-016,D-MD-B18-A002-014,RELATED,Owner decisions Q4 to Q7 the approved candidate preserves.,D-MD-B18-A002-016,2026-10-05T19:43:16+07:00,Same B18-A002/BL001; candidate-v4 owner approval.
+MD-REL-1423,D-MD-B18-A002-016,D-MD-B18-A002-015,RELATED,Direction D authority the approved candidate applies.,D-MD-B18-A002-016,2026-10-05T19:43:16+07:00,Same B18-A002/BL001; candidate-v4 owner approval.
+MD-REL-1424,D-MD-B18-A002-016,F-MD-B18-A002-025,RELATED,"Progress: approved, admission outstanding; finding stays open.",D-MD-B18-A002-016,2026-10-05T19:43:16+07:00,Same B18-A002/BL001; candidate-v4 owner approval.
+MD-REL-1425,D-MD-B18-A002-016,F-MD-B18-A002-032,RELATED,Approved candidate derives the corrected freshness; finding stays open until admission.,D-MD-B18-A002-016,2026-10-05T19:43:16+07:00,Same B18-A002/BL001; candidate-v4 owner approval.
+MD-REL-1426,D-MD-B18-A002-016,F-MD-B18-A002-030,RELATED,Stays open until admission.,D-MD-B18-A002-016,2026-10-05T19:43:16+07:00,Same B18-A002/BL001; candidate-v4 owner approval.
+MD-REL-1427,D-MD-B18-A002-016,F-MD-B18-A002-031,RELATED,Stays open until admission.,D-MD-B18-A002-016,2026-10-05T19:43:16+07:00,Same B18-A002/BL001; candidate-v4 owner approval.
+MD-REL-1428,D-MD-B18-A002-016,CI-MD-B18-A002-001,RELATED,Same impact declaration records the approval.,D-MD-B18-A002-016,2026-10-05T19:43:16+07:00,Same B18-A002/BL001; candidate-v4 owner approval.
+MD-REL-1429,E-MD-B18-A002-100,D-MD-B18-A002-016,RELATED,The owner approval that follows this review.,D-MD-B18-A002-016,2026-10-05T19:43:16+07:00,Same B18-A002/BL001; candidate-v4 owner approval.
+MD-REL-1430,F-MD-B18-A002-025,D-MD-B18-A002-016,RELATED,The approval recorded for the finding.,D-MD-B18-A002-016,2026-10-05T19:43:16+07:00,Same B18-A002/BL001; candidate-v4 owner approval.
+MD-REL-1431,F-MD-B18-A002-032,D-MD-B18-A002-016,RELATED,The approval recorded for the finding.,D-MD-B18-A002-016,2026-10-05T19:43:16+07:00,Same B18-A002/BL001; candidate-v4 owner approval.
+MD-REL-1432,CI-MD-B18-A002-001,D-MD-B18-A002-016,RELATED,Impact declaration identifies the approval.,D-MD-B18-A002-016,2026-10-05T19:43:16+07:00,Same B18-A002/BL001; candidate-v4 owner approval.

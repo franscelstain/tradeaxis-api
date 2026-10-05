@@ -1311,3 +1311,7 @@ Candidate-v4 (fingerprint `d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b
 ## 2026-10-05 candidate-v4 independent review — E-MD-B18-A002-100
 
 Candidate-v4 (fingerprint `d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00`) was independently reviewed PASS and awaits owner approval; it is not proof. `MD-S003-R0025` stays `INCOMPLETE`, `MD-S050-R0005` stays `IMPLEMENTATION_DEPENDENCY_UNAVAILABLE`, formal `SATISFIED` is 0/113 and the reviewed basis 100/113. This finding stays `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.
+
+## 2026-10-05 candidate-v4 owner approval — D-MD-B18-A002-016
+
+Candidate-v4 (fingerprint `d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00`) is owner approved but not admitted or bound; it is not proof. `MD-S003-R0025` stays `INCOMPLETE`, `MD-S050-R0005` stays `IMPLEMENTATION_DEPENDENCY_UNAVAILABLE`, formal `SATISFIED` is 0/113 and the reviewed basis 100/113. This finding stays `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.
