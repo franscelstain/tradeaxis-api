@@ -7,7 +7,7 @@
 - Remediates: `F-MD-B19-A001-002` (P1)
 - Blocking dependency: `MD-DEP-0009` — `MD-B19` is the blocked logical stage; return-to `MD-B19-A001`
 - Status: `IN_PROGRESS — REMEDIATION`
-- Strategy meaning change: `YES` — bounded to `DOC-CHG-20260925-001` (`MD-S065` line 7, `MD-S065-R0003` rerun configuration rule; owner decision `D-MD-B18-A002-010`); declared below before mutation. (`DOC-CHG-20260922-001` added one `MD-S082` key row under `D-MD-B18-A002-006` and is recorded in the change log, not here.)
+- Strategy meaning change: `YES` — also bounded to `DOC-CHG-20261005-001` (`MD-S022`, `MD-S009` line 7, `MD-S021` line 55: freshness state `NOT_APPLICABLE`; owner decision `D-MD-B18-A002-015`; successor freeze `MD-STRATEGY-FREEZE-20261005-001`) — and bounded to `DOC-CHG-20260925-001` (`MD-S065` line 7, `MD-S065-R0003` rerun configuration rule; owner decision `D-MD-B18-A002-010`); declared below before mutation. (`DOC-CHG-20260922-001` added one `MD-S082` key row under `D-MD-B18-A002-006` and is recorded in the change log, not here.)
 - Governance authority change: `YES` — bounded to `DOC-CHG-20260923-001` (documentation integrity gate: immutable historical integrity exception); declared below before mutation. No other governance authority change.
 
 Issued after `MD-B18-A002-BL001` and before any material `MD-B18` mutation, so that it directs the
@@ -1052,3 +1052,31 @@ Post-registration validation for E-MD-B18-A002-092, D-MD-B18-A002-013 and F-MD-B
 ## 2026-10-03 candidate-v1 review response — E-MD-B18-A002-093
 
 Same A002/BL001/CI. The independent review of candidate-v1 returned CHANGES REQUIRED BEFORE APPROVAL. This unit changed test code only (the wrong-fingerprint control and four sibling controls of `R0025SyntheticV2CandidateFixtureTest`, `F-MD-B18-A002-029`) and no production file, hash producer, nested-identity or publication-identity service, registry or build producer (NOT_B10_SEMANTIC). It disclosed `F-MD-B18-A002-027` (provider bar timestamp not carried; the acquisition clock is stored as `source_timestamp`) and `F-MD-B18-A002-028` (formula and reason registry identity are one build-bound hash; no frozen build identity). Candidate-v2 is not produced; owner decisions Q4 to Q7 are required, and each carries a B10 impact assessment in `E-MD-B18-A002-093` (not implemented, not a proof). `MD-S003-R0025`, `F-MD-B18-A002-025` and `F-MD-B18-A002-017` stay open; B18 stays 100/113 reviewed and 0/113 formal `SATISFIED`; `MD-DEP-0015` and `MD-DEP-0017` are unchanged; B10 stays closed. Raw package: `storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261003-v2-review-response`.
+
+## 2026-10-03 candidate-v2 — D-MD-B18-A002-014, E-MD-B18-A002-094
+
+Same A002/BL001/CI. The owner selected Q4 = A, Q5 = B, Q6 = B, Q7 = A (`D-MD-B18-A002-014`, recorded before implementation). Production changes: the immutable observation envelope binds the provider instant and a normalized row no longer stores the acquisition clock as `source_timestamp` (`PublicApiEodBarsAdapter`, `SourceObservationRepository`; `MD-B07`/`MD-B09` producers, `F-MD-B18-A002-027`); V2 publications bind separate semantic formula and reason registry identities, a contamination-decision projection in `event_factor_hash`, and an independent package must assert all eleven bound inputs as literals (`ReplayVerificationService`, new `ReplayV2IdentityProjection`; `MD-B18`). No B10 semantic hash producer, nested-identity service, publication identity service, registry capture or build producer changed. B10 impact executed: the 21 B10 covering test files (365 tests) pass apart from the 8 governed expected states; the full MarketData suite (2776 tests, 45270 assertions) shows the 8 governed expected failures and no other; classification `B10_IMPLEMENTATION_BUT_NO_PROOF_INVALIDATION`; B10 stays closed 1072/1072. Candidate-v2 is not reviewed, approved or proof. `MD-S003-R0025`, `F-MD-B18-A002-025` and `F-MD-B18-A002-017` stay open; `F-MD-B10-A002-004` stays `PARTIALLY_RESOLVED`; B18 stays 100/113 reviewed and 0/113 formal `SATISFIED`; `MD-DEP-0015` and `MD-DEP-0017` are unchanged. Raw package: `storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261003-v2-candidate`.
+
+## 2026-10-04 candidate-v2 independent review — E-MD-B18-A002-095
+
+Same A002/BL001/CI. Candidate-v2 was reviewed and returned CHANGES REQUIRED on two points (`F-MD-B18-A002-030`, `F-MD-B18-A002-031`). Recorded before any correction. `MD-S003-R0025`, `F-MD-B18-A002-025` and `F-MD-B18-A002-017` stay open; B10 stays closed; no matrix, predicate or protected-file change.
+
+## 2026-10-05 candidate-v3 — E-MD-B18-A002-096
+
+Same A002/BL001/CI. Candidate-v3 corrects `F-MD-B18-A002-030` and `F-MD-B18-A002-031`. The only production change is in `ReplayVerificationService` (the locked assertion layer vocabulary, the verified publication manifest hash of the target, its comparison, two gate checks); no B10 hash producer, nested-identity service, publication identity service, publication repository, registry capture or build producer changed (`NOT_B10_SEMANTIC`). The 21 B10 covering test files (365 tests) were re-executed inside the full MarketData suite and are green apart from the 8 governed expected states. B10 stays closed 1072/1072; `MD-S003-R0025`, `F-MD-B18-A002-025` and `F-MD-B18-A002-017` stay open; B18 stays 100/113 reviewed and 0/113 formal `SATISFIED`; no matrix, predicate or protected-file change. Raw package: `storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261005-v3-candidate`.
+
+## 2026-10-05 candidate-v3 independent review — E-MD-B18-A002-097
+
+Same A002/BL001/CI. Candidate-v3 was reviewed and returned CHANGES REQUIRED on the freshness member of the publication manifest (`F-MD-B18-A002-032`); authority does not uniquely determine the successor, so candidate-v4 waits for owner decision Q8. No app, test, config or candidate change; `MD-S003-R0025`, `F-MD-B18-A002-025` and `F-MD-B18-A002-017` stay open; B10 stays closed 1072/1072; no matrix, predicate or protected-file change.
+
+## 2026-10-05 controlled authority correction — E-MD-B18-A002-098
+
+Same A002/BL001/CI. Strategy meaning change: `DOC-CHG-20261005-001` (owner decision `D-MD-B18-A002-015`, Direction D). Affected strategy rules: `MD-S022` (new rows `R0040`-`R0052`), `MD-S009-R0002`, `MD-S021-R0027`. Affected stages: `MD-B17` (13 rows not assessed; successor attempt required), `MD-B10` (bounded producer remediation and revalidation of `MD-S005-R0056`, `MD-S005-R0071`, `MD-S045-R0058`; no row text changed). No schema, configuration, runtime, test, candidate or expected-hash change in this unit. Dependencies: `MD-DEP-0017` unchanged. Compatibility risk: sealed publications that record `NOT_AVAILABLE` with `READABLE` stay audit-valid and are not rewritten. `F-MD-B18-A002-033` tracks the implementation work.
+
+## 2026-10-05 MD-B10-A003 entry
+
+Same A002/BL001/CI. `MD-B10-A003` (baseline `MD-B10-A003-BL001`, `CI-MD-B10-A003-001`, scope `E-MD-B10-A003-001`) is the active remediation stage for `F-MD-B18-A002-033` under `MD-DEP-0022`; `MD-B18-A002` stays the blocked logical stage and returns to candidate-v4 only after `SC-MD-B10-A003-001`. No B18 row, candidate or expected hash changes.
+
+## 2026-10-05 MD-B10-A003 closed
+
+Same A002/BL001/CI. `MD-B10-A003` closed `1072/1072` (`SC-MD-B10-A003-001`); `MD-DEP-0022` resolved; `MD-B18-A002` returns to candidate-v4. No B18 row, candidate or expected hash changed.

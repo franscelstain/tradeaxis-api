@@ -58,7 +58,68 @@ final class MarketDataB10SuccessorBinding
                 'epoch' => 'MD-REBASELINE-20260820-001',
                 'strategy_freeze' => 'MD-STRATEGY-FREEZE-20260925-001',
             ],
+            'MD-B10-A003' => [
+                'attempt' => 'MD-B10-A003',
+                'baseline' => 'MD-B10-A003-BL001',
+                'change_impact' => 'CI-MD-B10-A003-001',
+                'scope_evidence' => 'E-MD-B10-A003-001',
+                'evidence_pattern' => '/^E-MD-B10-A003-\d{3}$/',
+                'epoch' => 'MD-REBASELINE-20260820-001',
+                'strategy_freeze' => 'MD-STRATEGY-FREEZE-20261005-001',
+            ],
         ];
+    }
+
+    /**
+     * The registered layers up to and including $attempt, oldest first. A promotion is planned and gated against the
+     * layers that exist at that attempt: a later layer re-owning some of its rules must not change what an earlier
+     * attempt could and did promote (F-MD-B10-A003-001).
+     *
+     * @return array<string,array<string,string>>
+     */
+    public static function profilesUpTo(string $attempt): array
+    {
+        $out = [];
+        foreach (self::profiles() as $name => $profile) {
+            $out[$name] = $profile;
+            if ($name === $attempt) {
+                return $out;
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * The evidence-id patterns a still-unaffected row may legitimately be bound to when $attempt promotes its scope:
+     * the first attempt's and those of every earlier registered layer (a row stays on the evidence of the layer that
+     * last proved it).
+     *
+     * @return array<int,string>
+     */
+    public static function earlierPatterns(string $attempt): array
+    {
+        $patterns = [self::PREDECESSOR_PATTERN];
+        foreach (self::profiles() as $name => $profile) {
+            if ($name === $attempt) {
+                break;
+            }
+            $patterns[] = $profile['evidence_pattern'];
+        }
+
+        return $patterns;
+    }
+
+    /** @param array<int,string> $patterns */
+    public static function matchesAnyPattern(string $value, array $patterns): bool
+    {
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $value) === 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static function profile(string $attempt): ?array
@@ -501,7 +562,7 @@ final class MarketDataB10SuccessorBinding
             } else {
                 $expected = (string) ($scope['review'][$rule]['current_evidence_binding'] ?? '');
                 $required = $scope['review'][$rule]['required_current_status'] ?? null;
-                if ($status !== 'SATISFIED' || $required !== 'SATISFIED' || $bound !== $expected || ! preg_match(self::PREDECESSOR_PATTERN, $bound)) {
+                if ($status !== 'SATISFIED' || $required !== 'SATISFIED' || $bound !== $expected || ! self::matchesAnyPattern($bound, self::earlierPatterns($attempt))) {
                     $unaffectedBad++;
                     if ($unaffectedBad <= 5) {
                         $errors[] = 'UNAFFECTED_ROW_UNEXPECTED_STATE: '.$rule.' '.$status.' ['.$bound.'] scope='.var_export($required, true).'/'.$expected;

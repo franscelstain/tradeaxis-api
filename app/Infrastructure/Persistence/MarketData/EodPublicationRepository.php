@@ -1034,8 +1034,7 @@ class EodPublicationRepository
             ->where('publication_id', (int) $context->publication_id)
             ->whereNotNull('canonicalization_version')->where('canonicalization_version', '<>', '')
             ->distinct()->value('canonicalization_version');
-        $freshness = strtoupper(trim((string) ($context->freshness_state ?? '')));
-        if (!in_array($freshness, ['FRESH', 'STALE', 'DEGRADED', 'NOT_AVAILABLE'], true)) $freshness = 'NOT_AVAILABLE';
+        $freshness = ArtifactSemanticHashService::normalizeFreshnessState($context->freshness_state ?? '');
         $nested = $this->semanticNestedIdentities($context);
 
         return [
@@ -2168,10 +2167,7 @@ class EodPublicationRepository
             ->where('canonicalization_version', '<>', '')
             ->distinct()->value('canonicalization_version');
 
-        $freshness = strtoupper(trim((string) ($context->freshness_state ?? '')));
-        if (! in_array($freshness, ['FRESH', 'STALE', 'DEGRADED', 'NOT_AVAILABLE'], true)) {
-            $freshness = 'NOT_AVAILABLE';
-        }
+        $freshness = ArtifactSemanticHashService::normalizeFreshnessState($context->freshness_state ?? '');
 
         $temporalRevisionSetHash = null;
         if (

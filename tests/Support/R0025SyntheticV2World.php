@@ -40,7 +40,10 @@ use Illuminate\Support\Facades\DB;
  */
 final class R0025SyntheticV2World
 {
-    public const PACKAGE = 'tests/fixtures/replay/r0025-synthetic-v2-candidate-v1';
+    /** The candidate package whose frozen inputs the world is built from. Candidate-v1 and candidate-v2 were reviewed CHANGES REQUIRED and are retained untouched. */
+    public const PACKAGE = 'tests/fixtures/replay/r0025-synthetic-v2-candidate-v3';
+    public const PACKAGE_V2 = 'tests/fixtures/replay/r0025-synthetic-v2-candidate-v2';
+    public const PACKAGE_V1 = 'tests/fixtures/replay/r0025-synthetic-v2-candidate-v1';
 
     public static function packagePath(): string
     {
@@ -56,7 +59,7 @@ final class R0025SyntheticV2World
     /**
      * Builds the world inside the caller's transaction and runs the real pipeline once.
      *
-     * @param array{ticker_id?:int,preconsume?:int,calendar_order?:string,retained_registry?:bool,tamper_response?:string,profile?:string} $layout
+     * @param array{ticker_id?:int,preconsume?:int,calendar_order?:string,retained_registry?:bool,tamper_response?:string,profile?:string,run_clock?:string} $layout
      *
      * @return array<string,mixed>
      */
@@ -76,7 +79,7 @@ final class R0025SyntheticV2World
             }
         }
 
-        Carbon::setTestNow($world['run_clock']);
+        Carbon::setTestNow((string) ($layout['run_clock'] ?? $world['run_clock']));
         $profile = (string) ($layout['profile'] ?? ArtifactSemanticHashService::PROFILE_V2);
         config()->set('market_data_runtime.artifact_hash_profile', $profile);
 

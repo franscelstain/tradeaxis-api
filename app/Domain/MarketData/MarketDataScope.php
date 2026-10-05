@@ -97,8 +97,7 @@ final class MarketDataScope
 
     public function isOperationallyActivatedFor($date)
     {
-        return $this->operationalStartDate !== null
-            && $this->assertRequestedDate($date) >= $this->operationalStartDate;
+        return FreshnessState::isInForce($this->operationalStartDate, $this->assertRequestedDate($date));
     }
 
     public function stateFor($date)

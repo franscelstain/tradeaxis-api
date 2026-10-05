@@ -47,6 +47,12 @@ class ReplayVerificationService
     public const TARGET_BOUND_MARKER_PREFIX = '@TARGET:';
 
     /**
+     * The only assertion layer values a fixture manifest may declare (Fixture_Package_Manifest_LOCKED.md, "Assertion layer values"). An independent
+     * package that declares any other value is refused; the list of the generator of self-generated runtime fixtures is a different surface.
+     */
+    public const LOCKED_ASSERTION_LAYERS = ['row', 'run', 'hash', 'publication', 'replay'];
+
+    /**
      * Operational identities of the execution instance. A golden package must not author them (they are allocated per run); it may state
      * a marker at exactly these paths and nowhere else, and the marker is bound from the target the caller named. This is a closed list,
      * not a wildcard: a marker on any other path, a declaration that differs from the markers present, or a kind that does not match the
@@ -1034,6 +1040,9 @@ class ReplayVerificationService
             'price_product_version' => $priceProductVersion,
             'factor_set_id' => $factorSetId,
             'factor_set_hash' => $factorSetHash,
+            // F-MD-B18-A002-031: the stored manifest hash of the target, only when the repository can re-verify it from the target's own rows
+            // (assertPublicationManifestHashValid); otherwise empty, never a stored value that could not be verified.
+            'publication_manifest_hash' => $this->verifiedPublicationManifestHash($publication),
             'replay_actual_resolution_mode' => $replayResolutionContext['replay_actual_resolution_mode'],
             'replay_publication_scope' => $replayResolutionContext['replay_publication_scope'],
             'historical_publication_allowed' => $replayResolutionContext['historical_publication_allowed'],
@@ -1241,7 +1250,9 @@ class ReplayVerificationService
      * separate field; the run-scope allocation keys are left out (D-MD-B10-A002-005). `event_factor_hash` gained a fifth member the same way: a
      * `componentGroupHash()` over the `ancillary` (C09) capture, whose own payload already contains
      * `contamination` (and `price_scale_breaks`) content (`ProducerAncillaryCapture::deriveContamination`/
-     * `derivePriceScaleBreaks`) -- the missing "contamination decisions" member of `MD-S050-R0012`.
+     * `derivePriceScaleBreaks`) -- the missing "contamination decisions" member of `MD-S050-R0012`. V1 only: a V2 publication replaces that
+     * ancillary group, whose rows carry local ids, with the contamination-decision projection of D-MD-B18-A002-014 (Q7 = A), and binds
+     * separate semantic formula and reason registry identities instead of the whole registry capture (Q4 = A); see ReplayV2IdentityProjection.
      */
     private function actualBoundInputContext($run, $publication = null)
     {
@@ -1279,7 +1290,7 @@ class ReplayVerificationService
                 ])
                 : ''),
             'event_factor_hash' => $semanticV2 !== null
-                ? $this->semanticV2EventFactor($semanticV2, $this->componentGroupHash($components, 'ancillary'))
+                ? $this->semanticV2EventFactor($semanticV2, $verified ? $this->semanticV2ContaminationIdentity($run, $publication, $components) : null)
                 : ($manifest
                 ? $this->canonicalHash([
                     'event_revision_set_hash' => (string) ($manifest->event_revision_set_hash ?? ''),
@@ -1290,13 +1301,17 @@ class ReplayVerificationService
                 ])
                 : ''),
             'config_snapshot_hash' => $this->configIdentityForRun($run),
-            // `registry_versions` (C10) is the one already-captured, already-verified component
-            // carrying both formula/build identity and the real reason-registry snapshot; splitting
-            // its two sub-identities apart requires decoding the raw capture payload, which is not
-            // part of this work unit -- both fields intentionally share this one frozen, real,
-            // non-live source rather than the previous vacuous-constant/live-config values.
-            'formula_registry_hash' => $registryPayloadHash,
-            'reason_registry_hash' => $registryPayloadHash,
+            // `registry_versions` (C10) is the one already-captured, already-verified component carrying the formula versions, the
+            // real reason-registry snapshot and the executable build. V1 publications keep binding its whole payload hash in both fields
+            // (D-MD-B10-A002-005, D-MD-B18-A002-006); that hash moves with the build, which is why V2 does not.
+            // D-MD-B18-A002-014 (Q4 = A): a V2 publication binds two separate semantic registry identities derived from the
+            // frozen registry capture; neither contains the executable build. A V1 publication keeps the whole-payload identity.
+            'formula_registry_hash' => $semanticV2 !== null
+                ? (string) (ReplayV2IdentityProjection::formulaRegistryIdentity($verified ? $boundContext['registry_content'] : null) ?? '')
+                : $registryPayloadHash,
+            'reason_registry_hash' => $semanticV2 !== null
+                ? (string) (ReplayV2IdentityProjection::reasonRegistryIdentity($verified ? $boundContext['registry_content'] : null) ?? '')
+                : $registryPayloadHash,
             // F-MD-B18-A002-021 (resolved): `read_model_version`, `serialization_version` and
             // `executable_build_identity` are all real fields `ProducerRegistrySnapshot::capture()`
             // captures inside `registry_versions` -- Reader decodes and re-verifies them
@@ -1317,6 +1332,22 @@ class ReplayVerificationService
                 ? (string) $boundContext['registry_content']['executable_build']['build_id']
                 : '',
         ];
+    }
+
+    /** The target publication's stored manifest hash if the repository re-derives the same value from the target's rows, else ''. */
+    private function verifiedPublicationManifestHash($publication): string
+    {
+        if (! $publication || empty($publication->publication_id)) {
+            return '';
+        }
+        try {
+            $this->publications->assertPublicationManifestHashValid((int) $publication->publication_id);
+        } catch (\Throwable $e) {
+            return '';
+        }
+        $stored = strtolower(trim((string) ($publication->publication_manifest_hash ?? '')));
+
+        return preg_match('/^[a-f0-9]{64}$/', $stored) === 1 ? $stored : '';
     }
 
     /**
@@ -1371,18 +1402,95 @@ class ReplayVerificationService
             : '';
     }
 
-    private function semanticV2EventFactor(array $v2, ?string $ancillaryGroupHash): string
+    private function semanticV2EventFactor(array $v2, ?string $contaminationIdentity): string
     {
-        return $v2['complete']
+        // D-MD-B18-A002-014 (Q7 = A): the allocation-bound ancillary group is replaced by the contamination-decision projection.
+        // The identity stays the four semantic nested members plus that projection; without the projection it is unavailable.
+        return $v2['complete'] && $contaminationIdentity !== null && $contaminationIdentity !== ''
             ? $this->canonicalHash([
                 'profile' => ArtifactSemanticHashService::PROFILE_V2,
                 'event_revision_set_hash' => $v2['members']['event_revision_set_hash'],
                 'source_scale_assessment_set_hash' => $v2['members']['source_scale_assessment_set_hash'],
                 'factor_decision_set_hash' => $v2['members']['factor_decision_set_hash'],
                 'factor_set_hash' => $v2['members']['factor_set_hash'],
-                'ancillary_contamination_hash' => (string) ($ancillaryGroupHash ?? ''),
+                'contamination_decision_set_hash' => $contaminationIdentity,
             ])
             : '';
+    }
+
+    /**
+     * The V2 contamination-decision identity of a publication, or NULL when it is unavailable (fail closed, never a V1 or live value).
+     * Reads the one `indicator-materialized-dependencies/v1` ancillary capture the bound context names, verified against its immutable
+     * hash, and projects its contamination and price-scale-break decisions through ReplayV2IdentityProjection. Local ticker ids are
+     * only used to find each listing's retained root; they never enter the identity.
+     */
+    private function semanticV2ContaminationIdentity($run, $publication, array $components): ?string
+    {
+        $captures = new \App\Infrastructure\Persistence\MarketData\RunInputCaptureRepository();
+        $payload = null;
+        foreach ($components as $component) {
+            if (($component['component_key'] ?? null) !== 'ancillary') {
+                continue;
+            }
+            $row = DB::table('md_run_input_captures')
+                ->where('run_id', (int) ($component['source_run_id'] ?? 0))
+                ->where('stage_code', (string) ($component['stage_code'] ?? ''))
+                ->where('component_key', 'ancillary')
+                ->where('slot_hash', (string) ($component['slot_hash'] ?? ''))
+                ->first();
+            if (! $row) {
+                return null;
+            }
+            try {
+                $decoded = $captures->verify((array) $row);
+            } catch (\Throwable $e) {
+                return null;
+            }
+            if (($decoded['selection_context']['operation'] ?? null) !== 'indicator-materialized-dependencies/v1') {
+                continue;
+            }
+            if ($payload !== null) {
+                return null;
+            }
+            $payload = $decoded['rows'][0] ?? null;
+        }
+        if (! is_array($payload) || ! is_array($payload['contamination'] ?? null) || ! is_array($payload['price_scale_breaks'] ?? null)) {
+            return null;
+        }
+        $tickers = [];
+        foreach ([$payload['contamination'], $payload['price_scale_breaks']] as $map) {
+            foreach ($map as $tickerId => $entries) {
+                if (is_array($entries) && $entries !== []) {
+                    $tickers[(int) $tickerId] = true;
+                }
+            }
+        }
+        $roots = [];
+        if ($tickers !== []) {
+            try {
+                // The listing of a legacy ticker comes from the listing master, never from an artifact table (a ticker that maps to no listing, or to
+                // several, has no retained root and leaves the identity unavailable).
+                $listingByTicker = [];
+                $ambiguous = [];
+                foreach (DB::table('md_listings')->whereIn('legacy_ticker_id', array_keys($tickers))->get(['legacy_ticker_id', 'listing_id']) as $listing) {
+                    isset($listingByTicker[(int) $listing->legacy_ticker_id]) ? $ambiguous[(int) $listing->legacy_ticker_id] = true : $listingByTicker[(int) $listing->legacy_ticker_id] = (int) $listing->listing_id;
+                }
+                if ($ambiguous !== []) {
+                    return null;
+                }
+                $tradeDate = (string) ($publication->trade_date ?? $run->trade_date_effective ?? '');
+                $listingRoots = (new ArtifactSemanticHashService())->resolveListingRoots('eod_bars', $tradeDate, array_values(array_unique($listingByTicker)), $run);
+                foreach ($listingByTicker as $tickerId => $listingId) {
+                    if (isset($listingRoots[$listingId]['listing_root'])) {
+                        $roots[$tickerId] = $listingRoots[$listingId]['listing_root'];
+                    }
+                }
+            } catch (\Throwable $e) {
+                return null;
+            }
+        }
+
+        return ReplayV2IdentityProjection::contaminationDecisionIdentity($payload['contamination'], $payload['price_scale_breaks'], $roots);
     }
 
     /**
@@ -1563,6 +1671,9 @@ class ReplayVerificationService
         foreach (['publication_id', 'publication_run_id', 'publication_version', 'publication_terminal_status', 'publication_publishability_state', 'publication_is_current', 'publication_seal_state', 'price_product_code', 'price_product_version', 'factor_set_id', 'factor_set_hash'] as $field) {
             $this->compareFieldAllowNull($mismatches, $field, $this->ctx($expectedContext, 'expected_publication_context.'.$field), $actual['context']['actual_publication_context'][$field] ?? null);
         }
+        // The frozen publication manifest hash (Replay_Verification_Contract_LOCKED.md: PASS requires the manifest assertion). An independent package must
+        // assert it (independentPackageGate); a package that does not state it carries no expectation and is not compared.
+        $this->compareField($mismatches, 'publication_manifest_hash', $this->ctx($expectedContext, 'expected_publication_context.publication_manifest_hash'), $actual['context']['actual_publication_context']['publication_manifest_hash'] ?? null);
         foreach (['pointer_publication_id', 'pointer_run_id', 'pointer_publication_version', 'pointer_resolve_status', 'pointer_switched'] as $field) {
             $this->compareFieldAllowNull($mismatches, $field, $this->ctx($expectedContext, 'expected_pointer_context.'.$field), $actual['context']['actual_pointer_context'][$field] ?? null);
         }
@@ -2623,6 +2734,30 @@ class ReplayVerificationService
             $relative = substr(str_replace('\\', '/', $file->getPathname()), strlen($root) + 1);
             if ($file->isFile() && $relative !== 'manifest.json' && ! isset($declared[$relative])) {
                 return ['reason' => 'REPLAY_FIXTURE_PACKAGE_TAMPERED: '.$relative.' is in the package but not bound by the manifest.'];
+            }
+        }
+        // F-MD-B18-A002-030: an independent package declares only the locked assertion layer values.
+        $layers = $manifest['assertion_layers'] ?? null;
+        if (! is_array($layers) || $layers === []) {
+            return ['reason' => 'REPLAY_INDEPENDENT_ASSERTION_LAYER_INVALID: assertion_layers must be a non-empty list of locked values.'];
+        }
+        foreach ($layers as $layer) {
+            if (! is_string($layer) || ! in_array($layer, self::LOCKED_ASSERTION_LAYERS, true)) {
+                return ['reason' => 'REPLAY_INDEPENDENT_ASSERTION_LAYER_INVALID: "'.(is_string($layer) ? $layer : gettype($layer)).'" is not a locked assertion layer value ('.implode(', ', self::LOCKED_ASSERTION_LAYERS).').'];
+            }
+        }
+        // F-MD-B18-A002-031: the frozen publication manifest hash is a literal expectation of an independent package.
+        $manifestLiteral = $fixture['expected_replay_result']['expected_publication_context']['publication_manifest_hash'] ?? null;
+        if (! is_string($manifestLiteral) || preg_match('/^[a-f0-9]{64}$/', $manifestLiteral) !== 1) {
+            return ['reason' => 'REPLAY_INDEPENDENT_PUBLICATION_MANIFEST_REQUIRED: expected_publication_context.publication_manifest_hash must be a literal sha256; an independent package may not omit it or make it target-bound.'];
+        }
+        // D-MD-B18-A002-014 / independent review IR-1: every one of the eleven required bound inputs is asserted as a literal. A NULL
+        // expectation is skipped by compareField and a target marker would make the input a wildcard, so neither may stand in for one.
+        $expectedBound = $fixture['expected_replay_result']['expected_bound_input_context'] ?? null;
+        foreach (self::BOUND_INPUT_FIELDS as $field) {
+            $literal = is_array($expectedBound) ? ($expectedBound[$field] ?? null) : null;
+            if (! is_string($literal) || trim($literal) === '' || strpos($literal, self::TARGET_BOUND_MARKER_PREFIX) === 0) {
+                return ['reason' => 'REPLAY_INDEPENDENT_BOUND_INPUT_REQUIRED: expected_bound_input_context.'.$field.' must be a literal expectation; an independent package may not omit it, leave it empty or make it target-bound.'];
             }
         }
         $fingerprint = $this->fixturePackageFingerprint($fixturePath);

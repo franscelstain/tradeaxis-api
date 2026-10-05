@@ -238,8 +238,9 @@ class CanonicalScopeFrontierAndDecisionGradeTest extends TestCase
      *
      * `MD-S056-R0004` establishes `decision-grade` as a target property, so this condition is proven
      * by the platform *tracking* timeliness against an explicit activation state — never by claiming
-     * it has been met. A run with no operational start reports `DEVELOPMENT_NOT_OPERATIONAL` rather
-     * than a freshness figure.
+     * it has been met. A run whose requested date precedes the operational activation marker (or with no
+     * marker) reports `NOT_APPLICABLE` rather than a freshness figure: operational freshness is not in
+     * force (DOC-CHG-20261005-001). The legacy label `DEVELOPMENT_NOT_OPERATIONAL` is no longer produced.
      */
     public function test_timeliness_is_tracked_against_activation_and_never_claimed_as_achieved(): void
     {
@@ -249,10 +250,20 @@ class CanonicalScopeFrontierAndDecisionGradeTest extends TestCase
         }
 
         $runs = $this->read('app/Infrastructure/Persistence/MarketData/EodRunRepository.php');
-        $this->assertMatchesRegularExpression(
-            "/operationalStartDate\(\)\s*\?\s*'NOT_EVALUATED'\s*:\s*'DEVELOPMENT_NOT_OPERATIONAL'/",
+        $this->assertSame(
+            3,
+            substr_count($runs, 'FreshnessState::runLabelFor('),
+            'every run creator (new, as-known replay, promote) must decide the freshness label from the requested date and the marker'
+        );
+        $this->assertStringNotContainsString(
+            'DEVELOPMENT_NOT_OPERATIONAL',
             $runs,
-            'freshness must resolve to a development state until an operational start exists'
+            'the legacy development label must not be produced: a pre-activation run is NOT_APPLICABLE'
+        );
+        $this->assertSame(
+            'NOT_APPLICABLE',
+            \App\Domain\MarketData\FreshnessState::runLabelFor(null, '2025-01-02'),
+            'freshness must resolve to NOT_APPLICABLE until an operational start exists'
         );
 
         $readiness = $this->read('app/Application/MarketData/Services/MarketDataReadinessService.php');

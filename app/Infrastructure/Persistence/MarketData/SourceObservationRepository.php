@@ -596,7 +596,9 @@ class SourceObservationRepository implements SourceObservationRecorder
             'mapping_revision' => $row['mapping_revision'] ?? ($capture['mapping_revision'] ?? null),
             'ticker_code' => Str::upper(trim((string) $instrumentCode)),
             'trade_date' => $tradeDate,
-            'source_timestamp' => $row['source_timestamp'] ?? ($row['captured_at'] ?? ($capture['source_timestamp'] ?? null)),
+            // F-MD-B18-A002-027 / D-MD-B18-A002-014 (Q6=B): only a provider instant carried by the row itself. The acquisition clock
+            // (`captured_at`) is not a provider fact and is never stored under this name; it stays on the envelope as `acquired_at`.
+            'source_timestamp' => $row['source_timestamp'] ?? null,
             'open_value' => $values['open'],
             'high_value' => $values['high'],
             'low_value' => $values['low'],

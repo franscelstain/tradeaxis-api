@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-10-03T08:45:44+07:00
 - Severity: `P1` for `MD-S003-R0025`; no effect on any other predicate
-- Status: `OPEN` — owner decision required (`E-MD-B18-A002-093`, Q4 and Q5)
+- Status: `OPEN` — IMPLEMENTED under the owner decisions (`D-MD-B18-A002-014`, Q4 = A and Q5 = B); closes when candidate-v2, which asserts all eleven bound inputs, passes independent review (`E-MD-B18-A002-094`)
 - Class: `PROOF_FIXTURE_ADMISSION_GAP`
 - Related: `E-MD-B18-A002-093`, `E-MD-B18-A002-092`, `F-MD-B18-A002-025`, `F-MD-B18-A002-017`, `D-MD-B10-A002-005`, `D-MD-B18-A002-006`, `D-MD-B18-A002-013`
 - Remediation owner: `MD-B18-A002` after the owner decision
@@ -27,3 +27,7 @@ Independently derivable from frozen input, and already asserted in candidate-v1:
 ## Resolution
 
 None here. `E-MD-B18-A002-093` Q4 and Q5 state the options with a recommendation. No production code is changed. The finding closes when the owner decides, the V2 identities are defined and implemented under the B10 impact review that decision requires, and a candidate that asserts all eleven passes independent review.
+
+## 2026-10-03 implementation — D-MD-B18-A002-014, E-MD-B18-A002-094
+
+Q4 = A: a V2 publication binds `formula_registry_hash` (the formula, indicator and related registry versions) and `reason_registry_hash` (the reason entries ordered by code) as separate semantic identities without the executable build, derived from the frozen registry capture; V1 keeps the whole-payload identity. Q5 = B: `executable_build_identity` is a frozen literal, `sha256:d7e008b973f400189259fbe27ddbc273c769a0328827bec877fb3899cbb16c16`, with its manifest (5915 files) and retained archive in candidate-v2; the oracle consumes it and never inspects the tree; a mismatch fails, and the approval of the package is valid only for that build. Candidate-v2 asserts all eleven bound inputs as literals (none NULL, none target-bound); eleven of eleven are identical across two allocation layouts. The finding closes when candidate-v2 passes independent review.

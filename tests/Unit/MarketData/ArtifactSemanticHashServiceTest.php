@@ -1,6 +1,7 @@
 <?php
 
 use App\Application\MarketData\Services\ArtifactSemanticHashService;
+use App\Domain\MarketData\FreshnessState;
 use App\Application\MarketData\Services\DeterministicHashService;
 use App\Application\MarketData\Services\MarketDataPipelineService;
 
@@ -424,15 +425,74 @@ class ArtifactSemanticHashServiceTest extends TestCase
 
     public function test_g4_an_unevaluated_or_unknown_freshness_can_never_be_hashed_as_fresh(): void
     {
+        // Labels outside the governed vocabulary are never FRESH. DEVELOPMENT_NOT_OPERATIONAL is the label of runs
+        // created before DOC-CHG-20261005-001: it stays outside the vocabulary so that a sealed publication keeps
+        // the identity it was sealed with. It is a historical-compatibility pin, not the state a new
+        // pre-activation run gets: new runs are labelled NOT_APPLICABLE (FreshnessState::runLabelFor).
         foreach (['NOT_EVALUATED', 'DEVELOPMENT_NOT_OPERATIONAL', '', null, 'fresh-ish'] as $raw) {
             $this->assertSame('NOT_AVAILABLE', ArtifactSemanticHashService::normalizeFreshnessState($raw), var_export($raw, true));
         }
         $this->assertSame('FRESH', ArtifactSemanticHashService::normalizeFreshnessState(' fresh '));
+        $this->assertSame('NOT_APPLICABLE', ArtifactSemanticHashService::normalizeFreshnessState('NOT_APPLICABLE'), 'a governed pre-activation state must not collapse to NOT_AVAILABLE');
 
         $fresh = $this->context(100);
         $unavailable = $this->context(100);
         $unavailable['freshness_state'] = 'NOT_AVAILABLE';
         $this->assertNotSame($this->eligibilityHash($fresh), $this->eligibilityHash($unavailable));
+    }
+
+    public function test_a_pre_activation_freshness_is_its_own_semantic_state_in_the_eligibility_identity(): void
+    {
+        // MD-S005-R0056: the eligibility row binds the canonical freshness state. NOT_APPLICABLE is a state of its
+        // own: it must not hash like NOT_AVAILABLE ("no consumer-safe result"), FRESH, STALE or DEGRADED.
+        $hashes = [];
+        // Written out, not read from the production constant: a vocabulary that lost a state must fail here.
+        foreach (['FRESH', 'STALE', 'DEGRADED', 'NOT_AVAILABLE', 'NOT_APPLICABLE'] as $state) {
+            $context = $this->context(100);
+            $context['freshness_state'] = $state;
+            $hashes[$state] = $this->eligibilityHash($context);
+        }
+        $this->assertCount(5, array_unique($hashes), 'every governed freshness state must give a distinct eligibility identity');
+        $this->assertNotSame($hashes['NOT_APPLICABLE'], $hashes['NOT_AVAILABLE']);
+        $this->assertNotSame($hashes['NOT_APPLICABLE'], $hashes['FRESH']);
+
+        // The four existing states keep their identity: the same context hashes as before the correction.
+        $this->assertSame($hashes['FRESH'], $this->eligibilityHash($this->context(100)), 'control: the default context is FRESH');
+    }
+
+    public function test_a_pre_activation_freshness_moves_the_eligibility_identity_only(): void
+    {
+        $date = '2026-09-29';
+        $notApplicable = $this->context(100);
+        $notApplicable['freshness_state'] = 'NOT_APPLICABLE';
+        $barRows = [$this->bar(1, 10, 100, $date, '110.0000')];
+        $this->assertSame($this->barsHash($barRows, [10]), $this->barsHash($barRows, [10], $notApplicable));
+        $indicatorRows = [$this->indicator(1, 10, 100, $date, '0.0400000000')];
+        $indicatorIdentities = [$date.'|10' => $this->identity('a')];
+        $this->assertSame(
+            $this->service()->hashPreparedArtifact('indicators', $indicatorRows, $indicatorIdentities, $this->withSectorRevisions($this->context(100), [10])),
+            $this->service()->hashPreparedArtifact('indicators', $indicatorRows, $indicatorIdentities, $this->withSectorRevisions($notApplicable, [10]))
+        );
+        $this->assertNotSame($this->eligibilityHash($this->context(100)), $this->eligibilityHash($notApplicable));
+    }
+
+    public function test_the_context_guard_accepts_every_governed_state_and_still_refuses_an_internal_label(): void
+    {
+        foreach (['FRESH', 'STALE', 'DEGRADED', 'NOT_AVAILABLE', 'NOT_APPLICABLE'] as $state) {
+            $context = $this->context(100);
+            $context['freshness_state'] = $state;
+            $this->assertMatchesRegularExpression('/^[a-f0-9]{64}$/', $this->eligibilityHash($context), $state);
+        }
+        foreach (['NOT_EVALUATED', 'DEVELOPMENT_NOT_OPERATIONAL'] as $internal) {
+            $context = $this->context(100);
+            $context['freshness_state'] = $internal;
+            try {
+                $this->eligibilityHash($context);
+                $this->fail('an internal run label was accepted as a freshness state: '.$internal);
+            } catch (RuntimeException $e) {
+                $this->assertStringContainsString('ARTIFACT_SEMANTIC_CONTEXT_INCOMPLETE: freshness_state', $e->getMessage());
+            }
+        }
     }
 
     public function test_g4_a_context_without_a_freshness_state_fails_closed(): void

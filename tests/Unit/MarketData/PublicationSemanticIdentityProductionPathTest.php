@@ -476,6 +476,7 @@ class PublicationSemanticIdentityProductionPathTest extends TestCase
             'correction_id' => $correction ? $ids['correction'] : null,
             'promote_mode' => $correction ? 'correction_current' : null,
             'publish_target' => $correction ? 'current_replace' : null,
+            'freshness_state' => $ids['freshness_state'] ?? null,
             'started_at' => '2026-03-20 17:01:00',
             'created_at' => '2026-03-20 17:01:00',
             'updated_at' => '2026-03-20 17:21:00',
@@ -705,7 +706,7 @@ class PublicationSemanticIdentityProductionPathTest extends TestCase
         $this->assertSame(['bars' => 2, 'indicators' => 2, 'eligibility' => 2], $payload['row_counts']);
         $this->assertSame('PASS', $payload['quality_state']);
         $this->assertSame('READABLE', $payload['readiness_state']);
-        $this->assertSame('NOT_AVAILABLE', $payload['freshness_state'], 'an unevaluated run is NOT_AVAILABLE, never FRESH');
+        $this->assertSame('NOT_AVAILABLE', $payload['freshness_state'], 'an unlabelled (legacy) run is NOT_AVAILABLE, never FRESH');
         $this->assertSame(['COVERAGE_THRESHOLD_MET'], $payload['semantic_reasons']);
         $this->assertSame(
             ['correction_semantic_hash', 'promote_mode', 'publish_target'],
@@ -729,6 +730,129 @@ class PublicationSemanticIdentityProductionPathTest extends TestCase
                 $member.' must be part of the manifest identity'
             );
         }
+    }
+
+    // ------------------------------------------------------------------
+    // MD-B10-A003 (F-MD-B18-A002-033, DOC-CHG-20261005-001): a READABLE publication before operational activation
+    // carries freshness_state NOT_APPLICABLE in its manifest and in the manifest hash. MD-S005-R0071 (the manifest
+    // binds the freshness state) and MD-S045-R0058 (the manifest freshness is the truthful consumer state).
+    // ------------------------------------------------------------------
+
+    private function manifestHashOf(int $publicationId): string
+    {
+        return (string) DB::table('eod_publications')->where('publication_id', $publicationId)->value('publication_manifest_hash');
+    }
+
+    private function sealedWithLabel(?string $label, array $allocation = self::ALLOCATION_A): int
+    {
+        $ids = $label === null ? $allocation : $allocation + ['freshness_state' => $label];
+
+        return $this->sealedCandidate($ids, 'plain', 'stable-predecessor-manifest');
+    }
+
+    public function test_a_pre_activation_run_seals_a_manifest_that_carries_not_applicable_and_verifies(): void
+    {
+        $publicationId = $this->sealedWithLabel('NOT_APPLICABLE');
+        $repository = new EodPublicationRepository();
+
+        $context = $this->invokePrivate($repository, 'publicationManifestContext', [$publicationId]);
+        $payload = $this->invokePrivate($repository, 'publicationManifestSemanticPayloadV2', [$context, 'READABLE']);
+        $this->assertSame('READABLE', $payload['readiness_state']);
+        $this->assertSame('NOT_APPLICABLE', $payload['freshness_state'], 'a READABLE pre-activation publication must not collapse to NOT_AVAILABLE');
+        $this->assertNotSame('NOT_AVAILABLE', $payload['freshness_state']);
+        $this->assertNotSame('FRESH', $payload['freshness_state']);
+
+        $view = (array) $repository->buildManifestByPublicationId($publicationId);
+        $this->assertSame('NOT_APPLICABLE', $view['freshness_state'], 'the manifest view carries the same state');
+        $this->assertTrue($repository->assertPublicationManifestHashValid($publicationId));
+        $this->assertSame(
+            (new PublicationSemanticIdentityService())->publicationHash($payload),
+            $this->manifestHashOf($publicationId),
+            'the sealed hash is the hash of that payload'
+        );
+    }
+
+    public function test_every_freshness_state_is_a_distinct_manifest_identity_and_the_legacy_label_is_unchanged(): void
+    {
+        $hashes = [];
+        foreach (['NOT_APPLICABLE', 'FRESH', 'STALE', 'DEGRADED', 'NOT_AVAILABLE'] as $state) {
+            $hashes[$state] = $this->manifestHashOf($this->sealedWithLabel($state));
+        }
+        $this->assertCount(5, array_unique($hashes), 'the five governed states give five manifest identities');
+
+        // Runs created before the correction: an unlabelled run and the legacy label hash exactly like NOT_AVAILABLE,
+        // as they always did, so no sealed publication changes identity.
+        $this->assertSame($hashes['NOT_AVAILABLE'], $this->manifestHashOf($this->sealedWithLabel(null)));
+        $this->assertSame($hashes['NOT_AVAILABLE'], $this->manifestHashOf($this->sealedWithLabel('DEVELOPMENT_NOT_OPERATIONAL')));
+        $this->assertSame($hashes['NOT_AVAILABLE'], $this->manifestHashOf($this->sealedWithLabel('NOT_EVALUATED')));
+        $this->assertNotSame($hashes['NOT_APPLICABLE'], $this->manifestHashOf($this->sealedWithLabel(null)), 'pre-activation is no longer NOT_AVAILABLE');
+    }
+
+    public function test_the_not_applicable_manifest_identity_is_allocation_independent(): void
+    {
+        $this->assertSame(
+            $this->manifestHashOf($this->sealedWithLabel('NOT_APPLICABLE', self::ALLOCATION_A)),
+            $this->manifestHashOf($this->sealedWithLabel('NOT_APPLICABLE', self::ALLOCATION_B))
+        );
+    }
+
+    public function test_the_manifest_binds_the_exact_freshness_value_after_sealing(): void
+    {
+        $publicationId = $this->sealedWithLabel('NOT_APPLICABLE');
+        $repository = new EodPublicationRepository();
+        $this->assertTrue($repository->assertPublicationManifestHashValid($publicationId), 'control: the sealed manifest verifies');
+
+        // Each of these would verify if NOT_APPLICABLE were canonicalised, relabelled or collapsed.
+        foreach (['NOT_AVAILABLE', 'FRESH', 'STALE', 'DEGRADED', 'DEVELOPMENT_NOT_OPERATIONAL', null] as $label) {
+            DB::table('eod_runs')->where('run_id', self::ALLOCATION_A['candidate_run'])->update(['freshness_state' => $label]);
+            try {
+                $repository->assertPublicationManifestHashValid($publicationId);
+                $this->fail('a run relabelled '.var_export($label, true).' still verified against a NOT_APPLICABLE manifest');
+            } catch (RuntimeException $e) {
+                $this->assertStringContainsString('publication_manifest_hash does not match', $e->getMessage(), var_export($label, true));
+            }
+        }
+        DB::table('eod_runs')->where('run_id', self::ALLOCATION_A['candidate_run'])->update(['freshness_state' => 'NOT_APPLICABLE']);
+        $this->assertTrue($repository->assertPublicationManifestHashValid($publicationId), 'control: the restored label verifies again');
+    }
+
+    public function test_a_publication_sealed_with_the_legacy_label_still_verifies_and_is_not_relabelled(): void
+    {
+        $publicationId = $this->sealedWithLabel('DEVELOPMENT_NOT_OPERATIONAL');
+        $repository = new EodPublicationRepository();
+        $before = $this->manifestHashOf($publicationId);
+
+        $this->assertTrue($repository->assertPublicationManifestHashValid($publicationId));
+        $context = $this->invokePrivate($repository, 'publicationManifestContext', [$publicationId]);
+        $payload = $this->invokePrivate($repository, 'publicationManifestSemanticPayloadV2', [$context, 'READABLE']);
+        $this->assertSame('NOT_AVAILABLE', $payload['freshness_state'], 'sealed history keeps the state it was sealed with');
+        $this->assertSame('DEVELOPMENT_NOT_OPERATIONAL', DB::table('eod_runs')->where('run_id', self::ALLOCATION_A['candidate_run'])->value('freshness_state'), 'the stored label is not rewritten');
+        $this->assertSame($before, $this->manifestHashOf($publicationId));
+    }
+
+    /**
+     * Captured from the build in force at MD-B10-A003 entry (before DOC-CHG-20261005-001 was implemented), for this
+     * exact history (ALLOCATION_A, plain flow, stub artifact hashes). A manifest sealed under that build must keep
+     * its identity: the correction adds a state, it does not relabel or re-hash what exists.
+     */
+    private const PRE_CORRECTION_MANIFEST_HASH = [
+        'legacy_unlabelled_and_pending_and_not_available' => '63ec71cf8823c74e25eff7ca4a97f39e7db5048439cf9f2a4f1afcb1ae5e71d1',
+        'FRESH' => '8d87fb98f93172520a09ce1ee3989328cd251ee50859e229a2cfe6b350af6e7b',
+        'STALE' => '9b0bc825dbb96ae2e719df9ec20c3201e158b8dbf067b8a49b25dd9ef22b4575',
+        'DEGRADED' => '534cfd37eb9fe4615e6b3f924a170c224e4864c83680b129f660016b3b82a4f7',
+    ];
+
+    public function test_manifest_identities_sealed_before_the_correction_are_unchanged_by_it(): void
+    {
+        $legacy = self::PRE_CORRECTION_MANIFEST_HASH['legacy_unlabelled_and_pending_and_not_available'];
+        foreach ([null, 'DEVELOPMENT_NOT_OPERATIONAL', 'NOT_EVALUATED', 'NOT_AVAILABLE'] as $label) {
+            $this->assertSame($legacy, $this->manifestHashOf($this->sealedWithLabel($label)), 'the pre-correction identity of '.var_export($label, true));
+        }
+        foreach (['FRESH', 'STALE', 'DEGRADED'] as $state) {
+            $this->assertSame(self::PRE_CORRECTION_MANIFEST_HASH[$state], $this->manifestHashOf($this->sealedWithLabel($state)), $state.' keeps its pre-correction identity');
+        }
+        // And the one identity that did move: the pre-activation state no longer hashes like NOT_AVAILABLE.
+        $this->assertNotSame($legacy, $this->manifestHashOf($this->sealedWithLabel('NOT_APPLICABLE')));
     }
 
     private function changedMember($value, string $member)

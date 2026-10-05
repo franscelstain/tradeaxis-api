@@ -1744,11 +1744,54 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
             'sanitized_request_identity' => $this->sanitizeUrl($url),
             'response_status' => $status,
             'content_type' => $contentType,
+            // F-MD-B18-A002-027 / D-MD-B18-A002-014 (Q6=B): the provider's own instant is a source fact of the envelope.
+            // The platform acquisition clock stays in `acquired_at` and is never written under this name.
+            'source_timestamp' => $this->providerObservationTimestamp($payload, $context),
             'acquired_at' => $capturedAt,
             'adapter_version' => (string) config('market_data.source.api.adapter_version', 'public_api_eod_v1'),
             'provider_schema_version' => (string) config('market_data.source.api.schema_version', 'provider_schema_observed_v1'),
             'payload' => $payload,
         ]);
+    }
+
+    /**
+     * The provider chart-series instant of a single-date request, in the platform timezone, or NULL.
+     *
+     * A chart response carries one instant per bar and no response-level observation time. For a request of one trade date the
+     * instant whose exchange-local date is that trade date is the provider's own timestamp of the observed bar; it is returned
+     * only when exactly one series element matches. A range request (several observed dates), a body that is not a chart payload,
+     * an exchange timezone other than the market boundary, or an ambiguous series has no single provider instant: NULL, and the
+     * raw instants stay bound through the payload hash. Nothing here validates the response; validation happens after capture.
+     */
+    private function providerObservationTimestamp($payload, array $context)
+    {
+        $tradeDate = $context['trade_date'] ?? null;
+        if (! is_string($payload) || ! is_string($tradeDate) || $tradeDate === ''
+            || ($context['source_acquisition_mode'] ?? null) === 'range_window') {
+            return null;
+        }
+        $decoded = json_decode($payload, true);
+        if (! is_array($decoded)) {
+            return null;
+        }
+        $result = data_get($decoded, 'chart.result.0');
+        $timestamps = is_array($result) ? ($result['timestamp'] ?? null) : null;
+        $timezone = (string) config('market_data.platform.timezone', 'Asia/Jakarta');
+        if (! is_array($timestamps) || trim((string) data_get($result, 'meta.exchangeTimezoneName', '')) !== $timezone) {
+            return null;
+        }
+        $matches = [];
+        foreach ($timestamps as $timestamp) {
+            if (! is_int($timestamp) && ! (is_string($timestamp) && ctype_digit($timestamp))) {
+                continue;
+            }
+            $instant = Carbon::createFromTimestampUTC((int) $timestamp)->setTimezone($timezone);
+            if ($instant->toDateString() === $tradeDate) {
+                $matches[] = $instant->toDateTimeString();
+            }
+        }
+
+        return count($matches) === 1 ? $matches[0] : null;
     }
 
     private function extractContentType(array $headers)

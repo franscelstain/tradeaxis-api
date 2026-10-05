@@ -4,7 +4,7 @@
 
 | Requested-date condition | Prior active sealed publication | Result | Effective date | Freshness |
 |---|---|---|---|---|
-| Active sealed publication passes every minimum-product gate | irrelevant | return requested publication | requested | `FRESH` unless an explicit activated degraded condition applies |
+| Active sealed publication passes every minimum-product gate | irrelevant | return requested publication | requested | `FRESH` unless an explicit activated degraded condition applies; `NOT_APPLICABLE` replaces `FRESH` while operational freshness is not in force for the requested date |
 | Candidate is building or unsealed | allowed and within age policy | return prior publication only through explicit fallback policy | prior | `STALE` or `DEGRADED` |
 | Candidate is building or unsealed | none/disallowed/too old | no data product | none | `NOT_AVAILABLE` |
 | Requested date is held for coverage, quality, provenance, config, adjustment, or indicator failure | allowed and within age policy | return prior publication with hold reasons | prior | `STALE` or `DEGRADED` |

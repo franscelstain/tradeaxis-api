@@ -31,8 +31,31 @@ Job success, row counts, eligibility, or a seal record alone do not imply `READA
 - `STALE`: a readable prior publication is deliberately returned and its older effective date is visible.
 - `DEGRADED`: the effective date may be current or prior, but one or more declared non-silent degraded conditions apply without violating data integrity.
 - `NOT_AVAILABLE`: there is no consumer-safe result.
+- `NOT_APPLICABLE`: operational freshness is not yet in force for the requested trade date, because that date precedes the effective `OPERATIONAL_START_DATE` or equivalent governed activation marker or no marker is effective; no operational freshness assessment is made or claimed. It is not a freshness verdict: it never means `FRESH`, never means lateness, and never means that no consumer-safe result exists.
 
 Before `OPERATIONAL_START_DATE`, missing future/daily data is development frontier, not an incident; the response still may not claim `FRESH`. After activation, lag against the latest expected completed session is measured and alerted.
+
+## Readability and operational freshness are independent (LOCKED)
+
+`readiness_state` states whether a publication is readable. `freshness_state` states the outcome of an operational freshness assessment, or states that none is in force. They are independent facts: neither is derived from the other and neither substitutes for the other. A publication for a date before operational activation, including a bounded historical or replay publication, is `READABLE` whenever every condition below holds; the absence of an operational freshness assessment neither grants nor removes readability.
+
+Operational freshness is in force for a requested trade date only when an explicit governed activation marker is effective on or before that date. It is never backdated. Whether it is in force is decided from the requested trade date and the marker alone, never from the time of the read, so a publication keeps one deterministic applicability wherever and whenever it is read or replayed.
+
+The first row that applies decides the freshness state of a response for a requested trade date:
+
+| Condition for the requested trade date | `freshness_state` |
+|---|---|
+| No readable publication is returned and no allowed prior-date fallback applies (held, failed, building, unsealed, or integrity-ambiguous) | `NOT_AVAILABLE` |
+| An allowed prior-date fallback is returned | `STALE` or `DEGRADED`, as defined above |
+| The requested publication is `READABLE` and an explicit activated degraded condition applies | `DEGRADED` |
+| The requested publication is `READABLE`, no such degraded condition applies, and operational freshness is not in force for the date | `NOT_APPLICABLE` |
+| The requested publication is `READABLE`, no such degraded condition applies, operational freshness is in force for the date, and all activated operational freshness gates pass | `FRESH` |
+
+A combination that no row represents resolves to the fail-safe default of the Consumer Readability Decision Table. `NOT_AVAILABLE` freshness always means that no consumer-safe result is returned, so a `READABLE` requested publication never carries `NOT_AVAILABLE`, and `NOT_APPLICABLE` is never used where a row above requires another state.
+
+A response carrying `NOT_APPLICABLE` exposes the operational activation context that explains it. When an activation marker becomes effective, dates on or after it are decided by the rows above from then on; a publication already sealed for an earlier date keeps its sealed freshness state and is not re-evaluated, relabelled, or rewritten.
+
+The freshness state decided for a publication is recorded in its publication manifest and in every semantic hash that binds a freshness state as that exact state value. `NOT_APPLICABLE` is a state value like the others: it is never null, empty, or `NOT_AVAILABLE`.
 
 ## `READABLE` conditions
 

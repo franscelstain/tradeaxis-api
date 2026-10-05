@@ -52,7 +52,7 @@ Eligibility is an explainable upstream data-usability fact. A compatibility `eli
 ### Readiness and freshness
 
 - `readiness_state`: `READABLE`, `HELD`, `FAILED`, `BUILDING`, `SUPERSEDED`, or `NOT_AVAILABLE`;
-- `freshness_state`: `FRESH`, `STALE`, `DEGRADED`, or `NOT_AVAILABLE`;
+- `freshness_state`: `FRESH`, `STALE`, `DEGRADED`, `NOT_AVAILABLE`, or `NOT_APPLICABLE` (the last only while operational freshness is not in force for the requested date; it is not a freshness verdict and never replaces `readiness_state`);
 - latest expected, latest acquired, latest canonicalized, and latest readable trade dates;
 - requested/effective-date relation and explicit fallback reason;
 - operational activation context and evaluated-at timestamp.

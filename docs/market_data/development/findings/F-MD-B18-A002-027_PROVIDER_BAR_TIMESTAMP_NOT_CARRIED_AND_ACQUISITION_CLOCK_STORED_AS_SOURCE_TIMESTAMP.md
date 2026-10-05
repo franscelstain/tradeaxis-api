@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-10-03T08:45:44+07:00
 - Severity: `P2` — no wrong value is published; a provider-supplied timestamp is dropped and one platform time is mislabelled
-- Status: `OPEN` — owner decision required before any implementation (`E-MD-B18-A002-093`, Q6)
+- Status: `RESOLVED` — corrected under the owner decision (`D-MD-B18-A002-014`, Q6 = B) and proven (`E-MD-B18-A002-094`)
 - Class: `IMPLEMENTATION_DEFECT`
 - Related: `E-MD-B18-A002-093`, `E-MD-B18-A002-092`, `F-MD-B18-A002-025`, `F-MD-B18-A002-017`, `D-MD-B18-A002-013`
 - Remediation owner: `MD-B18-A002` for the decision; the producers touched are acquisition (`MD-B07`), canonical import (`MD-B09`) and the V2 bar artifact (`MD-B10`), none of which is reopened by this record
@@ -48,3 +48,7 @@ No production code was changed for this finding. Expected classification of the 
 ## Not in scope here
 
 No change to the adapter, repositories, hashing or any closed stage. Candidate-v1 is not edited.
+
+## 2026-10-03 correction — D-MD-B18-A002-014, E-MD-B18-A002-094
+
+The owner selected Q6 = B. The adapter now binds the provider's own instant to the immutable observation envelope of a single-date request: the series element whose exchange-local date is the trade date, when exactly one matches, rendered in the platform timezone (`2026-03-23 09:00:00` for the frozen `1774231200`). The acquisition clock stays in `acquired_at`. A normalized row no longer stores the acquisition clock as `source_timestamp` (NULL), and the canonical bar keeps a NULL source timestamp. Range-window requests, ambiguous or absent instants, non-chart payloads and a foreign exchange timezone give NULL on the envelope; the raw instants stay bound through the payload hash. Proof: `ProviderObservationTimestampTest` (7 tests) and probes P6a, P6b, P7a, P7b; the V2 observation manifest changes with the provider instant and with the acquisition time as separate facts. B10 impact executed, not assumed: the 21 B10 covering test files (365 tests) pass apart from the 8 governed expected states, the full MarketData suite shows no regression, and no B10 semantic hash producer changed (`B10_IMPLEMENTATION_BUT_NO_PROOF_INVALIDATION`, 1072/1072 unchanged). `MD-S053-R0068` (`MD-B07`) is not reassessed. Residual by design: a range-window acquisition carries no single envelope instant.

@@ -41,6 +41,7 @@ $canonical = realpath($paths['matrix']) === realpath(MarketDataB10SuccessorBindi
 // the written file must satisfy them again afterwards; otherwise the matrix is left (or restored) as it was.
 $gateOverrides = array_filter(['evidence_dir' => $opts['evidence-dir'], 'relationships_path' => $opts['relationships'], 'package_base' => $opts['package-base']],
     static function ($v) { return $v !== null; });
+$gateOverrides['successors'] = MarketDataB10SuccessorBinding::profilesUpTo((string) $opts['attempt']);
 $postGates = static function (array $rows) use ($root, $gateOverrides): array {
     $errors = [];
     $proof = MarketDataPublicationLifecycleProofGate::validate($root, true, ['rows' => $rows] + $gateOverrides);

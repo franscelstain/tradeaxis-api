@@ -5,6 +5,7 @@ namespace App\Infrastructure\Persistence\MarketData;
 use App\Application\MarketData\Services\ArtifactSemanticHashService;
 use App\Application\MarketData\Services\CoverageGateStateNormalizer;
 use App\Application\MarketData\Services\PublicationSemanticIdentityService;
+use App\Domain\MarketData\FreshnessState;
 use App\Domain\MarketData\MarketDataScope;
 use App\Models\EodRun;
 use App\Models\EodRunEvent;
@@ -121,7 +122,7 @@ class EodRunRepository
                 'config_snapshot_id' => $snapshot['config_snapshot_id'],
                 'observation_manifest_hash' => null,
                 'operational_start_date' => $scope->operationalStartDate(),
-                'freshness_state' => $scope->operationalStartDate() ? 'NOT_EVALUATED' : 'DEVELOPMENT_NOT_OPERATIONAL',
+                'freshness_state' => FreshnessState::runLabelFor($scope->operationalStartDate(), $requestedDate),
                 'supersedes_run_id' => $supersedesRunId,
                 'publication_id' => null,
                 'publication_version' => null,
@@ -209,7 +210,7 @@ class EodRunRepository
             'config_snapshot_ref' => $snapshot['snapshot_uid'],
             'config_snapshot_id' => $snapshot['config_snapshot_id'],
             'operational_start_date' => $scope->operationalStartDate(),
-            'freshness_state' => $scope->operationalStartDate() ? 'NOT_EVALUATED' : 'DEVELOPMENT_NOT_OPERATIONAL',
+            'freshness_state' => FreshnessState::runLabelFor($scope->operationalStartDate(), $requestedDate),
             'is_current_publication' => 0,
             'notes' => 'replay_mode=AS_KNOWN;replay_isolation=true',
             'started_at' => $now,
@@ -312,7 +313,9 @@ class EodRunRepository
             'config_snapshot_id' => $seedRun->config_snapshot_id,
             'observation_manifest_hash' => $seedRun->observation_manifest_hash,
             'operational_start_date' => $seedRun->operational_start_date,
-            'freshness_state' => $seedRun->freshness_state,
+            // Decided again from the requested date and the marker the seed run carries, never copied: a copied legacy label would
+            // make a corrected publication carry the pre-correction state.
+            'freshness_state' => FreshnessState::runLabelFor($seedRun->operational_start_date, $seedRun->trade_date_requested),
             'supersedes_run_id' => $seedRun->supersedes_run_id,
             'publication_id' => null,
             'publication_version' => null,

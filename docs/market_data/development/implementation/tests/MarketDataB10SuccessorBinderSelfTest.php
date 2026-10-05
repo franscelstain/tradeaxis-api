@@ -20,6 +20,7 @@ require_once __DIR__.'/MarketDataPublicationLifecycleTraceabilityGate.php';
 $root = dirname(__DIR__, 5);
 $binder = __DIR__.'/MarketDataB10SuccessorBinder.php';
 $attempt = 'MD-B10-A002';
+$layers = ['successors' => MarketDataB10SuccessorBinding::profilesUpTo($attempt)];
 $evidenceId = 'E-MD-B10-A002-017';
 $canonicalMatrix = MarketDataB10SuccessorBinding::canonicalMatrix($root);
 $canonicalBefore = hash_file('sha256', $canonicalMatrix);
@@ -210,14 +211,18 @@ $check('control_apply_changes_only_the_three_governed_fields', $foreignFieldChan
 $idem = sb_run($w, $binder, $attempt, $evidenceId, ['--apply']);
 $check('control_apply_is_idempotent', $idem['exit'] === 0 && ($idem['json']['already_bound'] ?? false) === true && file_get_contents($w['matrix']) === $afterRaw, $idem['text']);
 $boundRows = $after['rows'];
-$gateProof = MarketDataPublicationLifecycleProofGate::validate($root, true, ['rows' => $boundRows]);
-$gateTrace = MarketDataPublicationLifecycleTraceabilityGate::validate($root, true, ['rows' => $boundRows]);
+$gateProof = MarketDataPublicationLifecycleProofGate::validate($root, true, $layers + ['rows' => $boundRows]);
+$gateTrace = MarketDataPublicationLifecycleTraceabilityGate::validate($root, true, $layers + ['rows' => $boundRows]);
 $check('control_post_state_satisfies_the_b10_proof_gate_bound', $gateProof['status'] === 'PASS', json_encode($gateProof['errors']));
 $check('control_post_state_satisfies_the_b10_traceability_gate_bound', $gateTrace['status'] === 'PASS', json_encode($gateTrace['errors']));
 
 if ($sourceMatrix !== $canonicalMatrix) {
     $canonicalWorld = ['matrix' => $canonicalMatrix, 'evidence' => $evidenceSource, 'relationships' => $relationshipSource];
-    $already = sb_run($canonicalWorld, $binder, $attempt, $evidenceId);
+    $latest = array_values(MarketDataB10SuccessorBinding::profiles());
+    $latest = end($latest);
+    // the latest layer's proof evidence is E-MD-B10-<attempt>-002 by this attempt's convention (scope evidence is -001)
+    $latestEvidence = $latest['attempt'] === $attempt ? $evidenceId : 'E-'.$latest['attempt'].'-002';
+    $already = sb_run($canonicalWorld, $binder, $latest['attempt'], $latestEvidence);
     $check('control_promoted_canonical_matrix_is_recognised_as_already_bound', $already['exit'] === 0 && ($already['json']['already_bound'] ?? false) === true
         && hash_file('sha256', $canonicalMatrix) === $canonicalBefore, $already['text']);
 }
@@ -243,7 +248,7 @@ $negative = static function (string $name, string $token, callable $mutate, arra
     $check($name, $refuses($r, $token) && file_get_contents($w['matrix']) === $before && $leftovers === [], $r['text'].' leftovers='.json_encode($leftovers));
 };
 
-$negative('wrong_attempt_not_registered', 'ATTEMPT_NOT_REGISTERED', static function ($w) {}, [], ['MD-B10-A003', 'E-MD-B10-A003-001']);
+$negative('wrong_attempt_not_registered', 'ATTEMPT_NOT_REGISTERED', static function ($w) {}, [], ['MD-B10-A004', 'E-MD-B10-A004-001']);
 $negative('predecessor_attempt_is_not_a_successor', 'ATTEMPT_NOT_REGISTERED', static function ($w) {}, [], ['MD-B10-A001', 'E-MD-B10-A001-001']);
 $negative('invalid_evidence_id', 'EVIDENCE_ID_NOT_A_MD-B10-A002_EVIDENCE', static function ($w) {}, [], [$attempt, 'BAD-EVIDENCE']);
 $negative('predecessor_evidence_id_refused', 'EVIDENCE_ID_NOT_A_MD-B10-A002_EVIDENCE', static function ($w) {}, [], [$attempt, 'E-MD-B10-A001-001']);
@@ -399,9 +404,9 @@ $check('a_matrix_that_changed_since_the_plan_is_not_overwritten', $applied['appl
 
 // ---- The successor-aware B10 gates fail closed on the same hazards ------------------------------------------------
 $boundRows = $after['rows'];
-$gateFails = static function (array $mutatedRows, string $token) use ($root): bool {
-    $proof = MarketDataPublicationLifecycleProofGate::validate($root, true, ['rows' => $mutatedRows]);
-    $trace = MarketDataPublicationLifecycleTraceabilityGate::validate($root, true, ['rows' => $mutatedRows]);
+$gateFails = static function (array $mutatedRows, string $token) use ($root, $layers): bool {
+    $proof = MarketDataPublicationLifecycleProofGate::validate($root, true, $layers + ['rows' => $mutatedRows]);
+    $trace = MarketDataPublicationLifecycleTraceabilityGate::validate($root, true, $layers + ['rows' => $mutatedRows]);
     $all = array_merge($proof['errors'], $trace['errors']);
     foreach ($all as $err) {
         if (strpos($err, $token) !== false) {
@@ -425,13 +430,13 @@ $check('gate_refuses_a_reopened_rule_left_on_the_predecessor_evidence', $gateFai
 $check('gate_refuses_an_unaffected_rule_bound_to_the_successor_evidence', $gateFails($mutateRow($boundRows, $unaffectedRule, static function (&$r) use ($evidenceId) { $r['current_evidence_ids'] = $evidenceId; }), 'BOUND_EVIDENCE_ID_INVALID'));
 $check('gate_refuses_two_successor_evidence_ids', $gateFails($mutateRow($boundRows, $affectedRule, static function (&$r) { $r['current_evidence_ids'] = 'E-MD-B10-A002-018'; }), 'BOUND_EVIDENCE_NOT_ATOMIC: MD-B10-A002'));
 $check('gate_refuses_a_not_assessed_row_in_the_closure_state', $gateFails($mutateRow($boundRows, $unaffectedRule, static function (&$r) { $r['coverage_status'] = 'NOT_ASSESSED'; $r['current_evidence_ids'] = ''; }), 'COVERAGE_STATUS_INVALID'));
-$check('traceability_gate_refuses_a_successor_row_without_successor_evidence', (function () use ($root, $boundRows, $mutateRow, $affectedRule) {
-    $r = MarketDataPublicationLifecycleTraceabilityGate::validate($root, true, ['rows' => $mutateRow($boundRows, $affectedRule, static function (&$row) { $row['current_evidence_ids'] = 'E-MD-B10-A001-001'; })]);
+$check('traceability_gate_refuses_a_successor_row_without_successor_evidence', (function () use ($root, $boundRows, $mutateRow, $affectedRule, $layers) {
+    $r = MarketDataPublicationLifecycleTraceabilityGate::validate($root, true, $layers + ['rows' => $mutateRow($boundRows, $affectedRule, static function (&$row) { $row['current_evidence_ids'] = 'E-MD-B10-A001-001'; })]);
 
     return $r['status'] === 'FAIL' && $r['invalid_mandatory_state'] === 1;
 })());
 // F-MD-B10-A002-001: the moved-row count is the measured 0 and a genuinely moved row still fails closed.
-$tracePlain = MarketDataPublicationLifecycleTraceabilityGate::validate($root, true, ['rows' => $boundRows]);
+$tracePlain = MarketDataPublicationLifecycleTraceabilityGate::validate($root, true, $layers + ['rows' => $boundRows]);
 $movedErrors = array_filter($tracePlain['errors'], static function ($err) { return strpos($err, 'moved count') === 0; });
 $check('f001_moved_count_is_zero_on_the_canonical_shape', $tracePlain['moved'] === 0 && $movedErrors === [] && $tracePlain['status'] === 'PASS', json_encode($tracePlain['errors']));
 $movedRows = $boundRows;
@@ -442,7 +447,7 @@ foreach ($movedRows as &$row) {
     }
 }
 unset($row);
-$movedResult = MarketDataPublicationLifecycleTraceabilityGate::validate($root, true, ['rows' => $movedRows]);
+$movedResult = MarketDataPublicationLifecycleTraceabilityGate::validate($root, true, $layers + ['rows' => $movedRows]);
 $check('f001_a_genuinely_moved_row_still_fails_closed', $movedResult['status'] === 'FAIL' && in_array('moved count must be 0', $movedResult['errors'], true) && $movedResult['moved'] === 1);
 $movedAndMandatory = $boundRows;
 foreach ($movedAndMandatory as &$row) {
@@ -452,7 +457,7 @@ foreach ($movedAndMandatory as &$row) {
     }
 }
 unset($row);
-$check('f001_the_other_traceability_counts_are_still_enforced', MarketDataPublicationLifecycleTraceabilityGate::validate($root, true, ['rows' => $movedAndMandatory])['status'] === 'FAIL');
+$check('f001_the_other_traceability_counts_are_still_enforced', MarketDataPublicationLifecycleTraceabilityGate::validate($root, true, $layers + ['rows' => $movedAndMandatory])['status'] === 'FAIL');
 // A001 behaviour is preserved: with no successor registry, the original one-evidence-id model still passes and still fails.
 $legacyRows = $boundRows;
 foreach ($legacyRows as &$row) {

@@ -202,7 +202,15 @@ final class MarketDataPublicationLifecycleProofGate
                     $payload = MarketDataB10SuccessorBinding::loadEvidence($paths['evidence_dir'], $ids[0], $errors)['payload'];
                 }
                 if (is_array($payload)) {
-                    $affected = array_keys(array_filter($scopeMap, static function ($attempt) use ($owner) { return $attempt === $owner; }));
+                    // The evidence proves the layer's own recorded scope; a later layer may have re-owned some of its rules
+                    // (F-MD-B10-A003-001), and the rows it still owns are then a subset of what it proved.
+                    $ownScopeErrors = [];
+                    $affected = isset($overrides['scopes'][$owner])
+                        ? $overrides['scopes'][$owner]
+                        : MarketDataB10SuccessorBinding::loadScope($paths, $profile, $ownScopeErrors)['affected'];
+                    foreach ($ownScopeErrors as $e) {
+                        $errors[] = $e;
+                    }
                     foreach (MarketDataB10SuccessorBinding::validateSuccessorEvidence($payload, $ids[0], $profile, $affected) as $e) {
                         $errors[] = $e;
                     }

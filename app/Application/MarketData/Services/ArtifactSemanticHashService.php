@@ -2,6 +2,7 @@
 
 namespace App\Application\MarketData\Services;
 
+use App\Domain\MarketData\FreshnessState;
 use App\Infrastructure\Persistence\MarketData\TemporalIdentityRepository;
 use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
@@ -110,7 +111,7 @@ class ArtifactSemanticHashService
     /** Sector_Classification_Contract_LOCKED.md: only these classes may establish a membership. */
     private const SECTOR_AUTHORITATIVE_CLASSES = ['EXCHANGE_AUTHORITATIVE', 'OPERATOR_ENTERED'];
 
-    public const FRESHNESS_STATES = ['FRESH', 'STALE', 'DEGRADED', 'NOT_AVAILABLE'];
+    public const FRESHNESS_STATES = FreshnessState::VOCABULARY;
 
     public const ELIGIBILITY_COLUMNS_V2 = [
         'trade_date',
@@ -241,9 +242,14 @@ class ArtifactSemanticHashService
     }
 
     /**
-     * Freshness is a consumer-visible semantic state, never a timing value. Anything outside the
-     * governed vocabulary is NOT_AVAILABLE ("no consumer-safe result"), so an unknown or
-     * unevaluated state can never be hashed as FRESH.
+     * Freshness is a consumer-visible semantic state, never a timing value. The governed vocabulary
+     * (FRESH, STALE, DEGRADED, NOT_AVAILABLE and, while operational freshness is not in force,
+     * NOT_APPLICABLE) passes through unchanged. Anything outside it is NOT_AVAILABLE ("no consumer-safe
+     * result"), so an unknown or unevaluated label can never be hashed as FRESH. The labels of runs
+     * created before DOC-CHG-20261005-001 (DEVELOPMENT_NOT_OPERATIONAL) fall outside the vocabulary on
+     * purpose: a sealed publication is re-verified from its stored run, and its identity must not change.
+     * New runs carry NOT_APPLICABLE (FreshnessState::runLabelFor), so the fallback is never how a
+     * pre-activation publication gets its state.
      */
     public static function normalizeFreshnessState($value): string
     {

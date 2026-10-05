@@ -1148,3 +1148,228 @@ MD-REL-1146,CI-MD-B18-A002-001,E-MD-B18-A002-093,RELATED,Impact declaration iden
 MD-REL-1147,CI-MD-B18-A002-001,F-MD-B18-A002-027,RELATED,New finding disclosed.,D-MD-B18-A002-013,2026-10-03T08:45:44+07:00,Same B18-A002/BL001; review response to candidate-v1.
 MD-REL-1148,CI-MD-B18-A002-001,F-MD-B18-A002-028,RELATED,New finding disclosed.,D-MD-B18-A002-013,2026-10-03T08:45:44+07:00,Same B18-A002/BL001; review response to candidate-v1.
 MD-REL-1149,CI-MD-B18-A002-001,F-MD-B18-A002-029,RELATED,New finding disclosed.,D-MD-B18-A002-013,2026-10-03T08:45:44+07:00,Same B18-A002/BL001; review response to candidate-v1.
+MD-REL-1150,D-MD-B18-A002-014,E-MD-B18-A002-093,RELATED,Answers the four owner decisions that record posed.,D-MD-B18-A002-014,2026-10-03T10:25:05+07:00,Same B18-A002/BL001; owner decision for candidate-v2.
+MD-REL-1151,D-MD-B18-A002-014,D-MD-B18-A002-013,DEPENDS_ON,Continues the synthetic V2 world and V2-only direction.,D-MD-B18-A002-014,2026-10-03T10:25:05+07:00,Same B18-A002/BL001; owner decision for candidate-v2.
+MD-REL-1152,D-MD-B18-A002-014,D-MD-B10-A002-005,RELATED,Q4 supersedes its whole-payload registry identity for V2 only; V1 unchanged.,D-MD-B18-A002-014,2026-10-03T10:25:05+07:00,Same B18-A002/BL001; owner decision for candidate-v2.
+MD-REL-1153,D-MD-B18-A002-014,D-MD-B18-A002-006,RELATED,Q4 supersedes its read of the whole registry capture for V2 only; V1 unchanged.,D-MD-B18-A002-014,2026-10-03T10:25:05+07:00,Same B18-A002/BL001; owner decision for candidate-v2.
+MD-REL-1154,D-MD-B18-A002-014,F-MD-B18-A002-025,RELATED,Decides the candidate-v2 prerequisites the finding waits on.,D-MD-B18-A002-014,2026-10-03T10:25:05+07:00,Same B18-A002/BL001; owner decision for candidate-v2.
+MD-REL-1155,D-MD-B18-A002-014,F-MD-B18-A002-027,RELATED,Q6 authorises the correction of the provider timestamp defect.,D-MD-B18-A002-014,2026-10-03T10:25:05+07:00,Same B18-A002/BL001; owner decision for candidate-v2.
+MD-REL-1156,D-MD-B18-A002-014,F-MD-B18-A002-028,RELATED,Q4 and Q5 decide the registry and build identity gap.,D-MD-B18-A002-014,2026-10-03T10:25:05+07:00,Same B18-A002/BL001; owner decision for candidate-v2.
+MD-REL-1157,D-MD-B18-A002-014,F-MD-B10-A002-004,RELATED,Q7 decides the V2 event_factor residual direction.,D-MD-B18-A002-014,2026-10-03T10:25:05+07:00,Same B18-A002/BL001; owner decision for candidate-v2.
+MD-REL-1158,D-MD-B18-A002-014,CI-MD-B18-A002-001,RELATED,Same impact declaration records the decision.,D-MD-B18-A002-014,2026-10-03T10:25:05+07:00,Same B18-A002/BL001; owner decision for candidate-v2.
+MD-REL-1159,E-MD-B18-A002-093,D-MD-B18-A002-014,RELATED,The decision that answers its owner decision package.,D-MD-B18-A002-014,2026-10-03T10:25:05+07:00,Same B18-A002/BL001; owner decision for candidate-v2.
+MD-REL-1160,F-MD-B18-A002-025,D-MD-B18-A002-014,RELATED,The decision recorded for the finding.,D-MD-B18-A002-014,2026-10-03T10:25:05+07:00,Same B18-A002/BL001; owner decision for candidate-v2.
+MD-REL-1161,F-MD-B18-A002-027,D-MD-B18-A002-014,RELATED,The decision recorded for the finding.,D-MD-B18-A002-014,2026-10-03T10:25:05+07:00,Same B18-A002/BL001; owner decision for candidate-v2.
+MD-REL-1162,F-MD-B18-A002-028,D-MD-B18-A002-014,RELATED,The decision recorded for the finding.,D-MD-B18-A002-014,2026-10-03T10:25:05+07:00,Same B18-A002/BL001; owner decision for candidate-v2.
+MD-REL-1163,F-MD-B10-A002-004,D-MD-B18-A002-014,RELATED,The decision recorded for the finding.,D-MD-B18-A002-014,2026-10-03T10:25:05+07:00,Same B18-A002/BL001; owner decision for candidate-v2.
+MD-REL-1164,CI-MD-B18-A002-001,D-MD-B18-A002-014,RELATED,Impact declaration identifies the decision.,D-MD-B18-A002-014,2026-10-03T10:25:05+07:00,Same B18-A002/BL001; owner decision for candidate-v2.
+MD-REL-1165,E-MD-B18-A002-094,D-MD-B18-A002-014,DEPENDS_ON,Applies the owner selections Q4 to Q7.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1166,E-MD-B18-A002-094,E-MD-B18-A002-093,DERIVED_FROM,Builds the candidate that record blocked on owner decisions; the record is not edited.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1167,E-MD-B18-A002-094,E-MD-B18-A002-092,RELATED,Candidate-v1 that candidate-v2 supersedes; not edited.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1168,E-MD-B18-A002-094,E-MD-B18-A002-091,RELATED,The allocation analysis the candidate rests on.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1169,E-MD-B18-A002-094,D-MD-B18-A002-013,DEPENDS_ON,"The synthetic world, review model and V2-only direction.",D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1170,E-MD-B18-A002-094,D-MD-B18-A002-011,DEPENDS_ON,The independent-fixture admission contract.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1171,E-MD-B18-A002-094,D-MD-B10-A002-005,RELATED,Q4 replaces its whole-payload registry identity for V2 only.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1172,E-MD-B18-A002-094,D-MD-B18-A002-006,RELATED,Q4 replaces its whole-capture registry read for V2 only.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1173,E-MD-B18-A002-094,F-MD-B18-A002-025,RELATED,Progress: candidate-v2 awaits review.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1174,E-MD-B18-A002-094,F-MD-B18-A002-027,RELATED,Resolves the provider timestamp defect.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1175,E-MD-B18-A002-094,F-MD-B18-A002-028,RELATED,Implements the registry and build identity decisions.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1176,E-MD-B18-A002-094,F-MD-B18-A002-029,RELATED,The IR-3 control fix is retained in the controls.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1177,E-MD-B18-A002-094,F-MD-B10-A002-004,RELATED,Reassesses the finding against its closure criterion.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1178,E-MD-B18-A002-094,F-MD-B18-A002-017,RELATED,Remaining MariaDB predicate; unchanged.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1179,E-MD-B18-A002-094,E-MD-B07-A001-001,RELATED,Proof of MD-S053-R0068; not reassessed.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1180,E-MD-B18-A002-094,E-MD-B10-A002-017,RELATED,The 56 predicates whose covering tests were re-executed.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1181,E-MD-B18-A002-094,SC-MD-B10-A002-001,RELATED,"Preservation: B10 closure unchanged, impact executed.",D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1182,E-MD-B18-A002-094,CI-MD-B18-A002-001,RELATED,Same impact declaration records the candidate.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1183,E-MD-B18-A002-094,MD-B18-A002-BL001,RELATED,Same B18 baseline; no new attempt.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1184,F-MD-B18-A002-025,E-MD-B18-A002-094,RELATED,Progress recorded.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1185,F-MD-B18-A002-027,E-MD-B18-A002-094,DERIVED_FROM,Resolved by the Q6 correction.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1186,F-MD-B18-A002-028,E-MD-B18-A002-094,RELATED,Implemented by Q4 and Q5.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1187,F-MD-B10-A002-004,E-MD-B18-A002-094,RELATED,The reassessment is recorded.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1188,F-MD-B18-A002-017,E-MD-B18-A002-094,RELATED,The finding records the candidate.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1189,CI-MD-B18-A002-001,E-MD-B18-A002-094,RELATED,Impact declaration identifies the candidate.,D-MD-B18-A002-014,2026-10-03T11:47:12+07:00,Same B18-A002/BL001; candidate-v2.
+MD-REL-1190,E-MD-B18-A002-095,E-MD-B18-A002-094,DERIVED_FROM,Records the independent review of the candidate that record issued; the record is not edited.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1191,E-MD-B18-A002-095,F-MD-B18-A002-030,RELATED,Review finding 1.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1192,E-MD-B18-A002-095,F-MD-B18-A002-031,RELATED,Review finding 2.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1193,E-MD-B18-A002-095,F-MD-B18-A002-025,RELATED,Progress: candidate-v2 reviewed CHANGES REQUIRED.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1194,E-MD-B18-A002-095,D-MD-B18-A002-011,DEPENDS_ON,The independent-fixture admission contract the review applies.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1195,E-MD-B18-A002-095,D-MD-B18-A002-014,RELATED,The owner decisions candidate-v2 applied and candidate-v3 preserves.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1196,E-MD-B18-A002-095,CI-MD-B18-A002-001,RELATED,Same impact declaration records the review.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1197,E-MD-B18-A002-095,MD-B18-A002-BL001,RELATED,Same B18 baseline; no new attempt.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1198,F-MD-B18-A002-030,E-MD-B18-A002-095,DERIVED_FROM,Raised by the review.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1199,F-MD-B18-A002-030,E-MD-B18-A002-094,RELATED,The candidate whose manifest it concerns.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1200,F-MD-B18-A002-030,F-MD-B18-A002-025,RELATED,Blocks approval of an independent package.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1201,F-MD-B18-A002-030,D-MD-B18-A002-011,RELATED,The admission contract.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1202,F-MD-B18-A002-031,E-MD-B18-A002-095,DERIVED_FROM,Raised by the review.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1203,F-MD-B18-A002-031,E-MD-B18-A002-094,RELATED,The candidate whose expectations it concerns.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1204,F-MD-B18-A002-031,F-MD-B18-A002-025,RELATED,Blocks an exact-publication proof.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1205,F-MD-B18-A002-031,F-MD-B18-A002-017,RELATED,Remaining MariaDB predicate.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1206,F-MD-B18-A002-031,D-MD-B18-A002-011,RELATED,The admission contract.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1207,F-MD-B18-A002-025,E-MD-B18-A002-095,RELATED,Progress recorded.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1208,F-MD-B18-A002-025,F-MD-B18-A002-030,RELATED,A review finding.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1209,F-MD-B18-A002-025,F-MD-B18-A002-031,RELATED,A review finding.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1210,CI-MD-B18-A002-001,E-MD-B18-A002-095,RELATED,Impact declaration identifies the review.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1211,CI-MD-B18-A002-001,F-MD-B18-A002-030,RELATED,New finding disclosed.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1212,CI-MD-B18-A002-001,F-MD-B18-A002-031,RELATED,New finding disclosed.,D-MD-B18-A002-014,2026-10-04T23:42:39+07:00,Same B18-A002/BL001; candidate-v2 review.
+MD-REL-1214,E-MD-B18-A002-096,E-MD-B18-A002-095,DEPENDS_ON,Corrects the two findings of that review.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1215,E-MD-B18-A002-096,E-MD-B18-A002-094,DERIVED_FROM,Candidate-v2 that candidate-v3 supersedes; not edited.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1216,E-MD-B18-A002-096,E-MD-B18-A002-093,RELATED,The earlier owner decision package.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1217,E-MD-B18-A002-096,F-MD-B18-A002-030,RELATED,Corrects review finding 1.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1218,E-MD-B18-A002-096,F-MD-B18-A002-031,RELATED,Corrects review finding 2.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1219,E-MD-B18-A002-096,F-MD-B18-A002-025,RELATED,Progress: candidate-v3 awaits review.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1220,E-MD-B18-A002-096,F-MD-B18-A002-028,RELATED,Q4 and Q5 semantics preserved.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1221,E-MD-B18-A002-096,F-MD-B10-A002-004,RELATED,Q7 semantics preserved.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1222,E-MD-B18-A002-096,F-MD-B18-A002-017,RELATED,Remaining MariaDB predicate; unchanged.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1223,E-MD-B18-A002-096,D-MD-B18-A002-014,DEPENDS_ON,The owner decisions candidate-v3 preserves.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1224,E-MD-B18-A002-096,D-MD-B18-A002-013,DEPENDS_ON,The synthetic world and review model.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1225,E-MD-B18-A002-096,D-MD-B18-A002-011,DEPENDS_ON,The independent-fixture admission contract.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1226,E-MD-B18-A002-096,SC-MD-B10-A002-001,RELATED,"Preservation: B10 closure unchanged, no closed producer changed.",D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1227,E-MD-B18-A002-096,CI-MD-B18-A002-001,RELATED,Same impact declaration records the candidate.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1228,E-MD-B18-A002-096,MD-B18-A002-BL001,RELATED,Same B18 baseline; no new attempt.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1229,F-MD-B18-A002-030,E-MD-B18-A002-096,RELATED,Corrected in candidate-v3.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1230,F-MD-B18-A002-031,E-MD-B18-A002-096,RELATED,Coverage established in candidate-v3.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1231,F-MD-B18-A002-025,E-MD-B18-A002-096,RELATED,Progress recorded.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1232,F-MD-B18-A002-017,E-MD-B18-A002-096,RELATED,The finding records the candidate.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1233,CI-MD-B18-A002-001,E-MD-B18-A002-096,RELATED,Impact declaration identifies the candidate.,D-MD-B18-A002-014,2026-10-05T07:38:19+07:00,Same B18-A002/BL001; candidate-v3.
+MD-REL-1234,E-MD-B18-A002-097,E-MD-B18-A002-096,DERIVED_FROM,Records the independent review of the candidate that record issued; the record is not edited.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1235,E-MD-B18-A002-097,E-MD-B18-A002-095,RELATED,Annotates it as continuity history; not edited.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1236,E-MD-B18-A002-097,F-MD-B18-A002-032,RELATED,The blocking review finding.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1237,E-MD-B18-A002-097,F-MD-B18-A002-031,RELATED,Mechanics reviewed PASS; expected hash blocked by the freshness member.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1238,E-MD-B18-A002-097,F-MD-B18-A002-030,RELATED,Assertion-layer correction reviewed PASS.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1239,E-MD-B18-A002-097,F-MD-B18-A002-025,RELATED,Progress: candidate-v3 reviewed CHANGES REQUIRED.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1240,E-MD-B18-A002-097,F-MD-B18-A002-028,RELATED,Q4 and Q5 semantics preserved.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1241,E-MD-B18-A002-097,F-MD-B18-A002-017,RELATED,Remaining MariaDB predicate; unchanged.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1242,E-MD-B18-A002-097,D-MD-B18-A002-013,DEPENDS_ON,The review model whose separate-reviewer rule the review is stated to satisfy.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1243,E-MD-B18-A002-097,D-MD-B18-A002-011,DEPENDS_ON,The independent-fixture admission contract the review applies.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1244,E-MD-B18-A002-097,D-MD-B18-A002-014,RELATED,The owner decisions candidate-v3 preserved.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1245,E-MD-B18-A002-097,SC-MD-B10-A002-001,RELATED,Preservation: B10 closure unchanged.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1246,E-MD-B18-A002-097,CI-MD-B18-A002-001,RELATED,Same impact declaration records the review.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1247,E-MD-B18-A002-097,MD-B18-A002-BL001,RELATED,Same B18 baseline; no new attempt.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1248,F-MD-B18-A002-032,E-MD-B18-A002-097,DERIVED_FROM,Raised by the review.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1249,F-MD-B18-A002-032,E-MD-B18-A002-096,RELATED,The candidate whose manifest member it concerns.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1250,F-MD-B18-A002-032,F-MD-B18-A002-031,RELATED,Its expected hash depends on the member.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1251,F-MD-B18-A002-032,F-MD-B18-A002-025,RELATED,Blocks an admissible R0025 independent fixture.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1252,F-MD-B18-A002-032,D-MD-B18-A002-013,RELATED,The synthetic world whose freshness property is undecided.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1253,F-MD-B18-A002-032,D-MD-B18-A002-011,RELATED,The admission contract.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1254,F-MD-B18-A002-031,E-MD-B18-A002-097,RELATED,Review of the coverage mechanics.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1255,F-MD-B18-A002-031,F-MD-B18-A002-032,RELATED,Blocked by the freshness member.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1256,F-MD-B18-A002-030,E-MD-B18-A002-097,RELATED,Correction reviewed PASS.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1257,F-MD-B18-A002-025,E-MD-B18-A002-097,RELATED,Progress recorded.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1258,F-MD-B18-A002-025,F-MD-B18-A002-032,RELATED,A blocking review finding.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1259,CI-MD-B18-A002-001,E-MD-B18-A002-097,RELATED,Impact declaration identifies the review.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1260,CI-MD-B18-A002-001,F-MD-B18-A002-032,RELATED,New finding disclosed.,D-MD-B18-A002-014,2026-10-05T12:24:15+07:00,Same B18-A002/BL001; candidate-v3 review.
+MD-REL-1261,D-MD-B18-A002-015,E-MD-B18-A002-097,RELATED,Answers owner decision Q8 posed by that record (alternative D).,D-MD-B18-A002-015,2026-10-05T13:21:08+07:00,Same B18-A002/BL001; owner decision Direction D.
+MD-REL-1262,D-MD-B18-A002-015,F-MD-B18-A002-032,RELATED,Decides the direction for the finding it waits on.,D-MD-B18-A002-015,2026-10-05T13:21:08+07:00,Same B18-A002/BL001; owner decision Direction D.
+MD-REL-1263,D-MD-B18-A002-015,F-MD-B18-A002-025,RELATED,"Continues the R0025 independent fixture: authority first, candidate-v4 after.",D-MD-B18-A002-015,2026-10-05T13:21:08+07:00,Same B18-A002/BL001; owner decision Direction D.
+MD-REL-1264,D-MD-B18-A002-015,D-MD-B18-A002-013,DEPENDS_ON,The synthetic V2 world and review model it continues.,D-MD-B18-A002-015,2026-10-05T13:21:08+07:00,Same B18-A002/BL001; owner decision Direction D.
+MD-REL-1265,D-MD-B18-A002-015,D-MD-B18-A002-011,DEPENDS_ON,The independent-fixture admission contract it keeps in force.,D-MD-B18-A002-015,2026-10-05T13:21:08+07:00,Same B18-A002/BL001; owner decision Direction D.
+MD-REL-1266,D-MD-B18-A002-015,CI-MD-B18-A002-001,RELATED,Same impact declaration records the decision.,D-MD-B18-A002-015,2026-10-05T13:21:08+07:00,Same B18-A002/BL001; owner decision Direction D.
+MD-REL-1267,E-MD-B18-A002-097,D-MD-B18-A002-015,RELATED,The decision that answers its owner decision Q8.,D-MD-B18-A002-015,2026-10-05T13:21:08+07:00,Same B18-A002/BL001; owner decision Direction D.
+MD-REL-1268,F-MD-B18-A002-032,D-MD-B18-A002-015,RELATED,The decision recorded for the finding.,D-MD-B18-A002-015,2026-10-05T13:21:08+07:00,Same B18-A002/BL001; owner decision Direction D.
+MD-REL-1269,F-MD-B18-A002-025,D-MD-B18-A002-015,RELATED,The decision recorded for the finding.,D-MD-B18-A002-015,2026-10-05T13:21:08+07:00,Same B18-A002/BL001; owner decision Direction D.
+MD-REL-1270,CI-MD-B18-A002-001,D-MD-B18-A002-015,RELATED,Impact declaration identifies the decision.,D-MD-B18-A002-015,2026-10-05T13:21:08+07:00,Same B18-A002/BL001; owner decision Direction D.
+MD-REL-1271,E-MD-B18-A002-098,E-MD-B18-A002-097,DEPENDS_ON,Resolves the authority question Q8 that record posed.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1272,E-MD-B18-A002-098,D-MD-B18-A002-015,DEPENDS_ON,The owner decision (Direction D) it applies.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1273,E-MD-B18-A002-098,F-MD-B18-A002-032,RELATED,Corrects the authority gap the finding records.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1274,E-MD-B18-A002-098,F-MD-B18-A002-033,RELATED,Raises the implementation non-conformance traced by its impact analysis.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1275,E-MD-B18-A002-098,F-MD-B18-A002-025,RELATED,Progress: authority corrected; candidate-v4 blocked on bounded remediation.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1276,E-MD-B18-A002-098,F-MD-B18-A002-031,RELATED,The expected manifest hash depends on the corrected freshness member.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1277,E-MD-B18-A002-098,F-MD-B18-A002-017,RELATED,Remaining MariaDB predicate; unchanged.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1278,E-MD-B18-A002-098,E-MD-B18-A002-096,RELATED,Candidate-v3 evidence; the candidate is not edited.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1279,E-MD-B18-A002-098,E-MD-B17-A002-001,RELATED,Predecessor basis of the two invalidated B17 rows; kept audit-only.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1280,E-MD-B18-A002-098,E-MD-B10-A002-017,RELATED,Proof of the three B10 predicates whose revalidation is required.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1281,E-MD-B18-A002-098,SC-MD-B10-A002-001,RELATED,B10 closure: no row text changed; closure claim not extended to pre-activation freshness.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1282,E-MD-B18-A002-098,SC-MD-B17-A002-001,RELATED,B17 closure: sufficiency withdrawn for 13 rows; closure kept as immutable history.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1283,E-MD-B18-A002-098,D-MD-B18-A002-013,DEPENDS_ON,The synthetic world whose freshness property this resolves.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1284,E-MD-B18-A002-098,D-MD-B18-A002-011,DEPENDS_ON,The independent-fixture admission contract kept in force.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1285,E-MD-B18-A002-098,CI-MD-B18-A002-001,RELATED,Same impact declaration records the correction.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1286,E-MD-B18-A002-098,MD-B18-A002-BL001,RELATED,Same B18 baseline; no new attempt.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1287,F-MD-B18-A002-033,E-MD-B18-A002-098,DERIVED_FROM,Raised by the impact trace.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1288,F-MD-B18-A002-033,F-MD-B18-A002-032,RELATED,Implementation counterpart of the corrected authority gap.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1289,F-MD-B18-A002-033,F-MD-B18-A002-025,RELATED,Blocks candidate-v4.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1290,F-MD-B18-A002-033,E-MD-B10-A002-017,RELATED,The B10 proof whose pinned mapping is superseded.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1291,F-MD-B18-A002-033,E-MD-B17-A002-001,RELATED,The B17 proof for the read surface.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1292,F-MD-B18-A002-033,D-MD-B18-A002-015,RELATED,The decision that authorises the corrected authority.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1293,F-MD-B18-A002-032,E-MD-B18-A002-098,RELATED,Authority correction recorded.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1294,F-MD-B18-A002-032,F-MD-B18-A002-033,RELATED,Implementation follow-up.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1295,F-MD-B18-A002-025,E-MD-B18-A002-098,RELATED,Progress recorded.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1296,F-MD-B18-A002-025,F-MD-B18-A002-033,RELATED,A blocker of candidate-v4.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1297,CI-MD-B18-A002-001,E-MD-B18-A002-098,RELATED,Impact declaration identifies the correction.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1298,CI-MD-B18-A002-001,F-MD-B18-A002-033,RELATED,New finding disclosed.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1299,D-MD-B18-A002-015,E-MD-B18-A002-098,RELATED,The correction that applies the decision.,D-MD-B18-A002-015,2026-10-05T13:30:21+07:00,Same B18-A002/BL001; DOC-CHG-20261005-001.
+MD-REL-1300,MD-B10-A003-BL001,MD-B10-A002-BL001,CARRIED_FROM,Successor B10 attempt carries the prior baseline lineage without inheriting a claim for the three demoted predicates.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1301,MD-B10-A003-BL001,F-MD-B18-A002-033,RELATED,Entry baseline responds to the cross-stage implementation non-conformance.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1302,MD-B10-A003-BL001,E-MD-B18-A002-098,RELATED,Entry starts from the impact classification of the authority correction.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1303,MD-B10-A003-BL001,D-MD-B18-A002-015,RELATED,The owner decision behind the corrected authority.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1304,CI-MD-B10-A003-001,MD-B10-A003-BL001,RELATED,Change impact declaration is bound to its immutable A003 baseline.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1305,CI-MD-B10-A003-001,F-MD-B18-A002-033,RELATED,A003 impact scope is the finding implementation remediation.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1306,CI-MD-B10-A003-001,F-MD-B10-A003-001,RELATED,Governed tooling change declared and tracked.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1307,CI-MD-B10-A003-001,E-MD-B18-A002-098,RELATED,A003 starts from that impact classification.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1308,CI-MD-B10-A003-001,SC-MD-B10-A002-001,CARRIED_FROM,A002 closure remains immutable and historically scoped.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1309,CI-MD-B10-A003-001,E-MD-B10-A002-017,RELATED,Prior proof of two of the three demoted predicates; kept audit-only.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1310,CI-MD-B10-A003-001,E-MD-B10-A003-001,RELATED,Scope evidence issued at entry.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1311,CI-MD-B10-A003-001,D-MD-B18-A002-015,RELATED,Owner decision behind the corrected authority.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1312,E-MD-B10-A003-001,CI-MD-B10-A003-001,RELATED,Scope evidence of the A003 impact declaration.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1313,E-MD-B10-A003-001,MD-B10-A003-BL001,RELATED,Retains the immutable entry baseline.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1314,E-MD-B10-A003-001,E-MD-B18-A002-098,DERIVED_FROM,Reviews the denominator the impact classification named; corrects its attribution of MD-S045-R0058.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1315,E-MD-B10-A003-001,E-MD-B10-A002-017,RELATED,Prior binding of MD-S005-R0056 and MD-S005-R0071.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1316,E-MD-B10-A003-001,E-MD-B10-A002-018,RELATED,The successor binding mechanism it extends.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1317,E-MD-B10-A003-001,E-MD-B10-A001-001,RELATED,Prior binding of MD-S045-R0058 and of the retained predicates.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1318,E-MD-B10-A003-001,SC-MD-B10-A002-001,RELATED,Historical closure retained.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1319,E-MD-B10-A003-001,SC-MD-B10-A001-001,RELATED,Historical closure retained.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1320,E-MD-B10-A003-001,F-MD-B18-A002-033,RELATED,Remediation scope of the finding.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1321,E-MD-B10-A003-001,F-MD-B10-A003-001,RELATED,Tooling finding raised at entry.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1322,E-MD-B10-A003-001,D-MD-B18-A002-015,RELATED,Owner decision behind the corrected authority.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1323,F-MD-B10-A003-001,F-MD-B10-A002-006,RELATED,Extends the mechanism that finding delivered.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1324,F-MD-B10-A003-001,E-MD-B10-A002-018,RELATED,The binder it extends.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1325,F-MD-B10-A003-001,E-MD-B10-A003-001,RELATED,Scope evidence in which the re-ownership appears.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1326,F-MD-B10-A003-001,CI-MD-B10-A003-001,RELATED,Declared tooling change.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1327,F-MD-B18-A002-033,E-MD-B10-A003-001,RELATED,Remediation scope recorded.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1328,F-MD-B18-A002-033,CI-MD-B10-A003-001,RELATED,Remediation declaration.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1329,CI-MD-B18-A002-001,CI-MD-B10-A003-001,RELATED,Active remediation declaration of the dependency.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1330,CI-MD-B18-A002-001,E-MD-B10-A003-001,RELATED,Entry scope evidence of the dependency.,MD-DEP-0022,2026-10-05T14:07:12+07:00,MD-B10-A003 entry; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1331,E-MD-B10-A003-002,MD-B10-A003-BL001,RELATED,Retains the immutable entry baseline.,MD-DEP-0022,2026-10-05T15:13:51+07:00,MD-B10-A003 proof; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1332,E-MD-B10-A003-002,CI-MD-B10-A003-001,RELATED,Proof of the declared remediation.,MD-DEP-0022,2026-10-05T15:13:51+07:00,MD-B10-A003 proof; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1333,E-MD-B10-A003-002,E-MD-B10-A003-001,DERIVED_FROM,Proves exactly the predicates the scope evidence reopened.,MD-DEP-0022,2026-10-05T15:13:51+07:00,MD-B10-A003 proof; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1334,E-MD-B10-A003-002,E-MD-B18-A002-098,RELATED,The impact classification it answers.,MD-DEP-0022,2026-10-05T15:13:51+07:00,MD-B10-A003 proof; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1335,E-MD-B10-A003-002,E-MD-B10-A002-017,RELATED,Prior proof of two of the three predicates; kept audit-only.,MD-DEP-0022,2026-10-05T15:13:51+07:00,MD-B10-A003 proof; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1336,E-MD-B10-A003-002,E-MD-B10-A001-001,RELATED,Prior proof of MD-S045-R0058; kept audit-only.,MD-DEP-0022,2026-10-05T15:13:51+07:00,MD-B10-A003 proof; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1337,E-MD-B10-A003-002,F-MD-B18-A002-033,RELATED,Implements the remediation of the finding.,MD-DEP-0022,2026-10-05T15:13:51+07:00,MD-B10-A003 proof; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1338,E-MD-B10-A003-002,F-MD-B10-A003-001,RELATED,Governed tooling change used for the promotion.,MD-DEP-0022,2026-10-05T15:13:51+07:00,MD-B10-A003 proof; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1339,E-MD-B10-A003-002,F-MD-B10-A003-002,RELATED,Observation made while proving.,MD-DEP-0022,2026-10-05T15:13:51+07:00,MD-B10-A003 proof; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1340,E-MD-B10-A003-002,D-MD-B18-A002-015,RELATED,Owner decision behind the corrected authority.,MD-DEP-0022,2026-10-05T15:13:51+07:00,MD-B10-A003 proof; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1341,F-MD-B10-A003-002,E-MD-B10-A003-002,DERIVED_FROM,Raised while proving.,MD-DEP-0022,2026-10-05T15:13:51+07:00,MD-B10-A003 proof; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1342,F-MD-B10-A003-002,F-MD-B18-A002-033,RELATED,Bounds the activated-world row of the finding.,MD-DEP-0022,2026-10-05T15:13:51+07:00,MD-B10-A003 proof; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1343,F-MD-B18-A002-033,E-MD-B10-A003-002,RELATED,Remediation proof recorded.,MD-DEP-0022,2026-10-05T15:13:51+07:00,MD-B10-A003 proof; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1344,F-MD-B18-A002-033,F-MD-B10-A003-002,RELATED,Observation recorded.,MD-DEP-0022,2026-10-05T15:13:51+07:00,MD-B10-A003 proof; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1345,CI-MD-B10-A003-001,E-MD-B10-A003-002,RELATED,Proof evidence of the declaration.,MD-DEP-0022,2026-10-05T15:13:51+07:00,MD-B10-A003 proof; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1346,CI-MD-B10-A003-001,F-MD-B10-A003-002,RELATED,Observation disclosed.,MD-DEP-0022,2026-10-05T15:13:51+07:00,MD-B10-A003 proof; blocked return MD-B18-A002 via MD-DEP-0022.
+MD-REL-1347,E-MD-B10-A003-003,MD-B10-A003-BL001,RELATED,Retains the immutable entry baseline.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1348,E-MD-B10-A003-003,CI-MD-B10-A003-001,RELATED,Promotion and closure of the declared remediation.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1349,E-MD-B10-A003-003,E-MD-B10-A003-002,DEPENDS_ON,Promotes exactly the predicates this proof covers.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1350,E-MD-B10-A003-003,E-MD-B10-A003-001,DEPENDS_ON,Promotion is measured against the entry scope.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1351,E-MD-B10-A003-003,E-MD-B18-A002-098,RELATED,Annotates its supporting-stage listing for MD-S022-R0052.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1352,E-MD-B10-A003-003,E-MD-B10-A002-018,RELATED,The binder it extends.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1353,E-MD-B10-A003-003,E-MD-B10-A002-017,CARRIED_FROM,Binding of 54 rows retained.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1354,E-MD-B10-A003-003,E-MD-B10-A001-001,CARRIED_FROM,Binding of 1015 rows retained.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1355,E-MD-B10-A003-003,SC-MD-B10-A002-001,RELATED,Historical closure retained.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1356,E-MD-B10-A003-003,SC-MD-B10-A001-001,RELATED,Historical closure retained.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1357,E-MD-B10-A003-003,F-MD-B18-A002-033,RELATED,B10 remediation of the finding completed.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1358,E-MD-B10-A003-003,F-MD-B10-A003-001,RELATED,Resolves the tooling finding.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1359,E-MD-B10-A003-003,F-MD-B10-A003-002,RELATED,Observation carried forward.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1360,E-MD-B10-A003-003,D-MD-B18-A002-015,RELATED,Owner decision behind the corrected authority.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1361,SC-MD-B10-A003-001,E-MD-B10-A003-003,DEPENDS_ON,Closure rests on the successor promotion evidence.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1362,SC-MD-B10-A003-001,E-MD-B10-A003-002,DEPENDS_ON,Closure rests on the executed proof of the three predicates.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1363,SC-MD-B10-A003-001,E-MD-B10-A003-001,DEPENDS_ON,Closure is measured against the entry scope.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1364,SC-MD-B10-A003-001,E-MD-B10-A001-001,CARRIED_FROM,The 1015 retained rows keep this evidence binding.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1365,SC-MD-B10-A003-001,E-MD-B10-A002-017,CARRIED_FROM,The 54 retained rows keep this evidence binding.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1366,SC-MD-B10-A003-001,SC-MD-B10-A002-001,RELATED,Successor closure of the same stage; the predecessor stays immutable.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1367,SC-MD-B10-A003-001,SC-MD-B10-A001-001,RELATED,Earlier closure of the same stage; immutable.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1368,SC-MD-B10-A003-001,CI-MD-B10-A003-001,RELATED,Closure under the impact declaration.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1369,SC-MD-B10-A003-001,MD-B10-A003-BL001,DEPENDS_ON,Closure is measured against the entry baseline.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1370,F-MD-B10-A003-001,E-MD-B10-A003-003,RELATED,Resolved by the promotion evidence.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1371,F-MD-B18-A002-033,E-MD-B10-A003-003,RELATED,B10 part conformant.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1372,F-MD-B18-A002-033,SC-MD-B10-A003-001,RELATED,B10 closure under the corrected authority.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1373,CI-MD-B10-A003-001,E-MD-B10-A003-003,RELATED,Promotion evidence of the declaration.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1374,CI-MD-B10-A003-001,SC-MD-B10-A003-001,RELATED,Closure of the declaration.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1375,F-MD-B10-A003-002,E-MD-B10-A003-003,RELATED,Carried forward at closure.,MD-DEP-0022,2026-10-05T15:27:49+07:00,MD-B10-A003 promotion and closure; return MD-B18-A002.

@@ -1,8 +1,8 @@
 {
-  "freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
-  "created_at": "2026-09-25T14:08:14+07:00",
+  "freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+  "created_at": "2026-10-05T13:24:10+07:00",
   "strategy_document_count": 91,
-  "rule": "The 91 registered documents are the current strategy freeze. Unchanged documents retain prior fingerprints; MD-S082 retains DOC-CHG-20260822-001 and DOC-CHG-20260903-001 and carries the bounded one-key eligibility decision contract version correction recorded by DOC-CHG-20260922-001 / D-MD-B18-A002-006; MD-S085 retains the bounded BAR_ZERO_VOLUME_PRICE_MOVEMENT correction recorded by DOC-CHG-20260823-001 / D-MD-20260823-01; MD-S065 carries the bounded one-line MD-S065-R0003 rerun configuration correction recorded by DOC-CHG-20260925-001 / D-MD-B18-A002-010.",
+  "rule": "The 91 registered documents are the current strategy freeze. Unchanged documents retain prior fingerprints; MD-S082 retains DOC-CHG-20260822-001 and DOC-CHG-20260903-001 and carries the bounded one-key eligibility decision contract version correction recorded by DOC-CHG-20260922-001 / D-MD-B18-A002-006; MD-S085 retains the bounded BAR_ZERO_VOLUME_PRICE_MOVEMENT correction recorded by DOC-CHG-20260823-001 / D-MD-20260823-01; MD-S065 carries the bounded one-line MD-S065-R0003 rerun configuration correction recorded by DOC-CHG-20260925-001 / D-MD-B18-A002-010; MD-S009 MD-S021 and MD-S022 carry the bounded pre-activation freshness correction (freshness state NOT_APPLICABLE) recorded by DOC-CHG-20261005-001 / D-MD-B18-A002-015.",
   "documents": [
     {
       "strategy_id": "MD-S001",
@@ -80,10 +80,10 @@
       "strategy_id": "MD-S009",
       "source_path_before_refactor": "book/Consumer_Readability_Decision_Table_LOCKED.md",
       "current_path": "authority/strategy/book/Consumer_Readability_Decision_Table_LOCKED.md",
-      "sha1": "E2DFB224B21707E4FD4055FEBC104B2C3D636A42",
+      "sha1": "A0ED512002A076193E5A44EA8EEAD95112996381",
       "authority_status": "CURRENT_STRATEGY_AUTHORITY",
-      "semantic_change": "NONE",
-      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+      "semantic_change": "CONTROLLED_CORRECTION_DOC-CHG-20261005-001",
+      "notes": "Moved byte-for-byte at the rebaseline. D-MD-B18-A002-015 / DOC-CHG-20261005-001 extend only line 7 (MD-S009-R0002) in place keeping the original wording as prefix: NOT_APPLICABLE replaces FRESH while operational freshness is not in force for the requested date. No other line changes."
     },
     {
       "strategy_id": "MD-S010",
@@ -188,19 +188,19 @@
       "strategy_id": "MD-S021",
       "source_path_before_refactor": "book/Downstream_Consumer_Read_Model_Contract_LOCKED.md",
       "current_path": "authority/strategy/book/Downstream_Consumer_Read_Model_Contract_LOCKED.md",
-      "sha1": "8717EB02874AAD084062C9C93D6E3E08AA14B29E",
+      "sha1": "0E00696E7284A3DAC7146089F8C15A8A02B4EAA3",
       "authority_status": "CURRENT_STRATEGY_AUTHORITY",
-      "semantic_change": "NONE",
-      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+      "semantic_change": "CONTROLLED_CORRECTION_DOC-CHG-20261005-001",
+      "notes": "Moved byte-for-byte at the rebaseline. D-MD-B18-A002-015 / DOC-CHG-20261005-001 replace only line 55 (MD-S021-R0027): the freshness_state vocabulary gains NOT_APPLICABLE (only while operational freshness is not in force for the requested date; not a freshness verdict; never replaces readiness_state). No other line changes."
     },
     {
       "strategy_id": "MD-S022",
       "source_path_before_refactor": "book/Downstream_Data_Readiness_Guarantee_LOCKED.md",
       "current_path": "authority/strategy/book/Downstream_Data_Readiness_Guarantee_LOCKED.md",
-      "sha1": "DBB771D9A74BE99A1D3C3293A39F1B3FB29020DE",
+      "sha1": "8644CEF75E40F4A82682A543871DAF0F017964DC",
       "authority_status": "CURRENT_STRATEGY_AUTHORITY",
-      "semantic_change": "NONE",
-      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+      "semantic_change": "CONTROLLED_CORRECTION_DOC-CHG-20261005-001",
+      "notes": "Moved byte-for-byte at the rebaseline. D-MD-B18-A002-015 / DOC-CHG-20261005-001 add NOT_APPLICABLE to the freshness states and one section \"Readability and operational freshness are independent (LOCKED)\": applicability rule; ordered freshness truth table; fail-safe default; activation context and transition; manifest and hash participation. No existing line is rewritten."
     },
     {
       "strategy_id": "MD-S023",

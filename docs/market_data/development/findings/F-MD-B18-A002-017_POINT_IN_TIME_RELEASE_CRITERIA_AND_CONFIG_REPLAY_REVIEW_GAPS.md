@@ -1295,3 +1295,11 @@ The owner decisions are recorded and the candidate synthetic V2 golden package e
 ## 2026-10-03 candidate-v1 review response — E-MD-B18-A002-093
 
 Candidate-v1 was reviewed and returned CHANGES REQUIRED BEFORE APPROVAL. Candidate-v2 is blocked on owner decisions Q4 to Q7 (`E-MD-B18-A002-093`). The `MD-S003-R0025` aggregate is unchanged; `MD-S003-R0025` stays `INCOMPLETE`, `MD-S050-R0005` stays `IMPLEMENTATION_DEPENDENCY_UNAVAILABLE`, formal `SATISFIED` is 0/113 and the reviewed basis 100/113. This finding stays `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.
+
+## 2026-10-03 candidate-v2 — E-MD-B18-A002-094
+
+Candidate-v2 (fingerprint `bbd8c73953eb1397a49ba651e8b66b5b6cf914dd0790142d2a706bb8a49edb9f`) asserts all eleven bound inputs and awaits independent review and owner approval. It matches the actual publication and is not proof. The `MD-S003-R0025` aggregate is unchanged; `MD-S003-R0025` stays `INCOMPLETE`, `MD-S050-R0005` stays `IMPLEMENTATION_DEPENDENCY_UNAVAILABLE`, formal `SATISFIED` is 0/113 and the reviewed basis 100/113. This finding stays `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.
+
+## 2026-10-05 candidate-v3 — E-MD-B18-A002-096
+
+Candidate-v3 (fingerprint `8a218f5befc0b1c6f278d20ee86a798ca29185ad4522e8b8a00ee069cec9b85e`) awaits independent review and owner approval; it matches the actual publication and is not proof. `MD-S003-R0025` stays `INCOMPLETE`, `MD-S050-R0005` stays `IMPLEMENTATION_DEPENDENCY_UNAVAILABLE`, formal `SATISFIED` is 0/113 and the reviewed basis 100/113. This finding stays `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.
