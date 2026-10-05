@@ -1,0 +1,137 @@
+{
+    "evidence_id": "E-MD-B18-A002-100",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-05T19:18:57+07:00",
+    "evidence_type": "INDEPENDENT_REVIEW_RECORD",
+    "verdict": "CANDIDATE_V4_INDEPENDENTLY_REVIEWED_PASS_NOT_OWNER_APPROVED_R0025_STILL_INCOMPLETE_NOT_PROOF",
+    "review_verdict": "CANDIDATE-V4 INDEPENDENT REVIEW PASS",
+    "checkpoint_verdict": "CANDIDATE-V4 INDEPENDENT REVIEW RECORDED — OWNER APPROVAL REQUIRED",
+    "reviewed_candidate": {
+        "path": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v4",
+        "package_fingerprint": "d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00",
+        "manifest_sha256": "6ce59c64e458638691504ea1de2d7726e4dae15ae53cfb77d65b1e2c9c2d8c32",
+        "expected_publication_manifest_hash": "17f6a5177f18b8e811052aa9eb11abec62c9d0d193e10b7e198b6ed668848e55",
+        "expected_freshness_state": "NOT_APPLICABLE",
+        "frozen_build": "sha256:7a1ed5c78cc37a978df0441b565815f3e435fdceafd2045eb202d716ce16d8cf",
+        "authoring_record": "E-MD-B18-A002-099 (author-produced candidate only; unchanged)",
+        "raw_proof_package_manifest_sha256": "132b394d614cfc9658be915844754f6b8376239ef221bfa9f1cdbaa28833ca6c"
+    },
+    "preconditions_verified_this_unit": {
+        "candidate_v4_fingerprint_recomputed": "d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00 (equals the fingerprint file)",
+        "candidate_v4_manifest_sha256": "6ce59c64e458638691504ea1de2d7726e4dae15ae53cfb77d65b1e2c9c2d8c32",
+        "frozen_build": "recomputed from the working tree (app, config, bootstrap, vendor, composer) = sha256:7a1ed5c78cc37a978df0441b565815f3e435fdceafd2045eb202d716ce16d8cf",
+        "candidate_v1_v2_v3_fingerprints_recomputed": {
+            "v1": "05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0",
+            "v2": "bbd8c73953eb1397a49ba651e8b66b5b6cf914dd0790142d2a706bb8a49edb9f",
+            "v3": "8a218f5befc0b1c6f278d20ee86a798ca29185ad4522e8b8a00ee069cec9b85e",
+            "result": "unchanged"
+        },
+        "E-MD-B18-A002-099": "still records an author-produced candidate only (independent_reviewer null, owner_approval null)",
+        "no_prior_review_or_approval_of_candidate_v4": "no E-MD-B18-A002-1xx record and no approval record existed before this one",
+        "repository_observation": "HEAD is f992704 (\"market-data: build R0025 candidate-v4 with pre-activation freshness proof\"), a local commit made outside this unit after E-MD-B18-A002-099 (the Code tab checkpoint); the candidate package content, its fingerprint and the frozen build were verified unchanged against it; nothing is pushed by this unit"
+    },
+    "reviewer_provenance": {
+        "reviewer": "an independent-review Agent that is not the authoring Agent; the project instruction that supplied this result names it as the Codex independent-review Agent",
+        "authoring_agent": "Claude Code (the fixture-authoring coding Agent of E-MD-B18-A002-099)",
+        "how_known": "Relayed in the project instruction of this work unit (\"Candidate-v4 telah melalui independent review oleh reviewer yang bukan authoring Agent\", verdict CANDIDATE-V4 INDEPENDENT REVIEW PASS). The review text, a reviewer session identifier and a model identifier were not supplied to the repository. The authoring Agent did not perform, and could not verify, the review.",
+        "not_invented": [
+            "human name",
+            "session identifier",
+            "reviewer artifact",
+            "model identifier"
+        ],
+        "satisfies": [
+            "D-MD-B18-A002-013 Q2 (author = coding Agent, reviewer = separate reviewer, approver = owner; the author never self-reviews)",
+            "D-MD-B18-A002-011 (the review record identifies the reviewer)",
+            "Runtime Evidence Standard 6A (the governed record covers reviewer identity)"
+        ],
+        "limit": "The identity is recorded at the level the review itself supplied (an independent Agent, not the author). If the owner requires a human reviewer name, session identifier or the review text before approval, the owner supplies it; this record does not fabricate it.",
+        "earlier_continuity_records": "E-MD-B18-A002-095 and the reviewer relay of E-MD-B18-A002-097 remain as annotated there; the authoring Agent's own read of any candidate is not an independent review"
+    },
+    "review_result_as_relayed": {
+        "verdict": "PASS",
+        "blocking_findings": "none",
+        "owner_or_authority_decision_required": "none",
+        "candidate_v5_required": false,
+        "passed_areas": [
+            "target identity and immutability",
+            "NOT_APPLICABLE authority semantics",
+            "oracle independence",
+            "freshness -> eligibility -> lineage -> publication-manifest-hash derivation",
+            "publication_version representation",
+            "canonicalization source",
+            "actual-versus-expected comparison",
+            "circularity exclusion",
+            "sensitivity and probes",
+            "package and assertion contract",
+            "regression admission",
+            "B10 / B17 boundary"
+        ]
+    },
+    "documentation_annotation": {
+        "probe_coverage": "The original main probe run (probes/probe_results_main_run.json, copied to probes/probe_results.json) produced 37 RED_INTENDED and 1 ANCHOR_ERROR (F5, anchor matched the V1 payload as well as the V2 payload). F5 was subsequently re-run alone with a corrected unique anchor (probes/probe_results_f5_rerun.json) and produced RED_INTENDED. Final unique successful mutation-case coverage is therefore 38. The original main run itself is NOT described as 38/38 RED_INTENDED.",
+        "prose_correction": "Prose of E-MD-B18-A002-099 notes, the F-MD-B18-A002-032 section and the memory of the authoring session that says \"37 probes, all RED_INTENDED\" means the 37 successful probes of the main run; the structured count of E-MD-B18-A002-099 (mutation_probes.count 38, with the F5 note) and the raw REVIEW_INDEX (38) are the correct final figure. E-MD-B18-A002-099 and the raw package are immutable and are not edited.",
+        "locked_manifest_example_observation_preserved": "Fixture_Package_Manifest_LOCKED.md carries an example using layer labels outside its own locked enum (row, run, hash, publication, replay). It is a LOCKED authority document; a governed change route is required; it is not changed by this record (carried from E-MD-B18-A002-097, deferred to the authority owner).",
+        "immutable_artifacts_not_edited": [
+            "candidate-v1, -v2, -v3, -v4 packages",
+            "E-MD-B18-A002-095 to E-MD-B18-A002-099",
+            "the raw proof package"
+        ]
+    },
+    "what_was_not_done": [
+        "candidate-v4 was not modified",
+        "no runtime or application change",
+        "no candidate-v5",
+        "no owner approval",
+        "no promotion or binding of MD-S003-R0025",
+        "no finding closed",
+        "no F-018 work",
+        "no B17 work",
+        "no verifier approval argument supplied: the verifier still answers REPLAY_INDEPENDENT_REVIEW_REQUIRED without an owner-approved fingerprint",
+        "no push"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-032",
+        "F-MD-B18-A002-025",
+        "F-MD-B18-A002-031",
+        "F-MD-B18-A002-030",
+        "F-MD-B18-A002-033",
+        "F-MD-B10-A003-002",
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-099",
+        "E-MD-B18-A002-098",
+        "E-MD-B18-A002-097",
+        "E-MD-B10-A003-003",
+        "SC-MD-B10-A003-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-015",
+        "D-MD-B18-A002-014",
+        "D-MD-B18-A002-013",
+        "D-MD-B18-A002-011"
+    ],
+    "findings_state": {
+        "F-MD-B18-A002-032": "OPEN until admission / reconciliation (candidate-v4 independently reviewed PASS, not approved)",
+        "F-MD-B18-A002-025": "OPEN (outstanding: owner approval, the admissible proof run)",
+        "F-MD-B18-A002-031": "OPEN until admission",
+        "F-MD-B18-A002-030": "OPEN until admission",
+        "F-MD-B18-A002-033": "OPEN (activated-world rows 6 and 7, not touched)",
+        "F-MD-B10-A003-002": "OPEN (not touched)",
+        "F-MD-B18-A002-017": "OPEN"
+    },
+    "b10_b17_boundary": "B10 stays DONE/PASS 1072/1072 (SC-MD-B10-A003-001), not reopened. B17 stays 244/257; MD-B17-A003 untouched. Activated-world FRESH/STALE/DEGRADED evaluation and marker reachability are not proven and not claimed.",
+    "r0025_state": "INCOMPLETE / NOT_ASSESSED. Candidate-v4 = independently reviewed PASS, NOT owner-approved. No proof admission, no promotion. B18 100/113 reviewed, formal 0/113; F-017 open; F-018 not started.",
+    "next_resume_point": "OWNER APPROVAL OF EXACT CANDIDATE-V4 FINGERPRINT: the project owner decides whether to approve candidate-v4 (tests/fixtures/replay/r0025-synthetic-v2-candidate-v4, fingerprint d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00, manifest sha256 6ce59c64e458638691504ea1de2d7726e4dae15ae53cfb77d65b1e2c9c2d8c32, valid only for frozen build sha256:7a1ed5c78cc37a978df0441b565815f3e435fdceafd2045eb202d716ce16d8cf) as a governed owner-approval record bound to that fingerprint (Runtime Evidence Standard 6A); approval is a separate record, is not implied by the independent review, and does not promote MD-S003-R0025. Candidate-v1, candidate-v2 and candidate-v3 must not be approved. MD-B17-A003 remains a separate bounded work unit and is not a prerequisite.",
+    "no_commit_or_push": 1
+}

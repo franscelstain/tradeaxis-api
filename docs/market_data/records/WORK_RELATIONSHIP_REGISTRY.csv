@@ -1394,3 +1394,24 @@ MD-REL-1393,E-MD-B18-A002-099,MD-B18-A002-BL001,RELATED,Same B18 baseline; no ne
 MD-REL-1394,F-MD-B18-A002-032,E-MD-B18-A002-099,RELATED,Candidate-v4 answers the finding.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
 MD-REL-1395,F-MD-B18-A002-025,E-MD-B18-A002-099,RELATED,Progress recorded.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
 MD-REL-1396,CI-MD-B18-A002-001,E-MD-B18-A002-099,RELATED,Impact declaration identifies the candidate.,D-MD-B18-A002-015,2026-10-05T17:53:57+07:00,Same B18-A002/BL001; candidate-v4.
+MD-REL-1397,E-MD-B18-A002-100,E-MD-B18-A002-099,DEPENDS_ON,Independent review of the author-produced candidate-v4 that record issued; E099 is not edited.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1398,E-MD-B18-A002-100,E-MD-B18-A002-098,RELATED,The corrected authority the reviewed freshness derivation applies.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1399,E-MD-B18-A002-100,E-MD-B18-A002-097,RELATED,The review of candidate-v3 whose blocker candidate-v4 answers.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1400,E-MD-B18-A002-100,E-MD-B10-A003-003,RELATED,"B10 boundary: closed 1072/1072, not reopened.",D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1401,E-MD-B18-A002-100,SC-MD-B10-A003-001,RELATED,B10 boundary preserved.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1402,E-MD-B18-A002-100,F-MD-B18-A002-032,RELATED,Review PASS recorded; finding open until admission.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1403,E-MD-B18-A002-100,F-MD-B18-A002-025,RELATED,"Progress: reviewed PASS, owner approval outstanding.",D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1404,E-MD-B18-A002-100,F-MD-B18-A002-031,RELATED,Open until admission.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1405,E-MD-B18-A002-100,F-MD-B18-A002-030,RELATED,Open until admission.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1406,E-MD-B18-A002-100,F-MD-B18-A002-033,RELATED,Activated-world rows not touched.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1407,E-MD-B18-A002-100,F-MD-B10-A003-002,RELATED,Marker reachability not touched.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1408,E-MD-B18-A002-100,F-MD-B18-A002-017,RELATED,Remaining MariaDB predicate; unchanged.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1409,E-MD-B18-A002-100,D-MD-B18-A002-013,DEPENDS_ON,"Review model Q2: author, separate reviewer, owner approver.",D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1410,E-MD-B18-A002-100,D-MD-B18-A002-011,DEPENDS_ON,Independent-fixture admission contract: review record identifies the reviewer.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1411,E-MD-B18-A002-100,D-MD-B18-A002-015,RELATED,The owner decision whose authority the candidate applies.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1412,E-MD-B18-A002-100,D-MD-B18-A002-014,RELATED,Owner decisions Q4 to Q7 preserved.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1413,E-MD-B18-A002-100,CI-MD-B18-A002-001,RELATED,Same impact declaration records the review.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1414,E-MD-B18-A002-100,MD-B18-A002-BL001,RELATED,Same B18 baseline; no new attempt.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1415,F-MD-B18-A002-032,E-MD-B18-A002-100,RELATED,Review PASS recorded.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1416,F-MD-B18-A002-025,E-MD-B18-A002-100,RELATED,Progress recorded.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
+MD-REL-1417,CI-MD-B18-A002-001,E-MD-B18-A002-100,RELATED,Impact declaration identifies the review.,D-MD-B18-A002-013,2026-10-05T19:18:57+07:00,Same B18-A002/BL001; candidate-v4 independent review.
