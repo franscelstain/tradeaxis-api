@@ -1,0 +1,161 @@
+{
+    "evidence_id": "E-MD-B18-A002-097",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-05T12:24:15+07:00",
+    "verdict": "CANDIDATE_V3_REVIEWED_CHANGES_REQUIRED_NOT_APPROVED_IMMUTABLE_HISTORY_FRESHNESS_AUTHORITY_DOES_NOT_UNIQUELY_DETERMINE_SUCCESSOR_OWNER_DECISION_REQUIRED",
+    "review_verdict": "REVIEWED — CHANGES REQUIRED",
+    "checkpoint_verdict": "OWNER / AUTHORITY DECISION REQUIRED",
+    "reviewed_candidate": {
+        "path": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v3",
+        "fingerprint": "8a218f5befc0b1c6f278d20ee86a798ca29185ad4522e8b8a00ee069cec9b85e",
+        "manifest_sha256": "266009f117ebcefdd9a0827b02f037eba415f43e655fd684fed3bcf89a1a5cf5",
+        "recorded_in": "E-MD-B18-A002-096",
+        "frozen_build": "sha256:aa4aa7d1e9b1c4c15fe58d2d172b395af630679bce834633c2758cda91dc1e22",
+        "status_after_review": "REVIEWED_CHANGES_REQUIRED: never approved, never edited, never reused under its fingerprint or its expected publication_manifest_hash; a correction is a distinct package"
+    },
+    "how_this_review_is_known": "The result was relayed to the authoring Agent in the project instruction that continues this work unit. The instruction states that the reviewer is separate from the authoring Agent and satisfies D-MD-B18-A002-013 Q2. The Agent could not verify that statement: the review text and the reviewer identity were not supplied to the repository, so neither is recorded here and none is invented. D-MD-B18-A002-011 requires the review record to identify the reviewer, so the identity remains outstanding for the eventual admission of any candidate. An earlier technical read of candidate-v3 performed by the authoring Agent itself in the same session is not an independent review (D-MD-B18-A002-013 Q2) and is not recorded as one.",
+    "review_result_as_relayed": {
+        "PASS": [
+            "target identity and frozen build",
+            "candidate-v1 and candidate-v2 immutability",
+            "assertion_layers correction (F-MD-B18-A002-030 mechanism)",
+            "expected-versus-actual non-circularity",
+            "publication_manifest_hash mathematical reconstruction",
+            "complete 35-member inventory",
+            "sensitivity path in principle",
+            "no B10 semantic impact"
+        ],
+        "BLOCKING": [
+            "freshness_state = NOT_AVAILABLE is not independently justified as an expected semantic member of the publication manifest: it is effectively inherited from production fallback normalization for DEVELOPMENT_NOT_OPERATIONAL, not derived from authority and frozen scenario semantics; because it participates in the 35-member preimage the expected publication_manifest_hash is not admissible as independent expected truth"
+        ],
+        "NON_BLOCKING_DOCUMENTATION": [
+            "E095 is continuity history, not admissible formal independent-review proof",
+            "E096 and DERIVATION.md say all frozen inputs other than the build were byte-identical to candidate-v2, but synthetic_world.json also changed",
+            "E096 said the consistency failures would clear before that was demonstrated",
+            "the fixture-manifest example contains layer labels outside the locked enum",
+            "canonicalization_version is hard-coded in the oracle although frozen sources exist",
+            "publication_version representation needs clarification"
+        ]
+    },
+    "preconditions_verified_this_unit": {
+        "candidate_fingerprints_recomputed": {
+            "candidate-v1": "05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0 MATCH",
+            "candidate-v2": "bbd8c73953eb1397a49ba651e8b66b5b6cf914dd0790142d2a706bb8a49edb9f MATCH",
+            "candidate-v3": "8a218f5befc0b1c6f278d20ee86a798ca29185ad4522e8b8a00ee069cec9b85e MATCH"
+        },
+        "frozen_build_recomputed": "sha256:aa4aa7d1e9b1c4c15fe58d2d172b395af630679bce834633c2758cda91dc1e22 MATCH over 5915 files (the working tree has not been edited since candidate-v3)",
+        "production_file_unchanged": "ReplayVerificationService.php sha256 2fe5577bcfda6caa… unchanged",
+        "r0025": "INCOMPLETE / NOT_ASSESSED",
+        "b10": "CLOSED 1072/1072 unchanged",
+        "attempt_baseline_ci": "MD-B18-A002 / MD-B18-A002-BL001 / CI-MD-B18-A002-001, no new attempt"
+    },
+    "freshness_authority_trace": {
+        "classification": "B — multiple semantically valid successor worlds exist; authority does not uniquely determine the freshness state of the intended synthetic R0025 world",
+        "sources": [
+            "Consumer_Readability_Decision_Table_LOCKED.md row 1: a sealed publication passing every minimum-product gate for the requested date is FRESH unless an explicit activated degraded condition applies",
+            "Downstream_Data_Readiness_Guarantee_LOCKED.md: FRESH needs effective = requested/latest expected and all activated operational freshness gates passing; before OPERATIONAL_START_DATE the response may not claim FRESH; STALE needs a deliberately returned prior publication; DEGRADED needs declared non-silent degraded conditions; NOT_AVAILABLE means no consumer-safe result",
+            "Terminology_and_Scope.md and EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md: activation is an explicit governed marker, never implied by a backfill, proof run or development frontier; development state permits no unproven fresh/current claim",
+            "Run_Artifacts_Format_LOCKED.md: NOT_AVAILABLE only on an unsealed in-progress run summary; FRESH on a sealed READABLE manifest example; neither states an activation context",
+            "Frozen synthetic world and frozen config: operational_start_date null, daily_enabled false; no owner decision (D-MD-B18-A002-011/013/014) sets an activation marker or a freshness property",
+            "Production: eod_runs.freshness_state is DEVELOPMENT_NOT_OPERATIONAL when the marker is unset (NOT_EVALUATED when set); the manifest and eligibility normalizers map anything outside FRESH/STALE/DEGRADED/NOT_AVAILABLE to NOT_AVAILABLE; no code path in app/ produces FRESH, STALE or DEGRADED (no freshness evaluator exists)"
+        ],
+        "derivation_result": "For a sealed READABLE publication in a development world: FRESH is excluded (not activated), STALE is excluded (no prior publication returned), DEGRADED and NOT_AVAILABLE are not selected by authority, and READABLE together with NOT_AVAILABLE contradicts the vocabulary definition of NOT_AVAILABLE. For an activated world authority gives FRESH, but the world is not activated and the activation marker and the activated gate list are owner-level inputs that no record supplies. Using production behavior to fill the gap is excluded by the review (it is the finding).",
+        "finding_record": "F-MD-B18-A002-032"
+    },
+    "owner_decision_required": {
+        "id": "Q8",
+        "question": "What freshness context and freshness_state value does the synthetic labelled V2 world of R0025 carry for its sealed READABLE publication, so that the freshness member of the publication manifest can be derived from authority plus a frozen, owner-declared scenario property instead of from production behavior?",
+        "alternatives": {
+            "A": {
+                "name": "Development world kept; owner declares the mapping NOT_AVAILABLE",
+                "meaning": "The world stays as frozen (no activation marker). The owner records, as a decision, that a sealed READABLE publication produced before OPERATIONAL_START_DATE carries freshness_state NOT_AVAILABLE for this fixture, and accepts that the vocabulary then labels a readable publication NOT_AVAILABLE (a fixture-scope mapping, not a change of the LOCKED strategy text; the strategy gap is recorded for relock).",
+                "impact": "Candidate-v4 freezes an explicit freshness context (activation marker absent, decision reference) and the oracle derives the member from it. No production change; B10 stays closed; hashes unchanged in value but now derived from a decided input. Smallest change; it ratifies what production already emits, so the owner should choose it consciously and not by default."
+            },
+            "B": {
+                "name": "Development world kept; owner declares DEGRADED with a declared pre-activation condition",
+                "meaning": "A new declared degraded condition (\"development / pre-activation\") is created and mapped to DEGRADED.",
+                "impact": "New semantic rule. Production emits NOT_AVAILABLE today, so production, eligibility rows and manifest hashes change (B10 semantic producers, ELIGIBILITY.freshness_state and MANIFEST.freshness_state): B10 impact analysis and likely reopening. Not in the scope of a fixture correction."
+            },
+            "C": {
+                "name": "Activated synthetic world with FRESH",
+                "meaning": "The owner sets a synthetic governed activation marker at or before the fixture date and declares which activated operational freshness gates the synthetic context satisfies; FRESH then follows from the readability decision table.",
+                "impact": "The frozen config, world, eligibility rows and every hash that binds them change; production has no freshness evaluator, so a freshness evaluator (a new semantic producer and rule) would be needed for the target to emit FRESH: B10 impact analysis, B18 target change, new frozen build. Largest change; the only route that yields FRESH from authority."
+            },
+            "D": {
+                "name": "Authority change first",
+                "meaning": "The strategy owner adds the missing vocabulary/mapping for a readable-but-not-activated publication to the LOCKED contracts, then the fixture follows that text.",
+                "impact": "Governed relock route (stage MD-B22 owns relock); defers candidate-v4 until the text exists."
+            }
+        },
+        "agent_recommendation": "None of the four is derivable from authority; the choice is the owner's. If the aim is to unblock the R0025 proof with B10 untouched, A is the only option that changes no production file, provided the owner records it as a decision. The Agent does not select it on its own because it equals the current production behavior the review rejected as a basis.",
+        "not_chosen_by_the_agent": true
+    },
+    "documentation_and_provenance_actions": {
+        "immutable_records_not_edited": [
+            "E-MD-B18-A002-095",
+            "E-MD-B18-A002-096",
+            "D-MD-B18-A002-011/013/014",
+            "candidate-v1, candidate-v2, candidate-v3 packages"
+        ],
+        "annotations_made_by_this_record": {
+            "E095": "E-MD-B18-A002-095 is continuity history, not admissible formal independent-review proof (no reviewer identity, no review text). Annotated here; E095 is unchanged.",
+            "E096_and_DERIVATION": "Verified by byte comparison: of the frozen inputs, provider_response.json, frozen_config_content.txt, frozen_reason_registry.json, frozen_registry_literals.json and foundation_registry.json are byte-identical between candidate-v2 and candidate-v3; synthetic_world.json differs (world_version r0025-synthetic-v2/2 → /3 and the purpose text, no semantic member); frozen_build_identity.json and frozen_build_manifest.txt differ (new build). The statement \"all other frozen inputs byte-identical\" in E096 and DERIVATION.md section 1 is therefore inaccurate and is corrected by this annotation; the immutable package text is not edited.",
+            "E096_consistency_statement": "E096 stated that the two consistency tests \"clear after regeneration\" before it was shown. They did clear after CURRENT_STATE regeneration and a targeted rerun, but no complete final full-suite run exists on the final tree; no \"final full-suite PASS\" is claimed anywhere."
+        },
+        "deferred_to_candidate_v4_after_Q8": [
+            "canonicalization_version is read in the oracle from the frozen config (source.canonicalization_version = idx_regular_raw_v2) instead of the hard-coded literals of reference_oracle.php (rows and manifest payload)",
+            "DERIVATION.md states the representation of publication_version in the preimage (the production serializer casts it to a string; the Publication_Manifest_Contract example shows an integer) and the basis of that choice",
+            "the freshness member derived from the decided frozen context"
+        ],
+        "deferred_to_the_authority_owner": [
+            "Fixture_Package_Manifest_LOCKED.md example uses layer labels outside the locked enum (row, run, hash, publication, replay); it is a LOCKED authority document and a governed change route is required; not changed here"
+        ]
+    },
+    "what_was_not_done": [
+        "no candidate-v4",
+        "no change to any candidate package",
+        "no change to app/, tests/ or config",
+        "no approval, no promotion, no review of candidate-v4",
+        "no new attempt, baseline or CI",
+        "no commit or push"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-025",
+        "F-MD-B18-A002-032",
+        "F-MD-B18-A002-031",
+        "F-MD-B18-A002-030",
+        "F-MD-B18-A002-028",
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-096",
+        "E-MD-B18-A002-095",
+        "E-MD-B18-A002-094",
+        "SC-MD-B10-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-014",
+        "D-MD-B18-A002-013",
+        "D-MD-B18-A002-011"
+    ],
+    "findings_state": {
+        "F-MD-B18-A002-032": "OPEN (raised; blocked on Q8)",
+        "F-MD-B18-A002-030": "OPEN until a corrected package passes independent review (the review found its mechanism PASS)",
+        "F-MD-B18-A002-031": "OPEN until a corrected package passes independent review (mathematical reconstruction and inventory PASS; freshness member blocks)",
+        "F-MD-B18-A002-025": "OPEN",
+        "F-MD-B18-A002-017": "OPEN"
+    },
+    "b10_impact": "None. No app file changed in this unit. B10 stays CLOSED 1072/1072. Alternatives B and C of Q8 would change B10 semantic producers and would require explicit impact analysis before any change.",
+    "r0025_state": "INCOMPLETE / NOT_ASSESSED. No approval, no proof claim, no binding, no promotion; B18 100/113 reviewed, formal 0/113; F-017 open; F-018 not started.",
+    "next_resume_point": "MD-B18-A002: owner / authority decision Q8 (the freshness context and value of the synthetic R0025 world's publication manifest, E-MD-B18-A002-097, F-MD-B18-A002-032). Only after Q8 is answered and recorded as a decision record: create candidate-v4 (a distinct package) that encodes the decided freshness context in frozen inputs, derives the member and the expected publication_manifest_hash from them, and carries the documentation/provenance corrections listed in E-MD-B18-A002-097; then stop at its independent review by a reviewer who is not the authoring Agent. Candidate-v1, candidate-v2 and candidate-v3 must not be approved.",
+    "no_commit_or_push": 1
+}

@@ -1,0 +1,10 @@
+[
+    {
+        "reason_code": "DATASET_HASH_CREATED",
+        "reason_count": 1
+    },
+    {
+        "reason_code": "ELIG_INSUFFICIENT_HISTORY",
+        "reason_count": 1
+    }
+]

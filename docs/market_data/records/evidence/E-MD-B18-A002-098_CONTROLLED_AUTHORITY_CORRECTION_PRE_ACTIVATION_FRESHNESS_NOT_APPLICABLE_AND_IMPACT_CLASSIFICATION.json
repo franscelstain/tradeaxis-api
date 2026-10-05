@@ -1,0 +1,310 @@
+{
+    "evidence_id": "E-MD-B18-A002-098",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-05T13:30:21+07:00",
+    "evidence_type": "AUTHORIZED_STRATEGY_CORRECTION_AND_IMPACT_CLASSIFICATION",
+    "verdict": "CONTROLLED_AUTHORITY_CORRECTION_COMPLETE_FRESHNESS_STATE_NOT_APPLICABLE_B17_ROWS_INVALIDATED_B10_BOUNDED_REMEDIATION_REQUIRED_NO_RUNTIME_CHANGE",
+    "checkpoint_verdict": "AUTHORITY CORRECTION COMPLETE — NEXT BOUNDED WORK UNIT IDENTIFIED",
+    "runtime_proof": "NOT_RUN_NOT_CLAIMED",
+    "decision_id": "D-MD-B18-A002-015",
+    "finding_id": "F-MD-B18-A002-032",
+    "explicit_user_authorization": {
+        "received": true,
+        "date": "2026-10-05",
+        "user_instruction": "Project owner memilih DIRECTION D.",
+        "context": "Owner decision supplied in the 2026-10-05 instruction \"CONTROLLED AUTHORITY CORRECTION AFTER OWNER DECISION Q8\", recorded verbatim in D-MD-B18-A002-015 before any authority edit. Alternative D of owner decision Q8 (E-MD-B18-A002-097) is \"Authority change first\".",
+        "scope": "The smallest coherent semantic correction that makes a readable pre-activation publication representable without contradiction; no candidate-v4, no runtime change, no stage reopened by assumption."
+    },
+    "document_change_id": "DOC-CHG-20261005-001",
+    "predecessor_strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "successor_strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "successor_strategy_freeze_manifest_sha1": "7961FF8FA3DBD94C933EDE1E80A0FB210DF5D110",
+    "changed_strategy_ids": [
+        "MD-S009",
+        "MD-S021",
+        "MD-S022"
+    ],
+    "authority_gap_confirmed": {
+        "statement": "Before the correction the freshness vocabulary had four states and no member could describe a READABLE publication whose requested trade date precedes operational activation.",
+        "contradiction_trace": {
+            "MD-S022-R0019 (Readiness Guarantee, Freshness states)": "before OPERATIONAL_START_DATE the response still may not claim FRESH",
+            "MD-S022-R0016": "STALE requires a readable prior publication deliberately returned; none is returned for the requested date",
+            "MD-S022-R0017": "DEGRADED requires a declared non-silent degraded condition; none applies merely because activation has not happened",
+            "MD-S022-R0018 and MD-S022-R0008": "NOT_AVAILABLE means there is no consumer-safe result, which contradicts a READABLE sealed publication",
+            "MD-S009-R0002 (Decision Table row 1)": "a sealed publication that passes every gate is FRESH unless an activated degraded condition applies, with no pre-activation carve-out",
+            "MD-S021-R0027 (Read Model)": "closes the freshness_state vocabulary at four values"
+        },
+        "result": "Every one of the four values is excluded for the condition, so the set of representable states was empty. The authority was incomplete (no representation) and, read with the fail-safe default, left the implementation to choose; production chose NOT_AVAILABLE through a fallback normalizer, which is the contradiction the owner rejected.",
+        "existing_vocabulary_searched": "authority/strategy and the specs under development/implementation/tests/specs were searched for NOT_APPLICABLE, NOT_EVALUATED, DEVELOPMENT_NOT_OPERATIONAL, pre-activation and activation_state as freshness or readiness states: no governed freshness state represents the condition (NOT_EVALUATED, DEVELOPMENT_NOT_OPERATIONAL and activation_state are implementation labels, not authority). NOT_APPLICABLE exists only as a traceability applicability vocabulary."
+    },
+    "authority_correction": {
+        "new_state": "NOT_APPLICABLE",
+        "why_this_name": "The activation contracts say development state \"only means that the obligation of consecutive daily freshness has not started counting\" (EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md) and that operational freshness obligations begin only at the marker and are never backdated (Terminology_and_Scope.md). The condition is therefore that operational freshness is not in force, not that an assessment is pending: \"not applicable\" states that, \"not assessed\" would suggest an omitted evaluation and collides with the governance verdict NOT_ASSESSED. NOT_APPLICABLE follows the existing applicability vocabulary of the traceability standard. NOT_EVALUATED, DEVELOPMENT_NOT_OPERATIONAL and the other production labels were not reused because they are implementation labels, not authority, and the owner excluded production behavior as a source.",
+        "normative_definition": "NOT_APPLICABLE: operational freshness is not yet in force for the requested trade date (that date precedes the effective OPERATIONAL_START_DATE or equivalent governed marker, or no marker is effective); no operational freshness assessment is made or claimed. It is not a freshness verdict: it never means FRESH, never means lateness, and never means that no consumer-safe result exists.",
+        "semantics": {
+            "A_readable_independent_of_freshness": "readiness_state and freshness_state are independent facts; neither is derived from or substitutes for the other; a pre-activation (including bounded historical or replay) publication is READABLE whenever every READABLE condition holds.",
+            "B_new_state": "NOT_APPLICABLE as defined above.",
+            "C_what_it_means": "Freshness not applicable (the obligation is not in force). Not \"not yet assessed\", not \"unavailable\", not \"unknown\".",
+            "D_activation_transition": "Operational freshness is in force for a requested trade date only when an explicit governed marker is effective on or before that date; it is decided from the requested date and the marker alone, never from the read time. When a marker becomes effective, dates on or after it are decided by the ordered rows; a publication already sealed for an earlier date keeps its sealed freshness state and is not re-evaluated, relabelled or rewritten.",
+            "E_FRESH": "Unchanged definition plus applicability: READABLE requested publication, no activated degraded condition, freshness in force for the date, and all activated operational freshness gates pass.",
+            "F_STALE": "Unchanged: a readable prior publication is deliberately returned (allowed fallback) and its older effective date is visible; applies in every phase and is never used merely because activation has not happened.",
+            "G_DEGRADED": "Unchanged: an explicit activated, declared, non-silent degraded condition applies; none is declared by this correction.",
+            "H_NOT_AVAILABLE": "Unchanged: no consumer-safe result is returned (no readable publication and no allowed fallback, or an integrity-ambiguous binding); a READABLE requested publication never carries it.",
+            "I_pre_activation_publication_in_manifest_and_read_product": "A READABLE pre-activation publication may and must appear in the publication manifest and the downstream read product with freshness_state NOT_APPLICABLE and the operational activation context that explains it.",
+            "J_hashing": "The decided freshness state is recorded in the publication manifest and in every semantic hash that binds a freshness state as that exact value; NOT_APPLICABLE is a state value like the others, never null, empty or NOT_AVAILABLE."
+        },
+        "truth_table_first_row_that_applies_decides": [
+            [
+                "no readable publication returned and no allowed fallback (held, failed, building, unsealed, integrity-ambiguous)",
+                "NOT_AVAILABLE"
+            ],
+            [
+                "allowed prior-date fallback returned",
+                "STALE or DEGRADED (as already defined)"
+            ],
+            [
+                "requested publication READABLE and an explicit activated degraded condition applies",
+                "DEGRADED"
+            ],
+            [
+                "requested publication READABLE, no such condition, operational freshness not in force for the date",
+                "NOT_APPLICABLE"
+            ],
+            [
+                "requested publication READABLE, no such condition, operational freshness in force, all activated gates pass",
+                "FRESH"
+            ],
+            [
+                "any other combination",
+                "fail-safe default of the Consumer Readability Decision Table (no consumer data product with an explicit reason)"
+            ]
+        ],
+        "contradictions_excluded": [
+            "READABLE together with NOT_AVAILABLE",
+            "FRESH, STALE or DEGRADED used merely because activation has not happened",
+            "NOT_APPLICABLE where an earlier row requires another state"
+        ],
+        "not_decided_here_and_not_invented": [
+            "no new degraded condition is declared",
+            "the outcome of an activated READABLE publication whose activated gates fail and with no declared degraded condition stays with the existing fail-safe default; no new rule was written for it",
+            "how the activated-world freshness evaluator works"
+        ],
+        "production_behavior_as_authority": "None. The correction was written from the strategy documents and the owner decision; production code was read only afterwards, for the impact trace."
+    },
+    "strategy_correction": {
+        "MD-S022": {
+            "path": "authority/strategy/book/Downstream_Data_Readiness_Guarantee_LOCKED.md",
+            "predecessor_sha1": "DBB771D9A74BE99A1D3C3293A39F1B3FB29020DE",
+            "successor_sha1": "8644CEF75E40F4A82682A543871DAF0F017964DC",
+            "change": "one new bullet in \"Freshness states\" (NOT_APPLICABLE) and one new section \"Readability and operational freshness are independent (LOCKED)\"; 23 lines added, no existing line rewritten (line 35 is byte-identical and its rule row keeps its status)"
+        },
+        "MD-S009": {
+            "path": "authority/strategy/book/Consumer_Readability_Decision_Table_LOCKED.md",
+            "predecessor_sha1": "E2DFB224B21707E4FD4055FEBC104B2C3D636A42",
+            "successor_sha1": "A0ED512002A076193E5A44EA8EEAD95112996381",
+            "change": "line 7 only, original wording kept as prefix: NOT_APPLICABLE replaces FRESH while operational freshness is not in force for the requested date"
+        },
+        "MD-S021": {
+            "path": "authority/strategy/book/Downstream_Consumer_Read_Model_Contract_LOCKED.md",
+            "predecessor_sha1": "8717EB02874AAD084062C9C93D6E3E08AA14B29E",
+            "successor_sha1": "0E00696E7284A3DAC7146089F8C15A8A02B4EAA3",
+            "change": "line 55 only: the freshness_state vocabulary gains NOT_APPLICABLE"
+        },
+        "unchanged_on_purpose": [
+            "Publication_Manifest_Contract_LOCKED.md (MD-S045) and Audit_Hash_and_Reproducibility_Contract_LOCKED.md (MD-S005): they require the truthful freshness state to be bound and name no vocabulary, so the Readiness Guarantee, which owns the vocabulary, carries the manifest/hash consequence; no B10-owned strategy row changed",
+            "Terminology_and_Scope.md, EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md, Run_Artifacts_Format_LOCKED.md and the Golden fixture examples: already consistent (activation semantics; an unsealed run summary with NOT_AVAILABLE; a sealed READABLE example with FRESH)"
+        ],
+        "scope_check": "Only MD-S009, MD-S021 and MD-S022 changed in the strategy tree; the documentation integrity gate reports 91 registered documents and zero freeze mismatches."
+    },
+    "lock_and_supersession_handling": {
+        "process": "DOCUMENT_CHANGE_POLICY.md section 2, same mechanism as DOC-CHG-20260925-001 and DOC-CHG-20260903-001: finding (F-MD-B18-A002-032), supporting evidence (E-MD-B18-A002-097, this record), reviewed decision (D-MD-B18-A002-015, recorded before any edit), explicit owner authorization, DOCUMENT_CHANGE_LOG entry, successor freeze MD-STRATEGY-FREEZE-20261005-001, invalidation and governed revalidation of affected current verification.",
+        "preserved": [
+            "the predecessor freeze MD-STRATEGY-FREEZE-20260925-001 and every record issued under it (immutable, not edited)",
+            "candidate-v1, candidate-v2 and candidate-v3 packages and fingerprints",
+            "D-MD-B18-A002-011/013/014, E-MD-B18-A002-092..097, E-MD-B17-A002-001/002, E-MD-B10-A002-017",
+            "the strategy bytes outside the three changed documents"
+        ],
+        "locked_documents_edited_in_place": "Yes, with the original bytes kept as prefix or untouched, because that is the repository mechanism for a controlled strategy revision; a parallel successor document would create a second authority for the same vocabulary (ONE_DOCUMENT_ONE_AUTHORITATIVE_ROLE_STANDARD.md).",
+        "governance_not_weakened": "No governance document, gate, standard or registry rule was relaxed; the strategy revision was made to remove a contradiction in authority, not to make R0025 pass (DOCUMENT_CHANGE_POLICY.md sections 1 and 4)."
+    },
+    "traceability_impact": {
+        "matrix_sha1": "0DF1C3F9C34CA03061257D55CC474A3EB7482EDA",
+        "active_rows_before": 6501,
+        "active_rows_after": 6514,
+        "existing_md_s022_rows": "39 rows keep id, text, fingerprint and status; 21 of them only have source_line re-pointed (the inserted lines moved them down)",
+        "invalidated_rows": {
+            "MD-S009-R0002": "text revised; was SATISFIED under E-MD-B17-A002-001; now NOT_ASSESSED, predecessor basis audit-only, inherited_satisfaction=NO",
+            "MD-S021-R0027": "text revised; was SATISFIED under E-MD-B17-A002-001; now NOT_ASSESSED, predecessor basis audit-only, inherited_satisfaction=NO"
+        },
+        "new_rows": {
+            "MD-S022-R0040": "REQUIRED/MANDATORY — NOT_APPLICABLE definition",
+            "MD-S022-R0041": "REQUIRED/MANDATORY — readiness and freshness independent",
+            "MD-S022-R0042": "REQUIRED/MANDATORY — applicability from requested date and marker only",
+            "MD-S022-R0043": "REFERENCE_ONLY — list introducer",
+            "MD-S022-R0044": "REFERENCE_ONLY — table header",
+            "MD-S022-R0045..R0049": "REQUIRED/MANDATORY — the five rows of the ordered truth table",
+            "MD-S022-R0050": "REQUIRED/MANDATORY — fail-safe default and the READABLE/NOT_AVAILABLE prohibition",
+            "MD-S022-R0051": "REQUIRED/MANDATORY — activation context exposure and activation transition",
+            "MD-S022-R0052": "REQUIRED/MANDATORY — manifest and hash participation (supporting stage MD-B10)"
+        },
+        "owner_of_new_rows": "MD-B17 (read-surface and freshness-state semantics); MD-S022-R0052 also lists MD-B10 as supporting stage. Ownership is recorded in the matrix, not in the strategy text.",
+        "md_b17_after": {
+            "mandatory": 257,
+            "satisfied": 244,
+            "not_assessed": 13,
+            "conditional_not_applicable": 2,
+            "optional_not_requested": 1,
+            "reference": 68,
+            "before": "246/246 mandatory, 66 reference"
+        },
+        "md_b10_after": {
+            "mandatory": 1072,
+            "satisfied": 1072,
+            "reference": 239,
+            "note": "no B10-owned row changed text, fingerprint or status"
+        },
+        "md_b18_after": {
+            "mandatory": 113,
+            "satisfied": 0,
+            "not_assessed": 113,
+            "note": "no B18-owned row changed"
+        }
+    },
+    "publication_manifest_consequence": {
+        "freshness_state_vocabulary": [
+            "FRESH",
+            "STALE",
+            "DEGRADED",
+            "NOT_AVAILABLE",
+            "NOT_APPLICABLE"
+        ],
+        "member_semantics": "The manifest member freshness_state is the state decided for the publication by the ordered rows. For a READABLE publication whose requested trade date precedes the effective marker (or with no marker) it is exactly NOT_APPLICABLE.",
+        "canonical_hash_preimage": "The 35-member V2 preimage structure, the member set, the canonicalization and the semantic profile are unchanged; only the value of the freshness member differs for such publications (NOT_APPLICABLE in place of NOT_AVAILABLE). The member is hashed as that exact string, not null, not empty.",
+        "also_binds_freshness": "The V2 eligibility artifact payload also binds a freshness state per row (MD-S005-R0056); it carries the same decided state, so the eligibility batch hash and every hash that includes it change for such publications. Whether eligibility-row freshness may legitimately differ from the publication-level state is not decided by this correction.",
+        "expected_replay_semantics": "An independently derived expectation for a pre-activation synthetic world must derive freshness from a frozen activation context (no marker, or a marker after the fixture date) and the governed rule, and must carry NOT_APPLICABLE into the freshness member and into every eligibility row it hashes. It must not read production output.",
+        "historical_publications": "Publications sealed before this correction record NOT_AVAILABLE together with READABLE for pre-activation dates. They stay audit-valid under their own sealed identity, are not rewritten or re-hashed, and can change only through the normal correction lifecycle (a distinct publication). V1-profile publications are historical and unchanged.",
+        "pre_activation_development_publications": "New or corrected development publications carry NOT_APPLICABLE once the producers conform (F-MD-B18-A002-033).",
+        "activated_publications": "Unchanged rules (FRESH, STALE, DEGRADED, NOT_AVAILABLE) plus the determinism rule that applicability depends on the requested date and the marker only.",
+        "candidate_v4_not_created": true
+    },
+    "impact_classification": {
+        "method": "For every stage that owns a strategy row of a changed document, a row that changed text, or a producer or proof that pins the superseded mapping, the requirement was traced to the semantic producer and the recorded proof. Production code was read only for this trace.",
+        "MD-B17": {
+            "classification": "CLOSURE_SUFFICIENCY_WITHDRAWN_FOR_THE_AFFECTED_ROWS; SUCCESSOR_ATTEMPT_AND_FRESH_PROOF_REQUIRED_FOR_13_ROWS (the stage is not otherwise reopened: 244 rows keep their predecessor-freeze basis)",
+            "trace": [
+                {
+                    "requirement": "MD-S021-R0027 freshness_state vocabulary (text changed)",
+                    "surface": "MarketDataReadinessService / MarketDataReadProductRepository (no freshness_state emitted)",
+                    "recorded_proof": "E-MD-B17-A002-001, family read_model_readiness_freshness (readiness diagnosis tests)",
+                    "impact": "invalidated, NOT_ASSESSED"
+                },
+                {
+                    "requirement": "MD-S009-R0002 decision table row 1 (text changed)",
+                    "surface": "MarketDataReadinessService",
+                    "recorded_proof": "E-MD-B17-A002-001, family readiness_states",
+                    "impact": "invalidated, NOT_ASSESSED"
+                },
+                {
+                    "requirement": "MD-S022-R0040..R0042, R0045..R0052 (new)",
+                    "surface": "read surface",
+                    "recorded_proof": "none",
+                    "impact": "NOT_ASSESSED, 11 new mandatory rows"
+                },
+                {
+                    "requirement": "MD-S022-R0015..R0019, MD-S021-R0026/R0028..R0030 (text unchanged)",
+                    "surface": "same",
+                    "recorded_proof": "E-MD-B17-A002-001",
+                    "impact": "retained; their meaning is unchanged. Note: the recorded positive and negative tests of the freshness family are readiness-diagnosis tests and the read surface emits no freshness_state, a point the successor attempt must examine, not assumed here"
+                }
+            ],
+            "gates_observed": "MarketDataReadProductClosureGate: FAIL on denominator_fully_satisfied (offenders: the 13 rows; 257 required); MarketDataReadProductProofGate: no proof family for MD-S022-R0040. Both are the designed signal; neither was edited. All other 41 governance gates, including every B10 gate, are unchanged from the pre-change baseline."
+        },
+        "MD-B10": {
+            "classification": "BOUNDED_REMEDIATION_REQUIRED_OF_PRODUCERS; BOUNDED_REVALIDATION_REQUIRED_OF_3_PREDICATES; NO_ROW_INVALIDATED_BY_TEXT; CLOSED_CLAIM_NOT_EXTENDED_TO_PRE_ACTIVATION_FRESHNESS; NOT_REOPENED_BY_ASSUMPTION",
+            "trace": [
+                {
+                    "requirement": "MD-S022 new rows (hash and manifest participation of NOT_APPLICABLE)",
+                    "producer": "ArtifactSemanticHashService::FRESHNESS_STATES / normalizeFreshnessState / context guard; EodPublicationRepository V2 manifest payload and manifest view",
+                    "finding": "F-MD-B18-A002-033 rows 1-3",
+                    "impact": "NOT_APPLICABLE cannot be accepted (guard throws) or is collapsed to NOT_AVAILABLE"
+                },
+                {
+                    "requirement": "applicability decided from requested date and marker",
+                    "producer": "EodRunRepository run freshness label",
+                    "finding": "F-MD-B18-A002-033 row 4",
+                    "impact": "label decided by marker presence"
+                },
+                {
+                    "requirement": "MD-S005-R0056 (eligibility row binds canonical freshness states), MD-S005-R0071 (manifest binds freshness states), MD-S045-R0058 (truthful consumer freshness state)",
+                    "proof": "E-MD-B10-A002-017 (promoted by the successor binder E-MD-B10-A002-018); tests that pin NOT_AVAILABLE for the development label",
+                    "finding": "F-MD-B18-A002-033 row 5",
+                    "impact": "their text is unchanged; their proof covers the four-state domain and pins a mapping the corrected authority supersedes; revalidation required for exactly these three"
+                },
+                {
+                    "requirement": "the other 1069 B10 mandatory predicates and the V1 profile",
+                    "impact": "none identified: no text, producer or proof pin is touched"
+                }
+            ],
+            "why_rows_were_not_flipped_now": "No B10-owned row text or fingerprint changed, so the recorded 1072/1072 closure stays true of what it claimed, as the MD-S065-R0002 review of DOC-CHG-20260925-001 treated MD-B04. The obligation is additive: the producers must support a new value. Flipping three rows and the stage register through the B10 successor machinery is bookkeeping that the bounded successor attempt performs at its entry; doing it here would be B10 work, which this unit excludes. Until then B10 conformance is not claimed for any publication whose requested date precedes activation.",
+            "bounded_impact_path": "MD-B10-A003 (successor attempt): (1) V2 producers accept, canonicalise and hash NOT_APPLICABLE; (2) the run state is decided from the requested trade date and the effective marker alone; (3) the superseded test pins are replaced; (4) MD-S005-R0056, MD-S005-R0071, MD-S045-R0058 are revalidated; V1 and the other predicates are untouched."
+        },
+        "MD-B18_R0025": {
+            "classification": "CANDIDATE_V4_BLOCKED_ON_MD_B10_BOUNDED_REMEDIATION",
+            "trace": "Candidate-v4 is valid only for a frozen executable build and its expected hashes must be reproduced by the target. Until the producers conform, the target emits NOT_AVAILABLE for the synthetic development world, so a correct independent expectation (NOT_APPLICABLE) would mismatch for the right reason and a package built to the production value would repeat the defect.",
+            "candidate_v4_must": [
+                "freeze a pre-activation context in its inputs (operational_start_date absent, as in the frozen config, or a marker after the fixture date) and derive applicability from it and the governed rule",
+                "derive NOT_APPLICABLE for the freshness member and for every eligibility row it hashes, then the eligibility batch hash, nested identities and the 35-member preimage and expected publication_manifest_hash, all by the oracle with no production read",
+                "read canonicalization_version from the frozen config, state the representation of publication_version, receive a new frozen build and fingerprint, and prove by probes that the freshness member, the expected hash and a wrong target freshness each move or fail with an exact field mismatch rather than build-identity noise"
+            ],
+            "candidate_v3": "REVIEWED — CHANGES REQUIRED, immutable history, fingerprint 8a218f5befc0b1c6f278d20ee86a798ca29185ad4522e8b8a00ee069cec9b85e; not edited."
+        },
+        "other_stages": "MD-B19 (run artifact examples and the evidence export that mirrors the raw run label; MD-S075 rows NOT_ASSESSED; MD-S056-R0045 NOT_ASSESSED): no row invalidated, implementation note in F-MD-B18-A002-033. MD-B04, MD-B01 and the remaining stages: NO_IDENTIFIED_SEMANTIC_INVALIDATION."
+    },
+    "governance_checks_before_issue": {
+        "documentation_integrity_gate": "PASS: STRATEGY_FREEZE 91 documents, 0 mismatches; TRACEABILITY_MATRIX fingerprints and source lines valid",
+        "classification_consistency_gate": "PASS",
+        "all_43_governance_gates_compared_with_the_pre_change_baseline": "only MarketDataReadProductClosureGate (PASS -> FAIL, designed) and MarketDataReadProductProofGate (unmapped new row) changed",
+        "register_level_checks": "executed after registration; their results are reported in the work-unit output, not self-referentially here"
+    },
+    "what_was_not_done": [
+        "no candidate-v4",
+        "no change to app/, tests/, config/, migrations or any candidate package",
+        "no B10 or B17 row status flipped other than the two B17 rows whose text changed",
+        "no approval, promotion, review or self-review",
+        "no new attempt, baseline or CI",
+        "no commit or push"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-032",
+        "F-MD-B18-A002-033",
+        "F-MD-B18-A002-025",
+        "F-MD-B18-A002-031",
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-097",
+        "E-MD-B18-A002-096",
+        "E-MD-B17-A002-001",
+        "E-MD-B10-A002-017",
+        "SC-MD-B10-A002-001",
+        "SC-MD-B17-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-015",
+        "D-MD-B18-A002-013",
+        "D-MD-B18-A002-011"
+    ],
+    "r0025_state": "INCOMPLETE / NOT_ASSESSED. No approval, no proof claim, no binding, no promotion; candidate-v3 REVIEWED — CHANGES REQUIRED; B18 0/113 formal; F-017 open; F-018 not started.",
+    "next_resume_point": "MD-B18-A002: candidate-v4 is blocked on the bounded MD-B10 remediation of F-MD-B18-A002-033. Next executable work unit: open MD-B10-A003 (a bounded successor attempt, with its Change Impact Declaration and baseline lock issued before any material mutation) to make the V2 semantic-hash and publication-manifest producers and the run's pre-activation freshness state conform to DOC-CHG-20261005-001 / D-MD-B18-A002-015 (accept, canonicalise and hash NOT_APPLICABLE; decide it from the requested trade date and the effective activation marker alone; replace the B10 tests that pin the superseded NOT_AVAILABLE mapping) and to revalidate MD-S005-R0056, MD-S005-R0071 and MD-S045-R0058; the V1 profile and the other 1069 B10 predicates are not touched. Only then create candidate-v4 (a distinct package; the oracle derives the freshness member from a frozen activation context and the governed rule) and stop at its independent review by a reviewer who is not the authoring Agent. MD-B17-A003 (proof of the 13 not-assessed rows and the read surface) is required but is not on the candidate-v4 critical path. Candidate-v1, v2 and v3 must not be approved.",
+    "immutability": "IMMUTABLE_AFTER_ISSUE",
+    "no_commit_or_push": 1
+}

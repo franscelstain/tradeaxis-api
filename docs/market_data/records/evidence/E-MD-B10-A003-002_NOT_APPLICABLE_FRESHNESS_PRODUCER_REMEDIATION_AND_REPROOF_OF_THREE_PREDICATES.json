@@ -1,0 +1,668 @@
+{
+    "evidence_id": "E-MD-B10-A003-002",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B10",
+    "attempt_id": "MD-B10-A003",
+    "work_id": "MD-B10-A003",
+    "baseline_id": "MD-B10-A003-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "change_impact_declaration": "CI-MD-B10-A003-001",
+    "issued_at": "2026-10-05T15:13:51+07:00",
+    "verdict": "THREE_AFFECTED_PREDICATES_PROVEN_CURRENT_NOT_APPLICABLE_PRODUCERS_CONFORM_PROMOTION_AND_CLOSURE_FOLLOW_IN_E_MD_B10_A003_003",
+    "checkpoint_verdict": "REMEDIATION AND REPROOF COMPLETE",
+    "b10_result": {
+        "denominator": 3,
+        "proven_current": 3,
+        "note": "The matrix still shows the three rows NOT_ASSESSED until the governed successor binder promotes them (E-MD-B10-A003-003). Historical MD-B10-A002 and MD-B10-A001 results are not rewritten."
+    },
+    "historical_versus_current": "E-MD-B10-A002-017 and SC-MD-B10-A002-001 stay true of what they claimed (four-state vocabulary). This evidence proves the current obligation created by DOC-CHG-20261005-001 (D-MD-B18-A002-015).",
+    "related_findings": [
+        "F-MD-B18-A002-033",
+        "F-MD-B10-A003-001",
+        "F-MD-B10-A003-002"
+    ],
+    "related_evidence": [
+        "E-MD-B10-A003-001",
+        "E-MD-B18-A002-098",
+        "E-MD-B10-A002-017",
+        "E-MD-B10-A001-001",
+        "CI-MD-B10-A003-001",
+        "MD-B10-A003-BL001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-015"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0022"
+    ],
+    "method": "Authority-first: the vocabulary and the applicability rule are asserted against the strategy text (read-model contract line, readiness guarantee truth-table rows), never against production output. Each predicate has positive members, negative members (mutation probes that must go red with the intended message), and the pre-correction identities captured from the entry build.",
+    "denominator": {
+        "source": "E-MD-B10-A003-001 affected_current_predicates and the traceability matrix NOT_ASSESSED set for primary MD-B10",
+        "count": 3,
+        "extra": [],
+        "missing": [],
+        "all_not_assessed_before": true
+    },
+    "result_counts": {
+        "PROVEN_CURRENT": 3,
+        "INCOMPLETE": 0,
+        "BLOCKED": 0,
+        "AUTHORITY_GAP": 0
+    },
+    "matrix": [
+        {
+            "rule_id": "MD-S005-R0056",
+            "authority": "Audit_Hash_and_Reproducibility_Contract_LOCKED.md:90 \"4. canonical quality, liquidity, temporal status, event-risk, and freshness states;\" read with Downstream_Data_Readiness_Guarantee_LOCKED.md (freshness states, DOC-CHG-20261005-001)",
+            "requirement": "The eligibility artifact binds the canonical freshness state; the governed vocabulary now has five states and a READABLE pre-activation publication is NOT_APPLICABLE.",
+            "implementation": "FreshnessState::VOCABULARY; ArtifactSemanticHashService::FRESHNESS_STATES (five), normalizeFreshnessState (passes the five through; unknown or unevaluated labels stay NOT_AVAILABLE, never FRESH) and the V2 context guard; the run label decided by FreshnessState::runLabelFor in all three run creators.",
+            "positive_proof": [
+                "tests/Unit/MarketData/ArtifactSemanticHashServiceTest.php::test_a_pre_activation_freshness_is_its_own_semantic_state_in_the_eligibility_identity",
+                "tests/Unit/MarketData/ArtifactSemanticHashServiceTest.php::test_a_pre_activation_freshness_moves_the_eligibility_identity_only",
+                "tests/Unit/MarketData/ArtifactSemanticHashServiceTest.php::test_the_context_guard_accepts_every_governed_state_and_still_refuses_an_internal_label",
+                "tests/Unit/MarketData/ArtifactSemanticHashServiceTest.php::test_g4_an_unevaluated_or_unknown_freshness_can_never_be_hashed_as_fresh",
+                "tests/Unit/MarketData/PreActivationFreshnessStateTest.php::test_the_canonicaliser_passes_the_five_states_through_and_keeps_every_other_label_out_of_fresh"
+            ],
+            "negative_proof_probes": {
+                "A1": "RED_INTENDED",
+                "A9": "RED_INTENDED"
+            },
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null
+        },
+        {
+            "rule_id": "MD-S005-R0071",
+            "authority": "Audit_Hash_and_Reproducibility_Contract_LOCKED.md:114 \"- row counts, quality/readiness/freshness states, and sorted reasons;\" read with the corrected guarantee",
+            "requirement": "publication_manifest_hash binds the freshness state as the exact decided value; NOT_APPLICABLE is a state like the others and is never null, empty or NOT_AVAILABLE.",
+            "implementation": "EodPublicationRepository::publicationManifestSemanticPayloadV2 and buildManifestByPublicationId use ArtifactSemanticHashService::normalizeFreshnessState (one canonicaliser); the V1 payload is unchanged by design.",
+            "positive_proof": [
+                "tests/Unit/MarketData/PublicationSemanticIdentityProductionPathTest.php::test_a_pre_activation_run_seals_a_manifest_that_carries_not_applicable_and_verifies",
+                "tests/Unit/MarketData/PublicationSemanticIdentityProductionPathTest.php::test_every_freshness_state_is_a_distinct_manifest_identity_and_the_legacy_label_is_unchanged",
+                "tests/Unit/MarketData/PublicationSemanticIdentityProductionPathTest.php::test_the_not_applicable_manifest_identity_is_allocation_independent",
+                "tests/Unit/MarketData/PublicationSemanticIdentityProductionPathTest.php::test_the_manifest_binds_the_exact_freshness_value_after_sealing",
+                "tests/Unit/MarketData/PublicationSemanticIdentityProductionPathTest.php::test_manifest_identities_sealed_before_the_correction_are_unchanged_by_it",
+                "tests/Unit/MarketData/PublicationSemanticIdentityProductionPathTest.php::test_a_publication_sealed_with_the_legacy_label_still_verifies_and_is_not_relabelled",
+                "tests/Unit/MarketData/PublicationSemanticIdentityProductionPathTest.php::test_each_manifest_member_follows_its_persisted_source"
+            ],
+            "negative_proof_probes": {
+                "A7": "RED_INTENDED",
+                "A8": "RED_INTENDED",
+                "A10": "RED_INTENDED",
+                "A12": "RED_INTENDED"
+            },
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null
+        },
+        {
+            "rule_id": "MD-S045-R0058",
+            "authority": "Publication_Manifest_Contract_LOCKED.md:72 \"readiness/freshness: truthful consumer state at the evaluated context\" read with Downstream_Data_Readiness_Guarantee_LOCKED.md (ordered truth table)",
+            "requirement": "The freshness a manifest exposes is the truthful consumer state: a READABLE pre-activation publication is NOT_APPLICABLE, decided from the requested trade date and the effective marker alone.",
+            "implementation": "App\\Domain\\MarketData\\FreshnessState::isInForce / runLabelFor (no clock); MarketDataScope::isOperationallyActivatedFor delegates to it; EodRunRepository decides the label in the new-run, as-known-replay and promote creators (the promote run decides again from the seed marker and never copies a legacy label).",
+            "positive_proof": [
+                "tests/Unit/MarketData/PreActivationFreshnessStateTest.php::test_the_vocabulary_is_exactly_the_five_states_the_corrected_read_model_contract_lists",
+                "tests/Unit/MarketData/PreActivationFreshnessStateTest.php::test_the_authority_truth_table_is_the_rule_the_label_implements",
+                "tests/Unit/MarketData/PreActivationFreshnessStateTest.php::test_operational_freshness_is_in_force_only_from_the_marker_date_and_never_backdated",
+                "tests/Unit/MarketData/PreActivationFreshnessStateTest.php::test_a_pre_activation_run_label_is_never_fresh_stale_degraded_or_not_available",
+                "tests/Unit/MarketData/PreActivationFreshnessStateTest.php::test_an_activated_run_keeps_the_pending_label_which_is_never_a_vocabulary_state",
+                "tests/Unit/MarketData/PreActivationFreshnessStateTest.php::test_the_decision_does_not_depend_on_the_wall_clock",
+                "tests/Unit/MarketData/PreActivationFreshnessStateTest.php::test_a_date_time_value_is_cut_to_its_date_and_a_malformed_value_fails_closed",
+                "tests/Unit/MarketData/PreActivationFreshnessStateTest.php::test_the_scope_and_the_freshness_rule_agree_on_applicability",
+                "tests/Unit/MarketData/PreActivationFreshnessStateTest.php::test_no_application_code_writes_a_freshness_state_after_a_run_exists",
+                "tests/Unit/MarketData/PreActivationFreshnessRunLabelTest.php::test_a_new_run_with_no_marker_is_not_applicable_and_records_no_marker",
+                "tests/Unit/MarketData/PreActivationFreshnessRunLabelTest.php::test_the_label_of_a_new_run_does_not_follow_the_wall_clock",
+                "tests/Unit/MarketData/PreActivationFreshnessRunLabelTest.php::test_an_as_known_replay_run_with_no_marker_is_not_applicable",
+                "tests/Unit/MarketData/PreActivationFreshnessRunLabelTest.php::test_a_promote_run_decides_again_and_never_copies_a_legacy_label",
+                "tests/Unit/MarketData/PreActivationFreshnessRunLabelTest.php::test_the_promote_decision_uses_the_seed_marker_and_not_the_wall_clock",
+                "tests/Unit/MarketData/PreActivationFreshnessRunLabelTest.php::test_creating_a_run_never_rewrites_an_existing_run",
+                "tests/Unit/MarketData/PreActivationFreshnessRunLabelTest.php::test_every_creator_label_is_what_the_domain_rule_says",
+                "tests/Unit/MarketData/CanonicalScopeFrontierAndDecisionGradeTest.php::test_timeliness_is_tracked_against_activation_and_never_claimed_as_achieved"
+            ],
+            "negative_proof_probes": {
+                "A2": "RED_INTENDED",
+                "A3": "RED_INTENDED",
+                "A4": "RED_INTENDED",
+                "A5": "RED_INTENDED",
+                "A6": "RED_INTENDED",
+                "A11": "RED_INTENDED"
+            },
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null
+        }
+    ],
+    "owner_requirement_matrix": {
+        "1_pre_activation_readable_is_NOT_APPLICABLE": "RunLabel::a_new_run_with_no_marker..., ::a_promote_run_decides_again...; ProductionPath::a_pre_activation_run_seals_a_manifest_that_carries_not_applicable_and_verifies (manifest payload and view)",
+        "2_pre_activation_is_not_FRESH": "State::a_pre_activation_run_label_is_never_fresh_stale_degraded_or_not_available; ProductionPath manifest test (assertNotSame FRESH)",
+        "3_pre_activation_is_not_NOT_AVAILABLE": "same tests (assertNotSame NOT_AVAILABLE); ProductionPath::every_freshness_state_is_a_distinct_manifest_identity... (NOT_APPLICABLE differs from the NOT_AVAILABLE identity); probe A7",
+        "4_activated_and_gates_pass_keeps_existing_FRESH_semantics": "PRESERVATION proof at the producer layer: FRESH passes the canonicaliser unchanged, hashes distinct, and its manifest identity equals the one captured before the correction (ProductionPath::manifest_identities_sealed_before_the_correction_are_unchanged_by_it). No code produces FRESH (no evaluator exists, F-MD-B18-A002-033 row 7); none was added.",
+        "5_prior_date_fallback_stays_STALE_or_DEGRADED": "PRESERVATION: STALE and DEGRADED pass through and keep their pre-correction manifest identities (same test, golden pins). Fallback selection is a read-surface behaviour owned by MD-B17 and untouched.",
+        "6_declared_degraded_condition_stays_DEGRADED": "PRESERVATION: DEGRADED pass-through and golden identity (same). No degraded condition was declared or removed.",
+        "7_no_readable_result_stays_NOT_AVAILABLE": "NOT_AVAILABLE passes through, keeps its pre-correction identity, and remains distinct from NOT_APPLICABLE (State::the_canonicaliser_passes_the_five_states_through...; ProductionPath golden and distinctness tests).",
+        "8_applicability_change_moves_the_hash_deterministically": "RunLabel::every_creator_label_is_what_the_domain_rule_says (marker and date move the label); ProductionPath::every_freshness_state_is_a_distinct_manifest_identity... and ::the_not_applicable_manifest_identity_is_allocation_independent; ArtifactSemanticHashServiceTest::a_pre_activation_freshness_is_its_own_semantic_state_in_the_eligibility_identity and ::moves_the_eligibility_identity_only (bars and indicators identities do not move)",
+        "9_requested_date_not_wall_clock": "State::the_decision_does_not_depend_on_the_wall_clock (four clocks, plus a static scan of FreshnessState for clock calls); RunLabel::the_label_of_a_new_run_does_not_follow_the_wall_clock and ::the_promote_decision_uses_the_seed_marker_and_not_the_wall_clock; probe A4",
+        "10_historical_sealed_publications_are_not_relabelled": "ProductionPath::manifest_identities_sealed_before_the_correction_are_unchanged_by_it (hashes captured from the pre-correction build, [\"63ec71cf8823c74e25eff7ca4a97f39e7db5048439cf9f2a4f1afcb1ae5e71d1\",\"8d87fb98f93172520a09ce1ee3989328cd251ee50859e229a2cfe6b350af6e7b\",\"9b0bc825dbb96ae2e719df9ec20c3201e158b8dbf067b8a49b25dd9ef22b4575\",\"534cfd37eb9fe4615e6b3f924a170c224e4864c83680b129f660016b3b82a4f7\"]); ::a_publication_sealed_with_the_legacy_label_still_verifies_and_is_not_relabelled; RunLabel::creating_a_run_never_rewrites_an_existing_run; State::no_application_code_writes_a_freshness_state_after_a_run_exists; probe A10"
+    },
+    "implementation": {
+        "new": [
+            "app/Domain/MarketData/FreshnessState.php"
+        ],
+        "changed": [
+            "app/Domain/MarketData/MarketDataScope.php (delegates the applicability comparison)",
+            "app/Infrastructure/Persistence/MarketData/EodRunRepository.php (three creators)",
+            "app/Application/MarketData/Services/ArtifactSemanticHashService.php (vocabulary, canonicaliser contract)",
+            "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php (V2 payload and manifest view)"
+        ],
+        "not_changed": [
+            "the V1 manifest payload and V1 profile",
+            "the 35-member manifest inventory and the canonical hash profile",
+            "any migration, config or schema",
+            "the B17 read surface",
+            "sealed publications and stored run labels"
+        ],
+        "semantics": [
+            "NOT_APPLICABLE is a valid V2 freshness state; a run whose requested date precedes the effective marker (or has none) is labelled NOT_APPLICABLE; an activated date keeps the pending label NOT_EVALUATED and its existing normalisation to NOT_AVAILABLE (no evaluator exists, unchanged); runs created before the correction keep their labels and identities; a promote run decides again from the seed marker."
+        ]
+    },
+    "hash_consequences": {
+        "changes": [
+            "manifest freshness_state member and publication_manifest_hash for a publication whose run is labelled NOT_APPLICABLE",
+            "eligibility row freshness binding and eligibility_batch_hash (and every hash that includes it) for such a publication"
+        ],
+        "invariant": [
+            "the 35-member inventory and semantic profile",
+            "bars_batch_hash and indicators_batch_hash (proved: they do not follow freshness)",
+            "every identity of FRESH, STALE, DEGRADED, NOT_AVAILABLE and of the legacy labels (golden pins)",
+            "V1"
+        ]
+    },
+    "golden_pre_correction_manifest_hashes": {
+        "NULL": "63ec71cf8823c74e25eff7ca4a97f39e7db5048439cf9f2a4f1afcb1ae5e71d1",
+        "'DEVELOPMENT_NOT_OPERATIONAL'": "63ec71cf8823c74e25eff7ca4a97f39e7db5048439cf9f2a4f1afcb1ae5e71d1",
+        "'NOT_EVALUATED'": "63ec71cf8823c74e25eff7ca4a97f39e7db5048439cf9f2a4f1afcb1ae5e71d1",
+        "'NOT_AVAILABLE'": "63ec71cf8823c74e25eff7ca4a97f39e7db5048439cf9f2a4f1afcb1ae5e71d1",
+        "'FRESH'": "8d87fb98f93172520a09ce1ee3989328cd251ee50859e229a2cfe6b350af6e7b",
+        "'STALE'": "9b0bc825dbb96ae2e719df9ec20c3201e158b8dbf067b8a49b25dd9ef22b4575",
+        "'DEGRADED'": "534cfd37eb9fe4615e6b3f924a170c224e4864c83680b129f660016b3b82a4f7",
+        "'NOT_APPLICABLE'": "63ec71cf8823c74e25eff7ca4a97f39e7db5048439cf9f2a4f1afcb1ae5e71d1"
+    },
+    "mutation_probes": {
+        "count": 12,
+        "all_red_intended": true,
+        "all_restored_byte_identical": true,
+        "note": "The first pass found two test-design gaps (tests iterated the production vocabulary constant) and one probe-filter gap (data-provider names); tests and probe runner were corrected and A1, A2, A3, A12 re-run (pass 2). A12 lost a covering member that bypassed the normalizer.",
+        "probes": {
+            "A1": {
+                "intent": "NOT_APPLICABLE removed from the freshness vocabulary",
+                "file": "app/Domain/MarketData/FreshnessState.php",
+                "verdict": "RED_INTENDED",
+                "restored_byte_identical": true,
+                "sha256_before": "448e1e1e357363b3a62327f6934487a116bc645128ba82379a01b70b09b15721",
+                "sha256_restored": "448e1e1e357363b3a62327f6934487a116bc645128ba82379a01b70b09b15721",
+                "covering": [
+                    {
+                        "test": "PreActivationFreshnessStateTest.php::test_the_vocabulary_is_exactly_the_five_states_the_corrected_read_model_contract_lists",
+                        "expected_message": "the vocabulary must be the contract list",
+                        "verdict": "RED_INTENDED"
+                    },
+                    {
+                        "test": "PreActivationFreshnessStateTest.php::test_the_canonicaliser_passes_the_five_states_through_and_keeps_every_other_label_out_of_fresh",
+                        "expected_message": "NOT_APPLICABLE",
+                        "verdict": "RED_INTENDED"
+                    },
+                    {
+                        "test": "ArtifactSemanticHashServiceTest.php::test_the_context_guard_accepts_every_governed_state_and_still_refuses_an_internal_label",
+                        "expected_message": "ARTIFACT_SEMANTIC_CONTEXT_INCOMPLETE",
+                        "verdict": "RED_INTENDED"
+                    },
+                    {
+                        "test": "PublicationSemanticIdentityProductionPathTest.php::test_a_pre_activation_run_seals_a_manifest_that_carries_not_applicable_and_verifies",
+                        "expected_message": "collapse to NOT_AVAILABLE",
+                        "verdict": "RED_INTENDED"
+                    }
+                ],
+                "pass": 2
+            },
+            "A2": {
+                "intent": "a pre-activation run is labelled NOT_AVAILABLE (production fallback) instead of NOT_APPLICABLE",
+                "file": "app/Domain/MarketData/FreshnessState.php",
+                "verdict": "RED_INTENDED",
+                "restored_byte_identical": true,
+                "sha256_before": "448e1e1e357363b3a62327f6934487a116bc645128ba82379a01b70b09b15721",
+                "sha256_restored": "448e1e1e357363b3a62327f6934487a116bc645128ba82379a01b70b09b15721",
+                "covering": [
+                    {
+                        "test": "PreActivationFreshnessStateTest.php::test_operational_freshness_is_in_force_only_from_the_marker_date_and_never_backdated",
+                        "expected_message": "NOT_APPLICABLE",
+                        "verdict": "RED_INTENDED"
+                    },
+                    {
+                        "test": "PreActivationFreshnessRunLabelTest.php::test_a_new_run_with_no_marker_is_not_applicable_and_records_no_marker",
+                        "expected_message": "NOT_APPLICABLE",
+                        "verdict": "RED_INTENDED"
+                    },
+                    {
+                        "test": "PreActivationFreshnessRunLabelTest.php::test_a_promote_run_decides_again_and_never_copies_a_legacy_label",
+                        "expected_message": "NOT_APPLICABLE",
+                        "verdict": "RED_INTENDED"
+                    }
+                ],
+                "pass": 2
+            },
+            "A3": {
+                "intent": "the marker date itself is not in force (>= becomes >)",
+                "file": "app/Domain/MarketData/FreshnessState.php",
+                "verdict": "RED_INTENDED",
+                "restored_byte_identical": true,
+                "sha256_before": "448e1e1e357363b3a62327f6934487a116bc645128ba82379a01b70b09b15721",
+                "sha256_restored": "448e1e1e357363b3a62327f6934487a116bc645128ba82379a01b70b09b15721",
+                "covering": [
+                    {
+                        "test": "PreActivationFreshnessStateTest.php::test_operational_freshness_is_in_force_only_from_the_marker_date_and_never_backdated",
+                        "expected_message": "the marker date itself is in force",
+                        "verdict": "RED_INTENDED"
+                    },
+                    {
+                        "test": "PreActivationFreshnessRunLabelTest.php::test_a_promote_run_decides_again_and_never_copies_a_legacy_label",
+                        "expected_message": "the marker date itself is in force",
+                        "verdict": "RED_INTENDED"
+                    }
+                ],
+                "pass": 2
+            },
+            "A4": {
+                "intent": "applicability is decided from the wall clock instead of the requested date",
+                "file": "app/Domain/MarketData/FreshnessState.php",
+                "verdict": "RED_INTENDED",
+                "restored_byte_identical": true,
+                "sha256_before": "448e1e1e357363b3a62327f6934487a116bc645128ba82379a01b70b09b15721",
+                "sha256_restored": "448e1e1e357363b3a62327f6934487a116bc645128ba82379a01b70b09b15721",
+                "covering": [
+                    {
+                        "test": "PreActivationFreshnessStateTest.php::test_the_decision_does_not_depend_on_the_wall_clock",
+                        "expected_message": "the result must be identical whatever the clock says",
+                        "verdict": "RED_INTENDED"
+                    },
+                    {
+                        "test": "PreActivationFreshnessRunLabelTest.php::test_the_promote_decision_uses_the_seed_marker_and_not_the_wall_clock",
+                        "expected_message": "NOT_EVALUATED",
+                        "verdict": "RED_INTENDED"
+                    }
+                ],
+                "pass": 1
+            },
+            "A5": {
+                "intent": "a promote run copies its seed label again",
+                "file": "app/Infrastructure/Persistence/MarketData/EodRunRepository.php",
+                "verdict": "RED_INTENDED",
+                "restored_byte_identical": true,
+                "sha256_before": "6028acd32cf7fac6191a0ce316f773a0e312136ab1decd476054e44854ec71f3",
+                "sha256_restored": "6028acd32cf7fac6191a0ce316f773a0e312136ab1decd476054e44854ec71f3",
+                "covering": [
+                    {
+                        "test": "PreActivationFreshnessRunLabelTest.php::test_a_promote_run_decides_again_and_never_copies_a_legacy_label",
+                        "expected_message": "a corrected publication must not carry the pre-correction label",
+                        "verdict": "RED_INTENDED"
+                    }
+                ],
+                "pass": 1
+            },
+            "A6": {
+                "intent": "a new run is labelled by marker presence with the legacy literal again",
+                "file": "app/Infrastructure/Persistence/MarketData/EodRunRepository.php",
+                "verdict": "RED_INTENDED",
+                "restored_byte_identical": true,
+                "sha256_before": "6028acd32cf7fac6191a0ce316f773a0e312136ab1decd476054e44854ec71f3",
+                "sha256_restored": "6028acd32cf7fac6191a0ce316f773a0e312136ab1decd476054e44854ec71f3",
+                "covering": [
+                    {
+                        "test": "PreActivationFreshnessRunLabelTest.php::test_a_new_run_with_no_marker_is_not_applicable_and_records_no_marker",
+                        "expected_message": "NOT_APPLICABLE",
+                        "verdict": "RED_INTENDED"
+                    },
+                    {
+                        "test": "CanonicalScopeFrontierAndDecisionGradeTest.php::test_timeliness_is_tracked_against_activation_and_never_claimed_as_achieved",
+                        "expected_message": "every run creator",
+                        "verdict": "RED_INTENDED"
+                    }
+                ],
+                "pass": 1
+            },
+            "A7": {
+                "intent": "the V2 manifest payload collapses NOT_APPLICABLE to NOT_AVAILABLE again",
+                "file": "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php",
+                "verdict": "RED_INTENDED",
+                "restored_byte_identical": true,
+                "sha256_before": "72dc69a1d1dbf2702c5ef4d7f8b7084af17f284027d6ee323f0d5af44fcb190e",
+                "sha256_restored": "72dc69a1d1dbf2702c5ef4d7f8b7084af17f284027d6ee323f0d5af44fcb190e",
+                "covering": [
+                    {
+                        "test": "PublicationSemanticIdentityProductionPathTest.php::test_a_pre_activation_run_seals_a_manifest_that_carries_not_applicable_and_verifies",
+                        "expected_message": "a READABLE pre-activation publication must not collapse to NOT_AVAILABLE",
+                        "verdict": "RED_INTENDED"
+                    },
+                    {
+                        "test": "PublicationSemanticIdentityProductionPathTest.php::test_every_freshness_state_is_a_distinct_manifest_identity_and_the_legacy_label_is_unchanged",
+                        "expected_message": "the five governed states give five manifest identities",
+                        "verdict": "RED_INTENDED"
+                    }
+                ],
+                "pass": 1
+            },
+            "A8": {
+                "intent": "the manifest view collapses NOT_APPLICABLE to NOT_AVAILABLE again",
+                "file": "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php",
+                "verdict": "RED_INTENDED",
+                "restored_byte_identical": true,
+                "sha256_before": "72dc69a1d1dbf2702c5ef4d7f8b7084af17f284027d6ee323f0d5af44fcb190e",
+                "sha256_restored": "72dc69a1d1dbf2702c5ef4d7f8b7084af17f284027d6ee323f0d5af44fcb190e",
+                "covering": [
+                    {
+                        "test": "PublicationSemanticIdentityProductionPathTest.php::test_a_pre_activation_run_seals_a_manifest_that_carries_not_applicable_and_verifies",
+                        "expected_message": "the manifest view carries the same state",
+                        "verdict": "RED_INTENDED"
+                    }
+                ],
+                "pass": 1
+            },
+            "A9": {
+                "intent": "the hash vocabulary is the old four states again",
+                "file": "app/Application/MarketData/Services/ArtifactSemanticHashService.php",
+                "verdict": "RED_INTENDED",
+                "restored_byte_identical": true,
+                "sha256_before": "3b76c952bf256464b110a46cc3345e6d7480891e1d01822d1fe1f5eb0578ba64",
+                "sha256_restored": "3b76c952bf256464b110a46cc3345e6d7480891e1d01822d1fe1f5eb0578ba64",
+                "covering": [
+                    {
+                        "test": "ArtifactSemanticHashServiceTest.php::test_a_pre_activation_freshness_is_its_own_semantic_state_in_the_eligibility_identity",
+                        "expected_message": "ARTIFACT_SEMANTIC_CONTEXT_INCOMPLETE",
+                        "verdict": "RED_INTENDED"
+                    },
+                    {
+                        "test": "ArtifactSemanticHashServiceTest.php::test_g4_an_unevaluated_or_unknown_freshness_can_never_be_hashed_as_fresh",
+                        "expected_message": "a governed pre-activation state must not collapse to NOT_AVAILABLE",
+                        "verdict": "RED_INTENDED"
+                    }
+                ],
+                "pass": 1
+            },
+            "A10": {
+                "intent": "the legacy label is relabelled NOT_APPLICABLE at hash time (sealed history changes identity)",
+                "file": "app/Application/MarketData/Services/ArtifactSemanticHashService.php",
+                "verdict": "RED_INTENDED",
+                "restored_byte_identical": true,
+                "sha256_before": "3b76c952bf256464b110a46cc3345e6d7480891e1d01822d1fe1f5eb0578ba64",
+                "sha256_restored": "3b76c952bf256464b110a46cc3345e6d7480891e1d01822d1fe1f5eb0578ba64",
+                "covering": [
+                    {
+                        "test": "PublicationSemanticIdentityProductionPathTest.php::test_manifest_identities_sealed_before_the_correction_are_unchanged_by_it",
+                        "expected_message": "the pre-correction identity of",
+                        "verdict": "RED_INTENDED"
+                    },
+                    {
+                        "test": "PublicationSemanticIdentityProductionPathTest.php::test_a_publication_sealed_with_the_legacy_label_still_verifies_and_is_not_relabelled",
+                        "expected_message": "sealed history keeps the state it was sealed with",
+                        "verdict": "RED_INTENDED"
+                    }
+                ],
+                "pass": 1
+            },
+            "A11": {
+                "intent": "an activated date is labelled NOT_APPLICABLE as well (applicability ignores the marker)",
+                "file": "app/Domain/MarketData/FreshnessState.php",
+                "verdict": "RED_INTENDED",
+                "restored_byte_identical": true,
+                "sha256_before": "448e1e1e357363b3a62327f6934487a116bc645128ba82379a01b70b09b15721",
+                "sha256_restored": "448e1e1e357363b3a62327f6934487a116bc645128ba82379a01b70b09b15721",
+                "covering": [
+                    {
+                        "test": "PreActivationFreshnessRunLabelTest.php::test_a_promote_run_decides_again_and_never_copies_a_legacy_label",
+                        "expected_message": "an activated date keeps the pending label",
+                        "verdict": "RED_INTENDED"
+                    },
+                    {
+                        "test": "PreActivationFreshnessStateTest.php::test_an_activated_run_keeps_the_pending_label_which_is_never_a_vocabulary_state",
+                        "expected_message": "NOT_EVALUATED",
+                        "verdict": "RED_INTENDED"
+                    }
+                ],
+                "pass": 1
+            },
+            "A12": {
+                "intent": "a sealed manifest stops binding the exact freshness value (the member is dropped from the V2 payload comparison by collapsing every label)",
+                "file": "app/Application/MarketData/Services/ArtifactSemanticHashService.php",
+                "verdict": "RED_INTENDED",
+                "restored_byte_identical": true,
+                "sha256_before": "3b76c952bf256464b110a46cc3345e6d7480891e1d01822d1fe1f5eb0578ba64",
+                "sha256_restored": "3b76c952bf256464b110a46cc3345e6d7480891e1d01822d1fe1f5eb0578ba64",
+                "covering": [
+                    {
+                        "test": "PublicationSemanticIdentityProductionPathTest.php::test_the_manifest_binds_the_exact_freshness_value_after_sealing",
+                        "expected_message": "still verified against a NOT_APPLICABLE manifest",
+                        "verdict": "RED_INTENDED"
+                    }
+                ],
+                "pass": 2
+            }
+        }
+    },
+    "regression": {
+        "focused": [
+            "PreActivationFreshnessStateTest 16/16",
+            "PreActivationFreshnessRunLabelTest 8/8",
+            "ArtifactSemanticHashServiceTest 49/49",
+            "PublicationSemanticIdentityProductionPathTest 34/34",
+            "CanonicalScopeFrontierAndDecisionGradeTest 12/12"
+        ],
+        "b10_covering_files": {
+            "AliasNamingAndMeaningBoundaryTest": {
+                "tests": 6,
+                "assertions": 188,
+                "failures": 0,
+                "errors": 0
+            },
+            "ArtifactSemanticHashServiceTest": {
+                "tests": 49,
+                "assertions": 147,
+                "failures": 0,
+                "errors": 0
+            },
+            "ArtifactSemanticIdentityOnMariaDbTest": {
+                "tests": 10,
+                "assertions": 87,
+                "failures": 0,
+                "errors": 0
+            },
+            "B18ProductionPathReplayFixturesTest": {
+                "tests": 13,
+                "assertions": 100,
+                "failures": 0,
+                "errors": 0
+            },
+            "B18ReplayPersistedEvidenceBindingTest": {
+                "tests": 17,
+                "assertions": 156,
+                "failures": 0,
+                "errors": 0
+            },
+            "B18ScenarioFamiliesOnMariaDbTest": {
+                "tests": 12,
+                "assertions": 482,
+                "failures": 1,
+                "errors": 0
+            },
+            "ConfigIsTheOnlyEnvReaderTest": {
+                "tests": 5,
+                "assertions": 8,
+                "failures": 0,
+                "errors": 0
+            },
+            "DateDrivenCapabilityAndProviderAbstractionTest": {
+                "tests": 18,
+                "assertions": 65,
+                "failures": 0,
+                "errors": 0
+            },
+            "DomainOwnershipSurfaceTest": {
+                "tests": 28,
+                "assertions": 523,
+                "failures": 0,
+                "errors": 0
+            },
+            "EmittedReasonCodeRegistrationTest": {
+                "tests": 3,
+                "assertions": 10,
+                "failures": 0,
+                "errors": 0
+            },
+            "IndicatorAtrStateReferenceTest": {
+                "tests": 9,
+                "assertions": 25,
+                "failures": 0,
+                "errors": 0
+            },
+            "LifecycleProofIsNotMockedTest": {
+                "tests": 5,
+                "assertions": 8,
+                "failures": 0,
+                "errors": 0
+            },
+            "MarketDataPipelineIntegrationTest": {
+                "tests": 83,
+                "assertions": 6157,
+                "failures": 0,
+                "errors": 0
+            },
+            "MigrationIntegrityAndDriftTest": {
+                "tests": 10,
+                "assertions": 25,
+                "failures": 0,
+                "errors": 0
+            },
+            "ProductionCorpusInvariantOracleTest": {
+                "tests": 10,
+                "assertions": 18,
+                "failures": 7,
+                "errors": 0
+            },
+            "PublicationCorrectionCalendarBindingTest": {
+                "tests": 6,
+                "assertions": 25,
+                "failures": 0,
+                "errors": 0
+            },
+            "PublicationRepositoryIntegrationTest": {
+                "tests": 28,
+                "assertions": 140,
+                "failures": 0,
+                "errors": 0
+            },
+            "PublicationScopeReasonSetTest": {
+                "tests": 6,
+                "assertions": 14,
+                "failures": 0,
+                "errors": 0
+            },
+            "PublicationSemanticIdentityProductionPathTest": {
+                "tests": 34,
+                "assertions": 334,
+                "failures": 0,
+                "errors": 0
+            },
+            "SemanticNestedIdentityOnMariaDbTest": {
+                "tests": 20,
+                "assertions": 172,
+                "failures": 0,
+                "errors": 0
+            },
+            "SemanticNestedIdentityPipelineWiringTest": {
+                "tests": 2,
+                "assertions": 2,
+                "failures": 0,
+                "errors": 0
+            },
+            "PreActivationFreshnessStateTest": {
+                "tests": 16,
+                "assertions": 100,
+                "failures": 0,
+                "errors": 0
+            },
+            "PreActivationFreshnessRunLabelTest": {
+                "tests": 8,
+                "assertions": 22,
+                "failures": 0,
+                "errors": 0
+            },
+            "CanonicalScopeFrontierAndDecisionGradeTest": {
+                "tests": 12,
+                "assertions": 90,
+                "failures": 0,
+                "errors": 0
+            }
+        },
+        "full_suite_on_the_final_tree": {
+            "tests": 2847,
+            "assertions": 40132,
+            "failures": 17,
+            "skipped": 0,
+            "classification": {
+                "governed_expected_failures_8": {
+                    "B18ScenarioFamiliesOnMariaDbTest": 1,
+                    "ProductionCorpusInvariantOracleTest": 7
+                },
+                "expected_invalidation_of_candidate_v3_fixture_tests_9": {
+                    "R0025SyntheticV2CandidateFixtureTest": 9
+                },
+                "unexplained": 0
+            },
+            "candidate_v3_tests_red_by_design": [
+                "test_a_wrong_literal_in_any_one_bound_input_is_the_only_mismatch_it_causes",
+                "test_a_wrong_publication_manifest_literal_is_the_only_mismatch_it_causes",
+                "test_an_independent_package_with_any_other_assertion_layer_is_blocked_even_with_an_approval_supplied",
+                "test_candidate_matches_the_actual_publication_but_is_not_admitted_as_proof",
+                "test_each_semantic_member_of_the_event_factor_identity_moves_it",
+                "test_the_actual_publication_manifest_hash_equals_the_independent_literal_and_is_stable_across_layouts",
+                "test_the_admission_mechanism_admits_only_the_exact_fingerprint_and_refuses_any_damaged_package",
+                "test_the_publication_bound_build_identity_is_the_frozen_build_identity",
+                "test_two_allocation_layouts_give_identical_semantic_identities_and_the_oracle_literals"
+            ],
+            "why_candidate_v3_tests_are_red": "Candidate-v3 is immutable reviewed history frozen to executable build aa4aa7d1…1e22 (owner decision Q5=B): any app/ edit invalidates it, and its expected publication_manifest_hash and eligibility identities carry the superseded NOT_AVAILABLE freshness. Not repaired here; candidate-v4 is a separate work unit with a new build, fingerprint and expectations."
+        },
+        "binder_selftest": "with the documented pristine A002 matrix all A002 controls stay green after the tooling change; the latest-layer already-bound control is green only after promotion (E-MD-B10-A003-003); the self-test result without the pristine matrix is not a valid comparison (the canonical matrix is no longer the A002 starting state)"
+    },
+    "b17_boundary": "MD-B17 was not repaired. Shared producer touched: MarketDataScope::isOperationallyActivatedFor (now delegating, behaviour identical on the whole date grid, test: the_scope_and_the_freshness_rule_agree_on_applicability); the B17 readiness tests are inside the full suite and unchanged green. B17 still has 13 not-assessed rows (244/257).",
+    "new_observation": "F-MD-B10-A003-002: the configuration registry types the activation marker as null, so a configured marker is refused when a run resolves its configuration snapshot; the activated branch of the configuration-driven creators is unreachable in this build (recorded, not remediated).",
+    "changed_files_sha256": {
+        "app/Domain/MarketData/MarketDataScope.php": "6ca5a1629a0e83c9ba77f8b88017e6d0c43f9d05e7eaa19b680ce42206a5c9bb",
+        "app/Infrastructure/Persistence/MarketData/EodRunRepository.php": "6028acd32cf7fac6191a0ce316f773a0e312136ab1decd476054e44854ec71f3",
+        "app/Application/MarketData/Services/ArtifactSemanticHashService.php": "3b76c952bf256464b110a46cc3345e6d7480891e1d01822d1fe1f5eb0578ba64",
+        "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php": "72dc69a1d1dbf2702c5ef4d7f8b7084af17f284027d6ee323f0d5af44fcb190e",
+        "app/Domain/MarketData/FreshnessState.php": "448e1e1e357363b3a62327f6934487a116bc645128ba82379a01b70b09b15721",
+        "tests/Unit/MarketData/PreActivationFreshnessStateTest.php": "60976b6b93b4b81ea4ff7483feea9b178ec50fda2dee280e8bc58686b7c21729",
+        "tests/Unit/MarketData/PreActivationFreshnessRunLabelTest.php": "46142341dfe71f5f14f2d8540b33b006683178a62bc96e8e334e6c2b2a3a4ef4",
+        "tests/Unit/MarketData/ArtifactSemanticHashServiceTest.php": "7a14f958b7bfd212ffae9e19a0fa9fbfc70e2322de6a1bf1e7cf731635582f59",
+        "tests/Unit/MarketData/PublicationSemanticIdentityProductionPathTest.php": "67c9db1c1009ea9121268b6a9192c1ce887bafc3393a86dcb34199c49fd76149",
+        "tests/Unit/MarketData/CanonicalScopeFrontierAndDecisionGradeTest.php": "e7bce30e10cdb8706e9f9603300848d604ca0f2e7eab86d4fe1d336a580f26f2",
+        "docs/market_data/development/implementation/tests/MarketDataB10SuccessorBinding.php": "eff642f4bf363953bef510a666769bf9e1a3fe4748b837595ff42b3fe3e55e93",
+        "docs/market_data/development/implementation/tests/MarketDataPublicationLifecycleProofGate.php": "cedce17750c79eb064342735daaf674898e3f3c20219cb4ca5c3cf868ab48784",
+        "docs/market_data/development/implementation/tests/MarketDataB10SuccessorBinder.php": "75a0988621a4c130d56f5cc69b5dbf6b27e66990cd62660741d93eb2de42fc8b",
+        "docs/market_data/development/implementation/tests/MarketDataB10SuccessorBinderSelfTest.php": "e3fe3fd3e7ae7c9dc5e57fd63c8e8363f342d60563700aa5b3bcefbbf6ce62db"
+    },
+    "preservation": {
+        "candidate_fingerprints_recomputed": {
+            "v1": "05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0",
+            "v2": "bbd8c73953eb1397a49ba651e8b66b5b6cf914dd0790142d2a706bb8a49edb9f",
+            "v3": "8a218f5befc0b1c6f278d20ee86a798ca29185ad4522e8b8a00ee069cec9b85e"
+        },
+        "D-MD-B18-A002-015": "not edited",
+        "E-MD-B10-A002-017 / SC-MD-B10-A002-001 / SC-MD-B10-A001-001": "not edited",
+        "protected files": "B18ScenarioFamiliesOnMariaDbTest.php and MarketDataReplayVerificationAcceptanceAggregate.php untouched"
+    },
+    "raw_proof": {
+        "package": "storage/app/market_data/evidence/MD-B10-A003/not-applicable-freshness-remediation-20261005-v1",
+        "manifest_sha256": "f7dea61538c6d205be95dd1f9576a2dcfd267712cd4f99b2f6cc44d08ddeb772",
+        "files": 191
+    },
+    "next_resume_point": "MD-B10-A003: promote the three rows through the governed successor binder (E-MD-B10-A003-003), issue SC-MD-B10-A003-001 and resolve MD-DEP-0022; then MD-B18-A002 candidate-v4.",
+    "no_commit_or_push": 1
+}

@@ -1,0 +1,459 @@
+{
+    "oracle": {
+        "id": "r0025-synthetic-v2-reference-oracle",
+        "version": "3.0.0",
+        "inputs": {
+            "synthetic_world.json": "da4b1c2c2642784245818c44d46f4c8a12e9cff74b4101f187c42ab6ecfb7200",
+            "provider_response.json": "8ab35be69d1223c7bcb6220d8937fbd703ce3f44c1a860489f865d5b31019fd3",
+            "frozen_config_content.txt": "8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0",
+            "frozen_reason_registry.json": "058b9dc131a42c7e6654cfe3cef9e628cdab375d8a3ed0da374710a26781c9d8",
+            "frozen_registry_literals.json": "79a2b4de53f589fbce634d3c023b272d4a254066d1f9439bf2337b3df947dc2f",
+            "frozen_build_identity.json": "8af03036b7a7c6370e358dbc4018ac32f6bbc87a30789ba442f91553c9b2154c",
+            "frozen_build_manifest.txt": "95bd9b10fd306312a37b9a9ba1b5275e10bcf630b6d46a4261a61bfc472e80b7"
+        }
+    },
+    "frozen_input_facts": {
+        "provider_response_sha256": "8ab35be69d1223c7bcb6220d8937fbd703ce3f44c1a860489f865d5b31019fd3",
+        "provider_response_schema_fingerprint": "d3bbb2cfc4329fe544d289c102701fb844e353ad53cf05f786461abb2728e19f",
+        "config_content_sha256": "8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0",
+        "retained_roots": {
+            "issuer_root": "5a000000-0000-4000-8000-000000000001",
+            "instrument_root": "5a000000-0000-4000-8000-000000000002",
+            "listing_root": "5a000000-0000-4000-8000-000000000003"
+        },
+        "provider_observation_timestamp": {
+            "unix": 1774231200,
+            "platform_timezone": "Asia/Jakarta",
+            "rendered": "2026-03-23 09:00:00",
+            "acquired_at": "2026-03-25 10:30:00"
+        },
+        "frozen_build_identity": "sha256:aa4aa7d1e9b1c4c15fe58d2d172b395af630679bce834633c2758cda91dc1e22",
+        "reason_registry_entry_count": 437
+    },
+    "observation_entries": {
+        "capture": {
+            "payload_hash": "8ab35be69d1223c7bcb6220d8937fbd703ce3f44c1a860489f865d5b31019fd3",
+            "payload_ref": "sha256:8ab35be69d1223c7bcb6220d8937fbd703ce3f44c1a860489f865d5b31019fd3",
+            "provider": "yahoo_finance",
+            "provider_symbol": "SYNV2.JK",
+            "mapping_revision": "temporal_provider_mapping_v1",
+            "requested_trade_date": "2026-03-23",
+            "requested_start_date": null,
+            "requested_end_date": null,
+            "source_timestamp": "2026-03-23 09:00:00",
+            "acquired_at": "2026-03-25 10:30:00",
+            "adapter_version": "yahoo_chart_v2",
+            "schema_fingerprint": "d3bbb2cfc4329fe544d289c102701fb844e353ad53cf05f786461abb2728e19f",
+            "provider_schema_version": "yahoo_chart_schema_v1",
+            "outcome_state": "CAPTURED",
+            "validation_state": "PENDING",
+            "reason_code": null,
+            "parent_entry_hash": null,
+            "supersedes_entry_hash": null
+        },
+        "capture_entry_hash": "06fe39b5ad22f3cf6fe200d1a33bdcdc6fafae83f9592ed6cb1cb05575c0e45d",
+        "accepted": {
+            "payload_hash": "8ab35be69d1223c7bcb6220d8937fbd703ce3f44c1a860489f865d5b31019fd3",
+            "payload_ref": "sha256:8ab35be69d1223c7bcb6220d8937fbd703ce3f44c1a860489f865d5b31019fd3",
+            "provider": "yahoo_finance",
+            "provider_symbol": "SYNV2.JK",
+            "mapping_revision": "temporal_provider_mapping_v1",
+            "requested_trade_date": "2026-03-23",
+            "requested_start_date": null,
+            "requested_end_date": null,
+            "source_timestamp": "2026-03-23 09:00:00",
+            "acquired_at": "2026-03-25 10:30:00",
+            "adapter_version": "yahoo_chart_v2",
+            "schema_fingerprint": "d3bbb2cfc4329fe544d289c102701fb844e353ad53cf05f786461abb2728e19f",
+            "provider_schema_version": "yahoo_chart_schema_v1",
+            "outcome_state": "ACCEPTED",
+            "validation_state": "PASSED",
+            "reason_code": null,
+            "parent_entry_hash": "06fe39b5ad22f3cf6fe200d1a33bdcdc6fafae83f9592ed6cb1cb05575c0e45d",
+            "supersedes_entry_hash": null
+        }
+    },
+    "documents": {
+        "observation_manifest": {
+            "preimage": "{\"entries\":[{\"acquired_at\":\"2026-03-25 10:30:00\",\"adapter_version\":\"yahoo_chart_v2\",\"mapping_revision\":\"temporal_provider_mapping_v1\",\"outcome_state\":\"ACCEPTED\",\"parent_entry_hash\":\"06fe39b5ad22f3cf6fe200d1a33bdcdc6fafae83f9592ed6cb1cb05575c0e45d\",\"payload_hash\":\"8ab35be69d1223c7bcb6220d8937fbd703ce3f44c1a860489f865d5b31019fd3\",\"payload_ref\":\"sha256:8ab35be69d1223c7bcb6220d8937fbd703ce3f44c1a860489f865d5b31019fd3\",\"provider\":\"yahoo_finance\",\"provider_schema_version\":\"yahoo_chart_schema_v1\",\"provider_symbol\":\"SYNV2.JK\",\"reason_code\":\"\",\"requested_end_date\":\"\",\"requested_start_date\":\"\",\"requested_trade_date\":\"2026-03-23\",\"schema_fingerprint\":\"d3bbb2cfc4329fe544d289c102701fb844e353ad53cf05f786461abb2728e19f\",\"source_timestamp\":\"2026-03-23 09:00:00\",\"supersedes_entry_hash\":\"\",\"validation_state\":\"PASSED\"}],\"schema_version\":\"market-data-observation-manifest/v2\"}",
+            "hash": "92ecc9f3fb02adec53093e3836129e7c4713549297e09ffe62f8619fa46bf0b5"
+        },
+        "identity_revision_set": {
+            "preimage": "{\"content\":{\"rows\":[{\"board_identity_recorded_at\":\"2020-01-01 00:00:00\",\"listing\":{\"instrument_root\":\"5a000000-0000-4000-8000-000000000002\",\"issuer_root\":\"5a000000-0000-4000-8000-000000000001\",\"listing_root\":\"5a000000-0000-4000-8000-000000000003\"},\"normalized_board_code\":\"\",\"resolution_state\":\"FAIL_CLOSED_BOARD_UNKNOWN\"}]},\"schema_version\":\"identity-board-resolution-set/v2\"}",
+            "hash": "fc581f41d529036c9886bdac8b21e700503321e5b6f3661f19771ade97fc586b"
+        },
+        "calendar_revision_set": {
+            "preimage": "{\"content\":{\"rows\":[{\"cal_date\":\"2026-03-23\",\"completed_at\":\"2026-03-23 16:00:00\",\"is_half_day\":0,\"is_trading_day\":1,\"market_code\":\"IDX\",\"market_segment\":\"REGULAR\",\"provenance_tier\":\"VERIFIED\",\"recorded_at\":\"2026-03-23 17:00:00\",\"revision_uid\":\"7dc2cd5c9c3774a947b99854864f0bf5a156d86823757e0b25a9be3946549a7e\",\"session_close_at\":\"2026-03-23 16:00:00\",\"session_open_at\":\"2026-03-23 09:00:00\",\"session_state\":\"COMPLETED\",\"source_payload_hash\":\"\",\"source_ref\":\"https://www.idx.co.id/test-calendar/2026-03-23\",\"source_version\":\"idx-test-calendar-v1\",\"supersedes_revision_uid\":\"\",\"timezone\":\"Asia/Jakarta\"}]},\"schema_version\":\"calendar-revision-set/v2\"}",
+            "hash": "ef256ac9af24d297d5fbe6fd3c97219ea5565181050b69f95050fff3c6a9065e"
+        },
+        "status_revision_set": {
+            "preimage": "{\"content\":{\"rows\":[{\"bar_expectation_state\":\"BAR_EXPECTATION_UNKNOWN\",\"listing\":{\"instrument_root\":\"5a000000-0000-4000-8000-000000000002\",\"issuer_root\":\"5a000000-0000-4000-8000-000000000001\",\"listing_root\":\"5a000000-0000-4000-8000-000000000003\"},\"status_revision_hash\":\"\",\"status_source_payload_hash\":\"\",\"temporal_status_state\":\"UNKNOWN\"}]},\"schema_version\":\"status-resolution-set/v2\"}",
+            "hash": "083483df0e9a825eb0b7fd7cf9cea9f9606c9d28f04f4d249442681ad01af81e"
+        },
+        "event_revision_set": {
+            "preimage": "{\"content\":{\"rows\":[]},\"schema_version\":\"event-revision-set/v2\"}",
+            "hash": "e26c3c22bba3187fa8cf14dfd0c888e60cafefac630b2534df9a8582859f7c82"
+        },
+        "source_scale_assessment_set": {
+            "preimage": "{\"content\":{\"rows\":[]},\"schema_version\":\"source-scale-assessment-set/v2\"}",
+            "hash": "ebb520fa38efc571ae42c68e4871f3f671018ee9cede1d7c81527ba0799f5936"
+        },
+        "market_structure_revision_set": {
+            "preimage": "{\"content\":{\"rows\":[{\"board_identity_recorded_at\":\"2020-01-01 00:00:00\",\"listing\":{\"instrument_root\":\"5a000000-0000-4000-8000-000000000002\",\"issuer_root\":\"5a000000-0000-4000-8000-000000000001\",\"listing_root\":\"5a000000-0000-4000-8000-000000000003\"},\"minimum_price\":\"\",\"normalized_board_code\":\"\",\"price_band\":\"\",\"reason_code\":\"MARKET_STRUCTURE_BOARD_UNKNOWN\",\"resolution_state\":\"FAIL_CLOSED_BOARD_UNKNOWN\",\"tick_size\":\"\"}]},\"schema_version\":\"market-structure-resolution-set/v2\"}",
+            "hash": "d313d45ada9589003ac3a8af2f962d5fea02850d35bb2e5fc14120bd4fc4f8e6"
+        },
+        "factor_decision_set": {
+            "preimage": "{\"content\":{\"rows\":[]},\"schema_version\":\"factor-decision-set/v2\"}",
+            "hash": "648a63777d0a173941fb8e31e045edfdac5dd2aff96942ecb528d0cbd2e7fb30"
+        },
+        "factor_set": {
+            "preimage": "{\"content\":{\"config_content_hash\":\"8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0\",\"decisions\":[],\"factor_formula_version\":\"structural_factor_product_v2\",\"factors\":[],\"price_product_code\":\"STRUCTURAL_ADJUSTED\",\"state\":\"BOUND\",\"window_end\":\"2026-03-23\",\"window_start\":\"2023-01-02\"},\"schema_version\":\"market-data-adjustment-factor-set/v2\"}",
+            "hash": "f76a54ae5251685f2bcff60bce22fc66f250408350583b86c57bde953baf74e0"
+        }
+    },
+    "nested_members": {
+        "observation_manifest_hash": "92ecc9f3fb02adec53093e3836129e7c4713549297e09ffe62f8619fa46bf0b5",
+        "identity_revision_set_hash": "fc581f41d529036c9886bdac8b21e700503321e5b6f3661f19771ade97fc586b",
+        "calendar_revision_set_hash": "ef256ac9af24d297d5fbe6fd3c97219ea5565181050b69f95050fff3c6a9065e",
+        "status_revision_set_hash": "083483df0e9a825eb0b7fd7cf9cea9f9606c9d28f04f4d249442681ad01af81e",
+        "event_revision_set_hash": "e26c3c22bba3187fa8cf14dfd0c888e60cafefac630b2534df9a8582859f7c82",
+        "source_scale_assessment_set_hash": "ebb520fa38efc571ae42c68e4871f3f671018ee9cede1d7c81527ba0799f5936",
+        "market_structure_revision_set_hash": "d313d45ada9589003ac3a8af2f962d5fea02850d35bb2e5fc14120bd4fc4f8e6",
+        "factor_decision_set_hash": "648a63777d0a173941fb8e31e045edfdac5dd2aff96942ecb528d0cbd2e7fb30",
+        "factor_set_hash": "f76a54ae5251685f2bcff60bce22fc66f250408350583b86c57bde953baf74e0"
+    },
+    "artifacts": {
+        "bars": {
+            "columns": {
+                "trade_date": "D",
+                "issuer_root": "S",
+                "instrument_root": "S",
+                "listing_root": "S",
+                "provider_namespace": "S",
+                "provider_symbol": "S",
+                "observation_manifest_hash": "H",
+                "source_timestamp": "T",
+                "acquired_at": "T",
+                "open": "P4",
+                "high": "P4",
+                "low": "P4",
+                "close": "P4",
+                "volume": "I",
+                "previous_close": "P4",
+                "traded_value_idr_actual": "P2",
+                "trade_count": "I",
+                "board_code": "S",
+                "session_code": "S",
+                "canonicalization_version": "S",
+                "price_product_code": "S",
+                "quality_state": "S",
+                "quality_reasons_json": "J",
+                "config_content_hash": "H",
+                "source_scale_state": "S",
+                "source_scale_assessment_set_hash": "H"
+            },
+            "row_tokens": [
+                {
+                    "trade_date": "2026-03-23",
+                    "issuer_root": "5a000000-0000-4000-8000-000000000001",
+                    "instrument_root": "5a000000-0000-4000-8000-000000000002",
+                    "listing_root": "5a000000-0000-4000-8000-000000000003",
+                    "provider_namespace": "yahoo_finance",
+                    "provider_symbol": "SYNV2.JK",
+                    "observation_manifest_hash": "92ecc9f3fb02adec53093e3836129e7c4713549297e09ffe62f8619fa46bf0b5",
+                    "source_timestamp": "",
+                    "acquired_at": "2026-03-25 10:30:00",
+                    "open": "100.0000",
+                    "high": "110.0000",
+                    "low": "95.0000",
+                    "close": "105.0000",
+                    "volume": "1000",
+                    "previous_close": "",
+                    "traded_value_idr_actual": "",
+                    "trade_count": "",
+                    "board_code": "",
+                    "session_code": "REGULAR",
+                    "canonicalization_version": "idx_regular_raw_v2",
+                    "price_product_code": "RAW",
+                    "quality_state": "VALIDATED",
+                    "quality_reasons_json": "[]",
+                    "config_content_hash": "8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0",
+                    "source_scale_state": "UNKNOWN",
+                    "source_scale_assessment_set_hash": "ebb520fa38efc571ae42c68e4871f3f671018ee9cede1d7c81527ba0799f5936"
+                }
+            ],
+            "preimage": "market-data-semantic-hash/v2|bars\n2026-03-23|5a000000-0000-4000-8000-000000000001|5a000000-0000-4000-8000-000000000002|5a000000-0000-4000-8000-000000000003|yahoo_finance|SYNV2.JK|92ecc9f3fb02adec53093e3836129e7c4713549297e09ffe62f8619fa46bf0b5||2026-03-25 10:30:00|100.0000|110.0000|95.0000|105.0000|1000|||||REGULAR|idx_regular_raw_v2|RAW|VALIDATED|[]|8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0|UNKNOWN|ebb520fa38efc571ae42c68e4871f3f671018ee9cede1d7c81527ba0799f5936",
+            "sha256": "6c874753323c4b750b253039444c73e6c4f9a0f0ddff19bbb4828ec07272c415"
+        },
+        "indicators": {
+            "columns": {
+                "trade_date": "D",
+                "issuer_root": "S",
+                "instrument_root": "S",
+                "listing_root": "S",
+                "observation_manifest_hash": "H",
+                "identity_revision_set_hash": "H",
+                "status_revision_set_hash": "H",
+                "event_revision_set_hash": "H",
+                "factor_decision_set_hash": "H",
+                "is_valid": "B",
+                "invalid_reason_code": "S",
+                "indicator_set_version": "S",
+                "sector_code": "S",
+                "sector_membership_revision_hash": "H",
+                "dv20_idr": "P2",
+                "atr14_pct": "P10",
+                "vol_ratio": "P10",
+                "roc5": "P10",
+                "roc10": "P10",
+                "roc20": "P10",
+                "hh20": "P4",
+                "ll20": "P4",
+                "ma20": "P4",
+                "ma50": "P4",
+                "close_to_hh20_pct": "P10",
+                "close_to_ll20_pct": "P10",
+                "range_20_pct": "P10",
+                "range_position_20_pct": "P10",
+                "close_vs_ma20_pct": "P10",
+                "close_vs_ma50_pct": "P10",
+                "ma20_slope_pct": "P10",
+                "rs_20_vs_ihsg": "P10",
+                "sector_roc20": "P10",
+                "rs_20_vs_sector": "P10",
+                "sector_rs_20_vs_ihsg": "P10",
+                "corporate_action_flag": "B",
+                "corporate_action_types": "S",
+                "trading_status_code": "S",
+                "is_suspended": "B",
+                "is_uma": "B",
+                "event_risk_flag": "B",
+                "event_risk_reasons": "J",
+                "corporate_action_window_reasons": "J",
+                "formula_version": "S",
+                "config_content_hash": "H",
+                "factor_set_hash": "H",
+                "price_product_code": "S",
+                "price_product_version": "S",
+                "liquidity_formula_version": "S",
+                "adv20_traded_value_idr_actual": "P2",
+                "adv20_close_volume_proxy_idr": "P2",
+                "atr14": "P10",
+                "atr_state_ref": "S",
+                "null_reasons_json": "J"
+            },
+            "row_tokens": [
+                {
+                    "trade_date": "2026-03-23",
+                    "issuer_root": "5a000000-0000-4000-8000-000000000001",
+                    "instrument_root": "5a000000-0000-4000-8000-000000000002",
+                    "listing_root": "5a000000-0000-4000-8000-000000000003",
+                    "observation_manifest_hash": "92ecc9f3fb02adec53093e3836129e7c4713549297e09ffe62f8619fa46bf0b5",
+                    "identity_revision_set_hash": "fc581f41d529036c9886bdac8b21e700503321e5b6f3661f19771ade97fc586b",
+                    "status_revision_set_hash": "083483df0e9a825eb0b7fd7cf9cea9f9606c9d28f04f4d249442681ad01af81e",
+                    "event_revision_set_hash": "e26c3c22bba3187fa8cf14dfd0c888e60cafefac630b2534df9a8582859f7c82",
+                    "factor_decision_set_hash": "648a63777d0a173941fb8e31e045edfdac5dd2aff96942ecb528d0cbd2e7fb30",
+                    "is_valid": "0",
+                    "invalid_reason_code": "IND_INSUFFICIENT_HISTORY",
+                    "indicator_set_version": "v1",
+                    "sector_code": "",
+                    "sector_membership_revision_hash": "",
+                    "dv20_idr": "",
+                    "atr14_pct": "",
+                    "vol_ratio": "",
+                    "roc5": "",
+                    "roc10": "",
+                    "roc20": "",
+                    "hh20": "",
+                    "ll20": "",
+                    "ma20": "",
+                    "ma50": "",
+                    "close_to_hh20_pct": "",
+                    "close_to_ll20_pct": "",
+                    "range_20_pct": "",
+                    "range_position_20_pct": "",
+                    "close_vs_ma20_pct": "",
+                    "close_vs_ma50_pct": "",
+                    "ma20_slope_pct": "",
+                    "rs_20_vs_ihsg": "",
+                    "sector_roc20": "",
+                    "rs_20_vs_sector": "",
+                    "sector_rs_20_vs_ihsg": "",
+                    "corporate_action_flag": "",
+                    "corporate_action_types": "",
+                    "trading_status_code": "",
+                    "is_suspended": "",
+                    "is_uma": "",
+                    "event_risk_flag": "",
+                    "event_risk_reasons": "",
+                    "corporate_action_window_reasons": "",
+                    "formula_version": "v1",
+                    "config_content_hash": "8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0",
+                    "factor_set_hash": "f76a54ae5251685f2bcff60bce22fc66f250408350583b86c57bde953baf74e0",
+                    "price_product_code": "STRUCTURAL_ADJUSTED",
+                    "price_product_version": "structural_adjusted_v2",
+                    "liquidity_formula_version": "liquidity_metric_v1",
+                    "adv20_traded_value_idr_actual": "",
+                    "adv20_close_volume_proxy_idr": "",
+                    "atr14": "",
+                    "atr_state_ref": "",
+                    "null_reasons_json": "{\"adv20_close_volume_proxy_idr\":[\"IND_INSUFFICIENT_HISTORY\"],\"atr14\":[\"IND_INSUFFICIENT_HISTORY\"],\"atr14_pct\":[\"IND_INSUFFICIENT_HISTORY\"],\"close_to_hh20_pct\":[\"IND_INSUFFICIENT_HISTORY\"],\"close_to_ll20_pct\":[\"IND_INSUFFICIENT_HISTORY\"],\"close_vs_ma20_pct\":[\"IND_INSUFFICIENT_HISTORY\"],\"close_vs_ma50_pct\":[\"IND_INSUFFICIENT_HISTORY\"],\"dv20_idr\":[\"IND_INSUFFICIENT_HISTORY\"],\"hh20\":[\"IND_INSUFFICIENT_HISTORY\"],\"ll20\":[\"IND_INSUFFICIENT_HISTORY\"],\"ma20\":[\"IND_INSUFFICIENT_HISTORY\"],\"ma20_slope_pct\":[\"IND_INSUFFICIENT_HISTORY\"],\"ma50\":[\"IND_INSUFFICIENT_HISTORY\"],\"range_20_pct\":[\"IND_INSUFFICIENT_HISTORY\"],\"range_position_20_pct\":[\"IND_INSUFFICIENT_HISTORY\"],\"roc10\":[\"IND_INSUFFICIENT_HISTORY\"],\"roc20\":[\"IND_INSUFFICIENT_HISTORY\"],\"roc5\":[\"IND_INSUFFICIENT_HISTORY\"],\"rs_20_vs_ihsg\":[\"IND_INSUFFICIENT_HISTORY\"],\"rs_20_vs_sector\":[\"IND_INSUFFICIENT_HISTORY\"],\"vol_ratio\":[\"IND_INSUFFICIENT_HISTORY\"]}"
+                }
+            ],
+            "preimage": "market-data-semantic-hash/v2|indicators\n2026-03-23|5a000000-0000-4000-8000-000000000001|5a000000-0000-4000-8000-000000000002|5a000000-0000-4000-8000-000000000003|92ecc9f3fb02adec53093e3836129e7c4713549297e09ffe62f8619fa46bf0b5|fc581f41d529036c9886bdac8b21e700503321e5b6f3661f19771ade97fc586b|083483df0e9a825eb0b7fd7cf9cea9f9606c9d28f04f4d249442681ad01af81e|e26c3c22bba3187fa8cf14dfd0c888e60cafefac630b2534df9a8582859f7c82|648a63777d0a173941fb8e31e045edfdac5dd2aff96942ecb528d0cbd2e7fb30|0|IND_INSUFFICIENT_HISTORY|v1||||||||||||||||||||||||||||||||v1|8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0|f76a54ae5251685f2bcff60bce22fc66f250408350583b86c57bde953baf74e0|STRUCTURAL_ADJUSTED|structural_adjusted_v2|liquidity_metric_v1|||||{\"adv20_close_volume_proxy_idr\":[\"IND_INSUFFICIENT_HISTORY\"],\"atr14\":[\"IND_INSUFFICIENT_HISTORY\"],\"atr14_pct\":[\"IND_INSUFFICIENT_HISTORY\"],\"close_to_hh20_pct\":[\"IND_INSUFFICIENT_HISTORY\"],\"close_to_ll20_pct\":[\"IND_INSUFFICIENT_HISTORY\"],\"close_vs_ma20_pct\":[\"IND_INSUFFICIENT_HISTORY\"],\"close_vs_ma50_pct\":[\"IND_INSUFFICIENT_HISTORY\"],\"dv20_idr\":[\"IND_INSUFFICIENT_HISTORY\"],\"hh20\":[\"IND_INSUFFICIENT_HISTORY\"],\"ll20\":[\"IND_INSUFFICIENT_HISTORY\"],\"ma20\":[\"IND_INSUFFICIENT_HISTORY\"],\"ma20_slope_pct\":[\"IND_INSUFFICIENT_HISTORY\"],\"ma50\":[\"IND_INSUFFICIENT_HISTORY\"],\"range_20_pct\":[\"IND_INSUFFICIENT_HISTORY\"],\"range_position_20_pct\":[\"IND_INSUFFICIENT_HISTORY\"],\"roc10\":[\"IND_INSUFFICIENT_HISTORY\"],\"roc20\":[\"IND_INSUFFICIENT_HISTORY\"],\"roc5\":[\"IND_INSUFFICIENT_HISTORY\"],\"rs_20_vs_ihsg\":[\"IND_INSUFFICIENT_HISTORY\"],\"rs_20_vs_sector\":[\"IND_INSUFFICIENT_HISTORY\"],\"vol_ratio\":[\"IND_INSUFFICIENT_HISTORY\"]}",
+            "sha256": "45a03750e321889251c94e59b56e2032e54becf5d94a5dda2560e53c0c4e85ec"
+        },
+        "eligibility": {
+            "columns": {
+                "trade_date": "D",
+                "issuer_root": "S",
+                "instrument_root": "S",
+                "listing_root": "S",
+                "identity_revision_set_hash": "H",
+                "status_revision_set_hash": "H",
+                "event_revision_set_hash": "H",
+                "market_structure_revision_set_hash": "H",
+                "eligible": "B",
+                "reason_code": "S",
+                "universe_membership_state": "S",
+                "bar_expectation_state": "S",
+                "delivery_state": "S",
+                "canonical_quality_state": "S",
+                "liquidity_state": "S",
+                "temporal_status_state": "S",
+                "event_risk_state": "S",
+                "source_provenance_state": "S",
+                "price_basis_state": "S",
+                "contamination_state": "S",
+                "indicator_state": "S",
+                "freshness_state": "S",
+                "eligibility_reasons_json": "J",
+                "config_content_hash": "H",
+                "read_model_version": "S",
+                "market_structure_resolution_state": "S"
+            },
+            "row_tokens": [
+                {
+                    "trade_date": "2026-03-23",
+                    "issuer_root": "5a000000-0000-4000-8000-000000000001",
+                    "instrument_root": "5a000000-0000-4000-8000-000000000002",
+                    "listing_root": "5a000000-0000-4000-8000-000000000003",
+                    "identity_revision_set_hash": "fc581f41d529036c9886bdac8b21e700503321e5b6f3661f19771ade97fc586b",
+                    "status_revision_set_hash": "083483df0e9a825eb0b7fd7cf9cea9f9606c9d28f04f4d249442681ad01af81e",
+                    "event_revision_set_hash": "e26c3c22bba3187fa8cf14dfd0c888e60cafefac630b2534df9a8582859f7c82",
+                    "market_structure_revision_set_hash": "d313d45ada9589003ac3a8af2f962d5fea02850d35bb2e5fc14120bd4fc4f8e6",
+                    "eligible": "0",
+                    "reason_code": "ELIG_INSUFFICIENT_HISTORY",
+                    "universe_membership_state": "MEMBER",
+                    "bar_expectation_state": "BAR_EXPECTATION_UNKNOWN",
+                    "delivery_state": "DELIVERED",
+                    "canonical_quality_state": "VALIDATED",
+                    "liquidity_state": "ACTIVE",
+                    "temporal_status_state": "UNKNOWN",
+                    "event_risk_state": "UNKNOWN",
+                    "source_provenance_state": "SOURCE_TRACEABLE",
+                    "price_basis_state": "STRUCTURAL_ADJUSTED",
+                    "contamination_state": "NO_CONTAMINATION_DETECTED",
+                    "indicator_state": "INVALID",
+                    "freshness_state": "NOT_AVAILABLE",
+                    "eligibility_reasons_json": "[\"ELIG_INSUFFICIENT_HISTORY\"]",
+                    "config_content_hash": "8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0",
+                    "read_model_version": "market_data_read_product_v1",
+                    "market_structure_resolution_state": "FAIL_CLOSED_BOARD_UNKNOWN"
+                }
+            ],
+            "preimage": "market-data-semantic-hash/v2|eligibility\n2026-03-23|5a000000-0000-4000-8000-000000000001|5a000000-0000-4000-8000-000000000002|5a000000-0000-4000-8000-000000000003|fc581f41d529036c9886bdac8b21e700503321e5b6f3661f19771ade97fc586b|083483df0e9a825eb0b7fd7cf9cea9f9606c9d28f04f4d249442681ad01af81e|e26c3c22bba3187fa8cf14dfd0c888e60cafefac630b2534df9a8582859f7c82|d313d45ada9589003ac3a8af2f962d5fea02850d35bb2e5fc14120bd4fc4f8e6|0|ELIG_INSUFFICIENT_HISTORY|MEMBER|BAR_EXPECTATION_UNKNOWN|DELIVERED|VALIDATED|ACTIVE|UNKNOWN|UNKNOWN|SOURCE_TRACEABLE|STRUCTURAL_ADJUSTED|NO_CONTAMINATION_DETECTED|INVALID|NOT_AVAILABLE|[\"ELIG_INSUFFICIENT_HISTORY\"]|8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0|market_data_read_product_v1|FAIL_CLOSED_BOARD_UNKNOWN",
+            "sha256": "42722d5ddeaa78896b81921e25d1c7d8d72de1e914a7a1ee24f8ae5ff2bf9269"
+        }
+    },
+    "replay_composites": {
+        "temporal_identity_hash": "a9233bcee067ad6f1715494c0bd5b587e49fa69e08b2a1085bc5509dc1b2e51b",
+        "calendar_status_hash": "2c7dc9f896cee8e1233ac0899d63316b5f2ccfb779cd6553f2fe3fa52e801dcf"
+    },
+    "publication_manifest": {
+        "payload": {
+            "market_scope": "IDX_REGULAR_EOD",
+            "trade_date": "2026-03-23",
+            "trade_date_requested": "2026-03-23",
+            "trade_date_effective": "2026-03-23",
+            "publication_version": "1",
+            "lineage": {
+                "supersedes_manifest_hash": null,
+                "previous_manifest_hash": null,
+                "replaced_manifest_hash": null
+            },
+            "artifact_hash_profile": "market-data-semantic-hash/v2",
+            "nested_identity_version": "market-data-semantic-nested/v2",
+            "observation_manifest_hash": "92ecc9f3fb02adec53093e3836129e7c4713549297e09ffe62f8619fa46bf0b5",
+            "config_content_hash": "8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0",
+            "config_registry_revision": "platform_config_registry_v2",
+            "identity_revision_set_hash": "fc581f41d529036c9886bdac8b21e700503321e5b6f3661f19771ade97fc586b",
+            "calendar_revision_set_hash": "ef256ac9af24d297d5fbe6fd3c97219ea5565181050b69f95050fff3c6a9065e",
+            "status_revision_set_hash": "083483df0e9a825eb0b7fd7cf9cea9f9606c9d28f04f4d249442681ad01af81e",
+            "event_revision_set_hash": "e26c3c22bba3187fa8cf14dfd0c888e60cafefac630b2534df9a8582859f7c82",
+            "source_scale_assessment_set_hash": "ebb520fa38efc571ae42c68e4871f3f671018ee9cede1d7c81527ba0799f5936",
+            "market_structure_revision_set_hash": "d313d45ada9589003ac3a8af2f962d5fea02850d35bb2e5fc14120bd4fc4f8e6",
+            "factor_decision_set_hash": "648a63777d0a173941fb8e31e045edfdac5dd2aff96942ecb528d0cbd2e7fb30",
+            "factor_set_hash": "f76a54ae5251685f2bcff60bce22fc66f250408350583b86c57bde953baf74e0",
+            "semantic_reasons": [
+                "COVERAGE_THRESHOLD_MET"
+            ],
+            "price_product_code": "STRUCTURAL_ADJUSTED",
+            "price_product_version": "structural_adjusted_v2",
+            "canonicalization_version": "idx_regular_raw_v2",
+            "formula_version": "v1",
+            "read_model_version": "market_data_read_product_v1",
+            "artifacts": {
+                "bars": "6c874753323c4b750b253039444c73e6c4f9a0f0ddff19bbb4828ec07272c415",
+                "indicators": "45a03750e321889251c94e59b56e2032e54becf5d94a5dda2560e53c0c4e85ec",
+                "eligibility": "42722d5ddeaa78896b81921e25d1c7d8d72de1e914a7a1ee24f8ae5ff2bf9269"
+            },
+            "row_counts": {
+                "bars": 1,
+                "indicators": 1,
+                "eligibility": 1
+            },
+            "quality_state": "PASS",
+            "coverage_gate_state": "PASS",
+            "coverage_ratio": "1.0000",
+            "readiness_state": "READABLE",
+            "freshness_state": "NOT_AVAILABLE",
+            "correction_lineage": {
+                "correction_semantic_hash": null,
+                "promote_mode": "",
+                "publish_target": ""
+            },
+            "seal_contract_version": "dataset_seal_v2",
+            "seal_hash_algorithm": "SHA-256"
+        },
+        "preimage": "{\"domain\":\"publication_manifest\",\"payload\":{\"artifact_hash_profile\":\"market-data-semantic-hash/v2\",\"artifacts\":{\"bars\":\"6c874753323c4b750b253039444c73e6c4f9a0f0ddff19bbb4828ec07272c415\",\"eligibility\":\"42722d5ddeaa78896b81921e25d1c7d8d72de1e914a7a1ee24f8ae5ff2bf9269\",\"indicators\":\"45a03750e321889251c94e59b56e2032e54becf5d94a5dda2560e53c0c4e85ec\"},\"calendar_revision_set_hash\":\"ef256ac9af24d297d5fbe6fd3c97219ea5565181050b69f95050fff3c6a9065e\",\"canonicalization_version\":\"idx_regular_raw_v2\",\"config_content_hash\":\"8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0\",\"config_registry_revision\":\"platform_config_registry_v2\",\"correction_lineage\":{\"correction_semantic_hash\":\"\",\"promote_mode\":\"\",\"publish_target\":\"\"},\"coverage_gate_state\":\"PASS\",\"coverage_ratio\":\"1.0000\",\"event_revision_set_hash\":\"e26c3c22bba3187fa8cf14dfd0c888e60cafefac630b2534df9a8582859f7c82\",\"factor_decision_set_hash\":\"648a63777d0a173941fb8e31e045edfdac5dd2aff96942ecb528d0cbd2e7fb30\",\"factor_set_hash\":\"f76a54ae5251685f2bcff60bce22fc66f250408350583b86c57bde953baf74e0\",\"formula_version\":\"v1\",\"freshness_state\":\"NOT_AVAILABLE\",\"identity_revision_set_hash\":\"fc581f41d529036c9886bdac8b21e700503321e5b6f3661f19771ade97fc586b\",\"lineage\":{\"previous_manifest_hash\":\"\",\"replaced_manifest_hash\":\"\",\"supersedes_manifest_hash\":\"\"},\"market_scope\":\"IDX_REGULAR_EOD\",\"market_structure_revision_set_hash\":\"d313d45ada9589003ac3a8af2f962d5fea02850d35bb2e5fc14120bd4fc4f8e6\",\"nested_identity_version\":\"market-data-semantic-nested/v2\",\"observation_manifest_hash\":\"92ecc9f3fb02adec53093e3836129e7c4713549297e09ffe62f8619fa46bf0b5\",\"price_product_code\":\"STRUCTURAL_ADJUSTED\",\"price_product_version\":\"structural_adjusted_v2\",\"publication_version\":\"1\",\"quality_state\":\"PASS\",\"read_model_version\":\"market_data_read_product_v1\",\"readiness_state\":\"READABLE\",\"row_counts\":{\"bars\":1,\"eligibility\":1,\"indicators\":1},\"seal_contract_version\":\"dataset_seal_v2\",\"seal_hash_algorithm\":\"SHA-256\",\"semantic_reasons\":[\"COVERAGE_THRESHOLD_MET\"],\"source_scale_assessment_set_hash\":\"ebb520fa38efc571ae42c68e4871f3f671018ee9cede1d7c81527ba0799f5936\",\"status_revision_set_hash\":\"083483df0e9a825eb0b7fd7cf9cea9f9606c9d28f04f4d249442681ad01af81e\",\"trade_date\":\"2026-03-23\",\"trade_date_effective\":\"2026-03-23\",\"trade_date_requested\":\"2026-03-23\"},\"semantic_profile\":\"market-data-publication-semantic/v2\"}",
+        "hash": "56e44a75683bf3a1734c333c10855be3f3b123d6ba5ac2c1e192cb537a11c2f2"
+    },
+    "candidate_v2_identities": {
+        "contamination_decision_set": {
+            "preimage": "{\"contamination\":[],\"price_scale_breaks\":[],\"schema_version\":\"market-data-contamination-decision-set/v2\"}",
+            "hash": "b61b39fa2641038c54740d92f862fe82ea2c4d3c5387ed99d1a685e8048f94b6"
+        },
+        "event_factor_hash": {
+            "preimage": "{\"contamination_decision_set_hash\":\"b61b39fa2641038c54740d92f862fe82ea2c4d3c5387ed99d1a685e8048f94b6\",\"event_revision_set_hash\":\"e26c3c22bba3187fa8cf14dfd0c888e60cafefac630b2534df9a8582859f7c82\",\"factor_decision_set_hash\":\"648a63777d0a173941fb8e31e045edfdac5dd2aff96942ecb528d0cbd2e7fb30\",\"factor_set_hash\":\"f76a54ae5251685f2bcff60bce22fc66f250408350583b86c57bde953baf74e0\",\"profile\":\"market-data-semantic-hash/v2\",\"source_scale_assessment_set_hash\":\"ebb520fa38efc571ae42c68e4871f3f671018ee9cede1d7c81527ba0799f5936\"}",
+            "hash": "4b3221309a4d1f6661c6b593920d20feeb5f03d674251aff11d7b04a32fd6f55"
+        },
+        "formula_registry_hash": {
+            "preimage": "{\"config_registry_revision\":\"platform_config_registry_v2\",\"config_resolver_version\":\"market_data_config_resolver_v1\",\"coverage_contract_version\":\"coverage_gate_v1\",\"eligibility_contract_version\":\"eod_eligibility_snapshot_v1\",\"indicator_set_version\":\"v1\",\"read_model_version\":\"market_data_read_product_v1\",\"registry_contract\":\"producer_registry_content_v1\",\"schema_version\":\"market-data-formula-registry/v2\",\"semantic_versions\":{\"canonical_volume_unit_code\":\"SHARES\",\"factor_formula_version\":\"structural_factor_product_v2\",\"liquidity_formula_version\":\"liquidity_metric_v1\",\"price_product_version\":\"structural_adjusted_v2\",\"raw_product_version\":\"raw_eod_v1\",\"session_snapshot_feature_state\":\"DISABLED\",\"source_reported_liquidity_version\":\"source_reported_v1\",\"structural_adjusted_product_version\":\"structural_adjusted_v2\",\"total_return_product_version\":\"total_return_v1\"},\"serialization_version\":\"canonical_json_v1\"}",
+            "hash": "2d1f53e19c2995ab5f9e0282e898e06a5f755ad4d9248f6c7cdac629e8ace4bf"
+        },
+        "reason_registry_hash": {
+            "entry_count": 437,
+            "preimage_head": "{\"entries\":[{\"category\":\"PUBLICATION_REPROCESS\",\"code\":\"AFFECTED_DATE_RUN_NOT_FOUND\",\"description\":\"Affected non-readable date could not be promoted because no persisted run exists.\",\"is_active\":true,\"severity\":\"HARD\"},{\"category\":\"CORRECTION\",\"code\":\"AFFECTED_PUBLICATION_REQUIRES_CORRECTION\",\"description\":\"A changed historical EOD bar can affect at least one already readable downstream publicatio",
+            "preimage_bytes": 84996,
+            "preimage_sha256_is_the_hash": true,
+            "hash": "0dda9efd27338ad354bca8175aeb2a84d127a259ba5d26dfe84712c33c027a89"
+        },
+        "executable_build_identity": {
+            "frozen_literal": "sha256:aa4aa7d1e9b1c4c15fe58d2d172b395af630679bce834633c2758cda91dc1e22",
+            "method": "php_source_build_v1",
+            "manifest_sha256": "95bd9b10fd306312a37b9a9ba1b5275e10bcf630b6d46a4261a61bfc472e80b7",
+            "file_count": 5915
+        }
+    }
+}

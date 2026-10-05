@@ -1,0 +1,384 @@
+{
+    "evidence_id": "E-MD-B10-A003-003",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B10",
+    "attempt_id": "MD-B10-A003",
+    "work_id": "MD-B10-A003",
+    "baseline_id": "MD-B10-A003-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "change_impact_declaration": "CI-MD-B10-A003-001",
+    "issued_at": "2026-10-05T15:27:49+07:00",
+    "verdict": "THREE_PREDICATES_PROMOTED_THROUGH_THE_GOVERNED_SUCCESSOR_BINDER_B10_CLOSED_1072_OF_1072_UNDER_A003",
+    "checkpoint_verdict": "MD-B10-A003 REMEDIATION COMPLETE",
+    "historical_versus_current": "MD-B10-A001 (SC-MD-B10-A001-001) and MD-B10-A002 (SC-MD-B10-A002-001) closed 1072/1072 under their strategy freezes and are not rewritten. This closure is the current result under MD-STRATEGY-FREEZE-20261005-001: the three predicates demoted at entry by the corrected authority are re-proven (E-MD-B10-A003-002) and bound; 1069 keep their predecessor bindings.",
+    "related_findings": [
+        "F-MD-B18-A002-033",
+        "F-MD-B10-A003-001",
+        "F-MD-B10-A003-002"
+    ],
+    "related_evidence": [
+        "E-MD-B10-A003-002",
+        "E-MD-B10-A003-001",
+        "E-MD-B18-A002-098",
+        "E-MD-B10-A002-018",
+        "E-MD-B10-A002-017",
+        "E-MD-B10-A001-001",
+        "SC-MD-B10-A002-001",
+        "SC-MD-B10-A001-001",
+        "CI-MD-B10-A003-001",
+        "MD-B10-A003-BL001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-015"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0022"
+    ],
+    "promotion": {
+        "mechanism": "MarketDataB10SuccessorBinder.php --attempt=MD-B10-A003 --evidence-id=E-MD-B10-A003-002 (validate-only first, then one --apply)",
+        "matrix_sha256_before": "3e72dbb3248473ce941e1dce52ada51574be7396be017dbb99fb04d37bae192b",
+        "matrix_sha256_after": "224311dbf953e2fb64a036e7069b40fd42891ed5da1bb3ece7c35054b0dc8bdb",
+        "changed_rules": "3 lines: MD-S005-R0056, MD-S005-R0071, MD-S045-R0058 (only coverage_status, current_evidence_ids, notes)",
+        "diagnostics": {
+            "denominator": 1072,
+            "affected": 3,
+            "affected_not_assessed": 3,
+            "affected_already_on_successor": 0,
+            "unaffected_satisfied_on_predecessor": 1069,
+            "unaffected_unexpected": 0,
+            "matrix_lines": 6514,
+            "planned_changed_lines": 3,
+            "post_state_satisfied": 1072
+        },
+        "write": {
+            "applied": true,
+            "rolled_back": false,
+            "errors": []
+        }
+    },
+    "final_matrix_state": {
+        "denominator": 1072,
+        "satisfied": 1072,
+        "bound_to": {
+            "E-MD-B10-A001-001": 1015,
+            "E-MD-B10-A002-017": 54,
+            "E-MD-B10-A003-002": 3
+        },
+        "not_assessed": 0,
+        "moved_supporting": 0,
+        "reference": 239,
+        "optional_not_requested": 1
+    },
+    "tooling": {
+        "finding": "F-MD-B10-A003-001 (RESOLVED)",
+        "changes": [
+            "A003 layer registered; profilesUpTo; earlierPatterns; an unaffected row may sit on the evidence of any earlier layer",
+            "the proof gate validates a layer's evidence against the layer's own recorded scope while pattern ownership follows the last owner",
+            "the binder gates the planned post-state against the layers that exist at the attempt",
+            "self-test: the not-registered case uses A004; every gate call of the A002 world is made against the A002 layers; the already-bound control uses the latest layer"
+        ]
+    },
+    "tooling_proof": {
+        "binder_selftest_with_the_documented_pristine_A002_matrix": {
+            "total": 54,
+            "controls": 8,
+            "fail_closed_cases": 46,
+            "failed": [],
+            "note": "E-MD-B10-A002-018 recorded 53 of 54; all 54 pass now, including the controls that used to stop the run. The earlier red was the canonical matrix being used as a pristine matrix once it had moved on."
+        },
+        "a003_binder_cases": {
+            "status": "PASS",
+            "checks": 20,
+            "canonical_matrix_untouched": true,
+            "content": "8 controls (validate-only, apply, idempotence, three governed fields only, 1072/1072 end state, proof and traceability gates in bound mode, the A002-only view of the same state refused) and 12 fail-closed cases"
+        },
+        "tooling_mutation_probes": {
+            "T1": {
+                "intent": "an unaffected row may only sit on the first attempt's evidence (earlier layers no longer accepted)",
+                "file": "MarketDataB10SuccessorBinding.php",
+                "verdict": "RED_INTENDED",
+                "expected_red_control": "control_validate_passes_and_writes_nothing",
+                "red_checks": [
+                    "control_validate_passes_and_writes_nothing",
+                    "control_apply_promotes_exactly_the_three_rules",
+                    "control_apply_end_state_is_1072_satisfied_with_the_three_on_the_successor_evidence",
+                    "control_apply_is_idempotent",
+                    "control_post_state_satisfies_the_b10_proof_gate_bound_with_three_layers",
+                    "control_post_state_satisfies_the_b10_traceability_gate_bound"
+                ],
+                "run_status": "FAIL",
+                "sha256_before": "eff642f4bf363953bef510a666769bf9e1a3fe4748b837595ff42b3fe3e55e93",
+                "sha256_restored": "eff642f4bf363953bef510a666769bf9e1a3fe4748b837595ff42b3fe3e55e93",
+                "restored_byte_identical": true
+            },
+            "T2": {
+                "intent": "a layer's evidence is validated against the rows it still owns instead of its own scope",
+                "file": "MarketDataPublicationLifecycleProofGate.php",
+                "verdict": "RED_INTENDED",
+                "expected_red_control": "control_post_state_satisfies_the_b10_proof_gate_bound_with_three_layers",
+                "red_checks": [
+                    "control_validate_passes_and_writes_nothing",
+                    "control_apply_promotes_exactly_the_three_rules",
+                    "control_apply_end_state_is_1072_satisfied_with_the_three_on_the_successor_evidence",
+                    "control_apply_is_idempotent",
+                    "control_post_state_satisfies_the_b10_proof_gate_bound_with_three_layers",
+                    "control_post_state_satisfies_the_b10_traceability_gate_bound"
+                ],
+                "run_status": "FAIL",
+                "sha256_before": "cedce17750c79eb064342735daaf674898e3f3c20219cb4ca5c3cf868ab48784",
+                "sha256_restored": "cedce17750c79eb064342735daaf674898e3f3c20219cb4ca5c3cf868ab48784",
+                "restored_byte_identical": true
+            },
+            "T3": {
+                "intent": "the post-state gates ignore the layer registry (no A003 pattern for the three rows)",
+                "file": "MarketDataB10SuccessorBinder.php",
+                "verdict": "RED_INTENDED",
+                "expected_red_control": "control_validate_passes_and_writes_nothing",
+                "red_checks": [
+                    "control_validate_passes_and_writes_nothing",
+                    "control_apply_promotes_exactly_the_three_rules",
+                    "control_apply_end_state_is_1072_satisfied_with_the_three_on_the_successor_evidence",
+                    "control_apply_is_idempotent",
+                    "control_post_state_satisfies_the_b10_proof_gate_bound_with_three_layers",
+                    "control_post_state_satisfies_the_b10_traceability_gate_bound"
+                ],
+                "run_status": "FAIL",
+                "sha256_before": "75a0988621a4c130d56f5cc69b5dbf6b27e66990cd62660741d93eb2de42fc8b",
+                "sha256_restored": "75a0988621a4c130d56f5cc69b5dbf6b27e66990cd62660741d93eb2de42fc8b",
+                "restored_byte_identical": true
+            }
+        }
+    },
+    "corrections_of_earlier_records": {
+        "MD-S022-R0052": "DOC-CHG-20261005-001 listed MD-B10 as a supporting stage of this MD-B17-owned row (E-MD-B18-A002-098). The B10 closure gate counts supporting rows as \"moved\" and requires 0 (F-MD-B10-A002-001), so the validate-only run refused the promotion. supporting_stages was cleared (matrix field, MUTABLE_TRACEABLE) and the producer relationship kept in the row notes; no strategy byte, fingerprint, status or owner changed. E-MD-B18-A002-098 is immutable and is annotated here.",
+        "MD-S045-R0058 attribution": "Corrected in E-MD-B10-A003-001: bound to E-MD-B10-A001-001, not E-MD-B10-A002-017."
+    },
+    "governance_gates": {
+        "all_43_gates_compared_with_the_pre_A003_state": "identical (no gate changed result); the B10 proof gate and traceability gate pass in bound mode (bound closure, moved 0)",
+        "summary": {
+            "MarketDataAnalyticalPriceProductProofGate": {
+                "exit": 1,
+                "status": "FAIL"
+            },
+            "MarketDataAnalyticalPriceProductStaticGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataAnalyticalPriceProductTraceabilityGate": {
+                "exit": 1,
+                "status": "FAIL"
+            },
+            "MarketDataB10MigrationStaticGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataB11MigrationStaticGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataCalendarStatusProofGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataCalendarStatusTraceabilityGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataCanonicalRawImportProofGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataCanonicalRawImportTraceabilityGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataClassificationConsistencyGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataConfigFoundationProofGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataConfigFoundationTraceabilityGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataCorporateActionProofGate": {
+                "exit": 1,
+                "status": "FAIL"
+            },
+            "MarketDataCorporateActionTraceabilityGate": {
+                "exit": 1,
+                "status": "FAIL"
+            },
+            "MarketDataCoverageGateClosureGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataCoverageGateProofGate": {
+                "exit": 1,
+                "status": "FAIL"
+            },
+            "MarketDataDocumentationIntegrityGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataEligibilitySnapshotClosureGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataEligibilitySnapshotProofGate": {
+                "exit": 1,
+                "status": "FAIL"
+            },
+            "MarketDataIndicatorEngineClosureGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataIndicatorEngineProofGate": {
+                "exit": 1,
+                "status": "FAIL"
+            },
+            "MarketDataLiquidityMetricProofGate": {
+                "exit": 1,
+                "status": "FAIL"
+            },
+            "MarketDataLiquidityMetricStaticGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataLiquidityMetricTraceabilityGate": {
+                "exit": 1,
+                "status": "FAIL"
+            },
+            "MarketDataOperationsProofGate": {
+                "exit": 1,
+                "status": "FAIL"
+            },
+            "MarketDataPromotedPredicateProofGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataProviderBootstrapTraceabilityGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataPublicationLifecycleProofGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataPublicationLifecycleTraceabilityGate": {
+                "exit": 1,
+                "status": "FAIL"
+            },
+            "MarketDataReadProductClosureGate": {
+                "exit": 1,
+                "status": "FAIL"
+            },
+            "MarketDataReadProductProofGate": {
+                "exit": 255,
+                "status": "NOT_JSON"
+            },
+            "MarketDataRelationshipIntegrityGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataReplayVerificationClosureGate": {
+                "exit": 1,
+                "status": "FAIL"
+            },
+            "MarketDataReplayVerificationProofGate": {
+                "exit": 1,
+                "status": "FAIL"
+            },
+            "MarketDataReplayVerificationProofReadinessGate": {
+                "exit": 1,
+                "status": "FAIL"
+            },
+            "MarketDataScopeBoundaryCompletionGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataSourceAcquisitionProofGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataSourceAcquisitionTraceabilityGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataSourceResilienceProofGate": {
+                "exit": 1,
+                "status": "FAIL"
+            },
+            "MarketDataSourceResilienceTraceabilityGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataTemporalIdentityProofGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataTemporalIdentityTraceabilityGate": {
+                "exit": 0,
+                "status": "PASS"
+            },
+            "MarketDataTraceabilityApplicabilityGate": {
+                "exit": 0,
+                "status": "PASS"
+            }
+        }
+    },
+    "regression": {
+        "full_suite_on_the_final_tree": {
+            "tests": 2847,
+            "assertions": 40132,
+            "failures": 17,
+            "skipped": 0,
+            "classification": {
+                "governed_expected_failures_8": {
+                    "B18ScenarioFamiliesOnMariaDbTest": 1,
+                    "ProductionCorpusInvariantOracleTest": 7
+                },
+                "expected_invalidation_of_candidate_v3_fixture_tests_9": {
+                    "R0025SyntheticV2CandidateFixtureTest": 9
+                },
+                "unexplained": 0
+            },
+            "candidate_v3_tests_red_by_design": [
+                "test_a_wrong_literal_in_any_one_bound_input_is_the_only_mismatch_it_causes",
+                "test_a_wrong_publication_manifest_literal_is_the_only_mismatch_it_causes",
+                "test_an_independent_package_with_any_other_assertion_layer_is_blocked_even_with_an_approval_supplied",
+                "test_candidate_matches_the_actual_publication_but_is_not_admitted_as_proof",
+                "test_each_semantic_member_of_the_event_factor_identity_moves_it",
+                "test_the_actual_publication_manifest_hash_equals_the_independent_literal_and_is_stable_across_layouts",
+                "test_the_admission_mechanism_admits_only_the_exact_fingerprint_and_refuses_any_damaged_package",
+                "test_the_publication_bound_build_identity_is_the_frozen_build_identity",
+                "test_two_allocation_layouts_give_identical_semantic_identities_and_the_oracle_literals"
+            ],
+            "why_candidate_v3_tests_are_red": "Candidate-v3 is immutable reviewed history frozen to executable build aa4aa7d1…1e22 (owner decision Q5=B): any app/ edit invalidates it, and its expected publication_manifest_hash and eligibility identities carry the superseded NOT_AVAILABLE freshness. Not repaired here; candidate-v4 is a separate work unit with a new build, fingerprint and expectations."
+        },
+        "source": "E-MD-B10-A003-002"
+    },
+    "b17_impact": {
+        "state": "MD-B17 remains 244/257 with 13 NOT_ASSESSED rows (MD-S009-R0002, MD-S021-R0027, MD-S022-R0040..R0042, R0045..R0052); not repaired, MD-B17-A003 not opened",
+        "shared producer touched": "MarketDataScope::isOperationallyActivatedFor now delegates to FreshnessState::isInForce (identical on the date grid); the B17 readiness tests are inside the full suite and unchanged green",
+        "new_for_b17": [
+            "the read surface still emits no freshness_state (known, F-MD-B18-A002-033 row 6)",
+            "the configuration registry types the activation marker as null, so the activated branch cannot be configured (F-MD-B10-A003-002)",
+            "the ordered truth table of the Readiness Guarantee is implemented by no read-surface code yet; FreshnessState implements only the applicability part"
+        ],
+        "b17_prerequisite_for_candidate_v4": false
+    },
+    "r0025_state": "INCOMPLETE / NOT_ASSESSED. Candidate-v3 is reviewed CHANGES REQUIRED, immutable and not edited; candidate-v4 does not exist. Its nine fixture tests are red by design against the changed build and freshness (E-MD-B10-A003-002).",
+    "raw_proof": {
+        "package": "storage/app/market_data/evidence/MD-B10-A003/successor-binding-and-closure-20261005-v1",
+        "manifest_sha256": "00afd335c3db8d4a10065f24671acada057830be9ac55377447cfb22bafbeb9f"
+    },
+    "next_resume_point": "MD-B18-A002: create candidate-v4 (distinct package) deriving the pre-activation freshness member and every eligibility row freshness from a frozen activation context and the governed rule; stop at its independent review by a reviewer who is not the authoring Agent.",
+    "no_commit_or_push": 1
+}

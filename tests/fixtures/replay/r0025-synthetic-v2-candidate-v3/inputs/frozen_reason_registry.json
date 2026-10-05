@@ -1,0 +1,3119 @@
+{
+    "label": "FROZEN_REASON_REGISTRY_FOR_SYNTHETIC_V2_WORLD",
+    "frozen_from": "the governed reason registry table `eod_reason_codes` of the platform database, read once by the package author at authoring time",
+    "entry_count": 437,
+    "entry_member_set": [
+        "code",
+        "category",
+        "description",
+        "severity",
+        "is_active"
+    ],
+    "authority_document": {
+        "path": "docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md",
+        "sha256": "d0ec57b3162801329b733c8bb03a4c9fade17946af8771d635e8b2d7c837e507",
+        "rows_parsed": 437
+    },
+    "authority_crosscheck": {
+        "codes_only_in_frozen_registry": [],
+        "codes_only_in_authority_document": [],
+        "category_differences": [],
+        "severity_and_activity_mapping": {
+            "HARD / INACTIVE => HARD / is_active=0": 1,
+            "HARD => HARD / is_active=1": 303,
+            "INFO => INFO / is_active=1": 83,
+            "WARN => WARN / is_active=1": 50
+        },
+        "description_text_differences": {
+            "count": 24,
+            "codes": [
+                "AFFECTED_DATE_RUN_NOT_FOUND",
+                "BAR_DUPLICATE_SOURCE_ROW",
+                "BAR_TICKER_MAPPING_MISSING",
+                "BAR_ZERO_VOLUME_PRICE_MOVEMENT",
+                "CANONICAL_BAR_PRICE_PRODUCT_INVALID",
+                "COMMAND_INVALID_DATE_FORMAT",
+                "COMMAND_INVALID_DATE_RANGE",
+                "CORPORATE_ACTION_AUTHORITATIVE_EVIDENCE_REQUIRED",
+                "COVERAGE_DORMANT_TICKERS_EXCLUDED",
+                "ELIG_FETCH_FAILURE",
+                "ELIG_MISSING_BAR",
+                "ELIG_TRADING_SUSPENDED",
+                "MARKET_CALENDAR_EVIDENCE_MISSING",
+                "MARKET_CALENDAR_REQUIRES_REQUESTED_TRADING_DATE",
+                "MARKET_SESSION_NOT_COMPLETED",
+                "PRICE_PRODUCT_UNRECORDED",
+                "PUBLICATION_REPROCESS_NOT_READABLE",
+                "PUBLICATION_REPROCESS_REPLAY_FAILED",
+                "REQUESTED_DATE_PROMOTED_BY_PRIMARY_PIPELINE",
+                "RUN_CURRENT_PUBLICATION_INTEGRITY_REPAIRED",
+                "RUN_REPAIR_CANDIDATE_PARTIAL",
+                "SECTOR_MEMBERSHIP_LEGACY_RECLASSED_DERIVED",
+                "TRADING_STATUS_CONFLICT",
+                "TRADING_STATUS_NO_EVIDENCE"
+            ],
+            "note": "The persisted descriptions are seed text; the authority document words them differently for these codes. The registry identity binds the persisted text. Registry rule 3 lets description text be clarified, which is why this is disclosed to the reviewer rather than hidden."
+        }
+    },
+    "entries": [
+        {
+            "code": "AFFECTED_DATE_RUN_NOT_FOUND",
+            "category": "PUBLICATION_REPROCESS",
+            "description": "Affected non-readable date could not be promoted because no persisted run exists.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "AFFECTED_PUBLICATION_REQUIRES_CORRECTION",
+            "category": "CORRECTION",
+            "description": "A changed historical EOD bar can affect at least one already readable downstream publication; silent mutation is blocked and correction/reseal/republication is required.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "API_IMPORT_ACCEPTED",
+            "category": "SOURCE",
+            "description": "API import was accepted as import-only context.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "API_IMPORT_COMPLETED",
+            "category": "SOURCE",
+            "description": "API import completed.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "API_IMPORT_FAILED",
+            "category": "SOURCE",
+            "description": "API import failed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "API_IMPORT_HELD",
+            "category": "SOURCE",
+            "description": "API import entered HELD state.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "API_IMPORT_PARTIAL_DATA",
+            "category": "SOURCE",
+            "description": "API import returned partial data and must not promote automatically.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "API_IMPORT_RATE_LIMITED",
+            "category": "SOURCE",
+            "description": "API import was rate limited.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "API_IMPORT_STARTED",
+            "category": "SOURCE",
+            "description": "API import started.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "API_IMPORT_TIMEOUT",
+            "category": "SOURCE",
+            "description": "API import timed out.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "API_PROMOTE_COMPLETED",
+            "category": "IMPORT_PROMOTE",
+            "description": "API promote completed.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "API_PROMOTE_COVERAGE_FAILED",
+            "category": "IMPORT_PROMOTE",
+            "description": "API promote coverage failed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "API_PROMOTE_COVERAGE_REQUIRED",
+            "category": "IMPORT_PROMOTE",
+            "description": "API promote requires coverage gate.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "ARTIFACT_EMPTY",
+            "category": "ARTIFACT",
+            "description": "Canonical fail-safe alias for an artifact with zero valid rows.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "AUTHORITATIVE_MARKET_STRUCTURE_VALIDATED",
+            "category": "MARKET_STRUCTURE",
+            "description": "An effective-dated IDX price-band, minimum-price, or tick-ladder revision was validated against immutable authoritative evidence without applying it to a series.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "AUTHORITATIVE_TERMS_VALIDATED",
+            "category": "CORPORATE_ACTION",
+            "description": "A corporate-action revision and its complete terms were validated against an immutable authoritative exchange/CSD document observation.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "AUTHORITATIVE_TRADING_STATUS_TRANSITIONS_VALIDATED",
+            "category": "STATUS",
+            "description": "The official IDX suspension-transition search was captured and validated through the measured frontier.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "AUTHORITATIVE_TRADING_STATUS_VALIDATED",
+            "category": "STATUS",
+            "description": "An official IDX long-suspension snapshot was captured and validated against its declared as-of scope.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "BARS_ARTIFACT_EMPTY",
+            "category": "ARTIFACT",
+            "description": "Bars artifact contained zero valid rows.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "BAR_DUPLICATE_SOURCE_ROW",
+            "category": "BAR",
+            "description": "More than one source row mapped to the same (trade_date, ticker_id), requiring deterministic winner selection.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "BAR_INVALID_OHLC_ORDER",
+            "category": "BAR",
+            "description": "Received OHLC values violated canonical ordering rules.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "BAR_MISSING_REQUIRED_FIELD",
+            "category": "BAR",
+            "description": "One or more mandatory source fields were missing.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "BAR_NEGATIVE_VOLUME",
+            "category": "BAR",
+            "description": "Received volume value was negative.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "BAR_NON_POSITIVE_PRICE",
+            "category": "BAR",
+            "description": "Received price value was zero or negative in a field that must be positive.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "BAR_PRICE_SCALE_BREAK_DETECTED",
+            "category": "BAR",
+            "description": "A canonical bar opens on a different price scale than the previous bar closes on, beyond the locked ratio and minimum-price guards.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "BAR_SOURCE_OBSERVATION_MISSING",
+            "category": "BAR",
+            "description": "Row carries no persisted source observation, so its origin cannot be traced.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "BAR_SOURCE_OBSERVATION_NOT_ACCEPTED",
+            "category": "BAR",
+            "description": "Referenced source observation exists but is not in an accepted immutable state.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "BAR_TEMPORAL_LISTING_MAPPING_MISSING",
+            "category": "BAR",
+            "description": "No point-in-time listing resolves for the instrument on the requested date, so the row cannot bind to a canonical logical identity.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "BAR_TICKER_MAPPING_MISSING",
+            "category": "BAR",
+            "description": "Source row ticker_code could not be resolved deterministically to ticker_id via the ticker master.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "BAR_ZERO_VOLUME_PRICE_MOVEMENT",
+            "category": "BAR",
+            "description": "A source-backed EOD row reports volume 0 while open/high/low/close are not all identical; the row is invalid/rejected evidence and never canonical.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "CANONICAL_BAR_PRICE_PRODUCT_INVALID",
+            "category": "READ_SIDE",
+            "description": "A canonical bar in the resolved publication declares a price product other than the configured canonical RAW identity. The publication is withheld because canonical bars cannot expose an analytical or unknown scale as RAW.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "COMMAND_APPLY_CONFIRMED",
+            "category": "COMMAND",
+            "description": "Operator command mutation was executed only after explicit apply confirmation.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "COMMAND_CONFLICTING_OPTIONS",
+            "category": "COMMAND",
+            "description": "Operator command options are mutually exclusive or ambiguous.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "COMMAND_CORRECTION_NOT_FOUND",
+            "category": "COMMAND",
+            "description": "Operator command referenced a correction id that does not exist.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "COMMAND_CORRECTION_STATUS_NOT_APPROVABLE",
+            "category": "COMMAND",
+            "description": "Correction approve command was blocked because only REQUESTED corrections are approvable.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "COMMAND_CORRECTION_STATUS_NOT_EXECUTABLE",
+            "category": "COMMAND",
+            "description": "Operator command attempted to execute a correction whose lifecycle status is not executable.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "COMMAND_DESTRUCTIVE_GUARD_REQUIRED",
+            "category": "COMMAND",
+            "description": "Operator command requested a destructive or force action without the required explicit guard/reason.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "COMMAND_DRY_RUN_ONLY",
+            "category": "COMMAND",
+            "description": "Operator command completed a dry-run preview and intentionally did not mutate final state.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "COMMAND_EXECUTION_FAILED",
+            "category": "COMMAND",
+            "description": "Operator command execution failed and surfaced a reason-coded blocking outcome.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "COMMAND_INVALID_DATE_FORMAT",
+            "category": "COMMAND",
+            "description": "Operator command date input does not use the locked YYYY-MM-DD format.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "COMMAND_INVALID_DATE_RANGE",
+            "category": "COMMAND",
+            "description": "Operator command date range is invalid because start_date is after end_date.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "COMMAND_INVALID_PROMOTE_MODE",
+            "category": "COMMAND",
+            "description": "Operator command promote mode is unsupported by the locked promote contract.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "COMMAND_INVALID_REQUEST_MODE",
+            "category": "COMMAND",
+            "description": "Operator command request mode is outside the locked set of run request modes.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "COMMAND_INVALID_SOURCE_MODE",
+            "category": "COMMAND",
+            "description": "Operator command source mode is outside the locked API/manual-file source modes.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "COMMAND_MISSING_REQUIRED_INPUT",
+            "category": "COMMAND",
+            "description": "Operator command input is missing or empty for a required argument or option.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "COMMAND_RESUME_REQUIRES_APPLY",
+            "category": "COMMAND",
+            "description": "A reconstruction resume was requested without the explicit apply flag, so no campaign work was executed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "CONFIG_SNAPSHOT_REQUIRED",
+            "category": "CONFIG",
+            "description": "A run or canonical artifact lacks its immutable resolved configuration snapshot.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "CORPORATE_ACTION_AUTHORITATIVE_EVIDENCE_REQUIRED",
+            "category": "CORPORATE_ACTION",
+            "description": "A detected price break cannot synthesize corporate-action identity, terms, date, or factors.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_ARTIFACT_BASELINE_OR_CANDIDATE_MISSING",
+            "category": "CORRECTION",
+            "description": "Correction artifact comparison cannot run because baseline or candidate publication is missing.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_ARTIFACT_CHANGED",
+            "category": "CORRECTION",
+            "description": "Correction artifact comparison found deterministic content change and reseal/publish may proceed through normal guards.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_ARTIFACT_HASH_INCOMPLETE",
+            "category": "CORRECTION",
+            "description": "Correction artifact comparison found missing hash context and cannot prove deterministic change.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_ARTIFACT_UNCHANGED",
+            "category": "CORRECTION",
+            "description": "Correction artifact comparison found no content change; current publication must be preserved.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_BASELINE_LINK_INVALID",
+            "category": "CORRECTION",
+            "description": "Correction baseline linkage is not a valid current readable publication.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_BASELINE_LINK_MISSING",
+            "category": "CORRECTION",
+            "description": "Correction baseline publication/run linkage is missing.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_BASELINE_LINK_VERIFIED",
+            "category": "CORRECTION",
+            "description": "Correction baseline publication/run linkage was verified.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_BASELINE_POINTER_PRESERVED",
+            "category": "CORRECTION",
+            "description": "Correction preserved the baseline current pointer on unchanged or failed replacement.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_BASELINE_PRESERVED_FAIL_SAFE",
+            "category": "POINTER",
+            "description": "Correction baseline was preserved because candidate failed fail-safe proof.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_CANCELLED",
+            "category": "CORRECTION",
+            "description": "Correction lifecycle was consumed without publication because current content was unchanged or cancelled safely.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_FAILED",
+            "category": "CORRECTION",
+            "description": "Correction lifecycle failed or was blocked before safe publication.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_IMPORT_ACCEPTED",
+            "category": "CORRECTION",
+            "description": "Correction import accepted without publication.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_IMPORT_NOT_PROMOTED",
+            "category": "CORRECTION",
+            "description": "Correction import was not promoted.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_LINEAGE_INCOMPLETE",
+            "category": "CORRECTION",
+            "description": "Correction lineage is incomplete across baseline, replacement, run, publication, or pointer switch.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_POINTER_SWITCH_BLOCKED",
+            "category": "CORRECTION",
+            "description": "Correction pointer switch was blocked because replacement or baseline linkage was unsafe.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_POINTER_SWITCH_CREATED",
+            "category": "CORRECTION",
+            "description": "Correction pointer switch was created for a valid replacement publication.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_PROMOTE_BLOCKED",
+            "category": "CORRECTION",
+            "description": "Correction promote blocked.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_PROMOTE_COMPLETED",
+            "category": "CORRECTION",
+            "description": "Correction promote completed.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_PROMOTE_REQUIRED",
+            "category": "CORRECTION",
+            "description": "Correction publication requires explicit promote/finalize path.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_PUBLISHED",
+            "category": "CORRECTION",
+            "description": "Correction lifecycle published a changed, resealed publication safely.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_REPLACEMENT_LINK_CREATED",
+            "category": "CORRECTION",
+            "description": "Correction replacement publication/run linkage was created.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_REPLACEMENT_LINK_INVALID",
+            "category": "CORRECTION",
+            "description": "Correction replacement publication/run linkage is invalid.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "CORRECTION_REPLACEMENT_LINK_VERIFIED",
+            "category": "CORRECTION",
+            "description": "Correction replacement publication/run linkage was verified before publication.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "COVERAGE_BELOW_THRESHOLD",
+            "category": "COVERAGE",
+            "description": "Coverage evaluation failed because available canonical EOD bars stayed below the locked minimum threshold.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "COVERAGE_CANONICAL_BAR_EVIDENCE_DISABLED",
+            "category": "COVERAGE",
+            "description": "Canonical bar evidence requirement was disabled; coverage must remain not evaluable because readable coverage requires canonical bar proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "COVERAGE_DORMANT_TICKERS_EXCLUDED",
+            "category": "COVERAGE",
+            "description": "DEPRECATED legacy reason: dormancy must never exclude a temporal-universe listing from the coverage denominator; any emission blocks V2 relock.",
+            "severity": "HARD",
+            "is_active": false
+        },
+        {
+            "code": "COVERAGE_GATE_DISABLED",
+            "category": "COVERAGE",
+            "description": "Coverage gate runtime switch was disabled; coverage must remain not evaluable and cannot create readable publication.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "COVERAGE_THRESHOLD_MET",
+            "category": "COVERAGE",
+            "description": "Coverage evaluation passed because available canonical EOD bars met or exceeded the locked minimum threshold.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "COVERAGE_UNIVERSE_EMPTY",
+            "category": "COVERAGE",
+            "description": "Coverage could not be evaluated because the resolved coverage universe for the requested date was empty.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "CURRENT_PUBLICATION_DEMOTED",
+            "category": "PUBLICATION",
+            "description": "Previous current publication was demoted during an allowed pointer switch.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "CURRENT_PUBLICATION_FORCE_REPLACED",
+            "category": "PUBLICATION",
+            "description": "Operator-controlled force replace switched current publication with audit reason.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "CURRENT_PUBLICATION_PRESERVED",
+            "category": "POINTER",
+            "description": "Current publication pointer was preserved after failed candidate.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "CURRENT_PUBLICATION_PROMOTED",
+            "category": "PUBLICATION",
+            "description": "Candidate publication was promoted to current after all validation passed.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "CURRENT_PUBLICATION_REPLACE_BLOCKED",
+            "category": "PUBLICATION",
+            "description": "Replacement of an existing current publication was blocked because force/audit controls were missing or invalid.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "DATASET_HASH_CREATED",
+            "category": "DATASET",
+            "description": "Dataset hash was created from canonical serialized artifact rows.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "DATASET_HASH_MISMATCH",
+            "category": "DATASET",
+            "description": "Recomputed or mirrored dataset hash does not match stored artifact hash context.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "DATASET_HASH_MISSING",
+            "category": "DATASET",
+            "description": "Dataset seal or finalize was blocked because mandatory artifact hash context is missing.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "DATASET_HASH_VERIFIED",
+            "category": "DATASET",
+            "description": "Dataset hash/seal context was verified against stored canonical manifest context.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "DATASET_MANIFEST_INVALID",
+            "category": "DATASET",
+            "description": "Dataset manifest is missing required run/date/source/hash/coverage context.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "DATASET_SEAL_INVALID",
+            "category": "DATASET",
+            "description": "Dataset seal state is invalid or cannot be verified from manifest/hash context.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "ELIGIBILITY_ARTIFACT_EMPTY",
+            "category": "ARTIFACT",
+            "description": "Eligibility artifact contained zero rows and coverage cannot pass.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "ELIG_CORPORATE_ACTION_DISCONTINUITY",
+            "category": "ELIGIBILITY",
+            "description": "Eligibility is blocked because required indicators were quarantined by a corporate action that breaks price or volume continuity inside their dependency window.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "ELIG_FETCH_FAILURE",
+            "category": "ELIGIBILITY",
+            "description": "Eligibility is blocked because ticker-level source acquisition failed and required upstream artifacts could not be formed safely.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "ELIG_INSUFFICIENT_HISTORY",
+            "category": "ELIGIBILITY",
+            "description": "Eligibility is blocked because required indicator history is still insufficient.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "ELIG_INVALID_INDICATORS",
+            "category": "ELIGIBILITY",
+            "description": "An indicator row exists but required indicators are marked invalid.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "ELIG_MISSING_BAR",
+            "category": "ELIGIBILITY",
+            "description": "A ticker in the coverage universe does not have a canonical valid bar for the requested date.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "ELIG_MISSING_INDICATORS",
+            "category": "ELIGIBILITY",
+            "description": "Eligibility cannot be determined because required indicators are unavailable.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "ELIG_PRICE_SCALE_DISCONTINUITY",
+            "category": "ELIGIBILITY",
+            "description": "Eligibility is blocked because required indicators were quarantined by an unexplained price-scale break inside their dependency window.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "ELIG_TRADING_SUSPENDED",
+            "category": "ELIGIBILITY",
+            "description": "Listing was suspended on the requested date, so its data is not usable and no bar was expected.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "ELIG_UNIVERSE_DEPENDENCY_MISSING",
+            "category": "ELIGIBILITY",
+            "description": "An upstream dependency required to determine universe membership is unavailable.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "EMPTY_ARTIFACT_NOT_READABLE",
+            "category": "ARTIFACT",
+            "description": "Empty artifact cannot be sealed, finalized, promoted, or exposed as readable.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "EVENT_RISK_CA_TYPE_UNMAPPED",
+            "category": "EVENT_RISK",
+            "description": "A corporate action row carries an action_type that has no row in the corporate action type dictionary; it was treated fail-safe as breaking both price and volume continuity until an operator maps it.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "EVIDENCE_COMPLETE",
+            "category": "EVIDENCE",
+            "description": "Evidence export includes all required operator-grade context sections.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "EVIDENCE_CORRECTION_LINEAGE_CONTEXT_INCLUDED",
+            "category": "EVIDENCE",
+            "description": "Evidence export included correction baseline/replacement lineage context.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "EVIDENCE_EMPTY_DATASET_INCLUDED",
+            "category": "EVIDENCE",
+            "description": "Evidence included empty dataset context.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "EVIDENCE_FAIL_SAFE_CONTEXT_INCLUDED",
+            "category": "EVIDENCE",
+            "description": "Evidence export included no-data/source-failure/pointer-preservation fail-safe context.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "EVIDENCE_FAIL_SAFE_CONTEXT_MISSING",
+            "category": "EVIDENCE",
+            "description": "Evidence is missing required fail-safe context.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "EVIDENCE_IMPORT_CONTEXT_INCLUDED",
+            "category": "EVIDENCE",
+            "description": "Evidence export included import context.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "EVIDENCE_IMPORT_PROMOTE_BOUNDARY_INCLUDED",
+            "category": "EVIDENCE",
+            "description": "Evidence export included import/promote boundary context.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "EVIDENCE_IMPORT_PROMOTE_CONTEXT_MISSING",
+            "category": "EVIDENCE",
+            "description": "Evidence export is missing import/promote boundary context.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "EVIDENCE_INCOMPLETE",
+            "category": "EVIDENCE",
+            "description": "Evidence export completed with one or more missing context sections that must be visible to the operator.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "EVIDENCE_LINEAGE_CONTEXT_INCLUDED",
+            "category": "EVIDENCE",
+            "description": "Evidence export included full run-publication-pointer-correction lineage context.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "EVIDENCE_LINEAGE_CONTEXT_MISSING",
+            "category": "EVIDENCE",
+            "description": "Evidence export found missing lineage context and marked evidence incomplete.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "EVIDENCE_POINTER_CONTEXT_INCLUDED",
+            "category": "EVIDENCE",
+            "description": "Evidence export included current pointer target context.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "EVIDENCE_POINTER_PRESERVATION_INCLUDED",
+            "category": "EVIDENCE",
+            "description": "Evidence included pointer preservation context.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "EVIDENCE_PROMOTE_CONTEXT_INCLUDED",
+            "category": "EVIDENCE",
+            "description": "Evidence export included promote context.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "EVIDENCE_PROOF_INCOMPLETE",
+            "category": "EVIDENCE",
+            "description": "Evidence proof is incomplete and must not be treated as replayable proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "EVIDENCE_RUN_PUBLICATION_CONTEXT_INCLUDED",
+            "category": "EVIDENCE",
+            "description": "Evidence export included run-publication linkage context.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "EVIDENCE_SOURCE_FAILURE_INCLUDED",
+            "category": "EVIDENCE",
+            "description": "Evidence included source failure context.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "FACTOR_APPLIED_SOURCE_AS_TRADED",
+            "category": "CORPORATE_ACTION",
+            "description": "An authoritative structural factor was applied because the bound Yahoo source-scale assessment classified the source series as as-traded.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "FACTOR_HELD_PROVIDER_BACK_ADJUSTED",
+            "category": "CORPORATE_ACTION",
+            "description": "An authoritative structural factor was held because the bound Yahoo source-scale assessment classified the source series as provider-back-adjusted.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "FACTOR_HELD_SOURCE_SCALE_UNKNOWN",
+            "category": "CORPORATE_ACTION",
+            "description": "An authoritative structural factor was held because the bound Yahoo source-scale assessment remained unknown.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "FINALIZE_BLOCKED_CANDIDATE_MISSING",
+            "category": "RUN",
+            "description": "Finalize was blocked because candidate publication was missing.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "FINALIZE_BLOCKED_COVERAGE_FAILED",
+            "category": "RUN",
+            "description": "Finalize was blocked because coverage failed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "FINALIZE_BLOCKED_COVERAGE_NOT_EVALUABLE",
+            "category": "RUN",
+            "description": "Finalize was blocked because coverage could not be evaluated.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "FINALIZE_BLOCKED_EMPTY_ARTIFACT",
+            "category": "RUN",
+            "description": "Finalize was blocked because required artifact proof was empty.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "FINALIZE_BLOCKED_HASH_MISSING",
+            "category": "RUN",
+            "description": "Finalize was blocked because hash proof was missing.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "FINALIZE_BLOCKED_NO_VALID_DATA",
+            "category": "RUN",
+            "description": "Finalize was blocked because there was no valid data proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "FINALIZE_BLOCKED_POINTER_INVALID",
+            "category": "RUN",
+            "description": "Finalize was blocked because pointer target validation failed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "FINALIZE_BLOCKED_SEAL_MISSING",
+            "category": "RUN",
+            "description": "Finalize was blocked because seal proof was missing.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "FINALIZE_BLOCKED_SOURCE_FAILED",
+            "category": "RUN",
+            "description": "Finalize was blocked because source acquisition failed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "FINALIZE_HASH_MISMATCH",
+            "category": "RUN",
+            "description": "Finalize was blocked because run hash context differs from candidate publication hash context.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "FINALIZE_HASH_MISSING",
+            "category": "RUN",
+            "description": "Finalize was blocked because the candidate publication or run is missing mandatory hash context.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "FINALIZE_HELD_SOURCE_FAILURE",
+            "category": "RUN",
+            "description": "Finalize held the run because source failure prevented a readable publication.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "FINALIZE_NOT_READABLE_NO_VALID_DATA",
+            "category": "RUN",
+            "description": "Finalize produced not-readable state because no valid data existed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "FINALIZE_SEAL_INVALID",
+            "category": "RUN",
+            "description": "Finalize was blocked because candidate publication seal timestamp or verification context is invalid.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "FINALIZE_SEAL_MISSING",
+            "category": "RUN",
+            "description": "Finalize was blocked because candidate publication seal state is missing.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "HASH_INPUT_EMPTY",
+            "category": "ARTIFACT",
+            "description": "Hash input was empty and cannot produce publication proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "IMMUTABLE_HISTORY_CORRECTION_REQUIRED",
+            "category": "CORRECTION",
+            "description": "An anomaly requires authoritative evidence and a new correction publication; in-place history mutation is prohibited.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "IMPORT_CORRECTION_PUBLISH_BLOCKED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Import-only attempted to publish a correction.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "IMPORT_ONLY_ACCEPTED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Import-only request accepted; data may be ingested but not promoted.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "IMPORT_ONLY_COMPLETED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Import-only ingest completed with traceable candidate/import context.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "IMPORT_ONLY_COMPLETED_NOT_PROMOTED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Import-only run was closed as completed non-readable candidate and still requires explicit promote.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "IMPORT_ONLY_NOT_PROMOTED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Import-only run completed without readable publication or pointer switch.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "IMPORT_POINTER_WRITE_BLOCKED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Import-only attempted to update current pointer.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "IMPORT_PROMOTE_BOUNDARY_VERIFIED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Import/promote boundary was verified.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "IMPORT_PROMOTE_BOUNDARY_VIOLATION",
+            "category": "IMPORT_PROMOTE",
+            "description": "Import/promote boundary violation detected.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "IMPORT_PUBLICATION_CURRENT_BLOCKED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Import-only attempted to mark a publication or run current.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "IMPORT_READABLE_STATE_BLOCKED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Import-only attempted to mark a run readable.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "IMPORT_SIDE_EFFECT_BLOCKED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Import-only side effect was blocked.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "INDICATORS_ARTIFACT_EMPTY",
+            "category": "ARTIFACT",
+            "description": "Indicators artifact contained zero rows required for publication proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "IND_COMPUTE_ERROR",
+            "category": "INDICATOR",
+            "description": "Indicator computation failed because of logic or runtime error.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "IND_CORPORATE_ACTION_DISCONTINUITY",
+            "category": "INDICATOR",
+            "description": "At least one mandatory indicator window spans a corporate action that breaks price or volume continuity, so the affected fields were quarantined as NULL instead of published as arithmetically meaningless values.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "IND_INSUFFICIENT_HISTORY",
+            "category": "INDICATOR",
+            "description": "Required trading-day history is not yet sufficient for deterministic indicator computation.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "IND_INVALID_BAR_INPUT",
+            "category": "INDICATOR",
+            "description": "A canonical bar input required for indicator computation is invalid.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "IND_MISSING_DEPENDENCY_BAR",
+            "category": "INDICATOR",
+            "description": "A required canonical bar in the trading-day dependency chain is missing.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "IND_PRICE_SCALE_DISCONTINUITY",
+            "category": "INDICATOR",
+            "description": "At least one mandatory indicator window spans a detected price-scale break that no recorded corporate action explains, so the affected fields were quarantined as NULL.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_ALL_ROWS_INVALID",
+            "category": "SOURCE",
+            "description": "Manual file rows were all rejected as invalid.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_EMPTY",
+            "category": "SOURCE",
+            "description": "Manual file contained no data rows.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_FORMAT_INVALID",
+            "category": "SOURCE",
+            "description": "Manual file format is invalid.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_HEADER_INVALID",
+            "category": "SOURCE",
+            "description": "Manual file header is missing or invalid.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_IMPORT_ACCEPTED",
+            "category": "SOURCE",
+            "description": "Manual file import was accepted as import-only context.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_IMPORT_BLOCKED",
+            "category": "SOURCE",
+            "description": "Manual file import was blocked by fail-safe policy.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_IMPORT_FAILED",
+            "category": "SOURCE",
+            "description": "Manual file import failed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_IMPORT_ONLY_ACCEPTED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Manual file import-only run accepted.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_IMPORT_ONLY_NOT_PROMOTED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Manual file import-only run did not promote.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_MISSING",
+            "category": "SOURCE",
+            "description": "Manual file path was missing or unresolved.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_NOT_READABLE",
+            "category": "SOURCE",
+            "description": "Manual file output must remain not readable.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_NO_VALID_ROWS",
+            "category": "SOURCE",
+            "description": "Manual file produced zero valid canonical rows.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_PROMOTE_COMPLETED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Manual file promote completed.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_PROMOTE_COVERAGE_FAILED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Manual file promote coverage failed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_PROMOTE_COVERAGE_REQUIRED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Manual file promote requires coverage gate.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_PROMOTE_STARTED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Manual file promote started.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_ROW_COUNT_MISMATCH",
+            "category": "SOURCE",
+            "description": "Manual file reported row count does not match accepted canonical row count.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_SOURCE_HASH_MISSING",
+            "category": "SOURCE",
+            "description": "Manual file source hash is missing and source identity cannot be proven.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_SOURCE_HASH_RECORDED",
+            "category": "SOURCE",
+            "description": "Manual file source hash was recorded.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "MANUAL_FILE_UNREADABLE",
+            "category": "SOURCE",
+            "description": "Manual file could not be opened or read.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MARKET_CALENDAR_EVIDENCE_MISSING",
+            "category": "CALENDAR",
+            "description": "No authoritative or explicitly sourced calendar revision exists for the requested date.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MARKET_CALENDAR_REQUIRES_REQUESTED_TRADING_DATE",
+            "category": "COMMAND",
+            "description": "The requested date is not an active trading day in market_calendar, so no trading-day window can be resolved for it.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MARKET_SESSION_NOT_COMPLETED",
+            "category": "CALENDAR",
+            "description": "EOD acquisition was blocked because the regular-market session is not completed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MARKET_STRUCTURE_BOARD_NOT_POINT_IN_TIME",
+            "category": "MARKET_STRUCTURE",
+            "description": "Market-structure resolution failed closed because the listing-board value was recorded after the evaluated trade date.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MARKET_STRUCTURE_BOARD_UNKNOWN",
+            "category": "MARKET_STRUCTURE",
+            "description": "Market-structure resolution failed closed because no listing-board value was available.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MARKET_STRUCTURE_BOARD_UNRECOGNIZED",
+            "category": "MARKET_STRUCTURE",
+            "description": "Market-structure resolution failed closed because the listing-board value was not recognized by the locked scope.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MARKET_STRUCTURE_REVISION_MISSING",
+            "category": "MARKET_STRUCTURE",
+            "description": "Market-structure resolution failed closed because one or more authoritative effective-dated rule revisions were unavailable.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "MARKET_STRUCTURE_SCOPE_EXCLUDED",
+            "category": "MARKET_STRUCTURE",
+            "description": "Market-structure resolution failed closed because the listing board is outside the standard-equity scope.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "NO_FAILED_SOURCE_ACQUISITION_CHECKPOINT",
+            "category": "RUN",
+            "description": "Resume with only-failed found no failed source acquisition checkpoint to retry.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "NO_READABLE_PUBLICATION",
+            "category": "READ_SIDE",
+            "description": "A read-side consumer could not resolve a current readable publication through the authoritative pointer and must return no data.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_ORPHAN_DETECTED",
+            "category": "POINTER",
+            "description": "Current pointer is orphaned from a valid publication/run lineage.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_POST_SWITCH_MISMATCH",
+            "category": "POINTER",
+            "description": "Pointer resolver did not return the expected promoted publication after switch.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_POST_SWITCH_VERIFIED",
+            "category": "POINTER",
+            "description": "Pointer resolver returned the promoted publication after switch.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_PRESERVED_FAIL_SAFE",
+            "category": "POINTER",
+            "description": "Current pointer was preserved because candidate proof was unsafe or non-readable.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_PUBLICATION_HASH_INVALID",
+            "category": "POINTER",
+            "description": "Current pointer target publication hash context is missing or mismatched.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_PUBLICATION_ID_MISMATCH",
+            "category": "POINTER",
+            "description": "Current pointer validation found publication id mismatch between expected and resolved pointer target.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_PUBLICATION_LINK_CREATED",
+            "category": "POINTER",
+            "description": "Current pointer linkage to a publication was created.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_PUBLICATION_LINK_INVALID",
+            "category": "POINTER",
+            "description": "Current pointer linkage points to an invalid publication target.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_PUBLICATION_LINK_MISSING",
+            "category": "POINTER",
+            "description": "Current pointer linkage is missing the target publication relationship.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_PUBLICATION_LINK_VERIFIED",
+            "category": "POINTER",
+            "description": "Current pointer linkage to its target publication was verified.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_PUBLICATION_NOT_FOUND",
+            "category": "POINTER",
+            "description": "Current pointer target publication row could not be found.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_PUBLICATION_SEAL_INVALID",
+            "category": "POINTER",
+            "description": "Current pointer target publication is not sealed with valid seal metadata.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_PUBLICATION_STATE_INVALID",
+            "category": "POINTER",
+            "description": "Current pointer target publication or run state is not readable/current-safe.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_PUBLICATION_TRADE_DATE_MISMATCH",
+            "category": "POINTER",
+            "description": "Current pointer target publication trade date does not match pointer trade date.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_PUBLICATION_VERSION_MISMATCH",
+            "category": "POINTER",
+            "description": "Current pointer validation found publication version mismatch.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_RUN_ID_MISMATCH",
+            "category": "POINTER",
+            "description": "Current pointer validation found run id mismatch between pointer and publication/run context.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_SEALED_AT_MISSING",
+            "category": "POINTER",
+            "description": "Current pointer validation found pointer sealed timestamp is missing.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_SWITCH_BLOCKED_EMPTY_CANDIDATE",
+            "category": "POINTER",
+            "description": "Pointer switch was blocked because candidate publication proof was empty.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_SWITCH_BLOCKED_INVALID_TARGET",
+            "category": "POINTER",
+            "description": "Pointer switch was blocked because target validation failed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_SWITCH_BLOCKED_NOT_READABLE",
+            "category": "POINTER",
+            "description": "Pointer switch was blocked because candidate was not readable.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_SWITCH_BLOCKED_NO_VALID_DATA",
+            "category": "POINTER",
+            "description": "Pointer switch was blocked because candidate had no valid data.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_SWITCH_BLOCKED_SOURCE_FAILURE",
+            "category": "POINTER",
+            "description": "Pointer switch was blocked because source acquisition failed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_SWITCH_COMPLETED",
+            "category": "POINTER",
+            "description": "Atomic pointer switch completed after validation.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_SWITCH_FAILED",
+            "category": "POINTER",
+            "description": "Atomic pointer switch failed before a valid current publication was established.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_SWITCH_ROLLED_BACK",
+            "category": "POINTER",
+            "description": "Pointer switch was rolled back or previous current publication was restored.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "POINTER_SWITCH_STARTED",
+            "category": "POINTER",
+            "description": "Atomic pointer switch validation started.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "PRICE_PRODUCT_UNRECORDED",
+            "category": "READ_SIDE",
+            "description": "A canonical bar in the resolved publication carries no price_product_code. The publication is withheld because a missing scale identity cannot be inferred as RAW; legacy rows remain unchanged until reconstructed through governed lifecycle.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PROMOTE_BLOCKED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Promote request was blocked before publication.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PROMOTE_COMPLETED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Promote request completed after all gates passed.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "PROMOTE_COVERAGE_FAILED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Promote blocked because coverage gate failed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PROMOTE_COVERAGE_REQUIRED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Promote requires coverage gate evaluation.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PROMOTE_FINALIZE_REQUIRED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Promote requires finalize decision.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PROMOTE_HASH_REQUIRED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Promote requires deterministic hash proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PROMOTE_POINTER_SWITCH_BLOCKED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Promote pointer switch was blocked.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PROMOTE_POINTER_SWITCH_COMPLETED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Promote completed current pointer switch.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "PROMOTE_POINTER_VALIDATION_REQUIRED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Promote requires pointer target validation.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PROMOTE_SEAL_REQUIRED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Promote requires sealed dataset proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PROMOTE_STARTED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Promote request started.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "PROVIDER_EMPTY_OR_INVALID_RESPONSE",
+            "category": "PROVIDER_SMOKE",
+            "description": "Safe provider smoke returned no usable rows or an invalid provider payload.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PROVIDER_NETWORK_ERROR",
+            "category": "PROVIDER_SMOKE",
+            "description": "Safe provider smoke hit a network or upstream transport failure before valid data was proven.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "PROVIDER_RATE_LIMITED",
+            "category": "PROVIDER_SMOKE",
+            "description": "Safe provider smoke was rate limited by the upstream provider and must not be counted as PASS.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "PROVIDER_REQUEST_HEADER_CONTEXT_MISMATCH",
+            "category": "PROVIDER_SMOKE",
+            "description": "Safe provider smoke proved the provider endpoint works with browser-like headers while a minimal PHP request context is blocked.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "PROVIDER_RESPONSE_PARSE_FAILED",
+            "category": "PROVIDER_SMOKE",
+            "description": "Safe provider smoke received an HTTP-success provider response but could not parse the payload safely.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PROVIDER_SMOKE_FULL_UNIVERSE_BLOCKED",
+            "category": "PROVIDER_SMOKE",
+            "description": "Safe provider smoke blocked multi-ticker or full-universe execution.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PROVIDER_SMOKE_INVALID_TICKER",
+            "category": "PROVIDER_SMOKE",
+            "description": "Safe provider smoke was blocked because the ticker format was invalid.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PROVIDER_SMOKE_OK",
+            "category": "PROVIDER_SMOKE",
+            "description": "Safe single-ticker provider smoke returned valid data without publication, seal, finalize, full-universe fetch, or pointer switch.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "PROVIDER_SMOKE_TICKER_REQUIRED",
+            "category": "PROVIDER_SMOKE",
+            "description": "Safe provider smoke was blocked because no ticker was provided.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PROVIDER_SYMBOL_MAPPING_AMBIGUOUS",
+            "category": "IDENTITY",
+            "description": "More than one provider symbol mapping is effective for the requested listing and date.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PROVIDER_SYMBOL_MAPPING_MISSING",
+            "category": "IDENTITY",
+            "description": "No effective provider symbol mapping exists for the requested listing and date.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PROVIDER_TIMEOUT",
+            "category": "PROVIDER_SMOKE",
+            "description": "Safe provider smoke timed out before a valid single-ticker response was proven.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "PROVIDER_TRADE_DATE_NOT_FOUND_IN_RESPONSE",
+            "category": "PROVIDER_SMOKE",
+            "description": "Safe provider smoke received provider data but the selected trade date was not present in returned timestamps.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLICATION_CANDIDATE_EMPTY",
+            "category": "ARTIFACT",
+            "description": "Publication candidate had no valid rows or proof context.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLICATION_NOT_MARKED_CURRENT",
+            "category": "PUBLICATION",
+            "description": "Current pointer validation found the publication row is not marked current.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLICATION_NOT_SEALED",
+            "category": "PUBLICATION",
+            "description": "Current pointer validation found the publication is not SEALED.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLICATION_REPROCESS_FAILED",
+            "category": "PUBLICATION_REPROCESS",
+            "description": "Publication reprocess failed before completing promote/hash/seal/finalize.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLICATION_REPROCESS_NOT_READABLE",
+            "category": "PUBLICATION_REPROCESS",
+            "description": "Affected-date promote flow completed without producing a readable publication.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLICATION_REPROCESS_REPLAY_FAILED",
+            "category": "PUBLICATION_REPROCESS",
+            "description": "Publication reprocess produced a readable run but requested replay verification failed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLICATION_ROW_MISSING",
+            "category": "PUBLICATION",
+            "description": "Current pointer validation could not find the linked publication row.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLICATION_RUN_NOT_FOUND",
+            "category": "PUBLICATION",
+            "description": "Publication lineage points to a run id that cannot be found.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLICATION_RUN_STATE_INVALID",
+            "category": "PUBLICATION",
+            "description": "Publication lineage points to a run whose state cannot produce a readable/current publication.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLICATION_SEALED_AT_MISSING",
+            "category": "PUBLICATION",
+            "description": "Current pointer validation found a sealed publication without sealed timestamp.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLICATION_TRADE_DATE_MISMATCH",
+            "category": "PUBLICATION",
+            "description": "Current pointer validation found publication trade date mismatch.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLISHABILITY_BLOCKED_COVERAGE_NOT_EVALUABLE",
+            "category": "PUBLISHABILITY",
+            "description": "Publishability was blocked because coverage was not evaluable.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLISHABILITY_BLOCKED_EMPTY_ARTIFACT",
+            "category": "PUBLISHABILITY",
+            "description": "Publishability was blocked because artifact proof was empty.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLISHABILITY_BLOCKED_MISSING_SEAL",
+            "category": "PUBLISHABILITY",
+            "description": "Publishability was blocked because seal proof was missing.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLISHABILITY_BLOCKED_NO_VALID_DATA",
+            "category": "PUBLISHABILITY",
+            "description": "Publishability was blocked because no valid data existed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLISHABILITY_BLOCKED_POINTER_INVALID",
+            "category": "PUBLISHABILITY",
+            "description": "Publishability was blocked because pointer target was invalid.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLISHABILITY_BLOCKED_SOURCE_FAILURE",
+            "category": "PUBLISHABILITY",
+            "description": "Publishability was blocked because source acquisition failed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "PUBLISHABILITY_NOT_READABLE_FAIL_SAFE",
+            "category": "PUBLISHABILITY",
+            "description": "Publishability was forced to not readable by fail-safe policy.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "READABLE_PUBLICATION_RESOLVED",
+            "category": "READ_SIDE",
+            "description": "A read-side consumer resolved a current sealed readable publication through the authoritative pointer.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_ACTUAL_PROOF_INCOMPLETE",
+            "category": "REPLAY",
+            "description": "Replay actual proof package is missing required lifecycle evidence.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_ARTIFACT_HASH_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay artifact hash or artifact row-count context differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_CONFIG_IDENTITY_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay ran under a different configuration identity than the recorded run. The dataset may be reproducible; the configuration it was produced under was not the same one, so compare config before treating the difference as non-determinism.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_CORRECTION_BASELINE_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay correction baseline or candidate publication context differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_CORRECTION_LINEAGE_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay detected correction baseline/replacement lineage mismatch.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_COVERAGE_RATIO_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay coverage ratio or threshold differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_COVERAGE_REASON_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay coverage reason code differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_COVERAGE_STATE_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay coverage gate state or coverage count context differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_CURRENT_POINTER_MOVED_HISTORICAL_VALID",
+            "category": "REPLAY",
+            "description": "Replay verified a historical sealed publication while the current pointer has moved to another publication.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_CURRENT_PUBLICATION_RESOLVED",
+            "category": "REPLAY",
+            "description": "Replay resolved the current readable publication for current-context actual-state proof.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_EFFECTIVE_DATE_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay effective trade date differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_EMPTY_ARTIFACT_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay detected empty-artifact context mismatch.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_EXPECTED_HISTORICAL_ACTUAL_CURRENT_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay expected a historical publication context but actual state resolved a current publication context, or the reverse.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_EXPECTED_PROOF_INCOMPLETE",
+            "category": "REPLAY",
+            "description": "Replay expected proof package is missing required deterministic lifecycle context.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_FAIL_SAFE_CONTEXT_MISSING",
+            "category": "REPLAY",
+            "description": "Replay proof is missing required fail-safe context.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_FAIL_SAFE_REASON_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay detected a mismatch in expected vs actual fail-safe reason context.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_FALLBACK_CONTEXT_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay fallback context differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_FINAL_REASON_CODE_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay final reason code or reason-code counts differ between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_FINAL_STATUS_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay final terminal or publishability state differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_FIXTURE_SCHEMA_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay fixture manifest or schema version does not match the locked replay fixture contract.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_HISTORICAL_ARTIFACT_SCOPE_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay historical actual-state artifact scope is not publication-scoped to the selected publication.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_HISTORICAL_PUBLICATION_MISSING",
+            "category": "REPLAY",
+            "description": "Replay historical actual-state selector did not resolve a publication.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_HISTORICAL_PUBLICATION_RESOLVED",
+            "category": "REPLAY",
+            "description": "Replay resolved a selector-scoped historical sealed publication for actual-state proof without current pointer fallback.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_HISTORICAL_PUBLICATION_UNSEALED",
+            "category": "REPLAY",
+            "description": "Replay historical actual-state publication is not sealed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_IMPORT_PROMOTE_MATCHED",
+            "category": "REPLAY",
+            "description": "Replay import/promote context matched expected proof.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_IMPORT_PROMOTE_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay import/promote context mismatch.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_IMPORT_STATUS_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay import status mismatch.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_LINEAGE_MATCHED",
+            "category": "REPLAY",
+            "description": "Replay lineage matched expected run-publication-pointer-correction proof.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_LINEAGE_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay lineage chain differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_MATCH",
+            "category": "REPLAY",
+            "description": "Replay expected proof matched observed proof across deterministic fields.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay found a difference that carries no more specific reason code. Seeing this means a comparison produced a mismatch without classifying it, so the specific code is the thing to add rather than this one being the answer.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_NON_DETERMINISTIC_OUTPUT",
+            "category": "REPLAY",
+            "description": "Replay output contains a deterministic-field mismatch not covered by a more specific replay reason code.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_NO_PUBLICATION_ACTUAL_STATE",
+            "category": "REPLAY",
+            "description": "Replay built actual state for a run that has no readable publication proof.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_NO_VALID_DATA_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay detected no-valid-data context mismatch.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_POINTER_PUBLICATION_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay detected a pointer-publication lineage mismatch.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_POINTER_RESOLUTION_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay pointer resolution state differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_POINTER_TARGET_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay pointer target differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_PROMOTE_STATUS_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay promote status mismatch.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_PROVIDER_CONTEXT_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay provider/API retry, timeout, or HTTP context differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_PUBLICATION_RUN_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay historical actual-state publication does not belong to the selected run or mirror context.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_PUBLICATION_STATE_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay publication state/readability context differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_PUBLICATION_VERSION_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay publication version differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_REQUESTED_DATE_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay requested trade date differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_REQUEST_MODE_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay request/promote/publish target context differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_RUN_PUBLICATION_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay detected a run-publication lineage mismatch.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_SEAL_STATE_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay seal state differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_SOURCE_FAILURE_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay detected source-failure context mismatch.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_SOURCE_FILE_HASH_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay manual source file hash differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_SOURCE_IDENTITY_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay source identity or source row-count context differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_SOURCE_MODE_MISMATCH",
+            "category": "REPLAY",
+            "description": "Replay source mode differs between expected proof and actual proof.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_UNEXPECTED_FAILURE",
+            "category": "REPLAY",
+            "description": "Replay produced failure when the expected proof required a successful deterministic match.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_UNEXPECTED_POINTER_SWITCH",
+            "category": "REPLAY",
+            "description": "Replay detected unexpected pointer switch.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_UNEXPECTED_PUBLICATION_PROMOTION",
+            "category": "REPLAY",
+            "description": "Replay detected unexpected publication promotion or pointer switch.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_UNEXPECTED_READABLE_OUTPUT",
+            "category": "REPLAY",
+            "description": "Replay detected unexpected readable output.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REPLAY_UNEXPECTED_SUCCESS",
+            "category": "REPLAY",
+            "description": "Replay produced a success-looking result when the expected proof required failure or degrade.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REQUESTED_DATE_PROMOTED_BY_PRIMARY_PIPELINE",
+            "category": "PUBLICATION_REPROCESS",
+            "description": "Requested date was already handled by primary promote/hash/seal/finalize.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "REQUEST_MODE_IMPORT_BLOCKED_FROM_PROMOTE",
+            "category": "IMPORT_PROMOTE",
+            "description": "Import-only request attempted to enter a promote/publish stage.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REQUEST_MODE_INVALID",
+            "category": "IMPORT_PROMOTE",
+            "description": "Request mode is not one of the allowed market-data intents.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REQUEST_MODE_MISSING",
+            "category": "IMPORT_PROMOTE",
+            "description": "Request mode is missing from a run context that requires explicit intent.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "REQUEST_MODE_PROMOTE_GATE_REQUIRED",
+            "category": "IMPORT_PROMOTE",
+            "description": "Promote request requires publishability gates before publication.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_COMPUTE_FAILED",
+            "category": "RUN",
+            "description": "Indicator computation stage failed and the run cannot continue silently.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_COVERAGE_EVALUATION_FAILED",
+            "category": "RUN",
+            "description": "Coverage evaluation failed before a deterministic gate result could be persisted.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_COVERAGE_GATE_NOT_PASS",
+            "category": "RUN",
+            "description": "Publication pointer validation found a run whose coverage gate state is not PASS.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_COVERAGE_LOW",
+            "category": "RUN",
+            "description": "Coverage ratio for the requested date is below the locked minimum threshold.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_COVERAGE_NOT_EVALUABLE",
+            "category": "RUN",
+            "description": "Coverage could not be evaluated meaningfully for the requested date, so requested-date publication must remain not readable.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_COVERAGE_TELEMETRY_INVALID",
+            "category": "RUN",
+            "description": "Readable pointer validation found invalid coverage telemetry for a candidate run.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_CURRENT_MIRROR_NOT_SET",
+            "category": "RUN",
+            "description": "Readable pointer validation found that the run current-publication mirror is not set.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_CURRENT_PUBLICATION_INTEGRITY_REPAIRED",
+            "category": "RUN",
+            "description": "Current publication mirror or pointer integrity was repaired or fail-safed to preserve readable-state contract.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "RUN_DATA_DELAYED",
+            "category": "RUN",
+            "description": "Coverage failed while requested-date data was still inside the controlled delayed-data window.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "RUN_ELIGIBILITY_FAILED",
+            "category": "RUN",
+            "description": "Eligibility build stage failed and the run cannot continue silently.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_ELIGIBILITY_MISSING",
+            "category": "RUN",
+            "description": "Eligibility snapshot for the requested date is not available.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_FINALIZE_BEFORE_CUTOFF",
+            "category": "RUN",
+            "description": "Final success was attempted before the cutoff policy allowed it.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_FINALIZE_FAILED",
+            "category": "RUN",
+            "description": "Finalize stage failed before a safe terminal state could be completed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_FINALIZE_IDEMPOTENCY_POINTER_INVALID",
+            "category": "RUN",
+            "description": "A previously completed readable finalize run no longer matches the current publication pointer and must be fail-safed before idempotent short-circuit.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_HASH_FAILED",
+            "category": "RUN",
+            "description": "Hash computation failed or produced unusable output.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_HASH_MISSING",
+            "category": "RUN",
+            "description": "One or more mandatory content hashes are missing at finalization time.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_INDICATORS_MISSING",
+            "category": "RUN",
+            "description": "Required indicator artifact or required indicator row set for the requested date is not available.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_KNOWLEDGE_CUTOFF_MISSING",
+            "category": "RUN",
+            "description": "Execution was blocked because the selected run predates the mandatory creation-time knowledge cutoff and cannot be resumed deterministically.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_LOCK_CONFLICT",
+            "category": "RUN",
+            "description": "Run-ownership conflict or duplicate writer activity occurred during hash, seal, or finalize stages.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_NON_CURRENT_PROMOTION",
+            "category": "RUN",
+            "description": "Promotion was requested for a target that must not become the current readable publication.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_PARTIAL_DATA",
+            "category": "RUN",
+            "description": "Coverage failed because only part of the requested-date universe had canonical valid EOD data.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_PUBLICATION_ID_MISMATCH",
+            "category": "RUN",
+            "description": "Readable pointer validation found a mismatch between run publication id and pointer publication id.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_PUBLICATION_LINK_CREATED",
+            "category": "RUN",
+            "description": "Publication lineage link was created from a valid originating run.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "RUN_PUBLICATION_LINK_INVALID",
+            "category": "RUN",
+            "description": "Publication lineage points to an invalid originating run or invalid publication context.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_PUBLICATION_LINK_MISSING",
+            "category": "RUN",
+            "description": "Publication lineage is missing either the publication row or originating run.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_PUBLICATION_LINK_VERIFIED",
+            "category": "RUN",
+            "description": "Publication lineage link to its originating run was verified.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "RUN_PUBLICATION_MIRROR_MISMATCH",
+            "category": "RUN",
+            "description": "Run-publication mirror fields disagree across run, publication, pointer, or trade-date context.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_PUBLICATION_VERSION_MISMATCH",
+            "category": "RUN",
+            "description": "Readable pointer validation found a mismatch between run publication version and pointer publication version.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_PUBLISHABILITY_NOT_READABLE",
+            "category": "RUN",
+            "description": "Publication pointer validation found a run whose publishability state is not READABLE.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_REPAIR_CANDIDATE_PARTIAL",
+            "category": "RUN",
+            "description": "Repair candidate is intentionally partial and must not be promoted as normal current readable data.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "RUN_ROW_MISSING",
+            "category": "RUN",
+            "description": "Readable pointer validation could not find the linked run row.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SEALED_AT_MISSING",
+            "category": "RUN",
+            "description": "Readable pointer validation found the linked run has no sealed timestamp.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SEAL_PRECONDITION_FAILED",
+            "category": "RUN",
+            "description": "Seal execution was attempted before all locked preconditions were satisfied.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SEAL_WRITE_FAILED",
+            "category": "RUN",
+            "description": "Seal metadata could not be written successfully.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_AUTH_ERROR",
+            "category": "RUN",
+            "description": "Source authentication failure or credential/config error blocked data acquisition.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_BAD_REQUEST",
+            "category": "RUN",
+            "description": "Source provider returned HTTP 400 or equivalent bad request during acquisition; diagnostic context must identify ticker/window/systemic scope.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_INVALID_SYMBOL",
+            "category": "RUN",
+            "description": "Source provider rejected an individual ticker/symbol; partial acquisition may continue and coverage gate decides publishability.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_MALFORMED_PAYLOAD",
+            "category": "RUN",
+            "description": "The source payload could not be normalized safely.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_MANUAL_FILE_EMPTY",
+            "category": "RUN",
+            "description": "Manual file existed but contained no data rows; empty manual file import/promote is blocked.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_MANUAL_FILE_MALFORMED",
+            "category": "RUN",
+            "description": "The configured manual-file source could not be parsed or normalized safely.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_MANUAL_FILE_MISSING_ROW",
+            "category": "RUN",
+            "description": "Manual file was readable but contained no row for an expected ticker/date pair; the affected ticker is reported as failed while other tickers may still succeed.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_MANUAL_FILE_NOT_FOUND",
+            "category": "RUN",
+            "description": "The configured manual-file source was not found.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_MANUAL_FILE_NOT_READABLE",
+            "category": "RUN",
+            "description": "The configured manual-file source could not be opened or read.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_MANUAL_FILE_NO_VALID_ROWS",
+            "category": "RUN",
+            "description": "Manual file rows were parsed but no row produced a valid canonical bar; run must remain non-readable.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_MODE_UNSUPPORTED",
+            "category": "RUN",
+            "description": "The requested source mode is not supported by the selected source adapter.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_NO_VALID_DATA",
+            "category": "RUN",
+            "description": "Source acquisition produced zero valid canonical EOD bars; empty source output must remain non-readable and must not publish.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_PARTIAL_COVERAGE",
+            "category": "RUN",
+            "description": "The source returned incomplete symbol coverage for the requested date.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_PARTIAL_RESPONSE",
+            "category": "RUN",
+            "description": "The source adapter returned only part of the requested provider response and coverage gate must decide publishability.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_PROVIDER_REJECTED_RANGE",
+            "category": "RUN",
+            "description": "Source provider rejected the requested acquisition range/window or global request parameters.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_RATE_LIMIT",
+            "category": "RUN",
+            "description": "The source hit rate limiting and affected data acquisition.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_RESPONSE_CHANGED",
+            "category": "RUN",
+            "description": "A source schema or response-contract change was detected.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_SOURCE_TIMEOUT",
+            "category": "RUN",
+            "description": "The source timed out and retry policy was already applied or exhausted.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "RUN_STALE_DATA",
+            "category": "RUN",
+            "description": "Source rows were outside the requested trade date and must not count as available coverage.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "RUN_TERMINAL_STATUS_NOT_SUCCESS",
+            "category": "RUN",
+            "description": "Publication pointer validation found a run whose terminal status is not SUCCESS.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SEALED_DATASET_MUTATION_BLOCKED",
+            "category": "DATASET",
+            "description": "Runtime attempted to mutate a sealed/finalized/readable dataset through a normal artifact path and was blocked.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SEAL_TARGET_EMPTY",
+            "category": "ARTIFACT",
+            "description": "Seal target was empty and cannot be sealed as readable.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SECTOR_INDEX_API_PARTIAL_RESPONSE",
+            "category": "SOURCE",
+            "description": "Sector index API returned fewer index codes than requested and partial acceptance was not enabled, so the ingest is blocked rather than storing an incomplete index set.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SECTOR_MEMBERSHIP_EFFECTIVE_FROM_CORRECTED_TO_LISTING",
+            "category": "SECTOR_CLASSIFICATION",
+            "description": "Legacy membership effective date was corrected from the IDX-IC launch date to the instrument listing date, because the instrument was not yet listed on the launch date and therefore could not carry a classification from it.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "SECTOR_MEMBERSHIP_IMPORT",
+            "category": "SECTOR_CLASSIFICATION",
+            "description": "Operator-entered sector membership revision was imported with explicit provenance and governance.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "SECTOR_MEMBERSHIP_IMPORT_LOCK_UNAVAILABLE",
+            "category": "SECTOR_CLASSIFICATION",
+            "description": "A sector membership import could not take the serialising import lock because another import holds it; the command stopped before writing anything rather than validating one world and applying to another.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SECTOR_MEMBERSHIP_LEGACY_RECLASSED_DERIVED",
+            "category": "SECTOR_CLASSIFICATION",
+            "description": "Pre-import legacy membership row was declared DERIVED_REFERENCE because its source is a profile or new-listing page rather than a dated IDX-IC classification announcement; it may corroborate but never establish membership.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "SESSION_SNAPSHOT_FEATURE_DISABLED",
+            "category": "COMMAND",
+            "description": "Optional session-snapshot capture was requested while the feature is disabled; EOD readiness is unaffected.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "SESSION_SNAPSHOT_SCOPE_UNRECOGNISED",
+            "category": "COMMAND",
+            "description": "Configured session-snapshot scope is not an upstream-safe value, so scope could not be resolved safely.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SNAP_PARTIAL_SCOPE",
+            "category": "INTRADAY",
+            "description": "The session snapshot captured only part of the planned scope.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "SNAP_SOURCE_ERROR",
+            "category": "INTRADAY",
+            "description": "The session-snapshot source failed for an operational reason that does not block EOD.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "SNAP_SOURCE_RATE_LIMIT",
+            "category": "INTRADAY",
+            "description": "The session-snapshot source hit rate limiting.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "SNAP_SOURCE_TIMEOUT",
+            "category": "INTRADAY",
+            "description": "The session-snapshot source timed out.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_ALL_SYMBOLS_FAILED",
+            "category": "SOURCE",
+            "description": "All requested symbols failed source acquisition.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_FAILURE_HELD",
+            "category": "SOURCE",
+            "description": "Source failure caused the run to be held safely without readable publication.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_FAILURE_NOT_READABLE",
+            "category": "SOURCE",
+            "description": "Source failure caused the output to remain not readable.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_IMPORT_NOT_PROMOTED",
+            "category": "SOURCE",
+            "description": "Source import completed without promotion.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_MODE_IMMUTABLE",
+            "category": "SOURCE",
+            "description": "Source mode changed within a run and was blocked.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_MODE_INVALID",
+            "category": "SOURCE",
+            "description": "Source mode is invalid.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_MODE_MISSING",
+            "category": "SOURCE",
+            "description": "Source mode is missing.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_MODE_VERIFIED",
+            "category": "SOURCE",
+            "description": "Source mode and source identity were verified.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_NO_VALID_DATA",
+            "category": "SOURCE",
+            "description": "Canonical fail-safe alias for source acquisition that produced no valid data.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_OBSERVATION_CAPTURE_REQUIRED",
+            "category": "SOURCE",
+            "description": "Canonicalization was blocked because raw source evidence was not durably captured first.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_OBSERVATION_NOT_ACCEPTED",
+            "category": "SOURCE",
+            "description": "Canonicalization was blocked because the bound source observation is not accepted.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_OBSERVATION_PERSISTENCE_FAILED",
+            "category": "SOURCE",
+            "description": "Acquisition was blocked because immutable observation capture or outcome persistence failed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_PROVIDER_EMPTY_RESPONSE",
+            "category": "SOURCE",
+            "description": "Canonical fail-safe alias for provider response that contained no usable rows.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_PROVIDER_HTTP_ERROR",
+            "category": "SOURCE",
+            "description": "Source provider returned a non-transient HTTP error that must not be treated as successful data.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_PROVIDER_MALFORMED_RESPONSE",
+            "category": "SOURCE",
+            "description": "Source provider response could not be parsed into canonical market-data payload.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_PROVIDER_PARTIAL_RESPONSE",
+            "category": "SOURCE",
+            "description": "Source provider returned only partial usable response context.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_PROVIDER_RATE_LIMITED",
+            "category": "SOURCE",
+            "description": "Source provider rate limited the request.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_PROVIDER_RETRY_EXHAUSTED",
+            "category": "SOURCE",
+            "description": "Source provider retry policy was exhausted without usable data.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_PROVIDER_TIMEOUT",
+            "category": "SOURCE",
+            "description": "Source provider timed out.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_PROVIDER_UNAVAILABLE",
+            "category": "SOURCE",
+            "description": "Source provider unavailable.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "SOURCE_SCALE_MARKET_STRUCTURE_UNRESOLVED",
+            "category": "CORPORATE_ACTION",
+            "description": "Yahoo source scale remained unknown because admissible point-in-time market-structure context was insufficient; factor activation was prohibited.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_ACQUISITION_CACHE_CLEANUP_FAILED",
+            "category": "SOURCE",
+            "description": "The temporary Stage 8 date-row cache could not be removed after a successful oracle.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_ACQUISITION_CACHE_CLEANUP_REFUSED",
+            "category": "SOURCE",
+            "description": "Stage 8 refused cache cleanup because the bounded rows directory contained an unexpected entry.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_ACQUISITION_CACHE_DATE_INVALID",
+            "category": "SOURCE",
+            "description": "A Stage 8 per-date acquisition cache contained an invalid batch record.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_ACQUISITION_CACHE_DATE_MISSING",
+            "category": "SOURCE",
+            "description": "A Stage 8 target had no per-date acquisition cache after acquisition completed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_ACQUISITION_CACHE_DATE_UNREADABLE",
+            "category": "SOURCE",
+            "description": "A Stage 8 per-date acquisition cache could not be opened.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_ACQUISITION_CACHE_IDENTITY_MISMATCH",
+            "category": "SOURCE",
+            "description": "A resumable Stage 8 acquisition cache did not match the frozen campaign/date/ticker identity.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_ACQUISITION_CACHE_MANIFEST_INVALID",
+            "category": "SOURCE",
+            "description": "The resumable Stage 8 acquisition manifest was not valid structured JSON.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_ACQUISITION_CACHE_WRITE_FAILED",
+            "category": "SOURCE",
+            "description": "The resumable Stage 8 Yahoo acquisition cache could not be written durably.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_ADMISSION_EVIDENCE_INVALID",
+            "category": "GOVERNANCE",
+            "description": "Stage 8 admission evidence was absent, inconsistent, or not hash-verifiable.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_ADMISSION_SUFFIX_NOT_FOUND",
+            "category": "COVERAGE",
+            "description": "No continuous suffix met the locked coverage and quality requirements.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_BASELINE_HASH_MISSING",
+            "category": "CORRECTION",
+            "description": "A frozen current baseline lacked a mandatory artifact hash and was ineligible for reconstruction.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_BASELINE_NOT_SEALED",
+            "category": "CORRECTION",
+            "description": "A current baseline was not a sealed successful publication and was ineligible for reconstruction.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_BASELINE_POINTER_DRIFT",
+            "category": "CORRECTION",
+            "description": "A current publication pointer no longer matches the baseline frozen by the Stage 8 campaign, so reconstruction stopped.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_BLOCKED_CAMPAIGN_SUPERSEDED",
+            "category": "GOVERNANCE",
+            "description": "A blocked full-range Stage 8 campaign was superseded by an explicit measured admission decision without changing its immutable attempts.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_CAMPAIGN_NOT_FOUND",
+            "category": "CORRECTION",
+            "description": "The requested Stage 8 reconstruction campaign does not exist.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_CAMPAIGN_RESUME_REQUIRED",
+            "category": "CORRECTION",
+            "description": "An unfinished Stage 8 campaign already exists and must be explicitly resumed.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_COMPLETED_CAMPAIGN_ORACLE_DRIFT",
+            "category": "CORRECTION",
+            "description": "A completed Stage 8 campaign no longer satisfies its frozen completion oracle.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_CONFORMANT_SUFFIX_ADMITTED",
+            "category": "GOVERNANCE",
+            "description": "A measured continuous suffix met the locked coverage threshold and quality requirements under verified status evidence.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_CURRENT_CORPUS_ORACLE_FAILED",
+            "category": "CORRECTION",
+            "description": "The final Stage 8 current-corpus oracle found one or more violations.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_CURRENT_CORPUS_RECONSTRUCTION",
+            "category": "CORRECTION",
+            "description": "A frozen current EOD publication is being replaced through the complete correction lifecycle using a fresh Yahoo observation set while retaining the immutable baseline.",
+            "severity": "INFO",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_DATE_NOT_READABLE",
+            "category": "CORRECTION",
+            "description": "A reconstructed trade date did not end in a successful readable publication and its current pointer was not accepted.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_FROZEN_SCOPE_EMPTY",
+            "category": "CORRECTION",
+            "description": "Stage 8 could not freeze a reconstruction scope because no current publication pointers exist.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_FROZEN_SCOPE_POINTER_CALENDAR_MISMATCH",
+            "category": "CORRECTION",
+            "description": "The frozen current-pointer dates did not exactly match the authoritative trading-calendar dates.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_OUTPUT_DIRECTORY_CREATE_FAILED",
+            "category": "CORRECTION",
+            "description": "The Stage 8 resumable campaign output directory could not be created.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_POINTER_SWITCH_NOT_PROVEN",
+            "category": "CORRECTION",
+            "description": "A reconstructed trade date could not prove that its current pointer switched to the new sealed publication.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_PRE_ADMISSION_READ_BLOCKED",
+            "category": "READINESS",
+            "description": "A requested date precedes the active conformant-corpus admission boundary and is not consumer-readable.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_RECONSTRUCTION_FAILED",
+            "category": "CORRECTION",
+            "description": "A Stage 8 reconstruction target failed without a more specific registered reason and remained incomplete.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STAGE8_SOURCE_ACQUISITION_FAILED",
+            "category": "SOURCE",
+            "description": "The bounded Stage 8 Yahoo range acquisition failed systemically.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "STALE_ACTIVE_RUN_CANCELLED",
+            "category": "RUN",
+            "description": "Stale active run was cancelled because it no longer represented an active process.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "TEMPORAL_IDENTITY_PROJECTION_INCOMPLETE",
+            "category": "IDENTITY",
+            "description": "Stage 8 found legacy ticker identities not projected into the temporal identity model and stopped without mutating them.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "TEMPORAL_LISTING_MAPPING_MISSING",
+            "category": "IDENTITY",
+            "description": "No unambiguous point-in-time listing identity could be bound for the requested date.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "TRADING_STATUS_CONFLICT",
+            "category": "TRADING_STATUS",
+            "description": "Conflicting verified trading-status revisions prevent a deterministic status decision.",
+            "severity": "HARD",
+            "is_active": true
+        },
+        {
+            "code": "TRADING_STATUS_NO_EVIDENCE",
+            "category": "TRADING_STATUS",
+            "description": "No verified point-in-time trading-status evidence exists; status remains unknown.",
+            "severity": "WARN",
+            "is_active": true
+        },
+        {
+            "code": "TRADING_STATUS_REVISION_BINDING_MISSING",
+            "category": "STATUS",
+            "description": "A BAR_NOT_EXPECTED eligibility fact lacks its verified trading-status revision and source-observation binding.",
+            "severity": "HARD",
+            "is_active": true
+        }
+    ]
+}

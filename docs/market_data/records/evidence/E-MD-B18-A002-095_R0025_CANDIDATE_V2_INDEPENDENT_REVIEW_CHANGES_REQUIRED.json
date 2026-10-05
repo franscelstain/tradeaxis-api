@@ -1,0 +1,65 @@
+{
+    "evidence_id": "E-MD-B18-A002-095",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-04T23:42:39+07:00",
+    "verdict": "CANDIDATE_V2_REVIEWED_CHANGES_REQUIRED_NOT_APPROVED_IMMUTABLE_HISTORY",
+    "review_verdict": "REVIEWED — CHANGES REQUIRED",
+    "reviewed_candidate": {
+        "path": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v2",
+        "fingerprint": "bbd8c73953eb1397a49ba651e8b66b5b6cf914dd0790142d2a706bb8a49edb9f",
+        "manifest_sha256": "ed1d102ced928d7143f29e717f93dd1a6a8f6872406de7a103741520ca08bb42",
+        "recorded_in": "E-MD-B18-A002-094",
+        "status_after_review": "REVIEWED_CHANGES_REQUIRED: never approved, never edited, never reused under its fingerprint; a correction is a distinct package"
+    },
+    "how_this_review_is_known": "The result was relayed to the authoring Agent in the project instruction that continues this work unit. The review text itself and the reviewer identity were not supplied to the repository, so neither is recorded here and none is invented. The instruction names exactly two blocking findings; no other review finding is recorded.",
+    "review_findings": {
+        "FINDING_1": {
+            "finding_record": "F-MD-B18-A002-030",
+            "summary": "The manifest declares assertion_layers outside the locked fixture-manifest vocabulary (Fixture_Package_Manifest_LOCKED.md allows row, run, hash, publication, replay). Candidate-v2 declares run, source, coverage, hash, seal, publication, pointer, fallback, lineage, replay."
+        },
+        "FINDING_2": {
+            "finding_record": "F-MD-B18-A002-031",
+            "summary": "Exact-publication coverage of the frozen publication_manifest_hash is not established: no independent expected value and no executing comparison against the target could be shown."
+        }
+    },
+    "preserved_semantics": [
+        "all eleven frozen bound inputs",
+        "the synthetic labelled V2 world",
+        "Q4 separate V2 formula and reason registry identities",
+        "Q5 frozen literal build identity",
+        "Q6 provider timestamp separate from acquisition time",
+        "Q7 allocation-independent event/factor contamination projection",
+        "V1 unchanged",
+        "the non-vacuous fingerprint control",
+        "no expectation derived from the target run"
+    ],
+    "successor_rule": "A distinct candidate-v3 with a new fingerprint corrects exactly the two findings. Candidate-v1 and candidate-v2 stay unchanged.",
+    "related_findings": [
+        "F-MD-B18-A002-025",
+        "F-MD-B18-A002-030",
+        "F-MD-B18-A002-031",
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-094",
+        "E-MD-B18-A002-093",
+        "E-MD-B18-A002-092"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-014",
+        "D-MD-B18-A002-013",
+        "D-MD-B18-A002-011"
+    ],
+    "r0025_state": "INCOMPLETE / NOT_ASSESSED. No approval, no proof claim, no binding, no promotion; B18 100/113 reviewed, formal 0/113; F-017 open; F-018 not started.",
+    "next_resume_point": "MD-B18-A002: create candidate-v3 (distinct package) correcting F-MD-B18-A002-030 and F-MD-B18-A002-031, then stop at its independent review; candidate-v1 and candidate-v2 must not be approved.",
+    "no_commit_or_push": 1
+}

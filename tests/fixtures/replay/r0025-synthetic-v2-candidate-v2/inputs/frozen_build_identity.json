@@ -1,0 +1,23 @@
+{
+    "label": "FROZEN_EXECUTABLE_BUILD_IDENTITY",
+    "method": "php_source_build_v1",
+    "method_source": "ProducerRegistrySnapshot::build, re-implemented independently by derivation/author_build_identity.php",
+    "build_id": "sha256:d7e008b973f400189259fbe27ddbc273c769a0328827bec877fb3899cbb16c16",
+    "content_hash": "d7e008b973f400189259fbe27ddbc273c769a0328827bec877fb3899cbb16c16",
+    "file_count": 5915,
+    "manifest_file": "inputs/frozen_build_manifest.txt",
+    "manifest_sha256": "70c421ab3d374d1155a281785ac679a3a6886030a42479b86aa808e52ed01143",
+    "archive": {
+        "retained_archive_path": "storage/app/market-data/input-builds/d7e008b973f400189259fbe27ddbc273c769a0328827bec877fb3899cbb16c16.json.gz",
+        "archive_sha256": "1bd69fa237736dd1a126fda8c2bd8799b78dc68325580ed11bc719d50c227a41",
+        "archive_bytes": 11400424,
+        "archive_decompresses_to_this_content": true
+    },
+    "frozen_at": "2026-10-03T10:56:50+07:00",
+    "validity": "This candidate is valid only for this build. A change to any file of the build changes the identity and requires a new candidate version, review and approval.",
+    "how_to_verify": [
+        "1. every line of inputs/frozen_build_manifest.txt equals the sha256 of that file of the tree the candidate was frozen from",
+        "2. sha256 of canonical JSON {\"files_base64\":{path: base64(file)},\"schema_version\":\"php_source_build_v1\"} over those files equals content_hash",
+        "3. when the archive is present: it decompresses to that same content"
+    ]
+}

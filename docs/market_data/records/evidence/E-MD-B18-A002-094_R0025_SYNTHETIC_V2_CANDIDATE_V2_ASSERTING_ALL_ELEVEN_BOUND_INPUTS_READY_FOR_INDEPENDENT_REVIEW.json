@@ -1,0 +1,784 @@
+{
+    "evidence_id": "E-MD-B18-A002-094",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20260925-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-03T11:47:12+07:00",
+    "verdict": "CANDIDATE_V2_ASSERTS_ALL_ELEVEN_BOUND_INPUTS_READY_FOR_INDEPENDENT_REVIEW_R0025_STILL_INCOMPLETE_NOT_PROOF",
+    "checkpoint_verdict": "CANDIDATE-V2 READY FOR INDEPENDENT REVIEW",
+    "candidate_match_statement": "CANDIDATE-V2 MATCHES ACTUAL — NOT ADMITTED AS PROOF",
+    "all_eleven_compared": "YES",
+    "related_findings": [
+        "F-MD-B18-A002-025",
+        "F-MD-B18-A002-027",
+        "F-MD-B18-A002-028",
+        "F-MD-B18-A002-029",
+        "F-MD-B10-A002-004",
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-093",
+        "E-MD-B18-A002-092",
+        "E-MD-B18-A002-091",
+        "E-MD-B07-A001-001",
+        "SC-MD-B10-A002-001",
+        "E-MD-B10-A002-017"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-014",
+        "D-MD-B18-A002-013",
+        "D-MD-B18-A002-011",
+        "D-MD-B10-A002-005",
+        "D-MD-B18-A002-006"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0015",
+        "MD-DEP-0017"
+    ],
+    "scope": "Applies the owner selections Q4 = A, Q5 = B, Q6 = B, Q7 = A (D-MD-B18-A002-014): the V2 formula and reason registry identities, the frozen executable build identity, the provider-timestamp correction, the V2 event/factor contamination projection, and the distinct package candidate-v2 that asserts all eleven bound inputs. Candidate-v2 is not reviewed, not approved and not proof. No R0025 binding, no promotion, no F-017 resolution, no F-018 work, no B10 binder.",
+    "owner_decision_recording": {
+        "canonical_decision": "D-MD-B18-A002-014",
+        "recorded_before_implementation": true,
+        "Q4": "A: separate semantic V2 formula and reason registry identities, build excluded, V1 unchanged",
+        "Q5": "B: executable_build_identity asserted as a frozen literal from the governed build mechanism, never a target marker",
+        "Q6": "B: the provider timestamp 1774231200 is bound in the observation envelope and manifest, the acquisition time is separate, the canonical bar keeps a NULL source timestamp",
+        "Q7": "A: V2 event_factor_hash replaces the ancillary group with a contamination-decision projection"
+    },
+    "starting_state": {
+        "head": "87782c8",
+        "note": "HEAD moved from 37246d9 to 87782c8 (\"test(market-data): record R0025 candidate review findings\") before this unit, not by this unit; nothing was pushed (origin/master ahead by 15 at the start)",
+        "candidate_v1_fingerprint": "05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0",
+        "protected_files": {
+            "tests/Unit/MarketData/B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f7829c2987445724958fbecfde7e0c395e11ba3343ca7d0e1bfe105efe2",
+            "docs/market_data/development/implementation/tests/MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b0ea2ab3f1f91a06b4aafced3119bc22585b6ddb96685fc31b6f58dd4"
+        }
+    },
+    "q4_registry_identities": {
+        "formula_preimage": "canonical{schema_version = market-data-formula-registry/v2, registry_contract, semantic_versions, indicator_set_version, coverage_contract_version, eligibility_contract_version, config_registry_revision, config_resolver_version, serialization_version, read_model_version}; composite serialization (keys ordered at every level)",
+        "formula_literal": "2d1f53e19c2995ab5f9e0282e898e06a5f755ad4d9248f6c7cdac629e8ace4bf",
+        "reason_preimage": "canonical{schema_version = market-data-reason-registry/v2, entries = [{code, category, description, severity, is_active}] ordered by code bytewise}",
+        "reason_literal": "0dda9efd27338ad354bca8175aeb2a84d127a259ba5d26dfe84712c33c027a89",
+        "reason_entry_count": 437,
+        "excluded": "executable build (file hashes, archive hash, PHP version and SAPI), implementation file hashes, local ids, the whole registry capture payload hash",
+        "v1_preservation": "a V1-profile publication still binds the whole registry capture payload hash in both fields (control test_a_v1_profile_run_keeps_its_historical_interpretation; probe PV1)",
+        "disclosure": "24 persisted reason descriptions differ from Reason_Codes_Registry.md; codes, categories and severities agree for all 437; the identity binds the persisted text (registry rule 3 lets description text be clarified)",
+        "implementation": "app/Application/MarketData/Services/ReplayV2IdentityProjection.php, ReplayVerificationService::actualBoundInputContext"
+    },
+    "q5_build_identity": {
+        "frozen_source": "inputs/frozen_build_identity.json and inputs/frozen_build_manifest.txt of candidate-v2",
+        "method": "php_source_build_v1 (ProducerRegistrySnapshot::build, re-implemented independently by derivation/author_build_identity.php)",
+        "literal": "sha256:d7e008b973f400189259fbe27ddbc273c769a0328827bec877fb3899cbb16c16",
+        "file_count": 5915,
+        "manifest_sha256": "70c421ab3d374d1155a281785ac679a3a6886030a42479b86aa808e52ed01143",
+        "retained_archive": {
+            "retained_archive_path": "storage/app/market-data/input-builds/d7e008b973f400189259fbe27ddbc273c769a0328827bec877fb3899cbb16c16.json.gz",
+            "archive_sha256": "1bd69fa237736dd1a126fda8c2bd8799b78dc68325580ed11bc719d50c227a41",
+            "archive_bytes": 11400424,
+            "archive_decompresses_to_this_content": true
+        },
+        "cross_check": "the independent re-implementation and the production capture of the world produce the same identity (control test_the_publication_bound_build_identity_is_the_frozen_build_identity compares the frozen manifest with the tree file by file)",
+        "mismatch_proof": "test_a_wrong_literal_in_any_one_bound_input_is_the_only_mismatch_it_causes (the build literal wrong: exactly bound_input_executable_build_identity fails); probes P5a, P5b; the oracle-sensitivity control moves only bound:executable_build_identity",
+        "validity": "valid only for this build; a change to a file of the build requires a new candidate version"
+    },
+    "q6_source_timestamp": {
+        "provider_timestamp": "1774231200 = 2026-03-23 09:00:00 Asia/Jakarta (chart-series bar instant)",
+        "acquisition_timestamp": "2026-03-25 10:30:00",
+        "observation_envelope_result": "capture and accepted envelope rows: source_timestamp 2026-03-23 09:00:00, acquired_at 2026-03-25 10:30:00",
+        "normalized_row_result": "source_timestamp NULL (the acquisition clock is no longer stored under that name)",
+        "canonical_bar_result": "source_timestamp NULL, acquired_at 2026-03-25 10:30:00",
+        "observation_manifest_result": "the entries bind both; source_observation_manifest_hash 92ecc9f3fb02adec53093e3836129e7c4713549297e09ffe62f8619fa46bf0b5",
+        "rule_applied": "single-date request: the series element whose exchange-local date is the trade date, when exactly one matches, rendered in the platform timezone; range-window requests, ambiguous or absent instants, non-chart payloads and a foreign exchange timezone give NULL (design decision of this unit, disclosed for review; the raw instants stay bound through the payload hash)",
+        "provider_instant_plus_60s_moves": [
+            "nested:observation_manifest_hash",
+            "artifact:bars",
+            "artifact:indicators",
+            "bound:source_observation_manifest_hash",
+            "bound:canonical_raw_input_hash"
+        ],
+        "acquisition_clock_plus_60s_moves": [
+            "nested:observation_manifest_hash",
+            "artifact:bars",
+            "artifact:indicators",
+            "bound:source_observation_manifest_hash",
+            "bound:canonical_raw_input_hash"
+        ],
+        "reading": "Both change the observation entry (and so the manifest, the bars artifact and the indicators artifact, which bind the manifest). The oracle-level and service-level controls separate them: the provider instant alone (same payload bytes), the acquisition time alone, and a missing provider instant are three different manifests; neither moves the bar values, the identity sets, the event/factor, registry or build identities.",
+        "finding": "F-MD-B18-A002-027"
+    },
+    "q7_event_factor": {
+        "old_allocation_sensitive_member": "componentGroupHash over the ancillary captures: ticker_ids selections, bars keyed by ticker id, full bar copies with listing_id, ticker_id, run_id, publication_id, source_observation_id",
+        "new_projection": "contamination-decision set {schema_version market-data-contamination-decision-set/v2, contamination, price_scale_breaks}: decisions grouped by retained listing root, semantic fields only; corporate_action_revision_id and candidate_uid dropped by name; an unknown field, a ticker without one retained root or an ambiguous mapping leaves the identity unavailable",
+        "composite_membership": [
+            "profile",
+            "event_revision_set_hash",
+            "source_scale_assessment_set_hash",
+            "factor_decision_set_hash",
+            "factor_set_hash",
+            "contamination_decision_set_hash"
+        ],
+        "not_members": [
+            "event_risk_contexts (derived from event and status revisions already bound; reason strings carry revision ids)",
+            "market_structure_revision_set (no authority text puts it in the event/factor domain)",
+            "dormancy, eligibility-input and benchmark/sector copies"
+        ],
+        "empty_world_literal": "b61b39fa2641038c54740d92f862fe82ea2c4d3c5387ed99d1a685e8048f94b6",
+        "event_factor_literal": "4b3221309a4d1f6661c6b593920d20feeb5f03d674251aff11d7b04a32fd6f55",
+        "allocation_proof": "two layouts, equal; controls test_the_contamination_decision_member_binds_semantic_facts_found_through_the_retained_root_and_not_local_ids (another ticker id and revision id, same identity; a changed semantic fact moves it) and test_each_semantic_member_of_the_event_factor_identity_moves_it; probes P2a, P2b, P9a, P9b"
+    },
+    "b10_impact": {
+        "before_change": "Changed producers: PublicApiEodBarsAdapter and SourceObservationRepository (MD-B07 / MD-B09 acquisition and import), ReplayVerificationService and the new ReplayV2IdentityProjection (MD-B18). The B10 semantic services SemanticObservationIdentityService, ArtifactSemanticHashService, SemanticNestedIdentityService, PublicationSemanticIdentityService, DeterministicHashService, RunInputCaptureRepository, ProducerRegistrySnapshot and PublicationInputBindingService are byte-identical to HEAD (git diff --stat HEAD -- app lists exactly the three changed files plus the new file). The V2 observation manifest values change only for observations written by the adapter (the envelope stores the provider instant), because the entry document already contained source_timestamp; the V1 journal content of future adapter runs changes the same way and sealed history is untouched.",
+        "dependent_b10_surface": "E-MD-B10-A002-017 (56 predicates PROVEN_CURRENT) is covered by 21 test files that exist in tests/Unit/MarketData; they exercise the V2 artifact hash, the nested identities, the publication manifest and the production pipeline",
+        "revalidation_performed": [
+            "all 21 B10 covering test files executed on the changed tree: 365 tests, 8594 assertions, 8 red, 0 skipped",
+            "the red ones are exactly the 8 governed expected states SC-MD-B10-A002-001 already records (B18ScenarioFamiliesOnMariaDbTest R0025 self-generated family, 7 ProductionCorpusInvariantOracleTest population controls)",
+            "full MarketData suite on the frozen tree: 2776 tests, 45270 assertions, 8 failures, all 8 governed expected"
+        ],
+        "classification": "B10_IMPLEMENTATION_BUT_NO_PROOF_INVALIDATION: the producers of stored envelope content changed; no B10 semantic hash producer changed; no previously bound B10 semantic expectation moved (executed, not assumed). The B10 proof binds the identity services over stored rows, which are unchanged.",
+        "final_b10_state": "closed, 1072/1072, unchanged; denominator unchanged; no binder or matrix change; MD-S053-R0068 (MD-B07) not reassessed"
+    },
+    "f004_reassessment": {
+        "closure_criterion": "Resolved when replay frozen identities are built from retained roots and content, and an allocation-history probe shows identical identities for identical semantic inputs.",
+        "v2_scope": "MET for V2-profile publications: all eleven replay bound inputs are retained-root or content based and equal across two allocation layouts, and the ancillary group is gone from event_factor_hash",
+        "remaining_residual": "the V1-profile captured content (universe rows and status-expectation selections carry ticker_id, issuer_id, instrument_id, listing_id; the V1 ancillary group) and the as-known path, unchanged by owner decision D-MD-B18-A002-013 Q3 (V2 only, V1 historical behaviour unchanged)",
+        "status": "PARTIALLY_RESOLVED, unchanged: not resolved automatically; the V2 criterion is met, the V1 residual remains"
+    },
+    "all_eleven_bound_inputs": {
+        "source_observation_manifest_hash": {
+            "expected_literal": "92ecc9f3fb02adec53093e3836129e7c4713549297e09ffe62f8619fa46bf0b5",
+            "actual_allocation_a": "92ecc9f3fb02adec53093e3836129e7c4713549297e09ffe62f8619fa46bf0b5",
+            "actual_allocation_b": "92ecc9f3fb02adec53093e3836129e7c4713549297e09ffe62f8619fa46bf0b5",
+            "a_equals_b": true,
+            "both_equal_expected": true,
+            "result": "MATCH"
+        },
+        "canonical_raw_input_hash": {
+            "expected_literal": "6c874753323c4b750b253039444c73e6c4f9a0f0ddff19bbb4828ec07272c415",
+            "actual_allocation_a": "6c874753323c4b750b253039444c73e6c4f9a0f0ddff19bbb4828ec07272c415",
+            "actual_allocation_b": "6c874753323c4b750b253039444c73e6c4f9a0f0ddff19bbb4828ec07272c415",
+            "a_equals_b": true,
+            "both_equal_expected": true,
+            "result": "MATCH"
+        },
+        "temporal_identity_hash": {
+            "expected_literal": "a9233bcee067ad6f1715494c0bd5b587e49fa69e08b2a1085bc5509dc1b2e51b",
+            "actual_allocation_a": "a9233bcee067ad6f1715494c0bd5b587e49fa69e08b2a1085bc5509dc1b2e51b",
+            "actual_allocation_b": "a9233bcee067ad6f1715494c0bd5b587e49fa69e08b2a1085bc5509dc1b2e51b",
+            "a_equals_b": true,
+            "both_equal_expected": true,
+            "result": "MATCH"
+        },
+        "calendar_status_hash": {
+            "expected_literal": "2c7dc9f896cee8e1233ac0899d63316b5f2ccfb779cd6553f2fe3fa52e801dcf",
+            "actual_allocation_a": "2c7dc9f896cee8e1233ac0899d63316b5f2ccfb779cd6553f2fe3fa52e801dcf",
+            "actual_allocation_b": "2c7dc9f896cee8e1233ac0899d63316b5f2ccfb779cd6553f2fe3fa52e801dcf",
+            "a_equals_b": true,
+            "both_equal_expected": true,
+            "result": "MATCH"
+        },
+        "event_factor_hash": {
+            "expected_literal": "4b3221309a4d1f6661c6b593920d20feeb5f03d674251aff11d7b04a32fd6f55",
+            "actual_allocation_a": "4b3221309a4d1f6661c6b593920d20feeb5f03d674251aff11d7b04a32fd6f55",
+            "actual_allocation_b": "4b3221309a4d1f6661c6b593920d20feeb5f03d674251aff11d7b04a32fd6f55",
+            "a_equals_b": true,
+            "both_equal_expected": true,
+            "result": "MATCH"
+        },
+        "config_snapshot_hash": {
+            "expected_literal": "8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0",
+            "actual_allocation_a": "8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0",
+            "actual_allocation_b": "8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0",
+            "a_equals_b": true,
+            "both_equal_expected": true,
+            "result": "MATCH"
+        },
+        "formula_registry_hash": {
+            "expected_literal": "2d1f53e19c2995ab5f9e0282e898e06a5f755ad4d9248f6c7cdac629e8ace4bf",
+            "actual_allocation_a": "2d1f53e19c2995ab5f9e0282e898e06a5f755ad4d9248f6c7cdac629e8ace4bf",
+            "actual_allocation_b": "2d1f53e19c2995ab5f9e0282e898e06a5f755ad4d9248f6c7cdac629e8ace4bf",
+            "a_equals_b": true,
+            "both_equal_expected": true,
+            "result": "MATCH"
+        },
+        "reason_registry_hash": {
+            "expected_literal": "0dda9efd27338ad354bca8175aeb2a84d127a259ba5d26dfe84712c33c027a89",
+            "actual_allocation_a": "0dda9efd27338ad354bca8175aeb2a84d127a259ba5d26dfe84712c33c027a89",
+            "actual_allocation_b": "0dda9efd27338ad354bca8175aeb2a84d127a259ba5d26dfe84712c33c027a89",
+            "a_equals_b": true,
+            "both_equal_expected": true,
+            "result": "MATCH"
+        },
+        "read_model_version": {
+            "expected_literal": "market_data_read_product_v1",
+            "actual_allocation_a": "market_data_read_product_v1",
+            "actual_allocation_b": "market_data_read_product_v1",
+            "a_equals_b": true,
+            "both_equal_expected": true,
+            "result": "MATCH"
+        },
+        "serialization_version": {
+            "expected_literal": "canonical_json_v1",
+            "actual_allocation_a": "canonical_json_v1",
+            "actual_allocation_b": "canonical_json_v1",
+            "a_equals_b": true,
+            "both_equal_expected": true,
+            "result": "MATCH"
+        },
+        "executable_build_identity": {
+            "expected_literal": "sha256:d7e008b973f400189259fbe27ddbc273c769a0328827bec877fb3899cbb16c16",
+            "actual_allocation_a": "sha256:d7e008b973f400189259fbe27ddbc273c769a0328827bec877fb3899cbb16c16",
+            "actual_allocation_b": "sha256:d7e008b973f400189259fbe27ddbc273c769a0328827bec877fb3899cbb16c16",
+            "a_equals_b": true,
+            "both_equal_expected": true,
+            "result": "MATCH"
+        }
+    },
+    "reference_oracle": {
+        "version": "2.0.0",
+        "path": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v2/derivation/reference_oracle.php",
+        "independence": "imports no application code, opens no database, reads no run, publication or replay output, calls no production hash implementation (control test_the_standalone_oracle_reproduces_the_package_and_includes_no_application_code scans it); consumes only the frozen inputs including the frozen build identity, never the tree",
+        "full_preimages": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v2/derivation/oracle_output.json",
+        "literal_outputs_equal_the_production_actuals": true
+    },
+    "two_allocation_stability": {
+        "layouts": "default; ticker 975777, 41 preconsumed ids, calendar rows inserted in reverse",
+        "result": "11 of 11 identical and equal to the literals",
+        "operational_identities_differ": {
+            "run_id": true,
+            "publication_id": true,
+            "ticker_id": true,
+            "listing_id": true,
+            "config_snapshot_id": true,
+            "factor_set_id": true,
+            "source_observation_ids": true
+        },
+        "raw": "storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261003-v2-candidate/diagnostics/two_allocation_layouts.json"
+    },
+    "mutation_probes": {
+        "count": 22,
+        "verdicts": {
+            "P1_wrong_foundation_fingerprint_not_rejected": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Infrastructure/Persistence/SecurityIdentity/FrozenSourcePackageReader.php",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_synthetic_retained_identity_resolves_only_through_the_foundation_restore_path"
+                ],
+                "sha256_before": "1b66b90286f2a4a61cf78220b746f634c3c11fc3ababd52a0ecd9f4c178ad6c4",
+                "sha256_mutated": "cbddbad0bd809d76a2c701829022950b9b29ea8a18dfcb1941069fe4026148b1",
+                "sha256_restored": "1b66b90286f2a4a61cf78220b746f634c3c11fc3ababd52a0ecd9f4c178ad6c4",
+                "restored_byte_identical": true
+            },
+            "P2a_event_factor_drops_the_factor_set_member": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_each_semantic_bound_input_equals_its_own_literal_on_the_real_path",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_each_semantic_member_of_the_event_factor_identity_moves_it"
+                ],
+                "sha256_before": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "sha256_mutated": "01b4595ba8dc7ed85f0fc05fd7f8fc738620c11f3e867f0d4a68ec80fc8a8d7d",
+                "sha256_restored": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "restored_byte_identical": true
+            },
+            "P2b_event_factor_keeps_the_allocation_bound_ancillary_group": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_each_semantic_bound_input_equals_its_own_literal_on_the_real_path",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_two_allocation_layouts_give_identical_semantic_identities_and_the_oracle_literals"
+                ],
+                "sha256_before": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "sha256_mutated": "a951dabb606788513ed42b10c1ba9afea58582bb3143a20b271b3141db147ca9",
+                "sha256_restored": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "restored_byte_identical": true
+            },
+            "P3a_formula_registry_includes_the_executable_build": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/ReplayV2IdentityProjection.php",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_each_semantic_bound_input_equals_its_own_literal_on_the_real_path",
+                    "ReplayV2IdentityProjectionTest.php::test_each_formula_member_moves_the_formula_identity_and_nothing_else_does"
+                ],
+                "sha256_before": "24baddfa004a14f258e35b86ec101733ed28fa88b3d6d5a4f6c9f19591dfc898",
+                "sha256_mutated": "3fdbc0389ba79938ba6e8d4d0b3b7b3b0244ffd39a5cd72d4f49630e9056b434",
+                "sha256_restored": "24baddfa004a14f258e35b86ec101733ed28fa88b3d6d5a4f6c9f19591dfc898",
+                "restored_byte_identical": true
+            },
+            "P3b_formula_registry_drops_a_member": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/ReplayV2IdentityProjection.php",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_each_semantic_bound_input_equals_its_own_literal_on_the_real_path",
+                    "ReplayV2IdentityProjectionTest.php::test_the_formula_identity_is_a_fixed_document_hash_over_its_own_members"
+                ],
+                "sha256_before": "24baddfa004a14f258e35b86ec101733ed28fa88b3d6d5a4f6c9f19591dfc898",
+                "sha256_mutated": "d6e0b6563e9a9a14f3d79bb551dfebd5b4b8da4b7511a7a7b03ed1b6046592d6",
+                "sha256_restored": "24baddfa004a14f258e35b86ec101733ed28fa88b3d6d5a4f6c9f19591dfc898",
+                "restored_byte_identical": true
+            },
+            "P4a_reason_registry_uses_the_whole_registry_capture": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_each_semantic_bound_input_equals_its_own_literal_on_the_real_path",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_registry_identities_are_separate_and_the_build_is_in_neither"
+                ],
+                "sha256_before": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "sha256_mutated": "35f3a03c8f11e056fbd7610739dd18a907d870391a6c5d42adf430426cf2ffad",
+                "sha256_restored": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "restored_byte_identical": true
+            },
+            "P4b_reason_registry_ignores_the_description": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/ReplayV2IdentityProjection.php",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_each_semantic_bound_input_equals_its_own_literal_on_the_real_path",
+                    "ReplayV2IdentityProjectionTest.php::test_every_reason_entry_member_moves_the_reason_identity"
+                ],
+                "sha256_before": "24baddfa004a14f258e35b86ec101733ed28fa88b3d6d5a4f6c9f19591dfc898",
+                "sha256_mutated": "f760845156b074d28435b275b248625499e93f65e4a25412f8d95a01bbcbdbe0",
+                "sha256_restored": "24baddfa004a14f258e35b86ec101733ed28fa88b3d6d5a4f6c9f19591dfc898",
+                "restored_byte_identical": true
+            },
+            "P5a_build_identity_read_from_the_wrong_member": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_publication_bound_build_identity_is_the_frozen_build_identity"
+                ],
+                "sha256_before": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "sha256_mutated": "1d348636ad3fff9ca75a138a1bdccc7942d89f2e78cee7b758a6d75dcfedecab",
+                "sha256_restored": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "restored_byte_identical": true
+            },
+            "P5b_build_identity_not_compared": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_a_wrong_literal_in_any_one_bound_input_is_the_only_mismatch_it_causes"
+                ],
+                "sha256_before": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "sha256_mutated": "beb5a403b703d71efef48c748b93cd50c8f5b39d341bd5410b65a8c26382f2c0",
+                "sha256_restored": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "restored_byte_identical": true
+            },
+            "P6a_provider_instant_not_bound_to_the_envelope": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php",
+                "covering": [
+                    "ProviderObservationTimestampTest.php::test_the_envelope_binds_the_provider_instant_and_the_acquisition_clock_separately_and_the_bar_keeps_none",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_each_semantic_bound_input_equals_its_own_literal_on_the_real_path"
+                ],
+                "sha256_before": "e7f586f71e7eb2f2c1e9864bba8a1115fcabde53e6a2e8caf55207d869fd24ee",
+                "sha256_mutated": "5c2d94ffd349c2340f7c932001ea55e9b0039e71de5d3d05cd9f769ad8c19584",
+                "sha256_restored": "e7f586f71e7eb2f2c1e9864bba8a1115fcabde53e6a2e8caf55207d869fd24ee",
+                "restored_byte_identical": true
+            },
+            "P6b_provider_instant_rendered_in_utc": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php",
+                "covering": [
+                    "ProviderObservationTimestampTest.php::test_the_provider_instant_of_a_single_date_request_is_rendered_in_the_platform_timezone",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_each_semantic_bound_input_equals_its_own_literal_on_the_real_path"
+                ],
+                "sha256_before": "e7f586f71e7eb2f2c1e9864bba8a1115fcabde53e6a2e8caf55207d869fd24ee",
+                "sha256_mutated": "ba905ac7874a8efb25ac7e8bce117015836761b752a996241cfc1c158e139a66",
+                "sha256_restored": "e7f586f71e7eb2f2c1e9864bba8a1115fcabde53e6a2e8caf55207d869fd24ee",
+                "restored_byte_identical": true
+            },
+            "P7a_acquisition_clock_stored_as_the_normalized_row_source_timestamp": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Infrastructure/Persistence/MarketData/SourceObservationRepository.php",
+                "covering": [
+                    "ProviderObservationTimestampTest.php::test_the_envelope_binds_the_provider_instant_and_the_acquisition_clock_separately_and_the_bar_keeps_none",
+                    "ProviderObservationTimestampTest.php::test_the_acquisition_clock_alone_moves_the_acquisition_semantics_and_not_the_provider_or_bar_facts"
+                ],
+                "sha256_before": "da619e334253580383f44c38a0119d948b12355db07b17da3b3e11c4423edb69",
+                "sha256_mutated": "534be838a5ff58754ed12cab0d29a88bf6f343301e7d75b8570f261a35763fbd",
+                "sha256_restored": "da619e334253580383f44c38a0119d948b12355db07b17da3b3e11c4423edb69",
+                "restored_byte_identical": true
+            },
+            "P7b_envelope_falls_back_to_the_acquisition_clock": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php",
+                "covering": [
+                    "ProviderObservationTimestampTest.php::test_an_envelope_without_a_single_provider_instant_has_none_and_never_the_acquisition_clock"
+                ],
+                "sha256_before": "e7f586f71e7eb2f2c1e9864bba8a1115fcabde53e6a2e8caf55207d869fd24ee",
+                "sha256_mutated": "9e99315c2672e979795eb28cd4fa34dec9e87e586b18b1c6a2a6ec583f75acdc",
+                "sha256_restored": "e7f586f71e7eb2f2c1e9864bba8a1115fcabde53e6a2e8caf55207d869fd24ee",
+                "restored_byte_identical": true
+            },
+            "P8a_missing_bound_input_not_refused": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_a_missing_or_empty_bound_input_blocks_an_independent_package_even_with_an_approval_supplied"
+                ],
+                "sha256_before": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "sha256_mutated": "c72b786694d26ded3ea9a58a2dd2486cddec8b9e2eca6b3c1a3d5289a351ea2a",
+                "sha256_restored": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "restored_byte_identical": true
+            },
+            "P8b_incomplete_v2_lineage_treated_as_complete": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_v2_replay_identities_fail_closed_when_a_v2_publication_lacks_a_semantic_member"
+                ],
+                "sha256_before": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "sha256_mutated": "a6649034ecba01d7aba5844872e061a74ef10b397d723c33bb467ff3d19f003a",
+                "sha256_restored": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "restored_byte_identical": true
+            },
+            "P8c_unavailable_contamination_projection_accepted": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_an_unavailable_contamination_projection_leaves_the_event_factor_identity_unavailable"
+                ],
+                "sha256_before": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "sha256_mutated": "39163a00d4be90cb21bd0eb55e0de5607a58ee2561f65cb8ee9230fbaa423990",
+                "sha256_restored": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "restored_byte_identical": true
+            },
+            "P8d_target_marker_allowed_on_a_bound_input": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_a_target_marker_cannot_stand_in_for_any_of_the_eleven_bound_inputs"
+                ],
+                "sha256_before": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "sha256_mutated": "7fad4e80f717294014e99c1dbabc82fc1156d2e13fc20a95c480b476a22eaa56",
+                "sha256_restored": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "restored_byte_identical": true
+            },
+            "P9a_contamination_group_carries_the_ticker_id": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/ReplayV2IdentityProjection.php",
+                "covering": [
+                    "ReplayV2IdentityProjectionTest.php::test_the_same_semantic_decisions_under_different_local_ids_have_the_same_identity",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_contamination_decision_member_binds_semantic_facts_found_through_the_retained_root_and_not_local_ids"
+                ],
+                "sha256_before": "24baddfa004a14f258e35b86ec101733ed28fa88b3d6d5a4f6c9f19591dfc898",
+                "sha256_mutated": "61cfd36aa0ac328c9bb26ba9d56e4f0f93d15bc6f094f60a0ae2ac1289c37efc",
+                "sha256_restored": "24baddfa004a14f258e35b86ec101733ed28fa88b3d6d5a4f6c9f19591dfc898",
+                "restored_byte_identical": true
+            },
+            "P9b_event_factor_carries_a_local_id": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_two_allocation_layouts_give_identical_semantic_identities_and_the_oracle_literals",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_each_semantic_bound_input_equals_its_own_literal_on_the_real_path"
+                ],
+                "sha256_before": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "sha256_mutated": "490a3c495eb783b853a83dde335adbb75b2634c93f7b4db2bb94beccb949270f",
+                "sha256_restored": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "restored_byte_identical": true
+            },
+            "P9c_formula_registry_carries_a_local_id": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_two_allocation_layouts_give_identical_semantic_identities_and_the_oracle_literals",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_each_semantic_bound_input_equals_its_own_literal_on_the_real_path"
+                ],
+                "sha256_before": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "sha256_mutated": "7ec530b3553d955354fda2186f905443ad0228577d5cee13a9652507b5e7e81e",
+                "sha256_restored": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "restored_byte_identical": true
+            },
+            "P9d_reason_registry_carries_a_local_id": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_two_allocation_layouts_give_identical_semantic_identities_and_the_oracle_literals",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_each_semantic_bound_input_equals_its_own_literal_on_the_real_path"
+                ],
+                "sha256_before": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "sha256_mutated": "e7003850d44da3dd5583e7761949819fa0ed822d5202e09a13e6e915e001a0b1",
+                "sha256_restored": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "restored_byte_identical": true
+            },
+            "PV1_v1_publication_uses_the_v2_formula_identity": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_a_v1_profile_run_keeps_its_historical_interpretation"
+                ],
+                "sha256_before": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "sha256_mutated": "8e5f50acc3a62d3ecab2b6d7141dba7563ca17e5554c420023a7307eabcbcd47",
+                "sha256_restored": "6f0dc2e76477f8f194ddb50a3f5f2fc9dc9261a0e67aa0938675fa8e2b5947f6",
+                "restored_byte_identical": true
+            }
+        },
+        "mapping": "P1 foundation fingerprint bypass; P2 event/factor semantic input (P2a, P2b, plus the always-run control that each of four members moves it); P3 formula registry (P3a, P3b); P4 reason registry (P4a, P4b); P5 build identity (P5a, P5b); P6 provider timestamp (P6a, P6b); P7 acquisition timestamp (P7a, P7b); P8 required input null/removed (P8a to P8d); P9 local ids in the new hashes (P9a to P9d); PV1 V1 preservation",
+        "input_mutation_controls": "run on every execution: test_the_oracle_expectation_changes_where_authority_requires_it_and_only_there (formula member alone, reason entry alone, frozen build alone, provider instant), test_a_wrong_literal_in_any_one_bound_input_is_the_only_mismatch_it_causes, test_a_missing_or_empty_bound_input_blocks_an_independent_package_even_with_an_approval_supplied",
+        "control_before": {
+            "R0025SyntheticV2CandidateFixtureTest.php": {
+                "exit": 0,
+                "summary": "OK (26 tests, 6422 assertions)"
+            },
+            "ProviderObservationTimestampTest.php": {
+                "exit": 0,
+                "summary": "OK (7 tests, 54 assertions)"
+            },
+            "ReplayV2IdentityProjectionTest.php": {
+                "exit": 0,
+                "summary": "OK (11 tests, 83 assertions)"
+            }
+        },
+        "control_after": {
+            "R0025SyntheticV2CandidateFixtureTest.php": {
+                "exit": 0,
+                "summary": "OK (26 tests, 6422 assertions)"
+            },
+            "ProviderObservationTimestampTest.php": {
+                "exit": 0,
+                "summary": "OK (7 tests, 54 assertions)"
+            },
+            "ReplayV2IdentityProjectionTest.php": {
+                "exit": 0,
+                "summary": "OK (11 tests, 83 assertions)"
+            }
+        },
+        "raw": "storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261003-v2-candidate/probes/"
+    },
+    "candidate_v2_package": {
+        "path": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v2",
+        "version": "candidate-2",
+        "status": "CANDIDATE_AWAITING_INDEPENDENT_REVIEW",
+        "manifest_sha256": "ed1d102ced928d7143f29e717f93dd1a6a8f6872406de7a103741520ca08bb42",
+        "package_fingerprint": "bbd8c73953eb1397a49ba651e8b66b5b6cf914dd0790142d2a706bb8a49edb9f",
+        "fingerprint_algorithm": "sha256 over \"<file sha256>  <relative path>\\n\" for every file including manifest.json, ordered by path",
+        "files": 20,
+        "family": "independent_golden_synthetic_v2",
+        "field_classification_counts": {
+            "LITERAL_SEMANTIC_EXPECTATION": 98,
+            "DERIVED_FROM_FROZEN_INPUT": 26,
+            "TARGET_BOUND_OPERATIONAL": 20,
+            "ASSERTED_LITERAL_BOUND_INPUTS": 11,
+            "REASON_CODE_COUNT_ROWS": 2
+        },
+        "target_bound_fields": 20,
+        "bound_inputs_target_bound": 0,
+        "independent_reviewer": null,
+        "owner_approval": null,
+        "valid_for_build": "sha256:d7e008b973f400189259fbe27ddbc273c769a0328827bec877fb3899cbb16c16"
+    },
+    "candidate_v2_vs_actual": {
+        "statement": "CANDIDATE-V2 MATCHES ACTUAL — NOT ADMITTED AS PROOF",
+        "all_eleven_compared": "YES",
+        "mismatch_count": 0,
+        "replay_status": "BLOCKED",
+        "comparison_result": "NOT_ADMISSIBLE",
+        "admission_state": "NOT_ADMISSIBLE",
+        "refusal": "REPLAY_INDEPENDENT_REVIEW_REQUIRED: package fingerprint bbd8c73953eb1397a49ba651e8b66b5b6cf914dd0790142d2a706bb8a49edb9f has no independent review and owner approval bound to it; a candidate package is not proof.",
+        "raw": "storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261003-v2-candidate/diagnostics/candidate_vs_actual_allocation_a.json",
+        "mechanism_control": "the fingerprint is supplied by a test only (test_the_admission_mechanism_admits_only_the_exact_fingerprint_and_refuses_any_damaged_package); it is not an approval"
+    },
+    "regression": {
+        "full_marketdata_suite": {
+            "tests": 2776,
+            "assertions": 45270,
+            "failures": 8,
+            "errors": 0,
+            "skipped": 0,
+            "failing_tests": [
+                "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+                "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_carries_a_non_positive_price",
+                "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_violates_ohlc_ordering",
+                "ProductionCorpusInvariantOracleTest::test_exactly_one_publication_is_current_per_trade_date",
+                "ProductionCorpusInvariantOracleTest::test_no_readable_publication_rests_on_a_failed_run",
+                "ProductionCorpusInvariantOracleTest::test_authoritative_factor_candidates_reach_an_explicit_applied_or_held_decision",
+                "ProductionCorpusInvariantOracleTest::test_no_price_derived_factor_is_usable_as_an_adjustment",
+                "ProductionCorpusInvariantOracleTest::test_every_history_row_binds_to_a_publication"
+            ],
+            "basis": "production code changed (acquisition producers and the replay verifier), so the full suite was run on the frozen tree; the 8 failures are the governed expected states recorded by SC-MD-B10-A002-001 and E-MD-B18-A002-092"
+        },
+        "b10_covering": {
+            "files": {
+                "AliasNamingAndMeaningBoundaryTest": {
+                    "tests": 6,
+                    "assertions": 188,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "ArtifactSemanticHashServiceTest": {
+                    "tests": 46,
+                    "assertions": 132,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "ArtifactSemanticIdentityOnMariaDbTest": {
+                    "tests": 10,
+                    "assertions": 87,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "B18ProductionPathReplayFixturesTest": {
+                    "tests": 13,
+                    "assertions": 100,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "B18ReplayPersistedEvidenceBindingTest": {
+                    "tests": 17,
+                    "assertions": 156,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "B18ScenarioFamiliesOnMariaDbTest": {
+                    "tests": 12,
+                    "assertions": 482,
+                    "red": 1,
+                    "skipped": 0
+                },
+                "ConfigIsTheOnlyEnvReaderTest": {
+                    "tests": 5,
+                    "assertions": 8,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "DateDrivenCapabilityAndProviderAbstractionTest": {
+                    "tests": 18,
+                    "assertions": 65,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "DomainOwnershipSurfaceTest": {
+                    "tests": 28,
+                    "assertions": 523,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "EmittedReasonCodeRegistrationTest": {
+                    "tests": 3,
+                    "assertions": 10,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "IndicatorAtrStateReferenceTest": {
+                    "tests": 9,
+                    "assertions": 25,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "LifecycleProofIsNotMockedTest": {
+                    "tests": 5,
+                    "assertions": 8,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "MarketDataPipelineIntegrationTest": {
+                    "tests": 83,
+                    "assertions": 6157,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "MigrationIntegrityAndDriftTest": {
+                    "tests": 10,
+                    "assertions": 25,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "ProductionCorpusInvariantOracleTest": {
+                    "tests": 10,
+                    "assertions": 18,
+                    "red": 7,
+                    "skipped": 0
+                },
+                "PublicationCorrectionCalendarBindingTest": {
+                    "tests": 6,
+                    "assertions": 25,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "PublicationRepositoryIntegrationTest": {
+                    "tests": 28,
+                    "assertions": 140,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "PublicationScopeReasonSetTest": {
+                    "tests": 6,
+                    "assertions": 14,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "PublicationSemanticIdentityProductionPathTest": {
+                    "tests": 28,
+                    "assertions": 257,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "SemanticNestedIdentityOnMariaDbTest": {
+                    "tests": 20,
+                    "assertions": 172,
+                    "red": 0,
+                    "skipped": 0
+                },
+                "SemanticNestedIdentityPipelineWiringTest": {
+                    "tests": 2,
+                    "assertions": 2,
+                    "red": 0,
+                    "skipped": 0
+                }
+            },
+            "tests": 365,
+            "assertions": 8594,
+            "red": 8,
+            "skipped": 0
+        },
+        "pre_freeze_run": "full-suite-pre-freeze/ ran before the package existed and before ConsumerReadProductAntiBypassTest exposed a direct artifact-table read in the new verifier method (fixed: tickers resolve through the listing master); kept as raw evidence"
+    },
+    "findings_state": {
+        "F-MD-B18-A002-025": "OPEN: candidate-v2 awaits independent review and owner approval",
+        "F-MD-B18-A002-027": "RESOLVED: provider instant bound, acquisition clock no longer mislabelled; residual by design: range-window requests carry no envelope instant",
+        "F-MD-B18-A002-028": "OPEN, implemented and awaiting independent review of a candidate that asserts all eleven",
+        "F-MD-B18-A002-029": "RESOLVED (unchanged)",
+        "F-MD-B10-A002-004": "PARTIALLY_RESOLVED (V2 criterion met, V1 residual remains)",
+        "F-MD-B18-A002-017": "OPEN"
+    },
+    "r0025_state": "INCOMPLETE / NOT_ASSESSED. No review, no approval, no proof claim, no binding, no promotion; B18 100/113 reviewed, formal 0/113; F-017 open; F-018 not started.",
+    "interpretations_for_review": [
+        "event_risk_contexts and market structure are not members of the event/factor identity",
+        "single-date rule for the envelope provider instant; range requests carry none",
+        "the reason registry binds persisted description text",
+        "the contamination whitelist drops corporate_action_revision_id and candidate_uid as row identities"
+    ],
+    "review_material": {
+        "raw_index": "storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261003-v2-candidate/REVIEW_INDEX.md",
+        "package": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v2",
+        "fingerprint": "bbd8c73953eb1397a49ba651e8b66b5b6cf914dd0790142d2a706bb8a49edb9f"
+    },
+    "not_done": [
+        "independent review",
+        "owner approval",
+        "admitted proof run",
+        "formal R0025 binder",
+        "F-018",
+        "push, commit"
+    ],
+    "preservation": {
+        "candidate_v1_fingerprint_recomputed": "05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0",
+        "E-MD-B18-A002-092": "not edited",
+        "E-MD-B18-A002-093": "not edited",
+        "b10_semantic_producers": "byte-identical to HEAD",
+        "B18ScenarioFamiliesOnMariaDbTest.php": "dd6a0f78…efe2 unchanged",
+        "MarketDataReplayVerificationAcceptanceAggregate.php": "2d41257b…58dd4 unchanged"
+    },
+    "raw_proof": {
+        "package": "storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261003-v2-candidate",
+        "manifest_sha256": "e04afeb8ff222e4ad722d0e12e0de8532d725745b169b3ec978a92c2f51db349"
+    },
+    "next_resume_point": "MD-B18-A002: independent review of the candidate-v2 package tests/fixtures/replay/r0025-synthetic-v2-candidate-v2 (fingerprint bbd8c73953eb1397a49ba651e8b66b5b6cf914dd0790142d2a706bb8a49edb9f, manifest sha256 ed1d102ced928d7143f29e717f93dd1a6a8f6872406de7a103741520ca08bb42) by a TradeAxis reviewer who is not the authoring Agent, using storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261003-v2-candidate/REVIEW_INDEX.md; the review record and the owner approval bound to that fingerprint are separate governed records; candidate-v1 must not be approved.",
+    "no_commit_or_push": 1
+}
