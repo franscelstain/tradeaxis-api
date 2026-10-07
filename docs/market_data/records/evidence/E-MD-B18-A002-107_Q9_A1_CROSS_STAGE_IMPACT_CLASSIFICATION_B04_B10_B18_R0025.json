@@ -1,0 +1,271 @@
+{
+    "evidence_id": "E-MD-B18-A002-107",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-07T10:03:34+07:00",
+    "evidence_type": "CROSS_STAGE_IMPACT_CLASSIFICATION",
+    "decision_id": "D-MD-B18-A002-018",
+    "verdict": "Q9_A1_RECORDED_CROSS_STAGE_IMPACT_CLASSIFIED_NO_MUTATION",
+    "checkpoint_verdict": "Q9 A1 RECORDED — CROSS-STAGE IMPACT CLASSIFIED",
+    "state_verified": {
+        "readiness": "101/113",
+        "formal_satisfied": "0/113",
+        "MD-S003-R0025": "PROVEN (E-MD-B18-A002-105)",
+        "candidate_chain": "E100 -> D016 -> E101 intact; candidate-v4 fingerprint d0a61b36…9f00",
+        "MD-S050-R0005": "without reviewed basis",
+        "F-MD-B18-A002-017": "OPEN",
+        "decision_package": "E-MD-B18-A002-106 and F-MD-B18-A002-034 present",
+        "MD-B04": "DONE / PASS 114/114 under MD-B04-A002 (SC-MD-B04-A002-001); no successor attempt open",
+        "application_code": "no diff against HEAD"
+    },
+    "mechanism_facts": {
+        "snapshot_content": "MarketDataConfigSnapshotRepository::currentContent() = canonical JSON of {resolved_config (redacted market_data config), semantic_bindings (MarketDataSemanticBindings::snapshot())}; config_hash = sha256 of that JSON; stored in md_config_snapshots.resolved_config_json / config_hash",
+        "new_member_shape": "a third top-level member of the same canonical JSON (like semantic_bindings), derived from the governed reason registry; payload-only: NO schema change, no new column",
+        "reuse_rule": "resolveForRun reuses the governing snapshot only when config_hash is equal; after the change the hash differs, so the next run writes a NEW snapshot row effective from its requested date; existing rows are never touched (byte- and semantically immutable)",
+        "consumption_check": "RunInputCaptureRepository::assertConsumedConfiguration() requires currentContent() to equal the run's bound resolved_config_json; after the change, a run bound to a pre-change snapshot cannot continue its producers (fail-closed), and any later reason-registry content change during a run is detected the same way",
+        "as_known_resolution": "resolveAsKnown(date, cutoff) returns the latest snapshot effective on or before the date and recorded at or before the cutoff; pre-change snapshots carry no member -> BLOCKED by D-MD-B18-A002-018"
+    },
+    "md_b04_impact": {
+        "successor_attempt_required": "YES: MD-B04 is DONE/PASS 114/114; two of its SATISFIED rows are not true today (F-MD-B18-A002-034) and the snapshot producer is an MD-B04 surface (MarketDataConfigSnapshotRepository, MarketDataSemanticBindings, PlatformConfigRegistry)",
+        "remediation_required": {
+            "MD-S082-R0036": "data-usability decision/reason registry versions: SATISFIED on a family guard pair; must be demoted and re-proven on a guard that fails when the member is absent",
+            "MD-S082-R0044": "contamination horizons and reason-code registry version: same"
+        },
+        "revalidation_required": {
+            "MD-S082-R0006": "effective and recorded/known timestamps of the snapshot that first carries the member",
+            "MD-S082-R0007": "canonical, sorted, typed content including the new member",
+            "MD-S082-R0009": "SHA-256 content hash covers the member",
+            "MD-S082-R0011": "the same snapshot id/hash binds run, artifacts, manifest and seal; the resolved snapshot, not the current registry, is used for replay",
+            "MD-S082-R0214": "synchronization rule: a derived member is not a runtime key, so the register is unchanged (D-MD-B18-A002-018 point 8); the conformance tests must stay green",
+            "MD-S082-R0220": "every required output-affecting key resolved exactly once (the member is derived, not a key)",
+            "MD-S082-R0221": "serialization and hash deterministic across independent executions (the member must be order-independent of DB read order)",
+            "MD-S082-R0223": "a one-key semantic change, and a reason-registry content change, produce a distinct snapshot hash"
+        },
+        "no_impact": "the other MD-B04 rows (acquisition, provider, indicator, coverage key families, redaction, MD-S085 vocabulary rows, MD-S005/MD-S019/MD-S034 hash rows owned by MD-B04)",
+        "schema": "none; payload/content only",
+        "old_snapshots": "remain byte- and semantically immutable; never back-filled",
+        "design_points_for_the_successor_ci": [
+            "an empty or unreadable reason registry at snapshot creation is a missing required binding and must block snapshot creation (MD-S082: unresolved required binding prevents sealing), so fixtures that create snapshots must seed the governed registry",
+            "canonical member content must follow D-MD-B18-A002-014 Q4 = A (code, category, description, severity, is_active), sorted by code"
+        ]
+    },
+    "b10_impact": {
+        "state": "MD-B10 stays DONE/PASS 1072/1072; not reopened",
+        "rows": {
+            "MD-S005-R0023": {
+                "rule": "config snapshot content hash is included in the stable identity",
+                "classification": "NO_IMPACT",
+                "why": "the rule binds whatever the snapshot content hash is; neither its text nor any B10 producer changes; the new member changes the value of new snapshots, which the producers carry unchanged",
+                "confirmation": "the 21 B10 covering test files are re-executed after the MD-B04-A003 change (impact-driven regression); a red file reclassifies the row"
+            },
+            "MD-S005-R0039": {
+                "rule": "bars payload binds the configuration snapshot content hash",
+                "classification": "NO_IMPACT",
+                "why": "the rule binds whatever the snapshot content hash is; neither its text nor any B10 producer changes; the new member changes the value of new snapshots, which the producers carry unchanged",
+                "confirmation": "the 21 B10 covering test files are re-executed after the MD-B04-A003 change (impact-driven regression); a red file reclassifies the row"
+            },
+            "MD-S005-R0044": {
+                "rule": "indicators payload binds the configuration snapshot content hash",
+                "classification": "NO_IMPACT",
+                "why": "the rule binds whatever the snapshot content hash is; neither its text nor any B10 producer changes; the new member changes the value of new snapshots, which the producers carry unchanged",
+                "confirmation": "the 21 B10 covering test files are re-executed after the MD-B04-A003 change (impact-driven regression); a red file reclassifies the row"
+            },
+            "MD-S005-R0067": {
+                "rule": "manifest binds the full config snapshot hash",
+                "classification": "NO_IMPACT",
+                "why": "the rule binds whatever the snapshot content hash is; neither its text nor any B10 producer changes; the new member changes the value of new snapshots, which the producers carry unchanged",
+                "confirmation": "the 21 B10 covering test files are re-executed after the MD-B04-A003 change (impact-driven regression); a red file reclassifies the row"
+            },
+            "MD-S045-R0007": {
+                "rule": "manifest purpose: full config snapshot identity/hash",
+                "classification": "NO_IMPACT",
+                "why": "the rule binds whatever the snapshot content hash is; neither its text nor any B10 producer changes; the new member changes the value of new snapshots, which the producers carry unchanged",
+                "confirmation": "the 21 B10 covering test files are re-executed after the MD-B04-A003 change (impact-driven regression); a red file reclassifies the row"
+            },
+            "MD-S045-R0028": {
+                "rule": "manifest field config_snapshot_hash",
+                "classification": "NO_IMPACT",
+                "why": "the rule binds whatever the snapshot content hash is; neither its text nor any B10 producer changes; the new member changes the value of new snapshots, which the producers carry unchanged",
+                "confirmation": "the 21 B10 covering test files are re-executed after the MD-B04-A003 change (impact-driven regression); a red file reclassifies the row"
+            },
+            "MD-S045-R0054": {
+                "rule": "config hashes are stable semantic inputs",
+                "classification": "NO_IMPACT",
+                "why": "the rule binds whatever the snapshot content hash is; neither its text nor any B10 producer changes; the new member changes the value of new snapshots, which the producers carry unchanged",
+                "confirmation": "the 21 B10 covering test files are re-executed after the MD-B04-A003 change (impact-driven regression); a red file reclassifies the row"
+            },
+            "MD-S045-R0078": {
+                "rule": "manifest answers which config identity produced it",
+                "classification": "NO_IMPACT",
+                "why": "the rule binds whatever the snapshot content hash is; neither its text nor any B10 producer changes; the new member changes the value of new snapshots, which the producers carry unchanged",
+                "confirmation": "the 21 B10 covering test files are re-executed after the MD-B04-A003 change (impact-driven regression); a red file reclassifies the row"
+            },
+            "MD-S019-R0006": {
+                "rule": "same content and bindings give identical bars hash",
+                "classification": "NO_IMPACT",
+                "why": "the rule binds whatever the snapshot content hash is; neither its text nor any B10 producer changes; the new member changes the value of new snapshots, which the producers carry unchanged",
+                "confirmation": "the 21 B10 covering test files are re-executed after the MD-B04-A003 change (impact-driven regression); a red file reclassifies the row"
+            },
+            "MD-S019-R0007": {
+                "rule": "identical indicators hash",
+                "classification": "NO_IMPACT",
+                "why": "the rule binds whatever the snapshot content hash is; neither its text nor any B10 producer changes; the new member changes the value of new snapshots, which the producers carry unchanged",
+                "confirmation": "the 21 B10 covering test files are re-executed after the MD-B04-A003 change (impact-driven regression); a red file reclassifies the row"
+            },
+            "MD-S019-R0008": {
+                "rule": "identical eligibility hash",
+                "classification": "NO_IMPACT",
+                "why": "the rule binds whatever the snapshot content hash is; neither its text nor any B10 producer changes; the new member changes the value of new snapshots, which the producers carry unchanged",
+                "confirmation": "the 21 B10 covering test files are re-executed after the MD-B04-A003 change (impact-driven regression); a red file reclassifies the row"
+            },
+            "MD-S082-R0222": {
+                "rule": "run, artifacts, publication and seal reference the identical snapshot id/hash (B10 primary, B04 supporting)",
+                "classification": "NO_IMPACT",
+                "why": "the rule binds whatever the snapshot content hash is; neither its text nor any B10 producer changes; the new member changes the value of new snapshots, which the producers carry unchanged",
+                "confirmation": "the 21 B10 covering test files are re-executed after the MD-B04-A003 change (impact-driven regression); a red file reclassifies the row"
+            },
+            "MD-S035-R0032": {
+                "rule": "metadata-equivalent content with a different output-affecting binding is not unchanged",
+                "classification": "NO_IMPACT",
+                "why": "a rerun after the change binds a new snapshot whose reason-registry member is output-affecting under MD-S082; authority already classifies that as not unchanged (MD-S035 :46). An unchanged rerun under the same snapshot is unaffected.",
+                "operational_note": "reruns of historical dates after deployment bind a new snapshot effective at that date and may legitimately yield correction publications; this is a B19 operations consequence, not a B10 defect"
+            },
+            "MD-S035-R0069": {
+                "rule": "unchanged content recomputed is not a new version",
+                "classification": "NO_IMPACT",
+                "why": "a rerun after the change binds a new snapshot whose reason-registry member is output-affecting under MD-S082; authority already classifies that as not unchanged (MD-S035 :46). An unchanged rerun under the same snapshot is unaffected.",
+                "operational_note": "reruns of historical dates after deployment bind a new snapshot effective at that date and may legitimately yield correction publications; this is a B19 operations consequence, not a B10 defect"
+            },
+            "MD-S035-R0127": {
+                "rule": "an unchanged rerun does not create a fake correction",
+                "classification": "NO_IMPACT",
+                "why": "a rerun after the change binds a new snapshot whose reason-registry member is output-affecting under MD-S082; authority already classifies that as not unchanged (MD-S035 :46). An unchanged rerun under the same snapshot is unaffected.",
+                "operational_note": "reruns of historical dates after deployment bind a new snapshot effective at that date and may legitimately yield correction publications; this is a B19 operations consequence, not a B10 defect"
+            }
+        },
+        "goldens": "a scan of every MarketData test that builds a runtime configuration snapshot (resolveForRun, currentContent, runDaily, R0025SyntheticV2World, MarketDataConfigSnapshotRepository) found pinned 64-hex literals only in R0025SyntheticV2CandidateFixtureTest; B10 goldens (artifact, nested, publication identity, freshness) are computed from hand-built contexts, not from the runtime snapshot, so they do not move",
+        "summary": "NO_IMPACT on every B10 predicate (15 rows checked); REMEDIATION_REQUIRED: none; REVALIDATION: confirmation only, by re-executing the 21 B10 covering files after the MD-B04-A003 change"
+    },
+    "b18_impact": {
+        "MD-S050-R0005": {
+            "needs": [
+                "implementation: AsKnownReplaySnapshotService binds the member of the cutoff-resolved snapshot; BLOCKED only when that snapshot lacks it",
+                "proof: an executed AS_KNOWN comparison where an unexplained divergence is MISMATCH/FAIL and the permitted differences are labelled",
+                "no new golden fixture (AS_KNOWN expectations come from a built as-known world, never from the run under test)",
+                "successor evidence after implementation"
+            ]
+        },
+        "MD-S050-R0014": {
+            "needs": [
+                "implementation: the same binding",
+                "proof: a reason-registry content change moves the AS_KNOWN identity and denies PASS; equal content keeps it",
+                "successor evidence"
+            ]
+        },
+        "MD-S019-R0071": {
+            "needs": [
+                "proof only after the binding: identical AS_KNOWN registry identity reproduces identical output; a different one never presents as identical",
+                "successor evidence"
+            ]
+        },
+        "revalidation_after_binding": {
+            "MD-S082-R0217": "PROVEN: as-known resolves only revisions known by the cutoff",
+            "MD-S082-R0218": "PROVEN: current registry state never leaks into historical replay",
+            "MD-S082-R0224": "PROVEN: environment drift cannot change publication replay",
+            "MD-S082-R0225": "PROVEN: as-known cannot see later revisions"
+        },
+        "other_missing_bases": "MD-S003-R0011, MD-S003-R0014, MD-S041-R0032, MD-S050-R0022, -R0023, -R0025, -R0028, -R0029, MD-S055-R0025: no shared dependency on the reason-registry snapshot member found; not broadened"
+    },
+    "r0025_impact": {
+        "classification": "B — HISTORICALLY VALID BUT CURRENT SUCCESSOR REQUIRED",
+        "what_changes": [
+            "frozen_config_content.txt bytes: the target world's currentContent() gains the member, so the bytes a candidate must freeze change",
+            "config_content_hash / config_snapshot_hash bound input: changes",
+            "artifact hashes: config_content_hash is a member of the bars, canonical bar, indicators and eligibility rows and of the factor set content, so bars_batch_hash, indicators_batch_hash, eligibility_batch_hash and factor_set_hash change",
+            "publication manifest preimage (config member, artifacts, nested factor identity) and publication_manifest_hash: change",
+            "executable frozen build identity: changes with the first application edit of the successor remediation",
+            "candidate-v4 expected semantics: no longer those of the target built on the new build"
+        ],
+        "why_not_C": "nothing has changed yet; the decision records intent only. The proof basis rests on executed guards and an exact-build approval, both still true for the current tree",
+        "why_not_A": "every reviewed and bound identity of candidate-v4 that depends on configuration or build changes once A1 lands",
+        "transition_point": "at implementation mutation: in the MD-B04-A003 unit that first changes the snapshot content or the executable build, the R0025 exact-publication member stops matching candidate-v4; that same unit must record the MD-S003-R0025 basis PROVEN -> INCOMPLETE (stale for the current build), retaining candidate-v4, E100, D016, E101, E104 and E105 as historical evidence. Not at decision time and not at attempt entry.",
+        "successor": "candidate-v5: independent derivation (its frozen configuration must carry the member computed from the frozen reason registry), independent review, owner approval, admission, basis re-promotion; to be built only after the B18 AS_KNOWN binding code has landed, because any later application edit would invalidate its frozen build again",
+        "basis": "D-MD-B18-A002-016 (approval exact-fingerprint and exact-build bound), E-MD-B18-A002-099 (valid only for the frozen build), D-MD-B18-A002-018 points 11-13"
+    },
+    "hash_golden_inventory": {
+        "active_requiring_successor_regeneration": [
+            "tests/fixtures/replay/r0025-synthetic-v2-candidate-v4 (as the ACTIVE R0025 golden; successor candidate-v5)",
+            "tests/Unit/MarketData/R0025SyntheticV2CandidateFixtureTest.php (eight pinned literals and the frozen-build control)",
+            "the exact-publication member of B18ScenarioFamiliesOnMariaDbTest / OnMirrorTest, which reads the approval D-MD-B18-A002-016"
+        ],
+        "historical_immutable_stays_valid": [
+            "candidate-v1 to candidate-v4 packages and fingerprints",
+            "E-MD-B18-A002-092 to E-MD-B18-A002-105 and their raw packages",
+            "every existing md_config_snapshots row and every sealed publication with its config hash (production and test databases)",
+            "MD-B04, MD-B10 and MD-B18 closure and evidence records as statements about their own build"
+        ],
+        "unaffected": [
+            "B10 semantic-identity goldens computed from hand-built contexts (ArtifactSemanticHashServiceTest, PublicationSemanticIdentityProductionPathTest freshness and identity goldens)",
+            "PlatformConfigRegistryConformanceTest register checks (the member is not a register key)",
+            "mirror-equivalence guards of the R0025 mirror class"
+        ],
+        "revalidate_after_change": [
+            "ConfigIdentityBindingTest and the other MD-B04 configuration guards",
+            "the 21 B10 covering files",
+            "any SQLite or MariaDB fixture that creates a configuration snapshot without seeding the governed reason registry (will fail closed by design and needs seeding, not a weaker producer)"
+        ]
+    },
+    "b17_and_other_stages": {
+        "MD-B17": "NO_IMPACT on its predicates: the read surface exposes the configuration snapshot id/hash of a publication (Downstream_Consumer_Read_Model_Contract_LOCKED.md:17) and carries the value it is given; values of new publications change, shape and semantics do not. MD-B17 stays REVALIDATION_REQUIRED for the unrelated freshness rows (244/257); not a prerequisite of the MD-B04/B18 path.",
+        "MD-B19": "operational consequence, not a predicate change: a run bound to a pre-change snapshot cannot be resumed after deployment (assertConsumedConfiguration), and reruns of historical dates bind a new snapshot and may produce corrections; to be considered by MD-B19 (IN_PROGRESS, 0/743) when it is resumed; not a prerequisite",
+        "MD-B21": "interaction only: MD-S065-R0003 (rerun binds the configuration effective for D, transferred to MD-B21) governs which snapshot a rerun binds; A1 does not change that rule; not a prerequisite",
+        "other_closed_stages": "no other stage owns a predicate that pins configuration-snapshot content; stages that create snapshots in their tests are covered by the revalidation item above"
+    },
+    "required_successor_sequence": {
+        "1": "D-MD-B18-A002-018 recorded (this unit) and the impact classified (this record)",
+        "2": "MD-B04-A003 entry: dependency record (MD-B18-A002 blocked on MD-B04-A003), baseline, change-impact declaration naming the rows above, R0025 lifecycle consequence and regression scope",
+        "3": "MD-B04-A003 implementation and proof: derived member, fail-closed on an empty registry, MD-S082-R0036/R0044 re-proven on predicate guards with probes, the eight revalidation rows re-executed; in the same unit: MD-S003-R0025 basis recorded INCOMPLETE (stale for the new build), the 21 B10 covering files re-executed, the full MarketData suite run",
+        "4": "MD-B04-A003 closure and return to MD-B18-A002",
+        "5": "MD-B18-A002: AS_KNOWN binding of the member and the proofs of MD-S050-R0005, MD-S050-R0014, MD-S019-R0071; revalidation of MD-S082-R0217/R0218/R0224/R0225",
+        "6": "R0025 candidate-v5: derivation on the final build, independent review, owner approval, admission, basis re-promotion",
+        "why_this_order": "MD-B10 needs no remediation, so it is confirmation inside step 3, not a stage of its own; candidate-v5 comes last because every application edit before it would invalidate its frozen build"
+    },
+    "not_done": [
+        "no code, migration, schema, test or runtime change",
+        "no candidate-v5",
+        "candidate-v4 untouched",
+        "no MD-B04 attempt opened",
+        "no proof-basis change",
+        "no matrix change",
+        "no B10 or B17 state change",
+        "no commit or push"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-034",
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-106",
+        "E-MD-B18-A002-105",
+        "E-MD-B18-A002-101",
+        "E-MD-B18-A002-099",
+        "E-MD-B04-A002-001",
+        "SC-MD-B04-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-018",
+        "D-MD-B18-A002-016",
+        "D-MD-B18-A002-014",
+        "D-MD-B18-A002-008"
+    ],
+    "next_resume_point": "MD-B04 successor remediation entry (MD-B04-A003) under D-MD-B18-A002-018 and E-MD-B18-A002-107: record the dependency (MD-B18-A002 blocked on MD-B04-A003), the MD-B04-A003 baseline and change-impact declaration naming the predicates of E-MD-B18-A002-107 (remediate MD-S082-R0036/R0044; revalidate MD-S082-R0006/R0007/R0009/R0011/R0214/R0220/R0221/R0223), the R0025 lifecycle consequence (basis PROVEN -> INCOMPLETE in the same unit that first mutates the build or snapshot content; candidate-v4 retained as historical evidence) and the B10 regression scope; then implement the derived member and prove it. No B18 AS_KNOWN binding and no candidate-v5 before the MD-B04-A003 closure; candidate-v5 only after the B18 binding code has landed, so that its frozen build is final.",
+    "no_commit_or_push": 1
+}

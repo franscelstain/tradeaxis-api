@@ -1112,3 +1112,11 @@ Same A002/BL001/CI. Test code and gate tooling only; no application, candidate, 
 ## 2026-10-07 corrected R0025 mirror basis review and promotion — E-MD-B18-A002-105
 
 Same A002/BL001/CI. Governance recording and one proof-basis entry only: no application, candidate or test change. Reviewed basis 101/113, formal `SATISFIED` 0/113. B10 stays closed 1072/1072; B17 stays 244/257; `F-018` not started.
+
+## 2026-10-07 MD-S050-R0005 decision package — E-MD-B18-A002-106
+
+Same A002/BL001/CI. Analysis and governance recording only: no application, test, proof-basis or matrix change. `F-MD-B18-A002-034` raised. Reviewed basis stays 101/113, formal `SATISFIED` 0/113. B04, B10 and B17 states unchanged.
+
+## 2026-10-07 owner decision Q9 = A1 and impact classification — D-MD-B18-A002-018, E-MD-B18-A002-107
+
+Same A002/BL001/CI. Governance records only: no code, schema, test, proof-basis or matrix change. Next: `MD-B04-A003` entry. B10 stays 1072/1072 (no predicate impact), B17 244/257, reviewed basis 101/113, formal `SATISFIED` 0/113.

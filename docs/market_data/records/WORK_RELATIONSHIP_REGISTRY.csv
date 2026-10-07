@@ -1533,3 +1533,47 @@ MD-REL-1532,E-MD-B18-A002-104,E-MD-B18-A002-105,RELATED,The independent review o
 MD-REL-1533,D-MD-B18-A002-017,E-MD-B18-A002-105,RELATED,The reviewed implementation of this decision.,D-MD-B18-A002-017,2026-10-07T09:32:43+07:00,Same B18-A002/BL001; R0025 corrected basis review.
 MD-REL-1534,F-MD-B18-A002-017,E-MD-B18-A002-105,RELATED,The finding records the review and the R0025 basis promotion.,D-MD-B18-A002-017,2026-10-07T09:32:43+07:00,Same B18-A002/BL001; R0025 corrected basis review.
 MD-REL-1535,CI-MD-B18-A002-001,E-MD-B18-A002-105,RELATED,Impact declaration identifies the review.,D-MD-B18-A002-017,2026-10-07T09:32:43+07:00,Same B18-A002/BL001; R0025 corrected basis review.
+MD-REL-1536,E-MD-B18-A002-106,F-MD-B18-A002-017,RELATED,"Decision package for MD-S050-R0005, the last basis owned by this finding.",,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1537,E-MD-B18-A002-106,F-MD-B18-A002-034,RELATED,Raises the root-cause finding.,,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1538,E-MD-B18-A002-106,E-MD-B18-A002-073,RELATED,Corrects the earlier reading that the gap is an MD-S085 authority gap.,,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1539,E-MD-B18-A002-106,E-MD-B18-A002-071,RELATED,Gap B2 marker whose cause is traced here.,,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1540,E-MD-B18-A002-106,E-MD-B18-A002-070,RELATED,The AS_KNOWN reason-identity execution that returned MD-S050-R0014 and MD-S019-R0071.,,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1541,E-MD-B18-A002-106,E-MD-B04-A002-001,RELATED,The MD-B04 binding of MD-S082-R0036/R0044 on a family proof.,,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1542,E-MD-B18-A002-106,D-MD-B18-A002-008,RELATED,Precedent: the analogous AS_KNOWN read-model identity was settled by owner decision.,,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1543,E-MD-B18-A002-106,D-MD-B18-A002-014,RELATED,Q4 = A defines the content identity of the reason registry reused by alternative A.,,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1544,E-MD-B18-A002-106,D-MD-B18-A002-016,RELATED,Alternative A invalidates the exact-build approval of candidate-v4 for a world built after the change.,,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1545,E-MD-B18-A002-106,E-MD-B18-A002-105,RELATED,The R0025 basis that alternative A would require to be re-derived.,,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1546,E-MD-B18-A002-106,CI-MD-B18-A002-001,RELATED,Same impact declaration records the package.,,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1547,E-MD-B18-A002-106,MD-B18-A002-BL001,RELATED,Same B18 baseline; no new attempt.,,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1548,F-MD-B18-A002-034,E-MD-B18-A002-106,RELATED,Raised by the decision package.,,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1549,F-MD-B18-A002-034,E-MD-B04-A002-001,RELATED,The closed-stage binding the finding questions.,,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1550,F-MD-B18-A002-034,F-MD-B18-A002-017,RELATED,Root cause of its MD-S050-R0005 basis.,,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1551,F-MD-B18-A002-017,E-MD-B18-A002-106,RELATED,The finding records the decision package.,,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1552,CI-MD-B18-A002-001,E-MD-B18-A002-106,RELATED,Impact declaration identifies the package.,,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1553,CI-MD-B18-A002-001,F-MD-B18-A002-034,RELATED,Impact declaration identifies the finding.,,2026-10-07T09:48:10+07:00,Same B18-A002/BL001; MD-S050-R0005 decision package.
+MD-REL-1554,D-MD-B18-A002-018,E-MD-B18-A002-106,DEPENDS_ON,Answers owner decision Q9 of that package.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1555,D-MD-B18-A002-018,F-MD-B18-A002-034,RELATED,Decides the remediation route of the finding.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1556,D-MD-B18-A002-018,F-MD-B18-A002-017,RELATED,"Decides the identity model for MD-S050-R0005, the last basis the finding owns.",D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1557,D-MD-B18-A002-018,D-MD-B18-A002-014,DEPENDS_ON,Q4 = A semantic-content identity reused for the snapshot member.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1558,D-MD-B18-A002-018,D-MD-B18-A002-016,RELATED,The candidate-v4 approval does not carry over to the new build or configuration semantics.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1559,D-MD-B18-A002-018,D-MD-B18-A002-008,RELATED,Precedent for an owner-decided AS_KNOWN identity.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1560,D-MD-B18-A002-018,E-MD-B04-A002-001,RELATED,The MD-B04 closure proof the successor remediation corrects for MD-S082-R0036/R0044.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1561,D-MD-B18-A002-018,CI-MD-B18-A002-001,RELATED,Same impact declaration records the decision.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1562,E-MD-B18-A002-107,D-MD-B18-A002-018,DEPENDS_ON,The impact classification the decision requires before any mutation.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1563,E-MD-B18-A002-107,E-MD-B18-A002-106,DEPENDS_ON,The decision package it follows.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1564,E-MD-B18-A002-107,F-MD-B18-A002-034,RELATED,Classifies the MD-B04 rows of the finding.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1565,E-MD-B18-A002-107,E-MD-B04-A002-001,RELATED,MD-B04 rows to remediate and revalidate.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1566,E-MD-B18-A002-107,SC-MD-B04-A002-001,RELATED,The MD-B04 closure a successor attempt corrects; not reopened here.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1567,E-MD-B18-A002-107,E-MD-B18-A002-105,RELATED,"R0025 basis classified B: historically valid, successor required at the first implementation mutation.",D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1568,E-MD-B18-A002-107,E-MD-B18-A002-101,RELATED,Admission chain retained as historical evidence.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1569,E-MD-B18-A002-107,E-MD-B18-A002-099,RELATED,Candidate-v4 valid only for its frozen build.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1570,E-MD-B18-A002-107,D-MD-B18-A002-016,RELATED,Exact-build approval that does not carry over.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1571,E-MD-B18-A002-107,F-MD-B18-A002-017,RELATED,B18 rows of the finding classified.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1572,E-MD-B18-A002-107,CI-MD-B18-A002-001,RELATED,Same impact declaration records the classification.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1573,E-MD-B18-A002-107,MD-B18-A002-BL001,RELATED,Same B18 baseline; no new attempt.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1574,E-MD-B18-A002-106,D-MD-B18-A002-018,RELATED,The owner answer to its Q9.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1575,F-MD-B18-A002-034,D-MD-B18-A002-018,RELATED,The decided route.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1576,F-MD-B18-A002-034,E-MD-B18-A002-107,RELATED,The impact classification.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1577,F-MD-B18-A002-017,D-MD-B18-A002-018,RELATED,The finding records the decision.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1578,CI-MD-B18-A002-001,D-MD-B18-A002-018,RELATED,Impact declaration identifies the decision.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.
+MD-REL-1579,CI-MD-B18-A002-001,E-MD-B18-A002-107,RELATED,Impact declaration identifies the classification.,D-MD-B18-A002-018,2026-10-07T10:03:34+07:00,Same B18-A002/BL001; Q9 A1 and impact classification.

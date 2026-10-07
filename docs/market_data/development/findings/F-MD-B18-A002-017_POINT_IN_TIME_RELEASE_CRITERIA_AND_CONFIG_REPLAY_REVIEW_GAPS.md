@@ -1335,3 +1335,11 @@ Under `D-MD-B18-A002-017` the five E102 blanket exclusions were replaced: sealed
 ## 2026-10-07 corrected R0025 mirror basis independently reviewed PASS — E-MD-B18-A002-105
 
 A Codex independent-review Agent that is not the authoring Agent returned PASS for the corrected mirror basis `E-MD-B18-A002-104` (raw manifest `f812cd84…29c7`): no blocking finding, no owner decision. The `MD-S003-R0025` proof basis is `PROVEN` (reviewed basis 101/113). It is not a formal `SATISFIED`: the matrix row stays `NOT_ASSESSED` until the atomic binder. This finding stays `OPEN`: `MD-S050-R0005` (`IMPLEMENTATION_DEPENDENCY_UNAVAILABLE`) still needs an owner / authority decision.
+
+## 2026-10-07 MD-S050-R0005 owner decision package — E-MD-B18-A002-106, F-MD-B18-A002-034
+
+The reason-registry block on AS_KNOWN is not an authority gap: `MD-S082` (`Platform_Config_Registry_LOCKED.md` `:66`, `:79`, `:289`) already places the reason-registry version in the immutable bitemporal configuration snapshot that as-known replay resolves by cutoff, and the snapshot member was never implemented; `MD-S082-R0036` / `R0044` are `SATISFIED` for `MD-B04` on a family proof (`F-MD-B18-A002-034`). Owner decision Q9 chooses the route (recommended: the configuration-snapshot member, with an `MD-B04` successor attempt and an R0025 candidate-v5 re-derivation). This finding stays `OPEN`; `MD-S050-R0005` stays `INCOMPLETE`.
+
+## 2026-10-07 owner decision Q9 = A1 — D-MD-B18-A002-018, E-MD-B18-A002-107
+
+`MD-S050-R0005` and `MD-S050-R0014` need the AS_KNOWN binding of the new snapshot member and their own proofs; `MD-S019-R0071` needs its reproducibility proof after the binding. They follow the `MD-B04` successor remediation. `MD-S003-R0025` stays `PROVEN` until the first implementation mutation invalidates candidate-v4 for the current build (classified B: historically valid, candidate-v5 required). This finding stays `OPEN`.

@@ -1,0 +1,163 @@
+{
+    "evidence_id": "E-MD-B18-A002-106",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-07T09:48:10+07:00",
+    "evidence_type": "OWNER_DECISION_PACKAGE",
+    "verdict": "MD_S050_R0005_ROOT_CAUSE_IS_AN_UNIMPLEMENTED_MD_S082_SNAPSHOT_MEMBER_NOT_AN_AUTHORITY_GAP_OWNER_DECISION_Q9_REQUIRED_FOR_THE_CROSS_STAGE_CONSEQUENCES",
+    "checkpoint_verdict": "MD-S050-R0005 OWNER DECISION REQUIRED",
+    "state_verified": {
+        "readiness": "101/113",
+        "missing_bases": [
+            "MD-S003-R0011",
+            "MD-S003-R0014",
+            "MD-S019-R0071",
+            "MD-S041-R0032",
+            "MD-S050-R0005",
+            "MD-S050-R0014",
+            "MD-S050-R0022",
+            "MD-S050-R0023",
+            "MD-S050-R0025",
+            "MD-S050-R0028",
+            "MD-S050-R0029",
+            "MD-S055-R0025"
+        ],
+        "MD-S003-R0025": "PROVEN (E-MD-B18-A002-105)",
+        "formal_satisfied": "0/113",
+        "F-MD-B18-A002-017": "OPEN; MD-S050-R0005 is the only remaining basis it owns",
+        "later_decision_on_this_question": "none (D-MD-B18-A002-017 is the latest and concerns the R0025 mirror)"
+    },
+    "md_s050_r0005_requirement": {
+        "source": "Replay_Verification_Contract_LOCKED.md:17 (As-known replay)",
+        "text": "It may differ from a historical publication when the selected cutoff, approved as-known configuration, or declared scenario differs. It creates new replay artifacts and never mutates or impersonates the original publication.",
+        "clause_1_bounded_difference": "an as-known result may differ from a historical publication ONLY for the named causes (cutoff, approved as-known configuration, declared scenario); a difference with no such cause is a divergence the comparison must catch. Proving it needs an as-known replay that actually executes its comparison: a MISMATCH/FAIL for an unexplained divergence and a PASS for the as-known expectation it is built from.",
+        "clause_2_no_impersonation": "creates new replay artifacts, never mutates or impersonates the publication: PROVEN today (B18AsKnownModeIsolationTest::test_an_as_known_result_claims_no_publication_and_records_its_own_mode)",
+        "identity_that_must_be_as_known": "every bound input of Replay_Verification_Contract_LOCKED.md:21-31, including the reason registry version (:30), resolved as known by the cutoff (Platform_Config_Registry_LOCKED.md:289; Determinism_Invariants_LOCKED.md:122), never current state (:291)",
+        "required_refusal": "a missing bound input is BLOCKED, not permission to query current/latest state (Replay_Verification_Contract_LOCKED.md:33)",
+        "why_clause_1_is_unreachable": "AsKnownReplaySnapshotService::capture() sets reason_registry_hash to the REASON_REGISTRY_IDENTITY_UNAVAILABLE marker unconditionally, and ReplayVerificationService::verifyAsKnownAgainstFixture returns BLOCKED on that marker before any comparison; no fixture content can reach comparison"
+    },
+    "root_cause": {
+        "classification": "IMPLEMENTATION GAP + PROOF GAP (not an authority gap)",
+        "correction_of_the_earlier_reading": "E-MD-B18-A002-071/073 and the code comments say the gap is that MD-S085 (Reason_Codes_Registry.md) defines no revision or version concept. That is true of MD-S085, but MD-S082 (Platform_Config_Registry_LOCKED.md) already places the reason registry version in the immutable, bitemporal configuration snapshot: \":66 data-usability decision/reason registry versions\" and \":79 contamination horizons and reason-code registry version\" are output-affecting key families, and \"The snapshot includes every applicable key in these families\" (:46). The snapshot has effective and recorded/known timestamps and a content hash (:13-19), and as-known replay \"resolves only revisions known by the declared knowledge cutoff, then freezes a new replay snapshot\" (:289). AS_KNOWN already takes its formula registry identity from the cutoff-resolved snapshot. The authority therefore defines where an as-known reason-registry identity comes from; what is missing is the snapshot member itself.",
+        "implementation_gap": "no configuration snapshot carries a reason-registry version: the resolved-key register has no such key, MarketDataSemanticBindings has none, and AsKnownReplaySnapshotService reads governance.reason_registry_revision, a key that never existed",
+        "proof_gap_in_a_closed_stage": "MD-S082-R0036 and MD-S082-R0044 are SATISFIED for MD-B04 (E-MD-B04-A002-001) on the generic configuration-foundation guard pair (MarketDataConfigFoundationProofGate maps every MD-S082 row to the same family methods), not on a guard that the snapshot carries a reason-registry version, which it does not. Recorded as F-MD-B18-A002-034; B04 state is not changed here.",
+        "publication_path_contrast": "PUBLICATION_EXACT binds real reason-registry content: ProducerRegistrySnapshot::capture() hashes the eod_reason_codes entries at run time into the frozen registry_versions component, and the V2 identity is the semantic content of code, category, description, severity (D-MD-B18-A002-014 Q4 = A). For a historical cutoff the producer already records missing path registry_versions.reason_registry.authoritative_known_at_cutoff."
+    },
+    "shared_predicate_impact": {
+        "MD-S050-R0014": {
+            "source": "Replay_Verification_Contract_LOCKED.md:30 (reason registry is a required bound input in both modes)",
+            "shared_dependency": "the same AS_KNOWN reason_registry_hash",
+            "settled_by_the_same_decision": "the identity model, yes",
+            "still_needs": "its own implementation binding and its own probe (a changed reason-registry content changes the AS_KNOWN identity and denies PASS)"
+        },
+        "MD-S019-R0071": {
+            "source": "Determinism_Invariants_LOCKED.md:117 (formula/registry versions), :122 (as-known resolves revisions known by the cutoff)",
+            "shared_dependency": "the same AS_KNOWN reason-registry ingredient of the reproducibility antecedent",
+            "settled_by_the_same_decision": "the identity model, yes",
+            "still_needs": "its own reproducibility proof (identical AS_KNOWN registry version reproduces identical output; a different one does not pass as identical)"
+        },
+        "other_remaining_bases": "MD-S003-R0011, MD-S003-R0014, MD-S041-R0032, MD-S050-R0022, -R0023, -R0025, -R0028, -R0029, MD-S055-R0025: their recorded bases (F-018 wall/mistargeted/knowledge-time/comparison-class gaps, F-013 reopening) do not depend on the reason-registry identity; no evidence of a shared dependency was found, so scope is not broadened. An F-018 predicate that later needs an executed AS_KNOWN comparison would inherit the same block; that is to be checked when F-018 is opened."
+    },
+    "existing_authority_options": {
+        "A_historical_reason_registry_versioning_in_MD_S085": "not defined: MD-S085 registry rules cover naming, meaning stability and deprecation only; rule 3 lets descriptions be clarified over time without a version",
+        "B_content_addressed_registry_identity": "defined for PUBLICATION_EXACT V2 (D-MD-B18-A002-014 Q4 = A: semantic content of the governed reason registry)",
+        "C_effective_dated_revision_via_the_config_snapshot": "defined by MD-S082 (:46, :66, :79, :13-19, :289-291) but not implemented and not in the resolved-key register",
+        "D_narrowed_proof_shape": "not authorized; the LOCKED \"While only one mode exists\" section says claims that need as-known replay are unavailable, not untested",
+        "E_precedent": "D-MD-B18-A002-008 settled the analogous AS_KNOWN read_model_version question by owner decision; D-MD-B18-A002-006 registered a contract version by owner decision"
+    },
+    "why_an_owner_decision_is_still_required": [
+        "the authority selects the location (the configuration snapshot) but implementing it has consequences that no current record authorizes:",
+        "1. every new configuration snapshot changes content and hash; config_content_hash enters the V2 artifact hashes, so a world built after the change no longer matches the owner-approved candidate-v4 (D-MD-B18-A002-016 is exact-fingerprint and exact-build bound): the MD-S003-R0025 basis proven by E-MD-B18-A002-105 would need a candidate-v5, independent review and owner approval cycle",
+        "2. the change sits on a closed stage (MD-B04) whose MD-S082-R0036/R0044 are SATISFIED on a basis that does not prove them (F-MD-B18-A002-034); correcting that is a successor attempt of a closed stage, which is not started by assumption",
+        "3. whether the member is a derived snapshot member (like the compiled semantic_bindings, no resolved-key register row) or a registered key (a controlled correction of the LOCKED register) is not stated by MD-S082",
+        "4. materially different alternatives remain that trade conformance to MD-S082 against blast radius"
+    ],
+    "owner_decision_Q9": {
+        "question": "How does an AS_KNOWN replay bind the reason-registry identity required by Replay_Verification_Contract_LOCKED.md:30, and under which governed route and sequencing?",
+        "alternatives": {
+            "A": {
+                "name": "Configuration-snapshot member, as MD-S082 states (RECOMMENDED)",
+                "semantic_meaning": "every new immutable configuration snapshot carries the content-addressed identity of the governed reason registry (canonical entries code, category, description, severity, is_active; the D-MD-B18-A002-014 Q4 = A content); AS_KNOWN binds the member of the snapshot resolved for the trade date as known at the cutoff; a snapshot without the member is BLOCKED (fail closed, like CONFIG_UNBOUND)",
+                "authority_impact": "none if the member is a derived snapshot member (A1); a controlled correction adding one row to the MD-S082 resolved-key register if the owner prefers a registered key (A2)",
+                "implementation_impact": "MarketDataConfigSnapshotRepository / snapshot payload (MD-B04 surface); AsKnownReplaySnapshotService and the verifier (MD-B18); a recorded_at for a registry change is the creation time of the first snapshot that carries it",
+                "proof_impact": "MD-S050-R0005 becomes provable: an as-known replay executes its comparison; an unexplained divergence is MISMATCH/FAIL and the permitted differences are labelled; MD-S050-R0014 and MD-S019-R0071 then need their own binding and reproducibility probes",
+                "historical_compatibility": "already-created snapshots and sealed publications are not rewritten; as-known replays whose cutoff resolves a pre-change snapshot stay BLOCKED for this input (honest, never back-filled from current state)",
+                "b10_b17_b18_impact": "B04: successor attempt to make MD-S082-R0036/R0044 true; B10: no producer change, but new snapshots change config_content_hash values in V2 artifact and manifest hashes (goldens that seal through the runtime resolver must be re-derived, not edited); B17: none found; B18: R0025 needs candidate-v5 + independent review + owner approval because the approved candidate is build- and config-bound",
+                "complexity_risk": "moderate: one snapshot member, one reader; the governance risk is the re-derivation of R0025, which must be sequenced deliberately"
+            },
+            "B": {
+                "name": "Revisioned reason registry (MD-S085 versioning)",
+                "semantic_meaning": "the reason registry gets immutable revisions with recorded/effective time; AS_KNOWN resolves the revision known at the cutoff",
+                "authority_impact": "controlled correction of MD-S085 (revision and time concepts) and still a snapshot selector for MD-S082",
+                "implementation_impact": "new revision table, seeding and migration discipline for every reason-code change, resolver, AS_KNOWN binding",
+                "proof_impact": "same as A once built",
+                "historical_compatibility": "no revision history exists before introduction: earlier cutoffs stay BLOCKED",
+                "b10_b17_b18_impact": "as A, plus a new registry lifecycle owned by B04",
+                "complexity_risk": "high; duplicates what the configuration snapshot already provides"
+            },
+            "C": {
+                "name": "Capture-derived identity (deviation)",
+                "semantic_meaning": "AS_KNOWN binds the reason-registry content captured with the latest run capture recorded at or before the cutoff (the content PUBLICATION_EXACT already freezes)",
+                "authority_impact": "an interpreting decision or controlled correction is needed because MD-S082 places registry versions in the snapshot, not in run captures; MD-S082-R0036/R0044 stay separately unmet",
+                "implementation_impact": "AsKnownReplaySnapshotService and the verifier only (B18); no snapshot change",
+                "proof_impact": "MD-S050-R0005 becomes provable",
+                "historical_compatibility": "needs a capture at or before the cutoff; registry changes between runs are invisible until the next run",
+                "b10_b17_b18_impact": "no config hash change: R0025 candidate-v4 stays valid; B04 truth problem (F-034) unaddressed",
+                "complexity_risk": "low code risk, real conformance risk: it leaves a LOCKED rule unimplemented and chooses a second source of registry truth"
+            },
+            "D": {
+                "name": "Narrow the MD-S050-R0005 proof shape (authority change)",
+                "semantic_meaning": "accept the bounded-difference clause without an executed as-known comparison",
+                "assessment": "this weakens the governed requirement: the clause only has content if a divergence can be caught; with every as-known replay BLOCKED the platform cannot answer the as-known question at all, and the LOCKED single-mode section says such claims are unavailable rather than untested. It would be an authority change, not a test correction, and it settles neither MD-S050-R0014 nor MD-S019-R0071, whose wording requires binding the version. NOT RECOMMENDED."
+            }
+        },
+        "sub_question": "If A: A1 (derived snapshot member, no register row) or A2 (registered key via a controlled correction), and whether the R0025 re-derivation (candidate-v5) is accepted now or sequenced after the remaining B18 bases"
+    },
+    "recommendation": "A (A1), sequenced as: owner decision -> MD-B04 successor attempt for the snapshot member and MD-S082-R0036/R0044 truth -> MD-B18 AS_KNOWN binding and the MD-S050-R0005 / R0014 / R0071 proofs -> R0025 candidate-v5 re-derivation, review and approval. Basis: it implements a LOCKED rule that already exists, binds historical content-addressed truth from an immutable bitemporal record, reuses the D-MD-B18-A002-014 identity, keeps AS_KNOWN consistent with how it already binds the formula registry, and never reads current state. The cost (R0025 re-derivation) is the honest consequence of a config-bound golden, not a reason to choose a deviation.",
+    "what_must_not_be_done": [
+        "bind the current eod_reason_codes content to an AS_KNOWN replay (leaks current state, MD-S082:291)",
+        "replace the marker with a constant, a label or an empty-looking hash (the E-MD-B18-A002-069 / Gap B2 failure shape)",
+        "back-fill reason-registry members into existing snapshots or reseal publications",
+        "treat BLOCKED as satisfying the bounded-difference clause",
+        "keep MD-S050-R0005 PROVEN on the renamed BLOCKED-only test",
+        "edit candidate-v4 or reuse its approval after a config change",
+        "flip MD-B04 rows without a successor attempt",
+        "take expected values for a new AS_KNOWN proof from the run under test"
+    ],
+    "not_done": [
+        "no implementation, runtime, schema or test change",
+        "no proof-basis change",
+        "no matrix change",
+        "no B04, B10 or B17 state change",
+        "F-018 and F-013 not started",
+        "no commit or push"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-017",
+        "F-MD-B18-A002-034",
+        "F-MD-B18-A002-013"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-105",
+        "E-MD-B18-A002-073",
+        "E-MD-B18-A002-071",
+        "E-MD-B18-A002-070",
+        "E-MD-B04-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-008",
+        "D-MD-B18-A002-014",
+        "D-MD-B18-A002-016",
+        "D-MD-B18-A002-006"
+    ],
+    "next_resume_point": "MD-B18-A002: OWNER DECISION Q9 of E-MD-B18-A002-106 (MD-S050-R0005 reason-registry identity for AS_KNOWN replay). No implementation, runtime change or proof-basis change until the owner answers and the decision is recorded. F-018 and the reopened F-013 stay unstarted; B10 stays 1072/1072, B17 244/257.",
+    "no_commit_or_push": 1
+}
