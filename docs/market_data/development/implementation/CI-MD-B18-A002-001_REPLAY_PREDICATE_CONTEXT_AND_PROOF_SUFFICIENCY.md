@@ -1172,3 +1172,7 @@ Same A002/BL001/CI. The database owner authorized the recovery with COPY_PATH, D
 ## 2026-10-08 MD-DEP-0016 recovery Phase A (E-MD-B18-A002-120)
 
 Same A002/BL001/CI. Phase A only: the byte-copy `D:\tradeaxis_recovery\data_260914_copy\` of `data_260914` (500 files, 45,794,016,835 bytes) is verified equal by size and SHA-256; the original is unchanged. No MariaDB recovery instance was started, nothing dumped or imported; `MD-DEP-0015` stays BLOCKING and the recovery is not complete.
+
+## 2026-10-08 MD-DEP-0016 recovery Phase B blocked (E-MD-B18-A002-121)
+
+Same A002/BL001/CI. The one normal startup of the isolated instance on the verified byte-copy crashed: the copy's redo log is out of step with its tablespaces (page LSNs from the pre-crash lifetime against a redo log near LSN 0) and system-schema pages are corrupt. No fallback was tried (no `innodb_force_recovery`); the original `data_260914` is unchanged; the copy changed only in its redo log, temp, Aria and dump files. The recovery is not complete, `MD-DEP-0015` stays BLOCKING, and an owner decision is required.

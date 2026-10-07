@@ -1,0 +1,145 @@
+{
+    "evidence_id": "E-MD-B18-A002-121",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-08T03:20:59+07:00",
+    "evidence_type": "RECOVERY_EXECUTION_PHASE_B",
+    "verdict": "PHASE_B_BLOCKED_NORMAL_STARTUP_FAILED_ON_THE_COPY_NO_FALLBACK_ATTEMPTED_ORIGINAL_UNCHANGED_RECOVERY_NOT_COMPLETE",
+    "checkpoint_verdict": "MD-DEP-0016 PHASE B BLOCKED — NORMAL STARTUP FAILED",
+    "authority": [
+        "D-MD-B18-A002-020",
+        "D-MD-B18-A002-021",
+        "E-MD-B18-A002-119",
+        "E-MD-B18-A002-120"
+    ],
+    "precheck": {
+        "copy": "500 files, 45,794,016,835 bytes, same file set, size and mtime as E-120",
+        "original": "same listing as E-120",
+        "port_3307": "free",
+        "clean_instance": "pid 38544, @@datadir D:\\xampp\\mysql\\data\\, port 3306",
+        "recovery_datadir_realpath": "D:\\tradeaxis_recovery\\data_260914_copy",
+        "not_original_not_clean": true,
+        "d_free_gib": 86.82
+    },
+    "engine": {
+        "binary": "D:\\xampp\\mysql\\bin\\mysqld.exe",
+        "version": "10.4.27-MariaDB (Win64)",
+        "compatibility": "the same XAMPP MariaDB 10.4.27 family that produced the datadir (the clean instance and the old error log use it); no application DB configuration changed"
+    },
+    "configuration": {
+        "file": "D:\\tradeaxis_recovery\\my_recovery.ini (created for this phase; copy in the raw artifacts)",
+        "critical": [
+            "datadir=D:/tradeaxis_recovery/data_260914_copy",
+            "port=3307",
+            "bind-address=127.0.0.1",
+            "pid-file=D:/tradeaxis_recovery/recovery.pid",
+            "log-error=D:/tradeaxis_recovery/recovery_error.log",
+            "tmpdir=D:/tradeaxis_recovery/tmp",
+            "skip-log-bin",
+            "innodb_log_file_size=512M x 2",
+            "innodb_buffer_pool_size=1G"
+        ],
+        "absent": [
+            "innodb_force_recovery",
+            "--skip-grant-tables",
+            "mysql_upgrade",
+            "any path to the original or the clean datadir (grep for force/skip-grant/xampp/3306 in the file: 0)"
+        ],
+        "command": "D:\\xampp\\mysql\\bin\\mysqld.exe --defaults-file=D:\\tradeaxis_recovery\\my_recovery.ini --console (one normal attempt; no fallback)"
+    },
+    "startup_result": {
+        "started": "2026-10-08T03:12:15+07:00 (pid 27332)",
+        "ready_for_connections": false,
+        "outcome": "CRASH",
+        "crashed_at": "03:12:30",
+        "never_listened_on_3307": true,
+        "log_facts": [
+            "InnoDB began crash recovery from checkpoint LSN=816438 (the redo log in the copy is essentially empty: ib_logfile0 holds a fresh log)",
+            "the data pages carry log sequence numbers far beyond it: 182 \"log sequence number … is in the future\" errors, e.g. page space=0 number=3 at LSN 52,444,482,902 and page 7 at 2,482,529 against a current system LSN of 816,456; 58 doublewrite copies ignored with future LSNs up to 52,524,163,765",
+            "tablespace mysql/innodb_table_stats page 1: \"Space id and page no stored in the page, read in are [space=0, page number=192], should be [space=1, page number=1]\" followed by \"Database page corruption on disk or a failed file read\"",
+            "InnoDB assertion failure in pars0pars.cc line 772 at 03:12:30 while rpl_load_gtid_slave_state opened a system table; exception 0x80000003; minidump written into the copy"
+        ],
+        "meaning": "the copy cannot start with a normal InnoDB recovery: its redo log does not match its tablespaces (page LSNs from the pre-crash lifetime, about 52.5 billion, against a redo log whose LSN restarted near zero) and system-schema pages are corrupt. This is the same future-LSN signature recorded in F-MD-B18-A002-007/010/012 and MD-DEP-0016. It is a property of the data, not of the copy: the copy is byte-identical to the original (E-120)."
+    },
+    "forbidden_actions_not_taken": [
+        "no innodb_force_recovery",
+        "no --skip-grant-tables",
+        "no deletion or recreation of redo logs or ibdata",
+        "no mysql_upgrade, no repair, no second start with other options"
+    ],
+    "read_only_access_check": "not performed: the server never accepted connections",
+    "post_state": {
+        "recovery_process": "gone (the crash ended pid 27332; only the clean mysqld 38544 on 3306 runs)",
+        "clean_instance": "unaffected (3306 listening; one connection TIME_WAIT from the check)",
+        "original_data_260914": "500 files, 45,794,016,835 bytes; re-hashed in full: 0 differences from the E-120 pre-copy inventory (size, SHA-256, mtime)",
+        "copy_changed_files": [
+            "ib_logfile0 (redo log rewritten, same size 536,870,912, SHA-256 changed)",
+            "ibtmp1 (temporary tablespace re-initialised, same size, content changed)",
+            "aria_log.00000001 (Aria log, same size, content changed)",
+            "mysqld.dmp (minidump overwritten, 182,401 -> 177,821 bytes)",
+            "aria_log_control (mtime only, content equal)"
+        ],
+        "copy_unchanged": "ibdata1 and every .ibd tablespace and all other files keep size and mtime (InnoDB crashed before writing data pages); the copy is no longer byte-identical to the original, as permitted for the working copy, and the original remains the intact reference",
+        "new_files_in_recovery_dir": [
+            "my_recovery.ini",
+            "recovery.pid",
+            "recovery_console_err.log (5.5 MB)",
+            "recovery_console_out.log",
+            "tmp/"
+        ],
+        "nothing_deleted": true
+    },
+    "b18_unchanged": {
+        "candidate_v5": "daf96a29…fbe3",
+        "matrix_sha256": "8b5bd9b1cb2d47022e6f003fef251d9160ef660b35e2813b92c297e7708e0695",
+        "frozen_build": "recomputed unchanged",
+        "E_001_and_E_117": "unchanged",
+        "satisfied": "113/113",
+        "recovered_content_used_as_proof": false
+    },
+    "consequence": [
+        "MD-DEP-0016 is NOT recovered; MD-DEP-0015 stays BLOCKING; F-MD-B18-A002-011(b) stays waiting",
+        "D-MD-B18-A002-020 term 4 and D-MD-B18-A002-021 restriction 5 apply: a recovery that needs innodb_force_recovery stops and returns for a new owner decision",
+        "whether a force-recovery read-only path (the usual way to dump from a tablespace whose redo log is out of step) is acceptable, or whether the corpus must come from another source, is an owner decision; D-004 foresaw option 2 (reclassify the oracle) and option 3 (rebuild from the provider) as the alternatives"
+    ],
+    "raw_artifacts": {
+        "dir": "storage/app/market-data/evidence/MD-B18-A002/recovery-phase-b-20261008",
+        "files": {
+            "recovery_console_err.log": {
+                "sha256": "772c572f710bee58100beb9c25f232cba9b67b2b3482a0552d415e4df4a3fb87",
+                "bytes": 5519700
+            },
+            "my_recovery.ini": {
+                "sha256": "1396134107f56d2237110986faa6e12e46cc0606929315efcdf1a15b905a6c5e",
+                "bytes": 558
+            },
+            "source_inventory_after_phase_b.json": {
+                "sha256": "8ff22b2153c5cb3b336c487f02b57e630ee35adc12cfbe72daf9497a1288a0c8",
+                "bytes": 105636
+            }
+        }
+    },
+    "related_findings": [
+        "F-MD-B18-A002-011"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-120",
+        "E-MD-B18-A002-119",
+        "E-MD-B18-A002-118"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-021",
+        "D-MD-B18-A002-020",
+        "D-MD-B18-A002-004"
+    ],
+    "next_resume_point": "stop for the project owner and the database owner: decide how to proceed now that normal startup of the copy fails (a new decision is required for any innodb_force_recovery use, or for the alternative corpus paths of F-MD-B18-A002-011 options 2 and 3).",
+    "no_commit_or_push": 1
+}
