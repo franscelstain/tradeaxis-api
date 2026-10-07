@@ -1,0 +1,1404 @@
+{
+    "evidence_id": "E-MD-B18-A002-104",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-07T09:02:18+07:00",
+    "evidence_type": "CORRECTED_PROOF_BASIS_AUTHOR_PRODUCED",
+    "verdict": "R0025_CORRECTED_MIRROR_BASIS_AUTHOR_PRODUCED_ALL_21_BULLETS_RUN_ON_BOTH_SUBSTRATES_ONE_GOVERNED_EXCEPTION_27_PROBES_RED_NOT_INDEPENDENTLY_REVIEWED_BASIS_STAYS_INCOMPLETE",
+    "checkpoint_verdict": "R0025 CORRECTED MIRROR BASIS READY FOR INDEPENDENT REVIEW",
+    "decision_id": "D-MD-B18-A002-017",
+    "review_status_separation": {
+        "AUTHOR_PRODUCED_CORRECTED_BASIS": "this record and its raw package (produced by the authoring Agent)",
+        "INDEPENDENTLY_REVIEWED_BASIS": "none: no independent review of the corrected basis exists; none is claimed",
+        "proof_basis": "MD-S003-R0025 stays INCOMPLETE in MarketDataReplayVerificationProofBasis; reviewed basis 100/113"
+    },
+    "starting_state_verified": {
+        "candidate_fingerprint": "d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00",
+        "frozen_build": "sha256:7a1ed5c78cc37a978df0441b565815f3e435fdceafd2045eb202d716ce16d8cf",
+        "E100/D016/E101": "unchanged",
+        "E102": "unchanged immutable execution evidence",
+        "E103": "successor correction recorded; basis INCOMPLETE; readiness 100/113",
+        "D017": "owner decision recorded before any implementation",
+        "application_code": "no diff against HEAD"
+    },
+    "what_changed": {
+        "new/changed test code only": [
+            "tests/Support/B18ScenarioFamilyBase.php (shared scenarios; governedException() replaces the author-invented engineOnly(); production-derived helpers; per-bullet run recording)",
+            "tests/Unit/MarketData/B18ScenarioFamiliesOnMirrorTest.php (rewritten: file-based WAL mirror, equivalent mechanisms, pinned exceptions, guards)",
+            "tests/Unit/MarketData/B18ScenarioFamiliesOnMariaDbTest.php (one guard added: the mirror derivation sources equal what production defines)",
+            "tests/Unit/MarketData/B18ReleaseCandidateAcceptanceAggregateTest.php",
+            "docs/market_data/development/implementation/tests/MarketDataReplayVerificationAcceptanceAggregate.php (the mirror binding guards)"
+        ],
+        "application_code_changed": false,
+        "candidate_changed": false,
+        "shared_mirror_schema_changed": false,
+        "note": "The shared SQLite mirror schema (UsesMarketDataSqlite) was not edited; the mirror equivalents are installed by the R0025 mirror class only."
+    },
+    "five_exclusion_corrections": {
+        "A_sealed_snapshot_row_triggers": {
+            "former": "SEALED_SNAPSHOT_ROW_TRIGGERS (not run on the mirror)",
+            "semantic_obligation": "sealed snapshot rows are immutable: direct insert/update/delete refused; a correction preserves the prior publication history",
+            "mirror_mechanism": "the nine production triggers are installed on the mirror, generated from the production migration (2026_08_24_000001) by reflection on its TRIGGERS constant and createTriggerSql (name, table, event, condition, message), translated to SQLite BEFORE triggers with RAISE(ABORT, SEALED_PUBLICATION_IMMUTABLE)",
+            "proof": "scenarios s_f1_frozen_inputs_and_seal and s_f5_prior_publication_auditable run the same refusal assertions on both substrates; a guard proves the installed set equals the production set and refuses sealed, not unsealed, publications; the MariaDB guard proves the derivation equals the live production triggers (name, table, timing, event, whole clause)",
+            "probes": [
+                "NA1",
+                "NA2",
+                "NG1"
+            ],
+            "verdict": "MIRROR_EQUIVALENT_PASS"
+        },
+        "B_information_schema_column_types": {
+            "former": "INFORMATION_SCHEMA_COLUMN_TYPES (not run on the mirror)",
+            "semantic_obligation": "actual traded value and the close-volume proxy never share meaning or field identity: separate columns, the actual nullable, the proxy absent from the actual tables (Historical_Replay_and_Data_Quality_Backtest.md, Corporate actions and indicators, last bullet)",
+            "mirror_mechanism": "PRAGMA table_info behind the same columnMetadata() shape (existence, nullability)",
+            "physical_type_vs_semantic_identity": "The authority requires semantic field/value identity, not an exact physical decimal type. The scenario asserts existence, nullability and separation; those run on both. SQLite reports column type affinity (numeric), not decimal(p,s), so exact physical-type equivalence is NOT claimed on the mirror; it is still captured on MariaDB (the type string is read there). If a reviewer holds that the bullet requires the physical type, that is an authority question this record does not decide.",
+            "probes": [
+                "NB1"
+            ],
+            "verdict": "MIRROR_EQUIVALENT_PASS (semantic identity); physical type MariaDB-only and not required by the bullet"
+        },
+        "C_advisory_lock_foundation_restore": {
+            "former": "ADVISORY_LOCK_FOUNDATION_RESTORE (the independent candidate-v4 verification was not run on the mirror)",
+            "semantic_obligation": "the same independent candidate-v4 replay semantics execute (retained-identity restore, bound inputs, manifest hash) and are admitted",
+            "mirror_mechanism": "GET_LOCK and RELEASE_LOCK registered as SQLite user functions with the MariaDB contract (1 acquired or re-entrant, 0 held by another connection, release 1/0/NULL; ownership per connection; the timeout argument is ignored, there is no waiting); the shared si_* foundation tables are created by running the PRODUCTION migration on the mirror; the world is built by the same R0025SyntheticV2World",
+            "proof": "the independent approved candidate-v4 verification runs unchanged inside s_f1_frozen_inputs_and_seal on the mirror and returns PASS / MATCH / ADMISSIBLE with zero mismatches, eleven bound inputs and the manifest hash compared; the self-generated fixture is refused; a guard exercises the lock contract with a second connection",
+            "probes": [
+                "NC1"
+            ],
+            "verdict": "MIRROR_EQUIVALENT_PASS",
+            "observation": "No hash differed between SQLite and MariaDB: the candidate-v4 expected values matched the mirror target without any change to the candidate."
+        },
+        "D_concurrent_connection_isolation": {
+            "former": "CONCURRENT_CONNECTIONS_ISOLATION (replaced on the mirror by a single-connection atomicity check, a weaker property)",
+            "semantic_obligation": "a concurrent, independent consumer cannot observe a mixed publication state during the switch",
+            "mirror_mechanism": "the mirror database is a file in WAL mode and a second connection is a genuinely independent consumer reading only committed state after every statement the production switch issues, before commit; the SAME scenario and assertions as MariaDB (pointer, current flags and the pointer-resolved read model show one publication)",
+            "weaker_substitute_removed": "the single-connection atomicity substitute of E102 was deleted",
+            "proof": "scenario s_f5_concurrent_consumers runs on both (124 / 123 assertions); a guard proves an uncommitted change is invisible to the second connection and a committed one is visible",
+            "probes": [
+                "ND1 (a production defect: the switch is not atomic; red on both substrates)"
+            ],
+            "verdict": "MIRROR_EQUIVALENT_PASS",
+            "limit": "SQLite WAL gives snapshot reads of committed state; MariaDB InnoDB REPEATABLE READ gives the same visible outcome for this property. Engine internals (locking) are not claimed equal."
+        },
+        "E_enforced_schema_constraints": {
+            "former": "ENFORCED_SCHEMA_CONSTRAINTS (one block, not run on the mirror)",
+            "decomposed": {
+                "PRIMARY KEY (one pointer per trade date)": "proven on the mirror natively (UNIQUE constraint failed); probe NE1",
+                "UNIQUE (one date per publication)": "proven on the mirror natively; probe NE2",
+                "ENUM (seal_state vocabulary)": "mirror triggers derived from the production migration enforce the same vocabulary with the same message; probe NE3; the MariaDB guard proves the derived ENUM equals the live column type",
+                "FOREIGN KEY (pointer to a publication)": "EXPLICIT_GOVERNED_EXCEPTION D001_ITEM4_REFERENTIAL_INTEGRITY: D-MD-B18-A002-001 item 4 says SQLite never establishes referential integrity; the MariaDB assertion stays mandatory and runs",
+                "NOT NULL (production nullability)": "D001 item 4 also covers it; no NOT NULL assertion exists in the 21 bullets, so no exception is invoked for it (not defined)"
+            },
+            "verdict": "MIRROR_EQUIVALENT_PASS for PRIMARY KEY, UNIQUE and ENUM; the foreign key is the single governed exception"
+        }
+    },
+    "governed_exception_mechanism": {
+        "accepted_ids": [
+            "D001_ITEM4_REFERENTIAL_INTEGRITY"
+        ],
+        "rule": "governedException() throws for any other id; a guard reads D-MD-B18-A002-001 and asserts its wording; the exceptions each mirror family invokes are pinned (Correction and read path: the foreign key only; every other family: none); no engineOnly() category exists",
+        "probes": [
+            "NF1 (pin removed)",
+            "NF2 (wording no longer matches the grant)"
+        ]
+    },
+    "bullet_matrix_21": {
+        "summary": {
+            "bullets": 21,
+            "mirror_equivalent_pass": 21,
+            "bullets_with_the_governed_exception": 1,
+            "blocked_no_equivalent_proof": 0
+        },
+        "rows": [
+            {
+                "n": 1,
+                "family": "Exact publication verification",
+                "scenario": "s_f1_explicit_publication",
+                "mariadb_assertions": 10,
+                "mirror_assertions": 10,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 2,
+                "family": "Exact publication verification",
+                "scenario": "s_f1_frozen_inputs_and_seal",
+                "mariadb_assertions": 77,
+                "mirror_assertions": 77,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 3,
+                "family": "Exact publication verification",
+                "scenario": "s_f1_unchanged_rerun",
+                "mariadb_assertions": 14,
+                "mirror_assertions": 14,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 4,
+                "family": "Degraded acquisition and expectation",
+                "scenario": "s_f2_outage_denominator",
+                "mariadb_assertions": 9,
+                "mirror_assertions": 9,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 5,
+                "family": "Degraded acquisition and expectation",
+                "scenario": "s_f2_unknown_expectation",
+                "mariadb_assertions": 10,
+                "mirror_assertions": 10,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 6,
+                "family": "Degraded acquisition and expectation",
+                "scenario": "s_f2_quarantine_or_hold",
+                "mariadb_assertions": 18,
+                "mirror_assertions": 18,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 7,
+                "family": "Degraded acquisition and expectation",
+                "scenario": "s_f2_no_prior_date_masquerade",
+                "mariadb_assertions": 17,
+                "mirror_assertions": 17,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 8,
+                "family": "Temporal identity and status",
+                "scenario": "s_f3_inactive_now_active_then",
+                "mariadb_assertions": 5,
+                "mirror_assertions": 5,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 9,
+                "family": "Temporal identity and status",
+                "scenario": "s_f3_symbol_change_and_reuse",
+                "mariadb_assertions": 17,
+                "mirror_assertions": 17,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 10,
+                "family": "Temporal identity and status",
+                "scenario": "s_f3_calendar_session_status_times",
+                "mariadb_assertions": 8,
+                "mirror_assertions": 8,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 11,
+                "family": "Corporate actions and indicators",
+                "scenario": "s_f4_synthetic_never_activates",
+                "mariadb_assertions": 5,
+                "mirror_assertions": 5,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 12,
+                "family": "Corporate actions and indicators",
+                "scenario": "s_f4_verified_revision_coherent_structural",
+                "mariadb_assertions": 23,
+                "mirror_assertions": 23,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 13,
+                "family": "Corporate actions and indicators",
+                "scenario": "s_f4_no_provider_adjusted_close",
+                "mariadb_assertions": 13,
+                "mirror_assertions": 13,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 14,
+                "family": "Corporate actions and indicators",
+                "scenario": "s_f4_long_chain_atr",
+                "mariadb_assertions": 5,
+                "mirror_assertions": 5,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 15,
+                "family": "Corporate actions and indicators",
+                "scenario": "s_f4_actual_value_and_proxy_identity",
+                "mariadb_assertions": 17,
+                "mirror_assertions": 17,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 16,
+                "family": "Correction and read path",
+                "scenario": "s_f5_prior_publication_auditable",
+                "mariadb_assertions": 17,
+                "mirror_assertions": 17,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 17,
+                "family": "Correction and read path",
+                "scenario": "s_f5_active_only_after_validation_and_reseal",
+                "mariadb_assertions": 18,
+                "mirror_assertions": 17,
+                "d001_exception": [
+                    "D001_ITEM4_REFERENTIAL_INTEGRITY"
+                ],
+                "verdict": "EXPLICIT_GOVERNED_EXCEPTION (assertion-level; the rest of the bullet is MIRROR_EQUIVALENT_PASS)"
+            },
+            {
+                "n": 18,
+                "family": "Correction and read path",
+                "scenario": "s_f5_concurrent_consumers",
+                "mariadb_assertions": 124,
+                "mirror_assertions": 123,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 19,
+                "family": "Correction and read path",
+                "scenario": "s_f5_explicit_fallback",
+                "mariadb_assertions": 9,
+                "mirror_assertions": 9,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 20,
+                "family": "As-known isolation",
+                "scenario": "s_f6_later_revisions_invisible",
+                "mariadb_assertions": 10,
+                "mirror_assertions": 10,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            },
+            {
+                "n": 21,
+                "family": "As-known isolation",
+                "scenario": "s_f6_later_cutoff_exposes_without_rewriting",
+                "mariadb_assertions": 12,
+                "mirror_assertions": 12,
+                "d001_exception": [],
+                "verdict": "MIRROR_EQUIVALENT_PASS"
+            }
+        ],
+        "raw": "storage/app/market_data/evidence/MD-B18-A002/r0025-corrected-mirror-basis-20261007/matrix/"
+    },
+    "g05_probes": {
+        "count": 27,
+        "all_red_intended": true,
+        "series": [
+            "G1-G6 six production read paths (both substrates)",
+            "S1-S6 skip one family",
+            "D1-D2 drop one driver/substrate",
+            "A1-A2 aggregate integrity",
+            "NA1,NA2,NB1,NC1,ND1,NE1,NE2,NE3,NF1,NF2,NG1 each mirror-equivalent protection"
+        ],
+        "probes": {
+            "G1_exact_explicit_publication_resolved_through_the_current_pointer": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php",
+                "kind": "AGG",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror"
+                ],
+                "intended_pattern": "/EVIDENCE_PUBLICATION_SELECTOR_MISMATCH|explicit selector resolved a different publication|s_f1_explicit_publication/",
+                "other_not_green_members_noise": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_correction_and_read_path_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror"
+                ],
+                "sha256_before": "fb6ecd9cd5b1824764f5e1d94900dafd5240c25a3689f73d21632ceeca516fd7",
+                "sha256_mutated": "bca3b18054b8836d6ccc33cc9371b43d631541a80720106b622900e4642057ba",
+                "sha256_restored": "fb6ecd9cd5b1824764f5e1d94900dafd5240c25a3689f73d21632ceeca516fd7",
+                "restored_byte_identical": true,
+                "source": "probes_g",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb": {
+                        "status": "ERROR",
+                        "reason": "ERROR",
+                        "detail": "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb RuntimeException: EVIDENCE_PUBLICATION_SELECTOR_MISMATCH: Resolved publication does not match selected publication_id. D:\\Laravel\\tradeaxis-api\\app\\Infrastructure\\Persistence\\MarketData\\EodEvidenceRepository.php"
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_correction_and_read_path_family_on_mariadb": {
+                        "status": "ERROR",
+                        "reason": "ERROR",
+                        "detail": "B18ScenarioFamiliesOnMariaDbTest::test_correction_and_read_path_family_on_mariadb RuntimeException: EVIDENCE_PUBLICATION_SELECTOR_MISMATCH: Resolved publication does not match selected publication_id. D:\\Laravel\\tradeaxis-api\\app\\Infrastructure\\Persistence\\MarketData\\EodEvidenceRepository.php:194 D"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror": {
+                        "status": "ERROR",
+                        "reason": "ERROR",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror RuntimeException: EVIDENCE_PUBLICATION_SELECTOR_MISMATCH: Resolved publication does not match selected publication_id. D:\\Laravel\\tradeaxis-api\\app\\Infrastructure\\Persistence\\MarketData\\EodEvidenceRepository.p"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror": {
+                        "status": "ERROR",
+                        "reason": "ERROR",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror RuntimeException: EVIDENCE_PUBLICATION_SELECTOR_MISMATCH: Resolved publication does not match selected publication_id. D:\\Laravel\\tradeaxis-api\\app\\Infrastructure\\Persistence\\MarketData\\EodEvidenceRepository.php:194"
+                    }
+                }
+            },
+            "G2_degraded_provider_outage_shrinks_the_coverage_denominator": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/CoverageGateEvaluator.php",
+                "kind": "AGG",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_degraded_acquisition_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_degraded_acquisition_family_on_the_mirror"
+                ],
+                "intended_pattern": "/s_f2_outage_denominator|shrank the denominator/",
+                "other_not_green_members_noise": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror"
+                ],
+                "sha256_before": "4a58b785dfa41c1c4a07573480e5400ff2e85e557bdf869e4fced321b6491260",
+                "sha256_mutated": "77acee0bb4efa1e5c3a62860ece066ff36b8f0be48d7743d1d0137f28d37945a",
+                "sha256_restored": "4a58b785dfa41c1c4a07573480e5400ff2e85e557bdf869e4fced321b6491260",
+                "restored_byte_identical": true,
+                "source": "probes_g",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb": {
+                        "status": "ERROR",
+                        "reason": "ERROR",
+                        "detail": "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb LogicException: COVERAGE_EVIDENCE_WRITE_INCOMPLETE: missing coverage_delivered_count. D:\\Laravel\\tradeaxis-api\\app\\Infrastructure\\Persistence\\MarketData\\EodRunRepository.php:835 D:\\Laravel\\tradeaxis-api\\app\\Infr"
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_degraded_acquisition_family_on_mariadb": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMariaDbTest::test_degraded_acquisition_family_on_mariadb [Degraded acquisition and expectation / s_f2_outage_denominator] \"provider outage remains missing delivery and cannot shrink the denominator;\": a provider outage shrank the denominator below the universe MariaDB resolves F"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror": {
+                        "status": "ERROR",
+                        "reason": "ERROR",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror LogicException: COVERAGE_EVIDENCE_WRITE_INCOMPLETE: missing coverage_delivered_count. D:\\Laravel\\tradeaxis-api\\app\\Infrastructure\\Persistence\\MarketData\\EodRunRepository.php:835 D:\\Laravel\\tradeaxis-api\\app\\In"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_degraded_acquisition_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_degraded_acquisition_family_on_the_mirror [Degraded acquisition and expectation / s_f2_outage_denominator] \"provider outage remains missing delivery and cannot shrink the denominator;\": a provider outage shrank the denominator below the universe MariaDB resolves"
+                    }
+                }
+            },
+            "G3_temporal_status_supersession_ignores_the_knowledge_time_bound": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php",
+                "kind": "AGG",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_temporal_identity_and_status_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_temporal_identity_and_status_family_on_the_mirror"
+                ],
+                "intended_pattern": "/s_f3_calendar_session_status_times/",
+                "other_not_green_members_noise": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMariaDbTest::test_as_known_isolation_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror",
+                    "B18ScenarioFamiliesOnMirrorTest::test_as_known_isolation_family_on_the_mirror"
+                ],
+                "sha256_before": "ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487",
+                "sha256_mutated": "032139bf64b4a1a17523d18e7b53d3f67f3d8027fe6affcc3ae4817ce003275e",
+                "sha256_restored": "ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487",
+                "restored_byte_identical": true,
+                "source": "probes_g",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb [Exact publication verification / s_f1_frozen_inputs_and_seal] \"verify frozen observations, temporal revisions, config, factors, formulas, artifacts, hashes, manifest, seal, reasons, and terminal state;\": approve"
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_temporal_identity_and_status_family_on_mariadb": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMariaDbTest::test_temporal_identity_and_status_family_on_mariadb [Temporal identity and status / s_f3_calendar_session_status_times] \"calendar/session/status revisions respect effective and knowledge time.\": a lift recorded on 1 May was visible to a read as known on 20 March Fai"
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_as_known_isolation_family_on_mariadb": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMariaDbTest::test_as_known_isolation_family_on_mariadb [As-known isolation / s_f6_later_revisions_invisible] \"later master, event, status, calendar, config, formula, and factor revisions are invisible before their recorded/known times;\": the lift recorded in May was visible to t"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror [Exact publication verification / s_f1_frozen_inputs_and_seal] \"verify frozen observations, temporal revisions, config, factors, formulas, artifacts, hashes, manifest, seal, reasons, and terminal state;\": appro"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_temporal_identity_and_status_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_temporal_identity_and_status_family_on_the_mirror [Temporal identity and status / s_f3_calendar_session_status_times] \"calendar/session/status revisions respect effective and knowledge time.\": a lift recorded on 1 May was visible to a read as known on 20 March F"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_as_known_isolation_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_as_known_isolation_family_on_the_mirror [As-known isolation / s_f6_later_revisions_invisible] \"later master, event, status, calendar, config, formula, and factor revisions are invisible before their recorded/known times;\": the lift recorded in May was visible to"
+                    }
+                }
+            },
+            "G4_corporate_actions_unverified_revision_reaches_the_factor_set": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Application/MarketData/Services/AdjustmentFactorSetService.php",
+                "kind": "AGG",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_corporate_actions_and_indicators_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_corporate_actions_and_indicators_family_on_the_mirror"
+                ],
+                "intended_pattern": "/INPUT_CAPTURE_FACTOR_SELECTED_REVISIONS_MISMATCH|the two non-verified revisions must not reach the factor set|produced a factor row|s_f4_synthetic_never_activates/",
+                "other_not_green_members_noise": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror"
+                ],
+                "sha256_before": "09b8708feefc9715874167824fee3db460daa67f1068485f37ec9afa86065370",
+                "sha256_mutated": "610b243cee69ad063e238ffbb47211191aced89bc6e0605c329b84a06c7d48b7",
+                "sha256_restored": "09b8708feefc9715874167824fee3db460daa67f1068485f37ec9afa86065370",
+                "restored_byte_identical": true,
+                "source": "probes_g",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb [Exact publication verification / s_f1_frozen_inputs_and_seal] \"verify frozen observations, temporal revisions, config, factors, formulas, artifacts, hashes, manifest, seal, reasons, and terminal state;\": approve"
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_corporate_actions_and_indicators_family_on_mariadb": {
+                        "status": "ERROR",
+                        "reason": "ERROR",
+                        "detail": "B18ScenarioFamiliesOnMariaDbTest::test_corporate_actions_and_indicators_family_on_mariadb RuntimeException: INPUT_CAPTURE_FACTOR_SELECTED_REVISIONS_MISMATCH D:\\Laravel\\tradeaxis-api\\app\\Infrastructure\\Persistence\\MarketData\\ProducerEventFactorCapture.php:273 D:\\Laravel\\tradeaxis-api\\app\\Infrastruct"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror [Exact publication verification / s_f1_frozen_inputs_and_seal] \"verify frozen observations, temporal revisions, config, factors, formulas, artifacts, hashes, manifest, seal, reasons, and terminal state;\": appro"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_corporate_actions_and_indicators_family_on_the_mirror": {
+                        "status": "ERROR",
+                        "reason": "ERROR",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_corporate_actions_and_indicators_family_on_the_mirror RuntimeException: INPUT_CAPTURE_FACTOR_SELECTED_REVISIONS_MISMATCH D:\\Laravel\\tradeaxis-api\\app\\Infrastructure\\Persistence\\MarketData\\ProducerEventFactorCapture.php:273 D:\\Laravel\\tradeaxis-api\\app\\Infrastru"
+                    }
+                }
+            },
+            "G5_correction_fallback_is_the_latest_publication_not_the_prior_date": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php",
+                "kind": "AGG",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_correction_and_read_path_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror"
+                ],
+                "intended_pattern": "/s_f5_explicit_fallback/",
+                "other_not_green_members_noise": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror"
+                ],
+                "sha256_before": "72dc69a1d1dbf2702c5ef4d7f8b7084af17f284027d6ee323f0d5af44fcb190e",
+                "sha256_mutated": "8c6cbac73ecb48445cdcdc52c337c9b724cd445dbd68577df119dc1e8edbac8c",
+                "sha256_restored": "72dc69a1d1dbf2702c5ef4d7f8b7084af17f284027d6ee323f0d5af44fcb190e",
+                "restored_byte_identical": true,
+                "source": "probes_g",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb [Exact publication verification / s_f1_frozen_inputs_and_seal] \"verify frozen observations, temporal revisions, config, factors, formulas, artifacts, hashes, manifest, seal, reasons, and terminal state;\": approve"
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_correction_and_read_path_family_on_mariadb": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMariaDbTest::test_correction_and_read_path_family_on_mariadb [Correction and read path / s_f5_explicit_fallback] \"explicit fallback retains prior effective date and stale/degraded state.\": a fallback for a date must never be the publication of that date or a later one Failed ass"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror [Exact publication verification / s_f1_frozen_inputs_and_seal] \"verify frozen observations, temporal revisions, config, factors, formulas, artifacts, hashes, manifest, seal, reasons, and terminal state;\": appro"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror [Correction and read path / s_f5_explicit_fallback] \"explicit fallback retains prior effective date and stale/degraded state.\": a fallback for a date must never be the publication of that date or a later one Failed a"
+                    }
+                }
+            },
+            "G6_as_known_calendar_read_ignores_the_knowledge_time_bound": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+                "kind": "AGG",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_as_known_isolation_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_as_known_isolation_family_on_the_mirror"
+                ],
+                "intended_pattern": "/MARKET_CALENDAR_REVISION_CONFLICT|calendar|s_f6_/i",
+                "other_not_green_members_noise": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMariaDbTest::test_temporal_identity_and_status_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror",
+                    "B18ScenarioFamiliesOnMirrorTest::test_temporal_identity_and_status_family_on_the_mirror"
+                ],
+                "sha256_before": "06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b",
+                "sha256_mutated": "862f3b709392be4f496d888315efd1bf052313e895cfb3661846911bb97ab395",
+                "sha256_restored": "06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b",
+                "restored_byte_identical": true,
+                "source": "probes_g",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb [Exact publication verification / s_f1_frozen_inputs_and_seal] \"verify frozen observations, temporal revisions, config, factors, formulas, artifacts, hashes, manifest, seal, reasons, and terminal state;\": approve"
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_temporal_identity_and_status_family_on_mariadb": {
+                        "status": "ERROR",
+                        "reason": "ERROR",
+                        "detail": "B18ScenarioFamiliesOnMariaDbTest::test_temporal_identity_and_status_family_on_mariadb RuntimeException: MARKET_CALENDAR_REVISION_CONFLICT: 2026-03-24 has multiple active governed revisions. D:\\Laravel\\tradeaxis-api\\app\\Infrastructure\\Persistence\\MarketData\\MarketCalendarRepository.php:59 D:\\Laravel"
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_as_known_isolation_family_on_mariadb": {
+                        "status": "ERROR",
+                        "reason": "ERROR",
+                        "detail": "B18ScenarioFamiliesOnMariaDbTest::test_as_known_isolation_family_on_mariadb RuntimeException: MARKET_CALENDAR_REVISION_CONFLICT: 2026-03-24 has multiple active governed revisions. D:\\Laravel\\tradeaxis-api\\app\\Infrastructure\\Persistence\\MarketData\\MarketCalendarRepository.php:59 D:\\Laravel\\tradeaxis"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror [Exact publication verification / s_f1_frozen_inputs_and_seal] \"verify frozen observations, temporal revisions, config, factors, formulas, artifacts, hashes, manifest, seal, reasons, and terminal state;\": appro"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_temporal_identity_and_status_family_on_the_mirror": {
+                        "status": "ERROR",
+                        "reason": "ERROR",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_temporal_identity_and_status_family_on_the_mirror RuntimeException: MARKET_CALENDAR_REVISION_CONFLICT: 2026-03-24 has multiple active governed revisions. D:\\Laravel\\tradeaxis-api\\app\\Infrastructure\\Persistence\\MarketData\\MarketCalendarRepository.php:59 D:\\Larav"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_as_known_isolation_family_on_the_mirror": {
+                        "status": "ERROR",
+                        "reason": "ERROR",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_as_known_isolation_family_on_the_mirror RuntimeException: MARKET_CALENDAR_REVISION_CONFLICT: 2026-03-24 has multiple active governed revisions. D:\\Laravel\\tradeaxis-api\\app\\Infrastructure\\Persistence\\MarketData\\MarketCalendarRepository.php:59 D:\\Laravel\\tradeax"
+                    }
+                }
+            },
+            "S1_skip_family_exact_publication_verification": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Support/B18ScenarioFamilyBase.php",
+                "kind": "AGG_SKIP",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror"
+                ],
+                "intended_pattern": "/probe: this family is skipped|skipped/i",
+                "other_not_green_members_noise": [],
+                "sha256_before": "d79dcaca9ceb46ce50ffd5962c8459eebd6937dad933e6181e7b8e4f92d7a524",
+                "sha256_mutated": "0da0a19451358ce18ed58095000bf9876ec485990faf11252770eb277499fa0d",
+                "sha256_restored": "d79dcaca9ceb46ce50ffd5962c8459eebd6937dad933e6181e7b8e4f92d7a524",
+                "restored_byte_identical": true,
+                "source": "probes_g",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    }
+                }
+            },
+            "S2_skip_family_degraded_acquisition_and_expectation": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Support/B18ScenarioFamilyBase.php",
+                "kind": "AGG_SKIP",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_degraded_acquisition_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_degraded_acquisition_family_on_the_mirror"
+                ],
+                "intended_pattern": "/probe: this family is skipped|skipped/i",
+                "other_not_green_members_noise": [],
+                "sha256_before": "d79dcaca9ceb46ce50ffd5962c8459eebd6937dad933e6181e7b8e4f92d7a524",
+                "sha256_mutated": "3b01791752c75f88af82b2ead31964dcedd6b8911f2faa6030c0c1d857c8dab6",
+                "sha256_restored": "d79dcaca9ceb46ce50ffd5962c8459eebd6937dad933e6181e7b8e4f92d7a524",
+                "restored_byte_identical": true,
+                "source": "probes_g",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMariaDbTest::test_degraded_acquisition_family_on_mariadb": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_degraded_acquisition_family_on_the_mirror": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    }
+                }
+            },
+            "S3_skip_family_temporal_identity_and_status": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Support/B18ScenarioFamilyBase.php",
+                "kind": "AGG_SKIP",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_temporal_identity_and_status_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_temporal_identity_and_status_family_on_the_mirror"
+                ],
+                "intended_pattern": "/probe: this family is skipped|skipped/i",
+                "other_not_green_members_noise": [],
+                "sha256_before": "d79dcaca9ceb46ce50ffd5962c8459eebd6937dad933e6181e7b8e4f92d7a524",
+                "sha256_mutated": "f0ad3f2ba1a775f3ca9089363a3081e92cba730cff4083d6146fa521fd81d916",
+                "sha256_restored": "d79dcaca9ceb46ce50ffd5962c8459eebd6937dad933e6181e7b8e4f92d7a524",
+                "restored_byte_identical": true,
+                "source": "probes_g",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMariaDbTest::test_temporal_identity_and_status_family_on_mariadb": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_temporal_identity_and_status_family_on_the_mirror": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    }
+                }
+            },
+            "S4_skip_family_corporate_actions_and_indicators": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Support/B18ScenarioFamilyBase.php",
+                "kind": "AGG_SKIP",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_corporate_actions_and_indicators_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_corporate_actions_and_indicators_family_on_the_mirror"
+                ],
+                "intended_pattern": "/probe: this family is skipped|skipped/i",
+                "other_not_green_members_noise": [],
+                "sha256_before": "d79dcaca9ceb46ce50ffd5962c8459eebd6937dad933e6181e7b8e4f92d7a524",
+                "sha256_mutated": "c0f0ef95fedfc1cdf76daa8585008587d6194201b4bcc3117ed5ec885b0fc21b",
+                "sha256_restored": "d79dcaca9ceb46ce50ffd5962c8459eebd6937dad933e6181e7b8e4f92d7a524",
+                "restored_byte_identical": true,
+                "source": "probes_g",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMariaDbTest::test_corporate_actions_and_indicators_family_on_mariadb": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_corporate_actions_and_indicators_family_on_the_mirror": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    }
+                }
+            },
+            "S5_skip_family_correction_and_read_path": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Support/B18ScenarioFamilyBase.php",
+                "kind": "AGG_SKIP",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_correction_and_read_path_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror"
+                ],
+                "intended_pattern": "/probe: this family is skipped|skipped/i",
+                "other_not_green_members_noise": [],
+                "sha256_before": "d79dcaca9ceb46ce50ffd5962c8459eebd6937dad933e6181e7b8e4f92d7a524",
+                "sha256_mutated": "2025b07451dcccb994eb00d1d2cc42a981f221fea43199ac6427e0d35b6ecdc1",
+                "sha256_restored": "d79dcaca9ceb46ce50ffd5962c8459eebd6937dad933e6181e7b8e4f92d7a524",
+                "restored_byte_identical": true,
+                "source": "probes_g",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMariaDbTest::test_correction_and_read_path_family_on_mariadb": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    }
+                }
+            },
+            "S6_skip_family_as_known_isolation": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Support/B18ScenarioFamilyBase.php",
+                "kind": "AGG_SKIP",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_as_known_isolation_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_as_known_isolation_family_on_the_mirror"
+                ],
+                "intended_pattern": "/probe: this family is skipped|skipped/i",
+                "other_not_green_members_noise": [],
+                "sha256_before": "d79dcaca9ceb46ce50ffd5962c8459eebd6937dad933e6181e7b8e4f92d7a524",
+                "sha256_mutated": "ee47b36304483a3b58b06c0c8f05c0c9465b37275c95bc4affcd9ba7bcc6f276",
+                "sha256_restored": "d79dcaca9ceb46ce50ffd5962c8459eebd6937dad933e6181e7b8e4f92d7a524",
+                "restored_byte_identical": true,
+                "source": "probes_g",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMariaDbTest::test_as_known_isolation_family_on_mariadb": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_as_known_isolation_family_on_the_mirror": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    }
+                }
+            },
+            "D1_driver_mariadb_unreachable_all_mariadb_members_skip": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Support/UsesMarketDataMariaDb.php",
+                "kind": "AGG_SKIP",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMariaDbTest::test_degraded_acquisition_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMariaDbTest::test_temporal_identity_and_status_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMariaDbTest::test_corporate_actions_and_indicators_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMariaDbTest::test_correction_and_read_path_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMariaDbTest::test_as_known_isolation_family_on_mariadb"
+                ],
+                "intended_pattern": "/no mysql connection is configured|skipped/i",
+                "other_not_green_members_noise": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_the_family_map_names_exactly_the_families_the_contract_requires",
+                    "B18ScenarioFamiliesOnMariaDbTest::test_the_bullet_map_names_exactly_the_bullets_the_contract_names",
+                    "B18ScenarioFamiliesOnMariaDbTest::test_every_bullet_names_one_existing_scenario_and_every_scenario_is_mapped_once",
+                    "B18ScenarioFamiliesOnMariaDbTest::test_every_family_test_runs_its_own_family_through_the_bullet_map",
+                    "B18ScenarioFamiliesOnMariaDbTest::test_these_scenarios_really_run_on_mariadb",
+                    "B18ScenarioFamiliesOnMariaDbTest::test_the_mirror_derivation_sources_equal_what_production_defines"
+                ],
+                "sha256_before": "d61aef2673738b30f4c93b0e5580b1551a49816948b43092d594764b8aed31b1",
+                "sha256_mutated": "800cb134e6c2fa3ee4db09c9cd437ffe98b461f6f347c65a3ef11e29d57aec75",
+                "sha256_restored": "d61aef2673738b30f4c93b0e5580b1551a49816948b43092d594764b8aed31b1",
+                "restored_byte_identical": true,
+                "source": "probes_g",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_degraded_acquisition_family_on_mariadb": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_temporal_identity_and_status_family_on_mariadb": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_corporate_actions_and_indicators_family_on_mariadb": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_correction_and_read_path_family_on_mariadb": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_as_known_isolation_family_on_mariadb": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_the_family_map_names_exactly_the_families_the_contract_requires": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_the_bullet_map_names_exactly_the_bullets_the_contract_names": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_every_bullet_names_one_existing_scenario_and_every_scenario_is_mapped_once": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_every_family_test_runs_its_own_family_through_the_bullet_map": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_these_scenarios_really_run_on_mariadb": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_the_mirror_derivation_sources_equal_what_production_defines": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    }
+                }
+            },
+            "D2_driver_mirror_unavailable_all_mirror_members_skip": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Unit/MarketData/B18ScenarioFamiliesOnMirrorTest.php",
+                "kind": "AGG_SKIP",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror",
+                    "B18ScenarioFamiliesOnMirrorTest::test_degraded_acquisition_family_on_the_mirror",
+                    "B18ScenarioFamiliesOnMirrorTest::test_temporal_identity_and_status_family_on_the_mirror",
+                    "B18ScenarioFamiliesOnMirrorTest::test_corporate_actions_and_indicators_family_on_the_mirror",
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror",
+                    "B18ScenarioFamiliesOnMirrorTest::test_as_known_isolation_family_on_the_mirror"
+                ],
+                "intended_pattern": "/the mirror is unavailable|skipped/i",
+                "other_not_green_members_noise": [
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_runs_exactly_the_families_and_bullets_the_contract_names",
+                    "B18ScenarioFamiliesOnMirrorTest::test_every_family_test_of_the_mirror_runs_its_own_family_through_the_bullet_map",
+                    "B18ScenarioFamiliesOnMirrorTest::test_these_scenarios_really_run_on_the_sqlite_mirror",
+                    "B18ScenarioFamiliesOnMirrorTest::test_every_governed_exception_is_granted_by_a_governance_record_and_nothing_else_is_one",
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_carries_the_nine_production_sealed_history_triggers_and_they_refuse_a_sealed_publication_only",
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_enforces_the_production_seal_state_enum",
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_advisory_locks_follow_the_mariadb_contract",
+                    "B18ScenarioFamiliesOnMirrorTest::test_a_second_connection_is_an_independent_consumer_that_reads_only_committed_state",
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_reads_column_metadata_through_pragma_with_the_same_shape"
+                ],
+                "sha256_before": "3b2a67838c60295a698dcaff6b2ad01f0f076e617660e04e4cd7f25898f67739",
+                "sha256_mutated": "82e7b91163048f6753cb1b67d2ca1aaaab569396f3d41ff688185bd91b4bda7d",
+                "sha256_restored": "3b2a67838c60295a698dcaff6b2ad01f0f076e617660e04e4cd7f25898f67739",
+                "restored_byte_identical": true,
+                "source": "probes_g",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_degraded_acquisition_family_on_the_mirror": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_temporal_identity_and_status_family_on_the_mirror": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_corporate_actions_and_indicators_family_on_the_mirror": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_as_known_isolation_family_on_the_mirror": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_runs_exactly_the_families_and_bullets_the_contract_names": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_every_family_test_of_the_mirror_runs_its_own_family_through_the_bullet_map": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_these_scenarios_really_run_on_the_sqlite_mirror": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_every_governed_exception_is_granted_by_a_governance_record_and_nothing_else_is_one": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_carries_the_nine_production_sealed_history_triggers_and_they_refuse_a_sealed_publication_only": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_enforces_the_production_seal_state_enum": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_advisory_locks_follow_the_mariadb_contract": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_a_second_connection_is_an_independent_consumer_that_reads_only_committed_state": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_reads_column_metadata_through_pragma_with_the_same_shape": {
+                        "status": "SKIPPED",
+                        "reason": "SKIPPED",
+                        "detail": ""
+                    }
+                }
+            },
+            "A1_aggregate_counts_a_skipped_member_as_green": {
+                "verdict": "RED_INTENDED",
+                "file": "docs/market_data/development/implementation/tests/MarketDataReplayVerificationAcceptanceAggregate.php",
+                "kind": "TESTCLASS",
+                "expected_members": [],
+                "intended_pattern": "/skipped|SKIPPED|zero.assert/i",
+                "other_not_green_members_noise": [],
+                "sha256_before": "b4bfad11df32976b8f2fa1175d9641711d690cf083df2477f1d95ece03bcb3c3",
+                "sha256_mutated": "6cd6b8e3ccb4bbab97d85eb142c8058a7e9050f1e02750832bbccba495fcf040",
+                "sha256_restored": "b4bfad11df32976b8f2fa1175d9641711d690cf083df2477f1d95ece03bcb3c3",
+                "restored_byte_identical": true,
+                "source": "probes_g",
+                "failed_tests": [
+                    "test_only_a_passed_member_with_assertions_counts",
+                    "test_only_a_passed_member_with_assertions_counts",
+                    "test_the_executor_reports_the_real_outcome_of_each_member_and_isolates_them_from_each_other"
+                ]
+            },
+            "A2_aggregate_detaches_the_mirror_members_from_the_predicate": {
+                "verdict": "RED_INTENDED",
+                "file": "docs/market_data/development/implementation/tests/MarketDataReplayVerificationAcceptanceAggregate.php",
+                "kind": "TESTCLASS",
+                "expected_members": [],
+                "intended_pattern": "/test_md_s003_r0025_executes_all_scenario_family_members_on_mariadb_and_the_mirror_and_is_green/",
+                "other_not_green_members_noise": [],
+                "sha256_before": "b4bfad11df32976b8f2fa1175d9641711d690cf083df2477f1d95ece03bcb3c3",
+                "sha256_mutated": "7d3f86f7c089b4bd21ef0571dcf2b83f3b926bed03e8a91941f6e2444ee9b6a3",
+                "sha256_restored": "b4bfad11df32976b8f2fa1175d9641711d690cf083df2477f1d95ece03bcb3c3",
+                "restored_byte_identical": true,
+                "source": "probes_a2_rerun",
+                "failed_tests": [
+                    "test_md_s003_r0025_executes_all_scenario_family_members_on_mariadb_and_the_mirror_and_is_green"
+                ]
+            },
+            "NA1_mirror_installs_no_sealed_history_trigger": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Unit/MarketData/B18ScenarioFamiliesOnMirrorTest.php",
+                "kind": "AGG",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror",
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror"
+                ],
+                "intended_pattern": "/s_f1_frozen_inputs_and_seal|s_f5_prior_publication_auditable|SEALED_PUBLICATION_IMMUTABLE/",
+                "other_not_green_members_noise": [
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_carries_the_nine_production_sealed_history_triggers_and_they_refuse_a_sealed_publication_only"
+                ],
+                "sha256_before": "3b2a67838c60295a698dcaff6b2ad01f0f076e617660e04e4cd7f25898f67739",
+                "sha256_mutated": "4409ac6ab285bc4db129b5e46f36b4c9ce3d59ed308b259367e9454d98a41fbd",
+                "sha256_restored": "3b2a67838c60295a698dcaff6b2ad01f0f076e617660e04e4cd7f25898f67739",
+                "restored_byte_identical": true,
+                "source": "probes_n",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror a sealed publication's snapshot row was changed (nothing was refused; expected SEALED_PUBLICATION_IMMUTABLE) D:\\Laravel\\tradeaxis-api\\tests\\Support\\B18ScenarioFamilyBase.php:665 D:\\Laravel\\tradeaxis-api\\tests\\"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror a sealed publication's snapshot row accepted the update (nothing was refused; expected SEALED_PUBLICATION_IMMUTABLE) D:\\Laravel\\tradeaxis-api\\tests\\Support\\B18ScenarioFamilyBase.php:665 D:\\Laravel\\tradeaxis-api\\test"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_carries_the_nine_production_sealed_history_triggers_and_they_refuse_a_sealed_publication_only": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_carries_the_nine_production_sealed_history_triggers_and_they_refuse_a_sealed_publication_only the mirror triggers are not exactly the production triggers Failed asserting that two arrays are identical. --- Expected +++ Actual @@ @@ -Array &0 ( - 0"
+                    }
+                }
+            },
+            "NA2_mirror_installs_no_sealed_history_update_trigger": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Unit/MarketData/B18ScenarioFamiliesOnMirrorTest.php",
+                "kind": "AGG",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror",
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror"
+                ],
+                "intended_pattern": "/s_f1_frozen_inputs_and_seal|s_f5_prior_publication_auditable|SEALED_PUBLICATION_IMMUTABLE/",
+                "other_not_green_members_noise": [
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_carries_the_nine_production_sealed_history_triggers_and_they_refuse_a_sealed_publication_only"
+                ],
+                "sha256_before": "3b2a67838c60295a698dcaff6b2ad01f0f076e617660e04e4cd7f25898f67739",
+                "sha256_mutated": "820cbc77329c5ac665d3a4a9635cf65d2e2127cb4527da9194a336ab1dbb916c",
+                "sha256_restored": "3b2a67838c60295a698dcaff6b2ad01f0f076e617660e04e4cd7f25898f67739",
+                "restored_byte_identical": true,
+                "source": "probes_n",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror a sealed publication's snapshot row was changed (nothing was refused; expected SEALED_PUBLICATION_IMMUTABLE) D:\\Laravel\\tradeaxis-api\\tests\\Support\\B18ScenarioFamilyBase.php:665 D:\\Laravel\\tradeaxis-api\\tests\\"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror a sealed publication's snapshot row accepted the update (nothing was refused; expected SEALED_PUBLICATION_IMMUTABLE) D:\\Laravel\\tradeaxis-api\\tests\\Support\\B18ScenarioFamilyBase.php:665 D:\\Laravel\\tradeaxis-api\\test"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_carries_the_nine_production_sealed_history_triggers_and_they_refuse_a_sealed_publication_only": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_carries_the_nine_production_sealed_history_triggers_and_they_refuse_a_sealed_publication_only the mirror triggers are not exactly the production triggers Failed asserting that two arrays are identical. --- Expected +++ Actual @@ @@ Array &0 ( 0"
+                    }
+                }
+            },
+            "NB1_mirror_metadata_reads_nullability_inverted": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Unit/MarketData/B18ScenarioFamiliesOnMirrorTest.php",
+                "kind": "AGG",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMirrorTest::test_corporate_actions_and_indicators_family_on_the_mirror"
+                ],
+                "intended_pattern": "/s_f4_actual_value_and_proxy_identity|actual must be nullable|stores the proxy/",
+                "other_not_green_members_noise": [
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_reads_column_metadata_through_pragma_with_the_same_shape"
+                ],
+                "sha256_before": "3b2a67838c60295a698dcaff6b2ad01f0f076e617660e04e4cd7f25898f67739",
+                "sha256_mutated": "75b0bd690816b37b6587924538e89d56f6949d4b94694019c94204ef58ecded6",
+                "sha256_restored": "3b2a67838c60295a698dcaff6b2ad01f0f076e617660e04e4cd7f25898f67739",
+                "restored_byte_identical": true,
+                "source": "probes_n",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMirrorTest::test_corporate_actions_and_indicators_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_corporate_actions_and_indicators_family_on_the_mirror [Corporate actions and indicators / s_f4_actual_value_and_proxy_identity] \"actual traded value and close-volume proxy never share meaning or field identity.\": eod_bars: the actual must be nullable so unavaila"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_reads_column_metadata_through_pragma_with_the_same_shape": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_reads_column_metadata_through_pragma_with_the_same_shape Failed asserting that false is true. D:\\Laravel\\tradeaxis-api\\tests\\Unit\\MarketData\\B18ScenarioFamiliesOnMirrorTest.php:364"
+                    }
+                }
+            },
+            "NC1_mirror_advisory_lock_never_acquired": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Unit/MarketData/B18ScenarioFamiliesOnMirrorTest.php",
+                "kind": "AGG",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror"
+                ],
+                "intended_pattern": "/lock|FOUNDATION|restore|s_f1_frozen_inputs_and_seal/i",
+                "other_not_green_members_noise": [
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror",
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_advisory_locks_follow_the_mariadb_contract"
+                ],
+                "sha256_before": "3b2a67838c60295a698dcaff6b2ad01f0f076e617660e04e4cd7f25898f67739",
+                "sha256_mutated": "55eb8856cd1d022625e524285eb90050c2283acd26c5497a42001d7d1942aa69",
+                "sha256_restored": "3b2a67838c60295a698dcaff6b2ad01f0f076e617660e04e4cd7f25898f67739",
+                "restored_byte_identical": true,
+                "source": "probes_n",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror": {
+                        "status": "ERROR",
+                        "reason": "ERROR",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror RuntimeException: FOUNDATION_WRITE_LOCK_UNAVAILABLE D:\\Laravel\\tradeaxis-api\\app\\Infrastructure\\Persistence\\SecurityIdentity\\FoundationRepository.php:19 D:\\Laravel\\tradeaxis-api\\app\\Application\\SecurityIdentit"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror [Correction and read path / s_f5_concurrent_consumers] \"concurrent consumers read exactly one publication;\": another R0025 concurrency fixture owns the namespace Failed asserting that 0 is identical to 1. D:\\Laravel"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_advisory_locks_follow_the_mariadb_contract": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_the_advisory_locks_follow_the_mariadb_contract a free name is acquired Failed asserting that 0 is identical to 1. D:\\Laravel\\tradeaxis-api\\tests\\Unit\\MarketData\\B18ScenarioFamiliesOnMirrorTest.php:326"
+                    }
+                }
+            },
+            "ND1_production_switch_not_atomic_a_consumer_sees_a_mixed_state": {
+                "verdict": "RED_INTENDED",
+                "file": "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php",
+                "kind": "AGG",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_correction_and_read_path_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror"
+                ],
+                "intended_pattern": "/s_f5_concurrent_consumers|mid-switch|different publication than the pointer|after: /",
+                "other_not_green_members_noise": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror"
+                ],
+                "sha256_before": "72dc69a1d1dbf2702c5ef4d7f8b7084af17f284027d6ee323f0d5af44fcb190e",
+                "sha256_mutated": "4feb8396ed2ac45e6109c37ae52eda5ae8389faa7ea5ef1f9c0d7ccbcc5be4e1",
+                "sha256_restored": "72dc69a1d1dbf2702c5ef4d7f8b7084af17f284027d6ee323f0d5af44fcb190e",
+                "restored_byte_identical": true,
+                "source": "probes_n",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb [Exact publication verification / s_f1_frozen_inputs_and_seal] \"verify frozen observations, temporal revisions, config, factors, formulas, artifacts, hashes, manifest, seal, reasons, and terminal state;\": approve"
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_correction_and_read_path_family_on_mariadb": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMariaDbTest::test_correction_and_read_path_family_on_mariadb [Correction and read path / s_f5_concurrent_consumers] \"concurrent consumers read exactly one publication;\": a consumer saw the current flag on a different publication than the pointer, mid-switch, after: update `eod_p"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror [Exact publication verification / s_f1_frozen_inputs_and_seal] \"verify frozen observations, temporal revisions, config, factors, formulas, artifacts, hashes, manifest, seal, reasons, and terminal state;\": appro"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror [Correction and read path / s_f5_concurrent_consumers] \"concurrent consumers read exactly one publication;\": a consumer saw the current flag on a different publication than the pointer, mid-switch, after: update \"eod"
+                    }
+                }
+            },
+            "NE1_mirror_pointer_primary_key_removed": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Support/UsesMarketDataSqlite.php",
+                "kind": "AGG",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror"
+                ],
+                "intended_pattern": "/s_f5_active_only_after_validation_and_reseal|second current pointer/",
+                "other_not_green_members_noise": [],
+                "sha256_before": "d155c2f308b2c8a3e1185194648443d0557e988064e3b55f2aeed79e5fc61256",
+                "sha256_mutated": "5f448aef856df9e30c574fae0291efc867231e14ebd748b5f9169385908219c6",
+                "sha256_restored": "d155c2f308b2c8a3e1185194648443d0557e988064e3b55f2aeed79e5fc61256",
+                "restored_byte_identical": true,
+                "source": "probes_n",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror a second current pointer for one trade date was accepted (nothing was refused; expected UNIQUE constraint failed) D:\\Laravel\\tradeaxis-api\\tests\\Support\\B18ScenarioFamilyBase.php:665 D:\\Laravel\\tradeaxis-api\\tests\\S"
+                    }
+                }
+            },
+            "NE2_mirror_pointer_unique_publication_removed": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Support/UsesMarketDataSqlite.php",
+                "kind": "AGG",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror"
+                ],
+                "intended_pattern": "/s_f5_active_only_after_validation_and_reseal|current pointer of two dates/",
+                "other_not_green_members_noise": [],
+                "sha256_before": "d155c2f308b2c8a3e1185194648443d0557e988064e3b55f2aeed79e5fc61256",
+                "sha256_mutated": "230a11af0b353ae0034e6609c9457708bb477e3496bf1f316e7633579e5bc206",
+                "sha256_restored": "d155c2f308b2c8a3e1185194648443d0557e988064e3b55f2aeed79e5fc61256",
+                "restored_byte_identical": true,
+                "source": "probes_n",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror one publication was accepted as the current pointer of two dates (nothing was refused; expected UNIQUE constraint failed) D:\\Laravel\\tradeaxis-api\\tests\\Support\\B18ScenarioFamilyBase.php:665 D:\\Laravel\\tradeaxis-api"
+                    }
+                }
+            },
+            "NE3_mirror_installs_no_seal_state_enum_guard": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Unit/MarketData/B18ScenarioFamiliesOnMirrorTest.php",
+                "kind": "AGG",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror"
+                ],
+                "intended_pattern": "/s_f1_frozen_inputs_and_seal|governed ENUM/",
+                "other_not_green_members_noise": [
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_enforces_the_production_seal_state_enum"
+                ],
+                "sha256_before": "3b2a67838c60295a698dcaff6b2ad01f0f076e617660e04e4cd7f25898f67739",
+                "sha256_mutated": "bb92e18fdf79765e3d62c3cd7fdc001763f2feeaa4cfb1d215098674b5dcdeb5",
+                "sha256_restored": "3b2a67838c60295a698dcaff6b2ad01f0f076e617660e04e4cd7f25898f67739",
+                "restored_byte_identical": true,
+                "source": "probes_n",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror a publication seal state outside its governed ENUM was accepted (nothing was refused; expected Data truncated for column) D:\\Laravel\\tradeaxis-api\\tests\\Support\\B18ScenarioFamilyBase.php:665 D:\\Laravel\\tradeax"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_enforces_the_production_seal_state_enum": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_enforces_the_production_seal_state_enum a seal state outside the ENUM was inserted (nothing was refused; expected Data truncated for column) D:\\Laravel\\tradeaxis-api\\tests\\Support\\B18ScenarioFamilyBase.php:665 D:\\Laravel\\tradeaxis-api\\tests\\Unit\\Mark"
+                    }
+                }
+            },
+            "NF1_mirror_exception_pin_removed_for_the_correction_family": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Unit/MarketData/B18ScenarioFamiliesOnMirrorTest.php",
+                "kind": "AGG",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror"
+                ],
+                "intended_pattern": "/governed exceptions the mirror invoked|Correction and read path/",
+                "other_not_green_members_noise": [],
+                "sha256_before": "3b2a67838c60295a698dcaff6b2ad01f0f076e617660e04e4cd7f25898f67739",
+                "sha256_mutated": "9914379f4b453a1e5f4ea5727545dc084b510050343bdaa8bb61cf19b136e6bf",
+                "sha256_restored": "3b2a67838c60295a698dcaff6b2ad01f0f076e617660e04e4cd7f25898f67739",
+                "restored_byte_identical": true,
+                "source": "probes_n",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror Correction and read path: the governed exceptions the mirror invoked are not exactly the reviewed ones for this family Failed asserting that two arrays are identical. --- Expected +++ Actual @@ @@ -Array &0 () +Array"
+                    }
+                }
+            },
+            "NF2_governed_exception_wording_no_longer_matches_its_grant": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Support/B18ScenarioFamilyBase.php",
+                "kind": "AGG",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMirrorTest::test_every_governed_exception_is_granted_by_a_governance_record_and_nothing_else_is_one"
+                ],
+                "intended_pattern": "/does not grant what the exception claims|granted/i",
+                "other_not_green_members_noise": [],
+                "sha256_before": "d79dcaca9ceb46ce50ffd5962c8459eebd6937dad933e6181e7b8e4f92d7a524",
+                "sha256_mutated": "c307eb17c4fdc2fbf12cb79f8eea60c1c00f8d4a9f8067c5cd4ae62d5d2e8a81",
+                "sha256_restored": "d79dcaca9ceb46ce50ffd5962c8459eebd6937dad933e6181e7b8e4f92d7a524",
+                "restored_byte_identical": true,
+                "source": "probes_n",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMirrorTest::test_every_governed_exception_is_granted_by_a_governance_record_and_nothing_else_is_one": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_every_governed_exception_is_granted_by_a_governance_record_and_nothing_else_is_one D001_ITEM4_REFERENTIAL_INTEGRITY: the record does not grant what the exception claims Failed asserting that '# Decision — approved ownership and deferral package - ID: `D-MD-B18"
+                    }
+                }
+            },
+            "NG1_derived_trigger_condition_no_longer_the_production_condition": {
+                "verdict": "RED_INTENDED",
+                "file": "tests/Support/B18ScenarioFamilyBase.php",
+                "kind": "AGG",
+                "expected_members": [
+                    "B18ScenarioFamiliesOnMariaDbTest::test_the_mirror_derivation_sources_equal_what_production_defines"
+                ],
+                "intended_pattern": "/condition and message the mirror derives|not the ones MariaDB runs/",
+                "other_not_green_members_noise": [
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror",
+                    "B18ScenarioFamiliesOnMirrorTest::test_degraded_acquisition_family_on_the_mirror",
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror",
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_carries_the_nine_production_sealed_history_triggers_and_they_refuse_a_sealed_publication_only"
+                ],
+                "sha256_before": "d79dcaca9ceb46ce50ffd5962c8459eebd6937dad933e6181e7b8e4f92d7a524",
+                "sha256_mutated": "96ede8b5fb5b1ff6329188e1927d0b5567c6b093c915a8542ca6a920fc564261",
+                "sha256_restored": "d79dcaca9ceb46ce50ffd5962c8459eebd6937dad933e6181e7b8e4f92d7a524",
+                "restored_byte_identical": true,
+                "source": "probes_ng_rerun",
+                "observed_not_green": {
+                    "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror": {
+                        "status": "ERROR",
+                        "reason": "ERROR",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror Illuminate\\Database\\QueryException: SQLSTATE[23000]: Integrity constraint violation: 19 SEALED_PUBLICATION_IMMUTABLE (SQL: insert into \"eod_bars_history\" (\"publication_id\", \"trade_date\", \"ticker_id\", \"open\", \"h"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_degraded_acquisition_family_on_the_mirror": {
+                        "status": "ERROR",
+                        "reason": "ERROR",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_degraded_acquisition_family_on_the_mirror Illuminate\\Database\\QueryException: SQLSTATE[23000]: Integrity constraint violation: 19 SEALED_PUBLICATION_IMMUTABLE (SQL: insert into \"eod_bars_history\" (\"publication_id\", \"trade_date\", \"ticker_id\", \"open\", \"high\", \"low"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror": {
+                        "status": "ERROR",
+                        "reason": "ERROR",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_correction_and_read_path_family_on_the_mirror Illuminate\\Database\\QueryException: SQLSTATE[23000]: Integrity constraint violation: 19 SEALED_PUBLICATION_IMMUTABLE (SQL: insert into \"eod_bars_history\" (\"publication_id\", \"trade_date\", \"ticker_id\", \"open\", \"high\","
+                    },
+                    "B18ScenarioFamiliesOnMariaDbTest::test_the_mirror_derivation_sources_equal_what_production_defines": {
+                        "status": "FAILED",
+                        "reason": "FAILED",
+                        "detail": "B18ScenarioFamiliesOnMariaDbTest::test_the_mirror_derivation_sources_equal_what_production_defines trg_eod_bars_history_bi_sealed_immutable: the condition and message the mirror derives are not the ones MariaDB runs Failed asserting that 'beginifexistsselect1fromeod_publicationswherepublication_id=n"
+                    },
+                    "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_carries_the_nine_production_sealed_history_triggers_and_they_refuse_a_sealed_publication_only": {
+                        "status": "ERROR",
+                        "reason": "ERROR",
+                        "detail": "B18ScenarioFamiliesOnMirrorTest::test_the_mirror_carries_the_nine_production_sealed_history_triggers_and_they_refuse_a_sealed_publication_only Illuminate\\Database\\QueryException: SQLSTATE[23000]: Integrity constraint violation: 19 SEALED_PUBLICATION_IMMUTABLE (SQL: insert into \"eod_bars_history\" (\"p"
+                    }
+                }
+            }
+        },
+        "honest_history": {
+            "A2_aggregate_detaches_the_mirror_members_from_the_predicate": "first attempt RED_UNINTENDED (message pattern named the wrong text; the aggregate test did go red); re-run alone with the corrected pattern in probes_a2_rerun",
+            "NG1_derived_trigger_condition_no_longer_the_production_condition": "first attempt RED_UNINTENDED: the MariaDB derivation guard compared only a prefix of the trigger condition, so a trivially true condition passed it (a real weakness the probe exposed); the guard now compares the whole clause, condition through message; re-run alone in probes_ng_rerun",
+            "N_series_launch": "the first launch of the N series ran no probe (the --only filter matched series prefixes instead of probe ids); relaunched with exact ids; nothing was mutated by the empty launch"
+        },
+        "earlier_e102_probes": "the 16 probes of E-MD-B18-A002-102 are retained as history; the G/S/D/A series was re-run here against the corrected tree",
+        "raw": "storage/app/market_data/evidence/MD-B18-A002/r0025-corrected-mirror-basis-20261007/probes_*/"
+    },
+    "complete_corrected_basis_trace": {
+        "MD-S003-R0025": "the 21 required bullets (parsed from the contract; guards on both classes)",
+        "MariaDB": "six family members PASSED with assertions, zero skips",
+        "supported SQLite mirror": "six family members PASSED with assertions, zero skips, the equivalent mechanisms above, one governed exception",
+        "E101 admission chain": "E099/E100/D016/E101 executed on BOTH substrates inside s_f1_frozen_inputs_and_seal (the mirror now runs it too)",
+        "single-defect probes": "27, above",
+        "aggregate": "MD-S003-R0025 GREEN, 27 items (12 members); all nine G05 predicates GREEN",
+        "E101 alone": "not represented as the whole proof"
+    },
+    "regression": {
+        "mariadb_family_class": "13 tests / 601 assertions",
+        "mirror_family_class": "15 tests / 778 assertions",
+        "aggregate_test_class": "44 tests / 1455 assertions",
+        "candidate_fixture_file": "42 tests / 6794 assertions",
+        "full_marketdata_suite": {
+            "tests": 2843,
+            "assertions": 47076,
+            "failures": 7,
+            "failure_set": "full-suite/failure_set.txt (the seven ProductionCorpusInvariantOracleTest empty-corpus assertions, MD-DEP-0015/0016)",
+            "claim": "NOT a full-suite PASS"
+        }
+    },
+    "interpretations_for_the_independent_reviewer": [
+        "the mirror is a file-based SQLite database in WAL mode with the hand-maintained schema (UsesMarketDataSqlite), not :memory:, so that a second connection can be a concurrent consumer; E102 used :memory:",
+        "the mirror triggers and ENUM are derived from the production migrations by reflection/parsing; whether that derivation is an acceptable \"equivalent mechanism\" is the reviewer's call; the MariaDB guard ties it to the live schema",
+        "the GET_LOCK emulation is single-process and ignores the timeout",
+        "physical decimal type equivalence is not claimed on the mirror (see B)",
+        "the foreign-key exception is the only exception; whether D001 item 4 also reaches the pointer foreign key is read here as yes because it is a referential-integrity constraint"
+    ],
+    "what_was_not_done": [
+        "candidate-v4, E100, D016, E101, E102, E103 not edited",
+        "no application, fixture-world or shared mirror schema change",
+        "no proof-basis promotion: MD-S003-R0025 stays INCOMPLETE",
+        "no formal SATISFIED change",
+        "MD-S050-R0005 and F-018 not started",
+        "B10 and B17 not changed",
+        "no commit or push"
+    ],
+    "b10_b17_boundary": "B10 stays DONE/PASS 1072/1072; B17 stays 244/257; MD-B17-A003 not created.",
+    "related_findings": [
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-103",
+        "E-MD-B18-A002-102",
+        "E-MD-B18-A002-101",
+        "E-MD-B18-A002-100",
+        "E-MD-B18-A002-099"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-017",
+        "D-MD-B18-A002-016",
+        "D-MD-B18-A002-001",
+        "D-MD-B18-A002-011",
+        "D-MD-B18-A002-013"
+    ],
+    "raw_proof": {
+        "package": "storage/app/market_data/evidence/MD-B18-A002/r0025-corrected-mirror-basis-20261007",
+        "manifest_sha256": "f812cd8499e8ff85e624270043973b780b75841b901ac09bd7ae5993054229c7"
+    },
+    "next_resume_point": "MD-B18-A002: INDEPENDENT REVIEW of the corrected R0025 mirror basis (E-MD-B18-A002-104 and storage/app/market_data/evidence/MD-B18-A002/r0025-corrected-mirror-basis-20261007/CORRECTED_BASIS_INDEX.md) by a reviewer who is not the authoring Agent; the review record is a separate governed record. Only after an independent review PASS may the MD-S003-R0025 proof basis move INCOMPLETE -> PROVEN (reviewed basis 101/113) through a governed record. Until then the basis stays INCOMPLETE and the reviewed basis is 100/113. Do not start MD-S050-R0005 or F-018 before R0025 is settled; do not edit candidate-v4, E100, D016, E101, E102 or E103.",
+    "no_commit_or_push": 1
+}

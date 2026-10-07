@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-10-05T12:24:15+07:00
 - Severity: `P1` for `MD-S003-R0025`; `freshness_state` is one of the 35 members of the publication manifest preimage
-- Status: `OPEN` — authority corrected (`DOC-CHG-20261005-001`); candidate-v4 (`E-MD-B18-A002-099`) derives the state independently and was independently reviewed PASS (`E-MD-B18-A002-100`) and owner approved (`D-MD-B18-A002-016`); stays open until admission / reconciliation
+- Status: `RESOLVED` — authority corrected (`DOC-CHG-20261005-001`); candidate-v4 derives the state independently, passed independent review (`E-MD-B18-A002-100`) and is admitted (`E-MD-B18-A002-101`)
 - Class: `PROOF_BASIS_AUTHORITY_GAP`
 - Related: `E-MD-B18-A002-097`, `E-MD-B18-A002-096`, `F-MD-B18-A002-031`, `F-MD-B18-A002-025`, `D-MD-B18-A002-013`, `D-MD-B18-A002-011`
 - Remediation owner: `MD-B18-A002` (owner decision required first)
@@ -45,3 +45,7 @@ An independent-review Agent that is not the authoring Agent (identity as relayed
 ## 2026-10-05 candidate-v4 owner approval — D-MD-B18-A002-016
 
 Candidate-v4 (fingerprint `d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00`) is owner approved (exact-fingerprint-bound) after the independent review PASS `E-MD-B18-A002-100`. It is not yet admitted or bound as proof; the finding stays `OPEN` until admission / reconciliation.
+
+## 2026-10-05 resolved by the admission of candidate-v4 — E-MD-B18-A002-101
+
+Candidate-v4 (fingerprint `d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00`, frozen build `sha256:7a1ed5c78cc37a978df0441b565815f3e435fdceafd2045eb202d716ce16d8cf`) was independently reviewed PASS (`E-MD-B18-A002-100`), owner approved (`D-MD-B18-A002-016`) and admitted: the exact-publication member of the `MD-S003-R0025` aggregate verifies the executed target against the approved package through the verifier's admission mechanism (`PASS` / `MATCH` / `ADMISSIBLE`, zero mismatches), with independence, anti-circularity and sensitivity controls and eight member probes red where intended. This finding's closure conditions are met and it is `RESOLVED`. `MD-S003-R0025` is not promoted by this; that is a separate operation under `F-MD-B18-A002-017`.

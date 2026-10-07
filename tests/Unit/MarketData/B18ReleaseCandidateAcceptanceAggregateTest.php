@@ -32,7 +32,7 @@ class B18ReleaseCandidateAcceptanceAggregateTest extends TestCase
         'MD-S004-R0003' => 5,   // universe, symbol, sector, action verification, current publication
         'MD-S004-R0005' => 3,   // three sentences
         'MD-S004-R0008' => 7,   // seven acceptance fixtures
-        'MD-S003-R0025' => 6,   // six required scenario families
+        'MD-S003-R0025' => 12,  // six required scenario families, on MariaDB and on the supported test mirror
     ];
 
     private function root(): string
@@ -210,7 +210,7 @@ class B18ReleaseCandidateAcceptanceAggregateTest extends TestCase
         $this->assertEveryMemberIsLoadBearingForItsPredicate('MD-S002-R0008');
     }
 
-    public function test_md_s003_r0025_turns_red_when_any_mariadb_scenario_family_member_fails(): void
+    public function test_md_s003_r0025_turns_red_when_any_scenario_family_member_fails(): void
     {
         $this->assertEveryMemberIsLoadBearingForItsPredicate('MD-S003-R0025');
     }
@@ -530,9 +530,9 @@ PHP
      * The predicate's real members execute through real PHPUnit processes and every one PASSED while
      * asserting something, together with the authority binding of every map that feeds it.
      */
-    private function assertPredicateExecutesItsRealMembersAndIsGreen(string $id, int $expectedMembers): void
+    private function assertPredicateExecutesItsRealMembersAndIsGreen(string $id, int $expectedMembers, ?array $run = null): void
     {
-        $run = $this->realRun();
+        $run = $run ?? $this->realRun();
         $this->assertSame([], $run['errors']);
         $this->assertArrayHasKey($id, $run['predicates']);
         $p = $run['predicates'][$id];
@@ -571,6 +571,29 @@ PHP
     public function test_md_s002_r0008_executes_the_correction_preservation_and_atomic_switch_members_and_is_green(): void
     {
         $this->assertPredicateExecutesItsRealMembersAndIsGreen('MD-S002-R0008', 6);
+    }
+
+    /**
+     * @group real-execution
+     *
+     * MD-S003-R0025: the six required scenario families run on MariaDB production semantics AND on the supported SQLite test mirror, with zero skips.
+     * The members are the six MariaDB family tests and the six mirror family tests; every one PASSED with assertions, and the authority bindings of both maps ran.
+     * It needs MariaDB: where MariaDB is unreachable the members skip and this test fails, because a skipped family is never green.
+     */
+    public function test_md_s003_r0025_executes_all_scenario_family_members_on_mariadb_and_the_mirror_and_is_green(): void
+    {
+        $run = (self::AGG)::run($this->root(), ['MD-S003-R0025'], 2);
+        $this->assertPredicateExecutesItsRealMembersAndIsGreen('MD-S003-R0025', 12, $run);
+        $classes = [];
+        foreach ($run['predicates']['MD-S003-R0025']['rows'] as $row) {
+            if ($row['role'] === 'member') {
+                $classes[explode('::', $row['guard'])[0]][] = $row['guard'];
+            }
+            $this->assertNotSame('SKIPPED', $row['status'], $row['guard'].' was skipped: zero skips are permitted');
+        }
+        $this->assertSame(['B18ScenarioFamiliesOnMariaDbTest', 'B18ScenarioFamiliesOnMirrorTest'], array_keys($classes));
+        $this->assertCount(6, $classes['B18ScenarioFamiliesOnMariaDbTest']);
+        $this->assertCount(6, $classes['B18ScenarioFamiliesOnMirrorTest']);
     }
 
     /** @group real-execution */
@@ -625,7 +648,7 @@ PHP
         $result = (self::AGG)::run($this->root(), ['MD-S003-R0025'], 1);
         $p = $result['predicates']['MD-S003-R0025'];
 
-        $this->assertCount(6, array_filter($p['rows'], static function ($r) { return $r['role'] === 'member'; }));
+        $this->assertCount(12, array_filter($p['rows'], static function ($r) { return $r['role'] === 'member'; }));
         $skipped = array_filter($p['rows'], static function ($r) { return $r['status'] === 'SKIPPED'; });
         foreach ($skipped as $row) {
             $this->assertFalse($row['green'], $row['guard'].' was skipped and must not count');

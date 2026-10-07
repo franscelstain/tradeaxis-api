@@ -1315,3 +1315,19 @@ Candidate-v4 (fingerprint `d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b
 ## 2026-10-05 candidate-v4 owner approval — D-MD-B18-A002-016
 
 Candidate-v4 (fingerprint `d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00`) is owner approved but not admitted or bound; it is not proof. `MD-S003-R0025` stays `INCOMPLETE`, `MD-S050-R0005` stays `IMPLEMENTATION_DEPENDENCY_UNAVAILABLE`, formal `SATISFIED` is 0/113 and the reviewed basis 100/113. This finding stays `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.
+
+## 2026-10-05 candidate-v4 admitted — E-MD-B18-A002-101
+
+Candidate-v4 (fingerprint `d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00`) is admitted and bound to the exact-publication member of the `MD-S003-R0025` aggregate; the aggregate is GREEN at zero skips and the first-independent-fixture findings `F-MD-B18-A002-025`, `-028`, `-030`, `-031` and `-032` are resolved. `MD-S003-R0025` is not promoted: its proof basis stays `INCOMPLETE` until the G05 single-defect probes and the mirror half are reviewed. `MD-S050-R0005` stays `IMPLEMENTATION_DEPENDENCY_UNAVAILABLE`, the reviewed basis stays 100/113, formal `SATISFIED` 0/113. This finding stays `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`.
+
+## 2026-10-05 R0025 proof basis PROVEN — E-MD-B18-A002-102
+
+The `MD-S003-R0025` proof basis is `PROVEN`: the six required families (21 bullets) execute on MariaDB and on the supported SQLite test mirror with zero skips and five named, pinned engine-only exclusions; the exact-publication member verifies the executed target against the admitted candidate-v4; sixteen G05 single-defect probes (six production read paths on both substrates, six skipped families, two drivers, two aggregate-verdict) are red where intended and restored byte-identically. The reviewed basis is 101/113; the matrix verdict stays `NOT_ASSESSED` because the binder binds all 113 atomically. This finding stays `OPEN`: `MD-S050-R0005` (`IMPLEMENTATION_DEPENDENCY_UNAVAILABLE`) needs an owner / authority decision.
+
+## 2026-10-07 owner mirror decision and E102 successor correction — D-MD-B18-A002-017, E-MD-B18-A002-103
+
+The independent review of `E-MD-B18-A002-102` (as relayed; text and reviewer identity not supplied) found the five engine-only mirror exclusions unsupported. The owner decided (`D-MD-B18-A002-017`): the supported test mirror must prove semantic-equivalent behaviour for all required scenario bullets; an engine difference never authorizes an exclusion; only exceptions governance explicitly allows (`D-MD-B18-A002-001` item 4: referential integrity and production nullability) may stand; the five E102 blanket exclusions are not approved; the E101 admission chain stays valid. `E-MD-B18-A002-102` stays immutable execution evidence; `E-MD-B18-A002-103` withdraws its PROVEN conclusion. The `MD-S003-R0025` proof basis is `INCOMPLETE` again and the reviewed basis is 100/113. This finding stays `OPEN`.
+
+## 2026-10-07 corrected R0025 mirror basis (author-produced) — E-MD-B18-A002-104
+
+Under `D-MD-B18-A002-017` the five E102 blanket exclusions were replaced: sealed-history triggers and the `seal_state` ENUM derived from the production migrations, `PRAGMA` metadata, a `GET_LOCK` emulation with the independent candidate-v4 verification now running on the mirror, a second WAL connection as a genuinely concurrent consumer, native PRIMARY KEY and UNIQUE. The only exception is the foreign-key assertion (`D-MD-B18-A002-001` item 4). All 21 bullets run on both substrates; 27 G05 probes are red where intended. This is an author-produced basis and is not independently reviewed: the `MD-S003-R0025` proof basis stays `INCOMPLETE` and the reviewed basis stays 100/113. This finding stays `OPEN`.

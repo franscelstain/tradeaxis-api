@@ -1092,3 +1092,19 @@ Same A002/BL001/CI. Governance recording only: no candidate, runtime, applicatio
 ## 2026-10-05 candidate-v4 owner approval — D-MD-B18-A002-016
 
 Same A002/BL001/CI. Governance recording only: no candidate, runtime, application or test change. Candidate-v4 owner approved, bound to its exact fingerprint; admission / binding is the next separate operation. B10 stays closed 1072/1072; B17 stays 244/257; `MD-S003-R0025`, `F-MD-B18-A002-025` and `F-MD-B18-A002-017` stay open; B18 stays 100/113 reviewed and 0/113 formal `SATISFIED`; `F-018` not started.
+
+## 2026-10-05 candidate-v4 admitted and bound — E-MD-B18-A002-101
+
+Same A002/BL001/CI. The exact-publication scenario of `B18ScenarioFamiliesOnMariaDbTest` now verifies the executed target against the owner-approved independent candidate-v4 (test code only; no application, verifier, candidate or configuration change; `NOT_B10_SEMANTIC`). The R0025 aggregate is GREEN with zero skips and the full G05 aggregate is GREEN for all nine predicates. `MD-S003-R0025` is not promoted. B10 stays closed 1072/1072; B17 stays 244/257; B18 stays 100/113 reviewed and 0/113 formal `SATISFIED`; `F-018` not started. Raw package: `storage/app/market_data/evidence/MD-B18-A002/r0025-admission-candidate-v4-20261005`.
+
+## 2026-10-05 R0025 proof basis PROVEN — E-MD-B18-A002-102
+
+Same A002/BL001/CI. Test code and gate tooling only (`B18ScenarioFamilyBase`, the MariaDB and mirror family classes, the acceptance aggregate and its test class, one entry of `MarketDataReplayVerificationProofBasis`); no application, candidate or configuration change (`NOT_B10_SEMANTIC`). B10 stays closed 1072/1072; B17 stays 244/257; B18 reviewed basis 101/113, formal `SATISFIED` 0/113; `F-018` not started. Raw package: `storage/app/market_data/evidence/MD-B18-A002/r0025-promotion-g05-and-mirror-20261005`.
+
+## 2026-10-07 owner mirror decision and E102 successor correction — D-MD-B18-A002-017, E-MD-B18-A002-103
+
+Same A002/BL001/CI. Governance recording only in this step: no application, candidate or test change. `E-MD-B18-A002-102`'s PROVEN conclusion is withdrawn (`E-MD-B18-A002-103`), the `MD-S003-R0025` basis is `INCOMPLETE`, reviewed basis 100/113, formal `SATISFIED` 0/113. B10 stays closed 1072/1072; B17 stays 244/257; `F-018` not started.
+
+## 2026-10-07 corrected R0025 mirror basis — E-MD-B18-A002-104
+
+Same A002/BL001/CI. Test code and gate tooling only; no application, candidate, fixture-world or shared mirror schema change (`NOT_B10_SEMANTIC`). Basis `INCOMPLETE`, reviewed basis 100/113, formal `SATISFIED` 0/113. B10 stays closed 1072/1072; B17 stays 244/257; `F-018` not started. Raw package: `storage/app/market_data/evidence/MD-B18-A002/r0025-corrected-mirror-basis-20261007`.

@@ -1,0 +1,77 @@
+{
+    "evidence_id": "E-MD-B18-A002-103",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-07T07:27:30+07:00",
+    "evidence_type": "SUCCESSOR_CORRECTION",
+    "verdict": "E102_PROVEN_CONCLUSION_WITHDRAWN_R0025_PROOF_BASIS_RESTORED_TO_INCOMPLETE_REVIEWED_BASIS_100_OF_113_EXECUTION_RESULTS_RETAINED",
+    "decision_id": "D-MD-B18-A002-017",
+    "supersedes": {
+        "E-MD-B18-A002-102": "the PROVEN conclusion and the reviewed-basis count 101/113 only; the execution results, probe results, bytes and raw package of E102 are retained as immutable execution evidence and are not edited"
+    },
+    "starting_state_verified": {
+        "candidate_fingerprint": "d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00",
+        "frozen_build": "sha256:7a1ed5c78cc37a978df0441b565815f3e435fdceafd2045eb202d716ce16d8cf",
+        "E-MD-B18-A002-100": "independent review PASS, unchanged",
+        "D-MD-B18-A002-016": "owner APPROVED, unchanged",
+        "E-MD-B18-A002-101": "admission, unchanged",
+        "E-MD-B18-A002-102": "exists, IMMUTABLE_AFTER_ISSUE, unchanged",
+        "proof_basis_file_before": "marked MD-S003-R0025 PROVEN (the E102 promotion comment present)",
+        "readiness_before": "101/113 (MarketDataReplayVerificationProofReadinessGate)",
+        "application_code": "no diff against HEAD",
+        "later_authority_change": "none: D-MD-B18-A002-017 is the latest decision"
+    },
+    "what_is_limited_in_e102": {
+        "conclusion": "MD-S003-R0025 proof basis PROVEN",
+        "reason": "its supported-mirror half rested on five engine-only exclusions that the owner did not approve (D-MD-B18-A002-017): SEALED_SNAPSHOT_ROW_TRIGGERS, INFORMATION_SCHEMA_COLUMN_TYPES, ADVISORY_LOCK_FOUNDATION_RESTORE, CONCURRENT_CONNECTIONS_ISOLATION, ENFORCED_SCHEMA_CONSTRAINTS",
+        "also_withdrawn": "the statement in E102 that the basis was acceptable on author review alone as a settled reviewed basis; the review that challenged it is the reason a successor basis is required",
+        "what_stays_valid": [
+            "the MariaDB execution of the six families (unchanged behaviour of the 21 bullets)",
+            "the exact-publication admission chain E099/E100/D016/E101",
+            "the aggregate and probe execution results as recorded, including the honest history of the three first attempts that were not clean",
+            "the structural refactor that runs the same scenarios on both substrates (B18ScenarioFamilyBase), subject to correction of its exclusion mechanism"
+        ]
+    },
+    "proof_basis_state_after_correction": {
+        "MD-S003-R0025": "INCOMPLETE (restored to INCOMPLETE in MarketDataReplayVerificationProofBasis; the entry is annotated with this correction)",
+        "reviewed_basis_count_expected": "100/113",
+        "matrix_verdict": "NOT_ASSESSED (unchanged)",
+        "formal_satisfied": "0/113 (unchanged)",
+        "basis_file_change": "one entry moved back (PROVEN -> INCOMPLETE); no other predicate changed"
+    },
+    "what_was_not_done": [
+        "E-MD-B18-A002-102 not edited",
+        "candidate-v4, E100, D016, E101 not touched",
+        "no application change",
+        "no formal SATISFIED row changed",
+        "MD-S050-R0005 and F-018 not started",
+        "B10 and B17 not changed",
+        "no commit or push"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-102",
+        "E-MD-B18-A002-101",
+        "E-MD-B18-A002-100",
+        "E-MD-B18-A002-099"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-017",
+        "D-MD-B18-A002-016",
+        "D-MD-B18-A002-013",
+        "D-MD-B18-A002-011",
+        "D-MD-B18-A002-001"
+    ],
+    "next_resume_point": "MD-B18-A002: implement the semantic-equivalent R0025 mirror proof required by D-MD-B18-A002-017 (replace each of the five E102 blanket exclusions independently; only the bounded D001 limitations on referential integrity and production nullability may remain as explicit governed exceptions; keep the MariaDB proof unchanged; re-run the G05 probes with new probes for each mirror-equivalent protection), then stop at an independent-review boundary with the author-produced corrected basis separated from any reviewed basis. MD-S003-R0025 stays INCOMPLETE and the reviewed basis is 100/113 until then. Do not start MD-S050-R0005 or F-018; do not edit candidate-v4, E100, D016, E101 or E102.",
+    "no_commit_or_push": 1
+}

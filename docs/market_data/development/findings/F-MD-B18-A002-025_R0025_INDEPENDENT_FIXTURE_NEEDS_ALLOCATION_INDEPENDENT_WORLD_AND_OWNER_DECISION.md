@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-10-02T11:48:07+07:00
 - Severity: `P1` for `MD-S003-R0025`; no effect on any other predicate
-- Status: `OPEN`
+- Status: `RESOLVED` — candidate-v4 independently reviewed PASS (`E-MD-B18-A002-100`), owner approved (`D-MD-B18-A002-016`), admitted and bound to the exact-publication member (`E-MD-B18-A002-101`); `MD-S003-R0025` itself not promoted
 - Class: `PROOF_FIXTURE_ADMISSION_GAP`
 - Related: `E-MD-B18-A002-091`, `F-MD-B18-A002-017`, `F-MD-B10-A002-004`, `F-MD-B10-A002-003`, `D-MD-B18-A002-011`, `E-MD-B18-A002-085`
 - Remediation owner: `MD-B18-A002` after the owner decision named below
@@ -76,3 +76,7 @@ Candidate-v4 (fingerprint `d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b
 ## 2026-10-05 candidate-v4 owner approval — D-MD-B18-A002-016
 
 The project owner approved candidate-v4 (fingerprint `d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00`, frozen build `sha256:7a1ed5c78cc37a978df0441b565815f3e435fdceafd2045eb202d716ce16d8cf`) after the independent review PASS (`E-MD-B18-A002-100`). The approval is bound to that exact fingerprint; any change to the fingerprint, the frozen build, the package or the reviewed content invalidates it for the changed candidate. The approval does not promote `MD-S003-R0025`, which stays `INCOMPLETE / NOT_ASSESSED`; admission and binding of the approved candidate are a separate governed operation. The finding stays `OPEN`.
+
+## 2026-10-05 resolved by the admission of candidate-v4 — E-MD-B18-A002-101
+
+Candidate-v4 (fingerprint `d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00`, frozen build `sha256:7a1ed5c78cc37a978df0441b565815f3e435fdceafd2045eb202d716ce16d8cf`) was independently reviewed PASS (`E-MD-B18-A002-100`), owner approved (`D-MD-B18-A002-016`) and admitted: the exact-publication member of the `MD-S003-R0025` aggregate verifies the executed target against the approved package through the verifier's admission mechanism (`PASS` / `MATCH` / `ADMISSIBLE`, zero mismatches), with independence, anti-circularity and sensitivity controls and eight member probes red where intended. This finding's closure conditions are met and it is `RESOLVED`. `MD-S003-R0025` is not promoted by this; that is a separate operation under `F-MD-B18-A002-017`.

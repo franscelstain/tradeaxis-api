@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-10-04T23:42:39+07:00
 - Severity: `P1` for `MD-S003-R0025`; the replay contract's PASS rule names the manifest
-- Status: `OPEN` — coverage established in candidate-v3 (`E-MD-B18-A002-096`, mechanics reviewed PASS) and preserved in candidate-v4 (`E-MD-B18-A002-099`); closes when a corrected package passes independent review
+- Status: `RESOLVED` — coverage established and preserved in candidate-v4, independently reviewed PASS (`E-MD-B18-A002-100`) and admitted (`E-MD-B18-A002-101`)
 - Class: `PROOF_BASIS_STRUCTURAL_AND_EXECUTABLE_GAP`
 - Related: `E-MD-B18-A002-095`, `E-MD-B18-A002-094`, `F-MD-B18-A002-025`, `F-MD-B18-A002-017`, `D-MD-B18-A002-011`
 - Remediation owner: `MD-B18-A002`
@@ -29,3 +29,7 @@ Resolved when a candidate package carries an independently derived expected `pub
 ## 2026-10-05 coverage established — E-MD-B18-A002-096
 
 Case B was confirmed: coverage was incomplete. Candidate-v3 carries `expected_publication_context.publication_manifest_hash` `56e44a75683bf3a1734c333c10855be3f3b123d6ba5ac2c1e192cb537a11c2f2`, derived by the standalone oracle (section 4e, payload and preimage in `oracle_output.json` and `expected/expected_publication_manifest.json`) from the frozen inputs and values the oracle derived; no production value was an input. The verifier compares it with the manifest hash of the target publication, reported only when `assertPublicationManifestHashValid` re-derives it from the target's rows (empty otherwise); an independent package that omits, empties, mis-cases, shortens or target-binds the literal is refused. Proof: a wrong literal causes exactly the manifest mismatch; damage to a manifest input of the run or to the stored hash after the seal gives an empty actual value and a mismatch; each input that authority makes a manifest member moves the expected hash; the manifest hash is equal across two allocation layouts; probes M1 to M6 (including the manifest compared with itself) are red. The finding stays `OPEN` until candidate-v3 passes independent review.
+
+## 2026-10-05 resolved by the admission of candidate-v4 — E-MD-B18-A002-101
+
+Candidate-v4 (fingerprint `d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00`, frozen build `sha256:7a1ed5c78cc37a978df0441b565815f3e435fdceafd2045eb202d716ce16d8cf`) was independently reviewed PASS (`E-MD-B18-A002-100`), owner approved (`D-MD-B18-A002-016`) and admitted: the exact-publication member of the `MD-S003-R0025` aggregate verifies the executed target against the approved package through the verifier's admission mechanism (`PASS` / `MATCH` / `ADMISSIBLE`, zero mismatches), with independence, anti-circularity and sensitivity controls and eight member probes red where intended. This finding's closure conditions are met and it is `RESOLVED`. `MD-S003-R0025` is not promoted by this; that is a separate operation under `F-MD-B18-A002-017`.
