@@ -1,0 +1,152 @@
+{
+    "evidence_id": "E-MD-B18-A002-120",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-08T02:50:34+07:00",
+    "evidence_type": "RECOVERY_EXECUTION_PHASE_A",
+    "verdict": "PHASE_A_PASS_BYTE_COPY_VERIFIED_BY_SIZE_AND_SHA256_ORIGINAL_UNCHANGED_NO_MARIADB_STARTED_RECOVERY_NOT_COMPLETE",
+    "checkpoint_verdict": "MD-DEP-0016 PHASE A PASS — COPY READY FOR ISOLATED READ TEST",
+    "authority": [
+        "D-MD-B18-A002-020",
+        "D-MD-B18-A002-021",
+        "E-MD-B18-A002-118",
+        "E-MD-B18-A002-119"
+    ],
+    "phase_0_precheck": {
+        "d_free_gib_before_copy": 129.471,
+        "threshold_ge_120": "MET",
+        "port_3307": "free (reported, not used)",
+        "source": "D:\\xampp\\mysql\\data_260914 exists",
+        "copy_path": "D:\\tradeaxis_recovery did not exist (no earlier partial recovery)",
+        "aliasing": "source realpath D:\\xampp\\mysql\\data_260914 differs from the copy and from the active clean datadir; the clean instance reported @@datadir = D:\\xampp\\mysql\\data\\ (one mysqld only, port 3306)",
+        "no_mysqld_on_source": true
+    },
+    "source_identity_before_copy": {
+        "path": "D:\\xampp\\mysql\\data_260914\\",
+        "files": 500,
+        "directories": 6,
+        "total_bytes": 45794016835,
+        "inventory_file": "storage/app/market-data/evidence/MD-B18-A002/recovery-phase-a-20261008/source_inventory_before_copy.json",
+        "per_file": "relative path, size, SHA-256 and mtime of all 500 files; read-only (directory walk and hash)",
+        "inventory_digest_sha256": "c23368ee8b298431e15e7893a6ea211ae6e3a5b9f5371c61fff25c78278c7d8e (SHA-256 of \"path TAB size TAB sha256 LF\" lines in path order)",
+        "inventory_json_sha256": "1847f9da309c063bdf34a61141586ec20e717acb7f1166371ef45c55d41d84a3"
+    },
+    "copy_execution": {
+        "method": "robocopy \"D:\\xampp\\mysql\\data_260914\" \"D:\\tradeaxis_recovery\\data_260914_copy\" /E /COPY:DAT /DCOPY:DAT /R:0 /W:0 /NP /NDL /NJH (no /MIR, /PURGE or /MOV: the source cannot be altered; the whole directory, no file omitted)",
+        "started": "2026-10-08T02:31:42+07:00",
+        "ended": "2026-10-08T02:39:33+07:00",
+        "robocopy_exit": "1 (files copied, no failures, no mismatches)",
+        "dirs": "7 copied, 0 failed",
+        "files": "500 copied, 0 skipped, 0 failed",
+        "bytes": "45,794,016,835 (42.649 GiB)",
+        "speed": "97.4 MB/s",
+        "log": "storage/app/market-data/evidence/MD-B18-A002/recovery-phase-a-20261008/robocopy.log"
+    },
+    "copy_vs_source": {
+        "copy_files": 500,
+        "copy_total_bytes": 45794016835,
+        "same_relative_file_set": true,
+        "same_directories": true,
+        "same_file_count_and_total_bytes": true,
+        "size_mismatches": 0,
+        "sha256_mismatches": 0,
+        "metadata_difference_reported_separately": "none: even mtime of all 500 files is equal (robocopy /COPY:DAT)",
+        "copy_inventory": "storage/app/market-data/evidence/MD-B18-A002/recovery-phase-a-20261008/copy_inventory.json",
+        "copy_inventory_json_sha256": "d9204bd48f15f426078edd109126c5e037fc8a80461d0ddbe0712872a890adbc"
+    },
+    "original_after_copy": {
+        "files": 500,
+        "total_bytes": 45794016835,
+        "same_file_set": true,
+        "size_mismatches": 0,
+        "sha256_mismatches": 0,
+        "mtime_differences": 0,
+        "verdict": "ORIGINAL UNCHANGED during the operation",
+        "inventory": "storage/app/market-data/evidence/MD-B18-A002/recovery-phase-a-20261008/source_inventory_after_copy.json"
+    },
+    "storage": {
+        "d_free_gib_before_copy": 129.471,
+        "d_free_gib_after_copy": 86.821,
+        "d_free_gib_after_verification": 86.821,
+        "copy_size_gib": 42.649,
+        "target_ge_80": "MET (86.821)",
+        "floor_25": "MET",
+        "deleted_anything": false
+    },
+    "phase_a_result": "PASS",
+    "not_done": [
+        "no MariaDB recovery instance started (the only mysqld is the clean 3306 instance)",
+        "no mysqldump, no dump file, D:\\tradeaxis_recovery\\dump not created",
+        "no import; tradeaxis and tradeaxis_testing not touched (one read of @@datadir on the clean server)",
+        "MD-DEP-0016 NOT recovered or resolved; MD-DEP-0015 stays BLOCKING; F-MD-B18-A002-011(b) stays waiting",
+        "Phase B not begun"
+    ],
+    "b18_unchanged": {
+        "candidate_v5_fingerprint": "daf96a296875df875539c196e997823e99ee4171d6d9d77af8d213f13a05fbe3",
+        "frozen_build": "sha256:7ea1956a…c4a (recomputed unchanged)",
+        "matrix_sha256": "8b5bd9b1cb2d47022e6f003fef251d9160ef660b35e2813b92c297e7708e0695",
+        "E_001_and_E_117": "present, unchanged",
+        "satisfied": "113/113",
+        "recovered_copy_used_as_proof": false
+    },
+    "raw_artifacts": {
+        "dir": "storage/app/market-data/evidence/MD-B18-A002/recovery-phase-a-20261008",
+        "files": {
+            "source_inventory_before_copy.json": {
+                "sha256": "1847f9da309c063bdf34a61141586ec20e717acb7f1166371ef45c55d41d84a3",
+                "bytes": 105636
+            },
+            "copy_inventory.json": {
+                "sha256": "d9204bd48f15f426078edd109126c5e037fc8a80461d0ddbe0712872a890adbc",
+                "bytes": 105648
+            },
+            "source_inventory_after_copy.json": {
+                "sha256": "8e3bd4065230548c0555777967e5ea9d9a9a96c2c538b1be29aede55166dfba6",
+                "bytes": 105636
+            },
+            "robocopy.log": {
+                "sha256": "1d49577453851b8952820da7900b6ba87e4c516b029adb83c8156ef1ecfcba32",
+                "bytes": 46644
+            },
+            "free_space_before_copy.txt": {
+                "sha256": "f98273e3d0233f8bebfd8bc517f6af8853caefc958134e60db6f978bf6b1ceef",
+                "bytes": 31
+            },
+            "free_space_after_copy.txt": {
+                "sha256": "bfaf573971e4ae30d2c2c35bae2c455b77fbb5b0fd06135869b9398a8dbdf550",
+                "bytes": 29
+            },
+            "free_space_after_verification.txt": {
+                "sha256": "ac7041637c0a758a297406278b268a82beb2d339a7841cf6bfdc2537accabcbe",
+                "bytes": 37
+            },
+            "inventory_tool.php": {
+                "sha256": "9063e64312ecb051b44fa2f3523be991918da9713bb0ff4881856b8021460cac",
+                "bytes": 1364
+            }
+        }
+    },
+    "related_findings": [
+        "F-MD-B18-A002-011"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-119",
+        "E-MD-B18-A002-118",
+        "E-MD-B18-A002-117",
+        "E-MD-B18-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-021",
+        "D-MD-B18-A002-020"
+    ],
+    "next_resume_point": "Phase B: isolated startup of mysqld on the verified byte-copy (port 3307, no innodb_force_recovery), as an isolated read test.",
+    "no_commit_or_push": 1
+}

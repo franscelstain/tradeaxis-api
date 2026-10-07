@@ -1168,3 +1168,7 @@ Same A002/BL001/CI. The project owner authorized the Option 1 recovery of `MD-DE
 ## 2026-10-08 MD-DEP-0016 database-owner authorization and execution preflight (D-MD-B18-A002-021, E-MD-B18-A002-119)
 
 Same A002/BL001/CI. The database owner authorized the recovery with COPY_PATH, DUMP_PATH and RECOVERY_PORT 3307; the read-only preflight (port, storage, streaming gzip, isolated-instance plan, 62-table export set, phases and stop conditions) is recorded. Nothing was executed: `MD-DEP-0015` stays BLOCKING, B18 stays 113/113 SATISFIED and `NOT_READY_FOR_CLOSURE`.
+
+## 2026-10-08 MD-DEP-0016 recovery Phase A (E-MD-B18-A002-120)
+
+Same A002/BL001/CI. Phase A only: the byte-copy `D:\tradeaxis_recovery\data_260914_copy\` of `data_260914` (500 files, 45,794,016,835 bytes) is verified equal by size and SHA-256; the original is unchanged. No MariaDB recovery instance was started, nothing dumped or imported; `MD-DEP-0015` stays BLOCKING and the recovery is not complete.
