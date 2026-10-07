@@ -1,0 +1,140 @@
+{
+    "evidence_id": "E-MD-B18-A002-115",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-08T00:14:49+07:00",
+    "evidence_type": "PROOF_ADMISSION_AND_PROOF_BASIS_PROMOTION",
+    "verdict": "R0025_CANDIDATE_V5_ADMITTED_AND_BOUND_MD_S003_R0025_PROMOTED_INCOMPLETE_TO_PROVEN_READINESS_113_OF_113_FORMAL_SATISFIED_0_OF_113",
+    "checkpoint_verdict": "R0025 CANDIDATE-V5 ADMITTED — 113/113 READY FOR ATOMIC BINDER",
+    "approval_chain_verified": {
+        "candidate_path": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v5",
+        "fingerprint_recomputed": "daf96a296875df875539c196e997823e99ee4171d6d9d77af8d213f13a05fbe3",
+        "manifest_sha256": "f7cc89399ec1c5e540db28e4ffeccbf2cccdc58dd3496e80b491c9c51a88bf4a",
+        "frozen_build_literal_and_working_tree_build": "sha256:7ea1956a36fe3ad773479bb249f1409b6fa04df8725576080284294ed8016c4a (recomputed read-only, 5916 files, unchanged)",
+        "independent_review": "E-MD-B18-A002-114: R0025 CANDIDATE-V5 INDEPENDENT REVIEW PASS (separate Codex independent-review Agent), binds the same fingerprint, build and path",
+        "owner_approval": "D-MD-B18-A002-019: APPROVED, IMMUTABLE_AFTER_ISSUE, binds the same fingerprint, build and manifest hash",
+        "authoring_record": "E-MD-B18-A002-113",
+        "no_prior_approval_or_admission_of_this_fingerprint": true,
+        "candidate_v4_chain": "D016, E100, E101, E104, E105 and the v4 package/fingerprint d0a61b36… unchanged and not edited"
+    },
+    "governed_admission_mechanism": {
+        "0": "same as E-MD-B18-A002-101: the approved fingerprint is read from the owner approval record (table row \"Package fingerprint\"), E-MD-B18-A002-114 must bind the same fingerprint, build and path, the package on disk must recompute to it, and it is passed as the fifth argument of ReplayVerificationService::verifyRunAgainstFixture; the verifier is not bypassed",
+        "selection_of_v5_not_v4": "tests/Support/B18ScenarioFamilyBase::approvedIndependentCandidate now reads D-MD-B18-A002-019 and E-MD-B18-A002-114 and asserts the approved path equals R0025SyntheticV2World::PACKAGE (candidate-v5); this is the only code changed by the admission",
+        "test_support_change": {
+            "file": "tests/Support/B18ScenarioFamilyBase.php",
+            "sha256_after": "8f7f090b555cddb579455cbd9647e81d55c1857eeb2032ade48938e48d144d2f",
+            "application_code": "none",
+            "candidate_v5_oracle_build": "not modified"
+        },
+        "before_admission": "the same scenario asserts NOT_ADMISSIBLE with no approval, NOT_ADMISSIBLE with an approval of another fingerprint, and REPLAY_FIXTURE_SELF_GENERATED for a self-generated fixture; the authoring record E-MD-B18-A002-113 shows NOT_ADMISSIBLE / BLOCKED with 0 mismatches before any approval existed"
+    },
+    "execution_result": {
+        "exact_publication_family_on_the_executed_target": "PASS / MATCH / ADMISSIBLE, zero mismatches, eleven bound inputs + publication manifest hash + artifact hashes + lineage compared, freshness NOT_APPLICABLE",
+        "B18ScenarioFamiliesOnMariaDbTest": "OK (13 tests, 602 assertions)",
+        "B18ScenarioFamiliesOnMirrorTest": "OK (15 tests, 779 assertions)",
+        "B18ReleaseCandidateAcceptanceAggregateTest": "OK (44 tests, 1455 assertions)",
+        "former_pre_admission_failures": "the three failures (exact-publication family on MariaDB and on the mirror, and the aggregate member), caused by admission still pointing to candidate-v4, are gone",
+        "g05_acceptance_aggregate": {
+            "command": "MarketDataReplayVerificationAcceptanceAggregate.php --only=MD-S003-R0025 --parallel=1",
+            "verdict": "GREEN",
+            "member_items": 12,
+            "items": 27,
+            "distinct_guards": 27,
+            "skips": 0,
+            "every_row_PASSED_with_assertions": true,
+            "raw": "storage/app/market_data/evidence/MD-B18-A002/r0025-admission-candidate-v5-aggregate.json"
+        }
+    },
+    "proof_basis_promotion": {
+        "predicate": "MD-S003-R0025",
+        "before": "INCOMPLETE (E-MD-B18-A002-108)",
+        "after": "PROVEN",
+        "file": "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php",
+        "method": "the INCOMPLETE entry was removed and a PROVEN entry with the same positive/negative pair and a rewritten basis was added; the key sets were compared by loading the class before and after",
+        "exactly_one_basis_changed": true,
+        "proven_before_after": "112 -> 113",
+        "incomplete_before_after": "1 -> 0",
+        "proof_basis_file_sha256_after": "6c6004ce3f02da6008f036450f848fe2ce096a2d0c24863eef6f6baca68dd56d",
+        "validate_only": "MarketDataReplayVerificationProofBinder --validate-only before the edit: 112/113, only MD-S003-R0025 without a basis; after: 113/113, no basis missing",
+        "g05_probes": "the 27 single-defect probes of E-MD-B18-A002-104/105 were NOT re-run on the final tree; they stay historical evidence of the aggregate's mutation sensitivity (the production read paths and mirror protections they mutate did not change in meaning); this is recorded as a limitation, not as a re-proof"
+    },
+    "readiness": {
+        "before": "112/113",
+        "after": "113/113 (MarketDataReplayVerificationProofReadinessGate: predicates_with_reviewed_basis 113, without: none)",
+        "formal_satisfied": "0/113 (no traceability matrix row changed; the atomic binder is the next separate operation)"
+    },
+    "binder_preflight_observation": {
+        "MarketDataReplayVerificationProofBinder --validate-only": "status FAIL with the single error MISSING_NEGATIVE_PROOF:determinism_and_operations",
+        "cause": "the family-level proof spec (MarketDataReplayVerificationProofSpec, family determinism_and_operations) names the negative test ReplayBackfillServiceTest::test_execute_marks_error_and_stops_when_publication_is_missing_and_continue_is_false, which no longer exists (the file now holds test_execute_rejects_* variants after the explicit-publication-identity change)",
+        "not_caused_by_this_unit": "the same error was reported at 112/113 before the promotion and by the baseline family-level gate; it is not changed here",
+        "consequence": "it must be resolved (a governed correction of the stale reference to an existing negative test) before or as the first step of the atomic binder unit; it was deliberately not edited here (out of scope: this unit admits and promotes only)"
+    },
+    "regression": {
+        "focused": {
+            "B18ScenarioFamiliesOnMariaDbTest": "OK (13 tests, 602 assertions)",
+            "B18ScenarioFamiliesOnMirrorTest": "OK (15 tests, 779 assertions)",
+            "B18ReleaseCandidateAcceptanceAggregateTest": "OK (44 tests, 1455 assertions)"
+        },
+        "full_marketdata_suite": {
+            "tests": 2960,
+            "assertions": 48432,
+            "skipped": 0,
+            "failures": 7,
+            "failure_classes": {
+                "ProductionCorpusInvariantOracleTest": 7
+            },
+            "classification": "only the 7 ProductionCorpusInvariantOracleTest empty-corpus assertions (MD-DEP-0015/0016); the 3 R0025 family/aggregate failures of E-MD-B18-A002-113 are gone",
+            "not_a_full_suite_pass": true,
+            "previous": "E-MD-B18-A002-113 run: 2960 tests, 10 failures"
+        },
+        "build_recheck": "frozen build recomputed unchanged"
+    },
+    "governance_state": {
+        "MD-S003-R0025": "PROVEN",
+        "readiness": "113/113",
+        "formal_satisfied": "0/113",
+        "candidate_v5": "independently reviewed PASS, owner-approved, admitted",
+        "candidate_v4_and_older": "immutable history",
+        "atomic_113_row_binder_run": false,
+        "b18_closed": false,
+        "b17": "not touched",
+        "b10": "not touched"
+    },
+    "what_was_not_done": [
+        "candidate-v5, its oracle and frozen build not modified",
+        "no candidate-v6",
+        "no application or runtime semantics changed",
+        "atomic 113-row binder not run",
+        "B18 not closed",
+        "G05 probes not re-run",
+        "no commit or push by this unit"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-017",
+        "F-MD-B18-A002-018"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-114",
+        "E-MD-B18-A002-113",
+        "E-MD-B18-A002-108",
+        "E-MD-B18-A002-105",
+        "E-MD-B18-A002-104",
+        "E-MD-B18-A002-101"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-019",
+        "D-MD-B18-A002-018",
+        "D-MD-B18-A002-017",
+        "D-MD-B18-A002-016"
+    ],
+    "next_resume_point": "MD-B18-A002: atomic 113-row binder and final B18 closure. First resolve the binder pre-flight observation (stale family-level negative reference MISSING_NEGATIVE_PROOF:determinism_and_operations) as a governed correction, then MarketDataReplayVerificationProofBinder --validate-only, --evidence-id=<new evidence> --apply, final validation, B18 closure. Do not change app/, config/, bootstrap/, vendor or composer files (candidate-v5 is valid only for build sha256:7ea1956a36fe3ad773479bb249f1409b6fa04df8725576080284294ed8016c4a).",
+    "no_commit_or_push": 1
+}

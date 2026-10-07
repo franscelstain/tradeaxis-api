@@ -1144,3 +1144,11 @@ Same A002/BL001/CI. Fixture authoring only (`E-MD-B18-A002-113`): candidate-v5 (
 ## 2026-10-07 R0025 candidate-v5 independent review PASS recorded
 
 Same A002/BL001/CI. Governance recording only (`E-MD-B18-A002-114`): a separate Codex independent-review Agent returned PASS for candidate-v5 (fingerprint `daf96a296875df875539c196e997823e99ee4171d6d9d77af8d213f13a05fbe3`, frozen build `sha256:7ea1956a…c4a`); no blocking finding, no authority decision required. The package is not owner-approved and not admitted: `MD-S003-R0025` stays `INCOMPLETE`, readiness 112/113, formal SATISFIED 0/113. Nothing in the package, oracle, build, runtime or tests changed.
+
+## 2026-10-07 R0025 candidate-v5 owner approval recorded
+
+Same A002/BL001/CI. Owner decision `D-MD-B18-A002-019` approves candidate-v5 (fingerprint `daf96a296875df875539c196e997823e99ee4171d6d9d77af8d213f13a05fbe3`, frozen build `sha256:7ea1956a…c4a`) after `E-MD-B18-A002-114`. Approval only: admission, promotion and the atomic binder are separate operations.
+
+## 2026-10-07 R0025 candidate-v5 admitted; MD-S003-R0025 promoted
+
+Same A002/BL001/CI. `E-MD-B18-A002-115`: candidate-v5 (fingerprint `daf96a296875df875539c196e997823e99ee4171d6d9d77af8d213f13a05fbe3`) is admitted and bound after `D-MD-B18-A002-019` and `E-MD-B18-A002-114`; `MD-S003-R0025` moves INCOMPLETE -> PROVEN (113/113 reviewed bases); formal SATISFIED stays 0/113. Only the scenario-family test support changed (it now selects the v5 approval chain); the executable build boundary, candidate-v5, its oracle and candidate-v4 are untouched.

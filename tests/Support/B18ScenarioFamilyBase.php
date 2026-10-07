@@ -823,10 +823,10 @@ abstract class B18ScenarioFamilyBase extends TestCase
     }
 
     /** The governed correction path consumes an unchanged request without a publication switch. */
-    /** The governed approval of the independent R0025 candidate, read from its records (never typed here). */
+    /** The governed approval of the independent R0025 candidate (candidate-v5: D-MD-B18-A002-019 after the review E-MD-B18-A002-114; the candidate-v4 chain D016/E100 is immutable history), read from its records (never typed here). */
     protected function approvedIndependentCandidate(): array
     {
-        $decision = (string) file_get_contents(base_path('docs/market_data/records/decisions/D-MD-B18-A002-016_OWNER_APPROVED_R0025_CANDIDATE_V4_EXACT_FINGERPRINT.md'));
+        $decision = (string) file_get_contents(base_path('docs/market_data/records/decisions/D-MD-B18-A002-019_OWNER_APPROVED_R0025_CANDIDATE_V5_EXACT_FINGERPRINT.md'));
         $this->assertStringContainsString('- Status: `APPROVED`', $decision, 'the owner approval record is not APPROVED');
         $this->assertStringContainsString('- Mutability: `IMMUTABLE_AFTER_ISSUE`', $decision);
         $field = function (string $label) use ($decision): string {
@@ -835,11 +835,12 @@ abstract class B18ScenarioFamilyBase extends TestCase
             return $m[1];
         };
         $approved = ['path' => $field('Candidate path'), 'fingerprint' => $field('Package fingerprint'), 'build' => $field('Frozen executable build'), 'manifest_hash' => $field('Expected `publication_manifest_hash`')];
-        $review = json_decode((string) file_get_contents(base_path('docs/market_data/records/evidence/E-MD-B18-A002-100_R0025_CANDIDATE_V4_INDEPENDENT_REVIEW_PASS_OWNER_APPROVAL_REQUIRED.json')), true);
-        $this->assertSame('CANDIDATE-V4 INDEPENDENT REVIEW PASS', $review['review_verdict'], 'no independent review PASS is recorded');
-        $this->assertSame($approved['fingerprint'], $review['reviewed_candidate']['package_fingerprint'], 'the approval and the review bind different fingerprints');
-        $this->assertSame($approved['build'], $review['reviewed_candidate']['frozen_build']);
-        $this->assertSame(rtrim($approved['path'], '/'), $review['reviewed_candidate']['path']);
+        $review = json_decode((string) file_get_contents(base_path('docs/market_data/records/evidence/E-MD-B18-A002-114_R0025_CANDIDATE_V5_INDEPENDENT_REVIEW_PASS_OWNER_APPROVAL_REQUIRED.json')), true);
+        $this->assertSame('R0025 CANDIDATE-V5 INDEPENDENT REVIEW PASS', $review['checkpoint_verdict'], 'no independent review PASS is recorded');
+        $this->assertSame($approved['fingerprint'], $review['reviewed_target']['candidate_fingerprint'], 'the approval and the review bind different fingerprints');
+        $this->assertSame($approved['build'], $review['reviewed_target']['frozen_build_identity']);
+        $this->assertSame(rtrim($approved['path'], '/'), $review['reviewed_target']['candidate_path']);
+        $this->assertSame(\Tests\Support\R0025SyntheticV2World::PACKAGE, rtrim($approved['path'], '/'), 'the approved candidate is not the package the world is built from (candidate-v4 must not be selected)');
 
         return $approved;
     }
