@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001`
 - Raised: 2026-09-14T10:45:00+07:00
 - Severity: `P1` for closure. It is not an application defect.
-- Status: `PARTIALLY_RESOLVED — OPTION_1_(a)_DONE; (b)_AWAITS_MD-DEP-0016_RECOVERY`
+- Status: `OPEN — GOVERNED_DEFERRAL_TO_MD-B22` (part (a) done; part (b) deferred by `D-MD-B18-A002-022`, 2026-10-08). Earlier status: `PARTIALLY_RESOLVED — OPTION_1_(a)_DONE; (b)_AWAITS_MD-DEP-0016_RECOVERY`
 - Class: `ENVIRONMENT_COUPLED_GUARDS`
 - Blocks: the full-suite criterion of `MD-DEP-0015`, as D-MD-B18-A002-003 sets it, and therefore the
   full-suite condition of MD-B18 closure
@@ -99,3 +99,7 @@ BLOCKED. Package validation: targeted 208/878 PASS; normalization and all govern
 Recorded by E-MD-B18-A002-015. Seven failures remain in ProductionCorpusInvariantOracleTest with empty
 deployed-corpus populations. The oracle is unchanged under D004. MD-DEP-0016 recovery remains
 separately unauthorized; this is current evidence of the existing blocker, not a new defect class.
+
+## 2026-10-08 Option 2 selected — D-MD-B18-A002-022
+
+Option 1(b) was attempted to its authorized boundary (`E-MD-B18-A002-120` byte-copy verified; `E-MD-B18-A002-121` normal startup failed on a redo log that does not match the tablespaces and corrupt system pages). `innodb_force_recovery` is neither authorized nor required. By `D-MD-B18-A002-022` the owner selected Option 2: `ProductionCorpusInvariantOracleTest` stays unchanged (no edit, skip or weakening), its seven controls are deployed-environment/corpus validation and not B18 closure acceptance, and the obligation is carried by `MD-DEP-0024` (`OPEN_NON_BLOCKING`, owner `MD-B22`). Part (b) therefore stays **open** as `GOVERNED_DEFERRAL_TO_MD-B22`: it is not resolved, only no longer a B18 closure blocker. The earlier text of this finding and the historical full-suite results stay as recorded.

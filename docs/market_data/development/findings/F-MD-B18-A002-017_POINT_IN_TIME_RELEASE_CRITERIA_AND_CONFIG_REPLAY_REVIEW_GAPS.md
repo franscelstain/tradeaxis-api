@@ -5,7 +5,7 @@
 - Raised: 2026-09-14T23:51:54+07:00 (system clock)
 - Severity: `P1` for closure. Bases that execute nothing, an executable gap already owned by F-013,
   and carry-forwards.
-- Status: `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`
+- Status: `RESOLVED` — 2026-10-08 by `E-MD-B18-A002-122` (every predicate it carried is `PROVEN` and `SATISFIED`; consolidated remediation complete). Earlier status: `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`
 - Class: `PROOF_BASIS_STRUCTURAL_AND_EXECUTABLE_GAP`
 - Found by: per-predicate review of PAIRS 21–40 (20 predicates)
 - Probe evidence: `E-MD-B18-A002-012`
@@ -1343,3 +1343,7 @@ The reason-registry block on AS_KNOWN is not an authority gap: `MD-S082` (`Platf
 ## 2026-10-07 owner decision Q9 = A1 — D-MD-B18-A002-018, E-MD-B18-A002-107
 
 `MD-S050-R0005` and `MD-S050-R0014` need the AS_KNOWN binding of the new snapshot member and their own proofs; `MD-S019-R0071` needs its reproducibility proof after the binding. They follow the `MD-B04` successor remediation. `MD-S003-R0025` stays `PROVEN` until the first implementation mutation invalidates candidate-v4 for the current build (classified B: historically valid, candidate-v5 required). This finding stays `OPEN`.
+
+## 2026-10-08 resolution — E-MD-B18-A002-122
+
+All predicates this finding carried are `PROVEN` (the proof basis holds 113 PROVEN and 0 INCOMPLETE) and bound `SATISFIED` against `E-MD-B18-A002-001`: the R0016 executable defect was fixed and proven (E074), `MD-S050-R0005`, `MD-S050-R0014` and `MD-S019-R0071` were proven on the cutoff-snapshot reason registry (E110), the G05 predicates through the acceptance aggregate (E082 to E084) and `MD-S003-R0025` through candidate-v5 (E115). The findings it depended on (`F-013`, `F-014`, `F-015`, `F-016`, `F-018`) are resolved. Observations recorded on already-`PROVEN` bases are not obligations of this finding.

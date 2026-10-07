@@ -1176,3 +1176,16 @@ Same A002/BL001/CI. Phase A only: the byte-copy `D:\tradeaxis_recovery\data_2609
 ## 2026-10-08 MD-DEP-0016 recovery Phase B blocked (E-MD-B18-A002-121)
 
 Same A002/BL001/CI. The one normal startup of the isolated instance on the verified byte-copy crashed: the copy's redo log is out of step with its tablespaces (page LSNs from the pre-crash lifetime against a redo log near LSN 0) and system-schema pages are corrupt. No fallback was tried (no `innodb_force_recovery`); the original `data_260914` is unchanged; the copy changed only in its redo log, temp, Aria and dump files. The recovery is not complete, `MD-DEP-0015` stays BLOCKING, and an owner decision is required.
+
+## 2026-10-08 Successor amendment of section 3 "full suite green before and after binding" (D-MD-B18-A002-022)
+
+The text of section 3 above stays as issued. By owner decision `D-MD-B18-A002-022` the closure acceptance rule distinguishes two things:
+
+* **Factual full-suite result.** A suite run that contains the seven `ProductionCorpusInvariantOracleTest` failures is a failed full suite. It is never described as "full-suite PASS", and `E-MD-B18-A002-001` and `E-MD-B18-A002-117` remain exactly as issued.
+* **B18 closure acceptance.** The suite requirement of section 3 is satisfied by a fresh MarketData suite execution with **0 errors, 0 skips, every test outside `ProductionCorpusInvariantOracleTest` passing, and exactly the seven oracle failures recorded as real failures**, together with the unchanged 113-row binding. Any eighth failure, any error or any skip stops closure.
+
+The seven oracle controls are deployed-environment/corpus validation owned by `MD-B22` through the new dependency `MD-DEP-0024` (`OPEN_NON_BLOCKING`, does not open `MD-B22`). `F-MD-B18-A002-011` part (b) becomes `OPEN — GOVERNED_DEFERRAL_TO_MD-B22`. The recovery of `data_260914` (`MD-DEP-0016`) stays an open, non-blocking old-data track; Option 1 normal recovery ended at `E-MD-B18-A002-121`.
+
+## 2026-10-08 Final state — MD-B18-A002 closed
+
+`SC-MD-B18-A002-001` closes the attempt: 113/113 mandatory rows `SATISFIED` (`E-MD-B18-A002-001`), the ten closure-gate conditions mutation-proven (`F-MD-B18-A002-005` resolved), the fresh MarketData suite accepted under the successor reading of section 3 (`D-MD-B18-A002-022`: 2960 tests, 0 errors, 0 skips, 7 `ProductionCorpusInvariantOracleTest` failures that remain real failures; not a full-suite pass), residue `CONFORMANT_WITH_CONTROLLED_COMPATIBILITY`, `MD-DEP-0015`, `MD-DEP-0017` and `MD-DEP-0009` resolved, `F-MD-B18-A002-017` resolved. The deployed-corpus controls are carried by `MD-DEP-0024` (`MD-B22`). Return to `MD-B19-A001`.

@@ -1,0 +1,213 @@
+{
+    "evidence_id": "E-MD-B18-A002-122",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-08T04:48:29+07:00",
+    "evidence_type": "STAGE_CLOSURE_CONTROLS_AND_FINAL_COMPLETION",
+    "verdict": "B18_CLOSURE_CONTROLS_COMPLETE_FRESH_SUITE_SATISFIES_D022_ITEM_6_F005_MUTATION_PROVEN_F017_MD_DEP_0017_RECONCILED_MD_DEP_0015_RESOLVED",
+    "checkpoint_verdict": "MD-B18 CLOSED — NEXT GOVERNED WORK ITEM IDENTIFIED",
+    "no_full_suite_pass_claim": "The fresh run is a FAILED full suite (7 ProductionCorpusInvariantOracleTest failures). It is NOT a full-suite PASS. It satisfies B18 closure acceptance only under D-MD-B18-A002-022 item 6.",
+    "authority": [
+        "D-MD-B18-A002-022",
+        "D-MD-B18-A002-004",
+        "D-MD-B18-A002-003",
+        "CI-MD-B18-A002-001 section 3 and its D-022 successor amendment",
+        "STAGE_CLOSURE_MANIFEST_STANDARD",
+        "IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD"
+    ],
+    "fresh_marketdata_suite": {
+        "tests": 2960,
+        "assertions": 48530,
+        "errors": 0,
+        "skipped": 0,
+        "failures": 7,
+        "failing_tests": [
+            "ProductionCorpusInvariantOracleTest::test_authoritative_factor_candidates_reach_an_explicit_applied_or_held_decision",
+            "ProductionCorpusInvariantOracleTest::test_every_history_row_binds_to_a_publication",
+            "ProductionCorpusInvariantOracleTest::test_exactly_one_publication_is_current_per_trade_date",
+            "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_carries_a_non_positive_price",
+            "ProductionCorpusInvariantOracleTest::test_no_canonical_bar_violates_ohlc_ordering",
+            "ProductionCorpusInvariantOracleTest::test_no_price_derived_factor_is_usable_as_an_adjustment",
+            "ProductionCorpusInvariantOracleTest::test_no_readable_publication_rests_on_a_failed_run"
+        ],
+        "every_other_test": "PASSED",
+        "d022_item_6": "MET: 0 errors, 0 skips, every test outside ProductionCorpusInvariantOracleTest passes, the seven oracle failures recorded as real failures",
+        "oracle_class_unchanged": "tests/Unit/MarketData/ProductionCorpusInvariantOracleTest.php has no diff against HEAD (no edit, skip or weakened assertion)",
+        "compared_with": "E-MD-B18-A002-001 (pre-binding) and E-MD-B18-A002-117 (post-binding): 2960 tests, 0 skips, 0 errors, the same seven failures; both unchanged as issued (8ee62d72210f6707f495f5b4a5bbcb36c45465dd027c7f5e9604272c36a59574, 6719fd463dd928e55075b555ec716de7020390e89e1314fca4d9cca4882b2004)",
+        "raw": "storage/app/market-data/evidence/MD-B18-A002/closure-controls-20261008/"
+    },
+    "f005_closure_gate_mutation_proof": {
+        "reconstruction": "F-MD-B18-A002-005 closes only after the A002 proof pack exists and the identity checks are mutation-proven with green controls before and after; CI section 3 asks that each closure-gate condition be independently mutation-proven",
+        "method": "the gate is run against SCRATCH ROOTS (copies of the proof pack, the evidence record and the matrix; the real files are never touched); data defects are injected one at a time; protections are removed one at a time from the gate source in place with a byte copy restored and hash-checked; a green control runs before and after each probe",
+        "layer1_data_scenarios": "21 scenarios, all RED_INTENDED: manifest stage/attempt/baseline/epoch identity, manifest artifact_count, artifact path outside the directory, artifact missing, artifact content altered, manifest missing, evidence absent, two evidence records, record evidence_id/stage/attempt/baseline/epoch/verdict, record manifest_path, manifest hash wrong and absent, and the withdrawn A001 pack substituted (the original F-005 defect)",
+        "layer2_protection_removals": "17 removals of one protection each, all RED_INTENDED (the corrupted pack was then NOT detected, so each protection is load-bearing): manifest identity x4, artifact_count, path containment, unreadable, hash mismatch, record evidence_id, stage, attempt, baseline, epoch, verdict, exactly-one-record, manifest path link, manifest hash link; the gate source was restored byte-identical every time (sha256 54ab898ca85b45b5c6da574e37a031a9f3620fb41f819430c317d2bfdfd03366) and the real closure gate PASSes",
+        "matrix_and_basis_conditions": "9 scenarios for the remaining conditions, all RED_INTENDED: transitional applicability, pending applicability, denominator not satisfied, reference row without decision, bound row without guard, row without context binding, denominator row without reviewed basis (scratch matrix), foreign proof-basis entry (proof basis file mutated in place, byte-restored), foreign row carrying the evidence",
+        "conditions_proven": "all ten closure-gate conditions",
+        "first_pass_preserved": "the first run of layer 2 had two probes whose EXPECTATION was mis-specified (C09 named a scenario that other protections also catch; C16 used a missing-file path that is_file also catches); the gate was not weakened or changed; expectations were corrected (S18 now points at an existing but wrong manifest, C09 targets only S12) and the whole set was re-run; first-pass results kept (f005_first_pass_results.json); the matrix-condition probe M8 first used a scratch matrix that foreign() does not read and was redone against the proof basis file",
+        "no_implementation_defect": "no gap was found in the gate; no application or gate change",
+        "raw": "storage/app/market-data/evidence/MD-B18-A002/closure-controls-20261008/"
+    },
+    "f017_and_md_dep_0017": {
+        "f017_status": "RESOLVED",
+        "md_dep_0017_status": "RESOLVED",
+        "basis": [
+            "proof basis 113 PROVEN, 0 INCOMPLETE (every one of the 23 INCOMPLETE bases tracked by MD-DEP-0017 -- F-017 12, F-018 9, F-013 2 -- is PROVEN: F-018 by E-112, R0005/R0014/R0071 by E-110, R0025 by E-115)",
+            "113/113 rows SATISFIED against E-MD-B18-A002-001, recomputed independently in E-117",
+            "F-013, F-014, F-015, F-016, F-018 RESOLVED; MD-DEP-0019 and MD-DEP-0018 RESOLVED",
+            "F-017 own executable defect (R0016 missing-input BLOCKED) fixed and proven (E-074); MD-S050-R0005 no longer structurally unreachable (E-110)",
+            "the \"50 retained bases unbound, 0/114 SATISFIED\" clause of MD-DEP-0017 is met: 113/113 bound"
+        ],
+        "not_assumed_from_113": "each clause was checked against the proof basis map, the matrix and the finding statuses; observations on already-PROVEN bases (R0012, R0017, R0019) were never owned by F-017 and stay observations"
+    },
+    "md_dep_0015": {
+        "status": "RESOLVED",
+        "d003_criteria": [
+            "clean provenance of the instance: verified E-009/E-090, unchanged",
+            "no application residue: verified E-090; the recovery work added only files under D:\\tradeaxis_recovery, no database",
+            "both databases created and fully migrated: 79/79 (checked in the full suite, MigrationIntegrityAndDriftTest green)",
+            "targeted tests and the full suite with zero skips: the fresh run has 0 skips and 0 errors; its seven failures are governed by D-022 item 6 and carried by MD-DEP-0024",
+            "integrity of both databases: 134/134 tables CHECK TABLE OK at E-090; no recovery process touched them (E-120/E-121)"
+        ],
+        "resolved_by": "D-MD-B18-A002-022 item 8 on this fresh execution",
+        "carried_forward": "MD-DEP-0024 (MD-B22, OPEN_NON_BLOCKING); F-011(b) OPEN GOVERNED_DEFERRAL_TO_MD-B22; MD-DEP-0016 OPEN_NON_BLOCKING"
+    },
+    "md_dep_0009": {
+        "status": "RESOLVED",
+        "rule": "its own resume trigger: resolve MD-DEP-0015, complete every retained predicate with A002 runtime evidence and mutation-proven closure, then resolve before return to MD-B19-A001",
+        "met": [
+            "MD-DEP-0015 RESOLVED",
+            "113/113 bound to E-MD-B18-A002-001 (runtime evidence), closure gate PASS with all ten conditions mutation-proven",
+            "SC-MD-B18-A002-001 issued"
+        ]
+    },
+    "residue_conformance_check": {
+        "standard": "IMPLEMENTATION_RESIDUE_AND_CONFORMANCE_STANDARD: reachable behaviour contradicting current authority blocks DONE",
+        "previous_state": "INCONCLUSIVE_RESIDUE_EVIDENCE (the A001 residue assessment was withdrawn with the A001 closure)",
+        "surfaces": [
+            "ReplayVerificationService",
+            "ReplayBackfillService",
+            "ReplaySmokeSuiteService",
+            "FullRangeCurrentEvidenceReplayService",
+            "ReplayResultRepository",
+            "VerifyReplayCommand"
+        ],
+        "covering_tests_in_the_fresh_run": {
+            "ReplayVerificationService": {
+                "test_classes_referencing": 34,
+                "tests": 530,
+                "failed": 0
+            },
+            "ReplayBackfillService": {
+                "test_classes_referencing": 8,
+                "tests": 124,
+                "failed": 0
+            },
+            "ReplaySmokeSuiteService": {
+                "test_classes_referencing": 4,
+                "tests": 74,
+                "failed": 0
+            },
+            "FullRangeCurrentEvidenceReplayService": {
+                "test_classes_referencing": 5,
+                "tests": 34,
+                "failed": 0
+            },
+            "ReplayResultRepository": {
+                "test_classes_referencing": 12,
+                "tests": 291,
+                "failed": 0
+            },
+            "VerifyReplayCommand": {
+                "test_classes_referencing": 6,
+                "tests": 101,
+                "failed": 0
+            }
+        },
+        "failed_covering_tests": 0,
+        "static_review": "read-only grep of the six surfaces for current-pointer lookups, latest/current fallbacks, live-config reads, adjusted-close fallbacks: ReplayVerificationService, ReplayBackfillService, ReplaySmokeSuiteService, ReplayResultRepository and VerifyReplayCommand contain none (backfill explicitly never consults findCurrentPublicationForTradeDate, E-116); the only current-pointer use is FullRangeCurrentEvidenceReplayService, an operator/diagnostic path that deliberately replays the CURRENT publications and generates self-generated fixtures, which the verifier refuses as independent proof (REPLAY_FIXTURE_SELF_GENERATED, proven in the R0025 families)",
+        "verdict": "CONFORMANT_WITH_CONTROLLED_COMPATIBILITY",
+        "controlled_compatibility": [
+            "FullRangeCurrentEvidenceReplayService current-evidence replay: by design, non-proof, refused as independent evidence",
+            "V1-profile historical publications keep their interpretation (E-MD-B10-A003)",
+            "the activated-world freshness evaluator does not exist (F-033, owned by MD-B17/B10 successors; candidate-v5 is pre-activation)"
+        ],
+        "limits": "static and test-based review; no new production probes were run for the residue check (the 113 predicate bases carry the probes)"
+    },
+    "dependencies_and_findings_after": {
+        "RESOLVED_now": [
+            "MD-DEP-0015",
+            "MD-DEP-0017",
+            "MD-DEP-0009",
+            "F-MD-B18-A002-005",
+            "F-MD-B18-A002-017"
+        ],
+        "still_open_closure_compatible": [
+            "MD-DEP-0016 OPEN_NON_BLOCKING (old data, retained)",
+            "MD-DEP-0024 OPEN_NON_BLOCKING (MD-B22)",
+            "MD-DEP-0010 (MD-B21)",
+            "MD-DEP-0011 (MD-B22)",
+            "F-MD-B18-A002-003 deferral to MD-B21",
+            "F-MD-B18-A002-004 partially resolved (MD-B22)",
+            "F-MD-B18-A002-011 OPEN deferral to MD-B22",
+            "F-MD-B18-A002-033 (MD-B17 / MD-B10 successors)"
+        ]
+    },
+    "unchanged_verification": {
+        "candidate_v5_fingerprint": "daf96a296875df875539c196e997823e99ee4171d6d9d77af8d213f13a05fbe3",
+        "frozen_build": "sha256:7ea1956a…c4a recomputed unchanged",
+        "matrix_sha256": "8b5bd9b1cb2d47022e6f003fef251d9160ef660b35e2813b92c297e7708e0695",
+        "E_001_sha256": "8ee62d72210f6707f495f5b4a5bbcb36c45465dd027c7f5e9604272c36a59574",
+        "E_117_sha256": "6719fd463dd928e55075b555ec716de7020390e89e1314fca4d9cca4882b2004",
+        "D019_E115": "unchanged",
+        "proof_basis_file_sha256": "6c6004ce3f02da6008f036450f848fe2ce096a2d0c24863eef6f6baca68dd56d",
+        "closure_gate_sha256": "54ab898ca85b45b5c6da574e37a031a9f3620fb41f819430c317d2bfdfd03366",
+        "oracle_test": "unchanged",
+        "application_code": "unchanged (no diff in app/config/bootstrap/composer)"
+    },
+    "gates": {
+        "closure_gate": "PASS (ten conditions)",
+        "proof_gate_bound": "PASS",
+        "reviewed_bases": "113/113 (ProofReadinessGate predicates_with_reviewed_basis 113, none without)",
+        "binder_validate_only_note": "binder --validate-only and the readiness gate evaluate in pre-binding mode and report PREMATURE_BINDING for bound rows by design (E-MD-B18-A002-117); the binder validate-only was PASS 113/113 immediately before the apply (E-MD-B18-A002-001, E-MD-B18-A002-116); after binding the meaningful checks are the bound-mode proof gate and the closure gate",
+        "summary": "storage/app/market-data/evidence/MD-B18-A002/closure-controls-20261008/governance_gates_final_summary.txt"
+    },
+    "raw_artifact_manifest": {
+        "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/MANIFEST-CLOSURE.json",
+        "manifest_sha256": "e5239c9005a8a2a4b2c2a177881956ce576125e9e72301c87b79b274f0b6de43",
+        "artifact_count": 12
+    },
+    "closure_manifest": "records/evidence/SC-MD-B18-A002-001_STAGE_CLOSURE_MANIFEST.md",
+    "what_was_not_done": [
+        "database recovery not continued; recovery copy not opened; no dump or import",
+        "oracle test not edited or skipped",
+        "candidate-v5, application code, matrix and binder evidence not modified",
+        "historical suite evidence not rewritten",
+        "no commit or push"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-005",
+        "F-MD-B18-A002-011",
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-001",
+        "E-MD-B18-A002-117",
+        "E-MD-B18-A002-120",
+        "E-MD-B18-A002-121",
+        "E-MD-B18-A002-115"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-022",
+        "D-MD-B18-A002-019"
+    ],
+    "next_resume_point": "MD-B19-A001 (return-to per MD-DEP-0009).",
+    "no_commit_or_push": 1
+}
