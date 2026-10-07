@@ -1,0 +1,96 @@
+{
+    "evidence_id": "E-MD-B18-A002-116",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-08T00:26:23+07:00",
+    "evidence_type": "PRE_BINDER_PROOF_SPEC_REFERENCE_CORRECTION",
+    "verdict": "STALE_FAMILY_NEGATIVE_REFERENCE_REPLACED_BY_AN_EXISTING_EQUIVALENT_TEST_BINDER_VALIDATE_ONLY_PASS_113_OF_113_UNCHANGED_FORMAL_0_OF_113",
+    "checkpoint_verdict": "B18 PRE-BINDER VALIDATION CLEAN — ATOMIC BINDER MAY RUN",
+    "blocker_reproduced": {
+        "command": "MarketDataReplayVerificationProofBinder --validate-only",
+        "before": "status FAIL, errors [MISSING_NEGATIVE_PROOF:determinism_and_operations] (113/113 reviewed bases)",
+        "predates": "the R0025 candidate-v5 work; reported at 112/113 as well and by the family-level gate in earlier baselines"
+    },
+    "trace": {
+        "family_definition": "MarketDataReplayVerificationProofSpec::families()[determinism_and_operations] (owner MD-B18:determinism-and-operations; predicates MD-S002-R0006, MD-S003-R0025, MD-S050-R0056, MD-S082-R0224; family comment \"repeatability across environments and the operator paths\")",
+        "obligation": "the family declares a positive and a negative proof method; the gate requires the negative method to exist in the named file",
+        "stale_reference": "ReplayBackfillServiceTest::test_execute_marks_error_and_stops_when_publication_is_missing_and_continue_is_false",
+        "root_cause": "commit b39f23e (F-MD-B18-A002-016, MD-S050-R0027/MD-S003-R0002, explicit publication identity for backfill) rewrote ReplayBackfillService::execute so a date's publication comes only from the declared fixture directory and findCurrentPublicationForTradeDate is never consulted; it replaced that test (the NO_READABLE_PUBLICATION path of the backfill no longer exists) but the family-level spec was not updated"
+    },
+    "removed_test_obligation": {
+        "production_path": "ReplayBackfillService::execute (the operator backfill loop and its catch/continueOnError handling)",
+        "negative_condition": "a trading date whose publication cannot be resolved",
+        "expected_result": "the date is recorded as status ERROR with a reason code, all_passed is false, with continue_on_error = false the loop STOPS (later dates are not processed) and no replay verification or evidence export is performed for it",
+        "the_removed_test_was_mock_based": "collaborators (calendar, publications, replays, evidence) were Mockery mocks; the unit under test is the service's own control flow, so mocks of collaborators are the proof method, not a surrogate"
+    },
+    "replacement": {
+        "test": "ReplayBackfillServiceTest::test_execute_rejects_a_date_with_no_declared_publication_before_any_work",
+        "file": "tests/Unit/MarketData/ReplayBackfillServiceTest.php",
+        "semantic_equivalence": "same production path and the same negative obligation, with the cause updated to the current contract: two trading dates, no declared publication for the first, continue_on_error = false: asserts all_passed false, exactly ONE case (the second date is not processed, which would otherwise be a second ERROR), status ERROR, reason code REPLAY_BACKFILL_EXPLICIT_PUBLICATION_UNDECLARED, and shouldNotReceive on findCurrentPublicationForTradeDate, buildManifestByPublicationId, verifyRunAgainstFixture and exportReplayEvidence",
+        "why_not_by_name": "chosen from the reconstructed obligation (error recorded, loop stops, no downstream work), not from a similar name; the sibling tests (more than one declaration, id not found, trade date mismatch, unknown case, blocked replay) cover other refusals and do not assert the stop behaviour on a multi-date range",
+        "passes_on_unchanged_production": "ReplayBackfillServiceTest 8 tests / 24 assertions OK",
+        "sensitivity_probe": {
+            "mutation": "ReplayBackfillService::execute: the break after the ERROR case in the catch block (continue_on_error = false) was replaced by a comment",
+            "result": "RED for the intended reason: \"Failed asserting that actual size 2 matches expected size 1.\" (the second date was processed); control green before and after",
+            "restored_byte_identical": true,
+            "file": "app/Application/MarketData/Services/ReplayBackfillService.php",
+            "sha256_after_restore": "27c7e36a1b38369172dfe4fe804b5fd1367352f719fcfa2f9036b523e6551b1b",
+            "raw": "scratchpad probe output, summarised here; no new package"
+        },
+        "positive_reference": "unchanged: FullRangeCurrentEvidenceReplayServiceTest::test_execute_generates_current_publication_evidence_fixture_replay_and_summary"
+    },
+    "governed_correction": {
+        "file": "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofSpec.php",
+        "change": "one line: the negative method of family determinism_and_operations, ReplayBackfillServiceTest::test_execute_marks_error_and_stops_when_publication_is_missing_and_continue_is_false -> ReplayBackfillServiceTest::test_execute_rejects_a_date_with_no_declared_publication_before_any_work",
+        "file_sha256_after": "9226c5a6d95cabaf2b526fb33be31155794e40ea4bcbabb91e782ac4707f3e4b",
+        "not_changed": [
+            "application code (the probe restored its mutation byte-identically)",
+            "the requirement (a negative proof of the same strength is still required)",
+            "any other family mapping",
+            "the proof basis (all 113 bases)",
+            "the traceability matrix (its notes keep the historical MD-B18-A001 text that cites the removed test)",
+            "historical evidence that cited the removed test (E-MD-B18-A002-115 and the matrix notes) is preserved"
+        ]
+    },
+    "binder_validate_only_after": {
+        "status": "PASS",
+        "predicates_with_reviewed_basis": 113,
+        "predicates_without_reviewed_basis": [],
+        "errors": [],
+        "binder_applied": false
+    },
+    "state_unchanged": {
+        "reviewed_bases": "113/113 PROVEN",
+        "MD-S003-R0025": "PROVEN",
+        "formal_satisfied": "0/113",
+        "candidate_v5": "owner-approved (D-MD-B18-A002-019) and admitted (E-MD-B18-A002-115), untouched",
+        "build": "no app/config/bootstrap/vendor/composer file changed (build recomputed)",
+        "b18_closed": false
+    },
+    "what_was_not_done": [
+        "atomic binder not applied",
+        "B18 not closed",
+        "no application code change",
+        "no full suite (only proof metadata changed; the affected test file and the governance gates were run)",
+        "no commit or push"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-016"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-115"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-019"
+    ],
+    "next_resume_point": "MD-B18-A002: atomic binder apply (MarketDataReplayVerificationProofBinder --evidence-id=<new evidence> --apply after --validate-only) and final B18 closure with final validation. Do not change app/, config/, bootstrap/, vendor or composer files.",
+    "no_commit_or_push": 1
+}

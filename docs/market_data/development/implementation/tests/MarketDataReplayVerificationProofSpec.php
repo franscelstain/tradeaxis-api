@@ -307,7 +307,7 @@ final class MarketDataReplayVerificationProofSpec
                     'app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php',
                 ],
                 'positive' => ['tests/Unit/MarketData/FullRangeCurrentEvidenceReplayServiceTest.php', 'test_execute_generates_current_publication_evidence_fixture_replay_and_summary'],
-                'negative' => ['tests/Unit/MarketData/ReplayBackfillServiceTest.php', 'test_execute_marks_error_and_stops_when_publication_is_missing_and_continue_is_false'],
+                'negative' => ['tests/Unit/MarketData/ReplayBackfillServiceTest.php', 'test_execute_rejects_a_date_with_no_declared_publication_before_any_work'],
             ],
         ];
     }

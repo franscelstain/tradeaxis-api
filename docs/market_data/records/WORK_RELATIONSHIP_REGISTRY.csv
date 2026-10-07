@@ -1726,3 +1726,8 @@ MD-REL-1725,E-MD-B18-A002-115,D-MD-B18-A002-016,RELATED,"Candidate-v4 approval: 
 MD-REL-1726,E-MD-B18-A002-115,F-MD-B18-A002-017,RELATED,Owns the R0025 basis.,D-MD-B18-A002-019,2026-10-08T00:14:49+07:00,MD-B18-A002 candidate-v5 admission and promotion.
 MD-REL-1727,D-MD-B18-A002-019,E-MD-B18-A002-115,RELATED,Admitted by.,D-MD-B18-A002-019,2026-10-08T00:14:49+07:00,MD-B18-A002 candidate-v5 admission and promotion.
 MD-REL-1728,CI-MD-B18-A002-001,E-MD-B18-A002-115,RELATED,Admission and promotion recorded under the impact declaration.,D-MD-B18-A002-019,2026-10-08T00:14:49+07:00,MD-B18-A002 candidate-v5 admission and promotion.
+MD-REL-1729,E-MD-B18-A002-116,E-MD-B18-A002-115,DEPENDS_ON,Starts from 113/113 and the admitted candidate-v5; corrects the pre-binder blocker reported there.,D-MD-B18-A002-019,2026-10-08T00:26:23+07:00,MD-B18-A002 pre-binder correction.
+MD-REL-1730,E-MD-B18-A002-116,D-MD-B18-A002-019,RELATED,Candidate-v5 approval unchanged.,D-MD-B18-A002-019,2026-10-08T00:26:23+07:00,MD-B18-A002 pre-binder correction.
+MD-REL-1731,E-MD-B18-A002-116,F-MD-B18-A002-016,RELATED,Finding whose backfill change removed the referenced test.,D-MD-B18-A002-019,2026-10-08T00:26:23+07:00,MD-B18-A002 pre-binder correction.
+MD-REL-1732,E-MD-B18-A002-115,E-MD-B18-A002-116,RELATED,Pre-binder blocker corrected by.,D-MD-B18-A002-019,2026-10-08T00:26:23+07:00,MD-B18-A002 pre-binder correction.
+MD-REL-1733,CI-MD-B18-A002-001,E-MD-B18-A002-116,RELATED,Correction recorded under the impact declaration.,D-MD-B18-A002-019,2026-10-08T00:26:23+07:00,MD-B18-A002 pre-binder correction.
