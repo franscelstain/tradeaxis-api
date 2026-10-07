@@ -62,6 +62,72 @@ class ConfigFoundationProofGateTest extends TestCase
         $this->assertStringContainsString('does not exist', implode(' ', $errors));
     }
 
+    public function test_the_two_rebound_predicates_are_bound_to_the_a003_evidence_and_the_others_to_a002(): void
+    {
+        foreach ($this->rows() as $row) {
+            if ($row['primary_stage'] !== 'MD-B04' || $row['coverage_requirement'] !== 'REQUIRED') {
+                continue;
+            }
+            $expected = in_array($row['rule_id'], ['MD-S082-R0036', 'MD-S082-R0044'], true) ? 'E-MD-B04-A003-002' : 'E-MD-B04-A002-001';
+            $this->assertSame($expected, $row['current_evidence_ids'], $row['rule_id']);
+            $this->assertSame($expected, MarketDataConfigFoundationProofGate::expectedEvidence($row['rule_id']));
+        }
+    }
+
+    public function test_a_rebound_predicate_bound_back_to_the_superseded_a002_proof_is_refused(): void
+    {
+        $rows = $this->rows();
+        $index = $this->indexOf($rows, 'MD-S082-R0036');
+        $rows[$index]['current_evidence_ids'] = 'E-MD-B04-A002-001';
+
+        $errors = MarketDataConfigFoundationProofGate::validate($rows, $this->root())['errors'];
+        $this->assertNotEmpty(array_filter($errors, static fn ($error) => strpos($error, 'MD-S082-R0036: current proof binding is not exact') !== false));
+    }
+
+    public function test_an_unaffected_predicate_bound_to_the_a003_evidence_is_refused(): void
+    {
+        $rows = $this->rows();
+        $index = $this->indexOf($rows, 'MD-S082-R0006');
+        $rows[$index]['current_evidence_ids'] = 'E-MD-B04-A003-002';
+
+        $errors = MarketDataConfigFoundationProofGate::validate($rows, $this->root())['errors'];
+        $this->assertNotEmpty(array_filter($errors, static fn ($error) => strpos($error, 'MD-S082-R0006: current proof binding is not exact') !== false));
+    }
+
+    public function test_a_rebound_predicate_without_its_a003_proof_note_is_refused(): void
+    {
+        $rows = $this->rows();
+        $index = $this->indexOf($rows, 'MD-S082-R0044');
+        $rows[$index]['notes'] = str_replace('MD-B04-A003: proof_binding=', 'MD-B04-A003: other=', $rows[$index]['notes']);
+
+        $errors = MarketDataConfigFoundationProofGate::validate($rows, $this->root())['errors'];
+        $this->assertNotEmpty(array_filter($errors, static fn ($error) => strpos($error, 'MD-S082-R0044: the A003 proof-binding note is missing') !== false));
+    }
+
+    public function test_the_proof_of_the_reason_registry_rules_must_run_every_reason_registry_member_test(): void
+    {
+        foreach (['MD-S082-R0036', 'MD-S082-R0044'] as $rule) {
+            foreach (MarketDataConfigFoundationProofGate::SUCCESSOR_MEMBER_METHODS as $method) {
+                $map = MarketDataConfigFoundationProofGate::proofMap();
+                $map[$rule]['methods'] = array_values(array_filter($map[$rule]['methods'], static fn ($m) => $m[1] !== $method));
+
+                $errors = MarketDataConfigFoundationProofGate::validate($this->rows(), $this->root(), $map)['errors'];
+                $this->assertContains($rule.': the proof does not run the reason-registry member test '.$method, $errors, $rule.' without '.$method);
+            }
+        }
+    }
+
+    public function test_the_generic_configuration_guard_pair_alone_is_not_a_proof_of_the_reason_registry_rules(): void
+    {
+        $map = MarketDataConfigFoundationProofGate::proofMap();
+        foreach (['MD-S082-R0036', 'MD-S082-R0044'] as $rule) {
+            $map[$rule]['methods'] = array_values(array_filter($map[$rule]['methods'], static fn ($m) => $m[0] !== MarketDataConfigFoundationProofGate::SUCCESSOR_MEMBER_TEST));
+        }
+
+        $errors = MarketDataConfigFoundationProofGate::validate($this->rows(), $this->root(), $map)['errors'];
+        $this->assertNotEmpty(array_filter($errors, static fn ($error) => strpos($error, 'does not run the reason-registry member test') !== false));
+    }
+
     private function indexOf(array $rows, string $ruleId): int
     {
         foreach ($rows as $index => $row) {

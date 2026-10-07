@@ -5429,33 +5429,35 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame($legitimateHash, DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->value('bound_input_context_hash'));
     }
 
-    public function test_binding_rejects_an_incomplete_capture_manifest(): void
+    /**
+     * An empty reason registry used to be caught late, as an incomplete producer-input manifest at the HASH stage
+     * (registry_versions.reason_registry.entries; the whole-C1 gap E032/E033 found). Since MD-B04-A003 (D-MD-B18-A002-018,
+     * Q9 = A1) the registry's semantic identity is a derived member of every new configuration snapshot, so the same defect
+     * is refused earlier: no run can be bound to a snapshot, and therefore no publication or lineage binding is created.
+     * The manifest clause in ProducerInputCompletionManifest stays as defence in depth; this test pins the stricter,
+     * earlier refusal and that nothing is left half-bound.
+     */
+    public function test_an_empty_reason_registry_stops_the_pipeline_before_any_publication_is_bound(): void
     {
         $this->seedTicker(1, 'BBCA');
-        // Deliberately emptying eod_reason_codes (normally seeded canonically by the shared SQLite
-        // trait, matching real MariaDB) reproduces the one real, pre-existing whole-C1 gap
-        // E032/E033 found (registry_versions.reason_registry.entries) as an incomplete-manifest
-        // fixture for Binding, rather than inventing an artificial one.
-        DB::table('eod_reason_codes')->delete();
+        // The registry is emptied only after the fixture-authored history exists: that history is created while the
+        // registry is readable, as it would have been in production.
         $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        DB::table('eod_reason_codes')->delete();
         $this->writeBarsFixture('2026-03-20', [[
             'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20', 'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124, 'volume' => 2000,
             'captured_at' => '2026-03-20T17:20:00+07:00',
         ]]);
         $pipeline = $this->makePipelineWithAncillaryEngaged();
 
-        // Binding V2 is now wired directly into completeHash (MarketDataPipelineService::completeHash),
-        // on the same lifecycle as V1's governance binding, so an incomplete manifest must fail the
-        // pipeline itself closed at the HASH stage, not merely a manual post-hoc bind() call.
         try {
             $this->runPipelineThroughHashUnsealed($pipeline, '2026-03-20');
-            $this->fail('Pipeline HASH stage completed despite an incomplete producer-input capture manifest.');
+            $this->fail('The pipeline completed its HASH stage although the reason registry has no derivable identity.');
         } catch (RuntimeException $e) {
-            $this->assertStringContainsString('INPUT_CAPTURE_BINDING_MANIFEST_INCOMPLETE', $e->getMessage());
+            $this->assertStringContainsString('CONFIG_SNAPSHOT_REASON_REGISTRY_IDENTITY_UNDERIVABLE', $e->getMessage());
         }
-        $runRow = DB::table('eod_runs')->where('trade_date_requested', '2026-03-20')->orderByDesc('run_id')->first();
-        $publication = DB::table('eod_publications')->where('run_id', $runRow->run_id)->first();
-        $this->assertNull(DB::table('md_publication_lineage_bindings')->where('publication_id', $publication->publication_id)->value('bound_input_context_hash'));
+        $this->assertNull(DB::table('eod_runs')->where('trade_date_requested', '2026-03-20')->first(), 'no run was bound to a snapshot that cannot carry the identity');
+        $this->assertSame(0, DB::table('eod_publications')->where('trade_date', '2026-03-20')->count());
     }
 
     public function test_binding_detects_a_compatibility_hash_inconsistent_with_the_captured_population(): void

@@ -259,16 +259,18 @@ class B18AsKnownModeIsolationTest extends TestCase
             'severity' => 'INFO', 'is_active' => 1,
         ]);
 
-        $this->verifyAsKnown();
-        $metric = $this->storedMetric();
-
-        $this->assertSame('BLOCKED', (string) $metric->replay_status,
-            'richer current registry content must not make a historical as-known replay admissible');
-        $this->assertSame(
-            AsKnownReplaySnapshotService::REASON_REGISTRY_IDENTITY_UNAVAILABLE,
-            (string) $metric->reason_registry_hash,
-            'no current-table lookup may fill the historical identity in'
-        );
+        // Since MD-B04-A003 (D-MD-B18-A002-018) the registry's semantic identity is a member of the configuration
+        // snapshot, so a later registry change makes the live configuration differ from the historical snapshot the
+        // as-known run is bound to. The producers refuse to run (INPUT_CAPTURE_LIVE_CONFIG_DIVERGENCE) instead of
+        // reaching the comparison: stricter than BLOCKED, and still never admissible.
+        $before = DB::table('md_replay_daily_metrics')->count();
+        try {
+            $this->verifyAsKnown();
+            $this->fail('richer current registry content must not let a historical as-known replay run to a verdict');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('INPUT_CAPTURE_LIVE_CONFIG_DIVERGENCE', $e->getMessage());
+        }
+        $this->assertSame($before, DB::table('md_replay_daily_metrics')->count(), 'no admissible or any other result was stored');
     }
 
     /**

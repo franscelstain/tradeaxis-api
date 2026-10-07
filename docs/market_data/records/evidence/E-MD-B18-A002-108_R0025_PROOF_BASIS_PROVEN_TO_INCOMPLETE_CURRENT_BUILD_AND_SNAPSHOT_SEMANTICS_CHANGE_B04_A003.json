@@ -1,0 +1,81 @@
+{
+    "evidence_id": "E-MD-B18-A002-108",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-07T10:21:13+07:00",
+    "evidence_type": "PROOF_BASIS_LIFECYCLE_TRANSITION",
+    "verdict": "MD_S003_R0025_PROOF_BASIS_PROVEN_TO_INCOMPLETE_CURRENT_BUILD_AND_SNAPSHOT_SEMANTICS_CHANGE_READINESS_101_TO_100_OF_113",
+    "issued_before": "the first MD-B04-A003 implementation mutation (the application tree has no diff against HEAD when this record is issued; checked by the issuing script)",
+    "trigger": {
+        "stage_attempt": "MD-B04-A003 (MD-DEP-0023)",
+        "decision": "D-MD-B18-A002-018 (Q9 = A1)",
+        "classification": "E-MD-B18-A002-107 (R0025 = B: historically valid, candidate-v5 required)",
+        "change": "the configuration snapshot content gains a derived reason-registry member, which changes the executable build and the config content hash"
+    },
+    "reason": "current-build/configuration semantics changed; candidate-v5 is required later",
+    "transition": {
+        "predicate": "MD-S003-R0025",
+        "from": "PROVEN (E-MD-B18-A002-105)",
+        "to": "INCOMPLETE",
+        "mechanism": "MarketDataReplayVerificationProofBasis: the PROVEN entry removed and an INCOMPLETE entry carrying the same positive/negative guards and an explicit basis inserted (the E-MD-B18-A002-103 mechanism)",
+        "removed_proven_block_sha256": "a845446f63c2f9b415b70389d85e7b35c7d2725a8eb2a95f355d67a9fd6f635d",
+        "retained_guards": {
+            "positive": "B18ReleaseCandidateAcceptanceAggregateTest::test_md_s003_r0025_executes_all_scenario_family_members_on_mariadb_and_the_mirror_and_is_green",
+            "negative": "B18ReleaseCandidateAcceptanceAggregateTest::test_md_s003_r0025_turns_red_when_any_scenario_family_member_fails"
+        }
+    },
+    "readiness": {
+        "before": "101/113 (predicates_with_reviewed_basis 101, without 12)",
+        "after": "100/113 (predicates_with_reviewed_basis 100, without 13)",
+        "computed_by": "MarketDataReplayVerificationProofReadinessGate",
+        "formal_satisfied": "0/113 (unchanged)",
+        "matrix_verdict_R0025": "NOT_ASSESSED (unchanged)"
+    },
+    "historical_evidence_preserved_unedited": [
+        "candidate-v4 package and fingerprint d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00",
+        "E-MD-B18-A002-100",
+        "D-MD-B18-A002-016",
+        "E-MD-B18-A002-101",
+        "E-MD-B18-A002-104",
+        "E-MD-B18-A002-105",
+        "E-MD-B18-A002-107"
+    ],
+    "expected_consequence": "After the first MD-B04-A003 app/snapshot mutation, the nine R0025 fixture tests and the R0025 aggregate member are red by design (build identity and config hash); each is classified in the A003 regression record and not repaired here. Candidate-v5 is a later B18 work unit.",
+    "what_was_not_done": [
+        "no candidate-v5",
+        "no edit of candidate-v4, E100, D016, E101, E104, E105",
+        "no formal SATISFIED row changed",
+        "no B18 binding implemented",
+        "no application change at issue time",
+        "no commit or push"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-017",
+        "F-MD-B18-A002-034"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-105",
+        "E-MD-B18-A002-107",
+        "E-MD-B18-A002-101",
+        "E-MD-B18-A002-100",
+        "E-MD-B04-A003-001",
+        "CI-MD-B04-A003-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-018",
+        "D-MD-B18-A002-016"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0023"
+    ],
+    "next_resume_point": "MD-B04-A003: implement the derived reason-registry snapshot member under CI-MD-B04-A003-001.",
+    "no_commit_or_push": 1
+}

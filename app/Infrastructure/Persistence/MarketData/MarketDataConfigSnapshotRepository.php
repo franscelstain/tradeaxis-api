@@ -2,6 +2,7 @@
 
 namespace App\Infrastructure\Persistence\MarketData;
 
+use App\Application\MarketData\Services\ReplayV2IdentityProjection;
 use App\Domain\MarketData\MarketDataSemanticBindings;
 use App\Domain\MarketData\MarketDataScope;
 use App\Infrastructure\MarketData\Config\PlatformConfigRegistry;
@@ -144,9 +145,50 @@ class MarketDataConfigSnapshotRepository
         $json = json_encode($this->canonicalize([
             'resolved_config' => $this->redact($config),
             'semantic_bindings' => MarketDataSemanticBindings::snapshot(),
+            'reason_registry' => $this->reasonRegistryMember(),
         ]), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
         if ($json === false) throw new \RuntimeException('CONFIG_SNAPSHOT_SERIALIZATION_FAILED');
         return $json;
+    }
+
+    /**
+     * The reason registry's semantic identity, derived from its content at the moment a snapshot is
+     * issued or checked (D-MD-B18-A002-018, Q9 = A1; derivation D-MD-B18-A002-014, Q4 = A).
+     *
+     * It is a member of the canonical snapshot content and therefore of the content hash: a change
+     * to the registry's meaning moves the hash, so a snapshot is reused only when the registry still
+     * means what it meant. The derivation is ReplayV2IdentityProjection::reasonRegistryIdentity, the
+     * single authority for it; row ids, timestamps and allocation order are not read.
+     *
+     * An empty, unreadable or malformed registry has no identity. Nothing stands in for it: a
+     * placeholder in a hashed member would make two different unknowns look equal and would let a
+     * snapshot that cannot answer "which reason registry" pass as one that can. Snapshots issued
+     * before this member existed are never rewritten; they simply do not carry it.
+     */
+    private function reasonRegistryMember(): array
+    {
+        try {
+            $rows = DB::table('eod_reason_codes')->orderBy('code')->get()->all();
+        } catch (\Throwable $e) {
+            throw new \RuntimeException('CONFIG_SNAPSHOT_REASON_REGISTRY_UNREADABLE: eod_reason_codes cannot be read, so no snapshot can carry its identity.', 0, $e);
+        }
+
+        $entries = array_map(static function ($row) {
+            return [
+                'code' => $row->code === null ? null : (string) $row->code,
+                'category' => $row->category === null ? null : (string) $row->category,
+                'description' => $row->description === null ? null : (string) $row->description,
+                'severity' => $row->severity === null ? null : (string) $row->severity,
+                'is_active' => $row->is_active === null ? null : (bool) $row->is_active,
+            ];
+        }, $rows);
+
+        $identity = ReplayV2IdentityProjection::reasonRegistryIdentity(['reason_entries' => $entries]);
+        if ($identity === null) {
+            throw new \RuntimeException('CONFIG_SNAPSHOT_REASON_REGISTRY_IDENTITY_UNDERIVABLE: the reason registry is empty or malformed ('.count($entries).' entries), so no snapshot can carry its identity.');
+        }
+
+        return ['identity_contract' => ReplayV2IdentityProjection::REASON_SCHEMA, 'semantic_identity' => $identity];
     }
 
     private function redact($value, $key = '')

@@ -1,0 +1,168 @@
+{
+    "evidence_id": "E-MD-B04-A003-003",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B04",
+    "attempt_id": "MD-B04-A003",
+    "work_id": "MD-B04-A003",
+    "baseline_id": "MD-B04-A003-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "change_impact_declaration": "CI-MD-B04-A003-001",
+    "decision_id": "D-MD-B18-A002-018",
+    "issued_at": "2026-10-07T16:37:11+07:00",
+    "evidence_type": "SUCCESSOR_BINDING_REGRESSION_AND_CLOSURE_BASIS",
+    "verdict": "TWO_PREDICATES_PROMOTED_THROUGH_THE_GOVERNED_SUCCESSOR_BINDER_B04_CLOSED_114_OF_114_UNDER_A003",
+    "checkpoint_verdict": "MD-B04-A003 REMEDIATION COMPLETE",
+    "historical_versus_current": "MD-B04-A002 (SC-MD-B04-A002-001) closed 114/114 and is not rewritten. This closure is the current result under MD-STRATEGY-FREEZE-20261005-001: the two predicates demoted at entry by owner decision D-MD-B18-A002-018 are re-proven (E-MD-B04-A003-002) and bound; 112 keep the A002 binding, eight of them re-confirmed with the member present.",
+    "promotion": {
+        "mechanism": "MarketDataConfigFoundationSuccessorBinding.php (validate-only first, then one --apply)",
+        "changed_rules": [
+            "MD-S082-R0036",
+            "MD-S082-R0044"
+        ],
+        "only_fields": [
+            "coverage_status",
+            "current_evidence_ids",
+            "notes"
+        ],
+        "matrix_lines_changed": 2
+    },
+    "final_matrix_state": {
+        "denominator": 114,
+        "satisfied": 114,
+        "bound_to": {
+            "E-MD-B04-A002-001": 112,
+            "E-MD-B04-A003-002": 2
+        },
+        "not_assessed": 0
+    },
+    "tooling": {
+        "MarketDataConfigFoundationProofGate": "per-rule expected evidence; the proof of the two rebound rules must run all 14 reason-registry member tests; the A003 evidence record is validated",
+        "successor_binder": "MarketDataConfigFoundationSuccessorBinding with fail-closed preconditions (entry state, A002 binding of the other 112, 114 denominator, evidence record)",
+        "tests": [
+            "ConfigFoundationProofGateTest 10 tests",
+            "ConfigFoundationSuccessorBindingTest 7 tests",
+            "ConfigFoundationTraceabilityGateTest 4 tests"
+        ]
+    },
+    "fixture_correction": "MarketDataPipelineIntegrationTest::test_binding_rejects_an_incomplete_capture_manifest emptied eod_reason_codes before creating run history; the defect it modelled is now refused earlier, at snapshot creation (D-MD-B18-A002-018). Classified A (test/fixture conformance gap); renamed to test_an_empty_reason_registry_stops_the_pipeline_before_any_publication_is_bound and re-pointed at the earlier refusal; production refusal not weakened, no placeholder. Recorded in E-MD-B04-A003-002.",
+    "b10_impact_final_classification": "E-MD-B18-A002-107 NO_IMPACT remains valid. 24 B10 covering files re-run on the final tree: all green except the known ProductionCorpusInvariantOracleTest empty-corpus failures (7, MD-DEP-0015/0016) and the exact-publication member of B18ScenarioFamiliesOnMariaDbTest (REPLAY_CONFIG_IDENTITY_MISMATCH against candidate-v4, the expected R0025 current-build consequence). No B10 predicate, producer or golden changed; none reclassified.",
+    "regression": {
+        "full_marketdata_suite_on_the_final_tree": {
+            "tests": 2875,
+            "assertions": 41075,
+            "failures": 26
+        },
+        "corrected_after_the_run_and_rerun_green": {
+            "B18AsKnownModeIsolationTest::test_mutating_the_current_reason_registry_does_not_make_as_known_admissible": "red in the run: a later registry change makes the live configuration differ from the historical snapshot the as-known run is bound to, so the producers refuse with INPUT_CAPTURE_LIVE_CONFIG_DIVERGENCE (the existing run-bound refusal) before reaching a verdict; this is the intended A1 consequence and is stricter than the BLOCKED the test expected. Conformance edit of the B18 test to assert the refusal and that no result is stored; production behaviour unchanged; file re-run 16/16 green. Consequence recorded for MD-B18-A002: an as-known run executes only while the live registry content equals that of its snapshot, as already true for every other configuration change.",
+            "GovernanceGateReadOnlyExecutionTest (2 tests)": "red in the run: the new successor-binder tooling file was not yet registered in the three document registries (ONE_DOCUMENT_ONE_ROLE, DOCUMENT_ID_REGISTRY_INTEGRITY, CURRENT_VERIFICATION_REBASELINE); registered as MD-DOC-01315; re-run green after registration"
+        },
+        "failure_classes": {
+            "B18AsKnownModeIsolationTest": 1,
+            "B18ReleaseCandidateAcceptanceAggregateTest": 1,
+            "B18ScenarioFamiliesOnMariaDbTest": 1,
+            "B18ScenarioFamiliesOnMirrorTest": 1,
+            "GovernanceGateReadOnlyExecutionTest": 2,
+            "ProductionCorpusInvariantOracleTest": 7,
+            "R0025SyntheticV2CandidateFixtureTest": 13
+        },
+        "failing_tests": {
+            "B18AsKnownModeIsolationTest": [
+                "test_mutating_the_current_reason_registry_does_not_make_as_known_admissible"
+            ],
+            "B18ReleaseCandidateAcceptanceAggregateTest": [
+                "test_md_s003_r0025_executes_all_scenario_family_members_on_mariadb_and_the_mirror_and_is_green"
+            ],
+            "B18ScenarioFamiliesOnMariaDbTest": [
+                "test_exact_publication_verification_family_on_mariadb"
+            ],
+            "B18ScenarioFamiliesOnMirrorTest": [
+                "test_exact_publication_verification_family_on_the_mirror"
+            ],
+            "GovernanceGateReadOnlyExecutionTest": [
+                "test_gate_execution_preserves_every_document with data set \"documentation pass\"",
+                "test_governance_self_test_remains_fail_closed_without_changing_documents"
+            ],
+            "ProductionCorpusInvariantOracleTest": [
+                "test_no_canonical_bar_carries_a_non_positive_price",
+                "test_no_canonical_bar_violates_ohlc_ordering",
+                "test_exactly_one_publication_is_current_per_trade_date",
+                "test_no_readable_publication_rests_on_a_failed_run",
+                "test_authoritative_factor_candidates_reach_an_explicit_applied_or_held_decision",
+                "test_no_price_derived_factor_is_usable_as_an_adjustment",
+                "test_every_history_row_binds_to_a_publication"
+            ],
+            "R0025SyntheticV2CandidateFixtureTest": [
+                "test_candidate_matches_the_actual_publication_but_is_not_admitted_as_proof",
+                "test_the_admission_mechanism_admits_only_the_exact_fingerprint_and_refuses_any_damaged_package",
+                "test_two_allocation_layouts_give_identical_semantic_identities_and_the_oracle_literals",
+                "test_a_wrong_literal_in_any_one_bound_input_is_the_only_mismatch_it_causes",
+                "test_each_semantic_member_of_the_event_factor_identity_moves_it",
+                "test_each_semantic_bound_input_equals_its_own_literal_on_the_real_path",
+                "test_the_publication_bound_build_identity_is_the_frozen_build_identity",
+                "test_an_independent_package_with_any_other_assertion_layer_is_blocked_even_with_an_approval_supplied",
+                "test_the_actual_publication_manifest_hash_equals_the_independent_literal_and_is_stable_across_layouts",
+                "test_a_wrong_publication_manifest_literal_is_the_only_mismatch_it_causes",
+                "test_the_real_target_emits_the_corrected_freshness_and_equals_the_independent_expectation",
+                "test_a_target_with_the_wrong_freshness_state_gives_field_specific_mismatches_and_no_build_noise",
+                "test_the_actual_eligibility_and_manifest_hashes_follow_the_governed_freshness_binding"
+            ]
+        },
+        "raw_package": {
+            "path": "storage/app/market_data/evidence/MD-B04-A003/reason-registry-snapshot-member-20261007-v1",
+            "manifest_proof_sha256": "cb57b18574d92057d817a63cbb72f11a2d5ae1c8ce3c16aab10ab9d0a6051d79",
+            "manifest_regression_sha256": "d685169c21b2228a2a3f4493f93bd1bdc57bd8f3ba624f910da97214782c31a0"
+        }
+    },
+    "r0025_b18_state": {
+        "MD-S003-R0025": "proof basis INCOMPLETE (E-MD-B18-A002-108); candidate-v4 and E100/D016/E101/E104/E105 immutable history; candidate-v5 required later",
+        "readiness": "100/113",
+        "without_reviewed_basis": [
+            "MD-S003-R0011",
+            "MD-S003-R0014",
+            "MD-S003-R0025",
+            "MD-S019-R0071",
+            "MD-S041-R0032",
+            "MD-S050-R0005",
+            "MD-S050-R0014",
+            "MD-S050-R0022",
+            "MD-S050-R0023",
+            "MD-S050-R0025",
+            "MD-S050-R0028",
+            "MD-S050-R0029",
+            "MD-S055-R0025"
+        ],
+        "formal_satisfied": "0/113"
+    },
+    "b17": "untouched (244/257); no MD-B17-A003",
+    "what_was_not_done": [
+        "no B18 binding implemented (MD-S050-R0005, MD-S050-R0014, MD-S019-R0071)",
+        "no candidate-v5",
+        "no historical snapshot modified or back-filled",
+        "no commit or push"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-034"
+    ],
+    "related_evidence": [
+        "E-MD-B04-A003-002",
+        "E-MD-B04-A003-001",
+        "E-MD-B18-A002-108",
+        "E-MD-B18-A002-107",
+        "E-MD-B04-A002-001",
+        "SC-MD-B04-A002-001",
+        "CI-MD-B04-A003-001",
+        "MD-B04-A003-BL001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-018",
+        "D-MD-B18-A002-014"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0023"
+    ],
+    "next_resume_point": "MD-B18-A002: reason-registry binding and proof for MD-S050-R0005, MD-S050-R0014 and MD-S019-R0071 against the derived snapshot member; candidate-v5 last.",
+    "no_commit_or_push": 1
+}

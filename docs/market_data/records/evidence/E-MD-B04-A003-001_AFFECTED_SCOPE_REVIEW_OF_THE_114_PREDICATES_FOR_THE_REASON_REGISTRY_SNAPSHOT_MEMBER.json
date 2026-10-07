@@ -1,0 +1,901 @@
+{
+    "evidence_id": "E-MD-B04-A003-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B04",
+    "attempt_id": "MD-B04-A003",
+    "work_id": "MD-B04-A003",
+    "baseline_id": "MD-B04-A003-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "change_impact_declaration": "CI-MD-B04-A003-001",
+    "issued_at": "2026-10-07T10:17:55+07:00",
+    "evidence_type": "AFFECTED_SCOPE_REVIEW_AT_ATTEMPT_ENTRY",
+    "verdict": "TWO_PREDICATES_AFFECTED_EIGHT_RECONFIRM_104_UNAFFECTED_NO_RUNTIME_MUTATION_YET",
+    "verdict_counts": {
+        "UNAFFECTED": 104,
+        "RECONFIRM_RERUN_WITH_MEMBER": 8,
+        "AFFECTED_REMEDIATE_REPROVE": 2
+    },
+    "historical_versus_current": "The recorded B04 result stays true of what it claimed: MD-B04-A002 closure SC-MD-B04-A002-001 (114/114) under its strategy freeze. The two predicates are not claimed to have failed originally; the rule text is unchanged. Owner decision D-MD-B18-A002-018 fixes how the existing rule is realised (derived snapshot member), which creates a current conformance obligation that the recorded generic guard pair does not cover. They are NOT_ASSESSED until revalidated.",
+    "affected_current_predicates": [
+        "MD-S082-R0036",
+        "MD-S082-R0044"
+    ],
+    "reconfirm_predicates": [
+        "MD-S082-R0006",
+        "MD-S082-R0007",
+        "MD-S082-R0009",
+        "MD-S082-R0011",
+        "MD-S082-R0214",
+        "MD-S082-R0220",
+        "MD-S082-R0221",
+        "MD-S082-R0223"
+    ],
+    "review_method": {
+        "mandatory_denominator": 114,
+        "method": "Every one of the 114 active mandatory B04 predicates was classified. (1) Text and section scan for snapshot, hash, canonical, registry, reason, serialization, version and identity; every hit was reviewed by hand with a recorded basis. (2) Two predicates name the reason-registry version directly and are demoted. (3) Eight predicates define the snapshot content, its canonical serialization, its hash and its binding; their proofs run through the changed producer and are re-run with the member present, not demoted. (4) The remaining predicates keep their binding with the basis recorded per row; the impact-driven regression of the attempt (full MarketData suite, 21 B10 covering files) is the check on that claim. A predicate claimed unaffected that fails there is new impact evidence."
+    },
+    "implementation_impact_trace": [
+        {
+            "surface": "App\\Infrastructure\\Persistence\\MarketData\\MarketDataConfigSnapshotRepository",
+            "fact": "currentContent() returns canonical JSON of resolved_config and semantic_bindings only; config_hash = sha256(json); resolveForRun reuses a snapshot only on hash match, so adding the member moves the hash of every future snapshot"
+        },
+        {
+            "surface": "App\\Application\\MarketData\\Services\\ReplayV2IdentityProjection",
+            "fact": "reasonRegistryIdentity() derives the identity from sorted semantic entries and returns null for empty, malformed or duplicate registries; it is the single authority for the derivation (D-MD-B18-A002-014 Q4 = A)"
+        },
+        {
+            "surface": "App\\Infrastructure\\Persistence\\MarketData\\RunInputCaptureRepository",
+            "fact": "assertConsumedConfiguration throws INPUT_CAPTURE_LIVE_CONFIG_DIVERGENCE when the live content differs from a run's stored content: a run bound to a pre-change snapshot is refused, not switched"
+        },
+        {
+            "surface": "App\\Application\\MarketData\\Services\\AsKnownReplaySnapshotService",
+            "fact": "still sets reason_registry_hash to the unavailable marker; as-known verification is MD-B18 work and is not touched here"
+        },
+        {
+            "surface": "MarketDataConfigFoundationProofGate / ProofBinder",
+            "fact": "hard-wired to E-MD-B04-A002-001 for all 114 rows; per-rule expected evidence and a successor binder are required to re-own two rows"
+        },
+        {
+            "surface": "MD-S003-R0025 candidate-v4",
+            "fact": "the frozen config bytes and config hash enter the candidate hashes and the frozen build; any app edit invalidates it"
+        }
+    ],
+    "planned_proof_members": [
+        "member present and derived from content, not ids",
+        "content change moves the member and the config hash; unchanged content reuses the snapshot",
+        "order and allocation independence",
+        "empty / malformed registry blocks creation, no placeholder",
+        "historical snapshot unmodified and not back-filled",
+        "run-bound refusal INPUT_CAPTURE_LIVE_CONFIG_DIVERGENCE preserved",
+        "mutation probes: member omitted, hash does not move, placeholder substituted, malformed accepted, historical back-filled"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-034"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-107",
+        "E-MD-B18-A002-106",
+        "E-MD-B04-A002-001",
+        "SC-MD-B04-A002-001",
+        "CI-MD-B04-A003-001",
+        "MD-B04-A003-BL001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-018",
+        "D-MD-B18-A002-014"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0023"
+    ],
+    "predicate_review": [
+        {
+            "rule_id": "MD-S005-R0009",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "canonical serialization format of artifact hashes (algorithm, encoding, delimiters, null/boolean tokens); the new member is serialized by the existing canonical JSON encoder and changes no serialization rule"
+        },
+        {
+            "rule_id": "MD-S005-R0010",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "canonical serialization format of artifact hashes (algorithm, encoding, delimiters, null/boolean tokens); the new member is serialized by the existing canonical JSON encoder and changes no serialization rule"
+        },
+        {
+            "rule_id": "MD-S005-R0011",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "canonical serialization format of artifact hashes (algorithm, encoding, delimiters, null/boolean tokens); the new member is serialized by the existing canonical JSON encoder and changes no serialization rule"
+        },
+        {
+            "rule_id": "MD-S005-R0012",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "canonical serialization format of artifact hashes (algorithm, encoding, delimiters, null/boolean tokens); the new member is serialized by the existing canonical JSON encoder and changes no serialization rule"
+        },
+        {
+            "rule_id": "MD-S005-R0013",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "canonical serialization format of artifact hashes (algorithm, encoding, delimiters, null/boolean tokens); the new member is serialized by the existing canonical JSON encoder and changes no serialization rule"
+        },
+        {
+            "rule_id": "MD-S005-R0014",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "canonical serialization format of artifact hashes (algorithm, encoding, delimiters, null/boolean tokens); the new member is serialized by the existing canonical JSON encoder and changes no serialization rule"
+        },
+        {
+            "rule_id": "MD-S005-R0015",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "canonical serialization format of artifact hashes (algorithm, encoding, delimiters, null/boolean tokens); the new member is serialized by the existing canonical JSON encoder and changes no serialization rule"
+        },
+        {
+            "rule_id": "MD-S005-R0016",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "canonical serialization format of artifact hashes (algorithm, encoding, delimiters, null/boolean tokens); the new member is serialized by the existing canonical JSON encoder and changes no serialization rule"
+        },
+        {
+            "rule_id": "MD-S005-R0017",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "canonical serialization format of artifact hashes (algorithm, encoding, delimiters, null/boolean tokens); the new member is serialized by the existing canonical JSON encoder and changes no serialization rule"
+        },
+        {
+            "rule_id": "MD-S005-R0018",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "canonical serialization format of artifact hashes (algorithm, encoding, delimiters, null/boolean tokens); the new member is serialized by the existing canonical JSON encoder and changes no serialization rule"
+        },
+        {
+            "rule_id": "MD-S005-R0020",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "canonical serialization format of artifact hashes (algorithm, encoding, delimiters, null/boolean tokens); the new member is serialized by the existing canonical JSON encoder and changes no serialization rule"
+        },
+        {
+            "rule_id": "MD-S019-R0076",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "formatting/serialization invariant of hash payloads and content hashes; unchanged in kind, covered by the regression"
+        },
+        {
+            "rule_id": "MD-S019-R0077",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "formatting/serialization invariant of hash payloads and content hashes; unchanged in kind, covered by the regression"
+        },
+        {
+            "rule_id": "MD-S019-R0078",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "formatting/serialization invariant of hash payloads and content hashes; unchanged in kind, covered by the regression"
+        },
+        {
+            "rule_id": "MD-S034-R0003",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "fixed number/date/hash formats of artifact fields; the member is a string identity of 64 lowercase hex characters produced by the existing projection and adds no numeric or date field"
+        },
+        {
+            "rule_id": "MD-S034-R0004",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "fixed number/date/hash formats of artifact fields; the member is a string identity of 64 lowercase hex characters produced by the existing projection and adds no numeric or date field"
+        },
+        {
+            "rule_id": "MD-S034-R0005",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "fixed number/date/hash formats of artifact fields; the member is a string identity of 64 lowercase hex characters produced by the existing projection and adds no numeric or date field"
+        },
+        {
+            "rule_id": "MD-S034-R0006",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "fixed number/date/hash formats of artifact fields; the member is a string identity of 64 lowercase hex characters produced by the existing projection and adds no numeric or date field"
+        },
+        {
+            "rule_id": "MD-S034-R0007",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "fixed number/date/hash formats of artifact fields; the member is a string identity of 64 lowercase hex characters produced by the existing projection and adds no numeric or date field"
+        },
+        {
+            "rule_id": "MD-S034-R0008",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "fixed number/date/hash formats of artifact fields; the member is a string identity of 64 lowercase hex characters produced by the existing projection and adds no numeric or date field"
+        },
+        {
+            "rule_id": "MD-S034-R0009",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "fixed number/date/hash formats of artifact fields; the member is a string identity of 64 lowercase hex characters produced by the existing projection and adds no numeric or date field"
+        },
+        {
+            "rule_id": "MD-S034-R0010",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "fixed number/date/hash formats of artifact fields; the member is a string identity of 64 lowercase hex characters produced by the existing projection and adds no numeric or date field"
+        },
+        {
+            "rule_id": "MD-S034-R0011",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "fixed number/date/hash formats of artifact fields; the member is a string identity of 64 lowercase hex characters produced by the existing projection and adds no numeric or date field"
+        },
+        {
+            "rule_id": "MD-S034-R0012",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "fixed number/date/hash formats of artifact fields; the member is a string identity of 64 lowercase hex characters produced by the existing projection and adds no numeric or date field"
+        },
+        {
+            "rule_id": "MD-S034-R0013",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "fixed number/date/hash formats of artifact fields; the member is a string identity of 64 lowercase hex characters produced by the existing projection and adds no numeric or date field"
+        },
+        {
+            "rule_id": "MD-S034-R0014",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "fixed number/date/hash formats of artifact fields; the member is a string identity of 64 lowercase hex characters produced by the existing projection and adds no numeric or date field"
+        },
+        {
+            "rule_id": "MD-S034-R0015",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "fixed number/date/hash formats of artifact fields; the member is a string identity of 64 lowercase hex characters produced by the existing projection and adds no numeric or date field"
+        },
+        {
+            "rule_id": "MD-S034-R0016",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "fixed number/date/hash formats of artifact fields; the member is a string identity of 64 lowercase hex characters produced by the existing projection and adds no numeric or date field"
+        },
+        {
+            "rule_id": "MD-S034-R0021",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "fixed number/date/hash formats of artifact fields; the member is a string identity of 64 lowercase hex characters produced by the existing projection and adds no numeric or date field"
+        },
+        {
+            "rule_id": "MD-S034-R0023",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "fixed number/date/hash formats of artifact fields; the member is a string identity of 64 lowercase hex characters produced by the existing projection and adds no numeric or date field"
+        },
+        {
+            "rule_id": "MD-S065-R0001",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "configuration change protocol and its recording; the member is derived and the protocol is unchanged"
+        },
+        {
+            "rule_id": "MD-S065-R0002",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "configuration change protocol and its recording; the member is derived and the protocol is unchanged"
+        },
+        {
+            "rule_id": "MD-S065-R0005",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "configuration change protocol and its recording; the member is derived and the protocol is unchanged"
+        },
+        {
+            "rule_id": "MD-S082-R0001",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "every run and publication binds the exact resolved configuration; binding mechanism unchanged; the member only widens the bound content"
+        },
+        {
+            "rule_id": "MD-S082-R0002",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "this registry owns configuration identity and snapshot semantics; statement of ownership, unchanged"
+        },
+        {
+            "rule_id": "MD-S082-R0004",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "stable config_snapshot_id; the snapshot uid is allocated as before and is not part of the derived identity"
+        },
+        {
+            "rule_id": "MD-S082-R0005",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "schema/serialization version columns unchanged"
+        },
+        {
+            "rule_id": "MD-S082-R0006",
+            "verdict": "RECONFIRM_RERUN_WITH_MEMBER",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "effective and recorded/known timestamps of the snapshot: stay in the snapshot row; the new member joins the canonical content, so the proof is re-run with the member present"
+        },
+        {
+            "rule_id": "MD-S082-R0007",
+            "verdict": "RECONFIRM_RERUN_WITH_MEMBER",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "canonical, sorted, typed key/value content: the content gains a third top-level member; canonical ordering and typing of the whole content is re-proven"
+        },
+        {
+            "rule_id": "MD-S082-R0008",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "redacted secret references; the redaction step is unchanged"
+        },
+        {
+            "rule_id": "MD-S082-R0009",
+            "verdict": "RECONFIRM_RERUN_WITH_MEMBER",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "SHA-256 content hash: the hash is computed over the content that now includes the member; determinism and movement are re-proven"
+        },
+        {
+            "rule_id": "MD-S082-R0010",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "provenance columns (registry revision, build, profile, resolver) are unchanged"
+        },
+        {
+            "rule_id": "MD-S082-R0011",
+            "verdict": "RECONFIRM_RERUN_WITH_MEMBER",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "the same non-null snapshot id and hash bind the run and artifacts: the hash input changes; the binding of run, artifacts, manifest and seal is re-run"
+        },
+        {
+            "rule_id": "MD-S082-R0020",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "the snapshot includes every applicable key family; the new member is not a key and does not alter key resolution"
+        },
+        {
+            "rule_id": "MD-S082-R0021",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0022",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0023",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0024",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0025",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0026",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0027",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0028",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0029",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0030",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0031",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0032",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0033",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0034",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "quality rules, accepted/blocked reason sets and quarantine policy are configuration content, not the reason-registry version; related, not demoted; the regression watches it"
+        },
+        {
+            "rule_id": "MD-S082-R0035",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0036",
+            "verdict": "AFFECTED_REMEDIATE_REPROVE",
+            "required_current_status": "NOT_ASSESSED",
+            "current_evidence_binding": "",
+            "prior_evidence": "E-MD-B04-A002-001",
+            "review_basis": "rule text: data-usability decision/reason registry versions; the snapshot carries no reason-registry member; the recorded proof is a generic config guard pair"
+        },
+        {
+            "rule_id": "MD-S082-R0037",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0038",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0039",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0040",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0041",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0042",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0043",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0044",
+            "verdict": "AFFECTED_REMEDIATE_REPROVE",
+            "required_current_status": "NOT_ASSESSED",
+            "current_evidence_binding": "",
+            "prior_evidence": "E-MD-B04-A002-001",
+            "review_basis": "rule text: contamination horizons and reason-code registry version; the snapshot carries no reason-registry member; the recorded proof is a generic config guard pair"
+        },
+        {
+            "rule_id": "MD-S082-R0045",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0046",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "formula/indicator registry versions: bound through semantic_bindings, unchanged"
+        },
+        {
+            "rule_id": "MD-S082-R0047",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0048",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0049",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "indicator price basis, precision, rounding, nullability and reason rules: bound through the resolved config, unchanged"
+        },
+        {
+            "rule_id": "MD-S082-R0050",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0051",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0052",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0053",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "immutable snapshot/history schema versions; the schema version columns are unchanged (the member lives in the content)"
+        },
+        {
+            "rule_id": "MD-S082-R0054",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0055",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "content and manifest hash definitions; definitions unchanged, the config content hash gains an input"
+        },
+        {
+            "rule_id": "MD-S082-R0056",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "minimum consumer read-model version: bound through semantic_bindings, unchanged"
+        },
+        {
+            "rule_id": "MD-S082-R0057",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0058",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "correction impact-graph and replay-mode versions: bound through semantic_bindings, unchanged"
+        },
+        {
+            "rule_id": "MD-S082-R0059",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0060",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0061",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0062",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0063",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0064",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "inclusion rules for reason sets and config in artifact hashes; the new member enters the config content hash by the rule already satisfied; related, not demoted; the regression watches it"
+        },
+        {
+            "rule_id": "MD-S082-R0065",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "the config snapshot hash and id belong in the publication/seal manifest evidence; the hash gains an input, the binding is unchanged; related, not demoted; covered by the B10 impact run"
+        },
+        {
+            "rule_id": "MD-S082-R0066",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "resolved key register statement; no key is added"
+        },
+        {
+            "rule_id": "MD-S082-R0067",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "columns of the resolved key register; no key is added"
+        },
+        {
+            "rule_id": "MD-S082-R0089",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0104",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0105",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a configuration key family or resolved-key rule whose text does not name the reason registry; the snapshot gains one derived member and no key; covered by the regression"
+        },
+        {
+            "rule_id": "MD-S082-R0212",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "environment values are resolver inputs, not replay authority; the member is derived from the registry content, not from the environment"
+        },
+        {
+            "rule_id": "MD-S082-R0213",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "secrets are never stored or hashed in cleartext; the member contains no secret"
+        },
+        {
+            "rule_id": "MD-S082-R0214",
+            "verdict": "RECONFIRM_RERUN_WITH_MEMBER",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "registry definitions, resolver validation and documentation must stay synchronized: the member is derived, not a registered key; the synchronization guard is re-run to prove no new key appeared"
+        },
+        {
+            "rule_id": "MD-S082-R0220",
+            "verdict": "RECONFIRM_RERUN_WITH_MEMBER",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "every required output-affecting key resolved exactly once: re-run to prove the member adds no duplicate or unresolved key"
+        },
+        {
+            "rule_id": "MD-S082-R0221",
+            "verdict": "RECONFIRM_RERUN_WITH_MEMBER",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "serialization and hash deterministic across independent executions: re-proven with the member present and across order/allocation"
+        },
+        {
+            "rule_id": "MD-S082-R0223",
+            "verdict": "RECONFIRM_RERUN_WITH_MEMBER",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "a one-key semantic change produces a distinct hash: re-proven, and extended to a reason-registry content change"
+        },
+        {
+            "rule_id": "MD-S085-R0002",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "the registry's own code rules and reason-code column list; the registry content is unchanged by this attempt (the snapshot only reads it)"
+        },
+        {
+            "rule_id": "MD-S085-R0003",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "the registry's own code rules and reason-code column list; the registry content is unchanged by this attempt (the snapshot only reads it)"
+        },
+        {
+            "rule_id": "MD-S085-R0004",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "the registry's own code rules and reason-code column list; the registry content is unchanged by this attempt (the snapshot only reads it)"
+        },
+        {
+            "rule_id": "MD-S085-R0005",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "the registry's own code rules and reason-code column list; the registry content is unchanged by this attempt (the snapshot only reads it)"
+        },
+        {
+            "rule_id": "MD-S085-R0006",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "the registry's own code rules and reason-code column list; the registry content is unchanged by this attempt (the snapshot only reads it)"
+        },
+        {
+            "rule_id": "MD-S085-R0007",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "the registry's own code rules and reason-code column list; the registry content is unchanged by this attempt (the snapshot only reads it)"
+        },
+        {
+            "rule_id": "MD-S085-R0008",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "the registry's own code rules and reason-code column list; the registry content is unchanged by this attempt (the snapshot only reads it)"
+        },
+        {
+            "rule_id": "MD-S085-R0009",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "the registry's own code rules and reason-code column list; the registry content is unchanged by this attempt (the snapshot only reads it)"
+        },
+        {
+            "rule_id": "MD-S085-R0010",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "the registry's own code rules and reason-code column list; the registry content is unchanged by this attempt (the snapshot only reads it)"
+        },
+        {
+            "rule_id": "MD-S085-R0011",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "the registry's own code rules and reason-code column list; the registry content is unchanged by this attempt (the snapshot only reads it)"
+        },
+        {
+            "rule_id": "MD-S085-R0012",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "the registry's own code rules and reason-code column list; the registry content is unchanged by this attempt (the snapshot only reads it)"
+        },
+        {
+            "rule_id": "MD-S085-R0013",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "the registry's own code rules and reason-code column list; the registry content is unchanged by this attempt (the snapshot only reads it)"
+        },
+        {
+            "rule_id": "MD-S085-R0014",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "the registry's own code rules and reason-code column list; the registry content is unchanged by this attempt (the snapshot only reads it)"
+        },
+        {
+            "rule_id": "MD-S085-R0455",
+            "verdict": "UNAFFECTED",
+            "required_current_status": "SATISFIED",
+            "current_evidence_binding": "E-MD-B04-A002-001",
+            "review_basis": "the registry's own code rules and reason-code column list; the registry content is unchanged by this attempt (the snapshot only reads it)"
+        }
+    ],
+    "baseline_lock": {
+        "id": "MD-B04-A003-BL001",
+        "file_sha256": "864599d63878df1e3c9bc574814eee71b2e62d138d02b31cb1994ff1f593151f"
+    },
+    "next_resume_point": "MD-B04-A003: record the R0025 PROVEN to INCOMPLETE transition, then implement the derived reason-registry snapshot member under CI-MD-B04-A003-001, prove MD-S082-R0036 and MD-S082-R0044, re-run the eight reconfirm rows and the B10 covering files, bind through the B04 successor binder and close with SC-MD-B04-A003-001; then return to MD-B18-A002.",
+    "no_commit_or_push": 1
+}

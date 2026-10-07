@@ -1120,3 +1120,11 @@ Same A002/BL001/CI. Analysis and governance recording only: no application, test
 ## 2026-10-07 owner decision Q9 = A1 and impact classification — D-MD-B18-A002-018, E-MD-B18-A002-107
 
 Same A002/BL001/CI. Governance records only: no code, schema, test, proof-basis or matrix change. Next: `MD-B04-A003` entry. B10 stays 1072/1072 (no predicate impact), B17 244/257, reviewed basis 101/113, formal `SATISFIED` 0/113.
+
+## 2026-10-07 MD-B04-A003 entry
+
+Same A002/BL001/CI. `MD-B04-A003` (baseline `MD-B04-A003-BL001`, `CI-MD-B04-A003-001`, scope `E-MD-B04-A003-001`) is the active remediation stage for `F-MD-B18-A002-034` under `MD-DEP-0023`; `MD-B18-A002` stays the blocked logical stage and returns to the reason-registry binding/proof only after `SC-MD-B04-A003-001`. No B18 row, candidate or expected hash changes.
+
+## 2026-10-07 MD-B04-A003 closed
+
+Same A002/BL001/CI. `MD-B04-A003` closed `114/114` (`SC-MD-B04-A003-001`); `MD-DEP-0023` resolved; `MD-B18-A002` returns to the reason-registry binding and proof. No B18 row, candidate or expected hash changed; the R0025 basis stays `INCOMPLETE` (`E-MD-B18-A002-108`).

@@ -1,0 +1,746 @@
+{
+    "evidence_id": "E-MD-B04-A003-002",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B04",
+    "attempt_id": "MD-B04-A003",
+    "work_id": "MD-B04-A003",
+    "baseline_id": "MD-B04-A003-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "change_impact_declaration": "CI-MD-B04-A003-001",
+    "decision_id": "D-MD-B18-A002-018",
+    "issued_at": "2026-10-07T16:10:38+07:00",
+    "evidence_type": "SUCCESSOR_PROOF_OF_REOPENED_PREDICATES",
+    "verdict": "MD_S082_R0036_AND_R0044_PROVEN_CURRENT_EIGHT_ROWS_RECONFIRMED_B10_COVERING_FILES_RERUN",
+    "rebound_predicates": [
+        "MD-S082-R0036",
+        "MD-S082-R0044"
+    ],
+    "scope_evidence": "E-MD-B04-A003-001",
+    "implementation": {
+        "changed_runtime_file": "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php",
+        "change": "a third top-level member reason_registry = {identity_contract, semantic_identity} derived by ReplayV2IdentityProjection::reasonRegistryIdentity from eod_reason_codes at snapshot issue and at check time; an unreadable or underivable registry throws CONFIG_SNAPSHOT_REASON_REGISTRY_UNREADABLE / ..._IDENTITY_UNDERIVABLE before any row is written; no schema change, no registered config key, no historical row touched",
+        "not_changed": [
+            "AsKnownReplaySnapshotService (as-known verification is MD-B18 work)",
+            "RunInputCaptureRepository (the INPUT_CAPTURE_LIVE_CONFIG_DIVERGENCE refusal is preserved and now tested explicitly)",
+            "every md_config_snapshots row",
+            "PlatformConfigRegistry and config/market_data.php"
+        ],
+        "file_sha256": {
+            "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+            "docs/market_data/development/implementation/tests/MarketDataConfigFoundationProofGate.php": "2dba331fbeddc32891b141db080f0c6a98932a5dc13159fa7dcc45f282b34469",
+            "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php": "ae2dab5f6ccbd7f031ef0f15f143c8b54f1a1da56e5f97f3a591aa822ebc1f42",
+            "tests/Unit/MarketData/ConfigFoundationProofGateTest.php": "27b071b21f112d0e1adc33723b0320762bb11a91b72d426ff973d63ce18426ae",
+            "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php": "777e627cb76470b9988c523ed146a6962646ab9a6e6cc005f2b653e7ef2e5d6a",
+            "tests/Unit/MarketData/ConfigFoundationSuccessorBindingTest.php": "1b4e7340f47836e95f371f0d5ce8e72e0eb5781cbf3253e026dee2a21f43f5f4",
+            "docs/market_data/development/implementation/tests/MarketDataConfigFoundationSuccessorBinding.php": "a4c2a447a55110f6eaf9c89a67d2995753a996ce7ce59b3a8a0cf50cf2179aa0"
+        }
+    },
+    "predicates": [
+        {
+            "rule_id": "MD-S082-R0036",
+            "rule_text": "data-usability decision/reason registry versions",
+            "authority": "Platform_Config_Registry_LOCKED.md (the snapshot includes every applicable key family, including the registry versions listed) read with owner decisions D-MD-B18-A002-014 (Q4 = A: semantic content identity) and D-MD-B18-A002-018 (Q9 = A1: derived member of every new snapshot)",
+            "requirement": "every new immutable configuration snapshot carries the reason-registry version as part of its canonical content and content hash",
+            "producer": "App\\Infrastructure\\Persistence\\MarketData\\MarketDataConfigSnapshotRepository::currentContent() / reasonRegistryMember()",
+            "chain": [
+                "registry content (eod_reason_codes rows: code, category, description, severity, is_active)",
+                "derived identity: ReplayV2IdentityProjection::reasonRegistryIdentity — semantic content only, sorted by code, no row ids, no audit columns; null for an empty, malformed or duplicate registry",
+                "snapshot member: MarketDataConfigSnapshotRepository::reasonRegistryMember() = {identity_contract: market-data-reason-registry/v2, semantic_identity}; unreadable or underivable registry throws and nothing is written",
+                "canonical content: currentContent() = canonical JSON of {reason_registry, resolved_config, semantic_bindings}",
+                "config_content_hash: sha256 of that canonical content; resolveForRun reuses a snapshot only when the hash matches"
+            ],
+            "positive_proof": [
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_a_new_snapshot_carries_the_reason_registry_identity_derived_from_the_registry_content",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_the_member_is_part_of_the_canonical_content_and_of_the_content_hash",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_the_member_is_deterministic_across_independent_resolutions",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_a_change_in_registry_content_moves_the_member_and_the_hash",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_an_added_or_removed_code_moves_the_member_and_the_hash",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_unchanged_registry_content_reuses_the_snapshot_whatever_the_row_order_and_audit_columns",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_the_member_is_not_a_registered_platform_config_key",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_an_empty_registry_blocks_snapshot_creation_and_leaves_no_placeholder_snapshot",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_a_malformed_registry_blocks_snapshot_creation_and_leaves_no_snapshot",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_an_unreadable_registry_blocks_snapshot_creation",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_a_historical_snapshot_without_the_member_is_never_modified_or_back_filled",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_as_known_resolution_returns_the_historical_snapshot_as_it_was_without_a_member",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_a_run_bound_to_a_pre_change_snapshot_is_refused_and_not_migrated",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_a_run_is_refused_when_the_registry_content_changes_after_it_was_bound"
+            ],
+            "discriminating_probes": {
+                "member omitted": [
+                    "P1: member omitted: the snapshot content no longer carries the reason-registry member => RED_INTENDED"
+                ],
+                "registry content changed but hash/member does not move": [
+                    "P2: registry content changed but the member does not move: the identity covers the codes only => RED_INTENDED",
+                    "P2b: the member is present but the content hash is computed over the content without it => RED_INTENDED"
+                ],
+                "placeholder or constant identity substituted": [
+                    "P3: placeholder substituted: an underivable identity becomes a constant \"UNAVAILABLE\" marker instead of blocking => RED_INTENDED"
+                ],
+                "malformed or empty registry accepted": [
+                    "P4: malformed or empty registry accepted: the identity is a raw hash that bypasses the validating projection => RED_INTENDED"
+                ],
+                "historical snapshot mutated or back-filled": [
+                    "P5: a historical snapshot is back-filled with the member when a new snapshot is created => RED_INTENDED"
+                ],
+                "identity depends on row order or allocation": [
+                    "P6: the identity depends on row order: raw hash over the unsorted rows => RED_INTENDED",
+                    "P7: the identity depends on allocation: audit columns enter the hash => RED_INTENDED"
+                ],
+                "run-bound refusal removed": [
+                    "P8: the run-bound divergence refusal is removed => RED_INTENDED"
+                ],
+                "diverging run silently switched": [
+                    "P9: a diverging run is silently switched to the current snapshot instead of refused => RED_INTENDED"
+                ]
+            },
+            "prior_proof_withdrawn": "E-MD-B04-A002-001 generic configuration guard pair (never exercised a reason-registry member); kept audit-only",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null
+        },
+        {
+            "rule_id": "MD-S082-R0044",
+            "rule_text": "contamination horizons and reason-code registry version",
+            "authority": "Platform_Config_Registry_LOCKED.md (the snapshot includes every applicable key family, including the registry versions listed) read with owner decisions D-MD-B18-A002-014 (Q4 = A: semantic content identity) and D-MD-B18-A002-018 (Q9 = A1: derived member of every new snapshot)",
+            "requirement": "every new immutable configuration snapshot carries the reason-registry version as part of its canonical content and content hash",
+            "producer": "App\\Infrastructure\\Persistence\\MarketData\\MarketDataConfigSnapshotRepository::currentContent() / reasonRegistryMember()",
+            "chain": [
+                "registry content (eod_reason_codes rows: code, category, description, severity, is_active)",
+                "derived identity: ReplayV2IdentityProjection::reasonRegistryIdentity — semantic content only, sorted by code, no row ids, no audit columns; null for an empty, malformed or duplicate registry",
+                "snapshot member: MarketDataConfigSnapshotRepository::reasonRegistryMember() = {identity_contract: market-data-reason-registry/v2, semantic_identity}; unreadable or underivable registry throws and nothing is written",
+                "canonical content: currentContent() = canonical JSON of {reason_registry, resolved_config, semantic_bindings}",
+                "config_content_hash: sha256 of that canonical content; resolveForRun reuses a snapshot only when the hash matches"
+            ],
+            "positive_proof": [
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_a_new_snapshot_carries_the_reason_registry_identity_derived_from_the_registry_content",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_the_member_is_part_of_the_canonical_content_and_of_the_content_hash",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_the_member_is_deterministic_across_independent_resolutions",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_a_change_in_registry_content_moves_the_member_and_the_hash",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_an_added_or_removed_code_moves_the_member_and_the_hash",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_unchanged_registry_content_reuses_the_snapshot_whatever_the_row_order_and_audit_columns",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_the_member_is_not_a_registered_platform_config_key",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_an_empty_registry_blocks_snapshot_creation_and_leaves_no_placeholder_snapshot",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_a_malformed_registry_blocks_snapshot_creation_and_leaves_no_snapshot",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_an_unreadable_registry_blocks_snapshot_creation",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_a_historical_snapshot_without_the_member_is_never_modified_or_back_filled",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_as_known_resolution_returns_the_historical_snapshot_as_it_was_without_a_member",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_a_run_bound_to_a_pre_change_snapshot_is_refused_and_not_migrated",
+                "tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php::test_a_run_is_refused_when_the_registry_content_changes_after_it_was_bound"
+            ],
+            "discriminating_probes": {
+                "member omitted": [
+                    "P1: member omitted: the snapshot content no longer carries the reason-registry member => RED_INTENDED"
+                ],
+                "registry content changed but hash/member does not move": [
+                    "P2: registry content changed but the member does not move: the identity covers the codes only => RED_INTENDED",
+                    "P2b: the member is present but the content hash is computed over the content without it => RED_INTENDED"
+                ],
+                "placeholder or constant identity substituted": [
+                    "P3: placeholder substituted: an underivable identity becomes a constant \"UNAVAILABLE\" marker instead of blocking => RED_INTENDED"
+                ],
+                "malformed or empty registry accepted": [
+                    "P4: malformed or empty registry accepted: the identity is a raw hash that bypasses the validating projection => RED_INTENDED"
+                ],
+                "historical snapshot mutated or back-filled": [
+                    "P5: a historical snapshot is back-filled with the member when a new snapshot is created => RED_INTENDED"
+                ],
+                "identity depends on row order or allocation": [
+                    "P6: the identity depends on row order: raw hash over the unsorted rows => RED_INTENDED",
+                    "P7: the identity depends on allocation: audit columns enter the hash => RED_INTENDED"
+                ],
+                "run-bound refusal removed": [
+                    "P8: the run-bound divergence refusal is removed => RED_INTENDED"
+                ],
+                "diverging run silently switched": [
+                    "P9: a diverging run is silently switched to the current snapshot instead of refused => RED_INTENDED"
+                ]
+            },
+            "prior_proof_withdrawn": "E-MD-B04-A002-001 generic configuration guard pair (never exercised a reason-registry member); kept audit-only",
+            "result": "PROVEN_CURRENT",
+            "blocker_if_any": null
+        }
+    ],
+    "reconfirmed_predicates": [
+        {
+            "rule_id": "MD-S082-R0006",
+            "proof_rerun_with_member_present": "effective and recorded/known timestamps stay in the snapshot row: ConfigIdentityBindingTest::test_the_bound_snapshot_carries_complete_provenance",
+            "result": "RECONFIRMED_NO_REGRESSION",
+            "binding_kept": "E-MD-B04-A002-001"
+        },
+        {
+            "rule_id": "MD-S082-R0007",
+            "proof_rerun_with_member_present": "canonical sorted typed content: ConfigIdentityBindingTest::test_compiled_semantic_versions_and_feature_state_are_inside_the_snapshot_identity; ReasonRegistrySnapshotMemberTest::test_the_member_is_part_of_the_canonical_content_and_of_the_content_hash",
+            "result": "RECONFIRMED_NO_REGRESSION",
+            "binding_kept": "E-MD-B04-A002-001"
+        },
+        {
+            "rule_id": "MD-S082-R0009",
+            "proof_rerun_with_member_present": "SHA-256 content hash: ReasonRegistrySnapshotMemberTest::test_the_member_is_part_of_the_canonical_content_and_of_the_content_hash; ConfigIdentityBindingTest::test_one_semantic_config_change_produces_a_different_identity",
+            "result": "RECONFIRMED_NO_REGRESSION",
+            "binding_kept": "E-MD-B04-A002-001"
+        },
+        {
+            "rule_id": "MD-S082-R0011",
+            "proof_rerun_with_member_present": "run and artifacts bind the same snapshot id/hash: ConfigIdentityBindingTest::test_a_created_run_receives_non_null_config_identity; AsKnownWiringAndConfigIdentityTest::test_a_promote_run_is_bound_to_a_config_snapshot; B18ProducerInputCaptureTest",
+            "result": "RECONFIRMED_NO_REGRESSION",
+            "binding_kept": "E-MD-B04-A002-001"
+        },
+        {
+            "rule_id": "MD-S082-R0214",
+            "proof_rerun_with_member_present": "registry/config/documentation synchronization with no new key: PlatformConfigRegistryConformanceTest (six methods); ReasonRegistrySnapshotMemberTest::test_the_member_is_not_a_registered_platform_config_key",
+            "result": "RECONFIRMED_NO_REGRESSION",
+            "binding_kept": "E-MD-B04-A002-001"
+        },
+        {
+            "rule_id": "MD-S082-R0220",
+            "proof_rerun_with_member_present": "every required key resolved exactly once: PlatformConfigRegistryConformanceTest::test_current_runtime_configuration_exactly_matches_the_locked_resolved_key_register and the missing/unregistered/wrong-type refusals",
+            "result": "RECONFIRMED_NO_REGRESSION",
+            "binding_kept": "E-MD-B04-A002-001"
+        },
+        {
+            "rule_id": "MD-S082-R0221",
+            "proof_rerun_with_member_present": "deterministic across independent executions: ReasonRegistrySnapshotMemberTest::test_the_member_is_deterministic_across_independent_resolutions; ::test_unchanged_registry_content_reuses_the_snapshot_whatever_the_row_order_and_audit_columns; ConfigIdentityBindingTest::test_an_unchanged_config_reuses_its_identity",
+            "result": "RECONFIRMED_NO_REGRESSION",
+            "binding_kept": "E-MD-B04-A002-001"
+        },
+        {
+            "rule_id": "MD-S082-R0223",
+            "proof_rerun_with_member_present": "one-key semantic change gives a distinct hash: ConfigIdentityBindingTest::test_one_semantic_config_change_produces_a_different_identity; ReasonRegistrySnapshotMemberTest::test_a_change_in_registry_content_moves_the_member_and_the_hash",
+            "result": "RECONFIRMED_NO_REGRESSION",
+            "binding_kept": "E-MD-B04-A002-001"
+        }
+    ],
+    "tests_run": {
+        "proof_and_focused_files": {
+            "DeterministicHashServiceTest": {
+                "tests": 17,
+                "assertions": 33,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "HashSealDatasetIntegrityStaticGuardTest": {
+                "tests": 6,
+                "assertions": 38,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "ConfigIdentityBindingTest": {
+                "tests": 7,
+                "assertions": 31,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "PlatformConfigRegistryConformanceTest": {
+                "tests": 6,
+                "assertions": 15,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "AsKnownWiringAndConfigIdentityTest": {
+                "tests": 2,
+                "assertions": 11,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "ReasonRegistrySnapshotMemberTest": {
+                "tests": 19,
+                "assertions": 73,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "CoverageDormantUniverseTest": {
+                "tests": 8,
+                "assertions": 16,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "TerminologyOwnerVocabularyTest": {
+                "tests": 7,
+                "assertions": 16,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "PublishedColumnHashCoverageTest": {
+                "tests": 23,
+                "assertions": 54,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "ConfigEnvGovernanceCleanupStaticGuardTest": {
+                "tests": 5,
+                "assertions": 39,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "ReasonCodeSeedExecutionTest": {
+                "tests": 5,
+                "assertions": 6,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "EmittedReasonCodeRegistrationTest": {
+                "tests": 3,
+                "assertions": 10,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "LoggingTraceabilityReasonCodesStaticGuardTest": {
+                "tests": 5,
+                "assertions": 89,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "ReplayConfigIdentityVariesWithConfigTest": {
+                "tests": 5,
+                "assertions": 17,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "B18ConfigEffectiveTimeSelectionTest": {
+                "tests": 8,
+                "assertions": 19,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "StageEightGovernanceBindingTest": {
+                "tests": 3,
+                "assertions": 17,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "MarketDataSqliteSchemaSyncTest": {
+                "tests": 6,
+                "assertions": 807,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "B18ProducerInputCaptureTest": {
+                "tests": 9,
+                "assertions": 34,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "ConfigFoundationTraceabilityGateTest": {
+                "tests": 4,
+                "assertions": 9,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            }
+        },
+        "b10_covering_files": {
+            "AliasNamingAndMeaningBoundaryTest": {
+                "tests": 6,
+                "assertions": 188,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "ArtifactSemanticHashServiceTest": {
+                "tests": 49,
+                "assertions": 147,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "ArtifactSemanticIdentityOnMariaDbTest": {
+                "tests": 10,
+                "assertions": 87,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "B18ProductionPathReplayFixturesTest": {
+                "tests": 13,
+                "assertions": 100,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "B18ReplayPersistedEvidenceBindingTest": {
+                "tests": 17,
+                "assertions": 156,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "B18ScenarioFamiliesOnMariaDbTest": {
+                "tests": 13,
+                "assertions": 526,
+                "failures": 1,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 1
+            },
+            "ConfigIsTheOnlyEnvReaderTest": {
+                "tests": 5,
+                "assertions": 8,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "DateDrivenCapabilityAndProviderAbstractionTest": {
+                "tests": 18,
+                "assertions": 65,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "DomainOwnershipSurfaceTest": {
+                "tests": 28,
+                "assertions": 523,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "EmittedReasonCodeRegistrationTest": {
+                "tests": 3,
+                "assertions": 10,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "IndicatorAtrStateReferenceTest": {
+                "tests": 9,
+                "assertions": 25,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "LifecycleProofIsNotMockedTest": {
+                "tests": 5,
+                "assertions": 8,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "MarketDataPipelineIntegrationTest": {
+                "tests": 83,
+                "assertions": 6158,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "MigrationIntegrityAndDriftTest": {
+                "tests": 10,
+                "assertions": 25,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "ProductionCorpusInvariantOracleTest": {
+                "tests": 10,
+                "assertions": 18,
+                "failures": 7,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 1
+            },
+            "PublicationCorrectionCalendarBindingTest": {
+                "tests": 6,
+                "assertions": 25,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "PublicationRepositoryIntegrationTest": {
+                "tests": 28,
+                "assertions": 140,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "PublicationScopeReasonSetTest": {
+                "tests": 6,
+                "assertions": 14,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "PublicationSemanticIdentityProductionPathTest": {
+                "tests": 34,
+                "assertions": 334,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "SemanticNestedIdentityOnMariaDbTest": {
+                "tests": 20,
+                "assertions": 172,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "SemanticNestedIdentityPipelineWiringTest": {
+                "tests": 2,
+                "assertions": 2,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "PreActivationFreshnessStateTest": {
+                "tests": 16,
+                "assertions": 100,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "PreActivationFreshnessRunLabelTest": {
+                "tests": 8,
+                "assertions": 22,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            },
+            "CanonicalScopeFrontierAndDecisionGradeTest": {
+                "tests": 12,
+                "assertions": 90,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0,
+                "exit": 0
+            }
+        },
+        "b10_reds_classified": {
+            "ProductionCorpusInvariantOracleTest": "known empty-corpus assertions (MD-DEP-0015/0016), identical to the pre-change 7 failures",
+            "B18ScenarioFamiliesOnMariaDbTest": "the exact-publication member reads the approved candidate-v4 whose build and config hash the change invalidates by design (E-MD-B18-A002-107 R0025 = B; basis moved to INCOMPLETE by E-MD-B18-A002-108); not a B10 defect"
+        }
+    },
+    "pipeline_integration_error": {
+        "test": "MarketDataPipelineIntegrationTest::test_binding_rejects_an_incomplete_capture_manifest (first B10 pass)",
+        "error": "CONFIG_SNAPSHOT_REASON_REGISTRY_IDENTITY_UNDERIVABLE: the reason registry is empty or malformed (0 entries)",
+        "path": "test emptied eod_reason_codes before seedProducerBoundHistoricalBars -> EodRunRepository::getOrCreateOwningRun -> MarketDataConfigSnapshotRepository::resolveForRun -> currentContent -> reasonRegistryMember",
+        "classification": "A. TEST / FIXTURE CONFORMANCE GAP",
+        "reasoning": "the fixture reproduced the whole-C1 empty-registry defect as a late incomplete-manifest refusal at the HASH stage; under D-MD-B18-A002-018 the same defect is refused at snapshot creation, earlier and stricter, which is the required production behaviour. The production refusal was not weakened and no placeholder was inserted; the test now seeds the fixture history while the registry is readable, empties it afterwards and asserts the earlier refusal and that no run or publication is bound. No B10 predicate, producer or golden is involved: the failing path never reached a B10 producer.",
+        "coverage_consequence": "the producer path to the ProducerInputCompletionManifest clause registry_versions.reason_registry.entries is now closed upstream; the clause stays as defence in depth and the reader-compatibility test of the old registry shape (B18BeforeSealValidationTest) is unchanged",
+        "renamed_test": "test_an_empty_reason_registry_stops_the_pipeline_before_any_publication_is_bound"
+    },
+    "b10_impact_confirmation": "The 15 B10 rows named by E-MD-B18-A002-107 bind whatever the snapshot content hash is. Every B10 covering file that does not read the R0025 candidate passed unchanged; no B10 golden was edited; no B10 row is reclassified. The two reds are the pre-existing corpus oracle and the expected R0025 exact-publication member.",
+    "probes": {
+        "P1": {
+            "intent": "member omitted: the snapshot content no longer carries the reason-registry member",
+            "file": "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "ReasonRegistrySnapshotMemberTest.php::test_a_new_snapshot_carries_the_reason_registry_identity_derived_from_the_registry_content => RED_INTENDED",
+                "ReasonRegistrySnapshotMemberTest.php::test_the_member_is_part_of_the_canonical_content_and_of_the_content_hash => RED_INTENDED",
+                "ReasonRegistrySnapshotMemberTest.php::test_a_change_in_registry_content_moves_the_member_and_the_hash => RED_INTENDED"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+            "sha256_restored": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+            "controls_green_before_and_after": true
+        },
+        "P2": {
+            "intent": "registry content changed but the member does not move: the identity covers the codes only",
+            "file": "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "ReasonRegistrySnapshotMemberTest.php::test_a_change_in_registry_content_moves_the_member_and_the_hash => RED_INTENDED"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+            "sha256_restored": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+            "controls_green_before_and_after": true
+        },
+        "P2b": {
+            "intent": "the member is present but the content hash is computed over the content without it",
+            "file": "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "ReasonRegistrySnapshotMemberTest.php::test_the_member_is_part_of_the_canonical_content_and_of_the_content_hash => RED_INTENDED",
+                "ReasonRegistrySnapshotMemberTest.php::test_a_change_in_registry_content_moves_the_member_and_the_hash => RED_INTENDED"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+            "sha256_restored": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+            "controls_green_before_and_after": true
+        },
+        "P3": {
+            "intent": "placeholder substituted: an underivable identity becomes a constant \"UNAVAILABLE\" marker instead of blocking",
+            "file": "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "ReasonRegistrySnapshotMemberTest.php::test_an_empty_registry_blocks_snapshot_creation_and_leaves_no_placeholder_snapshot => RED_INTENDED",
+                "ReasonRegistrySnapshotMemberTest.php::test_a_malformed_registry_blocks_snapshot_creation_and_leaves_no_snapshot => RED_INTENDED"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+            "sha256_restored": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+            "controls_green_before_and_after": true
+        },
+        "P4": {
+            "intent": "malformed or empty registry accepted: the identity is a raw hash that bypasses the validating projection",
+            "file": "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "ReasonRegistrySnapshotMemberTest.php::test_an_empty_registry_blocks_snapshot_creation_and_leaves_no_placeholder_snapshot => RED_INTENDED",
+                "ReasonRegistrySnapshotMemberTest.php::test_a_malformed_registry_blocks_snapshot_creation_and_leaves_no_snapshot => RED_INTENDED"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+            "sha256_restored": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+            "controls_green_before_and_after": true
+        },
+        "P5": {
+            "intent": "a historical snapshot is back-filled with the member when a new snapshot is created",
+            "file": "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "ReasonRegistrySnapshotMemberTest.php::test_a_historical_snapshot_without_the_member_is_never_modified_or_back_filled => RED_INTENDED",
+                "ReasonRegistrySnapshotMemberTest.php::test_as_known_resolution_returns_the_historical_snapshot_as_it_was_without_a_member => RED_INTENDED"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+            "sha256_restored": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+            "controls_green_before_and_after": true
+        },
+        "P6": {
+            "intent": "the identity depends on row order: raw hash over the unsorted rows",
+            "file": "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "ReasonRegistrySnapshotMemberTest.php::test_unchanged_registry_content_reuses_the_snapshot_whatever_the_row_order_and_audit_columns => RED_INTENDED"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+            "sha256_restored": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+            "controls_green_before_and_after": true
+        },
+        "P7": {
+            "intent": "the identity depends on allocation: audit columns enter the hash",
+            "file": "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "ReasonRegistrySnapshotMemberTest.php::test_unchanged_registry_content_reuses_the_snapshot_whatever_the_row_order_and_audit_columns => RED_INTENDED"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+            "sha256_restored": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+            "controls_green_before_and_after": true
+        },
+        "P8": {
+            "intent": "the run-bound divergence refusal is removed",
+            "file": "app/Infrastructure/Persistence/MarketData/RunInputCaptureRepository.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "ReasonRegistrySnapshotMemberTest.php::test_a_run_bound_to_a_pre_change_snapshot_is_refused_and_not_migrated => RED_INTENDED",
+                "ReasonRegistrySnapshotMemberTest.php::test_a_run_is_refused_when_the_registry_content_changes_after_it_was_bound => RED_INTENDED",
+                "B18ProducerInputCaptureTest.php::test_live_config_drift_is_rejected_before_consumption => RED_INTENDED"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "fd058f563173e531ac730ea8035f2747ccf4137337123d6f2bb406d8250781c8",
+            "sha256_restored": "fd058f563173e531ac730ea8035f2747ccf4137337123d6f2bb406d8250781c8",
+            "controls_green_before_and_after": true
+        },
+        "P9": {
+            "intent": "a diverging run is silently switched to the current snapshot instead of refused",
+            "file": "app/Infrastructure/Persistence/MarketData/RunInputCaptureRepository.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "ReasonRegistrySnapshotMemberTest.php::test_a_run_bound_to_a_pre_change_snapshot_is_refused_and_not_migrated => RED_INTENDED",
+                "ReasonRegistrySnapshotMemberTest.php::test_a_run_is_refused_when_the_registry_content_changes_after_it_was_bound => RED_INTENDED"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "fd058f563173e531ac730ea8035f2747ccf4137337123d6f2bb406d8250781c8",
+            "sha256_restored": "fd058f563173e531ac730ea8035f2747ccf4137337123d6f2bb406d8250781c8",
+            "controls_green_before_and_after": true
+        }
+    },
+    "raw_package": {
+        "path": "storage/app/market_data/evidence/MD-B04-A003/reason-registry-snapshot-member-20261007-v1",
+        "manifest": "storage/app/market_data/evidence/MD-B04-A003/reason-registry-snapshot-member-20261007-v1/manifest_proof.json",
+        "manifest_sha256": "cb57b18574d92057d817a63cbb72f11a2d5ae1c8ce3c16aab10ab9d0a6051d79"
+    },
+    "r0025": {
+        "transition_evidence": "E-MD-B18-A002-108",
+        "state": "proof basis INCOMPLETE, readiness 100/113, formal SATISFIED 0/113; candidate-v4 and E100/D016/E101/E104/E105 preserved as history"
+    },
+    "what_was_not_done": [
+        "no B18 binding (MD-S050-R0005, MD-S050-R0014, MD-S019-R0071)",
+        "no candidate-v5",
+        "no MD-B17-A003",
+        "no historical snapshot mutated or back-filled",
+        "no commit or push"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-034"
+    ],
+    "related_evidence": [
+        "E-MD-B04-A003-001",
+        "E-MD-B18-A002-108",
+        "E-MD-B18-A002-107",
+        "E-MD-B04-A002-001",
+        "CI-MD-B04-A003-001",
+        "MD-B04-A003-BL001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-018",
+        "D-MD-B18-A002-014"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0023"
+    ],
+    "next_resume_point": "MD-B04-A003: bind the two predicates through the governed successor binder, run the full MarketData suite on the final tree and close with SC-MD-B04-A003-001.",
+    "no_commit_or_push": 1
+}

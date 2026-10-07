@@ -2,11 +2,43 @@
 
 require_once __DIR__.'/MarketDataConfigFoundationTraceabilityGate.php';
 
-/** Exact MD-B04-A002 proof binding and implementation-surface gate. */
+/**
+ * Exact MD-B04 proof binding and implementation-surface gate.
+ *
+ * MD-B04-A002 bound all 114 predicates to E-MD-B04-A002-001. MD-B04-A003 (MD-DEP-0023, owner decision
+ * D-MD-B18-A002-018) re-owns exactly two of them, MD-S082-R0036 and MD-S082-R0044, under
+ * E-MD-B04-A003-002: their A002 proof was a generic configuration guard pair that never exercised a
+ * reason-registry member. The other 112 stay bound to the A002 evidence.
+ */
 final class MarketDataConfigFoundationProofGate
 {
     public const EVIDENCE = 'E-MD-B04-A002-001';
     public const RESOLVED_RULE = 'MD-S082-R0062';
+    public const SUCCESSOR_EVIDENCE = 'E-MD-B04-A003-002';
+    public const SUCCESSOR_RULES = ['MD-S082-R0036', 'MD-S082-R0044'];
+    public const SUCCESSOR_MEMBER_TEST = 'tests/Unit/MarketData/ReasonRegistrySnapshotMemberTest.php';
+    public const SUCCESSOR_MEMBER_METHODS = [
+        'test_a_new_snapshot_carries_the_reason_registry_identity_derived_from_the_registry_content',
+        'test_the_member_is_part_of_the_canonical_content_and_of_the_content_hash',
+        'test_the_member_is_deterministic_across_independent_resolutions',
+        'test_a_change_in_registry_content_moves_the_member_and_the_hash',
+        'test_an_added_or_removed_code_moves_the_member_and_the_hash',
+        'test_unchanged_registry_content_reuses_the_snapshot_whatever_the_row_order_and_audit_columns',
+        'test_the_member_is_not_a_registered_platform_config_key',
+        'test_an_empty_registry_blocks_snapshot_creation_and_leaves_no_placeholder_snapshot',
+        'test_a_malformed_registry_blocks_snapshot_creation_and_leaves_no_snapshot',
+        'test_an_unreadable_registry_blocks_snapshot_creation',
+        'test_a_historical_snapshot_without_the_member_is_never_modified_or_back_filled',
+        'test_as_known_resolution_returns_the_historical_snapshot_as_it_was_without_a_member',
+        'test_a_run_bound_to_a_pre_change_snapshot_is_refused_and_not_migrated',
+        'test_a_run_is_refused_when_the_registry_content_changes_after_it_was_bound',
+    ];
+
+    /** @return string the evidence a rule must be bound to in the current matrix */
+    public static function expectedEvidence(string $rule): string
+    {
+        return in_array($rule, self::SUCCESSOR_RULES, true) ? self::SUCCESSOR_EVIDENCE : self::EVIDENCE;
+    }
 
     /** @return array<string,array{surfaces:array<int,string>,methods:array<int,array{0:string,1:string}>}> */
     public static function proofMap(): array
@@ -81,6 +113,15 @@ final class MarketDataConfigFoundationProofGate
             }
         }
 
+        // MD-B04-A003: the snapshot must carry the reason-registry identity as a derived member; the proof is the
+        // member's own tests (positive, content-change, fail-closed, historical immutability, run-bound refusal).
+        foreach (self::SUCCESSOR_RULES as $rule) {
+            $map[$rule]['surfaces'][] = 'app/Application/MarketData/Services/ReplayV2IdentityProjection.php';
+            foreach (self::SUCCESSOR_MEMBER_METHODS as $method) {
+                $map[$rule]['methods'][] = [self::SUCCESSOR_MEMBER_TEST, $method];
+            }
+        }
+
         foreach (['MD-S082-R0037', 'MD-S082-R0104', 'MD-S082-R0105'] as $rule) {
             $map[$rule]['surfaces'][] = 'app/Application/MarketData/Services/CoverageGateEvaluator.php';
             $map[$rule]['methods'][] = ['tests/Unit/MarketData/CoverageDormantUniverseTest.php', 'test_a_dormant_ticker_stays_in_the_denominator'];
@@ -121,8 +162,19 @@ final class MarketDataConfigFoundationProofGate
             $row = $required[$rule];
             $counts['denominator']++;
             $counts['satisfied']++;
-            if ($row['coverage_status'] !== 'SATISFIED' || $row['current_evidence_ids'] !== self::EVIDENCE) {
-                $errors[] = $rule.': current A002 proof binding is not exact';
+            if ($row['coverage_status'] !== 'SATISFIED' || $row['current_evidence_ids'] !== self::expectedEvidence($rule)) {
+                $errors[] = $rule.': current proof binding is not exact (expected '.self::expectedEvidence($rule).')';
+            }
+            if (in_array($rule, self::SUCCESSOR_RULES, true)) {
+                if (strpos($row['notes'], 'MD-B04-A003: proof_binding='.self::SUCCESSOR_EVIDENCE) === false) {
+                    $errors[] = $rule.': the A003 proof-binding note is missing';
+                }
+                $named = array_map(static function ($m) { return $m[0].'::'.$m[1]; }, $proof['methods']);
+                foreach (self::SUCCESSOR_MEMBER_METHODS as $method) {
+                    if (! in_array(self::SUCCESSOR_MEMBER_TEST.'::'.$method, $named, true)) {
+                        $errors[] = $rule.': the proof does not run the reason-registry member test '.$method;
+                    }
+                }
             }
             if ($rule === self::RESOLVED_RULE
                 && (strpos($row['notes'], 'D-MD-20260822-06') === false
@@ -152,8 +204,18 @@ final class MarketDataConfigFoundationProofGate
             || ($evidence['decision_id'] ?? null) !== 'D-MD-20260822-06') {
             $errors[] = 'EVIDENCE: issued proof record is missing, malformed, or miscorrelated';
         }
+        $successorPath = glob($root.'/docs/market_data/records/evidence/'.self::SUCCESSOR_EVIDENCE.'_*.json');
+        $successor = $successorPath ? json_decode(file_get_contents($successorPath[0]), true) : null;
+        if (! is_array($successor)
+            || ($successor['evidence_id'] ?? null) !== self::SUCCESSOR_EVIDENCE
+            || ($successor['baseline_id'] ?? null) !== 'MD-B04-A003-BL001'
+            || ($successor['change_impact_declaration'] ?? null) !== 'CI-MD-B04-A003-001'
+            || ($successor['decision_id'] ?? null) !== 'D-MD-B18-A002-018'
+            || ($successor['rebound_predicates'] ?? null) !== self::SUCCESSOR_RULES) {
+            $errors[] = 'EVIDENCE: issued A003 proof record is missing, malformed, or miscorrelated';
+        }
         if ($counts !== ['denominator' => 114, 'satisfied' => 114, 'blocked' => 0]) {
-            $errors[] = 'COUNTS: expected exact A002 closure proof at 114/114';
+            $errors[] = 'COUNTS: expected exact closure proof at 114/114';
         }
 
         return ['errors' => $errors, 'counts' => $counts, 'status' => $errors === [] ? 'PASS' : 'FAIL'];

@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001` (discovered here; the affected rows belong to `MD-B04`)
 - Raised: 2026-10-07T09:48:10+07:00
 - Severity: `P1` for `MD-S050-R0005`, `MD-S050-R0014`, `MD-S019-R0071` (AS_KNOWN cannot bind a reason-registry version); `P2` for the `MD-B04` closure claim
-- Status: `OPEN` — route decided by `D-MD-B18-A002-018` (Q9 = A1); impact classified in `E-MD-B18-A002-107`; no state of `MD-B04` is changed yet
+- Status: `PARTIALLY_RESOLVED` — the `MD-B04` part is remediated and closed (`MD-B04-A003`, `SC-MD-B04-A003-001`); the `MD-B18` bindings (`MD-S050-R0005`, `MD-S050-R0014`, `MD-S019-R0071`) remain open
 - Class: `PROOF_BASIS_VACUOUS_OR_MISTARGETED` (family proof standing for two predicates) and `IMPLEMENTATION_GAP` (the member does not exist)
 - Related: `E-MD-B18-A002-106`, `E-MD-B04-A002-001`, `F-MD-B18-A002-017`, `E-MD-B18-A002-071`, `E-MD-B18-A002-073`
 - Remediation owner: decided by owner decision Q9 (`E-MD-B18-A002-106`); recommended a successor attempt of `MD-B04`
@@ -24,3 +24,7 @@ Resolved when the owner decision Q9 is recorded, the governed route it selects m
 ## 2026-10-07 owner decision Q9 = A1 — D-MD-B18-A002-018, E-MD-B18-A002-107
 
 The owner chose the derived configuration-snapshot member (A1). The remediation is an `MD-B04` successor attempt: `MD-S082-R0036` and `MD-S082-R0044` are to be demoted and re-proven on guards that fail when the member is absent; `MD-S082-R0006`, `R0007`, `R0009`, `R0011`, `R0214`, `R0220`, `R0221` and `R0223` are to be re-executed. The change is payload-only (no schema), and existing snapshots stay immutable. The finding stays `OPEN`.
+
+## 2026-10-07 MD-B04 part resolved — E-MD-B04-A003-003
+
+`MD-B04-A003` made the configuration snapshot carry the reason-registry identity as a derived member (`E-MD-B04-A003-002`), re-proved `MD-S082-R0036` and `MD-S082-R0044`, re-confirmed eight related rows and closed `MD-B04` at 114/114 (`SC-MD-B04-A003-001`). Historical snapshots remain immutable and without the member. Remaining under this finding: the `MD-B18` as-known binding and proof; candidate-v5 later.
