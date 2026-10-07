@@ -1,0 +1,122 @@
+{
+    "evidence_id": "E-MD-B18-A002-114",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-07T23:19:00+07:00",
+    "evidence_type": "R0025_CANDIDATE_INDEPENDENT_REVIEW_RECORD",
+    "verdict": "R0025_CANDIDATE_V5_INDEPENDENT_REVIEW_PASS_NO_BLOCKING_NO_AUTHORITY_DECISION_REQUIRED_OWNER_APPROVAL_REQUIRED_NOT_ADMITTED_R0025_STAYS_INCOMPLETE",
+    "checkpoint_verdict": "R0025 CANDIDATE-V5 INDEPENDENT REVIEW PASS",
+    "reviewer_provenance": {
+        "reviewer": "a separate Codex independent-review Agent, not the candidate-v5 authoring Agent",
+        "not_recorded": "no human reviewer identity, session id or model metadata was supplied, and none is invented here",
+        "recorded_by": "the governance-recording Agent from the review result supplied by the owner; the recording Agent did not perform the review"
+    },
+    "reviewed_target": {
+        "candidate_path": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v5",
+        "candidate_fingerprint": "daf96a296875df875539c196e997823e99ee4171d6d9d77af8d213f13a05fbe3",
+        "candidate_manifest_sha256": "f7cc89399ec1c5e540db28e4ffeccbf2cccdc58dd3496e80b491c9c51a88bf4a",
+        "frozen_build_identity": "sha256:7ea1956a36fe3ad773479bb249f1409b6fa04df8725576080284294ed8016c4a",
+        "frozen_build_manifest_sha256": "8464514949826b5a2a7cd686cd3d2dc33a57bba58e43824aad3667bc0971146e",
+        "raw_review_package": "storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261007-v5-candidate",
+        "raw_review_package_manifest_sha256": "8cd464967a706dfc2d07900b592057fd4111ce777e9b5be5454149f147f5d144",
+        "author_evidence": "E-MD-B18-A002-113"
+    },
+    "target_verified_before_recording": {
+        "fingerprint_recomputed_from_the_24_package_files": "daf96a296875df875539c196e997823e99ee4171d6d9d77af8d213f13a05fbe3 (equal)",
+        "candidate_manifest_sha256_recomputed": "equal",
+        "frozen_build_recomputed_read_only_5916_files": "sha256:7ea1956a…c4a, manifest 84645149…146e (unchanged)",
+        "raw_package_manifest_sha256_recomputed": "equal",
+        "E-MD-B18-A002-113": "present and registered, unchanged",
+        "candidate_v5_owner_approved": false,
+        "candidate_v5_admitted": false,
+        "readiness": "112/113 (MarketDataReplayVerificationProofReadinessGate), only MD-S003-R0025 without a reviewed basis",
+        "formal_satisfied": "0/113",
+        "prior_review_record_for_this_exact_candidate": "none (no E-MD-B18-A002-114 or other record bound this fingerprint before this one)",
+        "working_tree_note": "HEAD f458782 (\"market-data: author R0025 candidate-v5 for final build\") is a checkpoint commit made between turns, not by this unit; it contains the authoring unit unchanged"
+    },
+    "reviewer_independently_verified": [
+        "package and build identities",
+        "historical candidates (v1 to v4) unchanged",
+        "D-MD-B18-A002-018 reason-registry propagation semantics",
+        "independent oracle derivation",
+        "absence of any circular dependency on target output",
+        "reason-registry semantic identity",
+        "configuration snapshot hash",
+        "downstream hash propagation",
+        "publication_manifest_hash",
+        "assertion, freshness and lineage semantics",
+        "actual-versus-expected: zero mismatches",
+        "pre-approval behaviour NOT_ADMISSIBLE / BLOCKED",
+        "the candidate-4 expectation corrections are authority-driven (D-MD-B18-A002-018), not result-fitting",
+        "the final 12 mutation and sensitivity probes are discriminating",
+        "the full suite remains non-PASS only for known governed and expected failures"
+    ],
+    "findings": {
+        "blocking": "none",
+        "owner_or_authority_decision_required": "none",
+        "note": "documentation observations, if any, are not new requirements and are not recorded as such"
+    },
+    "bound_to": {
+        "evidence": [
+            "E-MD-B18-A002-113",
+            "E-MD-B18-A002-112",
+            "E-MD-B18-A002-108",
+            "E-MD-B18-A002-101",
+            "E-MD-B18-A002-100",
+            "E-MD-B04-A003-002"
+        ],
+        "decisions": [
+            "D-MD-B18-A002-018",
+            "D-MD-B18-A002-016",
+            "D-MD-B18-A002-015",
+            "D-MD-B18-A002-014",
+            "D-MD-B18-A002-013",
+            "D-MD-B18-A002-011"
+        ],
+        "predicate": "MD-S003-R0025",
+        "impact_declaration": "CI-MD-B18-A002-001"
+    },
+    "governance_state_after_recording": {
+        "MD-S003-R0025": "INCOMPLETE (proof basis unchanged)",
+        "readiness": "112/113",
+        "formal_satisfied": "0/113",
+        "candidate_v5_independently_reviewed": "PASS (this record)",
+        "candidate_v5_owner_approved": false,
+        "candidate_v5_admitted": false,
+        "b18_closed": false,
+        "atomic_113_row_binder_run": false,
+        "candidate_v4": "unchanged historical evidence"
+    },
+    "what_was_not_done": [
+        "candidate-v5, the oracle, the frozen build, runtime and tests were not modified",
+        "no owner approval",
+        "no admission",
+        "MD-S003-R0025 not promoted; proof basis not changed",
+        "atomic 113-row binder not run",
+        "B18 not closed",
+        "no runtime or full-suite run (no implementation changed)",
+        "no commit or push by this unit"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-018"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-113",
+        "E-MD-B18-A002-100",
+        "E-MD-B18-A002-108"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-018",
+        "D-MD-B18-A002-016"
+    ],
+    "next_resume_point": "MD-B18-A002: owner approval of the exact candidate-v5 fingerprint daf96a296875df875539c196e997823e99ee4171d6d9d77af8d213f13a05fbe3 (manifest sha256 f7cc89399ec1c5e540db28e4ffeccbf2cccdc58dd3496e80b491c9c51a88bf4a, frozen build sha256:7ea1956a36fe3ad773479bb249f1409b6fa04df8725576080284294ed8016c4a) as a separate governed decision record; only after it, admission and binding, and the R0025 proof basis may return to PROVEN if complete.",
+    "no_commit_or_push": 1
+}

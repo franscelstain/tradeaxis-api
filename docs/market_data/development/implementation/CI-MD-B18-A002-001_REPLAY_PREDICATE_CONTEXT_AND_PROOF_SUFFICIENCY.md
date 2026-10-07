@@ -1140,3 +1140,7 @@ Same A002/BL001/CI. Test and proof only: the nine bases of `F-MD-B18-A002-018` a
 ## 2026-10-07 R0025 candidate-v5 authored
 
 Same A002/BL001/CI. Fixture authoring only (`E-MD-B18-A002-113`): candidate-v5 (`tests/fixtures/replay/r0025-synthetic-v2-candidate-v5`, fingerprint `daf96a296875df875539c196e997823e99ee4171d6d9d77af8d213f13a05fbe3`) is authored against the final post-A003 build (`sha256:7ea1956a…c4a`, HEAD `7eeaf89`). The executable build boundary is unchanged; no production code changed; candidate-v4 is untouched. The package is not reviewed, not approved and not admitted: `MD-S003-R0025` stays `INCOMPLETE`, readiness 112/113.
+
+## 2026-10-07 R0025 candidate-v5 independent review PASS recorded
+
+Same A002/BL001/CI. Governance recording only (`E-MD-B18-A002-114`): a separate Codex independent-review Agent returned PASS for candidate-v5 (fingerprint `daf96a296875df875539c196e997823e99ee4171d6d9d77af8d213f13a05fbe3`, frozen build `sha256:7ea1956a…c4a`); no blocking finding, no authority decision required. The package is not owner-approved and not admitted: `MD-S003-R0025` stays `INCOMPLETE`, readiness 112/113, formal SATISFIED 0/113. Nothing in the package, oracle, build, runtime or tests changed.

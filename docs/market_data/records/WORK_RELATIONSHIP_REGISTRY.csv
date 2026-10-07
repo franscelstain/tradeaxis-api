@@ -1700,3 +1700,11 @@ MD-REL-1699,E-MD-B18-A002-113,D-MD-B18-A002-018,RELATED,Q9 = A1 snapshot member;
 MD-REL-1700,E-MD-B18-A002-113,D-MD-B18-A002-016,RELATED,Approval of candidate-v4 only.,MD-DEP-0023,2026-10-07T22:20:43+07:00,MD-B18-A002 candidate-v5 authoring.
 MD-REL-1701,E-MD-B18-A002-113,F-MD-B18-A002-018,RELATED,Resolved finding whose completion made the build final.,MD-DEP-0023,2026-10-07T22:20:43+07:00,MD-B18-A002 candidate-v5 authoring.
 MD-REL-1702,CI-MD-B18-A002-001,E-MD-B18-A002-113,RELATED,Authoring recorded under the impact declaration.,MD-DEP-0023,2026-10-07T22:20:43+07:00,MD-B18-A002 candidate-v5 authoring.
+MD-REL-1703,E-MD-B18-A002-114,E-MD-B18-A002-113,DEPENDS_ON,Reviews exactly the package authored and recorded there.,MD-DEP-0023,2026-10-07T23:19:00+07:00,MD-B18-A002 candidate-v5 review recording.
+MD-REL-1704,E-MD-B18-A002-114,E-MD-B18-A002-112,RELATED,Readiness 112/113 and the unchanged build recorded there.,MD-DEP-0023,2026-10-07T23:19:00+07:00,MD-B18-A002 candidate-v5 review recording.
+MD-REL-1705,E-MD-B18-A002-114,E-MD-B18-A002-108,RELATED,Candidate-v4 invalidation that required candidate-v5.,MD-DEP-0023,2026-10-07T23:19:00+07:00,MD-B18-A002 candidate-v5 review recording.
+MD-REL-1706,E-MD-B18-A002-114,E-MD-B18-A002-100,RELATED,Candidate-v4 review; does not cover candidate-v5.,MD-DEP-0023,2026-10-07T23:19:00+07:00,MD-B18-A002 candidate-v5 review recording.
+MD-REL-1707,E-MD-B18-A002-114,D-MD-B18-A002-018,RELATED,Q9 = A1 snapshot member semantics reviewed.,MD-DEP-0023,2026-10-07T23:19:00+07:00,MD-B18-A002 candidate-v5 review recording.
+MD-REL-1708,E-MD-B18-A002-114,D-MD-B18-A002-016,RELATED,Candidate-v4 approval does not carry over; v5 needs its own.,MD-DEP-0023,2026-10-07T23:19:00+07:00,MD-B18-A002 candidate-v5 review recording.
+MD-REL-1709,E-MD-B18-A002-113,E-MD-B18-A002-114,RELATED,Reviewed by.,MD-DEP-0023,2026-10-07T23:19:00+07:00,MD-B18-A002 candidate-v5 review recording.
+MD-REL-1710,CI-MD-B18-A002-001,E-MD-B18-A002-114,RELATED,Review recorded under the impact declaration.,MD-DEP-0023,2026-10-07T23:19:00+07:00,MD-B18-A002 candidate-v5 review recording.
