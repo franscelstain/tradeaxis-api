@@ -72,7 +72,7 @@ class CanonicalRawImportBoundaryTest extends TestCase
      * Runs one ingest and returns what reached the artifact writer, so a test can inspect the
      * canonical rows and the rejected rows separately.
      */
-    private function ingest(array $sourceRows, array $tickerIds, $acceptedObservation = true): array
+    private function ingest(array $sourceRows, array $tickerIds, $acceptedObservation = true, string $route = 'full'): array
     {
         $this->bindMarketDataConfig([
             'market_data' => [
@@ -121,12 +121,22 @@ class CanonicalRawImportBoundaryTest extends TestCase
 
             return null;
         });
+        // The recovered-row (partial) route writes through a different artifact method; both routes build the canonical row.
+        $artifacts->method('upsertBarsPartial')->willReturnCallback(function ($date, $pubId, $runId, array $valid, array $invalid, $useHistory) {
+            $this->captured = ['valid' => $valid, 'invalid' => $invalid];
+
+            return null;
+        });
 
         $run = new EodRun(['run_id' => 91, 'trade_date_requested' => '2026-03-24', 'knowledge_cutoff_at' => '2026-03-24 18:00:00']);
         $service = new EodBarsIngestService($localSource, $apiSource, $tickers, $artifacts, $publications, null, $observations, null, null, $this->mockProducerInputCapture());
 
         try {
-            $service->ingestAcquiredRows($run, '2026-03-24', 'api', $sourceRows, ['source_acquisition_state' => 'SUCCESS']);
+            if ($route === 'partial') {
+                $service->ingestRecoveredRowsPartial($run, '2026-03-24', 'api', $sourceRows, ['source_acquisition_state' => 'SUCCESS']);
+            } else {
+                $service->ingestAcquiredRows($run, '2026-03-24', 'api', $sourceRows, ['source_acquisition_state' => 'SUCCESS']);
+            }
         } catch (\App\Infrastructure\MarketData\Source\SourceAcquisitionException $e) {
             /*
              * A run where no row survives never reaches the artifact writer — it refuses first, and
@@ -220,7 +230,20 @@ class CanonicalRawImportBoundaryTest extends TestCase
         $result = $this->ingest([$this->baseRow(['close' => 108, 'adj_close' => 104])], ['BBCA' => 1]);
 
         $this->assertCount(1, $result['valid']);
-        $this->assertNull($result['valid'][0]['adj_close']);
+        $this->assertNull($result['valid'][0]['adj_close'], 'provider adjusted close must never reach the canonical row');
+        $this->assertSame(108, $result['valid'][0]['close'], 'the raw close is untouched by the provider adjusted series');
+    }
+
+    /**
+     * `MD-S003-R0014`: the recovered-row (partial) route builds its own canonical rows, so the prohibition is asserted on it too -- a
+     * guard on the full route alone would let provider adjusted close back in through the recovery path.
+     */
+    public function test_provider_adjusted_close_never_reaches_the_canonical_row_on_the_recovered_row_route(): void
+    {
+        $result = $this->ingest([$this->baseRow(['close' => 108, 'adj_close' => 104])], ['BBCA' => 1], true, 'partial');
+
+        $this->assertCount(1, $result['valid'], 'the recovered route produced no canonical row, so the prohibition would be untested');
+        $this->assertNull($result['valid'][0]['adj_close'], 'provider adjusted close must never reach the canonical row on the recovered-row route');
         $this->assertSame(108, $result['valid'][0]['close'], 'the raw close is untouched by the provider adjusted series');
     }
 

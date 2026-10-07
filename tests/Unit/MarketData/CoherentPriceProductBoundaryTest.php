@@ -173,6 +173,41 @@ class CoherentPriceProductBoundaryTest extends TestCase
         $this->assertEqualsWithDelta(200.0, $adjusted['volume'], 1e-9, 'volume moves inversely');
     }
 
+    /**
+     * `MD-S003-R0014` (Historical_Replay_and_Data_Quality_Backtest.md:32) -- "provider adjusted-close fallback is impossible".
+     *
+     * The earlier positive was a replay comparison of factor-set identity, which says nothing about adjusted close. This guard
+     * holds the provider's `adj_close` (77) away from the analytical vector by every route the platform has: the legacy selector,
+     * a missing or unresolved factor, and the price adjustment itself. The close is 100 throughout, so any value that came from
+     * `adj_close` is visibly 77-derived, and the raw-close-derived indicators are exactly what they are without it.
+     */
+    public function test_r0014_no_selector_or_adjustment_makes_provider_adjusted_close_an_analytical_value(): void
+    {
+        $bars = [];
+        for ($i = 1; $i <= 60; $i++) {
+            $bars[] = $this->bar(date('Y-m-d', strtotime('2026-01-01 +'.$i.' days')), 100, 77);
+        }
+        $asOf = $bars[count($bars) - 1]['trade_date'];
+
+        $baseline = (new IndicatorVectorService())->buildRow(1, $bars, $asOf, 55, 9001, '2026-05-25 18:00:00', $this->config());
+        $config = $this->config();
+        $config['price_basis_default'] = 'adj_close';
+        $selected = (new IndicatorVectorService())->buildRow(1, $bars, $asOf, 55, 9001, '2026-05-25 18:00:00', $config);
+
+        $this->assertEqualsWithDelta(100.0, $baseline['ma20'], 1e-9, 'the analytical moving average is the raw-close one (a value derived from adj_close would be 77)');
+        $this->assertEqualsWithDelta(100.0, $selected['ma20'], 1e-9, 'a legacy adj_close selector must not make the provider adjusted close an analytical value');
+        $this->assertSame($baseline['ma20'], $selected['ma20'], 'the selector changes nothing');
+        $this->assertSame($baseline['close_vs_ma20_pct'], $selected['close_vs_ma20_pct'], 'and nothing derived from the price basis');
+
+        // No factor available: the answer is the unadjusted structural product, never a fall back to the provider's adjusted series.
+        $unadjusted = $this->adjust([$this->bar('2026-04-05', 100, 77)], []);
+        $this->assertEqualsWithDelta(100.0, $unadjusted['bars'][0]['close'], 1e-9, 'with no factor the close is the unadjusted raw close, not the provider adjusted close');
+
+        // A factor scales the platform product only; the provider observation is not rescaled into a second analytical series.
+        $adjusted = $this->adjust([$this->bar('2026-04-05', 100, 77)], [['ex_date' => '2026-04-20', 'price_factor' => 0.5, 'volume_factor' => 2.0]]);
+        $this->assertEqualsWithDelta(50.0, $adjusted['bars'][0]['close'], 1e-9, 'the raw close is adjusted');
+        $this->assertEqualsWithDelta(77.0, $adjusted['bars'][0]['adj_close'], 1e-9, 'the provider observation is left as observed and is not scaled into a platform product');
+    }
     public function test_legacy_adj_close_selector_cannot_become_an_analytical_fallback(): void
     {
         $bars = [];
@@ -192,7 +227,7 @@ class CoherentPriceProductBoundaryTest extends TestCase
             $config
         );
 
-        $this->assertEqualsWithDelta(100.0, $row['hh20'], 1e-9);
-        $this->assertSame('STRUCTURAL_ADJUSTED', $row['price_product_code']);
+        $this->assertEqualsWithDelta(100.0, $row['hh20'], 1e-9, 'a legacy adj_close selector must not make the provider adjusted close the analytical price');
+        $this->assertSame('STRUCTURAL_ADJUSTED', $row['price_product_code'], 'the analytical product stays the structural adjusted product whatever the selector says');
     }
 }

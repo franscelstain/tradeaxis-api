@@ -1132,3 +1132,7 @@ Same A002/BL001/CI. `MD-B04-A003` closed `114/114` (`SC-MD-B04-A003-001`); `MD-D
 ## 2026-10-07 reason-registry as-known binding
 
 Same A002/BL001/CI. `AsKnownReplaySnapshotService` binds the member of the snapshot resolved at the cutoff and `ReplayVerificationService` compares it; `MD-S050-R0005`, `MD-S050-R0014` and `MD-S019-R0071` are `PROVEN` (`E-MD-B18-A002-110`, authority verdict `E-MD-B18-A002-109`); readiness 103/113; this is part of the build that candidate-v5 will freeze; no candidate-v5, no F-018.
+
+## 2026-10-07 F-MD-B18-A002-018 completed
+
+Same A002/BL001/CI. Test and proof only: the nine bases of `F-MD-B18-A002-018` are `PROVEN` (`E-MD-B18-A002-111`, `E-MD-B18-A002-112`), readiness 112/113 with only `MD-S003-R0025` missing. The executable build boundary (`app/`, `config/`, `bootstrap/`, composer) is unchanged; no candidate-v5.

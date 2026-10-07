@@ -60,6 +60,9 @@ class B18ReplayPersistedEvidenceBindingTest extends TestCase
     /** @var B18ReplayComparisonExhaustivenessTest */
     private $fixtures;
 
+    /** When true the sealed publication is a V2 semantic-profile publication: its frozen members live in the semantic lineage columns. */
+    private $v2World = false;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -246,6 +249,44 @@ class B18ReplayPersistedEvidenceBindingTest extends TestCase
         ];
     }
 
+    /**
+     * `MD-S041-R0032` / `MD-S055-R0025`, publication mode, V2 semantic profile. The governed publication does not re-resolve the
+     * calendar or the temporal mapping: it replays the revision sets frozen with it in its semantic lineage. Each frozen member
+     * moves exactly the identity it feeds -- the calendar and status sets the calendar/status identity, the identity revision set
+     * the temporal identity -- and no live read can substitute, because the identity is rebuilt only from the persisted members.
+     *
+     * @dataProvider v2FrozenMembers
+     *
+     * @param array<int,string> $expectedMoved
+     */
+    public function test_a_v2_publication_replays_the_calendar_and_temporal_identities_frozen_in_its_lineage(string $member, array $expectedMoved): void
+    {
+        $this->v2World = true;
+        $baseline = $this->persist();
+        $perturbed = $this->persist([], [$member => str_repeat('3', 64)]);
+
+        $moved = [];
+        foreach (self::FROZEN_IDENTITIES as $identity) {
+            if ((string) $baseline['bound'][$identity] !== (string) $perturbed['bound'][$identity]) {
+                $moved[] = $identity;
+            }
+        }
+        sort($moved);
+        sort($expectedMoved);
+        $this->assertNotSame('', (string) $baseline['bound']['calendar_status_hash'], 'the V2 calendar/status identity is bound, not blank');
+        $this->assertNotSame('', (string) $baseline['bound']['temporal_identity_hash'], 'the V2 temporal identity is bound, not blank');
+        $this->assertSame($expectedMoved, $moved, 'changing the frozen '.$member.' must move exactly the identity it feeds');
+    }
+
+    /** @return array<string,array{0:string,1:array<int,string>}> */
+    public function v2FrozenMembers(): array
+    {
+        return [
+            'calendar revision set' => ['calendar_revision_set_hash', ['calendar_status_hash']],
+            'status revision set' => ['status_revision_set_hash', ['calendar_status_hash']],
+            'identity revision set' => ['identity_revision_set_hash', ['temporal_identity_hash']],
+        ];
+    }
     /**
      * "Later environment drift cannot change exact evidence." A second real replay of the same
      * frozen inputs, run after the live configuration and build identity have changed, records the
@@ -503,11 +544,26 @@ class B18ReplayPersistedEvidenceBindingTest extends TestCase
             'observation_manifest_hash' => $run['observation_manifest_hash'],
             'source_scale_assessment_set_hash' => $sources['source_scale_assessment_set_hash'],
             'factor_decision_set_hash' => $sources['factor_decision_set_hash'],
+            'artifact_hash_profile' => $this->v2World ? \App\Application\MarketData\Services\ArtifactSemanticHashService::PROFILE_V2 : 'V1',
             'sealed_at' => $sealedAt,
             'created_at' => self::TRADE_DATE.' 17:10:00',
             'updated_at' => $sealedAt,
         ]);
-        DB::table('md_publication_lineage_bindings')->insert([
+        $semantic = [];
+        if ($this->v2World) {
+            $semantic['semantic_nested_identity_version'] = \App\Application\MarketData\Services\SemanticNestedIdentityService::VERSION;
+            $members = [
+                'observation_manifest_hash' => $run['observation_manifest_hash'], 'identity_revision_set_hash' => $sources['identity_revision_set_hash'],
+                'calendar_revision_set_hash' => $sources['calendar_revision_set_hash'], 'status_revision_set_hash' => $sources['status_revision_set_hash'],
+                'event_revision_set_hash' => $sources['event_revision_set_hash'], 'source_scale_assessment_set_hash' => $sources['source_scale_assessment_set_hash'],
+                'market_structure_revision_set_hash' => str_repeat('9', 64), 'factor_decision_set_hash' => $sources['factor_decision_set_hash'],
+                'factor_set_hash' => $run['factor_set_hash'],
+            ];
+            foreach (\App\Application\MarketData\Services\SemanticNestedIdentityService::LINEAGE_COLUMNS as $member => $column) {
+                $semantic[$column] = $members[$member];
+            }
+        }
+        DB::table('md_publication_lineage_bindings')->insert($semantic + [
             'publication_id' => self::PUBLICATION_ID,
             'config_snapshot_id' => $configSnapshotId,
             'observation_manifest_hash' => $run['observation_manifest_hash'],

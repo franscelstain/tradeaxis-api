@@ -5,7 +5,7 @@
 - Raised: 2026-09-15T00:29:04+07:00 (system clock)
 - Severity: `P1` for closure. Bases that pass against a refusal, bases that never exercise knowledge
   time, and mistargeted bases.
-- Status: `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`
+- Status: `RESOLVED` — 2026-10-07 by `E-MD-B18-A002-112` (all nine owned predicates `PROVEN`; reconstruction `E-MD-B18-A002-111`). Earlier status: `OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE`
 - Class: `PROOF_BASIS_VACUOUS_OR_MISTARGETED`
 - Found by: per-predicate review of PAIRS 41–68 (28 predicates). The per-predicate review of all 69
   pairs is complete with this finding.
@@ -132,3 +132,7 @@ is a candidate binding for the reason distribution.
   follow-up.
 - `P65-HISTORICAL-DENIED` first probed `MarketDataEvidenceExportService:621`, which the test does
   not read. The follow-up probed `:230`.
+
+## 2026-10-07 resolution — E-MD-B18-A002-111 / E-MD-B18-A002-112
+
+The nine bases the finding owned (`MD-S003-R0011`, `MD-S003-R0014`, `MD-S041-R0032`, `MD-S050-R0022`, `MD-S050-R0023`, `MD-S050-R0025`, `MD-S050-R0028`, `MD-S050-R0029`, `MD-S055-R0025`) are `PROVEN`. Classification: eight were test gaps and `MD-S055-R0025` was a proof rebind for its as-known half; no production defect was found (every production clause is caught when removed, 52 probes). The `MD-B18-A002-013` carry-forwards (`MD-S041-R0032`, `MD-S055-R0025`) are proven for both modes, including the V2 publication path that no test exercised. Advisory notes on `MD-S003-R0012`, `R0019` and `R0017` (kept `PROVEN`) remain observations.

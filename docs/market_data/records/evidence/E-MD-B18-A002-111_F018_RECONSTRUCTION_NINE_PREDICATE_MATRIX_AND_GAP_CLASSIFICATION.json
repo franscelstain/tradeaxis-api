@@ -1,0 +1,176 @@
+{
+    "evidence_id": "E-MD-B18-A002-111",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-07T19:08:35+07:00",
+    "evidence_type": "FINDING_RECONSTRUCTION_AND_GAP_CLASSIFICATION",
+    "finding": "F-MD-B18-A002-018",
+    "verdict": "NINE_PREDICATES_CLASSIFIED_NO_PRODUCTION_DEFECT_NO_CLASS_C",
+    "starting_state": {
+        "readiness": "103/113",
+        "missing": [
+            "MD-S003-R0011",
+            "MD-S003-R0014",
+            "MD-S003-R0025",
+            "MD-S041-R0032",
+            "MD-S050-R0022",
+            "MD-S050-R0023",
+            "MD-S050-R0025",
+            "MD-S050-R0028",
+            "MD-S050-R0029",
+            "MD-S055-R0025"
+        ],
+        "f018_owns": "exactly the nine non-R0025 bases (MD-S041-R0032 and MD-S055-R0025 are listed in the finding under \"carried forward under F-013\": that finding is RESOLVED and their publication half is proven here)",
+        "candidate_v5": "does not exist",
+        "candidate_v4": "d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00 unchanged"
+    },
+    "method": "The finding and each source authority line were read in full; for each predicate the implementation path, the recorded pair and the gap were established from the code and the tests; the \"test-only\" expectation was NOT assumed: every production clause the predicate depends on was then mutated one defect at a time against the new guards (52 probes, E-MD-B18-A002-112). A class C finding would have stopped the unit before any production edit.",
+    "nine_row_matrix": [
+        {
+            "rule_id": "MD-S003-R0011",
+            "requirement": "calendar/session/status revisions respect effective and knowledge time (Historical_Replay_and_Data_Quality_Backtest.md:26)",
+            "implementation_path": "MarketCalendarRepository::sessionContext/tradingDatesBetween (recorded_at and supersession bounds; cal_date range), TemporalTradingStatusRepository::resolveForListing (effective_from/to, recorded_at, retracted_at)",
+            "before": {
+                "positive": "AsKnownReplayBoundaryTest::test_status_revision_selection_applies_both_effective_and_knowledge_time",
+                "negative": "AsKnownReplayBoundaryTest::test_a_calendar_revision_recorded_after_the_cutoff_is_invisible"
+            },
+            "gap": "the positive varied effective time on one root with a revision recorded before the cutoff; no calendar correction, no effective-time case for the calendar, no wall control",
+            "classification": "B",
+            "remedy": "dedicated positive holding both axes on both roots with a wall control; negative rebound to the status knowledge-time guard"
+        },
+        {
+            "rule_id": "MD-S003-R0014",
+            "requirement": "provider adjusted-close fallback is impossible (:32)",
+            "implementation_path": "EodBarsIngestService canonical rows (adj_close => null) on the full and the recovered-row route; IndicatorVectorService::priceBasis; AnalyticalPriceProductService adjustment",
+            "before": {
+                "positive": "ReplayVerificationServiceTest::test_replay_detects_analytical_factor_set_identity_drift",
+                "negative": "CanonicalRawImportBoundaryTest::test_provider_adjusted_close_never_reaches_the_canonical_row"
+            },
+            "gap": "mistargeted positive (factor-set identity drift); the recovered-row canonical route had no prohibition test; the selector test had no message for the price-basis fallback",
+            "classification": "B",
+            "remedy": "analytical-side positive; recovered-row route test; messages on the canonical negative"
+        },
+        {
+            "rule_id": "MD-S041-R0032",
+            "requirement": "historical processing uses the calendar revision governed for the replay mode; as-known must not use a future correction unknown at its cutoff (Market_Calendar_Requirements_Contract.md:64)",
+            "implementation_path": "as-known: MarketCalendarRepository with the cutoff; publication: ReplayVerificationService calendar/status identity from the frozen calendar_revision_set_hash (V1 manifest, V2 semantic lineage)",
+            "before": {
+                "positive": "AsKnownReplayBoundaryTest::test_a_calendar_revision_recorded_after_the_cutoff_is_invisible",
+                "negative": "CalendarProvenanceAndStatusTest::test_calendar_revision_conflict_and_incomplete_verification_both_fail_closed"
+            },
+            "gap": "passes against a calendar wall; publication mode carried under F-013 (identity once empty): V1 held by the persisted-evidence guard, the V2 semantic-profile path exercised by no test",
+            "classification": "B",
+            "remedy": "as-known correction test over the three calendar reads; V2 frozen-lineage test through the real writer and verifier"
+        },
+        {
+            "rule_id": "MD-S050-R0022",
+            "requirement": "fixture: a calendar/status fact corrected after T (Replay_Verification_Contract_LOCKED.md:44)",
+            "implementation_path": "calendar and status supersession joins bounded by recorded_at <= cutoff",
+            "before": {
+                "positive": "AsKnownReplayBoundaryTest::test_a_calendar_revision_recorded_after_the_cutoff_is_invisible",
+                "negative": "B18AntiSurvivorshipFixtureCorpusTest::test_every_named_fixture_guard_exists_and_is_executable"
+            },
+            "gap": "one late-recorded revision rather than a correction (wall passes); the negative is a corpus existence guard",
+            "classification": "B",
+            "remedy": "real correction for both roots with wall and current-state-substitution controls"
+        },
+        {
+            "rule_id": "MD-S050-R0023",
+            "requirement": "fixture: a corporate action learned or verified later (:45)",
+            "implementation_path": "EventRiskSourceRepository::resolveEventRiskContextForTickerIds (revision recorded_at, supersession bound, ex-date)",
+            "before": {
+                "positive": "AsKnownReplayBoundaryTest::test_a_corporate_action_recorded_after_the_cutoff_is_invisible",
+                "negative": "B18AntiSurvivorshipFixtureCorpusTest::test_every_named_fixture_guard_exists_and_is_executable"
+            },
+            "gap": "second assertion made without a cutoff (wall passes); \"verified later\" never exercised; negative is an existence guard",
+            "classification": "B",
+            "remedy": "known/learned-later/verified-later listings and a cancellation-later negative"
+        },
+        {
+            "rule_id": "MD-S050-R0025",
+            "requirement": "fixture: an original and a corrected immutable publication (:47)",
+            "implementation_path": "EodEvidenceRepository::resolvePublicationAsKnownAt (seal time, supersession chain) and resolvePublicationForEvidenceAudit (explicit identity)",
+            "before": {
+                "positive": "ReplayVerificationServiceTest::test_verify_replay_resolves_historical_publication_without_current_pointer_fallback",
+                "negative": "B18AntiSurvivorshipFixtureCorpusTest::test_every_named_fixture_guard_exists_and_is_executable"
+            },
+            "gap": "a mocked single publication; the fixture held no corrected publication; P55 left the positive green",
+            "classification": "B",
+            "remedy": "rebind to the real two-publication read-path fixture and add explicit-identity resolution and no-fallback tests"
+        },
+        {
+            "rule_id": "MD-S050-R0028",
+            "requirement": "as-known bitemporal resolution; ties and corrections deterministic; ambiguity fails closed (:54)",
+            "implementation_path": "every root: identity, status, calendar, event, config (governingSnapshot ordering), factor (event/factor context)",
+            "before": {
+                "positive": "AsKnownReplayBoundaryTest::test_status_revision_selection_applies_both_effective_and_knowledge_time",
+                "negative": "CalendarProvenanceAndStatusTest::test_same_priority_authoritative_conflict_holds_instead_of_using_recency"
+            },
+            "gap": "one root, one axis (P45, P48 left the pair green); ambiguity never evaluated as known",
+            "classification": "B",
+            "remedy": "per-root guard set with both predicates and wall controls; ties/corrections/ambiguity as known"
+        },
+        {
+            "rule_id": "MD-S050-R0029",
+            "requirement": "PASS: all expected values, null reasons, states, lineages, content hashes, manifest, seal assertions match (:58)",
+            "implementation_path": "ReplayVerificationService::compareExpectedAndActual and compareReasonCodeCounts",
+            "before": {
+                "positive": "B18ReplayComparisonExhaustivenessTest::test_a_divergence_in_any_named_assertion_class_denies_pass",
+                "negative": "B18ReplayComparisonExhaustivenessTest::test_the_unperturbed_fixture_passes"
+            },
+            "gap": "asserted only that SOME mismatch occurred, so a sibling comparison masked a removed one (P68-REASON-COUNTS-OFF, P68-SEAL-COMPARE-OFF)",
+            "classification": "B",
+            "remedy": "seven classes parsed from the contract sentence, each perturbation named on its own field; control evaluates every probed comparison"
+        },
+        {
+            "rule_id": "MD-S055-R0025",
+            "requirement": "replay uses the mapping effective on T and, as known, only the revision known by the cutoff; no future rename, relisting, provider correction or current symbol (Symbol_Lifecycle_and_Mapping_Contract.md:50)",
+            "implementation_path": "TemporalIdentityRepository (symbol, board, provider mapping effective/recorded/retracted); publication mode: frozen identity revision set",
+            "before": {
+                "positive": "AsKnownReplayBoundaryTest::test_identity_recorded_after_the_cutoff_is_invisible",
+                "negative": "AsKnownReplayBoundaryTest::test_an_as_known_config_resolution_refuses_rather_than_inventing_one"
+            },
+            "gap": "mistargeted: the negative concerns configuration; the guards that carry the mapping rule already existed and held; publication half carried under F-013",
+            "classification": "A for the as-known half (proof rebind only), B for the publication V2 path",
+            "remedy": "rebind to the symbol-change/provider-mapping guards; V2 frozen-identity test"
+        }
+    ],
+    "classification_result": {
+        "A": "MD-S055-R0025 (as-known half)",
+        "B": "the other eight and the V2 publication path of MD-S055-R0025/MD-S041-R0032",
+        "C": "none",
+        "basis": "every production comparison, bound and refusal the nine predicates rely on is caught by a guard when removed (all 52 probes RED_INTENDED), and every guard is green on the unchanged production code, so the implementation conforms and the gaps were in the proof"
+    },
+    "gaps_found_by_probing_and_closed": {
+        "I1/I2 NOT_CAUGHT (first probe pass)": "the identity fixture gave listing, instrument and issuer the same recorded time and the symbol the same listed date, so removing the listing knowledge bound or the listed-date bound changed nothing: rewritten to one late root at a time",
+        "B1/B3 NOT_CAUGHT (first probe pass)": "no test exercised the V2 semantic-profile publication path of the calendar/status and temporal identities: B18ReplayPersistedEvidenceBindingTest gained a V2 world and test_a_v2_publication_replays_the_calendar_and_temporal_identities_frozen_in_its_lineage",
+        "A1 anchor count 2": "the canonical row is built on two routes (full and recovered-row) and only the full route was held: test_provider_adjusted_close_never_reaches_the_canonical_row_on_the_recovered_row_route",
+        "M12 RED_UNRELATED": "the manifest test accepted any RuntimeException (the removed refusal surfaced as a mock error): it now requires the refusal that names the missing file",
+        "labels": "several first-pass reds were the intended defect reported by an assertion or exception other than the one first labelled; labels were corrected to the assertion that actually reports the defect, and the whole probe set was re-run on the final tests"
+    },
+    "carried_observations_not_gaps_of_the_nine": {
+        "MD-S003-R0012 (PROVEN)": "its negative guards a private always-false stub (finding: \"should be rebound\"); not owned by this unit, recorded here as an observation",
+        "MD-S003-R0019 (PROVEN)": "the MariaDB pointer assertion would be the stronger negative; observation",
+        "MD-S003-R0017 (PROVEN)": "the positive mocks the publication row; observation"
+    },
+    "related_findings": [
+        "F-MD-B18-A002-018",
+        "F-MD-B18-A002-013"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-110",
+        "E-MD-B18-A002-112"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-018"
+    ],
+    "no_commit_or_push": 1
+}

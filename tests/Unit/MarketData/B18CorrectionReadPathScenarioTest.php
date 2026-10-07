@@ -373,6 +373,57 @@ class B18CorrectionReadPathScenarioTest extends TestCase
         (new EodEvidenceRepository())->resolvePublicationAsKnownAt(self::TRADE_DATE, '');
     }
     /**
+     * `MD-S050-R0025` -- the replay fixture "an original and corrected immutable publication".
+     *
+     * The earlier proof replayed one mocked historical publication, so no fixture ever held both. Here both are real and
+     * sealed, the pointer names the correction, and an exact replay selects a publication by EXPLICIT identity: the original
+     * resolves as itself -- a sealed historical publication, not the current pointer -- and the correction as the current
+     * one. Neither resolution substitutes the other, which is the thing the correction makes possible to get wrong.
+     */
+    public function test_s050_r0025_an_original_and_a_corrected_publication_each_resolve_by_their_own_identity(): void
+    {
+        DB::table('eod_publications')->whereIn('publication_id', [self::ORIGINAL_PUBLICATION, self::CORRECTED_PUBLICATION])
+            ->update(['indicators_batch_hash' => 'indicators-hash', 'eligibility_batch_hash' => 'eligibility-hash']);
+        $repository = new EodEvidenceRepository();
+
+        $original = $repository->resolvePublicationForEvidenceAudit(['type' => 'publication_id', 'publication_id' => self::ORIGINAL_PUBLICATION]);
+        $this->assertSame(self::ORIGINAL_PUBLICATION, (int) $original->publication_id, 'the original is resolved as itself');
+        $this->assertSame(1, (int) $original->publication_version);
+        $this->assertSame('HISTORICAL_PUBLICATION_AUDIT', $original->evidence_resolution_mode, 'the original is a sealed historical publication, not the current one');
+        $this->assertFalse((bool) $original->current_pointer_required, 'and its resolution does not depend on the current pointer');
+        $this->assertSame(self::CORRECTED_PUBLICATION, (int) $original->pointer_publication_id, 'while the pointer names the correction, so a pointer fallback would return the wrong publication');
+
+        $corrected = $repository->resolvePublicationForEvidenceAudit(['type' => 'publication_id', 'publication_id' => self::CORRECTED_PUBLICATION]);
+        $this->assertSame(self::CORRECTED_PUBLICATION, (int) $corrected->publication_id, 'the correction is resolved as itself');
+        $this->assertSame(2, (int) $corrected->publication_version);
+        $this->assertSame('CURRENT_READABLE_PUBLICATION_AUDIT', $corrected->evidence_resolution_mode);
+    }
+
+    /**
+     * The prohibitions of the same fixture: no selector means no replay (never the latest or the current one), and a selector
+     * that names the original with the correction's run is refused rather than reconciled toward either.
+     */
+    public function test_s050_r0025_a_replay_never_falls_back_to_the_latest_or_the_current_publication(): void
+    {
+        DB::table('eod_publications')->whereIn('publication_id', [self::ORIGINAL_PUBLICATION, self::CORRECTED_PUBLICATION])
+            ->update(['indicators_batch_hash' => 'indicators-hash', 'eligibility_batch_hash' => 'eligibility-hash']);
+        $repository = new EodEvidenceRepository();
+
+        try {
+            $repository->resolvePublicationForEvidenceAudit(['type' => 'trade_date', 'trade_date' => self::TRADE_DATE]);
+            $this->fail('a replay with no explicit publication or run identity must not resolve the current or latest publication');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('EVIDENCE_SELECTOR_MISSING', $e->getMessage());
+        }
+
+        try {
+            $repository->resolvePublicationForEvidenceAudit(['type' => 'publication_id', 'publication_id' => self::ORIGINAL_PUBLICATION, 'run_id' => self::CORRECTED_RUN]);
+            $this->fail('the original must not be resolved through the correction\'s run');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('EVIDENCE_PUBLICATION_NOT_FOUND', $e->getMessage());
+        }
+    }
+    /**
      * `MD-S003-R0017` -- the prior immutable publication remains auditable.
      *
      * Superseded is not deleted. The original's snapshot rows are still there, still saying what

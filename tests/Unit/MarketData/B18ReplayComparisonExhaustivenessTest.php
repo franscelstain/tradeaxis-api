@@ -733,6 +733,143 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
 
         $this->assertSame([], $missing, 'these contract items name a guard that no longer exists');
     }
+    // ---- MD-S050-R0029: a PASS requires every class of assertion to match, and each class is compared by its own comparison ---
+    //
+    // `Replay_Verification_Contract_LOCKED.md:58`: "`PASS`: all expected values, null reasons, states, lineages, content hashes,
+    // manifest, and seal assertions match." The perturbation table above (`perturbations()`) asserts only that SOME mismatch
+    // occurs, so a class whose own comparison is removed still reads red while a sibling comparison fires (`F-MD-B18-A002-018`:
+    // `P68-REASON-COUNTS-OFF` and `P68-SEAL-COMPARE-OFF` left the recorded pair green). Each entry below asserts the mismatch on
+    // the field of the entry itself, and the control is the unperturbed fixture.
+
+    /**
+     * Class => perturbations. Seven classes, parsed from the contract sentence by the test below, so a class added to or removed
+     * from it fails there. `manifest` is not a field comparison: a manifest that does not describe its fixture is refused
+     * outright, which is `test_a_manifest_declaring_a_file_the_fixture_does_not_carry_is_refused`.
+     *
+     * @return array<string,array<string,array<string,mixed>>>
+     */
+    private function passAssertionClassMap(): array
+    {
+        return [
+            'expected values' => [
+                'artifact row count' => ['expected' => ['bars_rows_written' => 9], 'field' => 'bars_rows_written'],
+                'eligible count' => ['expected' => ['eligible_count' => 9], 'field' => 'eligible_count'],
+            ],
+            'null reasons' => [
+                'final reason code' => ['expected' => ['final_reason_code' => 'RUN_PARTIAL_DATA'], 'field' => 'final_reason_code'],
+                'reason-code distribution' => ['expected' => ['expected_reason_code_counts' => [['reason_code' => 'ELIG_NOT_ENOUGH_HISTORY', 'reason_count' => 4]]], 'field' => 'reason_code_counts'],
+            ],
+            'states' => [
+                'publishability' => ['expected' => ['publishability_state' => 'NOT_READABLE'], 'field' => 'publishability_state'],
+                'terminal status' => ['expected' => ['terminal_status' => 'HELD'], 'field' => 'terminal_status'],
+                'coverage gate' => ['expected' => ['coverage_gate_state' => 'FAIL'], 'field' => 'coverage_gate_state'],
+            ],
+            'lineages' => [
+                'publishing run' => ['expected' => ['publication_run_id' => 92], 'field' => 'publication_run_id'],
+                'lineage record' => ['expected' => ['publication_run_id' => 92], 'field' => 'lineage'],
+            ],
+            'content hashes' => [
+                'bars batch hash' => ['expected' => ['bars_batch_hash' => 'A2'], 'field' => 'bars_batch_hash'],
+                'indicators batch hash' => ['expected' => ['indicators_batch_hash' => 'B2'], 'field' => 'indicators_batch_hash'],
+                'eligibility batch hash' => ['expected' => ['eligibility_batch_hash' => 'C2'], 'field' => 'eligibility_batch_hash'],
+            ],
+            'seal' => [
+                'run seal state' => ['expected' => ['seal_state' => 'UNSEALED'], 'field' => 'seal_state'],
+                'publication seal state' => ['expected' => ['seal_state' => 'UNSEALED'], 'field' => 'publication_seal_state'],
+            ],
+        ];
+    }
+
+    /** @return array<string,array{0:string,1:string,2:array<string,mixed>}> */
+    public function passAssertionPerturbations(): array
+    {
+        $cases = [];
+        foreach ($this->passAssertionClassMap() as $class => $entries) {
+            foreach ($entries as $label => $spec) {
+                $cases[$class.': '.$label] = [$class, $label, $spec];
+            }
+        }
+
+        return $cases;
+    }
+
+    /** The map must name exactly the classes the contract sentence names (plus the manifest, proven separately). */
+    public function test_r0029_the_class_map_names_exactly_the_classes_a_pass_requires_in_the_contract(): void
+    {
+        $path = dirname(__DIR__, 3).'/docs/market_data/authority/strategy/book/Replay_Verification_Contract_LOCKED.md';
+        $this->assertFileExists($path);
+        $this->assertSame(1, preg_match('/^- `PASS`: all (.+?) assertions match\.\s*$/m', (string) file_get_contents($path), $match),
+            'the PASS sentence of the replay contract moved; re-read it rather than weakening this map');
+        $named = array_values(array_filter(array_map(static function (string $c) { return trim(preg_replace('/^and\s+/', '', trim($c))); }, explode(',', $match[1]))));
+        $mapped = array_merge(array_keys($this->passAssertionClassMap()), ['manifest']);
+        sort($named);
+        sort($mapped);
+
+        $this->assertCount(7, $named, 'the PASS sentence no longer names seven classes');
+        $this->assertSame($named, $mapped, 'MD-S050-R0029 and the reviewed class map disagree about what a PASS requires to match');
+        foreach ($this->passAssertionClassMap() as $class => $entries) {
+            $this->assertNotSame([], $entries, 'the "'.$class.'" class has no perturbation, so it is named and never probed');
+        }
+    }
+
+    /**
+     * Each class diverging on its own is a FAIL (not BLOCKED: BLOCKED says the comparison never ran; not PASS), is reported
+     * on the field of the entry itself, and is classified by a registered, specific reason code.
+     *
+     * @dataProvider passAssertionPerturbations
+     *
+     * @param array<string,mixed> $spec
+     */
+    public function test_r0029_a_divergence_in_each_assertion_class_denies_pass_and_is_named_by_its_own_comparison(string $class, string $label, array $spec): void
+    {
+        $result = $this->verify($this->releaseCriterionExpected($spec));
+
+        $this->assertSame('FAIL', $result['replay_status'], 'a '.$class.' divergence ('.$label.') must be a FAIL: BLOCKED would say the comparison never ran and PASS that it agreed');
+        $this->assertSame('MISMATCH', $result['comparison_result']);
+        $this->assertContains($spec['field'], array_column($result['mismatches'], 'field'),
+            'the '.$label.' divergence was reported, but not on '.$spec['field'].', so that comparison is not what caught it');
+        $own = array_values(array_filter($result['mismatches'], static function (array $m) use ($spec) { return $m['field'] === $spec['field']; }));
+        $this->assertContains($own[0]['reason_code'], $this->registeredReasonCodes(), $spec['field'].' carries a reason code the registry does not define');
+        $this->assertNotSame('REPLAY_MISMATCH', $own[0]['reason_code'], $spec['field'].' is an unclassified mismatch');
+    }
+
+    /**
+     * The manifest class of `MD-S050-R0029`. It is not a field comparison: a manifest that does not describe its fixture is refused
+     * outright, and refused for the right reason -- the file the manifest declares and the fixture lacks -- not for any exception.
+     */
+    public function test_r0029_a_manifest_declaring_a_file_the_fixture_does_not_carry_is_refused_for_that_file(): void
+    {
+        $fixtureDir = $this->fixtureDir();
+        $manifestPath = $fixtureDir.'/manifest.json';
+        $manifest = json_decode((string) file_get_contents($manifestPath), true);
+        $manifest['files'][] = 'expected/expected_absent_file.json';
+        file_put_contents($manifestPath, json_encode($manifest));
+
+        $refusal = null;
+        try {
+            $this->service($this->mocks(false))->verifyRunAgainstFixture(self::RUN_ID, $fixtureDir);
+        } catch (\Throwable $e) {
+            $refusal = $e->getMessage();
+        }
+
+        $this->assertNotNull($refusal, 'a manifest declaring a file the fixture does not carry must be refused, not compared');
+        $this->assertStringContainsString('REPLAY_EXPECTED_PROOF_INCOMPLETE: Replay fixture file missing: expected/expected_absent_file.json', (string) $refusal,
+            'the refusal must name the file the manifest declares and the fixture lacks');
+    }
+    /** The control: a fixture matching in every class passes, and every probed comparison was evaluated, so none can vanish and still read as a match. */
+    public function test_r0029_a_matching_fixture_passes_and_every_probed_comparison_was_evaluated(): void
+    {
+        $result = $this->verify();
+        $this->assertSame('PASS', $result['replay_status']);
+        $this->assertSame('MATCH', $result['comparison_result']);
+        $this->assertSame(0, $result['mismatch_count']);
+        foreach ($this->passAssertionClassMap() as $class => $entries) {
+            foreach ($entries as $label => $spec) {
+                $this->assertContains($spec['field'], $result['deterministic_fields_checked'],
+                    'the "'.$label.'" comparison of the '.$class.' class was not evaluated on a matching fixture, so a divergence in it could not be seen');
+            }
+        }
+    }
     // ---- MD-S002-R0003: zero unexplained mismatches in exact publication fixtures ---------------
     //
     // Authority: Backtest_Metrics_and_Acceptance_Criteria_LOCKED.md:7 names eight classes -- value,

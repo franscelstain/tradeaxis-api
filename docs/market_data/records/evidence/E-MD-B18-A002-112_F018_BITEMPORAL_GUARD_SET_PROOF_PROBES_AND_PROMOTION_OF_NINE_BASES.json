@@ -1,0 +1,1112 @@
+{
+    "evidence_id": "E-MD-B18-A002-112",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-07T19:08:35+07:00",
+    "evidence_type": "PROOF_AND_PROOF_BASIS_PROMOTION",
+    "finding": "F-MD-B18-A002-018",
+    "verdict": "NINE_BASES_PROVEN_READINESS_103_TO_112_OF_113_ONLY_R0025_REMAINS_BUILD_UNCHANGED_NO_CANDIDATE_V5",
+    "checkpoint_verdict": "F-018 COMPLETE — ONLY R0025 REMAINS",
+    "classification_record": "E-MD-B18-A002-111",
+    "predicates": {
+        "MD-S003-R0011": {
+            "requirement": "calendar/session/status revisions respect effective and knowledge time (Historical_Replay_and_Data_Quality_Backtest.md:26)",
+            "implementation_path": "MarketCalendarRepository::sessionContext/tradingDatesBetween (recorded_at and supersession bounds; cal_date range), TemporalTradingStatusRepository::resolveForListing (effective_from/to, recorded_at, retracted_at)",
+            "classification": "B",
+            "positive": "tests/Unit/MarketData/B18F018BitemporalGuardSetTest.php::test_r0011_calendar_and_status_revisions_respect_effective_time_and_knowledge_time_each_on_its_own",
+            "negative": "AsKnownReplayBoundaryTest::test_a_status_revision_recorded_after_the_cutoff_is_invisible",
+            "probes": [
+                "K1",
+                "K2",
+                "K4",
+                "K5",
+                "S1",
+                "S2",
+                "S4"
+            ],
+            "probe_verdicts": [
+                "K1: RED_INTENDED",
+                "K2: RED_INTENDED",
+                "K4: RED_INTENDED",
+                "K5: RED_INTENDED",
+                "S1: RED_INTENDED",
+                "S2: RED_INTENDED",
+                "S4: RED_INTENDED"
+            ]
+        },
+        "MD-S003-R0014": {
+            "requirement": "provider adjusted-close fallback is impossible (:32)",
+            "implementation_path": "EodBarsIngestService canonical rows (adj_close => null) on the full and the recovered-row route; IndicatorVectorService::priceBasis; AnalyticalPriceProductService adjustment",
+            "classification": "B",
+            "positive": "CoherentPriceProductBoundaryTest::test_r0014_no_selector_or_adjustment_makes_provider_adjusted_close_an_analytical_value",
+            "negative": "CanonicalRawImportBoundaryTest::test_provider_adjusted_close_never_reaches_the_canonical_row (+ ..._on_the_recovered_row_route)",
+            "probes": [
+                "A1",
+                "A1b",
+                "A2",
+                "A3"
+            ],
+            "probe_verdicts": [
+                "A1: RED_INTENDED",
+                "A1b: RED_INTENDED",
+                "A2: RED_INTENDED",
+                "A3: RED_INTENDED"
+            ]
+        },
+        "MD-S041-R0032": {
+            "requirement": "historical processing uses the calendar revision governed for the replay mode; as-known must not use a future correction unknown at its cutoff (Market_Calendar_Requirements_Contract.md:64)",
+            "implementation_path": "as-known: MarketCalendarRepository with the cutoff; publication: ReplayVerificationService calendar/status identity from the frozen calendar_revision_set_hash (V1 manifest, V2 semantic lineage)",
+            "classification": "B",
+            "positive": "tests/Unit/MarketData/B18F018BitemporalGuardSetTest.php::test_r0032_as_known_historical_processing_uses_the_calendar_known_at_the_cutoff_and_not_a_future_correction",
+            "negative": "B18ReplayPersistedEvidenceBindingTest::test_a_v2_publication_replays_the_calendar_and_temporal_identities_frozen_in_its_lineage",
+            "probes": [
+                "K1",
+                "K2",
+                "K3",
+                "B1",
+                "B2"
+            ],
+            "probe_verdicts": [
+                "K1: RED_INTENDED",
+                "K2: RED_INTENDED",
+                "K3: RED_INTENDED",
+                "B1: RED_INTENDED",
+                "B2: RED_INTENDED"
+            ]
+        },
+        "MD-S050-R0022": {
+            "requirement": "fixture: a calendar/status fact corrected after T (Replay_Verification_Contract_LOCKED.md:44)",
+            "implementation_path": "calendar and status supersession joins bounded by recorded_at <= cutoff",
+            "classification": "B",
+            "positive": "tests/Unit/MarketData/B18F018BitemporalGuardSetTest.php::test_r0022_a_calendar_and_a_status_fact_corrected_after_T_resolve_as_known_at_each_cutoff",
+            "negative": "tests/Unit/MarketData/B18F018BitemporalGuardSetTest.php::test_r0022_the_current_state_is_not_substituted_for_the_as_known_correction_chain",
+            "probes": [
+                "K2",
+                "K3",
+                "S2",
+                "S3"
+            ],
+            "probe_verdicts": [
+                "K2: RED_INTENDED",
+                "K3: RED_INTENDED",
+                "S2: RED_INTENDED",
+                "S3: RED_INTENDED"
+            ]
+        },
+        "MD-S050-R0023": {
+            "requirement": "fixture: a corporate action learned or verified later (:45)",
+            "implementation_path": "EventRiskSourceRepository::resolveEventRiskContextForTickerIds (revision recorded_at, supersession bound, ex-date)",
+            "classification": "B",
+            "positive": "tests/Unit/MarketData/B18F018BitemporalGuardSetTest.php::test_r0023_a_corporate_action_learned_or_verified_later_is_known_only_as_it_was_at_the_cutoff",
+            "negative": "tests/Unit/MarketData/B18F018BitemporalGuardSetTest.php::test_r0023_a_cancellation_recorded_after_the_cutoff_does_not_remove_an_action_known_at_it",
+            "probes": [
+                "V1",
+                "V2",
+                "V3"
+            ],
+            "probe_verdicts": [
+                "V1: RED_INTENDED",
+                "V2: RED_INTENDED",
+                "V3: RED_INTENDED"
+            ]
+        },
+        "MD-S050-R0025": {
+            "requirement": "fixture: an original and a corrected immutable publication (:47)",
+            "implementation_path": "EodEvidenceRepository::resolvePublicationAsKnownAt (seal time, supersession chain) and resolvePublicationForEvidenceAudit (explicit identity)",
+            "classification": "B",
+            "positive": "B18CorrectionReadPathScenarioTest::test_a_correction_sealed_later_is_invisible_to_an_earlier_cutoff",
+            "negative": "B18CorrectionReadPathScenarioTest::test_s050_r0025_a_replay_never_falls_back_to_the_latest_or_the_current_publication",
+            "probes": [
+                "P1",
+                "P2",
+                "P3",
+                "P4"
+            ],
+            "probe_verdicts": [
+                "P1: RED_INTENDED",
+                "P2: RED_INTENDED",
+                "P3: RED_INTENDED",
+                "P4: RED_INTENDED"
+            ]
+        },
+        "MD-S050-R0028": {
+            "requirement": "as-known bitemporal resolution; ties and corrections deterministic; ambiguity fails closed (:54)",
+            "implementation_path": "every root: identity, status, calendar, event, config (governingSnapshot ordering), factor (event/factor context)",
+            "classification": "B",
+            "positive": "tests/Unit/MarketData/B18F018BitemporalGuardSetTest.php::test_r0028_every_root_resolves_by_effective_time_and_by_knowledge_time",
+            "negative": "tests/Unit/MarketData/B18F018BitemporalGuardSetTest.php::test_r0028_ties_and_corrections_are_deterministic_and_ambiguity_fails_closed_as_known",
+            "probes": [
+                "K1",
+                "K2",
+                "K6",
+                "S1",
+                "S2",
+                "S4",
+                "S5",
+                "V1",
+                "V2",
+                "V4",
+                "C1",
+                "C2",
+                "C3",
+                "C4",
+                "F1",
+                "F2",
+                "F3",
+                "I1",
+                "I2",
+                "I3"
+            ],
+            "probe_verdicts": [
+                "K1: RED_INTENDED",
+                "K2: RED_INTENDED",
+                "K6: RED_INTENDED",
+                "S1: RED_INTENDED",
+                "S2: RED_INTENDED",
+                "S4: RED_INTENDED",
+                "S5: RED_INTENDED",
+                "V1: RED_INTENDED",
+                "V2: RED_INTENDED",
+                "V4: RED_INTENDED",
+                "C1: RED_INTENDED",
+                "C2: RED_INTENDED",
+                "C3: RED_INTENDED",
+                "C4: RED_INTENDED",
+                "F1: RED_INTENDED",
+                "F2: RED_INTENDED",
+                "F3: RED_INTENDED",
+                "I1: RED_INTENDED",
+                "I2: RED_INTENDED",
+                "I3: RED_INTENDED"
+            ]
+        },
+        "MD-S050-R0029": {
+            "requirement": "PASS: all expected values, null reasons, states, lineages, content hashes, manifest, seal assertions match (:58)",
+            "implementation_path": "ReplayVerificationService::compareExpectedAndActual and compareReasonCodeCounts",
+            "classification": "B",
+            "positive": "B18ReplayComparisonExhaustivenessTest::test_r0029_a_divergence_in_each_assertion_class_denies_pass_and_is_named_by_its_own_comparison (15 data sets)",
+            "negative": "B18ReplayComparisonExhaustivenessTest::test_r0029_a_matching_fixture_passes_and_every_probed_comparison_was_evaluated",
+            "probes": [
+                "M1",
+                "M2",
+                "M3",
+                "M4",
+                "M5",
+                "M6",
+                "M7",
+                "M8",
+                "M9",
+                "M10",
+                "M11",
+                "M12"
+            ],
+            "probe_verdicts": [
+                "M1: RED_INTENDED",
+                "M2: RED_INTENDED",
+                "M3: RED_INTENDED",
+                "M4: RED_INTENDED",
+                "M5: RED_INTENDED",
+                "M6: RED_INTENDED",
+                "M7: RED_INTENDED",
+                "M8: RED_INTENDED",
+                "M9: RED_INTENDED",
+                "M10: RED_INTENDED",
+                "M11: RED_INTENDED",
+                "M12: RED_INTENDED"
+            ]
+        },
+        "MD-S055-R0025": {
+            "requirement": "replay uses the mapping effective on T and, as known, only the revision known by the cutoff; no future rename, relisting, provider correction or current symbol (Symbol_Lifecycle_and_Mapping_Contract.md:50)",
+            "implementation_path": "TemporalIdentityRepository (symbol, board, provider mapping effective/recorded/retracted); publication mode: frozen identity revision set",
+            "classification": "A for the as-known half (proof rebind only), B for the publication V2 path",
+            "positive": "B18AntiSurvivorshipFixtureCorpusTest::test_a_symbol_change_recorded_after_the_cutoff_is_not_yet_visible_to_it",
+            "negative": "B18AntiSurvivorshipFixtureCorpusTest::test_a_symbol_change_resolves_to_the_symbol_and_mapping_effective_on_the_trade_date",
+            "probes": [
+                "T1",
+                "T2",
+                "T3",
+                "T4",
+                "B3",
+                "I1",
+                "I2",
+                "I3"
+            ],
+            "probe_verdicts": [
+                "T1: RED_INTENDED",
+                "T2: RED_INTENDED",
+                "T3: RED_INTENDED",
+                "T4: RED_INTENDED",
+                "B3: RED_INTENDED",
+                "I1: RED_INTENDED",
+                "I2: RED_INTENDED",
+                "I3: RED_INTENDED"
+            ]
+        }
+    },
+    "probes": {
+        "count": 52,
+        "all_red_intended": true,
+        "method": "control green, one exact textual mutation, intended message, byte-identical restore from a saved copy, control green again; the whole set was re-run on the final tests after the tests that the first passes showed too weak were strengthened",
+        "results": {
+            "K1": {
+                "intent": "calendar: the knowledge-time bound is removed (a later-recorded revision is visible to the cutoff)",
+                "file": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0011_calendar_and_status_revisions_respect_effective_time_and_knowledge_time_each_on_its_own => RED_INTENDED (a calendar revision recorded after the cutoff must be invisible to it)",
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_every_root_resolves_by_effective_time_and_by_knowledge_time => RED_INTENDED (calendar: recorded after the cutoff, invisible to it)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b",
+                "sha256_restored": "06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b"
+            },
+            "K2": {
+                "intent": "calendar WALL: every cutoff read hides everything",
+                "file": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0011_calendar_and_status_revisions_respect_effective_time_and_knowledge_time_each_on_its_own => RED_INTENDED (a calendar revision recorded before the cutoff must be visible at it (a wall hides it))",
+                    "B18F018BitemporalGuardSetTest.php::test_r0022_a_calendar_and_a_status_fact_corrected_after_T_resolve_as_known_at_each_cutoff => RED_INTENDED (at the early cutoff the original, known revision stands)",
+                    "B18F018BitemporalGuardSetTest.php::test_r0032_as_known_historical_processing_uses_the_calendar_known_at_the_cutoff_and_not_a_future_correction => RED_INTENDED (at the cutoff the date is the completed trading session that was on record)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b",
+                "sha256_restored": "06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b"
+            },
+            "K3": {
+                "intent": "calendar: a correction recorded after the cutoff supersedes the original at the cutoff (join bound removed)",
+                "file": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0022_a_calendar_and_a_status_fact_corrected_after_T_resolve_as_known_at_each_cutoff => RED_INTENDED (at the early cutoff the original, known revision stands)",
+                    "B18F018BitemporalGuardSetTest.php::test_r0032_as_known_historical_processing_uses_the_calendar_known_at_the_cutoff_and_not_a_future_correction => RED_INTENDED (at the cutoff the date is the completed trading session that was on record)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b",
+                "sha256_restored": "06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b"
+            },
+            "K4": {
+                "intent": "calendar range read: the knowledge-time bound is removed",
+                "file": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0011_calendar_and_status_revisions_respect_effective_time_and_knowledge_time_each_on_its_own => RED_INTENDED (a revision effective after the target date must not apply to it, and the late-recorded one is unknown)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b",
+                "sha256_restored": "06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b"
+            },
+            "K5": {
+                "intent": "calendar range read: the effective-time upper bound is removed",
+                "file": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0011_calendar_and_status_revisions_respect_effective_time_and_knowledge_time_each_on_its_own => RED_INTENDED (a revision effective after the target date must not apply to it, and the late-recorded one is unknown)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b",
+                "sha256_restored": "06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b"
+            },
+            "K6": {
+                "intent": "calendar: ambiguity does not fail closed (two terminal revisions, the first is used)",
+                "file": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_ties_and_corrections_are_deterministic_and_ambiguity_fails_closed_as_known => RED_INTENDED (once both are known two terminal revisions are an ambiguity and must fail closed, not pick the latest)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b",
+                "sha256_restored": "06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b"
+            },
+            "S1": {
+                "intent": "status: the knowledge-time bound is removed (a later-recorded revision is visible to the cutoff)",
+                "file": "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0011_calendar_and_status_revisions_respect_effective_time_and_knowledge_time_each_on_its_own => RED_INTENDED (a status revision recorded after the cutoff must be invisible to it, although it was effective at the target)",
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_every_root_resolves_by_effective_time_and_by_knowledge_time => RED_INTENDED (status: recorded after the cutoff, invisible to it)",
+                    "AsKnownReplayBoundaryTest.php::test_a_status_revision_recorded_after_the_cutoff_is_invisible => RED_INTENDED (not yet recorded is not yet knowable)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487",
+                "sha256_restored": "ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487"
+            },
+            "S2": {
+                "intent": "status WALL: every cutoff read hides everything",
+                "file": "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0011_calendar_and_status_revisions_respect_effective_time_and_knowledge_time_each_on_its_own => RED_INTENDED (a status revision effective and recorded before the cutoff must be visible at it (a wall hides it))",
+                    "B18F018BitemporalGuardSetTest.php::test_r0022_a_calendar_and_a_status_fact_corrected_after_T_resolve_as_known_at_each_cutoff => RED_INTENDED (the lift took effect but was learned later: at the early cutoff the suspension still stands)",
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_every_root_resolves_by_effective_time_and_by_knowledge_time => RED_INTENDED (status: known before the cutoff, visible at it)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487",
+                "sha256_restored": "ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487"
+            },
+            "S3": {
+                "intent": "status: a correction recorded after the cutoff closes the suspension at the cutoff (join bound removed)",
+                "file": "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0022_a_calendar_and_a_status_fact_corrected_after_T_resolve_as_known_at_each_cutoff => RED_INTENDED (the lift took effect but was learned later: at the early cutoff the suspension still stands)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487",
+                "sha256_restored": "ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487"
+            },
+            "S4": {
+                "intent": "status: the effective-time bound is removed (a revision effective after the target applies to it)",
+                "file": "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0011_calendar_and_status_revisions_respect_effective_time_and_knowledge_time_each_on_its_own => RED_INTENDED (a status revision known at the cutoff but effective only after the target date must not apply to the target)",
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_every_root_resolves_by_effective_time_and_by_knowledge_time => RED_INTENDED (status: effective after the target, not applied to it)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487",
+                "sha256_restored": "ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487"
+            },
+            "S5": {
+                "intent": "status: a same-authority disagreement does not fail closed",
+                "file": "app/Infrastructure/Persistence/MarketData/TemporalTradingStatusRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_ties_and_corrections_are_deterministic_and_ambiguity_fails_closed_as_known => RED_INTENDED (once both are known the same-authority disagreement fails closed)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487",
+                "sha256_restored": "ae9c9fc009aeb672fb36709579e5e52799e6730d6147ebdd5caa1e4ea8a7c487"
+            },
+            "V1": {
+                "intent": "event: the knowledge-time bound is removed (an action learned later is visible to the cutoff)",
+                "file": "app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0023_a_corporate_action_learned_or_verified_later_is_known_only_as_it_was_at_the_cutoff => RED_INTENDED (an action learned after the cutoff must be invisible to it)",
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_every_root_resolves_by_effective_time_and_by_knowledge_time => RED_INTENDED (event: recorded after the cutoff, invisible to it)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "5687695a777b69f9b27fe8c3dd9fddf2c241e9b4c0e5e29e8a6c0b1b1c7fff28",
+                "sha256_restored": "5687695a777b69f9b27fe8c3dd9fddf2c241e9b4c0e5e29e8a6c0b1b1c7fff28"
+            },
+            "V2": {
+                "intent": "event WALL: every cutoff read hides every action",
+                "file": "app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0023_a_corporate_action_learned_or_verified_later_is_known_only_as_it_was_at_the_cutoff => RED_INTENDED (an action known before the cutoff must be visible at it)",
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_every_root_resolves_by_effective_time_and_by_knowledge_time => RED_INTENDED (event: known before the cutoff, visible at it)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "5687695a777b69f9b27fe8c3dd9fddf2c241e9b4c0e5e29e8a6c0b1b1c7fff28",
+                "sha256_restored": "5687695a777b69f9b27fe8c3dd9fddf2c241e9b4c0e5e29e8a6c0b1b1c7fff28"
+            },
+            "V3": {
+                "intent": "event: a verification or cancellation recorded after the cutoff supersedes the revision known at it (join bound removed)",
+                "file": "app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0023_a_corporate_action_learned_or_verified_later_is_known_only_as_it_was_at_the_cutoff => RED_INTENDED (verified later: the revision known at the cutoff must still be the terminal one)",
+                    "B18F018BitemporalGuardSetTest.php::test_r0023_a_cancellation_recorded_after_the_cutoff_does_not_remove_an_action_known_at_it => RED_INTENDED (the June cancellation is not known in April, so the earlier revision is still the terminal one)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "5687695a777b69f9b27fe8c3dd9fddf2c241e9b4c0e5e29e8a6c0b1b1c7fff28",
+                "sha256_restored": "5687695a777b69f9b27fe8c3dd9fddf2c241e9b4c0e5e29e8a6c0b1b1c7fff28"
+            },
+            "V4": {
+                "intent": "event: the effective-time bound (ex-date equals the target) is removed",
+                "file": "app/Infrastructure/Persistence/MarketData/EventRiskSourceRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_every_root_resolves_by_effective_time_and_by_knowledge_time => RED_INTENDED (event: ex-date after the target, not applied to it)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "5687695a777b69f9b27fe8c3dd9fddf2c241e9b4c0e5e29e8a6c0b1b1c7fff28",
+                "sha256_restored": "5687695a777b69f9b27fe8c3dd9fddf2c241e9b4c0e5e29e8a6c0b1b1c7fff28"
+            },
+            "C1": {
+                "intent": "config: the knowledge-time bound is removed",
+                "file": "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_every_root_resolves_by_effective_time_and_by_knowledge_time => RED_INTENDED (config: the snapshot known before the cutoff governs the target at it)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+                "sha256_restored": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4"
+            },
+            "C2": {
+                "intent": "config WALL: every cutoff read finds nothing",
+                "file": "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_every_root_resolves_by_effective_time_and_by_knowledge_time => RED_INTENDED (config: the snapshot known before the cutoff governs the target at it)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+                "sha256_restored": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4"
+            },
+            "C3": {
+                "intent": "config: the effective-time bound is removed",
+                "file": "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_every_root_resolves_by_effective_time_and_by_knowledge_time => RED_INTENDED (config: the snapshot known before the cutoff governs the target at it)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+                "sha256_restored": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4"
+            },
+            "C4": {
+                "intent": "config: an exact tie is broken by the lower id instead of the same rule",
+                "file": "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_ties_and_corrections_are_deterministic_and_ambiguity_fails_closed_as_known => RED_INTENDED (an exact tie is broken by the same rule every time (the higher id), never by read order)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+                "sha256_restored": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4"
+            },
+            "F1": {
+                "intent": "factor: the knowledge-time bound on factor sets is removed",
+                "file": "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_every_root_resolves_by_effective_time_and_by_knowledge_time => RED_INTENDED (factor: only the set known at the cutoff, and it is visible (a wall hides it))"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+                "sha256_restored": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2"
+            },
+            "F2": {
+                "intent": "factor WALL: no factor set is ever known under a cutoff",
+                "file": "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_every_root_resolves_by_effective_time_and_by_knowledge_time => RED_INTENDED (factor: only the set known at the cutoff, and it is visible (a wall hides it))"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+                "sha256_restored": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2"
+            },
+            "F3": {
+                "intent": "factor: the effective-time bound on factors is removed",
+                "file": "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_every_root_resolves_by_effective_time_and_by_knowledge_time => RED_INTENDED (factor: a factor effective after the target is not applied to it)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+                "sha256_restored": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2"
+            },
+            "I1": {
+                "intent": "identity: the listing knowledge-time bound is removed",
+                "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_every_root_resolves_by_effective_time_and_by_knowledge_time => RED_INTENDED (identity: a listing whose listing root was recorded after the cutoff must be invisible to it)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "29575428e6efb0b4ad52672a100f9d8c9630f580833d3a6f0f66c94adf6c0c0a",
+                "sha256_restored": "29575428e6efb0b4ad52672a100f9d8c9630f580833d3a6f0f66c94adf6c0c0a"
+            },
+            "I2": {
+                "intent": "identity: the effective-time bound (listed date) is removed",
+                "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_every_root_resolves_by_effective_time_and_by_knowledge_time => RED_INTENDED (identity: a listing effective only after the target date must not be in its universe)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "29575428e6efb0b4ad52672a100f9d8c9630f580833d3a6f0f66c94adf6c0c0a",
+                "sha256_restored": "29575428e6efb0b4ad52672a100f9d8c9630f580833d3a6f0f66c94adf6c0c0a"
+            },
+            "I3": {
+                "intent": "identity WALL: no listing is ever known under a cutoff",
+                "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18F018BitemporalGuardSetTest.php::test_r0028_every_root_resolves_by_effective_time_and_by_knowledge_time => RED_INTENDED (identity: a listing known before the cutoff must be visible at it)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "29575428e6efb0b4ad52672a100f9d8c9630f580833d3a6f0f66c94adf6c0c0a",
+                "sha256_restored": "29575428e6efb0b4ad52672a100f9d8c9630f580833d3a6f0f66c94adf6c0c0a"
+            },
+            "A1": {
+                "intent": "adjusted close: the canonical row keeps the provider adj_close (full ingest route)",
+                "file": "app/Application/MarketData/Services/EodBarsIngestService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "CanonicalRawImportBoundaryTest.php::test_provider_adjusted_close_never_reaches_the_canonical_row => RED_INTENDED (provider adjusted close must never reach the canonical row)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "ef8a195b180ce56eb4d4afe2f12088a3cc703c1416fce7c93db9daae374b9cbf",
+                "sha256_restored": "ef8a195b180ce56eb4d4afe2f12088a3cc703c1416fce7c93db9daae374b9cbf"
+            },
+            "A1b": {
+                "intent": "adjusted close: the canonical row keeps the provider adj_close (recovered-row route)",
+                "file": "app/Application/MarketData/Services/EodBarsIngestService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "CanonicalRawImportBoundaryTest.php::test_provider_adjusted_close_never_reaches_the_canonical_row_on_the_recovered_row_route => RED_INTENDED (provider adjusted close must never reach the canonical row on the recovered-row route)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "ef8a195b180ce56eb4d4afe2f12088a3cc703c1416fce7c93db9daae374b9cbf",
+                "sha256_restored": "ef8a195b180ce56eb4d4afe2f12088a3cc703c1416fce7c93db9daae374b9cbf"
+            },
+            "A2": {
+                "intent": "adjusted close: the price basis falls back to the provider adj_close when present",
+                "file": "app/Application/MarketData/Services/IndicatorVectorService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "CoherentPriceProductBoundaryTest.php::test_r0014_no_selector_or_adjustment_makes_provider_adjusted_close_an_analytical_value => RED_INTENDED (the analytical moving average is the raw-close one)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "9148056cd4a6fee8f2d392c969b4af490133189278e650414908494b96580cf2",
+                "sha256_restored": "9148056cd4a6fee8f2d392c969b4af490133189278e650414908494b96580cf2"
+            },
+            "A3": {
+                "intent": "adjusted close: the provider adj_close is rescaled by the platform factor into a second analytical series",
+                "file": "app/Application/MarketData/Services/AnalyticalPriceProductService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "CoherentPriceProductBoundaryTest.php::test_r0014_no_selector_or_adjustment_makes_provider_adjusted_close_an_analytical_value => RED_INTENDED (the provider observation is left as observed and is not scaled into a platform product)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "f321b20242d77ec11f4a968bb7433144c06af75d732c23a28572ce1a6f0c24c8",
+                "sha256_restored": "f321b20242d77ec11f4a968bb7433144c06af75d732c23a28572ce1a6f0c24c8"
+            },
+            "P1": {
+                "intent": "publication: the original is resolved as the current one (pointer comparison forced true)",
+                "file": "app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18CorrectionReadPathScenarioTest.php::test_s050_r0025_an_original_and_a_corrected_publication_each_resolve_by_their_own_identity => RED_INTENDED (the original is a sealed historical publication, not the current one)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "fb6ecd9cd5b1824764f5e1d94900dafd5240c25a3689f73d21632ceeca516fd7",
+                "sha256_restored": "fb6ecd9cd5b1824764f5e1d94900dafd5240c25a3689f73d21632ceeca516fd7"
+            },
+            "P2": {
+                "intent": "publication: a replay with no explicit identity falls back to a publication",
+                "file": "app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18CorrectionReadPathScenarioTest.php::test_s050_r0025_a_replay_never_falls_back_to_the_latest_or_the_current_publication => RED_INTENDED (a replay with no explicit publication or run identity must not resolve the current or latest publication)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "fb6ecd9cd5b1824764f5e1d94900dafd5240c25a3689f73d21632ceeca516fd7",
+                "sha256_restored": "fb6ecd9cd5b1824764f5e1d94900dafd5240c25a3689f73d21632ceeca516fd7"
+            },
+            "P3": {
+                "intent": "publication: as-known resolution ignores the seal time (a correction sealed later is visible)",
+                "file": "app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18CorrectionReadPathScenarioTest.php::test_a_correction_sealed_later_is_invisible_to_an_earlier_cutoff => RED_INTENDED (a correction sealed at 19:20 cannot be the publication a reader had at 18:30)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "fb6ecd9cd5b1824764f5e1d94900dafd5240c25a3689f73d21632ceeca516fd7",
+                "sha256_restored": "fb6ecd9cd5b1824764f5e1d94900dafd5240c25a3689f73d21632ceeca516fd7"
+            },
+            "P4": {
+                "intent": "publication WALL: as-known resolution returns nothing under any cutoff",
+                "file": "app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18CorrectionReadPathScenarioTest.php::test_a_correction_sealed_later_is_invisible_to_an_earlier_cutoff => RED_INTENDED (the original was sealed at 18:20 and must resolve at 18:30)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "fb6ecd9cd5b1824764f5e1d94900dafd5240c25a3689f73d21632ceeca516fd7",
+                "sha256_restored": "fb6ecd9cd5b1824764f5e1d94900dafd5240c25a3689f73d21632ceeca516fd7"
+            },
+            "M1": {
+                "intent": "comparison: the reason-code distribution is no longer compared",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18ReplayComparisonExhaustivenessTest.php::test_r0029_a_divergence_in_each_assertion_class_denies_pass_and_is_named_by_its_own_comparison with data set \"null reasons: reason-code distribution\" => RED_INTENDED (a null reasons divergence (reason-code distribution) must be a FAIL)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+                "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe"
+            },
+            "M2": {
+                "intent": "comparison: the run seal state is no longer compared (the publication seal comparison still fires)",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18ReplayComparisonExhaustivenessTest.php::test_r0029_a_divergence_in_each_assertion_class_denies_pass_and_is_named_by_its_own_comparison with data set \"seal: run seal state\" => RED_INTENDED (but not on seal_state)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+                "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe"
+            },
+            "M3": {
+                "intent": "comparison: the publication seal state is no longer compared (the run seal comparison still fires)",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18ReplayComparisonExhaustivenessTest.php::test_r0029_a_divergence_in_each_assertion_class_denies_pass_and_is_named_by_its_own_comparison with data set \"seal: publication seal state\" => RED_INTENDED (but not on publication_seal_state)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+                "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe"
+            },
+            "M4": {
+                "intent": "comparison: publishability is no longer compared",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18ReplayComparisonExhaustivenessTest.php::test_r0029_a_divergence_in_each_assertion_class_denies_pass_and_is_named_by_its_own_comparison with data set \"states: publishability\" => RED_INTENDED (but not on publishability_state)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+                "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe"
+            },
+            "M5": {
+                "intent": "comparison: the terminal status is no longer compared (the status comparison of the same expectation still fires)",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18ReplayComparisonExhaustivenessTest.php::test_r0029_a_divergence_in_each_assertion_class_denies_pass_and_is_named_by_its_own_comparison with data set \"states: terminal status\" => RED_INTENDED (but not on terminal_status)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+                "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe"
+            },
+            "M6": {
+                "intent": "comparison: the final reason code is no longer compared (the expected_reason_code comparison still fires)",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18ReplayComparisonExhaustivenessTest.php::test_r0029_a_divergence_in_each_assertion_class_denies_pass_and_is_named_by_its_own_comparison with data set \"null reasons: final reason code\" => RED_INTENDED (but not on final_reason_code)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+                "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe"
+            },
+            "M7": {
+                "intent": "comparison: the lineage record is no longer compared",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18ReplayComparisonExhaustivenessTest.php::test_r0029_a_divergence_in_each_assertion_class_denies_pass_and_is_named_by_its_own_comparison with data set \"lineages: lineage record\" => RED_INTENDED (but not on lineage)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+                "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe"
+            },
+            "M8": {
+                "intent": "comparison: the indicators batch hash is no longer compared",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18ReplayComparisonExhaustivenessTest.php::test_r0029_a_divergence_in_each_assertion_class_denies_pass_and_is_named_by_its_own_comparison with data set \"content hashes: indicators batch hash\" => RED_INTENDED (but not on indicators_batch_hash)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+                "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe"
+            },
+            "M9": {
+                "intent": "comparison: the artifact row count is no longer compared",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18ReplayComparisonExhaustivenessTest.php::test_r0029_a_divergence_in_each_assertion_class_denies_pass_and_is_named_by_its_own_comparison with data set \"expected values: artifact row count\" => RED_INTENDED (but not on bars_rows_written)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+                "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe"
+            },
+            "M10": {
+                "intent": "comparison: the publishing run is no longer compared (the lineage comparison of the same expectation still fires)",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18ReplayComparisonExhaustivenessTest.php::test_r0029_a_divergence_in_each_assertion_class_denies_pass_and_is_named_by_its_own_comparison with data set \"lineages: publishing run\" => RED_INTENDED (but not on publication_run_id)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+                "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe"
+            },
+            "M11": {
+                "intent": "comparison: the coverage gate state is no longer compared",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18ReplayComparisonExhaustivenessTest.php::test_r0029_a_divergence_in_each_assertion_class_denies_pass_and_is_named_by_its_own_comparison with data set \"states: coverage gate\" => RED_INTENDED (a states divergence (coverage gate) must be a FAIL)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+                "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe"
+            },
+            "M12": {
+                "intent": "comparison: a manifest declaring a file the fixture does not carry is no longer refused",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18ReplayComparisonExhaustivenessTest.php::test_r0029_a_manifest_declaring_a_file_the_fixture_does_not_carry_is_refused_for_that_file => RED_INTENDED (the refusal must name the file the manifest declares and the fixture lacks)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+                "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe"
+            },
+            "T1": {
+                "intent": "mapping: the provider-mapping knowledge-time bound is removed",
+                "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18AntiSurvivorshipFixtureCorpusTest.php::test_a_symbol_change_recorded_after_the_cutoff_is_not_yet_visible_to_it => RED_INTENDED (PROVIDER_SYMBOL_MAPPING_AMBIGUOUS)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "29575428e6efb0b4ad52672a100f9d8c9630f580833d3a6f0f66c94adf6c0c0a",
+                "sha256_restored": "29575428e6efb0b4ad52672a100f9d8c9630f580833d3a6f0f66c94adf6c0c0a"
+            },
+            "T2": {
+                "intent": "mapping: a retraction recorded after the cutoff does not stop the retracted mapping answering once known",
+                "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18AntiSurvivorshipFixtureCorpusTest.php::test_a_symbol_change_recorded_after_the_cutoff_is_not_yet_visible_to_it => RED_INTENDED (PROVIDER_SYMBOL_MAPPING_AMBIGUOUS)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "29575428e6efb0b4ad52672a100f9d8c9630f580833d3a6f0f66c94adf6c0c0a",
+                "sha256_restored": "29575428e6efb0b4ad52672a100f9d8c9630f580833d3a6f0f66c94adf6c0c0a"
+            },
+            "T3": {
+                "intent": "mapping/identity: the symbol knowledge-time bound is removed (a future rename is visible to the cutoff)",
+                "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18AntiSurvivorshipFixtureCorpusTest.php::test_a_symbol_change_recorded_after_the_cutoff_is_not_yet_visible_to_it => RED_INTENDED (a symbol revision recorded on 1 September cannot be visible to a cutoff of 1 August)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "29575428e6efb0b4ad52672a100f9d8c9630f580833d3a6f0f66c94adf6c0c0a",
+                "sha256_restored": "29575428e6efb0b4ad52672a100f9d8c9630f580833d3a6f0f66c94adf6c0c0a"
+            },
+            "T4": {
+                "intent": "mapping: the effective-time end of a mapping is ignored (a superseded provider mapping still answers)",
+                "file": "app/Infrastructure/Persistence/MarketData/TemporalIdentityRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18AntiSurvivorshipFixtureCorpusTest.php::test_a_symbol_change_resolves_to_the_symbol_and_mapping_effective_on_the_trade_date => RED_INTENDED (PROVIDER_SYMBOL_MAPPING_AMBIGUOUS)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "29575428e6efb0b4ad52672a100f9d8c9630f580833d3a6f0f66c94adf6c0c0a",
+                "sha256_restored": "29575428e6efb0b4ad52672a100f9d8c9630f580833d3a6f0f66c94adf6c0c0a"
+            },
+            "B1": {
+                "intent": "publication mode (V2): the frozen calendar revision set no longer enters the calendar/status identity",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18ReplayPersistedEvidenceBindingTest.php::test_a_v2_publication_replays_the_calendar_and_temporal_identities_frozen_in_its_lineage with data set \"calendar revision set\" => RED_INTENDED (changing the frozen calendar_revision_set_hash must move exactly the identity it feeds)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+                "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe"
+            },
+            "B2": {
+                "intent": "publication mode (V1): the frozen calendar revision set no longer enters the calendar/status identity",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18ReplayPersistedEvidenceBindingTest.php::test_each_frozen_identity_follows_only_its_own_canonical_source with data set \"calendar and status revisions\" => RED_INTENDED (perturbing one canonical source must move exactly the identity it feeds)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+                "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe"
+            },
+            "B3": {
+                "intent": "publication mode (V2): the frozen identity revision set no longer enters the temporal identity",
+                "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "B18ReplayPersistedEvidenceBindingTest.php::test_a_v2_publication_replays_the_calendar_and_temporal_identities_frozen_in_its_lineage with data set \"identity revision set\" => RED_INTENDED (changing the frozen identity_revision_set_hash must move exactly the identity it feeds)"
+                ],
+                "restored_byte_identical": true,
+                "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+                "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe"
+            }
+        }
+    },
+    "gaps_found_by_probing_and_closed": {
+        "I1/I2 NOT_CAUGHT (first probe pass)": "the identity fixture gave listing, instrument and issuer the same recorded time and the symbol the same listed date, so removing the listing knowledge bound or the listed-date bound changed nothing: rewritten to one late root at a time",
+        "B1/B3 NOT_CAUGHT (first probe pass)": "no test exercised the V2 semantic-profile publication path of the calendar/status and temporal identities: B18ReplayPersistedEvidenceBindingTest gained a V2 world and test_a_v2_publication_replays_the_calendar_and_temporal_identities_frozen_in_its_lineage",
+        "A1 anchor count 2": "the canonical row is built on two routes (full and recovered-row) and only the full route was held: test_provider_adjusted_close_never_reaches_the_canonical_row_on_the_recovered_row_route",
+        "M12 RED_UNRELATED": "the manifest test accepted any RuntimeException (the removed refusal surfaced as a mock error): it now requires the refusal that names the missing file",
+        "labels": "several first-pass reds were the intended defect reported by an assertion or exception other than the one first labelled; labels were corrected to the assertion that actually reports the defect, and the whole probe set was re-run on the final tests"
+    },
+    "test_and_support_changes": {
+        "new": [
+            "tests/Unit/MarketData/B18F018BitemporalGuardSetTest.php (8 tests)"
+        ],
+        "methods_added_to_existing_classes": [
+            "B18ReplayComparisonExhaustivenessTest (4 methods incl. 15 data sets)",
+            "B18CorrectionReadPathScenarioTest (2)",
+            "CoherentPriceProductBoundaryTest (1)",
+            "CanonicalRawImportBoundaryTest (1 test, route parameter and a partial-write mock in the ingest harness)",
+            "B18ReplayPersistedEvidenceBindingTest (1 test with 3 data sets, a V2 publication world flag in persistWorld)"
+        ],
+        "assertions_given_messages": [
+            "CanonicalRawImportBoundaryTest and CoherentPriceProductBoundaryTest assertions carry the failure messages the probes expect"
+        ],
+        "production_code": "none",
+        "file_sha256": {
+            "tests/Unit/MarketData/B18ReplayComparisonExhaustivenessTest.php": "d99d8dea19195e5a4fe0bb40776aaa41113ec94e6e1358e97e0fa6aa780bc432",
+            "tests/Unit/MarketData/B18CorrectionReadPathScenarioTest.php": "2cb4e8d8da74375b7f8bf92ffbb4ad4fd29ee16f50d4788816d0bf42961e092a",
+            "tests/Unit/MarketData/CoherentPriceProductBoundaryTest.php": "f3b35f82107e3513b7968d17f28e0b2445087bbcd60988578e4989e6511966c2",
+            "tests/Unit/MarketData/CanonicalRawImportBoundaryTest.php": "1e67031767416cf586f13f061786dd7618dbb32a7ecf43d52469f1f9bb37eca5",
+            "tests/Unit/MarketData/B18ReplayPersistedEvidenceBindingTest.php": "c60fd0b12e4b706c691f4831b4bdfea5372eb139191ad441f2f4fc9290a80b56",
+            "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php": "e7d3a7038961498760342a10fc4f751f22094905c49810b109443079e27e4182",
+            "tests/Unit/MarketData/B18F018BitemporalGuardSetTest.php": "b66888154905227c14f4e951138d45fa184bebaedd48fbc324ff94b4a31f6ace"
+        }
+    },
+    "existing_proven_bases_touched_by_shared_test_changes": {
+        "bases": {
+            "B18ReplayComparisonExhaustivenessTest": [
+                "MD-S050-R0008",
+                "MD-S050-R0009",
+                "MD-S050-R0012",
+                "MD-S019-R0067",
+                "MD-S019-R0068",
+                "MD-S019-R0069",
+                "MD-S085-R0452",
+                "MD-S082-R0015",
+                "MD-S050-R0002",
+                "MD-S003-R0003",
+                "MD-S050-R0016",
+                "MD-S082-R0216",
+                "MD-S050-R0033",
+                "MD-S036-R0007",
+                "MD-S036-R0031",
+                "MD-S019-R0074",
+                "MD-S002-R0003"
+            ],
+            "CoherentPriceProductBoundaryTest": [
+                "MD-S003-R0013"
+            ],
+            "B18ReplayPersistedEvidenceBindingTest": [
+                "MD-S003-R0023",
+                "MD-S004-R0004"
+            ]
+        },
+        "rechecks": {
+            "B18F018BitemporalGuardSetTest": {
+                "tests": 8,
+                "assertions": 81,
+                "failures": 0,
+                "errors": 0
+            },
+            "B18ReplayComparisonExhaustivenessTest": {
+                "tests": 94,
+                "assertions": 690,
+                "failures": 0,
+                "errors": 0
+            },
+            "B18CorrectionReadPathScenarioTest": {
+                "tests": 14,
+                "assertions": 39,
+                "failures": 0,
+                "errors": 0
+            },
+            "CoherentPriceProductBoundaryTest": {
+                "tests": 8,
+                "assertions": 24,
+                "failures": 0,
+                "errors": 0
+            },
+            "CanonicalRawImportBoundaryTest": {
+                "tests": 12,
+                "assertions": 36,
+                "failures": 0,
+                "errors": 0
+            },
+            "B18ReplayPersistedEvidenceBindingTest": {
+                "tests": 20,
+                "assertions": 177,
+                "failures": 0,
+                "errors": 0
+            },
+            "AsKnownReplayBoundaryTest": {
+                "tests": 11,
+                "assertions": 110,
+                "failures": 0,
+                "errors": 0
+            },
+            "B18AntiSurvivorshipFixtureCorpusTest": {
+                "tests": 10,
+                "assertions": 47,
+                "failures": 0,
+                "errors": 0
+            },
+            "B18AsKnownTemporalSequenceTest": {
+                "tests": 5,
+                "assertions": 12,
+                "failures": 0,
+                "errors": 0
+            },
+            "B18AsKnownModeIsolationTest": {
+                "tests": 36,
+                "assertions": 202,
+                "failures": 0,
+                "errors": 0
+            },
+            "ReplayVerificationServiceTest": {
+                "tests": 23,
+                "assertions": 95,
+                "failures": 0,
+                "errors": 0
+            },
+            "B18ConfigEffectiveTimeSelectionTest": {
+                "tests": 8,
+                "assertions": 19,
+                "failures": 0,
+                "errors": 0
+            },
+            "CalendarProvenanceAndStatusTest": {
+                "tests": 20,
+                "assertions": 46,
+                "failures": 0,
+                "errors": 0
+            },
+            "B18BeforeSealValidationTest": {
+                "tests": 10,
+                "assertions": 28,
+                "failures": 0,
+                "errors": 0
+            }
+        },
+        "result": "every touched file is green and the full suite below shows no new failure; no PROVEN basis is invalidated",
+        "support_change_note": "persistWorld gained an optional V2 flag; the V1 world now writes artifact_hash_profile = V1 instead of leaving it NULL, which the verifier treats identically (only the V2 profile selects the semantic path)"
+    },
+    "build_finality": {
+        "classification": "A. NO PRODUCTION BUILD CHANGE",
+        "evidence": "git diff --stat of app/, config/, bootstrap/, composer.json and composer.lock against HEAD is empty at issue time (checked by the issuing script); the production files mutated by the probes were restored byte-identically (sha256 recorded per probe)",
+        "frozen_build_boundary": "app, config, bootstrap, vendor, composer.json, composer.lock (ProducerRegistrySnapshot::build)",
+        "consequence": "candidate-v5 freezes the build as it stands at the commit that closes this unit"
+    },
+    "full_suite_on_the_final_tree": {
+        "tests": 2927,
+        "assertions": 41578,
+        "failures": 23,
+        "failure_classes": {
+            "B18ReleaseCandidateAcceptanceAggregateTest": 1,
+            "B18ScenarioFamiliesOnMariaDbTest": 1,
+            "B18ScenarioFamiliesOnMirrorTest": 1,
+            "ProductionCorpusInvariantOracleTest": 7,
+            "R0025SyntheticV2CandidateFixtureTest": 13
+        },
+        "failing_tests": {
+            "B18ReleaseCandidateAcceptanceAggregateTest": [
+                "test_md_s003_r0025_executes_all_scenario_family_members_on_mariadb_and_the_mirror_and_is_green"
+            ],
+            "B18ScenarioFamiliesOnMariaDbTest": [
+                "test_exact_publication_verification_family_on_mariadb"
+            ],
+            "B18ScenarioFamiliesOnMirrorTest": [
+                "test_exact_publication_verification_family_on_the_mirror"
+            ],
+            "ProductionCorpusInvariantOracleTest": [
+                "test_no_canonical_bar_carries_a_non_positive_price",
+                "test_no_canonical_bar_violates_ohlc_ordering",
+                "test_exactly_one_publication_is_current_per_trade_date",
+                "test_no_readable_publication_rests_on_a_failed_run",
+                "test_authoritative_factor_candidates_reach_an_explicit_applied_or_held_decision",
+                "test_no_price_derived_factor_is_usable_as_an_adjustment",
+                "test_every_history_row_binds_to_a_publication"
+            ],
+            "R0025SyntheticV2CandidateFixtureTest": [
+                "test_candidate_matches_the_actual_publication_but_is_not_admitted_as_proof",
+                "test_the_admission_mechanism_admits_only_the_exact_fingerprint_and_refuses_any_damaged_package",
+                "test_two_allocation_layouts_give_identical_semantic_identities_and_the_oracle_literals",
+                "test_a_wrong_literal_in_any_one_bound_input_is_the_only_mismatch_it_causes",
+                "test_each_semantic_member_of_the_event_factor_identity_moves_it",
+                "test_each_semantic_bound_input_equals_its_own_literal_on_the_real_path",
+                "test_the_publication_bound_build_identity_is_the_frozen_build_identity",
+                "test_an_independent_package_with_any_other_assertion_layer_is_blocked_even_with_an_approval_supplied",
+                "test_the_actual_publication_manifest_hash_equals_the_independent_literal_and_is_stable_across_layouts",
+                "test_a_wrong_publication_manifest_literal_is_the_only_mismatch_it_causes",
+                "test_the_real_target_emits_the_corrected_freshness_and_equals_the_independent_expectation",
+                "test_a_target_with_the_wrong_freshness_state_gives_field_specific_mismatches_and_no_build_noise",
+                "test_the_actual_eligibility_and_manifest_hashes_follow_the_governed_freshness_binding"
+            ]
+        },
+        "classification": "every remaining failure is a governed or expected state: the 7 ProductionCorpusInvariantOracle empty-corpus assertions (MD-DEP-0015/0016) and the R0025 candidate-v4 tests invalidated by the current build and configuration (E-MD-B18-A002-108, candidate-v5 pending); this is not a full-suite PASS"
+    },
+    "proof_basis_consequence": {
+        "promoted_to_PROVEN": [
+            "MD-S003-R0011",
+            "MD-S003-R0014",
+            "MD-S041-R0032",
+            "MD-S050-R0022",
+            "MD-S050-R0023",
+            "MD-S050-R0025",
+            "MD-S050-R0028",
+            "MD-S050-R0029",
+            "MD-S055-R0025"
+        ],
+        "removed_from_INCOMPLETE": [
+            "MD-S003-R0011",
+            "MD-S003-R0014",
+            "MD-S041-R0032",
+            "MD-S050-R0022",
+            "MD-S050-R0023",
+            "MD-S050-R0025",
+            "MD-S050-R0028",
+            "MD-S050-R0029",
+            "MD-S055-R0025"
+        ],
+        "unrelated_predicates_changed": 0,
+        "independent_review": "not required by governance for these bases (RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD 6A applies to the R0025 golden-fixture admission)"
+    },
+    "readiness": {
+        "before": "103/113",
+        "after": "112/113 (MarketDataReplayVerificationProofReadinessGate)",
+        "without_reviewed_basis": [
+            "MD-S003-R0025"
+        ],
+        "formal_satisfied": "0/113 (no matrix row changed; the atomic binder stage is later)",
+        "MD-S003-R0025": "INCOMPLETE; candidate-v4 and E100/D016/E101/E104/E105 untouched; candidate-v5 not created"
+    },
+    "finding_status": "F-MD-B18-A002-018 RESOLVED: every predicate it owns has a complete reviewed and proven basis under the current mechanism; the three advisory notes on already-PROVEN bases (R0012, R0019, R0017) are carried as observations in E-MD-B18-A002-111",
+    "raw_package": {
+        "path": "storage/app/market_data/evidence/MD-B18-A002/f018-as-known-bitemporal-guard-set-20261007-v1",
+        "manifest": "storage/app/market_data/evidence/MD-B18-A002/f018-as-known-bitemporal-guard-set-20261007-v1/manifest.json",
+        "manifest_sha256": "4459b454e5b904847ebb2db27c84771746b7af74b5e7875a445ced3bdcd304ac"
+    },
+    "what_was_not_done": [
+        "no candidate-v5",
+        "no production change",
+        "B04 and B10 not reopened",
+        "no B17 work",
+        "no formal SATISFIED row changed",
+        "no commit or push"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-018",
+        "F-MD-B18-A002-013"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-111",
+        "E-MD-B18-A002-110",
+        "E-MD-B18-A002-108"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-018"
+    ],
+    "next_resume_point": "MD-B18-A002: author candidate-v5 for MD-S003-R0025 as a distinct package against the unchanged build; independent review and owner approval.",
+    "no_commit_or_push": 1
+}
