@@ -13,17 +13,16 @@ use Illuminate\Support\Facades\DB;
 final class AsKnownReplaySnapshotService
 {
     /**
-     * `MD-S050-R0016` Gap B2: `Reason_Codes_Registry.md` (`MD-S085`) defines a stable code
-     * vocabulary but no revision, version, effective-time or recorded-time concept at all --
-     * confirmed by reading its "Registry rules" in full, which cover only naming, meaning
-     * stability and deprecation. There is therefore no historical reason-registry state an
-     * as-known replay could legitimately bind as of its knowledge cutoff. The prior
-     * `reason_registry_hash` was a hash of two hardcoded constant arrays
-     * (`coverage_states`/`replay_states`) plus a config key (`governance.reason_registry_revision`)
-     * that has never existed -- the exact same "non-empty is not present" shape `E-MD-B18-A002-069`
-     * found in the config identity. This marker replaces that fabricated-looking hash so the gap
-     * stays legible, exactly as `ReplayVerificationService::CONFIG_IDENTITY_UNRECORDED` already
-     * does for a missing config identity. Value equal to name, by the same convention.
+     * Marks a reason-registry identity that the configuration snapshot resolved as known at the cutoff cannot supply.
+     *
+     * Since `D-MD-B18-A002-018` (Q9 = A1) every NEW configuration snapshot carries the reason-registry semantic
+     * identity as a derived member, and an as-known replay binds exactly that member of the snapshot it resolved --
+     * never the current registry, the latest run capture, a placeholder or an inferred value. This marker is what is
+     * left for the snapshots that cannot supply it: a historical snapshot issued before the member existed (never
+     * back-filled, mutated or rewritten) or one whose member is malformed. Such a replay is `BLOCKED`
+     * (`Replay_Verification_Contract_LOCKED.md:33`), exactly as `MD-S050-R0016` Gap B2 recorded before the member
+     * existed. It is never the identity of a replay that proceeds: `ReplayResultRepository` refuses a non-BLOCKED
+     * result that carries it.
      */
     public const REASON_REGISTRY_IDENTITY_UNAVAILABLE = 'REASON_REGISTRY_IDENTITY_UNAVAILABLE';
 
@@ -112,14 +111,9 @@ final class AsKnownReplaySnapshotService
             'eligibility' => isset($resolvedConfig['eligibility']) ? $resolvedConfig['eligibility'] : [],
             'semantic_bindings' => $configPayload['semantic_bindings'],
         ];
-        $governanceConfig = isset($resolvedConfig['governance']) && is_array($resolvedConfig['governance'])
-            ? $resolvedConfig['governance'] : [];
-        $reasonIdentity = [
-            'coverage_states' => ['PASS', 'FAIL', 'NOT_EVALUATED'],
-            'replay_states' => ['PASS', 'FAIL', 'BLOCKED'],
-            'build_reason_registry_revision' => (string) (isset($governanceConfig['reason_registry_revision'])
-                ? $governanceConfig['reason_registry_revision'] : ''),
-        ];
+        // D-MD-B18-A002-018: the identity of the reason registry is the derived member of the snapshot resolved as known
+        // at the cutoff, and nothing else. null when that snapshot carries no valid member (see the marker's docblock).
+        $reasonIdentity = $this->reasonRegistryMember($configPayload);
 
         $context = [
             'replay_mode' => ReplayMode::AS_KNOWN,
@@ -179,10 +173,12 @@ final class AsKnownReplaySnapshotService
             'config_snapshot_id' => isset($config['config_snapshot_id']) ? (int) $config['config_snapshot_id'] : null,
             'config_snapshot_hash' => (string) ($config['config_hash'] ?? ''),
             'formula_registry_hash' => $this->hash($formulaIdentity),
-            // `MD-S050-R0016` Gap B2: `$reasonIdentity` above is two hardcoded constant arrays plus
-            // a config key that has never existed -- a hash of it is not a historical reason-
-            // registry identity, however non-empty it looks. See `self::REASON_REGISTRY_IDENTITY_UNAVAILABLE`.
-            'reason_registry_hash' => self::REASON_REGISTRY_IDENTITY_UNAVAILABLE,
+            // The semantic identity carried by the snapshot resolved at the cutoff (the same 64-hex value
+            // PUBLICATION_EXACT derives from the registry it froze), or the BLOCKED marker when that snapshot has none.
+            // Never read from the current registry.
+            'reason_registry_hash' => $reasonIdentity === null
+                ? self::REASON_REGISTRY_IDENTITY_UNAVAILABLE
+                : $reasonIdentity['semantic_identity'],
             'snapshot_hash' => $this->hash($context),
         ];
     }
@@ -240,6 +236,28 @@ final class AsKnownReplaySnapshotService
         }
 
         return $payload;
+    }
+
+    /**
+     * The derived reason-registry member of the decoded snapshot, or null when it is absent or malformed.
+     *
+     * Read only from the payload of the snapshot the cutoff selected. A snapshot issued before the member existed has
+     * none and stays that way: nothing is inferred, defaulted or looked up elsewhere.
+     *
+     * @return array{identity_contract:string,semantic_identity:string}|null
+     */
+    private function reasonRegistryMember(array $payload): ?array
+    {
+        $member = $payload['reason_registry'] ?? null;
+        if (! is_array($member)
+            || array_keys($member) !== ['identity_contract', 'semantic_identity']
+            || $member['identity_contract'] !== ReplayV2IdentityProjection::REASON_SCHEMA
+            || ! is_string($member['semantic_identity'])
+            || preg_match('/^[0-9a-f]{64}$/', $member['semantic_identity']) !== 1) {
+            return null;
+        }
+
+        return $member;
     }
 
     private function only(array $row, array $keys): array

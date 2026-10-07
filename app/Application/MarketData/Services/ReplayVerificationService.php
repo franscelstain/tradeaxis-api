@@ -402,9 +402,10 @@ class ReplayVerificationService
                 'canonical_raw_input_hash' => 'REPLAY_SOURCE_OBSERVATION_UNAVAILABLE: the requested trade date is '
                     .'a trading day and no identity-bound canonical row exists for it, so the canonical raw input '
                     .'set cannot be bound.',
-                'reason_registry_hash' => 'REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE: no historical reason-'
-                    .'registry identity can be bound as of the knowledge cutoff; MD-S085 defines no revision/'
-                    .'version lineage to resolve one from, so replay cannot proceed.',
+                'reason_registry_hash' => 'REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE: the configuration snapshot '
+                    .'resolved as known at the knowledge cutoff carries no valid derived reason-registry member '
+                    .'(it was issued before the member existed, or the member is malformed); a historical snapshot '
+                    .'is never back-filled and the current registry is never read, so replay cannot proceed.',
             ][$unavailableField];
             $reason = $reasonText;
             $actualContext = ['bound_inputs' => $actualSnapshot, 'executed_replay' => null];
@@ -495,6 +496,14 @@ class ReplayVerificationService
             ];
         }
 
+        // MD-S050-R0014 / D-MD-B18-A002-018: the fixture binds the reason-registry identity it expects, and it is
+        // compared with the identity of the snapshot resolved at the cutoff. A fixture that binds none is incomplete,
+        // not permission to skip the comparison.
+        $expectedReasonRegistryHash = $expectedSnapshot['reason_registry_hash'] ?? null;
+        if (! is_string($expectedReasonRegistryHash) || preg_match('/^[0-9a-f]{64}$/', $expectedReasonRegistryHash) !== 1) {
+            throw new \RuntimeException('REPLAY_EXPECTED_PROOF_INCOMPLETE: AS_KNOWN fixture must bind reason_registry_hash as the 64-hex semantic identity.');
+        }
+
         $executionService = $this->asKnownExecution ?: app(AsKnownReplayExecutionService::class);
         $actualExecution = $executionService->execute($tradeDate, $knowledgeCutoff, $actualSnapshot);
         if ((string) ($expectedExecution['execution_scope'] ?? '') !== AsKnownReplayExecutionService::EXECUTION_SCOPE) {
@@ -507,6 +516,14 @@ class ReplayVerificationService
                 'field' => 'as_known_snapshot_hash',
                 'expected' => $expectedSnapshotHash,
                 'actual' => $actualSnapshot['snapshot_hash'],
+                'reason_code' => 'REPLAY_LINEAGE_MISMATCH',
+            ];
+        }
+        if (! hash_equals($expectedReasonRegistryHash, (string) $actualSnapshot['reason_registry_hash'])) {
+            $mismatches[] = [
+                'field' => 'as_known_snapshot.reason_registry_hash',
+                'expected' => $expectedReasonRegistryHash,
+                'actual' => $actualSnapshot['reason_registry_hash'],
                 'reason_code' => 'REPLAY_LINEAGE_MISMATCH',
             ];
         }
@@ -604,7 +621,7 @@ class ReplayVerificationService
             'expected_context_json' => json_encode($expectedContext, JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION),
             'actual_context_json' => json_encode($actualContext, JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION),
             'ignored_volatile_fields_json' => json_encode($this->ignoredVolatileFields, JSON_UNESCAPED_SLASHES),
-            'deterministic_fields_checked_json' => json_encode(['as_known_snapshot_hash','canonical_output_hash','canonical_row_count','invalid_row_count','reason_code_counts'], JSON_UNESCAPED_SLASHES),
+            'deterministic_fields_checked_json' => json_encode(['as_known_snapshot_hash','as_known_snapshot.reason_registry_hash','canonical_output_hash','canonical_row_count','invalid_row_count','reason_code_counts'], JSON_UNESCAPED_SLASHES),
             'final_reason_code' => $comparisonResult === 'MATCH' ? null : (string) ($mismatches[0]['reason_code'] ?? 'REPLAY_MISMATCH'),
         ];
 

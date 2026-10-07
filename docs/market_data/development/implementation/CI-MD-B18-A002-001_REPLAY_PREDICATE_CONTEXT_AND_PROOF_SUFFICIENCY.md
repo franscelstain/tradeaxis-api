@@ -1128,3 +1128,7 @@ Same A002/BL001/CI. `MD-B04-A003` (baseline `MD-B04-A003-BL001`, `CI-MD-B04-A003
 ## 2026-10-07 MD-B04-A003 closed
 
 Same A002/BL001/CI. `MD-B04-A003` closed `114/114` (`SC-MD-B04-A003-001`); `MD-DEP-0023` resolved; `MD-B18-A002` returns to the reason-registry binding and proof. No B18 row, candidate or expected hash changed; the R0025 basis stays `INCOMPLETE` (`E-MD-B18-A002-108`).
+
+## 2026-10-07 reason-registry as-known binding
+
+Same A002/BL001/CI. `AsKnownReplaySnapshotService` binds the member of the snapshot resolved at the cutoff and `ReplayVerificationService` compares it; `MD-S050-R0005`, `MD-S050-R0014` and `MD-S019-R0071` are `PROVEN` (`E-MD-B18-A002-110`, authority verdict `E-MD-B18-A002-109`); readiness 103/113; this is part of the build that candidate-v5 will freeze; no candidate-v5, no F-018.

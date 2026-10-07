@@ -1651,3 +1651,28 @@ MD-REL-1650,F-MD-B18-A002-034,E-MD-B04-A003-003,RELATED,B04 part resolved.,MD-DE
 MD-REL-1651,F-MD-B18-A002-034,SC-MD-B04-A003-001,RELATED,B04 closure under the owner decision.,MD-DEP-0023,2026-10-07T16:37:11+07:00,MD-B04-A003 promotion and closure; return MD-B18-A002.
 MD-REL-1652,CI-MD-B04-A003-001,E-MD-B04-A003-003,RELATED,Promotion evidence of the declaration.,MD-DEP-0023,2026-10-07T16:37:11+07:00,MD-B04-A003 promotion and closure; return MD-B18-A002.
 MD-REL-1653,CI-MD-B04-A003-001,SC-MD-B04-A003-001,RELATED,Closure of the declaration.,MD-DEP-0023,2026-10-07T16:37:11+07:00,MD-B04-A003 promotion and closure; return MD-B18-A002.
+MD-REL-1654,E-MD-B18-A002-109,D-MD-B18-A002-018,DEPENDS_ON,The verdict applies the owner decision to the live-configuration guard.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1655,E-MD-B18-A002-109,D-MD-B18-A002-014,DEPENDS_ON,Semantic derivation of the identity.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1656,E-MD-B18-A002-109,E-MD-B04-A003-003,DEPENDS_ON,The closure whose consequence is examined.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1657,E-MD-B18-A002-109,E-MD-B18-A002-108,RELATED,R0025 basis transition caused by the same build change.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1658,E-MD-B18-A002-109,E-MD-B18-A002-107,RELATED,Impact classification that named the four rechecked bases.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1659,E-MD-B18-A002-109,E-MD-B18-A002-071,RELATED,Gap B2 marker whose cause is now removed.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1660,E-MD-B18-A002-109,E-MD-B18-A002-070,RELATED,Reopening of R0014 and R0071.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1661,E-MD-B18-A002-109,F-MD-B18-A002-034,RELATED,Finding resolved with the proof.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1662,E-MD-B18-A002-109,F-MD-B18-A002-013,RELATED,Finding resolved with the proof.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1663,E-MD-B18-A002-109,F-MD-B18-A002-017,RELATED,Owner of the R0005 basis.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1664,E-MD-B18-A002-110,E-MD-B18-A002-109,DEPENDS_ON,Proof rests on the authority verdict.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1665,E-MD-B18-A002-110,E-MD-B18-A002-108,RELATED,R0025 stays INCOMPLETE.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1666,E-MD-B18-A002-110,E-MD-B18-A002-107,DERIVED_FROM,Executes the B18 part of the classification and the four rechecks.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1667,E-MD-B18-A002-110,E-MD-B04-A003-003,DEPENDS_ON,The member is produced by the closed B04 remediation.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1668,E-MD-B18-A002-110,E-MD-B18-A002-071,RELATED,Replaces the Gap B2 unavailable-marker state for snapshots that carry the member; E071 stays immutable history.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1669,E-MD-B18-A002-110,E-MD-B18-A002-070,RELATED,Resolves the reopening of R0014 and R0071.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1670,E-MD-B18-A002-110,F-MD-B18-A002-034,RELATED,Resolves the finding.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1671,E-MD-B18-A002-110,F-MD-B18-A002-013,RELATED,Resolves the finding.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1672,E-MD-B18-A002-110,F-MD-B18-A002-017,RELATED,Owner of the R0005 basis.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1673,E-MD-B18-A002-110,D-MD-B18-A002-018,DEPENDS_ON,Owner decision Q9 = A1.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1674,E-MD-B18-A002-110,D-MD-B18-A002-014,DEPENDS_ON,Semantic derivation of the identity.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1675,F-MD-B18-A002-034,E-MD-B18-A002-110,RELATED,Resolved by the proof.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1676,F-MD-B18-A002-013,E-MD-B18-A002-110,RELATED,Resolved by the proof.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1677,CI-MD-B18-A002-001,E-MD-B18-A002-109,RELATED,Verdict recorded under the impact declaration.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.
+MD-REL-1678,CI-MD-B18-A002-001,E-MD-B18-A002-110,RELATED,Proof recorded under the impact declaration.,MD-DEP-0023,2026-10-07T17:50:53+07:00,MD-B18-A002 reason-registry as-known binding.

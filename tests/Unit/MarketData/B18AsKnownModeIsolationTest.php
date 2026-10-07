@@ -84,22 +84,86 @@ class B18AsKnownModeIsolationTest extends TestCase
     }
 
     /**
-     * `MD-S050-R0016` Gap B2 -- even a fixture that would otherwise match exactly is `BLOCKED`, not
-     * `PASS`. `MD-S085` provides no historical reason-registry identity for any as-known replay to
-     * bind, so this holds unconditionally; before this fix the same scenario reached `PASS`/`MATCH`
-     * on a hash of two hardcoded constant arrays that never varied with anything.
+     * `MD-S050-R0014` / `D-MD-B18-A002-018` (Q9 = A1) -- an as-known replay binds the reason-registry identity of the
+     * configuration snapshot RESOLVED AS KNOWN AT THE CUTOFF. Before the derived member existed no identity could be
+     * bound and every as-known replay was `BLOCKED` (`MD-S050-R0016` Gap B2); a fixture that matches now reaches
+     * `PASS`/`MATCH`, and the identity it stored is the snapshot's member -- not a marker, not a constant.
      */
-    public function test_an_as_known_replay_is_blocked_even_when_the_fixture_would_otherwise_match(): void
+    public function test_an_as_known_replay_binds_the_reason_registry_identity_of_the_snapshot_resolved_at_the_cutoff(): void
     {
+        $member = $this->resolvedSnapshotMember();
+        $this->assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $member['semantic_identity'], 'the world must give the cutoff snapshot a real member');
+
         $this->verifyAsKnown();
         $metric = $this->storedMetric();
 
-        $this->assertSame('BLOCKED', (string) $metric->replay_status,
-            'a fully-matching fixture must not make an unavailable required input admissible');
+        $this->assertSame('PASS', (string) $metric->replay_status, 'a matching fixture over a snapshot with a valid member must reach PASS');
+        $this->assertSame('MATCH', (string) $metric->comparison_result);
+        $this->assertSame('ADMISSIBLE', (string) $metric->admission_state);
+        $this->assertSame($member['semantic_identity'], (string) $metric->reason_registry_hash,
+            'the stored identity must be the member of the snapshot the cutoff resolved');
+        $this->assertNotSame(AsKnownReplaySnapshotService::REASON_REGISTRY_IDENTITY_UNAVAILABLE, (string) $metric->reason_registry_hash);
+        $bound = json_decode((string) $metric->bound_input_context_json, true)['bound_inputs'];
+        $this->assertSame($member, $bound['reason_registry_identity'], 'the snapshot context carries the same member, so snapshot_hash moves with it');
+    }
+
+    /**
+     * `D-MD-B18-A002-018` -- a historical snapshot that carries no member is never back-filled, mutated or rewritten,
+     * and a replay that resolves it stays `BLOCKED` even though the CURRENT registry is perfectly readable: the
+     * current registry is not a source for a historical identity.
+     */
+    public function test_a_replay_over_a_historical_snapshot_without_the_member_is_blocked_and_nothing_is_back_filled(): void
+    {
+        $this->stripMemberFromResolvedSnapshot();
+        $before = DB::table('md_config_snapshots')->orderBy('config_snapshot_id')->get()->all();
+        $this->assertGreaterThan(0, DB::table('eod_reason_codes')->count(), 'the current registry is readable throughout');
+
+        try {
+            $this->verifyAsKnownBlocked();
+        } catch (\RuntimeException $e) {
+            $this->fail('a snapshot without the member must block the replay, but execution was attempted: '.$e->getMessage());
+        }
+        $metric = $this->storedMetric();
+
+        $this->assertSame('BLOCKED', (string) $metric->replay_status, 'a snapshot without the member must block the replay');
         $this->assertSame('NOT_ADMISSIBLE', (string) $metric->comparison_result);
         $this->assertSame('NOT_ADMISSIBLE', (string) $metric->admission_state);
-        $this->assertStringContainsString('REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE', (string) $metric->mismatch_summary,
-            'the block must name the input that was unavailable');
+        $this->assertSame(AsKnownReplaySnapshotService::REASON_REGISTRY_IDENTITY_UNAVAILABLE, (string) $metric->reason_registry_hash,
+            'no current-table lookup may fill the historical identity in');
+        $this->assertStringContainsString('REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE', (string) $metric->mismatch_summary);
+        $this->assertSame([], json_decode((string) $metric->mismatches_json, true), 'a comparison that never ran reports no mismatch');
+        $this->assertEquals($before, DB::table('md_config_snapshots')->orderBy('config_snapshot_id')->get()->all(),
+            'the historical snapshot is byte-identical afterwards: not back-filled, mutated or rewritten');
+    }
+
+    /** @dataProvider malformedMembers */
+    public function test_a_replay_over_a_snapshot_with_a_malformed_member_is_blocked(callable $malform): void
+    {
+        $this->setMemberOfResolvedSnapshot($malform);
+
+        try {
+            $this->verifyAsKnownBlocked(false);
+        } catch (\RuntimeException $e) {
+            $this->fail('a malformed member must not be accepted, repaired or inferred; execution was attempted: '.$e->getMessage());
+        }
+        $metric = $this->storedMetric();
+
+        $this->assertSame('BLOCKED', (string) $metric->replay_status, 'a malformed member must not be accepted, repaired or inferred');
+        $this->assertSame(AsKnownReplaySnapshotService::REASON_REGISTRY_IDENTITY_UNAVAILABLE, (string) $metric->reason_registry_hash);
+        $this->assertStringContainsString('REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE', (string) $metric->mismatch_summary);
+    }
+
+    public function malformedMembers(): array
+    {
+        return [
+            'scalar' => [static function ($m) { return 'not-an-object'; }],
+            'wrong contract' => [static function ($m) { $m['identity_contract'] = 'market-data-reason-registry/v1'; return $m; }],
+            'identity not 64 hex' => [static function ($m) { $m['semantic_identity'] = substr($m['semantic_identity'], 1); return $m; }],
+            'uppercase identity' => [static function ($m) { $m['semantic_identity'] = strtoupper($m['semantic_identity']); return $m; }],
+            'empty identity' => [static function ($m) { $m['semantic_identity'] = ''; return $m; }],
+            'extra key' => [static function ($m) { $m['current_value'] = 'x'; return $m; }],
+            'identity missing' => [static function ($m) { unset($m['semantic_identity']); return $m; }],
+        ];
     }
 
     /**
@@ -197,7 +261,7 @@ class B18AsKnownModeIsolationTest extends TestCase
         $this->assertNotFalse($source);
 
         $this->assertStringContainsString(
-            "'deterministic_fields_checked_json' => json_encode(['as_known_snapshot_hash','canonical_output_hash','canonical_row_count','invalid_row_count','reason_code_counts'], JSON_UNESCAPED_SLASHES),",
+            "'deterministic_fields_checked_json' => json_encode(['as_known_snapshot_hash','as_known_snapshot.reason_registry_hash','canonical_output_hash','canonical_row_count','invalid_row_count','reason_code_counts'], JSON_UNESCAPED_SLASHES),",
             $source,
             'the as-known comparison field list must name the as-known artifacts it actually compares'
         );
@@ -222,55 +286,221 @@ class B18AsKnownModeIsolationTest extends TestCase
     }
 
     /**
-     * `MD-S050-R0016` Gap B2 -- an unavailable historical reason-registry identity blocks the
-     * replay before any comparison, regardless of what else the fixture would have diverged on. The
-     * prior version of this test (`test_an_as_known_result_diverging_from_its_own_fixture_is_a_mismatch`)
-     * proved this same perturbed fixture reached `MISMATCH`/`FAIL`; that scenario no longer exists,
-     * because `MD-S085` provides no historical reason-registry identity for any as-known replay to
-     * bind, so every as-known replay is `BLOCKED` first. Forcing a `MISMATCH`/`FAIL` result here
-     * would require fabricating a reason-registry identity Gap B2 exists to refuse -- not done.
+     * `MD-S050-R0005` -- the NEGATIVE clause. As-known "may differ from a historical publication when the selected
+     * cutoff, approved as-known configuration, or declared scenario differs"; a difference with none of those causes
+     * must be caught, not absorbed by that permission. Here the cutoff, the configuration snapshot and the scenario are
+     * exactly the fixture's, and only the fixture's own expectation of the snapshot is wrong: the comparison must RUN
+     * and report a MISMATCH -- it must not stop earlier because an input is unavailable (the Gap B2 state), and a
+     * `BLOCKED` result would not satisfy this clause.
      */
-    public function test_an_as_known_result_with_a_diverging_fixture_is_still_blocked_by_the_unavailable_reason_registry(): void
+    public function test_an_as_known_result_diverging_from_its_own_fixture_is_a_mismatch(): void
     {
         $this->verifyAsKnown(['snapshot_hash' => str_repeat('9', 64)]);
         $metric = $this->storedMetric();
 
-        $this->assertSame('BLOCKED', (string) $metric->replay_status,
-            'an unavailable required input is BLOCKED regardless of what else in the fixture diverges');
-        $this->assertSame('NOT_ADMISSIBLE', (string) $metric->comparison_result);
-        $this->assertStringContainsString('REPLAY_REASON_REGISTRY_IDENTITY_UNAVAILABLE', (string) $metric->mismatch_summary);
-
+        $this->assertSame('FAIL', (string) $metric->replay_status, 'an unexplained difference is a FAIL, not a BLOCKED and not a PASS');
+        $this->assertSame('MISMATCH', (string) $metric->comparison_result);
+        $this->assertSame('ADMISSIBLE', (string) $metric->admission_state, 'the comparison executed, so the result is admissible evidence of the difference');
         $mismatches = json_decode((string) $metric->mismatches_json, true);
-        $this->assertSame([], $mismatches,
-            'a comparison that never ran must not report a named mismatch, fabricated or otherwise');
+        $this->assertCount(1, $mismatches, 'exactly the perturbed expectation differs');
+        $this->assertSame('as_known_snapshot_hash', $mismatches[0]['field']);
+        $this->assertSame(str_repeat('9', 64), $mismatches[0]['expected']);
+        $this->assertSame('REPLAY_LINEAGE_MISMATCH', $mismatches[0]['reason_code']);
+        $this->assertStringNotContainsString('UNAVAILABLE', (string) $metric->mismatch_summary);
     }
 
     /**
-     * `MD-S050-R0016` Gap B2, the no-fallback half: mutating the *current* `eod_reason_codes`
-     * registry -- the real table, not a fixture -- cannot make an as-known replay admissible.
-     * `Platform_Config_Registry_LOCKED.md`: "Current registry state must never leak into
-     * historical replay." If the block were somehow keyed off today's registry being empty or
-     * absent, populating it richly would flip the verdict; it must not.
+     * `MD-S050-R0014` -- the reason-registry identity is compared as its own bound input. A fixture that expects another
+     * identity while the cutoff, configuration and scenario are the same is an unexplained difference: FAIL on exactly
+     * that field, naming the expected and the actual identity -- never BLOCKED, never absorbed into the snapshot hash.
      */
-    public function test_mutating_the_current_reason_registry_does_not_make_as_known_admissible(): void
+    public function test_a_different_expected_reason_registry_identity_is_a_named_mismatch(): void
+    {
+        $actual = $this->resolvedSnapshotMember()['semantic_identity'];
+        $other = hash('sha256', 'a different reason registry');
+
+        $this->verifyAsKnown(['reason_registry_hash' => $other]);
+        $metric = $this->storedMetric();
+
+        $this->assertSame('FAIL', (string) $metric->replay_status, 'a different expected reason-registry identity must fail the comparison');
+        $this->assertSame('MISMATCH', (string) $metric->comparison_result);
+        $mismatches = json_decode((string) $metric->mismatches_json, true);
+        $this->assertCount(1, $mismatches, 'only the reason-registry identity differs');
+        $this->assertSame('as_known_snapshot.reason_registry_hash', $mismatches[0]['field']);
+        $this->assertSame($other, $mismatches[0]['expected']);
+        $this->assertSame($actual, $mismatches[0]['actual']);
+        $this->assertSame($actual, (string) $metric->reason_registry_hash);
+    }
+
+    public function test_a_fixture_that_binds_no_reason_registry_identity_is_incomplete_not_unchecked(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessageMatches('/REPLAY_EXPECTED_PROOF_INCOMPLETE: AS_KNOWN fixture must bind reason_registry_hash/');
+
+        $this->verifyAsKnown(['reason_registry_hash' => null]);
+    }
+
+    /**
+     * `D-MD-B18-A002-018` / `Platform_Config_Registry_LOCKED.md:291`: "Current registry state must never leak into
+     * historical replay." The identity a replay binds is the one of the snapshot S1 resolved at the cutoff (H1). A later
+     * change of the live registry (H2) must not move it: not the identity, not the snapshot context, not the hash the
+     * replay compares. Nothing here executes the canonicalizer -- this is the binding of the identity, and it is
+     * independent of the live registry whatever the execution guard does.
+     */
+    public function test_a_later_registry_change_does_not_change_the_identity_the_cutoff_snapshot_binds(): void
+    {
+        $service = new AsKnownReplaySnapshotService();
+        $h1 = $service->capture(self::TRADE_DATE, self::CUTOFF);
+        $member = $this->resolvedSnapshotMember();
+        $this->assertSame($member['semantic_identity'], $h1['reason_registry_hash']);
+
+        DB::table('eod_reason_codes')->insert([
+            'code' => 'PROBE_CURRENT_ONLY_CODE', 'category' => 'PROBE', 'description' => 'current-only probe row',
+            'severity' => 'INFO', 'is_active' => 1,
+        ]);
+        $liveNow = \App\Application\MarketData\Services\ReplayV2IdentityProjection::reasonRegistryIdentity(['reason_entries' => array_map(
+            static function ($r) { return ['code' => $r->code, 'category' => $r->category, 'description' => $r->description, 'severity' => $r->severity, 'is_active' => (bool) $r->is_active]; },
+            DB::table('eod_reason_codes')->orderBy('code')->get()->all()
+        )]);
+        $this->assertNotSame($h1['reason_registry_hash'], $liveNow, 'the live registry now means something else (H2)');
+
+        $h2 = $service->capture(self::TRADE_DATE, self::CUTOFF);
+
+        $this->assertSame($h1['reason_registry_hash'], $h2['reason_registry_hash'], 'the bound identity is still H1, not the live H2');
+        $this->assertSame($h1['reason_registry_identity'], $h2['reason_registry_identity']);
+        $this->assertSame($h1['snapshot_hash'], $h2['snapshot_hash'], 'and nothing the replay compares moved with the live registry');
+        $this->assertNotSame($liveNow, $h2['reason_registry_hash']);
+    }
+
+    /**
+     * The EXECUTION of the production canonicalizer is a different matter from binding the identity. The producers read
+     * the live configuration, so executing them for a replay bound to snapshot S1 while the live content (now including
+     * the registry member) differs from S1 would label output produced under H2 with the identity H1 -- the current
+     * state leaking into a historical replay. They refuse, with the named reason, before any result is produced;
+     * nothing is stored, so there is neither an admissible nor a false PASS.
+     */
+    public function test_execution_under_a_diverged_live_registry_is_refused_and_stores_no_result(): void
     {
         DB::table('eod_reason_codes')->insert([
             'code' => 'PROBE_CURRENT_ONLY_CODE', 'category' => 'PROBE', 'description' => 'current-only probe row',
             'severity' => 'INFO', 'is_active' => 1,
         ]);
-
-        // Since MD-B04-A003 (D-MD-B18-A002-018) the registry's semantic identity is a member of the configuration
-        // snapshot, so a later registry change makes the live configuration differ from the historical snapshot the
-        // as-known run is bound to. The producers refuse to run (INPUT_CAPTURE_LIVE_CONFIG_DIVERGENCE) instead of
-        // reaching the comparison: stricter than BLOCKED, and still never admissible.
         $before = DB::table('md_replay_daily_metrics')->count();
+
         try {
             $this->verifyAsKnown();
-            $this->fail('richer current registry content must not let a historical as-known replay run to a verdict');
+            $this->fail('the canonicalizer ran for a snapshot whose registry identity no longer matches the live registry');
         } catch (\RuntimeException $e) {
             $this->assertStringContainsString('INPUT_CAPTURE_LIVE_CONFIG_DIVERGENCE', $e->getMessage());
         }
         $this->assertSame($before, DB::table('md_replay_daily_metrics')->count(), 'no admissible or any other result was stored');
+    }
+
+    /**
+     * `MD-S050-R0014` -- "formula, indicator registry, reason registry, price-product, coverage, eligibility, read-model,
+     * hash/serialization, and build versions" are each a bound input of an as-known replay. Each one is moved on its own
+     * and must move what the replay compares (`snapshot_hash`); the reason-registry identity is also its own bound field
+     * and moves independently of the configuration it travels in, and the configuration-resident versions leave it alone.
+     *
+     * @dataProvider boundVersions
+     */
+    public function test_each_named_version_is_a_bound_input_that_moves_what_the_as_known_replay_compares(string $version, string $kind, string $path): void
+    {
+        $service = new AsKnownReplaySnapshotService();
+        $base = $service->capture(self::TRADE_DATE, self::CUTOFF);
+
+        if ($kind === 'config') {
+            config([$path => 'PROBE-'.$version]);
+        } else {
+            $row = $this->resolvedSnapshotRow();
+            $payload = json_decode((string) $row->resolved_config_json, true);
+            if ($kind === 'column') {
+                DB::table('md_config_snapshots')->where('config_snapshot_id', $row->config_snapshot_id)->update([$path => 'PROBE-'.$version]);
+            } else {
+                $target = &$payload;
+                foreach (explode('.', $path) as $step) {
+                    $target = &$target[$step];
+                }
+                $target = $kind === 'reason' ? hash('sha256', 'probe '.$version) : 'PROBE-'.$version;
+                unset($target);
+                $this->storeSnapshotPayload($row, $payload);
+            }
+        }
+        $moved = $service->capture(self::TRADE_DATE, self::CUTOFF);
+
+        $this->assertNotSame($base['snapshot_hash'], $moved['snapshot_hash'], $version.' is not a bound input of the as-known replay: changing it left the compared snapshot unchanged');
+        if ($kind === 'reason') {
+            $this->assertNotSame($base['reason_registry_hash'], $moved['reason_registry_hash'], 'the reason-registry identity is its own bound field');
+            $this->assertSame($base['formula_registry_hash'], $moved['formula_registry_hash'], 'and it is not folded into the formula identity');
+        } else {
+            $this->assertSame($base['reason_registry_hash'], $moved['reason_registry_hash'], $version.' moved the reason-registry identity, so the two stand in for each other');
+        }
+    }
+
+    public function boundVersions(): array
+    {
+        return [
+            'formula / indicator registry' => ['indicator_set_version', 'payload', 'resolved_config.indicators.set_version'],
+            'coverage' => ['coverage_contract_version', 'payload', 'resolved_config.coverage_gate.contract_version'],
+            'eligibility' => ['eligibility_contract_version', 'payload', 'resolved_config.eligibility.contract_version'],
+            'price-product' => ['price_product_version', 'payload', 'semantic_bindings.price_product_version'],
+            'reason registry' => ['reason_registry_identity', 'reason', 'reason_registry.semantic_identity'],
+            'hash/serialization' => ['serialization_version', 'column', 'serialization_version'],
+            'build' => ['build_id', 'config', 'market_data.governance.build_id'],
+        ];
+    }
+
+    /**
+     * `MD-S019-R0071` -- the negative control of the reproducibility claim. "If replay uses identical ... formula/registry
+     * versions then replay reproduces identical outputs" only means something if a DIFFERENT registry identity is a
+     * different input. A snapshot S2 recorded between two cutoffs carries another identity (H2): the later cutoff binds
+     * H2 and a different snapshot hash, and the earlier cutoff still binds H1 -- not the latest, not the live one.
+     */
+    public function test_a_different_registry_identity_is_a_different_replay_input_and_each_cutoff_keeps_its_own(): void
+    {
+        $service = new AsKnownReplaySnapshotService();
+        $early = $service->capture(self::TRADE_DATE, self::CUTOFF);
+
+        // A later configuration, issued through the real producer after the registry changed, known only after the early cutoff.
+        DB::table('eod_reason_codes')->insert([
+            'code' => 'LATER_REGISTRY_CODE', 'category' => 'PROBE', 'description' => 'registry state of the later snapshot',
+            'severity' => 'INFO', 'is_active' => 1,
+        ]);
+        $later = (new MarketDataConfigSnapshotRepository())->resolveForRun(self::TRADE_DATE);
+        DB::table('md_config_snapshots')->where('config_snapshot_id', $later['config_snapshot_id'])->update(['recorded_at' => '2026-05-01 00:00:00']);
+        $laterCutoff = '2026-06-01 00:00:00';
+
+        $atLater = $service->capture(self::TRADE_DATE, $laterCutoff);
+        $atEarly = $service->capture(self::TRADE_DATE, self::CUTOFF);
+
+        $this->assertNotSame($early['reason_registry_hash'], $atLater['reason_registry_hash'], 'a different registry identity must be a different input');
+        $this->assertNotSame($early['snapshot_hash'], $atLater['snapshot_hash']);
+        $this->assertSame($early['reason_registry_hash'], $atEarly['reason_registry_hash'], 'the earlier cutoff still binds its own identity H1, not the latest snapshot or the live registry');
+        $this->assertSame($early['snapshot_hash'], $atEarly['snapshot_hash'], 'and reproduces its own snapshot exactly');
+        $this->assertSame(json_decode($later['resolved_config_json'], true)['reason_registry']['semantic_identity'], $atLater['reason_registry_hash']);
+    }
+    /**
+     * `MD-S019-R0071` / Invariant 14 -- same retained snapshot, same historical inputs, same reason-registry identity:
+     * the replay reproduces. Two independent replays of the same cutoff bind the same identity and reach the same
+     * canonical output and the same snapshot hash.
+     */
+    public function test_the_same_snapshot_and_inputs_reproduce_the_same_identity_and_result(): void
+    {
+        $this->verifyAsKnown();
+        $first = DB::table('md_replay_daily_metrics')->orderByDesc('replay_id')->first();
+        $this->verifyAsKnown();
+        $second = DB::table('md_replay_daily_metrics')->orderByDesc('replay_id')->first();
+
+        $this->assertNotSame($first->replay_id, $second->replay_id, 'two replays were executed');
+        $this->assertSame('PASS', (string) $first->replay_status, 'an unchanged retained snapshot and unchanged inputs must reproduce (PASS)');
+        $this->assertSame('PASS', (string) $second->replay_status, 'an unchanged retained snapshot and unchanged inputs must reproduce (PASS)');
+        $this->assertSame($first->reason_registry_hash, $second->reason_registry_hash);
+        $this->assertSame($first->config_snapshot_hash, $second->config_snapshot_hash);
+        $this->assertSame($first->bars_batch_hash, $second->bars_batch_hash, 'the deterministic replay result is identical');
+        $this->assertSame(
+            json_decode((string) $first->bound_input_context_json, true)['bound_inputs']['snapshot_hash'],
+            json_decode((string) $second->bound_input_context_json, true)['bound_inputs']['snapshot_hash']
+        );
     }
 
     /**
@@ -521,6 +751,7 @@ class B18AsKnownModeIsolationTest extends TestCase
                 'trade_date' => self::TRADE_DATE,
                 'knowledge_cutoff' => self::CUTOFF,
                 'snapshot_hash' => $snapshot['snapshot_hash'],
+                'reason_registry_hash' => $snapshot['reason_registry_hash'],
             ], $snapshotOverride),
             [
                 'execution_scope' => $execution['execution_scope'],
@@ -550,13 +781,17 @@ class B18AsKnownModeIsolationTest extends TestCase
      * snapshot against live config -- which would reject the deliberate snapshot mutation one of
      * them makes for an unrelated reason. The execution block is therefore canned; nothing reads it.
      */
-    private function verifyAsKnownBlocked(): void
+    private function verifyAsKnownBlocked(bool $historical = true): void
     {
+        // A historical snapshot: the cutoff resolves one issued before the derived member existed.
+        if ($historical) {
+            $this->stripMemberFromResolvedSnapshot();
+        }
         $snapshots = new AsKnownReplaySnapshotService();
         $snapshot = $snapshots->capture(self::TRADE_DATE, self::CUTOFF);
 
         $dir = $this->fixtureDir(
-            ['trade_date' => self::TRADE_DATE, 'knowledge_cutoff' => self::CUTOFF, 'snapshot_hash' => $snapshot['snapshot_hash']],
+            ['trade_date' => self::TRADE_DATE, 'knowledge_cutoff' => self::CUTOFF, 'snapshot_hash' => $snapshot['snapshot_hash'], 'reason_registry_hash' => str_repeat('0', 64)],
             [
                 'execution_scope' => AsKnownReplayExecutionService::EXECUTION_SCOPE,
                 'execution_state' => 'SUCCESS',
@@ -569,6 +804,48 @@ class B18AsKnownModeIsolationTest extends TestCase
 
         (new ReplayVerificationService(new EodEvidenceRepository(), new EodPublicationRepository(), new ReplayResultRepository(), $snapshots))
             ->verifyAsKnownAgainstFixture(self::RUN_ID, $dir, self::CUTOFF);
+    }
+
+    /** The snapshot the cutoff resolves, as stored. */
+    private function resolvedSnapshotRow()
+    {
+        $row = DB::table('md_config_snapshots')->where('recorded_at', '<=', self::CUTOFF)->orderByDesc('effective_at')->orderByDesc('recorded_at')->orderByDesc('config_snapshot_id')->first();
+        $this->assertNotNull($row, 'no snapshot resolves at the cutoff');
+
+        return $row;
+    }
+
+    /** @return array{identity_contract:string,semantic_identity:string} */
+    private function resolvedSnapshotMember(): array
+    {
+        $payload = json_decode((string) $this->resolvedSnapshotRow()->resolved_config_json, true);
+        $this->assertArrayHasKey('reason_registry', $payload, 'the world was issued by the current producer');
+
+        return $payload['reason_registry'];
+    }
+
+    /** Rewrites the stored snapshot the way a pre-member build would have stored it (test world only: the production path never does this). */
+    private function setMemberOfResolvedSnapshot(callable $mutate): void
+    {
+        $row = $this->resolvedSnapshotRow();
+        $payload = json_decode((string) $row->resolved_config_json, true);
+        $payload['reason_registry'] = $mutate($payload['reason_registry']);
+        $this->storeSnapshotPayload($row, $payload);
+    }
+
+    private function stripMemberFromResolvedSnapshot(): void
+    {
+        $row = $this->resolvedSnapshotRow();
+        $payload = json_decode((string) $row->resolved_config_json, true);
+        unset($payload['reason_registry']);
+        $this->storeSnapshotPayload($row, $payload);
+    }
+
+    private function storeSnapshotPayload($row, array $payload): void
+    {
+        ksort($payload, SORT_STRING);
+        $json = json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
+        DB::table('md_config_snapshots')->where('config_snapshot_id', $row->config_snapshot_id)->update(['resolved_config_json' => $json, 'config_hash' => hash('sha256', $json)]);
     }
 
     private function storedMetric()

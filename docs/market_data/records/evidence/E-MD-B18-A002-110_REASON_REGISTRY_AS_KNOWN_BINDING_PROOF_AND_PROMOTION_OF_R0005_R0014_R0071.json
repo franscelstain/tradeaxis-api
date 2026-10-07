@@ -1,0 +1,438 @@
+{
+    "evidence_id": "E-MD-B18-A002-110",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-07T17:50:53+07:00",
+    "evidence_type": "PROOF_AND_PROOF_BASIS_PROMOTION",
+    "decision_id": "D-MD-B18-A002-018",
+    "verdict": "MD_S050_R0005_R0014_AND_MD_S019_R0071_PROVEN_READINESS_100_TO_103_OF_113_NO_CANDIDATE_V5",
+    "checkpoint_verdict": "REASON-REGISTRY AS-KNOWN PROOF COMPLETE — NEXT B18 WORK UNIT IDENTIFIED",
+    "authority_verdict_record": "E-MD-B18-A002-109",
+    "implementation": {
+        "AsKnownReplaySnapshotService": "reason_registry_hash and reason_registry_identity come from the member of the snapshot resolved at the cutoff (reasonRegistryMember: contract market-data-reason-registry/v2, 64 lowercase hex, exactly two keys); the constant coverage_states/replay_states array and the governance key that never existed are gone; the unavailable marker remains only for a snapshot that cannot supply a valid member and is refused at the storage boundary for any non-BLOCKED result",
+        "ReplayVerificationService": "BLOCKED text states the real cause; the fixture must bind reason_registry_hash (REPLAY_EXPECTED_PROOF_INCOMPLETE otherwise); the identity is compared as its own input and the comparison surface list names it",
+        "unchanged": [
+            "the INPUT_CAPTURE_LIVE_CONFIG_DIVERGENCE guard (A, E-MD-B18-A002-109)",
+            "every historical snapshot",
+            "MarketDataConfigSnapshotRepository",
+            "PUBLICATION_EXACT"
+        ],
+        "file_sha256": {
+            "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "app/Application/MarketData/Services/ReplayVerificationService.php": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+            "tests/Unit/MarketData/B18AsKnownModeIsolationTest.php": "262ebdb68c964acf45d0d8073ff5c57fbe4ca89e10e7bba12c63d1bb794e0713",
+            "docs/market_data/development/implementation/tests/MarketDataReplayVerificationProofBasis.php": "fd5335e1a963836ea4e9d67609d862251ba8bed42546dab74f62cdefeabe02fb"
+        }
+    },
+    "predicates": [
+        {
+            "rule_id": "MD-S050-R0005",
+            "rule_text": "As-known replay may differ from a historical publication when the selected cutoff, approved as-known configuration, or declared scenario differs. It creates new replay artifacts and never mutates or impersonates the original publication.",
+            "requirement_to_implementation": "ReplayVerificationService::verifyAsKnownAgainstFixture stores its own AS_KNOWN row (source as_known_replay, cutoff, null publication_id) and compares the replay with its OWN fixture; since D-MD-B18-A002-018 the comparison is reachable again because the cutoff snapshot supplies the reason-registry identity",
+            "positive_proof": [
+                "tests/Unit/MarketData/B18AsKnownModeIsolationTest.php::test_an_as_known_result_claims_no_publication_and_records_its_own_mode",
+                "tests/Unit/MarketData/B18AsKnownModeIsolationTest.php::test_the_original_publication_is_untouched_and_a_new_replay_row_appears",
+                "tests/Unit/MarketData/B18AsKnownModeIsolationTest.php::test_an_as_known_replay_binds_the_reason_registry_identity_of_the_snapshot_resolved_at_the_cutoff"
+            ],
+            "negative_proof": [
+                "tests/Unit/MarketData/B18AsKnownModeIsolationTest.php::test_an_as_known_result_diverging_from_its_own_fixture_is_a_mismatch (unexplained difference reaches FAIL/MISMATCH, ADMISSIBLE, one named mismatch; BLOCKED would not satisfy it)"
+            ],
+            "discriminating_probes": {
+                "Q4": "an unexplained difference passes: the comparison result is forced to MATCH => RED_INTENDED",
+                "Q5": "an unexplained difference stops early as BLOCKED because the identity is treated as unavailable => RED_INTENDED",
+                "Q10": "the replay result impersonates a publication replay (wrong source) => RED_INTENDED"
+            },
+            "not_claimed": "a named cause being silently accepted (a different cutoff is refused, a different configuration is a named mismatch); R0005 permits a difference from the publication, not from the replay's own expectation",
+            "result": "PROVEN"
+        },
+        {
+            "rule_id": "MD-S050-R0014",
+            "rule_text": "Every fixture/manifest binds formula, indicator registry, reason registry, price-product, coverage, eligibility, read-model, hash/serialization, and build versions.",
+            "requirement_to_implementation": "AsKnownReplaySnapshotService reads the derived member of the cutoff snapshot as reason_registry_hash and inside the compared context; ReplayVerificationService requires the fixture to bind it and compares it as its own input (as_known_snapshot.reason_registry_hash); the other versions are bound through the snapshot configuration, the semantic bindings, the serialization column, the read-product contract and the build identity",
+            "positive_proof": [
+                "tests/Unit/MarketData/B18AsKnownModeIsolationTest.php::test_an_as_known_replay_binds_the_reason_registry_identity_of_the_snapshot_resolved_at_the_cutoff",
+                "tests/Unit/MarketData/B18AsKnownModeIsolationTest.php::test_each_named_version_is_a_bound_input_that_moves_what_the_as_known_replay_compares (7 data sets)",
+                "tests/Unit/MarketData/B18AsKnownModeIsolationTest.php::test_a_replay_over_a_historical_snapshot_without_the_member_is_blocked_and_nothing_is_back_filled",
+                "tests/Unit/MarketData/B18AsKnownModeIsolationTest.php::test_a_replay_over_a_snapshot_with_a_malformed_member_is_blocked (7 data sets)"
+            ],
+            "negative_proof": [
+                "tests/Unit/MarketData/B18AsKnownModeIsolationTest.php::test_a_different_expected_reason_registry_identity_is_a_named_mismatch",
+                "tests/Unit/MarketData/B18AsKnownModeIsolationTest.php::test_a_fixture_that_binds_no_reason_registry_identity_is_incomplete_not_unchecked"
+            ],
+            "discriminating_probes": {
+                "Q1": "reads the CURRENT reason registry instead of the snapshot member => RED_INTENDED",
+                "Q2": "replaces the historical member with the LATEST snapshot member => RED_INTENDED",
+                "Q3": "accepts a missing or malformed historical member by substituting a constant identity => RED_INTENDED",
+                "Q7": "the reason-registry identity is not compared as its own bound input => RED_INTENDED",
+                "Q8": "the member is dropped from the compared snapshot context => RED_INTENDED",
+                "Q9": "the unavailable marker is reintroduced as the identity of every replay => RED_INTENDED",
+                "Q11": "the reason-registry identity is folded away from its own field (version sensitivity: identity change moves nothing) => RED_INTENDED"
+            },
+            "not_claimed": "PUBLICATION_EXACT is unchanged and stays proven by its own guards, re-run green; no claim about versions of another stage",
+            "result": "PROVEN"
+        },
+        {
+            "rule_id": "MD-S019-R0071",
+            "rule_text": "If replay uses identical price-product and formula/registry versions, replay must reproduce identical outputs (Invariant 14).",
+            "requirement_to_implementation": "the reason-registry ingredient is the member of the retained cutoff snapshot; with the same snapshot and inputs the identity, configuration hash, snapshot hash and canonical output hash are the same; a different registry identity is a different input; the live registry cannot move any of them",
+            "positive_proof": [
+                "tests/Unit/MarketData/B18AsKnownModeIsolationTest.php::test_the_same_snapshot_and_inputs_reproduce_the_same_identity_and_result",
+                "tests/Unit/MarketData/B18AsKnownModeIsolationTest.php::test_a_later_registry_change_does_not_change_the_identity_the_cutoff_snapshot_binds",
+                "tests/Unit/MarketData/B18AsKnownModeIsolationTest.php::test_execution_under_a_diverged_live_registry_is_refused_and_stores_no_result"
+            ],
+            "negative_proof": [
+                "tests/Unit/MarketData/B18AsKnownModeIsolationTest.php::test_a_different_registry_identity_is_a_different_replay_input_and_each_cutoff_keeps_its_own"
+            ],
+            "discriminating_probes": {
+                "Q1": "reads the CURRENT reason registry instead of the snapshot member => RED_INTENDED",
+                "Q2": "replaces the historical member with the LATEST snapshot member => RED_INTENDED",
+                "Q6": "the historical replay depends on the live current registry (live state enters the compared context) => RED_INTENDED",
+                "Q12": "reproducibility: the replay result depends on a changing live value (build identity read from a clock-like source in the compared context) => RED_INTENDED"
+            },
+            "not_claimed": "reproducibility of the canonical RAW execution after the live configuration or registry moved on (refused, not reproduced; E-MD-B18-A002-109)",
+            "result": "PROVEN"
+        }
+    ],
+    "probes": {
+        "Q1": {
+            "intent": "reads the CURRENT reason registry instead of the snapshot member",
+            "file": "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "B18AsKnownModeIsolationTest.php::test_a_later_registry_change_does_not_change_the_identity_the_cutoff_snapshot_binds => RED_INTENDED (the bound identity is still H1, not the live H2)",
+                "B18AsKnownModeIsolationTest.php::test_a_replay_over_a_historical_snapshot_without_the_member_is_blocked_and_nothing_is_back_filled => RED_INTENDED (a snapshot without the member must block the replay)"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "sha256_restored": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "pass": 3
+        },
+        "Q2": {
+            "intent": "replaces the historical member with the LATEST snapshot member",
+            "file": "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "B18AsKnownModeIsolationTest.php::test_a_different_registry_identity_is_a_different_replay_input_and_each_cutoff_keeps_its_own => RED_INTENDED (the earlier cutoff still binds its own identity H1, not the latest snapshot or the live registry)"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "sha256_restored": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "pass": 1
+        },
+        "Q3": {
+            "intent": "accepts a missing or malformed historical member by substituting a constant identity",
+            "file": "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "B18AsKnownModeIsolationTest.php::test_a_replay_over_a_historical_snapshot_without_the_member_is_blocked_and_nothing_is_back_filled => RED_INTENDED (a snapshot without the member must block the replay)",
+                "B18AsKnownModeIsolationTest.php::test_a_replay_over_a_snapshot_with_a_malformed_member_is_blocked => RED_INTENDED (a malformed member must not be accepted, repaired or inferred)"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "sha256_restored": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "pass": 2
+        },
+        "Q4": {
+            "intent": "an unexplained difference passes: the comparison result is forced to MATCH",
+            "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "B18AsKnownModeIsolationTest.php::test_an_as_known_result_diverging_from_its_own_fixture_is_a_mismatch => RED_INTENDED (an unexplained difference is a FAIL, not a BLOCKED and not a PASS)",
+                "B18AsKnownModeIsolationTest.php::test_a_different_expected_reason_registry_identity_is_a_named_mismatch => RED_INTENDED (a different expected reason-registry identity must fail the comparison)"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+            "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+            "pass": 1
+        },
+        "Q5": {
+            "intent": "an unexplained difference stops early as BLOCKED because the identity is treated as unavailable",
+            "file": "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "B18AsKnownModeIsolationTest.php::test_an_as_known_result_diverging_from_its_own_fixture_is_a_mismatch => RED_INTENDED (an unexplained difference is a FAIL, not a BLOCKED and not a PASS)"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "sha256_restored": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "pass": 1
+        },
+        "Q6": {
+            "intent": "the historical replay depends on the live current registry (live state enters the compared context)",
+            "file": "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "B18AsKnownModeIsolationTest.php::test_a_later_registry_change_does_not_change_the_identity_the_cutoff_snapshot_binds => RED_INTENDED (and nothing the replay compares moved with the live registry)"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "sha256_restored": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "pass": 1
+        },
+        "Q7": {
+            "intent": "the reason-registry identity is not compared as its own bound input",
+            "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "B18AsKnownModeIsolationTest.php::test_a_different_expected_reason_registry_identity_is_a_named_mismatch => RED_INTENDED (a different expected reason-registry identity must fail the comparison)"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+            "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+            "pass": 1
+        },
+        "Q8": {
+            "intent": "the member is dropped from the compared snapshot context",
+            "file": "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "B18AsKnownModeIsolationTest.php::test_an_as_known_replay_binds_the_reason_registry_identity_of_the_snapshot_resolved_at_the_cutoff => RED_INTENDED (the snapshot context carries the same member, so snapshot_hash moves with it)"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "sha256_restored": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "pass": 1
+        },
+        "Q9": {
+            "intent": "the unavailable marker is reintroduced as the identity of every replay",
+            "file": "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "B18AsKnownModeIsolationTest.php::test_an_as_known_replay_binds_the_reason_registry_identity_of_the_snapshot_resolved_at_the_cutoff => RED_INTENDED (a matching fixture over a snapshot with a valid member must reach PASS)",
+                "B18AsKnownModeIsolationTest.php::test_a_different_expected_reason_registry_identity_is_a_named_mismatch => RED_INTENDED (a different expected reason-registry identity must fail the comparison)"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "sha256_restored": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "pass": 1
+        },
+        "Q10": {
+            "intent": "the replay result impersonates a publication replay (wrong source)",
+            "file": "app/Application/MarketData/Services/ReplayVerificationService.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "B18AsKnownModeIsolationTest.php::test_an_as_known_result_claims_no_publication_and_records_its_own_mode => RED_INTENDED (the result names as-known execution as its source rather than a publication run)"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+            "sha256_restored": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+            "pass": 1
+        },
+        "Q11": {
+            "intent": "the reason-registry identity is folded away from its own field (version sensitivity: identity change moves nothing)",
+            "file": "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "B18AsKnownModeIsolationTest.php::test_each_named_version_is_a_bound_input_that_moves_what_the_as_known_replay_compares => RED_INTENDED (the reason-registry identity is its own bound field)",
+                "B18AsKnownModeIsolationTest.php::test_an_as_known_replay_binds_the_reason_registry_identity_of_the_snapshot_resolved_at_the_cutoff => RED_INTENDED (the stored identity must be the member of the snapshot the cutoff resolved)"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "sha256_restored": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "pass": 1
+        },
+        "Q12": {
+            "intent": "reproducibility: the replay result depends on a changing live value (build identity read from a clock-like source in the compared context)",
+            "file": "app/Application/MarketData/Services/AsKnownReplaySnapshotService.php",
+            "verdict": "RED_INTENDED",
+            "covering": [
+                "B18AsKnownModeIsolationTest.php::test_the_same_snapshot_and_inputs_reproduce_the_same_identity_and_result => RED_INTENDED (an unchanged retained snapshot and unchanged inputs must reproduce (PASS))"
+            ],
+            "restored_byte_identical": true,
+            "sha256_before": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "sha256_restored": "d0976cc2542585b443112ca9781cddda5c943e46e1baae2be002f3e3e6bc10f2",
+            "pass": 1
+        }
+    },
+    "rechecks_of_the_four_proven_bases_named_by_E107": {
+        "MD-S082-R0217": [
+            "recheck-R0217-pos",
+            "recheck-R0217-neg"
+        ],
+        "MD-S082-R0218": [
+            "recheck-R0218-pos",
+            "recheck-R0218-neg"
+        ],
+        "MD-S082-R0224": [
+            "recheck-R0224-pos",
+            "recheck-R0224-neg"
+        ],
+        "MD-S082-R0225": [
+            "recheck-R0225-pos",
+            "recheck-R0225-neg"
+        ],
+        "results": {
+            "R0217-pos": {
+                "tests": 1,
+                "assertions": 2,
+                "failures": 0,
+                "errors": 0
+            },
+            "R0217-neg": {
+                "tests": 1,
+                "assertions": 3,
+                "failures": 0,
+                "errors": 0
+            },
+            "R0218-pos": {
+                "tests": 1,
+                "assertions": 6,
+                "failures": 0,
+                "errors": 0
+            },
+            "R0218-neg": {
+                "tests": 1,
+                "assertions": 5,
+                "failures": 0,
+                "errors": 0
+            },
+            "R0224-pos": {
+                "tests": 1,
+                "assertions": 6,
+                "failures": 0,
+                "errors": 0
+            },
+            "R0224-neg": {
+                "tests": 1,
+                "assertions": 6,
+                "failures": 0,
+                "errors": 0
+            },
+            "R0225-pos": {
+                "tests": 1,
+                "assertions": 4,
+                "failures": 0,
+                "errors": 0
+            },
+            "R0225-neg": {
+                "tests": 1,
+                "assertions": 1,
+                "failures": 0,
+                "errors": 0
+            }
+        },
+        "impact": "none: all eight guards green on the final tree; no PROVEN basis is invalidated or changed; R0218's clause \"current registry state must never leak\" is now additionally proven on the identity binding itself"
+    },
+    "full_suite_on_the_final_tree": {
+        "tests": 2895,
+        "assertions": 41312,
+        "failures": 23,
+        "failure_classes": {
+            "B18ReleaseCandidateAcceptanceAggregateTest": 1,
+            "B18ScenarioFamiliesOnMariaDbTest": 1,
+            "B18ScenarioFamiliesOnMirrorTest": 1,
+            "ProductionCorpusInvariantOracleTest": 7,
+            "R0025SyntheticV2CandidateFixtureTest": 13
+        },
+        "failing_tests": {
+            "B18ReleaseCandidateAcceptanceAggregateTest": [
+                "test_md_s003_r0025_executes_all_scenario_family_members_on_mariadb_and_the_mirror_and_is_green"
+            ],
+            "B18ScenarioFamiliesOnMariaDbTest": [
+                "test_exact_publication_verification_family_on_mariadb"
+            ],
+            "B18ScenarioFamiliesOnMirrorTest": [
+                "test_exact_publication_verification_family_on_the_mirror"
+            ],
+            "ProductionCorpusInvariantOracleTest": [
+                "test_no_canonical_bar_carries_a_non_positive_price",
+                "test_no_canonical_bar_violates_ohlc_ordering",
+                "test_exactly_one_publication_is_current_per_trade_date",
+                "test_no_readable_publication_rests_on_a_failed_run",
+                "test_authoritative_factor_candidates_reach_an_explicit_applied_or_held_decision",
+                "test_no_price_derived_factor_is_usable_as_an_adjustment",
+                "test_every_history_row_binds_to_a_publication"
+            ],
+            "R0025SyntheticV2CandidateFixtureTest": [
+                "test_candidate_matches_the_actual_publication_but_is_not_admitted_as_proof",
+                "test_the_admission_mechanism_admits_only_the_exact_fingerprint_and_refuses_any_damaged_package",
+                "test_two_allocation_layouts_give_identical_semantic_identities_and_the_oracle_literals",
+                "test_a_wrong_literal_in_any_one_bound_input_is_the_only_mismatch_it_causes",
+                "test_each_semantic_member_of_the_event_factor_identity_moves_it",
+                "test_each_semantic_bound_input_equals_its_own_literal_on_the_real_path",
+                "test_the_publication_bound_build_identity_is_the_frozen_build_identity",
+                "test_an_independent_package_with_any_other_assertion_layer_is_blocked_even_with_an_approval_supplied",
+                "test_the_actual_publication_manifest_hash_equals_the_independent_literal_and_is_stable_across_layouts",
+                "test_a_wrong_publication_manifest_literal_is_the_only_mismatch_it_causes",
+                "test_the_real_target_emits_the_corrected_freshness_and_equals_the_independent_expectation",
+                "test_a_target_with_the_wrong_freshness_state_gives_field_specific_mismatches_and_no_build_noise",
+                "test_the_actual_eligibility_and_manifest_hashes_follow_the_governed_freshness_binding"
+            ]
+        }
+    },
+    "proof_basis_consequence": {
+        "promoted_to_PROVEN": [
+            "MD-S050-R0005",
+            "MD-S050-R0014",
+            "MD-S019-R0071"
+        ],
+        "removed_from_INCOMPLETE": [
+            "MD-S050-R0005",
+            "MD-S050-R0014",
+            "MD-S019-R0071"
+        ],
+        "unrelated_predicates_changed": 0,
+        "independent_review": "not required by governance for these bases (the independent-review chain applies to the R0025 golden fixture admission, RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD 6A); the promotion rests on executed guards and discriminating probes"
+    },
+    "readiness": {
+        "before": "100/113",
+        "after": "103/113 (computed by MarketDataReplayVerificationProofReadinessGate)",
+        "without_reviewed_basis": [
+            "MD-S003-R0011",
+            "MD-S003-R0014",
+            "MD-S003-R0025",
+            "MD-S041-R0032",
+            "MD-S050-R0022",
+            "MD-S050-R0023",
+            "MD-S050-R0025",
+            "MD-S050-R0028",
+            "MD-S050-R0029",
+            "MD-S055-R0025"
+        ],
+        "formal_satisfied": "0/113 (no matrix row changed)",
+        "MD-S003-R0025": "INCOMPLETE; candidate-v4 and E100/D016/E101/E104/E105 untouched; candidate-v5 not created"
+    },
+    "raw_package": {
+        "path": "storage/app/market_data/evidence/MD-B18-A002/reason-registry-as-known-binding-20261007-v1",
+        "manifest": "storage/app/market_data/evidence/MD-B18-A002/reason-registry-as-known-binding-20261007-v1/manifest.json",
+        "manifest_sha256": "4e5b092a9ed41d88942b833142aad2b15243524d8d361815ab28d5d5490cca61"
+    },
+    "what_was_not_done": [
+        "no candidate-v5",
+        "B04 not reopened",
+        "F-MD-B18-A002-018 not started",
+        "no unrelated missing basis worked",
+        "no historical snapshot modified or back-filled",
+        "no commit or push"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-034",
+        "F-MD-B18-A002-013",
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-109",
+        "E-MD-B18-A002-108",
+        "E-MD-B18-A002-107",
+        "E-MD-B04-A003-003",
+        "E-MD-B18-A002-071",
+        "E-MD-B18-A002-070"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-018",
+        "D-MD-B18-A002-014"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0023"
+    ],
+    "next_resume_point": "MD-B18-A002: author candidate-v5 (a distinct package whose independently derived oracle describes the post-A003/A004 build and configuration semantics), then independent review and owner approval; F-MD-B18-A002-018 (test-only rebinds of nine predicates) is independent of it.",
+    "no_commit_or_push": 1
+}

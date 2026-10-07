@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline / Epoch: `MD-B18` / `MD-B18-A002` / `MD-B18-A002-BL001` / `MD-REBASELINE-20260820-001` (discovered here; the affected rows belong to `MD-B04`)
 - Raised: 2026-10-07T09:48:10+07:00
 - Severity: `P1` for `MD-S050-R0005`, `MD-S050-R0014`, `MD-S019-R0071` (AS_KNOWN cannot bind a reason-registry version); `P2` for the `MD-B04` closure claim
-- Status: `PARTIALLY_RESOLVED` — the `MD-B04` part is remediated and closed (`MD-B04-A003`, `SC-MD-B04-A003-001`); the `MD-B18` bindings (`MD-S050-R0005`, `MD-S050-R0014`, `MD-S019-R0071`) remain open
+- Status: `RESOLVED` — the `MD-B04` part by `MD-B04-A003` (`SC-MD-B04-A003-001`) and the `MD-B18` bindings (`MD-S050-R0005`, `MD-S050-R0014`, `MD-S019-R0071`) by `E-MD-B18-A002-110`
 - Class: `PROOF_BASIS_VACUOUS_OR_MISTARGETED` (family proof standing for two predicates) and `IMPLEMENTATION_GAP` (the member does not exist)
 - Related: `E-MD-B18-A002-106`, `E-MD-B04-A002-001`, `F-MD-B18-A002-017`, `E-MD-B18-A002-071`, `E-MD-B18-A002-073`
 - Remediation owner: decided by owner decision Q9 (`E-MD-B18-A002-106`); recommended a successor attempt of `MD-B04`
@@ -28,3 +28,7 @@ The owner chose the derived configuration-snapshot member (A1). The remediation 
 ## 2026-10-07 MD-B04 part resolved — E-MD-B04-A003-003
 
 `MD-B04-A003` made the configuration snapshot carry the reason-registry identity as a derived member (`E-MD-B04-A003-002`), re-proved `MD-S082-R0036` and `MD-S082-R0044`, re-confirmed eight related rows and closed `MD-B04` at 114/114 (`SC-MD-B04-A003-001`). Historical snapshots remain immutable and without the member. Remaining under this finding: the `MD-B18` as-known binding and proof; candidate-v5 later.
+
+## 2026-10-07 MD-B18 part resolved — E-MD-B18-A002-110
+
+As-known replay binds the reason-registry identity of the configuration snapshot resolved at the cutoff; the live-configuration guard was examined and kept for execution (`E-MD-B18-A002-109`, verdict A). The three predicates are `PROVEN` with discriminating probes. The finding is resolved.

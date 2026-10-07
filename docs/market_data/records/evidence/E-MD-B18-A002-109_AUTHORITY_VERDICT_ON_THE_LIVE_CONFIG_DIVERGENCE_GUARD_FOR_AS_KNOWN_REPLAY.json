@@ -1,0 +1,78 @@
+{
+    "evidence_id": "E-MD-B18-A002-109",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-07T17:50:53+07:00",
+    "evidence_type": "AUTHORITY_VERDICT",
+    "decision_id": "D-MD-B18-A002-018",
+    "verdict": "A_CORRECT_AND_REQUIRED_FOR_EXECUTION_AND_NOT_THE_BINDING_MECHANISM_OF_THE_REASON_REGISTRY_IDENTITY",
+    "question": "Is requiring \"live current config == historical resolved snapshot\" for as-known replay compatible with D-MD-B18-A002-018 (the identity comes from the snapshot resolved as known at the cutoff, never from the current registry)?",
+    "order_of_work_stated_honestly": "The authority trace and the verdict below were established from the authority text and the code before any B18 code or test was changed in this unit; the record is written after the first implementation edits and before any proof-basis promotion. The one earlier test edit (MD-B04-A003 close: B18AsKnownModeIsolationTest asserting the refusal) predates this unit and is re-examined here.",
+    "authority_trace": [
+        {
+            "source": "D-MD-B18-A002-018 items 4-6",
+            "text": "as-known replay must use the reason-registry identity of the configuration snapshot resolved as known at the cutoff; it must not use the current registry, the latest run capture, a placeholder or an inferred current value; historical snapshots without the member are never back-filled and their replay stays fail-closed/BLOCKED"
+        },
+        {
+            "source": "Platform_Config_Registry_LOCKED.md:13,291",
+            "text": "the same snapshot id and hash bind the run and every output artifact; the resolved snapshot, not the current environment or registry, is used for replay; current registry state must never leak into historical replay"
+        },
+        {
+            "source": "Replay_Verification_Contract_LOCKED.md:30,33,37-39",
+            "text": "every manifest binds the reason registry among the versions; missing input is BLOCKED, not permission to query current state; replay must not use current config; a configuration/formula change after T is a required fixture"
+        }
+    ],
+    "implementation_trace": {
+        "identity binding": "AsKnownReplaySnapshotService::capture resolves the snapshot with MarketDataConfigSnapshotRepository::resolveForRun(date, cutoff), which only looks up and never inserts, decodes its payload and reads the member from it; no query of eod_reason_codes, no latest snapshot, no run capture. This path does not execute any producer and does not call the divergence guard.",
+        "execution": "AsKnownReplayExecutionService::execute binds a run to the same snapshot (createAsKnownReplayRun) and runs the production canonicalizer through EodBarsIngestService, which calls RunInputCaptureRepository::assertConsumedConfiguration: currentContent() (live resolved configuration plus semantic bindings plus the derived registry member) must equal the bound snapshot content, else INPUT_CAPTURE_LIVE_CONFIG_DIVERGENCE. The producers read the live configuration (config()); the platform has no mechanism that applies a historical snapshot configuration to them, and a historical registry state cannot be re-instated.",
+        "registry consumers": "eod_reason_codes is read by exactly two production paths: the snapshot producer (to derive the member) and ProducerRegistrySnapshot (the registry_versions capture); no output decision reads registry content."
+    },
+    "classification": {
+        "A. CORRECT AND REQUIRED": "for the EXECUTION of the production canonicalizer: running producers under a live configuration that differs from the snapshot the replay is bound to would label output produced under today's configuration/registry (H2) with the identity of the historical snapshot (H1), which is exactly the current-state leak and the false output binding the authority forbids, and it cannot be repaired by executing under historical state because none can be applied. The guard fails closed before any result exists; D-MD-B18-A002-018 item 6 itself leaves the corresponding replays fail-closed.",
+        "not B (too broad)": "narrowing the guard so that an as-known execution proceeds while the live registry or configuration differs would manufacture a replay whose bound identity does not describe how it was produced; the authority does not permit it and nothing in it asks for it.",
+        "not the binding mechanism": "the guard is NOT how the reason-registry identity is bound. The identity is read from the cutoff snapshot only, so it is independent of the live registry whatever the guard does. This is proven separately from the guard (test_a_later_registry_change_does_not_change_the_identity_the_cutoff_snapshot_binds) and was the thing the earlier test of the MD-B04-A003 close did not show."
+    },
+    "historical_change_case": {
+        "S1 carries identity H1; the live registry later becomes H2; the cutoff resolves S1": {
+            "identity bound": "H1 (not H2); identity, snapshot context and snapshot hash unchanged by the live change",
+            "execution": "refused with INPUT_CAPTURE_LIVE_CONFIG_DIVERGENCE before any producer output; nothing stored; never a PASS",
+            "tests": [
+                "test_a_later_registry_change_does_not_change_the_identity_the_cutoff_snapshot_binds",
+                "test_execution_under_a_diverged_live_registry_is_refused_and_stores_no_result",
+                "test_a_different_registry_identity_is_a_different_replay_input_and_each_cutoff_keeps_its_own"
+            ]
+        }
+    },
+    "boundaries_and_observations": {
+        "reproducibility of execution": "an as-known CANONICAL_RAW execution can run only while the live configuration and registry equal the snapshot resolved at the cutoff, as was already true for every configuration key; the required fixture \"a configuration/formula change after T\" is proven for resolution and identity binding (E-MD-B18-A002 B18ConfigEffectiveTimeSelection, B18ProductionPathReplayFixtures), not as an end-to-end execution under historical configuration. This is a platform capability limit, not a defect of this unit, and is carried, not decided.",
+        "form of the refusal": "the guard throws before a result exists, so no BLOCKED row is persisted for it; the contract's BLOCKED vocabulary would allow recording one. D-MD-B18-A002-018 does not require it and the question is left open as an improvement candidate, not as a blocker.",
+        "owner question": "none: D-MD-B18-A002-018 items 4-6, Platform_Config_Registry_LOCKED.md:13/291 and Replay_Verification_Contract_LOCKED.md:33 decide the three binding behaviours; the two observations above do not change them."
+    },
+    "corrects_earlier_statement": "The MD-B04-A003 closure recorded B18AsKnownModeIsolationTest::test_mutating_the_current_reason_registry_does_not_make_as_known_admissible as a conformance edit to the refusal. That edit is kept as test_execution_under_a_diverged_live_registry_is_refused_and_stores_no_result; the original claim (current registry cannot leak into the replay) is now proven where it belongs, on the identity binding.",
+    "related_findings": [
+        "F-MD-B18-A002-034",
+        "F-MD-B18-A002-013",
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B04-A003-003",
+        "E-MD-B18-A002-108",
+        "E-MD-B18-A002-107",
+        "E-MD-B18-A002-071",
+        "E-MD-B18-A002-070"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-018",
+        "D-MD-B18-A002-014"
+    ],
+    "next_resume_point": "MD-B18-A002: record the proof and promotion of MD-S050-R0005, MD-S050-R0014 and MD-S019-R0071 (E-MD-B18-A002-110).",
+    "no_commit_or_push": 1
+}
