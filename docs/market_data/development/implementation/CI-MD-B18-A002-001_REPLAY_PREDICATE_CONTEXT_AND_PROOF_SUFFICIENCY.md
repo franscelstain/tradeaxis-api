@@ -1156,3 +1156,7 @@ Same A002/BL001/CI. `E-MD-B18-A002-115`: candidate-v5 (fingerprint `daf96a296875
 ## 2026-10-08 pre-binder correction (E-MD-B18-A002-116)
 
 Same A002/BL001/CI. Proof-spec metadata only: the stale negative reference of family `determinism_and_operations` is replaced by an existing equivalent test (probe-proven); `MarketDataReplayVerificationProofBinder --validate-only` is PASS at 113/113; formal SATISFIED stays 0/113; no executable-build file changed.
+
+## 2026-10-08 atomic binder applied (E-MD-B18-A002-001, E-MD-B18-A002-117)
+
+Same A002/BL001/CI. The atomic binder wrote exactly the 113 MD-B18 mandatory rows `NOT_ASSESSED` -> `SATISFIED` against `E-MD-B18-A002-001` (independently recomputed: 113 changed rows, 0 foreign, 113/113 reviewed and satisfied, 0 not assessed). The closure gate passes its ten conditions. The stage is NOT closed: `MD-DEP-0015` stays BLOCKING (full suite: 7 deployed-corpus oracle failures, `F-MD-B18-A002-011` part (b), `MD-DEP-0016`), and `F-MD-B18-A002-005` still needs its mutation proof. The executable build boundary is unchanged.

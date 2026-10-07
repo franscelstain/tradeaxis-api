@@ -1,0 +1,206 @@
+{
+    "evidence_id": "E-MD-B18-A002-117",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-08T01:28:27+07:00",
+    "evidence_type": "ATOMIC_BINDER_APPLIED_AND_POST_BINDING_VALIDATION",
+    "verdict": "ATOMIC_BINDER_APPLIED_113_OF_113_SATISFIED_INDEPENDENTLY_RECOMPUTED_STAGE_CLOSURE_NOT_CLAIMED_BLOCKED_BY_MD_DEP_0015",
+    "checkpoint_verdict": "B18 BINDER COMPLETE — STAGE CLOSURE BLOCKED BY GOVERNED DEPENDENCY",
+    "binder_evidence": "E-MD-B18-A002-001 (pre-binding proof; its raw manifest storage/app/market-data/evidence/MD-B18-A002/MANIFEST.json is bound by the closure gate)",
+    "apply": {
+        "sequence": [
+            "evidence E-MD-B18-A002-001 issued with its raw manifest and registered",
+            "binder --validate-only: PASS 113/113, errors []",
+            "binder --evidence-id=E-MD-B18-A002-001 (dry run): PASS, bound 113, foreign_rows_altered 0",
+            "binder --evidence-id=E-MD-B18-A002-001 --apply: PASS, bound 113, foreign_rows_altered 0, bound_validation PASS"
+        ],
+        "sequence_source": "the binder source and the consolidated remediation package step 7; no step invented",
+        "matrix_sha256": {
+            "before": "7a374a79efbdcf025cec7126bb66251dd0b59627a907c1e9e7f0f17c26f57a79",
+            "after": "8b5bd9b1cb2d47022e6f003fef251d9160ef660b35e2813b92c297e7708e0695"
+        },
+        "line_diff": "113 insertions, 113 deletions in the matrix and nothing else",
+        "raw": "storage/app/market-data/evidence/MD-B18-A002/binder-post-binding-20261008/binder_apply_output.txt"
+    },
+    "independent_recomputation": {
+        "matrix_rows_before": 6514,
+        "matrix_rows_after": 6514,
+        "same_rule_ids_in_same_order": true,
+        "changed_rows": 113,
+        "fields_changed": {
+            "coverage_status": 113,
+            "current_evidence_ids": 113,
+            "notes": 113
+        },
+        "rows_failing_the_expected_transition": [],
+        "md_b18_rows_by_requirement_applicability_status": {
+            "REFERENCE_ONLY/REFERENCE_ONLY/REFERENCE_ONLY": 33,
+            "REQUIRED/CONDITIONAL_NOT_APPLICABLE/NOT_APPLICABLE": 4,
+            "REQUIRED/MANDATORY/SATISFIED": 113,
+            "REQUIRED/OPTIONAL_CAPABILITY/OPTIONAL_NOT_REQUESTED": 2
+        },
+        "denominator": 113,
+        "satisfied": 113,
+        "not_assessed": 0,
+        "proven_bases": 113,
+        "incomplete_bases": 0,
+        "missing_basis": 0,
+        "foreign_rows_carrying_b18_evidence": 0,
+        "method": "a separate script (not the binder) loaded the matrix before and after and the proof basis, and checked every changed row",
+        "raw": "storage/app/market-data/evidence/MD-B18-A002/binder-post-binding-20261008/independent_recomputation.json"
+    },
+    "post_binder_state": {
+        "denominator": 113,
+        "reviewed_bases": "113/113",
+        "formal_satisfied": "113/113",
+        "not_assessed": 0,
+        "missing_basis": 0,
+        "proof_gate_bound_mode": "PASS (bound true, runtime_pending 0)",
+        "closure_gate": "PASS: all ten conditions met (denominator_fully_satisfied, raw_artifact_integrity, governed_evidence_reachable included)"
+    },
+    "gate_movement": {
+        "pre_binding_baseline": "storage/app/market-data/evidence/MD-B18-A002/binder-post-binding-20261008/governance_gates_pre_binding_summary.txt",
+        "post_binding": "storage/app/market-data/evidence/MD-B18-A002/binder-post-binding-20261008/governance_gates_post_binding_summary.txt",
+        "moved": [
+            "MarketDataReplayVerificationClosureGate FAIL -> PASS (expected: the denominator, manifest and evidence conditions are now met)",
+            "MarketDataReplayVerificationProofGate PASS -> FAIL in its default (pre-binding) mode with PREMATURE_BINDING for the 113 bound rows; PASS with --bound",
+            "MarketDataReplayVerificationProofReadinessGate PASS -> FAIL for the same reason; it always evaluates in pre-binding mode (readiness for local runtime proof) and its predicates_with_reviewed_basis stays 113"
+        ],
+        "unrelated_movement": "none: the other 40 gates are identical to the pre-binding baseline",
+        "explanation": "binding turns the two pre-binding checks red by design (a bound row is \"premature\" only before runtime proof); closure is judged by the bound-mode proof gate and the closure gate"
+    },
+    "regression": {
+        "pre_binding_full_suite": "E-MD-B18-A002-001 artifacts: 2960 tests, 48448 assertions, 0 skipped, 0 errors, 7 failures",
+        "post_binding_full_suite": {
+            "tests": 2960,
+            "assertions": 48458,
+            "skipped": 0,
+            "errors": 0,
+            "failures": 7,
+            "failure_classes": {
+                "ProductionCorpusInvariantOracleTest": 7
+            }
+        },
+        "classification": "the 7 ProductionCorpusInvariantOracleTest empty-corpus assertions (deployed-corpus oracle; MD-DEP-0015 / F-MD-B18-A002-011(b) / MD-DEP-0016); no new failure; NOT a full-suite PASS",
+        "g05_acceptance_aggregate": "GREEN 9/9, 84 guards, zero skips (pre-binding artifact); R0025 family tests on MariaDB and mirror and the aggregate test were green in E-MD-B18-A002-115 and are inside both full-suite runs",
+        "governance_tests": "GovernanceGateReadOnlyExecutionTest 9, FindingRecordConsistencyTest 3, DualUseFactAndContractAlignmentTest 20, ScopeBoundaryAndOrchestrationCompletionTest 8, StageEightGovernanceBindingTest 3: all OK after binding",
+        "build": "frozen build sha256:7ea1956a…c4a recomputed unchanged after binding and the suite"
+    },
+    "finding_and_dependency_reconciliation": {
+        "findings": {
+            "F-MD-B18-A002-003": {
+                "status": "OPEN — GOVERNED_DEFERRAL_TO_MD-B21",
+                "classification": "EXTERNAL_BUT_CLOSURE_COMPATIBLE",
+                "basis": "SQLite-mirror under-enforcement; blocks nothing bound; bounds what the mirror can be cited for; MD-DEP-0010 OPEN_NON_BLOCKING (D-MD-B18-A002-001)"
+            },
+            "F-MD-B18-A002-004": {
+                "status": "PARTIALLY_RESOLVED",
+                "classification": "EXTERNAL_BUT_CLOSURE_COMPATIBLE",
+                "basis": "blocks MD-S002-R0004 only, whose owner is MD-B22 with MD-B18 supporting (D-MD-B18-A002-001; MD-DEP-0011 OPEN_NON_BLOCKING)"
+            },
+            "F-MD-B18-A002-005": {
+                "status": "OPEN — closure-gate admission; \"Blocks: MD-B18-A002 closure\"",
+                "classification": "STILL_REQUIRED_FOR_CLOSURE",
+                "basis": "the gate now points only at E-MD-B18-A002-001 and the MD-B18-A002 manifest and its positive branch has been exercised (PASS after the binder); its own closure rule still requires the identity checks (Stage/Attempt/Baseline/Epoch/verdict, manifest identity, path containment, recorded manifest hash) to be mutation-proven with green controls before and after — not done in this unit"
+            },
+            "F-MD-B18-A002-011": {
+                "status": "PARTIALLY_RESOLVED — OPTION_1_(a)_DONE; (b)_AWAITS_MD-DEP-0016_RECOVERY",
+                "classification": "BLOCKING_STAGE_CLOSURE",
+                "basis": "its header: blocks the full-suite criterion of MD-DEP-0015 and therefore the full-suite condition of MD-B18 closure; the seven failing controls are exactly its deployed-corpus guards"
+            },
+            "F-MD-B18-A002-017": {
+                "status": "OPEN — REMEDIATION_IN_CONSOLIDATED_PACKAGE",
+                "classification": "RESOLVABLE_AT_CLOSURE",
+                "basis": "every predicate it carried is now PROVEN and SATISFIED (113/113); no executable unit remains; the status change is a closure-unit record"
+            },
+            "F-MD-B18-A002-033": {
+                "status": "OPEN",
+                "classification": "EXTERNAL_BUT_CLOSURE_COMPATIBLE",
+                "basis": "the part that mattered to MD-S003-R0025 (target emits the corrected state) is conformant and proven; remaining rows are owned by MD-B17 successor and by an owner/stage decision on the activated-world evaluator"
+            },
+            "resolved": "26 other B18 findings in the registry are RESOLVED (F-014, F-015, F-018, F-021, F-025, F-028, F-030, F-031, F-032, F-034 among them); not reopened"
+        },
+        "dependencies": {
+            "MD-DEP-0015": {
+                "status": "BLOCKING",
+                "classification": "BLOCKS_STAGE_CLOSURE",
+                "basis": "resolve condition: the full suite runs green with zero skips; it runs with 0 skips, 0 errors and exactly 7 failures (ProductionCorpusInvariantOracleTest empty-corpus assertions) before and after binding; the criterion additionally depends on MD-DEP-0016 recovery per D-MD-B18-A002-004"
+            },
+            "MD-DEP-0016": {
+                "status": "OPEN_NON_BLOCKING (but per D-MD-B18-A002-004 closure depends on its deployed-corpus criterion through MD-DEP-0015)",
+                "classification": "OWNER_RECOVERY_TRACK",
+                "basis": "database-owner decision required; data_260914 must not be touched without separate authorization"
+            },
+            "MD-DEP-0017": {
+                "status": "BLOCKING",
+                "classification": "RESOLVABLE_AT_CLOSURE",
+                "basis": "the remediation it tracks (F-013..F-018 bases) is complete: 113/113 PROVEN and SATISFIED"
+            },
+            "MD-DEP-0009": {
+                "status": "BLOCKING (for MD-B19)",
+                "classification": "RESOLVES_ONLY_WITH_STAGE_CLOSURE",
+                "basis": "MD-B19 is blocked by the withdrawn B18 closure; it needs a successor closure, which is not yet possible"
+            },
+            "MD-DEP-0010 / MD-DEP-0011": {
+                "status": "OPEN_NON_BLOCKING",
+                "classification": "EXTERNAL_BUT_CLOSURE_COMPATIBLE",
+                "basis": "downstream obligations of MD-B21 and MD-B22"
+            },
+            "resolved": "MD-DEP-0012, 0013, 0014, 0018, 0019, 0020, 0022, 0023 are RESOLVED"
+        }
+    },
+    "closure_determination": {
+        "closed": false,
+        "blocking": [
+            "MD-DEP-0015 (BLOCKING): the full-suite-green-with-zero-skips criterion is not met; 7 deployed-corpus oracle controls fail",
+            "F-MD-B18-A002-011 part (b): awaits the MD-DEP-0016 database-owner recovery",
+            "F-MD-B18-A002-005: identity checks of the closure gate still need their mutation proof"
+        ],
+        "authority": "D-MD-B18-A002-003/004, F-MD-B18-A002-011 header, consolidated remediation package step 6 (\"for closure the full suite must be green without skip before and after binding; MD-DEP-0015 remains a blocker until criterion D004 is met\")",
+        "no_closure_manifest_issued": "no SC-MD-B18-A002-001 and no Stage Register DONE: issuing them would waive a BLOCKING dependency"
+    },
+    "preserved_history": [
+        "candidate-v1..v5 and the v4 approval/admission chain (D016, E100, E101, E104, E105)",
+        "candidate-v5 chain (E113, E114, D019, E115, E116)",
+        "E102/E103 correction history",
+        "MD-B04-A003 history",
+        "every earlier attempt and baseline lock"
+    ],
+    "raw_artifact_manifest_postbind": {
+        "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/MANIFEST-POSTBIND.json",
+        "manifest_sha256": "f12b4d8599b8e73f8f5c6fcbeb193c767a8b68ae55e14b77461b9b328a49b9de",
+        "artifact_count": 8
+    },
+    "what_was_not_done": [
+        "no candidate created or modified",
+        "no application or runtime change",
+        "no basis reopened",
+        "no finding or dependency status waived or changed",
+        "B18 not closed; no closure manifest",
+        "no commit or push by this unit"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-005",
+        "F-MD-B18-A002-011",
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-001",
+        "E-MD-B18-A002-116",
+        "E-MD-B18-A002-115"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-004",
+        "D-MD-B18-A002-019"
+    ],
+    "next_resume_point": "MD-B18-A002 closure remains blocked: the database owner must decide the MD-DEP-0016 recovery / F-MD-B18-A002-011(b) path so the full suite can run green with zero skips (MD-DEP-0015); then mutation-prove the closure-gate identity checks (F-MD-B18-A002-005), resolve F-MD-B18-A002-017 and MD-DEP-0017, issue the stage closure manifest and resolve MD-DEP-0009. Do not change app/, config/, bootstrap/, vendor or composer files.",
+    "no_commit_or_push": 1
+}

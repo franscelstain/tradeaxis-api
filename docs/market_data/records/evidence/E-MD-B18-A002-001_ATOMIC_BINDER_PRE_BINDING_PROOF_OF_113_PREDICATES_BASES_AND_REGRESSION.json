@@ -1,0 +1,83 @@
+{
+    "evidence_id": "E-MD-B18-A002-001",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-08T01:01:05+07:00",
+    "verdict": "PASS",
+    "verdict_scope": "PASS here means exactly what the binder and the closure gate admit: the 113 per-predicate proof bases are complete and executed, and the proof gate, readiness gate and binder --validate-only are clean. It does NOT claim stage closure: the full suite is not green (7 ProductionCorpusInvariantOracleTest empty-corpus failures, MD-DEP-0015 BLOCKING, F-MD-B18-A002-011(b), MD-DEP-0016) and closure_claimed is false.",
+    "title": "MD-B18-A002 pre-binding proof of the 113 required predicates (atomic binder evidence)",
+    "evidence_id_note": "E-MD-B18-A002-001 is the prospective evidence identity that F-MD-B18-A002-005 pointed the closure gate at (MarketDataReplayVerificationClosureGate::EVIDENCE) and that the consolidated remediation package step 7 names for the atomic binding. It was never issued before (A002 evidence began at E-MD-B18-A002-002) and is unregistered in every registry; it is issued now, out of numeric sequence on purpose, because the gate admits no other identity. Later evidence continues the sequence (E-MD-B18-A002-117 onward).",
+    "raw_artifact_manifest": {
+        "manifest_path": "storage/app/market-data/evidence/MD-B18-A002/MANIFEST.json",
+        "manifest_sha256": "d9a30660aebdc1acf60d50afcacc94a9c4454c792adb00a23212377e49fd6c9d",
+        "artifact_count": 8
+    },
+    "bound_state": {
+        "head_at_issue": "76be1de19f189268e0d3c35568a15913569ca4d8",
+        "checkpoint": "the committed E-MD-B18-A002-116 state (76be1de) with no uncommitted change at the start of this unit",
+        "traceability_matrix_sha256_before_binding": "7a374a79efbdcf025cec7126bb66251dd0b59627a907c1e9e7f0f17c26f57a79",
+        "md_b18_matrix_rows_before": {
+            "REQUIRED/MANDATORY/NOT_ASSESSED": 113,
+            "REQUIRED/CONDITIONAL_NOT_APPLICABLE/NOT_APPLICABLE": 4,
+            "REQUIRED/OPTIONAL_CAPABILITY/OPTIONAL_NOT_REQUESTED": 2,
+            "REFERENCE_ONLY": 33
+        },
+        "denominator": 113,
+        "reviewed_proof_bases": "113/113 PROVEN, 0 INCOMPLETE (proof basis file)",
+        "formal_satisfied_before": "0/113",
+        "candidate_v5": {
+            "fingerprint": "daf96a296875df875539c196e997823e99ee4171d6d9d77af8d213f13a05fbe3",
+            "frozen_build": "sha256:7ea1956a36fe3ad773479bb249f1409b6fa04df8725576080284294ed8016c4a (recomputed unchanged)",
+            "owner_approval": "D-MD-B18-A002-019",
+            "review": "E-MD-B18-A002-114",
+            "admission": "E-MD-B18-A002-115",
+            "pre_binder_correction": "E-MD-B18-A002-116"
+        },
+        "build_files_changed": "none"
+    },
+    "executed_proof": {
+        "proof_gate": "MarketDataReplayVerificationProofGate: PASS",
+        "readiness_gate": "MarketDataReplayVerificationProofReadinessGate: PASS, 113 with a reviewed basis, none without",
+        "binder_validate_only": "PASS, 113/113, errors []",
+        "proof_gate_self_test": "MarketDataReplayVerificationProofSelfTest: PASS, 11/11, controls green",
+        "g05_acceptance_aggregate": "GREEN, 9 of 9 predicates, 84 guards executed, each its own PHPUnit process, zero skips (MD-S002-R0005/R0006/R0007/R0008, MD-S003-R0025, MD-S004-R0002/R0003/R0005/R0008)",
+        "full_marketdata_suite": {
+            "tests": 2960,
+            "assertions": 48448,
+            "skipped": 0,
+            "failures": 7,
+            "failure_classes": {
+                "ProductionCorpusInvariantOracleTest": 7
+            },
+            "classification": "only the 7 ProductionCorpusInvariantOracleTest empty-corpus assertions: environment/data-coupled controls against the deployed corpus (MD-DEP-0015, F-MD-B18-A002-011(b), MD-DEP-0016); no other failure, no error, no skip",
+            "not_a_full_suite_pass": true
+        }
+    },
+    "residue": {
+        "full_suite": "not green: the closure criterion of D-MD-B18-A002-003/004 and consolidated package step 6 (\"full suite green without skip before and after binding\") is NOT met",
+        "consequence": "this evidence enables the atomic binder (predicate-level SATISFIED) and the closure gate's artifact conditions; it does not close MD-B18"
+    },
+    "related_findings": [
+        "F-MD-B18-A002-005",
+        "F-MD-B18-A002-011",
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-115",
+        "E-MD-B18-A002-116"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-019",
+        "D-MD-B18-A002-004"
+    ],
+    "no_inheritance_statement": "No A001 verdict or artifact is inherited; the A001 binding was withdrawn (F-MD-B19-A001-002).",
+    "no_commit_or_push": 1
+}
