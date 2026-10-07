@@ -1331,3 +1331,7 @@ The independent review of `E-MD-B18-A002-102` (as relayed; text and reviewer ide
 ## 2026-10-07 corrected R0025 mirror basis (author-produced) — E-MD-B18-A002-104
 
 Under `D-MD-B18-A002-017` the five E102 blanket exclusions were replaced: sealed-history triggers and the `seal_state` ENUM derived from the production migrations, `PRAGMA` metadata, a `GET_LOCK` emulation with the independent candidate-v4 verification now running on the mirror, a second WAL connection as a genuinely concurrent consumer, native PRIMARY KEY and UNIQUE. The only exception is the foreign-key assertion (`D-MD-B18-A002-001` item 4). All 21 bullets run on both substrates; 27 G05 probes are red where intended. This is an author-produced basis and is not independently reviewed: the `MD-S003-R0025` proof basis stays `INCOMPLETE` and the reviewed basis stays 100/113. This finding stays `OPEN`.
+
+## 2026-10-07 corrected R0025 mirror basis independently reviewed PASS — E-MD-B18-A002-105
+
+A Codex independent-review Agent that is not the authoring Agent returned PASS for the corrected mirror basis `E-MD-B18-A002-104` (raw manifest `f812cd84…29c7`): no blocking finding, no owner decision. The `MD-S003-R0025` proof basis is `PROVEN` (reviewed basis 101/113). It is not a formal `SATISFIED`: the matrix row stays `NOT_ASSESSED` until the atomic binder. This finding stays `OPEN`: `MD-S050-R0005` (`IMPLEMENTATION_DEPENDENCY_UNAVAILABLE`) still needs an owner / authority decision.

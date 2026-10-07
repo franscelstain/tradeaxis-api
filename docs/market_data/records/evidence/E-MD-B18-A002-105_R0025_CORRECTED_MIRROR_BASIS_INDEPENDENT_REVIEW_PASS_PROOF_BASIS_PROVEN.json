@@ -1,0 +1,105 @@
+{
+    "evidence_id": "E-MD-B18-A002-105",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-07T09:32:43+07:00",
+    "evidence_type": "INDEPENDENT_REVIEW_RECORD_AND_PROOF_BASIS_PROMOTION",
+    "verdict": "R0025_CORRECTED_MIRROR_BASIS_INDEPENDENTLY_REVIEWED_PASS_PROOF_BASIS_PROMOTED_INCOMPLETE_TO_PROVEN_MATRIX_ROW_STAYS_NOT_ASSESSED",
+    "checkpoint_verdict": "R0025 PROOF BASIS PROVEN — NEXT B18 WORK UNIT IDENTIFIED",
+    "review_verdict": "R0025 CORRECTED MIRROR BASIS INDEPENDENT REVIEW PASS",
+    "reviewed_target": {
+        "record": "E-MD-B18-A002-104",
+        "record_sha256": "831c02d6eebbcab1695b4565d7bf96ccd069260769b78f3f147ec1b2fd5c67dc",
+        "raw_proof_package": "storage/app/market_data/evidence/MD-B18-A002/r0025-corrected-mirror-basis-20261007",
+        "raw_manifest_sha256": "f812cd8499e8ff85e624270043973b780b75841b901ac09bd7ae5993054229c7",
+        "raw_files_verified": 93,
+        "candidate_v4_fingerprint": "d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00",
+        "chain": "D-MD-B18-A002-017 -> E-MD-B18-A002-103 -> E-MD-B18-A002-104; E-MD-B18-A002-100 -> D-MD-B18-A002-016 -> E-MD-B18-A002-101",
+        "verified_unchanged_before_recording": "E104, its 93-file raw package (every sha256), D017, E103, E100, D016, E101 and candidate-v4 are unchanged since the review target"
+    },
+    "reviewer_provenance": {
+        "reviewer": "a separate Codex independent-review Agent, not the authoring Claude Code Agent",
+        "how_known": "Relayed in the project instruction of this work unit. The review text, a reviewer session identifier and a model identifier were not supplied to the repository; none is invented. The reviewer made no repository mutation (as stated in the instruction).",
+        "satisfies": [
+            "D-MD-B18-A002-013 Q2 (author never self-reviews)",
+            "D-MD-B18-A002-011",
+            "D-MD-B18-A002-017 (the corrected basis needed review that is not the author's)"
+        ]
+    },
+    "review_result_as_relayed": {
+        "verdict": "PASS",
+        "blocking": "none",
+        "non_blocking_affecting_proof_completeness": "none",
+        "owner_or_authority_decision_required": "none",
+        "independently_confirmed": [
+            "governance chain D017 -> E103 -> E104 valid",
+            "all 21 governed bullets covered",
+            "all six families execute on MariaDB",
+            "all six families execute on the supported SQLite mirror",
+            "the D001 foreign-key limitation is the only governed mirror exception",
+            "sealed-trigger semantic equivalence",
+            "PRAGMA metadata proof sufficient for the governed semantic obligation",
+            "advisory-lock emulation proves the required ownership / mutual-exclusion semantics",
+            "file-backed WAL plus a second connection proves concurrent-consumer isolation",
+            "PRIMARY KEY, UNIQUE and ENUM mirror behaviour",
+            "candidate-v4 executes PASS / MATCH / ADMISSIBLE on the mirror",
+            "27 final probes are discriminating",
+            "the complete corrected proof basis is PROVEN"
+        ]
+    },
+    "documentation_observations_not_new_requirements": [
+        "the advisory-lock mirror proves ownership and mutual exclusion, not MariaDB timeout-wait parity (E104 already states the timeout is ignored)",
+        "the first N-series launch executed no substantive probe; the final corrected probe evidence stays valid (E104 recorded this)",
+        "the full MarketData suite is not a full PASS: seven ProductionCorpusInvariantOracleTest empty-corpus failures remain (MD-DEP-0015 / MD-DEP-0016)"
+    ],
+    "proof_basis_promotion": {
+        "predicate": "MD-S003-R0025",
+        "before": "INCOMPLETE (E-MD-B18-A002-103)",
+        "after": "PROVEN (reviewed basis) in MarketDataReplayVerificationProofBasis",
+        "only_this_entry_changed": true,
+        "mechanism": "the governed proof-basis file read by the proof gate, the readiness gate and the binder (binder --validate-only run before and after; the binder was not applied)",
+        "guards": {
+            "positive": "B18ReleaseCandidateAcceptanceAggregateTest::test_md_s003_r0025_executes_all_scenario_family_members_on_mariadb_and_the_mirror_and_is_green",
+            "negative": "B18ReleaseCandidateAcceptanceAggregateTest::test_md_s003_r0025_turns_red_when_any_scenario_family_member_fails"
+        },
+        "not_formal_satisfied": "proof-basis PROVEN is not a formal predicate SATISFIED: the matrix row stays NOT_ASSESSED until the later atomic binder; formal SATISFIED stays 0/113",
+        "history_preserved": "E102 immutable execution evidence; E103 withdrew its unsupported earlier PROVEN; E104 is the corrected author-produced basis; this record is what makes E104 eligible for the new transition"
+    },
+    "what_was_not_done": [
+        "no change to the corrected mirror implementation or tests",
+        "no candidate change",
+        "E100, D016, E101, E102, E103, E104 not edited",
+        "no authority change",
+        "no formal matrix row change",
+        "MD-S050-R0005 and F-018 not started",
+        "no runtime or full-suite run (nothing runtime changed)",
+        "no commit or push"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-017"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-104",
+        "E-MD-B18-A002-103",
+        "E-MD-B18-A002-102",
+        "E-MD-B18-A002-101",
+        "E-MD-B18-A002-100"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-017",
+        "D-MD-B18-A002-016",
+        "D-MD-B18-A002-013",
+        "D-MD-B18-A002-011",
+        "D-MD-B18-A002-001"
+    ],
+    "next_resume_point": "MD-B18-A002: MD-S050-R0005 owner / authority decision package. Derived from the current state: with R0025 settled at PROVEN, the 12 bases without a reviewed basis are MD-S003-R0011, MD-S003-R0014, MD-S019-R0071, MD-S041-R0032 (F-018 / F-013 families), MD-S050-R0005 (F-017, IMPLEMENTATION_DEPENDENCY_UNAVAILABLE), MD-S050-R0014 and MD-S050-R0022/R0023/R0025/R0028/R0029 and MD-S055-R0025 (F-018 / F-013 families). MD-S050-R0005 is the only remaining basis owned by F-MD-B18-A002-017, its negative clause is structurally unreachable while every as-known replay is BLOCKED for an unbindable reason-registry identity, and no implementation can proceed without an owner decision (historical reason-registry versioning versus narrowing the predicate proof shape); it also bears on MD-S050-R0014 and MD-S019-R0071, which share that identity, so the decision package must state that impact. Prepare the package (options, authority trace, impact) and stop for the owner. F-018 and the reopened F-013 stay unstarted until the owner sequences them; B10 stays 1072/1072 and B17 244/257.",
+    "no_commit_or_push": 1
+}

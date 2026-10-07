@@ -1108,3 +1108,7 @@ Same A002/BL001/CI. Governance recording only in this step: no application, cand
 ## 2026-10-07 corrected R0025 mirror basis — E-MD-B18-A002-104
 
 Same A002/BL001/CI. Test code and gate tooling only; no application, candidate, fixture-world or shared mirror schema change (`NOT_B10_SEMANTIC`). Basis `INCOMPLETE`, reviewed basis 100/113, formal `SATISFIED` 0/113. B10 stays closed 1072/1072; B17 stays 244/257; `F-018` not started. Raw package: `storage/app/market_data/evidence/MD-B18-A002/r0025-corrected-mirror-basis-20261007`.
+
+## 2026-10-07 corrected R0025 mirror basis review and promotion — E-MD-B18-A002-105
+
+Same A002/BL001/CI. Governance recording and one proof-basis entry only: no application, candidate or test change. Reviewed basis 101/113, formal `SATISFIED` 0/113. B10 stays closed 1072/1072; B17 stays 244/257; `F-018` not started.
