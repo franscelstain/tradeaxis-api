@@ -1692,3 +1692,11 @@ MD-REL-1691,F-MD-B18-A002-018,E-MD-B18-A002-112,RELATED,Resolved by the proof.,M
 MD-REL-1692,F-MD-B18-A002-013,E-MD-B18-A002-112,RELATED,Carry-forwards proven.,MD-DEP-0023,2026-10-07T19:08:35+07:00,MD-B18-A002 F-018 completion.
 MD-REL-1693,CI-MD-B18-A002-001,E-MD-B18-A002-111,RELATED,Classification recorded under the impact declaration.,MD-DEP-0023,2026-10-07T19:08:35+07:00,MD-B18-A002 F-018 completion.
 MD-REL-1694,CI-MD-B18-A002-001,E-MD-B18-A002-112,RELATED,Proof recorded under the impact declaration.,MD-DEP-0023,2026-10-07T19:08:35+07:00,MD-B18-A002 F-018 completion.
+MD-REL-1695,E-MD-B18-A002-113,E-MD-B18-A002-112,DEPENDS_ON,Starts from 112/113 and the unchanged build recorded there.,MD-DEP-0023,2026-10-07T22:20:43+07:00,MD-B18-A002 candidate-v5 authoring.
+MD-REL-1696,E-MD-B18-A002-113,E-MD-B18-A002-108,RELATED,Authored because candidate-v4 was invalidated for the current build.,MD-DEP-0023,2026-10-07T22:20:43+07:00,MD-B18-A002 candidate-v5 authoring.
+MD-REL-1697,E-MD-B18-A002-113,E-MD-B18-A002-101,RELATED,Candidate-v4 admission; not carried over.,MD-DEP-0023,2026-10-07T22:20:43+07:00,MD-B18-A002 candidate-v5 authoring.
+MD-REL-1698,E-MD-B18-A002-113,E-MD-B18-A002-100,RELATED,Candidate-v4 review; does not cover candidate-v5.,MD-DEP-0023,2026-10-07T22:20:43+07:00,MD-B18-A002 candidate-v5 authoring.
+MD-REL-1699,E-MD-B18-A002-113,D-MD-B18-A002-018,RELATED,Q9 = A1 snapshot member; items 12 and 13.,MD-DEP-0023,2026-10-07T22:20:43+07:00,MD-B18-A002 candidate-v5 authoring.
+MD-REL-1700,E-MD-B18-A002-113,D-MD-B18-A002-016,RELATED,Approval of candidate-v4 only.,MD-DEP-0023,2026-10-07T22:20:43+07:00,MD-B18-A002 candidate-v5 authoring.
+MD-REL-1701,E-MD-B18-A002-113,F-MD-B18-A002-018,RELATED,Resolved finding whose completion made the build final.,MD-DEP-0023,2026-10-07T22:20:43+07:00,MD-B18-A002 candidate-v5 authoring.
+MD-REL-1702,CI-MD-B18-A002-001,E-MD-B18-A002-113,RELATED,Authoring recorded under the impact declaration.,MD-DEP-0023,2026-10-07T22:20:43+07:00,MD-B18-A002 candidate-v5 authoring.

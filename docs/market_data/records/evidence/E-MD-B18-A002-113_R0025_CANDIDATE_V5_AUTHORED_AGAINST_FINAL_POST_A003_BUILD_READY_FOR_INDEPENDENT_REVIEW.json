@@ -1,0 +1,356 @@
+{
+    "evidence_id": "E-MD-B18-A002-113",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-07T22:20:43+07:00",
+    "evidence_type": "R0025_CANDIDATE_AUTHORED_AWAITING_INDEPENDENT_REVIEW",
+    "verdict": "CANDIDATE_V5_AUTHORED_AGAINST_FINAL_BUILD_AUTHOR_VALIDATION_GREEN_NOT_REVIEWED_NOT_APPROVED_NOT_ADMITTED_R0025_STAYS_INCOMPLETE",
+    "checkpoint_verdict": "R0025 CANDIDATE-V5 READY FOR INDEPENDENT REVIEW",
+    "starting_state": {
+        "head": "7eeaf89a4fadddae9a8d67ef6e219dbedce50f44",
+        "b18_denominator": 113,
+        "reviewed_bases": "112/113",
+        "only_missing_basis": "MD-S003-R0025",
+        "formal_satisfied": "0/113",
+        "F-MD-B18-A002-018": "RESOLVED",
+        "MD-B04-A003": "CLOSED/PASS 114/114",
+        "b10": "1072/1072",
+        "candidate_v4": "d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00 immutable, untouched",
+        "candidate_v5_before": "did not exist",
+        "uncommitted_build_change": "none"
+    },
+    "final_build_freeze": {
+        "method": "php_source_build_v1 (ProducerRegistrySnapshot::build, re-implemented by derivation/author_build_identity.php)",
+        "head": "7eeaf89",
+        "file_count": 5916,
+        "build_id": "sha256:7ea1956a36fe3ad773479bb249f1409b6fa04df8725576080284294ed8016c4a",
+        "manifest_sha256": "8464514949826b5a2a7cd686cd3d2dc33a57bba58e43824aad3667bc0971146e",
+        "retained_archive": {
+            "path": "storage/app/market-data/input-builds/7ea1956a36fe3ad773479bb249f1409b6fa04df8725576080284294ed8016c4a.json.gz",
+            "sha256": "0f65faae9c725532fc3758cd024ae9fdedc5e0377a3997f1b95077a9a7cd35e2",
+            "bytes": 11406320,
+            "decompresses_to_the_content": true
+        },
+        "candidate_v4_build": "sha256:7a1ed5c78cc37a978df0441b565815f3e435fdceafd2045eb202d716ce16d8cf (5916 files)",
+        "recomputed_after_authoring_probes_and_full_suite": "identical (changes/build_recheck_after_authoring.txt)"
+    },
+    "candidate_package": {
+        "path": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v5",
+        "files": 24,
+        "fingerprint": "daf96a296875df875539c196e997823e99ee4171d6d9d77af8d213f13a05fbe3",
+        "fingerprint_file": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v5.fingerprint.txt",
+        "manifest_sha256": "f7cc89399ec1c5e540db28e4ffeccbf2cccdc58dd3496e80b491c9c51a88bf4a",
+        "fixture_status": "CANDIDATE_AWAITING_INDEPENDENT_REVIEW",
+        "oracle": "r0025-synthetic-v2-reference-oracle@5.0.0",
+        "world_version": "r0025-synthetic-v2/5",
+        "supersedes": "candidate-4 (d0a61b36…9f00) -> candidate-3 -> candidate-2 -> candidate-1",
+        "assertion_layers": [
+            "run",
+            "hash",
+            "publication",
+            "replay"
+        ],
+        "field_classification": {
+            "LITERAL_SEMANTIC_EXPECTATION": 98,
+            "DERIVED_FROM_FROZEN_INPUT": 27,
+            "TARGET_BOUND_OPERATIONAL": 20,
+            "ASSERTED_LITERAL_BOUND_INPUTS": 11,
+            "REASON_CODE_COUNT_ROWS": 2
+        }
+    },
+    "independent_oracle_derivation_chain": {
+        "1": "frozen reason registry content (inputs/frozen_reason_registry.json, 437 entries, byte-identical to candidate 4) -> document {schema_version market-data-reason-registry/v2, entries ordered by code, each {code, category, description, severity, is_active}} -> SHA-256 = semantic identity 0dda9efd27338ad354bca8175aeb2a84d127a259ba5d26dfe84712c33c027a89",
+        "2": "member reason_registry = {identity_contract market-data-reason-registry/v2, semantic_identity} (E-MD-B04-A003-002; D-MD-B18-A002-018 Q9 = A1)",
+        "3": "snapshot content = canonical JSON {reason_registry, resolved_config, semantic_bindings} (resolved_config and semantic_bindings frozen, identical to candidate 4); config_content_hash = SHA-256 = 2075a960f2d065877244435ed38ac9715c61a21479470c1935642d89eed3bf6f (5768 bytes), assembled by the oracle and required to equal inputs/frozen_config_content.txt",
+        "4": "every value that binds config_content_hash is derived by the oracle: bars, indicators, eligibility rows, factor-set document, event-factor composite, manifest preimage, publication_manifest_hash; frozen build identity is consumed as a frozen literal",
+        "sources_not_used": "no target output, no candidate-4 literal, no runtime-generated expectation, no allocation id; the production snapshot dump taken before authoring is a recorded cross-check only (equal), never an input of any tool or of the oracle",
+        "literal_sources": {
+            "config_snapshot_hash": "step 3",
+            "bars/indicators/eligibility/factor_set/event_factor/canonical_raw_input hashes": "oracle V2 artifact and nested hash derivations over the frozen inputs and the step 3 config hash",
+            "publication_manifest_hash": "oracle section 4e preimage over the frozen payload",
+            "readiness/coverage/freshness": "frozen publication facts and the authority ordered table (NOT_APPLICABLE, row 4)",
+            "seal/package identity": "target-bound operational identities stay @TARGET markers; package identity = fingerprint over the 24 files"
+        },
+        "gap": "none: every literal has a documented derivation source; no stop condition arose"
+    },
+    "reason_registry_and_config_identity_vs_candidate_4": {
+        "reason_registry_identity": "unchanged in value 0dda9efd… (registry content unchanged)",
+        "config_snapshot_hash": {
+            "v4": "8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0",
+            "v5": "2075a960f2d065877244435ed38ac9715c61a21479470c1935642d89eed3bf6f"
+        },
+        "moved": [
+            "bars_batch_hash",
+            "indicators_batch_hash",
+            "eligibility_batch_hash",
+            "factor_set_hash",
+            "event_factor_hash",
+            "canonical_raw_input_hash",
+            "config_snapshot_hash",
+            "publication_manifest_hash",
+            "executable_build_identity"
+        ],
+        "unchanged": [
+            "source_observation_manifest_hash",
+            "temporal_identity_hash",
+            "calendar_status_hash",
+            "formula_registry_hash",
+            "reason_registry_hash",
+            "read_model_version",
+            "serialization_version",
+            "eight nested set documents"
+        ],
+        "v4_expectation_superseded": "candidate 4 expected a reason-registry change to move only the reason identity; after MD-B04-A003 it also moves the config hash and what binds it (two controls updated, flagged for review)"
+    },
+    "publication_manifest_reconstruction": {
+        "expected_publication_manifest_hash": "6162e5fcd1d327fa39d1e43b2a3911ca74807816d36d8ef8ea506a10a977c8bd",
+        "members": 35,
+        "preimage_and_payload": "expected/expected_publication_manifest.json and derivation/oracle_output.json publication_manifest",
+        "actual_side": "the target only as ACTUAL: the stored publication manifest hash and the verifier re-verification both equal the literal"
+    },
+    "actual_vs_expected": {
+        "mismatch_count": 0,
+        "twelve_values_equal_on_two_allocation_layouts": true,
+        "artifact_and_nested_hashes_identical_across_layouts": true,
+        "operational_identities_differ_across_layouts": true,
+        "admission_state": "NOT_ADMISSIBLE (no approval bound)",
+        "replay_status": "BLOCKED",
+        "diagnostics": "storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261007-v5-candidate/diagnostics/"
+    },
+    "mutation_and_sensitivity_probes": {
+        "count": 12,
+        "all_red_intended": true,
+        "results": {
+            "Q1": {
+                "intent": "package: the frozen reason registry content changes (one description) while everything else stays",
+                "file": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v5/inputs/frozen_reason_registry.json",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_frozen_snapshot_content_carries_the_independently_derived_reason_registry_member => RED_INTENDED",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_standalone_oracle_reproduces_the_package_and_includes_no_application_code => RED_INTENDED"
+                ],
+                "sha256_before": "058b9dc131a42c7e6654cfe3cef9e628cdab375d8a3ed0da374710a26781c9d8",
+                "sha256_restored": "058b9dc131a42c7e6654cfe3cef9e628cdab375d8a3ed0da374710a26781c9d8"
+            },
+            "Q2": {
+                "intent": "package: the frozen snapshot content loses the reason_registry member (the config hash would not move with the registry)",
+                "file": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v5/inputs/frozen_config_content.txt",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_frozen_snapshot_content_carries_the_independently_derived_reason_registry_member => RED_INTENDED"
+                ],
+                "sha256_before": "2075a960f2d065877244435ed38ac9715c61a21479470c1935642d89eed3bf6f",
+                "sha256_restored": "2075a960f2d065877244435ed38ac9715c61a21479470c1935642d89eed3bf6f"
+            },
+            "P1": {
+                "intent": "production: the snapshot content no longer carries the reason_registry member (the config hash does not move with the registry)",
+                "file": "app/Infrastructure/Persistence/MarketData/MarketDataConfigSnapshotRepository.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_each_semantic_bound_input_equals_its_own_literal_on_the_real_path => RED_INTENDED",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_actual_snapshot_row_is_the_frozen_content_and_carries_the_frozen_reason_member => RED_INTENDED",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_a_reason_registry_content_change_on_the_real_path_moves_the_actual_reason_identity_and_config_hash_while_an_audit_only_change_moves_nothing => RED_INTENDED"
+                ],
+                "sha256_before": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4",
+                "sha256_restored": "f61020a39f11c01fcf33c7579e31eb6a7fc22a2d9d0ea614d88fcc4219545ab4"
+            },
+            "Q3": {
+                "intent": "package: the expected publication manifest hash is altered (one character)",
+                "file": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v5/expected/expected_replay_result.json",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_publication_manifest_hash_is_a_literal_derived_by_the_oracle_and_bound_to_the_frozen_manifest_payload => RED_INTENDED",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_actual_publication_manifest_hash_equals_the_independent_literal_and_is_stable_across_layouts => RED_INTENDED"
+                ],
+                "sha256_before": "7432757fa62a2f5b8d31d7c72c5cd092a9ad793c87d828ecedcadc1f93877858",
+                "sha256_restored": "7432757fa62a2f5b8d31d7c72c5cd092a9ad793c87d828ecedcadc1f93877858"
+            },
+            "Q4": {
+                "intent": "package: the frozen build identity is altered (one character of the build id and content hash)",
+                "file": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v5/inputs/frozen_build_identity.json",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_publication_bound_build_identity_is_the_frozen_build_identity => RED_INTENDED",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_every_one_of_the_eleven_bound_inputs_is_a_literal_in_the_package => RED_INTENDED"
+                ],
+                "sha256_before": "3d81ddb04daa8bfae7e2f404780aad4d8cc1dd19c52cd870e26c424995bd52a4",
+                "sha256_restored": "3d81ddb04daa8bfae7e2f404780aad4d8cc1dd19c52cd870e26c424995bd52a4"
+            },
+            "Q5": {
+                "intent": "package: an expected artifact hash is altered (the eligibility batch hash, one character, in the artifact context)",
+                "file": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v5/expected/expected_replay_result.json",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_candidate_matches_the_actual_publication_but_is_not_admitted_as_proof => RED_INTENDED",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_candidate_v5_freezes_a_pre_activation_context_and_expects_the_independently_derived_not_applicable => RED_INTENDED"
+                ],
+                "sha256_before": "7432757fa62a2f5b8d31d7c72c5cd092a9ad793c87d828ecedcadc1f93877858",
+                "sha256_restored": "7432757fa62a2f5b8d31d7c72c5cd092a9ad793c87d828ecedcadc1f93877858"
+            },
+            "Q6": {
+                "intent": "package: the manifest declares an assertion layer outside the locked vocabulary",
+                "file": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v5/manifest.json",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_package_declares_only_the_locked_assertion_layers => RED_INTENDED",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_an_independent_package_with_any_other_assertion_layer_is_blocked_even_with_an_approval_supplied => RED_INTENDED"
+                ],
+                "sha256_before": "f7cc89399ec1c5e540db28e4ffeccbf2cccdc58dd3496e80b491c9c51a88bf4a",
+                "sha256_restored": "f7cc89399ec1c5e540db28e4ffeccbf2cccdc58dd3496e80b491c9c51a88bf4a"
+            },
+            "P2b": {
+                "intent": "production: a content change of a description is invisible to the reason identity (the frozen literal is unaffected; only the change is hidden)",
+                "file": "app/Application/MarketData/Services/ReplayV2IdentityProjection.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_a_reason_registry_content_change_on_the_real_path_moves_the_actual_reason_identity_and_config_hash_while_an_audit_only_change_moves_nothing => RED_INTENDED"
+                ],
+                "sha256_before": "24baddfa004a14f258e35b86ec101733ed28fa88b3d6d5a4f6c9f19591dfc898",
+                "sha256_restored": "24baddfa004a14f258e35b86ec101733ed28fa88b3d6d5a4f6c9f19591dfc898"
+            },
+            "Q8": {
+                "intent": "package: the recorded package fingerprint is wrong (one character)",
+                "file": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v5.fingerprint.txt",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_manifest_binds_every_file_and_the_recorded_fingerprint_is_the_package_fingerprint => RED_INTENDED",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_admission_mechanism_admits_only_the_exact_fingerprint_and_refuses_any_damaged_package => RED_INTENDED"
+                ],
+                "sha256_before": "a251bbe6e0c6f2330601ae016faf6ee23d76f3bd7320776146efae56fe0d802c",
+                "sha256_restored": "a251bbe6e0c6f2330601ae016faf6ee23d76f3bd7320776146efae56fe0d802c"
+            },
+            "Q9": {
+                "intent": "package: a frozen input member is damaged (provider response, one byte)",
+                "file": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v5/inputs/provider_response.json",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_manifest_binds_every_file_and_the_recorded_fingerprint_is_the_package_fingerprint => RED_INTENDED",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_admission_mechanism_admits_only_the_exact_fingerprint_and_refuses_any_damaged_package => RED_INTENDED"
+                ],
+                "sha256_before": "8ab35be69d1223c7bcb6220d8937fbd703ce3f44c1a860489f865d5b31019fd3",
+                "sha256_restored": "8ab35be69d1223c7bcb6220d8937fbd703ce3f44c1a860489f865d5b31019fd3"
+            },
+            "P2": {
+                "intent": "production: the reason identity ignores the description (a content change does not move it)",
+                "file": "app/Application/MarketData/Services/ReplayV2IdentityProjection.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_a_reason_registry_content_change_on_the_real_path_moves_the_actual_reason_identity_and_config_hash_while_an_audit_only_change_moves_nothing => RED_INTENDED",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_each_semantic_bound_input_equals_its_own_literal_on_the_real_path => RED_INTENDED"
+                ],
+                "sha256_before": "24baddfa004a14f258e35b86ec101733ed28fa88b3d6d5a4f6c9f19591dfc898",
+                "sha256_restored": "24baddfa004a14f258e35b86ec101733ed28fa88b3d6d5a4f6c9f19591dfc898"
+            },
+            "Q7": {
+                "intent": "oracle: the reason identity of the snapshot member is a value the target produced (hard-wired literal of a registry-changed run) instead of the derived one",
+                "file": "tests/fixtures/replay/r0025-synthetic-v2-candidate-v5/derivation/reference_oracle.php",
+                "verdict": "RED_INTENDED",
+                "covering": [
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_the_standalone_oracle_reproduces_the_package_and_includes_no_application_code => RED_INTENDED",
+                    "R0025SyntheticV2CandidateFixtureTest.php::test_a_reason_registry_content_change_moves_the_identity_the_config_hash_and_what_binds_it_and_an_order_or_allocation_change_moves_nothing => RED_INTENDED"
+                ],
+                "sha256_before": "8cc8e0e0d5741d8ad44edfab8de58cf8cfd513ccea3d45f81445f9c324355580",
+                "sha256_restored": "8cc8e0e0d5741d8ad44edfab8de58cf8cfd513ccea3d45f81445f9c324355580"
+            }
+        },
+        "earlier_attempts": "pass 1 left P2, Q7, Q8, Q9 weak or mislabelled (wrong covering test or message); preserved under probes/probes1-*; P2b added and the affected probes re-run (probes2, probes3); no test or production file changed between passes",
+        "covered_themes": [
+            "registry identity changed (Q1, P2, P2b)",
+            "config hash not moving (Q2, P1)",
+            "expected manifest hash altered (Q3)",
+            "frozen build identity altered (Q4)",
+            "expected artifact hash altered (Q5)",
+            "assertion layer outside the closed vocabulary (Q6)",
+            "target-produced value substituted into the oracle (Q7)",
+            "wrong fingerprint (Q8)",
+            "damaged package member (Q9)"
+        ]
+    },
+    "author_side_validation": {
+        "R0025SyntheticV2CandidateFixtureTest": "46 tests / 6885 assertions OK (final); first full run: 2 failures, both candidate-4 rules superseded by D-MD-B18-A002-018 and updated; output preserved",
+        "new_controls": [
+            "test_the_frozen_snapshot_content_carries_the_independently_derived_reason_registry_member",
+            "test_the_actual_snapshot_row_is_the_frozen_content_and_carries_the_frozen_reason_member",
+            "test_a_reason_registry_content_change_moves_the_identity_the_config_hash_and_what_binds_it_and_an_order_or_allocation_change_moves_nothing",
+            "test_a_reason_registry_content_change_on_the_real_path_moves_the_actual_reason_identity_and_config_hash_while_an_audit_only_change_moves_nothing"
+        ],
+        "is_independent_review": false
+    },
+    "regression": {
+        "full_marketdata_suite": {
+            "tests": 2960,
+            "assertions": 48166,
+            "failures": 10,
+            "failure_set": "storage raw package full-suite/failure_set.txt",
+            "classification": "7 ProductionCorpusInvariantOracleTest empty-corpus assertions (MD-DEP-0015/0016) + 3 members that execute the ADMITTED candidate (still candidate 4: config identity mismatch) and stay red until candidate 5 is approved and admitted",
+            "before": "E-MD-B18-A002-112 run: the same 10 plus 13 R0025SyntheticV2CandidateFixtureTest members (candidate-4 controls invalidated by the build), now green against candidate 5",
+            "not_a_full_suite_pass": true,
+            "test_count_note": "the E-112 run recorded 2927 tests; this run 2960: 4 are new here; the remaining difference is not attributed"
+        },
+        "governance_gates": "43 gates run; pass/fail set identical to the earlier baseline (26 PASS; the FAIL/NOT_JSON ones are the readiness-mode and pre-existing states, MarketDataReadProductProofGate exit 255 pre-existing); raw: governance/"
+    },
+    "governance_state": {
+        "MD-S003-R0025": "INCOMPLETE (proof basis unchanged)",
+        "readiness": "112/113",
+        "formal_satisfied": "0/113",
+        "b18_closed": false,
+        "candidate_v5_reviewed": false,
+        "candidate_v5_owner_approved": false,
+        "candidate_v5_admitted": false,
+        "atomic_113_row_binder_run": false
+    },
+    "files_changed_or_created": {
+        "created": [
+            "tests/fixtures/replay/r0025-synthetic-v2-candidate-v5/ (24 files)",
+            "tests/fixtures/replay/r0025-synthetic-v2-candidate-v5.fingerprint.txt",
+            "raw proof package storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261007-v5-candidate/",
+            "review package storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261007-v5-review-package.zip"
+        ],
+        "modified": [
+            "tests/Support/R0025SyntheticV2World.php (PACKAGE -> candidate-v5; PACKAGE_V4 retained)",
+            "tests/Unit/MarketData/R0025SyntheticV2CandidateFixtureTest.php (retargeted; four controls added; two candidate-4 expectations updated)"
+        ],
+        "production_code": "none",
+        "candidate_v4_and_older": "untouched"
+    },
+    "raw_proof": {
+        "path": "storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261007-v5-candidate",
+        "manifest_sha256": "8cd464967a706dfc2d07900b592057fd4111ce777e9b5be5454149f147f5d144",
+        "review_index": "storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261007-v5-candidate/REVIEW_INDEX.md",
+        "review_package_zip": "storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261007-v5-review-package.zip",
+        "review_package_zip_sha256": "fb6c78e91bfa28e52f4a504cec0e1cd8903ca26be44e3cfd89c675739b9af625"
+    },
+    "related_findings": [
+        "F-MD-B18-A002-018"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-100",
+        "E-MD-B18-A002-101",
+        "E-MD-B18-A002-108",
+        "E-MD-B18-A002-112",
+        "E-MD-B04-A003-002"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-016",
+        "D-MD-B18-A002-018"
+    ],
+    "what_was_not_done": [
+        "candidate-v4 not edited",
+        "no review, owner approval or admission of candidate-v5",
+        "MD-S003-R0025 not promoted",
+        "atomic 113-row binder not run",
+        "B18 not closed",
+        "no production change",
+        "no commit or push"
+    ],
+    "next_resume_point": "MD-B18-A002: independent review of candidate-v5 (tests/fixtures/replay/r0025-synthetic-v2-candidate-v5, fingerprint daf96a296875df875539c196e997823e99ee4171d6d9d77af8d213f13a05fbe3, manifest sha256 f7cc89399ec1c5e540db28e4ffeccbf2cccdc58dd3496e80b491c9c51a88bf4a) by a TradeAxis reviewer who is not the authoring Agent, using storage/app/market_data/evidence/MD-B18-A002/r0025-synthetic-v2-candidate-20261007-v5-candidate/REVIEW_INDEX.md; the review record and the owner approval bound to that exact fingerprint are separate governed records.",
+    "no_commit_or_push": 1
+}

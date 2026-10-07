@@ -1,0 +1,62 @@
+{
+    "schema": "r0025-expected-publication-manifest/1",
+    "semantic_profile": "market-data-publication-semantic/v2",
+    "domain": "publication_manifest",
+    "payload": {
+        "market_scope": "IDX_REGULAR_EOD",
+        "trade_date": "2026-03-23",
+        "trade_date_requested": "2026-03-23",
+        "trade_date_effective": "2026-03-23",
+        "publication_version": "1",
+        "lineage": {
+            "supersedes_manifest_hash": null,
+            "previous_manifest_hash": null,
+            "replaced_manifest_hash": null
+        },
+        "artifact_hash_profile": "market-data-semantic-hash/v2",
+        "nested_identity_version": "market-data-semantic-nested/v2",
+        "observation_manifest_hash": "92ecc9f3fb02adec53093e3836129e7c4713549297e09ffe62f8619fa46bf0b5",
+        "config_content_hash": "2075a960f2d065877244435ed38ac9715c61a21479470c1935642d89eed3bf6f",
+        "config_registry_revision": "platform_config_registry_v2",
+        "identity_revision_set_hash": "fc581f41d529036c9886bdac8b21e700503321e5b6f3661f19771ade97fc586b",
+        "calendar_revision_set_hash": "ef256ac9af24d297d5fbe6fd3c97219ea5565181050b69f95050fff3c6a9065e",
+        "status_revision_set_hash": "083483df0e9a825eb0b7fd7cf9cea9f9606c9d28f04f4d249442681ad01af81e",
+        "event_revision_set_hash": "e26c3c22bba3187fa8cf14dfd0c888e60cafefac630b2534df9a8582859f7c82",
+        "source_scale_assessment_set_hash": "ebb520fa38efc571ae42c68e4871f3f671018ee9cede1d7c81527ba0799f5936",
+        "market_structure_revision_set_hash": "d313d45ada9589003ac3a8af2f962d5fea02850d35bb2e5fc14120bd4fc4f8e6",
+        "factor_decision_set_hash": "648a63777d0a173941fb8e31e045edfdac5dd2aff96942ecb528d0cbd2e7fb30",
+        "factor_set_hash": "63dda396fc01519248abf19518cde3deef588edc72893d45f60ab11134c46611",
+        "semantic_reasons": [
+            "COVERAGE_THRESHOLD_MET"
+        ],
+        "price_product_code": "STRUCTURAL_ADJUSTED",
+        "price_product_version": "structural_adjusted_v2",
+        "canonicalization_version": "idx_regular_raw_v2",
+        "formula_version": "v1",
+        "read_model_version": "market_data_read_product_v1",
+        "artifacts": {
+            "bars": "fa316df7c72d74a0c4e2b28154d7d773ad23c086aeb7342caf7c95c13589e219",
+            "indicators": "d38185be55ae6c1334f1025e4e489a384ea90eea17da4c43d93cead31766c995",
+            "eligibility": "a30d81022aae24012d7fee3b9aa9a1c5a8bab98ed66c013ce786eaf892218c56"
+        },
+        "row_counts": {
+            "bars": 1,
+            "indicators": 1,
+            "eligibility": 1
+        },
+        "quality_state": "PASS",
+        "coverage_gate_state": "PASS",
+        "coverage_ratio": "1.0000",
+        "readiness_state": "READABLE",
+        "freshness_state": "NOT_APPLICABLE",
+        "correction_lineage": {
+            "correction_semantic_hash": null,
+            "promote_mode": "",
+            "publish_target": ""
+        },
+        "seal_contract_version": "dataset_seal_v2",
+        "seal_hash_algorithm": "SHA-256"
+    },
+    "preimage": "{\"domain\":\"publication_manifest\",\"payload\":{\"artifact_hash_profile\":\"market-data-semantic-hash/v2\",\"artifacts\":{\"bars\":\"fa316df7c72d74a0c4e2b28154d7d773ad23c086aeb7342caf7c95c13589e219\",\"eligibility\":\"a30d81022aae24012d7fee3b9aa9a1c5a8bab98ed66c013ce786eaf892218c56\",\"indicators\":\"d38185be55ae6c1334f1025e4e489a384ea90eea17da4c43d93cead31766c995\"},\"calendar_revision_set_hash\":\"ef256ac9af24d297d5fbe6fd3c97219ea5565181050b69f95050fff3c6a9065e\",\"canonicalization_version\":\"idx_regular_raw_v2\",\"config_content_hash\":\"2075a960f2d065877244435ed38ac9715c61a21479470c1935642d89eed3bf6f\",\"config_registry_revision\":\"platform_config_registry_v2\",\"correction_lineage\":{\"correction_semantic_hash\":\"\",\"promote_mode\":\"\",\"publish_target\":\"\"},\"coverage_gate_state\":\"PASS\",\"coverage_ratio\":\"1.0000\",\"event_revision_set_hash\":\"e26c3c22bba3187fa8cf14dfd0c888e60cafefac630b2534df9a8582859f7c82\",\"factor_decision_set_hash\":\"648a63777d0a173941fb8e31e045edfdac5dd2aff96942ecb528d0cbd2e7fb30\",\"factor_set_hash\":\"63dda396fc01519248abf19518cde3deef588edc72893d45f60ab11134c46611\",\"formula_version\":\"v1\",\"freshness_state\":\"NOT_APPLICABLE\",\"identity_revision_set_hash\":\"fc581f41d529036c9886bdac8b21e700503321e5b6f3661f19771ade97fc586b\",\"lineage\":{\"previous_manifest_hash\":\"\",\"replaced_manifest_hash\":\"\",\"supersedes_manifest_hash\":\"\"},\"market_scope\":\"IDX_REGULAR_EOD\",\"market_structure_revision_set_hash\":\"d313d45ada9589003ac3a8af2f962d5fea02850d35bb2e5fc14120bd4fc4f8e6\",\"nested_identity_version\":\"market-data-semantic-nested/v2\",\"observation_manifest_hash\":\"92ecc9f3fb02adec53093e3836129e7c4713549297e09ffe62f8619fa46bf0b5\",\"price_product_code\":\"STRUCTURAL_ADJUSTED\",\"price_product_version\":\"structural_adjusted_v2\",\"publication_version\":\"1\",\"quality_state\":\"PASS\",\"read_model_version\":\"market_data_read_product_v1\",\"readiness_state\":\"READABLE\",\"row_counts\":{\"bars\":1,\"eligibility\":1,\"indicators\":1},\"seal_contract_version\":\"dataset_seal_v2\",\"seal_hash_algorithm\":\"SHA-256\",\"semantic_reasons\":[\"COVERAGE_THRESHOLD_MET\"],\"source_scale_assessment_set_hash\":\"ebb520fa38efc571ae42c68e4871f3f671018ee9cede1d7c81527ba0799f5936\",\"status_revision_set_hash\":\"083483df0e9a825eb0b7fd7cf9cea9f9606c9d28f04f4d249442681ad01af81e\",\"trade_date\":\"2026-03-23\",\"trade_date_effective\":\"2026-03-23\",\"trade_date_requested\":\"2026-03-23\"},\"semantic_profile\":\"market-data-publication-semantic/v2\"}",
+    "publication_manifest_hash": "6162e5fcd1d327fa39d1e43b2a3911ca74807816d36d8ef8ea506a10a977c8bd"
+}

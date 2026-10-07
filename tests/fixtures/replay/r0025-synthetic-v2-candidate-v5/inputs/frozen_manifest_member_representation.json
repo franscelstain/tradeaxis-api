@@ -1,0 +1,25 @@
+{
+    "label": "FROZEN_MANIFEST_MEMBER_REPRESENTATION",
+    "scope": "Members of the V2 publication manifest semantic payload whose JSON type is not stated by an authority text.",
+    "members": {
+        "publication_version": {
+            "representation": "TEXT_BASE10",
+            "meaning": "the publication version is hashed as its base-10 text (\"1\"), not as a JSON integer (1)",
+            "authority_state": "No authority text fixes the type of this member in the semantic payload. Publication_Manifest_Contract_LOCKED.md shows an integer in the operational manifest view; DB_FIELDS_AND_METADATA.md stores an INT column. Neither defines the hashed payload.",
+            "basis": "FROZEN_GOVERNED_PRODUCER: the representation is a property of the executable build this candidate is frozen to (inputs/frozen_build_identity.json), not an inference from any run or target output.",
+            "producer_source": {
+                "path": "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php",
+                "method": "publicationManifestSemanticPayloadV2",
+                "line": 1045,
+                "text": "'publication_version' => (string) $context->publication_version,",
+                "sha256_in_frozen_build_manifest": "72dc69a1d1dbf2702c5ef4d7f8b7084af17f284027d6ee323f0d5af44fcb190e"
+            },
+            "governed_proof_of_the_member": [
+                "E-MD-B10-A002-016",
+                "E-MD-B10-A002-017 (MANIFEST.publication_version)",
+                "E-MD-B10-A003-002 (PublicationSemanticIdentityProductionPathTest::test_each_manifest_member_follows_its_persisted_source)"
+            ],
+            "effect_if_wrong": "The manifest preimage and publication_manifest_hash would differ; the package would fail against the producer it is frozen to."
+        }
+    }
+}

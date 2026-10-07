@@ -14,8 +14,9 @@ use Tests\Support\R0025SyntheticV2World;
 use Tests\Support\UsesMarketDataMariaDb;
 
 /**
- * Controls of the CANDIDATE independent R0025 golden fixture, candidate-v4 (package `tests/fixtures/replay/r0025-synthetic-v2-candidate-v4`), a PRE-ACTIVATION candidate.
- * Candidate-v1, -v2 and -v3 (`.../r0025-synthetic-v2-candidate-v1`, `-v2`, `-v3`, all reviewed CHANGES REQUIRED, never approved) are retained untouched; their preservation is controlled below.
+ * Controls of the CANDIDATE independent R0025 golden fixture, candidate-v5 (package `tests/fixtures/replay/r0025-synthetic-v2-candidate-v5`), a PRE-ACTIVATION candidate authored against the FINAL
+ * post-A003 build (the configuration snapshot content carries the derived reason_registry member). Candidate-v4 (reviewed PASS, approved, admitted, then invalidated for the final build by
+ * E-MD-B18-A002-108) and candidate-v1, -v2 and -v3 (reviewed CHANGES REQUIRED, never approved) are retained untouched; their preservation is controlled below.
  *
  * The package is `CANDIDATE_AWAITING_INDEPENDENT_REVIEW`: nothing here approves it, and none of these tests is the governed R0025
  * proof. They show that the synthetic V2 world runs through the real production path, that its retained identities and semantic
@@ -253,7 +254,7 @@ class R0025SyntheticV2CandidateFixtureTest extends TestCase
         $w = R0025SyntheticV2World::build();
         $verifier = $this->verifier();
         $fingerprint = $verifier->fixturePackageFingerprint($this->package());
-        $this->assertSame(trim((string) file_get_contents(dirname($this->package()).'/r0025-synthetic-v2-candidate-v4.fingerprint.txt')), $fingerprint, 'the recorded fingerprint is not the package fingerprint');
+        $this->assertSame(trim((string) file_get_contents(dirname($this->package()).'/r0025-synthetic-v2-candidate-v5.fingerprint.txt')), $fingerprint, 'the recorded fingerprint is not the package fingerprint');
 
         $admitted = $verifier->verifyRunAgainstFixture($w['run_id'], $this->package(), null, $w['publication_id'], $fingerprint);
         $this->assertSame('PASS', $admitted['replay_status']);
@@ -423,9 +424,14 @@ class R0025SyntheticV2CandidateFixtureTest extends TestCase
         $this->assertContains('bound:read_model_version', $readModel);
         $this->assertContains('bound:formula_registry_hash', $readModel);
         $this->assertNotContains('bound:reason_registry_hash', $readModel, 'the reason registry does not depend on the formula registry');
-        // reason registry: one entry of the frozen registry changes its identity and nothing else
+        // reason registry: one entry of the frozen registry changes its identity AND, since the final build (D-MD-B18-A002-018 Q9 = A1, E-MD-B04-A003-002), the configuration snapshot content
+        // that carries the identity as a member; so the config hash moves and with it every value that binds the config hash. Candidate-v4 expected this to move the identity alone.
         $reason = $mutate(function ($c) { $f = $c.'/inputs/frozen_reason_registry.json'; $j = json_decode((string) file_get_contents($f), true); $j['entries'][0]['severity'] = 'ZZ'.$j['entries'][0]['severity']; file_put_contents($f, json_encode($j)); }, 'a changed reason entry');
-        $this->assertSame(['bound:reason_registry_hash'], $reason);
+        $this->assertSame(['artifact:bars', 'artifact:eligibility', 'artifact:indicators', 'bound:canonical_raw_input_hash', 'bound:config_snapshot_hash', 'bound:event_factor_hash', 'bound:reason_registry_hash',
+            'nested:factor_set_hash', 'publication:publication_manifest_hash'], $reason);
+        foreach (['bound:formula_registry_hash', 'bound:executable_build_identity', 'bound:source_observation_manifest_hash', 'bound:temporal_identity_hash', 'bound:calendar_status_hash'] as $unmoved) {
+            $this->assertNotContains($unmoved, $reason, $unmoved.' does not depend on the reason registry content');
+        }
         // executable build: the frozen identity moves the build input and nothing else
         $build = $mutate(function ($c) { $f = $c.'/inputs/frozen_build_identity.json'; $j = json_decode((string) file_get_contents($f), true); $j['content_hash'] = str_repeat('a', 64); $j['build_id'] = 'sha256:'.str_repeat('a', 64); file_put_contents($f, json_encode($j)); }, 'a different frozen build identity');
         $this->assertSame(['bound:executable_build_identity'], $build);
@@ -850,7 +856,7 @@ class R0025SyntheticV2CandidateFixtureTest extends TestCase
         $actual = $this->verifier()->verifyRunAgainstFixture($w['run_id'], $this->package(), null, $w['publication_id'])['actual_context']['actual_bound_input_context']['executable_build_identity'];
         $frozen = $this->packageJson('inputs/frozen_build_identity.json');
         $this->assertSame($frozen['build_id'], $this->packageJson('expected/expected_replay_result.json')['expected_bound_input_context']['executable_build_identity']);
-        $this->assertSame($frozen['build_id'], $actual, 'the executing build is not the build candidate-v4 was frozen from');
+        $this->assertSame($frozen['build_id'], $actual, 'the executing build is not the build candidate-v5 was frozen from');
         // the frozen manifest is the manifest of this tree, file by file
         $root = base_path();
         $checked = 0;
@@ -864,27 +870,30 @@ class R0025SyntheticV2CandidateFixtureTest extends TestCase
         $this->assertSame($frozen['file_count'], $checked);
     }
 
-    public function test_candidate_v1_v2_and_v3_are_preserved_byte_for_byte_and_are_different_packages(): void
+    public function test_candidate_v1_to_v4_are_preserved_byte_for_byte_and_are_different_packages(): void
     {
         $history = [R0025SyntheticV2World::PACKAGE_V1 => '05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0', R0025SyntheticV2World::PACKAGE_V2 => 'bbd8c73953eb1397a49ba651e8b66b5b6cf914dd0790142d2a706bb8a49edb9f',
-            R0025SyntheticV2World::PACKAGE_V3 => '8a218f5befc0b1c6f278d20ee86a798ca29185ad4522e8b8a00ee069cec9b85e'];
+            R0025SyntheticV2World::PACKAGE_V3 => '8a218f5befc0b1c6f278d20ee86a798ca29185ad4522e8b8a00ee069cec9b85e',
+            R0025SyntheticV2World::PACKAGE_V4 => 'd0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00'];
         foreach ($history as $path => $fingerprint) {
             $dir = base_path($path);
-            $this->assertSame($fingerprint, $this->verifier()->fixturePackageFingerprint($dir), $path.' changed; it was reviewed CHANGES REQUIRED and must not be edited');
+            $this->assertSame($fingerprint, $this->verifier()->fixturePackageFingerprint($dir), $path.' changed; a superseded candidate is immutable historical evidence and must not be edited');
             $this->assertSame($fingerprint, trim((string) file_get_contents(dirname($dir).'/'.basename($dir).'.fingerprint.txt')), $path);
             $manifest = json_decode((string) file_get_contents($dir.'/manifest.json'), true);
             foreach ($manifest['files_sha256'] as $relative => $sha) {
                 $this->assertSame($sha, hash_file('sha256', $dir.'/'.$relative), $path.'/'.$relative);
             }
-            $this->assertNotSame($fingerprint, $this->verifier()->fixturePackageFingerprint($this->package()), 'candidate-v4 must be a distinct package');
+            $this->assertNotSame($fingerprint, $this->verifier()->fixturePackageFingerprint($this->package()), 'candidate-v5 must be a distinct package');
         }
         $this->assertSame('ed1d102ced928d7143f29e717f93dd1a6a8f6872406de7a103741520ca08bb42', hash_file('sha256', base_path(R0025SyntheticV2World::PACKAGE_V2).'/manifest.json'));
         $this->assertSame('266009f117ebcefdd9a0827b02f037eba415f43e655fd684fed3bcf89a1a5cf5', hash_file('sha256', base_path(R0025SyntheticV2World::PACKAGE_V3).'/manifest.json'));
+        $this->assertSame('6ce59c64e458638691504ea1de2d7726e4dae15ae53cfb77d65b1e2c9c2d8c32', hash_file('sha256', base_path(R0025SyntheticV2World::PACKAGE_V4).'/manifest.json'));
         $manifest = $this->packageJson('manifest.json');
-        $this->assertSame('candidate-4', $manifest['fixture_version']);
-        $this->assertSame('8a218f5befc0b1c6f278d20ee86a798ca29185ad4522e8b8a00ee069cec9b85e', $manifest['supersedes_candidate']['fingerprint']);
-        $this->assertSame('bbd8c73953eb1397a49ba651e8b66b5b6cf914dd0790142d2a706bb8a49edb9f', $manifest['supersedes_candidate']['earlier']['fingerprint']);
-        $this->assertSame('05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0', $manifest['supersedes_candidate']['earlier']['earlier']['fingerprint']);
+        $this->assertSame('candidate-5', $manifest['fixture_version']);
+        $this->assertSame('d0a61b36d99682c9e165560a9e89ad83ee5a363d08f4f3f58701b06cc7ac9f00', $manifest['supersedes_candidate']['fingerprint']);
+        $this->assertSame('8a218f5befc0b1c6f278d20ee86a798ca29185ad4522e8b8a00ee069cec9b85e', $manifest['supersedes_candidate']['earlier']['fingerprint']);
+        $this->assertSame('bbd8c73953eb1397a49ba651e8b66b5b6cf914dd0790142d2a706bb8a49edb9f', $manifest['supersedes_candidate']['earlier']['earlier']['fingerprint']);
+        $this->assertSame('05b717c63ef1f5f96a759ed6d2160b46e4eb9d1c9c946e2a03d373229abf26c0', $manifest['supersedes_candidate']['earlier']['earlier']['earlier']['fingerprint']);
     }
 
     // ------------------------------------------------------------------------------- 8c. candidate-v3: locked assertion layers (F-MD-B18-A002-030)
@@ -1112,9 +1121,9 @@ class R0025SyntheticV2CandidateFixtureTest extends TestCase
             [$didMove] = $moved($change);
             $this->assertTrue($didMove, $what.' did not move the expected manifest hash');
         }
-        // inputs that are not manifest members leave it unchanged: the reason registry and the frozen build identity belong to the bound inputs only
+        // the reason registry content is a manifest input only THROUGH the configuration snapshot content (its member moves config_content_hash, a manifest member); the frozen build identity is not one
         [$reasonMoved] = $moved(function ($c) { $f = $c.'/inputs/frozen_reason_registry.json'; $j = json_decode((string) file_get_contents($f), true); $j['entries'][0]['severity'] = 'ZZ'.$j['entries'][0]['severity']; file_put_contents($f, json_encode($j)); });
-        $this->assertFalse($reasonMoved, 'the reason registry is not a publication manifest member');
+        $this->assertTrue($reasonMoved, 'the reason registry content moves the manifest through the config content hash of the snapshot member');
         [$buildMoved] = $moved(function ($c) { $f = $c.'/inputs/frozen_build_identity.json'; $j = json_decode((string) file_get_contents($f), true); $j['content_hash'] = str_repeat('a', 64); $j['build_id'] = 'sha256:'.str_repeat('a', 64); file_put_contents($f, json_encode($j)); });
         $this->assertFalse($buildMoved, 'the executable build is not a publication manifest member');
     }
@@ -1134,7 +1143,7 @@ class R0025SyntheticV2CandidateFixtureTest extends TestCase
         }
         ksort($actual, SORT_STRING);
         $this->assertSame($actual, $manifest['files_sha256']);
-        $this->assertSame(trim((string) file_get_contents(dirname($this->package()).'/r0025-synthetic-v2-candidate-v4.fingerprint.txt')), $this->verifier()->fixturePackageFingerprint($this->package()));
+        $this->assertSame(trim((string) file_get_contents(dirname($this->package()).'/r0025-synthetic-v2-candidate-v5.fingerprint.txt')), $this->verifier()->fixturePackageFingerprint($this->package()));
         $classification = $this->packageJson('derivation/field_classification.json');
         $this->assertSame(['LITERAL_SEMANTIC_EXPECTATION', 'DERIVED_FROM_FROZEN_INPUT', 'TARGET_BOUND_OPERATIONAL'], array_keys(array_intersect_key($classification['counts'], array_flip(['LITERAL_SEMANTIC_EXPECTATION', 'DERIVED_FROM_FROZEN_INPUT', 'TARGET_BOUND_OPERATIONAL']))));
         $expected = $this->packageJson('expected/expected_replay_result.json');
@@ -1170,7 +1179,153 @@ class R0025SyntheticV2CandidateFixtureTest extends TestCase
         return $hashes;
     }
 
-    // ------------------------------------------------------------------------------- 9. candidate-v4: the pre-activation freshness expectation (F-MD-B18-A002-032)
+    // ------------------------------------------------------------------------------- 10. candidate-v5: the reason-registry member of the configuration snapshot (MD-B04-A003)
+
+    /** The semantic identity of a reason registry as THIS TEST computes it (own ordering and encoding): not the oracle, not the application. */
+    private function testReasonIdentity(array $entries): string
+    {
+        $rows = [];
+        foreach ($entries as $e) {
+            $rows[$e['code']] = ['category' => $e['category'], 'code' => $e['code'], 'description' => $e['description'], 'is_active' => (bool) $e['is_active'], 'severity' => $e['severity']];
+        }
+        ksort($rows, SORT_STRING);
+
+        return hash('sha256', json_encode(['entries' => array_values($rows), 'schema_version' => 'market-data-reason-registry/v2'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION));
+    }
+
+    public function test_the_frozen_snapshot_content_carries_the_independently_derived_reason_registry_member(): void
+    {
+        $bytes = (string) file_get_contents($this->package().'/inputs/frozen_config_content.txt');
+        $config = json_decode($bytes, true);
+        $this->assertSame(['reason_registry', 'resolved_config', 'semantic_bindings'], array_keys($config), 'the snapshot content has exactly the three members of the final build');
+        $registry = $this->packageJson('inputs/frozen_reason_registry.json');
+        $identity = $this->testReasonIdentity($registry['entries']);
+        $this->assertSame(['identity_contract' => 'market-data-reason-registry/v2', 'semantic_identity' => $identity], $config['reason_registry'], 'the member is the identity contract and the semantic identity of the frozen registry content');
+        $expected = $this->packageJson('expected/expected_replay_result.json');
+        $this->assertSame($identity, $expected['expected_bound_input_context']['reason_registry_hash']);
+        $this->assertSame(hash('sha256', $bytes), $expected['expected_bound_input_context']['config_snapshot_hash'], 'config_snapshot_hash is the SHA-256 of the three-member content');
+        $this->assertSame(hash('sha256', $bytes), $expected['expected_config_identity']);
+        $out = $this->packageJson('derivation/oracle_output.json');
+        $this->assertTrue($out['frozen_input_facts']['config_content_matches_derivation'], 'the oracle assembled exactly the frozen bytes');
+        $this->assertTrue($out['candidate_v2_identities']['configuration_snapshot_content']['frozen_file_equals_assembly']);
+        $this->assertSame($identity, $out['candidate_v2_identities']['configuration_snapshot_content']['members']['reason_registry']['semantic_identity']);
+        $this->assertSame(437, $registry['entry_count']);
+
+        // against candidate-v4: the same two base members, no reason_registry, a different config identity
+        $v4 = json_decode((string) file_get_contents(base_path(R0025SyntheticV2World::PACKAGE_V4).'/inputs/frozen_config_content.txt'), true);
+        $v4Expected = json_decode((string) file_get_contents(base_path(R0025SyntheticV2World::PACKAGE_V4).'/expected/expected_replay_result.json'), true);
+        $this->assertSame(['resolved_config', 'semantic_bindings'], array_keys($v4));
+        $this->assertSame($v4['resolved_config'], $config['resolved_config']);
+        $this->assertSame($v4['semantic_bindings'], $config['semantic_bindings']);
+        $this->assertSame('8d0dd54f449b119c4691426612512e152c7dd22c151c358a4acb320f2160a4c0', $v4Expected['expected_bound_input_context']['config_snapshot_hash'], 'control: candidate-v4 literal');
+        $this->assertNotSame($v4Expected['expected_bound_input_context']['config_snapshot_hash'], $expected['expected_bound_input_context']['config_snapshot_hash']);
+        $this->assertSame($v4Expected['expected_bound_input_context']['reason_registry_hash'], $expected['expected_bound_input_context']['reason_registry_hash'], 'the registry content is the same, so its identity is the same');
+        $this->assertNotSame($v4Expected['expected_bound_input_context']['executable_build_identity'], $expected['expected_bound_input_context']['executable_build_identity']);
+    }
+
+    public function test_the_actual_snapshot_row_is_the_frozen_content_and_carries_the_frozen_reason_member(): void
+    {
+        $w = R0025SyntheticV2World::build();
+        $publication = DB::table('eod_publications')->where('publication_id', $w['publication_id'])->first();
+        $row = DB::table('md_config_snapshots')->where('config_snapshot_id', $publication->config_snapshot_id)->first();
+        $frozen = (string) file_get_contents($this->package().'/inputs/frozen_config_content.txt');
+        $this->assertSame(hash('sha256', $frozen), $row->config_hash, 'the stored config hash is the independently derived literal');
+        $this->assertSame($frozen, $row->resolved_config_json, 'the stored snapshot content is the frozen content, byte for byte');
+        $this->assertSame(json_decode($frozen, true)['reason_registry'], json_decode($row->resolved_config_json, true)['reason_registry']);
+    }
+
+    public function test_a_reason_registry_content_change_moves_the_identity_the_config_hash_and_what_binds_it_and_an_order_or_allocation_change_moves_nothing(): void
+    {
+        $before = $this->fileHashes();
+        $base = $this->packageJson('derivation/oracle_output.json');
+        $baseExpected = (string) file_get_contents($this->package().'/expected/expected_replay_result.json');
+        $baseManifest = (string) file_get_contents($this->package().'/expected/expected_publication_manifest.json');
+        $values = static function (array $o): array {
+            return ['reason' => $o['candidate_v2_identities']['reason_registry_hash']['hash'], 'config' => $o['frozen_input_facts']['config_content_sha256'], 'bars' => $o['artifacts']['bars']['sha256'],
+                'indicators' => $o['artifacts']['indicators']['sha256'], 'eligibility' => $o['artifacts']['eligibility']['sha256'], 'factor_set' => $o['nested_members']['factor_set_hash'],
+                'manifest' => $o['publication_manifest']['hash'], 'event_factor' => $o['candidate_v2_identities']['event_factor_hash']['hash']];
+        };
+        $unrelated = static function (array $o): array {
+            $members = $o['nested_members'];
+            unset($members['factor_set_hash']);
+
+            return ['members' => $members, 'composites' => $o['replay_composites'], 'formula' => $o['candidate_v2_identities']['formula_registry_hash']['hash']];
+        };
+
+        // (a) order and allocation only: the entries reversed, a row id and audit columns added to every entry
+        $order = $this->copyPackage();
+        $file = $order.'/inputs/frozen_reason_registry.json';
+        $registry = json_decode((string) file_get_contents($file), true);
+        $entries = array_reverse($registry['entries']);
+        foreach ($entries as $i => $entry) {
+            $entries[$i] = ['id' => 9000 + $i, 'created_at' => '2031-01-01 00:00:00', 'updated_at' => '2032-02-02 00:00:00'] + $entry;
+        }
+        $registry['entries'] = $entries;
+        file_put_contents($file, json_encode($registry, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        $a = $this->runOracleRaw($order);
+        $this->assertSame(0, $a['exit'], $a['text']);
+        $this->assertTrue($a['output']['frozen_input_facts']['config_content_matches_derivation'], 'an order or allocation change leaves the frozen snapshot content valid');
+        $this->assertSame($values($base), $values($a['output']), 'order and allocation move no identity');
+        $this->assertSame($baseExpected, (string) file_get_contents($order.'/expected/expected_replay_result.json'));
+        $this->assertSame($baseManifest, (string) file_get_contents($order.'/expected/expected_publication_manifest.json'));
+
+        // (b) a content change of one entry (the frozen snapshot content is now stale, which the oracle flags)
+        $content = $this->copyPackage();
+        $file = $content.'/inputs/frozen_reason_registry.json';
+        $registry = json_decode((string) file_get_contents($file), true);
+        $registry['entries'][0]['description'] .= ' (changed)';
+        file_put_contents($file, json_encode($registry, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        $b = $this->runOracleRaw($content);
+        $this->assertSame(0, $b['exit'], $b['text']);
+        $this->assertFalse($b['output']['frozen_input_facts']['config_content_matches_derivation'], 'the frozen snapshot content no longer equals the assembly of the changed registry');
+        $baseValues = $values($base);
+        $moved = $values($b['output']);
+        foreach ($baseValues as $name => $value) {
+            $this->assertNotSame($value, $moved[$name], $name.' must move with the reason registry content');
+        }
+        $this->assertSame($unrelated($base), $unrelated($b['output']), 'identities that bind neither the registry nor the config do not move');
+
+        // (c) the same content change with the frozen snapshot content re-authored: consistent, and the same moved values
+        $out = [];
+        $code = 0;
+        exec('"'.PHP_BINARY.'" '.escapeshellarg($content.'/derivation/author_config_content.php').' 2>&1', $out, $code);
+        $this->assertSame(0, $code, implode("\n", $out));
+        $c = $this->runOracleRaw($content);
+        $this->assertSame(0, $c['exit'], $c['text']);
+        $this->assertTrue($c['output']['frozen_input_facts']['config_content_matches_derivation']);
+        $this->assertSame($moved, $values($c['output']), 're-authoring the content does not change what the oracle derives');
+        $this->assertSame($moved['reason'], json_decode((string) file_get_contents($content.'/inputs/frozen_config_content.txt'), true)['reason_registry']['semantic_identity']);
+        $this->assertSame($before, $this->fileHashes(), 'the package itself is unchanged');
+    }
+
+    public function test_a_reason_registry_content_change_on_the_real_path_moves_the_actual_reason_identity_and_config_hash_while_an_audit_only_change_moves_nothing(): void
+    {
+        $expected = $this->packageJson('expected/expected_replay_result.json')['expected_bound_input_context'];
+        $code = DB::table('eod_reason_codes')->orderBy('code')->value('code');
+
+        // an audit-only change (no registry content member) is not a content change
+        $columns = array_column(DB::select('show columns from eod_reason_codes'), 'Field');
+        $audit = array_values(array_intersect(['updated_at', 'created_at'], $columns));
+        $this->assertNotSame([], $audit, 'control: the registry table has an audit column to change');
+        DB::table('eod_reason_codes')->where('code', $code)->update([$audit[0] => '2031-01-01 00:00:00']);
+        $w = R0025SyntheticV2World::build();
+        $actual = $this->verifier()->verifyRunAgainstFixture($w['run_id'], $this->package(), null, $w['publication_id'])['actual_context']['actual_bound_input_context'];
+        $this->assertSame($expected['reason_registry_hash'], $actual['reason_registry_hash'], 'an audit-only change does not move the reason identity');
+        $this->assertSame($expected['config_snapshot_hash'], $actual['config_snapshot_hash'], 'an audit-only change does not move the config hash');
+
+        // a content change does
+        $this->freshTransaction();
+        DB::table('eod_reason_codes')->where('code', $code)->update(['description' => DB::raw("CONCAT(description, ' (changed)')")]);
+        $w = R0025SyntheticV2World::build();
+        $result = $this->verifier()->verifyRunAgainstFixture($w['run_id'], $this->package(), null, $w['publication_id']);
+        $actual = $result['actual_context']['actual_bound_input_context'];
+        $this->assertNotSame($expected['reason_registry_hash'], $actual['reason_registry_hash'], 'a content change moves the reason identity');
+        $this->assertNotSame($expected['config_snapshot_hash'], $actual['config_snapshot_hash'], 'a content change moves the config hash through the snapshot member');
+        $this->assertSame($expected['formula_registry_hash'], $actual['formula_registry_hash'], 'the formula identity is a separate domain');
+        $this->assertSame($expected['source_observation_manifest_hash'], $actual['source_observation_manifest_hash']);
+        $this->assertGreaterThan(0, $result['mismatch_count'], 'the verifier reports the divergence from the independent literals');
+    }
+    // ------------------------------------------------------------------------------- 9. candidate-v5: the pre-activation freshness expectation (F-MD-B18-A002-032)
     //
     // Owner decision D-MD-B18-A002-015 and the controlled correction DOC-CHG-20261005-001: a READABLE publication whose requested trade date precedes the
     // effective activation marker is NOT_APPLICABLE. Candidate-v4 freezes the activation context and the publication facts; the independent oracle derives
@@ -1201,7 +1356,7 @@ class R0025SyntheticV2CandidateFixtureTest extends TestCase
         file_put_contents($dir.'/inputs/frozen_config_content.txt', str_replace('"operational_start_date":null', '"operational_start_date":'.($marker === null ? 'null' : '"'.$marker.'"'), $config));
     }
 
-    public function test_candidate_v4_freezes_a_pre_activation_context_and_expects_the_independently_derived_not_applicable(): void
+    public function test_candidate_v5_freezes_a_pre_activation_context_and_expects_the_independently_derived_not_applicable(): void
     {
         $world = $this->packageJson('inputs/synthetic_world.json');
         $this->assertNull($world['operational_activation']['operational_start_date']);
@@ -1230,13 +1385,20 @@ class R0025SyntheticV2CandidateFixtureTest extends TestCase
         $expected = $this->packageJson('expected/expected_replay_result.json');
         $this->assertSame($out['publication_manifest']['hash'], $expected['expected_publication_context']['publication_manifest_hash']);
         $this->assertSame($out['artifacts']['eligibility']['sha256'], $expected['expected_artifact_context']['eligibility_batch_hash']);
+        // No earlier candidate's literal is reused: candidate-v3 (NOT_AVAILABLE) and candidate-v4 (the same freshness, the previous configuration content and build).
         $v3 = json_decode((string) file_get_contents(base_path(R0025SyntheticV2World::PACKAGE_V3).'/expected/expected_replay_result.json'), true);
+        $v4 = json_decode((string) file_get_contents(base_path(R0025SyntheticV2World::PACKAGE_V4).'/expected/expected_replay_result.json'), true);
         $this->assertSame('56e44a75683bf3a1734c333c10855be3f3b123d6ba5ac2c1e192cb537a11c2f2', $v3['expected_publication_context']['publication_manifest_hash'], 'control: candidate-v3 literal');
-        $this->assertNotSame($v3['expected_publication_context']['publication_manifest_hash'], $expected['expected_publication_context']['publication_manifest_hash'], 'no candidate-v3 manifest hash is reused');
-        $this->assertNotSame($v3['expected_artifact_context']['eligibility_batch_hash'], $expected['expected_artifact_context']['eligibility_batch_hash'], 'no candidate-v3 eligibility hash is reused');
-        foreach (['bars_batch_hash', 'indicators_batch_hash'] as $unchanged) {
-            $this->assertSame($v3['expected_artifact_context'][$unchanged], $expected['expected_artifact_context'][$unchanged], $unchanged.' does not bind freshness');
+        $this->assertSame('17f6a5177f18b8e811052aa9eb11abec62c9d0d193e10b7e198b6ed668848e55', $v4['expected_publication_context']['publication_manifest_hash'], 'control: candidate-v4 literal');
+        foreach (['v3' => $v3, 'v4' => $v4] as $name => $old) {
+            $this->assertNotSame($old['expected_publication_context']['publication_manifest_hash'], $expected['expected_publication_context']['publication_manifest_hash'], 'no candidate-'.$name.' manifest hash is reused');
+            foreach (['bars_batch_hash', 'indicators_batch_hash', 'eligibility_batch_hash'] as $bound) {
+                $this->assertNotSame($old['expected_artifact_context'][$bound], $expected['expected_artifact_context'][$bound], 'no candidate-'.$name.' '.$bound.' is reused: every artifact row binds the config content hash');
+            }
         }
+        // the freshness of candidate-v5 is the freshness of candidate-v4: only the configuration content and the build moved the values
+        $this->assertSame($v4['expected_final_state'], $expected['expected_final_state']);
+        $this->assertSame($v4['expected_bound_input_context']['reason_registry_hash'], $expected['expected_bound_input_context']['reason_registry_hash'], 'the registry content, and so its semantic identity, did not change');
     }
 
     public function test_the_real_target_emits_the_corrected_freshness_and_equals_the_independent_expectation(): void
@@ -1315,12 +1477,16 @@ class R0025SyntheticV2CandidateFixtureTest extends TestCase
         $this->assertCount(5, array_unique(array_column($hashes, 'manifest')), 'every governed state gives its own publication manifest hash');
         $this->assertCount(1, array_unique(array_column($hashes, 'bars')), 'the bars artifact does not bind freshness');
         $this->assertCount(1, array_unique(array_column($hashes, 'indicators')), 'the indicators artifact does not bind freshness');
-        // NOT_APPLICABLE and NOT_AVAILABLE are distinguishable, and candidate-v3 (which expected NOT_AVAILABLE) is exactly the NOT_AVAILABLE binding of this world.
+        // NOT_APPLICABLE and NOT_AVAILABLE are distinguishable. The NOT_AVAILABLE eligibility binding of this world is what the independent oracle derives for a world whose requested
+        // publication is not returned (candidate-v3 expected that state under the previous configuration content; its literals cannot equal a binding of the new content).
         $this->assertNotSame($hashes['NOT_APPLICABLE']['manifest'], $hashes['NOT_AVAILABLE']['manifest']);
-        $v3 = json_decode((string) file_get_contents(base_path(R0025SyntheticV2World::PACKAGE_V3).'/expected/expected_replay_result.json'), true);
-        $this->assertSame($v3['expected_artifact_context']['eligibility_batch_hash'], $hashes['NOT_AVAILABLE']['eligibility'], 'the independent v3 literal is the NOT_AVAILABLE binding of this world');
-        $this->assertSame($v3['expected_publication_context']['publication_manifest_hash'], $hashes['NOT_AVAILABLE']['manifest']);
-        // and candidate-v4 is the NOT_APPLICABLE binding
+        $notAvailable = $this->copyPackage();
+        $this->setActivation($notAvailable, null, null, ['requested_publication_is_returned' => false]);
+        $derived = $this->runOracleRaw($notAvailable);
+        $this->assertSame(0, $derived['exit'], $derived['text']);
+        $this->assertSame('NOT_AVAILABLE', $derived['output']['freshness_derivation']['state']);
+        $this->assertSame($derived['output']['artifacts']['eligibility']['sha256'], $hashes['NOT_AVAILABLE']['eligibility'], 'the oracle-derived NOT_AVAILABLE eligibility hash is the NOT_AVAILABLE binding of this world');
+        // and candidate-v5 is the NOT_APPLICABLE binding
         $expected = $this->packageJson('expected/expected_replay_result.json');
         $this->assertSame($expected['expected_artifact_context']['eligibility_batch_hash'], $hashes['NOT_APPLICABLE']['eligibility']);
         $this->assertSame($expected['expected_publication_context']['publication_manifest_hash'], $hashes['NOT_APPLICABLE']['manifest']);
@@ -1398,9 +1564,12 @@ class R0025SyntheticV2CandidateFixtureTest extends TestCase
         $base = $this->packageJson('derivation/oracle_output.json');
         $this->assertNotSame($base['artifacts']['eligibility']['sha256'], $r['output']['artifacts']['eligibility']['sha256']);
         $this->assertNotSame($base['publication_manifest']['hash'], $r['output']['publication_manifest']['hash']);
-        // the eligibility row of that world differs from candidate-v4 only in freshness: it is candidate-v3's literal
+        // the eligibility row of that world is candidate-v3's row (which expected NOT_AVAILABLE) in every token but the config content hash, which moved with the configuration content
         $v3 = json_decode((string) file_get_contents(base_path(R0025SyntheticV2World::PACKAGE_V3).'/derivation/oracle_output.json'), true);
-        $this->assertSame($v3['artifacts']['eligibility']['sha256'], $r['output']['artifacts']['eligibility']['sha256']);
+        $old = $v3['artifacts']['eligibility']['row_tokens'][0];
+        $new = $r['output']['artifacts']['eligibility']['row_tokens'][0];
+        $this->assertSame(['config_content_hash'], array_keys(array_diff_assoc($new, $old)), 'only the config content hash token differs from the candidate-v3 eligibility row');
+        $this->assertSame($old['freshness_state'], $new['freshness_state']);
     }
 
     public function test_the_oracle_cannot_obtain_the_freshness_state_from_the_target(): void

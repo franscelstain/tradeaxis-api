@@ -1,0 +1,69 @@
+{
+    "label": "SYNTHETIC_TEST_WORLD_NOT_A_REAL_INSTRUMENT",
+    "world_version": "r0025-synthetic-v2/5",
+    "purpose": "Fifth independent MD-S003-R0025 golden fixture candidate, successor of candidate-v4 (reviewed PASS, owner-approved and admitted, then invalidated for the current build by E-MD-B18-A002-108) and of candidate-v1, candidate-v2 and candidate-v3, reviewed CHANGES REQUIRED (D-MD-B18-A002-011, D-MD-B18-A002-013, D-MD-B18-A002-014, D-MD-B18-A002-015, E-MD-B18-A002-095, E-MD-B18-A002-097). A PRE-ACTIVATION world: operational freshness is not in force. Test-only; never master-data truth.",
+    "trade_date": "2026-03-23",
+    "run_clock": "2026-03-25 10:30:00",
+    "platform_timezone": "Asia/Jakarta",
+    "artifact_hash_profile": "market-data-semantic-hash/v2",
+    "listing": {
+        "ticker_code": "SYNV2",
+        "company_name": "SYNTHETIC V2 TEST LISTING",
+        "exchange_namespace": "IDX",
+        "exchange_symbol": "SYNV2",
+        "provider_namespace": "yahoo_finance",
+        "provider_symbol": "SYNV2.JK",
+        "venue": "SYNTHETIC_VENUE",
+        "market_segment": "SYNTHETIC_SEGMENT",
+        "board": "SYNTHETIC_BOARD",
+        "listed_date": "2020-01-01"
+    },
+    "retained_roots": {
+        "issuer": "5a000000-0000-4000-8000-000000000001",
+        "instrument": "5a000000-0000-4000-8000-000000000002",
+        "listing": "5a000000-0000-4000-8000-000000000003"
+    },
+    "foundation_validity": {
+        "valid_from": "2020-01-01 00:00:00",
+        "valid_to": null,
+        "known_at": "2020-01-01 00:00:00",
+        "history_verified_through": "2030-01-01 00:00:00"
+    },
+    "bar": {
+        "trade_date": "2026-03-23",
+        "open": 100,
+        "high": 110,
+        "low": 95,
+        "close": 105,
+        "volume": 1000,
+        "provider_timestamp_unix": 1774231200
+    },
+    "calendar": {
+        "market_code": "IDX",
+        "market_segment": "REGULAR",
+        "timezone": "Asia/Jakarta",
+        "first_date": "2026-02-20",
+        "last_date": "2026-03-23",
+        "trading_days": "Monday to Friday",
+        "session_open": "09:00:00",
+        "session_close": "16:00:00",
+        "recorded_at_time": "17:00:00",
+        "source_version": "idx-test-calendar-v1",
+        "provenance_tier": "VERIFIED",
+        "source_ref_template": "https://www.idx.co.id/test-calendar/{date}"
+    },
+    "history": "none: exactly one bar is frozen, so every indicator that needs history is insufficient",
+    "operational_activation": {
+        "operational_start_date": null,
+        "marker_state": "NO_MARKER_EFFECTIVE",
+        "rationale": "A development world: no OPERATIONAL_START_DATE or equivalent governed activation marker is effective, so operational freshness is not in force for the requested trade date. The frozen configuration (inputs/frozen_config_content.txt) carries scope.operational_start_date = null; the oracle refuses the package inputs if the two disagree."
+    },
+    "publication_facts": {
+        "requested_publication_is_returned": true,
+        "all_readable_conditions_hold": true,
+        "prior_date_fallback_returned": false,
+        "activated_degraded_condition_declared": false,
+        "activated_operational_freshness_gates_pass": null,
+        "note": "The bounded replay purpose: the active sealed publication for the requested date is READABLE. No fallback and no degraded condition is declared. The activated gates are not applicable (null): operational freshness is not in force, so no gate is assessed."
+    }
+}

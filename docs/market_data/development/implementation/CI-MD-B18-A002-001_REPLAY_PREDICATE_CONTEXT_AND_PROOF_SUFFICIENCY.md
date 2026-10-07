@@ -1136,3 +1136,7 @@ Same A002/BL001/CI. `AsKnownReplaySnapshotService` binds the member of the snaps
 ## 2026-10-07 F-MD-B18-A002-018 completed
 
 Same A002/BL001/CI. Test and proof only: the nine bases of `F-MD-B18-A002-018` are `PROVEN` (`E-MD-B18-A002-111`, `E-MD-B18-A002-112`), readiness 112/113 with only `MD-S003-R0025` missing. The executable build boundary (`app/`, `config/`, `bootstrap/`, composer) is unchanged; no candidate-v5.
+
+## 2026-10-07 R0025 candidate-v5 authored
+
+Same A002/BL001/CI. Fixture authoring only (`E-MD-B18-A002-113`): candidate-v5 (`tests/fixtures/replay/r0025-synthetic-v2-candidate-v5`, fingerprint `daf96a296875df875539c196e997823e99ee4171d6d9d77af8d213f13a05fbe3`) is authored against the final post-A003 build (`sha256:7ea1956a…c4a`, HEAD `7eeaf89`). The executable build boundary is unchanged; no production code changed; candidate-v4 is untouched. The package is not reviewed, not approved and not admitted: `MD-S003-R0025` stays `INCOMPLETE`, readiness 112/113.

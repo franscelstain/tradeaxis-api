@@ -40,8 +40,9 @@ use Illuminate\Support\Facades\DB;
  */
 final class R0025SyntheticV2World
 {
-    /** The candidate package whose frozen inputs the world is built from. Candidate-v1, -v2 and -v3 were reviewed CHANGES REQUIRED and are retained untouched. */
-    public const PACKAGE = 'tests/fixtures/replay/r0025-synthetic-v2-candidate-v4';
+    /** The candidate package whose frozen inputs the world is built from. Candidate-v4 (admitted, then invalidated for the final build, E-MD-B18-A002-108) and candidate-v1, -v2 and -v3 are retained untouched. */
+    public const PACKAGE = 'tests/fixtures/replay/r0025-synthetic-v2-candidate-v5';
+    public const PACKAGE_V4 = 'tests/fixtures/replay/r0025-synthetic-v2-candidate-v4';
     public const PACKAGE_V3 = 'tests/fixtures/replay/r0025-synthetic-v2-candidate-v3';
     public const PACKAGE_V2 = 'tests/fixtures/replay/r0025-synthetic-v2-candidate-v2';
     public const PACKAGE_V1 = 'tests/fixtures/replay/r0025-synthetic-v2-candidate-v1';
