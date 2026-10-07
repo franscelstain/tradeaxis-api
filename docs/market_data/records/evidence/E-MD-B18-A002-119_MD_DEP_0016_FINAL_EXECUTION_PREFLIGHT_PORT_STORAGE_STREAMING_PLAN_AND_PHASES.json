@@ -1,0 +1,383 @@
+{
+    "evidence_id": "E-MD-B18-A002-119",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-08T02:11:53+07:00",
+    "evidence_type": "RECOVERY_FINAL_EXECUTION_PREFLIGHT_READ_ONLY",
+    "verdict": "PREFLIGHT_PASSED_PORT_3307_FREE_STORAGE_WITHIN_GOVERNED_THRESHOLDS_STREAMING_GZIP_VERIFIED_PLAN_AND_PHASES_FROZEN_NO_RECOVERY_EXECUTED",
+    "checkpoint_verdict": "MD-DEP-0016 AUTHORIZATIONS COMPLETE — RECOVERY EXECUTION READY",
+    "governance_state_verified": {
+        "D_MD_B18_A002_020": "present",
+        "E_MD_B18_A002_118": "present",
+        "MD_DEP_0015": "BLOCKING",
+        "MD_DEP_0016": "OPEN_NON_BLOCKING, not recovered/resolved",
+        "b18": "113/113 SATISFIED (independently recomputed: 113 changed rows vs the saved pre-binder matrix)",
+        "matrix_sha256": "8b5bd9b1cb2d47022e6f003fef251d9160ef660b35e2813b92c297e7708e0695",
+        "candidate_v5": "daf96a29…fbe3 unchanged",
+        "frozen_build": "sha256:7ea1956a…c4a recomputed unchanged",
+        "closure_gate": "PASS",
+        "prior_database_owner_authorization": "none before D-MD-B18-A002-021",
+        "recovery_executed": false,
+        "head": "e215680"
+    },
+    "authorization_record": {
+        "decision": "D-MD-B18-A002-021",
+        "database_owner": "Fransiscus",
+        "date": "2026-10-08",
+        "COPY_PATH": "D:\\tradeaxis_recovery\\data_260914_copy\\",
+        "DUMP_PATH": "D:\\tradeaxis_recovery\\dump\\tradeaxis_260914.sql.gz",
+        "RECOVERY_PORT": 3307,
+        "not_broadened": true
+    },
+    "source_destination_safety": {
+        "original": "D:\\xampp\\mysql\\data_260914 exists: 500 files, 45,794,016,835 bytes; contains a stale mysql.pid and the 2026-09-14 mysql_error.log; no mysqld holds it (the only mysqld, pid 38544, listens on 3306 with datadir D:/xampp/mysql/data)",
+        "copy_path": "D:\\tradeaxis_recovery\\ does not exist: there is no partial or uncertified earlier recovery",
+        "dump_parent": "D:\\tradeaxis_recovery\\dump\\ does not exist (created in Phase A/D)",
+        "clean_tradeaxis": "D:/xampp/mysql/data (schema tradeaxis, 67 tables, migrations 79; empty corpus)",
+        "clean_tradeaxis_testing": "D:/xampp/mysql/data (schema tradeaxis_testing, 67 tables; must stay untouched)",
+        "aliasing": "the three locations are distinct directories on D:, none nested in another; the copy is a sibling tree under D:\\tradeaxis_recovery; Phase B asserts by realpath that datadir != original and != clean datadir"
+    },
+    "port_preflight": {
+        "3307": "FREE (netstat and Get-NetTCPConnection: no listener, no connection)",
+        "listeners_seen": "3306 (pid 38544, the clean instance) only",
+        "rule": "if 3307 is occupied at execution time: stop and report, do not choose another port"
+    },
+    "storage_preflight": {
+        "d_free_gib_now": 129.47,
+        "d_total_gib": 244.14,
+        "threshold_initial_ge_120": "MET",
+        "projected_after_copy": "86.5 GiB (>= 80 required)",
+        "projected_before_import": "copy plus dump: with a 10 GiB dump about 76.5 GiB (>= 70 required; fails if the dump exceeds about 16.8 GiB, and the owner threshold of 15 GiB for the dump triggers reassessment first)",
+        "projected_during_import": "import adds 30 to 42 GiB plus ibdata/redo/tmp: about 34 GiB free left at the worst plausible point with a 10 GiB dump (>= 25 required); the 25 GiB floor stops any phase",
+        "not_reclaimable": "deleting the byte-copy or the dump is not authorized, so space cannot be reclaimed mid-way",
+        "created_nothing": true,
+        "note": "estimates, not measurements; the thresholds are enforced by measurement before each phase",
+        "owner_layout_change": "the owner placed the dump on D: (E-118 had recommended a separate volume); the governed thresholds make that safe only for a compressed stream"
+    },
+    "streaming_gzip_preflight": {
+        "tools": [
+            "mysqldump.exe 10.19 / MariaDB 10.4.27 (D:/xampp/mysql/bin)",
+            "mysqld.exe 10.4.27",
+            "gzip 1.13 (Git for Windows /usr/bin/gzip)",
+            "PowerShell 5.1 with System.IO.Compression.GzipStream (fallback)"
+        ],
+        "mysqldump_options_present": [
+            "--single-transaction",
+            "--quick",
+            "--hex-blob",
+            "--net-buffer-length",
+            "--max-allowed-packet",
+            "--tables",
+            "--no-create-info",
+            "--complete-insert",
+            "--skip-triggers"
+        ],
+        "verified": "a 400,000-line generated stream piped through gzip -c into a .gz in the scratchpad: only the .gz exists on disk (no intermediate file), gzip -t OK, 400000 lines read back; no mysqldump was run",
+        "method_accepted": "mysqldump.exe ... | gzip -c > DUMP_PATH in Git bash (a pure byte pipe)",
+        "open_risk_and_control": "Windows mysqldump.exe into an MSYS pipe could translate line endings: Phase D starts with a byte-for-byte pipe-fidelity probe on a tiny table with newline and binary data; the real dump does not start if it differs",
+        "forbidden": "creating an uncompressed .sql (40+ GiB); PowerShell text pipelines for the dump (encoding)"
+    },
+    "isolated_instance_plan": {
+        "defaults_file_planned": "; D:\\tradeaxis_recovery\\my_recovery.ini  (PLANNED, NOT CREATED) — used ONLY as: mysqld.exe --defaults-file=D:\\tradeaxis_recovery\\my_recovery.ini --console\n[mysqld]\ndatadir=D:/tradeaxis_recovery/data_260914_copy\nport=3307\nbind-address=127.0.0.1\npid-file=D:/tradeaxis_recovery/recovery.pid\nlog-error=D:/tradeaxis_recovery/recovery_error.log\ntmpdir=D:/tradeaxis_recovery/tmp\ncharacter-set-server=utf8mb4\nskip-log-bin\nskip-slave-start\ninnodb_file_per_table=ON\ninnodb_data_file_path=ibdata1:10M:autoextend\ninnodb_log_file_size=512M\ninnodb_log_files_in_group=2\ninnodb_buffer_pool_size=1G\nmax_allowed_packet=64M\n; FORBIDDEN and absent: innodb_force_recovery, any datadir other than the byte-copy, port 3306",
+        "start_command_planned": "D:\\xampp\\mysql\\bin\\mysqld.exe --defaults-file=D:\\tradeaxis_recovery\\my_recovery.ini --console  (defaults-file first, so no my.ini of XAMPP or of data_260914 is read)",
+        "guarantees": [
+            "datadir is the byte-copy; the original path appears in no option",
+            "pre-start assertion: realpath(datadir) differs from D:\\xampp\\mysql\\data_260914 and D:\\xampp\\mysql\\data, and the file contains neither innodb_force_recovery nor port 3306",
+            "the original is only READ in Phase 0/A (listing, hashing, robocopy source) and its size/mtime/count are re-listed after every phase",
+            "own port 3307, own pid file, own error log, own tmpdir; skip-log-bin; no mysql_upgrade or mysql_install_db is run (the copy is not upgraded or migrated)",
+            "the clean instance is never restarted by the recovery"
+        ],
+        "not_authorized_contingencies": [
+            "innodb_force_recovery of any value",
+            "--skip-grant-tables (if root cannot log in: stop and ask)",
+            "a different port"
+        ]
+    },
+    "export_set_62_tables": {
+        "count": 62,
+        "tables": [
+            "eod_bars",
+            "eod_bars_history",
+            "eod_current_publication_pointer",
+            "eod_dataset_corrections",
+            "eod_eligibility",
+            "eod_eligibility_history",
+            "eod_indicators",
+            "eod_indicators_history",
+            "eod_invalid_bars",
+            "eod_publications",
+            "eod_reason_codes",
+            "eod_run_events",
+            "eod_runs",
+            "market_benchmark_bars",
+            "market_benchmark_indicators",
+            "market_benchmarks",
+            "market_calendar",
+            "market_data_corporate_action_types",
+            "market_data_corporate_actions",
+            "market_data_price_scale_breaks",
+            "market_data_sectors",
+            "market_data_trading_status_event_types",
+            "market_data_trading_status_events",
+            "md_adjustment_factor_decisions",
+            "md_adjustment_factor_sets",
+            "md_adjustment_factors",
+            "md_config_snapshots",
+            "md_corporate_action_reconciliations",
+            "md_corporate_action_revisions",
+            "md_corpus_admission_decisions",
+            "md_exchange_market_structure_revisions",
+            "md_exchange_price_band_tiers",
+            "md_exchange_tick_size_tiers",
+            "md_instruments",
+            "md_issuers",
+            "md_liquidity_metric_labels",
+            "md_listing_boards",
+            "md_listing_symbols",
+            "md_listings",
+            "md_market_calendar_revisions",
+            "md_price_scale_break_candidate_reviews",
+            "md_price_scale_break_candidates",
+            "md_provider_symbol_mappings",
+            "md_publication_lineage_bindings",
+            "md_publication_market_structure_bindings",
+            "md_publication_projection_reconciliations",
+            "md_replay_daily_metrics",
+            "md_replay_reason_code_counts",
+            "md_session_snapshots",
+            "md_source_observation_identity_bindings",
+            "md_source_observation_rejected_rows",
+            "md_source_observation_revision_comparisons",
+            "md_source_observation_rows",
+            "md_source_observations",
+            "md_source_scale_assessments",
+            "md_stage8_reconstruction_campaigns",
+            "md_stage8_reconstruction_targets",
+            "md_trading_status_revisions",
+            "md_trading_status_source_registry",
+            "migrations",
+            "ticker_sector_memberships",
+            "tickers"
+        ],
+        "excluded_watchlist_tables_11": [
+            "watchlist_bt_cutoffs_ws",
+            "watchlist_bt_eval",
+            "watchlist_bt_oos_eval_ws",
+            "watchlist_bt_param_grid",
+            "watchlist_bt_picks_ws",
+            "watchlist_bt_universe_ws",
+            "watchlist_fail_codes",
+            "watchlist_param_sets",
+            "watchlist_plan_items",
+            "watchlist_plan_runs",
+            "watchlist_reason_codes"
+        ],
+        "method": "the 62 non-watchlist .ibd file names of data_260914/tradeaxis (directory listing only) — all 62 exist in the clean tradeaxis; the clean instance also has 5 tables created by later migrations (md_run_input_captures, si_entities, si_holds, si_packages, si_revisions) which are not exported (absent from the old data)",
+        "no_system_schema": true,
+        "matches": "F-MD-B18-A002-011 (62 repository tables, 11 old-only watchlist_*), D-003/D-004, E-118",
+        "verification_at_phase_c": "the list is re-derived from SHOW TABLES of the recovered schema and must equal this list"
+    },
+    "import_design_decisions_found_by_preflight": {
+        "decision_1_data_only": "the dump is data-only with complete column lists (--no-create-info --complete-insert): applying the old CREATE TABLE statements would replace the clean, 79-migration schema (the old schema predates later migrations) and break the 79/79 requirement; a schema-only dump of the old schema is taken separately for comparison",
+        "decision_2_migrations_ledger": "the old `migrations` table is among the 62 but is NOT imported: importing it would replace the 79-row clean ledger (term 9: tradeaxis stays 79/79); it is exported and compared only",
+        "decision_3_seed_tables": "seven tables are already populated in the clean tradeaxis by migrations/seeders: eod_reason_codes, market_benchmarks, market_data_corporate_action_types, market_data_sectors, market_data_trading_status_event_types, md_liquidity_metric_labels, md_trading_status_source_registry (e.g. eod_reason_codes 437 rows, the registry behind the candidate-v5 reason identity). They are exported and compared with the clean content, not imported; a material difference is reported and stops (not silently overwritten). The import therefore covers 54 of the 62 tables",
+        "decision_4_immutability_triggers": "the clean tradeaxis has 13 triggers; the three *_history tables have BEFORE INSERT triggers that refuse a row whose publication is already SEALED in eod_publications. Importing the history tables before eod_publications keeps every trigger defined and firing and needs no bypass; any refusal that this ordering does not avoid stops the recovery for a decision",
+        "decision_5_foreign_keys": "four history/pointer tables reference eod_publications; the import session uses FOREIGN_KEY_CHECKS=0 and Phase F proves referential integrity with explicit orphan queries",
+        "scope_note": "these are narrowings or implementation choices inside the authorized scope (nothing outside it is touched); if the owner disagrees with decisions 2-4 he must say so before Phase E"
+    },
+    "phases_and_stop_conditions": {
+        "PHASE_0_PRE_CHECKS": {
+            "actions": "immediately before Phase A: re-read D: free (>= 120 GiB), port 3307 free, only the clean mysqld (3306) running, D:\\tradeaxis_recovery absent, original data_260914 inventory (500 files, 45,794,016,835 bytes) and per-file SHA-256 manifest of the ORIGINAL (read only)",
+            "stop_if": [
+                "D: free < 120 GiB",
+                "3307 occupied (do not pick another port)",
+                "D:\\tradeaxis_recovery or the dump file already exists",
+                "any mysqld holds data_260914",
+                "original inventory differs from the preflight"
+            ]
+        },
+        "PHASE_A_BYTE_COPY": {
+            "actions": "create D:\\tradeaxis_recovery\\data_260914_copy\\ and copy the complete original directory with robocopy /E /COPY:DAT /R:0 /W:0 (no /MIR, /PURGE or /MOV: the source is never altered); SHA-256 of every copied file; compare with the source manifest; re-list the original and show size/mtime/count unchanged",
+            "stop_if": [
+                "any file missing, differing in size or SHA-256",
+                "the original changed (size/mtime/count)",
+                "D: free after the copy < 80 GiB (expected about 86.8 GiB)",
+                "D: free < 25 GiB at any moment"
+            ],
+            "evidence": "item A of E-MD-B18-A002-118"
+        },
+        "PHASE_B_ISOLATED_STARTUP": {
+            "actions": "create the planned my_recovery.ini and tmp dir; assert datadir is the copy and differs from the original (realpath compare) and the file has no innodb_force_recovery; start mysqld.exe --defaults-file=... on port 3307 on the COPY (normal crash recovery of the copy is allowed, it is not force recovery); read the startup log in full; connect to 127.0.0.1:3307",
+            "stop_if": [
+                "the server cannot start without innodb_force_recovery (term 4: return for a new owner decision; never set it)",
+                "the log shows corruption that stops InnoDB",
+                "the server tries to use any path outside the copy",
+                "cannot authenticate (the --skip-grant-tables contingency is NOT authorized by D-021: ask first)"
+            ],
+            "evidence": "item B"
+        },
+        "PHASE_C_CHECK_COUNTS_RANGES": {
+            "actions": "inventory of the tables of schema tradeaxis (62 repository + 11 watchlist expected); SHOW CREATE TABLE of the 62 compared with the clean schema (old columns must all exist in clean; the 5 clean-only tables md_run_input_captures and si_* are expected); SELECT-readability of every table; CHECK TABLE of the 62; per-table COUNT(*), key date ranges (trade_date min/max for bars/history/publications/runs), publication state mix, derived-factor count; comparison with the historical figures (756,329 bars; 64,092 publications; 71,917 runs; table sizes of F-011); also record the old migrations ledger and the 8 tables that are already populated in the clean instance",
+            "stop_if": [
+                "any repository table unreadable or CHECK TABLE fails (report per table; no repair in place)",
+                "an old column is missing in the clean schema (schema drift: needs a decision)",
+                "counts/ranges differ from the historical figures without an explanation (term 11)"
+            ],
+            "evidence": "items C, D, F, G"
+        },
+        "PHASE_D_STREAMING_LOGICAL_DUMP": {
+            "actions": "first a pipe-fidelity probe on a tiny table of the recovery instance containing newline and binary data: mysqldump | gzip -> gzip -dc compared byte-for-byte with a direct client export (the Windows mysqldump.exe writing into a Git-bash pipe must not translate line endings); then the real dump as ONE streaming pipeline: mysqldump.exe --host=127.0.0.1 --port=3307 --user=root --single-transaction --quick --no-create-info --complete-insert --hex-blob --skip-triggers --net-buffer-length=500000 --max-allowed-packet=64M schema tradeaxis <the 62 tables> | gzip -c > D:\\tradeaxis_recovery\\dump\\tradeaxis_260914.sql.gz; a separate small schema-only dump (--no-data, uncompressed or gzip) for the evidence; gzip -t; SHA-256 and size of the .gz; row counts per table taken in the same snapshot",
+            "stop_if": [
+                "the pipe-fidelity probe differs",
+                "the dump would need an uncompressed .sql on disk (never create one)",
+                "compressed size passes 15 GiB (explicit space reassessment before continuing)",
+                "D: free < 70 GiB before the import or < 25 GiB at any moment",
+                "gzip -t fails or the dump errors"
+            ],
+            "evidence": "items E, F; the 11 watchlist_* tables and every system schema are excluded by construction (explicit table list, no --databases/--all-databases)"
+        },
+        "PHASE_E_CLEAN_IMPORT": {
+            "actions": "stop the recovery instance (graceful) after the dump; for the clean instance (3306) record the baseline (tradeaxis_testing untouched: record its row counts/size before and after); import ONLY into schema tradeaxis through gzip -dc | mysql with FOREIGN_KEY_CHECKS=0 for the session; order: the history tables and all tables that carry no sealed-publication trigger first, eod_publications after the history tables (the clean BEFORE INSERT triggers reject history rows of a publication that is already SEALED; loading history first keeps every trigger defined and firing, nothing is dropped or disabled), eod_current_publication_pointer after eod_publications; the default autocommit per statement (no giant transaction, bounded undo growth)",
+            "tables_imported": [
+                "eod_bars",
+                "eod_bars_history",
+                "eod_current_publication_pointer",
+                "eod_dataset_corrections",
+                "eod_eligibility",
+                "eod_eligibility_history",
+                "eod_indicators",
+                "eod_indicators_history",
+                "eod_invalid_bars",
+                "eod_publications",
+                "eod_run_events",
+                "eod_runs",
+                "market_benchmark_bars",
+                "market_benchmark_indicators",
+                "market_calendar",
+                "market_data_corporate_actions",
+                "market_data_price_scale_breaks",
+                "market_data_trading_status_events",
+                "md_adjustment_factor_decisions",
+                "md_adjustment_factor_sets",
+                "md_adjustment_factors",
+                "md_config_snapshots",
+                "md_corporate_action_reconciliations",
+                "md_corporate_action_revisions",
+                "md_corpus_admission_decisions",
+                "md_exchange_market_structure_revisions",
+                "md_exchange_price_band_tiers",
+                "md_exchange_tick_size_tiers",
+                "md_instruments",
+                "md_issuers",
+                "md_listing_boards",
+                "md_listing_symbols",
+                "md_listings",
+                "md_market_calendar_revisions",
+                "md_price_scale_break_candidate_reviews",
+                "md_price_scale_break_candidates",
+                "md_provider_symbol_mappings",
+                "md_publication_lineage_bindings",
+                "md_publication_market_structure_bindings",
+                "md_publication_projection_reconciliations",
+                "md_replay_daily_metrics",
+                "md_replay_reason_code_counts",
+                "md_session_snapshots",
+                "md_source_observation_identity_bindings",
+                "md_source_observation_rejected_rows",
+                "md_source_observation_revision_comparisons",
+                "md_source_observation_rows",
+                "md_source_observations",
+                "md_source_scale_assessments",
+                "md_stage8_reconstruction_campaigns",
+                "md_stage8_reconstruction_targets",
+                "md_trading_status_revisions",
+                "ticker_sector_memberships",
+                "tickers"
+            ],
+            "tables_not_imported_because_the_clean_instance_already_holds_them": [
+                "migrations (the clean ledger must stay 79/79; the old ledger also carries the 11 watchlist orphans)",
+                "eod_reason_codes",
+                "market_benchmarks",
+                "market_data_corporate_action_types",
+                "market_data_sectors",
+                "market_data_trading_status_event_types",
+                "md_liquidity_metric_labels",
+                "md_trading_status_source_registry"
+            ],
+            "stop_if": [
+                "any insert is refused by an immutability trigger in a way the order above does not avoid (no trigger is dropped, altered or bypassed: ask)",
+                "a constraint or data-type error",
+                "the old seed tables differ from the clean content in a way that matters (reason codes, types, labels): report; do not overwrite",
+                "D: free < 25 GiB"
+            ],
+            "evidence": "item H"
+        },
+        "PHASE_F_MIGRATIONS_INTEGRITY_RECONCILIATION": {
+            "actions": "migrate:status shows 79/79 on tradeaxis and tradeaxis_testing (forward only; no migrate:fresh/reset/rollback; the destructive-migration guard refuses them on tradeaxis); per-table import COUNT(*) equals the export count equals the Phase C count for the 54 imported tables; for the 8 not-imported tables old versus clean content compared and recorded; FK integrity queries (every history/pointer row has its publication); CHECK TABLE of both clean databases; clean-instance error log read before and after",
+            "stop_if": [
+                "any count differs",
+                "migrations not 79/79",
+                "CHECK TABLE not clean",
+                "FK orphan rows",
+                "future-LSN or corruption in the clean error log"
+            ],
+            "evidence": "items I, J, K"
+        },
+        "PHASE_G_CONTROLS_AND_TARGETED": {
+            "actions": "ProductionCorpusInvariantOracleTest alone (7 of 7, every population control satisfied, no skip); then B18 families on MariaDB and the mirror, the R0025 aggregate, ReplayBackfillServiceTest, MigrationIntegrityAndDriftTest, governance tests",
+            "stop_if": [
+                "any control still fails: report the exact invariant and the data fact (a real corpus violation is a finding, not something to fix by editing the test)",
+                "any skip"
+            ],
+            "evidence": "items L, M"
+        },
+        "PHASE_H_FULL_SUITE": {
+            "actions": "full MarketData suite on the recovered environment",
+            "stop_if": [
+                "any failure, error or skip (the earlier 2960-test run with 7 failures is never represented as green)"
+            ],
+            "evidence": "item N"
+        },
+        "PHASE_I_UNCHANGED_VERIFICATION": {
+            "actions": "candidate-v5 fingerprint daf96a296875df875539c196e997823e99ee4171d6d9d77af8d213f13a05fbe3 and manifest f7cc8939…bf4a; frozen build sha256:7ea1956a…c4a over 5916 files; matrix sha256 8b5bd9b1cb2d47022e6f003fef251d9160ef660b35e2813b92c297e7708e0695 (113 rows SATISFIED against E-MD-B18-A002-001); file hashes of E-MD-B18-A002-001 and E-MD-B18-A002-117; no basis cites the recovered corpus; original data_260914 inventory unchanged; then the recovery evidence record and the F-011(b)/MD-DEP-0015/0016 status records",
+            "stop_if": [
+                "any identity differs"
+            ],
+            "evidence": "item O"
+        }
+    },
+    "acceptance_checklist_reference": "E-MD-B18-A002-118 items A-O remain mandatory and map to the phases above; no recovery record may claim success unless every item passes",
+    "build_and_proof_impact": "A — no build or proof impact (database-only; only tradeaxis is imported; proof runs on tradeaxis_testing; no frozen-build file, candidate-v5 input or matrix row changes). Any need for code or a transformation would be class C: stop.",
+    "what_was_not_done": [
+        "nothing copied, started, stopped, dumped or imported",
+        "no directory under D:\\tradeaxis_recovery created",
+        "no database changed",
+        "data_260914 not opened",
+        "no app/config/bootstrap/vendor/composer change",
+        "B18 not closed"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-011"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-118",
+        "E-MD-B18-A002-117",
+        "E-MD-B18-A002-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-021",
+        "D-MD-B18-A002-020",
+        "D-MD-B18-A002-004",
+        "D-MD-B18-A002-003"
+    ],
+    "next_resume_point": "MD-DEP-0016 recovery execution, Phase 0 then Phase A (byte-copy and identity/inventory), under D-MD-B18-A002-021 and the frozen plan of this record.",
+    "no_commit_or_push": 1
+}

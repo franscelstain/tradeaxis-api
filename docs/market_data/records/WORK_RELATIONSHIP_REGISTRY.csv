@@ -1753,3 +1753,14 @@ MD-REL-1754,E-MD-B18-A002-118,D-MD-B18-A002-020,DEPENDS_ON,Preflight prepared fo
 MD-REL-1755,E-MD-B18-A002-118,E-MD-B18-A002-117,DEPENDS_ON,Starts from the post-binding state.,MD-DEP-0016,2026-10-08T01:46:46+07:00,MD-B18-A002 MD-DEP-0016 recovery authorization.
 MD-REL-1757,CI-MD-B18-A002-001,D-MD-B18-A002-020,RELATED,Decision recorded under the impact declaration.,MD-DEP-0016,2026-10-08T01:46:46+07:00,MD-B18-A002 MD-DEP-0016 recovery authorization.
 MD-REL-1758,CI-MD-B18-A002-001,E-MD-B18-A002-118,RELATED,Preflight recorded under the impact declaration.,MD-DEP-0016,2026-10-08T01:46:46+07:00,MD-B18-A002 MD-DEP-0016 recovery authorization.
+MD-REL-1759,D-MD-B18-A002-021,D-MD-B18-A002-020,DEPENDS_ON,The project-owner authorization this database-owner authorization is subject to; same terms.,D-MD-B18-A002-021,2026-10-08T02:11:53+07:00,MD-B18-A002 MD-DEP-0016 database-owner authorization.
+MD-REL-1760,D-MD-B18-A002-021,E-MD-B18-A002-118,DEPENDS_ON,Preflight and acceptance checklist the authorization binds.,D-MD-B18-A002-021,2026-10-08T02:11:53+07:00,MD-B18-A002 MD-DEP-0016 database-owner authorization.
+MD-REL-1761,D-MD-B18-A002-021,E-MD-B18-A002-119,RELATED,Final execution preflight issued with the authorization.,D-MD-B18-A002-021,2026-10-08T02:11:53+07:00,MD-B18-A002 MD-DEP-0016 database-owner authorization.
+MD-REL-1762,D-MD-B18-A002-021,D-MD-B18-A002-004,DEPENDS_ON,Option 1(b): corpus only through the separately authorized recovery.,D-MD-B18-A002-021,2026-10-08T02:11:53+07:00,MD-B18-A002 MD-DEP-0016 database-owner authorization.
+MD-REL-1763,D-MD-B18-A002-021,D-MD-B18-A002-003,DEPENDS_ON,Decision 2: clean runtime and the old-data track.,D-MD-B18-A002-021,2026-10-08T02:11:53+07:00,MD-B18-A002 MD-DEP-0016 database-owner authorization.
+MD-REL-1764,D-MD-B18-A002-021,F-MD-B18-A002-011,RELATED,Part (b) waits for this recovery.,D-MD-B18-A002-021,2026-10-08T02:11:53+07:00,MD-B18-A002 MD-DEP-0016 database-owner authorization.
+MD-REL-1765,E-MD-B18-A002-119,E-MD-B18-A002-118,DEPENDS_ON,Executes the preflight of E-118 against the fixed parameters.,D-MD-B18-A002-021,2026-10-08T02:11:53+07:00,MD-B18-A002 MD-DEP-0016 database-owner authorization.
+MD-REL-1766,E-MD-B18-A002-119,E-MD-B18-A002-117,DEPENDS_ON,Starts from the post-binding state.,D-MD-B18-A002-021,2026-10-08T02:11:53+07:00,MD-B18-A002 MD-DEP-0016 database-owner authorization.
+MD-REL-1767,E-MD-B18-A002-119,D-MD-B18-A002-021,DEPENDS_ON,Prepared for this authorization.,D-MD-B18-A002-021,2026-10-08T02:11:53+07:00,MD-B18-A002 MD-DEP-0016 database-owner authorization.
+MD-REL-1768,CI-MD-B18-A002-001,D-MD-B18-A002-021,RELATED,Authorization recorded under the impact declaration.,D-MD-B18-A002-021,2026-10-08T02:11:53+07:00,MD-B18-A002 MD-DEP-0016 database-owner authorization.
+MD-REL-1769,CI-MD-B18-A002-001,E-MD-B18-A002-119,RELATED,Preflight recorded under the impact declaration.,D-MD-B18-A002-021,2026-10-08T02:11:53+07:00,MD-B18-A002 MD-DEP-0016 database-owner authorization.

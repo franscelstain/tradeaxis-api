@@ -1164,3 +1164,7 @@ Same A002/BL001/CI. The atomic binder wrote exactly the 113 MD-B18 mandatory row
 ## 2026-10-08 MD-DEP-0016 project-owner decision and recovery preflight (D-MD-B18-A002-020, E-MD-B18-A002-118)
 
 Same A002/BL001/CI. The project owner authorized the Option 1 recovery of `MD-DEP-0016` subject to a separate database-owner authorization, which does not exist yet. Governance recording and read-only preflight only: nothing was started, copied, dumped or imported; B18 stays 113/113 SATISFIED and `NOT_READY_FOR_CLOSURE`; `MD-DEP-0015` stays BLOCKING.
+
+## 2026-10-08 MD-DEP-0016 database-owner authorization and execution preflight (D-MD-B18-A002-021, E-MD-B18-A002-119)
+
+Same A002/BL001/CI. The database owner authorized the recovery with COPY_PATH, DUMP_PATH and RECOVERY_PORT 3307; the read-only preflight (port, storage, streaming gzip, isolated-instance plan, 62-table export set, phases and stop conditions) is recorded. Nothing was executed: `MD-DEP-0015` stays BLOCKING, B18 stays 113/113 SATISFIED and `NOT_READY_FOR_CLOSURE`.
