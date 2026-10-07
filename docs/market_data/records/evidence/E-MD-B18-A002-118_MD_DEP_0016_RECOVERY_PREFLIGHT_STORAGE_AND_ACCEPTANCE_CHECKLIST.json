@@ -1,0 +1,154 @@
+{
+    "evidence_id": "E-MD-B18-A002-118",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B18",
+    "attempt_id": "MD-B18-A002",
+    "work_id": "MD-B18-A002",
+    "baseline_id": "MD-B18-A002-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B18-A002-001",
+    "issued_at": "2026-10-08T01:46:46+07:00",
+    "evidence_type": "RECOVERY_PREFLIGHT_READ_ONLY",
+    "verdict": "PREFLIGHT_RECORDED_STORAGE_LAYOUT_FEASIBLE_ONLY_WITH_COMPRESSED_DUMP_ON_SEPARATE_VOLUME_DATABASE_OWNER_AUTHORIZATION_ABSENT_NO_RECOVERY_STARTED",
+    "checkpoint_verdict": "MD-DEP-0016 PROJECT-OWNER APPROVAL RECORDED — DATABASE-OWNER AUTHORIZATION REQUIRED",
+    "state_verified": {
+        "b18": "113/113 reviewed, 113/113 SATISFIED, 0 NOT_ASSESSED (independently recomputed: 113 changed rows vs the saved pre-binder matrix, 0 foreign)",
+        "matrix_sha256": "8b5bd9b1cb2d47022e6f003fef251d9160ef660b35e2813b92c297e7708e0695",
+        "closure_gate": "PASS",
+        "candidate_v5": "fingerprint daf96a29…fbe3 unchanged; D019/E115/E116 present",
+        "build": "recomputed unchanged",
+        "E_001_and_E_117": "present",
+        "MD_DEP_0015": "BLOCKING",
+        "MD_DEP_0016": "OPEN_NON_BLOCKING, \"no recovery authorized\"",
+        "database_owner_authorization": "none in the repository",
+        "recovery_executed": false,
+        "F_011_b": "waiting for the MD-DEP-0016 recovery",
+        "git": "HEAD 2a65fa4, clean tree at the start"
+    },
+    "read_only_observations": {
+        "tradeaxis_now": "empty corpus: eod_bars, eod_publications, eod_runs, eod_bars_history, pointer, md_adjustment_factor_decisions, market_data_corporate_actions, tickers, market_calendar all 0 rows; eod_reason_codes 437; migrations 79",
+        "method": "SELECT COUNT(*) on the clean tradeaxis; filesystem sizes of data_260914 by directory listing only; data_260914 not opened, copied or started"
+    },
+    "database_owner_authorization_boundary": {
+        "required_from": "the database owner (MD-DEP-0015/0016 owner field), as the separate authorization D-MD-B18-A002-004 requires; the project-owner decision D-MD-B18-A002-020 does not substitute for it",
+        "must_authorize_or_refuse_each": [
+            "byte-copy creation",
+            "isolated recovery instance on the copy (no innodb_force_recovery)",
+            "logical export of the 62 repository tables",
+            "import into the clean tradeaxis",
+            "integrity and count reconciliation"
+        ],
+        "must_bind_prohibitions": [
+            "original data_260914 mutation/opening/repair/migration",
+            "innodb_force_recovery",
+            "raw InnoDB/.ibd import or copy into a clean instance",
+            "deletion of the byte-copy or dump",
+            "use of the recovered corpus as B18 proof"
+        ],
+        "parameters_to_supply": [
+            "copy path",
+            "dump path",
+            "recovery port (not 3306)",
+            "owner identity and date"
+        ],
+        "prepared_text": "inside D-MD-B18-A002-020"
+    },
+    "storage_preflight": {
+        "source_data_260914": {
+            "bytes": 45794016835,
+            "gib": 42.65,
+            "files": 500,
+            "tradeaxis_schema_bytes": 44480142810,
+            "repository_ibd_bytes": 40444755968,
+            "repository_ibd_files": 62,
+            "watchlist_ibd_bytes": 4034969600,
+            "ibdata1_bytes": 146800640,
+            "redo_log_bytes": 536870912,
+            "largest": {
+                "eod_bars_history": 15388901376,
+                "eod_indicators_history": 15107883008,
+                "eod_eligibility_history": 5322571776,
+                "watchlist_bt_universe_ws": 3992977408,
+                "eod_run_events": 1908408320
+            }
+        },
+        "free_space_at_preflight": {
+            "D:": {
+                "free_gib": 129.47,
+                "total_gib": 244.1,
+                "0": "holds_the_clean_datadir_D:/xampp/mysql/data (1.2 GB now) and data_260914"
+            },
+            "C:": {
+                "free_gib": 69.74,
+                "total_gib": 232,
+                "note": "system volume with Git; keep at least 15 GiB free"
+            }
+        },
+        "estimates": {
+            "byte_copy": "42.65 GiB (exact; a complete copy including ibdata1, redo logs and the mysql schema is required for the instance to start)",
+            "logical_dump_uncompressed": "15 to 40 GiB (estimate, not measured: row data is smaller than the .ibd files, which include indexes and free pages; the three history tables dominate)",
+            "logical_dump_gzip": "3 to 10 GiB (estimate)",
+            "imported_tradeaxis_on_clean_instance": "30 to 42 GiB (estimate: about the 37.7 GiB of repository .ibd, repacked) plus about 1 GiB ibdata/redo growth",
+            "full_suite_writes": "small (tradeaxis_testing about 21 MB)"
+        },
+        "naive_check_is_not_enough": "copy + uncompressed dump + import on D: = 42.65 + (15..40) + (30..42) = 88 to 125 GiB against 129.5 GiB free: worst case leaves under 5 GiB, which is unsafe (a full volume mid-import can corrupt the clean instance). The raw sum alone must not be accepted.",
+        "recommended_layout": {
+            "byte_copy": "D: (e.g. D:/recovery/data_260914_copy_<date>) — 42.65 GiB",
+            "logical_dump": "gzip-compressed, written to C: (e.g. C:/recovery/dump_<date>) — expected 3 to 10 GiB; or an external/other volume if the owner has one",
+            "import_target": "the existing clean datadir on D: — up to about 43 GiB",
+            "projected_D_use": "42.65 + up to 43 = about 86 GiB of 129.5 GiB free: headroom about 43 GiB (33%)",
+            "projected_C_use": "up to 10 GiB of 69.7 GiB free: headroom about 60 GiB",
+            "abort_thresholds": [
+                "stop any phase if D: free falls below 25 GiB",
+                "stop any phase if C: free falls below 15 GiB",
+                "stop if the measured compressed dump exceeds 20 GiB or the uncompressed export exceeds 60 GiB and ask for a volume decision",
+                "check free space before each phase and after the copy and after the dump"
+            ],
+            "after_success": "the byte-copy (42.65 GiB) stays until a separate authorization decides its fate; do not delete it as space recovery"
+        },
+        "verdict": "feasible with the layout above; NOT feasible as a single-volume uncompressed layout; the 130 GiB free on D: is not treated as safe by itself"
+    },
+    "recovery_acceptance_checklist": {
+        "A_source_copy": "byte-copy created from data_260914 with the source untouched; record per-file size and SHA-256 of the source and of the copy (all 500 files, 45794016835 bytes at preflight) and show equality; record the source directory listing and mtimes before and after (unchanged)",
+        "B_isolated_startup": "recovery mysqld on the copy only, own defaults file/datadir/port/pid, NO innodb_force_recovery in the command line or any included file (record the effective config); startup log read in full: no future-LSN/corruption that forces recovery; if it cannot start cleanly STOP (term 4)",
+        "C_repository_table_inventory": "inventory of tables in the recovered tradeaxis: the 62 repository tables versus the old-only watchlist_* tables (11, about 3.8 GiB); compare with the 79 repository migrations; list rebuildable-from-repository versus old-only data",
+        "D_readability_integrity": "SELECT-readability and CHECK TABLE (EXTENDED if time allows) for every repository table; any table that is unreadable or fails -> STOP with a per-table report; no repair in place",
+        "E_logical_export": "mysqldump (or CSV) of the repository tables only, consistent snapshot, to the dump path; record dump file sizes and SHA-256",
+        "F_export_counts_and_ranges": "per-table COUNT(*) and key ranges: eod_bars/eod_bars_history trade_date min/max and counts, eod_publications (count, is_current dates), eod_runs (count, terminal_status mix), md_adjustment_factor_decisions, market_data_corporate_actions (DERIVED_FROM_PRICE_SERIES count), pointer, eod_indicators_history, eod_eligibility_history",
+        "G_historical_comparison": "compare with the figures recorded in the repository: ProductionCorpusInvariantOracleTest docblock (756,329 canonical bars; 64,092 publications; 71,917 runs), F-MD-B18-A002-011 (62 tables, about 37.7 GB; eod_bars_history 14.7 GB, eod_indicators_history 14.4 GB, eod_eligibility_history 5.1 GB), the B17-A002 closure full-suite PASS of 2026-09-03 and any earlier counts; every difference explained or STOP (term 11)",
+        "H_clean_import": "import into the clean tradeaxis only (port 3306, clean datadir), schema already migrated; tradeaxis_testing untouched; no raw files; foreign-key/trigger handling recorded (immutability triggers must not be bypassed silently)",
+        "I_migrations": "migrations table 79/79 and schema identical to the repository migrations after the import",
+        "J_import_reconciliation": "per-table import row counts equal the export counts and the source counts; sums and date ranges equal; zero unexplained difference",
+        "K_database_integrity": "CHECK TABLE clean for both clean databases (tradeaxis and tradeaxis_testing); error log of the clean instance read before and after: no corruption/future-LSN",
+        "L_seven_corpus_controls": "ProductionCorpusInvariantOracleTest run alone: 7 of 7 green with every population control satisfied (no skip)",
+        "M_targeted_tests": "B18 families on MariaDB and mirror, R0025 aggregate, ReplayBackfillServiceTest, governance tests: green, zero skips",
+        "N_full_suite": "full MarketData suite: 0 failures, 0 errors, 0 skipped (the historical 2960-test run with 7 failures is NOT represented as green)",
+        "O_unchanged_verification": "candidate-v5 fingerprint daf96a29…fbe3 and package manifest; frozen build sha256:7ea1956a…c4a recomputed over the 5916 files; matrix sha256 8b5bd9b1…0695 (113 rows SATISFIED against E-MD-B18-A002-001); E-MD-B18-A002-001 and E-MD-B18-A002-117 file hashes; E115/E116 and D019 unchanged; the recovered corpus is not cited as proof by any basis",
+        "rule": "no recovery record may claim success unless every item A–O passed; any STOP condition ends the unit and returns to the owner"
+    },
+    "build_and_proof_impact": "A — no build or proof impact if the recovery stays database-only (only tradeaxis is imported; proof runs on tradeaxis_testing; no file of the frozen build and no candidate-v5 input changes). A need for an importer, a transformation or any code change would be a build-changing recovery: stop and return.",
+    "unchanged": [
+        "no database started/stopped/changed",
+        "data_260914 not opened/copied",
+        "no app/config/bootstrap/vendor/composer change",
+        "candidate-v5, the binder state, E-001/E-117 untouched",
+        "B18 not closed"
+    ],
+    "related_findings": [
+        "F-MD-B18-A002-011"
+    ],
+    "related_evidence": [
+        "E-MD-B18-A002-001",
+        "E-MD-B18-A002-117"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-020",
+        "D-MD-B18-A002-003",
+        "D-MD-B18-A002-004"
+    ],
+    "next_resume_point": "the database owner gives (or refuses) the separate MD-DEP-0016 authorization using the prepared text and parameters; only then the bounded recovery work unit may begin.",
+    "no_commit_or_push": 1
+}

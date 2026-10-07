@@ -1160,3 +1160,7 @@ Same A002/BL001/CI. Proof-spec metadata only: the stale negative reference of fa
 ## 2026-10-08 atomic binder applied (E-MD-B18-A002-001, E-MD-B18-A002-117)
 
 Same A002/BL001/CI. The atomic binder wrote exactly the 113 MD-B18 mandatory rows `NOT_ASSESSED` -> `SATISFIED` against `E-MD-B18-A002-001` (independently recomputed: 113 changed rows, 0 foreign, 113/113 reviewed and satisfied, 0 not assessed). The closure gate passes its ten conditions. The stage is NOT closed: `MD-DEP-0015` stays BLOCKING (full suite: 7 deployed-corpus oracle failures, `F-MD-B18-A002-011` part (b), `MD-DEP-0016`), and `F-MD-B18-A002-005` still needs its mutation proof. The executable build boundary is unchanged.
+
+## 2026-10-08 MD-DEP-0016 project-owner decision and recovery preflight (D-MD-B18-A002-020, E-MD-B18-A002-118)
+
+Same A002/BL001/CI. The project owner authorized the Option 1 recovery of `MD-DEP-0016` subject to a separate database-owner authorization, which does not exist yet. Governance recording and read-only preflight only: nothing was started, copied, dumped or imported; B18 stays 113/113 SATISFIED and `NOT_READY_FOR_CLOSURE`; `MD-DEP-0015` stays BLOCKING.

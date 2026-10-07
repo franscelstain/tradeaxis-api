@@ -1744,3 +1744,12 @@ MD-REL-1743,E-MD-B18-A002-117,F-MD-B18-A002-005,RELATED,Closure-gate identity ch
 MD-REL-1744,E-MD-B18-A002-117,F-MD-B18-A002-017,RELATED,All predicates now proven and satisfied; resolvable at closure.,MD-DEP-0015,2026-10-08T01:28:27+07:00,MD-B18-A002 atomic binder post-binding record.
 MD-REL-1745,E-MD-B18-A002-001,E-MD-B18-A002-117,RELATED,Post-binding record.,MD-DEP-0015,2026-10-08T01:28:27+07:00,MD-B18-A002 atomic binder post-binding record.
 MD-REL-1746,CI-MD-B18-A002-001,E-MD-B18-A002-117,RELATED,Post-binding record under the impact declaration.,MD-DEP-0015,2026-10-08T01:28:27+07:00,MD-B18-A002 atomic binder post-binding record.
+MD-REL-1749,D-MD-B18-A002-020,F-MD-B18-A002-011,RELATED,Part (b) waits for this recovery.,MD-DEP-0016,2026-10-08T01:46:46+07:00,MD-B18-A002 MD-DEP-0016 recovery authorization.
+MD-REL-1750,D-MD-B18-A002-020,D-MD-B18-A002-004,DEPENDS_ON,"Option 1(b): corpus only through recovery, separately authorized.",MD-DEP-0016,2026-10-08T01:46:46+07:00,MD-B18-A002 MD-DEP-0016 recovery authorization.
+MD-REL-1751,D-MD-B18-A002-020,D-MD-B18-A002-003,DEPENDS_ON,Decision 2: clean runtime and the old-data track.,MD-DEP-0016,2026-10-08T01:46:46+07:00,MD-B18-A002 MD-DEP-0016 recovery authorization.
+MD-REL-1752,D-MD-B18-A002-020,E-MD-B18-A002-001,RELATED,"Binder evidence, unchanged historical evidence of seven corpus failures.",MD-DEP-0016,2026-10-08T01:46:46+07:00,MD-B18-A002 MD-DEP-0016 recovery authorization.
+MD-REL-1753,D-MD-B18-A002-020,E-MD-B18-A002-117,RELATED,"Post-binding record, unchanged.",MD-DEP-0016,2026-10-08T01:46:46+07:00,MD-B18-A002 MD-DEP-0016 recovery authorization.
+MD-REL-1754,E-MD-B18-A002-118,D-MD-B18-A002-020,DEPENDS_ON,Preflight prepared for this decision.,MD-DEP-0016,2026-10-08T01:46:46+07:00,MD-B18-A002 MD-DEP-0016 recovery authorization.
+MD-REL-1755,E-MD-B18-A002-118,E-MD-B18-A002-117,DEPENDS_ON,Starts from the post-binding state.,MD-DEP-0016,2026-10-08T01:46:46+07:00,MD-B18-A002 MD-DEP-0016 recovery authorization.
+MD-REL-1757,CI-MD-B18-A002-001,D-MD-B18-A002-020,RELATED,Decision recorded under the impact declaration.,MD-DEP-0016,2026-10-08T01:46:46+07:00,MD-B18-A002 MD-DEP-0016 recovery authorization.
+MD-REL-1758,CI-MD-B18-A002-001,E-MD-B18-A002-118,RELATED,Preflight recorded under the impact declaration.,MD-DEP-0016,2026-10-08T01:46:46+07:00,MD-B18-A002 MD-DEP-0016 recovery authorization.
