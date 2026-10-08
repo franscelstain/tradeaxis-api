@@ -150,12 +150,13 @@ final class MarketDataOperationsProofBasis
             'basis' => 'a mixed checkpoint file yields total 5, eligible 2, retried 2, retry success 1, retry failure 1, skipped 3 with the three skipped reasons, and the quantities are tied (total = eligible + skipped, retried = success + failure, skipped = sum of reasons); the written diagnostics file repeats the counts and its failure sample equals the checkpoint file row field by field; dropping or mislabelling any count or reason, or building the sample from window telemetry, turns a guard red',
         ],
 
-        // ---- MD-S075 section 1 "run_summary.json" -- family `artifact_run_summary`, 49 of 52 predicates. HELD, with no entry:
-        // MD-S075-R0047 (F-MD-B19-A001-005: warning_count is never written by the pipeline and 'warning' is undefined),
-        // MD-S075-R0074 and MD-S075-R0075 (F-MD-B19-A001-006: final_reason_code is a derived value under a persisted column
-        // name, and the contract defines no marker for derived fields). The earlier guard proved every minimum field is a KEY
-        // of the file; these entries are value proofs: a run record in which every column differs, the manifest of the run's own
-        // publication against decoys, and a real sealed run read directly from the tables.
+        // ---- MD-S075 section 1 "run_summary.json" -- family `artifact_run_summary`, 52 of 52 predicates. Three were held for owner
+        // decisions and are entered after D-MD-B19-A001-003: MD-S075-R0047 (F-MD-B19-A001-005 Option B: warning_count mirrors the
+        // persisted value incl. NULL, an ACCEPTED LIMITATION -- nothing writes the counter), MD-S075-R0074 and MD-S075-R0075
+        // (F-MD-B19-A001-006 Option A: final_reason_code strictly mirrors the persisted column; the effective reason is a separate
+        // derived field and derived fields are listed in derived_companion_fields). The earlier guard proved every minimum field is
+        // a KEY of the file; these entries are value proofs: a run record in which every column differs, the manifest of the run's
+        // own publication against decoys, and a real sealed run read directly from the tables.
         'MD-S075-R0025' => [
             'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
             'negative' => 'B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value',
@@ -265,6 +266,11 @@ final class MarketDataOperationsProofBasis
             'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
             'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
             'basis' => 'invalid_indicator_count carries the value of its own invalid_indicator_count column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the invalid bar count turns it red (G08)',
+        ],
+        'MD-S075-R0047' => [
+            'positive' => 'B19RunSummaryDerivedFieldMarkingTest::test_warning_count_is_the_persisted_value_and_a_null_is_not_turned_into_a_count',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'Option B (D-MD-B19-A001-003): warning_count carries the persisted eod_runs.warning_count under its persisted name, a persisted NULL stays NULL and is never turned into zero or into a count of anything else, and it is never marked as derived; on a real run the persisted value is NULL and the summary says NULL. ACCEPTED LIMITATION, not a conformance claim about warning counting: nothing in app/ writes the counter and a warning is defined nowhere (F-MD-B19-A001-005); a tripwire fails the day a new file starts to handle it, so that the population is decided first. Defaulting to zero, reading another counter, inventing a population from the invalid counts or marking the field as derived turns a guard red (W01..W04); a repository that starts writing the counter or a new file that mentions it turns the tripwire red (W05, W06)',
         ],
         'MD-S075-R0048' => [
             'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
@@ -395,6 +401,16 @@ final class MarketDataOperationsProofBasis
             'positive' => 'B19RunSummaryValueProvenanceTest::test_a_held_or_failed_run_is_never_summarised_as_readable',
             'negative' => 'B19RunSummaryValueProvenanceTest::test_a_run_without_a_resolved_publication_exports_no_publication_facing_value',
             'basis' => 'held, failed and not-readable runs are not promoted, switch no pointer, name no current publication, carry no seal and export no publication-facing value, and their outcome note says not readable; a stand-in seal, a current marking or an always-switched pointer turns a guard red (F06, F07, D02)',
+        ],
+        'MD-S075-R0074' => [
+            'positive' => 'B19RunSummaryDerivedFieldMarkingTest::test_final_reason_code_carries_exactly_the_persisted_column',
+            'negative' => 'B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value',
+            'basis' => 'final_reason_code mirrors eod_runs.final_reason_code and nothing else (D-MD-B19-A001-003, F-MD-B19-A001-006 Option A): a persisted value is exported although the source and coverage reasons differ, a persisted NULL stays NULL (no source reason, coverage reason or stand-in), the message beside it describes only the persisted code, and on a real run every key shared with an eod_runs column, final_reason_code included, equals the persisted value; the reason resolved for operators is the separate field of R0075. Exporting the effective reason, a stand-in or the source reason under the persisted name, or the message of a fallback reason, turns a guard red (O01..O04); so does a consumer that relabels the effective reason as the persisted one (C01, C03)',
+        ],
+        'MD-S075-R0075' => [
+            'positive' => 'B19RunSummaryDerivedFieldMarkingTest::test_every_derived_field_is_listed_in_the_derived_companion_marker',
+            'negative' => 'B19RunSummaryDerivedFieldMarkingTest::test_the_marker_does_not_list_a_pure_persisted_mirror',
+            'basis' => 'derived fields appear only as marked derived companion evidence (D-MD-B19-A001-003): the effective final reason with its provenance and message, the seven manifest-derived minimum fields, the bound-input projection, the manifest-preferred publication fields, the current-marking derivations and source_context are listed in derived_companion_fields with a derivation kind and what each is derived from; the effective reason names the exact column or block it was taken from; no persisted mirror is listed and a marker that is absent cannot satisfy that; a manifest-derived field follows the manifest of the run\'s own publication and not the run record, and on a real run the listed fields exist and agree with the tables; the export result, lineage, completeness check and outcome note read the effective field. Omitting a field from the marker, an entry without an origin, a wrong origin, a marked persisted mirror, a dropped or wrong provenance or a consumer that relabels the effective reason turns a guard red (O05..O10, K01..K09, C01..C06)',
         ],
         'MD-S075-R0076' => [
             'positive' => 'B19RunSummaryValueProvenanceTest::test_source_context_recovers_thin_minimum_fields_from_persisted_notes_only',

@@ -201,3 +201,9 @@ Same attempt, baseline and declaration. **Actual impact: runtime behaviour, one 
 The family's existing guard proved that each minimum field is a key of the file; it passed with the seven manifest-derived fields holding null. Two new guards prove values (a run record whose every column differs, the manifest of the run's own publication against decoys, and a real sealed run read directly from the tables). 49 of 52 predicates are established; `MD-S075-R0047`, `R0074` and `R0075` are held on owner questions (`F-MD-B19-A001-005`, `F-MD-B19-A001-006`). Reviewed per-predicate bases 70/743.
 
 Strategy meaning change: `NO`.
+
+## 2026-10-08T14:15:01+07:00 run-summary owner decisions (`D-MD-B19-A001-003`, `E-MD-B19-A001-006`)
+
+Same attempt, baseline and declaration. **Actual impact: runtime behaviour of one artifact.** `MarketDataEvidenceExportService::buildRunSummary()` now exports `final_reason_code` as the persisted `eod_runs.final_reason_code` only; the reason it used to export under that name (persisted, else source, else coverage reason) is `effective_final_reason_code`, with `effective_final_reason_code_derived_from` and `effective_final_reason_message`; `derived_companion_fields` lists every derived field with its derivation and origin. The export result and `lineage.json` carry both reasons; the completeness check and the outcome note read the effective reason. `warning_count` is unchanged (already the faithful mirror) and its limitation is recorded. This edits an executable-build file that already differed from candidate-v5 (`MarketDataEvidenceExportService.php`); no file is added to the set, candidate-v5 stays historical-only, candidate-v6 is not created. No schema or configuration change.
+
+`artifact_run_summary` is complete at 52/52; reviewed per-predicate bases 73/743. Strategy meaning change: `NO`.

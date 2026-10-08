@@ -23,16 +23,6 @@ class B19RunSummaryRealRunProvenanceTest extends TestCase
 {
     use UsesMarketDataMariaDb;
 
-    /**
-     * Summary keys that carry a DERIVED value under the name of a persisted column. Measured on a real run:
-     * `final_reason_code` is NULL on `eod_runs` and exported as `COVERAGE_THRESHOLD_MET`, because the exporter falls
-     * back to the source and coverage reasons. `MD-S075-R0074` / `R0075` forbid a derived value under a persisted
-     * name unless it is clearly marked as derived; what the export should do instead is an open owner decision
-     * (`F-MD-B19-A001-005`). The key is excluded from the equality check so that no guard blesses either reading;
-     * `MD-S075-R0074` and `R0075` therefore have no proof basis.
-     */
-    private const DERIVED_UNDER_A_PERSISTED_NAME_UNDECIDED = ['final_reason_code'];
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -80,7 +70,9 @@ class B19RunSummaryRealRunProvenanceTest extends TestCase
      * `MD-S075-R0074`: every summary field that mirrors persisted run state uses the persisted name and
      * carries the persisted value. Checked for every key of the summary that is a column of `eod_runs` —
      * not only the contract's minimum fields — so a mirrored field that was renamed or replaced by a
-     * derived value under the same name is caught.
+     * derived value under the same name is caught. `final_reason_code` is included: on the real run the
+     * persisted column is NULL and the summary says NULL; the reason the exporter resolves for operators
+     * is `effective_final_reason_code` (`D-MD-B19-A001-003`, `F-MD-B19-A001-006` Option A).
      */
     public function test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value(): void
     {
@@ -99,14 +91,38 @@ class B19RunSummaryRealRunProvenanceTest extends TestCase
 
         $disagree = [];
         foreach ($shared as $column) {
-            if (in_array($column, self::DERIVED_UNDER_A_PERSISTED_NAME_UNDECIDED, true)) {
-                continue;
-            }
             if (is_array($summary[$column]) || ! $this->same($row[$column], $summary[$column])) {
                 $disagree[$column] = ['persisted' => $row[$column], 'summary' => $summary[$column]];
             }
         }
         $this->assertSame([], $disagree, 'summary fields that disagree with the persisted eod_runs row: '.json_encode($disagree));
+    }
+
+    /**
+     * `MD-S075-R0074`, `R0075`, `R0047` on a real run: the persisted reason is mirrored (NULL here), the effective
+     * reason is a different field that names the persisted column it was taken from, every manifest-derived field is
+     * listed in the marker, and the never-written `warning_count` is exported as the NULL it is.
+     */
+    public function test_a_real_run_mirrors_the_persisted_reason_and_marks_the_derived_ones(): void
+    {
+        [$summary, $row] = $this->exportRealRun();
+
+        $this->assertNull($row['final_reason_code'], 'the world no longer leaves eod_runs.final_reason_code NULL; the real-run case below is stale');
+        $this->assertNull($summary['final_reason_code'], 'R0074: a derived reason is exported under the persisted name');
+        $this->assertSame($row['coverage_reason_code'], $summary['effective_final_reason_code'], 'R0075: the effective reason is not the coverage reason the run recorded');
+        $this->assertNotNull($summary['effective_final_reason_code']);
+        $this->assertSame('coverage.coverage_reason_code', $summary['effective_final_reason_code_derived_from']);
+
+        $this->assertNull($row['warning_count'], 'R0047: the pipeline now writes warning_count; the Option B limitation record is stale');
+        $this->assertNull($summary['warning_count'], 'R0047: a persisted NULL warning_count is exported as '.json_encode($summary['warning_count']));
+
+        foreach (['publication_manifest_hash', 'config_snapshot_hash', 'temporal_revision_set_hash', 'factor_set_id', 'canonicalization_version', 'formula_version',
+            'read_model_version', 'effective_final_reason_code', 'effective_final_reason_message'] as $derived) {
+            $this->assertArrayHasKey($derived, $summary['derived_companion_fields'], 'R0075: '.$derived.' is derived and not marked');
+            $this->assertArrayHasKey($derived, $summary, 'R0075: the marker names '.$derived.', which the summary does not carry');
+        }
+        $this->assertSame([], array_values(array_intersect(array_keys($summary['derived_companion_fields']), ['final_reason_code', 'warning_count', 'run_id', 'terminal_status', 'sealed_at'])),
+            'R0074: a persisted mirror is marked as derived');
     }
 
     /**

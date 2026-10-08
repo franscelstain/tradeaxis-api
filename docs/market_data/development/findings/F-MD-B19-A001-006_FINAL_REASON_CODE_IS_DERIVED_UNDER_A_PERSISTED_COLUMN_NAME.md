@@ -4,9 +4,9 @@
 - Stage / Attempt / Baseline: `MD-B19` / `MD-B19-A001` / `MD-B19-A001-BL001`
 - Raised at: 2026-10-08T12:02:54+07:00
 - Severity: `P2`
-- Status: `OPEN — OWNER DECISION REQUIRED`
+- Status: `RESOLVED`
 - Class: `DERIVED_VALUE_UNDER_A_PERSISTED_NAME`
-- Blocked: the per-predicate proof basis of `MD-S075-R0074` and `MD-S075-R0075`.
+- Blocked: the per-predicate proof basis of `MD-S075-R0074` and `MD-S075-R0075` (now established).
 - Blocks strategy change: `NO`
 
 ## Statement
@@ -65,3 +65,13 @@ no guard blesses either reading.
 ## Related
 
 - `E-MD-B19-A001-005` (where this was measured), `MD-S075-R0074`, `MD-S075-R0075`, `F-MD-B19-A001-004`
+
+## 2026-10-08T13:02:10+07:00 Owner decision recorded: Option A (`D-MD-B19-A001-003`)
+
+The project owner selected **Option A**: `final_reason_code` strictly mirrors the persisted `eod_runs.final_reason_code`; the effective derived reason is exposed in a separately named field with explicit provenance; manifest-derived publication-facing fields are marked as derived companion evidence; consumers are audited and updated. The production change is governed under `F-MD-B19-A001-003` Option O1.
+
+## 2026-10-08T14:15:01+07:00 Resolved under Option A (`E-MD-B19-A001-006`)
+
+`buildRunSummary()` now exports `final_reason_code` as the persisted `eod_runs.final_reason_code` (NULL stays NULL) and `final_reason_message` for that code only. The reason resolved for operators is `effective_final_reason_code` (persisted, else source, else coverage reason) with `effective_final_reason_code_derived_from` naming `eod_runs.final_reason_code`, `source_context.final_reason_code` or `coverage.coverage_reason_code`, and `effective_final_reason_message`. `derived_companion_fields` lists every derived field with its derivation kind and origin: the effective reason fields, the seven manifest-derived minimum fields, the bound-input projection, the manifest-preferred `publication_version` / `is_current_publication`, the current-marking derivations (`promoted`, `pointer_switched`, `current_publication_id`, `import_status`, `promote_status`, `import_promote_boundary`), `final_outcome_note` and `source_context`. No persisted mirror is listed.
+
+Consumers audited (`consumer_audit.md` in the raw evidence): the export result and lineage carry both the persisted and the effective reason; the completeness check and the outcome note read the effective reason; the anomaly report does not read the field; replay comparison does not read `run_summary.json` and derives its own final state from the row (unchanged). Proven by 21 guards (plus one real-run guard) and 34 single-defect mutations. Production change in `MarketDataEvidenceExportService.php`, an already-listed executable-build file.

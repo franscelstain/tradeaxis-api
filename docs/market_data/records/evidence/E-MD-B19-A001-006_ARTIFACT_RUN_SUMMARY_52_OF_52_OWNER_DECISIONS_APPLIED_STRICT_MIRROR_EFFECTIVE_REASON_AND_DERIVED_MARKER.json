@@ -1,0 +1,272 @@
+{
+    "evidence_id": "E-MD-B19-A001-006",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B19",
+    "attempt_id": "MD-B19-A001",
+    "work_id": "MD-B19-A001",
+    "baseline_id": "MD-B19-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B19-A001-001",
+    "issued_at": "2026-10-08T14:15:01+07:00",
+    "evidence_type": "OWNER_DECISION_IMPLEMENTATION_AND_FAMILY_COMPLETION",
+    "verdict": "ARTIFACT_RUN_SUMMARY_52_OF_52_ESTABLISHED_F005_ACCEPTED_LIMITATION_F006_RESOLVED",
+    "checkpoint_verdict": "MD-B19-A001 RUN-SUMMARY OWNER DECISIONS APPLIED — artifact_run_summary 52/52",
+    "starting_state": {
+        "reviewed_bases": "70/743",
+        "artifact_run_summary": "49/52 (R0047, R0074, R0075 held)",
+        "fully_reviewed_families": "2/37",
+        "head": "4bbc89d"
+    },
+    "owner_decision": {
+        "id": "D-MD-B19-A001-003",
+        "f005": "Option B",
+        "f006": "Option A",
+        "recorded_before_any_production_edit": "decision file issued 2026-10-08T13:02:10+07:00; the first production edit of this unit followed it"
+    },
+    "production_change": {
+        "file": "app/Application/MarketData/Services/MarketDataEvidenceExportService.php",
+        "sha256_before": "95582f083dd31901aa2bdb57b1834326a20b9d94c87ef3742ab6b3dbc484ff06",
+        "sha256_after": "0b44622c4e532191f64ae19e0ef3073eac17569ca27f8f89a0e18033da6995ff",
+        "diff": "raw export_service_change.diff",
+        "summary": "final_reason_code = the persisted eod_runs.final_reason_code; final_reason_message for that code only; new effective_final_reason_code, effective_final_reason_code_derived_from, effective_final_reason_message; new derived_companion_fields marker; export-result summary and lineage carry both reasons; the completeness check and the outcome note read the effective reason. warning_count unchanged (already the faithful mirror).",
+        "files_not_changed": "no other app file; no schema, configuration or migration change"
+    },
+    "consumer_audit": "raw consumer_audit.md: ten consumers; anomaly report and replay comparison do not read run_summary.json final_reason_code and are unchanged; the replay comparison derives its own final state from the row (ReplayVerificationService.php:929) and is a different artifact, not changed",
+    "predicate_matrix": [
+        {
+            "rule_id": "MD-S075-R0047",
+            "decision": "F-MD-B19-A001-005 Option B",
+            "established": "faithful mirror incl. NULL; accepted limitation",
+            "positive_guard": "B19RunSummaryDerivedFieldMarkingTest::test_warning_count_is_the_persisted_value_and_a_null_is_not_turned_into_a_count",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "mutations": "W01..W06, R02",
+            "basis_entry": "WRITTEN",
+            "classification": "D (owner decision) -> proven"
+        },
+        {
+            "rule_id": "MD-S075-R0074",
+            "decision": "F-MD-B19-A001-006 Option A",
+            "established": "final_reason_code strictly the persisted column",
+            "positive_guard": "B19RunSummaryDerivedFieldMarkingTest::test_final_reason_code_carries_exactly_the_persisted_column",
+            "negative_guard": "B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value",
+            "mutations": "O01..O04, C01, C03, R01",
+            "basis_entry": "WRITTEN",
+            "classification": "D (owner decision) -> proven"
+        },
+        {
+            "rule_id": "MD-S075-R0075",
+            "decision": "F-MD-B19-A001-006 Option A",
+            "established": "derived fields marked as derived companion evidence",
+            "positive_guard": "B19RunSummaryDerivedFieldMarkingTest::test_every_derived_field_is_listed_in_the_derived_companion_marker",
+            "negative_guard": "B19RunSummaryDerivedFieldMarkingTest::test_the_marker_does_not_list_a_pure_persisted_mirror",
+            "mutations": "O05..O10, K01..K09, C01..C06, R03",
+            "basis_entry": "WRITTEN",
+            "classification": "D (owner decision) -> proven"
+        }
+    ],
+    "guards": [
+        "B19RunSummaryDerivedFieldMarkingTest: 21 tests (strict mirror, message, effective chain and provenance, marker completeness, marker contains no persisted mirror, marker follows the manifest, export result, lineage, completeness, outcome note, warning_count mirror, warning_count limitation tripwire)",
+        "B19RunSummaryRealRunProvenanceTest: real-run exclusion of final_reason_code removed; new test_a_real_run_mirrors_the_persisted_reason_and_marks_the_derived_ones (5 tests)"
+    ],
+    "probes": {
+        "red_before_fix": "raw red_before_fix.txt: the new guard against the pre-unit service (byte copy swapped in, restored byte-exact): 21 tests, 12 failures + 1 error",
+        "fast_mutations_red_intended": 31,
+        "real_run_mutations_red_intended": 3,
+        "total_distinct_mutations": 34,
+        "restore": "every file restored byte for byte, sha256 verified, green control before and after each",
+        "files_at_final_pass_sha256": {
+            "app/Application/MarketData/Services/MarketDataEvidenceExportService.php": "0b44622c4e532191f64ae19e0ef3073eac17569ca27f8f89a0e18033da6995ff",
+            "tests/Unit/MarketData/B19RunSummaryDerivedFieldMarkingTest.php": "f1fdb3dbedc2f9de645a537d643e1a3c8cbfff97e441f97f70b010511dd70243",
+            "tests/Unit/MarketData/B19RunSummaryValueProvenanceTest.php": "f9dba0185dd71dc9ad7edf434c0f569b36cb4c89e70cdf2db20bdcac119a068a",
+            "tests/Unit/MarketData/B19RunSummaryRealRunProvenanceTest.php": "fc2e9b6cd1de80cf2fa018a144701369946be250372a342ef7332b4cac8944e2"
+        },
+        "first_pass_not_as_intended": {
+            "O07_effective_chain_skips_the_coverage_reason": {
+                "verdict": "EXPECTED_GUARD_DID_NOT_FAIL",
+                "failed_under_mutation": [
+                    "test_the_effective_final_reason_is_a_separate_field_that_names_where_it_came_from with data set \"the coverage reason when nothing else is recorded\"",
+                    "test_the_lineage_finalize_decision_separates_the_persisted_and_the_effective_reason",
+                    "test_the_outcome_note_of_a_run_that_is_not_readable_names_the_effective_reason"
+                ],
+                "expected_but_green": [
+                    "test_the_completeness_check_still_finds_a_reason_the_run_recorded_only_as_a_coverage_reason"
+                ]
+            },
+            "K08_marker_removed": {
+                "verdict": "EXPECTED_GUARD_DID_NOT_FAIL",
+                "failed_under_mutation": [
+                    "test_every_derived_field_is_listed_in_the_derived_companion_marker",
+                    "test_a_marked_manifest_field_follows_the_manifest_and_not_the_run_record"
+                ],
+                "expected_but_green": [
+                    "test_the_marker_does_not_list_a_pure_persisted_mirror"
+                ]
+            },
+            "W03_warning_count_is_invented_from_invalid_bars_when_null": {
+                "verdict": "EXPECTED_GUARD_DID_NOT_FAIL",
+                "failed_under_mutation": [
+                    "test_warning_count_is_the_persisted_value_and_a_null_is_not_turned_into_a_count with data set \"a persisted NULL\""
+                ],
+                "expected_but_green": [
+                    "test_a_persisted_null_is_exported_as_null_not_as_a_default"
+                ]
+            }
+        },
+        "first_pass_note": "O07: the completeness check keeps its own coverage fallback, so skipping the coverage reason cannot make it red (mis-specified expectation, corrected); K08: the \"no persisted mirror is marked\" guard passed vacuously when no marker existed (guard strengthened with a non-empty assertion, the other marker guards were red); W03: the value-provenance null test nulls every counter and cannot see a fallback to invalid_bar_count (the new warning guard does). The whole fast set was then re-run against the final test files; those results are the counted ones."
+    },
+    "regression": {
+        "final_full_suite": {
+            "tests": 3073,
+            "assertions": 43330,
+            "errors": 0,
+            "skipped": 0,
+            "failures": 20,
+            "oracle_failures": 7,
+            "build_identity_successor_pending_failures": 13,
+            "verdict": "NOT a full-suite PASS: 7 governed MD-B22 oracle failures (MD-DEP-0024) + 13 governed build-identity failures (MD-DEP-0025); nothing else; no governance test failed",
+            "build_identity_failures": [
+                "B18ReleaseCandidateAcceptanceAggregateTest::test_md_s003_r0025_executes_all_scenario_family_members_on_mariadb_and_the_mirror_and_is_green",
+                "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+                "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror",
+                "R0025SyntheticV2CandidateFixtureTest::test_a_target_with_the_wrong_freshness_state_gives_field_specific_mismatches_and_no_build_noise",
+                "R0025SyntheticV2CandidateFixtureTest::test_a_wrong_literal_in_any_one_bound_input_is_the_only_mismatch_it_causes",
+                "R0025SyntheticV2CandidateFixtureTest::test_a_wrong_publication_manifest_literal_is_the_only_mismatch_it_causes",
+                "R0025SyntheticV2CandidateFixtureTest::test_an_independent_package_with_any_other_assertion_layer_is_blocked_even_with_an_approval_supplied",
+                "R0025SyntheticV2CandidateFixtureTest::test_candidate_matches_the_actual_publication_but_is_not_admitted_as_proof",
+                "R0025SyntheticV2CandidateFixtureTest::test_each_semantic_member_of_the_event_factor_identity_moves_it",
+                "R0025SyntheticV2CandidateFixtureTest::test_the_admission_mechanism_admits_only_the_exact_fingerprint_and_refuses_any_damaged_package",
+                "R0025SyntheticV2CandidateFixtureTest::test_the_publication_bound_build_identity_is_the_frozen_build_identity",
+                "R0025SyntheticV2CandidateFixtureTest::test_the_real_target_emits_the_corrected_freshness_and_equals_the_independent_expectation",
+                "R0025SyntheticV2CandidateFixtureTest::test_two_allocation_layouts_give_identical_semantic_identities_and_the_oracle_literals"
+            ]
+        },
+        "note": "the full suite ran before this evidence record was registered; the governance tests are re-run after registration and reported in the unit report"
+    },
+    "gates": {
+        "all_43": "statuses identical to the previous unit (gates_post4): the same gates pass and fail; MarketDataOperationsProofGate reports 73 reviewed, 670 without a reviewed basis, 34 families without a guard (3 families guarded and fully reviewed), and no error about artifact_run_summary or range_window_warmup/checkpoint"
+    },
+    "build_impact": {
+        "files_differing_from_candidate_v5_manifest": [
+            "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+            "app/Application/MarketData/Services/MarketDataEvidenceExportService.php",
+            "app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php"
+        ],
+        "new_file_added_by_this_unit": "none",
+        "candidate_v5": "immutable historical proof, unchanged",
+        "candidate_v6": "NOT created",
+        "md_dep_0025": "ACTIVE, extended with the decision and this evidence; blocks B19 closure"
+    },
+    "state_after": {
+        "reviewed_bases": "73/743",
+        "without_basis": 670,
+        "artifact_run_summary": "52/52",
+        "fully_reviewed_families": "3/37",
+        "formal_satisfied": "0/743",
+        "findings_resolved": [
+            "F-MD-B19-A001-005",
+            "F-MD-B19-A001-006"
+        ]
+    },
+    "not_claimed": [
+        "B19 closure",
+        "a full-suite PASS",
+        "formal SATISFIED for any predicate",
+        "that warnings are counted"
+    ],
+    "raw_artifacts": {
+        "dir": "storage/app/market-data/evidence/MD-B19-A001/run-summary-owner-decisions-20261008",
+        "manifest_sha256": "638c4907c1ed5c8305ef27268b83a3c791c48fc1209fd410fb70ce301deb6818",
+        "files": {
+            "red_before_fix.txt": {
+                "sha256": "fe0c9290668205de606db769a5643c19afa8e8acba505c892a90c28169dd2de7",
+                "bytes": 6418
+            },
+            "export_service_change.diff": {
+                "sha256": "f2165a73bf35be26356b4b06553c11c516868032bb3757b3eb7924add3cc2d67",
+                "bytes": 10574
+            },
+            "consumer_audit.md": {
+                "sha256": "f487e3cfcbc1b0b8746cdbc367a8470bfb81e1dc54d17a38b12e4b121817abba",
+                "bytes": 3954
+            },
+            "probe_pass1.json": {
+                "sha256": "84708c6ba9c4c58274ba57341f4d7dd0700c5c637ec7bf74d949025ce9704615",
+                "bytes": 99191
+            },
+            "probe_pass1.out": {
+                "sha256": "4b2ca6b4bc3aafc56160198bb3b87281f34592a67934e603d9d8d21fd4304d16",
+                "bytes": 8060
+            },
+            "probe_final.json": {
+                "sha256": "bb3e57d32868a936268cd0a62730c9e26e6f27990d7e86f55f812ba70407acad",
+                "bytes": 99512
+            },
+            "probe_final.out": {
+                "sha256": "2d9ed5c75d8c8a79d5f672f0e57673bcb663cb27cffc8f0f4ed90e6ba9d45c48",
+                "bytes": 8065
+            },
+            "probe_real_run.json": {
+                "sha256": "586a7f07d51ffdb04fe89a299e717e14a91bcd1e815aa8f86bc15d59c1c3d141",
+                "bytes": 8397
+            },
+            "probe_real_run.out": {
+                "sha256": "f248ba55b0680373c3ba459bd02c63b9f1a7f8bdb30829552701e957bfbf95d8",
+                "bytes": 619
+            },
+            "full_suite_raw_output.txt": {
+                "sha256": "ba16ec7c2c02b54f2167944a9e63fef2e2d1ca7ac8993ae21cdaaf26c93c0ad0",
+                "bytes": 18133
+            },
+            "full_suite_junit.xml": {
+                "sha256": "aa63a47ce00ebde943d254f2e3dfda188c23f34985734a75b1762ea2531d17ed",
+                "bytes": 1134255
+            },
+            "gates_summary.txt": {
+                "sha256": "486c48e15079136f764dc1288b617fbdd056ea2563b98d1290b37a8d8e0d3279",
+                "bytes": 3059
+            },
+            "gate_MarketDataOperationsProofGate.json": {
+                "sha256": "478d49f64ff1d04de7c9b93142d270d4e348e52ee74802e7e829f15f20a7cd38",
+                "bytes": 4067
+            },
+            "sha_export_service_pre_unit.txt": {
+                "sha256": "94c4ec6e962e9ee6eecb8606b582ed3ed24bda6fc3bbc92bb392aa8d96694300",
+                "bytes": 138
+            },
+            "sha_export_service_post_unit.txt": {
+                "sha256": "000d176bb7f6c30528f7561d3e6b6e4926517d5d83f5d4bb815d750423196285",
+                "bytes": 138
+            },
+            "sha_files_at_final_probe.txt": {
+                "sha256": "e5b8af92bcb65c271698cb01e9c087f9dd56af9b6271216c40e8e990ff92f449",
+                "bytes": 519
+            },
+            "spec_probes_fast.php": {
+                "sha256": "ca00fe26c5f0ecf7e44a033c78539eb044b6952212ba6aa4ce1024a5c4dfda1e",
+                "bytes": 12478
+            },
+            "spec_probes_real_run.php": {
+                "sha256": "b765ef71235335f96615020fd4762bd465dba26af8ecd2b070e350345b0975d9",
+                "bytes": 2209
+            }
+        }
+    },
+    "related_findings": [
+        "F-MD-B19-A001-005",
+        "F-MD-B19-A001-006",
+        "F-MD-B19-A001-003",
+        "F-MD-B19-A001-002"
+    ],
+    "related_decisions": [
+        "D-MD-B19-A001-003",
+        "D-MD-B19-A001-001"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0025"
+    ],
+    "next_resume_point": "artifact_publication_manifest (33 predicates, MD-S075 section 2) — not started in this unit",
+    "no_push": 1
+}

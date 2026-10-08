@@ -123,3 +123,7 @@ From this point candidate-v5 is immutable historical proof and is no longer curr
 ## 2026-10-08T12:02:54+07:00 Third executable-build file (`E-MD-B19-A001-005`)
 
 The correction of `MD-S075-R0076` (`source_context.retry_attempt_count` is null, not 0, when the run recorded no retry telemetry) changed `app/Application/MarketData/Services/MarketDataEvidenceExportService.php` (written 2026-10-08T11:26:42+07:00). Files now differing from the candidate-v5 manifest: `ApiBackfillRangeAcquisitionService.php`, `MarketDataEvidenceExportService.php`, `PublicApiEodBarsAdapter.php`. The governed successor-pending set is unchanged: the same 13 tests, each with the single mismatch field `bound_input_executable_build_identity`.
+
+## 2026-10-08T14:15:01+07:00 Third executable-build file changed again (`E-MD-B19-A001-006`)
+
+Implementing `D-MD-B19-A001-003` (strict mirror of `final_reason_code`, the separate effective field, the derived-companion marker and the consumer updates) changed `app/Application/MarketData/Services/MarketDataEvidenceExportService.php` again. It was already one of the three files differing from the candidate-v5 manifest, so the set is unchanged: `ApiBackfillRangeAcquisitionService.php`, `MarketDataEvidenceExportService.php`, `PublicApiEodBarsAdapter.php`. The governed successor-pending set is unchanged: the same 13 tests, each with the single mismatch field `bound_input_executable_build_identity`.

@@ -4,9 +4,9 @@
 - Stage / Attempt / Baseline: `MD-B19` / `MD-B19-A001` / `MD-B19-A001-BL001`
 - Raised at: 2026-10-08T12:02:54+07:00
 - Severity: `P3`
-- Status: `OPEN — AUTHORITY QUESTION FOR THE PROJECT OWNER`
+- Status: `RESOLVED`
 - Class: `AUTHORITY_GAP_FIELD_NEVER_POPULATED`
-- Blocked: the per-predicate proof basis of `MD-S075-R0047` only.
+- Blocked: the per-predicate proof basis of `MD-S075-R0047` only (now established as the faithful mirror, under the accepted limitation below).
 - Blocks strategy change: `NO`
 
 ## Statement
@@ -47,3 +47,13 @@ today: the summary exposes `warning_count` under its persisted name and carries 
 ## Related
 
 - `E-MD-B19-A001-005` (where this was measured), `MD-S075-R0047`
+
+## 2026-10-08T13:02:10+07:00 Owner decision recorded: Option B (`D-MD-B19-A001-003`)
+
+The project owner selected **Option B**: `warning_count` keeps its faithful mapping, a persisted NULL stays NULL, the semantic limitation is recorded, and no warning population is invented.
+
+## 2026-10-08T14:15:01+07:00 Resolved under Option B (`E-MD-B19-A001-006`)
+
+**Accepted limitation, recorded:** `eod_runs.warning_count` is never written (the repository initialises it to NULL on both run-creation paths and nothing in `app/` sets it) and no document defines a warning, so every `run_summary.json` carries `"warning_count": null`. The summary mirrors the persisted value faithfully (a persisted number as that number, NULL as NULL, never zero, never marked as derived). **This is not a claim that warnings are counted.** The contract's example value `50` is illustrative.
+
+No warning population was invented. A tripwire (`B19RunSummaryDerivedFieldMarkingTest::test_the_known_limitation_nothing_writes_warning_count_still_holds`) fails the day a new file in `app/` starts to mention `warning_count` or the repository stops initialising it to NULL, so that the owner defines the population before a counter appears under a name whose meaning nobody decided. `MD-S075-R0047` is the faithful-mirror predicate and carries a reviewed basis; whether warnings should be counted stays an open product question, not a defect of this artifact.

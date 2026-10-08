@@ -178,6 +178,8 @@ class MarketDataEvidenceExportService
                 'publishability_state' => $runSummary['publishability_state'],
                 'coverage_gate_state' => $runSummary['coverage']['coverage_gate_state'] ?? null,
                 'final_reason_code' => $runSummary['final_reason_code'] ?? null,
+                'effective_final_reason_code' => $runSummary['effective_final_reason_code'] ?? null,
+                'effective_final_reason_code_derived_from' => $runSummary['effective_final_reason_code_derived_from'] ?? null,
                 'evidence_completeness_state' => $completeness['evidence_completeness_state'],
                 'evidence_admission_state' => $admission['evidence_admission_state'],
                 'publication_id' => $publicationContext['publication_id'] ?? null,
@@ -469,6 +471,8 @@ class MarketDataEvidenceExportService
                 'terminal_status' => $runSummary['terminal_status'],
                 'publishability_state' => $runSummary['publishability_state'],
                 'final_reason_code' => $runSummary['final_reason_code'],
+                'effective_final_reason_code' => $runSummary['effective_final_reason_code'],
+                'effective_final_reason_code_derived_from' => $runSummary['effective_final_reason_code_derived_from'],
             ],
             'run_to_publication' => [
                 'run_id' => $runSummary['run_id'],
@@ -499,7 +503,7 @@ class MarketDataEvidenceExportService
         $this->markMissingSection($missing, 'run_context', $runSummary['run_id'] ?? null);
         $this->markMissingSection($missing, 'source_context', $runSummary['source_context']['source_mode'] ?? null);
         $this->markMissingSection($missing, 'coverage_context', $runSummary['coverage']['coverage_gate_state'] ?? null);
-        $this->markMissingSection($missing, 'reason_code_context', $runSummary['final_reason_code'] ?? ($runSummary['coverage']['coverage_reason_code'] ?? null));
+        $this->markMissingSection($missing, 'reason_code_context', $runSummary['effective_final_reason_code'] ?? ($runSummary['coverage']['coverage_reason_code'] ?? null));
         $this->markMissingSection($missing, 'artifact_hash_context', $artifactContext['mandatory_artifact_presence'] ?? false);
 
         if ((string) ($runSummary['publishability_state'] ?? '') === 'READABLE') {
@@ -1007,9 +1011,10 @@ class MarketDataEvidenceExportService
         $notesMap = $this->parseRunNotes((string) ($this->field($run, 'notes') ?? ''));
         $coverage = $this->buildCoverageState($run);
         $coverageReasonCode = $coverage['coverage_reason_code'] ?? null;
-        $finalReasonCode = $this->field($run, 'final_reason_code')
-            ?: ($sourceContext['final_reason_code'] ?? null)
-            ?: $coverageReasonCode;
+        // MD-S075-R0074/R0075 (D-MD-B19-A001-003): `final_reason_code` mirrors eod_runs.final_reason_code and nothing else;
+        // the reason the exporter resolves for operators is the separately named, marked `effective_final_reason_code`.
+        $persistedFinalReasonCode = $this->field($run, 'final_reason_code');
+        [$effectiveFinalReasonCode, $effectiveFinalReasonCodeDerivedFrom] = $this->resolveEffectiveFinalReasonCode($persistedFinalReasonCode, $sourceContext, $coverageReasonCode);
         $requestMode = $this->field($run, 'request_mode') ?: ($notesMap['request_mode'] ?? null);
         $isCurrentPublication = $manifest ? (bool) $manifest['is_current'] : (bool) $this->field($run, 'is_current_publication', false);
         $promoted = (string) $this->field($run, 'terminal_status') === 'SUCCESS'
@@ -1056,9 +1061,13 @@ class MarketDataEvidenceExportService
                     ? 'import_only must not create READABLE publication or switch current pointer'
                     : 'promote must pass coverage/hash/seal/finalize before pointer switch',
             ],
-            'final_reason_code' => $finalReasonCode,
-            'final_reason_message' => $this->resolveReasonMessage($finalReasonCode),
-            'final_outcome_note' => $this->field($run, 'final_outcome_note') ?: ($notesMap['final_outcome_note'] ?? $this->deriveFinalOutcomeNote($run, $finalReasonCode)),
+            'final_reason_code' => $persistedFinalReasonCode,
+            'final_reason_message' => $this->resolveReasonMessage($persistedFinalReasonCode),
+            'effective_final_reason_code' => $effectiveFinalReasonCode,
+            'effective_final_reason_code_derived_from' => $effectiveFinalReasonCodeDerivedFrom,
+            'effective_final_reason_message' => $this->resolveReasonMessage($effectiveFinalReasonCode),
+            'final_outcome_note' => $this->field($run, 'final_outcome_note') ?: ($notesMap['final_outcome_note'] ?? $this->deriveFinalOutcomeNote($run, $effectiveFinalReasonCode)),
+            'derived_companion_fields' => $this->derivedCompanionFields(),
             'source_context' => $sourceContext,
             'coverage' => $coverage,
             'coverage_summary' => $coverage,
@@ -1138,6 +1147,71 @@ class MarketDataEvidenceExportService
             'evidence_export_created_at' => $this->evidenceCreatedAtFromRecord($run),
             'evidence_export_timestamp_source' => $this->evidenceTimestampSourceFromRecord($run),
         ] + $this->mutationImpactPayloadFromNotes($notesMap);
+    }
+
+    /**
+     * The reason the exporter resolves for operators: the persisted run reason, else the source reason, else the
+     * coverage reason the run recorded. Returned with the name of the place it came from, so the derivation is
+     * never silent (`MD-S075-R0075`). Empty strings fall through as they always did.
+     *
+     * @return array{0:?string,1:?string} [code, derived_from]
+     */
+    private function resolveEffectiveFinalReasonCode($persistedFinalReasonCode, array $sourceContext, $coverageReasonCode)
+    {
+        if ($persistedFinalReasonCode) {
+            return [$persistedFinalReasonCode, 'eod_runs.final_reason_code'];
+        }
+
+        if (! empty($sourceContext['final_reason_code'])) {
+            return [$sourceContext['final_reason_code'], 'source_context.final_reason_code'];
+        }
+
+        if ($coverageReasonCode) {
+            return [$coverageReasonCode, 'coverage.coverage_reason_code'];
+        }
+
+        return [null, null];
+    }
+
+    /**
+     * `MD-S075-R0075`: every field of the summary that is derived rather than mirrored from `eod_runs` is named
+     * here with the kind of derivation and what it is derived from. A field that is a pure mirror of a persisted
+     * column is never listed. The list is a marker, not a data source: nothing reads it back.
+     *
+     * @return array<string,array{derivation:string,derived_from:array<int,string>}>
+     */
+    private function derivedCompanionFields()
+    {
+        $manifest = function ($field) {
+            return ['derivation' => 'PUBLICATION_MANIFEST', 'derived_from' => ['publication_manifest.'.$field]];
+        };
+
+        return [
+            'effective_final_reason_code' => ['derivation' => 'FALLBACK_CHAIN', 'derived_from' => ['eod_runs.final_reason_code', 'source_context.final_reason_code', 'coverage.coverage_reason_code']],
+            'effective_final_reason_code_derived_from' => ['derivation' => 'PROVENANCE_OF_EFFECTIVE_FINAL_REASON_CODE', 'derived_from' => ['effective_final_reason_code']],
+            'effective_final_reason_message' => ['derivation' => 'MESSAGE_FOR_EFFECTIVE_FINAL_REASON_CODE', 'derived_from' => ['effective_final_reason_code']],
+            'final_outcome_note' => ['derivation' => 'RUN_NOTES_ENTRY_OR_DERIVED_TEXT', 'derived_from' => ['eod_runs.notes', 'eod_runs.terminal_status', 'eod_runs.publishability_state', 'effective_final_reason_code']],
+            'source_context' => ['derivation' => 'PERSISTED_RUN_TELEMETRY_AND_NOTES', 'derived_from' => ['eod_runs.source_* columns', 'eod_runs.notes', 'source attempt telemetry']],
+            'import_status' => ['derivation' => 'DERIVED_FROM_RUN_STATE', 'derived_from' => ['eod_runs.request_mode', 'eod_runs.stage', 'eod_runs.terminal_status']],
+            'promote_status' => ['derivation' => 'DERIVED_FROM_RUN_STATE', 'derived_from' => ['eod_runs.request_mode', 'eod_runs.terminal_status', 'promoted']],
+            'promoted' => ['derivation' => 'DERIVED_FROM_RUN_STATE_AND_CURRENT_MARKING', 'derived_from' => ['eod_runs.terminal_status', 'eod_runs.publishability_state', 'is_current_publication']],
+            'pointer_switched' => ['derivation' => 'DERIVED_FROM_CURRENT_MARKING', 'derived_from' => ['is_current_publication']],
+            'current_publication_id' => ['derivation' => 'DERIVED_FROM_CURRENT_MARKING', 'derived_from' => ['is_current_publication', 'publication_id']],
+            'import_promote_boundary' => ['derivation' => 'DERIVED_FROM_RUN_STATE', 'derived_from' => ['request_mode', 'source_mode', 'import_status', 'promote_status', 'promoted', 'pointer_switched']],
+            'publication_manifest_hash' => $manifest('publication_manifest_hash'),
+            'config_snapshot_hash' => $manifest('config_snapshot_hash'),
+            'temporal_revision_set_hash' => $manifest('temporal_revision_set_hash'),
+            'factor_set_id' => $manifest('factor_set_id'),
+            'canonicalization_version' => $manifest('canonicalization_version'),
+            'formula_version' => $manifest('formula_version'),
+            'read_model_version' => $manifest('read_model_version'),
+            'bound_input_context_schema_version' => $manifest('bound_input_context.schema_version'),
+            'bound_input_context_status' => $manifest('bound_input_context.status'),
+            'bound_input_context_available' => $manifest('bound_input_context.available'),
+            'bound_input_context_hash' => $manifest('bound_input_context.bound_input_context_hash'),
+            'publication_version' => ['derivation' => 'PUBLICATION_MANIFEST_PREFERRED_OVER_RUN_COLUMN', 'derived_from' => ['publication_manifest.publication_version', 'eod_runs.publication_version']],
+            'is_current_publication' => ['derivation' => 'PUBLICATION_MANIFEST_PREFERRED_OVER_RUN_COLUMN', 'derived_from' => ['publication_manifest.is_current', 'eod_runs.is_current_publication']],
+        ];
     }
 
     private function mutationImpactPayloadFromNotes(array $notesMap)

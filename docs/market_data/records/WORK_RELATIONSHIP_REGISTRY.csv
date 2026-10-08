@@ -1851,3 +1851,19 @@ MD-REL-1853,F-MD-B19-A001-005,CI-MD-B19-A001-001,DEPENDS_ON,Raised within the at
 MD-REL-1854,F-MD-B19-A001-005,E-MD-B19-A001-005,DERIVED_FROM,Measured with the evidence record.,,2026-10-08T12:02:54+07:00,MD-B19-A001 artifact_run_summary.
 MD-REL-1855,F-MD-B19-A001-006,CI-MD-B19-A001-001,DEPENDS_ON,Raised within the attempt the declaration directs.,,2026-10-08T12:02:54+07:00,MD-B19-A001 artifact_run_summary.
 MD-REL-1856,F-MD-B19-A001-006,E-MD-B19-A001-005,DERIVED_FROM,Measured with the evidence record.,,2026-10-08T12:02:54+07:00,MD-B19-A001 artifact_run_summary.
+MD-REL-1857,D-MD-B19-A001-003,F-MD-B19-A001-005,RELATED,Decides the finding: Option B.,D-MD-B19-A001-003,2026-10-08T13:02:10+07:00,MD-B19-A001 run-summary owner decisions.
+MD-REL-1858,D-MD-B19-A001-003,F-MD-B19-A001-006,RELATED,Decides the finding: Option A.,D-MD-B19-A001-003,2026-10-08T13:02:10+07:00,MD-B19-A001 run-summary owner decisions.
+MD-REL-1859,D-MD-B19-A001-003,F-MD-B19-A001-003,RELATED,The production change is governed under O1.,D-MD-B19-A001-003,2026-10-08T13:02:10+07:00,MD-B19-A001 run-summary owner decisions.
+MD-REL-1860,D-MD-B19-A001-003,D-MD-B19-A001-001,DEPENDS_ON,O1 permits the executable-build change this decision requires.,D-MD-B19-A001-003,2026-10-08T13:02:10+07:00,MD-B19-A001 run-summary owner decisions.
+MD-REL-1861,D-MD-B19-A001-003,D-MD-B18-A002-018,DEPENDS_ON,Item 13 governs the consequence for candidate-v5.,D-MD-B19-A001-003,2026-10-08T13:02:10+07:00,MD-B19-A001 run-summary owner decisions.
+MD-REL-1862,D-MD-B19-A001-003,E-MD-B19-A001-005,DEPENDS_ON,The measurements that raised the questions.,D-MD-B19-A001-003,2026-10-08T13:02:10+07:00,MD-B19-A001 run-summary owner decisions.
+MD-REL-1863,F-MD-B19-A001-005,D-MD-B19-A001-003,DEPENDS_ON,Option B decision.,D-MD-B19-A001-003,2026-10-08T13:02:10+07:00,MD-B19-A001 run-summary owner decisions.
+MD-REL-1864,F-MD-B19-A001-006,D-MD-B19-A001-003,DEPENDS_ON,Option A decision.,D-MD-B19-A001-003,2026-10-08T13:02:10+07:00,MD-B19-A001 run-summary owner decisions.
+MD-REL-1865,E-MD-B19-A001-006,D-MD-B19-A001-003,DEPENDS_ON,Implements the decision: F-005 Option B and F-006 Option A.,D-MD-B19-A001-003,2026-10-08T14:15:01+07:00,MD-B19-A001 run-summary owner decisions.
+MD-REL-1866,E-MD-B19-A001-006,D-MD-B19-A001-001,DEPENDS_ON,O1 permits the executable-build change.,D-MD-B19-A001-001,2026-10-08T14:15:01+07:00,MD-B19-A001 run-summary owner decisions.
+MD-REL-1867,E-MD-B19-A001-006,CI-MD-B19-A001-001,DEPENDS_ON,Executes the proof method and records the actual impact.,,2026-10-08T14:15:01+07:00,MD-B19-A001 run-summary owner decisions.
+MD-REL-1868,E-MD-B19-A001-006,E-MD-B19-A001-005,DEPENDS_ON,Closes the three held predicates of that evidence.,,2026-10-08T14:15:01+07:00,MD-B19-A001 run-summary owner decisions.
+MD-REL-1869,E-MD-B19-A001-006,F-MD-B19-A001-005,RELATED,Resolves the finding under Option B.,,2026-10-08T14:15:01+07:00,MD-B19-A001 run-summary owner decisions.
+MD-REL-1870,E-MD-B19-A001-006,F-MD-B19-A001-006,RELATED,Resolves the finding under Option A.,,2026-10-08T14:15:01+07:00,MD-B19-A001 run-summary owner decisions.
+MD-REL-1871,E-MD-B19-A001-006,F-MD-B19-A001-003,RELATED,Edits the third executable-build file again; no new file.,,2026-10-08T14:15:01+07:00,MD-B19-A001 run-summary owner decisions.
+MD-REL-1872,E-MD-B19-A001-006,F-MD-B19-A001-002,RELATED,Fifty-two of fifty-two predicates of artifact_run_summary established; the finding stays open for the other families.,,2026-10-08T14:15:01+07:00,MD-B19-A001 run-summary owner decisions.
