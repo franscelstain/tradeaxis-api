@@ -1867,3 +1867,7 @@ MD-REL-1869,E-MD-B19-A001-006,F-MD-B19-A001-005,RELATED,Resolves the finding und
 MD-REL-1870,E-MD-B19-A001-006,F-MD-B19-A001-006,RELATED,Resolves the finding under Option A.,,2026-10-08T14:15:01+07:00,MD-B19-A001 run-summary owner decisions.
 MD-REL-1871,E-MD-B19-A001-006,F-MD-B19-A001-003,RELATED,Edits the third executable-build file again; no new file.,,2026-10-08T14:15:01+07:00,MD-B19-A001 run-summary owner decisions.
 MD-REL-1872,E-MD-B19-A001-006,F-MD-B19-A001-002,RELATED,Fifty-two of fifty-two predicates of artifact_run_summary established; the finding stays open for the other families.,,2026-10-08T14:15:01+07:00,MD-B19-A001 run-summary owner decisions.
+MD-REL-1873,E-MD-B19-A001-007,CI-MD-B19-A001-001,DEPENDS_ON,Executes the per-predicate proof method; no production impact.,,2026-10-08T17:42:49+07:00,MD-B19-A001 artifact_publication_manifest.
+MD-REL-1874,E-MD-B19-A001-007,E-MD-B19-A001-006,DEPENDS_ON,Continues from the completed artifact_run_summary family; its raw evidence was re-verified.,,2026-10-08T17:42:49+07:00,MD-B19-A001 artifact_publication_manifest.
+MD-REL-1875,E-MD-B19-A001-007,D-MD-B19-A001-001,DEPENDS_ON,O1 governs the build state; no executable-build file changed in this unit.,D-MD-B19-A001-001,2026-10-08T17:42:49+07:00,MD-B19-A001 artifact_publication_manifest.
+MD-REL-1876,E-MD-B19-A001-007,F-MD-B19-A001-002,RELATED,Thirty-three more predicates established per predicate; the finding stays open for the other families.,,2026-10-08T17:42:49+07:00,MD-B19-A001 artifact_publication_manifest.

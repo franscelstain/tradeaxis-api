@@ -417,5 +417,177 @@ final class MarketDataOperationsProofBasis
             'negative' => 'B19RunSummaryValueProvenanceTest::test_source_context_invents_no_source_fact_the_run_never_recorded',
             'basis' => 'source_context recovers minimum fields from persisted notes only, reads only the exported run\'s record, and invents no source fact: a run with no recorded source telemetry has null minimum fields and a null retry_attempt_count (it exported 0 retries before this unit\'s correction); a stand-in reason, a default attempt count, a dropped notes recovery or the old zero default turns a guard red (B02, B06, B07, B08)',
         ],
+
+        // ---- MD-S075 section 2 "publication_manifest.json" -- family `artifact_publication_manifest`, 33 of 33 predicates (R0079..R0111).
+        // No production defect was found: the manifest builder already maps every field to the source that owns it. What was missing is proof.
+        // Three guards cooperate: `B19PublicationManifestValueProvenanceTest` drives the real builder on a history where every source differs and
+        // neighbours and run mirrors are decoys; `B19PublicationManifestSupersessionTest` drives the repository's own seal and promotion twice on
+        // one trade date and reads the superseded manifest before and after; `B19PublicationManifestRealRunProvenanceTest` compares the file of a
+        // real sealed publication with an independent read of the tables and verifies the hash under its governed profile.
+        'MD-S075-R0079' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_every_minimum_field_of_a_real_publication_equals_its_source_row',
+            'basis' => 'publication_id carries the publication\'s own id in a history where the publication, its run, its config snapshot, its lineage binding and its bars history all hold different values, the run mirrors the same names with other values and a predecessor and a publication of another date have their own rows, and a real sealed publication agrees with an independent read of the tables; reading the run id turns the guard red (P01)',
+        ],
+        'MD-S075-R0080' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestValueProvenanceTest::test_the_publication_date_and_the_runs_requested_date_are_kept_apart',
+            'basis' => 'trade_date is the publication\'s own date, kept apart from the run\'s requested date, and the real publication agrees; taking the run\'s requested date turns the guard red (P02)',
+        ],
+        'MD-S075-R0081' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_every_minimum_field_of_a_real_publication_equals_its_source_row',
+            'basis' => 'run_id is the run that produced the publication in a history where the publication, its run, its config snapshot, its lineage binding and its bars history all hold different values, the run mirrors the same names with other values and a predecessor and a publication of another date have their own rows, and a real sealed publication agrees with an independent read of the tables; reading the publication id turns the guard red (P03)',
+        ],
+        'MD-S075-R0082' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_every_minimum_field_of_a_real_publication_equals_its_source_row',
+            'basis' => 'publication_version is the publication\'s own version, not the run mirror of the same name in a history where the publication, its run, its config snapshot, its lineage binding and its bars history all hold different values, the run mirrors the same names with other values and a predecessor and a publication of another date have their own rows, and a real sealed publication agrees with an independent read of the tables; reading the publication id turns the guard red (P04)',
+        ],
+        'MD-S075-R0083' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_current_and_supersession_use_the_publication_names_and_not_the_run_mirror_names',
+            'negative' => 'B19PublicationManifestSupersessionTest::test_superseding_a_publication_changes_its_current_marking_and_nothing_else',
+            'basis' => 'is_current is the publication\'s stored marking: true for the current publication, false for a superseded one on a history produced by the repository\'s own seal and promotion, never the run\'s is_current_publication mirror, and the real publication agrees with the pointer table; always-current, the run mirror, a renamed key and a promotion that leaves the predecessor current turn guards red (P05, P06, P09, P42)',
+        ],
+        'MD-S075-R0084' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_current_and_supersession_use_the_publication_names_and_not_the_run_mirror_names',
+            'negative' => 'B19PublicationManifestSupersessionTest::test_the_successor_names_its_predecessor_as_a_publication_and_is_current',
+            'basis' => 'supersedes_publication_id is the superseded PUBLICATION id: the successor of a real correction names its predecessor, the first publication is NULL, the previous and replaced links are distinct columns, and a run id is never exported as a publication id; reading the previous link, the run mirror supersedes_run_id, a renamed key, or a promotion that forgets what it supersedes turns guards red (P07, P08, P10, P43)',
+        ],
+        'MD-S075-R0085' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestValueProvenanceTest::test_a_value_the_publication_cannot_supply_is_null_not_borrowed',
+            'basis' => 'seal_state is the publication\'s stored state: SEALED for a sealed publication, UNSEALED for one that is not, and the real publication agrees; a constant SEALED turns the guard red (P11)',
+        ],
+        'MD-S075-R0086' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestValueProvenanceTest::test_a_value_the_publication_cannot_supply_is_null_not_borrowed',
+            'basis' => 'sealed_at is the publication\'s stored seal time, NULL for an unsealed publication and never filled in from another timestamp; the update time of the row or a created_at stand-in turns guards red (P12, P13). On the real run the stored seal time and the row update time coincide under the frozen test clock, so the real-run guard alone cannot tell them apart (a recorded equivalent mutant)',
+        ],
+        'MD-S075-R0087' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_the_artifact_exports_the_persisted_observation_identity_and_not_the_semantic_one_under_its_name',
+            'basis' => 'observation_manifest_hash is the publication\'s persisted observation manifest hash; on a V2 publication the lineage\'s semantic observation identity, which the manifest hash binds, is a different value and is NOT exported under this name. Another hash or the semantic identity under the persisted name turns guards red (P14, Q04). The artifact does not expose the semantic identities and nothing here claims it should',
+        ],
+        'MD-S075-R0088' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_every_minimum_field_of_a_real_publication_equals_its_source_row',
+            'basis' => 'config_snapshot_id is the publication\'s own snapshot id in a history where the publication, its run, its config snapshot, its lineage binding and its bars history all hold different values, the run mirrors the same names with other values and a predecessor and a publication of another date have their own rows, and a real sealed publication agrees with an independent read of the tables; reading the factor set id turns the guard red (P15)',
+        ],
+        'MD-S075-R0089' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_every_minimum_field_of_a_real_publication_equals_its_source_row',
+            'basis' => 'config_snapshot_hash is the config_hash of the publication\'s own snapshot (the predecessor\'s snapshot is a decoy), read from md_config_snapshots on the real run; the registry revision in its place turns guards red (P16, Q02)',
+        ],
+        'MD-S075-R0090' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_the_temporal_revision_set_hash_is_composed_from_the_publications_own_lineage',
+            'negative' => 'B19PublicationManifestValueProvenanceTest::test_a_value_the_publication_cannot_supply_is_null_not_borrowed',
+            'basis' => 'temporal_revision_set_hash is the canonical-document hash of the publication\'s trade date and its own identity, calendar and status revision hashes (recomputed independently from the lineage row on the real run), NULL when a lineage hash is not a SHA-256 value; dropping the trade date, repeating a member or hashing a partial lineage turns guards red (P17, P18, P19, Q01)',
+        ],
+        'MD-S075-R0091' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_every_minimum_field_of_a_real_publication_equals_its_source_row',
+            'basis' => 'factor_set_id is the publication\'s own factor set id in a history where the publication, its run, its config snapshot, its lineage binding and its bars history all hold different values, the run mirrors the same names with other values and a predecessor and a publication of another date have their own rows, and a real sealed publication agrees with an independent read of the tables; the config snapshot id in its place turns the guard red (P20)',
+        ],
+        'MD-S075-R0092' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_every_minimum_field_of_a_real_publication_equals_its_source_row',
+            'basis' => 'factor_set_hash is the publication\'s own factor set hash in a history where the publication, its run, its config snapshot, its lineage binding and its bars history all hold different values, the run mirrors the same names with other values and a predecessor and a publication of another date have their own rows, and a real sealed publication agrees with an independent read of the tables; the factor decision hash in its place turns the guard red (P21)',
+        ],
+        'MD-S075-R0093' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_every_minimum_field_of_a_real_publication_equals_its_source_row',
+            'basis' => 'price_product_code is the publication\'s own product code, not the run mirror and not the product version in a history where the publication, its run, its config snapshot, its lineage binding and its bars history all hold different values, the run mirrors the same names with other values and a predecessor and a publication of another date have their own rows, and a real sealed publication agrees with an independent read of the tables; the version in its place turns the guard red (P22)',
+        ],
+        'MD-S075-R0094' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestValueProvenanceTest::test_a_value_the_publication_cannot_supply_is_null_not_borrowed',
+            'basis' => 'canonicalization_version is the one recorded in the bars history of THIS publication (other publications of the date carry other values), NULL when the history records none and never defaulted; reading across the date or a default label turns guards red (P23, P24)',
+        ],
+        'MD-S075-R0095' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_every_minimum_field_of_a_real_publication_equals_its_source_row',
+            'basis' => 'formula_version is the lineage binding\'s formula version for the publication in a history where the publication, its run, its config snapshot, its lineage binding and its bars history all hold different values, the run mirrors the same names with other values and a predecessor and a publication of another date have their own rows, and a real sealed publication agrees with an independent read of the tables; the read model version in its place turns the guard red (P25)',
+        ],
+        'MD-S075-R0096' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_every_minimum_field_of_a_real_publication_equals_its_source_row',
+            'basis' => 'read_model_version is the lineage binding\'s read model version (the publication column carries another value and does not win); preferring the publication column turns the guard red (P26)',
+        ],
+        'MD-S075-R0097' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_every_minimum_field_of_a_real_publication_equals_its_source_row',
+            'basis' => 'bars_batch_hash is the publication\'s own bars hash, not the run mirror and not a sibling artifact hash in a history where the publication, its run, its config snapshot, its lineage binding and its bars history all hold different values, the run mirrors the same names with other values and a predecessor and a publication of another date have their own rows, and a real sealed publication agrees with an independent read of the tables; the indicators hash in its place turns the guard red (P27)',
+        ],
+        'MD-S075-R0098' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_every_minimum_field_of_a_real_publication_equals_its_source_row',
+            'basis' => 'indicators_batch_hash is the publication\'s own indicators hash in a history where the publication, its run, its config snapshot, its lineage binding and its bars history all hold different values, the run mirrors the same names with other values and a predecessor and a publication of another date have their own rows, and a real sealed publication agrees with an independent read of the tables; the eligibility hash in its place turns the guard red (P28)',
+        ],
+        'MD-S075-R0099' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_every_minimum_field_of_a_real_publication_equals_its_source_row',
+            'basis' => 'eligibility_batch_hash is the publication\'s own eligibility hash in a history where the publication, its run, its config snapshot, its lineage binding and its bars history all hold different values, the run mirrors the same names with other values and a predecessor and a publication of another date have their own rows, and a real sealed publication agrees with an independent read of the tables; the bars hash in its place turns the guard red (P29)',
+        ],
+        'MD-S075-R0100' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestSupersessionTest::test_a_damaged_stored_manifest_hash_is_refused_by_the_governed_verifier',
+            'basis' => 'publication_manifest_hash is the publication\'s stored manifest hash, a SHA-256 value that VERIFIES under its governed profile (V2) on a real sealed publication, on a superseded one after supersession, and whose damage the governed verifier refuses (a damaged predecessor hash is refused for its successor too, because the successor\'s identity binds it); the seal fingerprint in its place, or a promotion that erases the predecessor\'s hash, turns guards red (P30, P44, Q03)',
+        ],
+        'MD-S075-R0101' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_the_row_counts_of_a_real_publication_equal_the_rows_of_its_history',
+            'basis' => 'bars_rows_written is the run\'s bars row count for the publication (three different counts in the mapping history) and equals the rows its history holds on the real run, NULL when unrecorded and never zero; the indicators count in its place, or a zero default, turns guards red (P31, P34)',
+        ],
+        'MD-S075-R0102' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_the_row_counts_of_a_real_publication_equal_the_rows_of_its_history',
+            'basis' => 'indicators_rows_written is the run\'s indicators row count and equals the rows its history holds on the real run; the eligibility count in its place turns the guard red (P32)',
+        ],
+        'MD-S075-R0103' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_the_row_counts_of_a_real_publication_equal_the_rows_of_its_history',
+            'basis' => 'eligibility_rows_written is the run\'s eligibility row count and equals the rows its history holds on the real run; the bars count in its place turns the guard red (P33)',
+        ],
+        'MD-S075-R0104' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestValueProvenanceTest::test_the_publication_date_and_the_runs_requested_date_are_kept_apart',
+            'basis' => 'trade_date_requested is the run\'s requested date, kept apart from the publication\'s trade date and from the effective date; the effective date in its place turns guards red (P35)',
+        ],
+        'MD-S075-R0105' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestValueProvenanceTest::test_requested_and_effective_dates_are_the_runs_two_dates',
+            'basis' => 'trade_date_effective is the run\'s recorded effective date, different from the requested date, and the real run agrees; the requested date in its place turns guards red (P36). When the run recorded no effective date the manifest falls back to the publication\'s own trade date, exactly as the governed V2 hash payload does; that fallback is not asserted either way (the pipeline records the effective date before a run can reach READABLE)',
+        ],
+        'MD-S075-R0106' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_readiness_is_the_publications_state_and_not_the_runs_publishability',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_current_readiness_and_freshness_of_a_real_publication_are_the_stored_truth',
+            'basis' => 'readiness_state is the publication\'s stored readiness (HELD is reported as HELD although the run is not READABLE, and READABLE for a real sealed publication), never derived and never defaulted; a constant READABLE turns the guard red (P37)',
+        ],
+        'MD-S075-R0107' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_freshness_is_the_recorded_label_inside_the_vocabulary_and_never_an_optimistic_default',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_current_readiness_and_freshness_of_a_real_publication_are_the_stored_truth',
+            'basis' => 'freshness_state is the run\'s recorded label inside the governed vocabulary (FRESH, STALE, DEGRADED, NOT_AVAILABLE, NOT_APPLICABLE pass through; an unknown, empty or NULL label is NOT_AVAILABLE and can never be exported as FRESH), and the predecessor keeps its own label; an unnormalized label or an unknown label defaulting to FRESH turns guards red (P38, P39)',
+        ],
+        'MD-S075-R0108' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_the_exported_file_is_the_manifest_the_repository_builds',
+            'negative' => 'B19PublicationManifestValueProvenanceTest::test_current_and_supersession_use_the_publication_names_and_not_the_run_mirror_names',
+            'basis' => 'the written publication_manifest.json is the repository\'s manifest field for field (nothing renamed, dropped or added by the writer) and carries the publication-contract names; a dropped field or an added run-mirror name turns guards red (P40, P41, P09, P10)',
+        ],
+        'MD-S075-R0109' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_a_minimum_field_carries_the_value_of_its_own_persisted_source',
+            'negative' => 'B19PublicationManifestRealRunProvenanceTest::test_the_artifact_exports_the_persisted_observation_identity_and_not_the_semantic_one_under_its_name',
+            'basis' => 'publication_manifest.json is publication-shaped evidence assembled from the publication row, the run, the config snapshot, the lineage binding and the bars history: every field is taken from the source that owns it (proven for all 29 fields against decoys in every other source) and not all of them live in eod_publications; the file is not a copy of the publication row',
+        ],
+        'MD-S075-R0110' => [
+            'positive' => 'B19PublicationManifestValueProvenanceTest::test_current_and_supersession_use_the_publication_names_and_not_the_run_mirror_names',
+            'negative' => 'B19PublicationManifestSupersessionTest::test_the_successor_names_its_predecessor_as_a_publication_and_is_current',
+            'basis' => 'is_current and supersedes_publication_id are the publication-shaped names and the run-mirror names is_current_publication and supersedes_run_id never appear in a built, exported, current or superseded manifest; their values come from the publication and not from the run mirror that disagrees with it; renaming a key or reading the run mirror turns guards red (P06, P08, P09, P10)',
+        ],
+        'MD-S075-R0111' => [
+            'positive' => 'B19PublicationManifestSupersessionTest::test_superseding_a_publication_changes_its_current_marking_and_nothing_else',
+            'negative' => 'B19PublicationManifestValueProvenanceTest::test_a_superseded_publication_manifest_is_not_rewritten_to_look_current',
+            'basis' => 'a superseded publication\'s manifest stays audit-valid: on a history produced by the repository\'s own seal and promotion, promoting a correction changes the predecessor\'s is_current and nothing else, its manifest hash still verifies under its governed profile, the evidence export of its own run made after the correction writes that historical manifest with is_current false, and a stale run mirror saying current does not make it look current; always-current, a predecessor left current, or a demotion that erases its hash turns guards red (P05, P42, P44)',
+        ],
     ];
 }

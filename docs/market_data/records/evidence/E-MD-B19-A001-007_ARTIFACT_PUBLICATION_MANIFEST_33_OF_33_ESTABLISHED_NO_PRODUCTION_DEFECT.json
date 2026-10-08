@@ -1,0 +1,417 @@
+{
+    "evidence_id": "E-MD-B19-A001-007",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B19",
+    "attempt_id": "MD-B19-A001",
+    "work_id": "MD-B19-A001",
+    "baseline_id": "MD-B19-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B19-A001-001",
+    "issued_at": "2026-10-08T17:42:49+07:00",
+    "evidence_type": "BOUNDED_FAMILY_PROOF_NO_PRODUCTION_CHANGE",
+    "verdict": "ARTIFACT_PUBLICATION_MANIFEST_33_OF_33_ESTABLISHED_PER_PREDICATE_NO_PRODUCTION_DEFECT_FOUND",
+    "checkpoint_verdict": "MD-B19-A001 ARTIFACT-PUBLICATION-MANIFEST COMPLETE — 33/33",
+    "starting_state": {
+        "head": "0e35d8b",
+        "reviewed_bases": "73/743",
+        "fully_reviewed_families": "3/37",
+        "artifact_run_summary": "52/52",
+        "e006_raw_linkage": "manifest sha256 and all 18 raw files re-verified before work",
+        "run_summary_silent_run": "the four targeted run-summary files were re-run with their status captured (OK, 21/51/3/8 tests); the full suite was not repeated"
+    },
+    "inventory": {
+        "family": "artifact_publication_manifest",
+        "predicates": "MD-S075-R0079..R0111 (29 minimum fields R0079..R0107 + 4 locked rules R0108..R0111); R0077/R0078 are reference-only",
+        "authority": "Run_Artifacts_Format_LOCKED.md section 2; the canonical contract is Publication_Manifest_Contract_LOCKED.md (MD-S045), which the operator artifact shares its field names with",
+        "producer": "EodPublicationRepository::buildManifestByPublicationId() (rows of eod_publications, eod_runs, md_config_snapshots, md_publication_lineage_bindings, eod_bars_history) written by MarketDataEvidenceExportService::exportRunEvidence() as publication_manifest.json",
+        "structures_distinguished": [
+            "operator artifact publication_manifest.json: persisted-column-shaped evidence",
+            "canonical semantic payload (publicationManifestSemanticPayloadV2): the hash input, built from the V2 nested semantic identities, not exposed in the artifact",
+            "stored publication_manifest_hash: identifies the semantic payload and is checked by assertPublicationManifestHashValid()"
+        ],
+        "consumers": "run_summary.json (reads seven manifest fields; proven in E-MD-B19-A001-005/006), publication/pointer contexts, evidence completeness; replay resolution reads the manifest builder"
+    },
+    "predicate_matrix": [
+        {
+            "rule_id": "MD-S075-R0079",
+            "field_or_rule": "publication_id",
+            "source_of_truth": "eod_publications.publication_id",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0080",
+            "field_or_rule": "trade_date",
+            "source_of_truth": "eod_publications.trade_date",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0081",
+            "field_or_rule": "run_id",
+            "source_of_truth": "eod_publications.run_id",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0082",
+            "field_or_rule": "publication_version",
+            "source_of_truth": "eod_publications.publication_version",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0083",
+            "field_or_rule": "is_current",
+            "source_of_truth": "eod_publications.is_current (pointer agrees)",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0084",
+            "field_or_rule": "supersedes_publication_id",
+            "source_of_truth": "eod_publications.supersedes_publication_id",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0085",
+            "field_or_rule": "seal_state",
+            "source_of_truth": "eod_publications.seal_state",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0086",
+            "field_or_rule": "sealed_at",
+            "source_of_truth": "eod_publications.sealed_at",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0087",
+            "field_or_rule": "observation_manifest_hash",
+            "source_of_truth": "eod_publications.observation_manifest_hash (persisted V1 column; the semantic identity is not exported under this name)",
+            "classification": "A (scope note: persisted-column-shaped; semantic identities not exposed)",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0088",
+            "field_or_rule": "config_snapshot_id",
+            "source_of_truth": "eod_publications.config_snapshot_id",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0089",
+            "field_or_rule": "config_snapshot_hash",
+            "source_of_truth": "md_config_snapshots.config_hash of the publication's snapshot",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0090",
+            "field_or_rule": "temporal_revision_set_hash",
+            "source_of_truth": "canonical-document hash of trade_date + lineage identity/calendar/status revision hashes (derived)",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0091",
+            "field_or_rule": "factor_set_id",
+            "source_of_truth": "eod_publications.factor_set_id",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0092",
+            "field_or_rule": "factor_set_hash",
+            "source_of_truth": "eod_publications.factor_set_hash",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0093",
+            "field_or_rule": "price_product_code",
+            "source_of_truth": "eod_publications.price_product_code",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0094",
+            "field_or_rule": "canonicalization_version",
+            "source_of_truth": "eod_bars_history.canonicalization_version of the publication (derived)",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0095",
+            "field_or_rule": "formula_version",
+            "source_of_truth": "md_publication_lineage_bindings.formula_version",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0096",
+            "field_or_rule": "read_model_version",
+            "source_of_truth": "md_publication_lineage_bindings.read_model_version (publication column second)",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0097",
+            "field_or_rule": "bars_batch_hash",
+            "source_of_truth": "eod_publications.bars_batch_hash",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0098",
+            "field_or_rule": "indicators_batch_hash",
+            "source_of_truth": "eod_publications.indicators_batch_hash",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0099",
+            "field_or_rule": "eligibility_batch_hash",
+            "source_of_truth": "eod_publications.eligibility_batch_hash",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0100",
+            "field_or_rule": "publication_manifest_hash",
+            "source_of_truth": "eod_publications.publication_manifest_hash (verified by assertPublicationManifestHashValid under the V2 profile)",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0101",
+            "field_or_rule": "bars_rows_written",
+            "source_of_truth": "eod_runs.bars_rows_written of the producing run",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0102",
+            "field_or_rule": "indicators_rows_written",
+            "source_of_truth": "eod_runs.indicators_rows_written",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0103",
+            "field_or_rule": "eligibility_rows_written",
+            "source_of_truth": "eod_runs.eligibility_rows_written",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0104",
+            "field_or_rule": "trade_date_requested",
+            "source_of_truth": "eod_runs.trade_date_requested",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0105",
+            "field_or_rule": "trade_date_effective",
+            "source_of_truth": "eod_runs.trade_date_effective (publication trade_date when the run recorded none)",
+            "classification": "A (scope note: shared fallback not asserted)",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0106",
+            "field_or_rule": "readiness_state",
+            "source_of_truth": "eod_publications.readiness_state",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0107",
+            "field_or_rule": "freshness_state",
+            "source_of_truth": "eod_runs.freshness_state normalized to the governed vocabulary",
+            "classification": "A (vocabulary governed by the freshness authority)",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0108",
+            "field_or_rule": "(rule) names align with the publication-manifest contract",
+            "source_of_truth": "the written file equals the repository manifest",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0109",
+            "field_or_rule": "(rule) publication-shaped evidence assembled from several tables",
+            "source_of_truth": "publication, run, config snapshot, lineage, bars history",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0110",
+            "field_or_rule": "(rule) publication names, not run-mirror names",
+            "source_of_truth": "is_current / supersedes_publication_id",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0111",
+            "field_or_rule": "(rule) a superseded manifest stays audit-valid and is not rewritten",
+            "source_of_truth": "repository seal + promotion path, twice on one date",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        }
+    ],
+    "classification_counts": {
+        "A existing conforming behaviour, proof missing": 33,
+        "B test/harness gap (an existing guard passed on placeholders)": 0,
+        "C production implementation gap": 0,
+        "D authority/owner decision gap": 0,
+        "note": "no guard existed for this family (GUARD_NOT_ASSIGNED); every mapping was found conforming"
+    },
+    "observations_not_findings": {
+        "R0105 fallback": "trade_date_effective falls back to the publication's own trade_date when the run recorded none, exactly as the governed V2 hash payload does (changing it would change sealed identities). The pipeline records the effective date before a run can reach READABLE. The fallback is not asserted either way and the basis says so.",
+        "R0087 scope": "the artifact exports the persisted V1 observation_manifest_hash; on a V2 publication the manifest hash binds a different semantic observation identity, which the artifact does not expose. Not required by the S075 minimum fields. Guarded as a distinction, not as a design claim.",
+        "seal_verification_status": "the extra field VERIFIED_BY_STORED_HASH_CONTEXT is derived from seal_state and sealed_at only; it is not in the 33 predicates and was not assessed.",
+        "sealed_at format": "the stored database timestamp is exported as stored (platform time zone, no offset); the contract example shows an ISO form. Field presence and value provenance are the predicates; the format is not a predicate and is not changed."
+    },
+    "production_change": "none: git diff HEAD over app, config, bootstrap, composer.json and composer.lock is empty; MD-DEP-0025 and the 13-test successor-pending set are unchanged",
+    "guards": [
+        "B19PublicationManifestValueProvenanceTest: 46 tests on the real builder and writer; every source differs, run mirrors and neighbouring publications are decoys",
+        "B19PublicationManifestSupersessionTest: 6 tests; the repository seals and promotes twice on one date and the superseded manifest is read before and after",
+        "B19PublicationManifestRealRunProvenanceTest: 5 tests on a real sealed MariaDB publication against direct table reads, the governed hash verifier, the pointer and the history counts"
+    ],
+    "proof_spec_change": "MarketDataOperationsProofSpec: artifact_publication_manifest assigned its family-level guard pair, as the other reviewed families have",
+    "probes": {
+        "red_intended_fast": 44,
+        "red_intended_real_run": 4,
+        "distinct_mutations_red_for_the_intended_reason": 48,
+        "restore": "every file restored byte for byte (sha256), green control before and after each; no production file differs from HEAD",
+        "files_at_final_pass_sha256": {
+            "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php": "72dc69a1d1dbf2702c5ef4d7f8b7084af17f284027d6ee323f0d5af44fcb190e",
+            "app/Application/MarketData/Services/MarketDataEvidenceExportService.php": "0b44622c4e532191f64ae19e0ef3073eac17569ca27f8f89a0e18033da6995ff",
+            "app/Application/MarketData/Services/ArtifactSemanticHashService.php": "3b76c952bf256464b110a46cc3345e6d7480891e1d01822d1fe1f5eb0578ba64",
+            "tests/Unit/MarketData/B19PublicationManifestRealRunProvenanceTest.php": "97bee875fc581c1599854b4e7baf4b6c72b9ad99c8c4d8e74d61bc5ac8da5fe3",
+            "tests/Unit/MarketData/B19PublicationManifestSupersessionTest.php": "a8c5c678d073d6c90a81e1d805e50b083db630c361190cca506bc95afba300f9",
+            "tests/Unit/MarketData/B19PublicationManifestValueProvenanceTest.php": "d79d475d4c9099e553885a0e9d3adcb879eaa467f3d044a6f595cfb7e748b4a2"
+        },
+        "real_run_not_as_intended": {
+            "Q07_real_run_sealed_at_is_the_row_update_time": {
+                "verdict": "SURVIVED",
+                "note": "real run: sealed_at is the update time of the row"
+            }
+        },
+        "real_run_note": "Q07 (sealed_at read from the row update time) survives the real-run guard because the frozen test clock gives both the same value; the mapping guard kills the same defect (P12). Recorded as an equivalent mutant of the real run, not counted.",
+        "first_pass_not_as_intended": {
+            "P02_trade_date_is_the_requested_date": "SURVIVED",
+            "P07_supersedes_is_the_previous_link": "NOT_APPLICABLE",
+            "P08_supersedes_is_the_run_mirror": "NOT_APPLICABLE",
+            "P10_supersedes_key_is_renamed_to_the_run_mirror_name": "NOT_APPLICABLE",
+            "P18_temporal_hash_uses_the_identity_hash_twice": "EXPECTED_GUARD_DID_NOT_FAIL",
+            "P20_factor_set_id_is_the_config_snapshot_id": "EXPECTED_GUARD_DID_NOT_FAIL",
+            "P34_row_count_defaults_to_zero": "SURVIVED",
+            "P42_promotion_does_not_demote_the_predecessor": "EXPECTED_GUARD_DID_NOT_FAIL"
+        },
+        "first_pass_note": "P02 and P34 exposed real gaps in the first guard (the requested date and the trade date were never separated; no row count was ever NULL) — both guards were strengthened; P07/P08/P10 anchors matched twice (the semantic payload has the same line) and were re-specified; P18, P20, P42 had wrongly listed guards among their expectations (the guard that must fail is the one named in the corrected spec). The whole set was then re-run against the final test files; those results are the counted ones."
+    },
+    "regression": {
+        "targeted": "raw targeted_tests.txt: the three new files, LifecycleProofIsNotMockedTest, PublicationSemanticIdentityProductionPathTest and B19RunSummaryRealRunProvenanceTest all OK",
+        "full_suite": "NOT re-run: no production file changed, the new tests are additive and mock nothing in the DB-backed files (LifecycleProofIsNotMockedTest passes); the previous full suite (3073 tests: 7 oracle + 13 build-identity failures, E-MD-B19-A001-006) remains the latest full-suite record and is not claimed as a PASS",
+        "governance": "all 43 gates have the statuses of the previous unit; MarketDataOperationsProofGate reports 106 reviewed, 637 without a reviewed basis, 33 families without a family-level guard; the governance PHPUnit files are re-run after registration and reported in the unit report"
+    },
+    "state_after": {
+        "reviewed_bases": "106/743",
+        "without_basis": 637,
+        "artifact_publication_manifest": "33/33",
+        "artifact_run_summary": "52/52",
+        "fully_reviewed_families": "4/37",
+        "formal_satisfied": "0/743"
+    },
+    "not_claimed": [
+        "B19 closure",
+        "a full-suite PASS",
+        "formal SATISFIED for any predicate",
+        "that the operator artifact exposes the V2 semantic identities"
+    ],
+    "raw_artifacts": {
+        "dir": "storage/app/market-data/evidence/MD-B19-A001/publication-manifest-20261008",
+        "manifest_sha256": "d9128e56c3f9ea8f0212f70b7303654f7e849644883cbf5fabc6b6ae06cd7e13",
+        "files": {
+            "measurement_real_publication_vs_tables.json": {
+                "sha256": "94e598fede0a78aa2a5bc8724e89d1a7413b3ec2b711e0e4a5790c4772ea4d5d",
+                "bytes": 1135088
+            },
+            "probe_pass1.out": {
+                "sha256": "06239200d99887669bb9854b9eb19a4ffbd2f61d7629a9f4c02bbe26dadc4503",
+                "bytes": 9156
+            },
+            "probe_pass1.json": {
+                "sha256": "ff13f592ff878fc095ab16b630a9e5679add3ac8c1e6843f7e8d5bb4607ffd70",
+                "bytes": 121919
+            },
+            "probe_final_fast.json": {
+                "sha256": "396ef471c8b48f9028c064e74a0dfdb6d6b2b5fdcd72f0d728793e2e2359fd37",
+                "bytes": 139677
+            },
+            "probe_final_fast.out": {
+                "sha256": "5797266fabc9cd3d076d193395dbad19ee646bfed9b51f41ba98927a9391b268",
+                "bytes": 10493
+            },
+            "probe_final_real_run.json": {
+                "sha256": "55fadae0730038dc9409f8d389776852976c9e2e7c22954b31debdc58add600a",
+                "bytes": 12365
+            },
+            "probe_final_real_run.out": {
+                "sha256": "57349e77162b2674d06acb904aca50a8616dd4b8e77464b91b84ffa5c725553b",
+                "bytes": 844
+            },
+            "targeted_tests.txt": {
+                "sha256": "1c030ac8724dc2d24e3bf72e473926853318c71da5a63e048222628fd479b08a",
+                "bytes": 427
+            },
+            "run_summary_status_recheck.txt": {
+                "sha256": "50fe38eddfe7c88595f592e2b2ef4c7e9162b0adffee858ec0f4faf31eca665d",
+                "bytes": 269
+            },
+            "gates_summary.txt": {
+                "sha256": "486c48e15079136f764dc1288b617fbdd056ea2563b98d1290b37a8d8e0d3279",
+                "bytes": 3059
+            },
+            "gate_MarketDataOperationsProofGate.json": {
+                "sha256": "518c573e9addf567189234b80ff5022291e0bd68b76df0b8a7ce91f2b1a9922d",
+                "bytes": 3967
+            },
+            "sha_files_at_final_probe.txt": {
+                "sha256": "b8a38641ace3cff047efb123e5d56f0c04b4e4cc33dbbb80bdfb9c65f7c70adc",
+                "bytes": 810
+            },
+            "spec_probes_fast.php": {
+                "sha256": "ffb684b145354a3efd51276f01b18c57c394c253d093c1608b3989075e29ff84",
+                "bytes": 22466
+            },
+            "spec_probes_real_run.php": {
+                "sha256": "c1eb1f1fed25084e911f4bf5b568efee20ccb0a705b13ab078f46e1911384061",
+                "bytes": 2872
+            }
+        }
+    },
+    "related_findings": [
+        "F-MD-B19-A001-002"
+    ],
+    "related_decisions": [
+        "D-MD-B19-A001-001"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0025"
+    ],
+    "related_evidence": [
+        "E-MD-B19-A001-006"
+    ],
+    "next_resume_point": "artifact_run_event_summary (18 predicates, MD-S075 section 3) — not started in this unit",
+    "no_push": 1
+}

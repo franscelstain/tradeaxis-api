@@ -948,8 +948,8 @@ final class MarketDataOperationsProofSpec
                     'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
                     'app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19PublicationManifestValueProvenanceTest.php', 'test_a_minimum_field_carries_the_value_of_its_own_persisted_source'],
+                'negative' => ['tests/Unit/MarketData/B19PublicationManifestSupersessionTest.php', 'test_superseding_a_publication_changes_its_current_marking_and_nothing_else'],
             ],
             'artifact_replay_result' => [
                 'owner' => 'MD-B19:artifact-replay-result',
