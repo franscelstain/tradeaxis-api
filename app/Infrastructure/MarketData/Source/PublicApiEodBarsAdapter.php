@@ -681,9 +681,19 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
         $lastHttpStatus = null;
         $lastUrl = null;
         $lastResponseBodySample = null;
+        $tickerRequestTelemetry = [];
 
         foreach ($requestTelemetry as $telemetry) {
             $attemptCount += (int) ($telemetry['attempt_count'] ?? 0);
+            // The request result of each ticker's own execution (MD-S053-R0210): a checkpoint row for the ticker
+            // takes its HTTP status and attempt count from here and never from the window aggregates below.
+            $ownTicker = strtoupper(trim((string) ($telemetry['ticker_code'] ?? '')));
+            if ($ownTicker !== '' && ! isset($tickerRequestTelemetry[$ownTicker]) && array_key_exists('attempt_count', $telemetry)) {
+                $tickerRequestTelemetry[$ownTicker] = [
+                    'attempt_count' => (int) $telemetry['attempt_count'],
+                    'final_http_status' => $telemetry['final_http_status'] ?? null,
+                ];
+            }
             $successAfterRetry = $successAfterRetry || (bool) ($telemetry['success_after_retry'] ?? false);
             $retryExhausted = $retryExhausted || (bool) ($telemetry['retry_exhausted'] ?? false);
             if (array_key_exists('final_http_status', $telemetry) && $telemetry['final_http_status'] !== null) {
@@ -733,6 +743,7 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
             'timeout_seconds' => $this->timeoutSeconds(),
             'retry_max' => $this->retryMax(),
             'attempt_count' => $attemptCount,
+            'ticker_request_telemetry' => $tickerRequestTelemetry,
             'attempts' => $attempts,
             'success_after_retry' => $successAfterRetry,
             'retry_exhausted' => $retryExhausted,

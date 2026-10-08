@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline: `MD-B19` / `MD-B19-A001` / `MD-B19-A001-BL001`
 - Raised at: 2026-10-08T07:08:21+07:00
 - Severity: `P2`
-- Status: `OPEN — OWNER DECISION REQUIRED BEFORE THE FIRST MD-B19 PRODUCTION CHANGE`
+- Status: `OPEN — O1 SELECTED (D-MD-B19-A001-001); SUCCESSOR-PENDING UNTIL CANDIDATE-V6 IS ADMITTED`
 - Class: `CROSS_STAGE_BUILD_IDENTITY_DEPENDENCY`
 - Blocked: every `MD-B19` unit that edits a file of the frozen R0025 build (`app/`, `config/`,
   `bootstrap/`, `composer.json`, `composer.lock`, `vendor/`). Does **not** block test-only, tooling or
@@ -102,3 +102,20 @@ then, under O1, candidate-v6 as the last `MD-B19` production-proof step and a `M
 - `D-MD-B18-A002-018`, `D-MD-B18-A002-019`, `E-MD-B18-A002-115`, `SC-MD-B18-A002-001`
 - `F-MD-B01-A014-001` (owned by `MD-B19`), `F-MD-B19-A001-002`
 - `E-MD-B19-A001-002` (where this was measured), `MD-DEP-0025`
+
+## 2026-10-08T08:04:28+07:00 Owner decision recorded: O1 (`D-MD-B19-A001-001`)
+
+The project owner selected **O1**. Consequences, as decided (not widened here):
+
+- Production-changing `MD-B19` units may proceed and may be batched; `MD-DEP-0025` no longer blocks them.
+- Candidate-v5 stays current for the approved frozen build until the first executable-build change. At that change it becomes historical-only for current-build purposes; `MD-B18` is not reopened.
+- From that point the build-identity failure of `R0025SyntheticV2CandidateFixtureTest` is a governed **successor-pending** failure under `MD-DEP-0025`: never skipped, never called PASS, never hidden, never repaired by editing candidate-v5. Any other R0025 failure is a regression.
+- One candidate-v6 is authored against the final build after the last executable-build change and before `MD-B19` closure; it needs independent review, owner approval, admission and the current-build R0025 revalidation. A build change after it requires another freeze.
+
+State at the time of recording: the frozen build equals the candidate-v5 manifest (5916 files, 0 differ). This finding stays open until candidate-v6 is admitted; it is the record of the successor-pending state.
+
+## 2026-10-08T10:53:24+07:00 First executable-build change recorded (`E-MD-B19-A001-004`)
+
+Under O1 (`D-MD-B19-A001-001`) the first executable-build change was made by the implementation of `MD-S053-R0210` (`D-MD-B19-A001-002`): `app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php` (written 2026-10-08T08:57:11+07:00), followed by `app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php`. Before it all 5916 frozen-build files equalled the candidate-v5 manifest; now exactly those two differ.
+
+From this point candidate-v5 is immutable historical proof and is no longer current-build R0025 proof; `MD-B18` stays `DONE` / `PASS`; `MD-DEP-0025` is the active successor-pending tracker. `R0025SyntheticV2CandidateFixtureTest::test_the_publication_bound_build_identity_is_the_frozen_build_identity` fails together with 12 derived R0025 / B18 scenario tests, all with the single mismatch field `bound_input_executable_build_identity` (13 tests in the final full suite, besides the 7 governed oracle failures; nothing else fails); none is skipped or reported as PASS and candidate-v5 is untouched. Candidate-v6 is not created: it is owed after the last `MD-B19` executable-build change and before closure.

@@ -262,9 +262,14 @@ class ApiBackfillRangeAcquisitionService
                 $reasonCode = $failureContext['final_reason_code']
                     ?? ($hasDateLevelMissing ? 'RUN_SOURCE_MISSING_REQUESTED_DATE_ROW' : (isset($failedTickers[$tickerKey]) ? ($telemetry['final_reason_code'] ?? 'RUN_SOURCE_PARTIAL_RESPONSE') : 'RUN_SOURCE_NO_VALID_DATA'));
             }
+            // Per-execution request-result fields come from this ticker's own request, never from the window
+            // aggregates in $telemetry (MD-S053-R0210, D-MD-B19-A001-002).
+            $ownRequest = isset($telemetry['ticker_request_telemetry'][$tickerKey]) && is_array($telemetry['ticker_request_telemetry'][$tickerKey])
+                ? $telemetry['ticker_request_telemetry'][$tickerKey]
+                : [];
             $httpStatus = $state === 'FAILED'
                 ? (array_key_exists('http_status', $failureContext) ? $failureContext['http_status'] : (array_key_exists('final_http_status', $failureContext) ? $failureContext['final_http_status'] : null))
-                : ($telemetry['final_http_status'] ?? ($telemetry['http_status'] ?? null));
+                : ($ownRequest['final_http_status'] ?? null);
             $errorSample = $state === 'FAILED'
                 ? ($failureContext['error_sample'] ?? ($failureContext['provider_error_sample'] ?? ($failureContext['response_body_sample'] ?? null)))
                 : null;
@@ -290,7 +295,7 @@ class ApiBackfillRangeAcquisitionService
                 'window_end' => $window['end'],
                 'ticker_code' => $tickerCode,
                 'state' => $state,
-                'attempt_count' => (int) (($state === 'FAILED' ? ($failureContext['attempt_count'] ?? null) : null) ?? ($telemetry['attempt_count'] ?? 0)),
+                'attempt_count' => (int) (($state === 'FAILED' ? ($failureContext['attempt_count'] ?? null) : null) ?? ($ownRequest['attempt_count'] ?? 0)),
                 'reason_code' => $reasonCode,
                 'http_status' => $httpStatus,
                 'error_sample' => $errorSample,

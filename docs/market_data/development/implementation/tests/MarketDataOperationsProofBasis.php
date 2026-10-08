@@ -75,5 +75,79 @@ final class MarketDataOperationsProofBasis
             'negative' => 'B19RangeWindowWarmupWiringTest::test_a_blocked_acquisition_still_records_the_boundary_in_its_diagnostic',
             'basis' => 'warmup_start, requested_start, requested_end and source_acquisition_mode=range_window are asserted in the returned plan, in the written run summary, and in the diagnostic a blocked acquisition writes; dropping any one from the summary, or recording the wrong mode, turns the guards red',
         ],
+
+        // ---- MD-S053 "API range-window checkpoint/resume addendum" -- family
+        // `range_window_checkpoint_resume`, 13 of 13 predicates. `MD-S053-R0210` was held until the project
+        // owner decided F-MD-B19-A001-004 (Option A, D-MD-B19-A001-002) and the implementation was corrected.
+        // Every scenario mixes a
+        // provider-rejected ticker, a retried-timeout ticker and a success in one window, in both
+        // iteration orders, because a leak from the previous ticker and a leak from the window's first
+        // failure are different defects. The orchestrator-level guards run the real orchestrator,
+        // acquisition service and provider adapter over the real calendar with a stubbed HTTP fetcher.
+        'MD-S053-R0202' => [
+            'positive' => 'B19RangeWindowCheckpointPersistenceTest::test_the_backfill_persists_one_checkpoint_per_window_and_ticker_and_its_diagnostics_agree_with_the_file',
+            'negative' => 'B19RangeWindowCheckpointIdentityTest::test_every_window_and_ticker_pair_has_its_own_checkpoint_carrying_that_identity',
+            'basis' => 'three windows x two tickers give six rows with a failure confined to one pair, the real orchestrator writes exactly those rows to source_acquisition_checkpoint.json, and a resume merges its row back without dropping the others; keying by ticker, dropping window_end from the key, not writing the file and overwriting on merge each turn a guard red',
+        ],
+        'MD-S053-R0204' => [
+            'positive' => 'B19RangeWindowCheckpointIdentityTest::test_every_window_and_ticker_pair_has_its_own_checkpoint_carrying_that_identity',
+            'negative' => 'ApiBackfillRangeAcquisitionServiceTest::test_http_400_checkpoint_keeps_ticker_window_url_and_provider_error_for_same_ticker',
+            'basis' => 'window_start of every one of six rows equals the window part of its key, and a failed row asserts it separately; writing the window end into window_start turns both red',
+        ],
+        'MD-S053-R0205' => [
+            'positive' => 'B19RangeWindowCheckpointIdentityTest::test_every_window_and_ticker_pair_has_its_own_checkpoint_carrying_that_identity',
+            'negative' => 'ApiBackfillRangeAcquisitionServiceTest::test_http_400_checkpoint_keeps_ticker_window_url_and_provider_error_for_same_ticker',
+            'basis' => 'window_end of every one of six rows equals the window part of its key, and a failed row asserts it separately; writing the window start into window_end turns both red',
+        ],
+        'MD-S053-R0206' => [
+            'positive' => 'B19RangeWindowCheckpointIdentityTest::test_every_window_and_ticker_pair_has_its_own_checkpoint_carrying_that_identity',
+            'negative' => 'ApiBackfillRangeAcquisitionServiceTest::test_http_400_checkpoint_keeps_ticker_window_url_and_provider_error_for_same_ticker',
+            'basis' => 'ticker_code of every one of six rows equals the ticker part of its key, and the persisted file keeps it; changing its case turns the guards red',
+        ],
+        'MD-S053-R0208' => [
+            'positive' => 'B19RangeWindowCheckpointIdentityTest::test_a_failed_checkpoint_takes_every_failure_field_from_its_own_identity',
+            'negative' => 'B19RangeWindowCheckpointIdentityTest::test_rows_count_is_the_failed_tickers_own_returned_rows',
+            'basis' => 'a rejected ticker (HTTP 400 and its own body, one attempt) and a retried timeout (three attempts, no status) in one window: reason_code, http_status, error_sample, provider_error_sample, sanitized_url, failure_scope, attempt_count and rows_count are each asserted per row, in both orders, and neither row mentions the other ticker; the first-failure context for all rows, a window-level sample, URL, reason code, attempt count or rows count each turn a guard red',
+        ],
+        'MD-S053-R0209' => [
+            'positive' => 'B19RangeWindowCheckpointIdentityTest::test_a_failed_checkpoint_takes_every_failure_field_from_its_own_identity',
+            'negative' => 'ApiBackfillRangeAcquisitionServiceTest::test_timeout_checkpoint_does_not_reuse_successful_ticker_http_status_or_error_sample',
+            'basis' => 'the timeout row keeps http_status null and provider_error_sample null although a different ticker in the same window failed with HTTP 400 and a body, in both iteration orders; inheriting the window status or provider body turns the positive guard red',
+        ],
+        'MD-S053-R0210' => [
+            'positive' => 'B19RangeWindowCheckpointIdentityTest::test_a_success_checkpoint_carries_the_status_and_attempts_of_its_own_request',
+            'negative' => 'B19RangeWindowCheckpointIdentityTest::test_a_neighbours_failure_status_and_retries_do_not_change_a_success_row',
+            'basis' => 'under Option A (D-MD-B19-A001-002) a success row carries the status (200) and attempts (2) of its own request while neighbours reject, time out and need retries; three neighbour configurations leave it identical while the window total changes; a success after a failed neighbour keeps its own status; two successes keep their own attempts in both assignments; the sample, scope and reason fields stay null; restoring the window status or attempt total, swapping identities, keeping a failure-derived status, hiding the per-ticker request result or the window totals each turn a guard red',
+        ],
+        'MD-S053-R0212' => [
+            'positive' => 'B19RangeWindowCheckpointIdentityTest::test_each_resume_state_is_reported_only_in_its_own_situation',
+            'negative' => 'B19RangeWindowCheckpointPersistenceTest::test_a_resume_retries_only_the_persisted_failure_and_merges_it_back_into_the_file',
+            'basis' => 'RETRY_SUCCESS only when every eligible failed checkpoint recovers, in a four-row state table and end to end through the orchestrator; reporting it as PARTIAL_RETRY_SUCCESS, or the reverse, turns the table red',
+        ],
+        'MD-S053-R0213' => [
+            'positive' => 'B19RangeWindowCheckpointIdentityTest::test_each_resume_state_is_reported_only_in_its_own_situation',
+            'negative' => 'ApiBackfillRangeAcquisitionServiceTest::test_resume_only_failed_partial_retry_success_state_is_not_systemic',
+            'basis' => 'PARTIAL_RETRY_SUCCESS only when some recover and some do not (1 success, 1 failure), and it is not systemic; swapping it with RETRY_SUCCESS turns the table red',
+        ],
+        'MD-S053-R0214' => [
+            'positive' => 'B19RangeWindowCheckpointIdentityTest::test_each_resume_state_is_reported_only_in_its_own_situation',
+            'negative' => 'B19RangeWindowCheckpointPersistenceTest::test_a_resume_that_still_fails_reports_its_counts_and_a_failure_sample_that_agrees_with_the_file',
+            'basis' => 'FAILED_RETRY_BLOCKED when every retried checkpoint fails again, in the table and end to end with the persisted file; reporting it as SYSTEMIC_FAILED turns the table red',
+        ],
+        'MD-S053-R0215' => [
+            'positive' => 'B19RangeWindowCheckpointIdentityTest::test_each_resume_state_is_reported_only_in_its_own_situation',
+            'negative' => 'B19RangeWindowCheckpointPersistenceTest::test_a_resume_over_a_file_with_no_failed_checkpoint_is_a_reported_no_op',
+            'basis' => 'NO_FAILED_CHECKPOINT when no checkpoint had failed, with zero provider requests, in the table and through the orchestrator (status NOOP, zero counts); reporting success instead, or fetching every ticker, turns the table red. The orchestrator branch that short-circuits this case is redundant with the service path (two equivalent mutants), so the outcome is held by two independent paths',
+        ],
+        'MD-S053-R0216' => [
+            'positive' => 'B19RangeWindowCheckpointIdentityTest::test_systemic_failed_is_reported_only_for_global_provider_or_config_failures',
+            'negative' => 'B19RangeWindowResumeStateTest::test_repeated_ticker_failures_are_not_escalated_to_systemic',
+            'basis' => 'authentication refused (401, 403), a provider range rejection (422) and a missing endpoint configuration escalate to SYSTEMIC_FAILED; a one-ticker timeout, bad request or unknown symbol stays FAILED_RETRY_BLOCKED; escalating timeouts, bad requests or any ticker-scoped failure, or not escalating authentication or range rejection, turns the guard red. CONFIG_INVALID in the escalation list is not reachable from this service in a controlled way and is not claimed',
+        ],
+        'MD-S053-R0217' => [
+            'positive' => 'B19RangeWindowCheckpointIdentityTest::test_resume_diagnostics_carry_every_count_and_the_skipped_reasons',
+            'negative' => 'B19RangeWindowCheckpointPersistenceTest::test_a_resume_that_still_fails_reports_its_counts_and_a_failure_sample_that_agrees_with_the_file',
+            'basis' => 'a mixed checkpoint file yields total 5, eligible 2, retried 2, retry success 1, retry failure 1, skipped 3 with the three skipped reasons, and the quantities are tied (total = eligible + skipped, retried = success + failure, skipped = sum of reasons); the written diagnostics file repeats the counts and its failure sample equals the checkpoint file row field by field; dropping or mislabelling any count or reason, or building the sample from window telemetry, turns a guard red',
+        ],
     ];
 }

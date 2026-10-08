@@ -1,0 +1,374 @@
+{
+    "evidence_id": "E-MD-B19-A001-004",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B19",
+    "attempt_id": "MD-B19-A001",
+    "work_id": "MD-B19-A001",
+    "baseline_id": "MD-B19-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B19-A001-001",
+    "issued_at": "2026-10-08T10:53:24+07:00",
+    "evidence_type": "BOUNDED_FAMILY_COMPLETION_WITH_FIRST_EXECUTABLE_BUILD_CHANGE",
+    "verdict": "MD_S053_R0210_PROVEN_UNDER_OPTION_A_RANGE_WINDOW_CHECKPOINT_RESUME_13_OF_13_FIRST_EXECUTABLE_BUILD_CHANGE_RECORDED_R0025_SUCCESSOR_PENDING_FAILURE_VISIBLE",
+    "checkpoint_verdict": "MD-B19-A001 CHECKPOINT-RESUME FAMILY COMPLETE",
+    "owner_decisions": {
+        "D-MD-B19-A001-002": "Option A for F-MD-B19-A001-004, recorded before any edit (2026-10-08T08:53:57+07:00)",
+        "D-MD-B19-A001-001": "O1 governs the executable-build change"
+    },
+    "starting_state": {
+        "reviewed_bases": "20/743",
+        "warmup_family": "8/8",
+        "checkpoint_resume_family": "12/13 (R0210 held)",
+        "formal_satisfied": "0/743",
+        "fully_reviewed_families": "1/37",
+        "build": "frozen build equals candidate-v5 manifest (5916 files, 0 differ) immediately before the first edit",
+        "f004": "open authority question until D-MD-B19-A001-002"
+    },
+    "root_cause": {
+        "predicate": "MD-S053-R0210 under D-MD-B19-A001-002 (Option A)",
+        "path": "ApiBackfillRangeAcquisitionService::buildWindowCheckpoints() built every row from the single window telemetry entry returned by PublicApiEodBarsAdapter::fetchYahooFinanceBarsRange(); that entry is the aggregate of all tickers of the window (buildYahooRangeAggregateTelemetry), and the per-ticker request results were consumed into the aggregate and not retained",
+        "leaks": [
+            "SUCCESS row http_status = $telemetry[final_http_status] ?? $telemetry[http_status]: the last non-null status any ticker saw in the window (a failing neighbour's 400/404), depending on iteration order",
+            "every row without a failure context (SUCCESS, and FAILED by a missing requested date) attempt_count = $telemetry[attempt_count]: the sum of the attempts of all tickers of the window"
+        ],
+        "measured_before_fix": "raw red_before_fix.txt: four of the five new guards failed — 400 instead of 200; the same success row read [SUCCESS,400,6], [SUCCESS,404,4], [SUCCESS,400,5] when only its neighbours changed; 5 instead of 3; 4 instead of 2"
+    },
+    "implementation_change": {
+        "files": [
+            {
+                "file": "app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php",
+                "change": "buildYahooRangeAggregateTelemetry() additionally exposes ticker_request_telemetry: for each ticker the attempt_count and final_http_status of its own request (first request entry of the ticker wins). The window aggregates (attempt_count, final_http_status, http_status, ...) are unchanged and stay on the window telemetry.",
+                "sha256_before": "e7f586f71e7eb2f2c1e9864bba8a1115fcabde53e6a2e8caf55207d869fd24ee",
+                "sha256_after": "883f8f2248f65d0b34b4eee2bc169d4bb97273e12486810c103dc544234b6017"
+            },
+            {
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "change": "buildWindowCheckpoints() reads the row's SUCCESS http_status and its attempt_count fallback from the ticker's own request entry; the window aggregate is no longer a source for any checkpoint-row field",
+                "sha256_before": "3c991205ab9113af88fdb371acb4fa28d9a49042d014b9724be25744ff3aaef8",
+                "sha256_after": "708bca9b44657b60a02f44c208e9961d7dee58d4b7bf469020ab2aa06a2d51c4"
+            }
+        ],
+        "not_changed": [
+            "failed rows' http_status (already from their own failure context)",
+            "window telemetry aggregates",
+            "BackfillLifecycleOrchestrator",
+            "any other family or surface"
+        ],
+        "slip_fixed_before_testing_finished": "my first edit read $ownRequest before assigning it (success status null); fixed by moving the assignment, caught by the new guards before any other work depended on it",
+        "diff": "raw executable_build_change.diff"
+    },
+    "first_build_change_transition": {
+        "under": "D-MD-B19-A001-001",
+        "file": "app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php",
+        "time": "2026-10-08T08:57:11+07:00 (mtime of the write; the second file followed minutes later)",
+        "before": "all 5916 frozen-build files equal the candidate-v5 manifest",
+        "after": "files differing from the manifest: app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php, app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php",
+        "consequences": [
+            "candidate-v5 is immutable historical proof and no longer current-build R0025 proof",
+            "MD-B18 stays CLOSED / PASS under SC-MD-B18-A002-001; no B18 record changed",
+            "MD-DEP-0025 is the active successor-pending tracker",
+            "candidate-v6 is NOT created; it is owed after the last B19 executable-build change and before B19 closure"
+        ]
+    },
+    "r0210_proof": {
+        "positive": "B19RangeWindowCheckpointIdentityTest::test_a_success_checkpoint_carries_the_status_and_attempts_of_its_own_request",
+        "negative": "B19RangeWindowCheckpointIdentityTest::test_a_neighbours_failure_status_and_retries_do_not_change_a_success_row",
+        "guards": [
+            "own request values (200, 2) against neighbours that reject (400), time out (3 attempts) and a window total of 6",
+            "three neighbour configurations (400/timeout, 404/succeed, 400/retry) leave the success row identical while the window total changes",
+            "two successes with different attempts in both assignments (identities not swapped)",
+            "a success processed after a failed neighbour keeps its own status (400 and 404)",
+            "a date-level failure row carries its own attempts",
+            "window totals remain on the window telemetry"
+        ]
+    },
+    "probes": {
+        "intended_red_distinct_mutations": 8,
+        "mutations": {
+            "pass1:R01_neighbour_status_leakage_restored": {
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "a success row takes the window status again (the pre-decision behaviour)",
+                "failed_under_mutation": [
+                    "test_a_success_checkpoint_carries_the_status_and_attempts_of_its_own_request",
+                    "test_a_neighbours_failure_status_and_retries_do_not_change_a_success_row",
+                    "test_two_success_rows_keep_their_own_attempts_whichever_ticker_was_retried"
+                ],
+                "verdict": "RED_INTENDED",
+                "restored_bytes_exact": true
+            },
+            "pass1:R02_window_attempt_aggregate_leakage_restored": {
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "a row takes the window attempt total again (the pre-decision behaviour)",
+                "failed_under_mutation": [
+                    "test_a_success_checkpoint_carries_the_status_and_attempts_of_its_own_request",
+                    "test_a_neighbours_failure_status_and_retries_do_not_change_a_success_row",
+                    "test_two_success_rows_keep_their_own_attempts_whichever_ticker_was_retried",
+                    "test_a_date_level_failure_row_carries_the_attempts_of_its_own_request"
+                ],
+                "verdict": "RED_INTENDED",
+                "restored_bytes_exact": true
+            },
+            "pass1:R03_ticker_identities_swapped": {
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "every row reads the first ticker's own request values",
+                "failed_under_mutation": [
+                    "test_two_success_rows_keep_their_own_attempts_whichever_ticker_was_retried",
+                    "test_a_date_level_failure_row_carries_the_attempts_of_its_own_request"
+                ],
+                "verdict": "RED_INTENDED",
+                "restored_bytes_exact": true
+            },
+            "pass1:R04_stale_failure_status_kept_on_success": {
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "a success row keeps the first failure's status",
+                "failed_under_mutation": [
+                    "test_a_success_checkpoint_carries_the_status_and_attempts_of_its_own_request",
+                    "test_a_neighbours_failure_status_and_retries_do_not_change_a_success_row",
+                    "test_two_success_rows_keep_their_own_attempts_whichever_ticker_was_retried"
+                ],
+                "verdict": "RED_INTENDED",
+                "restored_bytes_exact": true
+            },
+            "pass1:R05_own_request_telemetry_not_exposed": {
+                "file": "app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php",
+                "note": "the adapter stops exposing each ticker's own request result",
+                "failed_under_mutation": [
+                    "test_a_success_checkpoint_carries_the_status_and_attempts_of_its_own_request",
+                    "test_a_neighbours_failure_status_and_retries_do_not_change_a_success_row",
+                    "test_two_success_rows_keep_their_own_attempts_whichever_ticker_was_retried",
+                    "test_a_date_level_failure_row_carries_the_attempts_of_its_own_request"
+                ],
+                "verdict": "RED_INTENDED",
+                "restored_bytes_exact": true
+            },
+            "pass1:R08_window_totals_removed_from_window_telemetry": {
+                "file": "app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php",
+                "note": "the window telemetry loses its attempt total",
+                "failed_under_mutation": [
+                    "test_a_success_checkpoint_carries_the_status_and_attempts_of_its_own_request",
+                    "test_a_neighbours_failure_status_and_retries_do_not_change_a_success_row",
+                    "test_window_totals_remain_available_on_the_window_telemetry"
+                ],
+                "verdict": "RED_INTENDED",
+                "restored_bytes_exact": true
+            },
+            "pass2:R06_adapter_own_attempts_are_the_running_window_total": {
+                "file": "app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php",
+                "note": "a ticker's own attempts are recorded as the running window total",
+                "failed_under_mutation": [
+                    "test_two_success_rows_keep_their_own_attempts_whichever_ticker_was_retried",
+                    "test_a_success_row_processed_after_a_failed_neighbour_keeps_its_own_status with data set \"bad request\"",
+                    "test_a_success_row_processed_after_a_failed_neighbour_keeps_its_own_status with data set \"unknown symbol\"",
+                    "test_a_date_level_failure_row_carries_the_attempts_of_its_own_request"
+                ],
+                "verdict": "RED_INTENDED",
+                "restored_bytes_exact": true
+            },
+            "pass2:R07_adapter_own_status_is_the_window_status": {
+                "file": "app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php",
+                "note": "a ticker's own status is recorded as the last status seen in the window",
+                "failed_under_mutation": [
+                    "test_a_success_row_processed_after_a_failed_neighbour_keeps_its_own_status with data set \"bad request\"",
+                    "test_a_success_row_processed_after_a_failed_neighbour_keeps_its_own_status with data set \"unknown symbol\""
+                ],
+                "verdict": "RED_INTENDED",
+                "restored_bytes_exact": true
+            },
+            "pass2:R02_window_attempt_aggregate_leakage_restored": {
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "a row takes the window attempt total again (the pre-decision behaviour)",
+                "failed_under_mutation": [
+                    "test_a_success_checkpoint_carries_the_status_and_attempts_of_its_own_request",
+                    "test_a_neighbours_failure_status_and_retries_do_not_change_a_success_row",
+                    "test_two_success_rows_keep_their_own_attempts_whichever_ticker_was_retried",
+                    "test_a_success_row_processed_after_a_failed_neighbour_keeps_its_own_status with data set \"bad request\"",
+                    "test_a_success_row_processed_after_a_failed_neighbour_keeps_its_own_status with data set \"unknown symbol\"",
+                    "test_a_date_level_failure_row_carries_the_attempts_of_its_own_request"
+                ],
+                "verdict": "RED_INTENDED",
+                "restored_bytes_exact": true
+            },
+            "pass2:R04_stale_failure_status_kept_on_success": {
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "a success row keeps the first failure's status",
+                "failed_under_mutation": [
+                    "test_a_success_checkpoint_carries_the_status_and_attempts_of_its_own_request",
+                    "test_a_neighbours_failure_status_and_retries_do_not_change_a_success_row",
+                    "test_two_success_rows_keep_their_own_attempts_whichever_ticker_was_retried",
+                    "test_a_success_row_processed_after_a_failed_neighbour_keeps_its_own_status with data set \"bad request\"",
+                    "test_a_success_row_processed_after_a_failed_neighbour_keeps_its_own_status with data set \"unknown symbol\""
+                ],
+                "verdict": "RED_INTENDED",
+                "restored_bytes_exact": true
+            }
+        },
+        "first_pass_not_as_intended": {
+            "R06_adapter_own_attempts_are_the_running_window_total": {
+                "verdict": "EXPECTED_GUARD_DID_NOT_FAIL",
+                "failed_under_mutation": [
+                    "test_two_success_rows_keep_their_own_attempts_whichever_ticker_was_retried",
+                    "test_a_date_level_failure_row_carries_the_attempts_of_its_own_request"
+                ],
+                "expected_but_green": [
+                    "test_a_success_checkpoint_carries_the_status_and_attempts_of_its_own_request"
+                ]
+            },
+            "R07_adapter_own_status_is_the_window_status": {
+                "verdict": "SURVIVED",
+                "failed_under_mutation": [],
+                "expected_but_green": [
+                    "test_a_success_checkpoint_carries_the_status_and_attempts_of_its_own_request",
+                    "test_a_neighbours_failure_status_and_retries_do_not_change_a_success_row",
+                    "test_two_success_rows_keep_their_own_attempts_whichever_ticker_was_retried"
+                ]
+            }
+        },
+        "second_pass_expectation_over_reach": {
+            "R01_neighbour_status_leakage_restored": {
+                "verdict": "EXPECTED_GUARD_DID_NOT_FAIL",
+                "failed_under_mutation": [
+                    "test_a_success_checkpoint_carries_the_status_and_attempts_of_its_own_request",
+                    "test_a_neighbours_failure_status_and_retries_do_not_change_a_success_row",
+                    "test_two_success_rows_keep_their_own_attempts_whichever_ticker_was_retried"
+                ],
+                "expected_but_green": [
+                    "test_a_success_row_processed_after_a_failed_neighbour_keeps_its_own_status"
+                ]
+            }
+        },
+        "over_reach_note": "R01/R04/R02 were re-run in pass 2 expecting the new after-a-failed-neighbour guard to catch them; a leak of the window status needs the success ticker BEFORE the failing one (the window status at that moment is the success own), so that guard does not see R01 by design; all three were already red-intended in pass 1 through the other guards",
+        "first_pass_note": "R06 was mis-specified (the first ticker's own total equals the running total, so the first guard cannot see it; the other guards did go red) and R07 survived because no fixture put a success after a failed neighbour; the guard test_a_success_row_processed_after_a_failed_neighbour_keeps_its_own_status was added and both were re-run in pass 2",
+        "warmup_wiring_guard_rewrite": "B19RangeWindowWarmupWiringTest (E-MD-B19-A001-002) was rewritten in this unit to comply with LifecycleProofIsNotMockedTest (real collaborators instead of mocks; provider requests observed through the real adapter). All 17 mutations of that evidence were re-run against the rewritten guard: 14 + 3 RED_INTENDED (pass 1 could not apply W07 and the two CRLF indicator anchors, exactly as originally; pass 2 did), files restored byte for byte, controls green (raw warmup_wiring_guard_reprobe_pass1.json / pass2.json).",
+        "required_four": {
+            "neighbour-status leakage restored": "R01",
+            "window-attempt aggregate leakage restored": "R02",
+            "ticker identities swapped": "R03",
+            "stale failure-derived value kept on success": "R04"
+        }
+    },
+    "regression": {
+        "family_and_shared": "== B19RangeWindowCheckpointIdentityTest\nOK (25 tests, 168 assertions)\n== B19RangeWindowCheckpointPersistenceTest\nOK (4 tests, 66 assertions)\n== B19RangeWindowResumeStateTest\nOK (3 tests, 10 assertions)\n== ApiBackfillRangeAcquisitionServiceTest\nOK (15 tests, 93 assertions)\n== B19RangeWindowWarmupWiringTest\nOK (7 tests, 65 assertions)\n== B19RangeWindowWarmupCalendarTest\nOK (3 tests, 8 assertions)\n== B19RunSummaryArtifactContractTest\nOK (3 tests, 25 assertions)\n== ApiBackfillLifecycleStaticGuardTest\nOK (13 tests, 81 assertions)\n== BackfillLifecyclePublicationReprocessTest\nOK (6 tests, 28 assertions)\n== BackfillMissingTickerLifecycleTest\nOK (12 tests, 73 assertions)\n== OpsCommandSurfaceTest\nOK (64 tests, 371 assertions)\n== MarketDataBackfillServiceTest\nOK (8 tests, 71 assertions)\n== CorrectionEvidenceExportServiceTest\nOK (2 tests, 51 assertions)\n== SourceProviderResilienceStaticGuardTest\nOK (12 tests, 219 assertions)\n== ProviderObservationTimestampTest\nOK (7 tests, 54 assertions)\n== AcquisitionKnowledgeCutoffTest\nOK (3 tests, 3 assertions)\n== ActivationClaimAndTerminologyBoundaryTest\nOK (8 tests, 38 assertions)\n== ApiBackfillLifecycleStaticGuardTest\nOK (13 tests, 81 assertions)\n== B18DegradedObservationDefectCorpusTest\nOK (7 tests, 23 assertions)\n== B18ScenarioFamiliesOnMariaDbTest\nFAILURES!\nTests: 13, Assertions: 527, Failures: 1.\n== BackfillLifecyclePublicationReprocessTest\nOK (6 tests, 28 assertions)\n== BackfillMissingTickerLifecycleTest\nOK (12 tests, 73 assertions)\n== BenchmarkBarsIngestServiceTest\nOK (2 tests, 9 assertions)\n== BenchmarkProviderSymbolResolverTest\nOK (3 tests, 9 assertions)\n== CanonicalRawImportBoundaryTest\nOK (12 tests, 36 assertions)\n== CoverageEdgeCaseBoundaryB15Test\nOK (9 tests, 1015 assertions)\n== DateDrivenCapabilityAndProviderAbstractionTest\nOK (18 tests, 65 assertions)\n== EmittedReasonCodeRegistrationTest\nOK (3 tests, 10 assertions)\n== EodBarsIngestServiceTest\nOK (8 tests, 53 assertions)\n== IngestSectorIndexBarsApiCommandTest\nOK (3 tests, 22 assertions)\n== ManualFilePolicyEnforcementStaticGuardTest\nOK (3 tests, 88 assertions)\n== MarketBenchmarkIndicatorExtensionStaticGuardTest\nOK (3 tests, 26 assertions)\n== MarketDataOrdersOneToFourArchitectureTest\nOK (5 tests, 28 assertions)\n== MarketDataOrdersOneToFourFoundationTest\nOK (9 tests, 35 assertions)\n== MarketDataPipelineIntegrationTest\nOK (83 tests, 6158 assertions)\n== ProviderNeutralBoundaryTest\nOK (8 tests, 15 assertions)\n== ProviderObservationTimestampTest\nOK (7 tests, 54 assertions)\n== ProviderSmokeSafeModeStaticGuardTest\nOK (4 tests, 59 assertions)\n== ProviderSmokeSafetyTest\nOK (19 tests, 54 assertions)\n== PublicApiEodBarsAdapterTest\nOK (29 tests, 166 assertions)\n== ScopeBoundaryAndOrchestrationCompletionTest\nOK (8 tests, 73 assertions)\n== SourceCircuitBreakerTest\nOK (6 tests, 8 assertions)\n== SourceProviderResilienceStaticGuardTest\nOK (12 tests, 219 assertions)\n== SymbolMappingLifecycleAndFailureTest\nOK (11 tests, 46 assertions)\n== VolumeUnitAndTurnoverBoundaryTest\nOK (10 tests, 26 assertions)\n== YahooPeriodBoundsTest\nOK (5 tests, 9 assertions)\n",
+        "r0025_current_build_guard": {
+            "result": "FAILS as expected under O1: 13 tests carry the build-identity mismatch (13 of the 46 R0025 fixture tests... see list)",
+            "failed_tests": [
+                "B18ReleaseCandidateAcceptanceAggregateTest::test_md_s003_r0025_executes_all_scenario_family_members_on_mariadb_and_the_mirror_and_is_green",
+                "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+                "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror",
+                "R0025SyntheticV2CandidateFixtureTest::test_a_target_with_the_wrong_freshness_state_gives_field_specific_mismatches_and_no_build_noise",
+                "R0025SyntheticV2CandidateFixtureTest::test_a_wrong_literal_in_any_one_bound_input_is_the_only_mismatch_it_causes",
+                "R0025SyntheticV2CandidateFixtureTest::test_a_wrong_publication_manifest_literal_is_the_only_mismatch_it_causes",
+                "R0025SyntheticV2CandidateFixtureTest::test_an_independent_package_with_any_other_assertion_layer_is_blocked_even_with_an_approval_supplied",
+                "R0025SyntheticV2CandidateFixtureTest::test_candidate_matches_the_actual_publication_but_is_not_admitted_as_proof",
+                "R0025SyntheticV2CandidateFixtureTest::test_each_semantic_member_of_the_event_factor_identity_moves_it",
+                "R0025SyntheticV2CandidateFixtureTest::test_the_admission_mechanism_admits_only_the_exact_fingerprint_and_refuses_any_damaged_package",
+                "R0025SyntheticV2CandidateFixtureTest::test_the_publication_bound_build_identity_is_the_frozen_build_identity",
+                "R0025SyntheticV2CandidateFixtureTest::test_the_real_target_emits_the_corrected_freshness_and_equals_the_independent_expectation",
+                "R0025SyntheticV2CandidateFixtureTest::test_two_allocation_layouts_give_identical_semantic_identities_and_the_oracle_literals"
+            ],
+            "explanation": "the executing build identity (computed from the tree) no longer equals the candidate-v5 frozen literal sha256:7ea1956a…6c4a (it is sha256:ca158b5c…9fce4a); in every one of these tests the ONLY mismatch is the field bound_input_executable_build_identity (confirmed for the admission verdict by a diagnostic run: mismatch_count=1, first_fields=bound_input_executable_build_identity) -- or the test is an aggregate/derivative of those",
+            "not_skipped": true,
+            "not_called_pass": true,
+            "candidate_v5_modified": false,
+            "other_failures": "none: the final full suite has exactly the 7 governed oracle failures and these 13",
+            "raw": "full_suite_raw_output.txt / full_suite_junit.xml"
+        },
+        "regression_found_and_fixed": {
+            "guard": "LifecycleProofIsNotMockedTest::test_db_backed_tests_only_mock_the_external_source_boundary",
+            "cause": "the two B19 orchestrator guards written in E-MD-B19-A001-002 / -003 mocked internal services and repositories in DB-backed tests; the first full suite of this unit reported it (not a build effect); fixed by using real collaborators (real ticker master, temporal identity, acquisition service, adapter, calendar; only the HTTP fetcher stands in) and a constructor-less tripwire instance for the publication pipeline; the guard itself is unchanged",
+            "rerun": "regression_lifecycle_proof_guard.log and the final full suite"
+        },
+        "full_suite": {
+            "tests": 2967,
+            "assertions": 42196,
+            "errors": 0,
+            "skipped": 0,
+            "failures": 20,
+            "oracle_failures_governed_by_D_MD_B18_A002_022": 7,
+            "build_identity_successor_pending_failures": 13,
+            "verdict": "NOT a full-suite PASS: 7 governed MD-B22 oracle failures + 13 governed successor-pending build-identity failures (MD-DEP-0025); no other failure, no error, no skip"
+        }
+    },
+    "state_after": {
+        "reviewed_bases": "21/743",
+        "without_basis": 722,
+        "checkpoint_resume_family": "13/13",
+        "fully_reviewed_families": "2/37",
+        "formal_satisfied": "0/743"
+    },
+    "raw_artifacts": {
+        "dir": "storage/app/market-data/evidence/MD-B19-A001/r0210-option-a-20261008",
+        "manifest_sha256": "56b262cf2ccce35e1c17ac5b6a54e29e8fbe3775a42742e8eb3d008110856f91",
+        "files": {
+            "red_before_fix.txt": {
+                "sha256": "e23d8f3c29b40ed7d24889f474a02c3a3fef6be75c4e212b74bf556ff5d1513e",
+                "bytes": 2025
+            },
+            "executable_build_change.diff": {
+                "sha256": "6fef84a0e4db02485172efcd649222ac972b1b3107d72af52449f3ed0b4d9d0a",
+                "bytes": 4574
+            },
+            "probe_pass1.json": {
+                "sha256": "d07f3f0979af0f17457148f05f93de9cecc4b60153fa869f65b59ffee4d0853f",
+                "bytes": 49768
+            },
+            "probe_pass2.json": {
+                "sha256": "1e0ac2d2179e9fe01b9e992b5466d7e082e415addb5998706c18ebdd36449d17",
+                "bytes": 36670
+            },
+            "regression_family.log": {
+                "sha256": "24357ff3446bd10b6ee2d240930684a89df4bea4efa5f6f9cf9cdc60c7b9dab1",
+                "bytes": 3076
+            },
+            "full_suite_raw_output.txt": {
+                "sha256": "516bb7e171887ef57033344b7bc51aea3de9c331662f301792e27cc1a4a33f98",
+                "bytes": 17971
+            },
+            "full_suite_junit.xml": {
+                "sha256": "0060ea685ebf88399deb5990049ff49ec10b814291b418ff4ac924a620f71953",
+                "bytes": 1086084
+            },
+            "regression_lifecycle_proof_guard.log": {
+                "sha256": "a4c784ff63f25601ae16602dedb4d0949b6e4130a5786637bf753b039b7743fe",
+                "bytes": 205
+            },
+            "frozen_build_files_sha_pre_edit.txt": {
+                "sha256": "59531420d27aefc98465fae2eef6ef97d2a0bda9223c9e6e7239ae2e4bc2a91a",
+                "bytes": 272
+            },
+            "frozen_build_files_sha_post_edit.txt": {
+                "sha256": "5d6b7e68b6596cd5538c20f6d51296f5ab1df70fa7db6f8af68f975dfd6c38d5",
+                "bytes": 408
+            },
+            "build_delta_vs_candidate_v5_manifest.txt": {
+                "sha256": "e8cda13567ca2340d23340ccce2a44e8925e9a55f2caa3b9ddb570f82c59b497",
+                "bytes": 303
+            },
+            "warmup_wiring_guard_reprobe_pass1.json": {
+                "sha256": "f42330edac58a04bd33702391d1cf487051bcdb3e04901e9f760fcc32f3874b5",
+                "bytes": 52810
+            },
+            "warmup_wiring_guard_reprobe_pass2.json": {
+                "sha256": "562b3fbd667a2b4e4e5d57fadf4a7dc1fb10d9bcb62de09371f652e82692924f",
+                "bytes": 12334
+            }
+        }
+    },
+    "related_findings": [
+        "F-MD-B19-A001-004",
+        "F-MD-B19-A001-003",
+        "F-MD-B19-A001-002"
+    ],
+    "related_decisions": [
+        "D-MD-B19-A001-002",
+        "D-MD-B19-A001-001",
+        "D-MD-B18-A002-018"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0025"
+    ],
+    "next_resume_point": "artifact_run_summary (52 predicates): per-predicate basis review of the existing, probed guard pair; production-changing families may be batched under O1; candidate-v6 only after the last executable-build change",
+    "no_commit_or_push": 1
+}

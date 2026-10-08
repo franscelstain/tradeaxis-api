@@ -177,3 +177,19 @@ Same attempt, baseline and declaration. **No file of the frozen R0025 build was 
 The 37-family inventory recorded in `E-MD-B19-A001-002` classifies 1 family complete, 15 proof-gap, 14 harness-gap, 7 production-gap; 9 of the 37 are measured against current output or an executed guard and the rest are structural. **A cross-stage consequence was found and is not decided here:** every production defect owned by this stage sits in a file of the frozen candidate-v5 build, so the first production edit invalidates the R0025 proof for the current build (`D-MD-B18-A002-018` item 13). `F-MD-B19-A001-003` and `MD-DEP-0025` carry the owner decision; `MD-B18` is not reopened.
 
 Strategy meaning change: `NO`.
+
+## 2026-10-08T08:04:28+07:00 Owner decision O1 (`D-MD-B19-A001-001`) and the checkpoint/resume family (`E-MD-B19-A001-003`)
+
+Same attempt, baseline and declaration. **Owner decision:** O1 for `F-MD-B19-A001-003` -- production-changing `MD-B19` work may be batched; candidate-v5 stays current until the first executable-build change, then historical-only for the current build with the build-identity failure visible as a governed successor-pending failure (`MD-DEP-0025`); one candidate-v6 is authored against the final build before `MD-B19` closure. `MD-B18` is not reopened. The runtime-behaviour, schema and configuration scope of section 3 is unchanged.
+
+**Actual impact of this unit:** no file of the frozen build was changed (5916 checked, 0 differ). Two behavioural guards were added (`B19RangeWindowCheckpointIdentityTest`, `B19RangeWindowCheckpointPersistenceTest`) and 12 entries to the proof basis. `range_window_checkpoint_resume` is established per predicate for 12 of 13: 42 single-protection mutations turned a guard red for the intended reason, two documented mutants are equivalent. `MD-S053-R0210` is held: a successful checkpoint row carries the window-level HTTP status and attempt total of a different ticker, and the contract does not say what a success row should carry (`F-MD-B19-A001-004`). Reviewed per-predicate bases: 20/743.
+
+Strategy meaning change: `NO`.
+
+## 2026-10-08T10:53:24+07:00 R0210 under Option A (`D-MD-B19-A001-002`) -- first executable-build change (`E-MD-B19-A001-004`)
+
+Same attempt, baseline and declaration. **Actual impact: runtime behaviour.** `PublicApiEodBarsAdapter::buildYahooRangeAggregateTelemetry()` now exposes each ticker's own request result (`ticker_request_telemetry`), and `ApiBackfillRangeAcquisitionService::buildWindowCheckpoints()` takes a checkpoint row's `http_status` (success) and its fallback `attempt_count` from it instead of from the window aggregate. Window aggregates are unchanged on the window telemetry. No schema, configuration or migration change; no other family or surface touched.
+
+This is the **first executable-build change** under O1: from 2026-10-08T08:57:11+07:00 candidate-v5 is historical-only for the current build and `MD-DEP-0025` is the active successor-pending tracker; `MD-B18` is not reopened and candidate-v6 is not created. The expected failure of the R0025 build-identity control is recorded, not skipped. `range_window_checkpoint_resume` is complete at 13/13; reviewed bases 21/743.
+
+Strategy meaning change: `NO`.

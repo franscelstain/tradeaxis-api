@@ -5,14 +5,19 @@ use App\Application\MarketData\Services\BackfillLifecycleOrchestrator;
 use App\Application\MarketData\Services\MarketDataEvidenceExportService;
 use App\Application\MarketData\Services\MarketDataPipelineService;
 use App\Application\MarketData\Services\ReplayVerificationService;
-use App\Application\MarketData\Ports\ApiEodBarsSource;
-use App\Infrastructure\MarketData\Source\SourceAcquisitionException;
+use App\Infrastructure\MarketData\Source\EquityProviderSymbolResolver;
+use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
+use App\Infrastructure\Persistence\MarketData\EodCorrectionRepository;
+use App\Infrastructure\Persistence\MarketData\EodEvidenceRepository;
+use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
 use App\Infrastructure\Persistence\MarketData\EodRunRepository;
 use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
+use App\Infrastructure\Persistence\MarketData\ReplayResultRepository;
+use App\Infrastructure\Persistence\MarketData\TemporalIdentityRepository;
 use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Mockery as m;
 use Tests\Support\UsesMarketDataSqlite;
 
 /**
@@ -24,14 +29,16 @@ use Tests\Support\UsesMarketDataSqlite;
  * (or a calendar-day approximation) to the acquisition service would satisfy every assertion in that
  * file. The contract's sentence is about the acquisition path — "range-window source acquisition
  * must resolve warmup through the market calendar" (`MD-S053-R0218`) — so this guard runs the real
- * orchestrator against the real calendar repository and observes what the acquisition service
- * is actually given and what the run records.
+ * orchestrator against the real calendar repository and observes what the provider is actually asked
+ * for and what the run records.
  *
- * The collaborators that are replaced are the ones outside the subject: the ticker universe, the
- * provider adapter, and the publication pipeline. The pipeline is replaced by a mock with **no**
- * expectations, so any call into it — the first step towards publishing a requested date — fails
- * the test. That is how "publishing requested dates when the warmup calendar dependency cannot be
- * proven" (`MD-S053-R0221`) is asserted: by the absence of any call, not by the presence of an
+ * Nothing internal is replaced (`LifecycleProofIsNotMockedTest`): the calendar, the ticker master and
+ * temporal identity, the acquisition service and the provider adapter are real; only the HTTP fetcher
+ * stands in for the outside world, and it records the requests the real adapter makes. The publication
+ * pipeline is a TRIPWIRE — an instance built without its constructor, so any publication step that
+ * touches a collaborator fails with an Error — and the publication tables are asserted empty. That is
+ * how "publishing requested dates when the warmup calendar dependency cannot be proven"
+ * (`MD-S053-R0221`) is asserted: by the absence of any request and any publication, not by an
  * exception message alone.
  */
 class B19RangeWindowWarmupWiringTest extends TestCase
@@ -53,6 +60,9 @@ class B19RangeWindowWarmupWiringTest extends TestCase
     /** @var string[] */
     private $outputDirs = [];
 
+    /** @var string[] the provider requests the real adapter made */
+    private $requests = [];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -66,7 +76,22 @@ class B19RangeWindowWarmupWiringTest extends TestCase
             $this->seedVerifiedMarketCalendarDate($iso, $weekday && ! in_array($iso, self::HOLIDAYS, true));
             $date = strtotime('+1 day', $date);
         }
-        config(['market_data.source.api_backfill.warmup_trading_days' => 10]);
+        config([
+            'market_data.source.api_backfill.warmup_trading_days' => 10,
+            'market_data.source.api_backfill.window_days' => 7,
+            'market_data.source.api_backfill.max_dates_per_run' => 20,
+            'market_data.provider.api_retry_max' => 0,
+            'market_data.provider.api_backoff_ms' => 0,
+            'market_data.provider.api_throttle_qps' => 1000,
+            'market_data.source.default_source_name' => 'YAHOO_FINANCE',
+            'market_data.source.api' => [
+                'provider' => 'yahoo_finance',
+                'endpoint_template' => 'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}{symbol_suffix}?period1={period1}&period2={period2}&interval={interval}',
+                'response_format' => 'json', 'response_rows_path' => '', 'timeout_seconds' => 3,
+                'auth_header_name' => '', 'auth_token' => '', 'source_name' => 'YAHOO_FINANCE',
+                'yahoo' => ['symbol_suffix' => '.JK', 'range' => '10d', 'interval' => '1d'],
+            ],
+        ]);
     }
 
     protected function tearDown(): void
@@ -77,7 +102,6 @@ class B19RangeWindowWarmupWiringTest extends TestCase
             }
             @rmdir($dir);
         }
-        m::close();
         $this->tearDownMarketDataSqlite();
         parent::tearDown();
     }
@@ -91,30 +115,28 @@ class B19RangeWindowWarmupWiringTest extends TestCase
     }
 
     /**
-     * The orchestrator over the real calendar. `$acquisition` is a partial mock so `plan()` is the
-     * real implementation; `$pipeline` has no expectations on purpose.
-     *
-     * @return array{0:BackfillLifecycleOrchestrator,1:\Mockery\MockInterface,2:\Mockery\MockInterface}
+     * The real orchestrator over real collaborators. The fetcher records every request and then
+     * fails it, so the run stops at the source — after the real adapter has built the URLs, and
+     * before anything could be imported or published.
      */
-    private function orchestrator(): array
+    private function orchestrator(): BackfillLifecycleOrchestrator
     {
-        $tickers = m::mock(TickerMasterRepository::class);
-        $tickers->shouldReceive('getUniverseForTradeDate')->andReturn([['ticker_id' => 1, 'ticker_code' => 'AAAA']]);
+        if (! DB::table('tickers')->where('ticker_code', 'AAAA')->exists()) {
+            DB::table('tickers')->insert(['ticker_code' => 'AAAA', 'company_name' => 'AAAA Tbk', 'is_active' => 1, 'listed_date' => '2020-01-02']);
+        }
+        $fetcher = function ($url) {
+            $this->requests[] = (string) $url;
+            throw new RuntimeException('probe: the provider is not reachable in this guard');
+        };
+        $service = new ApiBackfillRangeAcquisitionService(new PublicApiEodBarsAdapter($fetcher, new EquityProviderSymbolResolver(new TemporalIdentityRepository())));
+        $pipeline = (new ReflectionClass(MarketDataPipelineService::class))->newInstanceWithoutConstructor();
 
-        $acquisition = m::mock(ApiBackfillRangeAcquisitionService::class, [m::mock(ApiEodBarsSource::class)])->makePartial();
-        $pipeline = m::mock(MarketDataPipelineService::class);
-
-        $orchestrator = new BackfillLifecycleOrchestrator(
-            new MarketCalendarRepository(),
-            $tickers,
-            $acquisition,
-            $pipeline,
-            m::mock(MarketDataEvidenceExportService::class),
-            m::mock(ReplayVerificationService::class),
-            m::mock(EodRunRepository::class)
+        return new BackfillLifecycleOrchestrator(
+            new MarketCalendarRepository(), new TickerMasterRepository(), $service, $pipeline,
+            new MarketDataEvidenceExportService(new EodEvidenceRepository(), new EodPublicationRepository(), new EodCorrectionRepository()),
+            new ReplayVerificationService(new EodEvidenceRepository(), new EodPublicationRepository(), new ReplayResultRepository()),
+            new EodRunRepository()
         );
-
-        return [$orchestrator, $acquisition, $pipeline];
     }
 
     private function governedBoundary(string $firstRequestedTradingDate, int $tradingDays): string
@@ -122,18 +144,24 @@ class B19RangeWindowWarmupWiringTest extends TestCase
         return (new MarketCalendarRepository())->tradingDateWindowStart($firstRequestedTradingDate, $tradingDays);
     }
 
+    private function period1(string $date): int
+    {
+        return Carbon::parse($date, 'Asia/Jakarta')->timestamp;
+    }
+
     /**
      * `MD-S053-R0218`, `R0225`: the plan the lifecycle backfill records for an API range-window run
-     * carries the calendar boundary and the four telemetry fields the contract names.
+     * carries the calendar boundary and the four telemetry fields the contract names, and planning
+     * asks the provider for nothing.
      */
     public function test_the_recorded_plan_carries_the_calendar_boundary_and_the_four_telemetry_fields(): void
     {
-        [$orchestrator, $acquisition] = $this->orchestrator();
-        $acquisition->shouldNotReceive('acquire');
+        $orchestrator = $this->orchestrator();
         $dir = $this->outputDir();
 
         $summary = $orchestrator->execute(self::REQUESTED_START, self::REQUESTED_END, 'api', ['plan' => true, 'output_dir' => $dir]);
 
+        $this->assertSame([], $this->requests, 'planning made a provider request');
         $governed = $this->governedBoundary(self::REQUESTED_START, 10);
         $calendarDayArithmetic = date('Y-m-d', strtotime(self::REQUESTED_START.' -10 days'));
         $this->assertNotSame($calendarDayArithmetic, $governed, 'the fixture must make trading-day and calendar-day boundaries differ');
@@ -157,43 +185,41 @@ class B19RangeWindowWarmupWiringTest extends TestCase
     }
 
     /**
-     * `MD-S053-R0218`, `R0219`, `R0220`: the acquisition service is handed the calendar boundary,
-     * and the trading dates it is handed start at that boundary. The boundary moves by whole
-     * trading days with the configured count, so it is a function of the calendar and not of a fixed
-     * offset.
+     * `MD-S053-R0218`, `R0219`, `R0220`: the provider is asked for the history that starts at the
+     * calendar boundary — the first request's period begins there — and the trading dates the plan
+     * hands to acquisition are the calendar-resolved dates from that boundary. The boundary moves by
+     * whole trading days with the configured count, so it is a function of the calendar and not of a
+     * fixed offset.
      */
     public function test_the_acquisition_service_is_handed_the_calendar_boundary(): void
     {
-        $seen = [];
         $boundaries = [];
         foreach ([10, 11] as $tradingDays) {
             config(['market_data.source.api_backfill.warmup_trading_days' => $tradingDays]);
-            [$orchestrator, $acquisition] = $this->orchestrator();
-            $acquisition->shouldReceive('acquire')->once()->andReturnUsing(function ($warmupStart, $requestedStart, $requestedEnd, array $tradingDates) use (&$seen, $tradingDays) {
-                $seen[$tradingDays] = ['warmup' => $warmupStart, 'start' => $requestedStart, 'end' => $requestedEnd, 'dates' => $tradingDates];
-                throw new SourceAcquisitionException('probe: stop after observing the arguments', 'RUN_SOURCE_ACQUISITION_FAILED');
-            });
+            $this->requests = [];
+            $orchestrator = $this->orchestrator();
 
             $summary = $orchestrator->execute(self::REQUESTED_START, self::REQUESTED_END, 'api', ['output_dir' => $this->outputDir()]);
-            $this->assertSame('BLOCKED', $summary['status'], 'the run did not reach the acquisition call');
-            $boundaries[$tradingDays] = $this->governedBoundary(self::REQUESTED_START, $tradingDays);
+
+            $this->assertSame('BLOCKED', $summary['status'], 'the run did not reach the provider');
+            $this->assertNotSame([], $this->requests, 'the run made no provider request');
+            $boundary = $this->governedBoundary(self::REQUESTED_START, $tradingDays);
+            $boundaries[$tradingDays] = $boundary;
+
+            $this->assertSame($boundary, $summary['plan']['windows'][0]['start'], 'the first acquisition window does not start at the calendar boundary for '.$tradingDays.' trading days');
+            $this->assertStringContainsString('period1='.$this->period1($boundary), $this->requests[0],
+                'the first provider request does not start at the calendar boundary for '.$tradingDays.' trading days');
+            $this->assertSame(self::REQUESTED_START, $summary['requested_start']);
+            $this->assertSame(self::REQUESTED_END, $summary['requested_end']);
+            $this->assertSame(
+                count((new MarketCalendarRepository())->tradingDatesBetween($boundary, self::REQUESTED_END)),
+                $summary['plan']['trading_date_count'],
+                'the trading dates given to acquisition are not the calendar-resolved dates from the boundary'
+            );
+            $this->assertNotSame(date('Y-m-d', strtotime(self::REQUESTED_START.' -'.$tradingDays.' days')), $summary['plan']['windows'][0]['start']);
         }
 
         $this->assertNotSame($boundaries[10], $boundaries[11], 'the fixture must move the boundary by one trading day');
-        foreach ([10, 11] as $tradingDays) {
-            $this->assertSame($boundaries[$tradingDays], $seen[$tradingDays]['warmup'],
-                'the acquisition service was not given the calendar boundary for '.$tradingDays.' trading days');
-            $this->assertSame(self::REQUESTED_START, $seen[$tradingDays]['start']);
-            $this->assertSame(self::REQUESTED_END, $seen[$tradingDays]['end']);
-            $this->assertSame($seen[$tradingDays]['warmup'], $seen[$tradingDays]['dates'][0],
-                'the trading dates given to acquisition do not begin at the warmup boundary');
-            $this->assertSame(
-                (new MarketCalendarRepository())->tradingDatesBetween($boundaries[$tradingDays], self::REQUESTED_END),
-                array_values($seen[$tradingDays]['dates']),
-                'the dates given to acquisition are not the calendar-resolved trading dates'
-            );
-            $this->assertNotSame(date('Y-m-d', strtotime(self::REQUESTED_START.' -'.$tradingDays.' days')), $seen[$tradingDays]['warmup']);
-        }
     }
 
     /**
@@ -202,8 +228,7 @@ class B19RangeWindowWarmupWiringTest extends TestCase
      */
     public function test_a_blocked_acquisition_still_records_the_boundary_in_its_diagnostic(): void
     {
-        [$orchestrator, $acquisition] = $this->orchestrator();
-        $acquisition->shouldReceive('acquire')->once()->andThrow(new SourceAcquisitionException('probe', 'RUN_SOURCE_ACQUISITION_FAILED'));
+        $orchestrator = $this->orchestrator();
         $dir = $this->outputDir();
 
         $orchestrator->execute(self::REQUESTED_START, self::REQUESTED_END, 'api', ['output_dir' => $dir]);
@@ -273,9 +298,7 @@ class B19RangeWindowWarmupWiringTest extends TestCase
      */
     public function test_an_unprovable_calendar_blocks_before_acquisition_and_publication(string $scenario, string $expectedMessage): void
     {
-        [$orchestrator, $acquisition, $pipeline] = $this->orchestrator();
-        $acquisition->shouldNotReceive('acquire');
-        $acquisition->shouldNotReceive('plan');
+        $orchestrator = $this->orchestrator();
         $dir = $this->outputDir();
 
         [$start, $end] = $this->arrangeUnprovableCalendar($scenario);
@@ -287,6 +310,7 @@ class B19RangeWindowWarmupWiringTest extends TestCase
             $this->assertStringContainsString($expectedMessage, $e->getMessage());
         }
 
+        $this->assertSame([], $this->requests, 'the provider was asked for data although the calendar could not establish the boundary');
         $this->assertFileDoesNotExist($dir.'/market_data_backfill_lifecycle_summary.json', 'a run summary was written for a backfill that never started');
         $this->assertFileDoesNotExist($dir.'/source_acquisition_cache.json');
         foreach (['eod_runs', 'eod_publications', 'eod_current_publication_pointer', 'eod_bars'] as $table) {

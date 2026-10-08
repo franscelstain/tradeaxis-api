@@ -1,0 +1,739 @@
+{
+    "evidence_id": "E-MD-B19-A001-003",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B19",
+    "attempt_id": "MD-B19-A001",
+    "work_id": "MD-B19-A001",
+    "baseline_id": "MD-B19-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B19-A001-001",
+    "issued_at": "2026-10-08T08:04:28+07:00",
+    "evidence_type": "BOUNDED_FAMILY_PROOF_WITH_AUTHORITY_QUESTION",
+    "verdict": "RANGE_WINDOW_CHECKPOINT_RESUME_12_OF_13_ESTABLISHED_PER_PREDICATE_R0210_HELD_AS_AUTHORITY_QUESTION_NO_FROZEN_BUILD_FILE_CHANGED",
+    "checkpoint_verdict": "MD-B19-A001 CHECKPOINT-RESUME BLOCKED — OWNER / AUTHORITY DECISION REQUIRED",
+    "owner_decision": {
+        "D-MD-B19-A001-001": "O1 recorded for F-MD-B19-A001-003 before this unit; MD-DEP-0025 moved from BLOCKING to open (blocks B19 closure, not production units)"
+    },
+    "starting_state": {
+        "reviewed_bases": "8/743",
+        "formal_satisfied": "0/743",
+        "warmup_family": "PROVEN 8/8",
+        "build": "frozen build equals candidate-v5 manifest: 5916 files, 0 differ",
+        "clean_tree_at_start": true
+    },
+    "authority": {
+        "contract": "authority/strategy/book/Source_Data_Acquisition_Contract_LOCKED.md, \"API range-window checkpoint/resume addendum\"",
+        "sufficient_for": "12 of 13 predicates",
+        "not_sufficient_for": "MD-S053-R0210 as to what a success row carries in http_status and attempt_count: F-MD-B19-A001-004",
+        "no_semantics_invented": "the eligible / skipped vocabulary of R0217 is named by the contract and defined by the implementation; the guard asserts presence and arithmetic ties between the named quantities only"
+    },
+    "matrix": [
+        {
+            "rule_id": "MD-S053-R0202",
+            "requirement": "API range-window acquisition must persist checkpoint rows at window/ticker granularity.",
+            "implementation": [
+                "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php::buildWindowCheckpoints",
+                "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php::writeAcquisitionCheckpoint/mergeAcquisitionCheckpoint"
+            ],
+            "positive_guard": "B19RangeWindowCheckpointPersistenceTest::test_the_backfill_persists_one_checkpoint_per_window_and_ticker_and_its_diagnostics_agree_with_the_file",
+            "negative_guard": "B19RangeWindowCheckpointIdentityTest::test_every_window_and_ticker_pair_has_its_own_checkpoint_carrying_that_identity",
+            "proof_gap_before": "service test asserted two keys of one window; persistence by the orchestrator and a multi-window layout were not exercised",
+            "mutations_red": [
+                "K01",
+                "K02",
+                "O01",
+                "O02"
+            ],
+            "basis_status": "PROVEN"
+        },
+        {
+            "rule_id": "MD-S053-R0204",
+            "requirement": "checkpoint identity: window_start",
+            "implementation": [
+                "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php::buildWindowCheckpoints"
+            ],
+            "positive_guard": "B19RangeWindowCheckpointIdentityTest::test_every_window_and_ticker_pair_has_its_own_checkpoint_carrying_that_identity",
+            "negative_guard": "ApiBackfillRangeAcquisitionServiceTest::test_http_400_checkpoint_keeps_ticker_window_url_and_provider_error_for_same_ticker",
+            "proof_gap_before": "asserted for one failed row only; no success row, no multi-window case",
+            "mutations_red": [
+                "K03"
+            ],
+            "basis_status": "PROVEN"
+        },
+        {
+            "rule_id": "MD-S053-R0205",
+            "requirement": "checkpoint identity: window_end",
+            "implementation": [
+                "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php::buildWindowCheckpoints"
+            ],
+            "positive_guard": "B19RangeWindowCheckpointIdentityTest::test_every_window_and_ticker_pair_has_its_own_checkpoint_carrying_that_identity",
+            "negative_guard": "ApiBackfillRangeAcquisitionServiceTest::test_http_400_checkpoint_keeps_ticker_window_url_and_provider_error_for_same_ticker",
+            "proof_gap_before": "same",
+            "mutations_red": [
+                "K02",
+                "K04"
+            ],
+            "basis_status": "PROVEN"
+        },
+        {
+            "rule_id": "MD-S053-R0206",
+            "requirement": "checkpoint identity: ticker_code",
+            "implementation": [
+                "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php::buildWindowCheckpoints"
+            ],
+            "positive_guard": "B19RangeWindowCheckpointIdentityTest::test_every_window_and_ticker_pair_has_its_own_checkpoint_carrying_that_identity",
+            "negative_guard": "ApiBackfillRangeAcquisitionServiceTest::test_http_400_checkpoint_keeps_ticker_window_url_and_provider_error_for_same_ticker",
+            "proof_gap_before": "same",
+            "mutations_red": [
+                "K05"
+            ],
+            "basis_status": "PROVEN"
+        },
+        {
+            "rule_id": "MD-S053-R0208",
+            "requirement": "failed checkpoint reason_code, http_status, error_sample, provider_error_sample, sanitized_url, failure_scope, attempt_count, rows_count come from the same checkpoint identity",
+            "implementation": [
+                "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php::buildWindowCheckpoints"
+            ],
+            "positive_guard": "B19RangeWindowCheckpointIdentityTest::test_a_failed_checkpoint_takes_every_failure_field_from_its_own_identity",
+            "negative_guard": "B19RangeWindowCheckpointIdentityTest::test_rows_count_is_the_failed_tickers_own_returned_rows",
+            "proof_gap_before": "attempt_count never asserted; no window mixing two different failures; rows_count of a failed ticker not distinguished from the window total",
+            "mutations_red": [
+                "F01",
+                "F04",
+                "F05",
+                "F06",
+                "F07",
+                "F08"
+            ],
+            "basis_status": "PROVEN"
+        },
+        {
+            "rule_id": "MD-S053-R0209",
+            "requirement": "timeout/non-HTTP failure must not inherit HTTP status or provider body from a different ticker",
+            "implementation": [
+                "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php::buildWindowCheckpoints"
+            ],
+            "positive_guard": "B19RangeWindowCheckpointIdentityTest::test_a_failed_checkpoint_takes_every_failure_field_from_its_own_identity",
+            "negative_guard": "ApiBackfillRangeAcquisitionServiceTest::test_timeout_checkpoint_does_not_reuse_successful_ticker_http_status_or_error_sample",
+            "proof_gap_before": "the neighbour in the existing guard succeeded; a neighbour that failed with its own status and body, in both orders, was not supplied",
+            "mutations_red": [
+                "F01",
+                "F02",
+                "F03"
+            ],
+            "basis_status": "PROVEN"
+        },
+        {
+            "rule_id": "MD-S053-R0210",
+            "requirement": "successful checkpoint rows must not carry stale failure sample fields",
+            "implementation": [
+                "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php::buildWindowCheckpoints"
+            ],
+            "positive_guard": "guarded for reason_code, error_sample, provider_error_sample, sanitized_url, failure_scope, date-level fields: B19RangeWindowCheckpointIdentityTest::test_a_successful_checkpoint_carries_no_failure_field_of_a_failed_neighbour",
+            "negative_guard": "none asserted for http_status and attempt_count (authority question)",
+            "proof_gap_before": "a success row carries http_status 400 of a different ticker and the window attempt total (measured)",
+            "mutations_red": [
+                "S01",
+                "S02",
+                "S03",
+                "S04",
+                "S05"
+            ],
+            "basis_status": "HELD_AUTHORITY_QUESTION_F_MD_B19_A001_004"
+        },
+        {
+            "rule_id": "MD-S053-R0212",
+            "requirement": "resume-only-failed state RETRY_SUCCESS",
+            "implementation": [
+                "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php::retryStateFromAccounting"
+            ],
+            "positive_guard": "B19RangeWindowCheckpointIdentityTest::test_each_resume_state_is_reported_only_in_its_own_situation",
+            "negative_guard": "B19RangeWindowCheckpointPersistenceTest::test_a_resume_retries_only_the_persisted_failure_and_merges_it_back_into_the_file",
+            "proof_gap_before": "one situation per existing test; no table showing the state is absent in the neighbouring situations; nothing end to end",
+            "mutations_red": [
+                "V01",
+                "V02"
+            ],
+            "basis_status": "PROVEN"
+        },
+        {
+            "rule_id": "MD-S053-R0213",
+            "requirement": "resume-only-failed state PARTIAL_RETRY_SUCCESS",
+            "implementation": [
+                "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php::retryStateFromAccounting"
+            ],
+            "positive_guard": "B19RangeWindowCheckpointIdentityTest::test_each_resume_state_is_reported_only_in_its_own_situation",
+            "negative_guard": "ApiBackfillRangeAcquisitionServiceTest::test_resume_only_failed_partial_retry_success_state_is_not_systemic",
+            "proof_gap_before": "same",
+            "mutations_red": [
+                "V01",
+                "V02"
+            ],
+            "basis_status": "PROVEN"
+        },
+        {
+            "rule_id": "MD-S053-R0214",
+            "requirement": "resume-only-failed state FAILED_RETRY_BLOCKED",
+            "implementation": [
+                "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php::retryStateFromAccounting"
+            ],
+            "positive_guard": "B19RangeWindowCheckpointIdentityTest::test_each_resume_state_is_reported_only_in_its_own_situation",
+            "negative_guard": "B19RangeWindowCheckpointPersistenceTest::test_a_resume_that_still_fails_reports_its_counts_and_a_failure_sample_that_agrees_with_the_file",
+            "proof_gap_before": "same",
+            "mutations_red": [
+                "V03"
+            ],
+            "basis_status": "PROVEN"
+        },
+        {
+            "rule_id": "MD-S053-R0215",
+            "requirement": "resume-only-failed state NO_FAILED_CHECKPOINT",
+            "implementation": [
+                "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php::retryStateFromAccounting",
+                "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php::execute (NOOP branch)"
+            ],
+            "positive_guard": "B19RangeWindowCheckpointIdentityTest::test_each_resume_state_is_reported_only_in_its_own_situation",
+            "negative_guard": "B19RangeWindowCheckpointPersistenceTest::test_a_resume_over_a_file_with_no_failed_checkpoint_is_a_reported_no_op",
+            "proof_gap_before": "service level only; the orchestrator no-op was not exercised",
+            "mutations_red": [
+                "V04",
+                "V05"
+            ],
+            "basis_status": "PROVEN"
+        },
+        {
+            "rule_id": "MD-S053-R0216",
+            "requirement": "SYSTEMIC_FAILED only for true global/provider/config acquisition failure",
+            "implementation": [
+                "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php::isSystemicRetryFailure",
+                "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php::hasSystemicWindowFailure"
+            ],
+            "positive_guard": "B19RangeWindowCheckpointIdentityTest::test_systemic_failed_is_reported_only_for_global_provider_or_config_failures",
+            "negative_guard": "B19RangeWindowResumeStateTest::test_repeated_ticker_failures_are_not_escalated_to_systemic",
+            "proof_gap_before": "only 401 and 504; no provider range rejection, no configuration fault, no unknown-symbol or bad-request negative",
+            "mutations_red": [
+                "Y01",
+                "Y02",
+                "Y03",
+                "Y04",
+                "Y05",
+                "Y06"
+            ],
+            "basis_status": "PROVEN"
+        },
+        {
+            "rule_id": "MD-S053-R0217",
+            "requirement": "resume diagnostics: failed checkpoint total/eligible/retried/skipped counts, retry success/failure counts, skipped reasons, failure sample consistent with source_acquisition_checkpoint.json",
+            "implementation": [
+                "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php::buildResumeOnlyFailedAccounting",
+                "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php::buildSourceDiagnosticFromAcquired"
+            ],
+            "positive_guard": "B19RangeWindowCheckpointIdentityTest::test_resume_diagnostics_carry_every_count_and_the_skipped_reasons",
+            "negative_guard": "B19RangeWindowCheckpointPersistenceTest::test_a_resume_that_still_fails_reports_its_counts_and_a_failure_sample_that_agrees_with_the_file",
+            "proof_gap_before": "two of three skip reasons never produced; quantities not tied; the diagnostics file never compared with the checkpoint file",
+            "mutations_red": [
+                "A01",
+                "A02",
+                "A03",
+                "A04",
+                "A05",
+                "A06",
+                "O03",
+                "O04",
+                "D01",
+                "D02",
+                "D03"
+            ],
+            "basis_status": "PROVEN"
+        }
+    ],
+    "measurement": {
+        "success_row_values": "with BBCA success, TTTT retried timeout, ZZ400 rejected 400 in one window and api_retry_max=2: BBCA SUCCESS row has http_status 400 and attempt_count 5; TTTT FAILED null/3; ZZ400 FAILED 400/1 (raw: authority_measurement_success_row_values_S2.json)",
+        "failed_rows": "all failure fields come from their own identity (guarded)"
+    },
+    "work": {
+        "production_code_changed": false,
+        "files": {
+            "tests/Unit/MarketData/B19RangeWindowCheckpointIdentityTest.php": {
+                "kind": "NEW",
+                "sha256": "32c4d97db1263211167fde3276d12efcd31ff17654488fdb01ed104ef109192d"
+            },
+            "tests/Unit/MarketData/B19RangeWindowCheckpointPersistenceTest.php": {
+                "kind": "NEW",
+                "sha256": "ab6b2828fd60aaa910620d933986cf511ea2f3b1e8235dd394b38d8d8da2f0a1"
+            },
+            "development/implementation/tests/MarketDataOperationsProofBasis.php": {
+                "kind": "MODIFIED (+12 entries)",
+                "sha256": "e77ec37ea3200e5f0c117e2cab5fc4428d2ca614958938af6b110ec0e840855d"
+            }
+        },
+        "guards": [
+            "B19RangeWindowCheckpointIdentityTest: 18 test cases, 135 assertions (service level, stubbed HTTP fetcher through the real provider adapter)",
+            "B19RangeWindowCheckpointPersistenceTest: 4 tests, 66 assertions (real orchestrator, real acquisition service, real adapter, real calendar; diagnose_source; pipeline mock with no expectations)"
+        ]
+    },
+    "probes": {
+        "mutations_red_for_the_intended_reason": 42,
+        "files_restored_byte_exact_and_sha_verified": true,
+        "green_control_before_and_after_each": true,
+        "equivalent_mutants_documented": [
+            "O05_no_op_branch_removed",
+            "O06_a_success_row_counts_as_a_failed_checkpoint"
+        ],
+        "equivalent_note": "the orchestrator branch that short-circuits a resume with no failed checkpoint is redundant with the service path: both produce status NOOP, state NO_FAILED_CHECKPOINT, zero counts and zero provider requests, so removing the branch (or making it misjudge a success row) changes no observable outcome; the outcome is held by two independent paths",
+        "first_pass_not_usable": {
+            "O03_diagnostic_sample_not_from_the_file_rows": "anchor matched 2 places"
+        },
+        "first_pass_note": "O03 matched two places in the orchestrator and was re-specified in pass 2; the fourth persistence guard (resume diagnostics) was added after pass 1, so D01-D03 and the repeat of O03 are pass 2",
+        "detail": {
+            "K01_rows_keyed_by_ticker_only": {
+                "predicates": [
+                    "R0202",
+                    "R0204",
+                    "R0205",
+                    "R0206"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "rows collapse across windows",
+                "verdict": "RED_INTENDED"
+            },
+            "K02_key_drops_window_end": {
+                "predicates": [
+                    "R0202",
+                    "R0205"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "identity key loses window_end",
+                "verdict": "RED_INTENDED"
+            },
+            "K03_window_start_field_wrong": {
+                "predicates": [
+                    "R0204"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "row window_start disagrees with its identity",
+                "verdict": "RED_INTENDED"
+            },
+            "K04_window_end_field_wrong": {
+                "predicates": [
+                    "R0205"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "row window_end disagrees with its identity",
+                "verdict": "RED_INTENDED"
+            },
+            "K05_ticker_code_field_wrong": {
+                "predicates": [
+                    "R0206"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "row ticker_code disagrees with its identity",
+                "verdict": "RED_INTENDED"
+            },
+            "F01_every_row_takes_the_first_failing_ticker_context": {
+                "predicates": [
+                    "R0208",
+                    "R0209"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "all failed rows read the first failing ticker's context",
+                "verdict": "RED_INTENDED"
+            },
+            "F02_http_status_inherits_the_window_status": {
+                "predicates": [
+                    "R0208",
+                    "R0209"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "a timeout with a null status inherits the window's first failure status",
+                "verdict": "RED_INTENDED"
+            },
+            "F03_provider_sample_inherits_the_window_sample": {
+                "predicates": [
+                    "R0208",
+                    "R0209"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "a timeout inherits the window's provider body",
+                "verdict": "RED_INTENDED"
+            },
+            "F04_error_sample_from_the_window": {
+                "predicates": [
+                    "R0208"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "error_sample read from window telemetry",
+                "verdict": "RED_INTENDED"
+            },
+            "F05_sanitized_url_from_the_window": {
+                "predicates": [
+                    "R0208"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "sanitized_url read from window telemetry",
+                "verdict": "RED_INTENDED"
+            },
+            "F06_attempt_count_is_the_window_aggregate": {
+                "predicates": [
+                    "R0208"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "attempt_count is the window total",
+                "verdict": "RED_INTENDED"
+            },
+            "F07_rows_count_is_the_window_total": {
+                "predicates": [
+                    "R0208"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "rows_count is the window total",
+                "verdict": "RED_INTENDED"
+            },
+            "F08_reason_code_from_the_window": {
+                "predicates": [
+                    "R0208"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "reason_code read from window telemetry",
+                "verdict": "RED_INTENDED"
+            },
+            "S01_success_row_carries_error_sample": {
+                "predicates": [
+                    "R0210"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "stale error sample on a success row",
+                "verdict": "RED_INTENDED"
+            },
+            "S02_success_row_carries_provider_sample": {
+                "predicates": [
+                    "R0210"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "stale provider body on a success row",
+                "verdict": "RED_INTENDED"
+            },
+            "S03_success_row_carries_sanitized_url": {
+                "predicates": [
+                    "R0210"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "stale URL on a success row",
+                "verdict": "RED_INTENDED"
+            },
+            "S04_success_row_carries_failure_scope": {
+                "predicates": [
+                    "R0210"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "stale failure scope on a success row",
+                "verdict": "RED_INTENDED"
+            },
+            "S05_success_row_carries_reason_code": {
+                "predicates": [
+                    "R0210"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "a reason code on a success row",
+                "verdict": "RED_INTENDED"
+            },
+            "V01_retry_success_reported_as_partial": {
+                "predicates": [
+                    "R0212",
+                    "R0213"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "full recovery mis-named",
+                "verdict": "RED_INTENDED"
+            },
+            "V02_partial_reported_as_retry_success": {
+                "predicates": [
+                    "R0212",
+                    "R0213"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "partial recovery reported as full",
+                "verdict": "RED_INTENDED"
+            },
+            "V03_blocked_reported_as_systemic": {
+                "predicates": [
+                    "R0214",
+                    "R0216"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "a retry that recovered nothing is called systemic",
+                "verdict": "RED_INTENDED"
+            },
+            "V04_no_failed_reported_as_success": {
+                "predicates": [
+                    "R0215"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "a resume that found nothing claims success",
+                "verdict": "RED_INTENDED"
+            },
+            "V05_resume_fetches_checkpoints_that_did_not_fail": {
+                "predicates": [
+                    "R0215",
+                    "R0202"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "resume-only-failed fetches every ticker",
+                "verdict": "RED_INTENDED"
+            },
+            "Y01_timeout_escalated": {
+                "predicates": [
+                    "R0216"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "transport timeouts escalate",
+                "verdict": "RED_INTENDED"
+            },
+            "Y02_bad_request_escalated": {
+                "predicates": [
+                    "R0216"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "ticker bad requests escalate",
+                "verdict": "RED_INTENDED"
+            },
+            "Y03_auth_error_not_escalated": {
+                "predicates": [
+                    "R0216"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "authentication/config failures not escalated",
+                "verdict": "RED_INTENDED"
+            },
+            "Y04_provider_range_rejection_not_escalated": {
+                "predicates": [
+                    "R0216"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "provider range rejection not escalated",
+                "verdict": "RED_INTENDED"
+            },
+            "Y05_ticker_scope_escalated": {
+                "predicates": [
+                    "R0216"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "every ticker-scoped failure escalates",
+                "verdict": "RED_INTENDED"
+            },
+            "Y06_systemic_window_never_detected": {
+                "predicates": [
+                    "R0216"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "a systemic window is not detected",
+                "verdict": "RED_INTENDED"
+            },
+            "A01_total_not_counted": {
+                "predicates": [
+                    "R0217"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "failed_checkpoint_total never counted",
+                "verdict": "RED_INTENDED"
+            },
+            "A02_eligible_not_counted": {
+                "predicates": [
+                    "R0217"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "failed_checkpoint_eligible never counted",
+                "verdict": "RED_INTENDED"
+            },
+            "A03_retried_ignores_failures": {
+                "predicates": [
+                    "R0217"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "retried count omits failed retries",
+                "verdict": "RED_INTENDED"
+            },
+            "A04_retry_failure_not_counted": {
+                "predicates": [
+                    "R0217"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "retry_failed_count never counted",
+                "verdict": "RED_INTENDED"
+            },
+            "A05_skip_reason_mislabelled": {
+                "predicates": [
+                    "R0217"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "skipped reason mislabelled",
+                "verdict": "RED_INTENDED"
+            },
+            "A06_skip_reasons_not_recorded": {
+                "predicates": [
+                    "R0217"
+                ],
+                "file": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+                "note": "skipped reasons not recorded",
+                "verdict": "RED_INTENDED"
+            },
+            "O01_checkpoint_not_persisted": {
+                "predicates": [
+                    "R0202"
+                ],
+                "file": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+                "note": "acquisition checkpoints are never written",
+                "verdict": "RED_INTENDED"
+            },
+            "O02_merge_overwrites_the_file": {
+                "predicates": [
+                    "R0202",
+                    "R0212"
+                ],
+                "file": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+                "note": "a resume replaces the file with only the retried rows",
+                "verdict": "RED_INTENDED"
+            },
+            "O04_diagnostic_sample_drops_http_status": {
+                "predicates": [
+                    "R0217"
+                ],
+                "file": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+                "note": "diagnostic sample disagrees with the file on http_status",
+                "verdict": "RED_INTENDED"
+            },
+            "O03_diagnostic_sample_not_from_the_file_rows": {
+                "predicates": [
+                    "R0217"
+                ],
+                "file": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+                "note": "diagnostic failure sample built from window telemetry instead of the checkpoint rows",
+                "verdict": "RED_INTENDED"
+            },
+            "D01_resume_diagnostic_total_zeroed": {
+                "predicates": [
+                    "R0217"
+                ],
+                "file": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+                "note": "resume diagnostics drop failed_checkpoint_total",
+                "verdict": "RED_INTENDED"
+            },
+            "D02_resume_diagnostic_retry_failed_zeroed": {
+                "predicates": [
+                    "R0217"
+                ],
+                "file": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+                "note": "resume diagnostics drop retry_failed_count",
+                "verdict": "RED_INTENDED"
+            },
+            "D03_resume_diagnostic_skipped_reasons_dropped": {
+                "predicates": [
+                    "R0217"
+                ],
+                "file": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+                "note": "resume diagnostics drop the skipped reasons",
+                "verdict": "RED_INTENDED"
+            }
+        },
+        "gate_scenarios": {
+            "count": 7,
+            "all_red_intended": true,
+            "control": {
+                "with": 20,
+                "without": 723,
+                "errors": [
+                    "PREDICATES_WITHOUT_A_REVIEWED_PROOF_BASIS:723"
+                ]
+            },
+            "control_unchanged": true
+        }
+    },
+    "regression": {
+        "family_and_shared_files": [
+            "B19RangeWindowCheckpointIdentityTest OK (18/135)",
+            "B19RangeWindowCheckpointPersistenceTest OK (4/66)",
+            "B19RangeWindowResumeStateTest OK (3/10)",
+            "ApiBackfillRangeAcquisitionServiceTest OK (15/93)",
+            "B19RangeWindowWarmupWiringTest OK (7/65)",
+            "B19RangeWindowWarmupCalendarTest OK (3/8)",
+            "B19RunSummaryArtifactContractTest OK (3/25)",
+            "ApiBackfillLifecycleStaticGuardTest OK (13/81)",
+            "BackfillLifecyclePublicationReprocessTest OK (6/28)",
+            "BackfillMissingTickerLifecycleTest OK (12/73)",
+            "OpsCommandSurfaceTest OK (64/371)",
+            "MarketDataBackfillServiceTest OK (8/71)",
+            "CorrectionEvidenceExportServiceTest OK (2/51)"
+        ],
+        "r0025_current_build_guard": "R0025SyntheticV2CandidateFixtureTest run once in a clean single process: see regression_r0025_candidate_v5.log; no executable-build content changed, so no successor-pending mismatch is expected and none is claimed",
+        "full_suite": "not run (no production file changed); not claimed green; ProductionCorpusInvariantOracleTest keeps its seven governed MD-B22 failures under D-MD-B18-A002-022"
+    },
+    "build_identity_state": {
+        "frozen_files_checked": 5916,
+        "differ_from_candidate_v5_manifest": 0,
+        "candidate_v5": "CURRENT (no executable-build change yet under O1)",
+        "md_dep_0025": "open; successor-pending activates at the first executable-build change",
+        "candidate_v6": "not created"
+    },
+    "state_after": {
+        "reviewed_bases": "20/743",
+        "without_basis": 723,
+        "families_fully_reviewed": "1/37 (range_window_warmup_calendar); range_window_checkpoint_resume 12/13",
+        "formal_satisfied": "0/743"
+    },
+    "raw_artifacts": {
+        "dir": "storage/app/market-data/evidence/MD-B19-A001/checkpoint-resume-20261008",
+        "manifest_sha256": "2f04199a86ebd0044efd91e24b6923c2e08a04ef134681d19a277c8f70003794",
+        "files": {
+            "probe_pass1.json": {
+                "sha256": "e7c2207fbce8436ac874c5d06151b05320accddc879b0157112f61f0e1b32990",
+                "bytes": 281634
+            },
+            "probe_pass2.json": {
+                "sha256": "61d1dc54d45d2542578013ef7b81099bc8f18444f088ee4f83b65cc72c2349b8",
+                "bytes": 29699
+            },
+            "gate_probe_results.json": {
+                "sha256": "a2ad0c08bc698bc98eb77c934bdcdde3c37d409bb088e673d94e73db35aa549b",
+                "bytes": 2762
+            },
+            "authority_measurement_success_row_values_S1.json": {
+                "sha256": "262dfe8012790b6e002d275fe8c003229bddf770c210ce049b73748273c48249",
+                "bytes": 5087
+            },
+            "authority_measurement_success_row_values_S2.json": {
+                "sha256": "3c4adb139d8655bb283ecfca21d598e5606ee79b78ec93b4515b301a3143208e",
+                "bytes": 907
+            },
+            "regression_family.log": {
+                "sha256": "ff94ae804bb1b4ae387f991701510f4c49dcebd391b7b5ae70db87fa00ed8951",
+                "bytes": 854
+            },
+            "regression_r0025_candidate_v5.log": {
+                "sha256": "78da63237cc8eb97c5219e8cdb904275e2469b02abe1f102a252270e339c271c",
+                "bytes": 210
+            },
+            "frozen_build_files_sha_before_probes.txt": {
+                "sha256": "4350a72378336f24d0e65949a32d7b13096e2eecf043ae2e53d51fa75ecabe06",
+                "bytes": 408
+            }
+        }
+    },
+    "related_findings": [
+        "F-MD-B19-A001-002",
+        "F-MD-B19-A001-003",
+        "F-MD-B19-A001-004"
+    ],
+    "related_decisions": [
+        "D-MD-B19-A001-001",
+        "D-MD-B18-A002-018"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0025"
+    ],
+    "next_resume_point": "owner decision on F-MD-B19-A001-004 (R0210); then close range_window_checkpoint_resume (13/13) and continue with artifact_run_summary (52). Production-changing families may now proceed under D-MD-B19-A001-001.",
+    "no_commit_or_push": 1
+}
