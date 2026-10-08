@@ -213,3 +213,9 @@ Same attempt, baseline and declaration. **Actual impact: runtime behaviour of on
 Same attempt, baseline and declaration. **Actual impact: none on runtime behaviour.** The family had no guard (`GUARD_NOT_ASSIGNED`). Three guards were added (mapping on a history where every source differs and neighbours and run mirrors are decoys; the repository's own seal and promotion run twice on one trade date; a real sealed MariaDB publication read against the tables and the governed hash verifier) and the family-level guard pair was assigned in `MarketDataOperationsProofSpec`. Every one of the 29 minimum fields and the 4 locked rules of `MD-S075` section 2 was found conforming; **no production file changed**, so `MD-DEP-0025`, the executable-build file set and the 13-test successor-pending set are unchanged and candidate-v6 is not created. 48 single-defect mutations of the builder, the writer and the promotion path are red for the intended reason. Reviewed per-predicate bases 106/743.
 
 Strategy meaning change: `NO`.
+
+## 2026-10-09T00:50:03+07:00 artifact_run_event_summary (`E-MD-B19-A001-008`, `F-MD-B19-A001-007`)
+
+Same attempt, baseline and declaration. **Actual impact: one executable-build file edited, inside the set already differing from candidate-v5** (`MarketDataEvidenceExportService.php`, +5 lines): an empty `stage_counts` / `reason_code_counts` is now written as a JSON object (`{}`), as the locked shape shows, not as `[]`. Two guards were added (the summarizer on a seeded `eod_run_events` trail compared with an independent derivation; a real MariaDB world exported and compared with the raw trail, the run row and cloned runs) and the family-level guard pair was assigned in `MarketDataOperationsProofSpec`. The other 16 predicates were found conforming. 27 single-defect mutations red. `MD-DEP-0025` stays ACTIVE and candidate-v6 is not created. Reviewed per-predicate bases 124/743.
+
+Strategy meaning change: `NO`.

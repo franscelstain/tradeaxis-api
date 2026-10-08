@@ -1,0 +1,337 @@
+{
+    "evidence_id": "E-MD-B19-A001-008",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B19",
+    "attempt_id": "MD-B19-A001",
+    "work_id": "MD-B19-A001",
+    "baseline_id": "MD-B19-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B19-A001-001",
+    "issued_at": "2026-10-09T00:50:03+07:00",
+    "evidence_type": "BOUNDED_FAMILY_PROOF_WITH_ONE_PRODUCTION_CORRECTION",
+    "verdict": "ARTIFACT_RUN_EVENT_SUMMARY_18_OF_18_ESTABLISHED_PER_PREDICATE_ONE_SHAPE_DEFECT_CORRECTED",
+    "checkpoint_verdict": "MD-B19-A001 ARTIFACT-RUN-EVENT-SUMMARY COMPLETE — 18/18",
+    "starting_state": {
+        "head": "5b025c4",
+        "reviewed_bases": "106/743",
+        "fully_reviewed_families": "4/37",
+        "formal_satisfied": "0/743",
+        "md_dep_0025": "ACTIVE",
+        "candidate_v6": "not created",
+        "e007_raw_linkage": "manifest sha256 and every raw file re-verified before this record was issued",
+        "working_tree": "clean"
+    },
+    "inventory": {
+        "family": "artifact_run_event_summary",
+        "predicates": "MD-S075-R0114..R0131: 10 minimum fields (R0114..R0121, R0122 with its four example stages R0123..R0126, R0127) + 4 locked rules (R0128..R0131)",
+        "authority": "Run_Artifacts_Format_LOCKED.md section 3",
+        "producer": "EodEvidenceRepository::summarizeRunEvents() (eod_run_events) + MarketDataEvidenceExportService::exportRunEvidence() (run_id, trade_date_requested, writing)",
+        "consumers": "run_event_summary.json, evidence_pack.json, dominantReasonCodesFromRunEvents() when no publication resolves",
+        "engine_facts": "eod_run_events: event_time DATETIME NOT NULL (second precision), stage NOT NULL, severity ENUM(INFO,WARN,ERROR) NOT NULL; ties on event_time exist and are ordered by event_id"
+    },
+    "predicate_matrix": [
+        {
+            "rule_id": "MD-S075-R0114",
+            "field_or_rule": "run_id",
+            "source_of_truth": "eod_runs.run_id of the exported run (not the publication id)",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0115",
+            "field_or_rule": "trade_date_requested",
+            "source_of_truth": "eod_runs.trade_date_requested (not the effective date)",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0116",
+            "field_or_rule": "event_count",
+            "source_of_truth": "count of eod_run_events rows of the run",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0117",
+            "field_or_rule": "first_event_time",
+            "source_of_truth": "earliest event_time of the run, ties by lower event_id (derived)",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0118",
+            "field_or_rule": "last_event_time",
+            "source_of_truth": "latest event_time of the run, ties by higher event_id (derived)",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0119",
+            "field_or_rule": "first_event_type",
+            "source_of_truth": "event_type of the first event (derived, not a persisted column of the run)",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0120",
+            "field_or_rule": "last_event_type",
+            "source_of_truth": "event_type of the last event (derived)",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0121",
+            "field_or_rule": "highest_severity",
+            "source_of_truth": "maximum severity INFO<WARN<ERROR over the run's events (derived)",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0122",
+            "field_or_rule": "stage_counts",
+            "source_of_truth": "events per stage (derived); written as a JSON object",
+            "classification": "C (empty map written as [] instead of {}; corrected) - proof added",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0123",
+            "field_or_rule": "stage_counts.INGEST",
+            "source_of_truth": "events of the INGEST stage",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0124",
+            "field_or_rule": "stage_counts.CANONICALIZE",
+            "source_of_truth": "events of the CANONICALIZE stage",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0125",
+            "field_or_rule": "stage_counts.INDICATORS",
+            "source_of_truth": "events of the INDICATORS stage",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0126",
+            "field_or_rule": "stage_counts.FINALIZE",
+            "source_of_truth": "events of the FINALIZE stage",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0127",
+            "field_or_rule": "reason_code_counts",
+            "source_of_truth": "events per reason code (derived); written as a JSON object, {} when empty",
+            "classification": "C (empty map written as [] instead of {}; corrected) - proof added",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0128",
+            "field_or_rule": "(rule) derivable from eod_run_events and invents nothing",
+            "source_of_truth": "the append-only trail",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0129",
+            "field_or_rule": "(rule) derived fields are not persisted column names",
+            "source_of_truth": "computed at call time",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0130",
+            "field_or_rule": "(rule) ERROR is never presented lower than ERROR",
+            "source_of_truth": "severity maximum",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0131",
+            "field_or_rule": "(rule) summarizes the trail, does not replace it",
+            "source_of_truth": "row-level eod_run_events stays intact",
+            "classification": "A",
+            "basis_entry": "WRITTEN"
+        }
+    ],
+    "classification_counts": {
+        "A existing conforming behaviour, proof missing": 16,
+        "B test/harness gap": 0,
+        "C production implementation gap": 2,
+        "D authority/owner decision gap": 0,
+        "note": "R0122 and R0127 shared one defect: an empty stage_counts / reason_code_counts was written as a JSON array. The family had no guard (GUARD_NOT_ASSIGNED)."
+    },
+    "production_change": {
+        "file": "app/Application/MarketData/Services/MarketDataEvidenceExportService.php",
+        "lines": "+5 -0",
+        "what": "stage_counts and reason_code_counts are converted to objects before the summary is written and embedded in evidence_pack.json",
+        "finding": "F-MD-B19-A001-007",
+        "red_before_fix": "red_before_fix_real_run.txt: two real-execution guards red (reason_code_counts must serialize as {} when empty)",
+        "green_after_fix": "green_after_fix_real_run.txt: OK (8 tests, 55 assertions)",
+        "build_delta": "the executable-build file set differing from candidate-v5 is unchanged (this file was already in it); MD-DEP-0025 stays ACTIVE; candidate-v6 not created"
+    },
+    "observations_not_findings": {
+        "highest_severity of a run with no events": "the repository reports INFO; MD-S075 says nothing about it. Not asserted either way and not changed (no invented semantics).",
+        "timestamps": "first_event_time / last_event_time are the stored DATETIME strings (platform time zone, no offset); the contract example shows an ISO form with an offset. A format, not one of the 18 predicates, the same convention as the other artifacts; not changed.",
+        "tie break": "ordering by event_time without event_id is an equivalent mutant on the supported engines because ties come back in primary-key order; reversing the tie break is guarded (M03).",
+        "real pipeline trail": "the real world writes 13 INFO events and one reason code; severity and empty-map shapes are therefore proven on seeded trails and on a cloned non-readable run, not on the world's own trail."
+    },
+    "guards": [
+        "B19RunEventSummaryTrailDerivationTest: 20 tests; the summarizer on a seeded eod_run_events trail built against shortcuts (out-of-order ids, a tie at the last timestamp, a mixed ERROR in the middle, a reason-free event, two decoy runs with ERROR), compared with an independent derivation",
+        "B19RunEventSummaryRealRunProvenanceTest: 8 tests on a real MariaDB world; the written file against the raw trail and the run row, the trail intact before and after, and clones of the run with reason-free and no events"
+    ],
+    "proof_spec_change": "MarketDataOperationsProofSpec: artifact_run_event_summary assigned its family-level guard pair",
+    "probes": {
+        "red_intended_fast": 24,
+        "red_intended_real_run": 3,
+        "distinct_mutations_red_for_the_intended_reason": 27,
+        "equivalent_mutant": "M02 (no event_id tie break) survives: ties are returned in primary-key order by the engines in use",
+        "restore": "every file restored byte for byte (sha256), green control before and after each",
+        "files_at_final_pass_sha256": {
+            "app/Application/MarketData/Services/MarketDataEvidenceExportService.php": "b12bf30cf0cd73c9dd35c5956184cda3a6691e967b07682698fd2d530abc1e4d",
+            "app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php": "fb6ecd9cd5b1824764f5e1d94900dafd5240c25a3689f73d21632ceeca516fd7",
+            "tests/Unit/MarketData/B19RunEventSummaryRealRunProvenanceTest.php": "5e4a954ae4f781d86bb9604aa8a5ceb3b3f1840416d224d92b9be8c247484bd1",
+            "tests/Unit/MarketData/B19RunEventSummaryTrailDerivationTest.php": "20fe25b93746c69de585b9f4ec8ec0826b49f0b16683c3a56b5a1abbebd73c8f"
+        },
+        "first_pass_note": "pass 1 (probe_fast_pass1.*) left M02, M04 and M24 alive: M04 because the seeded ids were in time order (seed strengthened so the earliest event has a higher id than later ones), M24 because the mutation never stored its cache (spec error); the whole fast set was then re-run against the final test file and those results are the counted ones."
+    },
+    "regression": {
+        "full_suite": {
+            "tests": 3158,
+            "assertions": 43724,
+            "errors": 0,
+            "skipped": 0,
+            "failures": 22,
+            "oracle_failures": 7,
+            "build_identity_successor_pending_failures": 13,
+            "verdict": "NOT a full-suite PASS: the 7 governed MD-B22 oracle failures (MD-DEP-0024) and the same 13 governed build-identity failures (MD-DEP-0025); nothing else",
+            "build_identity_failures": [
+                "B18ReleaseCandidateAcceptanceAggregateTest::test_md_s003_r0025_executes_all_scenario_family_members_on_mariadb_and_the_mirror_and_is_green",
+                "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+                "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror",
+                "R0025SyntheticV2CandidateFixtureTest::test_a_target_with_the_wrong_freshness_state_gives_field_specific_mismatches_and_no_build_noise",
+                "R0025SyntheticV2CandidateFixtureTest::test_a_wrong_literal_in_any_one_bound_input_is_the_only_mismatch_it_causes",
+                "R0025SyntheticV2CandidateFixtureTest::test_a_wrong_publication_manifest_literal_is_the_only_mismatch_it_causes",
+                "R0025SyntheticV2CandidateFixtureTest::test_an_independent_package_with_any_other_assertion_layer_is_blocked_even_with_an_approval_supplied",
+                "R0025SyntheticV2CandidateFixtureTest::test_candidate_matches_the_actual_publication_but_is_not_admitted_as_proof",
+                "R0025SyntheticV2CandidateFixtureTest::test_each_semantic_member_of_the_event_factor_identity_moves_it",
+                "R0025SyntheticV2CandidateFixtureTest::test_the_admission_mechanism_admits_only_the_exact_fingerprint_and_refuses_any_damaged_package",
+                "R0025SyntheticV2CandidateFixtureTest::test_the_publication_bound_build_identity_is_the_frozen_build_identity",
+                "R0025SyntheticV2CandidateFixtureTest::test_the_real_target_emits_the_corrected_freshness_and_equals_the_independent_expectation",
+                "R0025SyntheticV2CandidateFixtureTest::test_two_allocation_layouts_give_identical_semantic_identities_and_the_oracle_literals"
+            ]
+        },
+        "governance": "all gates have the statuses of the previous unit; MarketDataOperationsProofGate reports 124 reviewed, 619 without a reviewed basis, 32 families without a family-level guard"
+    },
+    "state_after": {
+        "reviewed_bases": "124/743",
+        "without_basis": 619,
+        "artifact_run_event_summary": "18/18",
+        "fully_reviewed_families": "5/37",
+        "formal_satisfied": "0/743"
+    },
+    "not_claimed": [
+        "B19 closure",
+        "a full-suite PASS",
+        "formal SATISFIED for any predicate"
+    ],
+    "raw_artifacts": {
+        "dir": "storage/app/market-data/evidence/MD-B19-A001/run-event-summary-20261008",
+        "manifest_sha256": "d1bb14eb5c19eb978722cc3818dc4b332f170a3ea754949637652fa3043ba15f",
+        "files": {
+            "edit_basis_script.php": {
+                "sha256": "5633b7d76bb6fa697fcffe391f3b549de742cbac741173e2742979849b827d37",
+                "bytes": 10162
+            },
+            "full_suite_junit.xml": {
+                "sha256": "d2838cada64ab500abd89e483b1b9b942bdd148d987f5bd89e182e7e6e78870d",
+                "bytes": 1177723
+            },
+            "full_suite_raw_output.txt": {
+                "sha256": "3f2c0683d70ce92f2cbcf0d547158e805c35af34e8819dfdf3daf1f7d077ff04",
+                "bytes": 28401
+            },
+            "gate_MarketDataOperationsProofGate.json": {
+                "sha256": "2aa38e5add4bb0e81258dbe392368c1319bf31bb67e4d6563814097f653c3ba9",
+                "bytes": 3872
+            },
+            "gates_summary.txt": {
+                "sha256": "486c48e15079136f764dc1288b617fbdd056ea2563b98d1290b37a8d8e0d3279",
+                "bytes": 3059
+            },
+            "governance_readonly_after_registration.txt": {
+                "sha256": "da9a651e55809fc0d506998d1be4ca72e3a0d3d1b0825573b80a3e32dd53a89f",
+                "bytes": 207
+            },
+            "green_after_fix_real_run.txt": {
+                "sha256": "938f5a5ea11b7f67bb4992fe2416dcc46b5db866548ea243fe229a04d0335ee3",
+                "bytes": 212
+            },
+            "probe_fast.json": {
+                "sha256": "fab0d64074ee3b113d5b247995393323b67f0c4306e0c83d21eacf3e94ac48f3",
+                "bytes": 112093
+            },
+            "probe_fast.out": {
+                "sha256": "8430112b8f452ab428a7e642efc94647e5d31cf387425d838fbff37938195149",
+                "bytes": 8173
+            },
+            "probe_fast_pass1.json": {
+                "sha256": "5dc6e0d5e059532a9a6b9a232c74aec9207d59b78131b3269ba3f2d0482ab695",
+                "bytes": 104337
+            },
+            "probe_fast_pass1.out": {
+                "sha256": "3899298d7660f6bc8e25cc1b6eabe49e7489618d1a225fda6b1d61180c059ae4",
+                "bytes": 7376
+            },
+            "probe_fast_rerun.json": {
+                "sha256": "09e62c8650d86644a96e43e9d487a2de7f48d912665a3a797242b64fd816440d",
+                "bytes": 12876
+            },
+            "probe_real_run.json": {
+                "sha256": "8560827af5b5cfc455d8d3846830f7bb2c519e34ffa73053aba90c5a69a20484",
+                "bytes": 8020
+            },
+            "probe_real_run.out": {
+                "sha256": "7b78e0e02e81df9fa967692d545b1fab39bc6df8197bccced956d8106de3d66a",
+                "bytes": 472
+            },
+            "red_before_fix_real_run.txt": {
+                "sha256": "78f4601315c87dcb5949ebb8b0dd65ac4655641d7714b999f1bf71d279cf9d96",
+                "bytes": 933
+            },
+            "sha_files_at_final_probe.txt": {
+                "sha256": "e4d750ac57329eff81710cd19d44e35c9d468c76324a9415fef7342defa741d8",
+                "bytes": 534
+            },
+            "spec_probes.php": {
+                "sha256": "29830e57d4a5c54ea56a47dab0aa172337bc21291762378ed2be9eecded19e04",
+                "bytes": 11004
+            },
+            "targeted_tests.txt": {
+                "sha256": "e3addf169faeee00914479d41fb6d3ff0e05f7b40bb8c9d2d984d3ab65b82725",
+                "bytes": 245
+            }
+        }
+    },
+    "related_findings": [
+        "F-MD-B19-A001-007",
+        "F-MD-B19-A001-002"
+    ],
+    "related_decisions": [
+        "D-MD-B19-A001-001"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0025"
+    ],
+    "related_evidence": [
+        "E-MD-B19-A001-007"
+    ],
+    "next_resume_point": "the next artifact family of MD-S075 in the proof spec order — not started in this unit",
+    "no_push": 1
+}

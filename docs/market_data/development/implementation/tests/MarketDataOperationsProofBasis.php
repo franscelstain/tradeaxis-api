@@ -589,5 +589,101 @@ final class MarketDataOperationsProofBasis
             'negative' => 'B19PublicationManifestValueProvenanceTest::test_a_superseded_publication_manifest_is_not_rewritten_to_look_current',
             'basis' => 'a superseded publication\'s manifest stays audit-valid: on a history produced by the repository\'s own seal and promotion, promoting a correction changes the predecessor\'s is_current and nothing else, its manifest hash still verifies under its governed profile, the evidence export of its own run made after the correction writes that historical manifest with is_current false, and a stale run mirror saying current does not make it look current; always-current, a predecessor left current, or a demotion that erases its hash turns guards red (P05, P42, P44)',
         ],
+
+        // ---- MD-S075 section 3 "run_event_summary.json" -- family `artifact_run_event_summary`, 18 of 18 predicates (R0114..R0131).
+        // One production DEFECT was found and corrected: an empty stage_counts / reason_code_counts was written as a JSON array ([]) instead of an object ({}).
+        // Two guards cooperate: `B19RunEventSummaryTrailDerivationTest` derives the summary from a seeded eod_run_events trail built against the usual shortcuts and
+        // compares it with an independent derivation; `B19RunEventSummaryRealRunProvenanceTest` exports a real run and a clone with no or reason-free events and
+        // compares the written file with the raw trail and with the run row.
+        'MD-S075-R0114' => [
+            'positive' => 'B19RunEventSummaryRealRunProvenanceTest::test_the_file_names_the_run_and_its_requested_date',
+            'negative' => 'B19RunEventSummaryRealRunProvenanceTest::test_a_trail_without_reason_codes_writes_an_empty_json_object',
+            'basis' => 'run_id is the run the file was exported for, read from the run row (never from the publication, which has another id on the real run): the real run, and a run with its own events and no publication, both name themselves; reading the publication id turns both guards red (X01)',
+        ],
+        'MD-S075-R0115' => [
+            'positive' => 'B19RunEventSummaryRealRunProvenanceTest::test_the_requested_date_is_not_the_effective_date',
+            'negative' => 'B19RunEventSummaryRealRunProvenanceTest::test_the_file_names_the_run_and_its_requested_date',
+            'basis' => 'trade_date_requested is the run\'s REQUESTED date: on a run served on another effective date the file still carries the requested date; reading the effective date turns the guard red (X02)',
+        ],
+        'MD-S075-R0116' => [
+            'positive' => 'B19RunEventSummaryTrailDerivationTest::test_event_count_is_the_number_of_this_runs_events_only',
+            'negative' => 'B19RunEventSummaryTrailDerivationTest::test_the_whole_summary_equals_the_independent_derivation',
+            'basis' => 'event_count is the number of THIS run\'s events in eod_run_events, on a database where two other runs hold events (one on the same trade date, one on another); counting every run or counting distinct stages turns guards red (M01, M20)',
+        ],
+        'MD-S075-R0117' => [
+            'positive' => 'B19RunEventSummaryTrailDerivationTest::test_first_event_is_the_earliest_by_time_and_not_the_first_inserted_or_lowest_id',
+            'negative' => 'B19RunEventSummaryTrailDerivationTest::test_a_tie_for_first_place_is_broken_by_the_lower_event_id',
+            'basis' => 'first_event_time is the earliest event time of the run, on a trail whose earliest event has a HIGHER event_id than the events after it and was inserted out of time order; ordering by id only, taking the last event or its time turns guards red (M04, M05, M07). Ties on event_time are broken by the lower event_id, which both supported engines already return as primary-key order, so removing the explicit tie break alone is an equivalent mutant on them (M02) and reversing it is red (M03)',
+        ],
+        'MD-S075-R0118' => [
+            'positive' => 'B19RunEventSummaryTrailDerivationTest::test_last_event_is_the_latest_by_time_and_the_higher_id_wins_a_tie',
+            'negative' => 'B19RunEventSummaryRealRunProvenanceTest::test_the_file_equals_the_independent_derivation_from_the_raw_trail',
+            'basis' => 'last_event_time is the latest event time of the run, with two events sharing the last timestamp; the first event\'s time or a reversed tie break turns guards red (M03, M06, M08), and a real pipeline trail agrees with an independent derivation',
+        ],
+        'MD-S075-R0119' => [
+            'positive' => 'B19RunEventSummaryTrailDerivationTest::test_first_event_is_the_earliest_by_time_and_not_the_first_inserted_or_lowest_id',
+            'negative' => 'B19RunEventSummaryTrailDerivationTest::test_a_tie_for_first_place_is_broken_by_the_lower_event_id',
+            'basis' => 'first_event_type is the type of the earliest event (tie: lower event_id), not of the last event or of the lowest id; an empty trail has none; the last event\'s type turns guards red (M05, M09)',
+        ],
+        'MD-S075-R0120' => [
+            'positive' => 'B19RunEventSummaryTrailDerivationTest::test_last_event_is_the_latest_by_time_and_the_higher_id_wins_a_tie',
+            'negative' => 'B19RunEventSummaryTrailDerivationTest::test_a_tie_for_first_place_is_broken_by_the_lower_event_id',
+            'basis' => 'last_event_type is the type of the latest event, the higher event_id winning a shared timestamp; the first event\'s type turns guards red (M06, M10)',
+        ],
+        'MD-S075-R0121' => [
+            'positive' => 'B19RunEventSummaryTrailDerivationTest::test_highest_severity_over_mixed_trails',
+            'negative' => 'B19RunEventSummaryTrailDerivationTest::test_highest_severity_is_the_maximum_of_the_trail_and_error_is_never_lowered',
+            'basis' => 'highest_severity is the maximum severity of the run\'s events (INFO < WARN < ERROR) over eight orderings of mixed severities and a trail whose ERROR is neither first nor last and whose last event is INFO; never raising it, ranking WARN above ERROR, ignoring ERROR or taking the last event\'s severity turn guards red (M11, M12, M13, M14). For a trail with NO events the severity is not asserted either way: the locked text says nothing about it and the repository reports INFO; this is recorded as a scope note, not decided here',
+        ],
+        'MD-S075-R0122' => [
+            'positive' => 'B19RunEventSummaryTrailDerivationTest::test_stage_counts_tally_this_runs_events_per_stage',
+            'negative' => 'B19RunEventSummaryRealRunProvenanceTest::test_a_run_with_no_events_writes_no_invented_history',
+            'basis' => 'stage_counts counts this run\'s events per stage, keyed by the stage name in a deterministic order, adding up to event_count and holding no stage of another run, and is written as a JSON OBJECT even when empty; double counting, keying by event type, leaving the order to the trail or writing an empty map as [] turn guards red (M15, M16, M17, X03)',
+        ],
+        'MD-S075-R0123' => [
+            'positive' => 'B19RunEventSummaryTrailDerivationTest::test_each_stage_of_the_example_is_counted_under_its_own_name',
+            'negative' => 'B19RunEventSummaryTrailDerivationTest::test_stage_counts_tally_this_runs_events_per_stage',
+            'basis' => 'the INGEST stage of the example is counted under its own key with its own count; keying by event type or counting twice turns guards red (M15, M16)',
+        ],
+        'MD-S075-R0124' => [
+            'positive' => 'B19RunEventSummaryTrailDerivationTest::test_each_stage_of_the_example_is_counted_under_its_own_name',
+            'negative' => 'B19RunEventSummaryTrailDerivationTest::test_stage_counts_tally_this_runs_events_per_stage',
+            'basis' => 'the CANONICALIZE stage of the example is counted under its own key with its own count; keying by event type or counting twice turns guards red (M15, M16)',
+        ],
+        'MD-S075-R0125' => [
+            'positive' => 'B19RunEventSummaryTrailDerivationTest::test_each_stage_of_the_example_is_counted_under_its_own_name',
+            'negative' => 'B19RunEventSummaryTrailDerivationTest::test_stage_counts_tally_this_runs_events_per_stage',
+            'basis' => 'the INDICATORS stage of the example is counted under its own key with its own count; keying by event type or counting twice turns guards red (M15, M16)',
+        ],
+        'MD-S075-R0126' => [
+            'positive' => 'B19RunEventSummaryTrailDerivationTest::test_each_stage_of_the_example_is_counted_under_its_own_name',
+            'negative' => 'B19RunEventSummaryTrailDerivationTest::test_stage_counts_tally_this_runs_events_per_stage',
+            'basis' => 'the FINALIZE stage of the example is counted under its own key with its own count; keying by event type or counting twice turns guards red (M15, M16)',
+        ],
+        'MD-S075-R0127' => [
+            'positive' => 'B19RunEventSummaryTrailDerivationTest::test_reason_code_counts_tally_this_runs_reason_codes_only',
+            'negative' => 'B19RunEventSummaryTrailDerivationTest::test_a_trail_without_reason_codes_has_no_reason_code_counts',
+            'basis' => 'reason_code_counts counts this run\'s events per reason code, events without one are not a reason, a trail without reason codes reports none and is written as a JSON OBJECT ({}, as in the locked example) and never as []. This was a DEFECT in the exporter: an empty map was written as [], and the real-execution guard was red before the fix and green after; counting null reasons, keying by event type, dropping the counts or removing the object cast turn guards red (M18, M19, M25, X03)',
+        ],
+        'MD-S075-R0128' => [
+            'positive' => 'B19RunEventSummaryTrailDerivationTest::test_an_empty_trail_invents_no_events_times_types_or_counts',
+            'negative' => 'B19RunEventSummaryTrailDerivationTest::test_the_summary_is_re_derived_from_the_trail_and_leaves_the_trail_untouched',
+            'basis' => 'the summary is derivable from eod_run_events and invents nothing: an empty trail yields zero events, null times and types and empty maps (not a RUN_CREATED, not a time); a new event appears in the next summary (no stored or remembered summary); the trail is not written to; another run\'s events never enter; inventing a first type or a last time, caching, writing to the trail or reading all runs turn guards red (M01, M21, M22, M23, M24)',
+        ],
+        'MD-S075-R0129' => [
+            'positive' => 'B19RunEventSummaryTrailDerivationTest::test_the_whole_summary_equals_the_independent_derivation',
+            'negative' => 'B19RunEventSummaryTrailDerivationTest::test_the_summary_is_re_derived_from_the_trail_and_leaves_the_trail_untouched',
+            'basis' => 'first_event_type, last_event_type, highest_severity, stage_counts and reason_code_counts are DERIVED fields computed from the rows of the trail at the time of the call and not read from any stored or remembered value: the whole summary equals an independent derivation for three runs, follows the trail when it grows, and a remembered summary turns the guard red (M24). eod_run_events has no columns of those names',
+        ],
+        'MD-S075-R0130' => [
+            'positive' => 'B19RunEventSummaryTrailDerivationTest::test_highest_severity_is_the_maximum_of_the_trail_and_error_is_never_lowered',
+            'negative' => 'B19RunEventSummaryTrailDerivationTest::test_highest_severity_over_mixed_trails',
+            'basis' => 'when the run\'s trail holds an ERROR, highest_severity is ERROR wherever the ERROR sits (first, between warnings, last, alone), on a seeded trail and on a real pipeline trail (which holds no ERROR, so it must not claim one); ignoring ERROR, ranking it below WARN, never raising the severity or taking the last event\'s severity turns guards red (M11, M12, M13, M14)',
+        ],
+        'MD-S075-R0131' => [
+            'positive' => 'B19RunEventSummaryRealRunProvenanceTest::test_the_export_leaves_the_event_trail_row_for_row_intact',
+            'negative' => 'B19RunEventSummaryTrailDerivationTest::test_the_summary_is_re_derived_from_the_trail_and_leaves_the_trail_untouched',
+            'basis' => 'the file summarizes the trail and does not replace it: exporting leaves the run\'s events row for row intact (a real run, before and after), the file holds no event rows or messages, and summarizing never writes to the trail (M23); the row-level events remain the source for diagnosis',
+        ],
     ];
 }

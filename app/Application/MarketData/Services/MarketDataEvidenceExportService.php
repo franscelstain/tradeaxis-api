@@ -86,6 +86,11 @@ class MarketDataEvidenceExportService
         $dominantReasonCodes = $publication
             ? $this->evidence->dominantReasonCodesForEvidencePublication($run->run_id, $this->resolvedTradeDate($run), $publication->publication_id, (bool) $this->field($publication, 'is_current'))
             : $this->dominantReasonCodesFromRunEvents($eventSummary);
+        foreach (['stage_counts', 'reason_code_counts'] as $map) {
+            if (isset($eventSummary[$map])) {
+                $eventSummary[$map] = (object) $eventSummary[$map];
+            }
+        }
         $eligibilityRows = $publication
             ? $this->evidence->exportEligibilityRowsForEvidencePublication($this->resolvedTradeDate($run), $publication->publication_id, (bool) $this->field($publication, 'is_current'))
             : [];

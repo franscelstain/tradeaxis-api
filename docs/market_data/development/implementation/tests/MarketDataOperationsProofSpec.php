@@ -974,8 +974,8 @@ final class MarketDataOperationsProofSpec
                     'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
                     'app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19RunEventSummaryTrailDerivationTest.php', 'test_the_whole_summary_equals_the_independent_derivation'],
+                'negative' => ['tests/Unit/MarketData/B19RunEventSummaryRealRunProvenanceTest.php', 'test_a_trail_without_reason_codes_writes_an_empty_json_object'],
             ],
             'artifact_run_summary' => [
                 'owner' => 'MD-B19:artifact-run-summary',
