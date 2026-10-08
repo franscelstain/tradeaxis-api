@@ -149,5 +149,257 @@ final class MarketDataOperationsProofBasis
             'negative' => 'B19RangeWindowCheckpointPersistenceTest::test_a_resume_that_still_fails_reports_its_counts_and_a_failure_sample_that_agrees_with_the_file',
             'basis' => 'a mixed checkpoint file yields total 5, eligible 2, retried 2, retry success 1, retry failure 1, skipped 3 with the three skipped reasons, and the quantities are tied (total = eligible + skipped, retried = success + failure, skipped = sum of reasons); the written diagnostics file repeats the counts and its failure sample equals the checkpoint file row field by field; dropping or mislabelling any count or reason, or building the sample from window telemetry, turns a guard red',
         ],
+
+        // ---- MD-S075 section 1 "run_summary.json" -- family `artifact_run_summary`, 49 of 52 predicates. HELD, with no entry:
+        // MD-S075-R0047 (F-MD-B19-A001-005: warning_count is never written by the pipeline and 'warning' is undefined),
+        // MD-S075-R0074 and MD-S075-R0075 (F-MD-B19-A001-006: final_reason_code is a derived value under a persisted column
+        // name, and the contract defines no marker for derived fields). The earlier guard proved every minimum field is a KEY
+        // of the file; these entries are value proofs: a run record in which every column differs, the manifest of the run's own
+        // publication against decoys, and a real sealed run read directly from the tables.
+        'MD-S075-R0025' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value',
+            'basis' => 'run_id carries the value of its own run_id column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading it from the publication id turns the mirror guard red (A01)',
+        ],
+        'MD-S075-R0026' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value',
+            'basis' => 'trade_date_requested carries the value of its own trade_date_requested column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; replacing it by the effective date turns it red (G01)',
+        ],
+        'MD-S075-R0027' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'trade_date_effective carries the value of its own trade_date_effective column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; replacing it by the requested date turns it red (A02)',
+        ],
+        'MD-S075-R0028' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value',
+            'basis' => 'lifecycle_state carries the value of its own lifecycle_state column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading it from the stage turns it red (A03)',
+        ],
+        'MD-S075-R0029' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value',
+            'basis' => 'terminal_status carries the value of its own terminal_status column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading it from the quality gate turns the sentinel and the real-run guards red (A04)',
+        ],
+        'MD-S075-R0030' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value',
+            'basis' => 'quality_gate_state carries the value of its own quality_gate_state column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading it from the terminal status turns it red (G02)',
+        ],
+        'MD-S075-R0031' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value',
+            'basis' => 'publishability_state carries the value of its own publishability_state column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading it from the terminal status turns it red (G03)',
+        ],
+        'MD-S075-R0032' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value',
+            'basis' => 'stage carries the value of its own stage column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; swapping it with the lifecycle state turns it red (A05)',
+        ],
+        'MD-S075-R0033' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value',
+            'basis' => 'source carries the value of its own source column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading it from the request mode turns it red (A06)',
+        ],
+        'MD-S075-R0034' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_source_context_carries_its_minimum_fields_from_the_persisted_source_columns',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_source_context_invents_no_source_fact_the_run_never_recorded',
+            'basis' => 'source_context is an array block carrying the six minimum fields, from persisted columns or recovered from persisted notes; truncating the block turns the guards red (G04b)',
+        ],
+        'MD-S075-R0035' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_source_context_carries_its_minimum_fields_from_the_persisted_source_columns',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_source_context_invents_no_source_fact_the_run_never_recorded',
+            'basis' => 'source_name comes from the source_name column, is recovered from notes when the column is thin, and is null when nothing was recorded; reading it from the provider column or dropping the notes recovery turns a guard red (B01, B02)',
+        ],
+        'MD-S075-R0036' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_source_context_carries_its_minimum_fields_from_the_persisted_source_columns',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_source_context_recovers_thin_minimum_fields_from_persisted_notes_only',
+            'basis' => 'source_input_file comes from the source_input_file column or the notes; reading it from the file hash turns the guard red (B09)',
+        ],
+        'MD-S075-R0037' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_source_context_carries_its_minimum_fields_from_the_persisted_source_columns',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_source_context_invents_no_source_fact_the_run_never_recorded',
+            'basis' => 'attempt_count comes from source_attempt_count (4) or the notes (5) and is null when unrecorded; reading the retry maximum, or defaulting to 1, turns a guard red (B03, B07)',
+        ],
+        'MD-S075-R0038' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_source_context_carries_its_minimum_fields_from_the_persisted_source_columns',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_source_context_invents_no_source_fact_the_run_never_recorded',
+            'basis' => 'success_after_retry is yes for a persisted 1, no for a persisted 0 and null when unrecorded; inverting it turns the guard red (B04)',
+        ],
+        'MD-S075-R0039' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_source_context_carries_its_minimum_fields_from_the_persisted_source_columns',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_source_context_invents_no_source_fact_the_run_never_recorded',
+            'basis' => 'final_http_status comes from source_final_http_status (503) or the notes (429) and is null when unrecorded; reading the timeout column turns the guard red (B05)',
+        ],
+        'MD-S075-R0040' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_source_context_carries_its_minimum_fields_from_the_persisted_source_columns',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_source_context_invents_no_source_fact_the_run_never_recorded',
+            'basis' => 'final_reason_code comes from source_final_reason_code or the notes and is null when unrecorded; exporting an UNKNOWN stand-in turns a guard red (B06)',
+        ],
+        'MD-S075-R0041' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'coverage_ratio carries the value of its own coverage_ratio column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; defaulting an absent ratio to 0 turns the NULL guard red (C01)',
+        ],
+        'MD-S075-R0042' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'bars_rows_written carries the value of its own bars_rows_written column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the indicator rows turns it red (C02)',
+        ],
+        'MD-S075-R0043' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'indicators_rows_written carries the value of its own indicators_rows_written column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the bar rows turns it red (G05)',
+        ],
+        'MD-S075-R0044' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'eligibility_rows_written carries the value of its own eligibility_rows_written column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the indicator rows turns it red (G06)',
+        ],
+        'MD-S075-R0045' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'invalid_bar_count carries the value of its own invalid_bar_count column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the invalid indicator count turns it red (G07)',
+        ],
+        'MD-S075-R0046' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'invalid_indicator_count carries the value of its own invalid_indicator_count column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the invalid bar count turns it red (G08)',
+        ],
+        'MD-S075-R0048' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'hard_reject_count carries the value of its own hard_reject_count column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the invalid bar count turns it red (C04)',
+        ],
+        'MD-S075-R0049' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'bars_batch_hash carries the value of its own bars_batch_hash column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the eligibility hash turns it red (D01)',
+        ],
+        'MD-S075-R0050' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'indicators_batch_hash carries the value of its own indicators_batch_hash column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the bars hash turns it red (G09)',
+        ],
+        'MD-S075-R0051' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'eligibility_batch_hash carries the value of its own eligibility_batch_hash column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the indicators hash turns it red (G10)',
+        ],
+        'MD-S075-R0052' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryRealRunProvenanceTest::test_publication_facing_fields_agree_with_the_publication_and_snapshot_rows',
+            'basis' => 'observation_manifest_hash carries the run column in a run record where every column differs, and on a real run it equals the observation manifest hash of the sealed publication read from eod_publications; reading the bars hash turns the guard red (D03)',
+        ],
+        'MD-S075-R0053' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_publication_facing_field_comes_from_the_manifest_of_the_runs_own_publication',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_run_without_a_resolved_publication_exports_no_publication_facing_value',
+            'basis' => 'publication_manifest_hash is read from the manifest of the run\'s own publication (decoys for every other id and on the run record), equals the eod_publications column on a real run, and is null when no publication resolved; reading it from the run, or from a neighbouring publication id, turns a guard red (D04, F05)',
+        ],
+        'MD-S075-R0054' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_missing_seal_evidence_on_a_readable_claim_is_exported_as_missing',
+            'basis' => 'sealed_at carries the sealed_at column, is null for a run that never sealed, and is never replaced by the finish time; a stand-in turns the guards red (D02)',
+        ],
+        'MD-S075-R0055' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value',
+            'basis' => 'config_version carries the value of its own config_version column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the config hash turns it red (E01)',
+        ],
+        'MD-S075-R0056' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'config_snapshot_id carries the value of its own config_snapshot_id column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the publication id as the snapshot id turns it red (E02b)',
+        ],
+        'MD-S075-R0057' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_publication_facing_field_comes_from_the_manifest_of_the_runs_own_publication',
+            'negative' => 'B19RunSummaryRealRunProvenanceTest::test_publication_facing_fields_agree_with_the_publication_and_snapshot_rows',
+            'basis' => 'config_snapshot_hash is read from the manifest of the run\'s own publication (decoys elsewhere) and on a real run equals md_config_snapshots.config_hash of the run\'s snapshot read directly; reading the run record or a neighbouring publication turns a guard red (E03, F05)',
+        ],
+        'MD-S075-R0058' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_publication_facing_field_comes_from_the_manifest_of_the_runs_own_publication',
+            'negative' => 'B19RunSummaryRealRunProvenanceTest::test_publication_facing_fields_agree_with_the_publication_and_snapshot_rows',
+            'basis' => 'temporal_revision_set_hash is read from the manifest of the run\'s own publication, is a SHA-256 value on a real run and equals what the repository resolves for that publication; reading the run record or a neighbouring publication turns a guard red (E04, F05)',
+        ],
+        'MD-S075-R0059' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_publication_facing_field_comes_from_the_manifest_of_the_runs_own_publication',
+            'negative' => 'B19RunSummaryRealRunProvenanceTest::test_publication_facing_fields_agree_with_the_publication_and_snapshot_rows',
+            'basis' => 'factor_set_id is read from the manifest of the run\'s own publication and on a real run equals eod_publications.factor_set_id; reading the run\'s decoy value turns a guard red (E05, F05)',
+        ],
+        'MD-S075-R0060' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'factor_set_hash carries the value of its own factor_set_hash column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the observation hash turns it red (E06)',
+        ],
+        'MD-S075-R0061' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'price_product_code carries the value of its own price_product_code column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the source turns it red (E07)',
+        ],
+        'MD-S075-R0062' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_publication_facing_field_comes_from_the_manifest_of_the_runs_own_publication',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_run_without_a_resolved_publication_exports_no_publication_facing_value',
+            'basis' => 'canonicalization_version is read from the manifest of the run\'s own publication, is non-null on a real run and equals what the repository resolves, and is null when no publication resolved; a fixed-label stand-in turns the guard red (E08)',
+        ],
+        'MD-S075-R0063' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_publication_facing_field_comes_from_the_manifest_of_the_runs_own_publication',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_run_without_a_resolved_publication_exports_no_publication_facing_value',
+            'basis' => 'formula_version is read from the manifest of the run\'s own publication, is non-null on a real run and equals what the repository resolves, and is null when no publication resolved; a fixed-label stand-in turns the guard red (E09)',
+        ],
+        'MD-S075-R0064' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_publication_facing_field_comes_from_the_manifest_of_the_runs_own_publication',
+            'negative' => 'B19RunSummaryRealRunProvenanceTest::test_publication_facing_fields_agree_with_the_publication_and_snapshot_rows',
+            'basis' => 'read_model_version is read from the manifest of the run\'s own publication and on a real run equals eod_publications.read_model_version; reading the run\'s decoy value turns a guard red (E10)',
+        ],
+        'MD-S075-R0065' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'freshness_state carries the value of its own freshness_state column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the stage turns it red (F01)',
+        ],
+        'MD-S075-R0066' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_publication_facing_field_comes_from_the_manifest_of_the_runs_own_publication',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_run_without_a_resolved_publication_exports_no_publication_facing_value',
+            'basis' => 'publication_version is the version of the run\'s own publication (4 in the sentinel, equal to eod_publications.publication_version on a real run) and null when no publication resolved; an off-by-one turns the guard red (G11). Where the run column and the manifest could differ the manifest\'s live value is exported; the pipeline keeps both in step and the real run shows agreement, so no precedence is claimed',
+        ],
+        'MD-S075-R0067' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_readable_success_carries_the_seal_and_publication_evidence_it_implies',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_held_or_failed_run_is_never_summarised_as_readable',
+            'basis' => 'is_current_publication is true for a readable success on its current publication and false for every run that published nothing; marking every run current, or no run current, turns a guard red (F06, G12). Same precedence note as R0066',
+        ],
+        'MD-S075-R0068' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'supersedes_run_id carries the value of its own supersedes_run_id column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the correction id turns it red (F02)',
+        ],
+        'MD-S075-R0069' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'started_at carries the value of its own started_at column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the creation time turns it red (F03)',
+        ],
+        'MD-S075-R0070' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default',
+            'basis' => 'finished_at carries the value of its own finished_at column in a run record where every column differs, a persisted NULL stays NULL, and a real sealed run agrees with eod_runs; reading the start time turns it red (F04)',
+        ],
+        'MD-S075-R0071' => [
+            'positive' => 'B19RunSummaryRealRunProvenanceTest::test_a_real_readable_success_carries_compatible_seal_and_publication_evidence',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_held_or_failed_run_is_never_summarised_as_readable',
+            'basis' => 'the outcome fields (terminal_status, publishability_state, quality_gate_state, ...) equal the persisted row on a real run and the persisted values in every held, failed and not-readable variant; deriving them from a neighbouring column or marking a run current turns a guard red (A04, G02, G03, F06)',
+        ],
+        'MD-S075-R0072' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_readable_success_carries_the_seal_and_publication_evidence_it_implies',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_missing_seal_evidence_on_a_readable_claim_is_exported_as_missing',
+            'basis' => 'a readable success carries seal time, the three batch hashes, the publication manifest hash, a publication version and the current marking, all equal to the sealed publication on a real run; when a run claims readability without seal evidence the summary exports the absence rather than a stand-in; a seal-time stand-in or a false current marking turns a guard red (D02, G12)',
+        ],
+        'MD-S075-R0073' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_a_held_or_failed_run_is_never_summarised_as_readable',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_a_run_without_a_resolved_publication_exports_no_publication_facing_value',
+            'basis' => 'held, failed and not-readable runs are not promoted, switch no pointer, name no current publication, carry no seal and export no publication-facing value, and their outcome note says not readable; a stand-in seal, a current marking or an always-switched pointer turns a guard red (F06, F07, D02)',
+        ],
+        'MD-S075-R0076' => [
+            'positive' => 'B19RunSummaryValueProvenanceTest::test_source_context_recovers_thin_minimum_fields_from_persisted_notes_only',
+            'negative' => 'B19RunSummaryValueProvenanceTest::test_source_context_invents_no_source_fact_the_run_never_recorded',
+            'basis' => 'source_context recovers minimum fields from persisted notes only, reads only the exported run\'s record, and invents no source fact: a run with no recorded source telemetry has null minimum fields and a null retry_attempt_count (it exported 0 retries before this unit\'s correction); a stand-in reason, a default attempt count, a dropped notes recovery or the old zero default turns a guard red (B02, B06, B07, B08)',
+        ],
     ];
 }

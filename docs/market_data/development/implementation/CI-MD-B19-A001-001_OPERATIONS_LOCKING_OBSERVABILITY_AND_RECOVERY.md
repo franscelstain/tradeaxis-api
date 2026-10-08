@@ -193,3 +193,11 @@ Same attempt, baseline and declaration. **Actual impact: runtime behaviour.** `P
 This is the **first executable-build change** under O1: from 2026-10-08T08:57:11+07:00 candidate-v5 is historical-only for the current build and `MD-DEP-0025` is the active successor-pending tracker; `MD-B18` is not reopened and candidate-v6 is not created. The expected failure of the R0025 build-identity control is recorded, not skipped. `range_window_checkpoint_resume` is complete at 13/13; reviewed bases 21/743.
 
 Strategy meaning change: `NO`.
+
+## 2026-10-08T12:02:54+07:00 artifact_run_summary (`E-MD-B19-A001-005`)
+
+Same attempt, baseline and declaration. **Actual impact: runtime behaviour, one line.** `MarketDataEvidenceExportService::buildSourceContext()` exported `retry_attempt_count` as 0 for a run that recorded no retry telemetry -- a source fact the run never recorded, which `MD-S075-R0076` forbids; it is now null when unrecorded. This is the **third executable-build file** (after `PublicApiEodBarsAdapter.php` and `ApiBackfillRangeAcquisitionService.php`); `MD-DEP-0025` lists it, candidate-v5 stays historical-only, candidate-v6 is not created, and the governed successor-pending set is the same 13 tests. No schema or configuration change.
+
+The family's existing guard proved that each minimum field is a key of the file; it passed with the seven manifest-derived fields holding null. Two new guards prove values (a run record whose every column differs, the manifest of the run's own publication against decoys, and a real sealed run read directly from the tables). 49 of 52 predicates are established; `MD-S075-R0047`, `R0074` and `R0075` are held on owner questions (`F-MD-B19-A001-005`, `F-MD-B19-A001-006`). Reviewed per-predicate bases 70/743.
+
+Strategy meaning change: `NO`.

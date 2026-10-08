@@ -1492,7 +1492,8 @@ class MarketDataEvidenceExportService
             'requested_trade_date' => $record->trade_date_requested ?? null,
             'source_priority' => $notesMap['source_priority'] ?? ($sourceMode === 'api' ? 'PRIMARY' : (in_array($sourceMode, ['manual_file', 'manual_entry'], true) ? 'SECONDARY_CONTROLLED_RECOVERY' : null)),
             'active_source_decision' => $notesMap['active_source_decision'] ?? ($sourceMode === 'api' ? 'api_free' : ($sourceMode === 'manual_entry' ? 'manual_file' : $sourceMode)),
-            'retry_attempt_count' => isset($notesMap['source_retry_attempt_count']) && $notesMap['source_retry_attempt_count'] !== '' ? (int) $notesMap['source_retry_attempt_count'] : 0,
+            // A run that recorded no retry telemetry has no retry count: absence is not zero (MD-S075-R0076).
+            'retry_attempt_count' => isset($notesMap['source_retry_attempt_count']) && $notesMap['source_retry_attempt_count'] !== '' ? (int) $notesMap['source_retry_attempt_count'] : null,
             'failure_class_summary' => $this->decodeJsonObject($notesMap['source_failure_class_summary_json'] ?? null),
             'observation_manifest_hash' => $record->observation_manifest_hash ?? null,
             'source_provider' => $provider,

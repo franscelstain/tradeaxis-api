@@ -1,0 +1,1125 @@
+{
+    "evidence_id": "E-MD-B19-A001-005",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B19",
+    "attempt_id": "MD-B19-A001",
+    "work_id": "MD-B19-A001",
+    "baseline_id": "MD-B19-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B19-A001-001",
+    "issued_at": "2026-10-08T12:02:54+07:00",
+    "evidence_type": "BOUNDED_FAMILY_PROOF_WITH_PRODUCTION_CORRECTION_AND_HELD_PREDICATES",
+    "verdict": "ARTIFACT_RUN_SUMMARY_49_OF_52_ESTABLISHED_PER_PREDICATE_R0076_CORRECTED_R0047_R0074_R0075_HELD",
+    "checkpoint_verdict": "MD-B19-A001 ARTIFACT-RUN-SUMMARY PARTIAL — BOUNDED GAP IDENTIFIED",
+    "starting_state": {
+        "reviewed_bases": "21/743",
+        "families_fully_reviewed": "2/37",
+        "attempt": "MD-B19-A001 active",
+        "family": "artifact_run_summary: exactly the 52 predicates MD-S075-R0025..R0076, existing guard pair B19RunSummaryArtifactContractTest",
+        "build_before": "two files differ from the candidate-v5 manifest (adapter, acquisition service); MD-DEP-0025 listed both"
+    },
+    "audit_of_the_40_of_40": {
+        "what_it_proved": "every minimum field of the contract is a KEY of the exported file (array_key_exists)",
+        "what_it_did_not_prove": "any VALUE. Its publication lookup returns nothing, so all seven manifest-derived fields (publication_manifest_hash, config_snapshot_hash, temporal_revision_set_hash, factor_set_id, canonicalization_version, formula_version, read_model_version) are keys holding null; a field read from the wrong column, a sibling, or a default would pass unchanged",
+        "real_run_measurement": "raw measurement_real_run_summary_vs_rows.json: on a run produced by the real pipeline every minimum field is present; every key shared with an eod_runs column (43 shared names) equals the persisted value except final_reason_code (persisted NULL, exported COVERAGE_THRESHOLD_MET); warning_count is persisted NULL and no code in app/ writes it",
+        "thin_run_measurement": "raw measurement_thin_run_source_context.json: a run with no source telemetry exported retry_attempt_count 0 (an invented fact); source_priority / active_source_decision are derived from the persisted source mode; source_final_status SUCCESS is derived from a SUCCESS terminal status (recorded as derivations, not asserted either way)",
+        "covered_by_the_old_guard": "R0025..R0070 as key presence only; R0073 (held run) by value"
+    },
+    "predicate_matrix": [
+        {
+            "rule_id": "MD-S075-R0025",
+            "sub_cluster": "A run identity and outcome",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0026",
+            "sub_cluster": "A run identity and outcome",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0027",
+            "sub_cluster": "A run identity and outcome",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0028",
+            "sub_cluster": "A run identity and outcome",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0029",
+            "sub_cluster": "A run identity and outcome",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0030",
+            "sub_cluster": "A run identity and outcome",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0031",
+            "sub_cluster": "A run identity and outcome",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0032",
+            "sub_cluster": "A run identity and outcome",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0033",
+            "sub_cluster": "A run identity and outcome",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0034",
+            "sub_cluster": "B source_context companion block",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_source_context_carries_its_minimum_fields_from_the_persisted_source_columns",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_source_context_invents_no_source_fact_the_run_never_recorded",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0035",
+            "sub_cluster": "B source_context companion block",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_source_context_carries_its_minimum_fields_from_the_persisted_source_columns",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_source_context_invents_no_source_fact_the_run_never_recorded",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0036",
+            "sub_cluster": "B source_context companion block",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_source_context_carries_its_minimum_fields_from_the_persisted_source_columns",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_source_context_recovers_thin_minimum_fields_from_persisted_notes_only",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0037",
+            "sub_cluster": "B source_context companion block",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_source_context_carries_its_minimum_fields_from_the_persisted_source_columns",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_source_context_invents_no_source_fact_the_run_never_recorded",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0038",
+            "sub_cluster": "B source_context companion block",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_source_context_carries_its_minimum_fields_from_the_persisted_source_columns",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_source_context_invents_no_source_fact_the_run_never_recorded",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0039",
+            "sub_cluster": "B source_context companion block",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_source_context_carries_its_minimum_fields_from_the_persisted_source_columns",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_source_context_invents_no_source_fact_the_run_never_recorded",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0040",
+            "sub_cluster": "B source_context companion block",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_source_context_carries_its_minimum_fields_from_the_persisted_source_columns",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_source_context_invents_no_source_fact_the_run_never_recorded",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0041",
+            "sub_cluster": "C coverage and row counts",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0042",
+            "sub_cluster": "C coverage and row counts",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0043",
+            "sub_cluster": "C coverage and row counts",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0044",
+            "sub_cluster": "C coverage and row counts",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0045",
+            "sub_cluster": "C coverage and row counts",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0046",
+            "sub_cluster": "C coverage and row counts",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0047",
+            "sub_cluster": "C coverage and row counts",
+            "classification": "D",
+            "positive_guard": null,
+            "negative_guard": null,
+            "basis_entry": "HELD"
+        },
+        {
+            "rule_id": "MD-S075-R0048",
+            "sub_cluster": "C coverage and row counts",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0049",
+            "sub_cluster": "D hashes and seal",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0050",
+            "sub_cluster": "D hashes and seal",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0051",
+            "sub_cluster": "D hashes and seal",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0052",
+            "sub_cluster": "D hashes and seal",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryRealRunProvenanceTest::test_publication_facing_fields_agree_with_the_publication_and_snapshot_rows",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0053",
+            "sub_cluster": "D hashes and seal",
+            "classification": "B",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_publication_facing_field_comes_from_the_manifest_of_the_runs_own_publication",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_run_without_a_resolved_publication_exports_no_publication_facing_value",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0054",
+            "sub_cluster": "D hashes and seal",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_missing_seal_evidence_on_a_readable_claim_is_exported_as_missing",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0055",
+            "sub_cluster": "E config and V2 bindings",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryRealRunProvenanceTest::test_every_summary_key_named_like_an_eod_runs_column_carries_that_columns_value",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0056",
+            "sub_cluster": "E config and V2 bindings",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0057",
+            "sub_cluster": "E config and V2 bindings",
+            "classification": "B",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_publication_facing_field_comes_from_the_manifest_of_the_runs_own_publication",
+            "negative_guard": "B19RunSummaryRealRunProvenanceTest::test_publication_facing_fields_agree_with_the_publication_and_snapshot_rows",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0058",
+            "sub_cluster": "E config and V2 bindings",
+            "classification": "B",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_publication_facing_field_comes_from_the_manifest_of_the_runs_own_publication",
+            "negative_guard": "B19RunSummaryRealRunProvenanceTest::test_publication_facing_fields_agree_with_the_publication_and_snapshot_rows",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0059",
+            "sub_cluster": "E config and V2 bindings",
+            "classification": "B",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_publication_facing_field_comes_from_the_manifest_of_the_runs_own_publication",
+            "negative_guard": "B19RunSummaryRealRunProvenanceTest::test_publication_facing_fields_agree_with_the_publication_and_snapshot_rows",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0060",
+            "sub_cluster": "E config and V2 bindings",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0061",
+            "sub_cluster": "E config and V2 bindings",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0062",
+            "sub_cluster": "E config and V2 bindings",
+            "classification": "B",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_publication_facing_field_comes_from_the_manifest_of_the_runs_own_publication",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_run_without_a_resolved_publication_exports_no_publication_facing_value",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0063",
+            "sub_cluster": "E config and V2 bindings",
+            "classification": "B",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_publication_facing_field_comes_from_the_manifest_of_the_runs_own_publication",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_run_without_a_resolved_publication_exports_no_publication_facing_value",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0064",
+            "sub_cluster": "E config and V2 bindings",
+            "classification": "B",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_publication_facing_field_comes_from_the_manifest_of_the_runs_own_publication",
+            "negative_guard": "B19RunSummaryRealRunProvenanceTest::test_publication_facing_fields_agree_with_the_publication_and_snapshot_rows",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0065",
+            "sub_cluster": "F publication lineage and timestamps",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0066",
+            "sub_cluster": "F publication lineage and timestamps",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_publication_facing_field_comes_from_the_manifest_of_the_runs_own_publication",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_run_without_a_resolved_publication_exports_no_publication_facing_value",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0067",
+            "sub_cluster": "F publication lineage and timestamps",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_readable_success_carries_the_seal_and_publication_evidence_it_implies",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_held_or_failed_run_is_never_summarised_as_readable",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0068",
+            "sub_cluster": "F publication lineage and timestamps",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0069",
+            "sub_cluster": "F publication lineage and timestamps",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0070",
+            "sub_cluster": "F publication lineage and timestamps",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_mirrored_field_carries_the_value_of_its_own_persisted_column",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_persisted_null_is_exported_as_null_not_as_a_default",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0071",
+            "sub_cluster": "G locked rules",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryRealRunProvenanceTest::test_a_real_readable_success_carries_compatible_seal_and_publication_evidence",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_held_or_failed_run_is_never_summarised_as_readable",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0072",
+            "sub_cluster": "G locked rules",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_readable_success_carries_the_seal_and_publication_evidence_it_implies",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_missing_seal_evidence_on_a_readable_claim_is_exported_as_missing",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0073",
+            "sub_cluster": "G locked rules",
+            "classification": "A",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_a_held_or_failed_run_is_never_summarised_as_readable",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_a_run_without_a_resolved_publication_exports_no_publication_facing_value",
+            "basis_entry": "WRITTEN"
+        },
+        {
+            "rule_id": "MD-S075-R0074",
+            "sub_cluster": "G locked rules",
+            "classification": "D",
+            "positive_guard": null,
+            "negative_guard": null,
+            "basis_entry": "HELD"
+        },
+        {
+            "rule_id": "MD-S075-R0075",
+            "sub_cluster": "G locked rules",
+            "classification": "D",
+            "positive_guard": null,
+            "negative_guard": null,
+            "basis_entry": "HELD"
+        },
+        {
+            "rule_id": "MD-S075-R0076",
+            "sub_cluster": "B source_context companion block",
+            "classification": "C",
+            "positive_guard": "B19RunSummaryValueProvenanceTest::test_source_context_recovers_thin_minimum_fields_from_persisted_notes_only",
+            "negative_guard": "B19RunSummaryValueProvenanceTest::test_source_context_invents_no_source_fact_the_run_never_recorded",
+            "basis_entry": "WRITTEN"
+        }
+    ],
+    "classification_counts": {
+        "A": 41,
+        "B": 7,
+        "C": 1,
+        "D": 3,
+        "definitions": {
+            "A": "implementation already conforms, proof only missing",
+            "B": "test/harness gap (an existing guard passed with null values)",
+            "C": "production implementation gap (corrected in this unit)",
+            "D": "owner/authority question (held)"
+        }
+    },
+    "sub_clusters": {
+        "A run identity and outcome": "R0025..R0033 (9)",
+        "B source_context companion block": "R0034..R0040, R0076 (8)",
+        "C coverage and row counts": "R0041..R0048 (8)",
+        "D hashes and seal": "R0049..R0054 (6)",
+        "E config and V2 bindings": "R0055..R0064 (10)",
+        "F publication lineage and timestamps": "R0065..R0070 (6)",
+        "G locked rules": "R0071..R0075 (5)"
+    },
+    "production_change": {
+        "file": "app/Application/MarketData/Services/MarketDataEvidenceExportService.php",
+        "change": "source_context.retry_attempt_count defaults to null, not 0, when the run recorded no retry telemetry (MD-S075-R0076: the companion block must not invent source facts absent from persisted run context)",
+        "sha256_before": "3aeee9762b391a3fe9d017c34fd624942322de6ef8922b09d4454fb58ae8d21d",
+        "sha256_after": "95582f083dd31901aa2bdb57b1834326a20b9d94c87ef3742ab6b3dbc484ff06",
+        "time": "2026-10-08T11:26:42+07:00 (mtime of the write)",
+        "consumers_checked": "MarketDataPipelineIntegrationTest (manual-file runs still report 0 because the pipeline persists source_retry_attempt_count=0 in the notes), MarketDataEvidenceExportServiceTest, SourceProviderResilienceStaticGuardTest and the full suite",
+        "diff": "raw export_service_change.diff"
+    },
+    "build_impact": {
+        "files_differing_from_candidate_v5_manifest": [
+            "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+            "app/Application/MarketData/Services/MarketDataEvidenceExportService.php",
+            "app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php"
+        ],
+        "third_file_added": "app/Application/MarketData/Services/MarketDataEvidenceExportService.php",
+        "candidate_v5": "immutable historical proof, unchanged",
+        "candidate_v6": "NOT created",
+        "md_dep_0025": "file list extended"
+    },
+    "held": {
+        "MD-S075-R0047": "F-MD-B19-A001-005: warning_count is never written by the pipeline and \"warning\" is not defined anywhere; the summary mirrors the persisted value faithfully",
+        "MD-S075-R0074": "F-MD-B19-A001-006: final_reason_code is a derived value under a persisted column name",
+        "MD-S075-R0075": "F-MD-B19-A001-006: derived values are unmarked and the contract does not define a marker"
+    },
+    "guards": [
+        "B19RunSummaryValueProvenanceTest: 51 test cases (every column of the run record a different value; manifest decoys for every other publication id; decoys on the run record under the manifest field names)",
+        "B19RunSummaryRealRunProvenanceTest: 4 tests on a real sealed run, expectations read directly from eod_runs, eod_publications and md_config_snapshots"
+    ],
+    "probes": {
+        "distinct_mutations_red_for_the_intended_reason": 52,
+        "restore": "every file restored byte for byte, sha256 verified; green control before and after each",
+        "first_pass_not_as_intended": {
+            "probe_rs_results.json": {
+                "E02_config_snapshot_id_from_publication_id": {
+                    "verdict": "EXPECTED_GUARD_DID_NOT_FAIL",
+                    "failed_under_mutation": [
+                        "test_a_persisted_null_is_exported_as_null_not_as_a_default"
+                    ],
+                    "expected_but_green": [
+                        "test_a_mirrored_field_carries_the_value_of_its_own_persisted_column with data set \"config_snapshot_id (R0056)\""
+                    ]
+                }
+            }
+        },
+        "first_pass_note": "E02 mutated only the null-check line of config_snapshot_id (re-run as E02b on the value line); G04 emptied the block and crashed every test (re-run as G04b: a block truncated to its first three keys). Neither first attempt is counted.",
+        "real_run_guard_in_the_probe_set": [
+            "A04",
+            "E03",
+            "D01",
+            "B01"
+        ],
+        "detail": {
+            "A01_run_id_from_the_publication_id": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0025"
+                ],
+                "note": "wrong identity source",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "A02_effective_date_is_the_requested_date": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0027"
+                ],
+                "note": "effective date replaced by the requested date",
+                "failed_under_mutation_count": 2,
+                "verdict": "RED_INTENDED"
+            },
+            "A03_lifecycle_state_from_stage": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0028"
+                ],
+                "note": "lifecycle state read from the stage column",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "A04_terminal_status_from_quality_gate": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0029"
+                ],
+                "note": "terminal status read from the quality gate",
+                "failed_under_mutation_count": 8,
+                "verdict": "RED_INTENDED"
+            },
+            "A05_stage_from_lifecycle_state": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0032"
+                ],
+                "note": "stage and lifecycle state swapped",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "A06_source_from_request_mode": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0033"
+                ],
+                "note": "source read from the request mode",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "C01_coverage_ratio_defaults_to_zero": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0041"
+                ],
+                "note": "absent coverage ratio exported as 0",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "C02_bars_rows_from_indicator_rows": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0042"
+                ],
+                "note": "bars and indicator rows swapped",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "C03_warning_count_defaults_to_zero": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0047"
+                ],
+                "note": "absent warning count exported as 0",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "C04_hard_rejects_from_invalid_bars": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0048"
+                ],
+                "note": "hard rejects read from the invalid bar count",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "D01_bars_hash_from_eligibility_hash": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0049"
+                ],
+                "note": "batch hashes swapped",
+                "failed_under_mutation_count": 3,
+                "verdict": "RED_INTENDED"
+            },
+            "D02_seal_time_has_a_stand_in": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0054",
+                    "R0072",
+                    "R0073"
+                ],
+                "note": "a run with no seal time exports its finish time as the seal",
+                "failed_under_mutation_count": 8,
+                "verdict": "RED_INTENDED"
+            },
+            "D03_observation_hash_from_bars_hash": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0052"
+                ],
+                "note": "observation manifest hash read from the bars hash",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "D04_publication_manifest_hash_read_from_the_run": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0053"
+                ],
+                "note": "publication-facing hash read from the run record",
+                "failed_under_mutation_count": 5,
+                "verdict": "RED_INTENDED"
+            },
+            "E01_config_version_from_config_hash": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0055"
+                ],
+                "note": "config version read from the config hash",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "E03_config_snapshot_hash_read_from_the_run": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0057"
+                ],
+                "note": "snapshot hash read from the run record",
+                "failed_under_mutation_count": 5,
+                "verdict": "RED_INTENDED"
+            },
+            "E04_temporal_hash_read_from_the_run": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0058"
+                ],
+                "note": "temporal revision set hash read from the run record",
+                "failed_under_mutation_count": 4,
+                "verdict": "RED_INTENDED"
+            },
+            "E05_factor_set_id_read_from_the_run": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0059"
+                ],
+                "note": "factor set id read from the run record",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "E06_factor_set_hash_from_observation_hash": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0060"
+                ],
+                "note": "factor set hash read from the observation hash",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "E07_price_product_from_source": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0061"
+                ],
+                "note": "price product read from the source",
+                "failed_under_mutation_count": 2,
+                "verdict": "RED_INTENDED"
+            },
+            "E08_canonicalization_has_a_stand_in": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0062",
+                    "R0075"
+                ],
+                "note": "canonicalization version defaults to a fixed label",
+                "failed_under_mutation_count": 3,
+                "verdict": "RED_INTENDED"
+            },
+            "E09_formula_version_has_a_stand_in": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0063",
+                    "R0075"
+                ],
+                "note": "formula version defaults to a fixed label",
+                "failed_under_mutation_count": 3,
+                "verdict": "RED_INTENDED"
+            },
+            "E10_read_model_version_read_from_the_run": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0064"
+                ],
+                "note": "read model version read from the run record",
+                "failed_under_mutation_count": 4,
+                "verdict": "RED_INTENDED"
+            },
+            "F01_freshness_from_stage": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0065"
+                ],
+                "note": "freshness read from the stage",
+                "failed_under_mutation_count": 2,
+                "verdict": "RED_INTENDED"
+            },
+            "F02_supersedes_run_from_correction": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0068"
+                ],
+                "note": "superseded run read from the correction id",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "F03_started_at_from_created_at": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0069"
+                ],
+                "note": "start time read from the creation time",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "F04_finished_at_from_started_at": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0070"
+                ],
+                "note": "finish time read from the start time",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "F05_manifest_of_a_sibling_publication": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0053",
+                    "R0057",
+                    "R0058",
+                    "R0059"
+                ],
+                "note": "the manifest of a neighbouring publication id is exported",
+                "failed_under_mutation_count": 7,
+                "verdict": "RED_INTENDED"
+            },
+            "F06_a_non_readable_run_is_marked_current": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0067",
+                    "R0073"
+                ],
+                "note": "every run is marked as the current publication",
+                "failed_under_mutation_count": 7,
+                "verdict": "RED_INTENDED"
+            },
+            "F07_pointer_always_switched": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0073"
+                ],
+                "note": "a non-readable run is summarised as having switched the pointer",
+                "failed_under_mutation_count": 4,
+                "verdict": "RED_INTENDED"
+            },
+            "B01_source_name_from_provider": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0035"
+                ],
+                "note": "source name read from the provider column",
+                "failed_under_mutation_count": 3,
+                "verdict": "RED_INTENDED"
+            },
+            "B02_notes_recovery_dropped": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0035",
+                    "R0076"
+                ],
+                "note": "source name no longer recovered from persisted notes",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "B03_attempt_count_from_retry_max": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0037"
+                ],
+                "note": "attempt count read from the retry maximum",
+                "failed_under_mutation_count": 2,
+                "verdict": "RED_INTENDED"
+            },
+            "B04_success_after_retry_inverted": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0038"
+                ],
+                "note": "success-after-retry inverted",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "B05_final_status_from_timeout_seconds": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0039"
+                ],
+                "note": "final HTTP status read from the timeout",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "B06_final_reason_has_a_stand_in": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0040",
+                    "R0076"
+                ],
+                "note": "an unrecorded final reason is exported as UNKNOWN",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "B07_attempt_count_defaults_to_one": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0037",
+                    "R0076"
+                ],
+                "note": "an unrecorded attempt count is exported as 1",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "B08_retry_count_defaults_to_zero_again": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0076"
+                ],
+                "note": "the pre-correction behaviour: an unrecorded retry count is exported as 0",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "B09_input_file_from_file_hash": {
+                "pass": "probe_rs_results.json",
+                "predicates": [
+                    "R0036"
+                ],
+                "note": "input file read from the file hash",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "E02b_config_snapshot_id_value_from_publication_id": {
+                "pass": "probe_rs_results2.json",
+                "predicates": [
+                    "R0056"
+                ],
+                "note": "snapshot id VALUE read from the publication id (pass 1 only changed its null test)",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "G01_requested_date_is_the_effective_date": {
+                "pass": "probe_rs_results3.json",
+                "predicates": [
+                    "R0026"
+                ],
+                "note": "requested date replaced by the effective date",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "G02_quality_gate_from_terminal_status": {
+                "pass": "probe_rs_results3.json",
+                "predicates": [
+                    "R0030"
+                ],
+                "note": "quality gate read from the terminal status",
+                "failed_under_mutation_count": 4,
+                "verdict": "RED_INTENDED"
+            },
+            "G03_publishability_from_terminal_status": {
+                "pass": "probe_rs_results3.json",
+                "predicates": [
+                    "R0031"
+                ],
+                "note": "publishability read from the terminal status",
+                "failed_under_mutation_count": 5,
+                "verdict": "RED_INTENDED"
+            },
+            "G04_source_context_block_removed": {
+                "pass": "probe_rs_results3.json",
+                "predicates": [
+                    "R0034"
+                ],
+                "note": "the companion block is exported empty",
+                "failed_under_mutation_count": 53,
+                "verdict": "RED_INTENDED"
+            },
+            "G05_indicator_rows_from_bar_rows": {
+                "pass": "probe_rs_results3.json",
+                "predicates": [
+                    "R0043"
+                ],
+                "note": "indicator rows read from the bar rows",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "G06_eligibility_rows_from_indicator_rows": {
+                "pass": "probe_rs_results3.json",
+                "predicates": [
+                    "R0044"
+                ],
+                "note": "eligibility rows read from the indicator rows",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "G07_invalid_bars_from_invalid_indicators": {
+                "pass": "probe_rs_results3.json",
+                "predicates": [
+                    "R0045"
+                ],
+                "note": "invalid bar count read from the invalid indicator count",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "G08_invalid_indicators_from_invalid_bars": {
+                "pass": "probe_rs_results3.json",
+                "predicates": [
+                    "R0046"
+                ],
+                "note": "invalid indicator count read from the invalid bar count",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "G09_indicators_hash_from_bars_hash": {
+                "pass": "probe_rs_results3.json",
+                "predicates": [
+                    "R0050"
+                ],
+                "note": "indicators hash read from the bars hash",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "G10_eligibility_hash_from_indicators_hash": {
+                "pass": "probe_rs_results3.json",
+                "predicates": [
+                    "R0051"
+                ],
+                "note": "eligibility hash read from the indicators hash",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "G11_publication_version_is_wrong": {
+                "pass": "probe_rs_results3.json",
+                "predicates": [
+                    "R0066"
+                ],
+                "note": "publication version off by one",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "G12_current_marker_is_always_false": {
+                "pass": "probe_rs_results3.json",
+                "predicates": [
+                    "R0067"
+                ],
+                "note": "a current publication is exported as not current",
+                "failed_under_mutation_count": 1,
+                "verdict": "RED_INTENDED"
+            },
+            "G04b_source_context_block_truncated": {
+                "pass": "probe_rs_results3b.json",
+                "predicates": [
+                    "R0034"
+                ],
+                "note": "the companion block is exported without its minimum fields (truncated to its first three keys)",
+                "failed_under_mutation_count": 4,
+                "verdict": "RED_INTENDED"
+            }
+        }
+    },
+    "regression": {
+        "final_full_marketdata_suite": {
+            "tests": 3022,
+            "assertions": 42464,
+            "errors": 0,
+            "skipped": 0,
+            "failures": 23,
+            "oracle_failures": 7,
+            "build_identity_successor_pending_failures": 13,
+            "verdict": "NOT a full-suite PASS: 7 governed MD-B22 oracle failures + 13 governed build-identity failures (MD-DEP-0025) + 3 documentation-sequencing failures (below); nothing else",
+            "build_identity_failures": [
+                "B18ReleaseCandidateAcceptanceAggregateTest::test_md_s003_r0025_executes_all_scenario_family_members_on_mariadb_and_the_mirror_and_is_green",
+                "B18ScenarioFamiliesOnMariaDbTest::test_exact_publication_verification_family_on_mariadb",
+                "B18ScenarioFamiliesOnMirrorTest::test_exact_publication_verification_family_on_the_mirror",
+                "R0025SyntheticV2CandidateFixtureTest::test_a_target_with_the_wrong_freshness_state_gives_field_specific_mismatches_and_no_build_noise",
+                "R0025SyntheticV2CandidateFixtureTest::test_a_wrong_literal_in_any_one_bound_input_is_the_only_mismatch_it_causes",
+                "R0025SyntheticV2CandidateFixtureTest::test_a_wrong_publication_manifest_literal_is_the_only_mismatch_it_causes",
+                "R0025SyntheticV2CandidateFixtureTest::test_an_independent_package_with_any_other_assertion_layer_is_blocked_even_with_an_approval_supplied",
+                "R0025SyntheticV2CandidateFixtureTest::test_candidate_matches_the_actual_publication_but_is_not_admitted_as_proof",
+                "R0025SyntheticV2CandidateFixtureTest::test_each_semantic_member_of_the_event_factor_identity_moves_it",
+                "R0025SyntheticV2CandidateFixtureTest::test_the_admission_mechanism_admits_only_the_exact_fingerprint_and_refuses_any_damaged_package",
+                "R0025SyntheticV2CandidateFixtureTest::test_the_publication_bound_build_identity_is_the_frozen_build_identity",
+                "R0025SyntheticV2CandidateFixtureTest::test_the_real_target_emits_the_corrected_freshness_and_equals_the_independent_expectation",
+                "R0025SyntheticV2CandidateFixtureTest::test_two_allocation_layouts_give_identical_semantic_identities_and_the_oracle_literals"
+            ],
+            "sequencing_artefacts": {
+                "failures": [
+                    "FindingRecordConsistencyTest::test_every_open_finding_reaches_the_canonical_current_state",
+                    "GovernanceGateReadOnlyExecutionTest::test_gate_execution_preserves_every_document with data set \"documentation pass\"",
+                    "GovernanceGateReadOnlyExecutionTest::test_governance_self_test_remains_fail_closed_without_changing_documents"
+                ],
+                "cause": "the suite ran while the two new finding files F-MD-B19-A001-005 / -006 already existed in the repository but were not yet registered or listed in CURRENT_STATE; the open-finding and gate read-only tests correctly refused",
+                "resolution": "registered in the same unit; the same tests are re-run after registration; their result is reported in the unit report, not in this immutable record"
+            }
+        },
+        "r0025": "the 13 failures are the same names as in E-MD-B19-A001-004 and each still carries only the bound_input_executable_build_identity mismatch; the third changed file did not add a failure"
+    },
+    "state_after": {
+        "reviewed_bases": "70/743",
+        "without_basis": 673,
+        "artifact_run_summary": "49/52",
+        "fully_reviewed_families": "2/37",
+        "formal_satisfied": "0/743"
+    },
+    "raw_artifacts": {
+        "dir": "storage/app/market-data/evidence/MD-B19-A001/run-summary-20261008",
+        "manifest_sha256": "a8459d8f7a75f64a6e120eb06cf084dc3e28336bd4d2c6a3616fbbb2832f48af",
+        "files": {
+            "red_before_fix.txt": {
+                "sha256": "abe3b0d8bcef441009b04ae12bffddc44edc86ea49d63b3a3ca0bc532f80f7ae",
+                "bytes": 639
+            },
+            "export_service_change.diff": {
+                "sha256": "75d4986e8fe9353d0a4a8763d134b5f48c82daadfa367894171e13e2341ea045",
+                "bytes": 1620
+            },
+            "probe_pass1.json": {
+                "sha256": "043c8e48a9dcc5faa1c44f161ca8cd9e19afa228f317428db45c426b31b68cc9",
+                "bytes": 173982
+            },
+            "probe_pass2.json": {
+                "sha256": "9aedbd5b5655a41f9b16b9b2d4b680c9c240fc51bada26683973d6bf10fc22f3",
+                "bytes": 3352
+            },
+            "probe_pass3.json": {
+                "sha256": "f80891acd1b8c0e7073fa15c805addda3419b948e15bb6df1e68afc6b2f211fb",
+                "bytes": 85200
+            },
+            "probe_pass3b.json": {
+                "sha256": "11a084951c5d5e1d5cb314917aed05ee0711b0bf3c06d6ae60deb879da696ddc",
+                "bytes": 5154
+            },
+            "measurement_real_run_summary_vs_rows.json": {
+                "sha256": "a7a9ee1c727c8cdbccde13474c79cb592bcceb48b179e715f79825e1cfed65d1",
+                "bytes": 1178778
+            },
+            "measurement_thin_run_source_context.json": {
+                "sha256": "6d9ca936f927006ef17f335219a1856959f700653b4d9f4d862b73ec0a5ffe3d",
+                "bytes": 3943
+            },
+            "full_suite_raw_output.txt": {
+                "sha256": "5b5a50ee65381c9beefae68d4ee636dfbc512ff2b4bc5eacc4ba38c2cbcd6b6c",
+                "bytes": 30914
+            },
+            "full_suite_junit.xml": {
+                "sha256": "227532c8235a7c9858f45376e637898d615f6ac1ed0d2883573199435633506d",
+                "bytes": 1120356
+            },
+            "sha_export_service_pre_edit.txt": {
+                "sha256": "791466bd5eb64df48506c275abd04a742bab578ec4b2b1611c8fbfdfec49d820",
+                "bytes": 138
+            },
+            "sha_export_service_post_edit.txt": {
+                "sha256": "94c4ec6e962e9ee6eecb8606b582ed3ed24bda6fc3bbc92bb392aa8d96694300",
+                "bytes": 138
+            }
+        }
+    },
+    "related_findings": [
+        "F-MD-B19-A001-005",
+        "F-MD-B19-A001-006",
+        "F-MD-B19-A001-003",
+        "F-MD-B19-A001-002"
+    ],
+    "related_decisions": [
+        "D-MD-B19-A001-001"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0025"
+    ],
+    "next_resume_point": "owner answers F-MD-B19-A001-005 and F-MD-B19-A001-006 (they close artifact_run_summary at 52/52); meanwhile the next family is artifact_publication_manifest (33 predicates, same contract MD-S075 section 2)",
+    "no_commit_or_push": 1
+}
