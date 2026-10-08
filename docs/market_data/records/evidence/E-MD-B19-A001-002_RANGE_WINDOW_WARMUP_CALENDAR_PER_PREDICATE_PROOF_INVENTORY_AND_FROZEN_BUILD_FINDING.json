@@ -1,0 +1,708 @@
+{
+    "evidence_id": "E-MD-B19-A001-002",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B19",
+    "attempt_id": "MD-B19-A001",
+    "work_id": "MD-B19-A001",
+    "baseline_id": "MD-B19-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B19-A001-001",
+    "issued_at": "2026-10-08T07:08:21+07:00",
+    "evidence_type": "BOUNDED_FAMILY_PROOF_AND_CROSS_STAGE_MEASUREMENT",
+    "numbering_note": "E-MD-B19-A001-001 is reserved for the atomic binding of the denominator, as E-MD-B18-A002-001 was; interim evidence of this attempt starts at 002.",
+    "verdict": "FAMILY_RANGE_WINDOW_WARMUP_CALENDAR_ESTABLISHED_PER_PREDICATE_8_OF_8_NO_FROZEN_BUILD_FILE_CHANGED_CROSS_STAGE_FINDING_RAISED_F_MD_B19_A001_003",
+    "checkpoint_verdict": "MD-B19-A001 BOUNDED FAMILY COMPLETE",
+    "starting_state": {
+        "attempt": "MD-B19-A001 (valid; no successor opened)",
+        "baseline": "MD-B19-A001-BL001",
+        "stage_status": "IN_PROGRESS",
+        "denominator": "743 (707 MANDATORY + 36 CONDITIONAL_APPLICABLE; 192 REFERENCE_ONLY, 1 OPTIONAL)",
+        "formal_traceability": "0/743 SATISFIED, 743 NOT_ASSESSED",
+        "reviewed_per_predicate_bases_before": "0/743",
+        "families_declared": 37,
+        "families_with_a_family_level_guard_pair_before": 3,
+        "handoff": "MD-DEP-0009 RESOLVED by SC-MD-B18-A002-001; MD-DEP-0015/0017 resolved; MD-DEP-0016 and MD-DEP-0024 stay OPEN_NON_BLOCKING and are not B19 inputs",
+        "b18_successor_obligations_for_b19": "none other than the build-identity consequence recorded in F-MD-B19-A001-003 (D-MD-B18-A002-018 item 13)"
+    },
+    "inventory": {
+        "method": "Class by current repository state, not by test names alone. Depth MEASURED = compared with the output of the production pipeline on a real sealed publication, or executed against its guard in this unit; STRUCTURAL = contract structure, implementation presence and test inventory only, predicates not read one by one, class provisional.",
+        "families": 37,
+        "measured": 9,
+        "structural": 28,
+        "by_class": {
+            "A": {
+                "families": 1,
+                "predicates": 8
+            },
+            "B": {
+                "families": 15,
+                "predicates": 332
+            },
+            "C": {
+                "families": 14,
+                "predicates": 274
+            },
+            "D": {
+                "families": 7,
+                "predicates": 129
+            },
+            "E": {
+                "families": 0,
+                "predicates": 0
+            }
+        },
+        "class_definitions": {
+            "A": "proven/complete per predicate",
+            "B": "implementation conforms on what was measured, proof gap",
+            "C": "test/harness gap",
+            "D": "production implementation gap",
+            "E": "authority or owner decision required"
+        },
+        "class_E_note": "No family is E as its primary class. Three decisions gate work: E-1 (all D families and any production fix: F-MD-B19-A001-003), E-2 (range_window_acquisition: contract line 314 versus 355), E-3 (archived/executed evidence: who owns the archive).",
+        "rows": [
+            {
+                "family": "activation_boundary",
+                "predicates": 8,
+                "class": "B",
+                "depth": "STRUCTURAL",
+                "basis": "ReadinessService + closed B01/B08 boundary tests exist; predicates not read one by one"
+            },
+            {
+                "family": "admissibility_boundary",
+                "predicates": 3,
+                "class": "C",
+                "depth": "STRUCTURAL",
+                "basis": "corpus-type family (claim boundary); no guard assigned"
+            },
+            {
+                "family": "allowed_source_modes",
+                "predicates": 2,
+                "class": "C",
+                "depth": "STRUCTURAL",
+                "basis": "two enabling statements about manual_file; no guard assigned"
+            },
+            {
+                "family": "archived_executed_evidence",
+                "predicates": 34,
+                "class": "C",
+                "depth": "STRUCTURAL",
+                "basis": "archive contents of real executed runs; flag E-3: B19 versus B22 ownership of the archive is not stated by the repository"
+            },
+            {
+                "family": "artifact_anomaly_report",
+                "predicates": 8,
+                "class": "D",
+                "depth": "MEASURED",
+                "basis": "a real sealed run writes \"# Anomaly Report\" with 6 lines; the contract section \"run identity\" (MD-S075-R0160) has no counterpart; the other minimum sections have a counterpart line"
+            },
+            {
+                "family": "artifact_correction_evidence",
+                "predicates": 20,
+                "class": "B",
+                "depth": "STRUCTURAL",
+                "basis": "all 14 contract field names occur as literals in the builder (presence only, not value proof)"
+            },
+            {
+                "family": "artifact_cross_cutting_rules",
+                "predicates": 7,
+                "class": "C",
+                "depth": "STRUCTURAL",
+                "basis": "timestamp consistency and secrecy rules need a corpus guard over exported artifacts"
+            },
+            {
+                "family": "artifact_eligibility_export",
+                "predicates": 9,
+                "class": "D",
+                "depth": "MEASURED",
+                "basis": "real sealed run: header is trade_date,ticker_id,eligible,reason_code; listing_id, publication_id, data_usable, reason set absent (F-MD-B01-A014-001)"
+            },
+            {
+                "family": "artifact_invalid_bars_export",
+                "predicates": 9,
+                "class": "D",
+                "depth": "MEASURED",
+                "basis": "real sealed run: header is trade_date,ticker_id,source,source_row_ref,invalid_reason_code; listing_id and the source-observation reference absent"
+            },
+            {
+                "family": "artifact_publication_manifest",
+                "predicates": 33,
+                "class": "B",
+                "depth": "MEASURED",
+                "basis": "real sealed run: 29/29 contract top-level fields present; values not yet proven per predicate"
+            },
+            {
+                "family": "artifact_replay_result",
+                "predicates": 32,
+                "class": "B",
+                "depth": "STRUCTURAL",
+                "basis": "all 28 contract field names occur as literals in the builders (presence only)"
+            },
+            {
+                "family": "artifact_replay_state_pair",
+                "predicates": 32,
+                "class": "B",
+                "depth": "STRUCTURAL",
+                "basis": "all 16+16 contract field names occur as literals in the builders (presence only)"
+            },
+            {
+                "family": "artifact_run_event_summary",
+                "predicates": 18,
+                "class": "B",
+                "depth": "MEASURED",
+                "basis": "real sealed run: 10/10 contract top-level fields present; derivation rules not yet proven per predicate"
+            },
+            {
+                "family": "artifact_run_summary",
+                "predicates": 52,
+                "class": "B",
+                "depth": "MEASURED",
+                "basis": "real sealed run: 40/40; guard parses the contract and is probed; per-predicate basis (52) not yet written"
+            },
+            {
+                "family": "artifact_set_and_categories",
+                "predicates": 15,
+                "class": "B",
+                "depth": "STRUCTURAL",
+                "basis": "exporter writes 11 files for a run; replay/correction members belong to other exporters"
+            },
+            {
+                "family": "artifact_source_attempt_telemetry",
+                "predicates": 29,
+                "class": "B",
+                "depth": "MEASURED",
+                "basis": "real sealed run: 13/13 contract top-level fields present; derivation rules not yet proven per predicate"
+            },
+            {
+                "family": "audit_pack_core_rules",
+                "predicates": 19,
+                "class": "C",
+                "depth": "STRUCTURAL",
+                "basis": "pack content and the questions a pack must answer have no generator or checker"
+            },
+            {
+                "family": "audit_pack_correction",
+                "predicates": 22,
+                "class": "C",
+                "depth": "STRUCTURAL",
+                "basis": "same"
+            },
+            {
+                "family": "audit_pack_replay",
+                "predicates": 21,
+                "class": "C",
+                "depth": "STRUCTURAL",
+                "basis": "same"
+            },
+            {
+                "family": "audit_pack_run",
+                "predicates": 29,
+                "class": "C",
+                "depth": "STRUCTURAL",
+                "basis": "same"
+            },
+            {
+                "family": "commands_and_runbook",
+                "predicates": 17,
+                "class": "B",
+                "depth": "STRUCTURAL",
+                "basis": "17 predicates; OpsCommandSurfaceTest (64 tests) and command classes exist; runbook text is documentation"
+            },
+            {
+                "family": "cross_contract_alignment",
+                "predicates": 25,
+                "class": "C",
+                "depth": "STRUCTURAL",
+                "basis": "corpus-type family (pointer lists)"
+            },
+            {
+                "family": "executed_run_admission",
+                "predicates": 21,
+                "class": "C",
+                "depth": "STRUCTURAL",
+                "basis": "admission criteria for executed evidence; flag E-3"
+            },
+            {
+                "family": "executed_run_evidence_pack",
+                "predicates": 32,
+                "class": "C",
+                "depth": "STRUCTURAL",
+                "basis": "minimum executed evidence pack contents; flag E-3"
+            },
+            {
+                "family": "freshness_and_slo",
+                "predicates": 35,
+                "class": "D",
+                "depth": "STRUCTURAL",
+                "basis": "alert states and consecutive-session SLO measurement: the contract vocabulary does not occur in app/ (presence/absence search only)"
+            },
+            {
+                "family": "incident_classification",
+                "predicates": 18,
+                "class": "D",
+                "depth": "STRUCTURAL",
+                "basis": "no incident-classification code in app/ (presence/absence search only)"
+            },
+            {
+                "family": "observability_minimum",
+                "predicates": 19,
+                "class": "B",
+                "depth": "STRUCTURAL",
+                "basis": "eod_runs / eod_run_events / counts exist and are asserted by earlier stages; not read per predicate"
+            },
+            {
+                "family": "operator_decision_trees",
+                "predicates": 43,
+                "class": "C",
+                "depth": "STRUCTURAL",
+                "basis": "six decision trees; procedures, no executable counterpart identified"
+            },
+            {
+                "family": "ownership_and_recovery",
+                "predicates": 27,
+                "class": "D",
+                "depth": "STRUCTURAL",
+                "basis": "takeover, fencing, heartbeat: no occurrence in app/ (presence/absence search only)"
+            },
+            {
+                "family": "range_window_acquisition",
+                "predicates": 20,
+                "class": "B",
+                "depth": "STRUCTURAL",
+                "basis": "ApiBackfillRangeAcquisitionServiceTest (15) exists; flag E-2: contract line 314 (block when the prior window is insufficient) versus line 355 (cap at dataset start) must be reconciled before this family is proven"
+            },
+            {
+                "family": "range_window_checkpoint_resume",
+                "predicates": 13,
+                "class": "B",
+                "depth": "MEASURED",
+                "basis": "two guards, three fail-closed probes recorded earlier; per-predicate basis (13) not yet written"
+            },
+            {
+                "family": "range_window_warmup_calendar",
+                "predicates": 8,
+                "class": "A",
+                "depth": "MEASURED",
+                "basis": "8/8 per-predicate basis, 17 mutations + 7 gate scenarios red as intended, controls green"
+            },
+            {
+                "family": "release_gates",
+                "predicates": 12,
+                "class": "C",
+                "depth": "STRUCTURAL",
+                "basis": "release-gate evaluation before a release claim; no release-gate evaluator identified"
+            },
+            {
+                "family": "reprocess_and_impact_amendments",
+                "predicates": 7,
+                "class": "B",
+                "depth": "STRUCTURAL",
+                "basis": "BackfillLifecyclePublicationReprocessTest and OutOfOrderImportImpact tests exist; not read per predicate"
+            },
+            {
+                "family": "resumable_backfill",
+                "predicates": 17,
+                "class": "B",
+                "depth": "STRUCTURAL",
+                "basis": "ApiBackfillLifecycle* and BackfillMissingTickerLifecycleTest exist; not read per predicate"
+            },
+            {
+                "family": "retention_and_maintenance",
+                "predicates": 4,
+                "class": "C",
+                "depth": "STRUCTURAL",
+                "basis": "partitioning baseline and CONFIG_UNBOUND reporting; no guard identified"
+            },
+            {
+                "family": "scheduling_and_locking",
+                "predicates": 23,
+                "class": "D",
+                "depth": "STRUCTURAL",
+                "basis": "scheduler outcomes SUCCESS_HELD / SKIPPED_LOCKED do not occur in app/ (presence/absence search only)"
+            }
+        ]
+    },
+    "selected_cluster": {
+        "family": "range_window_warmup_calendar",
+        "predicates": 8,
+        "rule_ids": [
+            "MD-S053-R0218",
+            "MD-S053-R0219",
+            "MD-S053-R0220",
+            "MD-S053-R0221",
+            "MD-S053-R0222",
+            "MD-S053-R0223",
+            "MD-S053-R0224",
+            "MD-S053-R0225"
+        ],
+        "why_first": [
+            "needs no change to any file of the frozen R0025 build, so it is not gated by E-1",
+            "one contract section (MD-S053) and two implementation files already carrying a guard pair that F-MD-B19-A001-002 withdrew as family-level proof",
+            "smallest family with an existing guard; every smaller one has none",
+            "every D family is gated by E-1; every other B family is larger or lacks the per-predicate review this one now has"
+        ]
+    },
+    "authority": {
+        "contract": "authority/strategy/book/Source_Data_Acquisition_Contract_LOCKED.md, section \"API range-window market-calendar warmup addendum\"",
+        "sufficient": "yes: the section names the forbidden and the required behaviour; no semantics were invented",
+        "interpretation_taken": "MD-S053-R0221 read as: when the calendar cannot establish the warmup boundary the backfill must stop before acquisition and publication. A calendar loaded later than dataset_start is not asserted either way; the contract line 314 versus 355 tension belongs to range_window_acquisition (flag E-2) and is recorded in the basis text, not decided here."
+    },
+    "work": {
+        "production_code_changed": false,
+        "files": {
+            "tests/Unit/MarketData/B19RangeWindowWarmupWiringTest.php": {
+                "kind": "NEW",
+                "sha256": "c79fd501c667198a464cf4eb0fdbd9cbf850167ddd323025fc8b991204c86ed8"
+            },
+            "development/implementation/tests/MarketDataOperationsProofBasis.php": {
+                "kind": "NEW",
+                "sha256": "6cae7eaf26e223bcfa7ab6574b46d549635e253ef4d397bd49d30e506e83b746"
+            },
+            "development/implementation/tests/MarketDataOperationsProofGate.php": {
+                "kind": "MODIFIED",
+                "sha256": "1ee323e3ce03fc6ec08519e617c8fa6dee657d0cd058f6e35686c3ff5a25eb0a"
+            }
+        },
+        "new_guards": [
+            "B19RangeWindowWarmupWiringTest: 4 test methods, 7 test cases, 65 assertions; real orchestrator over the real calendar repository, acquisition observed, pipeline mock with no expectations, publication tables asserted empty"
+        ],
+        "existing_guards_used": [
+            "B19RangeWindowWarmupCalendarTest (3 tests, 8 assertions)",
+            "IndicatorVectorServiceTest::test_short_history_calculates_each_field_as_soon_as_its_own_warmup_is_met"
+        ],
+        "gate_change": "MarketDataOperationsProofGate now reads MarketDataOperationsProofBasis::PROVEN and fails PREDICATE_GUARD_MISSING when a named guard does not exist; a bare string or blank basis counts as no basis"
+    },
+    "proof_basis_after": {
+        "predicates_with_a_reviewed_basis": 8,
+        "predicates_without": 735,
+        "families_fully_reviewed": 1,
+        "formal_satisfied": "0/743 (binding is atomic and remains for the end of the attempt)"
+    },
+    "probes": {
+        "guard_mutations": {
+            "count": 17,
+            "all_red_intended": true,
+            "restore": "each file restored byte for byte, sha256 verified; green control before and after each",
+            "first_pass_note": "three mutations could not be applied on the first pass (an anchor matching two places; two CRLF anchors) and were re-specified; the first-pass results are preserved in the raw artifacts",
+            "detail": {
+                "W01_acquire_receives_requested_start_not_boundary": {
+                    "predicates": [
+                        "MD-S053-R0218",
+                        "MD-S053-R0219"
+                    ],
+                    "file": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+                    "note": "execute() hands acquisition requested_start as the warmup boundary; the resolver itself is untouched, so the resolver-only guard stays green",
+                    "failed_under_mutation": [
+                        "test_the_acquisition_service_is_handed_the_calendar_boundary"
+                    ],
+                    "verdict": "RED_INTENDED"
+                },
+                "W02_acquire_receives_calendar_day_arithmetic": {
+                    "predicates": [
+                        "MD-S053-R0218",
+                        "MD-S053-R0219"
+                    ],
+                    "file": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+                    "note": "execute() hands acquisition requested_start minus N calendar days; resolver untouched",
+                    "failed_under_mutation": [
+                        "test_the_acquisition_service_is_handed_the_calendar_boundary"
+                    ],
+                    "verdict": "RED_INTENDED"
+                },
+                "W03_acquisition_dates_not_calendar_resolved": {
+                    "predicates": [
+                        "MD-S053-R0218"
+                    ],
+                    "file": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+                    "note": "the dates handed to acquisition no longer begin at the warmup boundary",
+                    "failed_under_mutation": [
+                        "test_the_acquisition_service_is_handed_the_calendar_boundary"
+                    ],
+                    "verdict": "RED_INTENDED"
+                },
+                "W04_plan_built_from_requested_start": {
+                    "predicates": [
+                        "MD-S053-R0218",
+                        "MD-S053-R0225"
+                    ],
+                    "file": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+                    "note": "the recorded plan states a boundary the run did not use",
+                    "failed_under_mutation": [
+                        "test_the_recorded_plan_carries_the_calendar_boundary_and_the_four_telemetry_fields"
+                    ],
+                    "verdict": "RED_INTENDED"
+                },
+                "W05_summary_drops_warmup_start": {
+                    "predicates": [
+                        "MD-S053-R0225"
+                    ],
+                    "file": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+                    "note": "telemetry no longer records warmup_start",
+                    "failed_under_mutation": [
+                        "test_the_recorded_plan_carries_the_calendar_boundary_and_the_four_telemetry_fields",
+                        "test_a_blocked_acquisition_still_records_the_boundary_in_its_diagnostic"
+                    ],
+                    "verdict": "RED_INTENDED"
+                },
+                "W06_summary_drops_requested_end": {
+                    "predicates": [
+                        "MD-S053-R0225"
+                    ],
+                    "file": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+                    "note": "telemetry no longer records requested_end",
+                    "failed_under_mutation": [
+                        "test_the_recorded_plan_carries_the_calendar_boundary_and_the_four_telemetry_fields",
+                        "test_a_blocked_acquisition_still_records_the_boundary_in_its_diagnostic"
+                    ],
+                    "verdict": "RED_INTENDED"
+                },
+                "W08_warmup_is_calendar_day_arithmetic": {
+                    "predicates": [
+                        "MD-S053-R0219",
+                        "MD-S053-R0222"
+                    ],
+                    "file": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+                    "note": "resolver replaced by requested_start - N calendar days",
+                    "failed_under_mutation": [
+                        "test_the_recorded_plan_carries_the_calendar_boundary_and_the_four_telemetry_fields",
+                        "test_the_acquisition_service_is_handed_the_calendar_boundary",
+                        "test_a_blocked_acquisition_still_records_the_boundary_in_its_diagnostic",
+                        "test_warmup_start_is_the_governed_trading_day_boundary_not_calendar_day_arithmetic",
+                        "test_the_dataset_start_boundary_caps_the_warmup_instead_of_failing",
+                        "test_a_non_trading_requested_date_fails_fast"
+                    ],
+                    "verdict": "RED_INTENDED"
+                },
+                "W09_warmup_adds_a_fixed_holiday_buffer": {
+                    "predicates": [
+                        "MD-S053-R0220"
+                    ],
+                    "file": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+                    "note": "resolver adds a fixed buffer of trading days on top of the configured count",
+                    "failed_under_mutation": [
+                        "test_the_recorded_plan_carries_the_calendar_boundary_and_the_four_telemetry_fields",
+                        "test_the_acquisition_service_is_handed_the_calendar_boundary",
+                        "test_a_blocked_acquisition_still_records_the_boundary_in_its_diagnostic",
+                        "test_warmup_start_is_the_governed_trading_day_boundary_not_calendar_day_arithmetic"
+                    ],
+                    "verdict": "RED_INTENDED"
+                },
+                "W10_resolver_falls_back_when_calendar_cannot_anchor": {
+                    "predicates": [
+                        "MD-S053-R0221",
+                        "MD-S053-R0223"
+                    ],
+                    "file": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+                    "note": "an unprovable boundary degrades to a calendar-day approximation instead of blocking",
+                    "failed_under_mutation": [
+                        "test_a_non_trading_requested_date_fails_fast"
+                    ],
+                    "verdict": "RED_INTENDED"
+                },
+                "C01_calendar_foundation_missing_returns_empty": {
+                    "predicates": [
+                        "MD-S053-R0221"
+                    ],
+                    "file": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+                    "note": "a missing governed calendar is read as an empty calendar instead of blocking",
+                    "failed_under_mutation": [
+                        "test_an_unprovable_calendar_blocks_before_acquisition_and_publication with data set \"calendar revision foundation is missing\""
+                    ],
+                    "verdict": "RED_INTENDED"
+                },
+                "C02_unverified_provenance_accepted": {
+                    "predicates": [
+                        "MD-S053-R0221"
+                    ],
+                    "file": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+                    "note": "calendar rows without VERIFIED provenance count as trading days",
+                    "failed_under_mutation": [
+                        "test_an_unprovable_calendar_blocks_before_acquisition_and_publication with data set \"requested dates have unverified provenance\""
+                    ],
+                    "verdict": "RED_INTENDED"
+                },
+                "C03_conflicting_revisions_accepted": {
+                    "predicates": [
+                        "MD-S053-R0221"
+                    ],
+                    "file": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+                    "note": "two live revisions for one date no longer block the range read",
+                    "failed_under_mutation": [
+                        "test_an_unprovable_calendar_blocks_before_acquisition_and_publication with data set \"calendar holds conflicting live revisions\""
+                    ],
+                    "verdict": "RED_INTENDED"
+                },
+                "C04_non_trading_anchor_accepted": {
+                    "predicates": [
+                        "MD-S053-R0223"
+                    ],
+                    "file": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+                    "note": "a non-trading requested date silently anchors the window at the previous trading day",
+                    "failed_under_mutation": [
+                        "test_a_non_trading_requested_date_fails_fast"
+                    ],
+                    "verdict": "RED_INTENDED"
+                },
+                "C05_dataset_start_boundary_fails_instead_of_capping": {
+                    "predicates": [
+                        "MD-S053-R0224"
+                    ],
+                    "file": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+                    "note": "a warmup horizon longer than the dataset fails instead of capping at the first available trading date",
+                    "failed_under_mutation": [
+                        "test_the_dataset_start_boundary_caps_the_warmup_instead_of_failing"
+                    ],
+                    "verdict": "RED_INTENDED"
+                },
+                "W07_summary_mode_is_not_range_window": {
+                    "predicates": [
+                        "MD-S053-R0225"
+                    ],
+                    "file": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+                    "note": "telemetry records the wrong source_acquisition_mode",
+                    "failed_under_mutation": [
+                        "test_the_recorded_plan_carries_the_calendar_boundary_and_the_four_telemetry_fields",
+                        "test_a_blocked_acquisition_still_records_the_boundary_in_its_diagnostic"
+                    ],
+                    "verdict": "RED_INTENDED"
+                },
+                "I01_short_history_zero_filled": {
+                    "predicates": [
+                        "MD-S053-R0224"
+                    ],
+                    "file": "app/Application/MarketData/Services/IndicatorVectorService.php",
+                    "note": "early indicators are zero-filled instead of NULL (Determinism_Invariants forbids guessed warmup)",
+                    "failed_under_mutation": [
+                        "test_build_row_marks_insufficient_history_when_requested_date_has_short_window",
+                        "test_short_history_calculates_each_field_as_soon_as_its_own_warmup_is_met"
+                    ],
+                    "verdict": "RED_INTENDED"
+                },
+                "I02_short_history_fails_the_row": {
+                    "predicates": [
+                        "MD-S053-R0224"
+                    ],
+                    "file": "app/Application/MarketData/Services/IndicatorVectorService.php",
+                    "note": "early indicators fail fast instead of being NULL per field",
+                    "failed_under_mutation": [
+                        "test_build_row_marks_insufficient_history_when_requested_date_has_short_window",
+                        "test_short_history_calculates_each_field_as_soon_as_its_own_warmup_is_met",
+                        "test_event_risk_context_survives_invalid_indicator_rows_without_faking_active_absence"
+                    ],
+                    "verdict": "RED_INTENDED"
+                }
+            }
+        },
+        "gate_scenarios": {
+            "count": 7,
+            "all_red_intended": true,
+            "control": {
+                "with": 8,
+                "without": 735,
+                "errors": [
+                    "PREDICATES_WITHOUT_A_REVIEWED_PROOF_BASIS:735"
+                ]
+            },
+            "control_unchanged": true
+        },
+        "frozen_build_files_after": {
+            "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php": "e88f22e43f594164cf6b1809e5cd2ef23d28cddf4c3be5482328a12d6176e4dc",
+            "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php": "06ff5bfe70c593fff901abe98a22556ab7dab833ba6e423928a330719753c63b",
+            "app/Application/MarketData/Services/IndicatorVectorService.php": "9148056cd4a6fee8f2d392c969b4af490133189278e650414908494b96580cf2"
+        }
+    },
+    "measurements": {
+        "real_world_artifact_shape": "raw artifact artifact_shape_report.json (R0025SyntheticV2World sealed publication, real MarketDataEvidenceExportService, MariaDB)",
+        "static_key_presence": "raw artifact static_keys_report.json (weak: literal presence only)",
+        "absence_search": "SKIPPED_LOCKED, SUCCESS_HELD, fencing, heartbeat, takeover, alert, incident: 0 occurrences in app/"
+    },
+    "regression": {
+        "cluster": [
+            "B19RangeWindowWarmupWiringTest OK (7/65)",
+            "B19RangeWindowWarmupCalendarTest OK (3/8)",
+            "B19RangeWindowResumeStateTest OK (3/10)",
+            "B19RunSummaryArtifactContractTest OK (3/25)",
+            "TradingWindowWarmupTest OK (12/26)",
+            "ApiBackfillLifecycleStaticGuardTest OK (13/81)",
+            "ApiBackfillRangeAcquisitionServiceTest OK (15/93)",
+            "BackfillLifecyclePublicationReprocessTest OK (6/28)",
+            "BackfillMissingTickerLifecycleTest OK (12/73)",
+            "IndicatorVectorServiceTest OK (11/93)",
+            "IndicatorFieldRegistryAndNullReasonsTest OK (9/851)",
+            "OpsCommandSurfaceTest OK (64/371)",
+            "MarketDataBackfillServiceTest OK (8/71)",
+            "CalendarProvenanceAndStatusTest OK (20/46)"
+        ],
+        "shared_stage_guard": "R0025SyntheticV2CandidateFixtureTest OK (46 tests, 6885 assertions) in a clean single-process run: the frozen build is unchanged and candidate-v5 still applies",
+        "incident": "two concurrent PHPUnit processes against tradeaxis_testing produced deadlocks and one error in the R0025 file; the cause was the overlap, not a defect (the clean run is green). The concurrent runs were stopped and the database showed no open transaction.",
+        "full_suite": "not run: no production file changed; the full MarketData suite is NOT claimed green here (and ProductionCorpusInvariantOracleTest keeps its seven governed MD-B22 failures under D-MD-B18-A002-022)"
+    },
+    "cross_stage": {
+        "b18": "unchanged; SC-MD-B18-A002-001, E-MD-B18-A002-001/117/122, matrix sha 8b5bd9b1…0695, candidate-v5 and the oracle are byte-identical to HEAD",
+        "finding": "F-MD-B19-A001-003 and MD-DEP-0025: any B19 edit to a frozen-build file invalidates candidate-v5 for the current build (D-MD-B18-A002-018 item 13); owner decision required before such an edit",
+        "b10_b17_b22": "no interaction; no app/, config/ or bootstrap change"
+    },
+    "open_after": [
+        "F-MD-B19-A001-002 (P1) remains OPEN for MD-B19: 8/743",
+        "F-MD-B19-A001-003 OPEN (owner decision)",
+        "F-MD-B01-A014-001 OPEN (owned by MD-B19; production change, gated by E-1)",
+        "MD-DEP-0003 OPEN_NON_BLOCKING",
+        "MD-DEP-0025 BLOCKING for production-changing B19 units only"
+    ],
+    "raw_artifacts": {
+        "dir": "storage/app/market-data/evidence/MD-B19-A001/warmup-calendar-20261008",
+        "manifest_sha256": "283b71263c9c6cecc661a205f2e5e0dcb54bc6cef0bab69fba939fca3dc32aa1",
+        "files": {
+            "probe_warmup_results_pass1.json": {
+                "sha256": "d92c31296e3289116c0be9d6c37a471df12b3bca20181bb34db03c3bfa0ef42b",
+                "bytes": 51398
+            },
+            "probe_warmup_results_pass2.json": {
+                "sha256": "405d266baf69b1849265ff2c8e1ee0e544140801f0c0eb7facc8d7a13425ef56",
+                "bytes": 12334
+            },
+            "gate_probe_results.json": {
+                "sha256": "23d1259d849cea761735f8d5e1277068b84157ca5a2dccc07fb44e5a33acab78",
+                "bytes": 2753
+            },
+            "artifact_shape_report.json": {
+                "sha256": "ba8d48a1cd35b7f0eafd7f7f151b3e5c077538b617d38d9f0ed0e3c30acb2155",
+                "bytes": 2771
+            },
+            "static_keys_report.json": {
+                "sha256": "5a8de4df180028bfd238101ebb8db36097dbb108c58177f5ed3af0cbffc03d47",
+                "bytes": 487
+            },
+            "regression_cluster.log": {
+                "sha256": "9c5bea4ce48f53484759df7c6aae7c6fc14f363bc63bfcc94b9c090d6a7fb693",
+                "bytes": 1578
+            },
+            "regression_r0025_candidate_v5_clean_run.log": {
+                "sha256": "5158fd6926af9ce19c11fd701a23dc39f14fb0944303357d779ccb599522fdad",
+                "bytes": 210
+            },
+            "gates_pre_recording_summary.txt": {
+                "sha256": "f2bfdc90132e2b7e7f58a0c7128e366f013e46cb3ec5bf7494fa31ba70062f6f",
+                "bytes": 3059
+            }
+        }
+    },
+    "related_findings": [
+        "F-MD-B19-A001-002",
+        "F-MD-B19-A001-003",
+        "F-MD-B01-A014-001"
+    ],
+    "related_decisions": [
+        "D-MD-B18-A002-018",
+        "D-MD-B18-A002-022"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0025",
+        "MD-DEP-0009",
+        "MD-DEP-0003"
+    ],
+    "next_resume_point": "MD-B19-A001: continue per-predicate proof with range_window_checkpoint_resume (13 predicates; guards exist and were probed, per-predicate basis review owed); production-changing families wait for the owner decision on F-MD-B19-A001-003.",
+    "no_commit_or_push": 1
+}

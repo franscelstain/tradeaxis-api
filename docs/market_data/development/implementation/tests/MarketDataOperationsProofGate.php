@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__.'/MarketDataOperationsProofSpec.php';
+require_once __DIR__.'/MarketDataOperationsProofBasis.php';
 
 /**
  * `MD-B19` proof gate.
@@ -193,17 +194,25 @@ final class MarketDataOperationsProofGate
          * The basis map is deliberately allowed to be incomplete while the stage is open: rows
          * without one are counted and named, the same way an unguarded family is.
          */
-        $basis = [];
-        if (method_exists($spec, 'proofBasis')) {
-            $basis = $spec::proofBasis();
-        } elseif (defined($spec.'::RULE_PROOF_BASIS')) {
-            $basis = constant($spec.'::RULE_PROOF_BASIS');
-        }
+        $basis = isset($overrides['basis']) ? $overrides['basis'] : MarketDataOperationsProofBasis::PROVEN;
         $withoutBasis = [];
         foreach ($rows as $row) {
             $id = (string) $row['rule_id'];
-            if (! isset($basis[$id]) || trim((string) $basis[$id]) === '') {
+            $entry = isset($basis[$id]) ? $basis[$id] : null;
+            if (! is_array($entry) || trim((string) (isset($entry['basis']) ? $entry['basis'] : '')) === '') {
                 $withoutBasis[] = $id;
+
+                continue;
+            }
+            // A basis names the guards that establish the predicate; a name that resolves to no
+            // method is a basis that cannot fail, which is the shape `F-MD-B19-A001-002` forbids.
+            foreach (['positive', 'negative'] as $kind) {
+                $parts = explode('::', (string) (isset($entry[$kind]) ? $entry[$kind] : ''));
+                $file = $root.'/tests/Unit/MarketData/'.$parts[0].'.php';
+                if (count($parts) !== 2 || ! is_file($file)
+                    || strpos((string) file_get_contents($file), 'function '.$parts[1].'(') === false) {
+                    $errors[] = 'PREDICATE_GUARD_MISSING:'.$id.':'.$kind;
+                }
             }
         }
         $foreignBasis = array_values(array_diff(array_keys($basis), array_map(static function ($r) {

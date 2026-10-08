@@ -167,3 +167,13 @@ until legitimate `MD-B19` closure.
   machine-checked criterion" while 515 reference rows had never been examined. Both of its signals
   are blind to a section classified entirely as reference. A third signal now counts reference rows
   carrying no recorded stage-entry decision, and reports `PROVISIONAL` while any remain.
+
+## 2026-10-08T07:08:21+07:00 Actual impact -- first family established per predicate (E-MD-B19-A001-002)
+
+Same attempt, baseline and declaration. **No file of the frozen R0025 build was changed.** What changed: one new behavioural guard (`B19RangeWindowWarmupWiringTest`), the per-predicate proof basis (`MarketDataOperationsProofBasis`, 8 entries) and the proof gate, which now reads that basis and fails when a named guard does not exist.
+
+`range_window_warmup_calendar` (`MD-S053-R0218..R0225`) is established per predicate: the resolver guard that already existed proved what the resolver returns, not that the lifecycle backfill hands it to the acquisition service; the new guard runs the real orchestrator over the real calendar and observes the arguments, the recorded telemetry and the absence of any acquisition or publication when the calendar cannot establish the boundary. 17 single-protection mutations (orchestrator wiring, resolver, calendar repository, indicator service) turned the guards red for the intended reason with the files restored byte for byte; 7 scenarios proved the gate's new checks can fail.
+
+The 37-family inventory recorded in `E-MD-B19-A001-002` classifies 1 family complete, 15 proof-gap, 14 harness-gap, 7 production-gap; 9 of the 37 are measured against current output or an executed guard and the rest are structural. **A cross-stage consequence was found and is not decided here:** every production defect owned by this stage sits in a file of the frozen candidate-v5 build, so the first production edit invalidates the R0025 proof for the current build (`D-MD-B18-A002-018` item 13). `F-MD-B19-A001-003` and `MD-DEP-0025` carry the owner decision; `MD-B18` is not reopened.
+
+Strategy meaning change: `NO`.
