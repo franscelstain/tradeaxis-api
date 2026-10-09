@@ -1,0 +1,185 @@
+{
+    "evidence_id": "E-MD-B19-A001-009",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B19",
+    "attempt_id": "MD-B19-A001",
+    "work_id": "MD-B19-A001",
+    "baseline_id": "MD-B19-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B19-A001-001",
+    "issued_at": "2026-10-09T07:57:53+07:00",
+    "evidence_type": "REVIEW_FOLLOW_UP_NO_PRODUCTION_CHANGE",
+    "verdict": "M02_TIE_ORDER_NOT_EQUIVALENT_GUARDED_BY_EXECUTED_SQL_AND_INDEX_ORDER_EMPTY_TRAIL_SEVERITY_AUTHORITY_GAP_R0121_R0128_HELD",
+    "successor_of": "E-MD-B19-A001-008",
+    "e008_status": "E-MD-B19-A001-008 is unchanged and immutable; its valid results (the empty-map defect correction F-MD-B19-A001-007, 24+3 mutations, the full suite) are preserved. Only its admission of R0121 and R0128 is superseded here.",
+    "starting_state": {
+        "head": "4411f0e",
+        "reviewed_bases": "124/743",
+        "fully_reviewed_families": "5/37",
+        "formal_satisfied": "0/743",
+        "f007": "RESOLVED, unchanged",
+        "md_dep_0025": "ACTIVE",
+        "candidate_v6": "not created",
+        "working_tree": "clean, nothing staged",
+        "e008_raw_linkage": "manifest and every raw file re-verified"
+    },
+    "work_unit_1_m02": {
+        "authority": "MD-S075 section 3 defines first/last event without a tie rule. The trail is append-only; event_time is a second-precision DATETIME so ties are routine. The guard therefore protects the determinism the summary needs to be derivable from the trail (MD-S075 R0128; Determinism Invariants), not a tie rule the contract states. event_id is the append sequence.",
+        "production": "unchanged and correct: ORDER BY event_time, event_id (ascending). Not modified to satisfy a test.",
+        "why_m02_was_not_equivalent": "On the engines in use tied rows come back in primary-key order, but that is an artefact of the plan, not a guarantee; the previous behavioural test could not tell. It was an equivalent mutant of the test, not of the semantics, and E-008 recorded it as equivalent on that basis.",
+        "guards_added": [
+            "test_the_executed_query_orders_ties_by_event_id_after_event_time: the SQL the repository really executes is captured with DB::listen and must be one statement ordering by event_time then event_id ascending",
+            "test_ties_are_resolved_by_event_id_even_when_the_engine_would_return_them_in_another_order: the only usable index returns tied rows in event_type order (confirmed by EXPLAIN QUERY PLAN) and the types sort opposite to the ids; first/last of tied events must still be the lower/higher event_id"
+        ],
+        "new_test_file": "tests/Unit/MarketData/B19RunEventSummaryTieOrderAndEmptyTrailTest.php (4 tests, 11 assertions); the two E-008 guard files are unchanged so the 27 earlier probes remain valid",
+        "result": "M02 (remove the event_id tie break) is RED for the intended reason on both new tests; M03 (descending) and M04 (event_id only) red on both; E-008 count: 24 fast + 3 real-run + M02 now red = 28 distinct mutations red, no equivalent mutant left in the ordering family"
+    },
+    "work_unit_2_empty_trail_severity": {
+        "finding": "F-MD-B19-A001-008",
+        "status": "OPEN (authority gap, no owner decision requested beyond the finding's options)",
+        "authority_inspected": [
+            "Run_Artifacts_Format_LOCKED.md section 3 (example INFO for 17 events; derived field; ERROR rule; no invention)",
+            "Observability_Minimum_Contract_LOCKED.md (append-only trail; no severity rule)",
+            "Determinism_Invariants_LOCKED.md",
+            "Executed_Run_Evidence_Bundle_Example_LOCKED.md (same non-empty example)",
+            "consumers: only EodEvidenceRepository produces highest_severity; no code reads the value of an empty trail"
+        ],
+        "conclusion": "INFO is NOT an explicitly authorised empty-trail default: nothing states one. The value for a trail with at least one event is the observed maximum (guarded). For zero events the repository reports an initial value, not an observation, and the contract does not say what the field is then. Genuine gap; not resolved by existing authority; not unilaterally changed.",
+        "affected_predicates": [
+            "MD-S075-R0121 (directly)",
+            "MD-S075-R0128 (indirectly: only if a default severity with no event is read as invented history)"
+        ],
+        "not_affected": [
+            "R0129 (derived, not persisted: true under every option)",
+            "R0130 (needs an ERROR in the trail)"
+        ],
+        "options": [
+            "A null when no event severity exists (independent reviewer recommendation, not an approved decision)",
+            "B keep INFO as the contracted floor and record the limitation",
+            "C another explicit marker defined by the owner"
+        ],
+        "proof_status": "R0121 and R0128 are HELD: their entries are removed from MarketDataOperationsProofBasis (precedent: MD-S075-R0047 while F-MD-B19-A001-005 was open). The guards remain and cover every non-empty trail; the empty-trail guard asserts only the presence of the field and that no WARN/ERROR is reported without an observation, so it is valid under A, B and C. E-008 admitted these two; this record supersedes that admission and does not invalidate E-008's other results.",
+        "guards": [
+            "test_an_empty_trail_reports_no_problem_severity_it_never_observed",
+            "test_a_single_event_trail_reports_its_own_severity"
+        ],
+        "probes": [
+            "M26 (empty trail starts at WARN) red",
+            "M27 (summarizer not isolated by run: an empty run reports another run's ERROR) red; pass 1 listed an expectation that was wrong (the single-event test cannot see a leak when it is the only event) — corrected in the spec and re-run, results in probe_m27_rerun.json"
+        ]
+    },
+    "probes": {
+        "red_intended": 5,
+        "mutations": [
+            "M02",
+            "M03",
+            "M04",
+            "M26",
+            "M27"
+        ],
+        "restore": "every file restored byte for byte (sha256), green control before and after each",
+        "files_at_probe_sha256": {
+            "app/Application/MarketData/Services/MarketDataEvidenceExportService.php": "b12bf30cf0cd73c9dd35c5956184cda3a6691e967b07682698fd2d530abc1e4d",
+            "app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php": "fb6ecd9cd5b1824764f5e1d94900dafd5240c25a3689f73d21632ceeca516fd7",
+            "tests/Unit/MarketData/B19RunEventSummaryRealRunProvenanceTest.php": "5e4a954ae4f781d86bb9604aa8a5ceb3b3f1840416d224d92b9be8c247484bd1",
+            "tests/Unit/MarketData/B19RunEventSummaryTieOrderAndEmptyTrailTest.php": "401c56237e690c2ed9f01e53f70474853cff41965776f0bd2ecc614f2d9dec31",
+            "tests/Unit/MarketData/B19RunEventSummaryTrailDerivationTest.php": "20fe25b93746c69de585b9f4ec8ec0826b49f0b16683c3a56b5a1abbebd73c8f"
+        }
+    },
+    "executed": [
+        "B19RunEventSummaryTieOrderAndEmptyTrailTest OK (4 tests, 11 assertions)",
+        "B19RunEventSummaryTrailDerivationTest OK (20 tests, 53 assertions)",
+        "MarketDataEvidenceExportServiceTest OK (8 tests, 222 assertions)",
+        "GovernanceGateReadOnlyExecutionTest OK (9 tests, 6854 assertions) after the finding was registered",
+        "all 43 gates: statuses identical to the E-008 state",
+        "MarketDataOperationsProofGate: 122 reviewed, 621 without, 32 families without a guard"
+    ],
+    "not_executed": [
+        "full suite (no production change; the last full-suite record is E-MD-B19-A001-008: 3158 tests, 7 oracle + 13 build-identity + 2 governance failures that cleared after registration)",
+        "B19RunEventSummaryRealRunProvenanceTest and the other MariaDB tests (unchanged files, unchanged production)",
+        "the 27 E-008 probes (unchanged guard files)"
+    ],
+    "production_change": "none: git diff HEAD over app, config, bootstrap, composer.json and composer.lock is empty",
+    "state_after": {
+        "reviewed_bases": "122/743",
+        "without_basis": 621,
+        "artifact_run_event_summary": "16/18 (R0121, R0128 held by F-MD-B19-A001-008)",
+        "fully_reviewed_families": "4/37",
+        "formal_satisfied": "0/743"
+    },
+    "not_claimed": [
+        "B19 closure",
+        "a full-suite PASS",
+        "formal SATISFIED for any predicate",
+        "that the empty-trail severity is proven under any option"
+    ],
+    "raw_artifacts": {
+        "dir": "storage/app/market-data/evidence/MD-B19-A001/run-event-summary-review-20261009",
+        "manifest_sha256": "cfad0ce12977bb2c4d65ca556ee86f036eb6b73f13bc2a1506936217386c8768",
+        "files": {
+            "gate_MarketDataOperationsProofGate.json": {
+                "sha256": "04e570ef5a63cb08e225fccfe1c015b7a9e00558c3fc5c1902d1c4bf02ee54a4",
+                "bytes": 3872
+            },
+            "gates_summary.txt": {
+                "sha256": "486c48e15079136f764dc1288b617fbdd056ea2563b98d1290b37a8d8e0d3279",
+                "bytes": 3059
+            },
+            "governance_readonly_after_registration.txt": {
+                "sha256": "d1194da43f9f54539371c333b13b4b99cb87bac8772d7023c1cccf8d4861a128",
+                "bytes": 207
+            },
+            "probe_m27_rerun.json": {
+                "sha256": "10da0d35e08d1301424da716af44fb6f992db00e248503894fdbe11a54755fbf",
+                "bytes": 3110
+            },
+            "probe_ordering_and_empty_trail.json": {
+                "sha256": "e9e37ce8c69145b027f87f94d44e555dc675e364db70b98de3755bed85163f39",
+                "bytes": 14720
+            },
+            "probe_ordering_and_empty_trail.out": {
+                "sha256": "b532509105f67698f5ec24cac6cf89c11b9772fbc40e4f7d723088b15dc0c090",
+                "bytes": 956
+            },
+            "probe_pass1_ordering_and_empty_trail.json": {
+                "sha256": "e9e37ce8c69145b027f87f94d44e555dc675e364db70b98de3755bed85163f39",
+                "bytes": 14720
+            },
+            "probe_pass1_ordering_and_empty_trail.out": {
+                "sha256": "b532509105f67698f5ec24cac6cf89c11b9772fbc40e4f7d723088b15dc0c090",
+                "bytes": 956
+            },
+            "sha_files_at_probe.txt": {
+                "sha256": "e470563fe65d1ee34e6b4244d9287fa778f412aa3ad506dafd02b6159a5344c4",
+                "bytes": 670
+            },
+            "spec_probes_ordering_and_empty_trail.php": {
+                "sha256": "2d78078341d36ab334d1223d142c9a98794826eb6c020e134d6d8857719cab0f",
+                "bytes": 1861
+            },
+            "targeted_tests.txt": {
+                "sha256": "d7e8d17903a26217d9f8e805e8f5db4dcd58616f777e0e5b15db1d00c6ac8b3c",
+                "bytes": 213
+            }
+        }
+    },
+    "related_findings": [
+        "F-MD-B19-A001-008",
+        "F-MD-B19-A001-007",
+        "F-MD-B19-A001-002"
+    ],
+    "related_decisions": [
+        "D-MD-B19-A001-001"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0025"
+    ],
+    "related_evidence": [
+        "E-MD-B19-A001-008"
+    ],
+    "git": "no commit, no push, nothing staged: the Project Owner controls commit and push",
+    "next_resume_point": "Project Owner decides F-MD-B19-A001-008 (A, B or C); then R0121 and R0128 are re-admitted"
+}

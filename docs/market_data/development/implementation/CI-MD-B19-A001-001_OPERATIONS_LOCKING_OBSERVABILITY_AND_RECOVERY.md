@@ -219,3 +219,9 @@ Strategy meaning change: `NO`.
 Same attempt, baseline and declaration. **Actual impact: one executable-build file edited, inside the set already differing from candidate-v5** (`MarketDataEvidenceExportService.php`, +5 lines): an empty `stage_counts` / `reason_code_counts` is now written as a JSON object (`{}`), as the locked shape shows, not as `[]`. Two guards were added (the summarizer on a seeded `eod_run_events` trail compared with an independent derivation; a real MariaDB world exported and compared with the raw trail, the run row and cloned runs) and the family-level guard pair was assigned in `MarketDataOperationsProofSpec`. The other 16 predicates were found conforming. 27 single-defect mutations red. `MD-DEP-0025` stays ACTIVE and candidate-v6 is not created. Reviewed per-predicate bases 124/743.
 
 Strategy meaning change: `NO`.
+
+## 2026-10-09T07:57:53+07:00 artifact_run_event_summary review follow-up (`E-MD-B19-A001-009`, `F-MD-B19-A001-008`)
+
+Same attempt, baseline and declaration. **Actual impact: none on runtime behaviour; no production file changed.** The event-id tie break of `summarizeRunEvents()` is now guarded by the executed SQL and by an index-order test (`M02` is red, no longer treated as equivalent). The severity of a run with no events is an authority gap (`F-MD-B19-A001-008`, OPEN): `MD-S075-R0121` and `MD-S075-R0128` are held without a reviewed basis until the Project Owner decides. `MD-DEP-0025` stays ACTIVE; candidate-v6 is not created. Reviewed per-predicate bases 122/743.
+
+Strategy meaning change: `NO`.
