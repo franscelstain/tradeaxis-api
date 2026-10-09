@@ -590,9 +590,8 @@ final class MarketDataOperationsProofBasis
             'basis' => 'a superseded publication\'s manifest stays audit-valid: on a history produced by the repository\'s own seal and promotion, promoting a correction changes the predecessor\'s is_current and nothing else, its manifest hash still verifies under its governed profile, the evidence export of its own run made after the correction writes that historical manifest with is_current false, and a stale run mirror saying current does not make it look current; always-current, a predecessor left current, or a demotion that erases its hash turns guards red (P05, P42, P44)',
         ],
 
-        // ---- MD-S075 section 3 "run_event_summary.json" -- family `artifact_run_event_summary`, 16 of 18 predicates have a basis (R0114..R0131 except R0121 and R0128).
-        // R0121 and R0128 are HELD, with no entry, until F-MD-B19-A001-008 is decided: the locked text does not say what highest_severity is for a run with no events (the repository reports INFO).
-        // Their guards exist and cover every non-empty trail; only the empty-trail representation is open.
+        // ---- MD-S075 section 3 "run_event_summary.json" -- family `artifact_run_event_summary`, 18 of 18 predicates (R0114..R0131).
+        // R0121 and R0128 were HELD while F-MD-B19-A001-008 was open and are re-admitted under the Project Owner decision D-MD-B19-A001-004 (Option A): highest_severity is null for a run with no events.
         // One production DEFECT was found and corrected: an empty stage_counts / reason_code_counts was written as a JSON array ([]) instead of an object ({}).
         // Three guards cooperate (the third is `B19RunEventSummaryTieOrderAndEmptyTrailTest`: executed-SQL and index-order proof of the event_id tie break): `B19RunEventSummaryTrailDerivationTest` derives the summary from a seeded eod_run_events trail built against the usual shortcuts and
         // compares it with an independent derivation; `B19RunEventSummaryRealRunProvenanceTest` exports a real run and a clone with no or reason-free events and
@@ -632,6 +631,11 @@ final class MarketDataOperationsProofBasis
             'negative' => 'B19RunEventSummaryTrailDerivationTest::test_a_tie_for_first_place_is_broken_by_the_lower_event_id',
             'basis' => 'last_event_type is the type of the latest event, the higher event_id winning a shared timestamp; the first event\'s type turns guards red (M06, M10)',
         ],
+        'MD-S075-R0121' => [
+            'positive' => 'B19RunEventSummaryTrailDerivationTest::test_highest_severity_over_mixed_trails',
+            'negative' => 'B19RunEventSummaryTieOrderAndEmptyTrailTest::test_an_empty_trail_has_a_null_highest_severity',
+            'basis' => 'highest_severity is the maximum severity of the run\'s recorded events (INFO < WARN < ERROR) over eight orderings of mixed severities, a trail whose ERROR is neither first nor last, and a single-event trail of each severity (INFO is reported only because an INFO was recorded); never raising it, ranking WARN above ERROR, ignoring ERROR, taking the last event\'s severity or not reporting a recorded INFO turn guards red (M11, M12, M13, M14, S05). For a run with ZERO events it is JSON null, per the Project Owner decision D-MD-B19-A001-004 (F-MD-B19-A001-008 Option A): the repository returns null, the written run_event_summary.json carries `"highest_severity": null` on a real run, and restoring the INFO default, an empty string, a WARN, coalescing the null back to INFO, or reading another run\'s ERROR into an empty run turn guards red (S01, S02, S03, S04, S06, S07)',
+        ],
         'MD-S075-R0122' => [
             'positive' => 'B19RunEventSummaryTrailDerivationTest::test_stage_counts_tally_this_runs_events_per_stage',
             'negative' => 'B19RunEventSummaryRealRunProvenanceTest::test_a_run_with_no_events_writes_no_invented_history',
@@ -661,6 +665,11 @@ final class MarketDataOperationsProofBasis
             'positive' => 'B19RunEventSummaryTrailDerivationTest::test_reason_code_counts_tally_this_runs_reason_codes_only',
             'negative' => 'B19RunEventSummaryTrailDerivationTest::test_a_trail_without_reason_codes_has_no_reason_code_counts',
             'basis' => 'reason_code_counts counts this run\'s events per reason code, events without one are not a reason, a trail without reason codes reports none and is written as a JSON OBJECT ({}, as in the locked example) and never as []. This was a DEFECT in the exporter: an empty map was written as [], and the real-execution guard was red before the fix and green after; counting null reasons, keying by event type, dropping the counts or removing the object cast turn guards red (M18, M19, M25, X03)',
+        ],
+        'MD-S075-R0128' => [
+            'positive' => 'B19RunEventSummaryTrailDerivationTest::test_an_empty_trail_invents_no_events_times_types_or_counts',
+            'negative' => 'B19RunEventSummaryTieOrderAndEmptyTrailTest::test_an_empty_trail_has_a_null_highest_severity',
+            'basis' => 'the summary is derivable from eod_run_events and invents nothing: an empty trail yields zero events, null times and types, empty maps and, per D-MD-B19-A001-004, a null highest_severity (no severity is reported where none was observed — the former INFO default is gone); a new event appears in the next summary (no stored or remembered summary); the trail is not written to; another run\'s events and severities never enter; inventing a first type or a last time, reporting a default severity, caching, writing to the trail or reading all runs turn guards red (M01, M21, M22, M23, M24, S01, S03, S04, S06)',
         ],
         'MD-S075-R0129' => [
             'positive' => 'B19RunEventSummaryTrailDerivationTest::test_the_whole_summary_equals_the_independent_derivation',

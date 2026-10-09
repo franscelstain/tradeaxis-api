@@ -225,3 +225,9 @@ Strategy meaning change: `NO`.
 Same attempt, baseline and declaration. **Actual impact: none on runtime behaviour; no production file changed.** The event-id tie break of `summarizeRunEvents()` is now guarded by the executed SQL and by an index-order test (`M02` is red, no longer treated as equivalent). The severity of a run with no events is an authority gap (`F-MD-B19-A001-008`, OPEN): `MD-S075-R0121` and `MD-S075-R0128` are held without a reviewed basis until the Project Owner decides. `MD-DEP-0025` stays ACTIVE; candidate-v6 is not created. Reviewed per-predicate bases 122/743.
 
 Strategy meaning change: `NO`.
+
+## 2026-10-09T08:44:28+07:00 artifact_run_event_summary empty-trail severity (`E-MD-B19-A001-010`, `D-MD-B19-A001-004`, `F-MD-B19-A001-008`)
+
+Same attempt, baseline and declaration. **Actual impact: one executable-build file edited by one line** — `EodEvidenceRepository::summarizeRunEvents()` starts `highest_severity` at `null`, so a run with zero events writes JSON `null` instead of `"INFO"`, as the Project Owner decided (`D-MD-B19-A001-004`, Option A). The file is in the candidate-v5 frozen build manifest, so **four** executable-build files now differ from candidate-v5 (permitted by O1; `MD-DEP-0025` updated and still ACTIVE); the same 13 build-identity tests fail and nothing else; candidate-v6 is not created. Consumers were checked (only the exported summary reads the field). `MD-S075-R0121` and `MD-S075-R0128` are re-admitted; `F-MD-B19-A001-008` is RESOLVED. Reviewed per-predicate bases 124/743.
+
+Strategy meaning change: `NO`.

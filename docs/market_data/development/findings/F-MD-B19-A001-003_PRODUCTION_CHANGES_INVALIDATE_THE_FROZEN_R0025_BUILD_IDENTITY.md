@@ -127,3 +127,7 @@ The correction of `MD-S075-R0076` (`source_context.retry_attempt_count` is null,
 ## 2026-10-08T14:15:01+07:00 Third executable-build file changed again (`E-MD-B19-A001-006`)
 
 Implementing `D-MD-B19-A001-003` (strict mirror of `final_reason_code`, the separate effective field, the derived-companion marker and the consumer updates) changed `app/Application/MarketData/Services/MarketDataEvidenceExportService.php` again. It was already one of the three files differing from the candidate-v5 manifest, so the set is unchanged: `ApiBackfillRangeAcquisitionService.php`, `MarketDataEvidenceExportService.php`, `PublicApiEodBarsAdapter.php`. The governed successor-pending set is unchanged: the same 13 tests, each with the single mismatch field `bound_input_executable_build_identity`.
+
+## 2026-10-09T08:44:28+07:00 Fourth executable-build file (`E-MD-B19-A001-010`)
+
+Under O1, `app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php` (in the candidate-v5 frozen build manifest) was edited by one line to implement `D-MD-B19-A001-004`. Four files now differ from candidate-v5. The four test classes that carry the governed failures were run: exactly the same 13 tests fail. Nothing was skipped, candidate-v5 is untouched and candidate-v6 is not created.

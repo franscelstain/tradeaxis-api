@@ -1,0 +1,223 @@
+{
+    "evidence_id": "E-MD-B19-A001-010",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B19",
+    "attempt_id": "MD-B19-A001",
+    "work_id": "MD-B19-A001",
+    "baseline_id": "MD-B19-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B19-A001-001",
+    "issued_at": "2026-10-09T08:44:28+07:00",
+    "evidence_type": "OWNER_DECISION_IMPLEMENTED_WITH_PROOF",
+    "verdict": "EMPTY_TRAIL_HIGHEST_SEVERITY_NULL_IMPLEMENTED_PROVEN_R0121_R0128_READMITTED_F008_RESOLVED",
+    "successor_of": [
+        "E-MD-B19-A001-008",
+        "E-MD-B19-A001-009"
+    ],
+    "preserved": "E-MD-B19-A001-008, E-MD-B19-A001-009 and F-MD-B19-A001-007 are unchanged; all other reviewed bases are untouched",
+    "starting_state": {
+        "head": "cb845b7 (the Project Owner committed the previous 12-file checkpoint; tree clean, nothing staged)",
+        "reviewed_bases": "122/743",
+        "artifact_run_event_summary": "16/18",
+        "held": "R0121, R0128",
+        "f008": "OPEN",
+        "md_dep_0025": "ACTIVE",
+        "candidate_v6": "not created"
+    },
+    "owner_decision": {
+        "record": "D-MD-B19-A001-004",
+        "issued_at": "2026-10-09T08:25:51+07:00",
+        "registered_before_the_production_edit": "yes: registered in the document-id, role, verification, work-record and relationship registries and checked by the finding-consistency, scope-frontier and dual-use tests and by every gate before any test or production edit",
+        "semantics": "zero events: highest_severity is JSON null; one or more events: the maximum recorded severity (INFO < WARN < ERROR)",
+        "conflict_with_a_locked_contract": "none: MD-S075 section 3, the Observability contract and the Determinism invariants state no empty-trail value"
+    },
+    "production_change": {
+        "file": "app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php",
+        "method": "summarizeRunEvents()",
+        "change": "initial value of $highestSeverity: 'INFO' -> null (1 line)",
+        "diff": "production_change.diff",
+        "consumers_checked": "highest_severity is produced only by this method and consumed only by run_event_summary.json / evidence_pack.json; dominantReasonCodesFromRunEvents() reads only reason_code_counts; tests mock the repository. No incompatibility, nothing else changed.",
+        "build_delta": "EodEvidenceRepository.php is in the candidate-v5 frozen build manifest, so the set of executable-build files differing from candidate-v5 grows from 3 to 4 (ApiBackfillRangeAcquisitionService, MarketDataEvidenceExportService, PublicApiEodBarsAdapter, EodEvidenceRepository). Permitted by O1 (D-MD-B19-A001-001); MD-DEP-0025 updated, still ACTIVE; candidate-v6 not created; candidate-v5 untouched.",
+        "build_identity_regression": "the four test classes that carry the governed failures were run (R0025SyntheticV2CandidateFixtureTest, B18ReleaseCandidateAcceptanceAggregateTest, B18ScenarioFamiliesOnMariaDbTest, B18ScenarioFamiliesOnMirrorTest): exactly the same 13 tests fail as before; nothing else"
+    },
+    "red_before_fix": {
+        "fast": "red_before_fix_fast.txt: test_an_empty_trail_has_a_null_highest_severity — Failed asserting that 'INFO' is null (1 of 6)",
+        "real_run": "red_before_fix_real_run.txt: test_a_run_with_no_events_writes_no_invented_history — Failed asserting that 'INFO' is null, on the file written by the real exporter (1 of 9)",
+        "unchanged_green": "single-event INFO/WARN/ERROR, mixed trails, ordering and the 17 other real-run tests passed before the fix: the fix changes only the empty case"
+    },
+    "green_after_fix": {
+        "fast": "B19RunEventSummaryTieOrderAndEmptyTrailTest OK (6 tests, 13 assertions); B19RunEventSummaryTrailDerivationTest OK (20 tests, 53 assertions, unchanged file); MarketDataEvidenceExportServiceTest OK (8 tests, 222 assertions)",
+        "real_run": "B19RunEventSummaryRealRunProvenanceTest OK (9 tests, 60 assertions) on MariaDB; the generated artifact is parsed from the written file: zero events -> `\"highest_severity\": null` (property present, JSON null, matched in the raw text); three INFO events -> \"INFO\"; INFO, ERROR, WARN -> \"ERROR\""
+    },
+    "guards_changed": [
+        "B19RunEventSummaryTieOrderAndEmptyTrailTest: the agnostic empty-trail test became test_an_empty_trail_has_a_null_highest_severity (assertNull, another run's ERROR in the table); the single-event test is a data provider over INFO, WARN and ERROR with a decoy run of the opposite severity",
+        "B19RunEventSummaryRealRunProvenanceTest: JSON-null assertions on the written file, the INFO/ERROR non-empty artifacts; the clone helper takes per-event severities"
+    ],
+    "ordering_guards": "the M02/M03/M04 executed-SQL and index-order tests are unchanged and green; production ordering is untouched; S06 (run isolation removed) also turned the ordering test red",
+    "probes": {
+        "red_intended": 7,
+        "mutations": [
+            "S01_empty_trail_defaults_to_info_again",
+            "S02_empty_trail_reports_an_empty_string",
+            "S03_empty_trail_reports_warn",
+            "S04_null_coalesced_back_to_info_on_output",
+            "S05_recorded_info_is_not_reported",
+            "S06_empty_run_leaks_another_runs_error",
+            "S07_real_run_artifact_gets_info_default_back"
+        ],
+        "restore": "every file restored byte for byte (sha256), green control before and after each",
+        "files_at_probe_sha256": {
+            "app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php": "14c28d9dc6889553b731dd1087d63c9c72e8320e7427ac4fdb2d68d8c4df3687",
+            "app/Application/MarketData/Services/MarketDataEvidenceExportService.php": "b12bf30cf0cd73c9dd35c5956184cda3a6691e967b07682698fd2d530abc1e4d",
+            "tests/Unit/MarketData/B19RunEventSummaryRealRunProvenanceTest.php": "909de5331c9cb1f4dc8c87b7bb57246d11f4d8214390d96416e386e285de9440",
+            "tests/Unit/MarketData/B19RunEventSummaryTieOrderAndEmptyTrailTest.php": "45a39100586f0738500471749defd3fee1d2ce904187d2658abd87b54125d178",
+            "tests/Unit/MarketData/B19RunEventSummaryTrailDerivationTest.php": "20fe25b93746c69de585b9f4ec8ec0826b49f0b16683c3a56b5a1abbebd73c8f"
+        },
+        "not_repeated": "the 27 E-008 probes and M02/M03/M04: the guard files they ran against are unchanged and the only production edit is the initial value of a variable they do not touch"
+    },
+    "readmission": {
+        "R0121": "basis restored: observed maximum for every non-empty trail (M11-M14, S05) and JSON null for zero events (S01-S04, S06, S07)",
+        "R0128": "basis restored: nothing invented for an empty trail, now including the severity (S01, S03, S04, S06) with the earlier M01/M21-M24 results",
+        "assessment": "each exact locked requirement was re-read against the guards: R0121 (highest_severity) is the derived maximum and, by the owner decision, null for zero events; R0128 (derivable, nothing invented) holds because no severity is reported where none was observed. The proof gate then counts both."
+    },
+    "executed": [
+        "the four test files above",
+        "seven probes",
+        "the four build-identity classes",
+        "all 43 gates (statuses identical to the previous unit)",
+        "MarketDataOperationsProofGate: 124 reviewed, 619 without, 32 families without a guard"
+    ],
+    "not_executed": [
+        "the full suite: the change is one initial value, its consumers were checked and the classes carrying the governed failures were run; the last full-suite record is E-MD-B19-A001-008 (3158 tests; 7 oracle + the same 13 build-identity + 2 governance cases that cleared after registration)",
+        "the 27 E-008 probes and the 5 E-009 probes"
+    ],
+    "state_after": {
+        "reviewed_bases": "124/743",
+        "without_basis": 619,
+        "artifact_run_event_summary": "18/18",
+        "fully_reviewed_families": "5/37",
+        "formal_satisfied": "0/743",
+        "f008": "RESOLVED",
+        "md_dep_0025": "ACTIVE; four executable-build files differ from candidate-v5"
+    },
+    "not_claimed": [
+        "B19 closure",
+        "a full-suite PASS",
+        "formal SATISFIED for any predicate"
+    ],
+    "raw_artifacts": {
+        "dir": "storage/app/market-data/evidence/MD-B19-A001/run-event-summary-severity-20261009",
+        "manifest_sha256": "e8bba6540e660c7e84e770e4ceb9c4b03b0c8ec266a89f119bbc3a05fb4dd995",
+        "files": {
+            "buildid_B18ReleaseCandidateAcceptanceAggregateTest.txt": {
+                "sha256": "2f7266c8369e7737742b45fcb0fd7e02fb5adad4fa7c47dea53301e668e9767d",
+                "bytes": 1506
+            },
+            "buildid_B18ReleaseCandidateAcceptanceAggregateTest.xml": {
+                "sha256": "7a760425b5f35df8ccf9eabc5cc5dbc3616f4feda35d91e03348cf4ffd3833fd",
+                "bytes": 17814
+            },
+            "buildid_B18ScenarioFamiliesOnMariaDbTest.txt": {
+                "sha256": "6a4bee22825ca3f4bd94095cc48e8073728c0dfdd06cd7d0e9a77723e503a08d",
+                "bytes": 2139
+            },
+            "buildid_B18ScenarioFamiliesOnMariaDbTest.xml": {
+                "sha256": "658c09850d7a8fff902a4e71c8b94d91a682fd5c0ec2bc547d0fe10b3dd3b053",
+                "bytes": 5115
+            },
+            "buildid_B18ScenarioFamiliesOnMirrorTest.txt": {
+                "sha256": "ef1f6b3f2f9de36849269fccf9fb4fb9731e0f767570e05918c64a80991baf5e",
+                "bytes": 2313
+            },
+            "buildid_B18ScenarioFamiliesOnMirrorTest.xml": {
+                "sha256": "02a65f132fdc9deb65bf5f1c0ab508d17af68ade7bfcd02f061b969192fc33b1",
+                "bytes": 5890
+            },
+            "buildid_R0025SyntheticV2CandidateFixtureTest.txt": {
+                "sha256": "a4c84f88e0a1dd6fa8babd883a07d0d89b6f404d66eee00eeba1bf59f9f2b4b5",
+                "bytes": 5198
+            },
+            "buildid_R0025SyntheticV2CandidateFixtureTest.xml": {
+                "sha256": "f84abe951bdcff86c002a204539ae99eb42a88efaccd3a26420ced93f481c8d5",
+                "bytes": 21989
+            },
+            "buildid_done.txt": {
+                "sha256": "d117fa006ba9208500b2930ce69cbde436c647afa917cb7396a9bc9111a46dd2",
+                "bytes": 5
+            },
+            "edit_basis_script.php": {
+                "sha256": "9a365163727293078eb25d00b526820b392346a3de264a14d55a2945f15a362a",
+                "bytes": 4723
+            },
+            "gate_MarketDataOperationsProofGate.json": {
+                "sha256": "3e3710108fe43de7ac6c72ddf6bc703efa8728f347f3331ebf5c478a0b1bae24",
+                "bytes": 3872
+            },
+            "gates_summary.txt": {
+                "sha256": "486c48e15079136f764dc1288b617fbdd056ea2563b98d1290b37a8d8e0d3279",
+                "bytes": 3059
+            },
+            "green_after_fix_fast.txt": {
+                "sha256": "d586a3a06e1356259ed68d1221704909ab5881c71f7f6077fe188c67196459e1",
+                "bytes": 213
+            },
+            "green_after_fix_real_run.txt": {
+                "sha256": "963a5ec2928d3395967973c026374248592261a6d3a310d183a4e555f812ede3",
+                "bytes": 212
+            },
+            "probe_severity.json": {
+                "sha256": "0716d3e6556baeb4ec058e5d372858281c740d98a7cc5efb8562ff0132e4c18c",
+                "bytes": 17952
+            },
+            "probe_severity.out": {
+                "sha256": "1108887b1b6b4a4dff8053e8b766b7100f9ce3fc8ef1cc913a097de4d91bad68",
+                "bytes": 1004
+            },
+            "production_change.diff": {
+                "sha256": "daa465a56d1db662c4e749d17e9b395cc903d7847def2541026bb5837a8ae53d",
+                "bytes": 693
+            },
+            "red_before_fix_fast.txt": {
+                "sha256": "ba42faccada01b9b307be08a2721527db165c2437553279af4dfa2a2d01120c9",
+                "bytes": 544
+            },
+            "red_before_fix_real_run.txt": {
+                "sha256": "fc2d26677cfb6dbc7d241e2338ad7640ef267aa36a920bcf25422e56aaf6542d",
+                "bytes": 545
+            },
+            "sha_files_at_probe.txt": {
+                "sha256": "86df10826d1c42011832f3719fc49acbd3404955816e7ce5dd010740016eefc9",
+                "bytes": 670
+            },
+            "spec_probes_severity.php": {
+                "sha256": "f58260d1b4ebdf2f1574d79ffc8d20d25d7c170ed388223d3558126f46ad793c",
+                "bytes": 2655
+            },
+            "targeted_tests.txt": {
+                "sha256": "f993384517235f828c7fafc44a60dbd1e155c6cd0e0d83220395fe41efd6af1c",
+                "bytes": 315
+            }
+        }
+    },
+    "related_findings": [
+        "F-MD-B19-A001-008",
+        "F-MD-B19-A001-007",
+        "F-MD-B19-A001-003"
+    ],
+    "related_decisions": [
+        "D-MD-B19-A001-004",
+        "D-MD-B19-A001-001"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0025"
+    ],
+    "related_evidence": [
+        "E-MD-B19-A001-008",
+        "E-MD-B19-A001-009"
+    ],
+    "git": "no commit, no push, nothing staged: the Project Owner controls commit and push",
+    "next_resume_point": "the next artifact family of MD-S075 in the proof-spec order — not started"
+}

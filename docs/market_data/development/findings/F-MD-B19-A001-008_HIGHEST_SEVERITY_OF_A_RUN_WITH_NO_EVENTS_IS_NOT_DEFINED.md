@@ -4,9 +4,9 @@
 - Stage / Attempt / Baseline: `MD-B19` / `MD-B19-A001` / `MD-B19-A001-BL001`
 - Raised at: 2026-10-09T07:52:52+07:00
 - Severity: `P3`
-- Status: `OPEN`
+- Status: `RESOLVED`
 - Class: `AUTHORITY_GAP_EMPTY_TRAIL_REPRESENTATION`
-- Blocked: the per-predicate proof basis of `MD-S075-R0121` and `MD-S075-R0128` only (both held, see below).
+- Blocked: the per-predicate proof basis of `MD-S075-R0121` and `MD-S075-R0128` only (held while open; re-admitted on resolution).
 - Blocks strategy change: `NO`
 
 ## Statement
@@ -68,3 +68,11 @@ way" is the same fact this finding records.
 ## Related
 
 - `E-MD-B19-A001-008` (where this was first noted), `E-MD-B19-A001-009`, `MD-S075-R0121`, `MD-S075-R0128`
+
+## 2026-10-09T08:25:51+07:00 Owner decision recorded: Option A (`D-MD-B19-A001-004`)
+
+The Project Owner selected **Option A**: a run with zero `eod_run_events` has a `highest_severity` of JSON `null`, not `"INFO"`; a non-empty trail keeps the maximum of its recorded severities. The decision was registered before any code or test was changed.
+
+## 2026-10-09T08:44:28+07:00 Resolved under Option A (`E-MD-B19-A001-010`)
+
+`EodEvidenceRepository::summarizeRunEvents()` now starts `$highestSeverity` at `null` (one line). Red before the fix and green after it, on the repository and on the file written by the real exporter (`"highest_severity": null`); INFO, WARN and ERROR trails keep their severity; run isolation and the event-id tie order are unchanged; seven mutations are red. `MD-S075-R0121` and `MD-S075-R0128` are re-admitted in `MarketDataOperationsProofBasis`. The edited file is one of the candidate-v5 frozen-build files, so the set differing from candidate-v5 is now four files (`MD-DEP-0025` updated, still ACTIVE; the same 13 build-identity tests fail).

@@ -1886,3 +1886,14 @@ MD-REL-1888,E-MD-B19-A001-009,E-MD-B19-A001-008,DEPENDS_ON,Successor follow-up; 
 MD-REL-1889,E-MD-B19-A001-009,F-MD-B19-A001-008,RELATED,Holds R0121 and R0128 pending the authority gap.,,2026-10-09T07:57:53+07:00,MD-B19-A001 artifact_run_event_summary review follow-up.
 MD-REL-1890,E-MD-B19-A001-009,F-MD-B19-A001-007,RELATED,F-MD-B19-A001-007 is preserved unchanged.,,2026-10-09T07:57:53+07:00,MD-B19-A001 artifact_run_event_summary review follow-up.
 MD-REL-1891,E-MD-B19-A001-009,D-MD-B19-A001-001,DEPENDS_ON,O1: no executable-build file changed in this follow-up.,D-MD-B19-A001-001,2026-10-09T07:57:53+07:00,MD-B19-A001 artifact_run_event_summary review follow-up.
+MD-REL-1892,D-MD-B19-A001-004,F-MD-B19-A001-008,RELATED,Decides the finding: Option A.,D-MD-B19-A001-004,2026-10-09T08:25:51+07:00,MD-B19-A001 F-008 owner decision.
+MD-REL-1893,F-MD-B19-A001-008,D-MD-B19-A001-004,DEPENDS_ON,Option A decision.,D-MD-B19-A001-004,2026-10-09T08:25:51+07:00,MD-B19-A001 F-008 owner decision.
+MD-REL-1894,D-MD-B19-A001-004,E-MD-B19-A001-009,DEPENDS_ON,Relies on the analysis and options recorded there.,,2026-10-09T08:25:51+07:00,MD-B19-A001 F-008 owner decision.
+MD-REL-1895,D-MD-B19-A001-004,D-MD-B19-A001-001,DEPENDS_ON,O1 governs the production change that implements the decision.,D-MD-B19-A001-001,2026-10-09T08:25:51+07:00,MD-B19-A001 F-008 owner decision.
+MD-REL-1896,E-MD-B19-A001-010,D-MD-B19-A001-004,DEPENDS_ON,Implements the owner decision.,D-MD-B19-A001-004,2026-10-09T08:44:28+07:00,MD-B19-A001 F-008 implementation.
+MD-REL-1897,E-MD-B19-A001-010,F-MD-B19-A001-008,RELATED,Resolves the finding under Option A.,,2026-10-09T08:44:28+07:00,MD-B19-A001 F-008 implementation.
+MD-REL-1898,F-MD-B19-A001-008,E-MD-B19-A001-010,DERIVED_FROM,Resolved with the implementation evidence.,,2026-10-09T08:44:28+07:00,MD-B19-A001 F-008 implementation.
+MD-REL-1899,E-MD-B19-A001-010,CI-MD-B19-A001-001,DEPENDS_ON,Executes the per-predicate proof method; one executable-build file edited.,,2026-10-09T08:44:28+07:00,MD-B19-A001 F-008 implementation.
+MD-REL-1900,E-MD-B19-A001-010,E-MD-B19-A001-009,DEPENDS_ON,Successor of the follow-up evidence; E-009 and E-008 are unchanged.,,2026-10-09T08:44:28+07:00,MD-B19-A001 F-008 implementation.
+MD-REL-1901,E-MD-B19-A001-010,D-MD-B19-A001-001,DEPENDS_ON,O1 batches production changes; the fourth build file is recorded in MD-DEP-0025.,D-MD-B19-A001-001,2026-10-09T08:44:28+07:00,MD-B19-A001 F-008 implementation.
+MD-REL-1902,E-MD-B19-A001-010,F-MD-B19-A001-007,RELATED,F-MD-B19-A001-007 is preserved unchanged.,,2026-10-09T08:44:28+07:00,MD-B19-A001 F-008 implementation.

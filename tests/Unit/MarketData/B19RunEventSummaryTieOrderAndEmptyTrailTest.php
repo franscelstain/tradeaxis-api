@@ -21,10 +21,10 @@ use Tests\Support\UsesMarketDataSqlite;
  *        are still the lowest and highest event id of the tied rows.
  *
  * 2. The severity of a run with NO events.
- *    The locked text gives `highest_severity` an example for a non-empty trail only and says nothing about an empty
- *    one (see `F-MD-B19-A001-008`). Nothing below pins the value the repository returns today. The guard asserts
- *    only what any reading of the contract needs: the field is present and an empty trail does not report a
- *    problem (`WARN`/`ERROR`) it never observed. Whether the value is `INFO`, `NULL` or another marker is OPEN.
+ *    The locked text gives `highest_severity` an example for a non-empty trail only. The Project Owner decided
+ *    `F-MD-B19-A001-008` Option A (`D-MD-B19-A001-004`): a run with zero events has a `highest_severity` of
+ *    `null`, and a non-empty trail keeps the maximum of its recorded severities. The guards below assert exactly
+ *    that, on a table that also holds another run's ERROR.
  */
 class B19RunEventSummaryTieOrderAndEmptyTrailTest extends TestCase
 {
@@ -104,21 +104,33 @@ class B19RunEventSummaryTieOrderAndEmptyTrailTest extends TestCase
         $this->assertSame(5, $summary['event_count']);
     }
 
-    /** `R0121`, `R0128`: an empty trail has the field, and does not report a problem it never observed. */
-    public function test_an_empty_trail_reports_no_problem_severity_it_never_observed(): void
+    /** `R0121`, `R0128` (D-MD-B19-A001-004): a run with zero events has a null highest_severity, not INFO, and another run's ERROR does not leak into it. */
+    public function test_an_empty_trail_has_a_null_highest_severity(): void
     {
         $this->event(1, 9002, '2026-04-21 17:31:00', 'OTHER_RUN_ERROR', 'ERROR');
         $summary = (new EodEvidenceRepository())->summarizeRunEvents(424242);
 
         $this->assertSame(0, $summary['event_count']);
         $this->assertArrayHasKey('highest_severity', $summary, 'the field is present for an empty trail');
-        $this->assertNotContains($summary['highest_severity'], ['WARN', 'ERROR'], 'an empty trail has observed neither a warning nor an error, and another run\'s ERROR must not leak');
+        $this->assertNull($summary['highest_severity'], 'no event, no observed severity: null, not the INFO default');
     }
 
-    /** `R0121`, `R0130`: a trail with an event keeps reporting the observed maximum however the empty case is later decided. */
-    public function test_a_single_event_trail_reports_its_own_severity(): void
+    /** @return array<string,array{0:string}> */
+    public static function singleSeverities(): array
     {
-        $this->event(1, 9003, '2026-04-21 17:31:00', 'ONLY_WARN', 'WARN');
-        $this->assertSame('WARN', (new EodEvidenceRepository())->summarizeRunEvents(9003)['highest_severity']);
+        return ['INFO' => ['INFO'], 'WARN' => ['WARN'], 'ERROR' => ['ERROR']];
+    }
+
+    /**
+     * `R0121`, `R0130`: a trail with exactly one event reports that event's severity — INFO is reported because an INFO
+     * was recorded, which is what separates it from the empty-trail null.
+     *
+     * @dataProvider singleSeverities
+     */
+    public function test_a_single_event_trail_reports_its_own_severity(string $severity): void
+    {
+        $this->event(1, 9003, '2026-04-21 17:31:00', 'ONLY_EVENT', $severity);
+        $this->event(2, 9004, '2026-04-21 17:31:00', 'DECOY_OTHER_RUN', $severity === 'ERROR' ? 'INFO' : 'ERROR');
+        $this->assertSame($severity, (new EodEvidenceRepository())->summarizeRunEvents(9003)['highest_severity']);
     }
 }

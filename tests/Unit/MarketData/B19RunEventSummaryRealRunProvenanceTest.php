@@ -105,7 +105,7 @@ class B19RunEventSummaryRealRunProvenanceTest extends TestCase
     }
 
     /** @return array{0:string,1:int} raw file and run id of a copy of the world's run with the given number of reason-free INFO events */
-    private function exportCloneWithEvents(int $events): array
+    private function exportCloneWithEvents(int $events, array $severities = []): array
     {
         $w = R0025SyntheticV2World::build();
         $row = (array) DB::table('eod_runs')->where('run_id', $w['run_id'])->first();
@@ -118,7 +118,7 @@ class B19RunEventSummaryRealRunProvenanceTest extends TestCase
         for ($i = 0; $i < $events; $i++) {
             DB::table('eod_run_events')->insert([
                 'run_id' => $newId, 'trade_date_requested' => $row['trade_date_requested'], 'event_time' => sprintf('2026-03-25 11:%02d:00', $i),
-                'stage' => 'INGEST', 'event_type' => 'T'.$i, 'severity' => 'INFO', 'reason_code' => null, 'message' => null,
+                'stage' => 'INGEST', 'event_type' => 'T'.$i, 'severity' => $severities[$i] ?? 'INFO', 'reason_code' => null, 'message' => null,
                 'event_payload_json' => null, 'created_at' => '2026-03-25 11:00:00',
             ]);
         }
@@ -137,6 +137,14 @@ class B19RunEventSummaryRealRunProvenanceTest extends TestCase
         $this->assertSame(3, $d->event_count);
         $this->assertTrue(is_object($d->reason_code_counts), 'reason_code_counts must serialize as {} when empty');
         $this->assertSame(3, $d->stage_counts->INGEST);
+        $this->assertSame('INFO', $d->highest_severity, 'three recorded INFO events: INFO is an observation here');
+    }
+
+    /** `R0121`, `R0130`: an ERROR recorded between an INFO and a WARN is the severity the written file reports. */
+    public function test_a_mixed_trail_writes_its_highest_recorded_severity(): void
+    {
+        [$raw] = $this->exportCloneWithEvents(3, ['INFO', 'ERROR', 'WARN']);
+        $this->assertSame('ERROR', json_decode($raw)->highest_severity);
     }
 
     /** `R0122`, `R0127`, `R0128`: a run with no events at all writes an honest, empty summary: zero count, null times and types, `{}` maps. */
@@ -149,6 +157,9 @@ class B19RunEventSummaryRealRunProvenanceTest extends TestCase
         $this->assertNull($d->last_event_time);
         $this->assertNull($d->first_event_type);
         $this->assertNull($d->last_event_type);
+        $this->assertTrue(property_exists($d, 'highest_severity'));
+        $this->assertNull($d->highest_severity, 'zero events: JSON null in the written artifact, not INFO');
+        $this->assertMatchesRegularExpression('/"highest_severity":\s*null/', $raw, 'the generated file itself carries a JSON null');
         $this->assertTrue(is_object($d->stage_counts));
         $this->assertTrue(is_object($d->reason_code_counts));
     }

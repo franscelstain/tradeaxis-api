@@ -269,7 +269,7 @@ class EodEvidenceRepository
         $first = $eventCount ? $events->first() : null;
         $last = $eventCount ? $events->last() : null;
         $severityRank = ['INFO' => 1, 'WARN' => 2, 'ERROR' => 3];
-        $highestSeverity = 'INFO';
+        $highestSeverity = null;
         $highestRank = 0;
 
         foreach ($events as $event) {
