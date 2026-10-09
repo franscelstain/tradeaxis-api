@@ -231,3 +231,27 @@ Strategy meaning change: `NO`.
 Same attempt, baseline and declaration. **Actual impact: one executable-build file edited by one line** — `EodEvidenceRepository::summarizeRunEvents()` starts `highest_severity` at `null`, so a run with zero events writes JSON `null` instead of `"INFO"`, as the Project Owner decided (`D-MD-B19-A001-004`, Option A). The file is in the candidate-v5 frozen build manifest, so **four** executable-build files now differ from candidate-v5 (permitted by O1; `MD-DEP-0025` updated and still ACTIVE); the same 13 build-identity tests fail and nothing else; candidate-v6 is not created. Consumers were checked (only the exported summary reads the field). `MD-S075-R0121` and `MD-S075-R0128` are re-admitted; `F-MD-B19-A001-008` is RESOLVED. Reviewed per-predicate bases 124/743.
 
 Strategy meaning change: `NO`.
+
+## 2026-10-09T12:55:37+07:00 artifact_eligibility_export (`E-MD-B19-A001-011`, `F-MD-B01-A014-001`)
+
+Same attempt, baseline and declaration. **Actual impact: two executable-build files edited, both already in the set differing from candidate-v5** (`EodEvidenceRepository.php`, `MarketDataEvidenceExportService.php`): `eligibility_export.csv` now ships the mandatory V2 columns `listing_id`, `publication_id`, `data_usable` and the complete persisted reason set, with the legacy `eligible` / `reason_code` projection last (`F-MD-B01-A014-001`, RESOLVED). The only reader of the repository rows (replay) reads `eligible` and is unaffected. The set differing from candidate-v5 stays at four files; the full suite shows exactly the 7 oracle failures and the same 13 build-identity failures; `MD-DEP-0025` updated and still ACTIVE; candidate-v6 not created. Reviewed per-predicate bases 133/743.
+
+Strategy meaning change: `NO`.
+
+## 2026-10-09T13:48:09+07:00 artifact_eligibility_export review follow-up (`E-MD-B19-A001-012`, `F-MD-B19-A001-009`)
+
+Same attempt, baseline and declaration. **Actual impact: one executable-build file edited** (`EodArtifactRepository.php`, in the candidate-v5 frozen build manifest): `replaceEligibility()` now refuses, before touching the stored rows, a blocked (`eligible = 0`) row whose reason set is empty, not a list or holds a blank member - the locked rule "no `eligible=false` row may have an empty reason set" was enforced only by construction in the producer (`F-MD-B19-A001-009`, RESOLVED). No pipeline run produces such a row; snapshot and promote copies are not tightened. **Five** executable-build files now differ from candidate-v5 (permitted by O1; `MD-DEP-0025` updated and still ACTIVE); the full suite shows the 7 oracle failures and the same 13 build-identity failures; candidate-v6 is not created. `R0144` is re-based on producer + persistence + real run; `R0134` and `R0138` boundary cases are proven; `artifact_eligibility_export` stays 9/9. Reviewed bases 133/743.
+
+Strategy meaning change: `NO`.
+
+## 2026-10-09T15:10:24+07:00 blocked-row write guard: numeric-key JSON object (`E-MD-B19-A001-013`, `F-MD-B19-A001-009`)
+
+Same attempt, baseline and declaration. **Actual impact: one already-listed executable-build file edited again, no new build file** (`EodArtifactRepository.php`): the guard added under `E-MD-B19-A001-012` decoded the reason set with the associative flag and checked for sequential keys, so an independent reviewer's JSON object with numeric keys passed as a list; the guard now reads the JSON root type from a decode without the associative flag. Red before / green after; seven mutations red; the real MariaDB write re-run green. Registry membership is still not enforced at the write (stated, with a tripwire test). Five executable-build files still differ from candidate-v5; `MD-DEP-0025` updated and still ACTIVE; candidate-v6 not created. `artifact_eligibility_export` stays 9/9; reviewed bases 133/743.
+
+Strategy meaning change: `NO`.
+
+## 2026-10-09T16:12:13+07:00 artifact_eligibility_export R0144 registered-reason boundary (`E-MD-B19-A001-014`)
+
+Same attempt, baseline and declaration. **Actual impact: none on runtime behaviour; no production file changed.** The registered-reason boundary of `MD-S075-R0144` was traced: the public `replaceEligibility()` accepts an unregistered member and the export of a sealed publication carries it unchanged (executed), so the boundary is the producer, which is closed (one caller, one builder, two member expressions, registered literals, a closed set of table writers) and enforced by a census tripwire. Registry enforcement at persistence or sealing is recorded as an optional hardening question. Five executable-build files still differ from candidate-v5; `MD-DEP-0025` unchanged and ACTIVE; candidate-v6 not created. `artifact_eligibility_export` stays 9/9; reviewed bases 133/743.
+
+Strategy meaning change: `NO`.

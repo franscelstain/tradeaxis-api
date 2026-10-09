@@ -930,9 +930,10 @@ final class MarketDataOperationsProofSpec
                 'owner' => 'MD-B19:artifact-eligibility-export',
                 'implementation' => [
                     'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
+                    'app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19EligibilityExportRowProvenanceTest.php', 'test_a_superseded_publication_exports_exactly_its_own_rows'],
+                'negative' => ['tests/Unit/MarketData/B19EligibilityExportRealRunProvenanceTest.php', 'test_the_file_of_a_real_run_equals_an_independent_read_of_the_tables'],
             ],
             'artifact_invalid_bars_export' => [
                 'owner' => 'MD-B19:artifact-invalid-bars-export',

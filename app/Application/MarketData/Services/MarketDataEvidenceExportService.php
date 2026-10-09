@@ -151,7 +151,7 @@ class MarketDataEvidenceExportService
         if ($sourceAttemptTelemetry !== null) {
             $this->writeJson($dir.'/source_attempt_telemetry.json', $sourceAttemptTelemetry);
         }
-        $this->writeCsv($dir.'/eligibility_export.csv', ['trade_date', 'ticker_id', 'eligible', 'reason_code'], $eligibilityRows);
+        $this->writeCsv($dir.'/eligibility_export.csv', ['trade_date', 'listing_id', 'ticker_id', 'publication_id', 'data_usable', 'reason_codes', 'eligible', 'reason_code'], $eligibilityRows);
         $this->writeCsv($dir.'/invalid_bars_export.csv', ['trade_date', 'ticker_id', 'source', 'source_row_ref', 'invalid_reason_code'], $invalidBarsRows);
         file_put_contents($dir.'/anomaly_report.md', $anomalyReport);
         $this->writeJson($dir.'/lineage.json', $lineage);

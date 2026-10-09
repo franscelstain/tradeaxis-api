@@ -1,0 +1,204 @@
+{
+    "evidence_id": "E-MD-B19-A001-013",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B19",
+    "attempt_id": "MD-B19-A001",
+    "work_id": "MD-B19-A001",
+    "baseline_id": "MD-B19-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B19-A001-001",
+    "issued_at": "2026-10-09T15:10:24+07:00",
+    "evidence_type": "REVIEWER_FOUND_GUARD_DEFECT_CORRECTED",
+    "verdict": "BLOCKED_ROW_WRITE_GUARD_NOW_READS_THE_JSON_ROOT_TYPE_NUMERIC_KEY_OBJECTS_REFUSED_R0144_RETAINED",
+    "successor_of": [
+        "E-MD-B19-A001-012",
+        "E-MD-B19-A001-011"
+    ],
+    "preserved": [
+        "E-MD-B19-A001-011 sha256 f23a2e8cfac1a6d478ba612cafb87dcb488353aecac7bb648c05113d7ac1743e",
+        "E-MD-B19-A001-012 sha256 75db15803a03e767a80468c20f33008e60ce3898144cd1b52e87a0eddd88c26a",
+        "both unchanged and immutable; their raw evidence and manifests were re-verified before this record was issued. E-012 stated that the guard refuses a set that is \"not a list\"; that statement was true for every form E-012 tested but not for a JSON object with sequential numeric keys. This record supersedes only that detail."
+    ],
+    "starting_state": {
+        "head": "dfbef0b with the uncommitted eligibility-export work in the tree (23 paths, nothing staged)",
+        "reviewed_bases": "133/743",
+        "fully_reviewed_families": "6/37",
+        "formal_satisfied": "0/743",
+        "md_dep_0025": "ACTIVE; five executable-build files differ from candidate-v5"
+    },
+    "defect": {
+        "reported_by": "independent reviewer of the E-011/E-012 package",
+        "reproduced": "yes, on the local runtime (PHP 7.4.33): json_decode(..., true) turns {\"0\":\"A\"} and {\"0\":\"A\",\"1\":\"B\"} into arrays whose keys are 0..n-1, so array_keys($set) === range(0, count($set) - 1) is true for them; the guard therefore accepted a JSON OBJECT as a reason set. test_the_runtime_decodes_a_numeric_key_object_like_a_list_when_asked_for_arrays keeps the reproduction on the record.",
+        "classification": "a bounded implementation/proof gap in a guard that claimed to require a JSON list; no owner decision (the locked rule \"no eligible=false row may have an empty reason set\" and the existing list shape are unchanged)",
+        "red_before_fix": "red_before_fix.txt: Tests: 17, 2 red - exactly the two numeric-key objects; the alphabetic-key object, the empty object, the list of lists, blank and non-string members were already refused"
+    },
+    "production_change": {
+        "file": "app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php",
+        "method": "assertBlockedEligibilityRowsCarryReasons()",
+        "change": "the reason set is decoded WITHOUT the associative flag and must be is_array and non-empty: a JSON list decodes to a PHP array and a JSON object to a stdClass, so the root type is read from the decode itself; the sequential-key comparison is removed",
+        "diff": "production_change_eod_artifact_repository.diff",
+        "build_delta": "unchanged: EodArtifactRepository.php was already the fifth file; no sixth file; MD-DEP-0025 still ACTIVE; candidate-v6 not created"
+    },
+    "verified": {
+        "accepted": "non-empty JSON lists of non-blank strings (including the suspension-leading two-member set); usable rows with [] or an annotation list (the guard does not apply to them)",
+        "refused, before any stored row is touched": [
+            "empty list",
+            "string",
+            "object with alphabetic keys",
+            "object with one numeric key",
+            "object with sequential numeric keys",
+            "empty object",
+            "list of lists",
+            "blank member",
+            "non-string member",
+            "NULL set (existing completeness guard)"
+        ],
+        "atomic": "a mixed batch with one defective blocked row writes nothing and leaves the stored rows",
+        "legacy_copies": "snapshot and promote still use only the completeness guard (StageThreeWriteCompletenessGuardTest green)"
+    },
+    "probes": {
+        "red_intended": 7,
+        "mutations": [
+            "N01_fix_reverted_assoc_decode_and_key_check",
+            "N02_assoc_decode_without_key_check",
+            "N03_objects_accepted_as_sets",
+            "N04_empty_list_accepted",
+            "N05_members_not_checked",
+            "N06_guard_not_called",
+            "N07_usable_rows_checked_too"
+        ],
+        "covers": "N01 reverts the reviewer-found form; N02 drops the key check; N03 accepts objects; N04 accepts empty lists; N05 skips the member check; N06 skips the guard; N07 holds usable rows to the blocked rule",
+        "files_at_probe_sha256": {
+            "app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php": "72c1b669874e5ad46d35868de0d6fb85196730b7663a27bb3ca3a8a3ae1fff29",
+            "tests/Unit/MarketData/B19EligibilityBlockedRowAdmissionTest.php": "e3169fe42c3a2700b3f2b422998b82701560fe9ac3b9f23d9f2ea93a55efc8fd"
+        },
+        "restore": "every file restored byte for byte (sha256), green control before and after each",
+        "not_repeated": "the earlier W family (superseded by N, whose anchors follow the corrected code) and the E-011 export probe families (their files are unchanged)"
+    },
+    "registration_boundary": {
+        "preserved_proof": "every code the eligibility decision and build services can emit is a registered, active code of the reason-code registry seed (B19EligibilityReasonRegistrationTest); the blocked row of a real run has only registered members (B19EligibilityExportRealRunProvenanceTest, re-run green after this change)",
+        "outside_current_proof_scope": "an arbitrary unregistered string handed directly to replaceEligibility() with an otherwise valid JSON list is written; the write path does not consult the registry",
+        "tripwire": "B19EligibilityWriteRegistrationBoundaryTest records that limitation (1 test) and fails the day the write starts to check the registry",
+        "why_no_registry_check": "no locked text requires the persistence layer to depend on the registry, the producers are proven registered, and a new dependency needs an authority or necessity that has not been established"
+    },
+    "regression": {
+        "executed": [
+            "B19EligibilityBlockedRowAdmissionTest 17 tests, 45 assertions",
+            "StageThreeWriteCompletenessGuardTest 30/154",
+            "StageThreeEligibilityProducerTest 1/57",
+            "EligibilityFirstClassFactDimensionsTest 5/44",
+            "EligibilityExplainabilityBoundaryTest 7/20",
+            "B19EligibilityExportRowProvenanceTest 12/87",
+            "B19EligibilityReasonRegistrationTest 9/46",
+            "MarketDataEvidenceExportServiceTest 8/222",
+            "B19EligibilityWriteRegistrationBoundaryTest 1/2",
+            "B19EligibilityExportRealRunProvenanceTest 1/31 on MariaDB (the real pipeline writes through the changed guard)",
+            "five governance test files",
+            "all 43 gates"
+        ],
+        "not_executed": [
+            "the full suite: the change turns a decode flag inside one private guard of the write path; every producer emits lists via json_encode(array_values(...)), and the real MariaDB write was exercised. The last full-suite record is E-MD-B19-A001-012: 3199 tests, the 7 oracle and the same 13 build-identity failures only",
+            "the other MariaDB suites",
+            "the 28 E-011 and 7 E-012 probes (superseded or unchanged files)"
+        ],
+        "proof_gate": "133 reviewed, 610 without, 31 families without a guard"
+    },
+    "admission": {
+        "MD-S075-R0144": "retained; basis text rewritten (three layers, numeric-key objects, registration boundary stated)",
+        "MD-S075-R0138": "retained; basis text updated",
+        "F-MD-B19-A001-009": "stays RESOLVED; a correction section records that its first form accepted numeric-key objects",
+        "counts": "unchanged: 133/743, 6/37 families, formal SATISFIED 0/743"
+    },
+    "state_after": {
+        "reviewed_bases": "133/743",
+        "without_basis": 610,
+        "artifact_eligibility_export": "9/9",
+        "fully_reviewed_families": "6/37",
+        "formal_satisfied": "0/743",
+        "executable_build_files_differing": 5
+    },
+    "not_claimed": [
+        "B19 closure",
+        "a full-suite PASS",
+        "formal SATISFIED for any predicate",
+        "registry membership enforced at the write"
+    ],
+    "raw_artifacts": {
+        "dir": "storage/app/market-data/evidence/MD-B19-A001/eligibility-numeric-key-object-20261009",
+        "manifest_sha256": "a4981e26d32c0b1cee1df42e3525e6d7dedaa72cbf0eb43f40308011415eb420",
+        "files": {
+            "edit_basis_script.php": {
+                "sha256": "8a469ff9460b8698e7619b47e9e5ea0c6338ad7c58b9efcf66609aadec49c9a9",
+                "bytes": 4304
+            },
+            "gate_MarketDataOperationsProofGate.json": {
+                "sha256": "eec98b07772ac8567241308fe0ea27432e6fc76d59dcbf147a2e3946516f94a1",
+                "bytes": 3775
+            },
+            "gates_summary.txt": {
+                "sha256": "486c48e15079136f764dc1288b617fbdd056ea2563b98d1290b37a8d8e0d3279",
+                "bytes": 3059
+            },
+            "governance_after_edit.txt": {
+                "sha256": "bae4ceabc1d9ea20b1e70cdee0eecf3ac0503a50d7c76f7b31a1d17baf5f71b4",
+                "bytes": 347
+            },
+            "green_after_fix_targeted.txt": {
+                "sha256": "81fbb9e9223795395fc5dc749338e172d0ee631cb002dc868ff4ffe9c61a185d",
+                "bytes": 550
+            },
+            "probe_numeric.json": {
+                "sha256": "d65d01d43fa493646e2fb5538de5e42cecc6fafd759f2e22192911a3387c3577",
+                "bytes": 32240
+            },
+            "probe_numeric.out": {
+                "sha256": "9060978ae9ca205f7d0a587c07ad9b702c6886f3d2ab99adb9f1d89de8370531",
+                "bytes": 3497
+            },
+            "production_change_eod_artifact_repository.diff": {
+                "sha256": "05d5d00896e056b515b058b8aa9380aa853cf4a4a1ba079e49acd3d8e7928baa",
+                "bytes": 2477
+            },
+            "real_run_after_fix.txt": {
+                "sha256": "b251cd031c331da6e22c28b12bfad0e17ec2fb185949d58e2a8cdb4ff850ebf3",
+                "bytes": 211
+            },
+            "red_before_fix.txt": {
+                "sha256": "818c2e676b7614fff3cde0a42025c3bb38022541f5ffe9abac10d44372c25511",
+                "bytes": 1085
+            },
+            "sha_files_at_probe.txt": {
+                "sha256": "7011bcaff2dee562256b0ec2da88f66fb31b9df88bed88fdcc3bfe0bce94a5bf",
+                "bytes": 264
+            },
+            "spec_probes.php": {
+                "sha256": "6ea9e548e4f74f18805c845cca00c3aa97d40b41585907921014a3024c5956b4",
+                "bytes": 3329
+            },
+            "targeted_tests.txt": {
+                "sha256": "710e693d4cf15578fe4911d084923b65d2f701e0da0ef20e7cc107ff4f002a29",
+                "bytes": 614
+            }
+        }
+    },
+    "related_findings": [
+        "F-MD-B19-A001-009",
+        "F-MD-B01-A014-001",
+        "F-MD-B19-A001-003"
+    ],
+    "related_decisions": [
+        "D-MD-B19-A001-001"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0025"
+    ],
+    "related_evidence": [
+        "E-MD-B19-A001-012",
+        "E-MD-B19-A001-011"
+    ],
+    "git": "no commit, no push, nothing staged: the Project Owner controls commit and push",
+    "next_resume_point": "the next artifact family of MD-S075 in the proof-spec order - not started"
+}

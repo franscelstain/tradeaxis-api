@@ -1,0 +1,185 @@
+{
+    "evidence_id": "E-MD-B19-A001-014",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B19",
+    "attempt_id": "MD-B19-A001",
+    "work_id": "MD-B19-A001",
+    "baseline_id": "MD-B19-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B19-A001-001",
+    "issued_at": "2026-10-09T16:12:13+07:00",
+    "evidence_type": "PROOF_BOUNDARY_RESOLUTION_NO_PRODUCTION_CHANGE",
+    "verdict": "R0144_REGISTERED_REASON_BOUNDARY_IS_THE_PRODUCER_AND_IT_IS_CLOSED_BY_CENSUS_R0144_ADMISSION_PRESERVED",
+    "successor_of": "E-MD-B19-A001-013",
+    "preserved": [
+        "E-MD-B19-A001-011 sha256 f23a2e8cfac1a6d478ba612cafb87dcb488353aecac7bb648c05113d7ac1743e",
+        "E-MD-B19-A001-012 sha256 75db15803a03e767a80468c20f33008e60ce3898144cd1b52e87a0eddd88c26a",
+        "E-MD-B19-A001-013 sha256 e05974e6f4d3b87a5994dccb407b60f66babeb84f364856b88cb9f0884eb97bc",
+        "all three unchanged and immutable; raw manifests re-verified before this record was issued"
+    ],
+    "starting_state": {
+        "head": "dfbef0b with 25 uncommitted paths (E-011, E-012, E-013), nothing staged",
+        "reviewed_bases": "133/743",
+        "fully_reviewed_families": "6/37",
+        "formal_satisfied": "0/743",
+        "md_dep_0025": "ACTIVE; five executable-build files differ from candidate-v5"
+    },
+    "question": "B19EligibilityWriteRegistrationBoundaryTest shows replaceEligibility() accepts an arbitrary unregistered reason inside a valid list. Calling that \"outside proof scope\" does not prove the exclusion legitimate: can an unregistered value reach an admissible sealed publication and its eligibility_export.csv?",
+    "trace": {
+        "writers_of_eligibility_rows": [
+            "replaceEligibility() - sole production caller EodEligibilityBuildService",
+            "snapshotPublicationFromCurrentTables / promotePublicationHistoryToCurrent - copy rows already persisted, never build a reason set",
+            "bindCandidateEligibilityMarketStructure - updates market_structure_resolution_state and revision ids only",
+            "EodPublicationRepository - deletes history rows only"
+        ],
+        "who_assigns_eligibility_reasons_json": "only EodEligibilityBuildService (json_encode of the set it builds); other app files read it, hash it or list it as a column",
+        "members_of_the_set": "exactly two expressions: the literal ELIG_TRADING_SUSPENDED and the reason of EligibilityDecisionService::decide(); every ELIG_ literal in the two producers is a registered, active code of the registry seed (B19EligibilityReasonRegistrationTest)",
+        "sealing_and_admission": "the semantic hash covers eligibility_reasons_json as an opaque column value; assertPublicationSnapshotComplete counts rows; the manifest publication-scope reasons are a different set (coverage reason) and are validated by shape only; no step consults eod_reason_codes for row reasons",
+        "export": "reports the persisted set as stored"
+    },
+    "reachability_result": {
+        "executed": "B19EligibilityReasonReachabilityTest::test_an_unregistered_reason_written_through_the_public_method_reaches_the_export_of_a_sealed_publication: the public method accepts NOT_A_REGISTERED_REASON_CODE and the evidence export of a SEALED publication carries it unchanged",
+        "meaning": "nothing downstream of the producer checks the registry, so the boundary of R0144 is the producer; there is no other layer to rely on",
+        "production_reachability": "no production path can pass an unregistered code: one caller, one builder, two member expressions, all registered; the writers are a closed set. Direct database access is outside the application and outside what any layer of it can prove."
+    },
+    "census_guards": [
+        "test_replace_eligibility_has_exactly_one_production_caller",
+        "test_only_the_build_service_builds_an_eligibility_reason_set",
+        "test_the_members_of_the_set_come_from_exactly_the_suspension_literal_and_the_decision_reason",
+        "test_the_files_that_write_the_eligibility_tables_are_a_closed_set",
+        "test_the_repository_writes_to_the_eligibility_tables_only_through_known_paths"
+    ],
+    "what_the_census_is": "a tripwire on the boundary, not a run-time registry lookup: a new caller, builder, member source or table writer fails the test and must be reviewed against R0144 before it is accepted",
+    "decision": {
+        "r0144": "existing guards plus the census satisfy R0144 for the current system; admission preserved; no production correction was demonstrated necessary (an unregistered value cannot reach a publication through any production path)",
+        "owner_question": "OPTIONAL HARDENING, not blocking, recorded and not decided: should persistence or sealing additionally consult the reason-code registry for row reasons, and against which registry - the live eod_reason_codes table or the registry snapshot bound to the publication's config (ProducerRegistrySnapshot / MarketDataConfigSnapshotRepository), which differ for historical or replayed publications? Options: (A) none - keep the producer boundary and census; (B) write-path check against the live table; (C) seal-time check against the bound snapshot. Choosing needs an authority decision on the registry and on legacy-copy compatibility; nothing was invented.",
+        "why_not_a_registry_dependency_now": "no locked text assigns the check to persistence, reachability is not demonstrated, and a live-table check would misjudge publications bound to an earlier registry"
+    },
+    "production_change": "none: the three production files equal the bytes recorded by the E-013 probes; no new build file; MD-DEP-0025 unchanged and ACTIVE",
+    "probes": {
+        "red_intended": 6,
+        "mutations": [
+            "C01_a_second_caller_of_the_public_write",
+            "C02_a_second_builder_of_reason_sets",
+            "C03_a_third_member_source_in_the_build_service",
+            "C04_a_new_literal_table_writer",
+            "C05_market_structure_bind_carries_a_reason_set",
+            "C06_the_write_starts_to_consult_the_registry"
+        ],
+        "covers": "C01 a second caller; C02 a second reason-set builder; C03 a third member source in the build service; C04 a new literal table writer; C05 a market-structure payload that carries a reason set; C06 the demonstration turns red the day persistence starts to refuse",
+        "files_at_probe_sha256": {
+            "app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php": "72c1b669874e5ad46d35868de0d6fb85196730b7663a27bb3ca3a8a3ae1fff29",
+            "app/Application/MarketData/Services/EodEligibilityBuildService.php": "107bbbede25936bb49b0e282ee4452ba918957043e1cbc717d2eff328ea8d339",
+            "app/Application/MarketData/Services/PublicationGovernanceBindingService.php": "396101213ea2105f97c77673bd56b5f3cf8805b2d772fc6c541acdb58e685c30",
+            "app/Application/MarketData/Services/PublicationProjectionRepairService.php": "1666d8b69144e8e2e8d0039fed56cd960a632754bc45a8be82a101b05673ea5c",
+            "tests/Unit/MarketData/B19EligibilityReasonReachabilityTest.php": "57ebac77282d47b789cbf07a4554d47923f2780c9e780283634674fac5cd6d5f"
+        },
+        "restore": "every file restored byte for byte (sha256), green control before and after each",
+        "not_repeated": "W, N, E, X, G, M families of earlier units (files unchanged)"
+    },
+    "regression": {
+        "executed": [
+            "B19EligibilityReasonReachabilityTest 6 tests, 18 assertions",
+            "B19EligibilityBlockedRowAdmissionTest 17/45",
+            "B19EligibilityWriteRegistrationBoundaryTest 1/2",
+            "B19EligibilityReasonRegistrationTest 9/46",
+            "B19EligibilityExportRowProvenanceTest 12/87",
+            "StageThreeWriteCompletenessGuardTest 30/154",
+            "MarketDataEvidenceExportServiceTest 8/222",
+            "five governance test files",
+            "all 43 gates (statuses unchanged)"
+        ],
+        "not_executed": [
+            "the full suite and the MariaDB suites: this unit adds tests and records only; no production file changed (last full-suite record E-MD-B19-A001-012)"
+        ],
+        "proof_gate": "133 reviewed, 610 without, 31 families without a guard"
+    },
+    "admission": {
+        "MD-S075-R0144": "retained on the producer boundary (content + reachability census), the persistence shape guard and the real run; basis text rewritten with the stated limits",
+        "family": "artifact_eligibility_export stays 9/9",
+        "F-MD-B19-A001-009": "stays RESOLVED; a section records the remaining limitation and the optional hardening question",
+        "counts": "unchanged: 133/743, 6/37 families, formal SATISFIED 0/743"
+    },
+    "state_after": {
+        "reviewed_bases": "133/743",
+        "without_basis": 610,
+        "artifact_eligibility_export": "9/9",
+        "fully_reviewed_families": "6/37",
+        "formal_satisfied": "0/743",
+        "executable_build_files_differing": 5
+    },
+    "not_claimed": [
+        "B19 closure",
+        "a full-suite PASS",
+        "formal SATISFIED for any predicate",
+        "that persistence or sealing enforces registry membership",
+        "that direct database writes outside the application are prevented"
+    ],
+    "raw_artifacts": {
+        "dir": "storage/app/market-data/evidence/MD-B19-A001/eligibility-reason-reachability-20261009",
+        "manifest_sha256": "252e2f96e9ffafe8c792eb663e2183442218f720866fb51bb3ff6445d802359b",
+        "files": {
+            "edit_basis_script.php": {
+                "sha256": "d74d6becfe24019357f7893cc13d9d8db6b2966d54f542226d787f7f2df7277b",
+                "bytes": 3932
+            },
+            "first_run.txt": {
+                "sha256": "8f86d2d5c067980379ee48c305ad99cc00f2d257dba89ed1905a6afa40de7fd1",
+                "bytes": 61835
+            },
+            "gate_MarketDataOperationsProofGate.json": {
+                "sha256": "828152fa34ada67bcead7b5f22d4a215585819eff1a9c0184cdb9a9a7ea52c53",
+                "bytes": 3775
+            },
+            "gates_summary.txt": {
+                "sha256": "486c48e15079136f764dc1288b617fbdd056ea2563b98d1290b37a8d8e0d3279",
+                "bytes": 3059
+            },
+            "governance_after_edit.txt": {
+                "sha256": "9575734eddd4aa2a5bea281929c137a2df0196dcefd25131a2c8baa146a99a66",
+                "bytes": 347
+            },
+            "green.txt": {
+                "sha256": "f28ef3e9f69d2fbcf21ea787fb5a35952019ea5e8c6739fa207137c68cc34ad3",
+                "bytes": 206
+            },
+            "probe_reach.json": {
+                "sha256": "e3cd4433af6f5159245794801952c9fe5497ff5635661f6ab6255b62a93196d1",
+                "bytes": 14388
+            },
+            "probe_reach.out": {
+                "sha256": "3c9dc12ce56d75e45edb371a6851433e49524b6567bc51eae11e9be0f726e958",
+                "bytes": 906
+            },
+            "sha_files_at_probe.txt": {
+                "sha256": "7d6dbc4c7ca14d07d5db04f70ab744a582fb37650acee619300ba962c1005f02",
+                "bytes": 679
+            },
+            "spec_probes.php": {
+                "sha256": "35dc50206e7a809ca7cd01b56992f1d8b4b5d9bb80cb2d7da9b1e7e5de8b6f55",
+                "bytes": 3041
+            },
+            "targeted_tests.txt": {
+                "sha256": "4208620feeb563068ddb4e62174528817ede5eda8756c4d1ab04d3da100adf5f",
+                "bytes": 487
+            }
+        }
+    },
+    "related_findings": [
+        "F-MD-B19-A001-009"
+    ],
+    "related_decisions": [
+        "D-MD-B19-A001-001"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0025"
+    ],
+    "related_evidence": [
+        "E-MD-B19-A001-013"
+    ],
+    "git": "no commit, no push, nothing staged: the Project Owner controls commit and push",
+    "next_resume_point": "the next artifact family of MD-S075 in the proof-spec order - not started"
+}

@@ -131,3 +131,7 @@ Implementing `D-MD-B19-A001-003` (strict mirror of `final_reason_code`, the sepa
 ## 2026-10-09T08:44:28+07:00 Fourth executable-build file (`E-MD-B19-A001-010`)
 
 Under O1, `app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php` (in the candidate-v5 frozen build manifest) was edited by one line to implement `D-MD-B19-A001-004`. Four files now differ from candidate-v5. The four test classes that carry the governed failures were run: exactly the same 13 tests fail. Nothing was skipped, candidate-v5 is untouched and candidate-v6 is not created.
+
+## 2026-10-09T13:48:09+07:00 Fifth executable-build file (`E-MD-B19-A001-012`)
+
+Under O1, `app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php` (in the candidate-v5 frozen build manifest) was edited to enforce, at the eligibility write, the locked rule that a blocked row carries a reason set (`F-MD-B19-A001-009`). Five files now differ from candidate-v5. The full suite shows exactly the 7 oracle failures and the same 13 build-identity failures. Nothing was skipped, candidate-v5 is untouched and candidate-v6 is not created.

@@ -1897,3 +1897,28 @@ MD-REL-1899,E-MD-B19-A001-010,CI-MD-B19-A001-001,DEPENDS_ON,Executes the per-pre
 MD-REL-1900,E-MD-B19-A001-010,E-MD-B19-A001-009,DEPENDS_ON,Successor of the follow-up evidence; E-009 and E-008 are unchanged.,,2026-10-09T08:44:28+07:00,MD-B19-A001 F-008 implementation.
 MD-REL-1901,E-MD-B19-A001-010,D-MD-B19-A001-001,DEPENDS_ON,O1 batches production changes; the fourth build file is recorded in MD-DEP-0025.,D-MD-B19-A001-001,2026-10-09T08:44:28+07:00,MD-B19-A001 F-008 implementation.
 MD-REL-1902,E-MD-B19-A001-010,F-MD-B19-A001-007,RELATED,F-MD-B19-A001-007 is preserved unchanged.,,2026-10-09T08:44:28+07:00,MD-B19-A001 F-008 implementation.
+MD-REL-1903,E-MD-B19-A001-011,F-MD-B01-A014-001,RELATED,Remediates and resolves the finding raised by MD-B01-A014 and owned by MD-B19.,,2026-10-09T12:55:37+07:00,MD-B19-A001 artifact_eligibility_export.
+MD-REL-1904,F-MD-B01-A014-001,E-MD-B19-A001-011,DERIVED_FROM,Resolved with the implementation evidence.,,2026-10-09T12:55:37+07:00,MD-B19-A001 artifact_eligibility_export.
+MD-REL-1905,E-MD-B19-A001-011,CI-MD-B19-A001-001,DEPENDS_ON,Executes the per-predicate proof method; two executable-build files edited.,,2026-10-09T12:55:37+07:00,MD-B19-A001 artifact_eligibility_export.
+MD-REL-1906,E-MD-B19-A001-011,E-MD-B19-A001-010,DEPENDS_ON,Continues from the completed artifact_run_event_summary family; its raw evidence was re-verified.,,2026-10-09T12:55:37+07:00,MD-B19-A001 artifact_eligibility_export.
+MD-REL-1907,E-MD-B19-A001-011,D-MD-B19-A001-001,DEPENDS_ON,O1 batches production changes; both edited files were already in the build-delta set.,D-MD-B19-A001-001,2026-10-09T12:55:37+07:00,MD-B19-A001 artifact_eligibility_export.
+MD-REL-1908,E-MD-B19-A001-011,F-MD-B19-A001-003,RELATED,Build-identity implications: no file added to the set.,,2026-10-09T12:55:37+07:00,MD-B19-A001 artifact_eligibility_export.
+MD-REL-1909,F-MD-B19-A001-009,CI-MD-B19-A001-001,DEPENDS_ON,Raised within the attempt the declaration directs.,,2026-10-09T13:48:09+07:00,MD-B19-A001 eligibility export review follow-up.
+MD-REL-1910,F-MD-B19-A001-009,E-MD-B19-A001-011,DERIVED_FROM,Raised by independent review of the family evidence.,,2026-10-09T13:48:09+07:00,MD-B19-A001 eligibility export review follow-up.
+MD-REL-1911,F-MD-B19-A001-009,E-MD-B19-A001-012,DERIVED_FROM,Corrected and proven with the successor evidence.,,2026-10-09T13:48:09+07:00,MD-B19-A001 eligibility export review follow-up.
+MD-REL-1912,E-MD-B19-A001-012,F-MD-B19-A001-009,RELATED,Resolves the finding with red-before and green-after proof.,,2026-10-09T13:48:09+07:00,MD-B19-A001 eligibility export review follow-up.
+MD-REL-1913,E-MD-B19-A001-012,E-MD-B19-A001-011,DEPENDS_ON,Successor; E-011 is unchanged and its other results are preserved.,,2026-10-09T13:48:09+07:00,MD-B19-A001 eligibility export review follow-up.
+MD-REL-1914,E-MD-B19-A001-012,CI-MD-B19-A001-001,DEPENDS_ON,Executes the per-predicate proof method; one executable-build file edited.,,2026-10-09T13:48:09+07:00,MD-B19-A001 eligibility export review follow-up.
+MD-REL-1915,E-MD-B19-A001-012,D-MD-B19-A001-001,DEPENDS_ON,O1 batches production changes; the fifth build file is recorded in MD-DEP-0025.,D-MD-B19-A001-001,2026-10-09T13:48:09+07:00,MD-B19-A001 eligibility export review follow-up.
+MD-REL-1916,E-MD-B19-A001-012,F-MD-B01-A014-001,RELATED,The finding stays RESOLVED; its column remediation is unchanged.,,2026-10-09T13:48:09+07:00,MD-B19-A001 eligibility export review follow-up.
+MD-REL-1917,F-MD-B19-A001-009,E-MD-B19-A001-013,DERIVED_FROM,Corrected after independent review with the successor evidence.,,2026-10-09T15:10:24+07:00,MD-B19-A001 eligibility numeric-key object gap.
+MD-REL-1918,E-MD-B19-A001-013,F-MD-B19-A001-009,RELATED,Corrects the first form of the finding.,,2026-10-09T15:10:24+07:00,MD-B19-A001 eligibility numeric-key object gap.
+MD-REL-1919,E-MD-B19-A001-013,E-MD-B19-A001-012,DEPENDS_ON,Successor; E-012 is unchanged and its other results are preserved.,,2026-10-09T15:10:24+07:00,MD-B19-A001 eligibility numeric-key object gap.
+MD-REL-1920,E-MD-B19-A001-013,E-MD-B19-A001-011,DEPENDS_ON,E-011 is unchanged.,,2026-10-09T15:10:24+07:00,MD-B19-A001 eligibility numeric-key object gap.
+MD-REL-1921,E-MD-B19-A001-013,CI-MD-B19-A001-001,DEPENDS_ON,Executes the per-predicate proof method; no new build file.,,2026-10-09T15:10:24+07:00,MD-B19-A001 eligibility numeric-key object gap.
+MD-REL-1922,E-MD-B19-A001-013,D-MD-B19-A001-001,DEPENDS_ON,O1: EodArtifactRepository.php was already a differing build file.,D-MD-B19-A001-001,2026-10-09T15:10:24+07:00,MD-B19-A001 eligibility numeric-key object gap.
+MD-REL-1923,E-MD-B19-A001-013,F-MD-B01-A014-001,RELATED,The finding stays RESOLVED; its column remediation is unchanged by this guard correction.,,2026-10-09T15:15:29+07:00,MD-B19-A001 eligibility numeric-key object gap.
+MD-REL-1924,E-MD-B19-A001-014,F-MD-B19-A001-009,RELATED,Records the remaining limitation and the optional hardening question of the finding.,,2026-10-09T16:12:13+07:00,MD-B19-A001 R0144 registered-reason boundary.
+MD-REL-1925,E-MD-B19-A001-014,E-MD-B19-A001-013,DEPENDS_ON,"Successor; E-011, E-012 and E-013 are unchanged.",,2026-10-09T16:12:13+07:00,MD-B19-A001 R0144 registered-reason boundary.
+MD-REL-1926,E-MD-B19-A001-014,CI-MD-B19-A001-001,DEPENDS_ON,Executes the per-predicate proof method; no runtime impact.,,2026-10-09T16:12:13+07:00,MD-B19-A001 R0144 registered-reason boundary.
+MD-REL-1927,E-MD-B19-A001-014,D-MD-B19-A001-001,DEPENDS_ON,O1: no executable-build file changed in this unit.,D-MD-B19-A001-001,2026-10-09T16:12:13+07:00,MD-B19-A001 R0144 registered-reason boundary.

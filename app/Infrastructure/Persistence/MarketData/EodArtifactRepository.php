@@ -736,6 +736,7 @@ class EodArtifactRepository
             }
 
             $this->assertCompleteEligibilityRows($rows, 'replaceEligibility');
+            $this->assertBlockedEligibilityRowsCarryReasons($rows, 'replaceEligibility');
 
             $table = $useHistory ? 'eod_eligibility_history' : 'eod_eligibility';
             $query = DB::table($table)->where('trade_date', $tradeDate);
@@ -1284,6 +1285,37 @@ class EodArtifactRepository
             'CANONICAL_BAR_WRITE_INCOMPLETE',
             $context
         );
+    }
+
+    /**
+     * Eligibility_Partial_Data_Behavior_LOCKED: "No eligible=false row may have an empty reason set." A blocked row whose
+     * reason set is empty, not a list, or holds a blank or non-string member cannot be explained, so it is refused before
+     * the stored rows are replaced (MD-S075-R0144: blocked rows carry registered reason codes).
+     */
+    private function assertBlockedEligibilityRowsCarryReasons(array $rows, string $context): void
+    {
+        foreach ($rows as $index => $row) {
+            $source = is_array($row) ? $row : (array) $row;
+            if ((int) ($source['eligible'] ?? 1) !== 0) {
+                continue;
+            }
+
+            // Decoded WITHOUT the associative flag: a JSON list is then a PHP array and a JSON object is a stdClass, whereas an
+            // associative decode turns {"0":"A"} into an array that no key check can tell from a list.
+            $set = json_decode((string) ($source['eligibility_reasons_json'] ?? ''));
+            $usable = is_array($set) && $set !== [];
+            foreach ($usable ? $set : [] as $member) {
+                if (! is_string($member) || trim($member) === '') {
+                    $usable = false;
+                }
+            }
+
+            if (! $usable) {
+                throw new \LogicException(
+                    'ELIGIBILITY_WRITE_INCOMPLETE: '.$context.' row '.$index.' is blocked (eligible=0) without a non-empty reason set in eligibility_reasons_json.'
+                );
+            }
+        }
     }
 
     private function assertCompleteEligibilityRows(array $rows, string $context): void

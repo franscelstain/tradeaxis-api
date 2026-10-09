@@ -1,6 +1,6 @@
 # F-MD-B01-A014-001 — `eligibility_export.csv` ships only the optional legacy projection
 
-- Status: `OPEN`
+- Status: `RESOLVED`
 - Severity: `P2`
 - Stage / Attempt / Baseline / Epoch: `MD-B01` / `MD-B01-A014` / `MD-B01-A014-BL001` / `MD-REBASELINE-20260820-001`
 - Owning stage for remediation: `MD-B19` (`W19` — operations, observability, evidence export)
@@ -56,3 +56,7 @@ At `MD-B19` entry: extend `exportEligibilityRows` to select `listing_id`, `publi
 - Independent of `F-MD-B01-A003-001`, which concerns frozen strategy wording and cannot be remediated by implementation. This one can.
 - `MD-S020-R0071` (no new surface named with `eligible`) is `SATISFIED` at `MD-B01-A014` and is not contradicted here: the export column is pre-existing, not a new surface.
 - Raised by `E-MD-B01-A014-001`.
+
+## 2026-10-09T12:55:37+07:00 Remediated under `MD-B19-A001` (`E-MD-B19-A001-011`)
+
+`EodEvidenceRepository::exportEligibilityRowsForEvidencePublication()` and `exportEligibilityRows()` now select `listing_id`, `publication_id` and `eligibility_reasons_json` and project one row as `trade_date, listing_id, ticker_id, publication_id, data_usable, reason_codes, eligible, reason_code`; `MarketDataEvidenceExportService` writes that header. `data_usable` is the persisted `eligible` as 1/0; `reason_codes` is the persisted set verbatim in persisted order as a JSON array (an unrecorded set stays an empty cell and is never rebuilt from `reason_code`); `listing_id` keeps NULL as NULL. Proved by execution, not by file existence: a seeded history of superseded, current, unsealed and neighbouring publications with literal expected rows, and the file of a real run against an independent read of the tables with a superseded neighbour added (byte-identical). 28 mutations red. The only reader of the repository rows (replay) reads `eligible` and is unaffected. The edited files were already in the set differing from candidate-v5 (`MD-DEP-0025` updated, still ACTIVE). `MD-S075-R0133..R0138` and `R0143..R0145` are admitted.

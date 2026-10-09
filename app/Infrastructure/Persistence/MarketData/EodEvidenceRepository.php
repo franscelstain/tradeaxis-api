@@ -343,12 +343,45 @@ class EodEvidenceRepository
     public function exportEligibilityRows($tradeDate, $publicationId = null)
     {
         return $this->readableEligibilityQuery($tradeDate, $publicationId)
-            ->select('elig.trade_date', 'elig.ticker_id', 'elig.eligible', 'elig.reason_code')
+            ->select($this->eligibilityExportColumns())
             ->orderBy('elig.ticker_id')
             ->get()
             ->map(function ($row) {
-                return (array) $row;
+                return $this->projectEligibilityExportRow($row);
             })->all();
+    }
+
+    /** @return array<int,string> */
+    private function eligibilityExportColumns()
+    {
+        return ['elig.trade_date', 'elig.listing_id', 'elig.ticker_id', 'elig.publication_id', 'elig.eligible', 'elig.reason_code', 'elig.eligibility_reasons_json'];
+    }
+
+    /**
+     * One row of `eligibility_export.csv` (MD-S075 section 4): the persisted V2 identity and usability first, the
+     * legacy `eligible` / `reason_code` projection last. `data_usable` is the persisted usability; the reason set is
+     * the persisted set in its persisted order (NULL when none was recorded, never rebuilt from `reason_code`).
+     */
+    private function projectEligibilityExportRow($row)
+    {
+        $eligible = (int) $row->eligible;
+        $set = $row->eligibility_reasons_json;
+        $reasons = null;
+        if ($set !== null && $set !== '') {
+            $decoded = json_decode((string) $set, true);
+            $reasons = is_array($decoded) ? json_encode(array_values($decoded), JSON_UNESCAPED_SLASHES) : (string) $set;
+        }
+
+        return [
+            'trade_date' => (string) $row->trade_date,
+            'listing_id' => $row->listing_id === null ? null : (int) $row->listing_id,
+            'ticker_id' => (int) $row->ticker_id,
+            'publication_id' => (int) $row->publication_id,
+            'data_usable' => $eligible === 1 ? 1 : 0,
+            'reason_codes' => $reasons,
+            'eligible' => $eligible,
+            'reason_code' => $row->reason_code,
+        ];
     }
 
     private function readablePublicationContextExists($tradeDate, $publicationId = null, $runId = null)
@@ -472,11 +505,11 @@ class EodEvidenceRepository
     public function exportEligibilityRowsForEvidencePublication($tradeDate, $publicationId, $isCurrentPublication = false)
     {
         return $this->evidenceEligibilityQuery($tradeDate, $publicationId, $isCurrentPublication)
-            ->select('elig.trade_date', 'elig.ticker_id', 'elig.eligible', 'elig.reason_code')
+            ->select($this->eligibilityExportColumns())
             ->orderBy('elig.ticker_id')
             ->get()
             ->map(function ($row) {
-                return (array) $row;
+                return $this->projectEligibilityExportRow($row);
             })->all();
     }
 
