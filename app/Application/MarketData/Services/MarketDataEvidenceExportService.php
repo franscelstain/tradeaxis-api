@@ -95,6 +95,17 @@ class MarketDataEvidenceExportService
             ? $this->evidence->exportEligibilityRowsForEvidencePublication($this->resolvedTradeDate($run), $publication->publication_id, (bool) $this->field($publication, 'is_current'))
             : [];
         $invalidBarsRows = $this->evidence->exportInvalidBarsRows($run->trade_date_requested, $run->run_id);
+        $invalidBarsSampleLimit = (int) $this->configValue('market_data.evidence.invalid_bars_export_sample_limit', 1000);
+        $invalidBarsExportedCount = count($invalidBarsRows);
+        $invalidBarsTotalCount = $invalidBarsExportedCount >= $invalidBarsSampleLimit
+            ? (int) $this->evidence->countInvalidBarsRows($run->trade_date_requested, $run->run_id)
+            : $invalidBarsExportedCount;
+        $runSummary['invalid_bars_export'] = [
+            'sampled' => $invalidBarsTotalCount > $invalidBarsExportedCount,
+            'exported_row_count' => $invalidBarsExportedCount,
+            'total_row_count' => $invalidBarsTotalCount,
+            'sample_limit' => $invalidBarsSampleLimit,
+        ];
         $publicationContext = $this->buildPublicationContext($run, $publication, $manifest);
         $pointerContext = $this->buildPointerContext($run, $publication, $manifest);
         $fallbackContext = $this->buildFallbackContext($run, $pointerContext, $publicationContext);
@@ -152,7 +163,7 @@ class MarketDataEvidenceExportService
             $this->writeJson($dir.'/source_attempt_telemetry.json', $sourceAttemptTelemetry);
         }
         $this->writeCsv($dir.'/eligibility_export.csv', ['trade_date', 'listing_id', 'ticker_id', 'publication_id', 'data_usable', 'reason_codes', 'eligible', 'reason_code'], $eligibilityRows);
-        $this->writeCsv($dir.'/invalid_bars_export.csv', ['trade_date', 'ticker_id', 'source', 'source_row_ref', 'invalid_reason_code'], $invalidBarsRows);
+        $this->writeCsv($dir.'/invalid_bars_export.csv', ['trade_date', 'listing_id', 'ticker_id', 'source_observation_id', 'source', 'source_row_ref', 'invalid_reason_code'], $invalidBarsRows);
         file_put_contents($dir.'/anomaly_report.md', $anomalyReport);
         $this->writeJson($dir.'/lineage.json', $lineage);
         $this->writeJson($dir.'/evidence_admission.json', $admission);

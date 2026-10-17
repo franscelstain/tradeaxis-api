@@ -1922,3 +1922,18 @@ MD-REL-1924,E-MD-B19-A001-014,F-MD-B19-A001-009,RELATED,Records the remaining li
 MD-REL-1925,E-MD-B19-A001-014,E-MD-B19-A001-013,DEPENDS_ON,"Successor; E-011, E-012 and E-013 are unchanged.",,2026-10-09T16:12:13+07:00,MD-B19-A001 R0144 registered-reason boundary.
 MD-REL-1926,E-MD-B19-A001-014,CI-MD-B19-A001-001,DEPENDS_ON,Executes the per-predicate proof method; no runtime impact.,,2026-10-09T16:12:13+07:00,MD-B19-A001 R0144 registered-reason boundary.
 MD-REL-1927,E-MD-B19-A001-014,D-MD-B19-A001-001,DEPENDS_ON,O1: no executable-build file changed in this unit.,D-MD-B19-A001-001,2026-10-09T16:12:13+07:00,MD-B19-A001 R0144 registered-reason boundary.
+MD-REL-1928,E-MD-B19-A001-015,E-MD-B19-A001-014,DEPENDS_ON,Eligibility checkpoint retained without change.,,2026-10-09T19:36:32+07:00,MD-B19-A001 invalid-bars partial family checkpoint.
+MD-REL-1929,E-MD-B19-A001-015,CI-MD-B19-A001-001,DEPENDS_ON,Same attempt baseline and declared evidence-export scope.,,2026-10-09T19:36:32+07:00,MD-B19-A001 invalid-bars partial family checkpoint.
+MD-REL-1930,E-MD-B19-A001-015,F-MD-B19-A001-010,RELATED,One reason-code predicate is held on the owner vocabulary decision.,,2026-10-09T19:36:32+07:00,MD-B19-A001 invalid-bars partial family checkpoint.
+MD-REL-1931,E-MD-B19-A001-015,D-MD-B19-A001-001,DEPENDS_ON,O1 permits further B19 executable-build changes before final candidate-v6.,D-MD-B19-A001-001,2026-10-09T19:36:32+07:00,MD-B19-A001 invalid-bars partial family checkpoint.
+MD-REL-1932,F-MD-B19-A001-010,CI-MD-B19-A001-001,RELATED,Finding belongs to the declared B19 export and producer scope.,,2026-10-09T19:11:01+07:00,MD-B19-A001 invalid-bars partial family checkpoint.
+MD-REL-1933,E-MD-B19-A001-016,E-MD-B19-A001-015,DEPENDS_ON,Retains invalid-bars partial checkpoint and its owner hold.,,2026-10-09T21:31:30+07:00,MD-B19-A001 replay-result throughput pilot.
+MD-REL-1934,E-MD-B19-A001-016,CI-MD-B19-A001-001,DEPENDS_ON,Same attempt and declared replay evidence export scope.,,2026-10-09T21:31:30+07:00,MD-B19-A001 replay-result throughput pilot.
+MD-REL-1935,E-MD-B19-A001-016,D-MD-B19-A001-001,DEPENDS_ON,O1 remains active; this pilot changes no executable-build file.,D-MD-B19-A001-001,2026-10-09T21:31:30+07:00,MD-B19-A001 replay-result throughput pilot.
+MD-REL-1936,E-MD-B19-A001-016,F-MD-B19-A001-010,RELATED,R0152 remains held; the independent replay pilot does not decide it.,,2026-10-09T21:31:30+07:00,MD-B19-A001 replay-result throughput pilot.
+MD-REL-1937,E-MD-B19-A001-017,E-MD-B19-A001-016,DEPENDS_ON,Retains the three identity bases and raw proof unchanged.,,2026-10-10T15:21:32+07:00,MD-B19-A001 replay-result partial checkpoint.
+MD-REL-1938,E-MD-B19-A001-017,CI-MD-B19-A001-001,DEPENDS_ON,Same attempt and replay export declaration.,,2026-10-10T15:21:32+07:00,MD-B19-A001 replay-result partial checkpoint.
+MD-REL-1939,E-MD-B19-A001-017,F-MD-B19-A001-011,RELATED,Eleven name-mapping predicates remain unreviewed.,,2026-10-10T15:21:32+07:00,MD-B19-A001 replay-result partial checkpoint.
+MD-REL-1940,E-MD-B19-A001-017,D-MD-B19-A001-001,DEPENDS_ON,O1 remains active; no new executable-build file in this unit.,D-MD-B19-A001-001,2026-10-10T15:21:32+07:00,MD-B19-A001 replay-result partial checkpoint.
+MD-REL-1941,F-MD-B19-A001-011,CI-MD-B19-A001-001,RELATED,Owner mapping question within declared replay evidence scope.,,2026-10-10T15:20:06+07:00,MD-B19-A001 replay-result partial checkpoint.
+MD-REL-1942,E-MD-B19-A001-017,F-MD-B19-A001-010,RELATED,Earlier invalid-bars reason owner hold remains independent.,,2026-10-10T15:21:32+07:00,MD-B19-A001 replay-result partial checkpoint.

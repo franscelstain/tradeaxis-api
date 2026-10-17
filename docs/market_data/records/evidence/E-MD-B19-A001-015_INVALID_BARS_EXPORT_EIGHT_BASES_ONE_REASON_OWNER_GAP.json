@@ -1,0 +1,339 @@
+{
+    "evidence_id": "E-MD-B19-A001-015",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B19",
+    "attempt_id": "MD-B19-A001",
+    "work_id": "MD-B19-A001",
+    "baseline_id": "MD-B19-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B19-A001-001",
+    "issued_at": "2026-10-09T19:36:32+07:00",
+    "evidence_type": "BOUNDED_PARTIAL_FAMILY_PROOF_WITH_PRODUCTION_REMEDIATION_AND_OWNER_GAP",
+    "verdict": "ARTIFACT_INVALID_BARS_EXPORT_8_OF_9_REVIEWED_R0152_HELD",
+    "starting_state": {
+        "head": "e055165178e12cea02001192290737ee06935778",
+        "git": "master, clean tracked tree and index; only untracked tests/Unit/MarketData/B19InvalidBarsProducerProvenanceTest.php",
+        "retained_reviewed_bases": "133/743",
+        "retained_families": "6/37",
+        "formal_satisfied": "0/743",
+        "eligibility_evidence": "E-MD-B19-A001-011..014 unchanged; 73 referenced raw files rechecked against SHA-256"
+    },
+    "recovery": {
+        "recovered_file": "tests/Unit/MarketData/B19InvalidBarsProducerProvenanceTest.php",
+        "state": "untracked, unfinished, unexecuted; initial three failures were harness assumptions about rejected-row order, canonical row reference and global literal registration",
+        "retained_changes": "test preserved and corrected in place; no prior batch governed evidence or raw execution existed",
+        "selected_batch": "starting artifact_invalid_bars_export only; owner gap stopped the family before the intended 20-35 predicate target or any later family"
+    },
+    "authority_and_flow": {
+        "locked_requirement": "Run_Artifacts_Format_LOCKED.md section 5, with canonical reason vocabulary in Reason_Codes_Registry.md",
+        "producer": "EodBarsIngestService -> EodArtifactRepository::replaceBars/persistInvalidBars -> eod_invalid_bars",
+        "export": "EodEvidenceRepository::exportInvalidBarsRows/countInvalidBarsRows -> MarketDataEvidenceExportService::exportRunEvidence -> invalid_bars_export.csv plus run_summary.json",
+        "consumers": "no application reader of invalid_bars_export.csv found; file is audit evidence, not a canonical bar input"
+    },
+    "predicate_matrix": [
+        {
+            "rule_id": "MD-S075-R0147",
+            "subject": "trade_date",
+            "classification": "A",
+            "basis": "reviewed"
+        },
+        {
+            "rule_id": "MD-S075-R0148",
+            "subject": "stable listing_id when resolved",
+            "classification": "C",
+            "basis": "reviewed after missing column correction"
+        },
+        {
+            "rule_id": "MD-S075-R0149",
+            "subject": "optional ticker_id compatibility projection",
+            "classification": "A",
+            "basis": "reviewed"
+        },
+        {
+            "rule_id": "MD-S075-R0150",
+            "subject": "immutable observation identity or reference",
+            "classification": "C",
+            "basis": "reviewed after missing source_observation_id correction; source_row_ref retained when no observation exists"
+        },
+        {
+            "rule_id": "MD-S075-R0151",
+            "subject": "source_row_ref",
+            "classification": "A",
+            "basis": "reviewed"
+        },
+        {
+            "rule_id": "MD-S075-R0152",
+            "subject": "invalid_reason_code",
+            "classification": "D and C",
+            "basis": "HELD: conflict producer emits unregistered BAR_CONFLICTING_SOURCE_ROWS; F-MD-B19-A001-010"
+        },
+        {
+            "rule_id": "MD-S075-R0156",
+            "subject": "audit-only export",
+            "classification": "A",
+            "basis": "reviewed"
+        },
+        {
+            "rule_id": "MD-S075-R0157",
+            "subject": "rejected rows distinct from canonical bars",
+            "classification": "A",
+            "basis": "reviewed"
+        },
+        {
+            "rule_id": "MD-S075-R0158",
+            "subject": "sampling disclosed in summary",
+            "classification": "C",
+            "basis": "reviewed after sampling metadata correction"
+        }
+    ],
+    "production_changes": {
+        "files": [
+            "app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php",
+            "app/Application/MarketData/Services/MarketDataEvidenceExportService.php"
+        ],
+        "details": "persisted listing_id/source_observation_id now selected and written; full run/date count is queried when limit may bind; run_summary.json records sampled, exported count, total count, limit",
+        "candidate_v5_build_file_set": "unchanged at five differing files; MD-DEP-0025 successor-pending ACTIVE",
+        "strategy_or_schema_change": "none"
+    },
+    "proof": {
+        "red_before": "red_before_repository.txt and red_before_writer.txt execute new guards against the pre-fix projection/disclosure",
+        "green": "producer 4/105, SQLite repository 2/7, writer 8/225, real sealed-run exporter 1/10; run files listed in raw_artifacts",
+        "real_run": "B19InvalidBarsRealRunExportTest on a real sealed R0025SyntheticV2World run with two independently seeded rejected rows: one-of-two CSV and true disclosure, then two-of-two CSV and false disclosure; canonical bar and rejected tables unchanged",
+        "mutations": "15 isolated probes M01..M15 red; each target restored byte-identical. M12 exercises reason discrimination but does not admit held R0152.",
+        "retained_evidence": "E-MD-B19-A001-011..014 raw hashes rechecked: 29+20+13+11 = 73 matched",
+        "full_suite": "3188 tests, 43756 assertions, 32 failures: the governed 7 corpus-oracle plus 13 candidate-v5 build-identity failures; 11 provisional-governance failures from an ungenerated CURRENT_STATE and the then-missing E015 draft, all resolved by targeted settled-state reruns; one pre-existing AliasNamingAndMeaningBoundaryTest failure on two unchanged HEAD eligibility records. No claim of full-suite PASS.",
+        "settled_governance": "DocumentationIntegrityGate PASS; RelationshipIntegrityGate PASS; FindingRecordConsistencyTest PASS; GovernanceGateReadOnlyExecutionTest PASS; ScopeBoundaryAndOrchestrationCompletionTest PASS; OperationsProofGate FAIL by design at 141/743 reviewed, 602 missing."
+    },
+    "status_after": {
+        "reviewed_bases": "141/743",
+        "fully_reviewed_families": "6/37",
+        "invalid_bars_family": "8/9 PARTIAL",
+        "formal_satisfied": "0/743"
+    },
+    "raw_artifacts": {
+        "dir": "storage/app/market-data/evidence/MD-B19-A001/invalid-bars-export-20261009",
+        "inventory": "sha256_inventory.json",
+        "inventory_sha256": "9b26cec0df9307951114294f59c59e21166682782983784d06615890c3e93017",
+        "files": {
+            "final_finding_consistency.txt": {
+                "sha256": "1dd3e755b3712dd5f7d4fc9d1fd7614e53d6cb149d1491d71774b618bc6a9366",
+                "bytes": 205
+            },
+            "final_gate_documentation.txt": {
+                "sha256": "de5cf34142a0eca12332b715cb6be3a8c88cb1eb434045257bed60f496cd8f96",
+                "bytes": 4004
+            },
+            "final_gate_operations.txt": {
+                "sha256": "0a8ff3fe26dc3ee77d8601c3e5261a03a42a9bcbba9ebf885227d0c5be06be74",
+                "bytes": 3676
+            },
+            "final_gate_relationships.txt": {
+                "sha256": "e9c717c6c1543649ba3d18d34fdcd3076969e0e89d9186d39d322e8d1fd64f27",
+                "bytes": 601
+            },
+            "final_governance.json": {
+                "sha256": "c1d8070a75cb4ac168fd3649816fa1e8dea01af7294ae1f7e6079802c13fff8b",
+                "bytes": 1344
+            },
+            "final_governance_read_only.txt": {
+                "sha256": "51f5d803b534f697d8257e5b78792429c856d9da95349b70b7e8bef1e58d68d8",
+                "bytes": 207
+            },
+            "final_scope_orchestration.txt": {
+                "sha256": "f95547b4963432372ec2e549ed76241d2aaf2343bff60075d7e5aba3f4b7f422",
+                "bytes": 206
+            },
+            "full_market_data.txt": {
+                "sha256": "5b2f64bc680fbe3bcdd96316170b7c5140b77d4ebce4292364cbff8083cc9297",
+                "bytes": 35638
+            },
+            "gate_documentation.txt": {
+                "sha256": "31daf70983d0e551ffc3c6b4dc53c085fee2c9f4015831682256619f1caf00f7",
+                "bytes": 4450
+            },
+            "gate_operations.txt": {
+                "sha256": "976c7ab6fe62238de2b776be6bc2bcdcd2aec965e1a1c0954b118d518159b5ef",
+                "bytes": 3676
+            },
+            "gate_relationships.txt": {
+                "sha256": "0b20daf3ec6745cb4f4b02aa76fc5f162a5b3c7b90eae777bf2b1b84e7b4bbdf",
+                "bytes": 601
+            },
+            "green_producer.txt": {
+                "sha256": "60ca68c75f5bc4db465ea4c1d0098895b82f92570c2f3f2997789983da73fea9",
+                "bytes": 207
+            },
+            "green_producer_final.txt": {
+                "sha256": "839a12bffbf5faadcb11bea55c53e45d6c3cf97ba61fe2a1a126c28284308675",
+                "bytes": 209
+            },
+            "green_real_run_tool_capture.txt": {
+                "sha256": "76c25898db0e0224e8e21d902b4ad8339223d476cc681d2d8be30d3c352016c6",
+                "bytes": 416
+            },
+            "green_repository.txt": {
+                "sha256": "d23d4485c72f94ccc15dc80ca56bce7bcac1de5353e185453efa7d4f51ad3b0c",
+                "bytes": 205
+            },
+            "green_writer.txt": {
+                "sha256": "5062b4e25592584af5ffd3069718efa20bb498bbaa7ef846d9cd6b8ee8a76e9e",
+                "bytes": 207
+            },
+            "M01_trade_date.txt": {
+                "sha256": "f622165d93cd50c62c50fd5748a4770dda8079be59c3a06eed3f5677ac89363c",
+                "bytes": 1065
+            },
+            "M02_listing_id.txt": {
+                "sha256": "b96c26445798657364e8b05c6d1c587123405558d232316928637a74cefde984",
+                "bytes": 1077
+            },
+            "M03_ticker_id.txt": {
+                "sha256": "249c0996025ba4acf2c41b4381e2bc7701213f93cf2436320775ddb5927774d6",
+                "bytes": 1143
+            },
+            "M04_observation_id.txt": {
+                "sha256": "755a518756222495765fc02007b605b9ad8098f306a2b5c4f6ceac2d4956b3b4",
+                "bytes": 1235
+            },
+            "M05_source.txt": {
+                "sha256": "3adbcab9ec29a253f51db385bb83d049392d8f91c91174b3f730e0d9f9d1c64e",
+                "bytes": 1165
+            },
+            "M06_source_row_ref.txt": {
+                "sha256": "6c993fe503616e44950e72de00bb63f30ebbbee8fec4a188bf4f870514f15d96",
+                "bytes": 1596
+            },
+            "M07_invalid_reason.txt": {
+                "sha256": "19debd9128a8d22137ab047bcc4e21436fc0a363bd732ce32d26456207ffe7ca",
+                "bytes": 1103
+            },
+            "M08_audit_table.txt": {
+                "sha256": "6c15772ea7d74318a8c169097fb979544a93ced45b33cecda156a79a4a39120d",
+                "bytes": 1980
+            },
+            "M09_sample_limit.txt": {
+                "sha256": "a84622e86833ddb3275f192e7b864cd6136ebc00e259a2747cc59efdc41cf749",
+                "bytes": 598
+            },
+            "M10_sample_disclosure.txt": {
+                "sha256": "a5a27c3a08348129316cbcbe0d6ffd74a9ecccf175bbd850d8f4894080d1cea6",
+                "bytes": 760
+            },
+            "M11_csv_header.txt": {
+                "sha256": "dd82ac19906823b668324efc229f0e3e461b11c60293c46631e312b37087dc59",
+                "bytes": 950
+            },
+            "M12_producer_reason.txt": {
+                "sha256": "ca701fc9a28ab002a33bd309212396d113619283a985e5ebbf4ec36a25087438",
+                "bytes": 709
+            },
+            "M13_canonical_boundary.json": {
+                "sha256": "9e12f45cf1e7e771c85fe6302e8c1016b3453e9b874933b38524acc54b80c528",
+                "bytes": 327
+            },
+            "M13_canonical_boundary.txt": {
+                "sha256": "2f144f57def2e3fe7dd9cd29b3b0ddf78b9fe1304f4c3e3455ed76876d99438e",
+                "bytes": 2851
+            },
+            "M14_count_without_date.txt": {
+                "sha256": "cf0d5dafbf152b9974bb8de5660de938e30d18b609ad5925c3727fa73128d805",
+                "bytes": 580
+            },
+            "M15_count_without_run.txt": {
+                "sha256": "e01a1348d4d18deb84b76b032ac74eaa496ddc8ee0bdabb927efb1af863b393f",
+                "bytes": 580
+            },
+            "mutate_canonical_boundary.py": {
+                "sha256": "34ca8d743c06f689fa35576f5c637136b536f3b99fb2a76ae49b51344b0e71ab",
+                "bytes": 1321
+            },
+            "mutate_sampling_scope.py": {
+                "sha256": "3e7003dd502ae3fcbbe63f33a081b470075028cafd05603774a0a2767e28fadf",
+                "bytes": 1639
+            },
+            "mutations.json": {
+                "sha256": "a9d24adef99e76f0acebbcd0a0f5dedc025593186e85936dd9130c4d26a916f6",
+                "bytes": 5217
+            },
+            "preexisting_alias_audit.json": {
+                "sha256": "0b2c2cddc91a501201a6bf44674d0fdcd55b7d8249142e9e145de4d5a8708c86",
+                "bytes": 643
+            },
+            "red_before.json": {
+                "sha256": "2368b9e7535820cccd0591121fcac40c95f65e7c7867de945f956ab283e622f4",
+                "bytes": 433
+            },
+            "red_before.py": {
+                "sha256": "cad3c46db13e17263ecf69d2d39da3e279bdca8afbadfcbd73e2298ef8f3983d",
+                "bytes": 2212
+            },
+            "red_before_repository.txt": {
+                "sha256": "7268b48b333a9e73dc72a6d5a732e204f806d05eef10266221982801b7d2d6b4",
+                "bytes": 1300
+            },
+            "red_before_writer.txt": {
+                "sha256": "0e07b1d4aecd78f88471f891dadc75476fea29b0b3ca78b41e4d44aded1619e0",
+                "bytes": 760
+            },
+            "retained_evidence_integrity.json": {
+                "sha256": "f1c9d14766262f43fbce2ba7838c6266ff04e1123427641dd486c2c7de3a5da5",
+                "bytes": 845
+            },
+            "run_final_governance.py": {
+                "sha256": "9ef2e56c71c11bb58348106af9c64d8a20aeada50cebef00ece7d10c86d453b5",
+                "bytes": 1448
+            },
+            "run_mutations.py": {
+                "sha256": "702f0e2aa44e36180357e64826b5c3590e099df6571373cfdb85290a124944e8",
+                "bytes": 3619
+            },
+            "run_verification.py": {
+                "sha256": "3b7a19e6c2a6f1ba53f2afa315fab94d55b8404a34492644306801bc44e369c1",
+                "bytes": 1552
+            },
+            "sampling_scope_mutations.json": {
+                "sha256": "7acb8a0604a138e631ea51a7b0a8ffe95af4311a3893de4fc818d9a80adb81eb",
+                "bytes": 540
+            },
+            "takeover_state.txt": {
+                "sha256": "be5825629fd2b0972c75b29b2d53ef0afcd32813a0312cf3bd87f2adf0c30cf8",
+                "bytes": 647
+            },
+            "update_stage_register.py": {
+                "sha256": "ff01467a0fe03fe2e3ebd6d9606adaaefe92e7bc3117e127854038377c095a02",
+                "bytes": 3249
+            },
+            "verification.json": {
+                "sha256": "e89f7d4a0176310a069584a8f239ec3c3f902b4afc3f12153ce79fff45a6fc90",
+                "bytes": 1483
+            },
+            "verify_preexisting_alias_failure.py": {
+                "sha256": "ec1451c27932b7ad86876bba09db0186d10175e57450a669528f386ed6d6f645",
+                "bytes": 1255
+            },
+            "verify_retained_evidence.py": {
+                "sha256": "9dd2acf1191018b9c77beb598c1cf65440b67f1033c4e7867ac73140e7ef017e",
+                "bytes": 854
+            }
+        }
+    },
+    "related_findings": [
+        "F-MD-B19-A001-010",
+        "F-MD-B19-A001-003",
+        "F-MD-B19-A001-002"
+    ],
+    "related_decisions": [
+        "D-MD-B19-A001-001"
+    ],
+    "related_dependencies": [
+        "MD-DEP-0025"
+    ],
+    "related_evidence": [
+        "E-MD-B19-A001-014"
+    ],
+    "git": "no commit, push, stage, reset, rebase, stash or discard; Project Owner controls Git operations",
+    "single_exact_resume_point": "Project Owner reason-vocabulary decision for F-MD-B19-A001-010; implement and independently prove held MD-S075-R0152 before proceeding to artifact_replay_result. Continue MD-B19-A001 under MD-B19-A001-BL001; preserve eligibility proof and candidate-v5."
+}

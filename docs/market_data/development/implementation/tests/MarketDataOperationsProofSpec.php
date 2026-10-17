@@ -939,9 +939,11 @@ final class MarketDataOperationsProofSpec
                 'owner' => 'MD-B19:artifact-invalid-bars-export',
                 'implementation' => [
                     'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
+                    'app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php',
+                    'app/Application/MarketData/Services/EodBarsIngestService.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19InvalidBarsExportRowProvenanceTest.php', 'test_the_export_rows_equal_their_own_persisted_rejections_with_null_identity_preserved'],
+                'negative' => ['tests/Unit/MarketData/B19InvalidBarsProducerProvenanceTest.php', 'test_rejected_rows_are_never_canonical_and_the_clean_row_is_not_rejected'],
             ],
             'artifact_publication_manifest' => [
                 'owner' => 'MD-B19:artifact-publication-manifest',
@@ -958,8 +960,8 @@ final class MarketDataOperationsProofSpec
                     'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
                     'app/Infrastructure/Persistence/MarketData/ReplayResultRepository.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19ReplayResultIdentityProvenanceTest.php', 'test_replay_result_identity_fields_follow_the_exact_persisted_pair'],
+                'negative' => ['tests/Unit/MarketData/B19ReplayResultIdentityProvenanceTest.php', 'test_replay_result_identity_never_falls_back_to_another_pair'],
             ],
             'artifact_replay_state_pair' => [
                 'owner' => 'MD-B19:artifact-replay-state-pair',

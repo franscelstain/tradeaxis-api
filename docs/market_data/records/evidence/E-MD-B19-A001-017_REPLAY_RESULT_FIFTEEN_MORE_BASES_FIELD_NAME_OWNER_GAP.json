@@ -1,0 +1,208 @@
+{
+    "evidence_id": "E-MD-B19-A001-017",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B19",
+    "attempt_id": "MD-B19-A001",
+    "work_id": "MD-B19-A001",
+    "baseline_id": "MD-B19-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B19-A001-001",
+    "issued_at": "2026-10-10T15:21:32+07:00",
+    "evidence_type": "BOUNDED_REPLAY_RESULT_FIELD_PROVENANCE_AND_DETAIL_PROOF",
+    "verdict": "REPLAY_RESULT_19_OF_32_REVIEWED_ELEVEN_NAME_MAPPING_PREDICATES_HELD",
+    "scope": {
+        "family": "artifact_replay_result",
+        "denominator": 32,
+        "retained_from_E016": [
+            "MD-S075-R0231",
+            "MD-S075-R0232",
+            "MD-S075-R0233"
+        ],
+        "new_reviewed_rule_ids": [
+            "MD-S075-R0234",
+            "MD-S075-R0235",
+            "MD-S075-R0236",
+            "MD-S075-R0237",
+            "MD-S075-R0238",
+            "MD-S075-R0239",
+            "MD-S075-R0250",
+            "MD-S075-R0251",
+            "MD-S075-R0252",
+            "MD-S075-R0253",
+            "MD-S075-R0254",
+            "MD-S075-R0255",
+            "MD-S075-R0256",
+            "MD-S075-R0257",
+            "MD-S075-R0258",
+            "MD-S075-R0262"
+        ],
+        "new_reviewed_count": 16,
+        "unreviewed": [
+            "MD-S075-R0240..R0249",
+            "MD-S075-R0259..R0261"
+        ],
+        "authority_hold": "R0240..R0249 and R0259 under F-MD-B19-A001-011",
+        "separate_proof_gaps": [
+            "MD-S075-R0260",
+            "MD-S075-R0261"
+        ],
+        "preceding_family_hold": "MD-S075-R0152 under F-MD-B19-A001-010",
+        "production_or_schema_change": "none"
+    },
+    "proof": {
+        "authority": "Run_Artifacts_Format_LOCKED.md section 8; exact 32-row rule/source/consumer/gap preflight in replay_result_preflight.csv",
+        "source_and_consumer": "selected md_replay_daily_metrics (replay_id, trade_date) row -> EodEvidenceRepository -> MarketDataEvidenceExportService -> replay_result.json and replay_evidence_pack.json",
+        "independent_values": "three hand-seeded persisted rows distinguish same replay on two dates and same date on another replay; actual and expected fields carry deliberately different values, hashes, statuses and versions, with NULL decoy; expectations come from fixture literals and stored row, never exported output",
+        "field_scope_limit": "R0234..R0239 and R0250..R0258 prove stored metric value projection only. R0260 status classification, R0261 versioned fixture independence and locked-name mapping remain unreviewed.",
+        "detail": "R0262 combines actual replay comparator execution requiring a persisted reason_code_counts mismatch detail with real SQLite metric/export JSON containing two independent detailed mismatches and a shorter summary; the producer guard uses mocked repository calls but real comparator logic, paired with a real persistence/export guard",
+        "green": "new field guard 2 tests/105 assertions; retained identity guard 2/28; repository integration 26/89; existing exporter 2/55; new detail guard 2/11; producer detail guard 1/3; exact logs in raw",
+        "mutations": "15 field-specific projection mutations plus one export-detail mutation and one producer-detail mutation, all red; every edited source restored byte-identical by SHA-256 comparison in finally",
+        "preflight": "32 rows in replay_result_preflight.csv; 19 reviewed, 11 authority/implementation mapping hold, 2 separate semantic proof gaps",
+        "full_suite": "not rerun: no production or schema edit in this successor unit; targeted regression and gates used",
+        "gate": "OperationsProofGate FAIL by design at 160/743 reviewed bases, 583 missing, 29 families without a guard"
+    },
+    "findings_and_dependencies": {
+        "new": "F-MD-B19-A001-011: locked top-level minimum names conflict with persisted replay names and nested output; Project Owner mapping decision required",
+        "retained": "F-MD-B19-A001-010 holds invalid-bars R0152; MD-DEP-0025 successor-pending ACTIVE, same five candidate-v5 differing build files",
+        "candidate_v5": "unchanged",
+        "candidate_v6": "not created"
+    },
+    "status_after": {
+        "reviewed_bases": "160/743",
+        "fully_reviewed_families": "6/37",
+        "artifact_replay_result": "19/32 PARTIAL",
+        "artifact_invalid_bars_export": "8/9 R0152 HELD",
+        "formal_satisfied": "0/743"
+    },
+    "raw_artifacts": {
+        "dir": "storage/app/market-data/evidence/MD-B19-A001/replay-result-fields-20261010",
+        "inventory": "sha256_inventory.json",
+        "inventory_sha256": "2cd8e69cdf5d3ef90ab21782eb207534be757c1a902528142eda4f39e92d4902",
+        "files": {
+            "diff_check.txt": {
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "bytes": 0
+            },
+            "execution_summary.json": {
+                "sha256": "a31aadda45e651f0f91023c531da19fffed3a97292e631bef0a1069563ccb889",
+                "bytes": 1001
+            },
+            "green_replay_detail.txt": {
+                "sha256": "88f69dc5ef98d03e86886313012e4f80ac01bcf918d2bf29705bf0e5892adade",
+                "bytes": 206
+            },
+            "green_replay_export.txt": {
+                "sha256": "cfed251a37c4f1e7faed473520557a51d250f60e51928e85f362184a902e1823",
+                "bytes": 206
+            },
+            "green_replay_fields.txt": {
+                "sha256": "8f50586c4e3663b2ca2f48039c92800cae91cbc7eaf3f9282ad8d9226be5864a",
+                "bytes": 207
+            },
+            "green_replay_identity_retained.txt": {
+                "sha256": "b6b29c389c9ba43a9baaf0727b709d89537f010f114b039465c6a9578cf7c11d",
+                "bytes": 206
+            },
+            "green_replay_producer_detail.txt": {
+                "sha256": "425f5942e04b256a1ff0c462c6b7de213bf1b58a95142e1e1ee32f5d311948b9",
+                "bytes": 204
+            },
+            "green_replay_repository.txt": {
+                "sha256": "80e8f71b6dd9064269ca13fe95a8c66b9d46c98dd9f3498884ebce7ac0774706",
+                "bytes": 207
+            },
+            "mutation_export_detail.txt": {
+                "sha256": "9be2e6aa692615e1ea68a98437eebe4ebc3a63ae4f694a695b4711fa03cd465c",
+                "bytes": 1315
+            },
+            "mutation_producer_detail.txt": {
+                "sha256": "650c5d57780de81cef1a72e9b441d41aa2eb0456e70a8cfd2916582a009dc703",
+                "bytes": 1990
+            },
+            "mutation_R0234.txt": {
+                "sha256": "a4e3549ae41b33ee5128b6e172abc575bb7771e6b1e21095a07b5a05cc74b139",
+                "bytes": 1089
+            },
+            "mutation_R0235.txt": {
+                "sha256": "d355643ffb166b1b8a84a46c3859221a7047cc4053bb5f0b1e7890a984d0f4b2",
+                "bytes": 708
+            },
+            "mutation_R0236.txt": {
+                "sha256": "0e6a8153086e77630f3f92c27093092121e52740dc6a53d2ce16cc7dac5cb8c3",
+                "bytes": 700
+            },
+            "mutation_R0237.txt": {
+                "sha256": "577bf6ab5e5da94c588149b125431e898ec0e44fdcbf0c6979d18d9f3f795fa0",
+                "bytes": 731
+            },
+            "mutation_R0238.txt": {
+                "sha256": "850d604b69cb3265bbcddd9858f4d441a0c94062f31b9849a04191715f27ac37",
+                "bytes": 745
+            },
+            "mutation_R0239.txt": {
+                "sha256": "3c084b6e380396820ee559c97b4f108eb3ab338ee675be0a512149629f7ca40f",
+                "bytes": 709
+            },
+            "mutation_R0250.txt": {
+                "sha256": "53e8143cf0bab113e5a8d54412a11ab63ab124e6f7012544a69adf990bdfe054",
+                "bytes": 1043
+            },
+            "mutation_R0251.txt": {
+                "sha256": "a0375d55976d8f34c3c0996142f6ebdf391cc0b0ff8203a6a80e33efccf21ffe",
+                "bytes": 707
+            },
+            "mutation_R0252.txt": {
+                "sha256": "1908c09d0a450f1a2129922d4bc20b64f7492f55c0a559c32765ce2dc4c5a66f",
+                "bytes": 713
+            },
+            "mutation_R0253.txt": {
+                "sha256": "7a671ff359eec9f678dd9a2924f64f4113898af09b8a96df647de7557726d15f",
+                "bytes": 715
+            },
+            "mutation_R0254.txt": {
+                "sha256": "a232cf525828a5d985e1f36504081250ed0eab1d5bf3ac7275a2860145ea68bb",
+                "bytes": 1096
+            },
+            "mutation_R0255.txt": {
+                "sha256": "9586e273e4ae93358ee7840dff874edfb37c1ba8545cc3a7209c52e493b65eb6",
+                "bytes": 1099
+            },
+            "mutation_R0256.txt": {
+                "sha256": "0df315694e14596c21fd95fd2cc63c15eea77dfae1f352798d5c387673c14930",
+                "bytes": 1131
+            },
+            "mutation_R0257.txt": {
+                "sha256": "d46707399218722a6456feb37b19d5bdffbef159bf9b859e007564fa52164bd8",
+                "bytes": 1105
+            },
+            "mutation_R0258.txt": {
+                "sha256": "c2bac0994a6eb2003cf873249667a6bad3163d2f1736e3da2e0ba69edfa56213",
+                "bytes": 732
+            },
+            "mutation_summary.json": {
+                "sha256": "a031cc1c937563caf938c2bd9ac42725cd064530e097014a351e3f5aa3bfe3b7",
+                "bytes": 798
+            },
+            "operations_gate.json": {
+                "sha256": "6f5aacdbed186309034ce95b9a122ea15b3dcbf75ab3047816b23bc741e47fe7",
+                "bytes": 3589
+            },
+            "replay_detail_mutations.py": {
+                "sha256": "184fcf2c231c563c411645850e7e309daeb2315650bd0c60fd918df57a169ac0",
+                "bytes": 2050
+            },
+            "replay_fields_mutations.py": {
+                "sha256": "7055f1fe60bb68171795c4c76c01574a90fc7b87c80f5ec58d992f1291ee4528",
+                "bytes": 3774
+            },
+            "replay_result_preflight.csv": {
+                "sha256": "7437710bb124d0bcc136fbd21f9c637a79a0d53dff098f92b489e70d9ae34dfe",
+                "bytes": 14805
+            }
+        }
+    },
+    "single_exact_resume_point": "MD-B19-A001 artifact_replay_result MD-S075-R0260: establish real producer comparison/admission PASS/FAIL/BLOCKED classification through persisted metric and exported JSON, including invalid/contradictory input refusal. R0240..R0249 and R0259 remain held for F-MD-B19-A001-011; R0152 remains held for F-010."
+}

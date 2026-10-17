@@ -9,13 +9,17 @@ use PHPUnit\Framework\TestCase;
 
 class MarketDataEvidenceExportServiceTest extends TestCase
 {
+    use InteractsWithMarketDataConfig;
+
     protected function tearDown(): void
     {
+        $this->clearMarketDataConfig();
         m::close();
     }
 
     public function test_export_run_evidence_writes_minimum_required_files()
     {
+        $this->bindMarketDataConfig(['market_data' => ['evidence' => ['invalid_bars_export_sample_limit' => 1]]]);
         $run = (object) [
             'run_id' => 8124,
             'trade_date_requested' => '2026-04-21',
@@ -200,8 +204,9 @@ class MarketDataEvidenceExportServiceTest extends TestCase
             ['trade_date' => '2026-04-21', 'ticker_id' => 101, 'eligible' => 1, 'reason_code' => null],
         ]);
         $evidence->shouldReceive('exportInvalidBarsRows')->once()->with('2026-04-21', 8124)->andReturn([
-            ['trade_date' => '2026-04-21', 'ticker_id' => 999, 'source' => 'LOCAL_FILE', 'source_row_ref' => 'r1', 'invalid_reason_code' => 'BAR_NON_POSITIVE_PRICE'],
+            ['trade_date' => '2026-04-21', 'listing_id' => 1999, 'ticker_id' => 999, 'source_observation_id' => 455, 'source' => 'LOCAL_FILE', 'source_row_ref' => 'r1', 'invalid_reason_code' => 'BAR_NON_POSITIVE_PRICE'],
         ]);
+        $evidence->shouldReceive('countInvalidBarsRows')->once()->with('2026-04-21', 8124)->andReturn(2);
 
         $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
         $dir = sys_get_temp_dir().'/market_data_evidence_run_'.uniqid();
@@ -226,6 +231,10 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertFileExists($dir.'/evidence_pack.json');
 
         $summary = json_decode(file_get_contents($dir.'/run_summary.json'), true);
+        $this->assertSame(['sampled' => true, 'exported_row_count' => 1, 'total_row_count' => 2, 'sample_limit' => 1], $summary['invalid_bars_export']);
+        $csv = array_map('str_getcsv', file($dir.'/invalid_bars_export.csv', FILE_IGNORE_NEW_LINES));
+        $this->assertSame(['trade_date', 'listing_id', 'ticker_id', 'source_observation_id', 'source', 'source_row_ref', 'invalid_reason_code'], $csv[0]);
+        $this->assertSame(['2026-04-21', '1999', '999', '455', 'LOCAL_FILE', 'r1', 'BAR_NON_POSITIVE_PRICE'], $csv[1]);
         $this->assertSame(8124, $summary['run_id']);
         $this->assertSame('SUCCESS', $summary['terminal_status']);
         $this->assertTrue($summary['is_current_publication']);

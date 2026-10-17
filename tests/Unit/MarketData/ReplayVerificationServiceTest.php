@@ -786,6 +786,8 @@ class ReplayVerificationServiceTest extends TestCase
                 && strpos($summary, 'REPLAY_FINAL_REASON_CODE_MISMATCH') !== false
                 && strpos($summary, 'reason_code_counts') !== false
                 && is_array($mismatches)
+                && count($mismatches) > 0
+                && in_array('reason_code_counts', array_column($mismatches, 'field'), true)
                 && isset($metric['mismatches_json']);
         }));
         $replays->shouldReceive('replaceReasonCodeCounts')->once()->with(3004, '2026-03-20', [

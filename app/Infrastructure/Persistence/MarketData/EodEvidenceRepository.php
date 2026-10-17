@@ -540,7 +540,7 @@ class EodEvidenceRepository
         $limit = (int) config('market_data.evidence.invalid_bars_export_sample_limit', 1000);
 
         return DB::table('eod_invalid_bars')
-            ->select('trade_date', 'ticker_id', 'source', 'source_row_ref', 'invalid_reason_code')
+            ->select('trade_date', 'listing_id', 'ticker_id', 'source_observation_id', 'source', 'source_row_ref', 'invalid_reason_code')
             ->where('trade_date', $tradeDate)
             ->where('run_id', $runId)
             ->orderBy('ticker_id')
@@ -551,6 +551,14 @@ class EodEvidenceRepository
                 return (array) $row;
             })
             ->all();
+    }
+
+    public function countInvalidBarsRows($tradeDate, $runId)
+    {
+        return DB::table('eod_invalid_bars')
+            ->where('trade_date', $tradeDate)
+            ->where('run_id', $runId)
+            ->count();
     }
 
 

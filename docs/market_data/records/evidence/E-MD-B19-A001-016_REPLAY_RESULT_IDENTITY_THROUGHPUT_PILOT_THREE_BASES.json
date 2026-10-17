@@ -1,0 +1,112 @@
+{
+    "evidence_id": "E-MD-B19-A001-016",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B19",
+    "attempt_id": "MD-B19-A001",
+    "work_id": "MD-B19-A001",
+    "baseline_id": "MD-B19-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B19-A001-001",
+    "issued_at": "2026-10-09T21:31:30+07:00",
+    "evidence_type": "BOUNDED_TEST_AND_TOOLING_THROUGHPUT_PILOT",
+    "verdict": "REPLAY_RESULT_IDENTITY_THREE_OF_THIRTY_TWO_REVIEWED_F010_UNCHANGED",
+    "scope": {
+        "family": "artifact_replay_result",
+        "denominator": 32,
+        "reviewed_rule_ids": [
+            "MD-S075-R0231",
+            "MD-S075-R0232",
+            "MD-S075-R0233"
+        ],
+        "remaining_in_family": 29,
+        "held_elsewhere": "MD-S075-R0152 under F-MD-B19-A001-010",
+        "production_change": "none",
+        "test_and_tooling_change": [
+            "tests/Unit/MarketData/B19ReplayResultIdentityProvenanceTest.php",
+            "docs/market_data/development/implementation/tests/MarketDataOperationsProofCoverageDiagnostic.php"
+        ]
+    },
+    "proof": {
+        "authority": "Run_Artifacts_Format_LOCKED.md section 8 minimum fields: replay_id, trade_date, trade_date_effective; matrix MD-S075-R0231..R0233",
+        "source_and_consumer": "md_replay_daily_metrics exact (replay_id, trade_date) row -> EodEvidenceRepository::findReplayMetric -> MarketDataEvidenceExportService::exportReplayEvidence -> replay_result.json",
+        "independent_values": "three hand-seeded persisted rows have two dates for replay 4101 and a same-date replay 4102 decoy; three distinct effective dates; expected values are fixture literals independent of exported JSON",
+        "negative": "missing explicit date, absent date of existing replay, and absent replay of existing date refuse export; no latest-row fallback",
+        "green": "B19ReplayResultIdentityProvenanceTest: 2 tests, 28 assertions; existing ReplayEvidenceExportServiceTest: 2 tests, 55 assertions",
+        "mutations": "M01 replay_id projection zero; M02 fixed trade_date; M03 fixed effective date; M04 repository wrong-date selector; all four targeted guards red and each source byte-restored by SHA-256 finally check",
+        "real_run_limit": "real repository and exporter run against persisted SQLite rows and write actual JSON; this pilot does not exercise the replay orchestration producer, so no replay status/semantic predicate beyond R0231..R0233 is admitted",
+        "gate": "operations proof gate intentionally FAIL, 144/743 reviewed bases, 599 missing; 29 families without a family guard",
+        "full_suite": "not rerun: no production code or schema changed; targeted tests and gate cover the bounded pilot"
+    },
+    "throughput": {
+        "improvement": "one fixture seeds three discriminating rows once, then a field expectation loop verifies four projections and one missing-pair test verifies selector refusal; read-only diagnostic enumerates missing ids and shared implementation files per family",
+        "measured": "2 targeted new tests, 28 assertions, four red mutation probes, 0 production edits; no elapsed-time saving claim without a comparable baseline",
+        "speculative": "future replay field predicates may reuse the same fixture lifecycle and one batched exporter execution; each will still need its own independently reviewed source value and mutation-sensitive negative case"
+    },
+    "status_after": {
+        "reviewed_bases": "144/743",
+        "fully_reviewed_families": "6/37",
+        "replay_result_family": "3/32 PARTIAL",
+        "invalid_bars_family": "8/9 R0152 HELD",
+        "formal_satisfied": "0/743",
+        "dependency": "MD-DEP-0025 successor-pending ACTIVE"
+    },
+    "raw_artifacts": {
+        "dir": "storage/app/market-data/evidence/MD-B19-A001/replay-result-throughput-pilot-20261009",
+        "inventory": "sha256_inventory.json",
+        "inventory_sha256": "ad1a36ff4bc9f62d3066ae65e27d7ef0b85e8a7728349636dd6915fcef2de730",
+        "files": {
+            "coverage_diagnostic.json": {
+                "sha256": "d155398f441be58198574fbc8b3dcf94597a44b67d6ac03941eb12d16151db29",
+                "bytes": 32692
+            },
+            "diff_check.txt": {
+                "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "bytes": 0
+            },
+            "execution_summary.json": {
+                "sha256": "7988428344ac6b310672379bd7d0f62fd614f26c05776c7d6ad160276dc34c36",
+                "bytes": 902
+            },
+            "green_existing_replay_export.txt": {
+                "sha256": "6a38879ac233bcb713bf430543710bf3b2810c6bc26f7ec1e8b79f7a7db44e0d",
+                "bytes": 206
+            },
+            "green_replay_identity.txt": {
+                "sha256": "e5b3e50f527533bd2f07cf34cf3a6939bc2823bb362d0340bcef6e71b2cdf6b3",
+                "bytes": 206
+            },
+            "mutation_effective_date.txt": {
+                "sha256": "7ab0e0d2fe0ef88f7cd70fdafdf1788f9a21fb01169bbaa91f9eb84a4ee877da",
+                "bytes": 700
+            },
+            "mutation_replay_id.txt": {
+                "sha256": "727a66104f1eaa7076382bc83a170591482b449f6f70c1563d57cf3340a2793a",
+                "bytes": 623
+            },
+            "mutation_restoration.json": {
+                "sha256": "c8375580b216334de6c4f1444dd9755561fb25a477362719436ca9bc04f24bf8",
+                "bytes": 387
+            },
+            "mutation_selector_date.txt": {
+                "sha256": "fbcfccc0135eff7355f812f459a0395f0db09d468bc41163fe2aa524aeb821c9",
+                "bytes": 690
+            },
+            "mutation_trade_date.txt": {
+                "sha256": "a770484fa5b799addb72dc64e5ab4873c12db54550821e084c89e984819abe05",
+                "bytes": 690
+            },
+            "operations_gate.json": {
+                "sha256": "7de8916521b559666f785625052bb17ab68ce6001674b396bbba70a7877993d5",
+                "bytes": 3589
+            },
+            "replay_pilot_mutations.py": {
+                "sha256": "1aa38eb01ca7db1b19a8688137e001c6209cdca077f154bb56a8378ec3cae83e",
+                "bytes": 2986
+            }
+        }
+    },
+    "single_exact_resume_point": "MD-B19-A001 artifact_replay_result MD-S075-R0234 (status): trace the real replay producer through persisted metric to replay_result.json, distinguish terminal run status from replay_status, establish positive/negative and mutation proof before admission. Preserve R0152 HELD for F-MD-B19-A001-010."
+}

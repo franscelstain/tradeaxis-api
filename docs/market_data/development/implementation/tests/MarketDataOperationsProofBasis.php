@@ -738,5 +738,149 @@ final class MarketDataOperationsProofBasis
             'negative' => 'B19EligibilityExportRowProvenanceTest::test_a_current_publication_with_history_rows_is_not_doubled',
             'basis' => 'the export never mixes current and superseded publication states: a superseded publication is read from the history table and exports only its own rows although the current publication has rows for the same tickers with the opposite usability, the current publication is read from one table and never unioned with its history, and the pointer-resolved readable export of a superseded publication is empty; reading the superseded publication from the current table, the current one from history only, or removing the publication filter turn guards red (E14, E15, E16, X04)',
         ],
+
+        // ---- MD-S075 section 5 "invalid_bars_export.csv" -- partial: eight reviewed bases.
+        // R0152 is deliberately absent: the real conflicting-source producer emits an unregistered
+        // BAR_CONFLICTING_SOURCE_ROWS code (F-MD-B19-A001-010); its owner must resolve the vocabulary.
+        'MD-S075-R0147' => [
+            'positive' => 'B19InvalidBarsExportRowProvenanceTest::test_the_export_rows_equal_their_own_persisted_rejections_with_null_identity_preserved',
+            'negative' => 'B19InvalidBarsProducerProvenanceTest::test_each_rejected_row_carries_the_provenance_of_the_input_row_it_came_from',
+            'basis' => 'the export reads only persisted rejections of the requested run/date and carries each row\'s trade_date; independently hand-written ingest rows bind their own requested trade date. Removing the selected date turns the row guard red (M01)',
+        ],
+        'MD-S075-R0148' => [
+            'positive' => 'B19InvalidBarsExportRowProvenanceTest::test_the_export_rows_equal_their_own_persisted_rejections_with_null_identity_preserved',
+            'negative' => 'B19InvalidBarsProducerProvenanceTest::test_each_rejected_row_carries_the_provenance_of_the_input_row_it_came_from',
+            'basis' => 'a resolved listing exports its persisted listing_id; an unresolved listing exports NULL, never the ticker or a stand-in. The producer derives each from the temporal mapping of hand-written inputs. Omitting listing_id turns the export guard red (M02)',
+        ],
+        'MD-S075-R0149' => [
+            'positive' => 'B19InvalidBarsExportRowProvenanceTest::test_the_export_rows_equal_their_own_persisted_rejections_with_null_identity_preserved',
+            'negative' => 'B19InvalidBarsProducerProvenanceTest::test_each_rejected_row_carries_the_provenance_of_the_input_row_it_came_from',
+            'basis' => 'the optional ticker_id compatibility field is the rejected row\'s persisted ticker, including NULL for an unknown ticker, distinct from listing identity. Omitting it turns the export guard red (M03)',
+        ],
+        'MD-S075-R0150' => [
+            'positive' => 'B19InvalidBarsExportRowProvenanceTest::test_the_export_rows_equal_their_own_persisted_rejections_with_null_identity_preserved',
+            'negative' => 'B19InvalidBarsProducerProvenanceTest::test_each_rejected_row_carries_the_provenance_of_the_input_row_it_came_from',
+            'basis' => 'the exported immutable source_observation_id is read from each persisted rejected row and traced to its hand-written source input; an input with no observation stays NULL rather than gaining one. Omitting the column turns the export guard red (M04)',
+        ],
+        'MD-S075-R0151' => [
+            'positive' => 'B19InvalidBarsExportRowProvenanceTest::test_the_export_rows_equal_their_own_persisted_rejections_with_null_identity_preserved',
+            'negative' => 'B19InvalidBarsProducerProvenanceTest::test_each_rejected_row_carries_the_provenance_of_the_input_row_it_came_from',
+            'basis' => 'the source and source_row_ref of each rejected row equal the literal source and distinct row reference fed to ingest, then persisted for that run/date. Dropping source or source_row_ref turns the export guard red (M05, M06)',
+        ],
+        'MD-S075-R0156' => [
+            'positive' => 'B19InvalidBarsExportRowProvenanceTest::test_the_export_rows_equal_their_own_persisted_rejections_with_null_identity_preserved',
+            'negative' => 'B19InvalidBarsProducerProvenanceTest::test_rejected_rows_are_never_canonical_and_the_clean_row_is_not_rejected',
+            'basis' => 'the audit export reads rejected rows without changing either the rejection or canonical tables; the producer supplies invalid rows to the invalid store and only the clean row to canonical. Querying canonical bars instead of rejected rows turns the export guard red (M08)',
+        ],
+        'MD-S075-R0157' => [
+            'positive' => 'B19InvalidBarsProducerProvenanceTest::test_rejected_rows_are_never_canonical_and_the_clean_row_is_not_rejected',
+            'negative' => 'B19InvalidBarsExportRowProvenanceTest::test_the_export_rows_equal_their_own_persisted_rejections_with_null_identity_preserved',
+            'basis' => 'seven defective input rows are rejected and none appears in the canonical output; the clean ticker is canonical and absent from the rejected set and audit export. A validation inversion turns the producer guard red and reading canonical bars turns the export guard red (M08, M13)',
+        ],
+        'MD-S075-R0158' => [
+            'positive' => 'B19InvalidBarsRealRunExportTest::test_the_real_file_and_summary_match_rejected_rows_and_disclose_sampling',
+            'negative' => 'B19InvalidBarsExportRowProvenanceTest::test_a_bounded_export_reports_the_full_count_of_its_run_and_date',
+            'basis' => 'for a real sealed run with two independently seeded rejected rows, the real repository and exporter write one CSV row under a limit of one and run_summary.json explicitly reports sampled=true, exported 1, total 2 and limit 1; a second export with limit three writes both and reports sampled=false. The count uses the same run/date filters independently of the limited row read. Widening the limit, suppressing disclosure or dropping either count filter turns guards red (M09, M10, M14, M15); the writer guard independently checks the one-of-two disclosure',
+        ],
+
+        // ---- MD-S075 section 8 replay_result.json pilot: three identity fields only.
+        // The other 29 replay-result predicates remain without a reviewed basis.
+        'MD-S075-R0231' => [
+            'positive' => 'B19ReplayResultIdentityProvenanceTest::test_replay_result_identity_fields_follow_the_exact_persisted_pair',
+            'negative' => 'B19ReplayResultIdentityProvenanceTest::test_replay_result_identity_never_falls_back_to_another_pair',
+            'basis' => 'three separately seeded replay metric rows distinguish replay id and date; the real repository lookup and JSON writer export the exact persisted replay_id for each selected pair, with no lookup of an absent id. Replacing the exported id with zero or selecting a different date makes the guard red (pilot M01, M04)',
+        ],
+        'MD-S075-R0232' => [
+            'positive' => 'B19ReplayResultIdentityProvenanceTest::test_replay_result_identity_fields_follow_the_exact_persisted_pair',
+            'negative' => 'B19ReplayResultIdentityProvenanceTest::test_replay_result_identity_never_falls_back_to_another_pair',
+            'basis' => 'two dates for one replay id plus a same-date different-id decoy make the requested persisted trade_date independently distinguishable; an absent date and an omitted selector are refused. Substituting a fixed export date or selecting a different persisted date makes the guard red (pilot M02, M04)',
+        ],
+        'MD-S075-R0233' => [
+            'positive' => 'B19ReplayResultIdentityProvenanceTest::test_replay_result_identity_fields_follow_the_exact_persisted_pair',
+            'negative' => 'B19ReplayResultIdentityProvenanceTest::test_replay_result_identity_never_falls_back_to_another_pair',
+            'basis' => 'each of three persisted rows has a different effective date, distinct from its trade date; the actual replay_result.json value equals its independently seeded metric field, and a fixed substitute turns the guard red (pilot M03). Missing replay/date pairs cannot borrow a neighbouring effective date',
+        ],
+
+        // ---- MD-S075 section 8: persisted replay-result field projections, each with a distinct red mutation.
+        'MD-S075-R0234' => [
+            'positive' => 'B19ReplayResultPersistedFieldProvenanceTest::test_replay_result_fields_equal_their_own_independently_seeded_metric_values',
+            'negative' => 'B19ReplayResultPersistedFieldProvenanceTest::test_expected_fields_do_not_inherit_actual_values_or_a_neighbour',
+            'basis' => 'The selected persisted replay metric has distinct actual status values COMPLETED, HELD and BLOCKED; the real exporter writes each unchanged to replay_result.json, independently of expected_status and neighbouring rows. Replacing actual status with expected_status turns the guard red (E-MD-B19-A001-017 R0234). This proves the stored terminal status projection, not the separate PASS/FAIL/BLOCKED replay_status classification.',
+        ],
+        'MD-S075-R0236' => [
+            'positive' => 'B19ReplayResultPersistedFieldProvenanceTest::test_replay_result_fields_equal_their_own_independently_seeded_metric_values',
+            'negative' => 'B19ReplayResultPersistedFieldProvenanceTest::test_expected_fields_do_not_inherit_actual_values_or_a_neighbour',
+            'basis' => 'The selected persisted replay metrics carry FAIL, PASS and BLOCKED as replay_status, distinct from terminal status; the real exporter writes each unchanged, and a neighbour date differs. Substituting terminal status turns the guard red (E-MD-B19-A001-017 R0236). The separate rule for semantic classification of these values, R0260, remains unreviewed.',
+        ],
+        'MD-S075-R0235' => [
+            'positive' => 'B19ReplayResultPersistedFieldProvenanceTest::test_replay_result_fields_equal_their_own_independently_seeded_metric_values',
+            'negative' => 'B19ReplayResultPersistedFieldProvenanceTest::test_expected_fields_do_not_inherit_actual_values_or_a_neighbour',
+            'basis' => 'The real replay evidence exporter reads the exact persisted replay metric row for the requested id/date and writes its comparison_result to replay_result.json. Three independently seeded rows distinguish MISMATCH versus EXPECTED_DEGRADE, with a BLOCKED decoy; no value is reconstructed from the exported file, an actual-state counterpart or a neighbouring row. Replacing this projection with a plausible wrong source turns the guard red (E-MD-B19-A001-017 R0235). This basis proves this stored-field export, not the semantic production of the metric.',
+        ],
+        'MD-S075-R0237' => [
+            'positive' => 'B19ReplayResultPersistedFieldProvenanceTest::test_replay_result_fields_equal_their_own_independently_seeded_metric_values',
+            'negative' => 'B19ReplayResultPersistedFieldProvenanceTest::test_expected_fields_do_not_inherit_actual_values_or_a_neighbour',
+            'basis' => 'The real replay evidence exporter reads the exact persisted replay metric row for the requested id/date and writes its comparison_note to replay_result.json. Three independently seeded rows distinguish two distinct notes and a NULL decoy; no value is reconstructed from the exported file, an actual-state counterpart or a neighbouring row. Replacing this projection with a plausible wrong source turns the guard red (E-MD-B19-A001-017 R0237). This basis proves this stored-field export, not the semantic production of the metric.',
+        ],
+        'MD-S075-R0238' => [
+            'positive' => 'B19ReplayResultPersistedFieldProvenanceTest::test_replay_result_fields_equal_their_own_independently_seeded_metric_values',
+            'negative' => 'B19ReplayResultPersistedFieldProvenanceTest::test_expected_fields_do_not_inherit_actual_values_or_a_neighbour',
+            'basis' => 'The real replay evidence exporter reads the exact persisted replay metric row for the requested id/date and writes its artifact_changed_scope to replay_result.json. Three independently seeded rows distinguish eligibility_only versus bars_only and a NULL decoy; no value is reconstructed from the exported file, an actual-state counterpart or a neighbouring row. Replacing this projection with a plausible wrong source turns the guard red (E-MD-B19-A001-017 R0238). This basis proves this stored-field export, not the semantic production of the metric.',
+        ],
+        'MD-S075-R0239' => [
+            'positive' => 'B19ReplayResultPersistedFieldProvenanceTest::test_replay_result_fields_equal_their_own_independently_seeded_metric_values',
+            'negative' => 'B19ReplayResultPersistedFieldProvenanceTest::test_expected_fields_do_not_inherit_actual_values_or_a_neighbour',
+            'basis' => 'The real replay evidence exporter reads the exact persisted replay metric row for the requested id/date and writes its replay_mode to replay_result.json. Three independently seeded rows distinguish PUBLICATION_EXACT versus AS_KNOWN; no value is reconstructed from the exported file, an actual-state counterpart or a neighbouring row. Replacing this projection with a plausible wrong source turns the guard red (E-MD-B19-A001-017 R0239). This basis proves this stored-field export, not the semantic production of the metric.',
+        ],
+        'MD-S075-R0250' => [
+            'positive' => 'B19ReplayResultPersistedFieldProvenanceTest::test_replay_result_fields_equal_their_own_independently_seeded_metric_values',
+            'negative' => 'B19ReplayResultPersistedFieldProvenanceTest::test_expected_fields_do_not_inherit_actual_values_or_a_neighbour',
+            'basis' => 'The real replay evidence exporter reads the exact persisted replay metric row for the requested id/date and writes its publication_version to replay_result.json. Three independently seeded rows distinguish 7 versus 8 and a NULL decoy; no value is reconstructed from the exported file, an actual-state counterpart or a neighbouring row. Replacing this projection with a plausible wrong source turns the guard red (E-MD-B19-A001-017 R0250). This basis proves this stored-field export, not the semantic production of the metric.',
+        ],
+        'MD-S075-R0251' => [
+            'positive' => 'B19ReplayResultPersistedFieldProvenanceTest::test_replay_result_fields_equal_their_own_independently_seeded_metric_values',
+            'negative' => 'B19ReplayResultPersistedFieldProvenanceTest::test_expected_fields_do_not_inherit_actual_values_or_a_neighbour',
+            'basis' => 'The real replay evidence exporter reads the exact persisted replay metric row for the requested id/date and writes its bars_batch_hash to replay_result.json. Three independently seeded rows distinguish bars-A versus bars-B and a NULL decoy, distinct from indicator and eligibility hashes; no value is reconstructed from the exported file, an actual-state counterpart or a neighbouring row. Replacing this projection with a plausible wrong source turns the guard red (E-MD-B19-A001-017 R0251). This basis proves this stored-field export, not the semantic production of the metric.',
+        ],
+        'MD-S075-R0252' => [
+            'positive' => 'B19ReplayResultPersistedFieldProvenanceTest::test_replay_result_fields_equal_their_own_independently_seeded_metric_values',
+            'negative' => 'B19ReplayResultPersistedFieldProvenanceTest::test_expected_fields_do_not_inherit_actual_values_or_a_neighbour',
+            'basis' => 'The real replay evidence exporter reads the exact persisted replay metric row for the requested id/date and writes its indicators_batch_hash to replay_result.json. Three independently seeded rows distinguish indicators-A versus indicators-B and a NULL decoy, distinct from bars and eligibility hashes; no value is reconstructed from the exported file, an actual-state counterpart or a neighbouring row. Replacing this projection with a plausible wrong source turns the guard red (E-MD-B19-A001-017 R0252). This basis proves this stored-field export, not the semantic production of the metric.',
+        ],
+        'MD-S075-R0253' => [
+            'positive' => 'B19ReplayResultPersistedFieldProvenanceTest::test_replay_result_fields_equal_their_own_independently_seeded_metric_values',
+            'negative' => 'B19ReplayResultPersistedFieldProvenanceTest::test_expected_fields_do_not_inherit_actual_values_or_a_neighbour',
+            'basis' => 'The real replay evidence exporter reads the exact persisted replay metric row for the requested id/date and writes its eligibility_batch_hash to replay_result.json. Three independently seeded rows distinguish eligibility-A versus eligibility-B and a NULL decoy, distinct from bars and indicator hashes; no value is reconstructed from the exported file, an actual-state counterpart or a neighbouring row. Replacing this projection with a plausible wrong source turns the guard red (E-MD-B19-A001-017 R0253). This basis proves this stored-field export, not the semantic production of the metric.',
+        ],
+        'MD-S075-R0254' => [
+            'positive' => 'B19ReplayResultPersistedFieldProvenanceTest::test_replay_result_fields_equal_their_own_independently_seeded_metric_values',
+            'negative' => 'B19ReplayResultPersistedFieldProvenanceTest::test_expected_fields_do_not_inherit_actual_values_or_a_neighbour',
+            'basis' => 'The real replay evidence exporter reads the exact persisted replay metric row for the requested id/date and writes its seal_state to replay_result.json. Three independently seeded rows distinguish SEALED versus UNSEALED, with expected seal state deliberately opposite; no value is reconstructed from the exported file, an actual-state counterpart or a neighbouring row. Replacing this projection with a plausible wrong source turns the guard red (E-MD-B19-A001-017 R0254). This basis proves this stored-field export, not the semantic production of the metric.',
+        ],
+        'MD-S075-R0255' => [
+            'positive' => 'B19ReplayResultPersistedFieldProvenanceTest::test_replay_result_fields_equal_their_own_independently_seeded_metric_values',
+            'negative' => 'B19ReplayResultPersistedFieldProvenanceTest::test_expected_fields_do_not_inherit_actual_values_or_a_neighbour',
+            'basis' => 'The real replay evidence exporter reads the exact persisted replay metric row for the requested id/date and writes its expected_status to replay_result.json. Three independently seeded rows distinguish SUCCESS versus HELD and a NULL decoy, deliberately distinct from actual status; no value is reconstructed from the exported file, an actual-state counterpart or a neighbouring row. Replacing this projection with a plausible wrong source turns the guard red (E-MD-B19-A001-017 R0255). This basis proves this stored-field export, not the semantic production of the metric.',
+        ],
+        'MD-S075-R0256' => [
+            'positive' => 'B19ReplayResultPersistedFieldProvenanceTest::test_replay_result_fields_equal_their_own_independently_seeded_metric_values',
+            'negative' => 'B19ReplayResultPersistedFieldProvenanceTest::test_expected_fields_do_not_inherit_actual_values_or_a_neighbour',
+            'basis' => 'The real replay evidence exporter reads the exact persisted replay metric row for the requested id/date and writes its expected_trade_date_effective to replay_result.json. Three independently seeded rows distinguish 2026-04-04 versus 2026-04-03 and a NULL decoy, distinct from actual effective dates; no value is reconstructed from the exported file, an actual-state counterpart or a neighbouring row. Replacing this projection with a plausible wrong source turns the guard red (E-MD-B19-A001-017 R0256). This basis proves this stored-field export, not the semantic production of the metric.',
+        ],
+        'MD-S075-R0257' => [
+            'positive' => 'B19ReplayResultPersistedFieldProvenanceTest::test_replay_result_fields_equal_their_own_independently_seeded_metric_values',
+            'negative' => 'B19ReplayResultPersistedFieldProvenanceTest::test_expected_fields_do_not_inherit_actual_values_or_a_neighbour',
+            'basis' => 'The real replay evidence exporter reads the exact persisted replay metric row for the requested id/date and writes its expected_seal_state to replay_result.json. Three independently seeded rows distinguish UNSEALED versus SEALED and a NULL decoy, deliberately opposite to actual seal state; no value is reconstructed from the exported file, an actual-state counterpart or a neighbouring row. Replacing this projection with a plausible wrong source turns the guard red (E-MD-B19-A001-017 R0257). This basis proves this stored-field export, not the semantic production of the metric.',
+        ],
+        'MD-S075-R0258' => [
+            'positive' => 'B19ReplayResultPersistedFieldProvenanceTest::test_replay_result_fields_equal_their_own_independently_seeded_metric_values',
+            'negative' => 'B19ReplayResultPersistedFieldProvenanceTest::test_expected_fields_do_not_inherit_actual_values_or_a_neighbour',
+            'basis' => 'The real replay evidence exporter reads the exact persisted replay metric row for the requested id/date and writes its mismatch_summary to replay_result.json. Three independently seeded rows distinguish summary A versus NULL on two non-mismatch rows, distinct from comparison notes; no value is reconstructed from the exported file, an actual-state counterpart or a neighbouring row. Replacing this projection with a plausible wrong source turns the guard red (E-MD-B19-A001-017 R0258). This basis proves this stored-field export, not the semantic production of the metric.',
+        ],
+        'MD-S075-R0262' => [
+            'positive' => 'B19ReplayResultMismatchDetailTest::test_summary_and_both_persisted_mismatches_survive_the_real_export',
+            'negative' => 'ReplayVerificationServiceTest::test_verify_replay_marks_mismatch_with_reason_code_when_reason_code_counts_diverge',
+            'basis' => 'A real repository/exporter reads a persisted MISMATCH with a short summary and two independently seeded, field-specific mismatches, preserving both detail entries in replay_result.json and replay_evidence_pack.json. The actual replay comparator is separately exercised on a reason-code divergence and the producer guard requires the persisted mismatches_json to contain the reason_code_counts field, not merely a nonempty summary. Dropping exported detail or replacing produced detail with an empty list turns the two guards red (E-MD-B19-A001-017 M16/M17). The producer guard mocks repository calls, but the paired export guard uses real SQLite persistence and a real writer.',
+        ],
     ];
 }
