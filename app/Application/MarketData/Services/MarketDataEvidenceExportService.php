@@ -918,6 +918,12 @@ class MarketDataEvidenceExportService
             throw new \RuntimeException('Replay result not found for evidence export.');
         }
 
+        $classifiedStatus = $this->replayStatusForComparison($metric->comparison_result ?? null);
+        $storedStatus = $this->field($metric, 'replay_status');
+        if ($storedStatus !== null && $storedStatus !== '' && $storedStatus !== $classifiedStatus) {
+            throw new \RuntimeException('REPLAY_CLASSIFICATION_CONTRADICTION: persisted replay_status disagrees with comparison_result.');
+        }
+
         $reasonCodes = $this->evidence->replayReasonCodeCounts($metric->replay_id, $metric->trade_date);
         $expectedReasonCodeCounts = $this->decodeExpectedReasonCodeCounts($metric->expected_reason_code_counts_json ?? null);
         $replayResult = $this->buildReplayResult($metric);
@@ -2372,7 +2378,11 @@ class MarketDataEvidenceExportService
             return 'FAIL';
         }
 
-        return 'BLOCKED';
+        if ((string) $comparisonResult === 'NOT_ADMISSIBLE') {
+            return 'BLOCKED';
+        }
+
+        throw new \RuntimeException('REPLAY_CLASSIFICATION_INVALID: comparison_result is not a persisted replay verdict.');
     }
 
     private function decodeExpectedReasonCodeCounts($json)

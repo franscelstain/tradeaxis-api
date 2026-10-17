@@ -1,0 +1,10 @@
+{
+  "fixture_id": "b19-semantic-comparison-context",
+  "fixture_version": "b19-v2",
+  "oracle": "A deliberately different, hand-authored expectation version: held, prior effective date, unsealed. The target world remains SUCCESS, 2026-03-20, SEALED, so this version must diverge.",
+  "expected_overrides": {
+    "terminal_status": "HELD",
+    "trade_date_effective": "2026-03-19",
+    "seal_state": "UNSEALED"
+  }
+}

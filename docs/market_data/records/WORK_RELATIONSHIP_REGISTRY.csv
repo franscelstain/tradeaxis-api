@@ -1937,3 +1937,12 @@ MD-REL-1939,E-MD-B19-A001-017,F-MD-B19-A001-011,RELATED,Eleven name-mapping pred
 MD-REL-1940,E-MD-B19-A001-017,D-MD-B19-A001-001,DEPENDS_ON,O1 remains active; no new executable-build file in this unit.,D-MD-B19-A001-001,2026-10-10T15:21:32+07:00,MD-B19-A001 replay-result partial checkpoint.
 MD-REL-1941,F-MD-B19-A001-011,CI-MD-B19-A001-001,RELATED,Owner mapping question within declared replay evidence scope.,,2026-10-10T15:20:06+07:00,MD-B19-A001 replay-result partial checkpoint.
 MD-REL-1942,E-MD-B19-A001-017,F-MD-B19-A001-010,RELATED,Earlier invalid-bars reason owner hold remains independent.,,2026-10-10T15:21:32+07:00,MD-B19-A001 replay-result partial checkpoint.
+MD-REL-1943,E-MD-B19-A001-018,E-MD-B19-A001-017,DEPENDS_ON,Retains accepted replay field proof and immutable raw artifacts.,,2026-10-17T23:33:00+07:00,MD-B19-A001 semantic replay proof.
+MD-REL-1944,E-MD-B19-A001-018,E-MD-B19-A001-016,DEPENDS_ON,Retains accepted identity proof.,,2026-10-17T23:33:00+07:00,MD-B19-A001 semantic replay proof.
+MD-REL-1945,E-MD-B19-A001-018,CI-MD-B19-A001-001,DEPENDS_ON,Same attempt baseline and bounded replay declaration.,,2026-10-17T23:33:00+07:00,MD-B19-A001 semantic replay proof.
+MD-REL-1946,E-MD-B19-A001-018,F-MD-B19-A001-012,RELATED,Records corrected classification boundary defect.,,2026-10-17T23:33:00+07:00,MD-B19-A001 semantic replay proof.
+MD-REL-1947,E-MD-B19-A001-018,F-MD-B19-A001-011,RELATED,Owner mapping ready; eleven predicates remain held.,,2026-10-17T23:33:00+07:00,MD-B19-A001 semantic replay proof.
+MD-REL-1948,E-MD-B19-A001-018,F-MD-B19-A001-010,RELATED,Independent invalid-bars reason owner hold retained.,,2026-10-17T23:33:00+07:00,MD-B19-A001 semantic replay proof.
+MD-REL-1949,E-MD-B19-A001-018,D-MD-B19-A001-001,DEPENDS_ON,O1 permits sixth executable-build change before final refreeze.,D-MD-B19-A001-001,2026-10-17T23:33:00+07:00,MD-B19-A001 semantic replay proof.
+MD-REL-1950,F-MD-B19-A001-012,CI-MD-B19-A001-001,RELATED,Resolved defect within declared replay export and persistence scope.,,2026-10-17T23:33:00+07:00,MD-B19-A001 semantic replay proof.
+MD-REL-1951,F-MD-B19-A001-011,E-MD-B19-A001-018,RELATED,Decision readiness and two independent semantic proofs.,,2026-10-17T23:33:00+07:00,MD-B19-A001 semantic replay proof.

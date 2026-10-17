@@ -23,6 +23,11 @@ class ReplayResultRepository
         // missing mode to PUBLICATION_EXACT is exactly how they become indistinguishable.
         // ReplayMode::normalize(null) raises REPLAY_MODE_REQUIRED, which is the intended behaviour.
         $metric['replay_mode'] = ReplayMode::normalize($metric['replay_mode'] ?? null);
+        $classifiedStatus = $this->replayStatusForComparison($metric['comparison_result'] ?? null);
+        if (isset($metric['replay_status']) && $metric['replay_status'] !== $classifiedStatus) {
+            throw new \RuntimeException('REPLAY_CLASSIFICATION_CONTRADICTION: replay_status disagrees with comparison_result.');
+        }
+        $metric['replay_status'] = $classifiedStatus;
         $this->assertModeInputs($metric);
 
         $payload = [
@@ -246,7 +251,11 @@ class ReplayResultRepository
             return 'FAIL';
         }
 
-        return 'BLOCKED';
+        if ((string) $comparisonResult === 'NOT_ADMISSIBLE') {
+            return 'BLOCKED';
+        }
+
+        throw new \RuntimeException('REPLAY_CLASSIFICATION_INVALID: comparison_result is not a persisted replay verdict.');
     }
 
     public function replaceReasonCodeCounts($replayId, $tradeDate, array $reasonCounts)

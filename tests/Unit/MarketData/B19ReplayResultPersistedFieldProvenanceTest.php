@@ -64,7 +64,8 @@ class B19ReplayResultPersistedFieldProvenanceTest extends TestCase
             ]),
             array_merge($common, [
                 'replay_id' => 5202, 'trade_date' => '2026-04-07', 'trade_date_effective' => '2026-04-01',
-                'status' => 'BLOCKED', 'comparison_result' => 'BLOCKED', 'replay_status' => 'BLOCKED',
+                // The production comparison_result enum calls prerequisite refusal NOT_ADMISSIBLE.
+                'status' => 'BLOCKED', 'comparison_result' => 'NOT_ADMISSIBLE', 'replay_status' => 'BLOCKED',
                 'comparison_note' => null, 'artifact_changed_scope' => null,
                 'replay_mode' => 'PUBLICATION_EXACT', 'publication_version' => null,
                 'bars_batch_hash' => null, 'indicators_batch_hash' => null,

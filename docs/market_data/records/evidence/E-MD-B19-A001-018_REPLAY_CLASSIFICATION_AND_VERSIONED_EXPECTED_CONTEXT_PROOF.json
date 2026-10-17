@@ -1,0 +1,1385 @@
+{
+    "evidence_id": "E-MD-B19-A001-018",
+    "record_type": "EVIDENCE",
+    "role_scope": "CURRENT_EVIDENCE",
+    "mutability": "IMMUTABLE_AFTER_ISSUE",
+    "stage_id": "MD-B19",
+    "attempt_id": "MD-B19-A001",
+    "work_id": "MD-B19-A001",
+    "baseline_id": "MD-B19-A001-BL001",
+    "verification_epoch": "MD-REBASELINE-20260820-001",
+    "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+    "ci_id": "CI-MD-B19-A001-001",
+    "issued_at": "2026-10-17T23:35:18+07:00",
+    "evidence_type": "REPLAY_SEMANTIC_PIPELINE_PROOF_WITH_BOUNDED_CLASSIFICATION_REMEDIATION_AND_OWNER_MAPPING",
+    "starting_state": {
+        "head": "b12afa7ff03b7298090b86bec23407d43ead9ed5",
+        "git": "clean index/worktree; master ahead 1, inherited owner commit",
+        "reviewed_bases": "160/743",
+        "replay_result": "19/32",
+        "formal_satisfied": "0/743"
+    },
+    "verdict": "R0260_R0261_REVIEWED_REPLAY_RESULT_21_OF_32_ELEVEN_AUTHORITY_HOLDS_REMAIN",
+    "new_reviewed_rule_ids": [
+        "MD-S075-R0260",
+        "MD-S075-R0261"
+    ],
+    "authority": {
+        "R0260": "Run_Artifacts_Format_LOCKED.md section 8: PASS for deterministic match/expected degrade; FAIL for mismatch/unexpected divergence; BLOCKED only when fixture/context/runtime prerequisites missing.",
+        "R0261": "Same section: expected comparison context remains explicit via expected_status, expected_trade_date_effective and expected_seal_state.",
+        "existing_schema": "Replay_Results_Schema_MariaDB.sql five-value comparison_result vocabulary; no new verdict or canonical reason code introduced."
+    },
+    "producer_to_consumer": "Real ReplayVerificationService -> ReplayResultRepository -> md_replay_daily_metrics exact id/date -> EodEvidenceRepository -> MarketDataEvidenceExportService -> replay_result.json, replay_expected_state.json and evidence pack. No repository mocks in the new semantic pipeline guard.",
+    "R0260": {
+        "classification": "C: producer conforming, write/export boundary defect demonstrated and corrected",
+        "independent_cases": "MATCH/PASS; EXPECTED_DEGRADE/PASS for independently declared seven usable listings/three insufficient-history holds; changed actual bars hash yields MISMATCH/FAIL or UNEXPECTED/FAIL. Actual run status stays SUCCESS.",
+        "prerequisites": "Missing/NULL expected context, unavailable runtime observation identity and self-generated fixture source yield NOT_ADMISSIBLE/BLOCKED through producer, persisted row and actual JSON.",
+        "defect": "Ten focused clean red-before cases: write and export each accept four contradictory comparison/status pairs and an unknown verdict. F-MD-B19-A001-012 resolved by validating the existing mapping at both boundaries before mutation/output.",
+        "additional_boundary_cases": "18 invalid write/export cases now refuse contradictory, empty/unknown comparison or invalid status; no export directory created. Historical valid comparison with NULL replay_status derives status at read without rewriting its row, and derives on new write.",
+        "mutations": "M01-M08: mapping, admission, unexpected classification, pair guards and unknown-verdict refusals all red and restored."
+    },
+    "R0261": {
+        "classification": "A/B: independent fixture/context proof added; producer semantics unchanged",
+        "oracle": "Checked-in hand-authored b19-v1/b19-v2 definitions and the retained literal B18 fixture template are loaded before actual-world creation. No generateFixtureFromRun, output-derived expected state, current config oracle, golden approval or R0025 candidate admission.",
+        "chain": "Fixture id/version/schema/manifest hash plus literal expected context -> real comparison -> expected_status/date/seal and expected_context_json -> replay_result.json and replay_expected_state.json.",
+        "negative": "Counterfactual v2 expects HELD/prior effective date/UNSEALED against SUCCESS/current-date/SEALED actual world: differences remain explicit with FAIL, never replaced by actual. Missing/NULL context stays NULL and BLOCKED. Fixture file hashes unchanged; publication/version/factor lineage and expected hash retained.",
+        "mutations": "M09-M17: producer actual/expected status/date/seal swaps, missing-context admission suppression, version loss, exporter swaps and removed expected context all red and restored."
+    },
+    "production_changes": [
+        "app/Infrastructure/Persistence/MarketData/ReplayResultRepository.php",
+        "app/Application/MarketData/Services/MarketDataEvidenceExportService.php"
+    ],
+    "retained_proof": "E016 and E017 records unchanged and 12+30 referenced raw files SHA-256 verified; prior mutation families not rerun. One impossible synthetic comparison_result=BLOCKED corrected to production NOT_ADMISSIBLE in accepted stored-field test, which passes again.",
+    "new_execution": {
+        "semantic_pipeline": "28 tests / 248 assertions PASS",
+        "targeted_regressions": "repository 26/89; producer 23/95; exporter 2/55; accepted fields 2/119; real persisted publication binding 20/177; admission/enum storage 3/19; fixture comparison corpus 94/690; preservation 3/10; self-explanation 14/143; bound input contract 3/10; all PASS, no skips.",
+        "new_mutations": "17 red, syntax-valid, every edited source byte-restored; no prior mutation family repeated.",
+        "known_governed_failure": "Representative R0025 frozen-build test 1 failure / 2 assertions: only frozen versus current executable build identity; not a PASS. Other historical 12 derived build-identity failures not rerun.",
+        "bounded_alias_check": "One targeted AliasNamingAndMeaningBoundaryTest run: 6 tests/188 assertions, 1 existing failure on unchanged F009 and E013 documentation; their bytes and guard equal takeover HEAD. No new production-regression claim or immutable-record edit.",
+        "full_suite": "not executed: local replay write/export validation and selected consumers/admission/fixture regressions exercised; no full-suite PASS claim.",
+        "discarded_harness_attempts": "Initial red_semantics and red_classification_confirmed contain a fixture immutability/NOT NULL setup error; preserved but not admitted as production red proof. Clean red_classification_boundaries contains only the ten demonstrated defect failures. Initial context exact-array expectation was corrected for legitimate normalization-added NULL members; final green_semantics_final_boundaries is controlling."
+    },
+    "owner_readiness": {
+        "finding": "F-MD-B19-A001-011 remains OPEN; exact eleven-row table and single proposed owner choice in finding",
+        "recommendation": "Option B: align contract with existing retained scalar/nested paths and add a versioned persisted actual publication manifest identity envelope for temporal_revision_set_hash and formula_version, preserving their meanings and explicit mode applicability. No approval or locked edit made.",
+        "held": [
+            "MD-S075-R0240..R0249",
+            "MD-S075-R0259"
+        ],
+        "other_owner_hold": "MD-S075-R0152 / F-MD-B19-A001-010 remains unchanged"
+    },
+    "dependency": {
+        "id": "MD-DEP-0025",
+        "state": "SUCCESSOR-PENDING ACTIVE",
+        "candidate_v5_differing_files": 6,
+        "new_sixth": "app/Infrastructure/Persistence/MarketData/ReplayResultRepository.php",
+        "candidate_v5": "immutable unchanged",
+        "candidate_v6": "not created",
+        "MD_B18": "not reopened"
+    },
+    "status_after": {
+        "reviewed_bases": "162/743",
+        "replay_result": "21/32 PARTIAL",
+        "invalid_bars_export": "8/9 PARTIAL",
+        "complete_families": "6/37",
+        "formal_satisfied": "0/743",
+        "operations_gate": "FAIL by design: 581 missing reviewed bases, 29 families without guard"
+    },
+    "proof_files_sha256": {
+        "app/Application/MarketData/Services/MarketDataEvidenceExportService.php": "a12ab1e579d6ba3a3b0950ebe19555fd0c4d5cc98edfb6d987295eddbdb5633a",
+        "app/Application/MarketData/Services/ReplayVerificationService.php": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+        "app/Infrastructure/Persistence/MarketData/ReplayResultRepository.php": "68d6c56d5cfc2068dca5b7f2bccadb07f3a766fc898c45a5c890a4b48c8f6c49",
+        "tests/Unit/MarketData/B19ReplayResultSemanticPipelineTest.php": "6a0e132a3ef5c461e7b8c16ae8d91ea8ac99a7cc1ec12e880c1a53589bdbf186",
+        "tests/Unit/MarketData/B19ReplayResultPersistedFieldProvenanceTest.php": "42032e163172a591a6f6225eb4e36da1a9840598556eaa3afa24ba7de40cf92f",
+        "tests/Unit/MarketData/B18ReplayPersistedEvidenceBindingTest.php": "c60fd0b12e4b706c691f4831b4bdfea5372eb139191ad441f2f4fc9290a80b56",
+        "tests/Unit/MarketData/B18ReplayComparisonExhaustivenessTest.php": "d99d8dea19195e5a4fe0bb40776aaa41113ec94e6e1358e97e0fa6aa780bc432",
+        "tests/fixtures/replay/b19-semantic-context-v1.json": "8065435b0174d118f976b5220f5720307dd07d359d0e1fe00a812d0aa84727be",
+        "tests/fixtures/replay/b19-semantic-context-v2.json": "1e3ff08d6c6cb055d3b0f6ce9df78ea6b99626d6a86e881767e4454bfe8f41a2",
+        "docs/market_data/development/findings/F-MD-B19-A001-011_REPLAY_RESULT_LOCKED_FIELD_NAMES_CONFLICT_WITH_PERSISTED_PROOF_NAMES.md": "5a52b83f9c2c96bdfaeb61be44b66ad673a69df6748459ab77f77909ea477f99"
+    },
+    "raw_artifacts": {
+        "dir": "storage/app/market-data/evidence/MD-B19-A001/replay-semantics-20261017",
+        "inventory": "sha256_inventory.json",
+        "inventory_sha256": "262b0baf1e78a2ab4dd1ac5a2cbb9a7974c5c79a6508c15b5f05dd68c7fd9e84",
+        "file_count": 319,
+        "files": {
+            "alias_bounded.execution.json": {
+                "sha256": "cf40fef85815e30f0b3f8fdc96fcb25df8eb111897e1e2e7ffc78b6623104710",
+                "bytes": 335
+            },
+            "alias_bounded.txt": {
+                "sha256": "2065030c3832f64f3bd1c206bc1bc1e1259671050eac7bca0e1fa295dbdc278d",
+                "bytes": 1850
+            },
+            "audit.py": {
+                "sha256": "a13450063e12355d9bdd23e4c381abad66c23f9b84da833a62022544bdf6d819",
+                "bytes": 2575
+            },
+            "capture.py": {
+                "sha256": "e7da6e95621ad7b94bf2f2a20467314b059501b508d1e097540a099119d939ea",
+                "bytes": 1087
+            },
+            "continuity_and_build_audit.json": {
+                "sha256": "26b4649dcf08a786f270e737d10deb757ffe86fe99a28ff8e1b6b4ca8be60702",
+                "bytes": 3589
+            },
+            "governed_build_identity.execution.json": {
+                "sha256": "7fde89a518976b573a59a80ccee22097b8260ba026ba9c7e3a32f32df899fbb1",
+                "bytes": 434
+            },
+            "governed_build_identity.txt": {
+                "sha256": "2271f653eaeb43837495b57662cad821689d10f022bcb9f60dbc2804da8a19bd",
+                "bytes": 828
+            },
+            "green_semantics.execution.json": {
+                "sha256": "6b18d8187044fe96a884b5d57c7cc6bf6c8868149447a6a1b72d91105a1e4e1b",
+                "bytes": 337
+            },
+            "green_semantics.txt": {
+                "sha256": "75c1888c00985423539b7bec847ad5c169157bd08b259220f291dfda407e66de",
+                "bytes": 208
+            },
+            "green_semantics_complete.execution.json": {
+                "sha256": "95e38c30cea923ebd1518f03bf4d73a9d5ba3e787c437c2fa7c2052796af45ac",
+                "bytes": 337
+            },
+            "green_semantics_complete.txt": {
+                "sha256": "499bdfa166a71cf64742a34c609a47e9b285c374a62b206c662ac29417dc819c",
+                "bytes": 208
+            },
+            "green_semantics_final.execution.json": {
+                "sha256": "d45deef4b12a8b398944eddefd2ad30c0d93444c4321318757d896fb158e827a",
+                "bytes": 337
+            },
+            "green_semantics_final.txt": {
+                "sha256": "ad2eb226966dc52b076af48dd9be7ddfea84647dbdfc8f183b82786700789609",
+                "bytes": 816
+            },
+            "green_semantics_final_boundaries.execution.json": {
+                "sha256": "cf4fe92e33845383c7e15b7daf3ffa754d759457b95b38f4796caa51b590b182",
+                "bytes": 337
+            },
+            "green_semantics_final_boundaries.txt": {
+                "sha256": "75135a28a3818172b59261cd7fd9c46ee99860a099b9011a1f5fa0f5ddea7207",
+                "bytes": 208
+            },
+            "green_semantics_restored.execution.json": {
+                "sha256": "ea9068440455e46a8804cd5efb3d08bd234ba668ab22fa9d8b07597b1f77d20f",
+                "bytes": 337
+            },
+            "green_semantics_restored.txt": {
+                "sha256": "8ef6febf7666779f1cf4ff516fae75db486135963b3baab5e34bb9d7afdd9fd1",
+                "bytes": 208
+            },
+            "M01_match.txt": {
+                "sha256": "2ea584cbbb14a3e28a994e8975d6d0f43b28d0c6f41287297134f4b5d58d82e2",
+                "bytes": 1701
+            },
+            "M02_divergence.txt": {
+                "sha256": "ca0720aa8387008398199eed56bfc093a4b63921f87609fde40c564bc176192c",
+                "bytes": 1752
+            },
+            "M03_admission.txt": {
+                "sha256": "ce9c1c8df0c448e703201de9578fed8db07642dcfb97891ccb5e4cf50027d82a",
+                "bytes": 2337
+            },
+            "M04_unexpected.txt": {
+                "sha256": "b06b2c69060b72f47f55ad1dccf21ca6f004c7fc734fb77bd99d17473c0f6d63",
+                "bytes": 736
+            },
+            "M05_write_pair.txt": {
+                "sha256": "3f5a77d0c1c8749db784c4c0bdd8fa7a55c59acc8f48fe0c81514099fb208e31",
+                "bytes": 3496
+            },
+            "M06_read_pair.txt": {
+                "sha256": "afcddc647b4fc2eb9c12c6d9432a8534b3d44064252207fe8275454f0722707d",
+                "bytes": 3573
+            },
+            "M07_write_unknown.txt": {
+                "sha256": "67f177ec00fe410982f28e272f87a713cce007a3bbd345787418c158c01c0a9d",
+                "bytes": 1183
+            },
+            "M08_read_unknown.txt": {
+                "sha256": "e55bf66d8e381657e472e7935695589769010fe09379ee70faef3ef8d125156a",
+                "bytes": 1205
+            },
+            "M09_expected_status.txt": {
+                "sha256": "898571df620d07621f895c5dcc537d2ddc19cea54b6f27a346e9b22091b91d82",
+                "bytes": 620
+            },
+            "M10_expected_date.txt": {
+                "sha256": "1af0e4bfd3dbdec8afcaa758b2d8ab11714941b1e4ca33b3a20383a0656f77f4",
+                "bytes": 629
+            },
+            "M11_expected_seal.txt": {
+                "sha256": "83054056ae53f83e25a09af00965bd282a0527158ae6f7b54291ab219c1ed3f8",
+                "bytes": 623
+            },
+            "M12_missing_context.txt": {
+                "sha256": "1f3f0851036a361e2c6246d6ca21ce2ec2b0ee571ad0408fded34c38d52e40e2",
+                "bytes": 668
+            },
+            "M13_version.txt": {
+                "sha256": "dc517bf0c61d55e47f89aed7079e2202d1aa2a898cf37e835b1f52111300910b",
+                "bytes": 575
+            },
+            "M14_expected_state_status.txt": {
+                "sha256": "16b11beca3b9b93548d7ccf6678cecdf6d4f563bd9b572af4dd1dda3424bc718",
+                "bytes": 621
+            },
+            "M15_expected_result_context.txt": {
+                "sha256": "ba18c73f942669def87f08d9e6bff2551106f7c56d16b19ee01a8482e3890228",
+                "bytes": 674
+            },
+            "M16_expected_state_date.txt": {
+                "sha256": "4a57b6aab9b3546436dded356066e54396cab33fb76bc7dc04583fa4b249d30f",
+                "bytes": 630
+            },
+            "M17_expected_state_seal.txt": {
+                "sha256": "9812b97eba41810cde67af95e3287b8d0ca11bde117bb3d0c773061b9eafe54f",
+                "bytes": 624
+            },
+            "mutate.py": {
+                "sha256": "c386ec64d34758aecf9911255f1b4502feb54b6d936c4dc65711638570e7a8a7",
+                "bytes": 6044
+            },
+            "new_mutation_results.json": {
+                "sha256": "3a5bada11d52fd161a973db00d65580a64d9ad47405df44e617ec356a3ca775c",
+                "bytes": 6937
+            },
+            "operations_gate.execution.json": {
+                "sha256": "fae6dd2ccd34838f0319a8dd6132b39e6ef46476e92efd1e199eb44f1c8c6f8e",
+                "bytes": 332
+            },
+            "operations_gate.txt": {
+                "sha256": "ba67746752d725dc997d7595f0a59338742a266ed604d907254d0a4d0de8ce17",
+                "bytes": 3589
+            },
+            "php_lint.json": {
+                "sha256": "43c3555e09c5121250ce7faae83e1d077921797b80d601ca41f8c8e36e00a781",
+                "bytes": 1609
+            },
+            "php_version.execution.json": {
+                "sha256": "eab7c9b29e616e69ac0d3f7e965fd0bfe572dd54a8c197ba656b9342587842b5",
+                "bytes": 258
+            },
+            "php_version.txt": {
+                "sha256": "8ae84d6b1aa5dd31a684b445bf783777c0b047eb625ae5bb300b60772ca120a9",
+                "bytes": 155
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__degrade_fails_/evidence_admission.json": {
+                "sha256": "c908711ee3867869d15ae3d90cca2b8313e00d3d29a829c734141d7984e24a2c",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__degrade_fails_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__degrade_fails_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__degrade_fails_/persisted_metric.json": {
+                "sha256": "bf9f7a68b707fd4b42b3109f1e68ad999b586a1466e1aabf25bcbf569793e876",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__degrade_fails_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__degrade_fails_/replay_evidence_pack.json": {
+                "sha256": "126910b96f2341f946a9603e34e8470afc2474c9a5f4f914198a0ff8b25bcc93",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__degrade_fails_/replay_expected_state.json": {
+                "sha256": "8084646e49e7a9d94b3eb4125240ad54c7cce6302f92d361d54cf87e5e7ce36d",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__degrade_fails_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__degrade_fails_/replay_result.json": {
+                "sha256": "1e2e48c602e9c0e01f7dfc303439b07fb8b7aaaaa7571b0b892a2d0cf9ed9984",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__empty_classification_/evidence_admission.json": {
+                "sha256": "54fb8f894eac1a3d93ad4f20c78eba76e1b0e37faf69244f9775c5ef4f6de31e",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__empty_classification_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__empty_classification_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__empty_classification_/persisted_metric.json": {
+                "sha256": "3823e1cea8b41b9d9fe9650f58b8d8b26a955da851fa698ee31a5ecebeab2642",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__empty_classification_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__empty_classification_/replay_evidence_pack.json": {
+                "sha256": "2ec035095a85daeadea64671a82ea032273b985d53bf9bf13a7722f0ea5152cd",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__empty_classification_/replay_expected_state.json": {
+                "sha256": "ec4c78cae2961138b65677b213c00dfe056f1705f7f1bbcba3c8786e0a543a4e",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__empty_classification_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__empty_classification_/replay_result.json": {
+                "sha256": "8476b524553d7e8cb0f2225cd43a443d1dcb7000440d3ab6eadfc4f6455517f8",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__inadmissible_passes_/evidence_admission.json": {
+                "sha256": "c908711ee3867869d15ae3d90cca2b8313e00d3d29a829c734141d7984e24a2c",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__inadmissible_passes_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__inadmissible_passes_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__inadmissible_passes_/persisted_metric.json": {
+                "sha256": "bf9f7a68b707fd4b42b3109f1e68ad999b586a1466e1aabf25bcbf569793e876",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__inadmissible_passes_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__inadmissible_passes_/replay_evidence_pack.json": {
+                "sha256": "126910b96f2341f946a9603e34e8470afc2474c9a5f4f914198a0ff8b25bcc93",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__inadmissible_passes_/replay_expected_state.json": {
+                "sha256": "8084646e49e7a9d94b3eb4125240ad54c7cce6302f92d361d54cf87e5e7ce36d",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__inadmissible_passes_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__inadmissible_passes_/replay_result.json": {
+                "sha256": "1e2e48c602e9c0e01f7dfc303439b07fb8b7aaaaa7571b0b892a2d0cf9ed9984",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__invalid_status_/evidence_admission.json": {
+                "sha256": "54fb8f894eac1a3d93ad4f20c78eba76e1b0e37faf69244f9775c5ef4f6de31e",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__invalid_status_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__invalid_status_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__invalid_status_/persisted_metric.json": {
+                "sha256": "3823e1cea8b41b9d9fe9650f58b8d8b26a955da851fa698ee31a5ecebeab2642",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__invalid_status_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__invalid_status_/replay_evidence_pack.json": {
+                "sha256": "2ec035095a85daeadea64671a82ea032273b985d53bf9bf13a7722f0ea5152cd",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__invalid_status_/replay_expected_state.json": {
+                "sha256": "ec4c78cae2961138b65677b213c00dfe056f1705f7f1bbcba3c8786e0a543a4e",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__invalid_status_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__invalid_status_/replay_result.json": {
+                "sha256": "8476b524553d7e8cb0f2225cd43a443d1dcb7000440d3ab6eadfc4f6455517f8",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_blocked_/evidence_admission.json": {
+                "sha256": "b8bd8dd826f982758eea167cc874a2ad83aba6e5c6303da386146696c5c47b5f",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_blocked_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_blocked_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_blocked_/persisted_metric.json": {
+                "sha256": "7e4ad9d2f2b3e29f4e04eef0476553c79a39727dde8e6c42ff779e72871c4c6a",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_blocked_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_blocked_/replay_evidence_pack.json": {
+                "sha256": "ef9e2b171df8e35cd7c02fbf5a40524cf337245d236aea36e9179f08b43399e5",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_blocked_/replay_expected_state.json": {
+                "sha256": "52325f12c1c567ff4ea3376c426f968b559bd9fd801a2df73167587d962da79c",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_blocked_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_blocked_/replay_result.json": {
+                "sha256": "e034cac2e3bc682da7b54616a0696d8d91ed3c05d276a840f86e8ce018c6d6cf",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_fails_/evidence_admission.json": {
+                "sha256": "b8bd8dd826f982758eea167cc874a2ad83aba6e5c6303da386146696c5c47b5f",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_fails_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_fails_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_fails_/persisted_metric.json": {
+                "sha256": "7e4ad9d2f2b3e29f4e04eef0476553c79a39727dde8e6c42ff779e72871c4c6a",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_fails_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_fails_/replay_evidence_pack.json": {
+                "sha256": "ef9e2b171df8e35cd7c02fbf5a40524cf337245d236aea36e9179f08b43399e5",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_fails_/replay_expected_state.json": {
+                "sha256": "52325f12c1c567ff4ea3376c426f968b559bd9fd801a2df73167587d962da79c",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_fails_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__match_fails_/replay_result.json": {
+                "sha256": "e034cac2e3bc682da7b54616a0696d8d91ed3c05d276a840f86e8ce018c6d6cf",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__mismatch_passes_/evidence_admission.json": {
+                "sha256": "b8bd8dd826f982758eea167cc874a2ad83aba6e5c6303da386146696c5c47b5f",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__mismatch_passes_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__mismatch_passes_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__mismatch_passes_/persisted_metric.json": {
+                "sha256": "7e4ad9d2f2b3e29f4e04eef0476553c79a39727dde8e6c42ff779e72871c4c6a",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__mismatch_passes_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__mismatch_passes_/replay_evidence_pack.json": {
+                "sha256": "ef9e2b171df8e35cd7c02fbf5a40524cf337245d236aea36e9179f08b43399e5",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__mismatch_passes_/replay_expected_state.json": {
+                "sha256": "52325f12c1c567ff4ea3376c426f968b559bd9fd801a2df73167587d962da79c",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__mismatch_passes_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__mismatch_passes_/replay_result.json": {
+                "sha256": "e034cac2e3bc682da7b54616a0696d8d91ed3c05d276a840f86e8ce018c6d6cf",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unexpected_passes_/evidence_admission.json": {
+                "sha256": "c908711ee3867869d15ae3d90cca2b8313e00d3d29a829c734141d7984e24a2c",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unexpected_passes_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unexpected_passes_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unexpected_passes_/persisted_metric.json": {
+                "sha256": "bf9f7a68b707fd4b42b3109f1e68ad999b586a1466e1aabf25bcbf569793e876",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unexpected_passes_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unexpected_passes_/replay_evidence_pack.json": {
+                "sha256": "126910b96f2341f946a9603e34e8470afc2474c9a5f4f914198a0ff8b25bcc93",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unexpected_passes_/replay_expected_state.json": {
+                "sha256": "8084646e49e7a9d94b3eb4125240ad54c7cce6302f92d361d54cf87e5e7ce36d",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unexpected_passes_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unexpected_passes_/replay_result.json": {
+                "sha256": "1e2e48c602e9c0e01f7dfc303439b07fb8b7aaaaa7571b0b892a2d0cf9ed9984",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unknown_classification_/evidence_admission.json": {
+                "sha256": "54fb8f894eac1a3d93ad4f20c78eba76e1b0e37faf69244f9775c5ef4f6de31e",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unknown_classification_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unknown_classification_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unknown_classification_/persisted_metric.json": {
+                "sha256": "3823e1cea8b41b9d9fe9650f58b8d8b26a955da851fa698ee31a5ecebeab2642",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unknown_classification_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unknown_classification_/replay_evidence_pack.json": {
+                "sha256": "2ec035095a85daeadea64671a82ea032273b985d53bf9bf13a7722f0ea5152cd",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unknown_classification_/replay_expected_state.json": {
+                "sha256": "ec4c78cae2961138b65677b213c00dfe056f1705f7f1bbcba3c8786e0a543a4e",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unknown_classification_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_classification_is_refused_at_write_with_data_set__unknown_classification_/replay_result.json": {
+                "sha256": "8476b524553d7e8cb0f2225cd43a443d1dcb7000440d3ab6eadfc4f6455517f8",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__degrade_fails_/evidence_admission.json": {
+                "sha256": "d672fba87fb15725b9b24e5de5600990361168a570dfa75205327a8cb6a37525",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__degrade_fails_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__degrade_fails_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__degrade_fails_/persisted_metric.json": {
+                "sha256": "0b5efc2fd1ce475713304b3dae59ea0c7a06249cf8719b5fa78250a5dcac0e80",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__degrade_fails_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__degrade_fails_/replay_evidence_pack.json": {
+                "sha256": "bdf436e4ca648b9b0571d322561a8c1c471918b2a9b91931771c1ac875698a5d",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__degrade_fails_/replay_expected_state.json": {
+                "sha256": "ecb340ab455c14398ca887023bc32add9e31dfb77e7d88985d12da1b2f8d13ff",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__degrade_fails_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__degrade_fails_/replay_result.json": {
+                "sha256": "d4d2e225cb714278de0cbaf5d339e15bd5fa649cd8e9d5fc05fd6f6468b49bf4",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__empty_classification_/evidence_admission.json": {
+                "sha256": "eb1ac1d98ea1da0f1c12f4f837599cc8cb475f680373a2e40c841b9754ddf74a",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__empty_classification_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__empty_classification_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__empty_classification_/persisted_metric.json": {
+                "sha256": "0973c5c70c555279b52d9dd8293694578430b5f732a382cb08b89cb08593d559",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__empty_classification_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__empty_classification_/replay_evidence_pack.json": {
+                "sha256": "ae4f7739737e59b6b3365a2e13c9176f9b855612b756af85ebede3711519efa9",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__empty_classification_/replay_expected_state.json": {
+                "sha256": "3cced9c9b9dd3f4283d9bc2073841dd522a2d967d91597b5e21b2ce9e08d0beb",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__empty_classification_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__empty_classification_/replay_result.json": {
+                "sha256": "73b5533f3b025eaa0657362abe9ee3a556aebfd3d3466a3798e31972bfa241d1",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__inadmissible_passes_/evidence_admission.json": {
+                "sha256": "d672fba87fb15725b9b24e5de5600990361168a570dfa75205327a8cb6a37525",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__inadmissible_passes_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__inadmissible_passes_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__inadmissible_passes_/persisted_metric.json": {
+                "sha256": "0b5efc2fd1ce475713304b3dae59ea0c7a06249cf8719b5fa78250a5dcac0e80",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__inadmissible_passes_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__inadmissible_passes_/replay_evidence_pack.json": {
+                "sha256": "bdf436e4ca648b9b0571d322561a8c1c471918b2a9b91931771c1ac875698a5d",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__inadmissible_passes_/replay_expected_state.json": {
+                "sha256": "ecb340ab455c14398ca887023bc32add9e31dfb77e7d88985d12da1b2f8d13ff",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__inadmissible_passes_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__inadmissible_passes_/replay_result.json": {
+                "sha256": "d4d2e225cb714278de0cbaf5d339e15bd5fa649cd8e9d5fc05fd6f6468b49bf4",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__invalid_status_/evidence_admission.json": {
+                "sha256": "eb1ac1d98ea1da0f1c12f4f837599cc8cb475f680373a2e40c841b9754ddf74a",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__invalid_status_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__invalid_status_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__invalid_status_/persisted_metric.json": {
+                "sha256": "0973c5c70c555279b52d9dd8293694578430b5f732a382cb08b89cb08593d559",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__invalid_status_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__invalid_status_/replay_evidence_pack.json": {
+                "sha256": "ae4f7739737e59b6b3365a2e13c9176f9b855612b756af85ebede3711519efa9",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__invalid_status_/replay_expected_state.json": {
+                "sha256": "3cced9c9b9dd3f4283d9bc2073841dd522a2d967d91597b5e21b2ce9e08d0beb",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__invalid_status_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__invalid_status_/replay_result.json": {
+                "sha256": "73b5533f3b025eaa0657362abe9ee3a556aebfd3d3466a3798e31972bfa241d1",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_blocked_/evidence_admission.json": {
+                "sha256": "d6b05331e49501bc4f32b042334a77460617761ab25d1df0c8ece02255880323",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_blocked_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_blocked_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_blocked_/persisted_metric.json": {
+                "sha256": "8cb9bc15db03870cd158bf9aa39ac8ba6e7c9820b490d692cbcf365a1ea90ea3",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_blocked_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_blocked_/replay_evidence_pack.json": {
+                "sha256": "c08df38509a8e6153af23d657cf3b56e92067af02122db44d1e8613d4f827165",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_blocked_/replay_expected_state.json": {
+                "sha256": "9c08c0a93a0ccebbd412e6443e2ffb81034c12d32cec2d93db774951f770a240",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_blocked_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_blocked_/replay_result.json": {
+                "sha256": "b6032b7445d8968565b1ee99f720562918e4d3788b761b4193bc8dd3d61375a2",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_fails_/evidence_admission.json": {
+                "sha256": "d6b05331e49501bc4f32b042334a77460617761ab25d1df0c8ece02255880323",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_fails_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_fails_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_fails_/persisted_metric.json": {
+                "sha256": "8cb9bc15db03870cd158bf9aa39ac8ba6e7c9820b490d692cbcf365a1ea90ea3",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_fails_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_fails_/replay_evidence_pack.json": {
+                "sha256": "c08df38509a8e6153af23d657cf3b56e92067af02122db44d1e8613d4f827165",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_fails_/replay_expected_state.json": {
+                "sha256": "9c08c0a93a0ccebbd412e6443e2ffb81034c12d32cec2d93db774951f770a240",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_fails_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__match_fails_/replay_result.json": {
+                "sha256": "b6032b7445d8968565b1ee99f720562918e4d3788b761b4193bc8dd3d61375a2",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__mismatch_passes_/evidence_admission.json": {
+                "sha256": "d6b05331e49501bc4f32b042334a77460617761ab25d1df0c8ece02255880323",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__mismatch_passes_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__mismatch_passes_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__mismatch_passes_/persisted_metric.json": {
+                "sha256": "8cb9bc15db03870cd158bf9aa39ac8ba6e7c9820b490d692cbcf365a1ea90ea3",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__mismatch_passes_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__mismatch_passes_/replay_evidence_pack.json": {
+                "sha256": "c08df38509a8e6153af23d657cf3b56e92067af02122db44d1e8613d4f827165",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__mismatch_passes_/replay_expected_state.json": {
+                "sha256": "9c08c0a93a0ccebbd412e6443e2ffb81034c12d32cec2d93db774951f770a240",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__mismatch_passes_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__mismatch_passes_/replay_result.json": {
+                "sha256": "b6032b7445d8968565b1ee99f720562918e4d3788b761b4193bc8dd3d61375a2",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__unexpected_passes_/evidence_admission.json": {
+                "sha256": "d672fba87fb15725b9b24e5de5600990361168a570dfa75205327a8cb6a37525",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__unexpected_passes_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__unexpected_passes_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__unexpected_passes_/persisted_metric.json": {
+                "sha256": "0b5efc2fd1ce475713304b3dae59ea0c7a06249cf8719b5fa78250a5dcac0e80",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__unexpected_passes_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__unexpected_passes_/replay_evidence_pack.json": {
+                "sha256": "bdf436e4ca648b9b0571d322561a8c1c471918b2a9b91931771c1ac875698a5d",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__unexpected_passes_/replay_expected_state.json": {
+                "sha256": "ecb340ab455c14398ca887023bc32add9e31dfb77e7d88985d12da1b2f8d13ff",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__unexpected_passes_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__unexpected_passes_/replay_result.json": {
+                "sha256": "d4d2e225cb714278de0cbaf5d339e15bd5fa649cd8e9d5fc05fd6f6468b49bf4",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__unknown_classification_/evidence_admission.json": {
+                "sha256": "eb1ac1d98ea1da0f1c12f4f837599cc8cb475f680373a2e40c841b9754ddf74a",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__unknown_classification_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__unknown_classification_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__unknown_classification_/persisted_metric.json": {
+                "sha256": "0973c5c70c555279b52d9dd8293694578430b5f732a382cb08b89cb08593d559",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__unknown_classification_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__unknown_classification_/replay_evidence_pack.json": {
+                "sha256": "ae4f7739737e59b6b3365a2e13c9176f9b855612b756af85ebede3711519efa9",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__unknown_classification_/replay_expected_state.json": {
+                "sha256": "3cced9c9b9dd3f4283d9bc2073841dd522a2d967d91597b5e21b2ce9e08d0beb",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_contradictory_or_invalid_persisted_classification_is_refused_at_export_with_data_set__unknown_classification_/replay_result.json": {
+                "sha256": "73b5533f3b025eaa0657362abe9ee3a556aebfd3d3466a3798e31972bfa241d1",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_legacy_null_status_is_derived_from_the_valid_persisted_comparison/evidence_admission.json": {
+                "sha256": "3273f12415f1646a634a576cafe081fc48dc99afb06009a0cbf94c7b44a0e63a",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_legacy_null_status_is_derived_from_the_valid_persisted_comparison/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_legacy_null_status_is_derived_from_the_valid_persisted_comparison/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_legacy_null_status_is_derived_from_the_valid_persisted_comparison/persisted_metric.json": {
+                "sha256": "d3a5f262f0c65d084439a7e8f28a8106d7b08f1568eaec6b6299eedfadfa5594",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_legacy_null_status_is_derived_from_the_valid_persisted_comparison/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_legacy_null_status_is_derived_from_the_valid_persisted_comparison/replay_evidence_pack.json": {
+                "sha256": "3113aacea7293817d21d37a354139e258c13affc3984e547e504508d73b2bada",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_legacy_null_status_is_derived_from_the_valid_persisted_comparison/replay_expected_state.json": {
+                "sha256": "df519cb5a85d0ac5ea612c60e9fb7c96a1b75786d0b189460cad918ab15b8c17",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_legacy_null_status_is_derived_from_the_valid_persisted_comparison/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_legacy_null_status_is_derived_from_the_valid_persisted_comparison/replay_result.json": {
+                "sha256": "e03255527b36c59f914160d6e4b4a0ac39ea9cbb4e409f46b21ca24cbfa984a4",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__expected_degrade_/evidence_admission.json": {
+                "sha256": "16b7669db5074527592a98805ea80e6d7c2fb37ad0a1b42ee4802e618f3969fc",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__expected_degrade_/fixture_expected.json": {
+                "sha256": "92dc6b85fdd049ac4ebfd606d0ac92ded6dc8dbc3b3bd6e3eb61c8c5d4b90cb2",
+                "bytes": 4218
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__expected_degrade_/fixture_manifest.json": {
+                "sha256": "945702bbb97f64f6a9f0fc918a8b9004146e7655b7d0d38e18c49fb13fdb622e",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__expected_degrade_/persisted_metric.json": {
+                "sha256": "d62185dd919f3d9af9732f523bdaa0441dd4dbece9d4ff46c7025ec96aa177a7",
+                "bytes": 21090
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__expected_degrade_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__expected_degrade_/replay_evidence_pack.json": {
+                "sha256": "b92e0bdcb17fc7cf6e6413db9d8cbb22c55435f8a12a5855bfcf8db9e30fa2da",
+                "bytes": 61770
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__expected_degrade_/replay_expected_state.json": {
+                "sha256": "3e0906b2f72d6caedfeac97de740dd8f35604dec9d6cb3cadc76c93cae394be3",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__expected_degrade_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__expected_degrade_/replay_result.json": {
+                "sha256": "f8701e1716702e6c2ee6f73a8450d31554b1844ec6d1df30f0c4f4a8a98d0ad2",
+                "bytes": 30784
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__match_/evidence_admission.json": {
+                "sha256": "16b7669db5074527592a98805ea80e6d7c2fb37ad0a1b42ee4802e618f3969fc",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__match_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__match_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__match_/persisted_metric.json": {
+                "sha256": "85d5b4114c825b7834e1dc86912ab69a30246ded843a2a3db48747b048f658f8",
+                "bytes": 21079
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__match_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__match_/replay_evidence_pack.json": {
+                "sha256": "98e2f2e70545dffdc5aceb094c0ccb990e325a9146d79b9b0e7b7817c5a61d25",
+                "bytes": 61748
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__match_/replay_expected_state.json": {
+                "sha256": "3e0906b2f72d6caedfeac97de740dd8f35604dec9d6cb3cadc76c93cae394be3",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__match_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__match_/replay_result.json": {
+                "sha256": "95fc48dc70d4a4934a6709c00b7e454fbcc1d4d85746a80c8205a71cb5c40350",
+                "bytes": 30773
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__mismatch_/evidence_admission.json": {
+                "sha256": "16b7669db5074527592a98805ea80e6d7c2fb37ad0a1b42ee4802e618f3969fc",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__mismatch_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__mismatch_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__mismatch_/persisted_metric.json": {
+                "sha256": "730b845f7787f58ab5ae8727f813edf2a5b656ae90eaeb0109c05723eedac29e",
+                "bytes": 22579
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__mismatch_/replay_actual_state.json": {
+                "sha256": "db17e93e44a6aa9cf36d28aedaf62f7288d4417c35735fd61ee32201f43823ff",
+                "bytes": 12984
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__mismatch_/replay_evidence_pack.json": {
+                "sha256": "074ae0b31610eb7552ba0996a2fe97934337ee5c6eac76ea4452cec0fc9633d9",
+                "bytes": 64147
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__mismatch_/replay_expected_state.json": {
+                "sha256": "3e0906b2f72d6caedfeac97de740dd8f35604dec9d6cb3cadc76c93cae394be3",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__mismatch_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__mismatch_/replay_result.json": {
+                "sha256": "a0d5f9098e369ab0aee62fda54c9c17331b7a4a9c666c6481bdc132483dbdbbf",
+                "bytes": 32890
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__unexpected_divergence_/evidence_admission.json": {
+                "sha256": "fb1e777c4e33da249ac02848edbc768d5ce30d9fcd66a751504ae0090ffa899a",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__unexpected_divergence_/fixture_expected.json": {
+                "sha256": "92dc6b85fdd049ac4ebfd606d0ac92ded6dc8dbc3b3bd6e3eb61c8c5d4b90cb2",
+                "bytes": 4218
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__unexpected_divergence_/fixture_manifest.json": {
+                "sha256": "945702bbb97f64f6a9f0fc918a8b9004146e7655b7d0d38e18c49fb13fdb622e",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__unexpected_divergence_/persisted_metric.json": {
+                "sha256": "a4624ffc08ea0a87c5d10c6634d2a7727da70d024462791f416809959df3b079",
+                "bytes": 22581
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__unexpected_divergence_/replay_actual_state.json": {
+                "sha256": "db17e93e44a6aa9cf36d28aedaf62f7288d4417c35735fd61ee32201f43823ff",
+                "bytes": 12984
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__unexpected_divergence_/replay_evidence_pack.json": {
+                "sha256": "2ec77ceba66dbf379cb82a05a8d5d70aa013af482d559c556f0eefbf994f89b2",
+                "bytes": 64151
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__unexpected_divergence_/replay_expected_state.json": {
+                "sha256": "5d35b55849d3e66e7699f499d50f3b813c940d1a23349da7a09301255a6caa11",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__unexpected_divergence_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_real_comparison_is_classified_persisted_and_exported_with_data_set__unexpected_divergence_/replay_result.json": {
+                "sha256": "eb26b5ba347c8e857b52f400616dec62f2a96760a3adf6b2d87cfa3a6a8793d5",
+                "bytes": 32892
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__fixture_context_/evidence_admission.json": {
+                "sha256": "69f2c5e78010d78b4bca22f78a66bc71ee015d669303eea8ae3e7df09179a507",
+                "bytes": 967
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__fixture_context_/fixture_expected.json": {
+                "sha256": "652cec9cb81390fffbd9f324a1284b1309a66ab6eb7ef1b782a4c82462711421",
+                "bytes": 2917
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__fixture_context_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__fixture_context_/persisted_metric.json": {
+                "sha256": "2442964333e0daa256e447e2b671d1d138c2fb7e514bbf395a6a6b53f4b62908",
+                "bytes": 22711
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__fixture_context_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__fixture_context_/replay_evidence_pack.json": {
+                "sha256": "1f5965f380c46110e374f8d2ab079b8f2dc83e57dc1aa5f4384ed0af262e5f33",
+                "bytes": 64070
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__fixture_context_/replay_expected_state.json": {
+                "sha256": "62f19d236ad3d9715f064a9712d75967a072287eab16095827bc368185c818d6",
+                "bytes": 10952
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__fixture_context_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__fixture_context_/replay_result.json": {
+                "sha256": "fa3dd05a11676f3bd13916cb982e6a7fc024ac94806850ddb9e881c344b14152",
+                "bytes": 32862
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__NULL_fixture_context_/evidence_admission.json": {
+                "sha256": "69f2c5e78010d78b4bca22f78a66bc71ee015d669303eea8ae3e7df09179a507",
+                "bytes": 967
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__NULL_fixture_context_/fixture_expected.json": {
+                "sha256": "f01a9424afe301f13ccbc2551ef90073c585e0806ff2ab80738fbf9f2c5d6bd9",
+                "bytes": 2750
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__NULL_fixture_context_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__NULL_fixture_context_/persisted_metric.json": {
+                "sha256": "316c5e766341caa0a7282049f3119036e6ade4d063d8e8292f3f13d102dcf2c7",
+                "bytes": 22870
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__NULL_fixture_context_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__NULL_fixture_context_/replay_evidence_pack.json": {
+                "sha256": "6974f81262d542f4ceab3ebac40f082bf5665f02dc60f07351f454b73ce0c88f",
+                "bytes": 64234
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__NULL_fixture_context_/replay_expected_state.json": {
+                "sha256": "6723746391a21cbf18c61892b85ea9bb02525c57755f27a0fc339436c6d4722c",
+                "bytes": 10909
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__NULL_fixture_context_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__NULL_fixture_context_/replay_result.json": {
+                "sha256": "5da2a187e9683ee16ca2cbf4d376d74f06fa2d08fca3cd6f2274675cbd3968cd",
+                "bytes": 33061
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__runtime_input_identity_/evidence_admission.json": {
+                "sha256": "5c47f42f0f9faa6f2e7b232471491de5ff7c594453ef54be3d2f4b5c126b9481",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__runtime_input_identity_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__runtime_input_identity_/fixture_manifest.json": {
+                "sha256": "f48c61c12ea35a4631eec20c54b47a456ca249173029d516631de449ac0142a1",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__runtime_input_identity_/persisted_metric.json": {
+                "sha256": "863cd85b179714fe42e246413080a1fa14041b86bfaddc7293ff784280856469",
+                "bytes": 21087
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__runtime_input_identity_/replay_actual_state.json": {
+                "sha256": "14b93f843189a298efc2e4ee79e8718f38d32eacab26b4b2d82dd6daa407c8dc",
+                "bytes": 12825
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__runtime_input_identity_/replay_evidence_pack.json": {
+                "sha256": "c3a6ada61d568b4c3351b7a81d3ffadc31443b83623507fc81dede5a4f113f13",
+                "bytes": 61708
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__runtime_input_identity_/replay_expected_state.json": {
+                "sha256": "561ffd3649d6a4a9db58108ab7e86c34ebb8b018edae29dc23731d79f04c96dc",
+                "bytes": 11005
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__runtime_input_identity_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__runtime_input_identity_/replay_result.json": {
+                "sha256": "69c7754bc9e28642f266e19f8285a07f3d0830455e4437a731090a8317c02f95",
+                "bytes": 30781
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__self-generated_oracle_/evidence_admission.json": {
+                "sha256": "5c47f42f0f9faa6f2e7b232471491de5ff7c594453ef54be3d2f4b5c126b9481",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__self-generated_oracle_/fixture_expected.json": {
+                "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+                "bytes": 4207
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__self-generated_oracle_/fixture_manifest.json": {
+                "sha256": "fc569562c3f94e6d7d46b2ac26ce0d599448c5cc525c8cd3dc69c8823ca75b62",
+                "bytes": 1157
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__self-generated_oracle_/persisted_metric.json": {
+                "sha256": "cca6a7a0eca19fc0a0bde3ca73e8739e674d3053b0d6e394ea3ca74f380bcf02",
+                "bytes": 21238
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__self-generated_oracle_/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__self-generated_oracle_/replay_evidence_pack.json": {
+                "sha256": "86cd7bc97280ccee9e694622692158f752f8769cf850b390bd28f2b76d45cfc5",
+                "bytes": 61928
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__self-generated_oracle_/replay_expected_state.json": {
+                "sha256": "9a2a802720abbad7dcd1703c6eb4e7e45a4558d06c4c31b7f6b36c482275dcd4",
+                "bytes": 11010
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__self-generated_oracle_/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_unavailable_prerequisites_block_the_real_pipeline_with_data_set__self-generated_oracle_/replay_result.json": {
+                "sha256": "d85b8f8a125da3d9df05367477b04200f5b1f50f3ed9bc9da0fd2829b5835a43",
+                "bytes": 30932
+            },
+            "pipeline_artifacts/test_versioned_expectations_remain_independent_of_actual_state/evidence_admission.json": {
+                "sha256": "5c47f42f0f9faa6f2e7b232471491de5ff7c594453ef54be3d2f4b5c126b9481",
+                "bytes": 903
+            },
+            "pipeline_artifacts/test_versioned_expectations_remain_independent_of_actual_state/fixture_expected.json": {
+                "sha256": "ede594db80120cfe28cfc2ea8d4324ec8f0ab8fa3b295db9871e95d36b8c6b6e",
+                "bytes": 4202
+            },
+            "pipeline_artifacts/test_versioned_expectations_remain_independent_of_actual_state/fixture_manifest.json": {
+                "sha256": "3527c29bf272b27888bc6ef423f6850f02401335b282e7e53803ca6058a2d3bd",
+                "bytes": 1433
+            },
+            "pipeline_artifacts/test_versioned_expectations_remain_independent_of_actual_state/persisted_metric.json": {
+                "sha256": "9656e1ffdbcf076a757c19c038acfad19feeb5f9cdfe1bbcf51d7275fcc427eb",
+                "bytes": 22424
+            },
+            "pipeline_artifacts/test_versioned_expectations_remain_independent_of_actual_state/replay_actual_state.json": {
+                "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+                "bytes": 12889
+            },
+            "pipeline_artifacts/test_versioned_expectations_remain_independent_of_actual_state/replay_evidence_pack.json": {
+                "sha256": "36ae21cea527e3ec06e1b08d73ff9aa4ba759540c0238f749366fbacd09e80f9",
+                "bytes": 63726
+            },
+            "pipeline_artifacts/test_versioned_expectations_remain_independent_of_actual_state/replay_expected_state.json": {
+                "sha256": "1b4c4400d59a6497d4916733db5d43b90ebe08019474ee7b7210b891073eb3af",
+                "bytes": 10997
+            },
+            "pipeline_artifacts/test_versioned_expectations_remain_independent_of_actual_state/replay_reason_code_counts.json": {
+                "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+                "bytes": 91
+            },
+            "pipeline_artifacts/test_versioned_expectations_remain_independent_of_actual_state/replay_result.json": {
+                "sha256": "580fc21169a7dbf2bf9fa8b3bdcaea0278164d53219a977bb9c2414b545182bb",
+                "bytes": 32564
+            },
+            "proof_source_bindings.json": {
+                "sha256": "7b8ebc7e45b3971ae02b52a27ea7b11f8e8aebf1df5ff28e89fc24784f0480e8",
+                "bytes": 1440
+            },
+            "red_classification_boundaries.execution.json": {
+                "sha256": "72328db116823416efa695411f3eb3e21f866a188526d21d394d67aee86ba596",
+                "bytes": 376
+            },
+            "red_classification_boundaries.txt": {
+                "sha256": "8ebf037052d797c478bf679527e88ef887e65c06a892436d29a2733440bce52d",
+                "bytes": 4947
+            },
+            "red_classification_confirmed.execution.json": {
+                "sha256": "2317b23811f950b97607e9c0929ec5d173113e7ac740c1f3d7e0bf2e4a545df0",
+                "bytes": 337
+            },
+            "red_classification_confirmed.txt": {
+                "sha256": "6df538a5c984ba1473fa7940ba41a7c7204dc4d3f9f95d0a4627f6201c9a036e",
+                "bytes": 9009
+            },
+            "red_semantics.execution.json": {
+                "sha256": "1413e8baa8c58755aba296c088c453f7f8fbd480758249cbd87a76d67b9e26b7",
+                "bytes": 337
+            },
+            "red_semantics.txt": {
+                "sha256": "b7b84cfd874727ac33783445aa5594d859d3774870c2b8e420e58315c6496285",
+                "bytes": 4156
+            },
+            "regression_accepted_fields.execution.json": {
+                "sha256": "dfbd09de156050a74353fd32cd07d8f3567e50618b35108e742e08cbdea2a712",
+                "bytes": 345
+            },
+            "regression_accepted_fields.txt": {
+                "sha256": "2407f36f1575ad6ccfbbbaa06b297941f7f30a06fb9779389c7a77e6ccf82c6f",
+                "bytes": 207
+            },
+            "regression_admission.execution.json": {
+                "sha256": "2572d7d2a4c0ece700b03fdfd6ab525fc438cc9031e541af6503a5d54e78245c",
+                "bytes": 343
+            },
+            "regression_admission.txt": {
+                "sha256": "44cdeb6450fcafbca12d2c25eb9b88282b5f726718431dc815db0252e79cc60b",
+                "bytes": 206
+            },
+            "regression_bound_inputs.execution.json": {
+                "sha256": "8419a9bbe3cdf0ad389f99a649da6583a24d34c9387b4a33e8806dd29ee078e7",
+                "bytes": 341
+            },
+            "regression_bound_inputs.txt": {
+                "sha256": "a8a260c2db08129e49984bd4c823656f952235c2012fd981c28850da3481b770",
+                "bytes": 206
+            },
+            "regression_expected_fixture.execution.json": {
+                "sha256": "95753baeb1921f2bf9c7302a5faf4e02511c828b9373bd37a7fee4a0da9b7b2b",
+                "bytes": 339
+            },
+            "regression_expected_fixture.txt": {
+                "sha256": "1f0414e1090e771bf1b9053dfc6cd246b3ab354da1b26d1c7ec89fdeba5ebb7e",
+                "bytes": 289
+            },
+            "regression_export.execution.json": {
+                "sha256": "0faf3a3fcc2b575c26c801055f4321736ff00b3ea2a7b1b630f47c9a0b5e6983",
+                "bytes": 333
+            },
+            "regression_export.txt": {
+                "sha256": "07e0114341f693372e1795d510986bf45805be2efdd8d97a2c29ae629655016b",
+                "bytes": 206
+            },
+            "regression_preservation.execution.json": {
+                "sha256": "4d5debca0878215d23986115aa2484e7e0ea0bdf3228b6addc9e4d368df69db7",
+                "bytes": 343
+            },
+            "regression_preservation.txt": {
+                "sha256": "b70a5cf69a581e59b8f7106b568709a3fc68b39ab36be55489af3595d1724345",
+                "bytes": 206
+            },
+            "regression_producer.execution.json": {
+                "sha256": "250d3c7a9ea6f004c644c6fd36c8e97c292bab4b048e6539bd402d85a4471124",
+                "bytes": 331
+            },
+            "regression_producer.txt": {
+                "sha256": "04bb7aa2e44590d775e0b44963deffcbcea6bd3693e313399fbcdb2f88bb4f17",
+                "bytes": 207
+            },
+            "regression_real_binding.execution.json": {
+                "sha256": "a72dba1bb620d31796ebdbeb1bfc0c841ca6846ff47d84873e68ae7293c4dac7",
+                "bytes": 339
+            },
+            "regression_real_binding.txt": {
+                "sha256": "e264622845450d92d0afc41aec816d435cb867c5be3b0a22106a84844793dbff",
+                "bytes": 208
+            },
+            "regression_repository.execution.json": {
+                "sha256": "95d65e31bd8cfa4f4dd4aa61af3c690528076cf08a0778df2d60a74f52ccf8cd",
+                "bytes": 339
+            },
+            "regression_repository.txt": {
+                "sha256": "d968933b208679e195d2be209e5dc7ec68e11e32f0294554eb1be5a787c977c2",
+                "bytes": 207
+            },
+            "regression_self_explanation.execution.json": {
+                "sha256": "9dd11d19ca27d95bfee550cf7fc9e7bf9acc3ab619e22ffcdc7d888696726545",
+                "bytes": 338
+            },
+            "regression_self_explanation.txt": {
+                "sha256": "c067bc1c28e36e4244a53a9575996b85395a94fafd70b6333c5cb62f3072f1f5",
+                "bytes": 208
+            }
+        }
+    },
+    "single_exact_resume_point": "Project Owner decision on F-MD-B19-A001-011 exact mapping (Option B recommended), then controlled authority correction and only the approved implementation/proof for its eleven held predicates. Keep independent R0152 held for F010. No replay-state-pair work."
+}

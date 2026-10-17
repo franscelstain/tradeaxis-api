@@ -1,0 +1,10 @@
+{
+  "fixture_id": "b19-semantic-comparison-context",
+  "fixture_version": "b19-v1",
+  "oracle": "Hand-authored contract literals, independent of verifier output; inherited B18 literal fixture template supplies the remaining context.",
+  "expected_overrides": {
+    "terminal_status": "SUCCESS",
+    "trade_date_effective": "2026-03-20",
+    "seal_state": "SEALED"
+  }
+}
