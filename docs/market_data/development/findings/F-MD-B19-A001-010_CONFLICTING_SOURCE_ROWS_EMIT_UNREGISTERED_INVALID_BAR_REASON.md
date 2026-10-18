@@ -1,12 +1,12 @@
-# Finding — `F-MD-B19-A001-010`
+# Finding â€” `F-MD-B19-A001-010`
 
 - ID: `F-MD-B19-A001-010`
 - Stage / Attempt / Baseline: `MD-B19` / `MD-B19-A001` / `MD-B19-A001-BL001`
 - Raised at: 2026-10-09T19:11:01+07:00
 - Severity: `P2`
-- Status: `OPEN — PROJECT OWNER DECISION REQUIRED`
+- Status: `RESOLVED`
 - Class: `PRODUCTION_DEFECT_WITH_FROZEN_VOCABULARY_DECISION`
-- Blocked: `MD-S075-R0152` in `artifact_invalid_bars_export`; the family is 8/9, not complete.
+- Current disposition: target predicates reviewed under E-MD-B19-A001-021; former hold superseded. Historical statements below retain their original checkpoint context.
 
 ## Statement
 
@@ -21,3 +21,15 @@ The Project Owner must choose the canonical meaning for conflicting source rows:
 ## Related
 
 `E-MD-B19-A001-015`, `CI-MD-B19-A001-001`, `D-MD-B19-A001-001`, `MD-DEP-0025`. Any producer or seed edit must update the successor-pending executable-build inventory before B19 closure. Candidate-v5 remains immutable; candidate-v6 has not been created.
+
+## 2026-10-18 binding owner decision and current boundary
+
+D-MD-B19-A001-005 records the Project Owner selection A: distinct BAR/HARD BAR_CONFLICTING_SOURCE_ROWS. The earlier decision-required/proposal passages above are retained chronology, superseded on selection by D005. The A/B choice must not be reopened. Exact replacement strategy bytes and impact analysis are prepared in B19_F010_F011_CONTROLLED_REVISION_REVIEW.md and E-MD-B19-A001-019 for the independent review retained by the owner. No live strategy/seed/runtime change or successor freeze is claimed. This finding stays OPEN until governed application and executed proof; R0152 remain HELD. Sixteen independent state-pair status/date/seal/version/hash/reason bases proceed without changing these obligations.
+
+## D006 / E020 authority application
+
+Owner-reported independent review corrections and confirmed RAW authorization applied with DOC-CHG-20261018-001 / freeze MD-STRATEGY-FREEZE-20261018-001. External provisional package/hash prerequisites withdrawn by latest owner instruction. Choices remain binding; exact corrected bytes and fingerprints retained. Finding remains OPEN on implementation/executed proof, not owner selection or strategy review.
+
+## E021 current implementation and proof disposition
+
+RESOLVED for this finding under D005/D006 and freeze MD-STRATEGY-FREEZE-20261018-001. R0152 admitted: BAR/HARD SQL registration, stable listing/date normal/recovered conflict rejection and exact audit provenance; deterministic duplicates retain WARN and clean neighbors remain canonical. New authority compound groups remain unproved stage scope; no formal SATISFIED, no B19 closure. Exact proof/mutations/limits in E021.

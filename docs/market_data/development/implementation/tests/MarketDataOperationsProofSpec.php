@@ -5,7 +5,7 @@ require_once __DIR__.'/MarketDataOperationsTraceabilitySpec.php';
 /**
  * `MD-B19` proof map.
  *
- * 743 required predicates across 37 families. The family of a predicate is decided by the
+ * 750 required predicates across 37 families. The family of a predicate is decided by the
  * structure of its own owner contract -- for `MD-S075` the artifact heading it sits under, for
  * `MD-S063` the evidence pack, elsewhere the owning contract and section -- and never by matching
  * words in the predicate text. `F-MD-B18-A001-001` measured what the latter produces: 23 of 121
@@ -24,10 +24,10 @@ final class MarketDataOperationsProofSpec
 
     public const CI = 'CI-MD-B19-A001-001';
 
-    public const EXPECTED_DENOMINATOR = 743;
+    public const EXPECTED_DENOMINATOR = 750;
 
     /**
-     * Expected size of each family. A re-bucketing that keeps the total at 743 changes these.
+     * Expected size of each family. A re-bucketing that keeps the total at 750 changes these.
      *
      * @var array<string,int>
      */
@@ -38,7 +38,7 @@ final class MarketDataOperationsProofSpec
         'archived_executed_evidence' => 34,
         'artifact_anomaly_report' => 8,
         'artifact_correction_evidence' => 20,
-        'artifact_cross_cutting_rules' => 7,
+        'artifact_cross_cutting_rules' => 13,
         'artifact_eligibility_export' => 9,
         'artifact_invalid_bars_export' => 9,
         'artifact_publication_manifest' => 33,
@@ -50,7 +50,7 @@ final class MarketDataOperationsProofSpec
         'artifact_source_attempt_telemetry' => 29,
         'audit_pack_core_rules' => 19,
         'audit_pack_correction' => 22,
-        'audit_pack_replay' => 21,
+        'audit_pack_replay' => 22,
         'audit_pack_run' => 29,
         'commands_and_runbook' => 17,
         'cross_contract_alignment' => 25,
@@ -78,6 +78,15 @@ final class MarketDataOperationsProofSpec
      * @var array<string,string>
      */
     public const RULE_FAMILIES = [
+        'MD-S063-R0169' => 'audit_pack_replay',
+
+        'MD-S075-R0325' => 'artifact_cross_cutting_rules',
+        'MD-S075-R0326' => 'artifact_cross_cutting_rules',
+        'MD-S075-R0327' => 'artifact_cross_cutting_rules',
+        'MD-S075-R0328' => 'artifact_cross_cutting_rules',
+        'MD-S075-R0329' => 'artifact_cross_cutting_rules',
+        'MD-S075-R0330' => 'artifact_cross_cutting_rules',
+
         // -- activation_boundary (8)
         'MD-S029-R0073' => 'activation_boundary',
         'MD-S029-R0074' => 'activation_boundary',
@@ -923,8 +932,8 @@ final class MarketDataOperationsProofSpec
                 'implementation' => [
                     'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19MultiFamilyMariaDbPipelineTest.php', 'test_all_identity_paths_follow_independent_inputs_and_persisted_publication_binding'],
+                'negative' => ['tests/Unit/MarketData/B19ArtifactBindingCompanionProofTest.php', 'test_each_applicable_binding_has_an_independent_value_and_missing_value_is_not_complete'],
             ],
             'artifact_eligibility_export' => [
                 'owner' => 'MD-B19:artifact-eligibility-export',
@@ -968,8 +977,8 @@ final class MarketDataOperationsProofSpec
                 'implementation' => [
                     'app/Application/MarketData/Services/ReplayVerificationService.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19ReplayStatePairStableSemanticsTest.php', 'test_each_state_member_preserves_its_independent_source'],
+                'negative' => ['tests/Unit/MarketData/B19ReplayStatePairStableSemanticsTest.php', 'test_counterfactual_expected_members_cannot_replace_actual'],
             ],
             'artifact_run_event_summary' => [
                 'owner' => 'MD-B19:artifact-run-event-summary',
@@ -993,8 +1002,8 @@ final class MarketDataOperationsProofSpec
                 'implementation' => [
                     'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19MultiFamilyMariaDbPipelineTest.php', 'test_all_identity_paths_follow_independent_inputs_and_persisted_publication_binding'],
+                'negative' => ['tests/Unit/MarketData/B19ArtifactCrossCuttingProofTest.php', 'test_stale_readable_publication_cannot_survive_a_held_run_export_in_the_same_directory'],
             ],
             'artifact_source_attempt_telemetry' => [
                 'owner' => 'MD-B19:artifact-source-attempt-telemetry',
@@ -1025,8 +1034,8 @@ final class MarketDataOperationsProofSpec
                 'implementation' => [
                     'app/Application/MarketData/Services/ReplayVerificationService.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19MultiFamilyMariaDbPipelineTest.php', 'test_all_identity_paths_follow_independent_inputs_and_persisted_publication_binding'],
+                'negative' => ['tests/Unit/MarketData/B19ReplayAuditPackProofTest.php', 'test_each_replay_pack_requirement_keeps_its_independent_expected_and_actual_meaning'],
             ],
             'audit_pack_run' => [
                 'owner' => 'MD-B19:audit-pack-run',

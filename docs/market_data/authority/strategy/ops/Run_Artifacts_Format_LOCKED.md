@@ -334,40 +334,41 @@ Fields such as `prior_publication_is_current` and `new_publication_is_current` s
 ### Purpose
 Provide a machine-readable summary when replay comparison does not fully match expectation.
 
-### Minimum fields
-    {
-      "replay_id": 3001,
-      "trade_date": "2025-12-10",
-      "trade_date_effective": "2025-12-10",
-      "status": "SUCCESS",
-      "comparison_result": "MISMATCH",
-      "replay_status": "FAIL",
-      "comparison_note": "eligibility output diverged",
-      "artifact_changed_scope": "eligibility_only",
-      "replay_mode": "PUBLICATION_EXACT",
-      "knowledge_cutoff": null,
-      "observation_manifest_hash": "OBS_HASH",
-      "config_snapshot_id": 9001,
-      "config_snapshot_hash": "CONFIG_HASH",
-      "temporal_revision_set_hash": "TEMPORAL_HASH",
-      "factor_set_id": 7001,
-      "factor_set_hash": "FACTOR_HASH",
-      "price_product_code": "STRUCTURAL_ADJUSTED",
-      "formula_version": "weekly_swing_eod_v2",
-      "read_model_version": "weekly_swing_read_v2",
-      "publication_version": 1,
-      "bars_batch_hash": "A1",
-      "indicators_batch_hash": "B1",
-      "eligibility_batch_hash": "C2",
-      "seal_state": "SEALED",
-      "expected_status": "SUCCESS",
-      "expected_trade_date_effective": "2025-12-10",
-      "expected_seal_state": "SEALED",
-      "mismatch_summary": "eligibility hash changed while bars hash remained unchanged"
-    }
+### Minimum fields (persisted JSON paths)
+
+| Path | Example |
+| --- | --- |
+| `replay_id` | `3001` |
+| `trade_date` | `"2025-12-10"` |
+| `trade_date_effective` | `"2025-12-10"` |
+| `status` | `"SUCCESS"` |
+| `comparison_result` | `"MISMATCH"` |
+| `replay_status` | `"FAIL"` |
+| `comparison_note` | `"eligibility output diverged"` |
+| `artifact_changed_scope` | `"eligibility_only"` |
+| `replay_mode` | `"PUBLICATION_EXACT"` |
+| `knowledge_cutoff_at` | `null` |
+| `bound_inputs.source_observation_manifest_hash` | `"OBS_HASH"` |
+| `bound_inputs.config_snapshot_id` | `9001` |
+| `bound_inputs.config_snapshot_hash` | `"CONFIG_HASH"` |
+| `actual_context.actual_publication_manifest_identity.temporal_revision_set_hash` | `"TEMPORAL_HASH"` |
+| `actual_context.actual_publication_context.factor_set_id` | `7001` |
+| `actual_context.actual_publication_context.factor_set_hash` | `"FACTOR_HASH"` |
+| `actual_context.actual_publication_context.price_product_code` | `"STRUCTURAL_ADJUSTED"` |
+| `actual_context.actual_publication_manifest_identity.formula_version` | `"weekly_swing_eod_v2"` |
+| `bound_inputs.read_model_version` | `"weekly_swing_read_v2"` |
+| `publication_version` | `1` |
+| `bars_batch_hash` | `"A1"` |
+| `indicators_batch_hash` | `"B1"` |
+| `eligibility_batch_hash` | `"C2"` |
+| `seal_state` | `"SEALED"` |
+| `expected_status` | `"SUCCESS"` |
+| `expected_trade_date_effective` | `"2025-12-10"` |
+| `expected_seal_state` | `"SEALED"` |
+| `mismatch_summary` | `"eligibility hash changed while bars hash remained unchanged"` |
 
 ### Locked rules
-- replay-result fields that mirror `md_replay_daily_metrics` must use the persisted replay names from replay proof storage
+- Scalar mirrors of `md_replay_daily_metrics` retain exact persisted column names. Named persisted JSON members retain the paths specified here; `bound_inputs` mirrors persisted bound-input scalars, `actual_context` mirrors `actual_context_json`, and `expected_context` mirrors independently persisted `expected_context_json`. No implicit aliases between different semantic identities are allowed. This is replay artifact identity schema `replay_artifact_identity_v1`.
 - replay-result status must be explicit: `PASS` for deterministic match/expected degrade, `FAIL` for mismatch/unexpected divergence, and `BLOCKED` only when replay cannot run because fixture/context/runtime prerequisites are missing
 - expected comparison context must remain explicit through replay-expected fields such as `expected_status`, `expected_trade_date_effective`, and `expected_seal_state`
 - mismatch summary must not replace detailed evidence, only summarize it
@@ -376,49 +377,67 @@ Provide a machine-readable summary when replay comparison does not fully match e
 ### Purpose
 Preserve the replay fixture expectation as exported evidence, including expected hashes and expected reason-code distribution when declared.
 
-### Minimum fields
-    {
-      "status": "SUCCESS",
-      "trade_date_effective": "2025-12-10",
-      "seal_state": "SEALED",
-      "replay_mode": "PUBLICATION_EXACT",
-      "observation_manifest_hash": "OBS_HASH",
-      "config_snapshot_hash": "CONFIG_HASH",
-      "temporal_revision_set_hash": "TEMPORAL_HASH",
-      "factor_set_hash": "FACTOR_HASH",
-      "price_product_code": "STRUCTURAL_ADJUSTED",
-      "formula_version": "weekly_swing_eod_v2",
-      "read_model_version": "weekly_swing_read_v2",
-      "publication_version": 1,
-      "bars_batch_hash": "A1",
-      "indicators_batch_hash": "B1",
-      "eligibility_batch_hash": "C1",
-      "reason_code_counts": []
-    }
+### Minimum fields (persisted JSON paths)
+
+| Path | Example |
+| --- | --- |
+| `status` | `"SUCCESS"` |
+| `trade_date_effective` | `"2025-12-10"` |
+| `seal_state` | `"SEALED"` |
+| `replay_mode` | `"PUBLICATION_EXACT"` |
+| `expected_context.expected_bound_input_context.source_observation_manifest_hash` | `"OBS_HASH"` |
+| `expected_context.expected_bound_input_context.config_snapshot_hash` | `"CONFIG_HASH"` |
+| `expected_context.expected_publication_manifest_identity.temporal_revision_set_hash` | `"TEMPORAL_HASH"` |
+| `expected_context.expected_publication_context.factor_set_hash` | `"FACTOR_HASH"` |
+| `expected_context.expected_publication_context.price_product_code` | `"STRUCTURAL_ADJUSTED"` |
+| `expected_context.expected_publication_manifest_identity.formula_version` | `"weekly_swing_eod_v2"` |
+| `expected_context.expected_bound_input_context.read_model_version` | `"weekly_swing_read_v2"` |
+| `publication_version` | `1` |
+| `bars_batch_hash` | `"A1"` |
+| `indicators_batch_hash` | `"B1"` |
+| `eligibility_batch_hash` | `"C1"` |
+| `reason_code_counts` | `[]` |
 
 ## 10. `replay_actual_state.json`
 ### Purpose
 Preserve the actual replay proof state exported from `md_replay_daily_metrics` and `md_replay_reason_code_counts`.
 
-### Minimum fields
-    {
-      "status": "SUCCESS",
-      "trade_date_effective": "2025-12-10",
-      "seal_state": "SEALED",
-      "replay_mode": "PUBLICATION_EXACT",
-      "observation_manifest_hash": "OBS_HASH",
-      "config_snapshot_hash": "CONFIG_HASH",
-      "temporal_revision_set_hash": "TEMPORAL_HASH",
-      "factor_set_hash": "FACTOR_HASH",
-      "price_product_code": "STRUCTURAL_ADJUSTED",
-      "formula_version": "weekly_swing_eod_v2",
-      "read_model_version": "weekly_swing_read_v2",
-      "publication_version": 1,
-      "bars_batch_hash": "A1",
-      "indicators_batch_hash": "B1",
-      "eligibility_batch_hash": "C1",
-      "reason_code_counts": []
-    }
+### Minimum fields (persisted JSON paths)
+
+| Path | Example |
+| --- | --- |
+| `status` | `"SUCCESS"` |
+| `trade_date_effective` | `"2025-12-10"` |
+| `seal_state` | `"SEALED"` |
+| `replay_mode` | `"PUBLICATION_EXACT"` |
+| `actual_context.actual_bound_input_context.source_observation_manifest_hash` | `"OBS_HASH"` |
+| `actual_context.actual_bound_input_context.config_snapshot_hash` | `"CONFIG_HASH"` |
+| `actual_context.actual_publication_manifest_identity.temporal_revision_set_hash` | `"TEMPORAL_HASH"` |
+| `actual_context.actual_publication_context.factor_set_hash` | `"FACTOR_HASH"` |
+| `actual_context.actual_publication_context.price_product_code` | `"STRUCTURAL_ADJUSTED"` |
+| `actual_context.actual_publication_manifest_identity.formula_version` | `"weekly_swing_eod_v2"` |
+| `actual_context.actual_bound_input_context.read_model_version` | `"weekly_swing_read_v2"` |
+| `publication_version` | `1` |
+| `bars_batch_hash` | `"A1"` |
+| `indicators_batch_hash` | `"B1"` |
+| `eligibility_batch_hash` | `"C1"` |
+| `reason_code_counts` | `[]` |
+
+## Replay identity applicability and retention (LOCKED)
+
+These rules qualify the minimum paths in sections 8–10; a nested path is a JSON path, never a dotted literal property or a top-level alias. Expected and actual paths are independent. Existing status, effective date, seal state, publication version, batch-hash and reason-count scalar paths are unchanged.
+
+`knowledge_cutoff_at` is explicitly NULL for PUBLICATION_EXACT and is the normalized declared cutoff for AS_KNOWN. Observation identity comes from the verified publication's V2 semantic lineage member or retained V1 run observation manifest in PUBLICATION_EXACT, and selected immutable snapshot observations in AS_KNOWN. Config snapshot ID/hash must identify the same retained or cutoff-resolved snapshot; an unavailable marker or a configuration reference string is not a content digest. Read-model identity comes from the verified frozen registry capture or AS_KNOWN snapshot, never the current code/default.
+
+At replay production time, capture `actual_context.actual_publication_manifest_identity` from the manifest of the explicitly selected, verified publication, including superseded publications. Persist it inside `actual_context_json` before export. The envelope has `schema_version = replay_publication_manifest_identity_v1`, `applicability`, `publication_id`, `publication_manifest_hash`, `temporal_revision_set_hash` and `formula_version`. Its publication ID and verified manifest hash bind both captured members to that exact publication. Do not query live/current state during export to repair missing old data, backfill legacy rows, recompute missing members or substitute current publication pointers.
+
+For applicable PUBLICATION_EXACT analytical publications (`STRUCTURAL_ADJUSTED` or `TOTAL_RETURN`), applicability is `APPLICABLE`; require a valid nonempty publication binding, temporal revision hash and formula version, plus the independently retained publication context's factor-set ID/hash and price-product code/version. For AS_KNOWN CANONICAL_RAW execution publication-only analytical identities are `NOT_APPLICABLE` with explicit NULL members and no fabricated publication identity. A missing/malformed applicable member is `UNAVAILABLE`, not `NOT_APPLICABLE`, and cannot support non-BLOCKED identity proof. For PUBLICATION_EXACT RAW, immutable RAW input observations alone do not establish a sealed, verified RAW publication. Applicable RAW publication identity must come from an existing supported, selected immutable publication whose binding is verified. Unsupported or unavailable mandatory identity is UNAVAILABLE/BLOCKED, never PASS or NOT_APPLICABLE. Analytical-only members are NOT_APPLICABLE only where the governing frozen RAW contract establishes that applicability, never merely because values are absent. Event-factor replay binding remains distinct from analytical factor-set identity. Expected context remains independently derived from the versioned fixture. This correction creates no RAW publication capability.
+
+`temporal_revision_set_hash` is the selected publication manifest's temporal revision-set identity, not replay `temporal_identity_hash`. `factor_set_hash` is the publication's factor identity, not composite `event_factor_hash`; `formula_version` is a version label, not `formula_registry_hash`. Keep every existing identity independently visible. Product version is retained beside product code; no live default may supply it.
+
+`replay_expected_state.json` retains fixture ID/version/schema and independently authored `expected_context`; its expected publication envelope is `expected_context.expected_publication_manifest_identity` with the same explicit schema and applicability vocabulary, derived from versioned fixture inputs before target execution. Missing expectations remain unavailable; they must not be reconstructed from actual context. `replay_actual_state.json` retains the persisted actual envelope. The state artifacts must expose their exact mode as `replay_mode`; the expected mode is independently declared and persisted in `expected_context.expected_replay_mode`, not copied from actual mode. Declared reason distributions retain their own expected/actual counts, never a success-only substitute. Matching NULLs cannot establish an applicable identity.
+
+File and pack hashes bind the changed serialized artifacts. Existing publication manifests, canonical output hashes, historical replay rows, immutable evidence and approved fixture versions are not rewritten. A changed expected fixture requires a new version and its applicable independent review/admission; candidate-v5 remains immutable.
 
 ## Artifact timestamp rule
 All operator-facing artifact timestamps must be represented consistently in platform timezone or in an explicitly stated alternative representation.

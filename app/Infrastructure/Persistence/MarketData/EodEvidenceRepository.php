@@ -818,6 +818,11 @@ class EodEvidenceRepository
             ->first();
     }
 
+    public function findPublicationSemanticBindings($publicationId)
+    {
+        return DB::table('md_publication_lineage_bindings')->where('publication_id', $publicationId)->first();
+    }
+
     public function findPublicationById($publicationId)
     {
         return DB::table('eod_publications')->where('publication_id', $publicationId)->first();

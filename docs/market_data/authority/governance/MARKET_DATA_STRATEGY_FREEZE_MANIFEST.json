@@ -1,8 +1,8 @@
 {
-  "freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
-  "created_at": "2026-10-05T13:24:10+07:00",
+  "freeze_id": "MD-STRATEGY-FREEZE-20261018-001",
+  "created_at": "2026-10-18T10:53:46+07:00",
   "strategy_document_count": 91,
-  "rule": "The 91 registered documents are the current strategy freeze. Unchanged documents retain prior fingerprints; MD-S082 retains DOC-CHG-20260822-001 and DOC-CHG-20260903-001 and carries the bounded one-key eligibility decision contract version correction recorded by DOC-CHG-20260922-001 / D-MD-B18-A002-006; MD-S085 retains the bounded BAR_ZERO_VOLUME_PRICE_MOVEMENT correction recorded by DOC-CHG-20260823-001 / D-MD-20260823-01; MD-S065 carries the bounded one-line MD-S065-R0003 rerun configuration correction recorded by DOC-CHG-20260925-001 / D-MD-B18-A002-010; MD-S009 MD-S021 and MD-S022 carry the bounded pre-activation freshness correction (freshness state NOT_APPLICABLE) recorded by DOC-CHG-20261005-001 / D-MD-B18-A002-015.",
+  "rule": "The 91 registered documents are the current strategy freeze. Unchanged documents retain prior fingerprints; MD-S082 retains DOC-CHG-20260822-001 and DOC-CHG-20260903-001 and carries the bounded one-key eligibility decision contract version correction recorded by DOC-CHG-20260922-001 / D-MD-B18-A002-006; MD-S085 retains the bounded BAR_ZERO_VOLUME_PRICE_MOVEMENT correction recorded by DOC-CHG-20260823-001 / D-MD-20260823-01; MD-S065 carries the bounded one-line MD-S065-R0003 rerun configuration correction recorded by DOC-CHG-20260925-001 / D-MD-B18-A002-010; MD-S009 MD-S021 and MD-S022 carry the bounded pre-activation freshness correction (freshness state NOT_APPLICABLE) recorded by DOC-CHG-20261005-001 / D-MD-B18-A002-015. DOC-CHG-20261018-001 / D-MD-B19-A001-006 applies the reviewed F010 canonical conflict reason and F011 replay identity alignment, including stable listing/date and fail-closed RAW corrections; unaffected documents retain their fingerprints.",
   "documents": [
     {
       "strategy_id": "MD-S001",
@@ -566,10 +566,10 @@
       "strategy_id": "MD-S063",
       "source_path_before_refactor": "ops/Audit_Evidence_Pack_Contract_LOCKED.md",
       "current_path": "authority/strategy/ops/Audit_Evidence_Pack_Contract_LOCKED.md",
-      "sha1": "0B1739489EA556F9607AF0B962348E9EA6199876",
+      "sha1": "9E3B7364F2560FBE08F8DDF254E37AA37F96C931",
       "authority_status": "CURRENT_STRATEGY_AUTHORITY",
-      "semantic_change": "NONE",
-      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+      "semantic_change": "CONTROLLED_CORRECTION_DOC-CHG-20261018-001",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved. D006 coordinated F010/F011 correction; source obligations rebound and new normative rows separately not assessed."
     },
     {
       "strategy_id": "MD-S064",
@@ -674,10 +674,10 @@
       "strategy_id": "MD-S075",
       "source_path_before_refactor": "ops/Run_Artifacts_Format_LOCKED.md",
       "current_path": "authority/strategy/ops/Run_Artifacts_Format_LOCKED.md",
-      "sha1": "4D5A48BCAE4046BE1385B941DFE566CF5B9672A9",
+      "sha1": "EDC53425EFBF773C4E8F77B8E2387847470F1842",
       "authority_status": "CURRENT_STRATEGY_AUTHORITY",
-      "semantic_change": "NONE",
-      "notes": "Moved byte-for-byte; legacy internal path strings preserved."
+      "semantic_change": "CONTROLLED_CORRECTION_DOC-CHG-20261018-001",
+      "notes": "Moved byte-for-byte; legacy internal path strings preserved. D006 coordinated F010/F011 correction; source obligations rebound and new normative rows separately not assessed."
     },
     {
       "strategy_id": "MD-S076",
@@ -764,10 +764,10 @@
       "strategy_id": "MD-S085",
       "source_path_before_refactor": "registry/Reason_Codes_Registry.md",
       "current_path": "authority/strategy/registry/Reason_Codes_Registry.md",
-      "sha1": "3BB61139B60926D99A7E0940636A830C99627030",
+      "sha1": "D7C4DE1B320E7B098BF85D63A9499F4F4459976F",
       "authority_status": "CURRENT_STRATEGY_AUTHORITY",
-      "semantic_change": "CONTROLLED_CORRECTION_DOC-CHG-20260823-001",
-      "notes": "D-MD-20260823-01 adds only BAR_ZERO_VOLUME_PRICE_MOVEMENT for MD-S023-R0044; no existing reason code changes meaning."
+      "semantic_change": "CONTROLLED_CORRECTION_DOC-CHG-20261018-001",
+      "notes": "D-MD-20260823-01 adds only BAR_ZERO_VOLUME_PRICE_MOVEMENT for MD-S023-R0044; no existing reason code changes meaning. D006 coordinated F010/F011 correction; source obligations rebound and new normative rows separately not assessed."
     },
     {
       "strategy_id": "MD-S086",

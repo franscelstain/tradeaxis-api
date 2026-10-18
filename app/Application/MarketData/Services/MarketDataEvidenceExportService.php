@@ -125,6 +125,9 @@ class MarketDataEvidenceExportService
             'correction_context',
             'lineage',
         ], $completeness['missing_sections'], $runSummary['evidence_export_created_at'] ?? null);
+        $bindingContexts = ['actual' => $this->artifactBindingContext($manifest ? $this->publicationArtifactBindingValues((array) $manifest) : (array) $run,
+            array_keys((array) ($eventSummary['reason_code_counts'] ?? [])), 'verified publication_manifest.json and primary V2 lineage semantic_observation_manifest_hash/semantic_factor_set_hash; run_summary.json/run_event_summary.json', false)];
+        $admission = $this->withArtifactBindingAdmission($admission, $bindingContexts);
         $runSummary['evidence_completeness_state'] = $completeness['evidence_completeness_state'];
         $runSummary['evidence_admission_state'] = $admission['evidence_admission_state'];
         $runSummary['evidence_missing_sections'] = $completeness['missing_sections'];
@@ -154,6 +157,7 @@ class MarketDataEvidenceExportService
 
         $dir = $outputDir ?: $this->defaultRunOutputDir($run->run_id);
         $this->ensureDirectory($dir);
+        $this->assertCompatibleArtifactOutput($dir, 'run', (int) $run->run_id, $manifest === null);
         $this->writeJson($dir.'/run_summary.json', $runSummary);
         if ($manifest) {
             $this->writeJson($dir.'/publication_manifest.json', $manifest);
@@ -164,7 +168,8 @@ class MarketDataEvidenceExportService
         }
         $this->writeCsv($dir.'/eligibility_export.csv', ['trade_date', 'listing_id', 'ticker_id', 'publication_id', 'data_usable', 'reason_codes', 'eligible', 'reason_code'], $eligibilityRows);
         $this->writeCsv($dir.'/invalid_bars_export.csv', ['trade_date', 'listing_id', 'ticker_id', 'source_observation_id', 'source', 'source_row_ref', 'invalid_reason_code'], $invalidBarsRows);
-        file_put_contents($dir.'/anomaly_report.md', $anomalyReport);
+        $this->assertNoSensitiveArtifactContent($anomalyReport);
+        $this->writeArtifactBytes($dir.'/anomaly_report.md', $anomalyReport);
         $this->writeJson($dir.'/lineage.json', $lineage);
         $this->writeJson($dir.'/evidence_admission.json', $admission);
         $this->writeJson($dir.'/evidence_completeness.json', $completeness);
@@ -183,6 +188,9 @@ class MarketDataEvidenceExportService
             'evidence_completeness.json',
             'evidence_pack.json',
         ]));
+
+        $files[] = 'artifact_manifest.json';
+        $this->writeArtifactManifest($dir, $files, 'run', (int) $run->run_id, $bindingContexts);
 
         return [
             'selector' => ['type' => 'run', 'id' => (int) $run->run_id],
@@ -883,12 +891,26 @@ class MarketDataEvidenceExportService
             'comparison_summary' => $this->buildCorrectionComparisonSummary($priorPublication, $newPublication, $changedDecision),
         ];
 
+        $bindingContexts = [];
+        foreach (['baseline' => $priorPublicationId, 'replacement' => $replacementPublicationId] as $side => $selectedId) {
+            if ($side === 'replacement' && $changedDecision === 'UNCHANGED') continue;
+            $selectedManifest = null;
+            if ($selectedId) { try { $selectedManifest = $this->publications->buildManifestByPublicationId((int) $selectedId); } catch (\Throwable $error) { /* legacy absence is not repaired */ } }
+            $bindingContexts[$side] = $this->artifactBindingContext($selectedManifest ? $this->publicationArtifactBindingValues((array) $selectedManifest) : [],
+                array_values(array_filter([$this->field($correction, 'correction_reason_code')])), 'explicit correction '.$side.' publication manifest; correction reason record', false);
+        }
+        $admission = $this->withArtifactBindingAdmission($admission, $bindingContexts);
+        $payload['evidence_admission'] = $admission;
         $dir = $outputDir ?: $this->defaultCorrectionOutputDir($this->field($correction, 'correction_id'));
         $this->ensureDirectory($dir);
+        $this->assertCompatibleArtifactOutput($dir, 'correction', (int) $this->field($correction, 'correction_id'));
         $this->writeJson($dir.'/correction_evidence.json', $payload);
         $this->writeJson($dir.'/evidence_admission.json', $admission);
 
         $files = ['correction_evidence.json', 'evidence_admission.json'];
+
+        $files[] = 'artifact_manifest.json';
+        $this->writeArtifactManifest($dir, $files, 'correction', (int) $this->field($correction, 'correction_id'), $bindingContexts);
 
         return [
             'selector' => ['type' => 'correction', 'id' => (int) $this->field($correction, 'correction_id')],
@@ -922,6 +944,37 @@ class MarketDataEvidenceExportService
         $storedStatus = $this->field($metric, 'replay_status');
         if ($storedStatus !== null && $storedStatus !== '' && $storedStatus !== $classifiedStatus) {
             throw new \RuntimeException('REPLAY_CLASSIFICATION_CONTRADICTION: persisted replay_status disagrees with comparison_result.');
+        }
+        $identityActual = $this->decodeJsonObject($this->field($metric, 'actual_context_json'));
+        if ($this->field($metric, 'replay_mode') === 'AS_KNOWN' && isset($identityActual['actual_publication_manifest_identity']) && $classifiedStatus !== 'BLOCKED') {
+            $identityExpected = $this->decodeJsonObject($this->field($metric, 'expected_context_json'));
+            if (($identityExpected['expected_replay_mode'] ?? null) !== 'AS_KNOWN') throw new \RuntimeException('REPLAY_MANIFEST_IDENTITY_INVALID: AS_KNOWN expected mode is missing or contradictory.');
+            foreach ([[$identityActual['actual_publication_manifest_identity'], $identityActual['actual_publication_context'] ?? []], [$identityExpected['expected_publication_manifest_identity'] ?? [], $identityExpected['expected_publication_context'] ?? []]] as $side) {
+                [$identity, $publication] = $side;
+                if (($identity['schema_version'] ?? null) !== 'replay_publication_manifest_identity_v1' || ($identity['applicability'] ?? null) !== 'NOT_APPLICABLE') throw new \RuntimeException('REPLAY_MANIFEST_IDENTITY_INVALID: AS_KNOWN publication-only identity must be explicitly inapplicable.');
+                foreach (['publication_id', 'publication_manifest_hash', 'temporal_revision_set_hash', 'formula_version'] as $key) if (! array_key_exists($key, $identity) || $identity[$key] !== null) throw new \RuntimeException('REPLAY_MANIFEST_IDENTITY_INVALID: AS_KNOWN must not claim a publication identity.');
+                foreach (['publication_id', 'publication_version', 'publication_manifest_hash', 'price_product_code', 'price_product_version', 'factor_set_id', 'factor_set_hash'] as $key) if (! array_key_exists($key, $publication) || $publication[$key] !== null) throw new \RuntimeException('REPLAY_MANIFEST_IDENTITY_INVALID: AS_KNOWN must not claim publication analytical context.');
+            }
+        }
+        if (($identityActual['replay_artifact_identity_schema_version'] ?? null) === 'replay_artifact_identity_v1' && $classifiedStatus !== 'BLOCKED') {
+            $identityExpected = $this->decodeJsonObject($this->field($metric, 'expected_context_json'));
+            if ($this->field($metric, 'replay_mode') !== 'PUBLICATION_EXACT' || ($identityExpected['expected_replay_mode'] ?? null) !== 'PUBLICATION_EXACT'
+                || $this->field($metric, 'knowledge_cutoff_at') !== null) {
+                throw new \RuntimeException('REPLAY_MANIFEST_IDENTITY_INVALID: publication envelope contradicts mode/cutoff coordinates.');
+            }
+            foreach ([[$identityActual['actual_publication_manifest_identity'] ?? null, $identityActual['actual_publication_context'] ?? []],
+                [$identityExpected['expected_publication_manifest_identity'] ?? null, $identityExpected['expected_publication_context'] ?? []]] as $side) {
+                [$identity, $publication] = $side;
+                if (! is_array($identity) || ($identity['schema_version'] ?? null) !== 'replay_publication_manifest_identity_v1'
+                    || ($identity['applicability'] ?? null) !== 'APPLICABLE' || ! is_int($identity['publication_id'] ?? null) || $identity['publication_id'] <= 0
+                    || ($publication['publication_id'] ?? null) !== $identity['publication_id']
+                    || ($publication['publication_manifest_hash'] ?? null) !== ($identity['publication_manifest_hash'] ?? null)
+                    || preg_match('/^[a-f0-9]{64}$/', (string) ($identity['publication_manifest_hash'] ?? '')) !== 1
+                    || preg_match('/^[a-f0-9]{64}$/', (string) ($identity['temporal_revision_set_hash'] ?? '')) !== 1
+                    || ! is_string($identity['formula_version'] ?? null) || trim($identity['formula_version']) === '') {
+                    throw new \RuntimeException('REPLAY_MANIFEST_IDENTITY_INVALID: persisted v1 publication envelope is missing, malformed or contradicts its publication binding.');
+                }
+            }
         }
 
         $reasonCodes = $this->evidence->replayReasonCodeCounts($metric->replay_id, $metric->trade_date);
@@ -968,7 +1021,74 @@ class MarketDataEvidenceExportService
         } else {
             $replayAdmissionMissing[] = 'replay_mode_invalid_or_historical_unclassified';
         }
+        if ($classifiedStatus === 'FAIL') {
+            $requiredSections = array_merge($requiredSections, ['mismatch_summary', 'mismatch_details', 'mismatch_classification']);
+            $this->markMissingSection($replayAdmissionMissing, 'mismatch_summary', $replayResult['mismatch_summary']);
+            if ($replayResult['mismatches'] === []) $replayAdmissionMissing[] = 'mismatch_details';
+            if ($replayResult['mismatch_reason_codes'] === []) $replayAdmissionMissing[] = 'mismatch_classification';
+        }
+        // Historical comparison PASS is readable; it is not versioned identity evidence.
+        $identityExpected = $this->decodeJsonObject($this->field($metric, 'expected_context_json'));
+        $identityAvailable = $classifiedStatus !== 'BLOCKED'
+            && ($identityExpected['expected_replay_mode'] ?? null) === $mode;
+        if ($mode === 'PUBLICATION_EXACT') {
+            $identityAvailable = $identityAvailable
+                && ($identityActual['replay_artifact_identity_schema_version'] ?? null) === 'replay_artifact_identity_v1'
+                && isset($identityActual['actual_publication_manifest_identity'], $identityExpected['expected_publication_manifest_identity']);
+            foreach ([$identityActual['actual_publication_context'] ?? [], $identityExpected['expected_publication_context'] ?? []] as $context) {
+                $identityAvailable = $identityAvailable && in_array($context['price_product_code'] ?? null, ['STRUCTURAL_ADJUSTED', 'TOTAL_RETURN'], true)
+                    && ! empty($context['price_product_version']) && ! empty($context['factor_set_id'])
+                    && preg_match('/^[a-f0-9]{64}$/', (string) ($context['factor_set_hash'] ?? '')) === 1;
+            }
+        } elseif ($mode === 'AS_KNOWN') {
+            $identityAvailable = $identityAvailable && isset($identityActual['actual_publication_manifest_identity'], $identityExpected['expected_publication_manifest_identity']);
+        } else {
+            $identityAvailable = false;
+        }
+        foreach (['fixture_id', 'fixture_version', 'fixture_schema_version', 'read_model_version'] as $field) {
+            $identityAvailable = $identityAvailable && is_string($this->field($metric, $field)) && trim($this->field($metric, $field)) !== '';
+        }
+        foreach (['source_observation_manifest_hash', 'config_snapshot_hash'] as $field) {
+            $identityAvailable = $identityAvailable && preg_match('/^[a-f0-9]{64}$/', (string) $this->field($metric, $field)) === 1
+                && preg_match('/^[a-f0-9]{64}$/', (string) ($identityExpected['expected_bound_input_context'][$field] ?? '')) === 1;
+        }
+        if ($mode === 'PUBLICATION_EXACT') {
+            $identityAvailable = $identityAvailable && (int) $this->field($metric, 'publication_id') === (int) ($identityActual['actual_publication_manifest_identity']['publication_id'] ?? 0);
+        }
+        if (! $identityAvailable) $replayAdmissionMissing[] = 'replay_artifact_identity';
+        foreach (['actual' => $actualState['coverage'], 'expected' => $expectedState['coverage']] as $side => $coverage) {
+            foreach (['coverage_gate_state', 'coverage_ratio', 'coverage_min_threshold', 'expected_bar_count', 'available_bar_count', 'missing_bar_count', 'coverage_reason_code'] as $field) {
+                $this->markMissingSection($replayAdmissionMissing, $side.'_coverage.'.$field, $coverage[$field] ?? null);
+            }
+        }
+        $requiredSections[] = 'replay_artifact_identity';
         $admission = $this->buildEvidenceAdmission('replay', (int) $metric->replay_id, $requiredSections, $replayAdmissionMissing, $this->evidenceCreatedAtFromRecord($metric));
+        $admission['identity_verification'] = ['schema_version' => 'replay_artifact_identity_v1', 'status' => $identityAvailable ? 'VERIFIED' : 'UNAVAILABLE',
+            'comparison_status' => $replayStatus, 'historical_comparison_implies_identity_verification' => false];
+        $bindingContexts = [
+            'actual' => $this->artifactBindingContext((array) ($identityActual['actual_artifact_semantic_bindings'] ?? []), array_column($reasonCodes, 'reason_code'),
+                'replay_result.json.actual_context.actual_artifact_semantic_bindings; persisted actual_context_json; replay_reason_code_counts.json', $mode === 'AS_KNOWN' && ($identityActual['executed_replay']['execution_scope'] ?? null) === 'CANONICAL_RAW'),
+            'expected' => $this->artifactBindingContext((array) ($identityExpected['expected_artifact_semantic_bindings'] ?? []), $this->field($metric, 'expected_reason_code_counts_json') !== null ? array_column($expectedReasonCodeCounts, 'reason_code') : null,
+                'replay_expected_state.json.expected_context.expected_artifact_semantic_bindings; independently versioned fixture; expected reason distribution', $mode === 'AS_KNOWN' && ($identityExpected['executed_replay']['execution_scope'] ?? null) === 'CANONICAL_RAW'),
+        ];
+        foreach (['actual' => $identityActual, 'expected' => $identityExpected] as $side => $context) {
+            $envelope = $context[$side.'_publication_manifest_identity'] ?? [];
+            $pub = $context[$side.'_publication_context'] ?? [];
+            $bound = $side === 'actual' ? ['config_snapshot_hash' => $this->field($metric, 'config_snapshot_hash'),
+                'observation_manifest_hash' => $this->field($metric, 'source_observation_manifest_hash'), 'read_model_version' => $this->field($metric, 'read_model_version')]
+                : ['config_snapshot_hash' => $context['expected_bound_input_context']['config_snapshot_hash'] ?? null,
+                'observation_manifest_hash' => $context['expected_bound_input_context']['source_observation_manifest_hash'] ?? null, 'read_model_version' => $context['expected_bound_input_context']['read_model_version'] ?? null];
+            $anchors = array_merge($bound, array_intersect_key($envelope, array_flip(['publication_id', 'publication_manifest_hash', 'temporal_revision_set_hash', 'formula_version'])),
+                array_intersect_key($pub, array_flip(['factor_set_id', 'factor_set_hash', 'price_product_code', 'price_product_version'])));
+            foreach ($anchors as $field => $value) if (isset($bindingContexts[$side]['bindings'][$field]) && $bindingContexts[$side]['bindings'][$field]['status'] !== 'NOT_APPLICABLE'
+                && $bindingContexts[$side]['bindings'][$field]['value'] !== $value) {
+                $bindingContexts[$side]['bindings'][$field]['status'] = 'UNAVAILABLE';
+                $bindingContexts[$side]['bindings'][$field]['conflict'] = 'contradicts its own persisted '.$side.' context';
+                $bindingContexts[$side]['missing_required_bindings'][] = $field;
+                $bindingContexts[$side]['status'] = 'INCOMPLETE';
+            }
+        }
+        $admission = $this->withArtifactBindingAdmission($admission, $bindingContexts);
         $summary['evidence_admission_state'] = $admission['evidence_admission_state'];
         $payload = [
             'evidence_admission' => $admission,
@@ -981,6 +1101,7 @@ class MarketDataEvidenceExportService
 
         $dir = $outputDir ?: $this->defaultReplayOutputDir($metric->replay_id, $metric->trade_date);
         $this->ensureDirectory($dir);
+        $this->assertCompatibleArtifactOutput($dir, 'replay', (int) $metric->replay_id);
         $this->writeJson($dir.'/replay_result.json', $replayResult);
         $this->writeJson($dir.'/replay_expected_state.json', $expectedState);
         $this->writeJson($dir.'/replay_actual_state.json', $actualState);
@@ -996,6 +1117,9 @@ class MarketDataEvidenceExportService
             'evidence_admission.json',
             'replay_evidence_pack.json',
         ];
+
+        $files[] = 'artifact_manifest.json';
+        $this->writeArtifactManifest($dir, $files, 'replay', (int) $metric->replay_id, $bindingContexts);
 
         return [
             'selector' => ['type' => 'replay', 'id' => (int) $metric->replay_id],
@@ -1922,7 +2046,7 @@ class MarketDataEvidenceExportService
                 'temporal_identity_hash' => $this->field($metric, 'temporal_identity_hash'),
                 'calendar_status_hash' => $this->field($metric, 'calendar_status_hash'),
                 'event_factor_hash' => $this->field($metric, 'event_factor_hash'),
-                'config_snapshot_id' => $this->field($metric, 'config_snapshot_id'),
+                'config_snapshot_id' => $this->field($metric, 'config_snapshot_id') !== null ? (int) $this->field($metric, 'config_snapshot_id') : null,
                 'config_snapshot_hash' => $this->field($metric, 'config_snapshot_hash'),
                 'formula_registry_hash' => $this->field($metric, 'formula_registry_hash'),
                 'reason_registry_hash' => $this->field($metric, 'reason_registry_hash'),
@@ -1999,6 +2123,7 @@ class MarketDataEvidenceExportService
     private function buildReplayExpectedState($metric, array $expectedReasonCodeCounts)
     {
         return [
+            'replay_mode' => ($this->decodeJsonObject($this->field($metric, 'expected_context_json')))['expected_replay_mode'] ?? null,
             'fixture_id' => $this->field($metric, 'fixture_id'),
             'fixture_version' => $this->field($metric, 'fixture_version'),
             'fixture_schema_version' => $this->field($metric, 'fixture_schema_version'),
@@ -2025,6 +2150,7 @@ class MarketDataEvidenceExportService
     private function buildReplayActualState($metric, array $reasonCodes)
     {
         return [
+            'replay_mode' => $this->field($metric, 'replay_mode'),
             'actual_context' => $this->decodeJsonObject($this->field($metric, 'actual_context_json')),
             'status' => $metric->status,
             'terminal_status' => $metric->status,
@@ -2221,6 +2347,21 @@ class MarketDataEvidenceExportService
     }
 
 
+    private function persistedCoverageExpectedCount($record, $side)
+    {
+        $column = $side === 'expected' ? 'expected_coverage_expected_count' : 'coverage_expected_count';
+        $value = $this->field($record, $column);
+        if ($value === null && property_exists($record, $side.'_context_json')) {
+            $context = $this->decodeJsonObject($this->field($record, $side.'_context_json'));
+            $value = $context[$side.'_coverage_context']['coverage_expected_count'] ?? null;
+        }
+        if ($value === null) return null; // historical absence stays unavailable
+        if (! is_numeric($value) || (float) $value !== (float) (int) $value || (int) $value < 0) {
+            throw new \RuntimeException('REPLAY_COVERAGE_CONTEXT_INVALID: persisted expected count is not a nonnegative integer.');
+        }
+        return (int) $value;
+    }
+
     private function buildCoverageState($record)
     {
         $coverageGateState = CoverageGateStateNormalizer::normalize($record->coverage_gate_state ?? null);
@@ -2240,14 +2381,14 @@ class MarketDataEvidenceExportService
             'coverage_universe_count' => isset($record->coverage_universe_count) && $record->coverage_universe_count !== null ? (int) $record->coverage_universe_count : null,
             'coverage_universe_hash' => isset($record->coverage_universe_hash) && $record->coverage_universe_hash !== null ? (string) $record->coverage_universe_hash : null,
             'coverage_excluded_sample_json' => $excludedSample,
-            'coverage_expected_count' => isset($record->coverage_expected_count) && $record->coverage_expected_count !== null ? (int) $record->coverage_expected_count : null,
+            'coverage_expected_count' => $this->persistedCoverageExpectedCount($record, 'actual'),
             'coverage_delivered_count' => isset($record->coverage_delivered_count) && $record->coverage_delivered_count !== null ? (int) $record->coverage_delivered_count : null,
             'coverage_delivered_valid_count' => isset($record->coverage_delivered_valid_count) && $record->coverage_delivered_valid_count !== null ? (int) $record->coverage_delivered_valid_count : null,
             'coverage_available_count' => isset($record->coverage_available_count) && $record->coverage_available_count !== null ? (int) $record->coverage_available_count : null,
             'coverage_missing_count' => isset($record->coverage_missing_count) && $record->coverage_missing_count !== null ? (int) $record->coverage_missing_count : null,
             'coverage_bar_not_expected_count' => isset($record->coverage_bar_not_expected_count) && $record->coverage_bar_not_expected_count !== null ? (int) $record->coverage_bar_not_expected_count : null,
             'coverage_expectation_unknown_count' => isset($record->coverage_expectation_unknown_count) && $record->coverage_expectation_unknown_count !== null ? (int) $record->coverage_expectation_unknown_count : null,
-            'expected_bar_count' => isset($record->coverage_expected_count) && $record->coverage_expected_count !== null ? (int) $record->coverage_expected_count : null,
+            'expected_bar_count' => $this->persistedCoverageExpectedCount($record, 'actual'),
             'available_bar_count' => isset($record->coverage_available_count) && $record->coverage_available_count !== null ? (int) $record->coverage_available_count : null,
             'missing_bar_count' => isset($record->coverage_missing_count) && $record->coverage_missing_count !== null ? (int) $record->coverage_missing_count : null,
             'coverage_ratio' => isset($record->coverage_ratio) && $record->coverage_ratio !== null ? (float) $record->coverage_ratio : null,
@@ -2306,10 +2447,10 @@ class MarketDataEvidenceExportService
 
         return [
             'coverage_universe_count' => isset($record->expected_coverage_universe_count) && $record->expected_coverage_universe_count !== null ? (int) $record->expected_coverage_universe_count : null,
-            'coverage_expected_count' => isset($record->expected_coverage_expected_count) && $record->expected_coverage_expected_count !== null ? (int) $record->expected_coverage_expected_count : null,
+            'coverage_expected_count' => $this->persistedCoverageExpectedCount($record, 'expected'),
             'coverage_available_count' => isset($record->expected_coverage_available_count) && $record->expected_coverage_available_count !== null ? (int) $record->expected_coverage_available_count : null,
             'coverage_missing_count' => isset($record->expected_coverage_missing_count) && $record->expected_coverage_missing_count !== null ? (int) $record->expected_coverage_missing_count : null,
-            'expected_bar_count' => isset($record->expected_coverage_expected_count) && $record->expected_coverage_expected_count !== null ? (int) $record->expected_coverage_expected_count : null,
+            'expected_bar_count' => $this->persistedCoverageExpectedCount($record, 'expected'),
             'available_bar_count' => isset($record->expected_coverage_available_count) && $record->expected_coverage_available_count !== null ? (int) $record->expected_coverage_available_count : null,
             'missing_bar_count' => isset($record->expected_coverage_missing_count) && $record->expected_coverage_missing_count !== null ? (int) $record->expected_coverage_missing_count : null,
             'coverage_ratio' => isset($record->expected_coverage_ratio) && $record->expected_coverage_ratio !== null ? (float) $record->expected_coverage_ratio : null,
@@ -2475,14 +2616,139 @@ class MarketDataEvidenceExportService
         return $run->trade_date_effective ?: $run->trade_date_requested;
     }
 
+
+    /** Diagnostic companion: hashes serialized files, never mutates publication/canonical hashes. */
+    private function writeArtifactManifest($dir, array $files, $type, $id, array $contexts)
+    {
+        $members = [];
+        foreach ($files as $file) {
+            if ($file === 'artifact_manifest.json') continue; // no circular self-hash
+            $refs = array_keys($contexts);
+            if ($type === 'replay' && $file === 'replay_expected_state.json') $refs = ['expected'];
+            elseif ($type === 'replay' && in_array($file, ['replay_actual_state.json', 'replay_reason_code_counts.json'], true)) $refs = ['actual'];
+            $members[$file] = ['sha256' => hash_file('sha256', $dir.'/'.$file), 'bytes' => filesize($dir.'/'.$file),
+                'binding_refs' => array_map(function ($side) { return '#/binding_contexts/'.$side; }, $refs)];
+        }
+        $timezone = (string) $this->configValue('market_data.platform.timezone', 'Asia/Jakarta');
+        new \DateTimeZone($timezone);
+        $this->writeJson($dir.'/artifact_manifest.json', [
+            'schema_version' => 'artifact_file_manifest_v1', 'selector' => ['type' => $type, 'id' => $id],
+            'timestamp_context' => ['platform_timezone' => $timezone,
+                'representation' => 'platform timezone for offset-free database timestamps; explicit offsets retained as stated alternatives'],
+            'files' => $members, 'binding_contexts' => $contexts, 'self_hash' => 'excluded; bound by the enclosing review/package inventory',
+        ]);
+    }
+
+    private function assertCompatibleArtifactOutput($dir, $type, $id, $publicationAbsent = false)
+    {
+        $manifest = $dir.'/artifact_manifest.json';
+        if (is_file($manifest)) {
+            $prior = json_decode(file_get_contents($manifest), true);
+            if (($prior['selector']['type'] ?? null) !== $type || ($prior['selector']['id'] ?? null) !== $id) {
+                throw new \RuntimeException('EVIDENCE_OUTPUT_CONFLICT: use a fresh directory for a different evidence selector.');
+            }
+        }
+        $foreign = $type === 'run' ? ['replay_result.json', 'correction_evidence.json']
+            : ($type === 'replay' ? ['run_summary.json', 'publication_manifest.json', 'correction_evidence.json'] : ['run_summary.json', 'replay_result.json']);
+        if ($publicationAbsent) $foreign[] = 'publication_manifest.json';
+        foreach ($foreign as $file) if (is_file($dir.'/'.$file)) {
+            throw new \RuntimeException('EVIDENCE_OUTPUT_CONFLICT: stale artifact belongs to another or inapplicable evidence scope; preserve it and use a fresh directory.');
+        }
+    }
+
+    /** Refuse disclosure; do not rewrite persisted audit facts or log the offending value. */
+    private function assertNoSensitiveArtifactContent($value)
+    {
+        if (is_array($value) || is_object($value)) {
+            foreach ((array) $value as $key => $child) {
+                $name = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', (string) $key));
+                if (in_array($name, ['credentials', 'secret', 'secrets', 'authtoken', 'internaltoken', 'password', 'passwd', 'accesstoken', 'refreshtoken', 'authorization', 'apikey', 'clientsecret', 'privatekey', 'internalsensitivetoken'], true)
+                    && $child !== null && $child !== '' && $child !== []) {
+                    throw new \RuntimeException('EVIDENCE_SENSITIVE_CONTENT: sensitive audit input refused.');
+                }
+                $this->assertNoSensitiveArtifactContent($child);
+            }
+        } elseif (is_string($value) && (preg_match('~[a-z][a-z0-9+.-]*://[^\s/@]+@|\bBearer\s+[a-z0-9._\~+/-]+~i', $value)
+            || preg_match('~\b(?:password|passwd|access_token|refresh_token|api_key|client_secret|internal_sensitive_token)\b["\x27\\]*\s*[:=]\s*[^\s,;}]+~i', $value))) {
+            throw new \RuntimeException('EVIDENCE_SENSITIVE_CONTENT: sensitive audit input refused.');
+        }
+    }
+
+    private function writeArtifactBytes($path, $bytes)
+    {
+        if (is_file($path)) {
+            if (hash_equals(hash_file('sha256', $path), hash('sha256', $bytes))) return;
+            throw new \RuntimeException('EVIDENCE_ARTIFACT_IMMUTABLE: preserve prior bytes and use a fresh output directory.');
+        }
+        file_put_contents($path, $bytes);
+    }
+
+    private function publicationArtifactBindingValues(array $manifest)
+    {
+        try { $verifiedManifest = ! empty($manifest['publication_id']) && $this->publications->assertPublicationManifestHashValid((int) $manifest['publication_id']); }
+        catch (\Throwable $error) { $verifiedManifest = false; }
+        if (! $verifiedManifest) return array_intersect_key($manifest, array_flip(['run_id', 'publication_id']));
+
+        if (($manifest['artifact_hash_profile'] ?? null) !== ArtifactSemanticHashService::PROFILE_V2) return $manifest;
+        $lineage = null;
+        try { $lineage = $this->evidence->findPublicationSemanticBindings((int) $manifest['publication_id']); } catch (\Throwable $error) { /* unavailable, never V1 fallback */ }
+        $verified = ($manifest['bound_input_context']['status'] ?? null) === 'VERIFIED'
+            && ($lineage->semantic_nested_identity_version ?? null) === SemanticNestedIdentityService::VERSION;
+        $manifest['observation_manifest_hash'] = $verified ? ($lineage->semantic_observation_manifest_hash ?? null) : null;
+        $manifest['factor_set_hash'] = $verified ? ($lineage->semantic_factor_set_hash ?? null) : null;
+        return $manifest;
+    }
+
+    private function artifactBindingContext(array $values, $reasons, $source, $asKnown)
+    {
+        $fields = ['run_id', 'publication_id', 'publication_manifest_hash', 'observation_manifest_hash', 'config_snapshot_id', 'config_snapshot_hash',
+            'temporal_revision_set_hash', 'factor_set_id', 'factor_set_hash', 'price_product_code', 'price_product_version',
+            'canonicalization_version', 'formula_version', 'config_registry_revision', 'read_model_version', 'trade_date_requested', 'trade_date_effective', 'readiness_state', 'freshness_state'];
+        $publicationOnly = ['publication_id', 'publication_manifest_hash', 'temporal_revision_set_hash', 'factor_set_id', 'factor_set_hash', 'price_product_code', 'price_product_version', 'formula_version'];
+        $bindings = []; $missing = [];
+        foreach ($fields as $field) {
+            $value = $values[$field] ?? null;
+            $inapplicable = $asKnown && in_array($field, $publicationOnly, true);
+            // Only the frozen AS_KNOWN CANONICAL_RAW rule establishes these inapplicabilities.
+            $available = is_string($value) && trim($value) !== '';
+            if (substr($field, -5) === '_hash') $available = is_string($value) && preg_match('/^[a-f0-9]{64}$/', $value) === 1;
+            if (substr($field, -3) === '_id') { $available = (is_int($value) || (is_string($value) && ctype_digit($value))) && (int) $value > 0; if ($available) $value = (int) $value; }
+            if ($inapplicable && $value !== null) $available = false;
+            $status = $inapplicable && $value === null ? 'NOT_APPLICABLE' : ($available ? 'AVAILABLE' : 'UNAVAILABLE');
+            if ($status === 'UNAVAILABLE') $missing[] = $field;
+            $bindings[$field] = ['applicability' => $inapplicable ? 'NOT_APPLICABLE' : 'REQUIRED', 'status' => $status, 'value' => $value, 'source' => $source];
+        }
+        $reasonsAvailable = is_array($reasons);
+        $reasons = $reasonsAvailable ? array_values(array_unique($reasons)) : null; if ($reasonsAvailable) sort($reasons, SORT_STRING);
+        if (! $reasonsAvailable) $missing[] = 'reason_codes';
+        $bindings['reason_codes'] = ['applicability' => 'REQUIRED', 'status' => $reasonsAvailable ? 'AVAILABLE' : 'UNAVAILABLE', 'value' => $reasons, 'source' => $source.'; complete declared reason distribution'];
+        return ['schema_version' => 'artifact_semantic_bindings_v1', 'status' => $missing ? 'INCOMPLETE' : 'COMPLETE', 'missing_required_bindings' => $missing, 'bindings' => $bindings];
+    }
+
+    private function withArtifactBindingAdmission(array $admission, array $contexts)
+    {
+        foreach ($contexts as $side => $context) {
+            foreach ($context['missing_required_bindings'] as $field) $admission['missing_sections'][] = 'artifact_bindings.'.$side.'.'.$field;
+        }
+        $admission['missing_sections'] = array_values(array_unique($admission['missing_sections']));
+        $admission['critical_missing_sections'] = $admission['missing_sections'];
+        $admission['evidence_admission_state'] = $admission['missing_sections'] ? 'ADMITTED_INCOMPLETE' : 'ADMITTED_COMPLETE';
+        $admission['evidence_admission_reason_code'] = $admission['missing_sections'] ? 'EVIDENCE_ADMISSION_INCOMPLETE' : 'EVIDENCE_ADMISSION_COMPLETE';
+        return $admission;
+    }
+
     private function writeJson($path, array $payload)
     {
-        file_put_contents($path, json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        $this->assertNoSensitiveArtifactContent($payload);
+        $bytes = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        if ($bytes === false) throw new \RuntimeException('EVIDENCE_JSON_ENCODING_FAILED');
+        $this->writeArtifactBytes($path, $bytes);
     }
 
     private function writeCsv($path, array $headers, array $rows)
     {
-        $handle = fopen($path, 'w');
+        $this->assertNoSensitiveArtifactContent($rows);
+        $handle = fopen('php://temp', 'w+');
         fputcsv($handle, $headers);
         foreach ($rows as $row) {
             $line = [];
@@ -2491,7 +2757,10 @@ class MarketDataEvidenceExportService
             }
             fputcsv($handle, $line);
         }
+        rewind($handle);
+        $bytes = stream_get_contents($handle);
         fclose($handle);
+        $this->writeArtifactBytes($path, $bytes);
     }
 
     private function ensureDirectory($dir)

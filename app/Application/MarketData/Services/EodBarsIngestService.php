@@ -237,7 +237,7 @@ class EodBarsIngestService
                 );
             }
 
-            $key = $row['trade_date'].'|'.$tickerId;
+            $key = $row['trade_date'].'|'.(! empty($row['listing_id']) ? 'listing:'.$row['listing_id'] : 'unresolved:'.$tickerId.'|'.($row['source_row_ref'] ?? ''));
 
             if (isset($conflictingDuplicateKeys[$key])) {
                 $duplicateLosers[] = $row + [
@@ -556,7 +556,7 @@ class EodBarsIngestService
                 );
             }
 
-            $key = $row['trade_date'].'|'.$tickerId;
+            $key = $row['trade_date'].'|'.(! empty($row['listing_id']) ? 'listing:'.$row['listing_id'] : 'unresolved:'.$tickerId.'|'.($row['source_row_ref'] ?? ''));
 
             if (isset($conflictingDuplicateKeys[$key])) {
                 $duplicateLosers[] = $row + [

@@ -155,3 +155,15 @@
 - Scope limit: no application code, schema, migration, runtime configuration, PHPUnit test, candidate package or expected hash changes. No degraded condition is declared. No B10-owned strategy row changed.
 - Freeze impact: successor freeze `MD-STRATEGY-FREEZE-20261005-001`; only the registered `MD-S009`, `MD-S021` and `MD-S022` fingerprints change.
 - Verification impact: `MD-S009-R0002` and `MD-S021-R0027` changed text and were `SATISFIED` under `E-MD-B17-A002-001`; they are `NOT_ASSESSED`, the predecessor basis kept audit-only. Eleven new mandatory `MD-S022` rows (`R0040`-`R0042`, `R0045`-`R0052`) and two reference rows are not assessed. `MD-B17` is therefore `244/257` and needs a successor attempt; its other 244 rows keep their predecessor-freeze basis. `MD-B10`: no row text changed; bounded producer remediation and revalidation of `MD-S005-R0056`, `MD-S005-R0071`, `MD-S045-R0058` are required before candidate-v4 and before any conformance claim for pre-activation freshness (`F-MD-B18-A002-033`, `E-MD-B18-A002-098`). Prior evidence is unaffected and stays immutable under the predecessor freeze.
+
+## DOC-CHG-20261018-001 — Reviewed F010/F011 reason and replay identity correction
+
+- Findings/evidence: F-MD-B19-A001-010, F-MD-B19-A001-011; E015–E019; application and source impact in E-MD-B19-A001-020.
+- Reviewed decisions and explicit authorization: D005 and D006; owner reports external conditional review, accepts stable E019 bases, confirms RAW fail-closed correction and withdraws external delivery prerequisites. No unavailable reviewer artifact/identity is invented.
+- Strategy changes: MD-S085 adds distinct BAR/HARD stable-listing/date conflict rejection; MD-S075 sections 8–10 preserve persisted/nested names, independent context, versioned publication-bound capture and fail-closed RAW applicability; MD-S063 aligns the replay pack. Original/replacement bytes and SHA256 are retained in reviewed_revision_manifest.json.
+- Freeze: MD-STRATEGY-FREEZE-20261005-001 -> MD-STRATEGY-FREEZE-20261018-001; only three strategy hashes change.
+- Verification impact: all existing mandatory IDs retained, unchanged meanings/source paths carry 178 earlier bases by explicit equivalence, no formal SATISFIED promotion; changed R0259 and eleven mapping fields had no prior basis. Reference-only removed illustrations are retained in source_rebinding.json, not silently treated as proof. 7 new compound normative rows are NOT_ASSESSED; B19 denominator recomputed to 750. Future seed/runtime changes require targeted revalidation and MD-DEP-0025 inventory. B18 historical validity, candidate-v5 and immutable evidence preserved; no candidate-v6.
+
+## 2026-10-19 — E022 proof and implementation checkpoint
+
+D007 records owner companion-carrier direction. No frozen strategy-byte change; freeze MD-STRATEGY-FREEZE-20261018-001 retained. Runtime identity/evidence admission correction and per-artifact immutable binding implementation verified; 50 new individually mapped bases, 64 prior replay bases impact-revalidated, other 142 retained. E022 records exact execution/inventory; no formal SATISFIED or B19 closure.

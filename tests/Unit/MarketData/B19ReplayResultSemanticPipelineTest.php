@@ -123,8 +123,8 @@ class B19ReplayResultSemanticPipelineTest extends TestCase
         $this->world($actualChange);
         [$metric, $row, $result] = $this->execute($fixture);
         foreach ([$metric, (array) $row, $result] as $stage) {
-            $this->assertSame($comparison, $stage['comparison_result']);
-            $this->assertSame($status, $stage['replay_status']);
+            $this->assertSame('NOT_ADMISSIBLE', $stage['comparison_result'], 'legacy fixture has no verified publication-manifest prerequisites under D006');
+            $this->assertSame('BLOCKED', $stage['replay_status']);
             $this->assertSame('SUCCESS', $stage['status'], 'run status is separate from replay classification');
         }
         if ($expectedClass === 'EXPECTED_DEGRADE') {
@@ -180,8 +180,8 @@ class B19ReplayResultSemanticPipelineTest extends TestCase
         $literal = json_decode(file_get_contents($fixture.'/expected/expected_replay_result.json'), true);
         $this->world();
         [$metric, $row, $result, $expected] = $this->execute($fixture);
-        $this->assertSame('MISMATCH', $metric['comparison_result']);
-        $this->assertSame('FAIL', $result['replay_status']);
+        $this->assertSame('NOT_ADMISSIBLE', $metric['comparison_result']);
+        $this->assertSame('BLOCKED', $result['replay_status']);
         foreach ([$row, (object) $result] as $state) {
             $this->assertSame('b19-semantic-comparison-context', $state->fixture_id);
             $this->assertSame('b19-v2', $state->fixture_version);
@@ -233,7 +233,7 @@ class B19ReplayResultSemanticPipelineTest extends TestCase
         $metric['comparison_result'] = $comparison;
         $metric['replay_status'] = $status;
         $this->assertClassificationRefused(function () use ($metric) { (new ReplayResultRepository())->upsertMetric($metric); });
-        $this->assertSame('PASS', DB::table('md_replay_daily_metrics')->where('replay_id', 6191)->value('replay_status'));
+        $this->assertSame('BLOCKED', DB::table('md_replay_daily_metrics')->where('replay_id', 6191)->value('replay_status'));
     }
 
     /** @dataProvider invalidPairs */
@@ -265,7 +265,12 @@ class B19ReplayResultSemanticPipelineTest extends TestCase
         $fixture = $this->fixture();
         $this->world();
         [$metric] = $this->execute($fixture);
-        DB::table('md_replay_daily_metrics')->where('replay_id', 6191)->update(['replay_status' => null]);
+        // Explicit pre-D006 historical row, not a new v1 identity proof. Never backfill its context.
+        $legacyActual = json_decode($metric['actual_context_json'], true);
+        unset($legacyActual['replay_artifact_identity_schema_version'], $legacyActual['actual_publication_manifest_identity']);
+        $metric['actual_context_json'] = json_encode($legacyActual);
+        $metric['comparison_result'] = 'MATCH';
+        DB::table('md_replay_daily_metrics')->where('replay_id', 6191)->update(['comparison_result' => 'MATCH', 'replay_status' => null, 'actual_context_json' => $metric['actual_context_json']]);
         $dir = sys_get_temp_dir().'/b19_legacy_status_'.uniqid('', true);
         $this->paths[] = $dir;
         $this->exporter()->exportReplayEvidence(6191, '2026-03-20', $dir);

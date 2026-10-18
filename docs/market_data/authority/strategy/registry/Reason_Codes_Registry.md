@@ -199,6 +199,7 @@ This registry is intentionally upstream-only. It does not encode watchlist score
 | `RUN_SOURCE_MODE_UNSUPPORTED` | RUN | HARD | The requested source mode is not supported by the selected source adapter. |
 | `RUN_SOURCE_MALFORMED_PAYLOAD` | RUN | HARD | The source payload could not be normalized safely. |
 | `BAR_DUPLICATE_SOURCE_ROW` | BAR | WARN | More than one accepted source observation mapped to the same canonical `(trade_date, listing_id)` identity. Duplicate resolution must preserve every immutable observation and choose the canonical revision deterministically; `ticker_id` may appear only as a compatibility projection. |
+| `BAR_CONFLICTING_SOURCE_ROWS` | BAR | HARD | Conflicting, non-equivalent source observations for the same resolved stable listing/trade-date identity where no canonical winner can safely be determined; ticker text alone does not define conflict identity. Reject the conflicting observations from canonical bars and preserve rejected audit evidence with exact source provenance. This is distinct from deterministic duplicate resolution under `BAR_DUPLICATE_SOURCE_ROW`. |
 | `BAR_INVALID_OHLC_ORDER` | BAR | HARD | Received OHLC values violated canonical ordering rules. |
 | `BAR_NON_POSITIVE_PRICE` | BAR | HARD | Received price value was zero or negative in a field that must be positive. |
 | `BAR_NEGATIVE_VOLUME` | BAR | HARD | Received volume value was negative. |

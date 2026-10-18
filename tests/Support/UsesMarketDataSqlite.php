@@ -406,6 +406,7 @@ trait UsesMarketDataSqlite
             ['AUTHORITATIVE_TRADING_STATUS_TRANSITIONS_VALIDATED', 'STATUS', 'The official IDX suspension-transition search was captured and validated through the measured frontier.', 'INFO', 1],
             ['AUTHORITATIVE_TRADING_STATUS_VALIDATED', 'STATUS', 'An official IDX long-suspension snapshot was captured and validated against its declared as-of scope.', 'INFO', 1],
             ['BAR_DUPLICATE_SOURCE_ROW', 'BAR', 'More than one source row mapped to the same (trade_date, ticker_id), requiring deterministic winner selection.', 'WARN', 1],
+            ['BAR_CONFLICTING_SOURCE_ROWS', 'BAR', 'Conflicting non-equivalent observations for the same resolved stable listing/trade-date identity with no safe canonical winner; preserve rejected audit evidence. Distinct from deterministic duplicate resolution.', 'HARD', 1],
             ['BAR_INVALID_OHLC_ORDER', 'BAR', 'Received OHLC values violated canonical ordering rules.', 'HARD', 1],
             ['BAR_MISSING_REQUIRED_FIELD', 'BAR', 'One or more mandatory source fields were missing.', 'HARD', 1],
             ['BAR_NEGATIVE_VOLUME', 'BAR', 'Received volume value was negative.', 'HARD', 1],

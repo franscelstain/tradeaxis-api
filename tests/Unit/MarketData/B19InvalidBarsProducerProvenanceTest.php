@@ -180,7 +180,7 @@ class B19InvalidBarsProducerProvenanceTest extends TestCase
     }
 
     /** Current bounded defect: the conflict path emits a reason absent from the locked registry. */
-    public function test_conflicting_source_rows_expose_the_unregistered_reason_owner_gap(): void
+    public function test_conflicting_source_rows_use_the_approved_distinct_registered_reason(): void
     {
         $this->ingest([
             $this->row(['ticker_code' => 'CLEAN', 'source_row_ref' => 'ref_clean', 'source_observation_id' => 9001]),
@@ -190,8 +190,8 @@ class B19InvalidBarsProducerProvenanceTest extends TestCase
         $this->assertSame([1], array_column($this->captured['valid'], 'ticker_id'));
         $this->assertSame(['BAR_CONFLICTING_SOURCE_ROWS', 'BAR_CONFLICTING_SOURCE_ROWS'], array_column($this->captured['invalid'], 'invalid_reason_code'));
         $registry = (string) file_get_contents(dirname(__DIR__, 3).'/docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md');
-        $this->assertFalse(strpos($registry, '`BAR_CONFLICTING_SOURCE_ROWS`'), 'the code has no locked registry entry; do not admit the reason predicate');
+        $this->assertNotFalse(strpos($registry, '| `BAR_CONFLICTING_SOURCE_ROWS` | BAR | HARD |'), 'D006 approved distinct BAR/HARD conflict semantics');
         $seed = (string) file_get_contents(dirname(__DIR__, 3).'/docs/market_data/development/implementation/db/registry/Reason_Codes_Seed.sql');
-        $this->assertFalse(strpos($seed, "('BAR_CONFLICTING_SOURCE_ROWS',"), 'the code has no executable registry seed');
+        $this->assertNotFalse(strpos($seed, "('BAR_CONFLICTING_SOURCE_ROWS', 'BAR',"), 'the distinct reason is seeded');
     }
 }

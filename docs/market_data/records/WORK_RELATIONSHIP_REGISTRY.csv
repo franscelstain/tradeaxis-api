@@ -1946,3 +1946,33 @@ MD-REL-1948,E-MD-B19-A001-018,F-MD-B19-A001-010,RELATED,Independent invalid-bars
 MD-REL-1949,E-MD-B19-A001-018,D-MD-B19-A001-001,DEPENDS_ON,O1 permits sixth executable-build change before final refreeze.,D-MD-B19-A001-001,2026-10-17T23:33:00+07:00,MD-B19-A001 semantic replay proof.
 MD-REL-1950,F-MD-B19-A001-012,CI-MD-B19-A001-001,RELATED,Resolved defect within declared replay export and persistence scope.,,2026-10-17T23:33:00+07:00,MD-B19-A001 semantic replay proof.
 MD-REL-1951,F-MD-B19-A001-011,E-MD-B19-A001-018,RELATED,Decision readiness and two independent semantic proofs.,,2026-10-17T23:33:00+07:00,MD-B19-A001 semantic replay proof.
+MD-REL-1952,D-MD-B19-A001-005,F-MD-B19-A001-010,RELATED,"Approved choices, retained evidence and stable proof scope; no strategy application.",,2026-10-18T09:41:43+07:00,MD-B19-A001 coordinated authority-review checkpoint.
+MD-REL-1953,D-MD-B19-A001-005,F-MD-B19-A001-011,RELATED,"Approved choices, retained evidence and stable proof scope; no strategy application.",,2026-10-18T09:41:43+07:00,MD-B19-A001 coordinated authority-review checkpoint.
+MD-REL-1954,D-MD-B19-A001-005,E-MD-B19-A001-015,DEPENDS_ON,"Approved choices, retained evidence and stable proof scope; no strategy application.",,2026-10-18T09:41:43+07:00,MD-B19-A001 coordinated authority-review checkpoint.
+MD-REL-1955,D-MD-B19-A001-005,E-MD-B19-A001-017,DEPENDS_ON,"Approved choices, retained evidence and stable proof scope; no strategy application.",,2026-10-18T09:41:43+07:00,MD-B19-A001 coordinated authority-review checkpoint.
+MD-REL-1956,D-MD-B19-A001-005,E-MD-B19-A001-018,DEPENDS_ON,"Approved choices, retained evidence and stable proof scope; no strategy application.",,2026-10-18T09:41:43+07:00,MD-B19-A001 coordinated authority-review checkpoint.
+MD-REL-1957,D-MD-B19-A001-005,D-MD-B19-A001-001,DEPENDS_ON,"Approved choices, retained evidence and stable proof scope; no strategy application.",,2026-10-18T09:41:43+07:00,MD-B19-A001 coordinated authority-review checkpoint.
+MD-REL-1958,E-MD-B19-A001-019,D-MD-B19-A001-005,DEPENDS_ON,"Approved choices, retained evidence and stable proof scope; no strategy application.",D-MD-B19-A001-005,2026-10-18T09:41:43+07:00,MD-B19-A001 coordinated authority-review checkpoint.
+MD-REL-1959,E-MD-B19-A001-019,CI-MD-B19-A001-001,DEPENDS_ON,"Approved choices, retained evidence and stable proof scope; no strategy application.",,2026-10-18T09:41:43+07:00,MD-B19-A001 coordinated authority-review checkpoint.
+MD-REL-1960,E-MD-B19-A001-019,E-MD-B19-A001-015,DEPENDS_ON,"Approved choices, retained evidence and stable proof scope; no strategy application.",,2026-10-18T09:41:43+07:00,MD-B19-A001 coordinated authority-review checkpoint.
+MD-REL-1961,E-MD-B19-A001-019,E-MD-B19-A001-016,DEPENDS_ON,"Approved choices, retained evidence and stable proof scope; no strategy application.",,2026-10-18T09:41:43+07:00,MD-B19-A001 coordinated authority-review checkpoint.
+MD-REL-1962,E-MD-B19-A001-019,E-MD-B19-A001-017,DEPENDS_ON,"Approved choices, retained evidence and stable proof scope; no strategy application.",,2026-10-18T09:41:43+07:00,MD-B19-A001 coordinated authority-review checkpoint.
+MD-REL-1963,E-MD-B19-A001-019,E-MD-B19-A001-018,DEPENDS_ON,"Approved choices, retained evidence and stable proof scope; no strategy application.",,2026-10-18T09:41:43+07:00,MD-B19-A001 coordinated authority-review checkpoint.
+MD-REL-1964,E-MD-B19-A001-019,D-MD-B19-A001-001,DEPENDS_ON,"Approved choices, retained evidence and stable proof scope; no strategy application.",,2026-10-18T09:41:43+07:00,MD-B19-A001 coordinated authority-review checkpoint.
+MD-REL-1965,D-MD-B19-A001-006,D-MD-B19-A001-005,DEPENDS_ON,Reviewed correction application; current same attempt/baseline.,,2026-10-18T10:54:56+07:00,D006 / DOC-CHG-20261018-001
+MD-REL-1966,D-MD-B19-A001-006,D-MD-B19-A001-001,DEPENDS_ON,Reviewed correction application; current same attempt/baseline.,,2026-10-18T10:54:56+07:00,D006 / DOC-CHG-20261018-001
+MD-REL-1967,D-MD-B19-A001-006,E-MD-B19-A001-019,DEPENDS_ON,Reviewed correction application; current same attempt/baseline.,,2026-10-18T10:54:56+07:00,D006 / DOC-CHG-20261018-001
+MD-REL-1968,E-MD-B19-A001-020,D-MD-B19-A001-006,DEPENDS_ON,Reviewed correction application; current same attempt/baseline.,D-MD-B19-A001-006,2026-10-18T10:54:56+07:00,D006 / DOC-CHG-20261018-001
+MD-REL-1969,E-MD-B19-A001-020,E-MD-B19-A001-019,DEPENDS_ON,Reviewed correction application; current same attempt/baseline.,,2026-10-18T10:54:56+07:00,D006 / DOC-CHG-20261018-001
+MD-REL-1970,E-MD-B19-A001-020,CI-MD-B19-A001-001,DEPENDS_ON,Reviewed correction application; current same attempt/baseline.,,2026-10-18T10:54:56+07:00,D006 / DOC-CHG-20261018-001
+MD-REL-1971,E-MD-B19-A001-021,D-MD-B19-A001-006,DEPENDS_ON,Bounded target proof and explicit revalidation; no stage closure.,D-MD-B19-A001-006,2026-10-18T11:59:29+07:00,E021
+MD-REL-1972,E-MD-B19-A001-021,E-MD-B19-A001-020,DEPENDS_ON,Bounded target proof and explicit revalidation; no stage closure.,D-MD-B19-A001-006,2026-10-18T11:59:29+07:00,E021
+MD-REL-1973,E-MD-B19-A001-021,E-MD-B19-A001-019,DEPENDS_ON,Bounded target proof and explicit revalidation; no stage closure.,D-MD-B19-A001-006,2026-10-18T11:59:29+07:00,E021
+MD-REL-1974,E-MD-B19-A001-021,CI-MD-B19-A001-001,DEPENDS_ON,Bounded target proof and explicit revalidation; no stage closure.,D-MD-B19-A001-006,2026-10-18T11:59:29+07:00,E021
+MD-REL-1975,F-MD-B19-A001-010,E-MD-B19-A001-021,DEPENDS_ON,Bounded target proof and explicit revalidation; no stage closure.,D-MD-B19-A001-006,2026-10-18T11:59:29+07:00,E021
+MD-REL-1976,F-MD-B19-A001-011,E-MD-B19-A001-021,DEPENDS_ON,Bounded target proof and explicit revalidation; no stage closure.,D-MD-B19-A001-006,2026-10-18T11:59:29+07:00,E021
+MD-REL-1977,E-MD-B19-A001-022,D-MD-B19-A001-007,DEPENDS_ON,Bounded multi-family proof and identity admission impact.,D-MD-B19-A001-007,2026-10-19T01:10:08+07:00,E022
+MD-REL-1978,E-MD-B19-A001-022,E-MD-B19-A001-021,DEPENDS_ON,Bounded multi-family proof and identity admission impact.,D-MD-B19-A001-007,2026-10-19T01:10:08+07:00,E022
+MD-REL-1979,E-MD-B19-A001-022,CI-MD-B19-A001-001,DEPENDS_ON,Bounded multi-family proof and identity admission impact.,D-MD-B19-A001-007,2026-10-19T01:10:08+07:00,E022
+MD-REL-1980,F-MD-B19-A001-013,E-MD-B19-A001-022,DEPENDS_ON,Bounded multi-family proof and identity admission impact.,D-MD-B19-A001-007,2026-10-19T01:10:08+07:00,E022
+MD-REL-1981,D-MD-B19-A001-007,CI-MD-B19-A001-001,DEPENDS_ON,Bounded multi-family proof and identity admission impact.,D-MD-B19-A001-007,2026-10-19T01:10:08+07:00,E022

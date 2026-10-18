@@ -1,0 +1,1188 @@
+{
+  "evidence_id": "E-MD-B19-A001-019",
+  "record_type": "EVIDENCE",
+  "role_scope": "CURRENT_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B19",
+  "attempt_id": "MD-B19-A001",
+  "work_id": "MD-B19-A001",
+  "baseline_id": "MD-B19-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261005-001",
+  "ci_id": "CI-MD-B19-A001-001",
+  "issued_at": "2026-10-18T09:41:43+07:00",
+  "evidence_type": "OWNER_CHOICES_REVISION_REVIEW_AND_INDEPENDENT_STABLE_STATE_PAIR_PROOF",
+  "verdict": "PARTIAL_16_NEW_BASES_EXACT_STRATEGY_REVIEW_PENDING_NO_AUTHORITY_OR_RUNTIME_CHANGE",
+  "initial_head": "eeb715b24df147232a7627d03d9c577ff369856f",
+  "initial_status": "clean master ahead origin/master by two inherited commits",
+  "decision_id": "D-MD-B19-A001-005",
+  "owner_choices": {
+    "F010": "Option A binding; distinct BAR/HARD conflicting source rows",
+    "F011": "Option B binding; exact eleven-row mapping retained",
+    "choice_reopening": "NOT_REQUESTED",
+    "application": "NOT_APPLIED; independent exact-text strategy review retained by Project Owner; no reviewer artifact for proposed bytes yet",
+    "freeze": "Unchanged 91-doc predecessor; no successor identity issued",
+    "authority_proposal": "Three exact replacement files/patch/manifest under raw proposed_revision; non-authoritative, not a completed strategy revision",
+    "review_item": "Concrete envelope schema/applicability/expected-mode paths and PUBLICATION_EXACT RAW boundary must be reviewed; no semantic default invented"
+  },
+  "preflight": {
+    "predicates": 44,
+    "file": "preflight_44.json",
+    "verification_impact": "verification_impact.json"
+  },
+  "newly_reviewed_predicates": [
+    "MD-S075-R0264",
+    "MD-S075-R0265",
+    "MD-S075-R0266",
+    "MD-S075-R0275",
+    "MD-S075-R0276",
+    "MD-S075-R0277",
+    "MD-S075-R0278",
+    "MD-S075-R0279",
+    "MD-S075-R0281",
+    "MD-S075-R0282",
+    "MD-S075-R0283",
+    "MD-S075-R0292",
+    "MD-S075-R0293",
+    "MD-S075-R0294",
+    "MD-S075-R0295",
+    "MD-S075-R0296"
+  ],
+  "proof": {
+    "classification": "A/B conforming stable behavior, previously missing per-predicate proof; no demonstrated production defect in this scope",
+    "producer_chain": "Accepted independently authored literal fixture -> real ReplayVerificationService comparator/admission -> ReplayResultRepository and real SQLite metrics/reason rows -> EodEvidenceRepository and real JSON exporter",
+    "independence": "Literal fixtures loaded before actual source rows; expected and actual statuses/dates/seals/version/hash/reason distribution asserted separately. Counterfactual expectations are test fault probes, not newly admitted immutable golden packages. No generated-from-actual expectations or mock-only substitute.",
+    "positive": "Eight member cases each support one expected and one actual predicate; literal source and persisted metric assertions, exact exported values; nonempty values, not key existence or matching NULLs.",
+    "negative": "Eight counterfactual cases yield MISMATCH/FAIL and preserve different expected versus actual values on each exact member. Supersession/live-run alteration after persistence cannot replace stored version/batch hashes.",
+    "new_tests": "17 tests / 161 assertions PASS; restored suite also 17/161 PASS",
+    "new_mutations": "13 assertion failures, valid PHP, all byte-restored; per-probe output, command, source before/restored SHA256 in new_mutation_results.json",
+    "retained_mutations": "E018 M14/M16/M17 unchanged expected status/date/seal projections; retained exact raw hashes and original guards, not rerun.",
+    "regressions": "61 tests / 687 assertions PASS: targeted real semantic pipeline, persisted fields, producer and exporter.",
+    "alias_check": "6 tests / 188 assertions / 1 known documentation failure: unchanged F009/E013 alias meaning omitted; source/guard unchanged from HEAD. Not a new production regression.",
+    "harness_corrections": "Initial runs failed only strict string/integer comparison of stored publication_version. New harness casts database version to integer consistently with JSON contract. No production red-before or defect correction claimed. Initial capture helper briefly wrote two new files under prior directory; those exact newly generated files were moved to the new directory, no original evidence byte changed.",
+    "MariaDB": "NOT_EXECUTED; no SQL/schema/transaction or engine-dependent behavior changed. These are real SQLite proof runs, not MariaDB claims.",
+    "full_suite": "NOT_EXECUTED; bounded test/map-only impact. Known MD-DEP-0025 build-identity failure retained from E018, not rerun solely for packaging.",
+    "operations_gate": "Expected FAIL: 178 reviewed, 565 without basis, zero structural errors. Not B19 closure."
+  },
+  "retained_evidence": {
+    "E015": 50,
+    "E016": 12,
+    "E017": 30,
+    "E018": 319,
+    "integrity": "All 411 referenced raw files hash-verified; 91 frozen strategy fingerprints verified; runtime and accepted fixture bytes equal takeover HEAD. No previous proof invalidated at this checkpoint."
+  },
+  "production_changes": [],
+  "previously_reviewed_bases_affected": 0,
+  "future_impact": "Explicit review map for controlled revision/seed/runtime changes. Stable member meaning/path equivalence must be recorded during future source rebinding; affected admission/context/registry/export proof must be revalidated then. Generated maps alone admit nothing.",
+  "held": {
+    "primary": [
+      "MD-S075-R0152",
+      "MD-S075-R0240..R0249",
+      "MD-S075-R0259"
+    ],
+    "state_pair": [
+      "MD-S075-R0267..R0274",
+      "MD-S075-R0284..R0291"
+    ],
+    "total_target_remaining": 28
+  },
+  "status_after": {
+    "reviewed_bases": 178,
+    "denominator": 743,
+    "formal_satisfied": 0,
+    "completed_families": 6,
+    "family_denominator": 37,
+    "artifact_invalid_bars_export": "8/9",
+    "artifact_replay_result": "21/32",
+    "artifact_replay_state_pair": "16/32"
+  },
+  "dependency": {
+    "MD-DEP-0025": "ACTIVE; six inherited build differences; no new executable-build input changed",
+    "candidate_v5": "immutable unchanged",
+    "candidate_v6": "not created",
+    "MD_B18": "not reopened"
+  },
+  "raw_artifacts": {
+    "dir": "storage/app/market-data/evidence/MD-B19-A001/authority-and-stable-pair-20261018",
+    "inventory": "sha256_inventory.json",
+    "inventory_sha256": "99a5b0132df6e81a358f7a5846f6dfe49a42fa3e5b184f5a95d08e11dfca0291",
+    "file_count": 261,
+    "files": {
+      "admit_stable.py": {
+        "sha256": "d10684ba234b3cfed83eb5db7713f8c5b8090fdccc4b55838007c27285b8d104",
+        "bytes": 2992
+      },
+      "alias_boundary.execution.json": {
+        "sha256": "975899e871301425a7909af1c815f32cb05a741cce4fae2b607d09812f65ee1b",
+        "bytes": 335
+      },
+      "alias_boundary.txt": {
+        "sha256": "ca9bffe77624de3965e5447b0e0d21c185a5039f6a9ef0b88377b23d56808bfa",
+        "bytes": 1850
+      },
+      "audit.py": {
+        "sha256": "6dfd571db1e1592715cb4014f6b1ad0ec799ee4ee9015349311ac287abd65422",
+        "bytes": 5275
+      },
+      "capture.py": {
+        "sha256": "b3eb99125e565cc3bc2b73c8ba66db261109864562bcf311f03e7621aac31b39",
+        "bytes": 1100
+      },
+      "green_state_pair.execution.json": {
+        "sha256": "032e34a0d0508e2d40bfd452eb6069a213c600de3252537d298e74718f666ed0",
+        "bytes": 351
+      },
+      "green_state_pair.txt": {
+        "sha256": "bb9acf95079bd5ef04f47589c1ca430587cba1155b8deaf8f520aaadf746da9c",
+        "bytes": 603
+      },
+      "green_state_pair_final.execution.json": {
+        "sha256": "e824f1ec27fccae35db1f1ba2a3046babb08d240e781fd4622b8fa6bbfd4d4c6",
+        "bytes": 351
+      },
+      "green_state_pair_final.txt": {
+        "sha256": "82e4fa47de95b4a23c65efb8923fdd30823310efc9c79ad2ad72fac36ee6b6d2",
+        "bytes": 208
+      },
+      "initial_state_pair.execution.json": {
+        "sha256": "4071a9c714750a807bc5ae64071f42e7eafb00ff1436301ed197c836577c75db",
+        "bytes": 351
+      },
+      "initial_state_pair.txt": {
+        "sha256": "836260d38dadda30931fde48374b2473800acf3eba83892bc3b3d6bc733a6d07",
+        "bytes": 620
+      },
+      "issue.py": {
+        "sha256": "bca2fec1d10afa0a3c54da0bf6ca7dc05f55eb376928a0f39a075d9e761730e1",
+        "bytes": 8002
+      },
+      "M_actual_bars_batch_hash.txt": {
+        "sha256": "9783aca355dc42e3b8aa34068ea0942f792f18f9102fa9f342ac6bb236483200",
+        "bytes": 787
+      },
+      "M_actual_eligibility_batch_hash.txt": {
+        "sha256": "0226d23a9c41f6f78612c10da1eefebdeae8a24e9674ee952377a1f5fb0f5e0a",
+        "bytes": 822
+      },
+      "M_actual_indicators_batch_hash.txt": {
+        "sha256": "58d0ce7641c797169066b0aad74caf2e90dada3af0090672cb4ad91c104250f5",
+        "bytes": 817
+      },
+      "M_actual_publication_version.txt": {
+        "sha256": "f48fc3e7a6899c15a8fcab0dbd2fff22a1310f2a08468f5df85f94ca1d174c6f",
+        "bytes": 710
+      },
+      "M_actual_reasons.txt": {
+        "sha256": "80e19e5d6abe171b4f8ee3e4a85af6c8b330b3ee359f89bb56474c4b6d802c76",
+        "bytes": 1675
+      },
+      "M_actual_seal_state.txt": {
+        "sha256": "4737b063adf117032f6dfacb6dda53fc1c364b622f7ad854e00a22d9cbc452c9",
+        "bytes": 763
+      },
+      "M_actual_status.txt": {
+        "sha256": "f1ca0341dd67e4d045ed36fc4caf7296cff1558de92104aac76e9f518db7e08d",
+        "bytes": 760
+      },
+      "M_actual_trade_date_effective.txt": {
+        "sha256": "1e16b4840c93e67cef55d84708a31fe3ebf713f692f1d6085d610c31e7047e05",
+        "bytes": 795
+      },
+      "M_expected_bars_batch_hash.txt": {
+        "sha256": "8522e9b311995e0dde4ab438e0c36796c2191559cd92947cf7df3353705f89b4",
+        "bytes": 760
+      },
+      "M_expected_eligibility_batch_hash.txt": {
+        "sha256": "25afa04b1a7dfed5e258d4f953584c1c1093022dec41aa0d5ecae3a53b26b343",
+        "bytes": 795
+      },
+      "M_expected_indicators_batch_hash.txt": {
+        "sha256": "87a897f72a6d4747ea55b3e1ad8e91930a14de346c063000701bf368dd53b48d",
+        "bytes": 790
+      },
+      "M_expected_publication_version.txt": {
+        "sha256": "865d9cfe28e34861c3818678e496c7de8ff22fa20332deccc5698bd885ad4774",
+        "bytes": 683
+      },
+      "M_expected_reasons.txt": {
+        "sha256": "ac67b5e7189dc6b8deea7e0a85bf79268f85f100a53d03d2ed8a176d5dd734aa",
+        "bytes": 1650
+      },
+      "mutate.py": {
+        "sha256": "c7fead8c15fd41d86393a812722efd22ed8205cc8d5d7de7332fc8ebf555cbe7",
+        "bytes": 3569
+      },
+      "new_mutation_results.json": {
+        "sha256": "9251fd42dd57f3d5d1ebc11f74147e2212c7413c1a15131727783c350166a504",
+        "bytes": 11284
+      },
+      "operations_checkpoint.execution.json": {
+        "sha256": "39d6f83495134894543086953eea522b83d72001dc70075142b9c368b5f059b4",
+        "bytes": 332
+      },
+      "operations_checkpoint.txt": {
+        "sha256": "78b7ad8571ecabe3bdf7788014832e84cb85d042870e41e49091dcc6e22d428c",
+        "bytes": 3494
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0264_R0281_status_/evidence_admission.json": {
+        "sha256": "10f7aa1a31804da9429c4889ef4e6a6cd858e6a832185b20ce6521e6df8c32ac",
+        "bytes": 903
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0264_R0281_status_/fixture_expected_hashes.json": {
+        "sha256": "34e0d97b553a8cad137bf01741481fa752899b187ddfbe5a66bef3cf6d2bc81e",
+        "bytes": 83
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0264_R0281_status_/fixture_expected_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0264_R0281_status_/fixture_expected_replay_result.json": {
+        "sha256": "b41df5646e1fa4f1b3cb805f336c1c9dbf0bea8a27d39b76309116b953574a0d",
+        "bytes": 4198
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0264_R0281_status_/fixture_expected_run_summary.json": {
+        "sha256": "aab058ef0503443caccf82aa79e2541dcd9275ee17784ca3e3780877fa728d7f",
+        "bytes": 241
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0264_R0281_status_/fixture_manifest.json": {
+        "sha256": "8dbaedf5503c86a7f1e844211da157e93298f236b288c8c89ceff209a217fec2",
+        "bytes": 1152
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0264_R0281_status_/persisted_metric.json": {
+        "sha256": "3c586b141ca208ac7271728887cfeb9861f6dd4481e185990560ce0cb5fbe1c3",
+        "bytes": 21730
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0264_R0281_status_/replay_actual_state.json": {
+        "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+        "bytes": 12889
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0264_R0281_status_/replay_evidence_pack.json": {
+        "sha256": "104c814b168774bc23cd9e986c696d9b049d4f6f921f0f9d416eadab2ec01918",
+        "bytes": 62670
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0264_R0281_status_/replay_expected_state.json": {
+        "sha256": "886a350507291fa9b76c33f356226368f5c48b373d634c24e84c5161c4314f7d",
+        "bytes": 10987
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0264_R0281_status_/replay_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0264_R0281_status_/replay_result.json": {
+        "sha256": "44a6e8fe3e745576ac690bed2ad1f64072957424ee02ec07cc1ce05b7f222a82",
+        "bytes": 31622
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0264_R0281_status_/source_rows.json": {
+        "sha256": "79e7578742b71e4a6338566217a37ab8bdabce790233b1231cd553f6802ae8c6",
+        "bytes": 5447
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0265_R0282_date_/evidence_admission.json": {
+        "sha256": "99f6fa25c719145d336f400a79dff7567585c22f0eaba506b5f6c1bddfb24524",
+        "bytes": 903
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0265_R0282_date_/fixture_expected_hashes.json": {
+        "sha256": "34e0d97b553a8cad137bf01741481fa752899b187ddfbe5a66bef3cf6d2bc81e",
+        "bytes": 83
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0265_R0282_date_/fixture_expected_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0265_R0282_date_/fixture_expected_replay_result.json": {
+        "sha256": "50922921d810b657761a2c9caf5dfdbdf32f78d81acde03c4feab69f8f2ca81d",
+        "bytes": 4207
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0265_R0282_date_/fixture_expected_run_summary.json": {
+        "sha256": "aab058ef0503443caccf82aa79e2541dcd9275ee17784ca3e3780877fa728d7f",
+        "bytes": 241
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0265_R0282_date_/fixture_manifest.json": {
+        "sha256": "77fe055291ec48fa20763249ceff6797150e69991141c7d23312b0df518064b4",
+        "bytes": 1152
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0265_R0282_date_/persisted_metric.json": {
+        "sha256": "8589e1a3365835d570aa5d35ca2277d4fbc34d82926416afedae6730ca516a72",
+        "bytes": 21403
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0265_R0282_date_/replay_actual_state.json": {
+        "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+        "bytes": 12889
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0265_R0282_date_/replay_evidence_pack.json": {
+        "sha256": "df6b7972dbf7b70913033f1da656bd313cf042182081d0152fe793b866eed9e5",
+        "bytes": 62186
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0265_R0282_date_/replay_expected_state.json": {
+        "sha256": "cacb8ac8b8e2470707e1dd8dd6c4986389d39e36aad9a5923236d8ebd8fce3f6",
+        "bytes": 11005
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0265_R0282_date_/replay_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0265_R0282_date_/replay_result.json": {
+        "sha256": "6f99552991b92aacae43998566cb34ca567b7320088338774c5ca10e5dd01a5d",
+        "bytes": 31172
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0265_R0282_date_/source_rows.json": {
+        "sha256": "79e7578742b71e4a6338566217a37ab8bdabce790233b1231cd553f6802ae8c6",
+        "bytes": 5447
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0266_R0283_seal_/evidence_admission.json": {
+        "sha256": "99f6fa25c719145d336f400a79dff7567585c22f0eaba506b5f6c1bddfb24524",
+        "bytes": 903
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0266_R0283_seal_/fixture_expected_hashes.json": {
+        "sha256": "34e0d97b553a8cad137bf01741481fa752899b187ddfbe5a66bef3cf6d2bc81e",
+        "bytes": 83
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0266_R0283_seal_/fixture_expected_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0266_R0283_seal_/fixture_expected_replay_result.json": {
+        "sha256": "d4a9c5ce7a4bbe464c14cdb3efeec0cd72ffe04ef01485e8489da751c6877059",
+        "bytes": 4211
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0266_R0283_seal_/fixture_expected_run_summary.json": {
+        "sha256": "aab058ef0503443caccf82aa79e2541dcd9275ee17784ca3e3780877fa728d7f",
+        "bytes": 241
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0266_R0283_seal_/fixture_manifest.json": {
+        "sha256": "731c3572a7c0b55d3e190cce5be60d48db194f73d3822854d3d7d2b55bfc893e",
+        "bytes": 1152
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0266_R0283_seal_/persisted_metric.json": {
+        "sha256": "da7aa3664dffbf397e9c8adf7be2b0d455e8fa6469a7c12b78401095616901c3",
+        "bytes": 21761
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0266_R0283_seal_/replay_actual_state.json": {
+        "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+        "bytes": 12889
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0266_R0283_seal_/replay_evidence_pack.json": {
+        "sha256": "11a65011c3a07d6a63d80b32ef84e1df6eb4a712076cc3ccd113853fd326b166",
+        "bytes": 62731
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0266_R0283_seal_/replay_expected_state.json": {
+        "sha256": "3c5f567482c76dd9413f4bb090bb180c556d9a32809b0813c61a4e8428a7f319",
+        "bytes": 11015
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0266_R0283_seal_/replay_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0266_R0283_seal_/replay_result.json": {
+        "sha256": "eb3cdb658d7f39b5236355d91b2f1ef8a48d74190ef6b521a5fb66497750a392",
+        "bytes": 31655
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0266_R0283_seal_/source_rows.json": {
+        "sha256": "79e7578742b71e4a6338566217a37ab8bdabce790233b1231cd553f6802ae8c6",
+        "bytes": 5447
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0275_R0292_version_/evidence_admission.json": {
+        "sha256": "f94c9cec74b0460158ad70a643fde7575dbb0b95fb8cdc23d5067bb804e01ddd",
+        "bytes": 903
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0275_R0292_version_/fixture_expected_hashes.json": {
+        "sha256": "34e0d97b553a8cad137bf01741481fa752899b187ddfbe5a66bef3cf6d2bc81e",
+        "bytes": 83
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0275_R0292_version_/fixture_expected_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0275_R0292_version_/fixture_expected_replay_result.json": {
+        "sha256": "479c5713449d389d0c5eff5dd9e1bb4809933064b803cb9e294b1a11b850243f",
+        "bytes": 4207
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0275_R0292_version_/fixture_expected_run_summary.json": {
+        "sha256": "aab058ef0503443caccf82aa79e2541dcd9275ee17784ca3e3780877fa728d7f",
+        "bytes": 241
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0275_R0292_version_/fixture_manifest.json": {
+        "sha256": "3c5c8729b9aa9b40e536ca064ddb896cd901c0c76fa684712b8bf0d85c0ff981",
+        "bytes": 1152
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0275_R0292_version_/persisted_metric.json": {
+        "sha256": "098eb2e8f40047a7513f5ca26c481e3878c03a7e9b2e27665cf6ab74b9c47e2a",
+        "bytes": 21705
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0275_R0292_version_/replay_actual_state.json": {
+        "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+        "bytes": 12889
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0275_R0292_version_/replay_evidence_pack.json": {
+        "sha256": "d3a86f133da46db9aa9160164e5667abe9c43b9868e7e8eca54af5b238b539a2",
+        "bytes": 62664
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0275_R0292_version_/replay_expected_state.json": {
+        "sha256": "f6b22d35777e91179469dc63ec2c256869a8388ddd5807ac1c245017d3d26a6a",
+        "bytes": 11005
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0275_R0292_version_/replay_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0275_R0292_version_/replay_result.json": {
+        "sha256": "2d8d583cdd91c9331fb434e92e87e08d49427bf7b0d31617070cbf8bc779ab1c",
+        "bytes": 31602
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0275_R0292_version_/source_rows.json": {
+        "sha256": "79e7578742b71e4a6338566217a37ab8bdabce790233b1231cd553f6802ae8c6",
+        "bytes": 5447
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0276_R0293_bars_/evidence_admission.json": {
+        "sha256": "f94c9cec74b0460158ad70a643fde7575dbb0b95fb8cdc23d5067bb804e01ddd",
+        "bytes": 903
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0276_R0293_bars_/fixture_expected_hashes.json": {
+        "sha256": "604b24633d205b93f063483be8ad5ce00a9d4ba760822c2b24dddb79c47af31a",
+        "bytes": 100
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0276_R0293_bars_/fixture_expected_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0276_R0293_bars_/fixture_expected_replay_result.json": {
+        "sha256": "5d6d22078de371dddd04d434d98d3e85e3000753b0f3838c23db6cdd06ccf9b9",
+        "bytes": 4241
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0276_R0293_bars_/fixture_expected_run_summary.json": {
+        "sha256": "aab058ef0503443caccf82aa79e2541dcd9275ee17784ca3e3780877fa728d7f",
+        "bytes": 241
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0276_R0293_bars_/fixture_manifest.json": {
+        "sha256": "aada8c63ad7c07f88af4591ce0a71a9679e20a9ed2342b95b72bf18790ec7c8b",
+        "bytes": 1152
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0276_R0293_bars_/persisted_metric.json": {
+        "sha256": "da339ecfc36f822f2a9d544bba6e5128a2217d6e2ff14e48d1ee70effebf9f5b",
+        "bytes": 22531
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0276_R0293_bars_/replay_actual_state.json": {
+        "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+        "bytes": 12889
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0276_R0293_bars_/replay_evidence_pack.json": {
+        "sha256": "2f74bfabc3374fcf098adeafdbbf4633df1a5a6268a43cc335c30b4737d0320a",
+        "bytes": 64070
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0276_R0293_bars_/replay_expected_state.json": {
+        "sha256": "0b7e4abc4cc74c242767d80538629845653d02c8f7ebc523d1c48b5ef4508fbe",
+        "bytes": 11073
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0276_R0293_bars_/replay_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0276_R0293_bars_/replay_result.json": {
+        "sha256": "ce6ff496ea1e4083686b804d19a0cd51b6e98f09cdc0665ce393556654db93b4",
+        "bytes": 32840
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0276_R0293_bars_/source_rows.json": {
+        "sha256": "79e7578742b71e4a6338566217a37ab8bdabce790233b1231cd553f6802ae8c6",
+        "bytes": 5447
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0277_R0294_indicators_/evidence_admission.json": {
+        "sha256": "f94c9cec74b0460158ad70a643fde7575dbb0b95fb8cdc23d5067bb804e01ddd",
+        "bytes": 903
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0277_R0294_indicators_/fixture_expected_hashes.json": {
+        "sha256": "1c48fe26a58a953672675665f7b3a07c4f7a625142e92b7df9a57ca4eb6bcde3",
+        "bytes": 106
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0277_R0294_indicators_/fixture_expected_replay_result.json": {
+        "sha256": "9f601499df4da1892e50ab10e8820de30ad1eceaf5fefa06f51a1995ab28c8c8",
+        "bytes": 4253
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0277_R0294_indicators_/fixture_expected_run_summary.json": {
+        "sha256": "aab058ef0503443caccf82aa79e2541dcd9275ee17784ca3e3780877fa728d7f",
+        "bytes": 241
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0277_R0294_indicators_/fixture_manifest.json": {
+        "sha256": "6315125eaaea3a47a825bdd36d06efff85a4a0b8c50c4daa51014841b65332a1",
+        "bytes": 1152
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0277_R0294_indicators_/persisted_metric.json": {
+        "sha256": "b0a3f9467c9d83e1dcf4efb1d06ba081e7072073d7f66f812de30dfe6a2507f3",
+        "bytes": 22579
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0277_R0294_indicators_/replay_actual_state.json": {
+        "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+        "bytes": 12889
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0277_R0294_indicators_/replay_evidence_pack.json": {
+        "sha256": "2ace7a97ecae1721e596381e80b0edcb7322c7281dd371cbb18694c753874e0d",
+        "bytes": 64148
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0277_R0294_indicators_/replay_expected_state.json": {
+        "sha256": "7b3d1a5a5b56e3a76c8e7a1ac97ea8e3b62b5639f6f99393b142ac4f3835899a",
+        "bytes": 11097
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0277_R0294_indicators_/replay_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0277_R0294_indicators_/replay_result.json": {
+        "sha256": "02cfa5cf263438d65161a5dac4ced379ec640eae8a5100c44bcac444dd1fc6a2",
+        "bytes": 32894
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0277_R0294_indicators_/source_rows.json": {
+        "sha256": "79e7578742b71e4a6338566217a37ab8bdabce790233b1231cd553f6802ae8c6",
+        "bytes": 5447
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0278_R0295_eligibility_/evidence_admission.json": {
+        "sha256": "71ced77aa85af97b9c338d22b22d489f1ccbbe15dd8b5bd2d8b8901b837c142f",
+        "bytes": 903
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0278_R0295_eligibility_/fixture_expected_hashes.json": {
+        "sha256": "6887f6fcc9753414d4b54d42e497d161a406b3d4af3fe2abc7521b960e33cde5",
+        "bytes": 107
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0278_R0295_eligibility_/fixture_expected_replay_result.json": {
+        "sha256": "1917de939d9b97b2d3fac6f37c8d14e139bcf424b3fc3f66c66b18010bed7084",
+        "bytes": 4255
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0278_R0295_eligibility_/fixture_expected_run_summary.json": {
+        "sha256": "aab058ef0503443caccf82aa79e2541dcd9275ee17784ca3e3780877fa728d7f",
+        "bytes": 241
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0278_R0295_eligibility_/fixture_manifest.json": {
+        "sha256": "6aba6d8d40375fedd0dd5b7af6f41d4bbe4dc19a77e2c509c07968325b2f1a65",
+        "bytes": 1152
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0278_R0295_eligibility_/persisted_metric.json": {
+        "sha256": "0e27714cfd571963b0845a7c3243e0aa4d3b33e8925ae79a4057d1afc85779bf",
+        "bytes": 22587
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0278_R0295_eligibility_/replay_actual_state.json": {
+        "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+        "bytes": 12889
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0278_R0295_eligibility_/replay_evidence_pack.json": {
+        "sha256": "e7a4c78de97394fb62a8f4a905e70f63d03b6395ecd9f37ebeda9348bcd095e1",
+        "bytes": 64161
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0278_R0295_eligibility_/replay_expected_state.json": {
+        "sha256": "c8dc155384de887d7cf1f179cea9a4c5e75b66a2e47f2c977a0f116fd8f54fde",
+        "bytes": 11101
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0278_R0295_eligibility_/replay_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0278_R0295_eligibility_/replay_result.json": {
+        "sha256": "d055998af75dba41c032d2f2758641dfd6d17fc52114dc6b3f19351df9410241",
+        "bytes": 32903
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0278_R0295_eligibility_/source_rows.json": {
+        "sha256": "79e7578742b71e4a6338566217a37ab8bdabce790233b1231cd553f6802ae8c6",
+        "bytes": 5447
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0279_R0296_reasons_/evidence_admission.json": {
+        "sha256": "71ced77aa85af97b9c338d22b22d489f1ccbbe15dd8b5bd2d8b8901b837c142f",
+        "bytes": 903
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0279_R0296_reasons_/fixture_expected_hashes.json": {
+        "sha256": "34e0d97b553a8cad137bf01741481fa752899b187ddfbe5a66bef3cf6d2bc81e",
+        "bytes": 83
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0279_R0296_reasons_/fixture_expected_reason_code_counts.json": {
+        "sha256": "861f84fb2ac775615dae09c2fbef1adc48d3e76c6073378a8475e83d2fc22d03",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0279_R0296_reasons_/fixture_expected_replay_result.json": {
+        "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+        "bytes": 4207
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0279_R0296_reasons_/fixture_expected_run_summary.json": {
+        "sha256": "aab058ef0503443caccf82aa79e2541dcd9275ee17784ca3e3780877fa728d7f",
+        "bytes": 241
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0279_R0296_reasons_/fixture_manifest.json": {
+        "sha256": "3f9f9eac0847105c93af1fedb6404bf1894cc0acde0ca81651777b46bfbafb85",
+        "bytes": 1152
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0279_R0296_reasons_/persisted_metric.json": {
+        "sha256": "212902b38e67484cdd0cde8ba2059565fd3f45c31e3c2828f18a5432c29c09bc",
+        "bytes": 21445
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0279_R0296_reasons_/replay_actual_state.json": {
+        "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+        "bytes": 12889
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0279_R0296_reasons_/replay_evidence_pack.json": {
+        "sha256": "bad68a7b281b55a7aec694358e0cd4e947ae8db45f5b4cd1980ce82a567c231e",
+        "bytes": 62306
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0279_R0296_reasons_/replay_expected_state.json": {
+        "sha256": "a3684a1f157c39ec23baa35cacf0b064322b57248fdde89641a03cd6df4c59d4",
+        "bytes": 11005
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0279_R0296_reasons_/replay_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0279_R0296_reasons_/replay_result.json": {
+        "sha256": "9af1459c6f0a962c0f2aa2cfe5d5f362a783ce777415b0d31e7da3b051a77f16",
+        "bytes": 31276
+      },
+      "pipeline_artifacts/test_counterfactual_expected_members_cannot_replace_actual_with_data_set__R0279_R0296_reasons_/source_rows.json": {
+        "sha256": "79e7578742b71e4a6338566217a37ab8bdabce790233b1231cd553f6802ae8c6",
+        "bytes": 5447
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0264_R0281_status_/evidence_admission.json": {
+        "sha256": "bb66af740129765abf91f447ab93d4d781fa9648b9598c6af189a7b6357724b2",
+        "bytes": 903
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0264_R0281_status_/fixture_expected_hashes.json": {
+        "sha256": "34e0d97b553a8cad137bf01741481fa752899b187ddfbe5a66bef3cf6d2bc81e",
+        "bytes": 83
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0264_R0281_status_/fixture_expected_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0264_R0281_status_/fixture_expected_replay_result.json": {
+        "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+        "bytes": 4207
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0264_R0281_status_/fixture_expected_run_summary.json": {
+        "sha256": "aab058ef0503443caccf82aa79e2541dcd9275ee17784ca3e3780877fa728d7f",
+        "bytes": 241
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0264_R0281_status_/fixture_manifest.json": {
+        "sha256": "0eff43e4950cb4c44cf806589e25641d3625287a3c80dbe2ba3cb4adbe2e3b56",
+        "bytes": 1152
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0264_R0281_status_/persisted_metric.json": {
+        "sha256": "993cdc03cec85b1f75a026c2bca94938dfc0a405985353c2c23be1b04ceefb81",
+        "bytes": 21079
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0264_R0281_status_/replay_actual_state.json": {
+        "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+        "bytes": 12889
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0264_R0281_status_/replay_evidence_pack.json": {
+        "sha256": "2ebb61b9462f8c65441162bf60ca055418ab1ae5051f628451c5109bf147f831",
+        "bytes": 61748
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0264_R0281_status_/replay_expected_state.json": {
+        "sha256": "25b469d9a7f15ff23c087e8856d2941e0439b679e57cd8980e8a1b47e82ec5cf",
+        "bytes": 11005
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0264_R0281_status_/replay_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0264_R0281_status_/replay_result.json": {
+        "sha256": "5b40db40543087b9e1a604337ec18d6d223e80353296d7dfaaa2e33c7e27763c",
+        "bytes": 30773
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0264_R0281_status_/source_rows.json": {
+        "sha256": "79e7578742b71e4a6338566217a37ab8bdabce790233b1231cd553f6802ae8c6",
+        "bytes": 5447
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0265_R0282_date_/evidence_admission.json": {
+        "sha256": "bb66af740129765abf91f447ab93d4d781fa9648b9598c6af189a7b6357724b2",
+        "bytes": 903
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0265_R0282_date_/fixture_expected_hashes.json": {
+        "sha256": "34e0d97b553a8cad137bf01741481fa752899b187ddfbe5a66bef3cf6d2bc81e",
+        "bytes": 83
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0265_R0282_date_/fixture_expected_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0265_R0282_date_/fixture_expected_replay_result.json": {
+        "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+        "bytes": 4207
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0265_R0282_date_/fixture_expected_run_summary.json": {
+        "sha256": "aab058ef0503443caccf82aa79e2541dcd9275ee17784ca3e3780877fa728d7f",
+        "bytes": 241
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0265_R0282_date_/fixture_manifest.json": {
+        "sha256": "0eff43e4950cb4c44cf806589e25641d3625287a3c80dbe2ba3cb4adbe2e3b56",
+        "bytes": 1152
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0265_R0282_date_/persisted_metric.json": {
+        "sha256": "993cdc03cec85b1f75a026c2bca94938dfc0a405985353c2c23be1b04ceefb81",
+        "bytes": 21079
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0265_R0282_date_/replay_actual_state.json": {
+        "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+        "bytes": 12889
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0265_R0282_date_/replay_evidence_pack.json": {
+        "sha256": "2ebb61b9462f8c65441162bf60ca055418ab1ae5051f628451c5109bf147f831",
+        "bytes": 61748
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0265_R0282_date_/replay_expected_state.json": {
+        "sha256": "25b469d9a7f15ff23c087e8856d2941e0439b679e57cd8980e8a1b47e82ec5cf",
+        "bytes": 11005
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0265_R0282_date_/replay_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0265_R0282_date_/replay_result.json": {
+        "sha256": "5b40db40543087b9e1a604337ec18d6d223e80353296d7dfaaa2e33c7e27763c",
+        "bytes": 30773
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0265_R0282_date_/source_rows.json": {
+        "sha256": "79e7578742b71e4a6338566217a37ab8bdabce790233b1231cd553f6802ae8c6",
+        "bytes": 5447
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0266_R0283_seal_/evidence_admission.json": {
+        "sha256": "215c425815d4667068d3dae0be202f22a3edf138885cfef5cae3873693ab57da",
+        "bytes": 903
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0266_R0283_seal_/fixture_expected_hashes.json": {
+        "sha256": "34e0d97b553a8cad137bf01741481fa752899b187ddfbe5a66bef3cf6d2bc81e",
+        "bytes": 83
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0266_R0283_seal_/fixture_expected_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0266_R0283_seal_/fixture_expected_replay_result.json": {
+        "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+        "bytes": 4207
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0266_R0283_seal_/fixture_expected_run_summary.json": {
+        "sha256": "aab058ef0503443caccf82aa79e2541dcd9275ee17784ca3e3780877fa728d7f",
+        "bytes": 241
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0266_R0283_seal_/fixture_manifest.json": {
+        "sha256": "0eff43e4950cb4c44cf806589e25641d3625287a3c80dbe2ba3cb4adbe2e3b56",
+        "bytes": 1152
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0266_R0283_seal_/persisted_metric.json": {
+        "sha256": "5a616adad128b87ffe3d2bd78bb0304b0c6136d216eaf22c0c301523f29eed07",
+        "bytes": 21079
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0266_R0283_seal_/replay_actual_state.json": {
+        "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+        "bytes": 12889
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0266_R0283_seal_/replay_evidence_pack.json": {
+        "sha256": "5e7070092f946564f88d1ed08022b97f8472f24900ec18ad2c1c89ee6fed0fca",
+        "bytes": 61748
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0266_R0283_seal_/replay_expected_state.json": {
+        "sha256": "3b5ab462b0258a6069516c8177ffed5f32a1a8a91b36c09e55a29861622ceaf7",
+        "bytes": 11005
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0266_R0283_seal_/replay_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0266_R0283_seal_/replay_result.json": {
+        "sha256": "e2eaf7a30ecf90b7d8b2b7f3223d27120c9721c4175b7c0a7b3185024e15620b",
+        "bytes": 30773
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0266_R0283_seal_/source_rows.json": {
+        "sha256": "79e7578742b71e4a6338566217a37ab8bdabce790233b1231cd553f6802ae8c6",
+        "bytes": 5447
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0275_R0292_version_/evidence_admission.json": {
+        "sha256": "215c425815d4667068d3dae0be202f22a3edf138885cfef5cae3873693ab57da",
+        "bytes": 903
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0275_R0292_version_/fixture_expected_hashes.json": {
+        "sha256": "34e0d97b553a8cad137bf01741481fa752899b187ddfbe5a66bef3cf6d2bc81e",
+        "bytes": 83
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0275_R0292_version_/fixture_expected_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0275_R0292_version_/fixture_expected_replay_result.json": {
+        "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+        "bytes": 4207
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0275_R0292_version_/fixture_expected_run_summary.json": {
+        "sha256": "aab058ef0503443caccf82aa79e2541dcd9275ee17784ca3e3780877fa728d7f",
+        "bytes": 241
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0275_R0292_version_/fixture_manifest.json": {
+        "sha256": "0eff43e4950cb4c44cf806589e25641d3625287a3c80dbe2ba3cb4adbe2e3b56",
+        "bytes": 1152
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0275_R0292_version_/persisted_metric.json": {
+        "sha256": "5a616adad128b87ffe3d2bd78bb0304b0c6136d216eaf22c0c301523f29eed07",
+        "bytes": 21079
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0275_R0292_version_/replay_actual_state.json": {
+        "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+        "bytes": 12889
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0275_R0292_version_/replay_evidence_pack.json": {
+        "sha256": "5e7070092f946564f88d1ed08022b97f8472f24900ec18ad2c1c89ee6fed0fca",
+        "bytes": 61748
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0275_R0292_version_/replay_expected_state.json": {
+        "sha256": "3b5ab462b0258a6069516c8177ffed5f32a1a8a91b36c09e55a29861622ceaf7",
+        "bytes": 11005
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0275_R0292_version_/replay_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0275_R0292_version_/replay_result.json": {
+        "sha256": "e2eaf7a30ecf90b7d8b2b7f3223d27120c9721c4175b7c0a7b3185024e15620b",
+        "bytes": 30773
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0275_R0292_version_/source_rows.json": {
+        "sha256": "79e7578742b71e4a6338566217a37ab8bdabce790233b1231cd553f6802ae8c6",
+        "bytes": 5447
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0276_R0293_bars_/evidence_admission.json": {
+        "sha256": "215c425815d4667068d3dae0be202f22a3edf138885cfef5cae3873693ab57da",
+        "bytes": 903
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0276_R0293_bars_/fixture_expected_hashes.json": {
+        "sha256": "34e0d97b553a8cad137bf01741481fa752899b187ddfbe5a66bef3cf6d2bc81e",
+        "bytes": 83
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0276_R0293_bars_/fixture_expected_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0276_R0293_bars_/fixture_expected_replay_result.json": {
+        "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+        "bytes": 4207
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0276_R0293_bars_/fixture_expected_run_summary.json": {
+        "sha256": "aab058ef0503443caccf82aa79e2541dcd9275ee17784ca3e3780877fa728d7f",
+        "bytes": 241
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0276_R0293_bars_/fixture_manifest.json": {
+        "sha256": "0eff43e4950cb4c44cf806589e25641d3625287a3c80dbe2ba3cb4adbe2e3b56",
+        "bytes": 1152
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0276_R0293_bars_/persisted_metric.json": {
+        "sha256": "5a616adad128b87ffe3d2bd78bb0304b0c6136d216eaf22c0c301523f29eed07",
+        "bytes": 21079
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0276_R0293_bars_/replay_actual_state.json": {
+        "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+        "bytes": 12889
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0276_R0293_bars_/replay_evidence_pack.json": {
+        "sha256": "5e7070092f946564f88d1ed08022b97f8472f24900ec18ad2c1c89ee6fed0fca",
+        "bytes": 61748
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0276_R0293_bars_/replay_expected_state.json": {
+        "sha256": "3b5ab462b0258a6069516c8177ffed5f32a1a8a91b36c09e55a29861622ceaf7",
+        "bytes": 11005
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0276_R0293_bars_/replay_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0276_R0293_bars_/replay_result.json": {
+        "sha256": "e2eaf7a30ecf90b7d8b2b7f3223d27120c9721c4175b7c0a7b3185024e15620b",
+        "bytes": 30773
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0276_R0293_bars_/source_rows.json": {
+        "sha256": "79e7578742b71e4a6338566217a37ab8bdabce790233b1231cd553f6802ae8c6",
+        "bytes": 5447
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0277_R0294_indicators_/evidence_admission.json": {
+        "sha256": "215c425815d4667068d3dae0be202f22a3edf138885cfef5cae3873693ab57da",
+        "bytes": 903
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0277_R0294_indicators_/fixture_expected_hashes.json": {
+        "sha256": "34e0d97b553a8cad137bf01741481fa752899b187ddfbe5a66bef3cf6d2bc81e",
+        "bytes": 83
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0277_R0294_indicators_/fixture_expected_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0277_R0294_indicators_/fixture_expected_replay_result.json": {
+        "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+        "bytes": 4207
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0277_R0294_indicators_/fixture_expected_run_summary.json": {
+        "sha256": "aab058ef0503443caccf82aa79e2541dcd9275ee17784ca3e3780877fa728d7f",
+        "bytes": 241
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0277_R0294_indicators_/fixture_manifest.json": {
+        "sha256": "0eff43e4950cb4c44cf806589e25641d3625287a3c80dbe2ba3cb4adbe2e3b56",
+        "bytes": 1152
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0277_R0294_indicators_/persisted_metric.json": {
+        "sha256": "5a616adad128b87ffe3d2bd78bb0304b0c6136d216eaf22c0c301523f29eed07",
+        "bytes": 21079
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0277_R0294_indicators_/replay_actual_state.json": {
+        "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+        "bytes": 12889
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0277_R0294_indicators_/replay_evidence_pack.json": {
+        "sha256": "5e7070092f946564f88d1ed08022b97f8472f24900ec18ad2c1c89ee6fed0fca",
+        "bytes": 61748
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0277_R0294_indicators_/replay_expected_state.json": {
+        "sha256": "3b5ab462b0258a6069516c8177ffed5f32a1a8a91b36c09e55a29861622ceaf7",
+        "bytes": 11005
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0277_R0294_indicators_/replay_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0277_R0294_indicators_/replay_result.json": {
+        "sha256": "e2eaf7a30ecf90b7d8b2b7f3223d27120c9721c4175b7c0a7b3185024e15620b",
+        "bytes": 30773
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0277_R0294_indicators_/source_rows.json": {
+        "sha256": "79e7578742b71e4a6338566217a37ab8bdabce790233b1231cd553f6802ae8c6",
+        "bytes": 5447
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0278_R0295_eligibility_/evidence_admission.json": {
+        "sha256": "10f7aa1a31804da9429c4889ef4e6a6cd858e6a832185b20ce6521e6df8c32ac",
+        "bytes": 903
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0278_R0295_eligibility_/fixture_expected_hashes.json": {
+        "sha256": "34e0d97b553a8cad137bf01741481fa752899b187ddfbe5a66bef3cf6d2bc81e",
+        "bytes": 83
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0278_R0295_eligibility_/fixture_expected_replay_result.json": {
+        "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+        "bytes": 4207
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0278_R0295_eligibility_/fixture_expected_run_summary.json": {
+        "sha256": "aab058ef0503443caccf82aa79e2541dcd9275ee17784ca3e3780877fa728d7f",
+        "bytes": 241
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0278_R0295_eligibility_/fixture_manifest.json": {
+        "sha256": "0eff43e4950cb4c44cf806589e25641d3625287a3c80dbe2ba3cb4adbe2e3b56",
+        "bytes": 1152
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0278_R0295_eligibility_/persisted_metric.json": {
+        "sha256": "9605be547ec176b940de08847c7d4856da8194a0254cf480e62e28ea5253717f",
+        "bytes": 21079
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0278_R0295_eligibility_/replay_actual_state.json": {
+        "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+        "bytes": 12889
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0278_R0295_eligibility_/replay_evidence_pack.json": {
+        "sha256": "086445b2e7c0a38e0ff6b15ba07a08b2806ed8d0b593c1c32f50841b3f85c38f",
+        "bytes": 61748
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0278_R0295_eligibility_/replay_expected_state.json": {
+        "sha256": "4ba06699afca17329cce9b2b8a28b655c56d05ebcac43c6930ca8e00ef076a41",
+        "bytes": 11005
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0278_R0295_eligibility_/replay_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0278_R0295_eligibility_/replay_result.json": {
+        "sha256": "32cc8f026d48d1432475c0d351714914b954594613e1ba8aceca3cf465df4760",
+        "bytes": 30773
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0278_R0295_eligibility_/source_rows.json": {
+        "sha256": "79e7578742b71e4a6338566217a37ab8bdabce790233b1231cd553f6802ae8c6",
+        "bytes": 5447
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0279_R0296_reasons_/evidence_admission.json": {
+        "sha256": "10f7aa1a31804da9429c4889ef4e6a6cd858e6a832185b20ce6521e6df8c32ac",
+        "bytes": 903
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0279_R0296_reasons_/fixture_expected_hashes.json": {
+        "sha256": "34e0d97b553a8cad137bf01741481fa752899b187ddfbe5a66bef3cf6d2bc81e",
+        "bytes": 83
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0279_R0296_reasons_/fixture_expected_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0279_R0296_reasons_/fixture_expected_replay_result.json": {
+        "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+        "bytes": 4207
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0279_R0296_reasons_/fixture_expected_run_summary.json": {
+        "sha256": "aab058ef0503443caccf82aa79e2541dcd9275ee17784ca3e3780877fa728d7f",
+        "bytes": 241
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0279_R0296_reasons_/fixture_manifest.json": {
+        "sha256": "0eff43e4950cb4c44cf806589e25641d3625287a3c80dbe2ba3cb4adbe2e3b56",
+        "bytes": 1152
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0279_R0296_reasons_/persisted_metric.json": {
+        "sha256": "9605be547ec176b940de08847c7d4856da8194a0254cf480e62e28ea5253717f",
+        "bytes": 21079
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0279_R0296_reasons_/replay_actual_state.json": {
+        "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+        "bytes": 12889
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0279_R0296_reasons_/replay_evidence_pack.json": {
+        "sha256": "086445b2e7c0a38e0ff6b15ba07a08b2806ed8d0b593c1c32f50841b3f85c38f",
+        "bytes": 61748
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0279_R0296_reasons_/replay_expected_state.json": {
+        "sha256": "4ba06699afca17329cce9b2b8a28b655c56d05ebcac43c6930ca8e00ef076a41",
+        "bytes": 11005
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0279_R0296_reasons_/replay_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0279_R0296_reasons_/replay_result.json": {
+        "sha256": "32cc8f026d48d1432475c0d351714914b954594613e1ba8aceca3cf465df4760",
+        "bytes": 30773
+      },
+      "pipeline_artifacts/test_each_state_member_preserves_its_independent_source_with_data_set__R0279_R0296_reasons_/source_rows.json": {
+        "sha256": "79e7578742b71e4a6338566217a37ab8bdabce790233b1231cd553f6802ae8c6",
+        "bytes": 5447
+      },
+      "pipeline_artifacts/test_export_keeps_the_persisted_state_after_publication_supersession/evidence_admission.json": {
+        "sha256": "71ced77aa85af97b9c338d22b22d489f1ccbbe15dd8b5bd2d8b8901b837c142f",
+        "bytes": 903
+      },
+      "pipeline_artifacts/test_export_keeps_the_persisted_state_after_publication_supersession/fixture_expected_hashes.json": {
+        "sha256": "34e0d97b553a8cad137bf01741481fa752899b187ddfbe5a66bef3cf6d2bc81e",
+        "bytes": 83
+      },
+      "pipeline_artifacts/test_export_keeps_the_persisted_state_after_publication_supersession/fixture_expected_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_export_keeps_the_persisted_state_after_publication_supersession/fixture_expected_replay_result.json": {
+        "sha256": "eb106448260619e3c7116292638f61da8a2b78c9afe0cd2ad5cfa6689136ec54",
+        "bytes": 4207
+      },
+      "pipeline_artifacts/test_export_keeps_the_persisted_state_after_publication_supersession/fixture_expected_run_summary.json": {
+        "sha256": "aab058ef0503443caccf82aa79e2541dcd9275ee17784ca3e3780877fa728d7f",
+        "bytes": 241
+      },
+      "pipeline_artifacts/test_export_keeps_the_persisted_state_after_publication_supersession/fixture_manifest.json": {
+        "sha256": "0eff43e4950cb4c44cf806589e25641d3625287a3c80dbe2ba3cb4adbe2e3b56",
+        "bytes": 1152
+      },
+      "pipeline_artifacts/test_export_keeps_the_persisted_state_after_publication_supersession/persisted_metric.json": {
+        "sha256": "c84a458ff80d1cc189417e098ebf5dc1d908f106b904bb82fd74aa44863ab234",
+        "bytes": 21079
+      },
+      "pipeline_artifacts/test_export_keeps_the_persisted_state_after_publication_supersession/replay_actual_state.json": {
+        "sha256": "5fbf563753826716bf5e80345480d34d99228dcd705d2e62bba5b493160b387b",
+        "bytes": 12889
+      },
+      "pipeline_artifacts/test_export_keeps_the_persisted_state_after_publication_supersession/replay_evidence_pack.json": {
+        "sha256": "783fdda5c82a4e5caa18a8df4555e2ea386ef73f69e650bac36da1c4a65afece",
+        "bytes": 61748
+      },
+      "pipeline_artifacts/test_export_keeps_the_persisted_state_after_publication_supersession/replay_expected_state.json": {
+        "sha256": "f7c915ed67250b9e77a0c4a6055e83cf4cfd182563ca87fc8bcac53d08bda940",
+        "bytes": 11005
+      },
+      "pipeline_artifacts/test_export_keeps_the_persisted_state_after_publication_supersession/replay_reason_code_counts.json": {
+        "sha256": "2c0b0e5e9c4e68429fd7de52c1f092d95116d4240d17e16b5f2c4629ada7789f",
+        "bytes": 91
+      },
+      "pipeline_artifacts/test_export_keeps_the_persisted_state_after_publication_supersession/replay_result.json": {
+        "sha256": "fac0da0124dd9cbdf9046281357b8d2da42c9cd885b0df24c0f193af80932ff2",
+        "bytes": 30773
+      },
+      "pipeline_artifacts/test_export_keeps_the_persisted_state_after_publication_supersession/source_rows.json": {
+        "sha256": "79e7578742b71e4a6338566217a37ab8bdabce790233b1231cd553f6802ae8c6",
+        "bytes": 5447
+      },
+      "preflight_44.json": {
+        "sha256": "c86f85846e826cdeb0d23fbe3121a81d0aab4b0081fcc9bbc95dd777e78041aa",
+        "bytes": 50018
+      },
+      "prepare_revision.py": {
+        "sha256": "2abccac1734c732373b785acda9ae70d5e1037100d91e30932cb06e76250a05a",
+        "bytes": 13160
+      },
+      "proposed_revision/docs/market_data/authority/strategy/ops/Audit_Evidence_Pack_Contract_LOCKED.md": {
+        "sha256": "5a81a09d1312941acf7a45843b7dc65ac8fc919475852b71e724d579598ff5ed",
+        "bytes": 8892
+      },
+      "proposed_revision/docs/market_data/authority/strategy/ops/Run_Artifacts_Format_LOCKED.md": {
+        "sha256": "231610e56be3ef7874f4a7c233568d5a836adf9df96e843304a796fd389b92b1",
+        "bytes": 27574
+      },
+      "proposed_revision/docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md": {
+        "sha256": "b3e7b14aba2904c289901eaee98b6aff67963860956c521fb73f2ca28619b241",
+        "bytes": 64245
+      },
+      "proposed_revision/manifest.json": {
+        "sha256": "bfefe48b901879cbc69825c3679a4c0abe51746914c1b323c742895ad629b166",
+        "bytes": 1283
+      },
+      "proposed_revision/proposed-authority.patch": {
+        "sha256": "80431c6154a1a825e55220510fb4e469bb608824a9efa0d4ba0cdcda60480e48",
+        "bytes": 16098
+      },
+      "replay_regression.execution.json": {
+        "sha256": "347ef668c58bbede3ab6c630be6280999f7252908492ac4613d33199c5808ce5",
+        "bytes": 468
+      },
+      "replay_regression.txt": {
+        "sha256": "7d88478b1cb361b125667ec8090298ab8263551a93d1358760e6a8b056270ca7",
+        "bytes": 208
+      },
+      "restored_state_pair.execution.json": {
+        "sha256": "8eeeac3772bbff69837fdddfb8c28cb4300a01d7aa03b4598c6ef44aa8e8ce8e",
+        "bytes": 351
+      },
+      "restored_state_pair.txt": {
+        "sha256": "13dc13e6d24d93bea1b54918014d87e6dd74012d9310081e41dd9696bdd2f335",
+        "bytes": 208
+      },
+      "retention_and_restoration_audit.json": {
+        "sha256": "bd7529428bc10b8f4a3be8b07b7d0251f39690deb77c1a826666fc8bc559d0aa",
+        "bytes": 2787
+      },
+      "update_governance.py": {
+        "sha256": "7d196df8e576ae2e0512f521eb2a8fef810fc2eed0807d8b6f69fdafbc71c19c",
+        "bytes": 11346
+      },
+      "verification_impact.json": {
+        "sha256": "942b6d5406142f25f5368e9782ae906e211e47fd7c762525faaf9babc6ba2703",
+        "bytes": 2336
+      }
+    }
+  },
+  "source_bindings": {
+    "tests/Unit/MarketData/B19ReplayStatePairStableSemanticsTest.php": "88a230453e7884c396253b7c61c5da84f8dcb59638cf251553a686e439d68b62",
+    "tests/Unit/MarketData/B19ReplayResultSemanticPipelineTest.php": "6a0e132a3ef5c461e7b8c16ae8d91ea8ac99a7cc1ec12e880c1a53589bdbf186",
+    "tests/Unit/MarketData/B18ReplayPersistedEvidenceBindingTest.php": "c60fd0b12e4b706c691f4831b4bdfea5372eb139191ad441f2f4fc9290a80b56",
+    "tests/Unit/MarketData/B18ReplayComparisonExhaustivenessTest.php": "d99d8dea19195e5a4fe0bb40776aaa41113ec94e6e1358e97e0fa6aa780bc432",
+    "app/Application/MarketData/Services/ReplayVerificationService.php": "4db2563bc8c4f91f1223a772facdb956027640e9b8b31666654b86319efe1cfe",
+    "app/Application/MarketData/Services/MarketDataEvidenceExportService.php": "a12ab1e579d6ba3a3b0950ebe19555fd0c4d5cc98edfb6d987295eddbdb5633a",
+    "app/Infrastructure/Persistence/MarketData/ReplayResultRepository.php": "68d6c56d5cfc2068dca5b7f2bccadb07f3a766fc898c45a5c890a4b48c8f6c49",
+    "app/Infrastructure/Persistence/MarketData/EodEvidenceRepository.php": "9c66358274a47855d86bb2a8e83417d62910820ba2632cef42f5148ebe07ce64",
+    "tests/fixtures/replay/b19-semantic-context-v1.json": "8065435b0174d118f976b5220f5720307dd07d359d0e1fe00a812d0aa84727be",
+    "tests/fixtures/replay/b19-semantic-context-v2.json": "1e3ff08d6c6cb055d3b0f6ce9df78ea6b99626d6a86e881767e4454bfe8f41a2"
+  },
+  "related_findings": [
+    "F-MD-B19-A001-010",
+    "F-MD-B19-A001-011",
+    "F-MD-B19-A001-003"
+  ],
+  "related_evidence": [
+    "E-MD-B19-A001-015",
+    "E-MD-B19-A001-016",
+    "E-MD-B19-A001-017",
+    "E-MD-B19-A001-018"
+  ],
+  "related_decisions": [
+    "D-MD-B19-A001-005",
+    "D-MD-B19-A001-001"
+  ],
+  "next_resume_point": "MD-B19-A001: independently review the exact proposed F010/F011 strategy bytes and verification-impact map in B19_F010_F011_CONTROLLED_REVISION_REVIEW.md (D-MD-B19-A001-005 choices are binding); resolve PUBLICATION_EXACT RAW applicability without invented values, then apply one reviewed correction/freeze with affected-proof handling before R0152, R0240-R0249/R0259 and the sixteen remaining state-pair mode/identity predicates. Retain E015-E019 and the sixteen stable state-pair bases. Current B19 178/743 reviewed, six complete families, formal SATISFIED 0/743; invalid bars 8/9, replay result 21/32, state pair 16/32. MD-DEP-0025 ACTIVE, six build files differing; candidate-v5 immutable, candidate-v6 not created.",
+  "no_commit_or_push": true,
+  "no_staging": true,
+  "governance_check_reporting": "Post-issue documentation/relationship/finding/operations gates are retained in the review ZIP; no unexecuted gate PASS is asserted by this record."
+}

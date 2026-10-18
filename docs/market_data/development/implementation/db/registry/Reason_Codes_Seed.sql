@@ -122,6 +122,7 @@ INSERT INTO eod_reason_codes (`code`, `category`, `description`, `severity`, `is
 ('RUN_STALE_DATA', 'RUN', 'Source rows were outside the requested trade date and must not count as available coverage.', 'HARD', 1),
 ('RUN_SOURCE_MALFORMED_PAYLOAD', 'RUN', 'The source payload could not be normalized safely.', 'HARD', 1),
 ('BAR_DUPLICATE_SOURCE_ROW', 'BAR', 'More than one source row mapped to the same (trade_date, ticker_id), requiring deterministic winner selection.', 'WARN', 1),
+('BAR_CONFLICTING_SOURCE_ROWS', 'BAR', 'Conflicting non-equivalent observations for the same resolved stable listing/trade-date identity with no safe canonical winner; preserve rejected audit evidence. Distinct from deterministic duplicate resolution.', 'HARD', 1),
 ('BAR_INVALID_OHLC_ORDER', 'BAR', 'Received OHLC values violated canonical ordering rules.', 'HARD', 1),
 ('BAR_NON_POSITIVE_PRICE', 'BAR', 'Received price value was zero or negative in a field that must be positive.', 'HARD', 1),
 ('BAR_NEGATIVE_VOLUME', 'BAR', 'Received volume value was negative.', 'HARD', 1),

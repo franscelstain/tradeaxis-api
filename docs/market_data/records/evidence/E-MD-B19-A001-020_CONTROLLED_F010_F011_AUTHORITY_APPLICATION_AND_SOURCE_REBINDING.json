@@ -1,0 +1,71 @@
+{
+  "evidence_id": "E-MD-B19-A001-020",
+  "record_type": "EVIDENCE",
+  "role_scope": "CURRENT_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B19",
+  "attempt_id": "MD-B19-A001",
+  "work_id": "MD-B19-A001",
+  "baseline_id": "MD-B19-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261018-001",
+  "ci_id": "CI-MD-B19-A001-001",
+  "issued_at": "2026-10-18T10:54:56+07:00",
+  "verdict": "CONTROLLED_AUTHORITY_APPLIED_EXECUTABLE_PROOF_PENDING",
+  "decision_id": "D-MD-B19-A001-006",
+  "source_findings": [
+    "F-MD-B19-A001-010",
+    "F-MD-B19-A001-011"
+  ],
+  "review_disposition": "Independent acceptance/conditional exact-text review reported by owner; exact review directions applied to in-repository E019 proposal. Subsequent owner instruction explicitly withdraws external delivery/provisional hash prerequisite. No unavailable reviewer identity or signed artifact invented.",
+  "change_id": "DOC-CHG-20261018-001",
+  "predecessor_freeze": "MD-STRATEGY-FREEZE-20261005-001",
+  "denominator": 750,
+  "reviewed_bases_retained": 178,
+  "formal_satisfied": 0,
+  "new_normative_groups_unproved": 7,
+  "verification_impact": "Existing mandatory IDs preserved; source equivalent table paths retain earlier meanings. No previously SATISFIED affected text. Current context/registry producer changes require targeted revalidation before later proof claim. Reference-only removed illustrations retained verbatim in raw source_rebinding; no obligation dropped. Seven new compound normative groups explicitly unproved.",
+  "runtime_proof": "NOT_RUN_NOT_CLAIMED_BY_THIS_RECORD",
+  "raw_artifacts": {
+    "dir": "storage/app/market-data/evidence/MD-B19-A001/authority-completion-20261018",
+    "inventory": "authority_inventory.json",
+    "inventory_sha256": "232f12168bdcbc3bb975e55791768a86517f01e3f27de72f91dceb9c131653a4",
+    "files": {
+      "reviewed_revision_manifest.json": {
+        "sha256": "128b57d8bfffeda8719bbf6ce10feb111e83cfaf00e41a01f5de2dd58676a7c4",
+        "bytes": 1542
+      },
+      "source_rebinding.json": {
+        "sha256": "0a9d9ad50c9be586737357ca76850709359115d6677afa0a788e8bd689954257",
+        "bytes": 200117
+      },
+      "reviewed_replacement/docs/market_data/authority/strategy/ops/Audit_Evidence_Pack_Contract_LOCKED.md": {
+        "sha256": "5a81a09d1312941acf7a45843b7dc65ac8fc919475852b71e724d579598ff5ed",
+        "bytes": 8892
+      },
+      "reviewed_replacement/docs/market_data/authority/strategy/ops/Run_Artifacts_Format_LOCKED.md": {
+        "sha256": "28e6cee295cad7069dd4feef0c7c14b78f8954d496b49b88445dadc64e4841a7",
+        "bytes": 28104
+      },
+      "reviewed_replacement/docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md": {
+        "sha256": "124efce00c90468aad12723891262cc46ab0dd4ff45b03cf624626202e0e55ee",
+        "bytes": 64330
+      },
+      "original/docs/market_data/authority/strategy/ops/Audit_Evidence_Pack_Contract_LOCKED.md": {
+        "sha256": "e81867a9a0703101e284b99b701be72a69a0ce9986156b835f39787b6c9d3294",
+        "bytes": 9419
+      },
+      "original/docs/market_data/authority/strategy/ops/Run_Artifacts_Format_LOCKED.md": {
+        "sha256": "c32cf0f265da73c6044fab29bf045203af08a120d695cd4302a41de93bb2e227",
+        "bytes": 22020
+      },
+      "original/docs/market_data/authority/strategy/registry/Reason_Codes_Registry.md": {
+        "sha256": "d0ec57b3162801329b733c8bb03a4c9fade17946af8771d635e8b2d7c837e507",
+        "bytes": 63857
+      }
+    },
+    "file_count": 8
+  },
+  "next_resume_point": "MD-B19-A001: D006 authority applied, freeze MD-STRATEGY-FREEZE-20261018-001; execute remaining 28 target predicates, starting stable-listing/date conflict key red/green on ingest/recovery then versioned publication-bound replay capture and independent mode/identity proof. B19 178/750 reviewed, formal 0/750; seven new normative groups unproved. MD-DEP-0025 ACTIVE; no candidate-v6.",
+  "no_git_mutations": true
+}

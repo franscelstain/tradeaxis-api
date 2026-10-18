@@ -75,6 +75,7 @@ class ReplayVerificationServiceTest extends TestCase
             'hard_reject_count' => 3,
         ]);
         $publication = (object) [
+            'publication_manifest_hash' => str_repeat('a', 64),
             'publication_id' => 44,
             'run_id' => 91,
             'publication_version' => 4,
@@ -87,6 +88,7 @@ class ReplayVerificationServiceTest extends TestCase
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
 
+        $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(91)->andReturn((object) $run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
@@ -170,6 +172,7 @@ class ReplayVerificationServiceTest extends TestCase
         foreach ([4801, 4802] as $replayId) {
             $run = (object) $this->successReadableRun(951, '2026-03-20');
             $publication = (object) [
+            'publication_manifest_hash' => str_repeat('a', 64),
                 'publication_id' => 61, 'run_id' => 951, 'publication_version' => 4, 'is_current' => 1,
                 'seal_state' => 'SEALED', 'sealed_at' => '2026-03-20 17:30:00',
             ];
@@ -178,7 +181,8 @@ class ReplayVerificationServiceTest extends TestCase
             $publications = m::mock(EodPublicationRepository::class);
             $replays = m::mock(ReplayResultRepository::class);
 
-            $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
+            $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
+        $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
             $evidence->shouldReceive('findRunById')->once()->with(951)->andReturn($run);
             $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->andReturn($publication);
             $evidence->shouldReceive('dominantReasonCodes')->andReturn([
@@ -237,6 +241,7 @@ class ReplayVerificationServiceTest extends TestCase
         foreach ([['id' => 4901, 'bars' => 'A1'], ['id' => 4902, 'bars' => 'A1_DIVERGED']] as $round) {
             $run = (object) array_merge($this->successReadableRun(952, '2026-03-20'), ['bars_batch_hash' => $round['bars']]);
             $publication = (object) [
+            'publication_manifest_hash' => str_repeat('a', 64),
                 'publication_id' => 62, 'run_id' => 952, 'publication_version' => 4, 'is_current' => 1,
                 'seal_state' => 'SEALED', 'sealed_at' => '2026-03-20 17:30:00',
             ];
@@ -245,7 +250,8 @@ class ReplayVerificationServiceTest extends TestCase
             $publications = m::mock(EodPublicationRepository::class);
             $replays = m::mock(ReplayResultRepository::class);
 
-            $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
+            $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
+        $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
             $evidence->shouldReceive('findRunById')->once()->with(952)->andReturn($run);
             $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->andReturn($publication);
             $evidence->shouldReceive('dominantReasonCodes')->andReturn([]);
@@ -347,6 +353,7 @@ class ReplayVerificationServiceTest extends TestCase
 
         $run = (object) $this->successReadableRun(991, '2026-03-20');
         $publication = (object) [
+            'publication_manifest_hash' => str_repeat('a', 64),
             'publication_id' => 944, 'run_id' => 991, 'publication_version' => 4, 'is_current' => 1,
             'seal_state' => 'SEALED', 'sealed_at' => '2026-03-20 17:30:00',
         ];
@@ -355,6 +362,7 @@ class ReplayVerificationServiceTest extends TestCase
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
 
+        $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(991)->andReturn($run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->andReturn($publication);
@@ -543,6 +551,7 @@ class ReplayVerificationServiceTest extends TestCase
 
         $run = (object) $this->successReadableRun(991, '2026-03-20');
         $publication = (object) [
+            'publication_manifest_hash' => str_repeat('a', 64),
             'publication_id' => 944, 'run_id' => 991, 'publication_version' => 4, 'is_current' => 1,
             'seal_state' => 'SEALED', 'sealed_at' => '2026-03-20 17:30:00',
         ];
@@ -556,6 +565,7 @@ class ReplayVerificationServiceTest extends TestCase
         if ($registryContent !== self::REGISTRY_CONTENT_UNSET) {
             $manifest->bound_input_context['registry_content'] = $registryContent;
         }
+        $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($manifest);
         $evidence->shouldReceive('findRunById')->once()->with(991)->andReturn($run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->andReturn($publication);
@@ -588,6 +598,7 @@ class ReplayVerificationServiceTest extends TestCase
 
         $run = (object) $this->successReadableRun(991, '2026-03-20');
         $publication = (object) [
+            'publication_manifest_hash' => str_repeat('a', 64),
             'publication_id' => 944,
             'run_id' => 991,
             'publication_version' => 4,
@@ -603,6 +614,7 @@ class ReplayVerificationServiceTest extends TestCase
         $manifest = $status === 'VERIFIED' ? $this->verifiedBoundContextManifest() : (object) [
             'bound_input_context' => ['available' => false, 'status' => $status, 'reason' => $reason],
         ];
+        $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($manifest);
         $evidence->shouldReceive('findRunById')->once()->with(991)->andReturn($run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->andReturn($publication);
@@ -692,11 +704,12 @@ class ReplayVerificationServiceTest extends TestCase
         ]);
         $replays->shouldReceive('nextReplayId')->once()->andReturn(3003);
         $replays->shouldReceive('upsertMetric')->once()->with(m::on(function ($metric) {
-            return $metric['comparison_result'] === 'EXPECTED_DEGRADE'
-                && $metric['replay_status'] === 'PASS'
+            return $metric['comparison_result'] === 'NOT_ADMISSIBLE'
+                && $metric['replay_status'] === 'BLOCKED'
                 && $metric['status'] === 'HELD'
                 && $metric['publishability_state'] === 'NOT_READABLE'
-                && $metric['mismatch_count'] === 0;
+                && $metric['final_reason_code'] === null
+                && strpos($metric['mismatch_summary'], 'REPLAY_PUBLICATION_MANIFEST_IDENTITY_UNAVAILABLE') !== false;
         }));
         $replays->shouldReceive('replaceReasonCodeCounts')->once()->with(3003, '2026-03-20', [
             ['reason_code' => 'RUN_SOURCE_RATE_LIMIT', 'reason_count' => 1],
@@ -705,8 +718,8 @@ class ReplayVerificationServiceTest extends TestCase
         $service = new ReplayVerificationService($evidence, $publications, $replays);
         $result = $service->verifyRunAgainstFixture(92, $fixtureDir);
 
-        $this->assertSame('EXPECTED_DEGRADE', $result['comparison_result']);
-        $this->assertSame('PASS', $result['replay_status']);
+        $this->assertSame('NOT_ADMISSIBLE', $result['comparison_result']);
+        $this->assertSame('BLOCKED', $result['replay_status']);
         $this->assertSame('HELD', $result['status']);
         $this->assertSame('NOT_READABLE', $result['publishability_state']);
     }
@@ -745,6 +758,7 @@ class ReplayVerificationServiceTest extends TestCase
 
         $run = (object) $this->successReadableRun(93, '2026-03-20');
         $publication = (object) [
+            'publication_manifest_hash' => str_repeat('a', 64),
             'publication_id' => 45,
             'run_id' => 93,
             'publication_version' => 4,
@@ -756,6 +770,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(93)->andReturn($run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
@@ -849,6 +864,7 @@ class ReplayVerificationServiceTest extends TestCase
             'eligibility_rows_written' => 8,
         ]);
         $publication = (object) [
+            'publication_manifest_hash' => str_repeat('a', 64),
             'publication_id' => 46,
             'run_id' => 94,
             'publication_version' => 4,
@@ -860,6 +876,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(94)->andReturn($run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
@@ -919,6 +936,7 @@ class ReplayVerificationServiceTest extends TestCase
 
         $run = (object) $this->successReadableRun(95, '2026-03-20');
         $publication = (object) [
+            'publication_manifest_hash' => str_repeat('a', 64),
             'publication_id' => 47,
             'run_id' => 95,
             'publication_version' => 4,
@@ -930,6 +948,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(95)->andReturn($run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
@@ -1033,6 +1052,7 @@ class ReplayVerificationServiceTest extends TestCase
             'eligible_count' => 7,
         ]);
         $historicalPublication = (object) [
+            'publication_manifest_hash' => str_repeat('a', 64),
             'publication_id' => 144,
             'run_id' => 191,
             'publication_version' => 4,
@@ -1052,6 +1072,7 @@ class ReplayVerificationServiceTest extends TestCase
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
 
+        $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(191)->andReturn($run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
@@ -1173,6 +1194,7 @@ class ReplayVerificationServiceTest extends TestCase
         $run = (object) $this->successReadableRun(556, '2026-04-01');
 
         $explicitPublication = (object) [
+            'publication_manifest_hash' => str_repeat('a', 64),
             'publication_id' => 61,
             'run_id' => 556,
             'publication_version' => 4,
@@ -1192,6 +1214,7 @@ class ReplayVerificationServiceTest extends TestCase
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
 
+        $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $publications->shouldNotReceive('findCurrentPublicationForTradeDate');
         $publications->shouldNotReceive('findReadableCurrentPublicationForRun');
@@ -1294,6 +1317,7 @@ class ReplayVerificationServiceTest extends TestCase
             'notes' => 'request_mode=correction; coverage_basis=CandidatePublication; coverage_basis_publication_id=307; candidate_publication_id=307; baseline_publication_id=305; coverage_basis_artifact_scope=candidate_publication_artifact',
         ]);
         $baselinePublication = (object) [
+            'publication_manifest_hash' => str_repeat('a', 64),
             'publication_id' => 305,
             'run_id' => 306,
             'publication_version' => 4,
@@ -1320,6 +1344,7 @@ class ReplayVerificationServiceTest extends TestCase
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
 
+        $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(408)->andReturn($run);
         $evidence->shouldReceive('findCorrectionByRunId')->once()->with(408)->andReturn($correction);
@@ -1475,7 +1500,7 @@ class ReplayVerificationServiceTest extends TestCase
         $replays->shouldReceive('upsertMetric')->once()->with(m::on(function ($metric) {
             $actualContext = json_decode($metric['actual_context_json'], true);
 
-            return $metric['comparison_result'] === 'MATCH'
+            return $metric['comparison_result'] === 'NOT_ADMISSIBLE'
                 && $metric['coverage_gate_state'] === 'NOT_EVALUABLE'
                 && $metric['expected_coverage_gate_state'] === 'NOT_EVALUABLE'
                 && ($actualContext['actual_coverage_context']['coverage_gate_state'] ?? null) === 'NOT_EVALUABLE'
@@ -1489,7 +1514,7 @@ class ReplayVerificationServiceTest extends TestCase
         $service = new ReplayVerificationService($evidence, $publications, $replays);
         $result = $service->verifyRunAgainstFixture(196, $fixtureDir);
 
-        $this->assertSame('MATCH', $result['comparison_result']);
+        $this->assertSame('NOT_ADMISSIBLE', $result['comparison_result']);
         $this->assertSame('NOT_EVALUABLE', $result['coverage_gate_state']);
         $this->assertSame('BLOCKED', $result['actual_context']['actual_coverage_context']['legacy_coverage_gate_state_raw']);
     }
@@ -1527,6 +1552,7 @@ class ReplayVerificationServiceTest extends TestCase
             'factor_set_hash' => $actualFactorHash,
         ]);
         $publication = (object) [
+            'publication_manifest_hash' => str_repeat('a', 64),
             'publication_id' => 55,
             'run_id' => 103,
             'publication_version' => 4,
@@ -1542,6 +1568,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(103)->andReturn($run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->with(m::on(function ($selector) {
@@ -1583,6 +1610,9 @@ class ReplayVerificationServiceTest extends TestCase
     private function verifiedBoundContextManifest(): object
     {
         return (object) [
+            'config_snapshot_id' => 7001, 'config_snapshot_hash' => str_repeat('7', 64),
+            'temporal_revision_set_hash' => str_repeat('b', 64), 'formula_version' => 'unit-formula-v1',
+            'price_product_code' => 'STRUCTURAL_ADJUSTED', 'price_product_version' => 'unit-structural-v1', 'factor_set_id' => 700,
             'bound_input_context' => [
                 'available' => true,
                 'status' => 'VERIFIED',
@@ -1716,6 +1746,7 @@ class ReplayVerificationServiceTest extends TestCase
         }
 
         return [
+            'expected_publication_manifest_identity' => ['schema_version' => 'replay_publication_manifest_identity_v1', 'applicability' => 'APPLICABLE', 'publication_id' => $v['publication_id'], 'publication_manifest_hash' => str_repeat('a', 64), 'temporal_revision_set_hash' => str_repeat('b', 64), 'formula_version' => 'unit-formula-v1'],
             'comparison_result' => $v['comparison_result'],
             'comparison_note' => 'deterministic replay fixture expectation',
             'expected_run_context' => [
@@ -1776,6 +1807,7 @@ class ReplayVerificationServiceTest extends TestCase
                 'seal_state' => $v['seal_state'] ?? ($v['terminal_status'] === 'SUCCESS' ? 'SEALED' : 'UNSEALED'),
             ],
             'expected_publication_context' => [
+                'publication_manifest_hash' => str_repeat('a', 64),
                 'publication_id' => $v['publication_id'],
                 'current_publication_id' => $v['publication_is_current'] ? $v['publication_id'] : null,
                 'publication_run_id' => $v['publication_run_id'],
@@ -1850,6 +1882,7 @@ class ReplayVerificationServiceTest extends TestCase
     private function manifest($fixtureId, array $files)
     {
         return [
+            'replay_mode' => 'PUBLICATION_EXACT',
             'fixture_id' => $fixtureId,
             'fixture_family' => $fixtureId,
             'fixture_version' => 'v2',

@@ -216,7 +216,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame(8124, $result['selector']['id']);
         $this->assertSame('SUCCESS', $result['summary']['terminal_status']);
         $this->assertSame('READABLE', $result['summary']['publishability_state']);
-        $this->assertSame(11, $result['file_count']);
+        $this->assertSame(12, $result['file_count']); // includes the serialized-byte hash/timestamp companion
         $this->assertSame($dir, $result['output_dir']);
         $this->assertFileExists($dir.'/run_summary.json');
         $this->assertFileExists($dir.'/publication_manifest.json');
@@ -238,7 +238,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertSame(8124, $summary['run_id']);
         $this->assertSame('SUCCESS', $summary['terminal_status']);
         $this->assertTrue($summary['is_current_publication']);
-        $this->assertSame('ADMITTED_COMPLETE', $summary['evidence_admission_state']);
+        $this->assertSame('ADMITTED_INCOMPLETE', $summary['evidence_admission_state']); // partial legacy fixture lacks mandatory companion bindings
         $this->assertSame('PASS', $summary['coverage']['coverage_gate_state']);
         $this->assertSame('COVERAGE_THRESHOLD_MET', $summary['coverage']['coverage_reason_code']);
         $this->assertTrue($summary['coverage']['coverage_passed']);
@@ -255,7 +255,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         );
         $this->assertSame(0.98, $summary['coverage']['coverage_min_threshold']);
         $this->assertSame([], $summary['coverage']['coverage_missing_sample']);
-        // C1 §6 step 4 (Reader): evidence export must carry the manifest's own version-aware
+        // C1 Â§6 step 4 (Reader): evidence export must carry the manifest's own version-aware
         // bound-input-context projection verbatim, never re-derive it.
         $this->assertTrue($summary['bound_input_context_available']);
         $this->assertSame('VERIFIED', $summary['bound_input_context_status']);
@@ -302,7 +302,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $admission = json_decode(file_get_contents($dir.'/evidence_admission.json'), true);
         $this->assertSame('run', $admission['selector_type']);
         $this->assertSame(8124, $admission['selector_id']);
-        $this->assertSame('ADMITTED_COMPLETE', $admission['evidence_admission_state']);
+        $this->assertSame('ADMITTED_INCOMPLETE', $admission['evidence_admission_state']); // legacy partial identity fixtures are readable, not complete R0004 proof
         $this->assertFalse($admission['database_lookup_required_after_export']);
         $this->assertFalse($admission['silent_missing_metadata_allowed']);
 
@@ -322,7 +322,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
             [['ticker_id' => 202, 'ticker_code' => 'EXCL']],
             $payload['coverage_context']['coverage_excluded_sample_json']
         );
-        $this->assertSame('ADMITTED_COMPLETE', $payload['evidence_admission']['evidence_admission_state']);
+        $this->assertSame('ADMITTED_INCOMPLETE', $payload['evidence_admission']['evidence_admission_state']); // same partial identity fixture, embedded admission stays consistent
         $this->assertSame('coverage_gate_v1', $payload['run_summary']['coverage']['coverage_contract_version']);
         $this->assertSame('active_equity_universe_asof_trade_date', $payload['run_summary']['coverage']['coverage_universe_basis']);
         $this->assertSame('REPUBLISHED', $payload['run_summary']['publication_reprocess_summary']['execution_state']);

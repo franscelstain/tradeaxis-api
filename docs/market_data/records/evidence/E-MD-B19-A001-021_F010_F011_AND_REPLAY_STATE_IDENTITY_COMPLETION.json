@@ -1,0 +1,792 @@
+{
+  "evidence_id": "E-MD-B19-A001-021",
+  "record_type": "EVIDENCE",
+  "role_scope": "CURRENT_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B19",
+  "attempt_id": "MD-B19-A001",
+  "work_id": "MD-B19-A001",
+  "baseline_id": "MD-B19-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261018-001",
+  "ci_id": "CI-MD-B19-A001-001",
+  "issued_at": "2026-10-18T12:04:51+07:00",
+  "evidence_type": "CONTROLLED_AUTHORITY_TARGET_COMPLETION_AND_AFFECTED_REPLAY_REVALIDATION",
+  "verdict": "28_NEW_REVIEWED_BASES_TARGET_COMPLETE_STAGE_PARTIAL",
+  "initial_head": "eeb715b24df147232a7627d03d9c577ff369856f",
+  "takeover": "178/743 reviewed, six completed families, formal zero; inherited 17 changed/new files. Initial-status capture was made immediately after new D006 creation, so contains 18 paths; no inherited work reset. HEAD unchanged.",
+  "decisions": [
+    "D-MD-B19-A001-005",
+    "D-MD-B19-A001-006"
+  ],
+  "authority_application": "E020 / DOC-CHG-20261018-001 applies corrected in-repository E019 proposal: stable listing/date BAR/HARD reason; controlled persisted-name replay contract alignment; owner-confirmed fail-closed PUBLICATION_EXACT RAW. Three strategy fingerprints change, 91 documents frozen. No additional RAW publication capability introduced. Seven new compound normative groups classified REQUIRED, denominator 750; they remain unproved. One further removed illustration MD-S063-R0143 retirement corrected in retired_reference_followup.json; REFERENCE_ONLY only.",
+  "newly_reviewed_predicates": [
+    "MD-S075-R0152",
+    "MD-S075-R0240",
+    "MD-S075-R0241",
+    "MD-S075-R0242",
+    "MD-S075-R0243",
+    "MD-S075-R0244",
+    "MD-S075-R0245",
+    "MD-S075-R0246",
+    "MD-S075-R0247",
+    "MD-S075-R0248",
+    "MD-S075-R0249",
+    "MD-S075-R0259",
+    "MD-S075-R0267",
+    "MD-S075-R0268",
+    "MD-S075-R0269",
+    "MD-S075-R0270",
+    "MD-S075-R0271",
+    "MD-S075-R0272",
+    "MD-S075-R0273",
+    "MD-S075-R0274",
+    "MD-S075-R0284",
+    "MD-S075-R0285",
+    "MD-S075-R0286",
+    "MD-S075-R0287",
+    "MD-S075-R0288",
+    "MD-S075-R0289",
+    "MD-S075-R0290",
+    "MD-S075-R0291"
+  ],
+  "newly_reviewed": 28,
+  "per_predicate_map": "per_predicate_proof_map.json",
+  "proof": {
+    "F010": "Independent stable listing/date alias fixtures -> actual normal/recovered ingest -> real audit/canonical rows -> CSV. Conflicts excluded, equivalent duplicates deterministic WARN, clean neighbor canonical; source refs/observations retained. Canonical SQL seed executed on SQLite and MariaDB rollback, BAR/HARD active. Four distinct mutation probes assertion-red and restored.",
+    "F011": "Independently versioned accepted semantic literals read before real world creation; selected immutable primary publication/config/lineage inputs derive navigation and temporal binding before replay. Full real MariaDB producer/comparator/admission -> persisted metrics -> all three JSON exports. New versioned actual publication envelope records verified publication_id/hash plus temporal revision hash and formula version; independent expected envelope never copied from actual replay output. Frozen factor/product/version retained; temporal_identity/event_factor/formula_registry hashes remain distinct.",
+    "independence": "Expected semantic values come from immutable candidate-v5 literals; new fixture manifest/version/envelope contract probes are separately authored and not successor golden candidates. Navigation allocations and temporal hash are independently derived from authoritative pre-replay input rows, not replay results. Source build ID is independently scanned from source bytes, never read from target result; mutant build separately scanned to prevent vacuous mismatch-red. Portable actual-row fixture is actual data for fast projections, not an expected oracle.",
+    "boundaries": "Actual real publication MATCH/PASS, genuine insufficient-history EXPECTED_DEGRADE/PASS, independent divergences MISMATCH/FAIL and UNEXPECTED/FAIL; missing/malformed expected envelope or mode BLOCKED. Wrong stored envelope refused at export; no live reconstruction. Selected publication marked noncurrent/current pointer removed, live default RAW changed: frozen selected identities/product retained. This is noncurrent-publication binding proof, not a full corrective reseal lifecycle. AS_KNOWN actual cutoff/mode/explicit publication-only NA exercised through real existing snapshot/replay/export; only those coordinate/applicability assertions claimed from reused helper, not its self-derived non-coordinate expectations.",
+    "RAW": "Existing EodPublicationRepository analytical seal path requires STRUCTURAL_ADJUSTED (source lines 761-762 at this checkpoint); no supported verified RAW publication exists on this path. Capture of RAW/missing mandatory analytical values is UNAVAILABLE and real admission BLOCKED, never matching NULL proof. Analytical NA only explicit AS_KNOWN CANONICAL_RAW branch; no invented RAW capability.",
+    "mutations": "22 distinct new assertion-sensitive probes (4 conflict, 17 fast replay projection/capture/parser, 1 actual MariaDB expected-mode fallback). Exact commands/output hashes/before/restored bytes in mutation_restoration_summary.json. Two initial related error-plus-assertion probes retained diagnostic; corrected supplemental probes clean assertion-red. Unaffected E018/E019 historical mutation suites retained, not repeated.",
+    "new_core_tests": "Real MariaDB replay 1/114 PASS; independent field/negative projectors 42/319 PASS; AS_KNOWN 1/31 PASS; conflict normal/recovery/registry 3/53 PASS; MariaDB full SQL seed 1/5 PASS.",
+    "regression": "172 tests / 1221 assertions PASS focused producer/persistence/export/classification/legacy-compatible fixtures/AS_KNOWN/registry; current registry 24/79 PASS; governance record/scope/read-only gate tests 20/7068 PASS. Some overlap, not summed as unique tests.",
+    "red_green_limits": "Stable-key normal/recovered genuine red and R242 type red retained; fixture setup failures and expected earlier-boundary exception mismatch not defect claims. New capture/source behavior is also demonstrated by targeted negative mutations; no fabricated pre-edit execution asserted.",
+    "full_suite": "NOT_EXECUTED; known alias F009/E013 failure and historical thirteen build-identity failures remain visible; no full-suite PASS claim."
+  },
+  "previous_bases": {
+    "retained_total": 178,
+    "explicitly_revalidated_semantic_and_stable": 18,
+    "predicates": [
+      "MD-S075-R0260",
+      "MD-S075-R0261",
+      "MD-S075-R0264",
+      "MD-S075-R0265",
+      "MD-S075-R0266",
+      "MD-S075-R0275",
+      "MD-S075-R0276",
+      "MD-S075-R0277",
+      "MD-S075-R0278",
+      "MD-S075-R0279",
+      "MD-S075-R0281",
+      "MD-S075-R0282",
+      "MD-S075-R0283",
+      "MD-S075-R0292",
+      "MD-S075-R0293",
+      "MD-S075-R0294",
+      "MD-S075-R0295",
+      "MD-S075-R0296"
+    ],
+    "other_retained": 160,
+    "impact": "Other earlier meanings/paths unchanged by documented source rebinding; stored projections/ingest and exporter targeted regressions retained. Earlier incomplete publication world CLASSIFICATION expectations invalidated and requalified to BLOCKED under D006; valid classification/stable context proof explicitly replaced by actual verified publication execution. No previously admitted predicate remains silently invalidated/held. No formal SATISFIED existed in affected B19 scope. Immutable historical evidence kept as original-freeze proof, not rewritten.",
+    "retained_raw_integrity": "retained_evidence_integrity.json"
+  },
+  "status_after": {
+    "reviewed_bases": 206,
+    "denominator": 750,
+    "formal_satisfied": 0,
+    "completed_families": 9,
+    "families": 37,
+    "artifact_invalid_bars_export": "9/9",
+    "artifact_replay_result": "32/32",
+    "artifact_replay_state_pair": "32/32",
+    "remaining_without_basis": 544,
+    "new_compound_groups_unproved": 7
+  },
+  "findings": {
+    "F-MD-B19-A001-010": "RESOLVED",
+    "F-MD-B19-A001-011": "RESOLVED",
+    "F-MD-B19-A001-003": "OPEN; MD-DEP-0025 ACTIVE; eight executable build files differ; no candidate-v6",
+    "F-MD-B19-A001-002": "OPEN; stage has 544 missing bases"
+  },
+  "governance": "Documentation/relationship/classification/applicability PASS; operations FAIL only for open-stage proof shortfall/unguarded families, map exactly750. Post-issue gate results kept externally in review package without rewriting this record.",
+  "candidate_v5": "Immutable; historical inputs/expected files unchanged. Frozen historical reason snapshot used inside rolled-back real replay test, current SQL reason registration proven separately. Current source identity is an independent test input only, not candidate-v6 or restored current-build R0025 admission. MD-B18 remains closed.",
+  "raw_artifacts": {
+    "dir": "storage/app/market-data/evidence/MD-B19-A001/authority-completion-20261018/proof",
+    "inventory": "inventory.json",
+    "inventory_sha256": "5974ebeb740f6a6be63759e7d7c243d034ec3a7f78a48e67bc9d6ae2ced90709",
+    "files": {
+      "conflict_mutations.json": {
+        "sha256": "c35fb5a49cd026ca5f1f39bfd9a57f72d1b26498602492fe760ff211e79d6456",
+        "bytes": 3007
+      },
+      "diagnostic_alias_meaning_final.execution.json": {
+        "sha256": "5f05c6925e28a5a0c4617c6b73a50b9b9a49257024ef2b4067f48ccfaff81f6f",
+        "bytes": 335
+      },
+      "diagnostic_alias_meaning_final.txt": {
+        "sha256": "6fe30dcd38524400fe4b4c1a167e6e28fd249e0844764dbfed0b4134a1f1077c",
+        "bytes": 1850
+      },
+      "execution_disposition.json": {
+        "sha256": "33d591f07e8595fc392b814d9ae21ff6e748f86765f1444333c1adc30f803f84",
+        "bytes": 11938
+      },
+      "frozen_build_identity.json": {
+        "sha256": "8cd822005587cf9cef9cc273d84e0efd834e2a717f8491f687393b3b0647e5b5",
+        "bytes": 1544
+      },
+      "frozen_build_manifest.txt": {
+        "sha256": "3d44ace4ead8e63145d45bb1fbb39677f5efb49e351442d7178c0e6c52956cc0",
+        "bytes": 736966
+      },
+      "gate_MarketDataClassificationConsistencyGate.execution.json": {
+        "sha256": "dec0b6977d93886f722b04018e34e9499f18a3ad2769341b8866306fbab096af",
+        "bytes": 342
+      },
+      "gate_MarketDataClassificationConsistencyGate.txt": {
+        "sha256": "8ef4ca83d244430d35d5a4d385b54550f9621c23d96314e5b49ea5cf2e3a27ed",
+        "bytes": 1579
+      },
+      "gate_MarketDataDocumentationIntegrityGate.execution.json": {
+        "sha256": "7b3ae4cfcaa62c68356f67ef60474bebf27bdd55eeb081e573d4599c7062e37c",
+        "bytes": 339
+      },
+      "gate_MarketDataDocumentationIntegrityGate.txt": {
+        "sha256": "1e20f56f48eb76e90a751d31ab73f2449f9839f4dc81122c9c886864c635ea9d",
+        "bytes": 4004
+      },
+      "gate_MarketDataRelationshipIntegrityGate.execution.json": {
+        "sha256": "2ec6087d6a5b79f6e159a5420bf8b5502adc171f3998aadb9a89b6f7427a3589",
+        "bytes": 338
+      },
+      "gate_MarketDataRelationshipIntegrityGate.txt": {
+        "sha256": "49c97b358410aeed0f35591a60b21b322461f05e861ef0df135f0de24c929405",
+        "bytes": 601
+      },
+      "gate_MarketDataTraceabilityApplicabilityGate.execution.json": {
+        "sha256": "b0281d6c8bb1717a593a555ca77c8f812ad2c17dd2af34f0191bade491c098b8",
+        "bytes": 342
+      },
+      "gate_MarketDataTraceabilityApplicabilityGate.txt": {
+        "sha256": "74f5c20c2a760daeb620021ee8dc298bd66c5cca8c16bab0facf01d3abc6cc86",
+        "bytes": 346
+      },
+      "gate_operations_preissue.execution.json": {
+        "sha256": "051729236820b70d8470e2ee88b9c614c62ef8884d5997e6cd1815da91af627d",
+        "bytes": 332
+      },
+      "gate_operations_preissue.txt": {
+        "sha256": "676966b10a34b2402f7b3c949baf67e7a57f4b5312c75f0e1878cc36507e65bb",
+        "bytes": 3494
+      },
+      "green_as_known_applicability_complete.execution.json": {
+        "sha256": "b30d0f72d3cd4c7decc10057359f8af374b29e15eeb170974977ed818c75ae5e",
+        "bytes": 337
+      },
+      "green_as_known_applicability_complete.txt": {
+        "sha256": "d0772276cfe562645eaf01e89a88fae6b1f7016cc42932c368bd42da9ab40636",
+        "bytes": 206
+      },
+      "green_as_known_final.execution.json": {
+        "sha256": "84067eed42e9cd14375840bb2f32af8d9df3a2306d9cd82dce70d8c0c3d5068a",
+        "bytes": 337
+      },
+      "green_as_known_final.txt": {
+        "sha256": "3a58a0b6a55269b87bb1f513865bbdab30efe44bf75b2caca14f7278c55c7905",
+        "bytes": 206
+      },
+      "green_as_known_new_paths.execution.json": {
+        "sha256": "7665ce4ed38c413e8dff8817293585b1bf2a88bf5653a4486c37eb728f69eb75",
+        "bytes": 383
+      },
+      "green_as_known_new_paths.txt": {
+        "sha256": "b7d90e4273e9b75d347db88c3cefdd0c93ce9274fca7c6166d83b91646a6c334",
+        "bytes": 206
+      },
+      "green_as_known_new_paths_final.execution.json": {
+        "sha256": "e4560dc02861ed4f625b20dc00d0e0013482d0463bd76ce6ec33841b30ae0ad1",
+        "bytes": 337
+      },
+      "green_as_known_new_paths_final.txt": {
+        "sha256": "a7bc1b624e599e1ee97d262b4f65ccc3faf27e3085d9c9d1196a84e2397c6f09",
+        "bytes": 206
+      },
+      "green_conflict.execution.json": {
+        "sha256": "18380172925b49374764c5e5aebf4255233cce67687cb34aa39e4ad10d9c4ec2",
+        "bytes": 331
+      },
+      "green_conflict.txt": {
+        "sha256": "22098dc9cdd191070452bdf7533ec1a6ffa2f6fbf53c275bcadc6ccfacaf7a88",
+        "bytes": 559
+      },
+      "green_conflict_final.execution.json": {
+        "sha256": "3bf89bc8bc87200690e20464aaa8116d6610b5f3d264a49a546432ac62f7e90b",
+        "bytes": 331
+      },
+      "green_conflict_final.txt": {
+        "sha256": "18272667b7f988cbe279318495ea09279cb323d99d7acb30b7ce65c67ceb2db6",
+        "bytes": 559
+      },
+      "green_conflict_registered.execution.json": {
+        "sha256": "b364b815ba54b2633fc5728defd37c8014f74d21e0e27843b1beb134773cf334",
+        "bytes": 331
+      },
+      "green_conflict_registered.txt": {
+        "sha256": "cb54b2b93451a1110200058ccf78e150286a3d15ebb552c36de1da4e45dd41e0",
+        "bytes": 206
+      },
+      "green_conflict_seed_executed.execution.json": {
+        "sha256": "1ce42c0deec875aa6142423fd4132a6b024a33e87c93237fb4758199d564cf79",
+        "bytes": 331
+      },
+      "green_conflict_seed_executed.txt": {
+        "sha256": "80e685f0cddf9c0edba440cc953da8d6259832e6a32b0655f9611bf95d3e6f8a",
+        "bytes": 559
+      },
+      "green_identity_projection.execution.json": {
+        "sha256": "5c919c967867924989726ec9f85003f8196b5097af44c3c5edc23bde4b36bb66",
+        "bytes": 333
+      },
+      "green_identity_projection.txt": {
+        "sha256": "06bd52883ecebb79016c57a8b04bb75cde8423cb420a7fa7b37c0ca5405f3fff",
+        "bytes": 1441
+      },
+      "green_identity_projection_extended.execution.json": {
+        "sha256": "8c00aa316b79e32bb6d4d8a18b3e905c81dc96b197794392e9252982dfbbf093",
+        "bytes": 333
+      },
+      "green_identity_projection_extended.txt": {
+        "sha256": "5b8b574296096223dbd6bcc0403823a277ea8023d5b59744a6d75a5f082e1b77",
+        "bytes": 208
+      },
+      "green_identity_projection_final.execution.json": {
+        "sha256": "1e98fce56a27551469b4874564d37860ff32a54951f0b4b6c516f76dede1c6fe",
+        "bytes": 333
+      },
+      "green_identity_projection_final.txt": {
+        "sha256": "9b7e32f7366955bd1762a8e3f29cfbf19058d04294d06bfd7a54a39db02e3b7b",
+        "bytes": 208
+      },
+      "green_mariadb_conflict_seed.execution.json": {
+        "sha256": "278d1d7673f8f0f80b6dc03e17d28bf2de448f790bb8e8153357d32d8f39d8f0",
+        "bytes": 334
+      },
+      "green_mariadb_conflict_seed.txt": {
+        "sha256": "49f25ebb7555b206889ddbb81f9914acafc04175edf4c7cfe8ed3c8cf2d828a4",
+        "bytes": 204
+      },
+      "green_projection_config_pair.execution.json": {
+        "sha256": "7baffb0522abd7d275aef1de238f0c6ee7fca282bd9c67fc891a27cff7d9cfe6",
+        "bytes": 333
+      },
+      "green_projection_config_pair.txt": {
+        "sha256": "b1f468e00c64f1ad169c57764e795dab72b687394e6c729ab7331e619488308f",
+        "bytes": 208
+      },
+      "green_projection_final.execution.json": {
+        "sha256": "0ebe5e1202b95167c28b82d9dd7f9e3d85886e00862cbf255c03eed322a50a0a",
+        "bytes": 333
+      },
+      "green_projection_final.txt": {
+        "sha256": "5997b487e5e786ba9952d23e45e2a25fc2678cfc5e894e19456360ea2bfc2e57",
+        "bytes": 208
+      },
+      "green_replay_final.execution.json": {
+        "sha256": "876189c4a433594ac1a10ce52d13043217f85fe00d7e25565615e00be69a1c07",
+        "bytes": 338
+      },
+      "green_replay_final.txt": {
+        "sha256": "57c7b916c64f09ce37f4ea2d2a0860ffdeaca41b9d88f1a54000a7905f2a0af8",
+        "bytes": 207
+      },
+      "green_replay_frozen_product_boundary.execution.json": {
+        "sha256": "d774421fac97ea89d5478e80cd9f305b02b8e4cd0480d9db5bacc69e9c687b31",
+        "bytes": 373
+      },
+      "green_replay_frozen_product_boundary.txt": {
+        "sha256": "9114bc68b1d173c18e38ae87195aa628d50b660fcfa7ed68795e3238c6e9d172",
+        "bytes": 207
+      },
+      "green_replay_identity_final_cases.execution.json": {
+        "sha256": "20f695aded52150f1b36801a77f8c3c4df5763e670140b8bf60da0235cd53bea",
+        "bytes": 373
+      },
+      "green_replay_identity_final_cases.txt": {
+        "sha256": "0987e38aefabae705d2ff41dc4c487ab87aa4e8606ff4b604cd8de918b7a5d79",
+        "bytes": 206
+      },
+      "green_replay_identity_initial.execution.json": {
+        "sha256": "4fb53a988079e003bda0746ac4c4c96d29ad1d2209ccfae0946826dcc25a65e4",
+        "bytes": 373
+      },
+      "green_replay_identity_initial.txt": {
+        "sha256": "1a31da927eecc7b4054a933a9a8a8e355635de11de8a16579d5c7ff99095b4fc",
+        "bytes": 963
+      },
+      "green_replay_identity_revalidated.execution.json": {
+        "sha256": "4c8451372b0b4625b3da5ab1e9a04fac276cb3234bc5aadd4e1db7d769777ab2",
+        "bytes": 373
+      },
+      "green_replay_identity_revalidated.txt": {
+        "sha256": "0a9d53f659392d34ffcc01ab3d3eaa398890ccc12681b9e518d65c82370dedae",
+        "bytes": 207
+      },
+      "green_replay_identity_v2.execution.json": {
+        "sha256": "63a2ee1f9747233c44557be42ce8f07ecf879be8924412cdd3bf0cbbb6cb488d",
+        "bytes": 373
+      },
+      "green_replay_identity_v2.txt": {
+        "sha256": "8b3175a540e75e83f718423cbbb1ec5ef423c9ddad952bf10c5935c015b2cf22",
+        "bytes": 842
+      },
+      "green_replay_identity_v3.execution.json": {
+        "sha256": "7b169ac57a881d92e4e56399d6d5e20abd504e195fe234fda7ce468fcb9e1fab",
+        "bytes": 373
+      },
+      "green_replay_identity_v3.txt": {
+        "sha256": "a61d16c762d664e90234a2c32f6bfcc535438512b8d76844a82b5cc23feccc20",
+        "bytes": 206
+      },
+      "impact_legacy_producer_unit.execution.json": {
+        "sha256": "ae659a31456070d2fe25d2e7c5a07f8a8f3aa8b1ce67cf8491c0aac889b1aa94",
+        "bytes": 331
+      },
+      "impact_legacy_producer_unit.txt": {
+        "sha256": "340226c745ece53a89466e7f3068e4abbb98217e919a7361d847559004fcdf57",
+        "bytes": 16691
+      },
+      "impact_legacy_semantic_fixture.execution.json": {
+        "sha256": "72f582704c19998b004124271ac411382ac89b6a1a44366f140fb83a8d3de92e",
+        "bytes": 337
+      },
+      "impact_legacy_semantic_fixture.txt": {
+        "sha256": "12fa662a74b10187570643dec3f7198c2a52f8c1ddda171402bc25fcdcec2cd3",
+        "bytes": 6738
+      },
+      "mutation_conflict_conflict_as_duplicate.txt": {
+        "sha256": "0f0085bc744be3a21bf4adc1581c016b7ef66455f73ea9ea3fc545e974acb8de",
+        "bytes": 1149
+      },
+      "mutation_conflict_normal_ticker_key.txt": {
+        "sha256": "120262e9b92f13e2e510c0ce5b7691c6f31f499c40b139d53beb278f28725742",
+        "bytes": 777
+      },
+      "mutation_conflict_recovered_ticker_key.txt": {
+        "sha256": "f0d208d1f2926d368e52d40635d4db7df7e6b3d63efc2c998a2987e394af5761",
+        "bytes": 779
+      },
+      "mutation_conflict_severity_wrong.txt": {
+        "sha256": "a2d8b23e605fbbcda79b900e5540cc94b6187db9d7c75c987b0f6a4767105d1c",
+        "bytes": 614
+      },
+      "mutation_missing_expected_mode.txt": {
+        "sha256": "9311e616d5d36a75cbd8318dec7d63ed41b6af2889d2d8101c09973257229e9a",
+        "bytes": 693
+      },
+      "mutation_missing_mode_build_scan.txt": {
+        "sha256": "1ade717a8cc75b368d7996d6eeb336ae6e7dd44cd03fb815f524c430ca84471d",
+        "bytes": 110
+      },
+      "mutation_replay_actual_context_swap.txt": {
+        "sha256": "acd69046edd6c9121354feca917ab7c4d0519216a196c47381bbd30c95aa465e",
+        "bytes": 4907
+      },
+      "mutation_replay_actual_mode_substitution.txt": {
+        "sha256": "cbb32fb7d4a5fa74c4af62b24b73a7ad3c342e27613caec362c3dd2651093d35",
+        "bytes": 623
+      },
+      "mutation_replay_config_hash_substitution.txt": {
+        "sha256": "96d2873470a79905b422a58353fc176dddaa92a786b35bb321d6622eaef88b2e",
+        "bytes": 1387
+      },
+      "mutation_replay_config_id_type.txt": {
+        "sha256": "f477b14647c6718c58c171749270810419a475fb34b9af9b760aacdd6dbeb3f8",
+        "bytes": 1064
+      },
+      "mutation_replay_config_ref_fallback.txt": {
+        "sha256": "42ea6d86f39a72aa5da534601c370aa7694e2382587924e0f32d885dcdd5eab0",
+        "bytes": 655
+      },
+      "mutation_replay_corrected_cutoff_name.txt": {
+        "sha256": "1b283a7bc7957fa737ed46bae08e637865bcf1652fe909a180de24e022eb5952",
+        "bytes": 1958
+      },
+      "mutation_replay_corrected_expected_applicability_bypass.txt": {
+        "sha256": "1516725ff4d9629098b4c5b6df883cd4068b196568fee0452bea41d9448f6a2d",
+        "bytes": 564
+      },
+      "mutation_replay_corrected_expected_schema_bypass.txt": {
+        "sha256": "d1db983aed01ff88f9e06726d67a9d308d01a66b70615a1e7ea492104ba0ff26",
+        "bytes": 564
+      },
+      "mutation_replay_corrected_result_context_swap.txt": {
+        "sha256": "509f726532deb205b67cc7a6726a5d4d7433c0b4c47b2ceb6d86f91721085116",
+        "bytes": 4196
+      },
+      "mutation_replay_cutoff_name.txt": {
+        "sha256": "3bbb17752c4b923a6ea79754607977601b8efee39acb3e50958120a65bdc0783",
+        "bytes": 1975
+      },
+      "mutation_replay_expected_context_swap.txt": {
+        "sha256": "9153e942c5a341f8260286b36ed45e723ed39ca200d75a039a50c54f6b5f2dd2",
+        "bytes": 4969
+      },
+      "mutation_replay_expected_mode_substitution.txt": {
+        "sha256": "69bc49b76918ad4dffc35c2ca638f7dfc2e856c753cadd827c05dc70302486c0",
+        "bytes": 623
+      },
+      "mutation_replay_formula_alias.txt": {
+        "sha256": "8e057981f12192cf7ac54f2ab760541985ee48f7333d26defe33ecf7ca0841b3",
+        "bytes": 1390
+      },
+      "mutation_replay_observation_substitution.txt": {
+        "sha256": "465a8ac3d6cc43f25c20231c97c2ec764c6218a7027c996f2fde324e6d5fd0a0",
+        "bytes": 1397
+      },
+      "mutation_replay_persisted_envelope_validation_bypass.txt": {
+        "sha256": "dd3e9bf4886d5755b1a66eacb8918e9fd7cc5df0263951b94ef024a5ab483c22",
+        "bytes": 1398
+      },
+      "mutation_replay_raw_capability_bypass.txt": {
+        "sha256": "cf81ab3b7f028cb1850afeb04d2e3bc1129a15b7436d068bfb6ea5a45c56ac33",
+        "bytes": 1111
+      },
+      "mutation_replay_read_model_substitution.txt": {
+        "sha256": "58ade72c5e0a422fd50323acb2ab937ad2974ac2719af2ba7190212ee33dc981",
+        "bytes": 1221
+      },
+      "mutation_replay_result_context_swap.txt": {
+        "sha256": "834e9425ee4cf60195c049d8a79f0bb250a6a6a943c2545c1398716ae57979e9",
+        "bytes": 4166
+      },
+      "mutation_replay_temporal_alias.txt": {
+        "sha256": "fd44dd7bc65d88b6c8313707014e50719b21b06987405d932468745e4a253f00",
+        "bytes": 1450
+      },
+      "mutation_restoration_summary.json": {
+        "sha256": "0f90c4bddf90ff1c08aad98c717cdfc662c60bbbaefb9158056c670d8ec34ce3",
+        "bytes": 18837
+      },
+      "per_predicate_proof_map.json": {
+        "sha256": "a641ec69b9cd40ff330cc7a5ab1dbbf28d408446b533256376828065377c7dba",
+        "bytes": 31628
+      },
+      "pipeline_artifacts/as_known_applicability/evidence_admission.json": {
+        "sha256": "59ac5cfddc78a8b91859b6dd21e27dc2447f31db01ca955a6111858732736817",
+        "bytes": 1082
+      },
+      "pipeline_artifacts/as_known_applicability/persisted_metric.json": {
+        "sha256": "5b0e6b9d2cf04f8b31dcc42c6b1aa6e61eba3a1f338ddd0c388cfa68be11c519",
+        "bytes": 45475
+      },
+      "pipeline_artifacts/as_known_applicability/replay_actual_state.json": {
+        "sha256": "10164cb9fb4ce326e03938167d042e4480f83ed8a499ee3d9e92bed55f84c2f0",
+        "bytes": 32283
+      },
+      "pipeline_artifacts/as_known_applicability/replay_evidence_pack.json": {
+        "sha256": "ed2c22c367611a70585d03a24592522660323060ae8b275098a929a3aab998b3",
+        "bytes": 119447
+      },
+      "pipeline_artifacts/as_known_applicability/replay_expected_state.json": {
+        "sha256": "b6a3526063cca0fc3fea43d1cad55d2382355dd6cf10a1d777212db83e2172dc",
+        "bytes": 5534
+      },
+      "pipeline_artifacts/as_known_applicability/replay_reason_code_counts.json": {
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "bytes": 2
+      },
+      "pipeline_artifacts/as_known_applicability/replay_result.json": {
+        "sha256": "c8a6b5d14ad14db1526d386deb1a64492ead70cd193cc4beedede851ca17a6ac",
+        "bytes": 71202
+      },
+      "pipeline_artifacts/conflict_normal/independent_inputs.json": {
+        "sha256": "c7219a71f95f9558807f64dcacef88a486ff2bed6886c43f53a34c421e7ea63e",
+        "bytes": 2569
+      },
+      "pipeline_artifacts/conflict_normal/invalid_bars_export.csv": {
+        "sha256": "898f7420d65e5366434786b63b79c66f5addd030682a5b9739e455e1b2198aa4",
+        "bytes": 388
+      },
+      "pipeline_artifacts/conflict_normal/persisted_canonical.json": {
+        "sha256": "cbaf7fab634682738e7ab97b06b4c6a958eb8bbd153915ce1ad9e2f1f3a9dab5",
+        "bytes": 1856
+      },
+      "pipeline_artifacts/conflict_normal/persisted_invalid.json": {
+        "sha256": "39a8a420d67e7588ab73daaf470f1b38c99ca1dfb0e6c46c4933c6aaa0199500",
+        "bytes": 2825
+      },
+      "pipeline_artifacts/conflict_recovered/independent_inputs.json": {
+        "sha256": "c7219a71f95f9558807f64dcacef88a486ff2bed6886c43f53a34c421e7ea63e",
+        "bytes": 2569
+      },
+      "pipeline_artifacts/conflict_recovered/invalid_bars_export.csv": {
+        "sha256": "898f7420d65e5366434786b63b79c66f5addd030682a5b9739e455e1b2198aa4",
+        "bytes": 388
+      },
+      "pipeline_artifacts/conflict_recovered/persisted_canonical.json": {
+        "sha256": "cbaf7fab634682738e7ab97b06b4c6a958eb8bbd153915ce1ad9e2f1f3a9dab5",
+        "bytes": 1856
+      },
+      "pipeline_artifacts/conflict_recovered/persisted_invalid.json": {
+        "sha256": "d2743e46923e3821b835c59dea646b0bcbf71965f41272736333a5d7820702a8",
+        "bytes": 2800
+      },
+      "pipeline_artifacts/mariadb_conflict_registry.json": {
+        "sha256": "1bca7b9822b7607371e2b6a1c3435c1182f3f5f6b6782bb9cd40fb07d513b9a1",
+        "bytes": 395
+      },
+      "pipeline_artifacts/replay_mariadb/additional_execution_cases.json": {
+        "sha256": "d7e8552d1778e71a64ffaef219f4eb0f17857acfd72d6d1375c268422e80f70f",
+        "bytes": 383124
+      },
+      "pipeline_artifacts/replay_mariadb/authoritative_inputs.json": {
+        "sha256": "5560cb35f0e1a61459b69edefec71534436d2d02e58c461c318e2487f12bc067",
+        "bytes": 49302
+      },
+      "pipeline_artifacts/replay_mariadb/evidence_admission.json": {
+        "sha256": "1e8239ea01bd47c8170001a0e97ddbf1b5389003d219da962ed01fa073298157",
+        "bytes": 900
+      },
+      "pipeline_artifacts/replay_mariadb/fixture_expected_hashes.json": {
+        "sha256": "03432d6d0af9260c87e6c22eac90fe564612c5f54101e21803502b3f9761d6f3",
+        "bytes": 288
+      },
+      "pipeline_artifacts/replay_mariadb/fixture_expected_reason_code_counts.json": {
+        "sha256": "9a57db61cf7d984023beb19c083675728b69f82930f4c68d098b7db23c3336b5",
+        "bytes": 179
+      },
+      "pipeline_artifacts/replay_mariadb/fixture_expected_replay_result.json": {
+        "sha256": "df4524ee4b428daf4b56e8895e6bde09aea088987a85525e63838df62e6d97ee",
+        "bytes": 8390
+      },
+      "pipeline_artifacts/replay_mariadb/fixture_expected_run_summary.json": {
+        "sha256": "dcc6952ab161371406b4bad01b502c67ccb42c34664c3246076c08bfa77c92b8",
+        "bytes": 572
+      },
+      "pipeline_artifacts/replay_mariadb/fixture_manifest.json": {
+        "sha256": "a07be1c1da9c01d28133e5b43a8e33ccb8fbc711f6dd6adedb8ebb1ec4588a74",
+        "bytes": 1130
+      },
+      "pipeline_artifacts/replay_mariadb/persisted_metric.json": {
+        "sha256": "23889f4d16b4c227368a5ad9ff394428cd4dffec8bf17bc20316d67f06a1e423",
+        "bytes": 25558
+      },
+      "pipeline_artifacts/replay_mariadb/replay_actual_state.json": {
+        "sha256": "f466ce64f9d662e84b96183af38670dcbc9312289236bdb976fa493852a7ea98",
+        "bytes": 14793
+      },
+      "pipeline_artifacts/replay_mariadb/replay_evidence_pack.json": {
+        "sha256": "c41cdcd4149f929320ca3fd69a746463cd46eb44dd18dcdb78384269bffc6847",
+        "bytes": 71983
+      },
+      "pipeline_artifacts/replay_mariadb/replay_expected_state.json": {
+        "sha256": "72d2d5804403303529b8f7db6b765aa989c7979c9bb1a7866da51def6ac96aca",
+        "bytes": 13771
+      },
+      "pipeline_artifacts/replay_mariadb/replay_reason_code_counts.json": {
+        "sha256": "9a57db61cf7d984023beb19c083675728b69f82930f4c68d098b7db23c3336b5",
+        "bytes": 179
+      },
+      "pipeline_artifacts/replay_mariadb/replay_result.json": {
+        "sha256": "3e9a87144bd80daf135acc0123b6aa40560748e2013271ae78769e2894340205",
+        "bytes": 35940
+      },
+      "portable_actual_snapshot_before_final_refresh.json": {
+        "sha256": "fa7827d2afdbc7b216a3b8341f4af6b8c9f6530f6e32f5623c33ad23e66204da",
+        "bytes": 129082
+      },
+      "red_conflict.execution.json": {
+        "sha256": "5bc3e40d26996f79f3a8447acc3d6f9231c6a735cfb3f3c45d5cada0a46e4ab6",
+        "bytes": 331
+      },
+      "red_conflict.txt": {
+        "sha256": "48926cfdf456438c19064fa303012b137c7a9d09bbe0253e26cf1d66d0609e55",
+        "bytes": 4037
+      },
+      "red_conflict_clean.execution.json": {
+        "sha256": "5abf898b7796db81399aee1757415b1746b04c10695f5eb996efb23719fe37f2",
+        "bytes": 331
+      },
+      "red_conflict_clean.txt": {
+        "sha256": "19c5a96bc177e8d241079d806b966afd8c2d818ce6de6414d6ffec7747059712",
+        "bytes": 4037
+      },
+      "red_conflict_ready.execution.json": {
+        "sha256": "8c59e3fb5734372c2218920cbe13bd20646c359f1bccb41942a659f4fab2de3a",
+        "bytes": 331
+      },
+      "red_conflict_ready.txt": {
+        "sha256": "be237bc1468696d30cc1d86d7f7560190ee565819d2d728cdc5075ef823e156b",
+        "bytes": 1616
+      },
+      "red_conflict_setup_fixed.execution.json": {
+        "sha256": "1fefd84af9480c251bbcaeaf3bdc48afa72dca074570d6aeae5f4c3793186c18",
+        "bytes": 331
+      },
+      "red_conflict_setup_fixed.txt": {
+        "sha256": "2d9e0cadbc81b97d1e644f45fe1ed0accc4175ddbf1832637420c210872a708d",
+        "bytes": 4083
+      },
+      "regression_as_known.execution.json": {
+        "sha256": "f95bb04264743316c35d7ac16e82d79e53cd5b318a84841ce8a5379c7520084b",
+        "bytes": 329
+      },
+      "regression_as_known.txt": {
+        "sha256": "c9836a4f5891f1ce9bc3093b68bdf0092ad83c604c46710af7ee66a3fa35cb2e",
+        "bytes": 209
+      },
+      "regression_current_registry_snapshot.execution.json": {
+        "sha256": "c6430992a791adf440b9de8a8ce1651ec99a4229c38f359bca152e8ff787e76b",
+        "bytes": 383
+      },
+      "regression_current_registry_snapshot.txt": {
+        "sha256": "538940be91380a8549cf87c6dbb48963007e07e46f439d2dee027f4d8737c518",
+        "bytes": 207
+      },
+      "regression_governance_records.execution.json": {
+        "sha256": "0f6548e815f7cf75d323a257eef5180768c3971d1f4d87c919152f7b9807b890",
+        "bytes": 431
+      },
+      "regression_governance_records.txt": {
+        "sha256": "1a52336128f673b7f1d870ed120baf7e3bd3c7f3a3245caa20a60b77d9072f94",
+        "bytes": 209
+      },
+      "regression_invalid_seed.execution.json": {
+        "sha256": "77719d8735206565f36ab306b616cfcd5e2374ff8ed3e4434f276fb9d9b3a555",
+        "bytes": 421
+      },
+      "regression_invalid_seed.txt": {
+        "sha256": "a46f932d83dff8db9ddacd0fdf05bd3dc75d05d0eb0d176d3fabc23723ddcb91",
+        "bytes": 208
+      },
+      "regression_legacy_semantic_requalified.execution.json": {
+        "sha256": "8a80bd9de52c321ab98fb506bcbe0a4f71a5f30b94b3e079152bca3a814b61aa",
+        "bytes": 337
+      },
+      "regression_legacy_semantic_requalified.txt": {
+        "sha256": "0ef4b6432882d8f838787832cf50f4dc8fae19633f7ad80c2033e375fcdfd055",
+        "bytes": 208
+      },
+      "regression_producer_unit_conforming.execution.json": {
+        "sha256": "9db65f27a1ad583232178ee613c580b9a41ead311e795da1f263a961f29a27d7",
+        "bytes": 331
+      },
+      "regression_producer_unit_conforming.txt": {
+        "sha256": "04806d5534bb799837616f6ecbb96b09ac4533f14da0adbbfdf373904a5a3ef8",
+        "bytes": 207
+      },
+      "regression_producer_unit_final.execution.json": {
+        "sha256": "aa64ff0ba27fdbc20ffdcd939bac6036b1ea9e945da16e6ef122520da40e395d",
+        "bytes": 331
+      },
+      "regression_producer_unit_final.txt": {
+        "sha256": "486ff4e8877717c4697661411f589058a3d0b38cf1f53719be91ec9f1c6bb95d",
+        "bytes": 1986
+      },
+      "regression_producer_unit_upgraded.execution.json": {
+        "sha256": "afed3691c2583828877a0c261f1bafc307a6866fb1c85ac31694fa22f6f5fdf6",
+        "bytes": 331
+      },
+      "regression_producer_unit_upgraded.txt": {
+        "sha256": "74fc0a488468d21613b6c17efab137f137935ffd6a8b27f81044500104975ae1",
+        "bytes": 3737
+      },
+      "regression_replay_related_final.execution.json": {
+        "sha256": "f28c31a0878bab77dda12a578834e69dad7e92028e449eae62810fc8c622c289",
+        "bytes": 814
+      },
+      "regression_replay_related_final.txt": {
+        "sha256": "e0f84065993b3b7caadc303f88c4ba8d1f0bffc4e35c6924a2f0baef8b31e482",
+        "bytes": 373
+      },
+      "regression_stable_state_requalified.execution.json": {
+        "sha256": "1026c696d01ac2df2bd3942359e6be45ef232f5f73e03472cb4f47360a624ffa",
+        "bytes": 339
+      },
+      "regression_stable_state_requalified.txt": {
+        "sha256": "b1f6b8030058156339f334dbf6bc7a7278c5da77a336fe0d926e6c0c9208cbdc",
+        "bytes": 208
+      },
+      "replay_projection_mutations.json": {
+        "sha256": "bec239e000fde55b320ac9ff793005e77df75543b8cc229a8ecf70ec79d33b73",
+        "bytes": 11131
+      },
+      "replay_projection_mutations_supplement.json": {
+        "sha256": "9d69f0eb557a8411f20ac22a271af105b1a651ff848677858c267d0f2ff08df2",
+        "bytes": 2873
+      },
+      "replay_real_mutation.json": {
+        "sha256": "35184f3312ed2b059e52abebd67044b842f834908bd80e21db4e769a13b3bc54",
+        "bytes": 1993
+      },
+      "retained_evidence_integrity.json": {
+        "sha256": "5dc5844d6dd334257b9ced589e589396083213b178388b95c9d0705f24e95855",
+        "bytes": 1252
+      },
+      "retired_reference_followup.json": {
+        "sha256": "4624c1c49aab6c3006df57715f0866c99b20ba7f296ffb2f0eeaf748a0bd988b",
+        "bytes": 1370
+      },
+      "source_bindings.json": {
+        "sha256": "3e79d5351f46e8b04e7c3e1933f0a5f48e593093ce98136f8e4918ac17b56a96",
+        "bytes": 7729
+      },
+      "successor_build_impact.json": {
+        "sha256": "bea6198af38a901410d6460ec09480184f5dd3a85de6840137c1ec76c693f0f1",
+        "bytes": 4250
+      },
+      "tool_audit_build.py": {
+        "sha256": "6a17f7d47a1682b7ec3341d481351dde1f3ac2ef784f6158be165a4be9ed9fc4",
+        "bytes": 1213
+      },
+      "tool_capture.py": {
+        "sha256": "f30f1320669960ad784406e536cdb759ee35a00a44d70869b38ebca3f09036c9",
+        "bytes": 1310
+      },
+      "tool_independent_build_input.php": {
+        "sha256": "c177ea407832a8e7ac54241a13ccb5b5421ddcca6304cec00d18a6b71128d39f",
+        "bytes": 4848
+      },
+      "tool_issue_completion.py": {
+        "sha256": "6ec89036bb0458f0d605bf487ccdbbdcd8beb7cd3956ec344a5bb662ec2106ee",
+        "bytes": 12308
+      },
+      "tool_mutate_conflict.py": {
+        "sha256": "e43e5357cae5950d293bd9b7001db42e491df6be298e05e34ef6baaf07c5a554",
+        "bytes": 2402
+      },
+      "tool_mutate_replay.py": {
+        "sha256": "aa51aa435863cedb4aea01560db9db545a38a2a21b65bfbe3ad74bd3b537f2a2",
+        "bytes": 4507
+      },
+      "tool_mutate_replay_real.py": {
+        "sha256": "1fea1fbce7a23fb24c508a4c2d65ad4209c54ad8a854c389c9185fc06d9c1b69",
+        "bytes": 1902
+      },
+      "tool_mutate_replay_supplement.py": {
+        "sha256": "08aeacbd1c89269d48082dc93403c08e3f8e37cda312cc2e4f9ba4bf256683bb",
+        "bytes": 5026
+      },
+      "tool_prepare_issue.py": {
+        "sha256": "803cc3cb52f028d6149871f39b3e4cc649526feaf0d261856bf2bf37e80c568d",
+        "bytes": 2700
+      },
+      "tool_reconcile_completion.py": {
+        "sha256": "01c3531eea4bb3b80ea4ba20f095ab66997badc986eed61d95035ea7e2d90abc",
+        "bytes": 16853
+      },
+      "tool_reconcile_completion_tail.py": {
+        "sha256": "314bc6101880b9e5af40c13c8c290d1276401b226fa61b024a45fb1bb0078473",
+        "bytes": 9517
+      },
+      "tool_reconcile_completion_tail2.py": {
+        "sha256": "14f111bd87449792ec15d658c92a1c5d1c01bf7fc7165908577b99a6d113d4f1",
+        "bytes": 7433
+      }
+    },
+    "file_count": 167
+  },
+  "next_resume_point": "MD-B19-A001: stop for independent review of E021 / D006 freeze MD-STRATEGY-FREEZE-20261018-001, 28 target bases plus affected revalidation (206/750 reviewed, formal 0/750). After review, resume canonical remaining B19 scope with the seven newly classified compound obligations explicitly unproved; no additional family entered here. MD-DEP-0025 ACTIVE, candidate-v6 deferred to final-build trigger; owner controls all Git mutations.",
+  "no_git_mutations": true
+}

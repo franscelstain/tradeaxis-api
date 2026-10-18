@@ -421,7 +421,9 @@ class B18ReplayEvidenceSelfExplanationTest extends TestCase
             $this->assertContains('replay_mode', $admission['required_sections'],
                 'an evidence pack that does not require its mode can be cited without naming one');
             $this->assertNotSame('', (string) $result['replay_mode']);
-            $this->assertSame('ADMITTED_COMPLETE', $admission['evidence_admission_state']);
+            $this->assertSame('ADMITTED_INCOMPLETE', $admission['evidence_admission_state']); // legacy comparison remains readable; versioned identities unavailable
+            $this->assertSame('UNAVAILABLE', $admission['identity_verification']['status']);
+            $this->assertContains('replay_artifact_identity', $admission['missing_sections']);
         }
     }
 

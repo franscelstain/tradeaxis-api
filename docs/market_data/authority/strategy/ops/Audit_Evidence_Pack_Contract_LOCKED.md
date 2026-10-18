@@ -176,36 +176,9 @@ A conforming replay result evidence pack must include at minimum:
 8. Did the declared replay mode and knowledge cutoff use the correct point-in-time inputs?
 9. Does the mismatch indicate canonical drift, indicator drift, eligibility drift, formatting drift, lineage drift, or publication drift?
 
-### Minimum example shape
-    {
-      "replay_id": 3001,
-      "trade_date": "2025-12-10",
-      "trade_date_effective": "2025-12-10",
-      "status": "SUCCESS",
-      "comparison_result": "MISMATCH",
-      "replay_status": "FAIL",
-      "comparison_note": "eligibility output diverged",
-      "artifact_changed_scope": "eligibility_only",
-      "replay_mode": "PUBLICATION_EXACT",
-      "knowledge_cutoff": null,
-      "observation_manifest_hash": "OBS_HASH",
-      "config_snapshot_id": 9001,
-      "config_snapshot_hash": "CONFIG_HASH",
-      "temporal_revision_set_hash": "TEMPORAL_HASH",
-      "factor_set_id": 7001,
-      "factor_set_hash": "FACTOR_HASH",
-      "price_product_code": "STRUCTURAL_ADJUSTED",
-      "formula_version": "weekly_swing_eod_v2",
-      "read_model_version": "weekly_swing_read_v2",
-      "publication_version": 1,
-      "bars_batch_hash": "A1",
-      "indicators_batch_hash": "B1",
-      "eligibility_batch_hash": "C2",
-      "expected_status": "SUCCESS",
-      "expected_trade_date_effective": "2025-12-10",
-      "expected_seal_state": "SEALED",
-      "mismatch_summary": "eligibility hash changed while bars hash remained unchanged"
-    }
+### Replay artifact contract
+
+The replay result and paired expected/actual state artifacts use `Run_Artifacts_Format_LOCKED.md` sections 8–10, including replay artifact identity schema `replay_artifact_identity_v1`, exact persisted scalar names and named nested paths, independently retained expected context, and the versioned publication-manifest identity envelope. An evidence pack preserves both sides without aliasing different temporal/factor/formula identities or reconstructing missing historical values from current state. Applicability and unavailable values follow that contract; two matching NULLs do not prove a required identity.
 
 ---
 

@@ -123,7 +123,7 @@ class ReplayEvidenceExportServiceTest extends TestCase
         $this->assertSame('EXPECTED_DEGRADE', $result['summary']['comparison_result']);
         $this->assertSame('PASS', $result['summary']['replay_status']);
         $this->assertSame('HELD', $result['summary']['status']);
-        $this->assertSame(6, $result['file_count']);
+        $this->assertSame(7, $result['file_count']); // includes the serialized-byte hash/timestamp companion
         $this->assertSame($dir, $result['output_dir']);
         $this->assertFileExists($dir.'/replay_result.json');
         $this->assertFileExists($dir.'/replay_expected_state.json');

@@ -148,10 +148,39 @@ class ReplayVerificationService
         if ($admissibility === null && $independentGate !== null) {
             $admissibility = $independentGate;
         }
+        $manifestIdentity = $actual['context']['actual_publication_manifest_identity'];
+        if ($admissibility === null && $manifestIdentity['applicability'] !== 'APPLICABLE') {
+            $admissibility = ['reason' => 'REPLAY_PUBLICATION_MANIFEST_IDENTITY_UNAVAILABLE: mandatory immutable publication identity is unavailable.'];
+        }
+        $expectedManifestIdentity = $expectedContext['expected_publication_manifest_identity'] ?? null;
+        if ($admissibility === null && ! $this->completeReplayManifestIdentity($expectedManifestIdentity)) {
+            $admissibility = ['reason' => 'REPLAY_EXPECTED_MANIFEST_IDENTITY_UNAVAILABLE: independently versioned expected publication identity is required.'];
+        }
+        if ($admissibility === null && (($expectedContext['expected_replay_mode'] ?? null) !== ReplayMode::PUBLICATION_EXACT
+            || ($expectedContext['expected_publication_context']['publication_id'] ?? null) !== $expectedManifestIdentity['publication_id']
+            || ($expectedContext['expected_publication_context']['publication_manifest_hash'] ?? null) !== $expectedManifestIdentity['publication_manifest_hash'])) {
+            $admissibility = ['reason' => 'REPLAY_EXPECTED_MANIFEST_IDENTITY_UNAVAILABLE: fixture publication/mode and manifest envelope contradict each other.'];
+        }
+        if ($admissibility === null) {
+            foreach (['publication_id', 'publication_manifest_hash', 'temporal_revision_set_hash', 'formula_version'] as $identityField) {
+                if ($expectedManifestIdentity[$identityField] !== $manifestIdentity[$identityField]) {
+                    $comparison['mismatches'][] = ['field' => 'publication_manifest_identity.'.$identityField, 'expected' => $expectedManifestIdentity[$identityField], 'actual' => $manifestIdentity[$identityField], 'reason_code' => 'REPLAY_LINEAGE_MISMATCH'];
+                    $comparison['comparison_result'] = (($fixture['expected_replay_result']['comparison_result'] ?? null) === 'EXPECTED_DEGRADE') ? 'UNEXPECTED' : 'MISMATCH';
+                    $replayStatus = 'FAIL';
+                    $comparison['mismatch_count'] = count($comparison['mismatches']);
+                    $comparison['mismatch_reason_codes'] = array_values(array_unique(array_merge($comparison['mismatch_reason_codes'], ['REPLAY_LINEAGE_MISMATCH'])));
+                    sort($comparison['mismatch_reason_codes']);
+                    $comparison['mismatch_summary'] = $this->buildOperatorMismatchSummary($comparison['mismatches'], $comparison['mismatch_reason_codes']);
+                    $comparison['final_reason_code'] = 'REPLAY_LINEAGE_MISMATCH';
+                    $comparison['comparison_note'] = 'Replay publication-manifest identity diverged from the versioned fixture.';
+                }
+            }
+        }
         if ($admissibility !== null) {
             $replayStatus = 'BLOCKED';
             $comparison['comparison_result'] = 'NOT_ADMISSIBLE';
             $comparison['mismatch_summary'] = $admissibility['reason'];
+            $comparison['final_reason_code'] = null;
         }
 
         $replayId = $replayId ?: $this->replays->nextReplayId();
@@ -408,8 +437,15 @@ class ReplayVerificationService
                     .'is never back-filled and the current registry is never read, so replay cannot proceed.',
             ][$unavailableField];
             $reason = $reasonText;
-            $actualContext = ['bound_inputs' => $actualSnapshot, 'executed_replay' => null];
-            $expectedContext = ['bound_inputs' => $expectedSnapshot, 'executed_replay' => $expectedExecution];
+            $actualContext = ['bound_inputs' => $actualSnapshot,
+            'actual_bound_input_context' => $actualSnapshot,
+            'actual_publication_context' => ['publication_id' => null, 'publication_version' => null, 'publication_manifest_hash' => null, 'price_product_code' => null, 'price_product_version' => null, 'factor_set_id' => null, 'factor_set_hash' => null],
+            'actual_publication_manifest_identity' => ['schema_version' => 'replay_publication_manifest_identity_v1', 'applicability' => 'NOT_APPLICABLE', 'publication_id' => null, 'publication_manifest_hash' => null, 'temporal_revision_set_hash' => null, 'formula_version' => null], 'executed_replay' => null];
+            $expectedContext = ['bound_inputs' => $expectedSnapshot,
+            'expected_bound_input_context' => $expectedSnapshot,
+            'expected_publication_context' => ['publication_id' => null, 'publication_version' => null, 'publication_manifest_hash' => null, 'price_product_code' => null, 'price_product_version' => null, 'factor_set_id' => null, 'factor_set_hash' => null],
+            'expected_replay_mode' => $manifest['replay_mode'] ?? null,
+            'expected_publication_manifest_identity' => ['schema_version' => 'replay_publication_manifest_identity_v1', 'applicability' => 'NOT_APPLICABLE', 'publication_id' => null, 'publication_manifest_hash' => null, 'temporal_revision_set_hash' => null, 'formula_version' => null], 'executed_replay' => $expectedExecution];
             $metric = [
                 'replay_id' => $replayId,
                 'trade_date' => $tradeDate,
@@ -463,7 +499,7 @@ class ReplayVerificationService
                 'expected_publishability_state' => 'NOT_READABLE',
                 'expected_trade_date_effective' => $tradeDate,
                 'expected_seal_state' => 'UNSEALED',
-                'expected_config_identity' => (string) ($expectedSnapshot['config_snapshot_hash'] ?? $actualSnapshot['config_snapshot_hash']),
+                'expected_config_identity' => (string) ($expectedSnapshot['config_snapshot_hash'] ?? null),
                 'expected_bars_batch_hash' => $expectedExecution['canonical_output_hash'] ?? null,
                 'expected_reason_code_counts_json' => json_encode((array) ($expectedExecution['reason_code_counts'] ?? []), JSON_UNESCAPED_SLASHES),
                 'mismatch_summary' => $reason,
@@ -549,10 +585,17 @@ class ReplayVerificationService
         $reasonCodeCounts = (array) ($actualExecution['reason_code_counts'] ?? []);
         $actualContext = [
             'bound_inputs' => $actualSnapshot,
+            'actual_bound_input_context' => $actualSnapshot,
+            'actual_publication_context' => ['publication_id' => null, 'publication_version' => null, 'publication_manifest_hash' => null, 'price_product_code' => null, 'price_product_version' => null, 'factor_set_id' => null, 'factor_set_hash' => null],
+            'actual_publication_manifest_identity' => ['schema_version' => 'replay_publication_manifest_identity_v1', 'applicability' => 'NOT_APPLICABLE', 'publication_id' => null, 'publication_manifest_hash' => null, 'temporal_revision_set_hash' => null, 'formula_version' => null],
             'executed_replay' => $actualExecution,
         ];
         $expectedContext = [
             'bound_inputs' => $expectedSnapshot,
+            'expected_bound_input_context' => $expectedSnapshot,
+            'expected_publication_context' => ['publication_id' => null, 'publication_version' => null, 'publication_manifest_hash' => null, 'price_product_code' => null, 'price_product_version' => null, 'factor_set_id' => null, 'factor_set_hash' => null],
+            'expected_replay_mode' => $manifest['replay_mode'] ?? null,
+            'expected_publication_manifest_identity' => ['schema_version' => 'replay_publication_manifest_identity_v1', 'applicability' => 'NOT_APPLICABLE', 'publication_id' => null, 'publication_manifest_hash' => null, 'temporal_revision_set_hash' => null, 'formula_version' => null],
             'executed_replay' => $expectedExecution,
         ];
 
@@ -611,7 +654,7 @@ class ReplayVerificationService
             'expected_publishability_state' => 'NOT_READABLE',
             'expected_trade_date_effective' => $tradeDate,
             'expected_seal_state' => 'UNSEALED',
-            'expected_config_identity' => (string) ($expectedSnapshot['config_snapshot_hash'] ?? $actualSnapshot['config_snapshot_hash']),
+            'expected_config_identity' => (string) ($expectedSnapshot['config_snapshot_hash'] ?? null),
             'expected_bars_batch_hash' => $expectedExecution['canonical_output_hash'] ?? null,
             'expected_reason_code_counts_json' => json_encode((array) ($expectedExecution['reason_code_counts'] ?? []), JSON_UNESCAPED_SLASHES),
             'mismatch_summary' => $comparisonResult === 'MATCH' ? null : 'AS_KNOWN snapshot/executed canonical output mismatch.',
@@ -1210,6 +1253,9 @@ class ReplayVerificationService
             'actual_artifact_context' => $artifactContext,
             'actual_seal_context' => $sealContext,
             'actual_publication_context' => $publicationContext,
+            'actual_publication_manifest_identity' => $this->replayPublicationManifestIdentity($publication),
+            'actual_artifact_semantic_bindings' => $this->replayArtifactSemanticBindings($publication),
+            'replay_artifact_identity_schema_version' => 'replay_artifact_identity_v1',
             'actual_pointer_context' => $pointerContext,
             'actual_fallback_context' => $fallbackContext,
             'actual_correction_context' => $correctionContext,
@@ -1317,7 +1363,9 @@ class ReplayVerificationService
                     'ancillary_contamination_hash' => (string) ($this->componentGroupHash($components, 'ancillary') ?? ''),
                 ])
                 : ''),
-            'config_snapshot_hash' => $this->configIdentityForRun($run),
+            'config_snapshot_hash' => $manifest && (int) ($manifest->config_snapshot_id ?? 0) === (int) ($run->config_snapshot_id ?? 0)
+                && hash_equals((string) ($manifest->config_snapshot_hash ?? ''), $this->configIdentityForRun($run))
+                ? $this->configIdentityForRun($run) : self::CONFIG_IDENTITY_UNRECORDED,
             // `registry_versions` (C10) is the one already-captured, already-verified component carrying the formula versions, the
             // real reason-registry snapshot and the executable build. V1 publications keep binding its whole payload hash in both fields
             // (D-MD-B10-A002-005, D-MD-B18-A002-006); that hash moves with the build, which is why V2 does not.
@@ -1988,6 +2036,9 @@ class ReplayVerificationService
             'expected_reason_code' => $r['expected_reason_code'] ?? ($expectedFinal['final_reason_code'] ?? null),
             'expected_lineage' => $expectedLineage,
             'expected_bound_input_context' => $expectedBoundInputs,
+            'expected_replay_mode' => $fixture['manifest']['replay_mode'] ?? null,
+            'expected_publication_manifest_identity' => $r['expected_publication_manifest_identity'] ?? null,
+            'expected_artifact_semantic_bindings' => $r['expected_artifact_semantic_bindings'] ?? null,
         ];
     }
 
@@ -3025,16 +3076,62 @@ class ReplayVerificationService
     private function configIdentityForRun($run)
     {
         $hash = trim((string) ($run->config_hash ?? ''));
-        if ($hash !== '') {
+        if (preg_match('/^[a-f0-9]{64}$/i', $hash) === 1 && ! empty($run->config_snapshot_id)) {
             return $hash;
         }
 
-        $snapshotRef = trim((string) ($run->config_snapshot_ref ?? ''));
-        if ($snapshotRef !== '') {
-            return $snapshotRef;
-        }
-
         return self::CONFIG_IDENTITY_UNRECORDED;
+    }
+
+    /** D006: capture only verified, explicit publication data before metric persistence. */
+    private function replayPublicationManifestIdentity($publication): array
+    {
+        $identity = ['schema_version' => 'replay_publication_manifest_identity_v1', 'applicability' => 'UNAVAILABLE',
+            'publication_id' => $publication ? (int) $publication->publication_id : null,
+            'publication_manifest_hash' => null, 'temporal_revision_set_hash' => null, 'formula_version' => null];
+        $hash = $this->verifiedPublicationManifestHash($publication);
+        if ($hash === '' || ! $publication || ($this->boundInputContextProjection($publication)['status'] ?? null) !== 'VERIFIED') return $identity;
+        $manifest = $this->publications->buildManifestByPublicationId((int) $publication->publication_id);
+        if (! $manifest) return $identity;
+        $identity['publication_manifest_hash'] = $hash;
+        $identity['temporal_revision_set_hash'] = $manifest->temporal_revision_set_hash ?? null;
+        $identity['formula_version'] = $manifest->formula_version ?? null;
+        // No supported frozen RAW applicability declaration exists on this analytical publication path.
+        // RAW observations, missing product data or absent analytical members cannot manufacture one.
+        if (! in_array($manifest->price_product_code ?? null, ['STRUCTURAL_ADJUSTED', 'TOTAL_RETURN'], true)
+            || empty($manifest->price_product_version) || empty($manifest->factor_set_id)
+            || preg_match('/^[a-f0-9]{64}$/', (string) ($manifest->factor_set_hash ?? '')) !== 1) return $identity;
+        $identity['applicability'] = 'APPLICABLE';
+        if (! $this->completeReplayManifestIdentity($identity)) $identity['applicability'] = 'UNAVAILABLE';
+        return $identity;
+    }
+
+    private function replayArtifactSemanticBindings($publication): array
+    {
+        if (! $publication || $this->verifiedPublicationManifestHash($publication) === '') return [];
+        $manifest = $this->publications->buildManifestByPublicationId((int) $publication->publication_id);
+        if (! $manifest) return [];
+        $fields = ['run_id', 'publication_id', 'publication_manifest_hash', 'observation_manifest_hash', 'config_snapshot_id', 'config_snapshot_hash',
+            'temporal_revision_set_hash', 'factor_set_id', 'factor_set_hash', 'price_product_code', 'price_product_version',
+            'canonicalization_version', 'formula_version', 'config_registry_revision', 'read_model_version',
+            'trade_date_requested', 'trade_date_effective', 'readiness_state', 'freshness_state'];
+        $bindings = array_intersect_key((array) $manifest, array_flip($fields));
+        $semantic = $this->semanticV2Lineage($publication);
+        if ($semantic !== null) {
+            // V2 semantic members differ from retained allocation-bound manifest hashes.
+            $bindings['observation_manifest_hash'] = $semantic['members']['observation_manifest_hash'] ?? null;
+            $bindings['factor_set_hash'] = $semantic['members']['factor_set_hash'] ?? null;
+        }
+        return $bindings;
+    }
+
+    private function completeReplayManifestIdentity($identity): bool
+    {
+        return is_array($identity) && ($identity['schema_version'] ?? null) === 'replay_publication_manifest_identity_v1'
+            && ($identity['applicability'] ?? null) === 'APPLICABLE' && is_int($identity['publication_id'] ?? null) && $identity['publication_id'] > 0
+            && preg_match('/^[a-f0-9]{64}$/', (string) ($identity['publication_manifest_hash'] ?? '')) === 1
+            && preg_match('/^[a-f0-9]{64}$/', (string) ($identity['temporal_revision_set_hash'] ?? '')) === 1
+            && is_string($identity['formula_version'] ?? null) && trim($identity['formula_version']) !== '';
     }
 
     private function replayStatusForComparison($comparisonResult)

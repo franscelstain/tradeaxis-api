@@ -174,6 +174,7 @@ final class R0025SyntheticV2World
             'publication' => $publication,
             'foundation' => $service,
             'publications' => $publications,
+            'pipeline' => $pipeline, // reuse this real world for bounded correction artifact proof
             'ticker_id' => $tickerId,
         ];
     }
