@@ -175,3 +175,7 @@ Accepted E022 continued under same A001/BL001/D005-D007/freeze. Runtime source/a
 ## 2026-10-19 — E024 correction/actual archive checkpoint
 
 Same A001/BL001/freeze;accepted E023 retained.82 independently mapped bases plus7 scoped revalidations;404/750 reviewed,18 complete families,formalzero. D008 holds R0324 due historical raw provenance absent, no normative/applicability/denominator change. Correction runtime gaps resolved;MD-DEP-0025 ACTIVE;no B18 reopening/candidate changes.
+
+## 2026-10-19 — E025 executed admission/audit core checkpoint
+
+Same A001/BL001/freeze;accepted E024 retained.72 new bases and7 scoped revalidations;476/750 reviewed,21 complete families,formalzero. Invalid execution metadata/stale final completeness corrected under existing authority. Conditional25 not entered;R0324 HELD D008/F016. No strategy,applicability,denominator,B18 or candidate change. MD-DEP-0025 ACTIVE.

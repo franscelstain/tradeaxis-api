@@ -335,7 +335,8 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $this->assertCount(2, $payload['source_attempt_telemetry']['attempts']);
         $this->assertSame(2, $payload['source_observation_audit']['source_observation_count']);
         $this->assertSame(str_repeat('c', 64), $payload['source_observation_audit']['source_observation_reference_manifest_hash']);
-        $this->assertSame('COMPLETE', $payload['evidence_completeness']['evidence_completeness_state']);
+        $this->assertSame('INCOMPLETE', $payload['evidence_completeness']['evidence_completeness_state']);
+        $this->assertSame($payload['evidence_admission']['missing_sections'], $payload['evidence_completeness']['missing_sections']);
         $this->assertFalse($payload['evidence_completeness']['database_lookup_required_after_export']);
         $this->assertSame(1201, $payload['publication_context']['publication_id']);
         $this->assertSame('RESOLVED_READABLE_CURRENT', $payload['pointer_context']['pointer_resolve_status']);
@@ -609,7 +610,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $result = $service->exportRunEvidence(8126, $dir);
 
         $this->assertSame('run', $result['selector']['type']);
-        $this->assertSame('COMPLETE', $result['summary']['evidence_completeness_state']);
+        $this->assertSame('INCOMPLETE', $result['summary']['evidence_completeness_state']);
         $this->assertSame('HISTORICAL_SEALED_PUBLICATION_RESOLVED', $result['summary']['pointer_resolve_status']);
 
         $payload = json_decode(file_get_contents($dir.'/evidence_pack.json'), true);

@@ -1018,8 +1018,8 @@ final class MarketDataOperationsProofSpec
                 'implementation' => [
                     'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19ExecutedEvidencePredicateProofTest.php', 'test_each_predicate_uses_independent_execution_values'],
+                'negative' => ['tests/Unit/MarketData/B19ExecutedEvidencePredicateProofTest.php', 'test_each_predicate_detects_missing_or_substituted_evidence'],
             ],
             'audit_pack_correction' => [
                 'owner' => 'MD-B19:audit-pack-correction',
@@ -1066,16 +1066,16 @@ final class MarketDataOperationsProofSpec
                 'implementation' => [
                     'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19ExecutedEvidencePredicateProofTest.php', 'test_each_predicate_uses_independent_execution_values'],
+                'negative' => ['tests/Unit/MarketData/B19ExecutedEvidencePredicateProofTest.php', 'test_each_predicate_detects_missing_or_substituted_evidence'],
             ],
             'executed_run_evidence_pack' => [
                 'owner' => 'MD-B19:executed-run-evidence-pack',
                 'implementation' => [
                     'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19ExecutedEvidencePredicateProofTest.php', 'test_each_predicate_uses_independent_execution_values'],
+                'negative' => ['tests/Unit/MarketData/B19ExecutedEvidencePredicateProofTest.php', 'test_each_predicate_detects_missing_or_substituted_evidence'],
             ],
             'freshness_and_slo' => [
                 'owner' => 'MD-B19:freshness-and-slo',

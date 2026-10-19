@@ -1986,3 +1986,7 @@ MD-REL-1988,E-MD-B19-A001-024,D-MD-B19-A001-008,DEPENDS_ON,E024 correction/archi
 MD-REL-1989,D-MD-B19-A001-008,F-MD-B19-A001-016,DEPENDS_ON,E024 correction/archive proof and explicit historical provenance hold.,D-MD-B19-A001-001,2026-10-19T11:56:04+07:00,E024
 MD-REL-1990,F-MD-B19-A001-015,E-MD-B19-A001-024,DEPENDS_ON,E024 correction/archive proof and explicit historical provenance hold.,D-MD-B19-A001-001,2026-10-19T11:56:04+07:00,E024
 MD-REL-1991,F-MD-B19-A001-016,E-MD-B19-A001-023,DEPENDS_ON,E024 correction/archive proof and explicit historical provenance hold.,D-MD-B19-A001-001,2026-10-19T11:56:04+07:00,E024
+MD-REL-1992,E-MD-B19-A001-025,E-MD-B19-A001-024,DEPENDS_ON,E025 actual admission/core proof; historical hold retained.,D-MD-B19-A001-001,2026-10-19T14:12:45+07:00,E025
+MD-REL-1993,E-MD-B19-A001-025,CI-MD-B19-A001-001,DEPENDS_ON,E025 actual admission/core proof; historical hold retained.,D-MD-B19-A001-001,2026-10-19T14:12:45+07:00,E025
+MD-REL-1994,E-MD-B19-A001-025,D-MD-B19-A001-008,DEPENDS_ON,E025 actual admission/core proof; historical hold retained.,D-MD-B19-A001-001,2026-10-19T14:12:45+07:00,E025
+MD-REL-1995,F-MD-B19-A001-017,E-MD-B19-A001-025,DEPENDS_ON,E025 actual admission/core proof; historical hold retained.,D-MD-B19-A001-001,2026-10-19T14:12:45+07:00,E025

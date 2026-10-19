@@ -1,0 +1,13 @@
+<?php
+use App\Application\MarketData\Services\MarketDataEvidenceExportService;
+
+class B19ExecutedAdmissionBoundaryTest extends TestCase
+{
+    private function admission($id,$at): array {$s=app(MarketDataEvidenceExportService::class);$m=new \ReflectionMethod($s,'buildEvidenceAdmission');$m->setAccessible(true);return $m->invoke($s,'run',$id,['run_summary'],[],$at);}
+    public static function invalidMetadata(): array {return ['missing_id'=>[0,'2026-03-25 10:30:00','execution_identity'],'symbolic_id'=>['example_run_id','2026-03-25 10:30:00','execution_identity'],'fractional_id'=>['17.5','2026-03-25 10:30:00','execution_identity'],'missing_time'=>[17,null,'execution_timestamp'],'symbolic_time'=>[17,'example_timestamp','execution_timestamp'],'calendar'=>[17,'2026-02-30 10:30:00','execution_timestamp']];}
+    /** @dataProvider invalidMetadata */
+    public function test_invalid_execution_metadata_cannot_admit_complete_base_evidence($id,$at,$issue): void {$a=$this->admission($id,$at);$this->assertSame('ADMITTED_INCOMPLETE',$a['evidence_admission_state']);$this->assertContains($issue,$a['missing_sections']);$this->assertFalse($a['claims']['declared_evidence_completeness']);if($issue==='execution_timestamp'){$this->assertSame($at,$a['evidence_created_at']);$this->assertSame('not_available',$a['evidence_timestamp_source']);}}
+    public function test_criteria_and_claim_boundaries_are_explicit_and_content_bound(): void {$sha=hash_file('sha256',base_path('app/Application/MarketData/Services/MarketDataEvidenceExportService.php'));$a=$this->admission(17,'2026-03-25 10:30:00');$this->assertArrayHasKey('criteria',$a);$this->assertSame('evidence_admission_v2',$a['criteria']['schema_version']);$this->assertSame($sha,$a['criteria']['exporter_sha256']);$this->assertSame(hash('sha256',json_encode(['run_summary'],JSON_UNESCAPED_SLASHES)),$a['criteria']['required_sections_sha256']);$this->assertFalse($a['claims']['output_correctness']);$this->assertFalse($a['claims']['cross_version_equivalence']);$this->assertFalse($a['claims']['current_governed_verification']);$this->assertTrue($a['claims']['declared_evidence_completeness']);}
+
+    public function test_final_required_bindings_update_the_completeness_claim(): void {$s=app(MarketDataEvidenceExportService::class);$m=new \ReflectionMethod($s,'withArtifactBindingAdmission');$m->setAccessible(true);$a=$m->invoke($s,$this->admission(17,'2026-03-25 10:30:00'),['actual'=>['missing_required_bindings'=>['temporal_revision_set_hash']]]);$this->assertSame('ADMITTED_INCOMPLETE',$a['evidence_admission_state']);$this->assertFalse($a['claims']['declared_evidence_completeness']);$this->assertContains('artifact_bindings.actual.temporal_revision_set_hash',$a['missing_sections']);}
+}

@@ -36,6 +36,8 @@ class B19ReplayIdentityMariaDbPipelineTest extends TestCase
     protected function prepareArtifactBindings(array $expected,array $oracle,array $navigation,$temporal): array { return $expected; }
 
     protected function afterIdentityRun($verifier,$runId,$fixture,$publicationId,$date,array $expected,array $manifest,array $files,array $world,$replay): void {}
+    protected function identityWorld(): array { return R0025SyntheticV2World::build(); }
+    protected function continueIdentityScope(): bool { return true; }
 
     public function test_all_identity_paths_follow_independent_inputs_and_persisted_publication_binding(): void
     {
@@ -48,7 +50,7 @@ class B19ReplayIdentityMariaDbPipelineTest extends TestCase
         $frozenReasons=json_decode(file_get_contents($package.'/inputs/frozen_reason_registry.json'),true)['entries'];
         // Historical publication input registry, restored within this rolled-back test transaction.
         DB::table('eod_reason_codes')->delete();foreach(array_chunk($frozenReasons,100) as $chunk)DB::table('eod_reason_codes')->insert($chunk);
-        $world=R0025SyntheticV2World::build();
+        $world=$this->identityWorld();
         $id=(int)$world['publication_id'];$runId=(int)$world['run_id'];$pub=DB::table('eod_publications')->where('publication_id',$id)->first();
         $run=DB::table('eod_runs')->where('run_id',$runId)->first();$date=$pub->trade_date;
         $lineage=DB::table('md_publication_lineage_bindings')->where('publication_id',$id)->first();
@@ -105,6 +107,7 @@ class B19ReplayIdentityMariaDbPipelineTest extends TestCase
             file_put_contents($capture.'/authoritative_inputs.json',json_encode(['publication'=>$pub,'run'=>$run,'lineage'=>$lineage,'config_snapshot'=>$snapshot,'independent_temporal_preimage'=>['trade_date'=>$date,'identity_revision_set_hash'=>$lineage->identity_revision_set_hash,'calendar_revision_set_hash'=>$lineage->calendar_revision_set_hash,'status_revision_set_hash'=>$lineage->status_revision_set_hash]],JSON_PRETTY_PRINT));
         }
         $this->afterIdentityRun($verifier,$runId,$fixture,$id,$date,$expected,$manifest,$files,$world,$replay);
+        if (! $this->continueIdentityScope()) return;
         $writeExpected=function(array $probe,string $version,array $reasons=null)use($fixture,&$manifest,$files){
             file_put_contents($fixture.'/expected/expected_replay_result.json',json_encode($probe));
             file_put_contents($fixture.'/expected/expected_hashes.json',json_encode(array_intersect_key($probe['expected_artifact_context'],array_flip(['bars_batch_hash','indicators_batch_hash','eligibility_batch_hash']))));

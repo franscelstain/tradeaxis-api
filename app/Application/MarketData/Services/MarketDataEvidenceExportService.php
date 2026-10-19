@@ -134,6 +134,10 @@ class MarketDataEvidenceExportService
             foreach (['source_name', 'provider'] as $field) if (empty($sourceAttemptTelemetry[$field])) $admission['missing_sections'][] = 'source_attempt_telemetry.'.$field;
         }
         $admission = $this->withArtifactBindingAdmission($admission, $bindingContexts);
+        // Final required evidence includes execution trail, telemetry and semantic bindings.
+        $completeness['missing_sections'] = $admission['missing_sections'];
+        $completeness['evidence_completeness_state'] = $admission['missing_sections'] ? 'INCOMPLETE' : 'COMPLETE';
+        $completeness['evidence_completeness_reason_code'] = $admission['missing_sections'] ? 'EVIDENCE_INCOMPLETE' : 'EVIDENCE_COMPLETE';
         $runSummary['evidence_completeness_state'] = $completeness['evidence_completeness_state'];
         $runSummary['evidence_admission_state'] = $admission['evidence_admission_state'];
         $runSummary['evidence_missing_sections'] = $completeness['missing_sections'];
@@ -563,6 +567,20 @@ class MarketDataEvidenceExportService
 
     private function buildEvidenceAdmission($selectorType, $selectorId, array $requiredSections, array $missingSections, $evidenceCreatedAt = null)
     {
+        if (! (is_int($selectorId) || (is_string($selectorId) && ctype_digit($selectorId))) || (int) $selectorId <= 0) {
+            $missingSections[] = 'execution_identity';
+        }
+        $timestampValid = is_string($evidenceCreatedAt) && preg_match('/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})?$/D', $evidenceCreatedAt);
+        if ($timestampValid) {
+            try {
+                new \DateTimeImmutable($evidenceCreatedAt);
+                $issues = \DateTimeImmutable::getLastErrors();
+                $timestampValid = $issues === false || ! array_filter($issues);
+            } catch (\Exception $error) {
+                $timestampValid = false;
+            }
+        }
+        if (! $timestampValid) $missingSections[] = 'execution_timestamp';
         $missingSections = array_values(array_unique(array_filter($missingSections, function ($section) {
             return $section !== null && $section !== '';
         })));
@@ -576,7 +594,19 @@ class MarketDataEvidenceExportService
             'missing_sections' => $missingSections,
             'critical_missing_sections' => $missingSections,
             'evidence_created_at' => $evidenceCreatedAt,
-            'evidence_timestamp_source' => $evidenceCreatedAt !== null ? 'source_record_timestamp' : 'not_available',
+            'evidence_timestamp_source' => $timestampValid ? 'source_record_timestamp' : 'not_available',
+            'criteria' => [
+                'schema_version' => 'evidence_admission_v2',
+                'exporter_sha256' => hash_file('sha256', __FILE__),
+                'required_sections_sha256' => hash('sha256', json_encode(array_values($requiredSections), JSON_UNESCAPED_SLASHES)),
+            ],
+            // Admission describes declared evidence, not result correctness or governed verification.
+            'claims' => [
+                'declared_evidence_completeness' => $missingSections === [],
+                'output_correctness' => false,
+                'cross_version_equivalence' => false,
+                'current_governed_verification' => false,
+            ],
             'database_lookup_required_after_export' => false,
             'deterministic_export' => true,
             'silent_missing_metadata_allowed' => false,
@@ -1312,7 +1342,7 @@ class MarketDataEvidenceExportService
             'formula_version' => $manifest['formula_version'] ?? null,
             'read_model_version' => $manifest['read_model_version'] ?? null,
             /*
-             * C1 §6 step 4 (Reader): the manifest's own version-aware projection of the producer-
+             * C1 Â§6 step 4 (Reader): the manifest's own version-aware projection of the producer-
              * bound input context, read verbatim -- not re-derived here. `available`/`status` come
              * from `PublicationInputBindingService::readBoundContext()`, which reuses the exact
              * verification Seal performs; export never invents a separate notion of "valid".
@@ -2803,6 +2833,7 @@ class MarketDataEvidenceExportService
         }
         $admission['missing_sections'] = array_values(array_unique($admission['missing_sections']));
         $admission['critical_missing_sections'] = $admission['missing_sections'];
+        $admission['claims']['declared_evidence_completeness'] = $admission['missing_sections'] === [];
         $admission['evidence_admission_state'] = $admission['missing_sections'] ? 'ADMITTED_INCOMPLETE' : 'ADMITTED_COMPLETE';
         $admission['evidence_admission_reason_code'] = $admission['missing_sections'] ? 'EVIDENCE_ADMISSION_INCOMPLETE' : 'EVIDENCE_ADMISSION_COMPLETE';
         return $admission;
