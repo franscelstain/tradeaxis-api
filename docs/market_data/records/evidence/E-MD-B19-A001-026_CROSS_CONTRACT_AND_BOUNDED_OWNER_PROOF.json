@@ -1,0 +1,192 @@
+{
+  "evidence_id": "E-MD-B19-A001-026",
+  "record_type": "EVIDENCE",
+  "role_scope": "CURRENT_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B19",
+  "attempt_id": "MD-B19-A001",
+  "work_id": "MD-B19-A001",
+  "baseline_id": "MD-B19-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261018-001",
+  "ci_id": "CI-MD-B19-A001-001",
+  "issued_at": "2026-10-19T17:19:48+07:00",
+  "evidence_type": "CROSS_CONTRACT_POLICY_AND_BOUNDED_OWNERSHIP_PROOF",
+  "verdict": "39_NEW_REVIEWED_BASES_STAGE_PARTIAL",
+  "initial_head": "d719b320999cdd7bd952b965fe33554a01a27fc9",
+  "initial_state": {
+    "working_tree": "CLEAN; Project Owner committed accepted E025",
+    "reviewed": 476,
+    "denominator": 750,
+    "complete_families": 21,
+    "formal_satisfied": 0
+  },
+  "newly_reviewed": 39,
+  "family_gains": {
+    "cross_contract_alignment": 25,
+    "incident_classification": 0,
+    "ownership_and_recovery": 14
+  },
+  "newly_reviewed_predicates": [
+    "MD-S062-R0056",
+    "MD-S062-R0057",
+    "MD-S062-R0058",
+    "MD-S062-R0059",
+    "MD-S062-R0060",
+    "MD-S063-R0163",
+    "MD-S063-R0164",
+    "MD-S063-R0165",
+    "MD-S063-R0166",
+    "MD-S063-R0167",
+    "MD-S068-R0027",
+    "MD-S068-R0028",
+    "MD-S068-R0029",
+    "MD-S071-R0045",
+    "MD-S071-R0046",
+    "MD-S071-R0047",
+    "MD-S075-R0304",
+    "MD-S075-R0305",
+    "MD-S075-R0306",
+    "MD-S075-R0307",
+    "MD-S075-R0308",
+    "MD-S076-R0049",
+    "MD-S076-R0050",
+    "MD-S076-R0051",
+    "MD-S076-R0052",
+    "MD-S077-R0006",
+    "MD-S077-R0015",
+    "MD-S077-R0016",
+    "MD-S077-R0017",
+    "MD-S077-R0018",
+    "MD-S077-R0019",
+    "MD-S077-R0021",
+    "MD-S077-R0022",
+    "MD-S077-R0023",
+    "MD-S077-R0029",
+    "MD-S077-R0032",
+    "MD-S077-R0037",
+    "MD-S077-R0038",
+    "MD-S077-R0040"
+  ],
+  "per_predicate_map": "E026_per_predicate_map.json",
+  "proof": {
+    "cross_contract": "25 registered owner/target pairs; 25 row-level semantic dimension sets, 50 focused tests/605 assertions; each missing/inverted source or target clause rejected. This establishes policy alignment only, never execution of operator workflow. Legacy examples and technical guidance retain subordinate registered roles.",
+    "ownership": "14 bounded runtime bases from actual SQLite run, correction, unforced conflict, approved replacement, low coverage, injected promotion failure, mismatched candidate ownership and pointer state. Focused 6/6 tests/65 assertions; normal1/4725, low coverage1/21, correction1/18; force-interlock bypass red at unexpected SUCCESS then exact byte restoration and control green.",
+    "runtime_gap_probe": "A real repository call creates two active run IDs for one requested date under distinct source modes; 1 test/2 assertions. Stale cancellation code lacks candidate-trust and partial-publication decision before takeover. No general one-owner/takeover/concurrent-finalization claim.",
+    "incident": "No incident classifier or recorded severity/response/closure outcome. Class floors alone do not decide breadth/duration escalation. Zero incident predicates admitted; F018 records exact authority and implementation gap.",
+    "conditional": "commands_and_runbook 0/17, not entered because registered command help and supported production runtime form an additional independent authority boundary."
+  },
+  "previous_bases": {
+    "previous_reviewed": 476,
+    "revalidated": [],
+    "revalidated_count": 0,
+    "retained_unaffected": 476,
+    "previous_invalidated_or_held": 0,
+    "reason": "No app/config/bootstrap/vendor/schema/frozen-authority bytes changed. New test and proof maps only; accepted E015-E025 proof retained. No previously accepted behavior was altered."
+  },
+  "held_or_unproved": {
+    "MD-S075-R0324": "HELD under D008/F016; historical raw execution provenance absent.",
+    "incident_classification": "0/18; exact R0011/R0012 severity escalation and closure decision requires owner authority; other sixteen are unimplemented/unproved.",
+    "ownership_and_recovery": "13/27 remain without a reviewed basis under F019; measured active-run scope, stale takeover and taxonomy gaps.",
+    "commands_and_runbook": "0/17 conditional not entered; additional command-help/runtime authority."
+  },
+  "findings": {
+    "F-MD-B19-A001-018": "OPEN incident classification decision and executable boundary",
+    "F-MD-B19-A001-019": "OPEN owner/takeover implementation and proof gaps",
+    "F-MD-B19-A001-016": "OPEN R0324 historical provenance",
+    "F-MD-B19-A001-003": "OPEN successor build"
+  },
+  "status_after": {
+    "reviewed_bases": 515,
+    "denominator": 750,
+    "formal_satisfied": 0,
+    "completed_families": 22,
+    "families": 37,
+    "remaining_without_basis": 235,
+    "families_without_guard": 13,
+    "predicates_without_guard": 221
+  },
+  "governance": "Operations proof gate remains FAIL by design on 235 unproved bases and 13 unguarded families. Historical alias-meaning F009/E013, unchanged coverage static guard, seven corpus oracle failures and thirteen candidate-v5 build-identity failures remain visible; none called PASS. No broad or full-suite run.",
+  "executable_build": "Unchanged app/config/bootstrap/vendor and composer source since accepted E025; MD-DEP-0025 stays ACTIVE, candidate-v6 not authored.",
+  "raw_artifacts": {
+    "dir": "storage/app/market-data/evidence/MD-B19-A001",
+    "inventory": "E026_inventory.json",
+    "inventory_sha256": "6b06f34040e71b6737c6f66c2e0cbec54a732495509a53777d63f5f13b0b1ab6",
+    "files": {
+      "E026_build_map.php": {
+        "bytes": 3121,
+        "sha256": "5de62fc416394e66c9171222cfe6fef79c6ebd10858866e80c9dc31bfbb54a81"
+      },
+      "E026_cross_contract_test.txt": {
+        "bytes": 4623,
+        "sha256": "ad4e64a6c2172f2254250e6aad36f6e961ae1c27afb6f009c506df6d46d81292"
+      },
+      "E026_gate_classification.json": {
+        "bytes": 1645,
+        "sha256": "0a3b33c94d0ac2fa8d6dbb538c11d7c387d71d0980edf2f7dd0a0ef86470919c"
+      },
+      "E026_gate_documentation.json": {
+        "bytes": 4152,
+        "sha256": "f4f21f6c36dc35de4698e710103187576ddfb2d5174a0abd3ffa33b8be1610a4"
+      },
+      "E026_gate_operations.json": {
+        "bytes": 2186,
+        "sha256": "79a0ca3ad316438519d5ff0ba8b16b760dc43042b6670719b77398657710e8af"
+      },
+      "E026_gate_relationships.json": {
+        "bytes": 614,
+        "sha256": "71526b59e512aa509f4c19cf9bb970b7fe7f213da6e72d3de7a848a7ed240e21"
+      },
+      "E026_owner_correction_success.txt": {
+        "bytes": 208,
+        "sha256": "3beea9d527f79a4ec9b0f5abb17e31722b293bfacf28980cb5202d5e929b40fe"
+      },
+      "E026_owner_low_coverage.txt": {
+        "bytes": 208,
+        "sha256": "b2afbed7091cb6c6df1ad7f9c9ef7c3e48271685679acd9f79b5a56ea2cee75e"
+      },
+      "E026_owner_mismatch_restore.txt": {
+        "bytes": 78,
+        "sha256": "24473341a2e004cbc05bab9753232e15c31ea1802e1a58c9a1336b7fe4eefc5e"
+      },
+      "E026_owner_no_force_mutation.txt": {
+        "bytes": 627,
+        "sha256": "a9a4891acce8e0036ed7057a99b9388fc4631ff6c0550e7d17113000eeb9773d"
+      },
+      "E026_owner_real_pipeline.txt": {
+        "bytes": 210,
+        "sha256": "1f3e4c79e32bad0a517e771d2a598f582da86b6ab9cc78b8e04872db4fb251d0"
+      },
+      "E026_owner_restored.txt": {
+        "bytes": 208,
+        "sha256": "c7cae2fd8df36676fe9453a72c427e8426164f0388147baa816ededc850afbcb"
+      },
+      "E026_owner_scope_gap.txt": {
+        "bytes": 206,
+        "sha256": "307c9521b9dac84d4924cfcbe95e9f78f801f6d2ba2ee90ae45734113049f55a"
+      },
+      "E026_ownership_existing.txt": {
+        "bytes": 209,
+        "sha256": "d505a0c820608ede5fbe5d8815ad1d23985d8adfe68d231d197f321d3b210da5"
+      },
+      "E026_per_predicate_map.json": {
+        "bytes": 77970,
+        "sha256": "ccac7125f8974531cd66b8e35b11ff02965b8b39d4404b3cee657aa6ccf511d2"
+      },
+      "E026_preflight.json": {
+        "bytes": 51560,
+        "sha256": "88822837d1040532c67d5115e34d62847a93d9c4bbf5ac912d8b78cc1100aae0"
+      },
+      "E026_README.md": {
+        "bytes": 3143,
+        "sha256": "cd3e858659b62e2393f3750b0ac1226be2488a3650ea637721a0d9596e0f1ef0"
+      },
+      "E026OwnerScopeGapProbeTest.php": {
+        "bytes": 1235,
+        "sha256": "7951049d6e32dedd13c91c5588ea9a81632d2ece18f65d05bf89824c64614437"
+      }
+    }
+  },
+  "next_resume_point": "MD-B19-A001: independent external review of E026 39 new reviewed bases (cross-contract policy25, bounded ownership14), zero prior revalidations;515/750 reviewed,22/37 families complete,formal0. Then resolve F018 severity/closure authority for R0011/R0012 and implement/prove incident classification, while correcting F019 owner/takeover gaps for remaining13; commands/runbook only after its independent runtime-help boundary. R0324 HELD D008/F016;MD-DEP-0025 ACTIVE;no candidate-v6. Project Owner alone controls Git.",
+  "diagnostics": "Initial no-test owner mismatch filter retained as NONCONTROLLING. Initial owner scope probe fixture error corrected before controlling 1/2 run. Initial documentation gate failed on the three unregistered new documents and was corrected; final PASS capture controls. No intermediate false PASS claim."
+}

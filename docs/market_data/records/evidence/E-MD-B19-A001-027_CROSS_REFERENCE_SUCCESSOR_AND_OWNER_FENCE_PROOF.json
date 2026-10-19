@@ -1,0 +1,85 @@
+{
+  "evidence_id": "E-MD-B19-A001-027",
+  "record_type": "EVIDENCE",
+  "role_scope": "CURRENT_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B19",
+  "attempt_id": "MD-B19-A001",
+  "work_id": "MD-B19-A001",
+  "baseline_id": "MD-B19-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261018-001",
+  "ci_id": "CI-MD-B19-A001-001",
+  "issued_at": "2026-10-19T17:54:17+07:00",
+  "evidence_type": "CROSS_REFERENCE_SUCCESSOR_AND_DATE_OWNER_FENCE_PROOF",
+  "verdict": "PENDING_INDEPENDENT_REVIEW_25_REPAIRED_11_NEW",
+  "external_review_input": {
+    "E026": "14 bounded ownership bases ACCEPTED; 25 cross-contract bases HELD for missing governing-reference identity",
+    "E026_immutable": true,
+    "accepted_before_E027": 490
+  },
+  "family_gains": {
+    "cross_contract_alignment": {
+      "new": 0,
+      "E026_held_repaired": 25
+    },
+    "ownership_and_recovery": {
+      "new_proposed": 11,
+      "accepted_E026_retained": 14,
+      "remaining_unproved": 2
+    },
+    "incident_classification": 0,
+    "commands_and_runbook": 0
+  },
+  "newly_proposed_owner_predicates": [
+    "MD-S077-R0003",
+    "MD-S077-R0004",
+    "MD-S077-R0013",
+    "MD-S077-R0025",
+    "MD-S077-R0027",
+    "MD-S077-R0028",
+    "MD-S077-R0031",
+    "MD-S077-R0033",
+    "MD-S077-R0034",
+    "MD-S077-R0035",
+    "MD-S077-R0039"
+  ],
+  "cross_reference_proof": "Every one of the 25 E026 source/target pairs now checks the exact governing line and source document identity against matrix and document-ID registry, unique registered exact-filename target or grounded registered family/role resolution for generic references, and independent semantic clauses in both documents. 75/75 tests, 958 assertions; exact removal, exact retarget and generic retarget on-disk mutants each red and byte-restored. Policy alignment only.",
+  "owner_runtime_proof": "Unique date-fence row serializes owner creation across source/request modes. A two-process SQLite race released behind a held database writer produces one active owner and one blocked contender. Cross-mode and promote-seed competitors, injected dual-active state, readable-finalize/direct-seal/promotion rejection, stale expiry plus explicit candidate and prior-pointer trust, ambiguous partial publication and malformed pointer refusal, audited takeover with both IDs, and prior readable row preservation execute in 8/8 adversarial tests/67 assertions. Nine affected earlier tests/4829 assertions pass. Three runtime bypass mutants red and exact-restored.",
+  "proof_map": "E027_per_predicate_map.json",
+  "previous_bases": {
+    "E026_accepted_owner_revalidated": 14,
+    "E026_held_cross_repaired_not_double_counted": 25,
+    "E015_to_E025_accepted_retained": 476,
+    "affected_runtime_methods_reexecuted": 9,
+    "historical_mutations_not_repeated": true
+  },
+  "production_and_schema_changes": [
+    "app/Infrastructure/Persistence/MarketData/EodRunRepository.php",
+    "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php",
+    "app/Application/MarketData/Services/MarketDataPipelineService.php",
+    "database/migrations/2026_10_19_000001_create_eod_run_owner_fences.php",
+    "docs/market_data/development/implementation/db/Database_Schema_MariaDB.sql"
+  ],
+  "remaining": {
+    "MD-S067-R0016": "NOT_ASSESSED: verified duplicate target must persist SKIPPED; distinct unforced replacement HELD is not this case.",
+    "MD-S067-R0017": "NOT_ASSESSED: fenced-worker request must persist BLOCKED/SKIPPED_LOCKED run status; event decision BLOCKED alone is insufficient.",
+    "incident_classification": "0/18; R0011/R0012 escalation/closure authority decision HELD under F018; no invented threshold or closure.",
+    "commands_and_runbook": "0/17 conditional not entered while F019 taxonomy remains incomplete.",
+    "MD-S075-R0324": "HELD under D008/F016 historical raw provenance."
+  },
+  "status_after_proposed": {
+    "reviewed_bases": 526,
+    "denominator": 750,
+    "complete_families": 22,
+    "families": 37,
+    "without_basis": 224,
+    "without_family_guard": 13,
+    "formal_satisfied": 0
+  },
+  "governance": "Operations proof gate remains FAIL on 224 missing bases and 13 unguarded families by design. Alias-meaning F009/E013, unchanged coverage static guard and historical candidate-v5 build-identity failures remain visible. MD-DEP-0025 ACTIVE with eleven differing executable-build files; no candidate-v6. B18 historical validity retained.",
+  "runtime_limits": "SQLite two-process adversarial owner race and focused real pipeline execution established; full MariaDB owner race and command help were not executed. New migration must be applied before production uses the date fence. No full suite or universal deployment claim.",
+  "raw_inventory": "E027_inventory.json",
+  "raw_inventory_sha256": "59ee4ce23764fc80075d9f285984414c8cbecf7767867a609358d9c7500ce6e8",
+  "single_exact_resume_point": "MD-B19-A001: independent external review of E027 corrected cross-reference proof25 and new runtime owner11 (526/750 proposed reviewed; formal0). After review, implement/prove F019 taxonomy R0016/R0017, retain F018 R0011/R0012 owner decision and incident scope, then assess commands/runbook runtime help. R0324 HELD D008/F016;MD-DEP-0025 ACTIVE;no candidate-v6;Project Owner controls Git."
+}

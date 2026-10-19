@@ -80,6 +80,10 @@ class B19PublicationManifestSupersessionTest extends TestCase
     {
         $correction = $baselinePublication !== null;
         $this->insertRun($s, $correction);
+        DB::table('eod_run_owner_fences')->updateOrInsert(
+            ['trade_date_requested' => self::DATE],
+            ['owner_run_id' => $s['run'], 'updated_at' => self::DATE.' '.$s['at']]
+        );
         if ($correction) {
             DB::table('eod_dataset_corrections')->insert([
                 'correction_id' => $s['correction'], 'trade_date' => self::DATE, 'baseline_publication_id' => $baselinePublication, 'correction_reason_code' => 'SOURCE_CORRECTION',

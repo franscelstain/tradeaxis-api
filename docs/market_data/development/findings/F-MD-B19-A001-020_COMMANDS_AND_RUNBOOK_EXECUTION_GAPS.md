@@ -1,0 +1,9 @@
+# F-MD-B19-A001-020 — Commands and runbook execution gaps
+
+Status: OPEN. Attempt: MD-B19-A001. Baseline: MD-B19-A001-BL001. Source: MD-S064 and MD-S036-R0013. Evidence: E-MD-B19-A001-028. Change impact: CI-MD-B19-A001-001.
+
+E028 executed `artisan list --raw` and JSON help for all 41 registered `market-data:*` commands. Three registered commands were missing from the operator index and are now listed. `B19RuntimeCommandCatalogTest` compares every registered name and command-specific option to `commands/README.md`; an invented option made it red, and the index was restored. This establishes only MD-S064-R0010, pending independent review. Existing 64 command-safety tests/371 assertions passed but are not substituted for live command-family workflows.
+
+The other 16 commands_and_runbook predicates remain without an independently admitted basis: MD-S036-R0013 and MD-S064-R0001 through R0009, R0011 through R0016. Runtime help establishes syntax, not preflight dates, bounded backfill, validated promotion, historical rollback, replay/evidence integrity, retention, apply preview, force boundaries, anti-mutation, exit taxonomy, linked retry or the complete production-runtime proof gate. The runtime list does not register a dedicated preflight/status command, and a generic historical pointer rollback command is not established by the current repair help. These are executable-surface and proof gaps; documentation examples are not treated as execution. No applicability or denominator changes are proposed.
+
+The next runbook batch must independently execute each command family and its negative/refusal path on the supported runtime, identify any missing producer behavior, and prove mutation sensitivity before increasing the reviewed count. Known F018 escalation/closure, R0324 under D008/F016, MD-DEP-0025, alias-meaning and static coverage failures remain separate.

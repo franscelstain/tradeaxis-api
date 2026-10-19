@@ -306,6 +306,11 @@ class PublicationSemanticIdentityProductionPathTest extends TestCase
             }
             $this->seedCandidateRun($ids, $correction);
         }
+        DB::table('eod_run_owner_fences')->insert([
+            'trade_date_requested' => self::TRADE_DATE,
+            'owner_run_id' => $ids['candidate_run'],
+            'updated_at' => self::TRADE_DATE.' 17:30:00',
+        ]);
 
         $repository = new EodPublicationRepository();
         $run = EodRun::query()->findOrFail($ids['candidate_run']);

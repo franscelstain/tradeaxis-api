@@ -21,7 +21,7 @@ The command-specific docs below remain supporting material. They must not contra
 
 ## Detected runtime command surface
 
-Presence in this list means the command is registered, not approved. The two prohibited legacy apply surfaces are called out below and block production relock.
+Presence in this list means the command is registered, not approved. The names and options require verification against runtime help and executable safety behavior.
 
 - `market-data:daily`
 - `market-data:eod-bars:ingest`
@@ -45,6 +45,9 @@ Presence in this list means the command is registered, not approved. The two pro
 - `market-data:trading-status:record-authoritative-snapshot`
 - `market-data:corpus:admit-conformant-suffix`
 - `market-data:corpus:reconstruct-current`
+- `market-data:reconcile:corporate-actions`
+- `market-data:reconcile:publication-projection`
+- `market-data:repair:publication-projection`
 - `market-data:events:import-trading-status`
 - `market-data:replay:verify`
 - `market-data:replay:smoke`
@@ -62,10 +65,10 @@ Presence in this list means the command is registered, not approved. The two pro
 - `market-data:repair-price-scale-stretches`
 - `market-data:events:derive-corporate-actions`
 
-### Prohibited until removed or redesigned
+### Detection-only compatibility surfaces
 
-- `market-data:repair-price-scale-stretches`: direct `--apply` mutation of `eod_bars`/history is forbidden.
-- `market-data:events:derive-corporate-actions`: may at most write an unverified detector candidate; it may not create/update verified actions or factors from price behavior.
+- `market-data:repair-price-scale-stretches`: runtime help describes a detection-only compatibility command. Direct canonical/history bar mutation remains prohibited.
+- `market-data:events:derive-corporate-actions`: runtime help describes a detection-only compatibility command. Price geometry cannot create or verify actions or factors.
 
 ## Notes
 
@@ -79,3 +82,51 @@ Presence in this list means the command is registered, not approved. The two pro
 ## Current indicator recompute lock
 
 `market-data:eod-indicators:recompute-current` is runtime-proven as the no-reimport indicator maintenance path. Runtime proof: full MarketData PHPUnit 640 tests / 9539 assertions on 2026-06-07, full-range recompute 807/807 success, and final current evidence/replay 807/807 MATCH/PASS. Latest docs-review validation on 2026-06-08 reran `vendor\bin\phpunit` and passed with OK (641 tests, 9547 assertions). It must remain read-only toward source/master tables and `eod_bars`.
+
+## Runtime-verified command options
+
+Captured from registered `php artisan help <command> --format=json` on 2026-10-19. This table describes the available syntax; command safety is established by executable refusal and workflow proof.
+
+| Registered command | Command-specific options |
+|---|---|
+| `market-data:audit:hash` | `--requested_date`, `--source_mode`, `--run_id`, `--correction_id`, `--latest` |
+| `market-data:backfill` | `--source_mode`, `--input_file`, `--output_dir`, `--continue_on_error` |
+| `market-data:backfill:lifecycle` | `--source_mode`, `--input_file`, `--output_dir`, `--plan`, `--resume`, `--only-failed`, `--continue-on-error`, `--stop-on-error`, `--collect-all-errors`, `--max-dates-per-run`, `--with-evidence`, `--with-replay`, `--replay-fixture-root`, `--no-replay`, `--diagnose-source` |
+| `market-data:backfill:missing-tickers` | `--source_mode`, `--ticker_codes`, `--input_file`, `--output_dir`, `--plan`, `--resume`, `--continue-on-error`, `--stop-on-error`, `--collect-all-errors`, `--max-dates-per-run`, `--skip-publication-reprocess`, `--with-evidence`, `--with-replay`, `--replay-fixture-root`, `--no-replay` |
+| `market-data:corpus:admit-conformant-suffix` | `--campaign_id`, `--dry-run`, `--apply` |
+| `market-data:corpus:reconstruct-current` | `--dry-run`, `--apply`, `--resume`, `--output_dir` |
+| `market-data:correction:approve` | `--approved_by` |
+| `market-data:correction:request` | `--trade_date`, `--reason_code`, `--reason_note`, `--requested_by` |
+| `market-data:correction:run` | `--requested_date`, `--source_mode`, `--latest` |
+| `market-data:current-publication:repair` | `--trade_date`, `--apply`, `--reason`, `--force_reason` |
+| `market-data:daily` | `--requested_date`, `--source_mode`, `--input_file`, `--output_dir`, `--correction_id`, `--latest` |
+| `market-data:dataset:seal` | `--requested_date`, `--source_mode`, `--run_id`, `--correction_id`, `--latest` |
+| `market-data:detect-price-scale-breaks` | `--start`, `--end`, `--ticker`, `--dry-run`, `--apply` |
+| `market-data:eod-bars:ingest` | `--requested_date`, `--source_mode`, `--run_id`, `--correction_id`, `--request_mode`, `--latest` |
+| `market-data:eod-eligibility:build` | `--requested_date`, `--source_mode`, `--run_id`, `--correction_id`, `--latest` |
+| `market-data:eod-indicators:compute` | `--requested_date`, `--source_mode`, `--run_id`, `--correction_id`, `--latest` |
+| `market-data:eod-indicators:recompute-current` | `--force_replace_reason`, `--output_dir`, `--with-evidence`, `--with-replay`, `--continue-on-error`, `--max_dates`, `--dry-run` |
+| `market-data:events:derive-corporate-actions` | `--check-recorded`, `--dry-run`, `--apply`, `--max_gap_pct` |
+| `market-data:events:import-corporate-actions` | `--source_name`, `--dry-run`, `--apply` |
+| `market-data:events:import-trading-status` | `--source_name`, `--dry-run`, `--apply` |
+| `market-data:events:record-authoritative-terms` | `--dry-run`, `--apply` |
+| `market-data:evidence-replay:full-range-current` | `--fixture_case`, `--fixture_root`, `--output_dir`, `--continue_on_error`, `--max_dates` |
+| `market-data:evidence:export` | `--run_id`, `--correction_id`, `--replay_id`, `--trade_date`, `--output_dir` |
+| `market-data:market-structure:record-authoritative-rules` | `--dry-run`, `--apply` |
+| `market-data:promote` | `--requested_date`, `--source_mode`, `--run_id`, `--correction_id`, `--mode`, `--output_dir`, `--latest`, `--force_replace`, `--force_replace_reason`, `--force_reason` |
+| `market-data:provider:smoke` | `--ticker`, `--trade_date`, `--dry-run`, `--max-tickers`, `--timeout`, `--provider`, `--retry-max`, `--json`, `--output_dir` |
+| `market-data:reconcile:corporate-actions` | `--dry-run`, `--apply` |
+| `market-data:reconcile:publication-projection` | `--start_date`, `--end_date`, `--latest` |
+| `market-data:repair-price-scale-stretches` | `--ticker`, `--dry-run`, `--apply` |
+| `market-data:repair:publication-projection` | `--trade_date`, `--dry-run`, `--apply`, `--reason` |
+| `market-data:replay:backfill` | `--fixture_case`, `--fixture_root`, `--output_dir`, `--continue_on_error` |
+| `market-data:replay:fixture:generate` | `--case`, `--output_dir`, `--publication_id` |
+| `market-data:replay:smoke` | `--publication_id`, `--fixture_root`, `--output_dir` |
+| `market-data:replay:verify` | `--mode`, `--publication_id`, `--knowledge_cutoff`, `--replay_id`, `--output_dir` |
+| `market-data:run:finalize` | `--requested_date`, `--source_mode`, `--run_id`, `--correction_id`, `--latest` |
+| `market-data:sector-indexes:import-bars` | `--source_name`, `--dry-run`, `--apply` |
+| `market-data:sector-indexes:ingest-api` | `--provider`, `--symbol_suffix`, `--symbol_map_json`, `--dry-run`, `--apply`, `--continue_on_error`, `--allow_partial` |
+| `market-data:sectors:import-memberships` | `--classification_system`, `--source_name`, `--source_authority_class`, `--operator_name`, `--reason_code`, `--dry-run`, `--apply` |
+| `market-data:session-snapshot` | `--source_mode`, `--input_file`, `--output_dir` |
+| `market-data:session-snapshot:purge` | `--before_date`, `--output_dir`, `--dry-run`, `--apply` |
+| `market-data:trading-status:record-authoritative-snapshot` | `--dry-run`, `--apply` |

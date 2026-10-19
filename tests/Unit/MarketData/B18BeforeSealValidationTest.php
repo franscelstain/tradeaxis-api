@@ -55,6 +55,10 @@ class B18BeforeSealValidationTest extends TestCase
         parent::setUp();
         $this->bootMarketDataSqlite();
         $this->seedRun();
+        DB::table('eod_run_owner_fences')->insert([
+            'trade_date_requested' => self::TRADE_DATE, 'owner_run_id' => self::RUN_ID,
+            'updated_at' => self::CUTOFF,
+        ]);
     }
 
     protected function tearDown(): void

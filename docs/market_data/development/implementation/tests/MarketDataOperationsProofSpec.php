@@ -1049,17 +1049,18 @@ final class MarketDataOperationsProofSpec
                 'owner' => 'MD-B19:commands-and-runbook',
                 'implementation' => [
                     'app/Console/Commands/MarketData',
+                    'docs/market_data/development/implementation/ops/commands/README.md',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19RuntimeCommandCatalogTest.php', 'test_registered_market_data_commands_and_options_match_the_operator_catalog'],
+                'negative' => ['tests/Unit/MarketData/B19RuntimeCommandCatalogTest.php', 'test_registered_market_data_commands_and_options_match_the_operator_catalog'],
             ],
             'cross_contract_alignment' => [
                 'owner' => 'MD-B19:cross-contract-alignment',
                 'implementation' => [
                     'docs/market_data/authority/strategy/ops',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19CrossContractSemanticAlignmentTest.php', 'test_each_pair_preserves_its_independently_named_semantic_fact'],
+                'negative' => ['tests/Unit/MarketData/B19CrossContractSemanticAlignmentTest.php', 'test_each_pair_rejects_removed_retargeted_or_unregistered_reference'],
             ],
             'executed_run_admission' => [
                 'owner' => 'MD-B19:executed-run-admission',
@@ -1113,9 +1114,11 @@ final class MarketDataOperationsProofSpec
                 'owner' => 'MD-B19:ownership-and-recovery',
                 'implementation' => [
                     'app/Application/MarketData/Services/MarketDataPipelineService.php',
+                    'app/Infrastructure/Persistence/MarketData/EodRunRepository.php',
+                    'app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php', 'test_parallel_publish_owner_requests_cannot_create_two_active_runs'],
+                'negative' => ['tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php', 'test_stale_owner_with_ambiguous_partial_publication_blocks_takeover'],
             ],
             'range_window_acquisition' => [
                 'owner' => 'MD-B19:range-window-acquisition',

@@ -301,6 +301,10 @@ class MarketDataPipelineService
             );
         }
 
+        if (in_array((string) $input->stage, ['PUBLISH_BARS', 'HASH', 'SEAL', 'FINALIZE'], true)) {
+            $this->runs->assertPublishCriticalOwner($run);
+        }
+
         if ($correction && in_array($input->stage, ['INGEST_BARS', 'PUBLISH_BARS'], true)) {
             if (! $isRepairCandidate && ! $this->artifacts->historySnapshotExists($priorCurrent->publication_id)) {
                 throw new \RuntimeException(
@@ -995,6 +999,7 @@ class MarketDataPipelineService
                 $useHistory
             );
 
+            $this->runs->assertPublishCriticalOwner($run);
             $run = $this->runs->storeHashes($run, $hashes);
             $this->publications->updateCandidateHashes($candidatePublication->publication_id, $hashes);
 
@@ -1327,6 +1332,27 @@ class MarketDataPipelineService
                 }
 
                 if ($preDecision['promotion_allowed']) {
+                    if (! $correction && ! $input->forceReplace) {
+                        $verifiedCurrent = $this->publications->findPointerResolvedPublicationForTradeDate($input->requestedDate);
+                        if ($verifiedCurrent && $this->isVerifiedDuplicatePublicationTarget($run, $candidatePublication, $verifiedCurrent)) {
+                            $run = $this->finalizeRunState($run, [
+                                'trade_date_effective' => null,
+                                'quality_gate_state' => 'PASS',
+                                'publishability_state' => 'NOT_READABLE',
+                                'terminal_status' => 'SKIPPED',
+                                'lifecycle_state' => 'COMPLETED',
+                            ]);
+                            $this->runs->appendEvent($run, $input->stage, 'RUN_DUPLICATE_TARGET_SKIPPED', 'INFO',
+                                'Verified duplicate target skipped; existing current publication preserved.', null, [
+                                    'run_id' => (int) $run->run_id,
+                                    'candidate_publication_id' => (int) $candidatePublication->publication_id,
+                                    'current_publication_id' => (int) $verifiedCurrent->publication_id,
+                                    'decision' => 'SKIPPED',
+                                    'publication_unchanged' => true,
+                                ]);
+                            return $run;
+                        }
+                    }
                     $run = $this->prepareRunForPointerSwitch($run, $preDecision);
 
                     if ($correction && $priorCurrent) {
@@ -3484,6 +3510,22 @@ class MarketDataPipelineService
             'requires_full_coverage' => true,
             'requires_baseline' => false,
         ];
+    }
+
+    private function isVerifiedDuplicatePublicationTarget($run, $candidate, $current): bool
+    {
+        if ((string) $current->trade_date !== (string) $run->trade_date_requested
+            || (int) $current->publication_id === (int) $candidate->publication_id
+            || (string) $candidate->seal_state !== 'SEALED') {
+            return false;
+        }
+        foreach (['config_snapshot_id', 'artifact_hash_profile', 'publication_semantic_profile',
+            'price_product_code', 'price_product_version', 'factor_set_hash'] as $field) {
+            if ((string) ($current->{$field} ?? '') !== (string) ($candidate->{$field} ?? '')) {
+                return false;
+            }
+        }
+        return $this->publicationDiffs->compare($current, $candidate)['decision'] === 'UNCHANGED';
     }
 
     private function finalizeRunState($run, array $state)

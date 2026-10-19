@@ -829,6 +829,12 @@ trait UsesMarketDataSqlite
             DB::table('eod_reason_codes')->insert($chunk);
         }
 
+        $schema->create('eod_run_owner_fences', function (Blueprint $table) {
+            $table->date('trade_date_requested')->primary();
+            $table->integer('owner_run_id')->nullable();
+            $table->dateTime('updated_at');
+        });
+
         $schema->create('eod_runs', function (Blueprint $table) {
             $table->increments('run_id');
             $table->date('trade_date_requested');

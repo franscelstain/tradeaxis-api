@@ -2472,5 +2472,282 @@ final class MarketDataOperationsProofBasis
             'negative' => 'B19ExecutedEvidencePredicateProofTest::test_each_predicate_detects_missing_or_substituted_evidence',
             'basis' => 'E-MD-B19-A001-025 dataset MD-S076-R0053: If a platform claims strong proof-by-execution but cannot show at least one real evidence bundle for the major operational classes above, then the proof layer is not fully saturated. Independent sources: primary eod_runs before export; actual one controlled provider observation succeeds; retained E023 eod_runs; E024 primary approved correction; E024 immutable primary baseline; E024 primary replacement; separately authored wrong eligibility hash before comparator; MISMATCH classification; independent expected fixture, not actual output; primary sealed publication; actual process exit code; correlated immutable stdout digest; actual test source ID and exact command; fifth major actual class, retained primary held producer. Current real persistence/export and immutable E022-E024 primary captures. Exact observations and per-value negatives in E025_per_predicate_proof_map.json; runtime mutations and proof-refusal bypass restored exactly. Admission never proves output correctness/current governed verification. Formal SATISFIED zero.',
         ],
+
+        // E026: policy alignment only; actual runtime behavior is separately proven or held.
+        'MD-S062-R0056' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S062-R0056: independently selected \'one normal readable success run\' on the owner side and \'normal readable success\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S062-R0057' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S062-R0057: independently selected \'real execution identifiers\' on the owner side and \'real execution identity\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S062-R0058' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S062-R0058: independently selected \'real execution identifiers\' on the owner side and \'real execution identity\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S062-R0059' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S062-R0059: independently selected \'Illustrative examples do not satisfy\' on the owner side and \'non-authoritative illustrative/example artifacts\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S062-R0060' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S062-R0060: independently selected \'actual correction request reference\' on the owner side and \'correction request identity\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S063-R0163' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S063-R0163: independently selected \'Evidence packs must not imply readability for an unsealed or non-current publication\' on the owner side and \'summary must not imply requested date is readable\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S063-R0164' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S063-R0164: independently selected \'whether prior safe state was preserved\' on the owner side and \'Preserve evidence and the prior active publication\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S063-R0165' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S063-R0165: independently selected \'prior current publication reference\' on the owner side and \'prior sealed publication\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S063-R0166' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S063-R0166: independently selected \'both expected and actual state\' on the owner side and \'actual and expected contexts\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S063-R0167' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S063-R0167: independently selected \'Evidence packs must not imply readability for an unsealed or non-current publication\' on the owner side and \'one active, sealed\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S068-R0027' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S068-R0027: independently selected \'sourced from an actual run\' on the owner side and \'real executed run\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S068-R0028' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S068-R0028: independently selected \'illustrative JSON shapes with placeholder hashes\' on the owner side and \'non-authoritative illustrative/example artifacts\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S068-R0029' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S068-R0029: independently selected \'real execution identity\' on the owner side and \'real execution identity\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S071-R0045' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S071-R0045: independently selected \'preserve prior publication and hold/fail requested date\' on the owner side and \'Preserve evidence and the prior active publication\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S071-R0047' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S071-R0047: independently selected \'Preserve prior current publication\' on the owner side and \'prior current publication remains preserved\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S075-R0304' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S075-R0304: independently selected \'summary must not imply requested date is readable\' on the owner side and \'Evidence packs must not imply readability for an unsealed or non-current publication\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S075-R0305' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S075-R0305: independently selected \'Publication safety: requested date not readable\' on the owner side and \'requested date remains non-readable\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S075-R0306' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S075-R0306: independently selected \'unchanged rerun must not claim a publication switch\' on the owner side and \'material correction\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S075-R0307' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S075-R0307: independently selected \'replay-result status must be explicit\' on the owner side and \'PASS`: all expected values\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S075-R0308' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S075-R0308: independently selected \'readiness/freshness states\' on the owner side and \'They are independent facts\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S076-R0049' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S076-R0049: independently selected \'real `run_summary.json`\' on the owner side and \'run summary\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S076-R0050' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S076-R0050: independently selected \'real `run_summary.json`\' on the owner side and \'run_summary.json\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S076-R0051' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S076-R0051: independently selected \'real test ID\' on the owner side and \'actual `test_id`\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S076-R0052' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S076-R0052: independently selected \'Illustrative examples are useful\' on the owner side and \'non-authoritative illustrative/example artifacts\' on the registered target side; multiple independently selected shared dimensions, current role registration, and missing/inverted clause probes are asserted per row. E027 successor: exact registered governing source line resolves to this target; removed/retargeted/unregistered reference is rejected while E026 semantic clause probes remain. Policy alignment only; no operator execution is inferred.',
+        ],
+        'MD-S071-R0046' => [
+            'positive' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_preserves_its_independently_named_semantic_fact',
+            'negative' => 'B19CrossContractSemanticAlignmentTest::test_each_pair_rejects_removed_retargeted_or_unregistered_reference',
+            'basis' => 'E026 MD-S071-R0046: operator prior-publication protection agrees with the incident matrix integrity fail-closed and verified-gateway condition; missing or inverted clauses fail the per-row guard. E027 successor: governing reference identity is checked and removal/retargeting rejected; E026 semantic clause probes remain. Policy alignment only; runtime incident classification is held.',
+        ],
+
+        // E026: bounded runtime ownership and publication-safety scenarios; takeover remains unproved.
+        'MD-S077-R0019' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_with_changed_artifacts_and_promotion_failure_holds_and_preserves_prior_current_publication',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_promote_daily_with_force_replace_switches_current_and_records_audit_event',
+            'basis' => 'E026 A real approved correction whose pointer promotion throws after sealing remains HELD/non-readable; prior publication and pointer keep IDs 1/90, candidate remains sealed/non-current, and no CORRECTION_PUBLISHED event is fabricated. Authorized successful replacement switches only after safety checks. Focused 6/6 runtime tests and restored force-interlock mutation; no universal concurrent ownership claim.',
+        ],
+        'MD-S077-R0021' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_promote_daily_without_force_replace_holds_when_valid_current_exists',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_promote_daily_with_force_replace_switches_current_and_records_audit_event',
+            'basis' => 'E026 A competing unforced run finalizes HELD/NOT_READABLE with RUN_LOCK_CONFLICT while the prior owner pointer remains ID 1/run 90. A separately reasoned authorized replacement reaches SUCCESS/READABLE; removing the force interlock makes the first test red. Focused 6/6 runtime tests and restored force-interlock mutation; no universal concurrent ownership claim.',
+        ],
+        'MD-S077-R0022' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_promote_daily_without_force_replace_holds_when_valid_current_exists',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_promote_daily_with_force_replace_switches_current_and_records_audit_event',
+            'basis' => 'E026 A competing unforced run cannot switch the existing current pointer, while the authorized replacement updates pointer, old/new current flags and supersession links atomically. The bypass mutant wrongly succeeds and is detected. Focused 6/6 runtime tests and restored force-interlock mutation; no universal concurrent ownership claim.',
+        ],
+        'MD-S077-R0029' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_with_changed_artifacts_and_promotion_failure_holds_and_preserves_prior_current_publication',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_promote_daily_with_force_replace_switches_current_and_records_audit_event',
+            'basis' => 'E026 An injected loss of promotion ownership leaves the prior sealed current pointer and publication active, with a sealed but non-current candidate and a WARN RUN_LOCK_CONFLICT event; the controlled successful replacement distinguishes a safe decision from uncertainty. This is limited to the executed promotion failure, not stale-owner takeover. Focused 6/6 runtime tests and restored force-interlock mutation; no universal concurrent ownership claim.',
+        ],
+        'MD-S077-R0032' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_run_daily_persists_full_db_backed_pipeline_and_current_publication',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_binding_rejects_ownership_mismatch',
+            'basis' => 'E026 The real pipeline hashes, binds and seals its own candidate; an attempted bind of a different run to that publication is rejected with INPUT_CAPTURE_BINDING_OWNERSHIP_MISMATCH before publication. The separate direct seal verification rejects ownership mismatch too. No stale-owner takeover is inferred. Focused 6/6 runtime tests and restored force-interlock mutation; no universal concurrent ownership claim.',
+        ],
+        'MD-S077-R0037' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_promote_daily_with_force_replace_switches_current_and_records_audit_event',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_promote_daily_without_force_replace_holds_when_valid_current_exists',
+            'basis' => 'E026 On controlled replacement the current pointer run_id equals the successful owner run and the audit event belongs to that run; on an unforced conflict the pointer continues to identify the prior owner run 90. This proves owner identity for these observed paths only. Focused 6/6 runtime tests and restored force-interlock mutation; no universal concurrent ownership claim.',
+        ],
+        'MD-S077-R0040' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_promote_daily_with_force_replace_switches_current_and_records_audit_event',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_with_changed_artifacts_and_promotion_failure_holds_and_preserves_prior_current_publication',
+            'basis' => 'E026 The successful replacement leaves exactly the new publication current, old publication non-current and explicit supersession; the injected promotion failure leaves the prior pointer and publication current and the candidate non-current. Resulting resolution is asserted from persisted rows, not a workflow document. Focused 6/6 runtime tests and restored force-interlock mutation; no universal concurrent ownership claim.',
+        ],
+
+        // E026: additional bounded owner-run producer and correction-switch assertions.
+        'MD-S077-R0006' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_replaces_current_publication_and_marks_correction_published',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_with_changed_artifacts_and_promotion_failure_holds_and_preserves_prior_current_publication',
+            'basis' => 'E026 Approved changed correction execution produces a new current publication with an explicit CORRECTION_PUBLISHED outcome; a promotion failure leaves the prior pointer current and candidate non-current. This covers the correction switch as a publish-critical stage, not lease takeover. Raw focused SQLite execution retained; no stale-owner or concurrent takeover claim.',
+        ],
+        'MD-S077-R0015' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_run_daily_persists_full_db_backed_pipeline_and_current_publication',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_low_coverage_with_fallback_holds_requested_date_and_preserves_old_readable_publication',
+            'basis' => 'E026 The real owning run retains source, calendar, mapping, raw lineage, indicator, eligibility, config and publication captures for one coherent candidate; incomplete coverage holds the requested date rather than publishing a partial candidate. Raw focused SQLite execution retained; no stale-owner or concurrent takeover claim.',
+        ],
+        'MD-S077-R0016' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_run_daily_persists_full_db_backed_pipeline_and_current_publication',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_low_coverage_with_fallback_holds_requested_date_and_preserves_old_readable_publication',
+            'basis' => 'E026 The same real owner run records non-null bars, indicators, eligibility and observation-manifest hashes before a readable pointer exists; low coverage cannot substitute a readable hash claim. Raw focused SQLite execution retained; no stale-owner or concurrent takeover claim.',
+        ],
+        'MD-S077-R0017' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_run_daily_persists_full_db_backed_pipeline_and_current_publication',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_binding_rejects_ownership_mismatch',
+            'basis' => 'E026 The real run seals a publication linked to its run ID and persisted input bindings; binding a different run to its candidate is refused with INPUT_CAPTURE_BINDING_OWNERSHIP_MISMATCH. The direct seal ownership guard is separately executed in the focused six-test batch. Raw focused SQLite execution retained; no stale-owner or concurrent takeover claim.',
+        ],
+        'MD-S077-R0018' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_run_daily_persists_full_db_backed_pipeline_and_current_publication',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_low_coverage_with_fallback_holds_requested_date_and_preserves_old_readable_publication',
+            'basis' => 'E026 The successful owner records terminal SUCCESS, READABLE and COMPLETED; a low-coverage run finishes HELD and keeps the requested publication non-readable. This is the observed terminal decision, not universal incident classification. Raw focused SQLite execution retained; no stale-owner or concurrent takeover claim.',
+        ],
+
+        // E026: separate evidence-preservation and competing-identity assertions.
+        'MD-S077-R0023' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_promote_daily_without_force_replace_holds_when_valid_current_exists',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_promote_daily_with_force_replace_switches_current_and_records_audit_event',
+            'basis' => 'E026 The unforced competing run is HELD and the entire persisted prior owner publication row is byte-for-byte equal before and after the attempt, while the pointer stays on publication1/run90. The separately authorized replacement changes only through the audited switch. The force-interlock bypass mutation turns the blocked scenario red. Focused 6/65 runtime tests and restored force-interlock mutation; no general concurrent or stale-takeover claim.',
+        ],
+        'MD-S077-R0038' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_promote_daily_without_force_replace_holds_when_valid_current_exists',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_promote_daily_with_force_replace_switches_current_and_records_audit_event',
+            'basis' => 'E026 The blocked competitor has a distinct run ID from owner run90; its own RUN_FINALIZED event carries RUN_LOCK_CONFLICT, while the pointer continues to identify owner run90. The authorized replacement path records the new owner run ID and audit event. Both identities are persisted observations, not inferred from a document. Focused 6/65 runtime tests and restored force-interlock mutation; no general concurrent or stale-takeover claim.',
+        ],
+
+        // E028: exact duplicate and fenced-worker terminal outcomes, plus runtime help/catalog identity.
+        'MD-S067-R0016' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_verified_identical_target_persists_skipped_without_switching_current',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_promote_daily_without_force_replace_holds_when_valid_current_exists',
+            'basis' => 'E028: independently completed current publication and new sealed candidate have matching mandatory artifact/binding comparison plus config/product identity. The producer persists SKIPPED/NOT_READABLE, records the exact preserved current publication ID, and leaves pointer/current mirrors unchanged. A changed target remains HELD/RUN_LOCK_CONFLICT; SKIPPED-to-HELD mutant red and restored. No unverified current is treated as duplicate.',
+        ],
+        'MD-S067-R0017' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_fenced_competing_worker_persists_blocked_run_without_touching_owner',
+            'negative' => 'B19OwnerFenceMariaDbTest::test_mariadb_migration_and_two_process_date_owner_fence',
+            'basis' => 'E028: cross-mode fenced request persists a separate COMPLETED/BLOCKED/NOT_READABLE run with RUN_LOCK_CONFLICT event and owner/blocked IDs while original owner fence and publication stay unchanged. MariaDB two-process contender confirms persisted BLOCKED status on the production enum. BLOCKED-to-HELD mutant red and restored.',
+        ],
+        'MD-S064-R0010' => [
+            'positive' => 'B19RuntimeCommandCatalogTest::test_registered_market_data_commands_and_options_match_the_operator_catalog',
+            'negative' => 'B19RuntimeCommandCatalogTest::test_registered_market_data_commands_and_options_match_the_operator_catalog',
+            'basis' => 'E028: actual artisan list and help --format=json for all 41 registered market-data commands are compared with every exact command and command-specific option in commands/README.md. Three missing registered names were corrected. An invented option in the catalog turns the guard red and is byte-restored. The catalog explicitly does not confer safety merely from a force-named option.',
+        ],
+
+        // E027: date-scoped runtime owner fence, adversarial two-process acquisition and conservative stale takeover.
+        'MD-S077-R0003' => [
+            'positive' => 'B19OwnerFenceMariaDbTest::test_mariadb_migration_and_two_process_date_owner_fence',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_publish_critical_owner_fences_cross_source_and_request_mode_competitors',
+            'basis' => 'E027 SQLite proof retained. E028: migrated InnoDB primary-key date fence serializes two independent PHP processes across source/request modes; one active run and matching fence owner survive, contender persists BLOCKED. Transaction retry handles a real InnoDB deadlock; removing retry turns the MariaDB test red. No worker-thread exclusivity within one run is claimed.',
+        ],
+        'MD-S077-R0004' => [
+            'positive' => 'B19OwnerFenceMariaDbTest::test_mariadb_migration_and_two_process_date_owner_fence',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_direct_publication_writes_refuse_an_applicable_run_with_no_date_fence',
+            'basis' => 'E027 SQLite proof retained. E028 MariaDB injects a distinct run after real two-process acquisition and rejects its readable finalize, direct seal and promotion while prior pointer stays unchanged. Direct entry with no fence is rejected before hash/candidate work; missing-fence mutant red and restored. The separately rejected worker has its own BLOCKED audit run, not a readable finalize.',
+        ],
+        'MD-S077-R0013' => [
+            'positive' => 'B19OwnerFenceMariaDbTest::test_mariadb_migration_and_two_process_date_owner_fence',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_publish_critical_owner_fences_cross_source_and_request_mode_competitors',
+            'basis' => 'E027 injected dual-active rejection and source-scope mutant retained. E028 migrated MariaDB InnoDB unique date key plus two-process cross-mode contention admit exactly one active owner; rejected contender persists completed BLOCKED rather than a second active owner. Removed transaction retry mutant exposes the actual deadlock path and turns red.',
+        ],
+        'MD-S077-R0025' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_promote_seed_cannot_create_second_active_publish_owner',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_publish_critical_owner_fences_cross_source_and_request_mode_competitors',
+            'basis' => 'E027: blocked promote seed and cross-mode requests record diagnostic owner/competitor context and BLOCKED decision; they create no executable competing publish owner, seal or current pointer. A directly injected non-owner remains non-readable and cannot finalize/seal/publish.',
+        ],
+        'MD-S077-R0027' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_stale_publish_owner_takeover_requires_empty_candidate_and_records_decision',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_stale_owner_with_ambiguous_partial_publication_blocks_takeover',
+            'basis' => 'E027: elapsed stale threshold alone does not transfer ownership. The recovery producer inspects candidate publication, hashes, seal and current binding; an empty/untrustworthy candidate is explicitly abandoned, while a real unsealed partial publication blocks takeover. Trust-bypass mutant makes the negative red.',
+        ],
+        'MD-S077-R0028' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_stale_takeover_rejection_preserves_prior_readable_publication',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_stale_owner_with_unverified_prior_pointer_blocks_takeover',
+            'basis' => 'E027: partial candidate leaves the exact prior pointer/publication rows unchanged; an orphan prior pointer blocks even an otherwise empty stale candidate. The recovery decision records unverified context rather than guessing readability or restoring from a malformed pointer.',
+        ],
+        'MD-S077-R0031' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_stale_publish_owner_takeover_requires_empty_candidate_and_records_decision',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_publish_critical_owner_fences_cross_source_and_request_mode_competitors',
+            'basis' => 'E027: configured active_run_stale_minutes=60 and a two-hour-old owner allow takeover only after the trust check; a live owner blocks cross-mode competition. Prior owner becomes CANCELLED, new owner receives the fence, and old owner cannot resume a publish-critical stage.',
+        ],
+        'MD-S077-R0033' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_stale_publish_owner_takeover_requires_empty_candidate_and_records_decision',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_stale_owner_with_ambiguous_partial_publication_blocks_takeover',
+            'basis' => 'E027: persisted old-owner cancellation and new-owner takeover events carry both run IDs, candidate trust, partial-publication exclusion and decision; blocked partial candidate carries a distinct recorded BLOCKED reason. No unobserved operator action is inferred.',
+        ],
+        'MD-S077-R0034' => [
+            'positive' => 'B19OwnerFenceMariaDbTest::test_mariadb_migration_and_two_process_date_owner_fence',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_publish_critical_owner_fences_cross_source_and_request_mode_competitors',
+            'basis' => 'E027 real owner success retained. E028 after MariaDB process contention injects a distinct competitor; readable finalize is refused before state mutation and its terminal status remains null. The prior seeded publication/pointer remains the sole current outcome. Three affected publication regressions pass; no second readable finalization is inferred from a sequential-only test.',
+        ],
+        'MD-S077-R0035' => [
+            'positive' => 'B19OwnerFenceMariaDbTest::test_mariadb_migration_and_two_process_date_owner_fence',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_publish_critical_owner_fences_cross_source_and_request_mode_competitors',
+            'basis' => 'E027 controlled replacement and seal-fence mutant retained. E028 MariaDB direct non-owner seal and promotion are refused, including missing-fence direct entry; prior current pointer/publication and historical raw read remain available, with one current row. No competing readable publication outcome is produced.',
+        ],
+        'MD-S077-R0039' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_stale_publish_owner_takeover_requires_empty_candidate_and_records_decision',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_stale_owner_with_ambiguous_partial_publication_blocks_takeover',
+            'basis' => 'E027: persisted RUN_OWNER_TAKEOVER event binds previous owner run ID and new owner run ID to trust assessment and ALLOWED decision; rejected partial state persists STALE_OWNER_TAKEOVER_BLOCKED with UNVERIFIED trust and exact reason. Resulting fence owner is asserted from storage.',
+        ],
     ];
 }

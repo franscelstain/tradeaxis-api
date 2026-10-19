@@ -1,0 +1,114 @@
+{
+  "evidence_id": "E-MD-B19-A001-028",
+  "record_type": "EVIDENCE",
+  "role_scope": "CURRENT_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B19",
+  "attempt_id": "MD-B19-A001",
+  "work_id": "MD-B19-A001",
+  "baseline_id": "MD-B19-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261018-001",
+  "ci_id": "CI-MD-B19-A001-001",
+  "issued_at": "2026-10-19T18:39:03+07:00",
+  "evidence_type": "MARIADB_OWNER_TAXONOMY_AND_RUNTIME_COMMAND_CATALOG_PROOF",
+  "verdict": "PENDING_INDEPENDENT_REVIEW_FIVE_REPAIRED_THREE_NEW",
+  "external_review_input": {
+    "accepted_before_E028": 521,
+    "E027_cross_contract_repaired_accepted": 25,
+    "E027_bounded_owner_accepted": 6,
+    "E027_owner_held_for_MariaDB_and_missing_fence": [
+      "MD-S077-R0003",
+      "MD-S077-R0004",
+      "MD-S077-R0013",
+      "MD-S077-R0034",
+      "MD-S077-R0035"
+    ],
+    "E026_E027_immutable": true
+  },
+  "family_gains": {
+    "cross_contract_alignment": {
+      "new": 0,
+      "accepted_E027_retained": 25
+    },
+    "ownership_and_recovery": {
+      "repaired_existing_E027": 5,
+      "new_taxonomy": 2,
+      "proposed_family_total": 27
+    },
+    "commands_and_runbook": {
+      "new": 1,
+      "remaining_unproved": 16
+    },
+    "incident_classification": {
+      "new": 0,
+      "remaining_unproved": 18
+    }
+  },
+  "newly_proposed_predicates": [
+    "MD-S067-R0016",
+    "MD-S067-R0017",
+    "MD-S064-R0010"
+  ],
+  "repaired_existing_predicates": [
+    "MD-S077-R0003",
+    "MD-S077-R0004",
+    "MD-S077-R0013",
+    "MD-S077-R0034",
+    "MD-S077-R0035"
+  ],
+  "proof_map": "E028_per_predicate_map.json",
+  "mariadb_proof": "Migration 000001 applied on tradeaxis_testing and on a temporary isolated MariaDB schema. Migration 000002 applied on tradeaxis_testing; isolated clone carries its expanded enum. InnoDB primary requested-date key held while two independent PHP processes attempted different source/request modes. One active owner and one persisted BLOCKED contender survived; bounded transaction retry converted actual deadlock to owner conflict. Direct missing-fence and injected non-owner finalize, seal and promotion refused; prior current pointer/publication and historical raw read persisted. Isolated schema was dropped by the test.",
+  "taxonomy_proof": "A verified same-target candidate compares mandatory artifact hashes, V2 binding and config/product identities to an independently resolved current publication, then persists SKIPPED/NOT_READABLE without switching current. Changed unforced replacement remains HELD/RUN_LOCK_CONFLICT. A fenced cross-mode request persists a separate COMPLETED/BLOCKED/NOT_READABLE run with registered RUN_LOCK_CONFLICT and both IDs; it cannot be active or readable.",
+  "command_proof": "Runtime list and JSON help for all 41 registered market-data commands match corrected README name/option catalog; three missing names added and obsolete descriptions corrected. Catalog guard rejects an invented option. Existing command-safety tests 64/371 pass, but the other 16 predicates remain uncounted pending independent execution of their specific command workflows and refusal paths.",
+  "executed_green": {
+    "mariadb_owner": "1 test, 34 assertions",
+    "owner_taxonomy": "12 tests, 98 assertions",
+    "affected_publication": "3 tests, 4751 assertions",
+    "affected_direct_publication_fixture_classes": "78 tests, 531 assertions",
+    "runtime_catalog": "1 test, 85 assertions",
+    "existing_command_safety": "64 tests, 371 assertions"
+  },
+  "negative_mutations": [
+    "missing_fence",
+    "blocked_status",
+    "duplicate_skip",
+    "command_catalog",
+    "mariadb_retry_removed"
+  ],
+  "restoration": "E028_restoration_verification.json PASS: all five mutant sources match exact pre-probe SHA-256",
+  "initial_failures": "The missing-fence direct-entry test and both taxonomy tests were red before production corrections. Four historical direct-publication classes initially failed because fixtures lacked explicit fences, then all passed after fixture repair. Two concurrent runs of the same fixture class collided on a shared test directory; sequential final reruns passed.",
+  "source_changes": [
+    "app/Infrastructure/Persistence/MarketData/EodRunRepository.php",
+    "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php",
+    "app/Application/MarketData/Services/MarketDataPipelineService.php",
+    "database/migrations/2026_10_19_000002_expand_eod_run_terminal_status_for_fenced_outcomes.php",
+    "docs/market_data/development/implementation/db/Database_Schema_MariaDB.sql",
+    "docs/market_data/development/implementation/ops/commands/README.md"
+  ],
+  "affected_previous_bases": {
+    "E027_five_held_repaired_not_double_counted": 5,
+    "E026_E027_bounded_owner_revalidated": 20,
+    "E027_cross_25_accepted_unchanged": 25,
+    "direct_publication_fixture_tests_revalidated": 78,
+    "historical_unaffected_mutations_not_repeated": true
+  },
+  "governance": {
+    "operations_gate": "FAIL",
+    "proposed_reviewed_bases": 529,
+    "denominator": 750,
+    "without_basis": 221,
+    "without_family_guard": 12,
+    "formal_satisfied": 0,
+    "complete_families_proposed": 23,
+    "MD_DEP_0025": "ACTIVE",
+    "candidate_v6": "NOT_CREATED",
+    "F018_R0011_R0012": "HELD_PROJECT_OWNER_DECISION",
+    "MD_S075_R0324": "HELD_D008_F016",
+    "known_failures": "F009/E013 alias meaning, unchanged coverage static guard and historical candidate-v5 build identity failures remain visible"
+  },
+  "limits": "No full suite, deployed production database or universal command-workflow claim. This proof uses a disposable schema on the actual MariaDB test server and registered runtime help. F020 retains 16 runbook predicates. Independent admission is pending.",
+  "raw_inventory": "E028_inventory.json",
+  "raw_inventory_sha256": "4074eb9a3a23d1ae09df126e2caaff98528e472393502d45af8af2c3f03154cd",
+  "single_exact_resume_point": "MD-B19-A001: independent external review of E028 five repaired E027 owner bases and three new bases (two taxonomy, one runbook catalog), 529/750 proposed reviewed, formal0. After review, execute F020 remaining16 command/runbook predicates and resolve demonstrated runtime gaps; F018 R0011/R0012 Project Owner decision and R0324 D008/F016 remain HELD; MD-DEP-0025 ACTIVE, no candidate-v6; Project Owner controls Git."
+}

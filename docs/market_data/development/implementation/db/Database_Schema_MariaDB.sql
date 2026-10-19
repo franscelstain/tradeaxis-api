@@ -629,13 +629,23 @@ CREATE TABLE IF NOT EXISTS eod_eligibility (
 -- Runs with separated state model
 -- =========================================================
 
+-- One serialized owner-fence row per requested date. The row lock prevents
+-- simultaneous owner creation across source and request modes; old owner IDs
+-- remain in immutable run events when a verified stale takeover changes it.
+CREATE TABLE IF NOT EXISTS eod_run_owner_fences (
+  trade_date_requested DATE NOT NULL,
+  owner_run_id BIGINT UNSIGNED NULL,
+  updated_at DATETIME NOT NULL,
+  PRIMARY KEY (trade_date_requested)
+) ENGINE=InnoDB;
+
 CREATE TABLE IF NOT EXISTS eod_runs (
   run_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   trade_date_requested DATE NOT NULL,
   trade_date_effective DATE NULL,
 
   lifecycle_state ENUM('PENDING','RUNNING','FINALIZING','COMPLETED','FAILED','CANCELLED') NOT NULL,
-  terminal_status ENUM('SUCCESS','HELD','FAILED') NULL,
+  terminal_status ENUM('SUCCESS','HELD','FAILED','SKIPPED','BLOCKED') NULL,
   quality_gate_state ENUM('PENDING','PASS','FAIL','BLOCKED') NOT NULL DEFAULT 'PENDING',
   publishability_state ENUM('NOT_READABLE','READABLE') NOT NULL DEFAULT 'NOT_READABLE',
 

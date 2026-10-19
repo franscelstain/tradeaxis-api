@@ -1217,6 +1217,7 @@ class EodPublicationRepository
     public function sealCandidatePublication(EodRun $run, $sealedBy, $sealNote = null)
     {
         return DB::transaction(function () use ($run) {
+            $this->assertDateOwnerFence($run);
             $candidate = $this->getOrCreateCandidatePublication($run, null);
 
             if (! $candidate->bars_batch_hash || ! $candidate->indicators_batch_hash || ! $candidate->eligibility_batch_hash) {
@@ -1307,6 +1308,7 @@ class EodPublicationRepository
     public function promoteCandidateToCurrent(EodRun $run, $priorPublicationId = null, $forceReplace = false)
     {
         return DB::transaction(function () use ($run, $priorPublicationId, $forceReplace) {
+            $this->assertDateOwnerFence($run);
             $candidate = DB::table('eod_publications')
                 ->where('run_id', $run->run_id)
                 ->where('trade_date', $run->trade_date_requested)
@@ -1461,6 +1463,19 @@ class EodPublicationRepository
 
             return DB::table('eod_publications')->where('publication_id', $candidate->publication_id)->first();
         });
+    }
+
+    private function assertDateOwnerFence(EodRun $run): void
+    {
+        $fence = DB::table('eod_run_owner_fences')
+            ->where('trade_date_requested', $run->trade_date_requested)
+            ->lockForUpdate()->first();
+        if ($fence === null || $fence->owner_run_id === null) {
+            throw new \RuntimeException('RUN_OWNER_FENCE_MISSING: publication write requires an explicitly acquired requested-date owner fence.');
+        }
+        if ((int) $fence->owner_run_id !== (int) $run->run_id) {
+            throw new \RuntimeException('RUN_OWNER_CONFLICT: candidate run does not hold requested-date owner fence.');
+        }
     }
 
 

@@ -16,6 +16,11 @@ class PublicationRepositoryIntegrationTest extends TestCase
     {
         parent::setUp();
         $this->bootMarketDataSqlite();
+        DB::table('eod_run_owner_fences')->insert([
+            'trade_date_requested' => '2026-03-20',
+            'owner_run_id' => 27,
+            'updated_at' => '2026-03-20 17:21:00',
+        ]);
 
         DB::table('eod_runs')->insert([
             'run_id' => 25,

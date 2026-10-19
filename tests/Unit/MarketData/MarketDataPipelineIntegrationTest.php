@@ -295,6 +295,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->seedTicker(1, 'BBCA');
         $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
         $this->seedCurrentPublicationBaselineForTradeDate('2026-03-20', 1, 120.0);
+        $ownerPublicationBefore = (array) DB::table('eod_publications')->where('publication_id', 1)->first();
 
         $this->writeBarsFixture('2026-03-20', [[
             'ticker_code' => 'BBCA',
@@ -321,6 +322,13 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertNotNull($pointer);
         $this->assertSame(1, (int) $pointer->publication_id);
         $this->assertSame(90, (int) $pointer->run_id);
+        $this->assertNotSame(90, (int) $run->run_id, 'The blocked run is a distinct competing identity.');
+        $this->assertSame($ownerPublicationBefore, (array) DB::table('eod_publications')->where('publication_id', 1)->first(),
+            'A non-owner may not overwrite the owner publication evidence.');
+        $competitorEvent = DB::table('eod_run_events')->where('run_id', $run->run_id)
+            ->where('event_type', 'RUN_FINALIZED')->orderByDesc('event_id')->first();
+        $this->assertNotNull($competitorEvent);
+        $this->assertSame('RUN_LOCK_CONFLICT', $competitorEvent->reason_code);
 
         $this->assertFalse(
             DB::table('eod_run_events')
@@ -328,6 +336,36 @@ class MarketDataPipelineIntegrationTest extends TestCase
                 ->where('event_type', 'RUN_FORCE_REPLACE_EXECUTED')
                 ->exists()
         );
+    }
+
+    public function test_verified_identical_target_persists_skipped_without_switching_current(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20',
+            'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124,
+            'volume' => 2000, 'adj_close' => 124, 'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+        $pipeline = $this->makePipeline();
+        $first = $pipeline->runDaily('2026-03-20', 'manual_file');
+        $this->assertSame('SUCCESS', $first->terminal_status);
+        $before = (array) DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
+
+        $second = $pipeline->promoteDaily('2026-03-20', 'manual_file');
+        $this->assertNotSame((int) $first->run_id, (int) $second->run_id);
+        $priorPublication = DB::table('eod_publications')->where('publication_id', $first->publication_id)->first();
+        $candidatePublication = DB::table('eod_publications')->where('run_id', $second->run_id)->first();
+        $this->assertNotNull($candidatePublication);
+        $this->assertSame('UNCHANGED', (new PublicationDiffService())->compare($priorPublication, $candidatePublication)['decision']);
+        $this->assertSame('SKIPPED', $second->terminal_status);
+        $this->assertSame('NOT_READABLE', $second->publishability_state);
+        $this->assertSame($before, (array) DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first());
+        $this->assertSame(1, DB::table('eod_publications')->where('trade_date', '2026-03-20')->where('is_current', 1)->count());
+        $this->assertSame((int) $first->publication_id,
+            (int) (new EodPublicationRepository())->resolveCurrentReadablePublicationForTradeDate('2026-03-20')->publication_id);
+        $this->assertSame('RUN_DUPLICATE_TARGET_SKIPPED', DB::table('eod_run_events')
+            ->where('run_id', $second->run_id)->orderByDesc('event_id')->value('event_type'));
     }
 
     public function test_completed_lock_conflict_finalize_rerun_with_force_replace_is_idempotent(): void
@@ -5124,6 +5162,287 @@ class MarketDataPipelineIntegrationTest extends TestCase
     private function makeBackfillServiceWithApiFetcher(callable $fetcher): MarketDataBackfillService
     {
         return new MarketDataBackfillService(new App\Infrastructure\Persistence\MarketData\MarketCalendarRepository(), $this->makePipelineWithApiFetcher($fetcher));
+    }
+
+    public function test_direct_publication_writes_refuse_an_applicable_run_with_no_date_fence(): void
+    {
+        $run = new \App\Models\EodRun();
+        $run->run_id = 991;
+        $run->trade_date_requested = '2026-03-21';
+        $run->request_mode = 'full_publish';
+        $publications = new EodPublicationRepository();
+
+        foreach (['sealCandidatePublication', 'promoteCandidateToCurrent'] as $method) {
+            try {
+                $publications->$method($run, null);
+                $this->fail($method.' admitted a run without a requested-date owner fence.');
+            } catch (\RuntimeException $e) {
+                $this->assertStringContainsString('RUN_OWNER_FENCE_MISSING', $e->getMessage(), $method);
+            }
+        }
+        $this->assertFalse(DB::table('eod_run_owner_fences')->where('trade_date_requested', '2026-03-21')->exists());
+    }
+
+    public function test_fenced_competing_worker_persists_blocked_run_without_touching_owner(): void
+    {
+        $repository = new EodRunRepository();
+        $owner = $repository->getOrCreateOwningRun('2026-03-21', 'manual_file', 'INGEST_BARS', null, 'full_publish');
+        try {
+            $repository->getOrCreateOwningRun('2026-03-21', 'api', 'INGEST_BARS', null, 'correction');
+            $this->fail('Competing worker must be fenced.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('RUN_OWNER_CONFLICT', $e->getMessage());
+        }
+        $blocked = DB::table('eod_runs')->where('trade_date_requested', '2026-03-21')
+            ->where('terminal_status', 'BLOCKED')->first();
+        $this->assertNotNull($blocked);
+        $this->assertSame('COMPLETED', $blocked->lifecycle_state);
+        $this->assertSame('NOT_READABLE', $blocked->publishability_state);
+        $this->assertSame((int) $owner->run_id,
+            (int) DB::table('eod_run_owner_fences')->where('trade_date_requested', '2026-03-21')->value('owner_run_id'));
+        $this->assertSame(0, DB::table('eod_publications')->where('trade_date', '2026-03-21')->count());
+    }
+
+    public function test_publish_critical_owner_fences_cross_source_and_request_mode_competitors(): void
+    {
+        $repository = new EodRunRepository();
+        $owner = $repository->getOrCreateOwningRun('2026-03-21', 'manual_file', 'INGEST_BARS', null, 'full_publish');
+        $this->assertSame((int) $owner->run_id, (int) DB::table('eod_run_owner_fences')->where('trade_date_requested', '2026-03-21')->value('owner_run_id'));
+        try {
+            $repository->getOrCreateOwningRun('2026-03-21', 'api', 'INGEST_BARS', null, 'correction');
+            $this->fail('Competing request must be fenced.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('RUN_OWNER_CONFLICT', $e->getMessage());
+        }
+        $this->assertSame(1, DB::table('eod_runs')->where('trade_date_requested', '2026-03-21')
+            ->whereIn('lifecycle_state', ['PENDING', 'RUNNING', 'FINALIZING'])->count());
+        $this->assertSame(1, DB::table('eod_runs')->where('trade_date_requested', '2026-03-21')
+            ->where('terminal_status', 'BLOCKED')->count());
+        $event = DB::table('eod_run_events')->where('run_id', $owner->run_id)->where('event_type', 'RUN_OWNER_CONFLICT')->first();
+        $this->assertNotNull($event);
+        $payload = json_decode($event->event_payload_json, true);
+        $this->assertSame((int) $owner->run_id, $payload['owner_run_id']);
+        $this->assertSame('api', $payload['competing_source_mode']);
+        $this->assertSame('correction', $payload['competing_request_mode']);
+
+        $rogue = (array) DB::table('eod_runs')->where('run_id', $owner->run_id)->first();
+        unset($rogue['run_id']);
+        $rogue['source'] = 'api';
+        $rogue['request_mode'] = 'correction';
+        $rogueId = DB::table('eod_runs')->insertGetId($rogue);
+        try {
+            $repository->assertPublishCriticalOwner($owner);
+            $this->fail('Dual-active injected state must block the original owner.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('RUN_OWNER_CONFLICT', $e->getMessage());
+        }
+        try {
+            $repository->assertPublishCriticalOwner(\App\Models\EodRun::findOrFail($rogueId));
+            $this->fail('Dual-active injected state must block the competitor.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('RUN_OWNER_CONFLICT', $e->getMessage());
+        }
+        $rogueRun = \App\Models\EodRun::findOrFail($rogueId);
+        try {
+            $repository->finalize($rogueRun, ['lifecycle_state' => 'COMPLETED', 'terminal_status' => 'SUCCESS', 'publishability_state' => 'READABLE']);
+            $this->fail('Competing run must not finalize readable.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('RUN_OWNER_CONFLICT', $e->getMessage());
+        }
+        $publications = new EodPublicationRepository();
+        foreach (['sealCandidatePublication', 'promoteCandidateToCurrent'] as $operation) {
+            try {
+                $operation === 'sealCandidatePublication'
+                    ? $publications->sealCandidatePublication($rogueRun, 'owner-probe')
+                    : $publications->promoteCandidateToCurrent($rogueRun);
+                $this->fail($operation.' must reject a non-owner.');
+            } catch (\RuntimeException $e) {
+                $this->assertStringContainsString('RUN_OWNER_CONFLICT', $e->getMessage());
+            }
+        }
+        $this->assertSame(0, DB::table('eod_publications')->where('trade_date', '2026-03-21')->count());
+        $this->assertNull(DB::table('eod_runs')->where('run_id', $rogueId)->value('terminal_status'));
+    }
+
+    public function test_parallel_publish_owner_requests_cannot_create_two_active_runs(): void
+    {
+        (new \App\Infrastructure\Persistence\MarketData\MarketDataConfigSnapshotRepository())->resolveForRun('2026-03-21');
+        $file = storage_path('framework/testing/market_data_owner_race_'.bin2hex(random_bytes(8)).'.sqlite');
+        $quoted = str_replace("'", "''", $file);
+        DB::statement("VACUUM INTO '".$quoted."'");
+        $locker = new \PDO('sqlite:'.$file);
+        $locker->exec('PRAGMA busy_timeout = 10000');
+        $locker->exec('BEGIN IMMEDIATE');
+        $workers = [];
+        try {
+            foreach (['manual_file', 'api'] as $mode) {
+                $pipes = [];
+                $process = proc_open([PHP_BINARY, base_path('tests/Support/MarketDataOwnerRaceWorker.php'), $file, $mode],
+                    [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, base_path());
+                $this->assertIsResource($process);
+                fclose($pipes[0]);
+                $workers[] = [$process, $pipes];
+            }
+            foreach ($workers as [, $pipes]) {
+                $this->assertSame("READY\n", fgets($pipes[1]));
+            }
+            usleep(100000);
+            $locker->exec('COMMIT');
+            $outcomes = [];
+            foreach ($workers as [$process, $pipes]) {
+                $outcomes[] = json_decode(trim(stream_get_contents($pipes[1])), true);
+                $error = stream_get_contents($pipes[2]);
+                fclose($pipes[1]);
+                fclose($pipes[2]);
+                $this->assertSame(0, proc_close($process), $error);
+            }
+            $this->assertCount(1, array_filter($outcomes, static fn ($x) => $x['outcome'] === 'OWNER'), json_encode($outcomes));
+            $this->assertCount(1, array_filter($outcomes, static fn ($x) => $x['outcome'] === 'BLOCKED'));
+            $this->assertSame(1, (int) $locker->query("SELECT COUNT(*) FROM eod_runs WHERE trade_date_requested='2026-03-21' AND lifecycle_state IN ('PENDING','RUNNING','FINALIZING')")->fetchColumn());
+            $this->assertSame((int) $locker->query("SELECT run_id FROM eod_runs WHERE trade_date_requested='2026-03-21' AND lifecycle_state IN ('PENDING','RUNNING','FINALIZING')")->fetchColumn(),
+                (int) $locker->query("SELECT owner_run_id FROM eod_run_owner_fences WHERE trade_date_requested='2026-03-21'")->fetchColumn());
+        } finally {
+            if ($locker->inTransaction()) {
+                $locker->exec('ROLLBACK');
+            }
+            $locker = null;
+            if (is_file($file)) {
+                unlink($file);
+            }
+        }
+    }
+
+    public function test_promote_seed_cannot_create_second_active_publish_owner(): void
+    {
+        $repository = new EodRunRepository();
+        $seed = $repository->getOrCreateOwningRun('2026-03-21', 'manual_file', 'INGEST_BARS', null, 'import_only');
+        $repository->finalize($seed, ['lifecycle_state' => 'COMPLETED', 'terminal_status' => null, 'publishability_state' => 'NOT_READABLE']);
+        $owner = $repository->getOrCreateOwningRun('2026-03-21', 'api', 'INGEST_BARS', null, 'full_publish');
+        try {
+            $repository->createPromoteRunFromSeed($seed->fresh(), 'PUBLISH_BARS');
+            $this->fail('Promote seed must not create a second active publish owner.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('RUN_OWNER_CONFLICT', $e->getMessage());
+        }
+        $event = DB::table('eod_run_events')->where('run_id', $owner->run_id)->where('event_type', 'RUN_OWNER_CONFLICT')->first();
+        $this->assertNotNull($event);
+        $payload = json_decode($event->event_payload_json, true);
+        $this->assertSame((int) $seed->run_id, $payload['competing_seed_run_id']);
+        $this->assertSame((int) $owner->run_id, $payload['owner_run_id']);
+        $this->assertSame('BLOCKED', $payload['decision']);
+        $this->assertSame(1, DB::table('eod_runs')->where('trade_date_requested', '2026-03-21')->whereIn('lifecycle_state', ['PENDING', 'RUNNING', 'FINALIZING'])->count());
+    }
+
+    public function test_stale_publish_owner_takeover_requires_empty_candidate_and_records_decision(): void
+    {
+        config()->set('market_data.pipeline.active_run_stale_minutes', 60);
+        $repository = new EodRunRepository();
+        $owner = $repository->getOrCreateOwningRun('2026-03-21', 'manual_file', 'INGEST_BARS', null, 'full_publish');
+        DB::table('eod_runs')->where('run_id', $owner->run_id)->update(['updated_at' => Carbon::now()->subHours(2)]);
+        $competitor = $repository->getOrCreateOwningRun('2026-03-21', 'api', 'INGEST_BARS', null, 'correction');
+        $this->assertNotSame((int) $owner->run_id, (int) $competitor->run_id);
+        $this->assertSame('CANCELLED', DB::table('eod_runs')->where('run_id', $owner->run_id)->value('lifecycle_state'));
+        $this->assertSame((int) $competitor->run_id, (int) DB::table('eod_run_owner_fences')->where('trade_date_requested', '2026-03-21')->value('owner_run_id'));
+        $event = DB::table('eod_run_events')->where('run_id', $owner->run_id)->where('event_type', 'STALE_ACTIVE_RUN_CANCELLED')->first();
+        $this->assertNotNull($event);
+        $decision = json_decode($event->event_payload_json, true);
+        $this->assertSame('UNTRUSTWORTHY_ABANDONED', $decision['candidate_trust']);
+        $this->assertTrue($decision['partial_publication_excluded']);
+        $this->assertSame('TAKEOVER_ALLOWED', $decision['decision']);
+        $takeover = DB::table('eod_run_events')->where('run_id', $competitor->run_id)->where('event_type', 'RUN_OWNER_TAKEOVER')->first();
+        $this->assertNotNull($takeover);
+        $takeoverDecision = json_decode($takeover->event_payload_json, true);
+        $this->assertSame([(int) $owner->run_id], $takeoverDecision['previous_owner_run_ids']);
+        $this->assertSame((int) $competitor->run_id, $takeoverDecision['owner_run_id']);
+        $this->assertSame('TAKEOVER_ALLOWED', $takeoverDecision['decision']);
+        $repository->assertPublishCriticalOwner($competitor);
+        try {
+            $repository->assertPublishCriticalOwner($owner->fresh());
+            $this->fail('Former owner must not resume publish-critical work.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('RUN_OWNER_CONFLICT', $e->getMessage());
+        }
+    }
+
+    public function test_stale_owner_with_ambiguous_partial_publication_blocks_takeover(): void
+    {
+        config()->set('market_data.pipeline.active_run_stale_minutes', 60);
+        $repository = new EodRunRepository();
+        $owner = $repository->getOrCreateOwningRun('2026-03-21', 'manual_file', 'INGEST_BARS', null, 'full_publish');
+        DB::table('eod_publications')->insert([
+            'trade_date' => '2026-03-21', 'run_id' => $owner->run_id, 'publication_version' => 1,
+            'is_current' => 0, 'seal_state' => 'UNSEALED', 'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+        ]);
+        DB::table('eod_runs')->where('run_id', $owner->run_id)->update(['updated_at' => Carbon::now()->subHours(2)]);
+        try {
+            $repository->getOrCreateOwningRun('2026-03-21', 'api', 'INGEST_BARS', null, 'correction');
+            $this->fail('Ambiguous candidate publication must block takeover.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('STALE_OWNER_TAKEOVER_BLOCKED', $e->getMessage());
+        }
+        $this->assertSame('PENDING', DB::table('eod_runs')->where('run_id', $owner->run_id)->value('lifecycle_state'));
+        $this->assertSame(1, DB::table('eod_runs')->where('trade_date_requested', '2026-03-21')->count());
+        $this->assertSame((int) $owner->run_id, (int) DB::table('eod_run_owner_fences')->where('trade_date_requested', '2026-03-21')->value('owner_run_id'));
+        $event = DB::table('eod_run_events')->where('run_id', $owner->run_id)->where('event_type', 'STALE_OWNER_TAKEOVER_BLOCKED')->first();
+        $this->assertNotNull($event);
+        $decision = json_decode($event->event_payload_json, true);
+        $this->assertSame('UNVERIFIED', $decision['candidate_trust']);
+        $this->assertFalse($decision['partial_publication_excluded']);
+        $this->assertSame('BLOCKED', $decision['decision']);
+    }
+
+    public function test_stale_owner_with_unverified_prior_pointer_blocks_takeover(): void
+    {
+        config()->set('market_data.pipeline.active_run_stale_minutes', 60);
+        $repository = new EodRunRepository();
+        $owner = $repository->getOrCreateOwningRun('2026-03-21', 'manual_file', 'INGEST_BARS', null, 'full_publish');
+        DB::table('eod_current_publication_pointer')->insert([
+            'trade_date' => '2026-03-21', 'publication_id' => 7777, 'run_id' => 7777,
+            'publication_version' => 1, 'sealed_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+        ]);
+        DB::table('eod_runs')->where('run_id', $owner->run_id)->update(['updated_at' => Carbon::now()->subHours(2)]);
+        try {
+            $repository->getOrCreateOwningRun('2026-03-21', 'api', 'INGEST_BARS', null, 'correction');
+            $this->fail('Unverified prior pointer must block takeover.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('prior_current_integrity_unverified', $e->getMessage());
+        }
+        $this->assertSame(7777, (int) DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-21')->value('publication_id'));
+        $this->assertSame('PENDING', DB::table('eod_runs')->where('run_id', $owner->run_id)->value('lifecycle_state'));
+        $this->assertSame('STALE_OWNER_TAKEOVER_BLOCKED', DB::table('eod_run_events')->where('run_id', $owner->run_id)->orderByDesc('event_id')->value('event_type'));
+    }
+
+    public function test_stale_takeover_rejection_preserves_prior_readable_publication(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedProducerBoundHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20',
+            'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124, 'volume' => 2000,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+        $published = $this->makePipeline()->runDaily('2026-03-20', 'manual_file');
+        $this->assertSame('READABLE', $published->publishability_state);
+        $priorPointer = (array) DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
+        $priorPublication = (array) DB::table('eod_publications')->where('publication_id', $priorPointer['publication_id'])->first();
+
+        config()->set('market_data.pipeline.active_run_stale_minutes', 60);
+        $repository = new EodRunRepository();
+        $owner = $repository->getOrCreateOwningRun('2026-03-20', 'manual_file', 'INGEST_BARS', null, 'correction');
+        DB::table('eod_publications')->insert([
+            'trade_date' => '2026-03-20', 'run_id' => $owner->run_id, 'publication_version' => 2,
+            'is_current' => 0, 'seal_state' => 'UNSEALED', 'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
+        ]);
+        DB::table('eod_runs')->where('run_id', $owner->run_id)->update(['updated_at' => Carbon::now()->subHours(2)]);
+        try {
+            $repository->getOrCreateOwningRun('2026-03-20', 'api', 'INGEST_BARS', null, 'full_publish');
+            $this->fail('Partial candidate must block stale takeover.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('STALE_OWNER_TAKEOVER_BLOCKED', $e->getMessage());
+        }
+        $this->assertSame($priorPointer, (array) DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first());
+        $this->assertSame($priorPublication, (array) DB::table('eod_publications')->where('publication_id', $priorPointer['publication_id'])->first());
+        $this->assertSame(1, DB::table('eod_publications')->where('run_id', $owner->run_id)->where('seal_state', 'UNSEALED')->count());
     }
 
     public function test_stale_running_import_only_run_is_cancelled_before_new_owning_run_is_created(): void
