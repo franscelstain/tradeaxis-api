@@ -1980,3 +1980,9 @@ MD-REL-1982,E-MD-B19-A001-023,E-MD-B19-A001-022,DEPENDS_ON,Bounded run evidence 
 MD-REL-1983,E-MD-B19-A001-023,CI-MD-B19-A001-001,DEPENDS_ON,Bounded run evidence proof and affected verification.,D-MD-B19-A001-001,2026-10-19T09:32:16+07:00,E023
 MD-REL-1984,E-MD-B19-A001-023,D-MD-B19-A001-007,DEPENDS_ON,Bounded run evidence proof and affected verification.,D-MD-B19-A001-001,2026-10-19T09:32:16+07:00,E023
 MD-REL-1985,F-MD-B19-A001-014,E-MD-B19-A001-023,DEPENDS_ON,Bounded run evidence proof and affected verification.,D-MD-B19-A001-001,2026-10-19T09:32:16+07:00,E023
+MD-REL-1986,E-MD-B19-A001-024,E-MD-B19-A001-023,DEPENDS_ON,E024 correction/archive proof and explicit historical provenance hold.,D-MD-B19-A001-001,2026-10-19T11:56:04+07:00,E024
+MD-REL-1987,E-MD-B19-A001-024,CI-MD-B19-A001-001,DEPENDS_ON,E024 correction/archive proof and explicit historical provenance hold.,D-MD-B19-A001-001,2026-10-19T11:56:04+07:00,E024
+MD-REL-1988,E-MD-B19-A001-024,D-MD-B19-A001-008,DEPENDS_ON,E024 correction/archive proof and explicit historical provenance hold.,D-MD-B19-A001-001,2026-10-19T11:56:04+07:00,E024
+MD-REL-1989,D-MD-B19-A001-008,F-MD-B19-A001-016,DEPENDS_ON,E024 correction/archive proof and explicit historical provenance hold.,D-MD-B19-A001-001,2026-10-19T11:56:04+07:00,E024
+MD-REL-1990,F-MD-B19-A001-015,E-MD-B19-A001-024,DEPENDS_ON,E024 correction/archive proof and explicit historical provenance hold.,D-MD-B19-A001-001,2026-10-19T11:56:04+07:00,E024
+MD-REL-1991,F-MD-B19-A001-016,E-MD-B19-A001-023,DEPENDS_ON,E024 correction/archive proof and explicit historical provenance hold.,D-MD-B19-A001-001,2026-10-19T11:56:04+07:00,E024

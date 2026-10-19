@@ -88,6 +88,7 @@ class BackfillLifecyclePublicationReprocessTest extends TestCase
         $this->assertSame(1, $result['publication_reprocess_evidence_exported_count']);
         $this->assertSame(1, $result['publication_reprocess_replay_verified_count']);
         $this->assertSame(202, $result['publication_reprocess_runs'][0]['run_id']);
+        $this->assertSame('AUTOMATED_NON_READABLE_DATES', $result['publication_reprocess_republication_mode']);
     }
 
     public function test_lifecycle_publication_reprocess_auto_corrects_readable_affected_dates(): void
@@ -171,6 +172,7 @@ class BackfillLifecyclePublicationReprocessTest extends TestCase
         $this->assertSame(['2026-05-08'], $result['publication_reprocess_republished_trade_dates']);
         $this->assertSame(51, $result['publication_reprocess_runs'][0]['correction_id']);
         $this->assertSame('AUTOMATED_READABLE_CORRECTION', $result['publication_reprocess_runs'][0]['republication_mode']);
+        $this->assertSame('AUTOMATED_READABLE_CORRECTION', $result['publication_reprocess_republication_mode']);
     }
 
     public function test_primary_requested_date_candidate_is_not_left_pending_after_primary_promote(): void

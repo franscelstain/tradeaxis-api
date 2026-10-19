@@ -797,11 +797,46 @@ class MarketDataEvidenceExportService
             $resealStatus,
             $discardedCandidatePublicationId
         );
-        $publicationSwitch = $changedDecision !== 'UNCHANGED' && $newPublication ? (bool) $newPublication->is_current : false;
+        // Switch is the correction event outcome; is_current is a separate, later snapshot.
+        $publicationSwitch = $changedDecision === 'CHANGED' && $newPublication
+            && strtoupper((string) $this->field($correction, 'status')) === 'PUBLISHED';
+        $currentPublication = null;
+        try { $currentPublication = $this->publications->findRawCurrentPublicationStateForTradeDate($this->field($correction, 'trade_date')); }
+        catch (\Throwable $error) { /* unavailable legacy context remains explicit */ }
+        if ($currentPublication) {
+            $currentPublication = (array) $currentPublication;
+            foreach (['publication_id', 'run_id', 'publication_version', 'pointer_publication_id', 'pointer_run_id', 'pointer_publication_version'] as $key) {
+                if (isset($currentPublication[$key])) $currentPublication[$key] = (int) $currentPublication[$key];
+            }
+        }
         $correctionAdmissionMissing = [];
         $this->markMissingSection($correctionAdmissionMissing, 'correction_context', $this->field($correction, 'correction_id'));
         $this->markMissingSection($correctionAdmissionMissing, 'correction_status', $this->field($correction, 'status'));
         $this->markMissingSection($correctionAdmissionMissing, 'correction_trade_date', $this->field($correction, 'trade_date'));
+        $this->markMissingSection($correctionAdmissionMissing, 'approval.approved_by', $this->field($correction, 'approved_by'));
+        $approvalAt = $this->field($correction, 'approved_at');
+        try {
+            if (! is_string($approvalAt) || ! preg_match('/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}/', $approvalAt)) throw new \RuntimeException('missing approval timestamp');
+            new \DateTimeImmutable($approvalAt); $errors = \DateTimeImmutable::getLastErrors();
+            if (is_array($errors) && (! empty($errors['warnings']) || ! empty($errors['errors']))) throw new \RuntimeException('invalid approval timestamp');
+        } catch (\Throwable $error) { $correctionAdmissionMissing[] = 'approval.approved_at'; }
+        $this->markMissingSection($correctionAdmissionMissing, 'correction_reason', $this->field($correction, 'correction_reason_code'));
+        if (($baselineHistoricalProof['proof_status'] ?? null) !== 'RESOLVED') $correctionAdmissionMissing[] = 'baseline_historical_publication_proof';
+        if ($priorPublication && ((string) $priorPublication->run_id !== (string) $this->field($correction, 'prior_run_id')
+            || (string) $this->field($priorPublication, 'trade_date') !== (string) $this->field($correction, 'trade_date'))) $correctionAdmissionMissing[] = 'baseline_identity';
+        if ($changedDecision === 'CHANGED') {
+            if (($candidateHistoricalProof['proof_status'] ?? null) !== 'RESOLVED') $correctionAdmissionMissing[] = 'candidate_historical_publication_proof';
+            if ($newPublication && ((string) $newPublication->run_id !== (string) $this->field($correction, 'new_run_id')
+                || (string) $this->field($newPublication, 'trade_date') !== (string) $this->field($correction, 'trade_date')
+                || (string) $this->field($newPublication, 'supersedes_publication_id') !== (string) $priorPublicationId)) $correctionAdmissionMissing[] = 'replacement_identity';
+        } elseif ($changedDecision !== 'UNCHANGED') { $correctionAdmissionMissing[] = 'changed_decision'; }
+        if (strtoupper((string) $this->field($correction, 'status')) === 'PUBLISHED' && $changedDecision !== 'CHANGED') $correctionAdmissionMissing[] = 'published_correction_changed_decision';
+        if ($changedDecision === 'UNCHANGED' && $linkedNewPublicationId !== null && (string) $linkedNewPublicationId !== (string) $priorPublicationId) $correctionAdmissionMissing[] = 'unchanged_replacement_identity';
+        if (! $currentPublication || empty($currentPublication['publication_id'])
+            || ($currentPublication['publication_id'] ?? null) !== ($currentPublication['pointer_publication_id'] ?? null)
+            || ($currentPublication['run_id'] ?? null) !== ($currentPublication['pointer_run_id'] ?? null)
+            || empty($currentPublication['publication_version']) || ($currentPublication['publication_version'] ?? null) !== ($currentPublication['pointer_publication_version'] ?? null)
+            || ! ($currentPublication['is_current'] ?? false) || ($currentPublication['seal_state'] ?? null) !== 'SEALED') $correctionAdmissionMissing[] = 'current_publication';
         $admission = $this->buildEvidenceAdmission('correction', (int) $this->field($correction, 'correction_id'), [
             'correction_context',
             'correction_lifecycle',
@@ -815,6 +850,18 @@ class MarketDataEvidenceExportService
             'evidence_admission' => $admission,
             'correction_id' => (int) $this->field($correction, 'correction_id'),
             'trade_date' => $this->field($correction, 'trade_date'),
+            'prior_run_id' => $this->field($correction, 'prior_run_id') !== null ? (int) $this->field($correction, 'prior_run_id') : null,
+            'new_run_id' => $this->field($correction, 'new_run_id') !== null ? (int) $this->field($correction, 'new_run_id') : null,
+            'prior_publication_version' => $priorPublication ? (int) $priorPublication->publication_version : null,
+            'new_publication_version' => $newPublication ? (int) $newPublication->publication_version : null,
+            'prior_publication_is_current' => $priorPublication ? (bool) $priorPublication->is_current : null,
+            'new_publication_is_current' => $newPublication ? (bool) $newPublication->is_current : ($changedDecision === 'UNCHANGED' ? false : null),
+            'current_publication' => $currentPublication ? (array) $currentPublication : null,
+            'supersession' => [
+                'baseline_publication_id' => $priorPublicationId !== null ? (int) $priorPublicationId : null,
+                'replacement_publication_id' => $replacementPublicationId !== null ? (int) $replacementPublicationId : null,
+                'supersedes_publication_id' => $newPublication && $this->field($newPublication, 'supersedes_publication_id') !== null ? (int) $this->field($newPublication, 'supersedes_publication_id') : null,
+            ],
             'approval' => [
                 'approved_by' => $this->field($correction, 'approved_by'),
                 'approved_at' => $this->field($correction, 'approved_at'),
@@ -2571,8 +2618,15 @@ class MarketDataEvidenceExportService
     private function resolveCorrectionChangedDecision($correction, $priorPublication, $newPublication)
     {
         $status = strtoupper((string) $this->field($correction, 'status'));
-        if ($status === 'CONSUMED_CURRENT' || $status === 'CANCELLED') {
+        if ($status === 'CONSUMED_CURRENT') {
             return 'UNCHANGED';
+        }
+
+        foreach ([$priorPublication, $newPublication] as $publication) {
+            foreach (['bars_batch_hash', 'indicators_batch_hash', 'eligibility_batch_hash'] as $hash) {
+                $value = $this->field($publication, $hash);
+                if (! is_string($value) || trim($value) === '') return 'UNKNOWN';
+            }
         }
 
         if ($priorPublication && $newPublication
@@ -2610,6 +2664,7 @@ class MarketDataEvidenceExportService
 
     private function buildCorrectionComparisonSummary($priorPublication, $newPublication, $changedDecision = null)
     {
+        if ($changedDecision === 'UNKNOWN') return 'Comparison unavailable: complete prior and replacement hash sets are required.';
         if ($changedDecision === 'UNCHANGED') {
             return 'No consumer-visible hash change detected.';
         }

@@ -907,8 +907,8 @@ final class MarketDataOperationsProofSpec
                 'implementation' => [
                     'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19ArchivedExecutedEvidenceProofTest.php', 'test_each_archived_obligation_has_actual_independent_source_and_execution'],
+                'negative' => ['tests/Unit/MarketData/B19ArchivedExecutedEvidenceProofTest.php', 'test_missing_illustrative_or_contradictory_archives_are_not_admitted'],
             ],
             'artifact_anomaly_report' => [
                 'owner' => 'MD-B19:artifact-anomaly-report',
@@ -924,8 +924,8 @@ final class MarketDataOperationsProofSpec
                     'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
                     'app/Infrastructure/Persistence/MarketData/EodCorrectionRepository.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19CorrectionMariaDbProofTest.php', 'test_real_changed_unchanged_failed_and_historical_correction'],
+                'negative' => ['tests/Unit/MarketData/B19CorrectionEvidenceProofTest.php', 'test_matching_missing_hashes_do_not_establish_unchanged'],
             ],
             'artifact_cross_cutting_rules' => [
                 'owner' => 'MD-B19:artifact-cross-cutting-rules',
@@ -1026,8 +1026,8 @@ final class MarketDataOperationsProofSpec
                 'implementation' => [
                     'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19CorrectionMariaDbProofTest.php', 'test_real_changed_unchanged_failed_and_historical_correction'],
+                'negative' => ['tests/Unit/MarketData/B19CorrectionEvidenceProofTest.php', 'test_cancelled_unexecuted_request_does_not_invent_unchanged'],
             ],
             'audit_pack_replay' => [
                 'owner' => 'MD-B19:audit-pack-replay',
@@ -1155,8 +1155,8 @@ final class MarketDataOperationsProofSpec
                 'implementation' => [
                     'app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19CorrectionMariaDbProofTest.php', 'test_real_impact_modes_require_safe_publication_lifecycle'],
+                'negative' => ['tests/Unit/MarketData/BackfillLifecyclePublicationReprocessTest.php', 'test_lifecycle_publication_reprocess_auto_corrects_readable_affected_dates'],
             ],
             'resumable_backfill' => [
                 'owner' => 'MD-B19:resumable-backfill',

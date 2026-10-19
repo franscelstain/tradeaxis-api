@@ -171,3 +171,7 @@ D007 records owner companion-carrier direction. No frozen strategy-byte change; 
 ## 2026-10-19 — E023 run-evidence proof checkpoint
 
 Accepted E022 continued under same A001/BL001/D005-D007/freeze. Runtime source/availability/narrative corrections and66 individually mapped bases;81 affected bases revalidated,175 retained. No strategy/governance acceptance invariant or frozen bytes changed; formal SATISFIED zero, B19 remains open. E023 records exact execution/integrity and MD-DEP-0025 successor-build impact.
+
+## 2026-10-19 — E024 correction/actual archive checkpoint
+
+Same A001/BL001/freeze;accepted E023 retained.82 independently mapped bases plus7 scoped revalidations;404/750 reviewed,18 complete families,formalzero. D008 holds R0324 due historical raw provenance absent, no normative/applicability/denominator change. Correction runtime gaps resolved;MD-DEP-0025 ACTIVE;no B18 reopening/candidate changes.
