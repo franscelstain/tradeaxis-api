@@ -915,8 +915,8 @@ final class MarketDataOperationsProofSpec
                 'implementation' => [
                     'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19RunEvidenceMariaDbProofTest.php', 'test_real_sources_attempts_run_pack_anomaly_and_historical_resolution'],
+                'negative' => ['tests/Unit/MarketData/B19RunEvidenceTelemetryProofTest.php', 'test_anomaly_narrative_keeps_run_facts_and_does_not_claim_unverified_safety'],
             ],
             'artifact_correction_evidence' => [
                 'owner' => 'MD-B19:artifact-correction-evidence',
@@ -1010,8 +1010,8 @@ final class MarketDataOperationsProofSpec
                 'implementation' => [
                     'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19RunEvidenceMariaDbProofTest.php', 'test_real_sources_attempts_run_pack_anomaly_and_historical_resolution'],
+                'negative' => ['tests/Unit/MarketData/B19RunEvidenceTelemetryProofTest.php', 'test_malformed_or_foreign_context_cannot_admit_complete_telemetry'],
             ],
             'audit_pack_core_rules' => [
                 'owner' => 'MD-B19:audit-pack-core-rules',
@@ -1042,8 +1042,8 @@ final class MarketDataOperationsProofSpec
                 'implementation' => [
                     'app/Application/MarketData/Services/MarketDataEvidenceExportService.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19RunEvidenceMariaDbProofTest.php', 'test_real_sources_attempts_run_pack_anomaly_and_historical_resolution'],
+                'negative' => ['tests/Unit/MarketData/B19RunAuditPackProofTest.php', 'test_each_run_pack_question_preserves_authoritative_facts_and_unavailability'],
             ],
             'commands_and_runbook' => [
                 'owner' => 'MD-B19:commands-and-runbook',

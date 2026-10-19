@@ -1976,3 +1976,7 @@ MD-REL-1978,E-MD-B19-A001-022,E-MD-B19-A001-021,DEPENDS_ON,Bounded multi-family 
 MD-REL-1979,E-MD-B19-A001-022,CI-MD-B19-A001-001,DEPENDS_ON,Bounded multi-family proof and identity admission impact.,D-MD-B19-A001-007,2026-10-19T01:10:08+07:00,E022
 MD-REL-1980,F-MD-B19-A001-013,E-MD-B19-A001-022,DEPENDS_ON,Bounded multi-family proof and identity admission impact.,D-MD-B19-A001-007,2026-10-19T01:10:08+07:00,E022
 MD-REL-1981,D-MD-B19-A001-007,CI-MD-B19-A001-001,DEPENDS_ON,Bounded multi-family proof and identity admission impact.,D-MD-B19-A001-007,2026-10-19T01:10:08+07:00,E022
+MD-REL-1982,E-MD-B19-A001-023,E-MD-B19-A001-022,DEPENDS_ON,Bounded run evidence proof and affected verification.,D-MD-B19-A001-001,2026-10-19T09:32:16+07:00,E023
+MD-REL-1983,E-MD-B19-A001-023,CI-MD-B19-A001-001,DEPENDS_ON,Bounded run evidence proof and affected verification.,D-MD-B19-A001-001,2026-10-19T09:32:16+07:00,E023
+MD-REL-1984,E-MD-B19-A001-023,D-MD-B19-A001-007,DEPENDS_ON,Bounded run evidence proof and affected verification.,D-MD-B19-A001-001,2026-10-19T09:32:16+07:00,E023
+MD-REL-1985,F-MD-B19-A001-014,E-MD-B19-A001-023,DEPENDS_ON,Bounded run evidence proof and affected verification.,D-MD-B19-A001-001,2026-10-19T09:32:16+07:00,E023

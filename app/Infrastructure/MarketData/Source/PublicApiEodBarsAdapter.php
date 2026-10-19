@@ -745,6 +745,8 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
             'attempt_count' => $attemptCount,
             'ticker_request_telemetry' => $tickerRequestTelemetry,
             'attempts' => $attempts,
+            // Retain the last request capture; export time/event time is a different fact.
+            'captured_at' => $requestTelemetry ? (end($requestTelemetry)['captured_at'] ?? null) : null,
             'success_after_retry' => $successAfterRetry,
             'retry_exhausted' => $retryExhausted,
             'final_reason_code' => $state === 'SUCCESS' ? null : (empty($failureReasonSummary) ? 'RUN_SOURCE_PARTIAL_RESPONSE' : $this->dominantYahooFailureReasonCode($failureTelemetry)),
@@ -975,6 +977,8 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
             'retry_max' => $this->retryMax(),
             'attempt_count' => $attemptCount,
             'attempts' => $attempts,
+            // Retain the last request capture; export time/event time is a different fact.
+            'captured_at' => $requestTelemetry ? (end($requestTelemetry)['captured_at'] ?? null) : null,
             'success_after_retry' => $successAfterRetry,
             'retry_exhausted' => $retryExhausted,
             'final_reason_code' => $finalReasonCode,
@@ -1353,6 +1357,8 @@ class PublicApiEodBarsAdapter implements ApiEodBarsSource
             'retry_max' => $this->retryMax(),
             'attempt_count' => $attemptCount,
             'attempts' => $attempts,
+            // Retain the last request capture; export time/event time is a different fact.
+            'captured_at' => $requestTelemetry ? (end($requestTelemetry)['captured_at'] ?? null) : null,
             'final_reason_code' => empty($rows)
                 ? (empty($failureTelemetry) ? 'RUN_SOURCE_NO_VALID_DATA' : $this->dominantYahooFailureReasonCode($failureTelemetry))
                 : (empty($failureTelemetry) ? null : 'RUN_SOURCE_PARTIAL_RESPONSE'),

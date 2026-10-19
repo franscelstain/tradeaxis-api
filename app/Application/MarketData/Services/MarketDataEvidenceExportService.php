@@ -127,11 +127,17 @@ class MarketDataEvidenceExportService
         ], $completeness['missing_sections'], $runSummary['evidence_export_created_at'] ?? null);
         $bindingContexts = ['actual' => $this->artifactBindingContext($manifest ? $this->publicationArtifactBindingValues((array) $manifest) : (array) $run,
             array_keys((array) ($eventSummary['reason_code_counts'] ?? [])), 'verified publication_manifest.json and primary V2 lineage semantic_observation_manifest_hash/semantic_factor_set_hash; run_summary.json/run_event_summary.json', false)];
+        if (empty($eventSummary['event_count'])) $admission['missing_sections'][] = 'run_event_summary';
+        if ($sourceAttemptTelemetry === null && (int) ($runSummary['source_context']['attempt_count'] ?? 0) > 0) $admission['missing_sections'][] = 'source_attempt_telemetry';
+        if (is_array($sourceAttemptTelemetry)) {
+            foreach (($sourceAttemptTelemetry['telemetry_integrity']['issues'] ?? []) as $issue) $admission['missing_sections'][] = 'source_attempt_telemetry.'.$issue;
+            foreach (['source_name', 'provider'] as $field) if (empty($sourceAttemptTelemetry[$field])) $admission['missing_sections'][] = 'source_attempt_telemetry.'.$field;
+        }
         $admission = $this->withArtifactBindingAdmission($admission, $bindingContexts);
         $runSummary['evidence_completeness_state'] = $completeness['evidence_completeness_state'];
         $runSummary['evidence_admission_state'] = $admission['evidence_admission_state'];
         $runSummary['evidence_missing_sections'] = $completeness['missing_sections'];
-        $anomalyReport = $this->buildAnomalyReport($runSummary, $dominantReasonCodes, $manifest, $completeness);
+        $anomalyReport = $this->buildAnomalyReport($runSummary, $dominantReasonCodes, $manifest, $fallbackContext);
 
         $payload = [
             'evidence_admission' => $admission,
@@ -284,24 +290,19 @@ class MarketDataEvidenceExportService
 
     private function buildPointerContext($run, $publication, $manifest)
     {
-        $rawPointer = null;
-        if (! $publication) {
-            try {
-                $rawPointer = $this->publications->findRawCurrentPublicationStateForTradeDate($this->field($run, 'trade_date_requested'));
-            } catch (\Throwable $e) {
-                $rawPointer = null;
-            }
-        }
+        // A selected historical publication does not replace the actual current pointer.
+        try { $rawPointer = $this->publications->findRawCurrentPublicationStateForTradeDate($this->field($run, 'trade_date_requested')); }
+        catch (\Throwable $error) { $rawPointer = null; } // unavailable, never fabricate a current identity
 
-        $pointerPublicationId = $this->field($publication, 'pointer_publication_id')
-            ?: ($manifest ? ($manifest['publication_id'] ?? null) : null)
-            ?: $this->field($rawPointer, 'pointer_publication_id');
-        $pointerRunId = $this->field($publication, 'pointer_run_id')
-            ?: ($manifest ? ($manifest['run_id'] ?? null) : null)
-            ?: $this->field($rawPointer, 'pointer_run_id');
-        $pointerVersion = $this->field($publication, 'pointer_publication_version')
-            ?: ($manifest ? ($manifest['publication_version'] ?? null) : null)
-            ?: $this->field($rawPointer, 'pointer_publication_version');
+        $pointerPublicationId = $this->field($rawPointer, 'pointer_publication_id')
+            ?: $this->field($publication, 'pointer_publication_id')
+            ?: ($manifest && ! empty($manifest['is_current']) ? ($manifest['publication_id'] ?? null) : null);
+        $pointerRunId = $this->field($rawPointer, 'pointer_run_id')
+            ?: $this->field($publication, 'pointer_run_id')
+            ?: ($manifest && ! empty($manifest['is_current']) ? ($manifest['run_id'] ?? null) : null);
+        $pointerVersion = $this->field($rawPointer, 'pointer_publication_version')
+            ?: $this->field($publication, 'pointer_publication_version')
+            ?: ($manifest && ! empty($manifest['is_current']) ? ($manifest['publication_version'] ?? null) : null);
         $isAuditResolvedPublication = $publication !== null && $this->field($publication, 'evidence_resolution_mode') !== null;
         $isPointerResolvedCurrent = $publication !== null
             && (! $isAuditResolvedPublication || (string) $this->field($publication, 'current_pointer_status') === 'RESOLVED_READABLE_CURRENT');
@@ -1589,10 +1590,11 @@ class MarketDataEvidenceExportService
     private function buildSourceAttemptTelemetry($run, array $sourceContext)
     {
         $telemetry = $this->evidence->exportRunSourceAttemptTelemetry($run->run_id);
-        if ($telemetry === []) {
+        if (! is_array($telemetry) || $telemetry === []) {
             return null;
         }
 
+        $beforeEnrichment = $telemetry;
         if (($telemetry['source_mode'] ?? null) === null && ($sourceContext['source_mode'] ?? null) !== null) {
             $telemetry['source_mode'] = $sourceContext['source_mode'];
         }
@@ -1621,15 +1623,15 @@ class MarketDataEvidenceExportService
             $telemetry['attempt_count'] = $sourceContext['attempt_count'];
         }
 
-        if (($telemetry['success_after_retry'] ?? null) === null && ($sourceContext['success_after_retry'] ?? null) !== null) {
+        if (! in_array('success_after_retry', $telemetry['persisted_payload_fields'] ?? [], true) && ($telemetry['success_after_retry'] ?? null) === null && ($sourceContext['success_after_retry'] ?? null) !== null) {
             $telemetry['success_after_retry'] = $sourceContext['success_after_retry'];
         }
 
-        if (($telemetry['final_http_status'] ?? null) === null && array_key_exists('final_http_status', $sourceContext)) {
+        if (! in_array('final_http_status', $telemetry['persisted_payload_fields'] ?? [], true) && ($telemetry['final_http_status'] ?? null) === null && array_key_exists('final_http_status', $sourceContext)) {
             $telemetry['final_http_status'] = $sourceContext['final_http_status'];
         }
 
-        if (($telemetry['final_reason_code'] ?? null) === null && ($sourceContext['final_reason_code'] ?? null) !== null) {
+        if (! in_array('final_reason_code', $telemetry['persisted_payload_fields'] ?? [], true) && ($telemetry['final_reason_code'] ?? null) === null && ($sourceContext['final_reason_code'] ?? null) !== null) {
             $telemetry['final_reason_code'] = $sourceContext['final_reason_code'];
         }
 
@@ -1661,6 +1663,16 @@ class MarketDataEvidenceExportService
             }
         }
 
+        // Logical run source_name and resolved provider source label are deliberately distinct.
+        foreach (['provider', 'timeout_seconds', 'retry_max'] as $field) {
+            if (($sourceContext[$field] ?? null) !== null && ($sourceContext[$field] ?? '') !== '' && ($telemetry[$field] ?? null) !== null
+                && (string) $sourceContext[$field] !== (string) $telemetry[$field]) {
+                $telemetry['telemetry_integrity']['issues'][] = 'conflicting_source_context.'.$field;
+                $telemetry['telemetry_integrity']['status'] = 'UNAVAILABLE';
+            }
+        }
+        $telemetry['enriched_from_run_context'] = [];
+        foreach ($telemetry as $field => $value) if ($field !== 'enriched_from_run_context' && (! array_key_exists($field, $beforeEnrichment) || $beforeEnrichment[$field] === null) && $value !== null) $telemetry['enriched_from_run_context'][$field] = 'eod_runs retained columns/notes through run_summary.source_context';
         return $this->normalizeSourceAttemptTelemetryPaths($telemetry);
     }
 
@@ -2536,16 +2548,20 @@ class MarketDataEvidenceExportService
         return is_array($decoded) ? $decoded : [];
     }
 
-    private function buildAnomalyReport(array $runSummary, array $dominantReasonCodes, $manifest = null)
+    private function buildAnomalyReport(array $runSummary, array $dominantReasonCodes, $manifest = null, array $fallbackContext = [])
     {
         $dominant = count($dominantReasonCodes) ? $dominantReasonCodes[0]['reason_code'] : 'NONE';
         $lines = [
             '# Anomaly Report',
+            '- Run ID: '.$runSummary['run_id'],
             '- Requested date: '.$runSummary['trade_date_requested'],
             '- Effective date: '.($runSummary['trade_date_effective'] ?: 'null'),
             '- Status: '.$runSummary['terminal_status'],
+            '- Status explanation: '.$runSummary['terminal_status'].'; reason='.($runSummary['effective_final_reason_code'] ?? 'UNAVAILABLE').'; '.($runSummary['effective_final_reason_message'] ?? 'reason description unavailable'),
             '- Dominant anomaly: '.$dominant,
-            '- Consumer effect: '.($runSummary['publishability_state'] === 'READABLE' ? 'requested date readable' : 'fallback or no readable state'),
+            '- Consumer effect: '.($runSummary['publishability_state'] === 'READABLE'
+                ? ($manifest && ! empty($manifest['is_current']) ? 'requested date readable' : 'historical sealed publication; current readability not claimed')
+                : (! empty($fallbackContext['fallback_used']) ? 'fallback effective date '.($fallbackContext['fallback_trade_date_effective'] ?? 'unavailable').'; publication identity '.(! empty($fallbackContext['fallback_pointer_resolved']) ? 'verified' : 'unverified') : 'no readable fallback claimed')),
             '- Publication safety: '.($manifest && $manifest['seal_state'] === 'SEALED' && $manifest['is_current'] ? 'current sealed publication present' : 'requested date not proven readable as current sealed publication'),
         ];
 

@@ -131,7 +131,7 @@ final class R0025SyntheticV2World
         $artifacts = new EodArtifactRepository();
         $bars = new EodBarsIngestService(
             new LocalFileEodBarsAdapter(),
-            new PublicApiEodBarsAdapter(static function () use ($body) {
+            new PublicApiEodBarsAdapter($layout['http_fetcher'] ?? static function () use ($body) {
                 return ['status' => 200, 'body' => $body, 'headers' => ['Content-Type: application/json']];
             }),
             $tickers,

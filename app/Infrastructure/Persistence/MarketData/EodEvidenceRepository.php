@@ -655,8 +655,9 @@ class EodEvidenceRepository
     public function exportRunSourceAttemptTelemetry($runId)
     {
         $events = DB::table('eod_run_events')
-            ->select('event_id', 'event_time', 'event_type', 'event_payload_json')
+            ->select('event_id', 'run_id', 'stage', 'event_time', 'event_type', 'trade_date_requested', 'event_payload_json')
             ->where('run_id', $runId)
+            ->whereIn('stage', ['INGEST_BARS', 'IMPORT'])
             ->whereNotNull('event_payload_json')
             ->orderBy('event_time')
             ->orderBy('event_id')
@@ -683,17 +684,16 @@ class EodEvidenceRepository
             $attempts = isset($sourceAcquisition['attempts']) && is_array($sourceAcquisition['attempts'])
                 ? $sourceAcquisition['attempts']
                 : [];
-            if ($attempts === []
-                && empty($sourceAcquisition['source_mode'])
-                && empty($sourceAcquisition['source_name'])
-                && empty($sourceAcquisition['final_reason_code'])
-                && empty($sourceAcquisition['source_final_status'])) {
-                continue;
-            }
+            // A source summary is not attempt-level evidence. Preserve the authoritative trail.
+            if ($attempts === []) continue;
+            if (isset($sourceAcquisition['event_id']) && (string) $sourceAcquisition['event_id'] !== (string) $event->event_id) $sourceAcquisition['_identity_mismatch'] = true;
+            if (isset($sourceAcquisition['trade_date']) && (string) $sourceAcquisition['trade_date'] !== (string) $event->trade_date_requested) $sourceAcquisition['_identity_mismatch'] = true;
             $sourceAcquisition['attempts'] = $attempts;
 
             $selected = [
                 'event_id' => (int) $event->event_id,
+                'event_run_id' => (int) $event->run_id,
+                'event_stage' => (string) $event->stage,
                 'event_time' => (string) $event->event_time,
                 'event_type' => (string) $event->event_type,
             ] + $sourceAcquisition;
@@ -703,24 +703,54 @@ class EodEvidenceRepository
             return [];
         }
 
+        $issues = ! empty($selected['_identity_mismatch']) ? ['payload_event_identity'] : [];
+        if (isset($selected['run_id']) && (string) $selected['run_id'] !== (string) $runId) $issues[] = 'payload_run_id';
+        $integer = static function ($value, $field, $minimum = 0) use (&$issues) {
+            if ((is_int($value) || (is_string($value) && ctype_digit($value))) && (int) $value >= $minimum) return (int) $value;
+            $issues[] = $field; return null;
+        };
+        $success = $selected['success_after_retry'] ?? null;
+        if (in_array($success, [true, 1, 'yes'], true)) $success = 'yes';
+        elseif (in_array($success, [false, 0, 'no'], true)) $success = 'no';
+        else { $issues[] = 'success_after_retry'; $success = null; }
+        $attemptRows = [];
+        foreach ($selected['attempts'] as $index => $attempt) {
+            if (! is_array($attempt)) { $issues[] = 'attempts.'.$index; continue; }
+            $row = [];
+            foreach (['attempt_number' => 1, 'throttle_delay_ms' => 0, 'backoff_delay_ms' => 0] as $field => $minimum) $row[$field] = $integer($attempt[$field] ?? null, 'attempts.'.$index.'.'.$field, $minimum);
+            foreach (['reason_code', 'http_status'] as $field) if (! array_key_exists($field, $attempt)) $issues[] = 'attempts.'.$index.'.'.$field;
+            if (array_key_exists('reason_code', $attempt) && $attempt['reason_code'] !== null && (! is_string($attempt['reason_code']) || $attempt['reason_code'] === '')) $issues[] = 'attempts.'.$index.'.reason_code';
+            $row['reason_code'] = is_string($attempt['reason_code'] ?? null) && $attempt['reason_code'] !== '' ? $attempt['reason_code'] : null;
+            $row['http_status'] = ($attempt['http_status'] ?? null) === null ? null : $integer($attempt['http_status'], 'attempts.'.$index.'.http_status', 100);
+            if ($row['http_status'] !== null && $row['http_status'] > 599) { $issues[] = 'attempts.'.$index.'.http_status'; $row['http_status'] = null; }
+            $row['will_retry'] = is_bool($attempt['will_retry'] ?? null) ? $attempt['will_retry'] : null;
+            if ($row['will_retry'] === null) $issues[] = 'attempts.'.$index.'.will_retry';
+            $attemptRows[] = array_replace(array_fill_keys(['attempt_number', 'reason_code', 'http_status', 'throttle_delay_ms', 'backoff_delay_ms', 'will_retry'], null), $row);
+        }
+        $count = $integer($selected['attempt_count'] ?? null, 'attempt_count', 1);
+        if ($count !== null && $count < count($selected['attempts'])) $issues[] = 'attempt_count';
         $telemetry = [
             'event_id' => $selected['event_id'],
+            'event_run_id' => $selected['event_run_id'],
+            'event_stage' => $selected['event_stage'],
+            'source_mode' => $selected['source_mode'] ?? null,
+            'persisted_payload_fields' => array_keys($selected),
             'event_time' => $selected['event_time'],
             'event_type' => $selected['event_type'],
-            'provider' => isset($selected['provider']) && $selected['provider'] !== '' ? (string) $selected['provider'] : null,
-            'source_name' => isset($selected['source_name']) && $selected['source_name'] !== '' ? (string) $selected['source_name'] : null,
+            'provider' => isset($selected['provider']) && is_string($selected['provider']) && $selected['provider'] !== '' ? $selected['provider'] : null,
+            'source_name' => isset($selected['source_name']) && is_string($selected['source_name']) && $selected['source_name'] !== '' ? $selected['source_name'] : null,
             'source_name_resolved' => isset($selected['source_name_resolved']) && $selected['source_name_resolved'] !== '' ? (string) $selected['source_name_resolved'] : null,
             'source_priority' => isset($selected['source_priority']) && $selected['source_priority'] !== '' ? (string) $selected['source_priority'] : null,
             'active_source_decision' => isset($selected['active_source_decision']) && $selected['active_source_decision'] !== '' ? (string) $selected['active_source_decision'] : null,
             'retry_attempt_count' => isset($selected['retry_attempt_count']) && $selected['retry_attempt_count'] !== null ? (int) $selected['retry_attempt_count'] : 0,
             'failure_class_summary' => isset($selected['failure_class_summary']) && is_array($selected['failure_class_summary']) ? $selected['failure_class_summary'] : [],
-            'timeout_seconds' => isset($selected['timeout_seconds']) && $selected['timeout_seconds'] !== null ? (int) $selected['timeout_seconds'] : null,
-            'retry_max' => isset($selected['retry_max']) && $selected['retry_max'] !== null ? (int) $selected['retry_max'] : null,
-            'attempt_count' => isset($selected['attempt_count']) && $selected['attempt_count'] !== null ? (int) $selected['attempt_count'] : count($selected['attempts'] ?? []),
-            'success_after_retry' => ! empty($selected['success_after_retry']) ? 'yes' : null,
+            'timeout_seconds' => $integer($selected['timeout_seconds'] ?? null, 'timeout_seconds', 1),
+            'retry_max' => $integer($selected['retry_max'] ?? null, 'retry_max'),
+            'attempt_count' => $count,
+            'success_after_retry' => $success,
             'final_http_status' => isset($selected['final_http_status']) && $selected['final_http_status'] !== null ? (int) $selected['final_http_status'] : null,
-            'final_reason_code' => isset($selected['final_reason_code']) && $selected['final_reason_code'] !== '' ? (string) $selected['final_reason_code'] : null,
-            'captured_at' => isset($selected['captured_at']) && $selected['captured_at'] !== '' ? (string) $selected['captured_at'] : (string) $selected['event_time'],
+            'final_reason_code' => isset($selected['final_reason_code']) && is_string($selected['final_reason_code']) && $selected['final_reason_code'] !== '' ? $selected['final_reason_code'] : null,
+            'captured_at' => isset($selected['captured_at']) && is_string($selected['captured_at']) && $selected['captured_at'] !== '' ? $selected['captured_at'] : null,
             'source_acquisition_state' => isset($selected['source_acquisition_state']) && $selected['source_acquisition_state'] !== '' ? (string) $selected['source_acquisition_state'] : null,
             'source_acquisition_mode' => isset($selected['source_acquisition_mode']) && $selected['source_acquisition_mode'] !== '' ? (string) $selected['source_acquisition_mode'] : null,
             'source_acquisition_batch_id' => isset($selected['source_acquisition_batch_id']) && $selected['source_acquisition_batch_id'] !== '' ? (string) $selected['source_acquisition_batch_id'] : null,
@@ -742,19 +772,23 @@ class EodEvidenceRepository
             'attempted_acquisition_unit_count' => isset($selected['attempted_acquisition_unit_count']) && $selected['attempted_acquisition_unit_count'] !== null ? (int) $selected['attempted_acquisition_unit_count'] : (isset($selected['attempted_ticker_count']) && $selected['attempted_ticker_count'] !== null ? (int) $selected['attempted_ticker_count'] : null),
             'unattempted_acquisition_unit_count' => isset($selected['unattempted_acquisition_unit_count']) && $selected['unattempted_acquisition_unit_count'] !== null ? (int) $selected['unattempted_acquisition_unit_count'] : (isset($selected['unattempted_ticker_count']) && $selected['unattempted_ticker_count'] !== null ? (int) $selected['unattempted_ticker_count'] : null),
             'circuit_breaker_trigger_reason_code' => isset($selected['circuit_breaker_trigger_reason_code']) && $selected['circuit_breaker_trigger_reason_code'] !== '' ? (string) $selected['circuit_breaker_trigger_reason_code'] : null,
-            'attempts' => array_values(array_map(function ($attempt) {
-                $attempt = is_array($attempt) ? $attempt : [];
-
-                return [
-                    'attempt_number' => isset($attempt['attempt_number']) && $attempt['attempt_number'] !== null ? (int) $attempt['attempt_number'] : null,
-                    'reason_code' => isset($attempt['reason_code']) && $attempt['reason_code'] !== '' ? (string) $attempt['reason_code'] : null,
-                    'http_status' => isset($attempt['http_status']) && $attempt['http_status'] !== null ? (int) $attempt['http_status'] : null,
-                    'throttle_delay_ms' => isset($attempt['throttle_delay_ms']) && $attempt['throttle_delay_ms'] !== null ? (int) $attempt['throttle_delay_ms'] : null,
-                    'backoff_delay_ms' => isset($attempt['backoff_delay_ms']) && $attempt['backoff_delay_ms'] !== null ? (int) $attempt['backoff_delay_ms'] : null,
-                    'will_retry' => isset($attempt['will_retry']) ? (bool) $attempt['will_retry'] : null,
-                ];
-            }, $selected['attempts'])),
+            'attempts' => $attemptRows,
         ];
+        foreach (['captured_at', 'final_http_status', 'final_reason_code'] as $field) if (! array_key_exists($field, $selected) || ($field === 'captured_at' && $telemetry[$field] === null)) $issues[] = $field;
+        foreach (['provider', 'source_name', 'final_reason_code'] as $field) {
+            if (array_key_exists($field, $selected) && $selected[$field] !== null && (! is_string($selected[$field]) || $selected[$field] === '')) { $issues[] = $field; $telemetry[$field] = null; }
+        }
+        if (($selected['final_http_status'] ?? null) !== null) {
+            $telemetry['final_http_status'] = $integer($selected['final_http_status'], 'final_http_status', 100);
+            if ($telemetry['final_http_status'] > 599) { $issues[] = 'final_http_status'; $telemetry['final_http_status'] = null; }
+        }
+        $lastAttempt = $attemptRows ? end($attemptRows) : null;
+        if (($lastAttempt['http_status'] ?? null) !== null && $telemetry['final_http_status'] !== $lastAttempt['http_status']) $issues[] = 'final_http_status';
+        if ($telemetry['captured_at'] !== null) {
+            try { if (! preg_match('/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}/', $telemetry['captured_at'])) throw new \RuntimeException('invalid timestamp'); new \DateTimeImmutable($telemetry['captured_at']); $dateErrors = \DateTimeImmutable::getLastErrors(); if (is_array($dateErrors) && (! empty($dateErrors['warnings']) || ! empty($dateErrors['errors']))) throw new \RuntimeException('invalid calendar timestamp'); }
+            catch (\Throwable $error) { $issues[] = 'captured_at'; $telemetry['captured_at'] = null; }
+        }
+        $telemetry['telemetry_integrity'] = ['status' => $issues ? 'UNAVAILABLE' : 'VERIFIED', 'issues' => array_values(array_unique($issues)), 'authority' => 'eod_run_events.event_id', 'bounded_attempt_rows' => count($attemptRows)];
         $telemetry['source_observation_audit'] = $this->exportRunSourceObservationAudit($runId);
 
         return $telemetry;
