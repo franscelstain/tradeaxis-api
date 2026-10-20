@@ -225,12 +225,29 @@ class B19RangeBackfillMariaDbProofTest extends TestCase
         $this->assertNotNull($warmupBar, 'The pre-request support bar must be retained for downstream rolling calculations.');
         $this->assertSame((int) $warmupObservation->source_observation_id, (int) $warmupBar->source_observation_id);
         $this->assertSame(0, (int) DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->count());
+        $implicitSeed = app(\App\Infrastructure\Persistence\MarketData\EodRunRepository::class)
+            ->findLatestForRequestedDate('2026-03-20', (string) $warmupRun->source);
+        $this->assertNotNull($implicitSeed, 'The implicit source/date lookup must resolve the persisted warmup run.');
+        $this->assertSame((int) $warmupRun->run_id, (int) $implicitSeed->run_id);
         try {
             $failureProxy->delegate()->promoteSingleDay('2026-03-20', 'api', (int) $warmupRun->run_id);
             $this->fail('Direct promotion of a warmup-only range date unexpectedly returned.');
         } catch (\RuntimeException $error) {
             $this->assertSame('RANGE_WINDOW_WARMUP_DATE_PROMOTION_REFUSED', $error->getMessage());
         }
+        $runsBeforeImplicitAttempt = (int) DB::table('eod_runs')->count();
+        $implicitRunFailure = null;
+        try {
+            // Use the persisted source identity so the normal implicit seed lookup resolves this
+            // exact warmup run rather than exercising the separate missing-run refusal.
+            $failureProxy->delegate()->promoteSingleDay('2026-03-20', (string) $warmupRun->source);
+        } catch (\RuntimeException $error) {
+            $implicitRunFailure = $error->getMessage();
+        }
+        $this->assertSame($runsBeforeImplicitAttempt, (int) DB::table('eod_runs')->count(),
+            'A refused implicit warmup promotion must not create a derived publication-authority run.');
+        $this->assertSame('RANGE_WINDOW_WARMUP_DATE_PROMOTION_REFUSED', $implicitRunFailure,
+            'Implicit-run promotion must resolve and refuse the warmup-only range date.');
         $this->assertSame(0, (int) DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->count(),
             'A direct promotion attempt cannot turn a support-only warmup run into a readable target.');
     }

@@ -2346,7 +2346,17 @@ class MarketDataPipelineService
         $sourceMode = $sourceMode ?: config('market_data.pipeline.default_source_mode');
         $promoteContext = $this->resolvePromoteContext($sourceMode, $correctionId, $promoteMode);
 
-        $this->assertRangeRunDateIsPublishable($requestedDate, $runId);
+        // An omitted run id is resolved by preparePromoteRunId() from the latest persisted run.
+        // Check that same implicit seed before creating a derived promotion run, then check the
+        // resolved id again below to keep the publication boundary fenced if the selection changes.
+        if ($runId === null) {
+            $implicitSeed = $this->runs->findLatestForRequestedDate($requestedDate, $sourceMode);
+            if ($implicitSeed) {
+                $this->assertRangeRunDateIsPublishable($requestedDate, $implicitSeed->run_id);
+            }
+        } else {
+            $this->assertRangeRunDateIsPublishable($requestedDate, $runId);
+        }
 
         if ($correctionId !== null && $promoteContext['requires_baseline']) {
             $this->corrections->requireApprovedForTradeDate($correctionId, $requestedDate);
@@ -2355,6 +2365,7 @@ class MarketDataPipelineService
         }
 
         $runId = $this->preparePromoteRunId($requestedDate, $sourceMode, $runId, $correctionId, $promoteContext);
+        $this->assertRangeRunDateIsPublishable($requestedDate, $runId);
         $this->ensurePromoteRunContext($runId, $requestedDate, $promoteContext, $correctionId);
         $materializedRun = $this->materializeDirectManualPromoteCandidateIfNeeded(
             $requestedDate,

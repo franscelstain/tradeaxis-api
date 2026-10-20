@@ -1,0 +1,78 @@
+{
+  "evidence_id": "E-MD-B19-A001-033",
+  "stage": "MD-B19",
+  "attempt": "MD-B19-A001",
+  "issued_at": "2026-10-20T20:27:15+07:00",
+  "purpose": "Targeted E032-accepted warmup predicate revalidation and operational preflight; no new predicate bases.",
+  "accepted_baseline": 595,
+  "proposed_reviewed_total": 595,
+  "denominator": 750,
+  "formal_satisfied": 0,
+  "new_reviewed_bases": {
+    "operator_decision_trees": 0,
+    "commands_and_runbook": 0,
+    "scheduling_and_locking": 0
+  },
+  "revalidated_predicates": [
+    "MD-S053-R0200"
+  ],
+  "targeted_warmup_check": {
+    "governing_requirement": "Warmup bars support rolling indicators and benchmark dependencies; warmup dates are not requested publication targets unless explicitly requested.",
+    "scenario": "MariaDB acquisition includes 2026-03-20 warmup and requested 2026-03-24/25; implicit promotion uses persisted warmup source identity and no runId.",
+    "result": "RANGE_WINDOW_WARMUP_DATE_PROMOTION_REFUSED before derived promote-run creation; no warmup current pointer.",
+    "counterfactual": "Removing early implicit seed fence changes result to RUN_OWNER_CONFLICT and fails exact refusal assertion; no readable warmup publication demonstrated.",
+    "source_restoration_sha256": "1B81AC477910D72C5264B1CBC1D9BFE63198845DC6AA2202C33FC2BFC9F1CB6B"
+  },
+  "tests": [
+    {
+      "command": "vendor/bin/phpunit tests/Unit/MarketData/B19RangeBackfillMariaDbProofTest.php --filter test_range_window_runs_each_requested_date_in_order_without_publishing_warmup",
+      "result": "PASS",
+      "tests": 1,
+      "assertions": 69,
+      "engine": "MariaDB"
+    },
+    {
+      "command": "vendor/bin/phpunit tests/Unit/MarketData/B19OperationalCommandsMariaDbTest.php",
+      "result": "PASS",
+      "tests": 4,
+      "assertions": 106,
+      "engine": "MariaDB"
+    },
+    {
+      "command": "vendor/bin/phpunit tests/Unit/MarketData/B19RuntimeCommandCatalogTest.php",
+      "result": "PASS",
+      "tests": 1,
+      "assertions": 89,
+      "engine": "runtime artisan help"
+    }
+  ],
+  "proof_scope_note": "Runtime checks are retained observations, not automatic admission for all command, operator-decision or scheduling predicates. No operator/runbook/scheduling bases are added without complete predicate-specific expectation, negative case, mutation sensitivity and evidence mapping.",
+  "held_primary_scope": {
+    "operator_decision_trees": 43,
+    "commands_and_runbook": 14,
+    "scheduling_and_locking": 9
+  },
+  "retained_e032_holds": [
+    "MD-S053-R0029",
+    "MD-S053-R0182",
+    "MD-S059-R0072",
+    "MD-S059-R0074",
+    "MD-S059-R0140",
+    "MD-S074-R0003",
+    "MD-S074-R0011",
+    "MD-S074-R0013",
+    "MD-S001-R0087",
+    "MD-S001-R0088",
+    "MD-S082-R0018"
+  ],
+  "governance": {
+    "D003_warning_count": "persisted mirror; NULL remains NULL",
+    "R0324": "HELD under D008/F016",
+    "F018": "escalation/closure authority unresolved",
+    "MD-DEP-0025": "ACTIVE",
+    "candidate": "v5 preserved; no candidate-v6",
+    "historical_B18": "valid and unchanged"
+  },
+  "status": "ISSUED_FOR_INDEPENDENT_REVIEW",
+  "single_exact_resume_point": "MD-B19-A001: continue the unproved operator_decision_trees (43), commands_and_runbook (14), and scheduling_and_locking (9) predicates with exact per-predicate execution/mutation mapping; retain the eleven E032 residual holds and F018/R0324/MD-DEP-0025 boundaries. No candidate-v6 or formal SATISFIED promotion."
+}

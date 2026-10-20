@@ -407,3 +407,8 @@ Production impact is limited to `BackfillLifecycleOrchestrator` ordinary resume 
 The last independent acceptance remains 590/750. Four repaired E031 proposals are re-submitted without double counting; one newly mapped R0007 makes the proposed position 595/750 pending independent review. The proof gate remains FAIL with 155 predicates lacking a reviewed basis and eight families lacking a guard. Eleven residual E031 holds remain, listed with exact limitations in E032 evidence. F018 authority, R0324 D008/F016, MD-DEP-0025 ACTIVE, candidate-v5 and historical B18 validity remain unchanged.
 
 Stop for independent external review of E032. Exact continuation after review: MD-B19-A001 — continue the eleven residual acquisition/backfill/mode/maintenance holds listed in E032 evidence and its per-predicate map; preserve the four repaired E031 proposals without duplicating them or repeating their proof.
+
+
+## E033 bounded verification impact
+
+A targeted guard-ordering check changed `MarketDataPipelineService::promoteSingleDay` and its MariaDB proof. It covers the E032-accepted warmup publication basis MD-S053-R0200 only; no new basis is admitted. The exact source/date seed is resolved before creating a derived promotion run, and the resolved run is checked again. A guard-removal mutation is detected by the implicit warmup refusal assertion and the service source is restored to its pre-mutation SHA-256. The same test passes restored. Runtime catalog (1/89) and operational command/scheduler MariaDB tests (4/106) pass. No broad suite, production activation or deployment proof ran.

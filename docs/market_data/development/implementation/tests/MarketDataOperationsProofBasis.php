@@ -3017,7 +3017,7 @@ final class MarketDataOperationsProofBasis
         'MD-S053-R0200' => [
             'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
             'negative' => 'B19RangeWindowWarmupWiringTest::test_the_acquisition_service_is_handed_the_calendar_boundary',
-            'basis' => 'E032 revalidates the E031 proposal on actual pre-request source rows: the 2026-03-20 warmup row is retained and source-attributed, but no warmup current pointer is created or changed; both explicitly requested dates remain separately readable. A direct non-requested warmup promotion counterfactual is refused by the runtime guard.',
+            'basis' => 'E032 revalidates the E031 proposal on actual pre-request source rows: the 2026-03-20 warmup row is retained and source-attributed, but no warmup current pointer is created or changed; both explicitly requested dates remain separately readable. A direct non-requested warmup promotion counterfactual is refused by the runtime guard. E033 directly resolves the warmup run via its persisted source/date identity with no explicit runId and asserts RANGE_WINDOW_WARMUP_DATE_PROMOTION_REFUSED before any derived run is created; a guard-removal counterfactual fails the exact refusal assertion with RUN_OWNER_CONFLICT, source restoration hash matches, and the restored MariaDB control passes. This is revalidation of R0200, not an additional basis.',
         ],
         'MD-S074-R0001' => [
             'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
