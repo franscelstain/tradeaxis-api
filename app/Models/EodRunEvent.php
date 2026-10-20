@@ -13,4 +13,11 @@ class EodRunEvent extends Model
     public $timestamps = false;
 
     protected $guarded = [];
+
+    protected static function boot()
+    {
+        parent::boot();
+        static::updating(static function () { throw new \RuntimeException('RUN_EVENT_APPEND_ONLY'); });
+        static::deleting(static function () { throw new \RuntimeException('RUN_EVENT_APPEND_ONLY'); });
+    }
 }

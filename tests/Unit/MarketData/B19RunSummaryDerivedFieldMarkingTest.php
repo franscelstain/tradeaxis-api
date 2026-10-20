@@ -323,11 +323,10 @@ class B19RunSummaryDerivedFieldMarkingTest extends TestCase
 
     /**
      * The accepted limitation of Option B, as a tripwire. Nothing in `app/` writes `eod_runs.warning_count`:
-     * the repository initialises it to NULL when it creates a run and no code ever sets it. If a file other
-     * than the ones listed below starts to mention `warning_count`, somebody has begun to count warnings and
-     * the limitation record (`F-MD-B19-A001-005`, `D-MD-B19-A001-003`) is stale — this test then fails so
-     * that the owner defines the population and the contract is revisited, instead of a counter appearing
-     * under a name whose meaning nobody decided.
+     * the repository initialises it to NULL when it creates a run and no code ever sets it. The operational
+     * status reader is an explicitly permitted read-only mirror: it preserves NULL and exposes the decision
+     * provenance. Other new consumers or any new producer/derivation still require the warning population
+     * to be decided first.
      */
     public function test_the_known_limitation_nothing_writes_warning_count_still_holds(): void
     {
@@ -343,6 +342,7 @@ class B19RunSummaryDerivedFieldMarkingTest extends TestCase
 
         $this->assertSame([
             'Application/MarketData/Services/MarketDataEvidenceExportService.php', // mirrors eod_runs.warning_count (run summary) and the replay metric row
+            'Application/MarketData/Services/MarketDataOperationalStatusService.php', // read-only persisted mirror; NULL and decision provenance are retained
             'Application/MarketData/Services/ReplayVerificationService.php',       // reads it for the replay comparison; never writes eod_runs
             'Domain/MarketData/MarketDataScope.php',                               // DateTime::getLastErrors() key -- unrelated
             'Infrastructure/Persistence/MarketData/EodRunRepository.php',          // initialises to null on run creation (two creation paths)
@@ -352,5 +352,10 @@ class B19RunSummaryDerivedFieldMarkingTest extends TestCase
 
         $repo = (string) file_get_contents($root.'/Infrastructure/Persistence/MarketData/EodRunRepository.php');
         $this->assertSame(2, substr_count($repo, "'warning_count' => null,"), 'the run repository no longer initialises warning_count to NULL');
+        $status = (string) file_get_contents($root.'/Application/MarketData/Services/MarketDataOperationalStatusService.php');
+        $this->assertStringContainsString('$counts[$field] === null) continue', $status, 'operational status must preserve the authorized NULL limitation');
+        $this->assertStringContainsString('WARNING_POPULATION_UNDEFINED', $status, 'operational status must expose the decision limitation');
+        $this->assertStringNotContainsString("update(['warning_count'", $status, 'operational status must not write a warning count');
+        $this->assertStringNotContainsString("where('severity', 'WARN')->count()", $status, 'WARN-event count is not the governed warning population');
     }
 }

@@ -218,7 +218,7 @@ Transport failures receive bounded retry; deterministic validation/gate failures
 
 ### Scheduler / cron deployment flow
 
-The deployment scheduler invokes `php artisan schedule:run`. Activation configuration includes `MARKET_DATA_DAILY_ENABLED=true`, `MARKET_DATA_PLATFORM_TIMEZONE=Asia/Jakarta`, `MARKET_DATA_PLATFORM_EOD_CUTOFF_TIME=HH:MM:SS`, `MARKET_DATA_SCHEDULER_OUTPUT_PATH`, and `MARKET_DATA_SCHEDULER_WITHOUT_OVERLAPPING_MINUTES`. The due event is `market-data:daily --latest`.
+The deployment scheduler invokes `php artisan schedule:run`. Activation configuration includes `MARKET_DATA_DAILY_ENABLED=true`, `MARKET_DATA_PLATFORM_TIMEZONE=Asia/Jakarta`, `MARKET_DATA_PLATFORM_EOD_CUTOFF_TIME=HH:MM:SS`, `MARKET_DATA_SCHEDULER_OUTPUT_PATH`, and `MARKET_DATA_SCHEDULER_WITHOUT_OVERLAPPING_MINUTES`. The due event is `market-data:scheduled`; it resolves the governed latest completed date, runs import and promotion, then checks the persisted outcome and current readable publication. `market-data:status --requested_date=YYYY-MM-DD` reports the primary run record and verified consumer publication state.
 
 Logs distinguish `scheduler_status=SUCCESS` and `scheduler_status=FAILURE`; a failed/held run records `pointer_switched=false`. **Scheduler proof is not live provider proof.**
 

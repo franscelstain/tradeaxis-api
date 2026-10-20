@@ -404,6 +404,7 @@ class MarketDataPipelineService
             );
             $sourceAcquisitionTelemetry = $this->barsIngest->consumeSourceAcquisitionTelemetry($input->sourceMode);
             return DB::transaction(function () use ($run, $input, $priorCurrent, $sourceRows, $sourceAcquisitionTelemetry) {
+                if (! in_array((string) $run->request_mode, ['import_only', 'replay_verify', 'evidence_export'], true)) $this->runs->assertPublishCriticalOwner($run);
                 $result = $this->barsIngest->ingestAcquiredRows(
                     $run,
                     $input->requestedDate,
@@ -553,6 +554,7 @@ class MarketDataPipelineService
 
         try {
             return DB::transaction(function () use ($run, $input, $priorCurrent, $sourceRows, $sourceAcquisition) {
+                if (! in_array((string) $run->request_mode, ['import_only', 'replay_verify', 'evidence_export'], true)) $this->runs->assertPublishCriticalOwner($run);
                 $result = $this->barsIngest->ingestRecoveredRowsPartial(
                     $run,
                     $input->requestedDate,
@@ -646,6 +648,7 @@ class MarketDataPipelineService
 
         try {
             return DB::transaction(function () use ($run, $input, $priorCurrent, $sourceRows, $sourceAcquisition) {
+                if (! in_array((string) $run->request_mode, ['import_only', 'replay_verify', 'evidence_export'], true)) $this->runs->assertPublishCriticalOwner($run);
                 $result = $this->barsIngest->ingestAcquiredRows(
                     $run,
                     $input->requestedDate,
@@ -760,6 +763,7 @@ class MarketDataPipelineService
 
         try {
             return DB::transaction(function () use ($run, $input) {
+                if (! in_array((string) $run->request_mode, ['import_only', 'replay_verify', 'evidence_export'], true)) $this->runs->assertPublishCriticalOwner($run);
                 $result = $this->indicators->compute($run, $input->requestedDate, $input->correctionId !== null);
                 $run = $this->runs->updateTelemetry($run, [
                     'indicators_rows_written' => $result['indicators_rows_written'],
@@ -782,6 +786,7 @@ class MarketDataPipelineService
 
         try {
             return DB::transaction(function () use ($run, $input, $priorCurrent) {
+                if (! in_array((string) $run->request_mode, ['import_only', 'replay_verify', 'evidence_export'], true)) $this->runs->assertPublishCriticalOwner($run);
                 $coverageBasisPublicationId = $this->resolveCandidateCoveragePublicationId($run, $input, $priorCurrent);
                 $coverage = $this->coverageGateEvaluator->evaluate(
                     $input->requestedDate,
@@ -887,6 +892,7 @@ class MarketDataPipelineService
 
         try {
             return DB::transaction(function () use ($run, $input) {
+                if (! in_array((string) $run->request_mode, ['import_only', 'replay_verify', 'evidence_export'], true)) $this->runs->assertPublishCriticalOwner($run);
                 $result = $this->eligibility->build($run, $input->requestedDate, $input->correctionId !== null);
                 $coverage = $this->coverageGateEvaluator->evaluate(
                     $input->requestedDate,
@@ -956,6 +962,8 @@ class MarketDataPipelineService
         [$run, $correction, $priorCurrent] = $this->startStage($input);
 
         try {
+            return DB::transaction(function () use ($run, $input, $correction, $priorCurrent) {
+            $this->runs->assertPublishCriticalOwner($run);
             $candidatePublication = $this->publications->getOrCreateCandidatePublication(
                 $run,
                 $correction && $priorCurrent ? $priorCurrent->publication_id : null
@@ -1024,6 +1032,7 @@ class MarketDataPipelineService
             );
 
             return $run;
+            });
         } catch (\Throwable $e) {
             $this->handleStageFailure($run, $input->stage, 'RUN_HASH_FAILED', $e);
             throw $e;
@@ -1131,6 +1140,7 @@ class MarketDataPipelineService
 
         try {
             return DB::transaction(function () use ($run, $input, $correction, $priorCurrent, $isRepairCandidate, $hasMandatoryHashes) {
+                $this->runs->assertPublishCriticalOwner($run);
                 try {
                     if ($correction && ! $isRepairCandidate && $hasMandatoryHashes) {
                         $candidateForNoopCheck = $this->publications->getOrCreateCandidatePublication(
@@ -1256,6 +1266,7 @@ class MarketDataPipelineService
 
         try {
             return DB::transaction(function () use ($run, $input, $correction, $priorCurrent) {
+                $this->runs->assertPublishCriticalOwner($run);
                 $fallback = $this->publications->findLatestReadablePublicationBefore($input->requestedDate);
                 $cutoffSatisfied = $this->isFinalizeCutoffSatisfied($input->requestedDate);
 

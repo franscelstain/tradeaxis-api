@@ -56,6 +56,8 @@ Presence in this list means the command is registered, not approved. The names a
 - `market-data:backfill`
 - `market-data:session-snapshot`
 - `market-data:session-snapshot:purge`
+- `market-data:scheduled`
+- `market-data:status`
 - `market-data:correction:request`
 - `market-data:correction:approve`
 - `market-data:correction:run`
@@ -129,4 +131,6 @@ Captured from registered `php artisan help <command> --format=json` on 2026-10-1
 | `market-data:sectors:import-memberships` | `--classification_system`, `--source_name`, `--source_authority_class`, `--operator_name`, `--reason_code`, `--dry-run`, `--apply` |
 | `market-data:session-snapshot` | `--source_mode`, `--input_file`, `--output_dir` |
 | `market-data:session-snapshot:purge` | `--before_date`, `--output_dir`, `--dry-run`, `--apply` |
+| `market-data:scheduled` | `--source_mode` |
+| `market-data:status` | `--requested_date`, `--run_id`, `--latest` |
 | `market-data:trading-status:record-authoritative-snapshot` | `--dry-run`, `--apply` |

@@ -2749,5 +2749,177 @@ final class MarketDataOperationsProofBasis
             'negative' => 'MarketDataPipelineIntegrationTest::test_stale_owner_with_ambiguous_partial_publication_blocks_takeover',
             'basis' => 'E027: persisted RUN_OWNER_TAKEOVER event binds previous owner run ID and new owner run ID to trust assessment and ALLOWED decision; rejected partial state persists STALE_OWNER_TAKEOVER_BLOCKED with UNVERIFIED trust and exact reason. Resulting fence owner is asserted from storage.',
         ],
+
+        // E029 operational slice: executable status, scheduled outcomes and real MariaDB evidence.
+        'MD-S064-R0002' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success',
+            'basis' => 'E029: registered status command reports requested/expected/acquired/canonicalized/readable frontiers and is bracketed by byte-identical requested-date runs/events/pointer and unchanged observation count. Conflicting date/latest selectors and invalid selectors refuse; MariaDB outage status remains explicitly unhealthy.',
+        ],
+        'MD-S064-R0003' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success',
+            'basis' => 'E029: real registered scheduled command executes import, promotion, verified-current status, and appends SCHEDULER_OUTCOME; a repeated invocation skips without new runs/observations/pointer writes. A provider outage on the separately resolved due date yields HELD/NOT_READABLE, nonzero exit, and unchanged prior readable publication.',
+        ],
+        'MD-S070-R0002' => [
+            'positive' => 'B19OperationalObservabilityMariaDbTest::test_real_run_status_events_counts_hash_seal_config_and_export_have_primary_provenance',
+            'negative' => 'B19OperationalObservabilityMariaDbTest::test_missing_contradictory_and_unavailable_primary_facts_never_report_operational_health',
+            'basis' => 'E029 MariaDB: persisted eod_runs terminal status is primary; an appended contradictory WARN message cannot overwrite SUCCESS. Missing terminal authority is mutated and restored and makes status unhealthy.',
+        ],
+        'MD-S070-R0003' => [
+            'positive' => 'B19OperationalObservabilityMariaDbTest::test_real_run_status_events_counts_hash_seal_config_and_export_have_primary_provenance',
+            'negative' => 'B19OperationalObservabilityMariaDbTest::test_missing_contradictory_and_unavailable_primary_facts_never_report_operational_health',
+            'basis' => 'E029 MariaDB: real stage/run events and exported reason summary retain producer provenance; absent trail mutation is detected as RUN_EVENT_TRAIL_MISSING. The mutation is transactionally restored.',
+        ],
+        'MD-S070-R0004' => [
+            'positive' => 'B19OperationalObservabilityMariaDbTest::test_real_run_status_events_counts_hash_seal_config_and_export_have_primary_provenance',
+            'negative' => 'B19OperationalObservabilityMariaDbTest::test_missing_contradictory_and_unavailable_primary_facts_never_report_operational_health',
+            'basis' => 'E029 MariaDB: bars, indicators and eligibility persisted row counts match the independent frozen candidate-v5 expected publication. Each missing row-count field is mutated/restored and prevents healthy status.',
+        ],
+        'MD-S070-R0006' => [
+            'positive' => 'B19OperationalObservabilityMariaDbTest::test_real_run_status_events_counts_hash_seal_config_and_export_have_primary_provenance',
+            'negative' => 'B19OperationalObservabilityMariaDbTest::test_missing_contradictory_and_unavailable_primary_facts_never_report_operational_health',
+            'basis' => 'E029 MariaDB: three persisted final hashes match the independent expected publication manifest; missing or malformed hashes are independently mutated/restored and prevent health.',
+        ],
+        'MD-S070-R0007' => [
+            'positive' => 'B19OperationalObservabilityMariaDbTest::test_real_run_status_events_counts_hash_seal_config_and_export_have_primary_provenance',
+            'negative' => 'B19OperationalObservabilityMariaDbTest::test_missing_contradictory_and_unavailable_primary_facts_never_report_operational_health',
+            'basis' => 'E029 MariaDB: sealed timestamp and exported SEALED manifest are present on a verified current consumer publication; removing seal metadata is a restored negative that makes status unhealthy.',
+        ],
+        'MD-S070-R0008' => [
+            'positive' => 'B19OperationalObservabilityMariaDbTest::test_real_run_status_events_counts_hash_seal_config_and_export_have_primary_provenance',
+            'negative' => 'B19OperationalObservabilityMariaDbTest::test_missing_contradictory_and_unavailable_primary_facts_never_report_operational_health',
+            'basis' => 'E029 MariaDB: snapshot ID, UID and resolved-config hash verify against the immutable run config; absent ID and contradictory hash mutations restore exactly and make status unhealthy.',
+        ],
+        'MD-S070-R0009' => [
+            'positive' => 'B19OperationalObservabilityMariaDbTest::test_real_run_status_events_counts_hash_seal_config_and_export_have_primary_provenance',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success',
+            'basis' => 'E029 MariaDB: the requested date resolves to its persisted SUCCESS run; a distinct future requested date resolves HELD and never inherits the prior run outcome as success.',
+        ],
+        'MD-S070-R0010' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success',
+            'basis' => 'E029 MariaDB: a normal run exposes the effective requested date; source outage exposes the persisted older fallback effective date explicitly, while requested date remains due and publication is unreadable.',
+        ],
+        'MD-S070-R0011' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success',
+            'negative' => 'B19OperationalObservabilityMariaDbTest::test_real_run_status_events_counts_hash_seal_config_and_export_have_primary_provenance',
+            'basis' => 'E029 MariaDB: coverage failure maps to the persisted PUBLISH_BARS event stage on the held requested date; a successful run reports no failed/held stage. No stage is inferred from log text.',
+        ],
+        'MD-S070-R0012' => [
+            'positive' => 'B19OperationalObservabilityMariaDbTest::test_real_run_status_events_counts_hash_seal_config_and_export_have_primary_provenance',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success',
+            'basis' => 'E029 MariaDB: reason codes are traceable to event and persisted source/final reason fields. A contradictory WARN reason is included as supporting evidence without replacing terminal authority; timeout and coverage failure are both retained for outage diagnosis.',
+        ],
+        'MD-S070-R0013' => [
+            'positive' => 'B19OperationalObservabilityMariaDbTest::test_real_run_status_events_counts_hash_seal_config_and_export_have_primary_provenance',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success',
+            'basis' => 'E029 MariaDB: independent normal execution has coverage PASS and provider outage execution retains coverage FAIL with missing count and zero ratio; provider failure does not shrink the requested universe.',
+        ],
+        'MD-S070-R0014' => [
+            'positive' => 'B19OperationalObservabilityMariaDbTest::test_real_run_status_events_counts_hash_seal_config_and_export_have_primary_provenance',
+            'negative' => 'B19OperationalObservabilityMariaDbTest::test_missing_contradictory_and_unavailable_primary_facts_never_report_operational_health',
+            'basis' => 'E029 MariaDB: hashes match the independent expected manifest; missing/malformed hash mutations cause explicit unavailable defects and unhealthy status.',
+        ],
+        'MD-S070-R0015' => [
+            'positive' => 'B19OperationalObservabilityMariaDbTest::test_real_run_status_events_counts_hash_seal_config_and_export_have_primary_provenance',
+            'negative' => 'B19OperationalObservabilityMariaDbTest::test_missing_contradictory_and_unavailable_primary_facts_never_report_operational_health',
+            'basis' => 'E029 MariaDB: seal metadata exists with the materializable current publication; missing seal mutation is restored and produces SEAL_PRESENCE_UNPROVEN.',
+        ],
+        'MD-S070-R0016' => [
+            'positive' => 'B19OperationalObservabilityMariaDbTest::test_real_run_status_events_counts_hash_seal_config_and_export_have_primary_provenance',
+            'negative' => 'B19OperationalObservabilityMariaDbTest::test_missing_contradictory_and_unavailable_primary_facts_never_report_operational_health',
+            'basis' => 'E029 MariaDB: effective snapshot ID, UID and hash are cross-checked against eod_runs; missing and contradictory config mutations restore and make status unhealthy.',
+        ],
+        'MD-S070-R0017' => [
+            'positive' => 'B19OperationalObservabilityMariaDbTest::test_real_run_status_events_counts_hash_seal_config_and_export_have_primary_provenance',
+            'negative' => 'B19OperationalObservabilityMariaDbTest::test_missing_contradictory_and_unavailable_primary_facts_never_report_operational_health',
+            'basis' => 'E029 MariaDB: eod_runs terminal status remains SUCCESS when a contradictory warning message says FAILED; event data is supporting and export primary fields agree with persisted authority.',
+        ],
+        'MD-S070-R0018' => [
+            'positive' => 'B19OperationalObservabilityMariaDbTest::test_event_model_and_actual_mariadb_reject_update_and_delete_but_accept_append',
+            'negative' => 'B19OperationalObservabilityMariaDbTest::test_event_model_and_actual_mariadb_reject_update_and_delete_but_accept_append',
+            'basis' => 'E029 MariaDB: model and direct SQL update/delete are refused by runtime hooks and database triggers; original event bytes remain equal, while append succeeds. Four attempted mutations are observed and restored by rollback.',
+        ],
+        'MD-S070-R0019' => [
+            'positive' => 'B19OperationalObservabilityMariaDbTest::test_missing_contradictory_and_unavailable_primary_facts_never_report_operational_health',
+            'negative' => 'B19OperationalObservabilityMariaDbTest::test_real_run_status_events_counts_hash_seal_config_and_export_have_primary_provenance',
+            'basis' => 'E029 MariaDB: a terminal run with no events is classified RUN_EVENT_TRAIL_MISSING and unhealthy; the normal real execution has a persisted event trail and exported event count.',
+        ],
+        'MD-S070-R0020' => [
+            'positive' => 'B19OperationalObservabilityMariaDbTest::test_real_run_status_events_counts_hash_seal_config_and_export_have_primary_provenance',
+            'negative' => 'B19OperationalObservabilityMariaDbTest::test_missing_contradictory_and_unavailable_primary_facts_never_report_operational_health',
+            'basis' => 'E029 MariaDB: healthy status requires terminal/effective/hash/seal/config and consumer-readable evidence; each required source field is independently removed or contradicted and restored, and none reports health.',
+        ],
+        'MD-S041-R0057' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success',
+            'negative' => 'B19OperationalCalendarTest::test_latest_target_requires_cutoff_and_verified_completed_session_and_exposes_unknown_states',
+            'basis' => 'E029: 2030 requested target is independently calendar-resolved while acquired/canonicalized/readable frontiers remain in 2026; development frontier need not equal calendar expected date.',
+        ],
+        'MD-S041-R0059' => [
+            'positive' => 'B19OperationalCalendarTest::test_latest_target_requires_cutoff_and_verified_completed_session_and_exposes_unknown_states',
+            'negative' => 'B19OperationalCalendarTest::test_conflicting_or_unverified_calendar_cannot_authorize_a_latest_target',
+            'basis' => 'E029: today 2026-03-25 after configured cutoff and verified completion resolves to today; unverified completion is refused.',
+        ],
+        'MD-S041-R0060' => [
+            'positive' => 'B19OperationalCalendarTest::test_latest_target_requires_cutoff_and_verified_completed_session_and_exposes_unknown_states',
+            'negative' => 'B19OperationalCalendarTest::test_latest_target_requires_cutoff_and_verified_completed_session_and_exposes_unknown_states',
+            'basis' => 'E029: before cutoff, latest expected resolves to prior completed 2026-03-24; after cutoff it moves to the verified current session.',
+        ],
+        'MD-S041-R0061' => [
+            'positive' => 'B19OperationalCalendarTest::test_latest_target_requires_cutoff_and_verified_completed_session_and_exposes_unknown_states',
+            'negative' => 'B19OperationalCalendarTest::test_conflicting_or_unverified_calendar_cannot_authorize_a_latest_target',
+            'basis' => 'E029: UNKNOWN, PARTIAL, CANCELLED and MISSING are returned explicitly while target remains prior completed session; unverified and conflicting revisions refuse authorization.',
+        ],
+        'MD-S078-R0001' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_missing_verified_calendar_produces_explicit_failed_scheduler_outcome',
+            'basis' => 'E029 MariaDB: scheduler with machine time in 2026 targets verified completed 2030-01-02 from versioned calendar although all persisted data frontiers remain in 2026; deleting calendar evidence produces explicit FAILED with no requested date.',
+        ],
+        'MD-S078-R0005' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_missing_verified_calendar_produces_explicit_failed_scheduler_outcome',
+            'basis' => 'E029 MariaDB actual command executions cover SUCCESS_READABLE, SUCCESS_HELD, FAILED, SKIPPED_ALREADY_READABLE and SKIPPED_LOCKED. Each emits the fixed machine result shape, IDs/dates where established, reasons and next action; no zero exit is used to claim readability.',
+        ],
+        'MD-S078-R0008' => [
+            'positive' => 'B19OwnerFenceMariaDbTest::test_mariadb_migration_and_two_process_date_owner_fence',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_publish_critical_owner_fences_cross_source_and_request_mode_competitors',
+            'basis' => 'E029 revalidates E028 real InnoDB two-process cross-mode acquisition: exactly one active owner survives, the competing worker cannot publish, and prior pointer is retained. A source-mode fence bypass is caught by the paired adversarial test.',
+        ],
+        'MD-S078-R0010' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
+            'basis' => 'E029 MariaDB: prior current publication on 2026-03-23 is preserved during requested 2030-01-02 provider failure; due outcome is HELD/NOT_READABLE and has no requested-date publication ID.',
+        ],
+        'MD-S078-R0011' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success',
+            'negative' => 'B19OperationalObservabilityMariaDbTest::test_real_run_status_events_counts_hash_seal_config_and_export_have_primary_provenance',
+            'basis' => 'E029 MariaDB: provider outage retains coverage universe and FAIL with one missing row and zero ratio; normal independent run records coverage PASS. No provider failure is made to look complete by shrinking its scope.',
+        ],
+        'MD-S078-R0012' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
+            'basis' => 'E029 MariaDB: outage executes initial request plus two bounded retries; persisted source_attempt_count and notes record three attempts and exact preexisting observation IDs remain byte-identical. Successful idempotent repeat adds no source observation.',
+        ],
+        'MD-S078-R0013' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success',
+            'basis' => 'E029 MariaDB: materializable sealed current is required for readable success; outage has no sealed requested-date publication, no pointer switch, and returns HELD/NOT_READABLE with status unhealthy.',
+        ],
+        'MD-S078-R0014' => [
+            'positive' => 'B19OwnerFenceMariaDbTest::test_mariadb_migration_and_two_process_date_owner_fence',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_scheduled_competitor_reports_locked_without_starting_a_second_owner',
+            'basis' => 'E029 real MariaDB process contention and scheduled contender prove exactly one owner; the second scheduled request returns SKIPPED_LOCKED/RUN_LOCK_CONFLICT while the original owner token remains and no readable pointer is created.',
+        ],
+        'MD-S078-R0016' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_scheduled_competitor_reports_locked_without_starting_a_second_owner',
+            'basis' => 'E029 Laravel schedule registration records intent; separate direct registered-command execution records SCHEDULER_OUTCOME with run ID, requested date and verified publication. A blocked invocation persists SKIPPED_LOCKED rather than inferring execution from registration.',
+        ],
+        'MD-S078-R0018' => [
+            'positive' => 'B19OwnerFenceMariaDbTest::test_mariadb_migration_and_two_process_date_owner_fence',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_publish_critical_owner_fences_cross_source_and_request_mode_competitors',
+            'basis' => 'E029 two independent MariaDB processes are released into same-date owner acquisition and persisted results show one winner/one blocked contender; separate SQLite cross-mode adversary ensures absent contention is not substituted for exclusion proof.',
+        ],
     ];
 }

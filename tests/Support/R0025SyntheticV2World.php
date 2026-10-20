@@ -160,7 +160,7 @@ final class R0025SyntheticV2World
             });
         }
         try {
-            $run = $pipeline->runDaily($date, 'api');
+            $run = isset($layout['run_workflow']) ? $layout['run_workflow']($pipeline, $date) : $pipeline->runDaily($date, 'api');
         } finally {
             if ($forcedLabel !== null) {
                 \App\Models\EodRun::getEventDispatcher()->forget('eloquent.creating: '.\App\Models\EodRun::class);

@@ -526,7 +526,9 @@ class EodRunRepository
         $severity = $this->normalizeSeverity($severity);
         $message = $this->truncateMessage($message);
 
-        return EodRunEvent::query()->create([
+        return DB::transaction(function () use ($run, $stage, $eventType, $severity, $message, $reasonCode, $payload, $now) {
+        DB::table('eod_runs')->where('run_id', $run->run_id)->lockForUpdate()->first();
+        $event = EodRunEvent::query()->create([
             'run_id' => $run->run_id,
             'trade_date_requested' => $run->trade_date_requested,
             'event_time' => $now,
@@ -538,6 +540,8 @@ class EodRunRepository
             'event_payload_json' => empty($payload) ? null : json_encode($payload),
             'created_at' => $now,
         ]);
+        return $event;
+        }, 3);
     }
 
     public function failStage(EodRun $run, $stage, $reasonCode, $message, array $payload = [])
@@ -814,9 +818,17 @@ class EodRunRepository
 
     private function setDateOwnerFence($requestedDate, int $runId): void
     {
+        $now = Carbon::now(config('market_data.platform.timezone'));
+        $prior = DB::table('eod_run_owner_fences')->where('trade_date_requested', $requestedDate)->first();
+        $ttl = (int) config('market_data.pipeline.active_run_stale_minutes', 1440);
         DB::table('eod_run_owner_fences')->where('trade_date_requested', $requestedDate)->update([
             'owner_run_id' => $runId,
-            'updated_at' => Carbon::now(config('market_data.platform.timezone')),
+            // The immutable, monotonically allocated owner_run_id is the fencing token.
+            'acquired_at' => $prior && (int) $prior->owner_run_id === $runId && $prior->acquired_at ? $prior->acquired_at : $now,
+            'heartbeat_at' => $now,
+            'expires_at' => $ttl > 0 ? $now->copy()->addMinutes($ttl) : null,
+            'released_at' => null,
+            'updated_at' => $now,
         ]);
     }
 
@@ -1100,6 +1112,13 @@ class EodRunRepository
         $run->updated_at = $now;
         $run->save();
 
+        if ($run->lifecycle_state === 'COMPLETED' && $this->isPublishCriticalMode($run->request_mode)) {
+            $released = DB::table('eod_run_owner_fences')->where('trade_date_requested', $run->trade_date_requested)
+                ->where('owner_run_id', $run->run_id)->whereNull('released_at')->update(['released_at' => $now]);
+            if ($released) $this->appendEvent($run, $run->stage, 'RUN_OWNER_RELEASED', 'INFO',
+                'Publish-critical owner completed; historical fencing token retained.', null,
+                ['owner_run_id' => (int) $run->run_id, 'fencing_token' => (int) $run->run_id, 'released_at' => (string) $now]);
+        }
         return $run->fresh();
     }
 }

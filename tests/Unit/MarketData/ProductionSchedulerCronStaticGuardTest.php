@@ -35,7 +35,7 @@ class ProductionSchedulerCronStaticGuardTest extends TestCase
             'MARKET_DATA_PLATFORM_EOD_CUTOFF_TIME=HH:MM:SS',
             'MARKET_DATA_SCHEDULER_OUTPUT_PATH',
             'MARKET_DATA_SCHEDULER_WITHOUT_OVERLAPPING_MINUTES',
-            'market-data:daily --latest',
+            'market-data:scheduled',
             'scheduler_status=SUCCESS',
             'scheduler_status=FAILURE',
             'pointer_switched=false',

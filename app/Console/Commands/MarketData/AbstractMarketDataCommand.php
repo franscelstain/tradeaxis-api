@@ -109,7 +109,11 @@ abstract class AbstractMarketDataCommand extends Command
         }
 
         if ($this->option('latest')) {
-            return Carbon::now(config('market_data.platform.timezone'))->toDateString();
+            $target = app(\App\Infrastructure\Persistence\MarketData\MarketCalendarRepository::class)->latestExpectedSession();
+            if ($target['latest_expected_trade_date'] === null) {
+                throw new \RuntimeException('MARKET_CALENDAR_EXPECTED_DATE_UNAVAILABLE: no verified completed session resolves the scheduled target.');
+            }
+            return $target['latest_expected_trade_date'];
         }
 
         return Carbon::now(config('market_data.platform.timezone'))->toDateString();

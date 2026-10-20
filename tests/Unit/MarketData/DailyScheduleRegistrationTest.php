@@ -63,18 +63,18 @@ class DailyScheduleRegistrationTest extends TestCase
                 'market_data.pipeline.daily_enabled' => true,
             ], $configOverride))),
             function (Event $event) {
-                return strpos((string) $event->command, 'market-data:daily --latest') !== false;
+                return strpos((string) $event->command, 'market-data:scheduled') !== false;
             }
         ));
 
-        $this->assertCount(1, $events, 'Exactly one daily market-data import must be scheduled.');
+        $this->assertCount(1, $events, 'Exactly one scheduled market-data workflow must be registered.');
 
         return $events[0];
     }
 
-    public function test_the_daily_import_is_scheduled(): void
+    public function test_the_daily_workflow_is_scheduled(): void
     {
-        $this->assertStringContainsString('market-data:daily --latest', $this->dailyEvent()->command);
+        $this->assertStringContainsString('market-data:scheduled', $this->dailyEvent()->command);
     }
 
     /**
@@ -148,7 +148,7 @@ class DailyScheduleRegistrationTest extends TestCase
 
         $this->assertCount(1, $events);
         $this->assertStringContainsString('market-data:reconcile:publication-projection --latest', $events[0]->command);
-        $this->assertStringNotContainsString('market-data:daily --latest', $events[0]->command);
+        $this->assertStringNotContainsString('market-data:scheduled', $events[0]->command);
     }
 
     public function test_daily_and_reconciliation_schedules_are_both_registered_when_daily_is_enabled(): void

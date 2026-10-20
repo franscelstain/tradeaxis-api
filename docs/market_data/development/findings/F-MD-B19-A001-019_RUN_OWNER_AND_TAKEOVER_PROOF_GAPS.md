@@ -4,7 +4,7 @@
 - Stage / Attempt / Baseline: `MD-B19` / `MD-B19-A001` / `MD-B19-A001-BL001`
 - Raised at: 2026-10-19T17:13:15+07:00
 - Severity: `P2`
-- Status: `OPEN`
+- Status: `RESOLVED`
 
 ## Measured runtime gaps
 
@@ -29,3 +29,8 @@ Eleven of the thirteen formerly unassessed owner predicates now have proposed E0
 E027 independent review accepted six bounded owner bases and held MD-S077-R0003/R0004/R0013/R0034/R0035 for MariaDB and missing-fence proof. E028 uses an isolated migrated MariaDB InnoDB schema and two independent PHP processes behind a held date key: one active owner survives across source/request modes, the contender persists a non-readable BLOCKED run, and the owner fence names the surviving run. The actual deadlock observed without transaction retry is converted by a bounded retry into an audited owner conflict. Direct repository seal and promotion with no fence now refuse before candidate work; an injected non-owner cannot finalize readable, seal or promote. A prior current pointer/publication remains unchanged, and its historical raw read still works. The five held bases have successor proof, not five additional counted bases.
 
 The locked taxonomy is now exercised on separate exact cases. A verified same-target candidate is SKIPPED while the current pointer and readable publication remain unchanged; a changed unforced replacement remains HELD/RUN_LOCK_CONFLICT. A cross-mode fenced worker persists COMPLETED/BLOCKED/NOT_READABLE with registered RUN_LOCK_CONFLICT and both run IDs, without becoming active. The MariaDB status enum accepts SKIPPED/BLOCKED. Both formerly unproved taxonomy predicates have new proposed bases, subject to independent review. No frozen status text was changed.
+
+
+## E028 independent resolution
+
+The Project Owner reports E028 independent review accepted the five repaired owner predicates MD-S077-R0003/R0004/R0013/R0034/R0035 and the two exact taxonomy predicates MD-S067-R0016/R0017. Combined with the previously accepted owner bases, the ownership_and_recovery family is 27/27 accepted. E026/E027/E028 remain immutable. No terminal meaning was changed beyond the authorized SKIPPED and BLOCKED taxonomy implementation; existing unforced replacement remains HELD.

@@ -179,3 +179,7 @@ Same A001/BL001/freeze;accepted E023 retained.82 independently mapped bases plus
 ## 2026-10-19 — E025 executed admission/audit core checkpoint
 
 Same A001/BL001/freeze;accepted E024 retained.72 new bases and7 scoped revalidations;476/750 reviewed,21 complete families,formalzero. Invalid execution metadata/stale final completeness corrected under existing authority. Conditional25 not entered;R0324 HELD D008/F016. No strategy,applicability,denominator,B18 or candidate change. MD-DEP-0025 ACTIVE.
+
+## 2026-10-20 — E029 operational runtime proof package
+
+Same MD-B19-A001/BL001 and frozen strategy; E028 accepted by independent external review as supplied by Project Owner. E029 adds 34 proposed per-predicate bases, retains 529 accepted, and keeps formal SATISFIED zero. Warning_count remains persisted NULL under D003. F018 incident authority, R0324 D008/F016, candidate-v5 and MD-DEP-0025 are preserved. No denominator or applicability changes.

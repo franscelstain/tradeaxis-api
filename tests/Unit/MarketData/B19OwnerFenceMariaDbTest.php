@@ -31,6 +31,8 @@ class B19OwnerFenceMariaDbTest extends TestCase
         DB::connection('b19_owner')->statement('INSERT INTO eod_reason_codes SELECT * FROM `tradeaxis_testing`.`eod_reason_codes`');
         require_once base_path('database/migrations/2026_10_19_000001_create_eod_run_owner_fences.php');
         (new CreateEodRunOwnerFences())->up();
+        require_once base_path('database/migrations/2026_10_20_000002_add_date_owner_lease_evidence.php');
+        (new AddDateOwnerLeaseEvidence())->up();
     }
 
     protected function tearDown(): void
@@ -106,6 +108,10 @@ class B19OwnerFenceMariaDbTest extends TestCase
             $this->assertStringContainsString('RUN_OWNER_CONFLICT', implode(' ', array_column($outcomes, 'reason')));
             $ownerId = (int) $db->table('eod_run_owner_fences')->where('trade_date_requested', '2026-03-21')->value('owner_run_id');
             $this->assertGreaterThan(0, $ownerId);
+            $lease = $db->table('eod_run_owner_fences')->where('trade_date_requested','2026-03-21')->first();
+            $this->assertNotNull($lease->acquired_at);
+            $this->assertNotNull($lease->heartbeat_at);
+            $this->assertGreaterThan($lease->heartbeat_at,$lease->expires_at);
             $this->assertSame(1, $db->table('eod_runs')->where('trade_date_requested', '2026-03-21')
                 ->whereIn('lifecycle_state', ['PENDING', 'RUNNING', 'FINALIZING'])->count());
             $this->assertSame($ownerId, (int) $db->table('eod_runs')->where('trade_date_requested', '2026-03-21')
@@ -170,5 +176,28 @@ class B19OwnerFenceMariaDbTest extends TestCase
                 if (is_resource($process)) proc_terminate($process);
             }
         }
+    }
+
+    public function test_terminal_status_upgrade_preserves_old_outcomes_and_refuses_destructive_downgrade(): void
+    {
+        $db = DB::connection('b19_owner');
+        $db->statement("ALTER TABLE eod_runs MODIFY terminal_status ENUM('SUCCESS','HELD','FAILED') NULL");
+        foreach (['SUCCESS','HELD','FAILED'] as $status) $db->table('eod_runs')->insert([
+            'trade_date_requested'=>'2026-03-21','lifecycle_state'=>'COMPLETED','terminal_status'=>$status,
+            'quality_gate_state'=>'BLOCKED','publishability_state'=>'NOT_READABLE','stage'=>'FINALIZE','source'=>'api',
+            'started_at'=>'2026-03-21 18:00:00','created_at'=>'2026-03-21 18:00:00','updated_at'=>'2026-03-21 18:00:00',
+        ]);
+        $before = $db->table('eod_runs')->orderBy('run_id')->get()->toJson();
+        require_once base_path('database/migrations/2026_10_19_000002_expand_eod_run_terminal_status_for_fenced_outcomes.php');
+        $migration = new ExpandEodRunTerminalStatusForFencedOutcomes(); $migration->up();
+        $this->assertSame($before, $db->table('eod_runs')->orderBy('run_id')->get()->toJson());
+        foreach (['SKIPPED','BLOCKED'] as $status) {
+            $row = (array) $db->table('eod_runs')->first(); unset($row['run_id']); $row['terminal_status']=$status;
+            $id=$db->table('eod_runs')->insertGetId($row);
+            $this->assertSame($status,$db->table('eod_runs')->where('run_id',$id)->value('terminal_status'));
+        }
+        try { $migration->down(); $this->fail('Downgrade discarded governed terminal meanings.'); }
+        catch (RuntimeException $e) { $this->assertStringContainsString('RUN_STATUS_ROLLBACK_BLOCKED',$e->getMessage()); }
+        $this->assertSame(5,$db->table('eod_runs')->count());
     }
 }

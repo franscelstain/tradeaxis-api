@@ -830,6 +830,10 @@ trait UsesMarketDataSqlite
         }
 
         $schema->create('eod_run_owner_fences', function (Blueprint $table) {
+            $table->dateTime('acquired_at')->nullable();
+            $table->dateTime('heartbeat_at')->nullable();
+            $table->dateTime('expires_at')->nullable();
+            $table->dateTime('released_at')->nullable();
             $table->date('trade_date_requested')->primary();
             $table->integer('owner_run_id')->nullable();
             $table->dateTime('updated_at');

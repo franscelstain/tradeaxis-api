@@ -13,6 +13,29 @@ use Illuminate\Support\Facades\Schema;
  */
 class MarketCalendarRepository
 {
+    public function latestExpectedSession($asOf = null): array
+    {
+        $clock = $asOf === null ? \Carbon\Carbon::now(config('market_data.platform.timezone'))
+            : \Carbon\Carbon::parse($asOf, config('market_data.platform.timezone'));
+        $today = $clock->toDateString();
+        $knownAt = $clock->toDateTimeString();
+        $dates = DB::table('md_market_calendar_revisions')->where('cal_date', '<=', $today)
+            ->where('recorded_at', '<=', $knownAt)->where('market_code', 'IDX')->where('market_segment', 'REGULAR')
+            ->distinct()->orderByDesc('cal_date')->pluck('cal_date')->all();
+        $latestState = 'MISSING';
+        $target = null;
+        foreach ($dates as $date) {
+            $context = $this->sessionContext((string) $date, $knownAt);
+            if ((string) $date === $today) $latestState = $context['session_state'];
+            if ((string) $date === $today && $clock->format('H:i:s') < config('market_data.platform.cutoff_time')) continue;
+            if ($context['is_trading_day'] !== true || $context['session_state'] !== 'COMPLETED') continue;
+            $this->assertCompletedRegularSession((string) $date, $knownAt);
+            $target = (string) $date;
+            break;
+        }
+        return ['latest_expected_trade_date' => $target, 'current_session_state' => $latestState, 'as_of' => $knownAt];
+    }
+
     public function assertCompletedRegularSession($tradeDate, $knownAt = null)
     {
         $context = $this->sessionContext($tradeDate, $knownAt);

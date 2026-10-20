@@ -1,0 +1,130 @@
+{
+  "evidence_id": "E-MD-B19-A001-029",
+  "record_type": "EVIDENCE",
+  "attempt": "MD-B19-A001",
+  "baseline": "MD-B19-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "accepted_baseline": {
+    "independently_accepted_reviewed_bases": 529,
+    "denominator": 750,
+    "formal_satisfied": 0,
+    "E028_immutable": true
+  },
+  "E029_proposed_bases": {
+    "new": 34,
+    "by_family": {
+      "commands_and_runbook": 2,
+      "observability_minimum": 18,
+      "scheduling_and_locking": 14
+    },
+    "basis_map": "E029_per_predicate_map.json"
+  },
+  "proposed_after_E029": {
+    "reviewed_basis_map": 563,
+    "denominator": 750,
+    "accepted_after_independent_review": 529,
+    "formal_satisfied": 0,
+    "without_basis": 187,
+    "families_without_guard": 12,
+    "operations_gate": "FAIL"
+  },
+  "held_predicates": {
+    "MD-S064-R0013": "No complete independently executed command-specific positive/negative workflow and mutation proof was retained for this obligation in E029; runtime help or mock adapter tests are not counted as execution.",
+    "MD-S064-R0014": "No complete independently executed command-specific positive/negative workflow and mutation proof was retained for this obligation in E029; runtime help or mock adapter tests are not counted as execution.",
+    "MD-S064-R0015": "No complete independently executed command-specific positive/negative workflow and mutation proof was retained for this obligation in E029; runtime help or mock adapter tests are not counted as execution.",
+    "MD-S070-R0005": "D-MD-B19-A001-003 preserves persisted warning_count NULL and records that no warning population is defined; invalid/hard-reject counts are proved, but a warning count cannot be manufactured.",
+    "MD-S078-R0002": "The scheduled command verifies publication status but does not execute an authority-bound freshness/SLO evaluation; F018 severity escalation and closure remain held.",
+    "MD-S078-R0003": "Owner exclusion and repeated-current idempotency are exercised, but full logical-key partitioning plus linked durable checkpoint/retry semantics and no duplicate canonical facts are not completely proved.",
+    "MD-S078-R0004": "The migrations and real owner token are verified, but every direct state-changing repository entry point and every fence validation boundary have not been exhaustively exercised.",
+    "MD-S078-R0006": "Deployment cron, notification routing, credentials, writable production paths, stale monitoring and consecutive-session rehearsal are outside the available runtime environment.",
+    "MD-S078-R0007": "No production provider activation or SLO/alert evaluation was executed; F018 severity and incident-closure authority remains unresolved.",
+    "MD-S078-R0009": "No new schedule-specific mutation proof was executed for automatic repair, factor verification or force-content mutation.",
+    "MD-S078-R0015": "The batch does not claim deployment readiness, scheduler cache-lock coverage for all manual entry paths or provider-production proof.",
+    "MD-S078-R0017": "No test in this batch establishes the absence of work outside scheduler locking; only the DB owner fence paths exercised are claimed.",
+    "MD-S078-R0019": "The evidence pairs schedule registration with execution records and does not claim a clean schedule record establishes correctness; no standalone negative governance guard was issued for this caveat.",
+    "MD-S036-R0013": "No complete independently executed command-specific positive/negative workflow and mutation proof was retained for this obligation in E029; runtime help or mock adapter tests are not counted as execution.",
+    "MD-S064-R0001": "No complete independently executed command-specific positive/negative workflow and mutation proof was retained for this obligation in E029; runtime help or mock adapter tests are not counted as execution.",
+    "MD-S064-R0004": "No complete independently executed command-specific positive/negative workflow and mutation proof was retained for this obligation in E029; runtime help or mock adapter tests are not counted as execution.",
+    "MD-S064-R0005": "No complete independently executed command-specific positive/negative workflow and mutation proof was retained for this obligation in E029; runtime help or mock adapter tests are not counted as execution.",
+    "MD-S064-R0006": "No complete independently executed command-specific positive/negative workflow and mutation proof was retained for this obligation in E029; runtime help or mock adapter tests are not counted as execution.",
+    "MD-S064-R0007": "No complete independently executed command-specific positive/negative workflow and mutation proof was retained for this obligation in E029; runtime help or mock adapter tests are not counted as execution.",
+    "MD-S064-R0008": "No complete independently executed command-specific positive/negative workflow and mutation proof was retained for this obligation in E029; runtime help or mock adapter tests are not counted as execution.",
+    "MD-S064-R0009": "No complete independently executed command-specific positive/negative workflow and mutation proof was retained for this obligation in E029; runtime help or mock adapter tests are not counted as execution.",
+    "MD-S064-R0011": "No complete independently executed command-specific positive/negative workflow and mutation proof was retained for this obligation in E029; runtime help or mock adapter tests are not counted as execution.",
+    "MD-S064-R0012": "No complete independently executed command-specific positive/negative workflow and mutation proof was retained for this obligation in E029; runtime help or mock adapter tests are not counted as execution.",
+    "MD-S064-R0016": "No complete independently executed command-specific positive/negative workflow and mutation proof was retained for this obligation in E029; runtime help or mock adapter tests are not counted as execution."
+  },
+  "authority_revalidation": {
+    "warning_count": "D-MD-B19-A001-003 Option B requires persisted value mirror; NULL remains NULL. WARN-event derivation/write removed. Current status exposes persisted NULL and provenance.",
+    "E028_catalog": "Runtime catalog revalidated at 43 commands after registering scheduled/status; E028 accepted MD-S064-R0010 retained, not recounted.",
+    "F018": "R0011/R0012 severity escalation and incident closure held for Project Owner decision.",
+    "R0324": "HELD under D008/F016.",
+    "MD-DEP-0025": "ACTIVE; candidate-v5 continuity preserved."
+  },
+  "runtime_results": {
+    "operational_commands": "4 tests,106 assertions, MariaDB",
+    "observability": "3 tests,70 assertions, MariaDB",
+    "calendar": "2 tests,12 assertions,SQLite mirror",
+    "owner_fence_and_migration": "2 tests,44 assertions, MariaDB",
+    "schedule_registration": "11 tests,29 assertions",
+    "catalog": "1 test,89 assertions",
+    "warning_authority_revalidation": "21 tests,317 assertions",
+    "command_guards": "8+5+64+2 tests,422 assertions",
+    "affected_pipeline_regressions": "3 focused tests,4765 assertions"
+  },
+  "affected_previous_bases": [
+    "D-MD-B19-A001-003 / MD-S075-R0047 warning_count NULL mirror",
+    "E028 owner MariaDB contention and fence migration",
+    "E028 runtime command catalog MD-S064-R0010",
+    "E028 owner taxonomy and current publication preservation"
+  ],
+  "new_source_defects_corrected": [
+    "removed unsupported WARN-event-derived warning_count writes",
+    "operational status now surfaces persisted source_final_reason_code and coverage-held stage from matching persisted event"
+  ],
+  "known_failures": [
+    "alias meaning F009/E013",
+    "coverage static-guard failure",
+    "historical candidate-v5 build-identity failures retained"
+  ],
+  "scope_exclusions": [
+    "freshness_and_slo not entered",
+    "F018 severity/closure rules not inferred",
+    "no full PHPUnit suite run"
+  ],
+  "single_exact_resume_point": "MD-B19-A001: independent external review of E029 proposed 34 bases (commands2, observability18, scheduling/calendar14); accepted baseline 529/750, E029 pending review, formal SATISFIED 0. After review, continue the 24 unproved predicates in the selected families; keep D-MD-B19-A001-003 warning_count NULL limitation, F018 severity/closure, R0324 D008/F016, and MD-DEP-0025 ACTIVE; do not enter freshness_and_slo, create candidate-v6, close B19, or mutate Git.",
+  "role_scope": "CURRENT_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "stage_id": "MD-B19",
+  "work_id": "MD-B19-A001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261018-001",
+  "ci_id": "CI-MD-B19-A001-001",
+  "issued_at": "2026-10-20T08:30:00+07:00",
+  "evidence_type": "OPERATIONAL_COMMANDS_OBSERVABILITY_CALENDAR_AND_LOCKING_PROOF",
+  "verdict": "PENDING_INDEPENDENT_REVIEW",
+  "raw_evidence_inventory": {
+    "path": "storage/app/market-data/evidence/MD-B19-A001/E029_raw_inventory.json",
+    "sha256": "6057408aa5ea105b4297e600a25d1bdb93b052a8a92774df1ccb56ab683dd71a",
+    "file_count": 63
+  },
+  "changed_source_files": [
+    "app/Application/MarketData/Services/MarketDataPipelineService.php",
+    "app/Console/Commands/MarketData/AbstractMarketDataCommand.php",
+    "app/Console/Kernel.php",
+    "app/Infrastructure/Persistence/MarketData/EodRunRepository.php",
+    "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+    "app/Models/EodRunEvent.php",
+    "app/Application/MarketData/Services/MarketDataOperationalStatusService.php",
+    "app/Console/Commands/MarketData/OperationalStatusCommand.php",
+    "app/Console/Commands/MarketData/ScheduledWorkflowCommand.php",
+    "database/migrations/2026_10_20_000001_protect_market_data_run_event_trail.php",
+    "database/migrations/2026_10_20_000002_add_date_owner_lease_evidence.php"
+  ],
+  "execution_limits": [
+    "No full PHPUnit suite executed.",
+    "Calendar behavioral test uses SQLite mirror; MariaDB concurrency and persistence assertions are separate real-engine tests.",
+    "No production provider, deployment cron, notification, credentials, or production activation was exercised.",
+    "No temporary source mutant remains; database mutation probes were restored."
+  ],
+  "raw_execution_inventory_sha256": "6057408aa5ea105b4297e600a25d1bdb93b052a8a92774df1ccb56ab683dd71a"
+}

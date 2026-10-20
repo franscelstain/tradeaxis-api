@@ -49,6 +49,8 @@ use Laravel\Lumen\Console\Kernel as ConsoleKernel;
 class Kernel extends ConsoleKernel
 {
     protected $commands = [
+        \App\Console\Commands\MarketData\OperationalStatusCommand::class,
+        \App\Console\Commands\MarketData\ScheduledWorkflowCommand::class,
         \App\Console\Commands\SecurityIdentity\BootstrapFoundationCommand::class,
         IngestEodBarsCommand::class,
         AdmitStageEightConformantSuffixCommand::class,
@@ -114,7 +116,7 @@ class Kernel extends ConsoleKernel
             return;
         }
 
-        $event = $schedule->command('market-data:daily --latest')
+        $event = $schedule->command('market-data:scheduled')
             ->dailyAt(substr(config('market_data.platform.cutoff_time'), 0, 5))
             ->timezone($timezone)
             ->withoutOverlapping((int) config('market_data.scheduler.without_overlapping_minutes', 120));
@@ -157,7 +159,7 @@ class Kernel extends ConsoleKernel
 
         file_put_contents(
             $outputPath,
-            sprintf("[%s] scheduler_status=%s command=\"market-data:daily --latest\"\n", $timestamp, $status),
+            sprintf("[%s] scheduler_status=%s command=\"market-data:scheduled\"\n", $timestamp, $status),
             FILE_APPEND
         );
     }
