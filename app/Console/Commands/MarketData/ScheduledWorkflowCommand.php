@@ -8,6 +8,14 @@ use App\Infrastructure\Persistence\MarketData\MarketCalendarRepository;
 
 class ScheduledWorkflowCommand extends AbstractMarketDataCommand
 {
+    const EXIT_READABLE = 0;
+    const EXIT_INVALID_INPUT = 1;
+    const EXIT_HELD = 2;
+    const EXIT_RETRYABLE_FAILURE = 3;
+    const EXIT_INTEGRITY_FAILURE = 4;
+    const EXIT_LOCK_CONFLICT = 5;
+    const EXIT_BLOCKED_PROOF = 6;
+
     protected $signature = 'market-data:scheduled {--source_mode=}';
     protected $description = 'Run the governed latest completed session through import, promotion and verified operational status.';
 
@@ -20,7 +28,7 @@ class ScheduledWorkflowCommand extends AbstractMarketDataCommand
             'latest_canonicalized_trade_date' => null, 'latest_readable_trade_date' => null,
             'reason_codes' => [], 'observability_defects' => [], 'activation_state' => null,
             'next_action' => 'Inspect retained run evidence.'];
-        if (! $this->validateSourceModeString($this->option('source_mode'))) return 1;
+        if (! $this->validateSourceModeString($this->option('source_mode'))) return self::EXIT_INVALID_INPUT;
         try {
             $target = app(MarketCalendarRepository::class)->latestExpectedSession();
             $date = $target['latest_expected_trade_date'];
@@ -60,7 +68,39 @@ class ScheduledWorkflowCommand extends AbstractMarketDataCommand
         if ($run) $this->runRepository()->appendEvent($run, 'FINALIZE', 'SCHEDULER_OUTCOME',
             in_array($result['scheduler_outcome'], ['SUCCESS_READABLE', 'SKIPPED_ALREADY_READABLE'], true) ? 'INFO' : 'WARN',
             'Scheduled workflow outcome recorded from run and verified publication facts.', null, $result);
+        $result['process_exit_code'] = $this->processExitCode($result);
         $this->line(json_encode($result, JSON_UNESCAPED_SLASHES));
-        return in_array($result['scheduler_outcome'], ['SUCCESS_READABLE', 'SKIPPED_ALREADY_READABLE'], true) ? 0 : 2;
+        return $result['process_exit_code'];
+    }
+
+    /**
+     * Keep the operating-system result distinct from the persisted run taxonomy.
+     * The numeric values are stable command-interface categories; machine output
+     * continues to carry the full scheduler outcome and reason-code set.
+     */
+    private function processExitCode(array $result): int
+    {
+        $outcome = (string) ($result['scheduler_outcome'] ?? 'FAILED');
+        if (in_array($outcome, ['SUCCESS_READABLE', 'SKIPPED_ALREADY_READABLE'], true)) {
+            return self::EXIT_READABLE;
+        }
+        if ($outcome === 'SKIPPED_LOCKED' || in_array('RUN_LOCK_CONFLICT', $result['reason_codes'] ?? [], true)) {
+            return self::EXIT_LOCK_CONFLICT;
+        }
+
+        $reasonCodes = array_map('strtoupper', $result['reason_codes'] ?? []);
+        if (array_intersect($reasonCodes, ['RUN_SOURCE_TIMEOUT', 'RUN_SOURCE_RATE_LIMIT']) !== []) {
+            return self::EXIT_RETRYABLE_FAILURE;
+        }
+        foreach ($reasonCodes as $reasonCode) {
+            if (preg_match('/(?:INTEGRITY|_HASH_MISMATCH|_MANIFEST_INVALID|_PROOF_INCOMPLETE)/', $reasonCode)) {
+                return self::EXIT_INTEGRITY_FAILURE;
+            }
+        }
+        if ($outcome === 'SUCCESS_HELD') {
+            return self::EXIT_HELD;
+        }
+
+        return self::EXIT_BLOCKED_PROOF;
     }
 }

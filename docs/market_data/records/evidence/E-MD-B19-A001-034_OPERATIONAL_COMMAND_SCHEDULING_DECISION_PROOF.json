@@ -1,0 +1,75 @@
+{
+  "evidence_id": "E-MD-B19-A001-034",
+  "stage": "MD-B19",
+  "attempt": "MD-B19-A001",
+  "issued_at": "2026-10-20T21:38:12+07:00",
+  "purpose": "Bounded command/runbook, scheduled-chain and operator-decision predicate proof after E033.",
+  "accepted_baseline": 595,
+  "proposed_reviewed_total": 620,
+  "denominator": 750,
+  "formal_satisfied": 0,
+  "new_proposed_bases": {
+    "commands_and_runbook": 6,
+    "scheduling_and_locking": 1,
+    "operator_decision_trees": 18,
+    "total": 25
+  },
+  "per_predicate_map": "storage/app/market-data/evidence/MD-B19-A001/E034_per_predicate_map.json",
+  "revalidated_predicates": [],
+  "source_changes": [],
+  "test_support_correction": {
+    "file": "tests/Unit/MarketData/B19RunEvidenceMariaDbProofTest.php",
+    "reason": "The MariaDB append-only migration correctly refused the test's former UPDATE/DELETE mutation of persisted run events.",
+    "change": "The test now asserts RUN_EVENT_APPEND_ONLY for both operations, confirms persisted event bytes/count remain unchanged, exports the untouched run as ADMITTED_COMPLETE, and delegates contradictory payload semantics to B19RunEvidenceTelemetryProofTest.",
+    "production_change": false
+  },
+  "executions": [
+    {"command": "vendor/bin/phpunit tests/Unit/MarketData/B19OperationalCommandsMariaDbTest.php", "result": "PASS", "tests": 4, "assertions": 106, "substrate": "MariaDB"},
+    {"command": "vendor/bin/phpunit tests/Unit/MarketData/B19OwnerFenceMariaDbTest.php", "result": "PASS", "tests": 2, "assertions": 44, "substrate": "MariaDB; isolated InnoDB two-process owner race"},
+    {"command": "vendor/bin/phpunit tests/Unit/MarketData/B19CorrectionMariaDbProofTest.php", "result": "PASS", "tests": 2, "assertions": 103, "substrate": "MariaDB"},
+    {"command": "vendor/bin/phpunit tests/Unit/MarketData/B19RunEvidenceMariaDbProofTest.php (pre-correction attempt)", "result": "FAIL_FIXTURE_CONFLICT", "tests": 1, "assertions": 103, "substrate": "MariaDB", "reason": "The test attempted UPDATE/DELETE against the append-only event trail; MariaDB correctly raised RUN_EVENT_APPEND_ONLY. No production defect or persisted mutation; the revised guard test passes below."},
+    {"command": "vendor/bin/phpunit tests/Unit/MarketData/B19RunEvidenceMariaDbProofTest.php", "result": "PASS", "tests": 1, "assertions": 182, "substrate": "MariaDB"},
+    {"command": "vendor/bin/phpunit tests/Unit/MarketData/B19ReplayAuditPackProofTest.php", "result": "PASS", "tests": 23, "assertions": 168, "substrate": "PHPUnit execution fixture"},
+    {"command": "vendor/bin/phpunit tests/Unit/MarketData/B19RunEvidenceTelemetryProofTest.php", "result": "PASS", "tests": 53, "assertions": 140, "substrate": "PHPUnit execution fixture"},
+    {"command": "vendor/bin/phpunit tests/Unit/MarketData/B19RuntimeCommandCatalogTest.php", "result": "PASS", "tests": 1, "assertions": 89, "substrate": "registered Artisan help/runtime catalog"},
+    {"command": "vendor/bin/phpunit tests/Unit/MarketData/B18DegradedObservationDefectCorpusTest.php", "result": "PASS", "tests": 7, "assertions": 23, "substrate": "application behavior fixtures"},
+    {"command": "vendor/bin/phpunit tests/Unit/MarketData/ReplayComparisonDetectsDivergenceTest.php", "result": "PASS", "tests": 29, "assertions": 84, "substrate": "replay comparator behavior"},
+    {"command": "vendor/bin/phpunit tests/Unit/MarketData/MarketDataPipelineIntegrationTest.php --filter=<listed E034 decision methods>", "result": "PASS", "tests": 13, "assertions": 223, "substrate": "pipeline integration fixture"},
+    {"command": "vendor/bin/phpunit tests/Unit/MarketData/OpsCommandSurfaceTest.php --filter=<listed E034 command methods>", "result": "PASS", "tests": 10, "assertions": 63, "substrate": "Laravel CommandTester; command output paths include mocked service seams"},
+    {"command": "vendor/bin/phpunit tests/Unit/MarketData/PublicApiEodBarsAdapterTest.php --filter=<schema controls>", "result": "PASS", "tests": 2, "assertions": 5, "substrate": "provider adapter behavior"},
+    {"command": "vendor/bin/phpunit tests/Unit/MarketData/ReplayVerificationServiceTest.php --filter=<mismatch controls>", "result": "PASS", "tests": 3, "assertions": 9, "substrate": "replay comparison behavior"},
+    {"command": "vendor/bin/phpunit tests/Unit/MarketData/MarketDataOperationsProofGate.php", "result": "FAIL_EXPECTED_OPEN_STAGE", "predicates_with_reviewed_basis": 620, "predicates_without_a_reviewed_basis": 130, "families_without_a_guard": 8, "errors": "Only the deliberately open incomplete-stage conditions: eight GUARD_NOT_ASSIGNED and PREDICATES_WITHOUT_A_REVIEWED_PROOF_BASIS:130"}
+  ],
+  "observed_unrelated_regression": {
+    "command": "vendor/bin/phpunit tests/Unit/MarketData/B18ReplayComparisonExhaustivenessTest.php",
+    "result": "FAIL",
+    "tests": 94,
+    "assertions": 267,
+    "failures": 69,
+    "signature": "mostly expected MATCH/MISMATCH/FAIL/EXPECTED_DEGRADE but actual NOT_ADMISSIBLE/BLOCKED",
+    "disposition": "No replay production, replay fixture or B18 source changed in this batch. Preserved visibly; not folded into an expected-failure aggregate, not fixed or treated as PASS, and no historical B18 closure is changed."
+  },
+  "proof_limits": {
+    "negative_sensitivity": "The per-row negative guards use missing, conflicting, failed, malformed, locked or unsealed inputs and assert exact refusal/state/pointer output. These are behavioral defect-sensitive controls; no production source mutation was applied in this batch.",
+    "deployment": "No scheduler/cron activation, provider-production credential, notification-route, multi-session rehearsal, or deployment proof is claimed.",
+    "severity_and_closure": "F018 escalation thresholds, incident severity escalation and closure remain held; no severity or closure rule is inferred.",
+    "full_suite": "No full-suite execution or pass is claimed."
+  },
+  "remaining_unproved": {
+    "commands_and_runbook": ["MD-S064-R0001", "MD-S064-R0006", "MD-S064-R0007", "MD-S064-R0009", "MD-S064-R0011", "MD-S064-R0012", "MD-S064-R0013", "MD-S064-R0016"],
+    "scheduling_and_locking": ["MD-S078-R0003", "MD-S078-R0004", "MD-S078-R0006", "MD-S078-R0007", "MD-S078-R0009", "MD-S078-R0015", "MD-S078-R0017", "MD-S078-R0019"],
+    "operator_decision_trees": ["MD-S071-R0002", "MD-S071-R0004", "MD-S071-R0006", "MD-S071-R0008", "MD-S071-R0009", "MD-S071-R0010", "MD-S071-R0013", "MD-S071-R0014", "MD-S071-R0016", "MD-S071-R0018", "MD-S071-R0021", "MD-S071-R0024", "MD-S071-R0025", "MD-S071-R0026", "MD-S071-R0027", "MD-S071-R0028", "MD-S071-R0029", "MD-S071-R0036", "MD-S071-R0037", "MD-S071-R0038", "MD-S071-R0039", "MD-S071-R0040", "MD-S071-R0041", "MD-S071-R0042", "MD-S071-R0048"]
+  },
+  "preserved_governance": {
+    "D003_warning_count": "persisted mirror; NULL remains NULL; no WARN-derived population",
+    "F018": "OPEN; severity escalation and incident closure decision remains unresolved",
+    "R0324": "HELD under D008/F016",
+    "MD-DEP-0025": "ACTIVE; frozen candidate-v5 comparison preserved",
+    "E032_residual_holds": ["MD-S053-R0029", "MD-S053-R0182", "MD-S059-R0072", "MD-S059-R0074", "MD-S059-R0140", "MD-S074-R0003", "MD-S074-R0011", "MD-S074-R0013", "MD-S001-R0087", "MD-S001-R0088", "MD-S082-R0018"],
+    "candidate": "v5 preserved; no v6",
+    "formal_satisfied": "0/750",
+    "historical_B18": "No source or authority changes; the observed B18 replay test failure is explicitly reported above."
+  },
+  "status": "ISSUED_FOR_INDEPENDENT_REVIEW",
+  "single_exact_resume_point": "MD-B19-A001: continue the eight command/runbook, eight scheduling/locking, and twenty-five operator-decision predicates still without a candidate basis; keep F018 severity/closure rows held pending Project Owner authority, retain R0324 under D008/F016 and MD-DEP-0025 ACTIVE; accepted baseline 595/750, E034 candidate 620/750, formal SATISFIED 0/750."
+}

@@ -43,6 +43,7 @@ class B19OperationalCommandsMariaDbTest extends TestCase
             [$code, $output] = $this->command(ScheduledWorkflowCommand::class, ['--source_mode' => 'api']);
             $this->assertSame(0, $code, $output);
             $outcome = json_decode($output, true);
+            $this->assertSame(0, $outcome['process_exit_code']);
             $this->assertSchedulerOutcomeShape($outcome);
             $this->assertSame('SUCCESS_READABLE', $outcome['scheduler_outcome']);
             $this->assertSame($date, $outcome['requested_date']);
@@ -53,6 +54,7 @@ class B19OperationalCommandsMariaDbTest extends TestCase
         [$code, $retry] = $this->command(ScheduledWorkflowCommand::class, ['--source_mode' => 'api']);
         $this->assertSame(0, $code, $retry); $retry = json_decode($retry,true);
         $this->assertSame('SKIPPED_ALREADY_READABLE', $retry['scheduler_outcome']);
+        $this->assertSame(0, $retry['process_exit_code']);
         $this->assertSame($outcome['publication_id'], $retry['publication_id']);
         $this->assertSame($before, [DB::table('md_source_observations')->count(), DB::table('eod_runs')->count(), DB::table('eod_current_publication_pointer')->get()->toJson()]);
         $this->assertSame(2, DB::table('eod_run_events')->where('run_id',$world['run_id'])->where('event_type','SCHEDULER_OUTCOME')->count());
@@ -101,7 +103,8 @@ class B19OperationalCommandsMariaDbTest extends TestCase
         Carbon::setTestNow('2030-01-03 10:30:00'); $mode='outage'; $calls=0;
         [$code,$output]=$this->command(ScheduledWorkflowCommand::class,['--source_mode'=>'api']);
         $outcome=json_decode($output,true);
-        $this->assertSame(2,$code,$output); $this->assertSame('SUCCESS_HELD',$outcome['scheduler_outcome']);
+        $this->assertSame(3,$code,$output); $this->assertSame('SUCCESS_HELD',$outcome['scheduler_outcome']);
+        $this->assertSame(3, $outcome['process_exit_code']);
         $this->assertSchedulerOutcomeShape($outcome);
         $this->assertSame('2030-01-02',$outcome['requested_date']);
         $run=EodRun::findOrFail($outcome['run_id']);
@@ -130,6 +133,32 @@ class B19OperationalCommandsMariaDbTest extends TestCase
         $this->retain('scheduler_failed',['outcome'=>$outcome,'run'=>$run,'status'=>$status]);
     }
 
+    public function test_scheduled_nonretryable_low_coverage_uses_held_exit_without_readable_pointer(): void
+    {
+        $body = file_get_contents(R0025SyntheticV2World::packagePath().'/inputs/provider_response.json');
+        $calls = 0;
+        $world = R0025SyntheticV2World::build(['http_fetcher' => function () use ($body, &$calls) {
+            $calls++;
+            return ['status' => 200, 'body' => $body, 'headers' => ['Content-Type' => 'application/json']];
+        }]);
+        $this->app->instance(MarketDataPipelineService::class, $world['pipeline']);
+        $calendar = (array) DB::table('md_market_calendar_revisions')->where('cal_date', R0025SyntheticV2World::world()['trade_date'])->first();
+        unset($calendar['calendar_revision_id']);
+        foreach (['session_open_at','session_close_at','completed_at','recorded_at'] as $field) $calendar[$field] = str_replace('2026-03-23','2030-01-02',$calendar[$field]);
+        $calendar['cal_date'] = '2030-01-02';
+        $calendar['revision_uid'] = hash('sha256', 'e035-held2030');
+        DB::table('md_market_calendar_revisions')->insert($calendar);
+        Carbon::setTestNow('2030-01-03 10:30:00');
+
+        [$code, $output] = $this->command(ScheduledWorkflowCommand::class, ['--source_mode' => 'api']);
+        $outcome = json_decode($output, true);
+        $this->assertSame(2, $code, $output);
+        $this->assertSame(2, $outcome['process_exit_code']);
+        $this->assertSame('SUCCESS_HELD', $outcome['scheduler_outcome']);
+        $this->assertContains('RUN_COVERAGE_LOW', $outcome['reason_codes']);
+        $this->assertSame(0, DB::table('eod_current_publication_pointer')->where('trade_date', '2030-01-02')->count());
+    }
+
     public function test_scheduled_competitor_reports_locked_without_starting_a_second_owner(): void
     {
         $world = R0025SyntheticV2World::build();
@@ -146,7 +175,8 @@ class B19OperationalCommandsMariaDbTest extends TestCase
         [$code,$output]=$this->command(ScheduledWorkflowCommand::class,['--source_mode'=>'api']);
         $outcome=json_decode($output,true);
         $this->assertSchedulerOutcomeShape($outcome);
-        $this->assertSame(2,$code,$output); $this->assertSame('SKIPPED_LOCKED',$outcome['scheduler_outcome']);
+        $this->assertSame(5,$code,$output); $this->assertSame('SKIPPED_LOCKED',$outcome['scheduler_outcome']);
+        $this->assertSame(5, $outcome['process_exit_code']);
         $this->assertSame('2030-01-02',$outcome['requested_date']);
         $this->assertContains('RUN_LOCK_CONFLICT',$outcome['reason_codes']);
         $this->assertSame((int)$owner->run_id,(int)DB::table('eod_run_owner_fences')->where('trade_date_requested','2030-01-02')->value('owner_run_id'));
@@ -160,11 +190,34 @@ class B19OperationalCommandsMariaDbTest extends TestCase
         [$code,$output]=$this->command(ScheduledWorkflowCommand::class,['--source_mode'=>'api']);
         $outcome=json_decode($output,true);
         $this->assertSchedulerOutcomeShape($outcome);
-        $this->assertSame(2,$code,$output); $this->assertSame('FAILED',$outcome['scheduler_outcome']);
+        $this->assertSame(6,$code,$output); $this->assertSame('FAILED',$outcome['scheduler_outcome']);
+        $this->assertSame(6, $outcome['process_exit_code']);
         $this->assertNull($outcome['requested_date']); $this->assertNull($outcome['run_id']);
         $this->assertContains('COMMAND_EXECUTION_FAILED',$outcome['reason_codes']);
         $this->assertStringContainsString('MARKET_CALENDAR_EXPECTED_DATE_UNAVAILABLE',$outcome['error']);
         $this->assertArrayHasKey('latest_acquired_trade_date',$outcome);
         $this->retain('scheduler_calendar_blocked',$outcome);
+    }
+
+    public function test_scheduled_exit_mapping_keeps_all_contract_categories_distinct(): void
+    {
+        $command = new ScheduledWorkflowCommand();
+        $method = new \ReflectionMethod($command, 'processExitCode');
+        $method->setAccessible(true);
+        $cases = [
+            'readable' => [['scheduler_outcome' => 'SUCCESS_READABLE', 'reason_codes' => []], 0],
+            'held' => [['scheduler_outcome' => 'SUCCESS_HELD', 'reason_codes' => ['RUN_COVERAGE_LOW']], 2],
+            'retryable' => [['scheduler_outcome' => 'FAILED', 'reason_codes' => ['RUN_SOURCE_TIMEOUT']], 3],
+            'integrity' => [['scheduler_outcome' => 'FAILED', 'reason_codes' => ['DATASET_HASH_MISMATCH']], 4],
+            'lock' => [['scheduler_outcome' => 'SKIPPED_LOCKED', 'reason_codes' => ['RUN_LOCK_CONFLICT']], 5],
+            'blocked_proof' => [['scheduler_outcome' => 'FAILED', 'reason_codes' => ['COMMAND_EXECUTION_FAILED']], 6],
+        ];
+        $codes = [];
+        foreach ($cases as $category => [$result, $expected]) {
+            $actual = $method->invoke($command, $result);
+            $this->assertSame($expected, $actual, $category);
+            $codes[] = $actual;
+        }
+        $this->assertCount(count($cases), array_unique($codes));
     }
 }

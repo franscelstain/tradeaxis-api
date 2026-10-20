@@ -1,0 +1,147 @@
+{
+  "record_id": "E-MD-B19-A001-036",
+  "record_type": "EVIDENCE",
+  "stage": "MD-B19",
+  "attempt": "MD-B19-A001",
+  "baseline": "MD-B19-A001-BL001",
+  "status": "ISSUED",
+  "issued_at": "2026-10-20T23:20:00+07:00",
+  "predecessors": [
+    "E-MD-B19-A001-034",
+    "E-MD-B19-A001-035"
+  ],
+  "accepted_baseline_reviewed": "619/750",
+  "repository_proposed_reviewed": "620/750",
+  "formal_satisfied": "0/750",
+  "new_bases": 0,
+  "trace_repair": "MD-S071-R0043 exact positive and negative execution linkage; already proposed, no double count.",
+  "remaining_operational_scope": {
+    "commands_and_runbook": {
+      "count": 8,
+      "ids": [
+        "MD-S064-R0001",
+        "MD-S064-R0006",
+        "MD-S064-R0007",
+        "MD-S064-R0009",
+        "MD-S064-R0011",
+        "MD-S064-R0012",
+        "MD-S064-R0013",
+        "MD-S064-R0016"
+      ],
+      "status": "HELD: command-specific shared-authority, rollback/as-known, retention, preview/force anti-mutation, and complete runtime matrix guards remain absent per F-MD-B19-A001-023."
+    },
+    "scheduling_and_locking": {
+      "count": 8,
+      "ids": [
+        "MD-S078-R0003",
+        "MD-S078-R0004",
+        "MD-S078-R0006",
+        "MD-S078-R0007",
+        "MD-S078-R0009",
+        "MD-S078-R0015",
+        "MD-S078-R0017",
+        "MD-S078-R0019"
+      ],
+      "status": "HELD: complete logical-key/checkpoint, all-path fencing/audited recovery, deployment rehearsal/provider production and manual/schedule capability-boundary proof remain unavailable per F-MD-B19-A001-023."
+    },
+    "operator_decision_trees": {
+      "count": 25,
+      "ids": [
+        "MD-S071-R0002",
+        "MD-S071-R0004",
+        "MD-S071-R0006",
+        "MD-S071-R0008",
+        "MD-S071-R0009",
+        "MD-S071-R0010",
+        "MD-S071-R0013",
+        "MD-S071-R0014",
+        "MD-S071-R0016",
+        "MD-S071-R0018",
+        "MD-S071-R0021",
+        "MD-S071-R0024",
+        "MD-S071-R0025",
+        "MD-S071-R0026",
+        "MD-S071-R0027",
+        "MD-S071-R0028",
+        "MD-S071-R0029",
+        "MD-S071-R0036",
+        "MD-S071-R0037",
+        "MD-S071-R0038",
+        "MD-S071-R0039",
+        "MD-S071-R0040",
+        "MD-S071-R0041",
+        "MD-S071-R0042",
+        "MD-S071-R0048"
+      ],
+      "status": "HELD where exact runtime decision/refusal branches are missing; seven F018 escalation/severity/closure rows remain held pending Project Owner authority."
+    }
+  },
+  "governed_boundaries": [
+    "R0324 HELD under D008/F016",
+    "MD-DEP-0025 ACTIVE",
+    "D003 warning_count persisted mirror; NULL remains NULL",
+    "candidate-v5 and current strategy freeze",
+    "B18 69 failures / 94 tests remains visible",
+    "deployment activation not established",
+    "no full-suite PASS or formal SATISFIED"
+  ],
+  "tests": [
+    "R0043 negative named test: 1/1 tests, 7 assertions PASS",
+    "R0043 positive named test retained from E035: 1/1 tests, 5 assertions PASS"
+  ],
+  "source_sha256": {
+    "OpsCommandSurfaceTest.php": "99df957b85b5198115934f3efb7a384ba8fe0e0c21f4f0a0233aa0e48758f272",
+    "ReplayVerificationServiceTest.php": "e255552d4098a55294a18ee8acaa0645fca0c5745c87ad7e365a22ebd23f4974",
+    "supplement.json": "c074454188508b4fc4d468398113d1eb20fa14689d9042f00f6eaf817de6679f"
+  },
+  "raw_execution": {
+    "negative": {
+      "test_file": "tests/Unit/MarketData/OpsCommandSurfaceTest.php",
+      "method": "test_replay_verify_command_returns_failure_on_mismatch_without_forcing_evidence_export",
+      "source_sha256": "99df957b85b5198115934f3efb7a384ba8fe0e0c21f4f0a0233aa0e48758f272",
+      "assertion_lines": [
+        1248,
+        1249,
+        1250,
+        1251,
+        1252,
+        1253,
+        1254
+      ],
+      "execution_output": "E036_runtime/R0043_negative_testdox.stdout.txt",
+      "execution_command": "vendor/bin/phpunit --testdox --filter test_replay_verify_command_returns_failure_on_mismatch_without_forcing_evidence_export tests/Unit/MarketData/OpsCommandSurfaceTest.php",
+      "execution_sha256": "f6e35eb0f355cac2c58a379e29d1de37913f7323acc7da8586eaf64695616408",
+      "result": "PASS; exact named method; 1 test, 7 assertions"
+    },
+    "positive": {
+      "test_file": "tests/Unit/MarketData/ReplayVerificationServiceTest.php",
+      "method": "test_verify_replay_marks_mismatch_when_coverage_contract_fields_diverge",
+      "source_sha256": "e255552d4098a55294a18ee8acaa0645fca0c5745c87ad7e365a22ebd23f4974",
+      "assertion_lines": [
+        904,
+        905,
+        906,
+        910,
+        914
+      ],
+      "execution_output": "E035_runtime/operator_replay_testdox.stdout.txt",
+      "execution_command": "vendor/bin/phpunit --testdox --filter test_verify_replay_marks_mismatch_when_coverage_contract_fields_diverge tests/Unit/MarketData/ReplayVerificationServiceTest.php",
+      "execution_sha256": "65cc6a8cba78d3fe7e82d0c638f15e8e6fc679a25064f17c68af262c2bee463a",
+      "result": "PASS; exact named method; 1 test, 5 assertions"
+    }
+  },
+  "git_mutations": "None",
+  "governance_gates": {
+    "documentation_integrity": "PASS, 1358 registered documents; strategy freeze 91/0 mismatch",
+    "relationship_integrity": "PASS, 501 records / 2035 relationships / zero validity or completeness errors",
+    "classification_consistency": "PASS, 9 pending unopened MD-B20 rows preserved",
+    "operations_proof": "FAIL as required for open stage: 620 proposed bases, 130 missing bases, 8 unguarded families, 161 predicates without executable guards",
+    "full_suite": "NOT_RUN"
+  },
+  "gate_output_sha256": {
+    "documentation_gate.stdout.txt": "15af5158f9e5f1d0c9886461ae62d0deaccd3b51bdd7ec6876db7c36f90f5f15",
+    "relationship_gate.stdout.txt": "bdbaa1a95e471e524fc70dacfd678da80ead956ed14ac54b6a478df05ff920c7",
+    "classification_gate.stdout.txt": "41dfd5342d236be354d75d09ef21c183f5334d7c4f33d8881a8735713328f04b",
+    "operations_proof_gate.stdout.txt": "bfc1e8127c6f82663e40ea91c7719173b099b16aa49cdd55aab89c34feee2f1c"
+  }
+}

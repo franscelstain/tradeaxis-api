@@ -3084,5 +3084,133 @@ final class MarketDataOperationsProofBasis
             'negative' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
             'basis' => 'E032: the interrupted multi-date execution persists the completed first date and leaves the second incomplete; resume starts at the first incomplete date, verifies the first date is checkpoint-skipped, and preserves its publication bytes and run count. Reverting the required reacquisition behavior leaves the second date HELD with zero rows and the success assertion fails; source restored byte-for-byte and test passes.',
         ],
+
+        // E034: bounded command, scheduler-chain, and operator decision executions.
+        // These are proposed bases pending independent review; the proof gate is not formal admission.
+        'MD-S036-R0013' => [
+            'positive' => 'B19RunEvidenceMariaDbProofTest::test_evidence_export_command_executes_real_integrity_check_and_refuses_ambiguous_selector',
+            'negative' => 'B19RunEvidenceMariaDbProofTest::test_evidence_export_command_executes_real_integrity_check_and_refuses_ambiguous_selector',
+            'basis' => 'E035 supplement to E034: actual MariaDB ExportEvidenceCommand completion, contradictory-source ADMITTED_INCOMPLETE, and ambiguous-selector refusal. Exact source hashes, method/assertion lines and raw testdox hashes are in E035_assertion_trace_map.json; no help-only inference.',
+        ],
+        'MD-S064-R0004' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_manual_file_historical_fill_executes_the_registered_lifecycle_and_rejects_missing_input',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_invalid_source_mode_refuses_before_creating_a_run',
+            'basis' => 'E034 reuses the E031/E032 actual MariaDB registered BackfillLifecycleCommand execution: a bounded manual-file historical date produces its governed run/publication, while a missing input and an unregistered source mode refuse without a readable pointer or invented date run. The provider-backed interrupted-range/resume proof remains separately identified in E032; this basis makes no production scheduler claim.',
+        ],
+        'MD-S064-R0005' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success',
+            'basis' => 'E034 executes the registered scheduled adapter over a real MariaDB producer chain and observes source acquisition, normalization/canonical rows, artifact/hash binding, seal, pointer activation and status; the provider-outage counterpart holds the requested date and leaves the existing pointer unchanged. The successful command is a local runtime fixture, not deployment activation evidence.',
+        ],
+        'MD-S064-R0008' => [
+            'positive' => 'B19RunEvidenceMariaDbProofTest::test_evidence_export_command_executes_real_integrity_check_and_refuses_ambiguous_selector',
+            'negative' => 'B19RunEvidenceTelemetryProofTest::test_contradictory_payload_run_identity_cannot_be_verified',
+            'basis' => 'E035 supplement to E034: registered export command executes integrity admission on real MariaDB producer state; contradictory source identity cannot become complete and telemetry run-identity contradiction is refused. Exact assertions and output hashes are mapped in E035.',
+        ],
+        'MD-S064-R0014' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_scheduled_exit_mapping_keeps_all_contract_categories_distinct',
+            'basis' => 'E035 red/green: live MariaDB command had collapsed timeout, lock conflict and missing-calendar exits to 2; the fixed command emits 3, 5 and 6. The same command suite verifies readable 0, invalid 1, held 2 and JSON reasons/run/date/publication fields; mapper asserts integrity 4. E035 records that a full end-to-end scheduled integrity-corruption exit case is a residual proof limit.',
+        ],
+        'MD-S064-R0015' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_scheduled_competitor_reports_locked_without_starting_a_second_owner',
+            'basis' => 'E035 supplement to E034/E029: actual MariaDB initial request plus two bounded retries; source_attempt_count 3, prior source observation bytes and readable pointer preserved. Idempotent current-date invocation adds no run/observation; competing owner produces a lock refusal. Exact execution and assertion sources are in E035 trace map.',
+        ],
+        'MD-S071-R0003' => [
+            'positive' => 'PublicApiEodBarsAdapterTest::test_active_yahoo_schema_version_must_match_the_released_adapter_contract',
+            'negative' => 'PublicApiEodBarsAdapterTest::test_misaligned_quote_arrays_fail_as_schema_change_before_row_acceptance',
+            'basis' => 'E035 trace supplement to E034: executes the released provider schema control and a payload with misaligned quote arrays; the adapter refuses the changed shape before accepting any row instead of best-effort normalizing it. This is bounded source-schema detection evidence only; it does not assert F018 escalation or incident closure.',
+        ],
+        'MD-S071-R0005' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_low_coverage_without_fallback_finishes_not_readable_and_emits_coverage_reason_code',
+            'basis' => 'E035 trace supplement to E034: MariaDB execution distinguishes a successfully readable requested date from an insufficient-coverage requested date. The latter has no readable publication, emits the coverage reason and remains NOT_READABLE; the earlier successful date cannot make this request successful.',
+        ],
+        'MD-S071-R0007' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_run_daily_low_coverage_with_fallback_holds_requested_date_and_preserves_old_readable_publication',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_low_coverage_without_fallback_finishes_not_readable_and_emits_coverage_reason_code',
+            'basis' => 'E035 trace supplement to E034: independently executes low coverage with and without a readable prior publication. When a prior publication exists, the requested run is held and the exact prior current pointer/publication remains; with no fallback, the requested date stays NOT_READABLE and no prior success is invented.',
+        ],
+        'MD-S071-R0011' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_seal_completes_a_genuinely_valid_bound_context',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_binding_rejects_a_conflicting_context_and_a_sealed_mismatch_but_allows_a_sealed_match',
+            'basis' => 'E035 trace supplement to E034: binds expected and actual serialization/config/source identity from the persisted capture; a genuinely coherent context seals, while a conflicting context is rejected and does not get reinterpreted as equivalent. This proves the serialization-coherence branch, not an operator incident severity.',
+        ],
+        'MD-S071-R0012' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_seal_completes_a_genuinely_valid_bound_context',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_binding_rejects_a_conflicting_context_and_a_sealed_mismatch_but_allows_a_sealed_match',
+            'basis' => 'E035 trace supplement to E034: real pipeline binding accepts only the coherent control and refuses the contradictory context before safe seal/readability; the negative assertion would fail if conflicting serialization were treated as publishable.',
+        ],
+        'MD-S071-R0015' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_run_daily_low_coverage_with_fallback_holds_requested_date_and_preserves_old_readable_publication',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_low_coverage_without_fallback_finishes_not_readable_and_emits_coverage_reason_code',
+            'basis' => 'E035 trace supplement to E034: directly compares low-coverage behavior with a prior readable current publication versus no fallback. In the former the same-date prior publication ID/hash and pointer remain unchanged while the requested run is HELD; the latter remains non-readable. No stale prior publication is substituted for the requested date.',
+        ],
+        'MD-S071-R0017' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_binding_persists_v2_context_and_matches_v1_compatibility_hashes_before_seal',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_seal_rejects_a_candidate_missing_its_v2_binding_without_computing_one',
+            'basis' => 'E035 trace supplement to E034: persisted V1 compatibility hashes match independently captured population while V2 input binding carries its distinct version/hash; the missing-binding candidate is refused without synthesizing a replacement hash. These are actual pipeline contexts, not hashes inferred from output wording.',
+        ],
+        'MD-S071-R0019' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_seal_completes_a_genuinely_valid_bound_context',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_seal_rejects_a_bound_context_with_an_altered_component_hash',
+            'basis' => 'E035 trace supplement to E034: the candidate seals only when all bound component hashes and context verify. A controlled altered component hash makes seal fail; the untouched coherent candidate succeeds. The negative case is sensitive to a seal path that ignores a component mismatch.',
+        ],
+        'MD-S071-R0020' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_seal_completes_a_genuinely_valid_bound_context',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_seal_rejects_a_bound_context_with_an_altered_component_hash',
+            'basis' => 'E035 trace supplement to E034: a coherent candidate reaches SEALED; the same lifecycle refuses a candidate whose persisted component hash was contradicted. The candidate never becomes readable through the incoherent path.',
+        ],
+        'MD-S071-R0022' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_with_changed_artifacts_and_post_switch_resolution_mismatch_restores_prior_current_publication',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_with_post_switch_resolution_mismatch_and_malformed_fallback_pointer_does_not_invent_effective_trade_date',
+            'basis' => 'E035 trace supplement to E034: after a post-switch resolution contradiction, a verified prior current publication is restored and the candidate does not remain current; a malformed fallback pointer is not used to guess or invent effective-date authority. The pointer restoration case ran in the focused test batch; the malformed-fallback guard is retained from the existing pipeline evidence.',
+        ],
+        'MD-S071-R0023' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_with_changed_artifacts_and_post_switch_resolution_mismatch_restores_prior_current_publication',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_with_reseal_failure_keeps_prior_current_and_leaves_candidate_non_current',
+            'basis' => 'E035 trace supplement to E034: a corrected candidate becomes current only after a successful, verified reseal and switch; an injected reseal failure persists FAILED/NOT_READABLE, leaves the candidate UNSEALED/non-current and preserves the old current publication.',
+        ],
+        'MD-S071-R0030' => [
+            'positive' => 'B19CorrectionMariaDbProofTest::test_real_changed_unchanged_failed_and_historical_correction',
+            'negative' => 'B19CorrectionEvidenceProofTest::test_cancelled_unexecuted_request_does_not_invent_unchanged',
+            'basis' => 'E035 trace supplement to E034: MariaDB correction execution compares independently supplied source close 105 with corrected close 106; changed content produces a new sealed publication/version and changed bars hash, while a cancelled unexecuted request does not fabricate an unchanged decision.',
+        ],
+        'MD-S071-R0031' => [
+            'positive' => 'B19CorrectionMariaDbProofTest::test_real_changed_unchanged_failed_and_historical_correction',
+            'negative' => 'B19CorrectionEvidenceProofTest::test_cancelled_unexecuted_request_does_not_invent_unchanged',
+            'basis' => 'E035 trace supplement to E034: actual MariaDB same-content correction persists UNCHANGED, creates no new publication and leaves the pointer on the baseline; an unexecuted/cancelled request is separately not relabeled UNCHANGED.',
+        ],
+        'MD-S071-R0032' => [
+            'positive' => 'B19CorrectionMariaDbProofTest::test_real_changed_unchanged_failed_and_historical_correction',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_with_reseal_failure_keeps_prior_current_and_leaves_candidate_non_current',
+            'basis' => 'E035 trace supplement to E034: changed correction inputs reseal and publish a new version with distinct hashes; the injected reseal-failure counterfactual has no switch and leaves the candidate unsealed. The comparison is driven by persisted source and publication rows.',
+        ],
+        'MD-S071-R0033' => [
+            'positive' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_with_reseal_failure_keeps_prior_current_and_leaves_candidate_non_current',
+            'negative' => 'B19CorrectionMariaDbProofTest::test_real_changed_unchanged_failed_and_historical_correction',
+            'basis' => 'E035 trace supplement to E034: an injected reseal write failure produces FAILED/NOT_READABLE, no publication switch, no CORRECTION_PUBLISHED event, and preserved old pointer; the MariaDB changed correction is the successful reseal/switch control.',
+        ],
+        'MD-S071-R0034' => [
+            'positive' => 'B19CorrectionMariaDbProofTest::test_real_changed_unchanged_failed_and_historical_correction',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_with_reseal_failure_keeps_prior_current_and_leaves_candidate_non_current',
+            'basis' => 'E035 trace supplement to E034: successful correction evidence resolves both prior and new historical publications; failed reseal leaves the exact previous current publication and pointer unchanged. The prior readable publication is not rewritten in place.',
+        ],
+        'MD-S071-R0035' => [
+            'positive' => 'B19CorrectionMariaDbProofTest::test_real_changed_unchanged_failed_and_historical_correction',
+            'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_with_reseal_failure_keeps_prior_current_and_leaves_candidate_non_current',
+            'basis' => 'E035 trace supplement to E034: changed successful correction selects its new sealed publication; a reseal failure leaves its candidate unsealed, is_current=0, and does not create a current pointer to that candidate.',
+        ],
+        'MD-S071-R0043' => [
+            'positive' => 'ReplayVerificationServiceTest::test_verify_replay_marks_mismatch_when_coverage_contract_fields_diverge',
+            'negative' => 'OpsCommandSurfaceTest::test_replay_verify_command_returns_failure_on_mismatch_without_forcing_evidence_export',
+            'basis' => 'E035 trace supplement to E034: the actual replay comparator marks a coverage divergence with a reasoned mismatch; the command adapter returns nonzero with replay ID, mismatch note and changed scope instead of suppressing or exporting a false pass. The command-output seam uses a service response fixture; replay comparison itself has an independent executable positive/negative test.',
+        ],
+        'MD-S078-R0002' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success',
+            'basis' => 'E034 actual scheduled command/MariaDB chain records observations, requested date run, canonical/artifact binding, sealed publication, atomic pointer, status/freshness fields and run event; outage returns HELD/NOT_READABLE with no false requested-date pointer and preserves the prior readable pointer. Calendar expectations are seeded independently of machine date. No deployment activation is inferred.',
+        ],
     ];
 }

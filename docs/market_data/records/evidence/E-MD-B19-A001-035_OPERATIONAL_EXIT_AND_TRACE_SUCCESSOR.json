@@ -1,0 +1,469 @@
+{
+  "evidence_id": "E-MD-B19-A001-035",
+  "stage": "MD-B19",
+  "attempt": "MD-B19-A001",
+  "issued_at": "2026-10-20T22:27:00+07:00",
+  "status": "PROPOSED_FOR_INDEPENDENT_REVIEW",
+  "purpose": "Successor proof traceability for the 22 E034 held candidate bases; exact command semantics; bounded current-build impact assessment; focused continuation evidence.",
+  "accepted_baseline": 598,
+  "proposed_reviewed_total": 620,
+  "denominator": 750,
+  "formal_satisfied": 0,
+  "new_predicate_bases": 0,
+  "repaired_existing_proposed_bases": 22,
+  "repaired_bases_by_family": {
+    "commands_and_runbook": 4,
+    "scheduling_and_locking": 0,
+    "operator_decision_trees": 18
+  },
+  "held_from_E034_after_repair_pending_independent_review": 22,
+  "per_predicate_trace_map": "storage/app/market-data/evidence/MD-B19-A001/E035_assertion_trace_map.json",
+  "E034_immutable": "E034 record, map, package and prior raw evidence preserved; no E034 issued content changed.",
+  "operational_progress": {
+    "scope_attempted": "Focused repair of E034 traceability gaps and executable command semantics. No new basis count assigned to commands/scheduling because the remaining 41-row proof is not yet complete.",
+    "cross_contract_reviewed_bases": "No denominator change and no duplicate counting; 22 existing proposals remain proposed until external review."
+  },
+  "production_correction": "ScheduledWorkflowCommand now distinguishes all seven operational exit categories; ExportEvidenceCommand writes an ADMITTED_INCOMPLETE diagnostic pack and returns integrity exit 4, while complete evidence returns 0.",
+  "execution_results": [
+    {
+      "command": "B19OperationalCommandsMariaDbTest.php --testdox",
+      "result": "PASS",
+      "tests": 6,
+      "assertions": 123,
+      "substrate": "MariaDB; readable, held, retryable, locked, blocked and idempotent scheduler outcomes"
+    },
+    {
+      "command": "B19RunEvidenceMariaDbProofTest.php --testdox",
+      "result": "PASS",
+      "tests": 2,
+      "assertions": 195,
+      "substrate": "MariaDB; actual evidence export command, complete/incomplete integrity, ambiguous selector refusal; run/event export and historical resolution"
+    },
+    {
+      "command": "MarketDataPipelineIntegrationTest.php --filter E034 mapped operator methods --testdox",
+      "result": "PASS",
+      "tests": 10,
+      "assertions": 162,
+      "substrate": "Focused pipeline integration; low coverage, binding/seal and correction switch rollback"
+    },
+    {
+      "command": "PublicApiEodBarsAdapterTest.php --filter schema controls --testdox",
+      "result": "PASS",
+      "tests": 2,
+      "assertions": 5,
+      "substrate": "Provider schema positive and changed-shape refusal"
+    },
+    {
+      "command": "OpsCommandSurfaceTest.php --filter evidence export and replay verify --testdox",
+      "result": "PASS",
+      "tests": 4,
+      "assertions": 23,
+      "substrate": "CommandTester; export and replay command refusal/mismatch outcomes, service seams noted"
+    },
+    {
+      "command": "ReplayVerificationServiceTest.php --filter coverage mismatch --testdox",
+      "result": "PASS",
+      "tests": 1,
+      "assertions": 5,
+      "substrate": "Replay comparator mismatch behavior"
+    },
+    {
+      "command": "B19CorrectionMariaDbProofTest.php --filter changed/unchanged/failed/historical --testdox",
+      "result": "PASS",
+      "tests": 1,
+      "assertions": 69,
+      "substrate": "MariaDB correction producer"
+    },
+    {
+      "command": "B19CorrectionEvidenceProofTest.php --filter cancelled unexecuted --testdox",
+      "result": "PASS",
+      "tests": 1,
+      "assertions": 2,
+      "substrate": "Cancelled request does not become unchanged"
+    },
+    {
+      "command": "B19RunEvidenceTelemetryProofTest.php --filter contradictory payload identity --testdox",
+      "result": "PASS",
+      "tests": 1,
+      "assertions": 3,
+      "substrate": "Contradictory run identity refused"
+    }
+  ],
+  "counterfactual_red_green": [
+    {
+      "obligation": "retryable timeout exit classification",
+      "red": "actual 2, expected distinct 3",
+      "green": "3, outcome SUCCESS_HELD plus RUN_SOURCE_TIMEOUT retained",
+      "evidence": "E035_runtime/test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success_red.stdout.txt; E035_runtime/command_scheduler_testdox.stdout.txt"
+    },
+    {
+      "obligation": "owner lock-conflict exit classification",
+      "red": "actual 2, expected distinct 5",
+      "green": "5, SKIPPED_LOCKED and RUN_LOCK_CONFLICT retained",
+      "evidence": "E035_runtime/test_scheduled_competitor_reports_locked_without_starting_a_second_owner_red.stdout.txt; E035_runtime/command_scheduler_testdox.stdout.txt"
+    },
+    {
+      "obligation": "missing-calendar blocked-proof exit classification",
+      "red": "actual 2, expected distinct 6",
+      "green": "6, FAILED with COMMAND_EXECUTION_FAILED and explicit calendar-unavailable error retained",
+      "evidence": "E035_runtime/test_missing_verified_calendar_produces_explicit_failed_scheduler_outcome_red.stdout.txt; E035_runtime/command_scheduler_testdox.stdout.txt"
+    },
+    {
+      "obligation": "invalid input",
+      "result": "actual registered scheduled command remains exit 1 with COMMAND_INVALID_SOURCE_MODE; included in MariaDB suite"
+    },
+    {
+      "obligation": "integrity category",
+      "result": "actual MariaDB ExportEvidenceCommand returns 4 for ADMITTED_INCOMPLETE while writing the diagnostic pack, and 0 for ADMITTED_COMPLETE; red/green command output retained."
+    }
+  ],
+  "evidence_export_command": {
+    "positive": "The registered MariaDB ExportEvidenceCommand writes a complete run pack and returns 0 with run selector/ID.",
+    "negative": "Contradictory persisted source identity remains exported with ADMITTED_INCOMPLETE and warning, but now returns 4. The source value is restored in finally and verified; ambiguous run/correction selector exits 1 before output creation."
+  },
+  "run_retry_command_semantics": {
+    "attempts": "initial request plus two bounded retries; run source_attempt_count 3",
+    "identity": "prior source observation rows/bytes remain unchanged",
+    "idempotency": "verified-readable second invocation skips without new runs, observations or pointer changes",
+    "fencing": "separate MariaDB competing owner exits 5, no second owner/pointer"
+  },
+  "operator_traceability": {
+    "rows": [
+      "MD-S071-R0003",
+      "MD-S071-R0005",
+      "MD-S071-R0007",
+      "MD-S071-R0011",
+      "MD-S071-R0012",
+      "MD-S071-R0015",
+      "MD-S071-R0017",
+      "MD-S071-R0019",
+      "MD-S071-R0020",
+      "MD-S071-R0022",
+      "MD-S071-R0023",
+      "MD-S071-R0030",
+      "MD-S071-R0031",
+      "MD-S071-R0032",
+      "MD-S071-R0033",
+      "MD-S071-R0034",
+      "MD-S071-R0035",
+      "MD-S071-R0043"
+    ],
+    "count": 18,
+    "assertion_trace": "Each positive/negative case identifies canonical CSV requirement row, source hash, method line range, individual assertion source lines, and a hashed exact testdox output. E034 content remains immutable."
+  },
+  "historical_impact_assessment": {
+    "shared_test": "B19RunEvidenceMariaDbProofTest::test_real_sources_attempts_run_pack_anomaly_and_historical_resolution",
+    "current_basis_references": [
+      "MD-S063-R0017",
+      "MD-S063-R0019",
+      "MD-S063-R0020",
+      "MD-S063-R0021",
+      "MD-S063-R0022",
+      "MD-S063-R0023",
+      "MD-S063-R0024",
+      "MD-S063-R0025",
+      "MD-S063-R0026",
+      "MD-S063-R0027",
+      "MD-S063-R0028",
+      "MD-S063-R0029",
+      "MD-S063-R0030",
+      "MD-S063-R0031",
+      "MD-S063-R0032",
+      "MD-S063-R0033",
+      "MD-S063-R0034",
+      "MD-S063-R0035",
+      "MD-S063-R0036",
+      "MD-S063-R0037",
+      "MD-S063-R0038",
+      "MD-S063-R0039",
+      "MD-S063-R0040",
+      "MD-S063-R0041",
+      "MD-S063-R0042",
+      "MD-S063-R0043",
+      "MD-S063-R0044",
+      "MD-S063-R0045",
+      "MD-S063-R0046",
+      "MD-S075-R0160",
+      "MD-S075-R0161",
+      "MD-S075-R0162",
+      "MD-S075-R0163",
+      "MD-S075-R0164",
+      "MD-S075-R0165",
+      "MD-S075-R0172",
+      "MD-S075-R0173"
+    ],
+    "count": 37,
+    "change": "Among the 37 accepted-basis references, the one test method direct event UPDATE/DELETE counterfactual now verifies MariaDB RUN_EVENT_APPEND_ONLY refusal, unchanged event count/bytes and complete untouched export. The E034 proposed R0008 link to this shared producer method is superseded by the actual evidence-command test in E035. Contradictory event payload identity remains independently covered by telemetry refusal.",
+    "current_revalidation": "B19RunEvidenceMariaDbProofTest passes 2/195 with append-only refusal, complete export, integrity failure exit, and historical resolution; telemetry contradictory-identity test passes 1/3. E034 acceptance is not withdrawn; the affected shared method has a new source identity and current-build execution evidence.",
+    "previously_accepted_basis_references": [
+      "MD-S063-R0017",
+      "MD-S063-R0019",
+      "MD-S063-R0020",
+      "MD-S063-R0021",
+      "MD-S063-R0022",
+      "MD-S063-R0023",
+      "MD-S063-R0024",
+      "MD-S063-R0025",
+      "MD-S063-R0026",
+      "MD-S063-R0027",
+      "MD-S063-R0028",
+      "MD-S063-R0029",
+      "MD-S063-R0030",
+      "MD-S063-R0031",
+      "MD-S063-R0032",
+      "MD-S063-R0033",
+      "MD-S063-R0034",
+      "MD-S063-R0035",
+      "MD-S063-R0036",
+      "MD-S063-R0037",
+      "MD-S063-R0038",
+      "MD-S063-R0039",
+      "MD-S063-R0040",
+      "MD-S063-R0041",
+      "MD-S063-R0042",
+      "MD-S063-R0043",
+      "MD-S063-R0044",
+      "MD-S063-R0045",
+      "MD-S063-R0046",
+      "MD-S075-R0160",
+      "MD-S075-R0161",
+      "MD-S075-R0162",
+      "MD-S075-R0163",
+      "MD-S075-R0164",
+      "MD-S075-R0165",
+      "MD-S075-R0172",
+      "MD-S075-R0173"
+    ],
+    "previously_accepted_count": 37,
+    "E034_candidate_reference": [
+      "MD-S064-R0008"
+    ],
+    "total_current_or_candidate_links": 38
+  },
+  "b18_regression": {
+    "observed": "B18ReplayComparisonExhaustivenessTest remains 69 failures / 94 tests / 267 assertions per immutable E034 record.",
+    "bounded_impact": "No B18 replay source/test or replay authority changed in E035; changed production file is ScheduledWorkflowCommand.php and proof support files concern E034 operational cases. E034 result remains a visible current known failure requiring its owning review; no reclassification or B18 reopening."
+  },
+  "known_holds": [
+    "25 remaining operator predicates after E034 proposals; seven exact F018 dependent rows remain held (MD-S071-R0008,R0016,R0025,R0029,R0036,R0038,R0048); deployment-specific scheduling/command obligations remain unavailable.",
+    "8 commands_and_runbook; 8 scheduling_and_locking; 25 operator_decision_trees remain outside this repaired E034 set until complete proof or precise hold.",
+    "F018 escalation and incident closure authority remains unresolved; no threshold invented.",
+    "R0324 HELD under D008/F016; MD-DEP-0025 ACTIVE; D003 warning_count NULL semantics; candidate-v5 and strategy freeze preserved."
+  ],
+  "full_suite": "NOT_RUN",
+  "operations_gate": "Expected open-stage FAIL; no full-suite pass claimed.",
+  "source_identity": {
+    "ScheduledWorkflowCommand.php": "eecf52ef1348d1e21d4049724d1bc55607010e39edf50ddcc5cdc3f73da4e6d8",
+    "ExportEvidenceCommand.php": "7ebdcab6c751e245a2aecaa1a7cad4980f90e0054f310779d20b7e6951ee77a2",
+    "assertion_trace_map_sha256": "3eb9ab48f70896e3153a0666fd38f1527a172da9a41b24eca10e87af2ee88ed9",
+    "MarketDataOperationsProofBasis.php": "f91569b635fef35eb3a70f49466747b90900438cecdcd0c24b297e3ee36eaa8b"
+  },
+  "raw_execution_inventory": [
+    {
+      "path": "E035_runtime/B19OperationalCommandsMariaDbTest.green.stdout.txt",
+      "sha256": "6e6b0121d055df7a3266e04a876e6bb41bf6220b54209fd4a724ea4838411d7f",
+      "bytes": 210
+    },
+    {
+      "path": "E035_runtime/B19RunEvidenceMariaDbProofTest_E035.stdout.txt",
+      "sha256": "21be72f8fa669a8851ed395dde78cfd04a6e6c88c2a9252ed53c46dd0337ccf5",
+      "bytes": 210
+    },
+    {
+      "path": "E035_runtime/classification_gate.stdout.txt",
+      "sha256": "63987f3f3d4fe1b41a3717155b5a67f864db2d3516ff58ca8f3fbcd964e3a269",
+      "bytes": 1645
+    },
+    {
+      "path": "E035_runtime/classification_gate_final.stdout.txt",
+      "sha256": "5e6914661ef0b61c512a21cdbc89e34383f559b6b60aa96654fde0e5ceda978e",
+      "bytes": 1579
+    },
+    {
+      "path": "E035_runtime/command_scheduler_testdox.stdout.txt",
+      "sha256": "304d063e45249ffc1eb8ed6546ff778fd188aa6d003a49336b5801a94fda4b63",
+      "bytes": 652
+    },
+    {
+      "path": "E035_runtime/correction_testdox.stdout.txt",
+      "sha256": "75d54dd300bc45b22cba68d27eb578c6df1cd4cfc4a0476265bc96b7e86771b5",
+      "bytes": 218
+    },
+    {
+      "path": "E035_runtime/documentation_gate.stdout.txt",
+      "sha256": "cd86ee549c016918d1a669b19c8b0749b39f10004b08cfb7cd74c59c73753bd6",
+      "bytes": 4230
+    },
+    {
+      "path": "E035_runtime/documentation_gate_final.stdout.txt",
+      "sha256": "50e8b4c6289730346d2aab218fd161ca5cda24a4f90f481731a1ea5ff0e98133",
+      "bytes": 4004
+    },
+    {
+      "path": "E035_runtime/evidence_export_command_mariadb.stdout.txt",
+      "sha256": "eb0c57a880802e7d267ec4caf4dcf83fd20920c09acd3c4ec9e32ae1ab0dd73a",
+      "bytes": 208
+    },
+    {
+      "path": "E035_runtime/evidence_export_static_control.stdout.txt",
+      "sha256": "519ade724c63f642e758840820a8f503d86a5c9bd0bed04c851a0cd65f4cffb5",
+      "bytes": 205
+    },
+    {
+      "path": "E035_runtime/evidence_export_testdox.stdout.txt",
+      "sha256": "a25da80ca085f256b3edb7da88d541df937bd2f1633e4f53c11fafdce4fe22be",
+      "bytes": 322
+    },
+    {
+      "path": "E035_runtime/evidence_integrity_exit_red.stdout.txt",
+      "sha256": "85977e799b9412f440a3485b84870eddd07da9b9d7bc5adcf6490cb48e29e40e",
+      "bytes": 2001
+    },
+    {
+      "path": "E035_runtime/exit_code_distinction_red.stdout.txt",
+      "sha256": "92fc10105a15dd16c32c3fb5944641ac827bba4d2a4c48e6431a11000e634c09",
+      "bytes": 163
+    },
+    {
+      "path": "E035_runtime/operations_proof_gate.stdout.txt",
+      "sha256": "d260bc7b0fbd24fc6d725a8b4446961b0171fed465c0531a6cdaa073fb5842a3",
+      "bytes": 1746
+    },
+    {
+      "path": "E035_runtime/operations_proof_gate_final.stdout.txt",
+      "sha256": "82e0e1958fbc2ee261e02c034edd74e178eef13528a5fea5b70224ba4bb7c05e",
+      "bytes": 1693
+    },
+    {
+      "path": "E035_runtime/operator_adapter_testdox.stdout.txt",
+      "sha256": "ae422b54a9bf9e762292dd5321e0df98f5982178329262f9a2e60052bb297b90",
+      "bytes": 303
+    },
+    {
+      "path": "E035_runtime/operator_adapter_trace.stdout.txt",
+      "sha256": "35c4b3d98fc9441c36e901fdc115ad5eeecd8556f713633038c335c0eba6f9ef",
+      "bytes": 207
+    },
+    {
+      "path": "E035_runtime/operator_cancelled_correction_testdox.stdout.txt",
+      "sha256": "f95ccae6b19914fce9d164f2eaf2e8b7d901f32ed3c524874768979528cdfe27",
+      "bytes": 215
+    },
+    {
+      "path": "E035_runtime/operator_cancelled_correction_trace.stdout.txt",
+      "sha256": "ac802d9ff7551ed79fbd4241a010e949bdca95ff1724d5fde95828d11208f050",
+      "bytes": 206
+    },
+    {
+      "path": "E035_runtime/operator_command_testdox.stdout.txt",
+      "sha256": "44fa1426bc56c61cdb121f43652974ce1dd10712e64536f4f665d40556e74afd",
+      "bytes": 340
+    },
+    {
+      "path": "E035_runtime/operator_command_trace.stdout.txt",
+      "sha256": "ef1b86779dc28fe956bcc1bf07d7c438ba6c676935119707c09545735f1dffe5",
+      "bytes": 208
+    },
+    {
+      "path": "E035_runtime/operator_correction_mariadb_trace.stdout.txt",
+      "sha256": "8a28d5313eac073ffe4cb857af06fe3ddf77befdf643e77ab99c4b482b005b24",
+      "bytes": 210
+    },
+    {
+      "path": "E035_runtime/operator_pipeline_testdox.stdout.txt",
+      "sha256": "7ef0abb92ebcc04c01f6aaf30eb062979ea92e4df4de2f770f29c212a4cf69b1",
+      "bytes": 1087
+    },
+    {
+      "path": "E035_runtime/operator_pipeline_trace.stdout.txt",
+      "sha256": "3f086e2fd63f7037b427bf98728735513bc472d701c89c4ef91d93e15ae2d796",
+      "bytes": 211
+    },
+    {
+      "path": "E035_runtime/operator_replay_testdox.stdout.txt",
+      "sha256": "65cc6a8cba78d3fe7e82d0c638f15e8e6fc679a25064f17c68af262c2bee463a",
+      "bytes": 226
+    },
+    {
+      "path": "E035_runtime/operator_replay_trace.stdout.txt",
+      "sha256": "495e9584d50ff6cb917586e2cd9fd7de36772d998b4cf4fc3e97212a2d873181",
+      "bytes": 206
+    },
+    {
+      "path": "E035_runtime/operator_telemetry_testdox.stdout.txt",
+      "sha256": "2c3f48b2afc9b361240639ad8bd25427c23a97265428717feeec198ebf7b41d1",
+      "bytes": 217
+    },
+    {
+      "path": "E035_runtime/operator_telemetry_trace.stdout.txt",
+      "sha256": "03e7ec128dabff5e50e7c53ea8c7df05d140aebb567c8c48731f6f4b6df4d268",
+      "bytes": 206
+    },
+    {
+      "path": "E035_runtime/php_lint.stdout.txt",
+      "sha256": "7f3afcf01a2c66367da3a5c3a3723308ff0bf9c169e5a0b51cbea61aa3739841",
+      "bytes": 91
+    },
+    {
+      "path": "E035_runtime/relationship_gate.stdout.txt",
+      "sha256": "a10786151a49d965d090113ae9cf45467fd8c5177b0191ef80dc09bd60446658",
+      "bytes": 614
+    },
+    {
+      "path": "E035_runtime/relationship_gate_final.stdout.txt",
+      "sha256": "2584e66b7353aa7b0976a655bcc5ec111a034f0bc4d3d4d5296cc397d6e259aa",
+      "bytes": 601
+    },
+    {
+      "path": "E035_runtime/scheduled_held_exit_testdox.stdout.txt",
+      "sha256": "d4f476af6af20720e21694e5706652448d068d32819fa13273e1805e9690e65d",
+      "bytes": 241
+    },
+    {
+      "path": "E035_runtime/test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success_red.stdout.txt",
+      "sha256": "9d4a2eca3541789402d0f99eddf19096298ada4e5a7f7572e53287511385a734",
+      "bytes": 1527
+    },
+    {
+      "path": "E035_runtime/test_missing_verified_calendar_produces_explicit_failed_scheduler_outcome_red.stdout.txt",
+      "sha256": "0cc58e1d8da21da15f9b026296aebb26ca03d9e8dbd2529d7679d98834b2df9a",
+      "bytes": 1008
+    },
+    {
+      "path": "E035_runtime/test_scheduled_competitor_reports_locked_without_starting_a_second_owner_red.stdout.txt",
+      "sha256": "f9f15a84297298861458cd52f7c53b523e67ec03ce432db97ff075aeb9268b24",
+      "bytes": 1099
+    }
+  ],
+  "single_exact_resume_point": "MD-B19-A001: after E035 successor trace and runtime correction, resume the 41 predicates not fully proven in E033/E034: commands_and_runbook 8 (MD-S064-R0001,R0006,R0007,R0009,R0011,R0012,R0013,R0016), scheduling_and_locking 8 (MD-S078-R0003,R0004,R0006,R0007,R0009,R0015,R0017,R0019), operator_decision_trees 25 (MD-S071-R0002,R0004,R0006,R0008,R0009,R0010,R0013,R0014,R0016,R0018,R0021,R0024-R0029,R0036-R0042,R0048). Accepted baseline 598/750; proposed 620/750; formal SATISFIED 0/750. Keep F018 severity/closure, deployment evidence and prior E032 residual holds exact; preserve E034/E035 and B18 regression evidence.",
+  "governance_gates": {
+    "documentation_integrity": "PASS after current resume point reconciliation",
+    "relationship_integrity": "PASS; 2033 relationships",
+    "classification_consistency": "PASS; nine pending unopened MD-B20 rows preserved",
+    "operations_proof": "FAIL as required for open attempt: 620 proposed basis rows, 130 without reviewed basis, eight unguarded families, 161 predicates without an executable guard",
+    "diff_check": "PASS after repository-line-ending normalization",
+    "full_suite": "NOT_RUN"
+  },
+  "production_corrections": [
+    {
+      "file": "app/Console/Commands/MarketData/ScheduledWorkflowCommand.php",
+      "sha256": "eecf52ef1348d1e21d4049724d1bc55607010e39edf50ddcc5cdc3f73da4e6d8",
+      "method": "processExitCode",
+      "requirement": "MD-S064-R0014",
+      "correction": "Distinct readable, invalid, held, retryable, integrity, lock-conflict and blocked-proof process categories with machine-readable code and retained scheduler result facts."
+    },
+    {
+      "file": "app/Console/Commands/MarketData/ExportEvidenceCommand.php",
+      "sha256": "7ebdcab6c751e245a2aecaa1a7cad4980f90e0054f310779d20b7e6951ee77a2",
+      "method": "handle",
+      "requirement": "MD-S064-R0014",
+      "correction": "ADMITTED_INCOMPLETE remains exported with diagnostic warning and returns exit 4; complete export returns 0."
+    }
+  ],
+  "E034_immutable_verification": {
+    "prior_review_zip_sha256_expected": "d8de8c44a629f5f0e09937a322fcde77610a6d0e44f0a2ca17c634eb7e507d48",
+    "actual": "d8de8c44a629f5f0e09937a322fcde77610a6d0e44f0a2ca17c634eb7e507d48",
+    "E034_map_sha256_matches_packaged_snapshot": true,
+    "E034_record_sha256_matches_packaged_snapshot": true
+  }
+}

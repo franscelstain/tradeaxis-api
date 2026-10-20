@@ -12,3 +12,7 @@ The next runbook batch must independently execute each command family and its ne
 ## E029 progress amendment
 
 E029 adds proposed positive/negative bases for MD-S064-R0002 and R0003 using actual MariaDB registered-command runs: read-only status/frontier reporting and a scheduled import-to-promotion-to-verified-status chain with idempotent retry, due-date provider failure, preserved prior current publication, lock refusal, and missing-calendar refusal. The registered command catalog was rerun with 43 commands and 89 assertions; E028-accepted MD-S064-R0010 remains the same basis and is not double-counted. Fourteen command predicates remain without a complete real runtime command-specific proof: MD-S036-R0013 and MD-S064-R0001, R0004-R0009, R0011-R0016. Mock adapter tests and runtime help remain supporting evidence only.
+
+## E034 progress amendment
+
+E034 adds six proposed command bases: `MD-S036-R0013` and `MD-S064-R0004`, `R0005`, `R0008`, `R0014`, and `R0015`, using actual command execution, MariaDB run-evidence export, immutable event-trail refusal, telemetry checks, replay comparisons, and operator-facing refusal output. Eight command predicates remain without candidate bases: `MD-S064-R0001`, `R0006`, `R0007`, `R0009`, `R0011`, `R0012`, `R0013`, and `R0016`. The accepted total remains 595/750; the proposed total is 620/750 pending independent review. E034 does not close this finding or claim command-family completion.

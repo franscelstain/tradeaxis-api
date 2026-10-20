@@ -1,8 +1,11 @@
 <?php
 use App\Application\MarketData\Services\MarketDataEvidenceExportService;
+use App\Console\Commands\MarketData\ExportEvidenceCommand;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\UsesMarketDataMariaDb;
 use Tests\Support\R0025SyntheticV2World;
+use Symfony\Component\Console\Tester\CommandTester;
 use Carbon\Carbon;
 
 /** Shared real producer world for the three selected run-evidence families; no golden authoring. */
@@ -18,6 +21,54 @@ class B19RunEvidenceMariaDbProofTest extends TestCase
         $trail=DB::table('eod_run_events')->where('run_id',$id)->get()->all();$stages=[];$reasons=[];foreach($trail as $event){$stages[$event->stage]=($stages[$event->stage]??0)+1;if($event->reason_code!==null&&$event->reason_code!=='')$reasons[$event->reason_code]=($reasons[$event->reason_code]??0)+1;}ksort($stages);ksort($reasons);$this->assertSame($stages,$p['run_event_summary']['stage_counts']);$this->assertSame($reasons,$p['run_event_summary']['reason_code_counts']);$this->assertGreaterThanOrEqual(3,count($trail));
         foreach(['coverage_gate_state','coverage_ratio','coverage_min_threshold','expected_bar_count','available_bar_count','missing_bar_count','coverage_reason_code'] as $f)$this->assertArrayHasKey($f,$p['coverage_context']);if($status==='SUCCESS')foreach(['coverage_gate_state'=>'PASS','coverage_ratio'=>1,'coverage_min_threshold'=>0.98,'expected_bar_count'=>1,'available_bar_count'=>1,'missing_bar_count'=>0,'coverage_reason_code'=>'COVERAGE_THRESHOLD_MET'] as $key=>$value)$this->assertSame($value,$p['coverage_context'][$key]);
         if($status==='SUCCESS'){$this->assertSame('READABLE',$s['publishability_state']);$this->assertSame('SEALED',$p['publication_manifest']['seal_state']);}else{$this->assertSame('NOT_READABLE',$s['publishability_state']);$this->assertSame('ADMITTED_INCOMPLETE',$p['evidence_admission']['evidence_admission_state']);$this->assertFalse($p['pointer_context']['pointer_switch_allowed']);}
+    }
+
+    public function test_evidence_export_command_executes_real_integrity_check_and_refuses_ambiguous_selector(): void
+    {
+        $world = R0025SyntheticV2World::build();
+        $runId = (int) $world['run_id'];
+        $provider = DB::table('eod_runs')->where('run_id', $runId)->value('source_provider');
+        $completeDir = sys_get_temp_dir().'/b19_command_evidence_'.uniqid();
+        $incompleteDir = $completeDir.'_contradictory';
+        $ambiguousDir = $completeDir.'_ambiguous';
+        $this->dirs[] = $completeDir;
+        $this->dirs[] = $incompleteDir;
+        $this->dirs[] = $ambiguousDir;
+
+        $command = new ExportEvidenceCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+        $exit = $tester->execute(['--run_id' => $runId, '--output_dir' => $completeDir]);
+        $this->assertSame(0, $exit, $tester->getDisplay());
+        $this->assertStringContainsString('selector=run', $tester->getDisplay());
+        $this->assertStringContainsString('selector_id='.$runId, $tester->getDisplay());
+        $this->assertStringContainsString('evidence_admission_state=ADMITTED_COMPLETE', $tester->getDisplay());
+        $completePack = json_decode(file_get_contents($completeDir.'/evidence_pack.json'), true);
+        $this->assertSame('ADMITTED_COMPLETE', $completePack['evidence_admission']['evidence_admission_state']);
+
+        try {
+            DB::table('eod_runs')->where('run_id', $runId)->update(['source_provider' => 'counterfactual-unregistered-provider']);
+            $command = new ExportEvidenceCommand();
+            $command->setLaravel($this->app);
+            $tester = new CommandTester($command);
+            $exit = $tester->execute(['--run_id' => $runId, '--output_dir' => $incompleteDir]);
+            $this->assertSame(4, $exit, $tester->getDisplay());
+            $this->assertStringContainsString('evidence_admission_state=ADMITTED_INCOMPLETE', $tester->getDisplay());
+            $this->assertStringContainsString('evidence_warning=EVIDENCE_INCOMPLETE', $tester->getDisplay());
+            $incompletePack = json_decode(file_get_contents($incompleteDir.'/evidence_pack.json'), true);
+            $this->assertSame('ADMITTED_INCOMPLETE', $incompletePack['evidence_admission']['evidence_admission_state']);
+        } finally {
+            DB::table('eod_runs')->where('run_id', $runId)->update(['source_provider' => $provider]);
+        }
+        $this->assertSame($provider, DB::table('eod_runs')->where('run_id', $runId)->value('source_provider'));
+
+        $command = new ExportEvidenceCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+        $exit = $tester->execute(['--run_id' => $runId, '--correction_id' => 77, '--output_dir' => $ambiguousDir]);
+        $this->assertSame(1, $exit);
+        $this->assertStringContainsString('reason_code=COMMAND_CONFLICTING_OPTIONS', $tester->getDisplay());
+        $this->assertDirectoryDoesNotExist($ambiguousDir, 'Ambiguous selection must be refused before invoking the exporter.');
     }
     public function test_real_sources_attempts_run_pack_anomaly_and_historical_resolution(): void {
         $pkg=R0025SyntheticV2World::packagePath();$oracle=json_decode(file_get_contents($pkg.'/expected/expected_publication_manifest.json'),true);$worldInput=json_decode(file_get_contents($pkg.'/inputs/synthetic_world.json'),true);$body=file_get_contents($pkg.'/inputs/provider_response.json');
@@ -35,13 +86,19 @@ class B19RunEvidenceMariaDbProofTest extends TestCase
         // A later live event time must not be substituted for the source request's capture time.
         $mode='retry';$sequence=0;$calls=[];Carbon::setTestNow('2026-03-25 10:30:00');$retry=$w['pipeline']->runDaily($date,'api');[$r]=$this->export((int)$retry->run_id,'retry');$rt=$r['source_attempt_telemetry'];$this->assertSame([504,200],array_column($calls,'status'));$this->assertSame(2,$rt['attempt_count']);$this->assertSame('yes',$rt['success_after_retry']);$this->assertSame(504,$rt['attempts'][0]['http_status']);$this->assertSame('RUN_SOURCE_TIMEOUT',$rt['attempts'][0]['reason_code']);$this->assertTrue($rt['attempts'][0]['will_retry']);$base=(int)config('market_data.provider.api_backoff_ms');$this->assertGreaterThanOrEqual($base+50,$rt['attempts'][0]['backoff_delay_ms']);$this->assertLessThanOrEqual($base+150,$rt['attempts'][0]['backoff_delay_ms']);$this->assertSame(200,$rt['attempts'][1]['http_status']);$this->assertNull($rt['attempts'][1]['reason_code']);$this->assertFalse($rt['attempts'][1]['will_retry']);$this->assertSame(0,$rt['attempts'][1]['backoff_delay_ms']);$this->assertSame('2026-03-25 10:30:00',$rt['captured_at']);$this->assertNotSame($rt['event_time'],$rt['captured_at']);$this->assertSame('VERIFIED',$rt['telemetry_integrity']['status']);
         // Missing/contradictory telemetry cannot inherit complete binding admission from a healthy publication.
-        $event=DB::table('eod_run_events')->where('event_id',$t['event_id'])->first();$payload=json_decode($event->event_payload_json,true);$saved=$payload;$payload['source_acquisition']['run_id']=$id+1000;
-        try {DB::table('eod_run_events')->where('event_id',$t['event_id'])->update(['event_payload_json'=>json_encode($payload)]);[$bad]=$this->export($id,'contradictory');$this->assertSame('ADMITTED_INCOMPLETE',$bad['evidence_admission']['evidence_admission_state']);$this->assertSame('UNAVAILABLE',$bad['source_attempt_telemetry']['telemetry_integrity']['status']);}
-        finally {DB::table('eod_run_events')->where('event_id',$t['event_id'])->update(['event_payload_json'=>$event->event_payload_json]);}
+        // The MariaDB migration makes the event trail append-only. Exercise the real database
+        // refusal instead of corrupting a historical event as this test used to do. Contradictory
+        // payload interpretation remains covered by B19RunEvidenceTelemetryProofTest.
+        $event=DB::table('eod_run_events')->where('event_id',$t['event_id'])->first();$payload=json_decode($event->event_payload_json,true);$payload['source_acquisition']['run_id']=$id+1000;
+        try {DB::table('eod_run_events')->where('event_id',$t['event_id'])->update(['event_payload_json'=>json_encode($payload)]);$this->fail('the MariaDB event-trail guard must reject historical event mutation');}
+        catch(QueryException $error){$this->assertStringContainsString('RUN_EVENT_APPEND_ONLY',$error->getMessage());}
+        $this->assertSame($event->event_payload_json,DB::table('eod_run_events')->where('event_id',$t['event_id'])->value('event_payload_json'));
+        [$stillComplete]=$this->export($id,'append_only_update_refused');$this->assertSame('ADMITTED_COMPLETE',$stillComplete['evidence_admission']['evidence_admission_state']);
         $providerBefore=DB::table('eod_runs')->where('run_id',$id)->value('source_provider');try {DB::table('eod_runs')->where('run_id',$id)->update(['source_provider'=>'counterfactual-other-provider']);[$conflict]=$this->export($id,'conflicting_provider');$this->assertSame('ADMITTED_INCOMPLETE',$conflict['evidence_admission']['evidence_admission_state'],'contradictory persisted source identities cannot constitute complete run evidence');$this->assertContains('source_attempt_telemetry.conflicting_source_context.provider',$conflict['evidence_admission']['missing_sections']);}finally{DB::table('eod_runs')->where('run_id',$id)->update(['source_provider'=>$providerBefore]);}
-        $sourceTrail=DB::table('eod_run_events')->where('run_id',$id)->get()->map(function($row){return (array)$row;})->all();
-        try {DB::table('eod_run_events')->where('run_id',$id)->delete();[$noTrail]=$this->export($id,'missing_trail');$this->assertSame('ADMITTED_INCOMPLETE',$noTrail['evidence_admission']['evidence_admission_state'],'selected publication alone cannot prove an unavailable run event trail');$this->assertContains('run_event_summary',$noTrail['evidence_admission']['missing_sections']);}
-        finally {DB::table('eod_run_events')->insert($sourceTrail);}
+        $trailCount=DB::table('eod_run_events')->where('run_id',$id)->count();
+        try {DB::table('eod_run_events')->where('run_id',$id)->delete();$this->fail('the MariaDB event-trail guard must reject historical event deletion');}
+        catch(QueryException $error){$this->assertStringContainsString('RUN_EVENT_APPEND_ONLY',$error->getMessage());}
+        $this->assertSame($trailCount,DB::table('eod_run_events')->where('run_id',$id)->count());
         // Preserve selected historical evidence and do not claim current readability after supersession.
         $mode='normal';$changed=json_decode($body,true);$changed['chart']['result'][0]['indicators']['quote'][0]['close'][0]=106;$responseBody=json_encode($changed);
         $corrections=new \App\Infrastructure\Persistence\MarketData\EodCorrectionRepository();$request=$corrections->createRequest($date,'DATASET_HASH_CREATED','Independent corrected close106 input','b19-run-proof',$pubId,$id);$corrections->approve($request->correction_id,'b19-run-proof');$corrected=$w['pipeline']->runDaily($date,'api',$request->correction_id);$newPub=(int)DB::table('eod_current_publication_pointer')->where('trade_date',$date)->value('publication_id');$this->assertNotSame($pubId,$newPub,'real changed correction must supersede the baseline');

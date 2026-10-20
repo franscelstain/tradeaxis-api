@@ -6,6 +6,8 @@ use App\Application\MarketData\Services\MarketDataEvidenceExportService;
 
 class ExportEvidenceCommand extends AbstractMarketDataCommand
 {
+    const EXIT_INTEGRITY_FAILURE = 4;
+
     protected $signature = 'market-data:evidence:export {--run_id=} {--correction_id=} {--replay_id=} {--trade_date=} {--output_dir=}';
 
     protected $description = 'Export requested-date run, correction, or replay evidence pack artifacts.';
@@ -90,7 +92,9 @@ class ExportEvidenceCommand extends AbstractMarketDataCommand
         $this->line('file_count='.(string) ($result['file_count'] ?? count($result['files'] ?? [])));
         $this->line('files='.implode(',', $result['files']));
 
-        return 0;
+        return ($summary['evidence_admission_state'] ?? null) === 'ADMITTED_INCOMPLETE'
+            ? self::EXIT_INTEGRITY_FAILURE
+            : 0;
     }
 
     private function stringifyValue($value)

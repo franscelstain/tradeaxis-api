@@ -19,3 +19,7 @@ The remaining 24 selected predicates are individually identified in `E029_per_pr
 F018 R0011/R0012 severity escalation and incident closure remain HELD for the exact Project Owner decision. R0324 remains HELD under D008/F016. MD-DEP-0025 stays ACTIVE: the frozen candidate-v5 manifest now has 15 differing listed source files and this batch added three app source files that the immutable v5 manifest does not list. No candidate-v6, denominator change, applicability change, B18 reopening, or formal SATISFIED promotion is authorized.
 
 The unchanged F009/E013 alias-meaning failure, coverage static-guard failure, and historical candidate-v5 build-identity failures remain visible. No full-suite result is claimed.
+
+## E034 progress amendment
+
+E034 proposes one additional scheduling/locking basis, `MD-S078-R0002`, from a real scheduled import-to-promotion-to-status MariaDB chain with idempotent invocation, due-run provider outage, retained prior current publication, lock refusal and missing-calendar refusal. Eight scheduling predicates remain unbased: `MD-S078-R0003`, `R0004`, `R0006`, `R0007`, `R0009`, `R0015`, `R0017` and `R0019`. These include full logical-key/checkpoint semantics, complete fencing and audited recovery entrypoints, deployment activation/rehearsal, provider-production behavior, schedule-specific force prohibition and exact capability boundaries. The accepted total remains 595/750; E034 proposes 620/750 pending independent review. F018 severity and closure rules remain unresolved and are not inferred.
