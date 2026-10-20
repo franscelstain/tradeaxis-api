@@ -1,0 +1,125 @@
+{
+  "evidence_id": "E-MD-B19-A001-032",
+  "record_type": "EVIDENCE",
+  "stage_id": "MD-B19",
+  "work_id": "MD-B19-A001",
+  "attempt": "MD-B19-A001",
+  "baseline": "MD-B19-A001-BL001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261018-001",
+  "ci_id": "CI-MD-B19-A001-001",
+  "issued_at": "2026-10-20T18:53:58+07:00",
+  "role_scope": "CURRENT_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "evidence_type": "WARMUP_SCOPE_INTERRUPTED_RANGE_RESUME_AND_PROTECTED_RETENTION_PROOF",
+  "verdict": "PENDING_INDEPENDENT_REVIEW",
+  "reconciled_baseline": {
+    "last_independently_accepted_reviewed_bases": 590,
+    "denominator": 750,
+    "E031_issued_position": 594,
+    "E031_admitted_new_bases": 27,
+    "E031_review_gaps_repaired_and_reproposed": 4,
+    "formal_satisfied": 0
+  },
+  "E032_candidate_bases": {
+    "previously_proposed_bases_revalidated": 4,
+    "newly_proposed_bases": 1,
+    "new_predicate_ids": [
+      "MD-S074-R0007"
+    ],
+    "repaired_predicate_ids": [
+      "MD-S053-R0183",
+      "MD-S053-R0200",
+      "MD-S074-R0001",
+      "MD-S001-R0085"
+    ],
+    "proposed_total_reviewed_bases": 595,
+    "denominator": 750,
+    "formal_satisfied": 0,
+    "per_predicate_map": "E032_runtime/E032_per_predicate_proof_map.json"
+  },
+  "implementation_corrections": [
+    "Direct promoteSingleDay publication now refuses a range_window run date outside its persisted requested_start/requested_end; warmup support runs cannot acquire publication authority through this entry point.",
+    "Ordinary --resume no longer treats diagnostic-only slim acquisition cache/checkpoints as source rows. It reacquires the provider range while retaining date-level completion checkpoints, then resumes from the first incomplete requested date. only-failed retry checkpoint behavior is unchanged."
+  ],
+  "proof_summary": {
+    "warmup_world": "Real MariaDB lifecycle consumed provider rows dated 2026-03-20, 2026-03-24 and 2026-03-25 while requesting only 2026-03-24 through 2026-03-25. The warmup observation and canonical support bar retained exact source-observation identity; no warmup pointer changed; requested dates published separately; direct warmup promotion refused with RANGE_WINDOW_WARMUP_DATE_PROMOTION_REFUSED.",
+    "interrupted_range_world": "Real MariaDB two-date run completed 2026-03-24, injected a one-shot pre-import interruption on 2026-03-25, and resumed via the registered lifecycle command. Resume checkpoint-skipped 2026-03-24, reacquired source data and published 2026-03-25. The completed date pointer, run count, publication rows, history rows and bars remained byte-identical; each requested date had one readable pointer and distinct run identity.",
+    "retention_world": "Registered snapshot TTL command was executed dry-run and apply. An expired and a retained snapshot were seeded. Protected canonical snapshots included bars, indicators, eligibility, runs, publications, correction trail, current pointer and histories; all were populated and remained byte-identical across both operations."
+  },
+  "mutation_and_restoration": {
+    "range_resume_counterfactual": "Removing the ordinary-resume acquisition-checkpoint reset and restoring resume-based successful-window skipping made the MariaDB test fail at the resumed command success assertion; the incomplete date remained HELD with zero acquired rows. Source SHA-256 before and after restoration matched 6b21519e06186c6796e6d0a267f0a4b6e1be31d5b633cb0b9f441961a8b6c57b.",
+    "warmup_promotion_counterfactual": "Removing the direct publication guard made the exact expected refusal assertion fail because warmup promotion returned; source SHA-256 before and after restoration matched c8f7972af31271551e0afbb35fccd993b3257a5e6d80a9c3b4dff327f8b2a283.",
+    "restored_green": "Both mutated production files were restored byte-for-byte; range resume and warmup direct-refusal MariaDB controls passed after restoration."
+  },
+  "held_predicates": [
+    {
+      "id": "MD-S053-R0029",
+      "gap": "Default V2 manual_file correction/replay refuses missing provider-source attribution; no provider fact is invented."
+    },
+    {
+      "id": "MD-S053-R0182",
+      "gap": "Independent replay fixtures and replay verification for each requested date were not executed."
+    },
+    {
+      "id": "MD-S059-R0072",
+      "gap": "External free-source historical availability and completeness through intentional dataset start are not established by this local runtime."
+    },
+    {
+      "id": "MD-S059-R0074",
+      "gap": "No complete acquisition from intentional dataset start proves the stated historical-risk mitigation."
+    },
+    {
+      "id": "MD-S059-R0140",
+      "gap": "No complete acquisition from intentional dataset start proves the stated range-wide risk treatment."
+    },
+    {
+      "id": "MD-S074-R0003",
+      "gap": "A rebuilt nonreadable candidate preserving both old and new observation lineage remains unexecuted."
+    },
+    {
+      "id": "MD-S074-R0011",
+      "gap": "No unchanged-value recovered retry proves persisted UNCHANGED and NOOP_UNCHANGED_BARS together."
+    },
+    {
+      "id": "MD-S074-R0013",
+      "gap": "No two-listing adversarial recovery world proves stable-listing merge preserves the unaffected listing."
+    },
+    {
+      "id": "MD-S001-R0087",
+      "gap": "No executable audit-evidence retention producer proves the official minimum retention window."
+    },
+    {
+      "id": "MD-S001-R0088",
+      "gap": "No trade-date partition maintenance or deployed partition proof exists."
+    },
+    {
+      "id": "MD-S082-R0018",
+      "gap": "No executed producer reports CONFIG_UNBOUND publication counts through zero."
+    }
+  ],
+  "preserved_governance": {
+    "D003_warning_count": "Persisted mirror; NULL remains NULL.",
+    "R0324": "HELD under D008/F016.",
+    "F018": "Incident escalation and closure semantics remain unresolved.",
+    "MD-DEP-0025": "ACTIVE.",
+    "candidate_v5": "Immutable; no candidate-v6.",
+    "formal_satisfied": "0/750; no automatic promotion.",
+    "full_suite": "NOT_RUN."
+  },
+  "executed_verification": {
+    "focused_mariadb_file": "B19RangeBackfillMariaDbProofTest: 12 tests, 187 assertions PASS.",
+    "range_resume_restored_control": "1 test, 65 assertions PASS after byte restoration.",
+    "warmup_restored_control": "1 test, 65 assertions PASS after byte restoration.",
+    "resume_regressions": "B19RangeWindowResumeStateTest and B19RangeWindowCheckpointPersistenceTest: 3 tests, 10 assertions PASS.",
+    "warmup_wiring_regression": "7 tests, 72 assertions PASS.",
+    "checkpoint_persistence_regression": "4 tests, 66 assertions PASS.",
+    "proof_gate": "595 reviewed bases / 750, 155 without basis, 8 families without a guard; FAIL as expected.",
+    "documentation_relationship_classification_gates": "Recorded in E032_runtime governance outputs; no full-suite claim."
+  },
+  "single_exact_resume_point": "MD-B19-A001: stop for independent external review of E032's four re-proposed E031 review-gap bases and one new MD-S074-R0007 basis. Last accepted remains 590/750; candidate proposal 595/750; formal SATISFIED 0/750. Continue only after review with the remaining eleven exact acquisition/backfill/mode/maintenance holds in E032_runtime/E032_per_predicate_proof_map.json; preserve R0324 HELD D008/F016, F018 authority gaps, MD-DEP-0025 ACTIVE, candidate-v5 and immutable E026-E031; no candidate-v6, B19 closure or Git mutation.",
+  "raw_execution_directory": "E032_runtime/",
+  "review_package": "MD-B19-A001-E032-successor-review.zip",
+  "raw_evidence_inventory_sha256": "ac19f0d19111a24fd712018ef68d22bc4769a27c07e198472df59e34f87fb590",
+  "per_predicate_map_sha256": "203fe4cf89d505d7395c6c558a20e08cd953dcc6509438ebc4769948c54a02d7",
+  "mutation_results": "E032_runtime/mutation_results.json"
+}

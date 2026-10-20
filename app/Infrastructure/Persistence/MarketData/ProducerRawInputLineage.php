@@ -156,7 +156,18 @@ final class ProducerRawInputLineage
                 }
             }
             $id = (int) $row['source_observation_id']; $expectedRoots[] = $id;
-            $selectionSource = ['read_kind' => 'existsAccepted', 'observation_ids' => [$id], 'source_row_ref' => null];
+            $references = [];
+            foreach ($source['tables']['md_source_observation_rows'] as $normalized) {
+                if ((int) $normalized['source_observation_id'] !== $id || (string) $normalized['trade_date'] !== (string) $row['trade_date']) continue;
+                foreach ($source['tables']['md_source_observation_identity_bindings'] as $binding) {
+                    if ((int) $binding['source_observation_row_id'] === (int) $normalized['source_observation_row_id']
+                        && (int) $binding['listing_id'] === (int) $row['listing_id']) {
+                        $references[] = (string) $normalized['source_row_ref'];
+                    }
+                }
+            }
+            if (count($references) !== 1) throw new \RuntimeException('INPUT_CAPTURE_RAW_OBSERVATION_REFERENCE');
+            $selectionSource = ['read_kind' => 'existsAccepted', 'observation_ids' => [$id], 'source_row_ref' => $references[0]];
             if (! isset($obs[$id]) || ! ProducerSourceObservationPopulation::evaluate($source, $selectionSource)['result']) {
                 throw new \RuntimeException('INPUT_CAPTURE_RAW_OBSERVATION_REFERENCE');
             }

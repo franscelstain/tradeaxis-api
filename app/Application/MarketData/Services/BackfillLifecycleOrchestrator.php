@@ -166,10 +166,19 @@ class BackfillLifecycleOrchestrator
             }
 
             $acquired = ($resume && ! $onlyFailed && ! $diagnoseSource) ? $this->readAcquisitionCache($outputDir) : null;
-            if (! is_array($acquired)) {
+            $cacheHasResumableRows = is_array($acquired)
+                && isset($acquired['rows_by_trade_date'])
+                && is_array($acquired['rows_by_trade_date']);
+            if (! $cacheHasResumableRows) {
+                // The persisted slim cache is diagnostic only. Reacquire the provider range
+                // so successful source-window checkpoints cannot turn a date-level resume
+                // into an empty candidate set after an interrupted publication run.
+                if ($resume && ! $onlyFailed) {
+                    $acquisitionCheckpoint = [];
+                }
                 try {
                     $acquired = $this->acquisition->acquire($warmupStart, $startDate, $endDate, $acquisitionDates, $tickerCodes, [
-                        'resume' => $resume,
+                        'resume' => $resume && $onlyFailed,
                         'only_failed' => $onlyFailed,
                         'source_acquisition_checkpoint' => $acquisitionCheckpoint,
                     ]);

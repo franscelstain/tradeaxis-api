@@ -1,0 +1,90 @@
+{
+  "evidence_id": "E-MD-B19-A001-031",
+  "record_type": "EVIDENCE",
+  "stage_id": "MD-B19",
+  "work_id": "MD-B19-A001",
+  "attempt": "MD-B19-A001",
+  "baseline": "MD-B19-A001-BL001",
+  "strategy_freeze_id": "MD-STRATEGY-FREEZE-20261018-001",
+  "ci_id": "CI-MD-B19-A001-001",
+  "issued_at": "2026-10-20T12:30:00+07:00",
+  "role_scope": "CURRENT_EVIDENCE",
+  "mutability": "IMMUTABLE_AFTER_ISSUE",
+  "evidence_type": "RANGE_ACQUISITION_RECOVERY_MANIFEST_AND_BOUNDED_MAINTENANCE_PROOF",
+  "verdict": "PENDING_INDEPENDENT_REVIEW",
+  "accepted_baseline": {
+    "reviewed_bases": 563,
+    "denominator": 750,
+    "formal_satisfied": 0,
+    "E029_accepted": true,
+    "E030_technical_correction_accepted_new_bases": 0
+  },
+  "E031_proposed_new_bases": {
+    "range_window_acquisition": 19,
+    "resumable_backfill": 10,
+    "allowed_source_modes": 1,
+    "retention_and_maintenance": 1,
+    "total": 31,
+    "per_predicate_map": "E031_per_predicate_map.json"
+  },
+  "proposed_governed_position": {
+    "reviewed_bases": 594,
+    "denominator": 750,
+    "without_basis": 156,
+    "families_without_guard": 8,
+    "formal_satisfied": 0,
+    "operations_gate": "FAIL"
+  },
+  "selected_held_predicates": [
+    "MD-S053-R0029",
+    "MD-S053-R0182",
+    "MD-S059-R0072",
+    "MD-S059-R0074",
+    "MD-S059-R0140",
+    "MD-S074-R0003",
+    "MD-S074-R0007",
+    "MD-S074-R0011",
+    "MD-S074-R0013",
+    "MD-S001-R0087",
+    "MD-S001-R0088",
+    "MD-S082-R0018"
+  ],
+  "production_corrections": [
+    "Recovered E030 candidate now requires exact normalized source content as well as accepted observation ID, capture and payload provenance before partial ingest.",
+    "RAW lineage now validates the uniquely bound row for its date and listing inside a multi-date accepted acquisition observation; ambiguous or absent binding refuses.",
+    "Explicit Windows drive-absolute local-file paths are recognized without treating them as project-relative."
+  ],
+  "affected_prior_proof": [
+    "E030 recovered manifest correction and E024 publication/correction guard",
+    "B18 RAW input lineage and source observation population",
+    "Local-file source and ordinary snapshot maintenance guards"
+  ],
+  "known_limitations": [
+    "Default V2 manual-file publication refuses missing provider-source attribution; legacy V1 historical-fill execution is separately proved.",
+    "No complete multi-date partial-range resume or unchanged-row recovered retry proof.",
+    "No intentional dataset-start completeness, evidence retention-window, partition maintenance or CONFIG_UNBOUND count producer proof.",
+    "No full PHPUnit suite, production provider activation, production deployment or candidate-v6.",
+    "The one-ticker recovered-date world does not prove a two-listing candidate merge preserving the unaffected listing (MD-S074-R0013)."
+  ],
+  "continuing_dependencies": [
+    "F-MD-B19-A001-018 incident severity/closure authority",
+    "F-MD-B19-A001-016 and D-MD-B19-A001-008 R0324 historical provenance",
+    "MD-DEP-0025 active frozen candidate-v5 build identity",
+    "F009/E013 alias-meaning and coverage static-guard failures"
+  ],
+  "single_exact_resume_point": "MD-B19-A001: stop for independent external review of E031's 31 proposed new bases at 594/750 and the 12 exact held selected predicates in E031_per_predicate_map.json. Accepted baseline remains 563/750 and formal SATISFIED 0/750 until review. Preserve E015-E030, F018, R0324 D008/F016, MD-DEP-0025 and candidate-v5; no Git mutation, candidate-v6 or B19 closure.",
+  "raw_execution_directory": "E031_runtime/",
+  "raw_evidence_inventory": "E031_runtime/E031_raw_inventory.json",
+  "review_package": "MD-B19-A001-E031-successor-review.zip",
+  "executed_verification": {
+    "mariadb_scope": "12 tests, 154 assertions PASS",
+    "affected_regressions": "B18 RAW lineage 12/206, source population 12/68, observation immutability 10/52, local-file adapter 4/19, B19 correction MariaDB 2/103 PASS",
+    "restored_controls": "8 tests, 71 assertions PASS after M1-M4; recovered-manifest 1 test, 59 assertions PASS after M5",
+    "mutations": "5 targeted production/source counterfactuals RED at intended assertions; exact raw transcripts and post-restoration SHA-256 in mutation_results.json",
+    "gates": "documentation PASS; relationship PASS; classification PASS; operations FAIL (594/750 candidate bases, 156 without basis, eight families without guard)",
+    "full_suite": "NOT_RUN",
+    "selected_guard_regressions": "Warmup calendar 3/8, wiring 7/72, checkpoint identity 25/168, checkpoint persistence 4/66 PASS"
+  },
+  "held_review_gap": "MD-S074-R0013 remains held because the one-ticker recovered-date world cannot detect full-date replacement of another candidate listing.",
+  "raw_evidence_inventory_sha256": "05bd8d730aced526c17c8537ec5dfbd913386f0ee9d7c63e2948d2f4c1804593"
+}

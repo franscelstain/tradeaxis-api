@@ -2346,6 +2346,8 @@ class MarketDataPipelineService
         $sourceMode = $sourceMode ?: config('market_data.pipeline.default_source_mode');
         $promoteContext = $this->resolvePromoteContext($sourceMode, $correctionId, $promoteMode);
 
+        $this->assertRangeRunDateIsPublishable($requestedDate, $runId);
+
         if ($correctionId !== null && $promoteContext['requires_baseline']) {
             $this->corrections->requireApprovedForTradeDate($correctionId, $requestedDate);
         } elseif ($correctionId !== null) {
@@ -2400,6 +2402,26 @@ class MarketDataPipelineService
         }
 
         return $run;
+    }
+
+    private function assertRangeRunDateIsPublishable($requestedDate, $runId): void
+    {
+        if ($runId === null) {
+            return;
+        }
+
+        $run = $this->safeFindRunById($runId);
+        $notes = (string) ($run->notes ?? '');
+        if ($run === null || $this->extractNoteValue($notes, 'source_acquisition_mode') !== 'range_window') {
+            return;
+        }
+
+        $requestedStart = $this->extractNoteValue($notes, 'requested_start');
+        $requestedEnd = $this->extractNoteValue($notes, 'requested_end');
+        $date = (string) $requestedDate;
+        if ($requestedStart === null || $requestedEnd === null || $date < $requestedStart || $date > $requestedEnd) {
+            throw new \RuntimeException('RANGE_WINDOW_WARMUP_DATE_PROMOTION_REFUSED');
+        }
     }
 
     public function promoteDaily($requestedDate, $sourceMode = null, $runId = null, $correctionId = null, $promoteMode = null, $forceReplace = false, $forceReplaceReason = null)

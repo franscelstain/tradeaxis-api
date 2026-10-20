@@ -277,7 +277,8 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
     private function isAbsolutePath($path)
     {
         return Str::startsWith($path, ['/','\\'])
-            || preg_match('~^[A-Za-z]:[\\/]~', $path) === 1;
+            || (strlen($path) >= 3 && ctype_alpha($path[0]) && $path[1] === ':'
+                && in_array($path[2], ['/', '\\'], true));
     }
 
     private function loadJson($path, $tradeDate)

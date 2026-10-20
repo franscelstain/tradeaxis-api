@@ -2921,5 +2921,168 @@ final class MarketDataOperationsProofBasis
             'negative' => 'MarketDataPipelineIntegrationTest::test_publish_critical_owner_fences_cross_source_and_request_mode_competitors',
             'basis' => 'E029 two independent MariaDB processes are released into same-date owner acquisition and persisted results show one winner/one blocked contender; separate SQLite cross-mode adversary ensures absent contention is not substituted for exclusion proof.',
         ],
+        // E031: range acquisition is exercised by the registered lifecycle command on MariaDB.
+        // The two requested dates, independently seeded calendar, fixed HTTP rows, run IDs and
+        // current pointers are checked together; the provider-outage run supplies the refusal side.
+        'MD-S053-R0179' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows',
+            'basis' => 'E031: one HTTP range supplies two rows, but the real command records distinct requested-date runs and pointers; an unavailable range creates neither requested-date pointer nor fake success.',
+        ],
+        'MD-S053-R0180' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeWindowWarmupCalendarTest::test_a_non_trading_requested_date_fails_fast',
+            'basis' => 'E031: cases and persisted runs are exactly 2026-03-24 then 2026-03-25 despite one window response; a nontrading requested date is refused.',
+        ],
+        'MD-S053-R0181' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows',
+            'basis' => 'E031: independently identified MariaDB run IDs differ for the two requested dates; a failed acquisition has no readable requested-date run.',
+        ],
+        'MD-S053-R0183' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'basis' => 'E032 revalidates the E031 proposal on actual MariaDB rows for 2026-03-20, 2026-03-24 and 2026-03-25: the pre-request row is retained as support history with its exact source-observation identity, both requested dates publish, and direct promotion of the warmup-only run refuses RANGE_WINDOW_WARMUP_DATE_PROMOTION_REFUSED. Removing the source guard makes the exact refusal assertion fail; byte-restored rerun passes.',
+        ],
+        'MD-S053-R0185' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_manual_file_historical_fill_executes_the_registered_lifecycle_and_rejects_missing_input',
+            'basis' => 'E031: each API requested-date run persists source_acquisition_mode=range_window; executed manual_file mode reports its distinct single-file mode.',
+        ],
+        'MD-S053-R0186' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows',
+            'basis' => 'E031: both persisted date runs carry the same independently specified batch ID API_20260324_20260325_001; failed acquisition retains a nonempty batch ID rather than inventing a run.',
+        ],
+        'MD-S053-R0187' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeWindowWarmupWiringTest::test_a_blocked_acquisition_still_records_the_boundary_in_its_diagnostic',
+            'basis' => 'E031: source_window_start is the independently seeded 2026-02-20 calendar boundary on both date runs; blocked acquisition retains its boundary in diagnostics.',
+        ],
+        'MD-S053-R0188' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows',
+            'basis' => 'E031: source_window_end is 2026-03-25 on both runs, distinct from first requested date; the outage checkpoint identifies its failed window.',
+        ],
+        'MD-S053-R0189' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeWindowWarmupCalendarTest::test_warmup_start_is_the_governed_trading_day_boundary_not_calendar_day_arithmetic',
+            'basis' => 'E031: both runs persist warmup_start=2026-02-20, matching the independently seeded trading calendar and differing from calendar-day subtraction.',
+        ],
+        'MD-S053-R0190' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows',
+            'basis' => 'E031: both persisted date runs record requested_start=2026-03-24; failed acquisition summary retains the same start without promotion.',
+        ],
+        'MD-S053-R0191' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows',
+            'basis' => 'E031: both persisted date runs record requested_end=2026-03-25, not the first run date; failed acquisition records its requested end without a pointer.',
+        ],
+        'MD-S053-R0192' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows',
+            'basis' => 'E031: both successful runs persist SUCCESS; real provider 503 persists SYSTEMIC_FAILED and no readable requested-date pointer.',
+        ],
+        'MD-S053-R0193' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeWindowCheckpointIdentityTest::test_window_totals_remain_available_on_the_window_telemetry',
+            'basis' => 'E031: each date run records expected_ticker_count=1 from the independently seeded SYNV2 universe; checkpoint window totals are separately checked.',
+        ],
+        'MD-S053-R0194' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows',
+            'basis' => 'E031: successful per-date run notes record success_ticker_count=1; provider 503 cannot produce a readable requested-date outcome.',
+        ],
+        'MD-S053-R0195' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows',
+            'basis' => 'E031: both successful date runs record failed_ticker_count=0 while real 503 summary records one failed ticker.',
+        ],
+        'MD-S053-R0197' => [
+            'positive' => 'B19RangeWindowWarmupCalendarTest::test_warmup_start_is_the_governed_trading_day_boundary_not_calendar_day_arithmetic',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'basis' => 'E031 reuses the independent calendar-day counterexample and confirms the chosen trading boundary persists through the MariaDB lifecycle.',
+        ],
+        'MD-S053-R0198' => [
+            'positive' => 'B19RangeWindowWarmupCalendarTest::test_warmup_start_is_the_governed_trading_day_boundary_not_calendar_day_arithmetic',
+            'negative' => 'B19RangeWindowWarmupWiringTest::test_the_acquisition_service_is_handed_the_calendar_boundary',
+            'basis' => 'E031: moving the configured trading-day count moves the boundary from the first requested date; the real orchestrator passes that resolved boundary to acquisition.',
+        ],
+        'MD-S053-R0199' => [
+            'positive' => 'B19RangeWindowWarmupWiringTest::test_an_unprovable_calendar_blocks_before_acquisition_and_publication',
+            'negative' => 'B19RangeWindowWarmupCalendarTest::test_the_dataset_start_boundary_caps_the_warmup_instead_of_failing',
+            'basis' => 'E031: missing or contradictory requested-date calendar blocks before acquisition, while the later binding addendum caps a short prior window at intentional dataset start; no fail-fast rule is inferred for that case.',
+        ],
+        'MD-S053-R0200' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeWindowWarmupWiringTest::test_the_acquisition_service_is_handed_the_calendar_boundary',
+            'basis' => 'E032 revalidates the E031 proposal on actual pre-request source rows: the 2026-03-20 warmup row is retained and source-attributed, but no warmup current pointer is created or changed; both explicitly requested dates remain separately readable. A direct non-requested warmup promotion counterfactual is refused by the runtime guard.',
+        ],
+        'MD-S074-R0001' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'basis' => 'E032 revalidates the E031 proposal with a genuine interrupted two-date MariaDB lifecycle: 2026-03-24 completes, a one-shot failure before 2026-03-25 import interrupts the range, then --resume skips the completed date and reacquires the provider range to publish 2026-03-25. The prior pointer, run count, publications, bars and history remain identical; resumed date has one run/pointer and distinct run identity. A counterfactual restoring stale source-window checkpoint skipping leaves the date HELD and makes the resume success assertion fail; exact source restoration and green rerun verified.',
+        ],
+        'MD-S074-R0002' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows',
+            'negative' => 'SourceObservationImmutabilityTest::test_a_rerun_appends_a_new_observation_and_never_overwrites',
+            'basis' => 'E031: failed and successful real retries append observation attempts and bytes of prior rows remain identical; recovered canonical bar binds accepted observation and stable listing ID. Immutable-source guard rejects updates.',
+        ],
+        'MD-S074-R0004' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_invalid_source_mode_refuses_before_creating_a_run',
+            'basis' => 'E031: once recovery seals a date, repeated only-failed invocation reports NO_FAILED_CHECKPOINT with identical run count and pointer; invalid mode cannot create a date run.',
+        ],
+        'MD-S074-R0005' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'basis' => 'E031: retry with no failed checkpoint creates no run or pointer change; a new explicit two-date request creates one run for each requested date.',
+        ],
+        'MD-S074-R0006' => [
+            'positive' => 'B19CorrectionMariaDbProofTest::test_real_changed_unchanged_failed_and_historical_correction',
+            'negative' => 'B19CorrectionMariaDbProofTest::test_real_impact_modes_require_safe_publication_lifecycle',
+            'basis' => 'E031 revalidates E024 real correction: approved historical change creates a distinct run and version-two sealed publication with exported prior/new run IDs, supersession, approval identity and changed hash set; unapproved and unavailable-correction paths refuse.',
+        ],
+        'MD-S074-R0009' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows',
+            'negative' => 'B19RangeWindowCheckpointPersistenceTest::test_a_resume_that_still_fails_reports_its_counts_and_a_failure_sample_that_agrees_with_the_file',
+            'basis' => 'E031: a second real 503 retry leaves cases empty, indicators and eligibility absent, and requested pointer missing, while checkpoint diagnostics retain the failure.',
+        ],
+        'MD-S074-R0010' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_recovered_rows_cannot_substitute_an_unrelated_accepted_observation',
+            'basis' => 'E031: resumed 503 becomes one accepted observation bound to actual captured and normalized rows; the candidate and canonical bar bind that ID and independently computed V1/V2 hashes before readable publication. Six substituted or incomplete observation identities refuse.',
+        ],
+        'MD-S074-R0012' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_recovered_rows_cannot_substitute_an_unrelated_accepted_observation',
+            'basis' => 'E031: recovered bar changes from absent to observed, affected nonreadable date executes both indicator and eligibility reprocess before guarded promotion; altered source values or identity cannot masquerade as that row.',
+        ],
+        'MD-S074-R0014' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_recovered_rows_cannot_substitute_an_unrelated_accepted_observation',
+            'basis' => 'E031: nonreadable recovered date executes normal reprocess and promote, producing a sealed publication and current pointer only after exact manifest identity verifies; six identity counterfactuals never reach readability.',
+        ],
+        'MD-S074-R0015' => [
+            'positive' => 'B19CorrectionMariaDbProofTest::test_real_impact_modes_require_safe_publication_lifecycle',
+            'negative' => 'B19CorrectionMariaDbProofTest::test_real_changed_unchanged_failed_and_historical_correction',
+            'basis' => 'E031 revalidates E024 MariaDB: already readable affected date cannot silently update; explicit blocked AFFECTED_PUBLICATION_REQUIRES_CORRECTION preserves pointer, whereas approved correction creates auditable replacement and prior publication remains readable historically.',
+        ],
+        'MD-S053-R0030' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_manual_file_historical_fill_executes_the_registered_lifecycle_and_rejects_missing_input',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_invalid_source_mode_refuses_before_creating_a_run',
+            'basis' => 'E031 MariaDB: explicit single-date operator historical CSV is consumed by the registered lifecycle command and yields a readable publication under the supported legacy row-hash profile; missing file and unregistered mode refuse. The default V2 profile fails ARTIFACT_PROVIDER_SOURCE_REQUIRED for local-only rows, a separate held default-profile limitation; this basis does not claim V2 manual correction or replay.',
+        ],
+        'MD-S001-R0085' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_snapshot_retention_dry_run_and_apply_only_remove_expired_snapshot_rows',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_snapshot_retention_dry_run_and_apply_only_remove_expired_snapshot_rows',
+            'basis' => 'E032 revalidates the E031 proposal with independent MariaDB snapshots before dry-run and apply. An expired session snapshot is the sole deletion candidate; retained snapshot remains. Bars, indicators, eligibility, runs, publications, correction-trail sentinel, current pointer and histories are seeded/present and byte-identical across both invocations. This proves ordinary snapshot TTL safety only; audit-evidence retention and date-partition maintenance remain held.',
+        ],
+        'MD-S074-R0007' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_range_window_runs_each_requested_date_in_order_without_publishing_warmup',
+            'basis' => 'E032: the interrupted multi-date execution persists the completed first date and leaves the second incomplete; resume starts at the first incomplete date, verifies the first date is checkpoint-skipped, and preserves its publication bytes and run count. Reverting the required reacquisition behavior leaves the second date HELD with zero rows and the success assertion fails; source restored byte-for-byte and test passes.',
+        ],
     ];
 }

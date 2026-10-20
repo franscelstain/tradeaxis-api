@@ -166,9 +166,11 @@ class SourceObservationRepository implements SourceObservationRecorder
         return $this->recordOutcome($capture, 'FAILED', $reasonCode);
     }
 
-    public function existsAccepted($observationId, $sourceRowRef = null)
+    public function existsAccepted($observationId, $sourceRowRef = null, ?array $expectedRow = null)
     {
-        if (ProducerInputScope::active()) return ProducerSourceObservationPopulation::consume('existsAccepted', ['source_row_ref' => $sourceRowRef === null ? null : (string) $sourceRowRef], [(int) $observationId]);
+        $selection = ['source_row_ref' => $sourceRowRef === null ? null : (string) $sourceRowRef];
+        if ($expectedRow !== null) $selection['expected_row'] = ProducerSourceObservationPopulation::expectedRowProjection($expectedRow);
+        if (ProducerInputScope::active()) return ProducerSourceObservationPopulation::consume('existsAccepted', $selection, [(int) $observationId]);
         $outcome = DB::table('md_source_observations')
             ->where('source_observation_id', $observationId)
             ->whereIn('outcome_state', ['ACCEPTED', 'NORMALIZED'])
@@ -201,7 +203,7 @@ class SourceObservationRepository implements SourceObservationRecorder
         $identityBindingCount = $identityBindings->count();
         $hasNormalizedRows = $normalizedRowCount > 0;
 
-        return $hasExecutionIdentity
+        $accepted = $hasExecutionIdentity
             && $hasNormalizedRows
             && $identityBindingCount === $normalizedRowCount
             && ! empty($capture->attempt_uid)
@@ -217,6 +219,15 @@ class SourceObservationRepository implements SourceObservationRecorder
             && (string) $capture->payload_ref === 'sha256:'.$hash
             && strtolower((string) $outcome->payload_hash) === $hash
             && strtolower((string) $outcome->schema_fingerprint) === $schema;
+
+        if (! $accepted || $expectedRow === null) return $accepted;
+        $persistedRows = DB::table('md_source_observation_rows')
+            ->where('source_observation_id', (int) $observationId)
+            ->where('source_row_ref', (string) $sourceRowRef)->get()->all();
+        return ProducerSourceObservationPopulation::matchesExpectedRow(
+            $selection['expected_row'], (array) $outcome, (array) $capture,
+            array_map(static function ($row) { return (array) $row; }, $persistedRows)
+        );
     }
 
     public function bindResolvedIdentity($observationId, $sourceRowRef, array $identity)

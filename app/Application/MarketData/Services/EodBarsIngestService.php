@@ -726,6 +726,28 @@ class EodBarsIngestService
             return $row;
         }, $validRows);
 
+        // Recovered checkpoint rows remain acquired source rows. Bind their exact
+        // observation set to the run and candidate before later promotion.
+        $manifestHash = $this->observations->manifestHashForObservationIds(
+            array_column($sourceRows, 'source_observation_id')
+        );
+        $semanticManifestHash = trim((string) ($run->artifact_hash_profile ?? '')) === ArtifactSemanticHashService::PROFILE_V2
+            ? app(SemanticObservationIdentityService::class)->manifestHashForObservationIds(
+                array_column($sourceRows, 'source_observation_id')
+            )
+            : null;
+        $this->publications->bindCandidateAcquisitionProvenance(
+            $candidatePublication->publication_id,
+            $run->run_id,
+            $manifestHash,
+            $configSnapshotId,
+            $semanticManifestHash
+        );
+        $run->observation_manifest_hash = $manifestHash;
+        if ($semanticManifestHash !== null) {
+            $run->semantic_observation_manifest_hash = $semanticManifestHash;
+        }
+
         $barMutationSummary = $this->artifacts->upsertBarsPartial($requestedDate, $candidatePublication->publication_id, $run->run_id, $validRows, $invalidRows, $useHistory);
         if (! is_array($barMutationSummary)) {
             $barMutationSummary = $this->defaultBarMutationSummary($requestedDate, $candidatePublication->publication_id, $validRows, $useHistory);
@@ -945,7 +967,8 @@ class EodBarsIngestService
 
         if (! $this->observations->existsAccepted(
             (int) $row['source_observation_id'],
-            (string) ($row['source_row_ref'] ?? '')
+            (string) ($row['source_row_ref'] ?? ''),
+            $row
         )) {
             return [
                 'reason_code' => 'BAR_SOURCE_OBSERVATION_NOT_ACCEPTED',

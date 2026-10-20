@@ -15,6 +15,48 @@ final class ProducerSourceObservationPopulation
         'md_source_observation_revision_comparisons' => 'source_observation_comparison_id',
     ];
 
+    /** The bounded source fact asserted by canonical ingest, retained in the input journal. */
+    public static function expectedRowProjection(array $row): array
+    {
+        $fields = [
+            'source_capture_observation_id', 'source_payload_hash', 'source_schema_fingerprint',
+            'ticker_code', 'trade_date', 'source_timestamp', 'provider', 'provider_symbol',
+            'source_mode', 'source_name', 'open', 'high', 'low', 'close', 'volume', 'adj_close',
+        ];
+        $projection = [];
+        foreach ($fields as $field) if (array_key_exists($field, $row)) $projection[$field] = $row[$field];
+        return $projection;
+    }
+
+    /** Compare the selected immutable normalized member, not merely its accepted outcome flag. */
+    public static function matchesExpectedRow(array $expected, array $outcome, array $capture, array $rows): bool
+    {
+        if (count($rows) !== 1) return false;
+        $stored = $rows[0];
+        foreach (['source_capture_observation_id' => 'source_observation_id',
+            'source_payload_hash' => 'payload_hash', 'source_schema_fingerprint' => 'schema_fingerprint'] as $input => $field) {
+            if (array_key_exists($input, $expected)
+                && (string) ($expected[$input] ?? '') !== (string) ($capture[$field] ?? '')) return false;
+        }
+        foreach (['ticker_code', 'trade_date', 'source_timestamp', 'provider', 'provider_symbol'] as $field) {
+            if (array_key_exists($field, $expected)
+                && (string) ($expected[$field] ?? '') !== (string) ($stored[$field] ?? '')) return false;
+        }
+        foreach (['source_mode', 'source_name'] as $field) {
+            if (array_key_exists($field, $expected)
+                && (string) ($expected[$field] ?? '') !== (string) ($capture[$field] ?? '')) return false;
+        }
+        foreach (['open', 'high', 'low', 'close', 'volume', 'adj_close'] as $field) {
+            if (! array_key_exists($field, $expected)) continue;
+            $left = $expected[$field]; $right = $stored[$field.'_value'] ?? null;
+            if ($left === null || $left === '') {
+                if ($right !== null && $right !== '') return false;
+            } elseif (! is_numeric($left) || ! is_numeric($right)
+                || sprintf('%.10F', (float) $left) !== sprintf('%.10F', (float) $right)) return false;
+        }
+        return (int) ($stored['source_observation_id'] ?? 0) === (int) ($outcome['source_observation_id'] ?? 0);
+    }
+
     public static function consume(string $kind, array $selection, array $ids)
     {
         $ids = array_values(array_unique(array_map('intval', $ids))); sort($ids, SORT_NUMERIC);
@@ -97,6 +139,13 @@ final class ProducerSourceObservationPopulation
                 && preg_match('/^[a-f0-9]{64}$/', $hash) === 1 && preg_match('/^[a-f0-9]{64}$/', $schema) === 1
                 && (int) $capture['payload_byte_length'] > 0 && (string) $capture['payload_ref'] === 'sha256:'.$hash
                 && strtolower((string) $outcome['payload_hash']) === $hash && strtolower((string) $outcome['schema_fingerprint']) === $schema;
+            if ($result && isset($selection['expected_row'])) {
+                $selectedRows = array_values(array_filter($rows, static function ($row) use ($id, $ref) {
+                    return (int) $row['source_observation_id'] === $id
+                        && ($ref === null || (string) $row['source_row_ref'] === $ref);
+                }));
+                $result = self::matchesExpectedRow($selection['expected_row'], $outcome, $capture, $selectedRows);
+            }
         } elseif (in_array($kind, ['manifestIds', 'manifestRun'], true)) {
             if ($population['missing_root_ids']) throw new \RuntimeException('INPUT_CAPTURE_SOURCE_MANIFEST_INCOMPLETE');
             $members = array_values(array_filter($tables['md_source_observations'], static function ($r) use ($ids) { return in_array((int) $r['source_observation_id'], $ids, true); }));

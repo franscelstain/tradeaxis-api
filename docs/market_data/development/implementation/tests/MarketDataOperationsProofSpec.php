@@ -898,9 +898,10 @@ final class MarketDataOperationsProofSpec
                 'owner' => 'MD-B19:allowed-source-modes',
                 'implementation' => [
                     'app/Application/MarketData/Services/EodBarsIngestService.php',
+                    'app/Infrastructure/MarketData/Source/LocalFileEodBarsAdapter.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19RangeBackfillMariaDbProofTest.php', 'test_manual_file_historical_fill_executes_the_registered_lifecycle_and_rejects_missing_input'],
+                'negative' => ['tests/Unit/MarketData/B19RangeBackfillMariaDbProofTest.php', 'test_invalid_source_mode_refuses_before_creating_a_run'],
             ],
             'archived_executed_evidence' => [
                 'owner' => 'MD-B19:archived-executed-evidence',
@@ -1124,9 +1125,10 @@ final class MarketDataOperationsProofSpec
                 'owner' => 'MD-B19:range-window-acquisition',
                 'implementation' => [
                     'app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php',
+                    'app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19RangeBackfillMariaDbProofTest.php', 'test_range_window_runs_each_requested_date_in_order_without_publishing_warmup'],
+                'negative' => ['tests/Unit/MarketData/B19RangeBackfillMariaDbProofTest.php', 'test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows'],
             ],
             'range_window_checkpoint_resume' => [
                 'owner' => 'MD-B19:range-window-checkpoint-resume',
@@ -1165,17 +1167,18 @@ final class MarketDataOperationsProofSpec
                 'owner' => 'MD-B19:resumable-backfill',
                 'implementation' => [
                     'app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php',
+                    'app/Application/MarketData/Services/EodBarsIngestService.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19RangeBackfillMariaDbProofTest.php', 'test_failed_provider_checkpoint_resumes_without_faking_readability_then_publishes_recovered_rows'],
+                'negative' => ['tests/Unit/MarketData/B19RangeBackfillMariaDbProofTest.php', 'test_recovered_rows_cannot_substitute_an_unrelated_accepted_observation'],
             ],
             'retention_and_maintenance' => [
                 'owner' => 'MD-B19:retention-and-maintenance',
                 'implementation' => [
-                    'app/Application/MarketData/Services/MarketDataPipelineService.php',
+                    'app/Application/MarketData/Services/SessionSnapshotService.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19RangeBackfillMariaDbProofTest.php', 'test_snapshot_retention_dry_run_and_apply_only_remove_expired_snapshot_rows'],
+                'negative' => ['tests/Unit/MarketData/B19RangeBackfillMariaDbProofTest.php', 'test_snapshot_retention_dry_run_and_apply_only_remove_expired_snapshot_rows'],
             ],
             'scheduling_and_locking' => [
                 'owner' => 'MD-B19:scheduling-and-locking',
