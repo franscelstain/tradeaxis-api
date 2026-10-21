@@ -613,6 +613,19 @@ class B19RangeBackfillMariaDbProofTest extends TestCase
         $canonicalAfter = $this->protectedCanonicalSnapshot();
         $this->assertSame($canonicalBefore, $canonicalAfter, 'Session snapshot maintenance must not mutate canonical publication state.');
         $this->assertFileExists($outputDirectory.'/market_data_session_snapshot_purge_summary.json');
+        if ($path = getenv('B19_E039_PURGE_OUTPUT')) {
+            file_put_contents($path, json_encode([
+                'dry_run_output' => $dry->getDisplay(),
+                'apply_output' => $apply->getDisplay(),
+                'dry_run_snapshot_rows' => 2,
+                'apply_snapshot_rows' => 1,
+                'protected_canonical_unchanged' => $canonicalBefore === $canonicalAfter,
+                'protected_canonical_tables' => array_keys($canonicalBefore),
+                'protected_indicator_rows' => (int) DB::table('eod_indicators')->count(),
+                'protected_eligibility_rows' => (int) DB::table('eod_eligibility')->count(),
+                'protected_correction_rows' => (int) DB::table('eod_dataset_corrections')->count(),
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        }
     }
 }
 

@@ -1,0 +1,117 @@
+{
+  "record_id": "E-MD-B19-A001-039",
+  "record_type": "EVIDENCE",
+  "stage": "MD-B19",
+  "attempt": "MD-B19-A001",
+  "baseline": "MD-B19-A001-BL001",
+  "status": "ISSUED",
+  "issued_at": "2026-10-21T09:18:00+07:00",
+  "predecessors": [
+    "E-MD-B19-A001-038"
+  ],
+  "accepted_baseline_reviewed": "625/750",
+  "repository_proposed_reviewed": "629/750",
+  "formal_satisfied": "0/750",
+  "corrected_predecessor_archive_identity": {
+    "record": "E-MD-B19-A001-038",
+    "sha256": "00992fa14a75e92b5f94541a54d253697cdbf242a55e26fb7e1ddffe30a4a82e",
+    "note": "Corrected archive identity supplied by independent review; E038 remains immutable."
+  },
+  "new_proposed_bases": {
+    "commands_and_runbook": [
+      "MD-S064-R0009"
+    ],
+    "operator_decision_trees": [
+      "MD-S071-R0004",
+      "MD-S071-R0021",
+      "MD-S071-R0026"
+    ],
+    "scheduling_and_locking": []
+  },
+  "predicate_proof_map": "storage/app/market-data/evidence/MD-B19-A001/E039_runtime/E039_per_predicate_map.json",
+  "predicate_proof_map_sha256": "e3a6b889936d46b49783ee2e02d83494def4796e171b20cb81c51614c56a412b",
+  "raw_execution_inventory": {
+    "classification_gate.stdout.txt": "a09015dc415b559dd0ab336c8adc08be9a0790f3d79eccc8126650483a8a7d1a",
+    "correction_command_green.stdout.txt": "f1ef350ce88a66aadd63f9ec4bf2526cead55790504902ee07e07cc603b51bc9",
+    "correction_command_restored_green.stdout.txt": "454e43717f0d1277305afca3612e25f1d996ecb0fcf071c8baa63a06e1ea3c2a",
+    "correction_command_scenarios.json": "229996dd8939b354b050f9bdeca205fcbba6f9977482763a2127ce08b089e30a",
+    "correction_switch_mutation.json": "21c5710e70f8fefd7d8c55d386307ccb7bf46a7e505ebd755228a226cda51969",
+    "correction_switch_mutation.stdout.txt": "6fc8831057d3630b0b372a19bcf92ffc6f21a725bafd3e5ee9ad5acefd08ddb1",
+    "current_state_generation.stdout.txt": "b0c659b596bad187db7769c7f591215a537438f1d97cf57d14d99f90fb06dc5c",
+    "documentation_gate.stdout.txt": "453d86bd409172ae763bbe6cda878b685f600224b665134183403b7bed2a5ae9",
+    "E039_per_predicate_map.json": "e3a6b889936d46b49783ee2e02d83494def4796e171b20cb81c51614c56a412b",
+    "MarketDataOperationsProofGate.json": "1cae1c25b757bcd21fbd05266f19bc55cdd6186e4f997b403dce0051ed94634c",
+    "mutate_correction_switch_report.py": "47174c3983ca458fb0b3fdf844155b0c904638b0d2f70dbc45d4e9cb07a394a3",
+    "mutate_prior_pointer_restore.py": "4a8c877e8851cfcbf2416d8360148929c7e92d2c4009590a09395ff6b95d421b",
+    "mutate_scheduler_already_readable_guard.py": "17d60d2283197cc327db8160fec5736a4fdaa3288e8dfa5ae5e56b962a2b53b6",
+    "mutate_snapshot_purge_dry_run.py": "8bae6d7a9e92a2e6592cf1519f535a15eebc6a15d2a8df4595f0f6b068b4b5cf",
+    "operations_gate.stdout.txt": "9596e826d8e320c211e0d7c2b72d79ccfadfa231540e2b7938de580fe86cb15a",
+    "prior_restore_mutation.json": "33156e76dacf224c1390eed6431c845ec0f530bb9ff82bae1296ddcbc8a30a09",
+    "prior_restore_mutation.stdout.txt": "925785b0e445513461542af624701e51acdda16cb2047d12334e816df086b022",
+    "prior_restore_restored_green.stdout.txt": "60efb774cec2842ce3d2ec3ca61c477d116d42ced7e1a00dffbbb05b807e1bc3",
+    "relationship_gate.stdout.txt": "4c7da6bda7e721f42eac9c982d538dfe6a3410ad06d5cb9c1eb53885d8bed744",
+    "scheduler_chain.json": "1937648b501956ff848704716e7ab343604756025cf5c10a766f4a8f564fe25e",
+    "scheduler_idempotent_final_green.stdout.txt": "754320ca135d74d91e859b6ca0a59de130be7d67827cd2da454f17ac6dd9035c",
+    "scheduler_idempotent_green.stdout.txt": "f9d36bc2cd02d164c8ea865048d1d82c3c93680e01bb9efb65d9b0a951de5023",
+    "scheduler_idempotent_mutation.json": "63495d540f831dd504d437e4a77d2b37350463f16bce3396f261fb0657cd9bc9",
+    "scheduler_idempotent_mutation.stdout.txt": "5d89713fd2371cc1aad6af4bec6bc7b4032ac1023ee675dcebb01b44a117eb08",
+    "scheduler_idempotent_restored_green.stdout.txt": "c7d85be0d6d1693a796389173c6a95e297364a4bd9583b78beb8d161fc1b1d8a",
+    "snapshot_purge_green.stdout.txt": "3dbcab38ab179d01e6d0dad39051f3c5ef09a5274960af4166c7033ac7136c90",
+    "snapshot_purge_mutation.json": "0ca0e5cdf7337e41e48c71f0bd7c2ad72940db9ed9904621068a10529a7b5481",
+    "snapshot_purge_mutation.stdout.txt": "4afd544dc16e59c17c7dc3f7c74259b87ae997d9db26bf7c8aa60cea0c2baa42",
+    "snapshot_purge_restored_green.stdout.txt": "3b8c264faa5c38668bcbb816c2db9da0568dd5390a5b98bfdf0a9899cb93ffb7",
+    "snapshot_purge_scenarios.json": "6aed204c41339f5bfdbd453036cc240ce56901a78c38e9e9f84bff25849fd6e2"
+  },
+  "production_changes": [],
+  "test_and_proof_changes": [
+    "tests/Unit/MarketData/B19OperationalCorrectionDecisionMariaDbTest.php (new real MariaDB command decision coverage)",
+    "tests/Unit/MarketData/B19RangeBackfillMariaDbProofTest.php (optional raw capture for existing snapshot dry-run/apply proof)",
+    "MarketDataOperationsProofBasis.php and MarketDataOperationsProofSpec.php (four row-specific proof mappings and family guard bindings)"
+  ],
+  "execution_summary": {
+    "correction_command": "PASS 1 test / 12 assertions; changed correction reports PUBLISHED/switch=true; unchanged reports UNCHANGED/switch=false; provider failure reports FAILED/switch=false and preserves prior pointer.",
+    "scheduler_idempotency": "PASS 1 test / 40 assertions; real migrated MariaDB execution then idempotent SKIPPED_ALREADY_READABLE; mutation disabling skip fails intended outcome assertion; restored green.",
+    "snapshot_retention": "PASS 1 test / 11 assertions; dry-run observes but deletes zero; apply deletes only expired snapshot; seeded canonical/protected families remain byte-equivalent; mutation calling purge on dry-run fails intended row-count assertion; restored green.",
+    "prior_publication_restore": "Affected E038 correction proof rerun PASS 1 test / 76 assertions; pointer restore mutation fails intended pointer identity assertion and source is byte-restored."
+  },
+  "mutation_restoration": {
+    "correction_switch_report": "intended assertion failure; production source SHA-256 unchanged after restoration.",
+    "scheduler_skip": "intended assertion failure; source byte-for-byte restored; restored green passes.",
+    "snapshot_dry_run": "intended assertion failure; service source byte-for-byte restored; restored green passes.",
+    "prior_pointer_restore": "intended pointer assertion failure; repository source byte-for-byte restored; affected E038 test restored-green passes."
+  },
+  "held_obligations": {
+    "MD-S064-R0013": "Held per owner instruction. E038 observed direct UPDATE succeeds for live eod_bars and eod_current_publication_pointer under app identity. No feasible authorized separation between approved lifecycle DML and direct DML using identical DB privileges; no trigger/session-variable/routine/role/deployment change authorized. Do not re-probe absent new design authority.",
+    "F018": "Seven severity/escalation/closure decision predicates remain held pending Project Owner semantics.",
+    "deployment": "Deployment activation and production scheduling rows held absent deployment evidence.",
+    "remaining_operational": "All unproven F023 rows remain open; this batch proposes only the four individually mapped rows."
+  },
+  "governance": {
+    "operations_proof_gate": "FAIL at 629/750 bases; 121 predicates without a basis; 7 families without guard; 118 predicates without guard; formal SATISFIED 0/750.",
+    "documentation_integrity": "PASS; all 1361 physical documents and registry rows aligned.",
+    "relationship_integrity": "PASS after E039 record and four relationship rows; 504 work records and 2044 relationships.",
+    "classification_consistency": "PASS; existing MD-B20 pending rows remain 9.",
+    "known_failures": [
+      "F009/E013 alias-meaning static guard failure remains visible.",
+      "Coverage static guard failure remains visible.",
+      "B18 replay comparison failure remains unresolved at 69 failures / 94 tests; not rerun or relabeled.",
+      "MD-DEP-0025 remains ACTIVE; R0324 HELD under D008/F016; D003 warning_count persisted mirror/NULL semantics preserved."
+    ]
+  },
+  "counts": {
+    "accepted_independent_baseline": "625/750",
+    "new_proposed": 4,
+    "proposed_repository_total": "629/750",
+    "denominator": "750",
+    "formal_satisfied": "0/750"
+  },
+  "single_exact_resume_point": "MD-B19-A001: continue F023 from MD-S064-R0007 (as-known replay command proof), then independently executable unproved F023 command/operator/scheduling rows; keep MD-S064-R0013 held pending an authorized enforceable database identity design; hold the seven F018 rows and deployment-only scheduling predicates.",
+  "governance_source_sha256": {
+    "docs/market_data/development/implementation/tests/MarketDataOperationsProofBasis.php": "4780cf4966705fa486ea70f1d68cf4edba69d7649af7a1daa258cf4bda189911",
+    "docs/market_data/development/implementation/tests/MarketDataOperationsProofSpec.php": "2e768e9b1f8b17c324732cdff1ea172a0a3d6e26c379a8704ad7a864a5045356",
+    "docs/market_data/development/implementation/CI-MD-B19-A001-001_OPERATIONS_LOCKING_OBSERVABILITY_AND_RECOVERY.md": "dd67a7c8b5c26abec20030e70215752149c0abb0ecddf6076718aa527e277249",
+    "docs/market_data/development/findings/F-MD-B19-A001-023_OPERATIONAL_DECISION_PROOF_REMAINDER.md": "555228f81f5ab5a0ab3596d287e4e6a638fcfee3d39fe73f111172075d5b5f0f",
+    "docs/market_data/development/implementation/MD_IMPLEMENTATION_STAGE_REGISTER.md": "755cffdf29f742b9838acb7cf084962a655760eb123ee942a4b1af58185da6bd",
+    "docs/market_data/development/implementation/CURRENT_STATE.md": "582fc0c6fa8b83cca63975cd86685f4cc56cf1cb93dc93f2c83f5001b1864c52"
+  }
+}

@@ -27,6 +27,30 @@ final class MarketDataOperationsProofBasis
 
     /** @var array<string,array<string,string>> */
     public const PROVEN = [
+        // Operator branch proof added by E039: a verified requested-date publication is
+        // an explicit no-op decision for the scheduled command, and correction output
+        // reports whether the current pointer actually switched (not merely whether a
+        // correction command ran).
+        'MD-S071-R0004' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
+            'basis' => 'the real scheduled command first completes a readable publication, then detects that exact healthy requested-date publication and returns SKIPPED_ALREADY_READABLE without changing source-observation count, run count, pointer or the immutable run event trail; disabling the healthy-current decision makes the focused MariaDB test fail at the scheduled command outcome assertion',
+        ],
+        'MD-S071-R0021' => [
+            'positive' => 'B19OperationalCorrectionDecisionMariaDbTest::test_real_correction_command_reports_switch_and_preserves_prior_on_no_switch',
+            'negative' => 'B19OperationalCorrectionDecisionMariaDbTest::test_real_correction_command_reports_switch_and_preserves_prior_on_no_switch',
+            'basis' => 'the actual MariaDB correction command reports candidate_publication_switch=true only after a changed correction becomes current; unchanged and provider-failed corrections report false, and both preserve the selected current pointer; mutating the command to always report false makes the changed-correction assertion fail',
+        ],
+        'MD-S071-R0026' => [
+            'positive' => 'B19CorrectionMariaDbProofTest::test_real_changed_unchanged_failed_and_historical_correction',
+            'negative' => 'B19CorrectionMariaDbProofTest::test_real_changed_unchanged_failed_and_historical_correction',
+            'basis' => 'the real MariaDB recovery path restores a known sealed/readable previous publication after a later provider failure and verifies pointer, publication-current and run-current mirrors; pairing restore with a nonexistent run is refused without changing the selected pointer; a counterfactual pointer write that leaves the current candidate selected is blocked by the pointer/current mirror guard and makes the recovery test red',
+        ],
+        'MD-S064-R0009' => [
+            'positive' => 'B19RangeBackfillMariaDbProofTest::test_snapshot_retention_dry_run_and_apply_only_remove_expired_snapshot_rows',
+            'negative' => 'B19RangeBackfillMariaDbProofTest::test_snapshot_retention_dry_run_and_apply_only_remove_expired_snapshot_rows',
+            'basis' => 'the registered MariaDB purge command previews the eligible expired session-snapshot count and cutoff without deleting, then --apply removes only the eligible non-authoritative snapshot row while preserving the in-window snapshot and byte-equivalent canonical, indicator, eligibility, correction, publication and history state; mutating the service to purge during DRY_RUN makes the dry-run row-count assertion fail',
+        ],
         // ---- MD-S053 "API range-window market-calendar warmup addendum" -- family
         // `range_window_warmup_calendar`. The addendum has two halves that pull in opposite
         // directions (fail fast for a non-trading requested date; do not fail fast at the dataset

@@ -1052,8 +1052,8 @@ final class MarketDataOperationsProofSpec
                     'app/Console/Commands/MarketData',
                     'docs/market_data/development/implementation/ops/commands/README.md',
                 ],
-                'positive' => ['tests/Unit/MarketData/B19RuntimeCommandCatalogTest.php', 'test_registered_market_data_commands_and_options_match_the_operator_catalog'],
-                'negative' => ['tests/Unit/MarketData/B19RuntimeCommandCatalogTest.php', 'test_registered_market_data_commands_and_options_match_the_operator_catalog'],
+                'positive' => ['tests/Unit/MarketData/B19RangeBackfillMariaDbProofTest.php', 'test_snapshot_retention_dry_run_and_apply_only_remove_expired_snapshot_rows'],
+                'negative' => ['tests/Unit/MarketData/B19OperationalCorrectionDecisionMariaDbTest.php', 'test_real_correction_command_reports_switch_and_preserves_prior_on_no_switch'],
             ],
             'cross_contract_alignment' => [
                 'owner' => 'MD-B19:cross-contract-alignment',
@@ -1108,8 +1108,8 @@ final class MarketDataOperationsProofSpec
                 'implementation' => [
                     'app/Console/Commands/MarketData',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19OperationalCommandsMariaDbTest.php', 'test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current'],
+                'negative' => ['tests/Unit/MarketData/B19OperationalCorrectionDecisionMariaDbTest.php', 'test_real_correction_command_reports_switch_and_preserves_prior_on_no_switch'],
             ],
             'ownership_and_recovery' => [
                 'owner' => 'MD-B19:ownership-and-recovery',
