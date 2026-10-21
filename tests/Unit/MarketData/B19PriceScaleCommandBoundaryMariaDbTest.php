@@ -82,20 +82,59 @@ class B19PriceScaleCommandBoundaryMariaDbTest extends TestCase
         $this->assertStringContainsString('reason_code=COMMAND_CONFLICTING_OPTIONS', $conflictOutput);
         $this->assertSame($before, $this->protectedState());
 
-        $history = DB::table('eod_bars_history')->where('publication_id', $world['publication_id'])->first();
-        $this->assertNotNull($history);
-        try {
-            DB::table('eod_bars_history')->where('publication_id', $world['publication_id'])
-                ->where('ticker_id', $history->ticker_id)->update(['close' => 1]);
-            $this->fail('Direct SQL rewrote sealed canonical history.');
-        } catch (QueryException $error) {
-            $this->assertStringContainsString('SEALED_PUBLICATION_IMMUTABLE', $error->getMessage());
+        foreach (['eod_bars_history', 'eod_indicators_history', 'eod_eligibility_history'] as $historyTable) {
+            $history = DB::table($historyTable)->where('publication_id', $world['publication_id'])->first();
+            $this->assertNotNull($history, 'Expected protected sealed history in '.$historyTable);
+            try {
+                DB::table($historyTable)->where('publication_id', $world['publication_id'])->update(['created_at' => '2030-01-01 00:00:00']);
+                $this->fail('Direct SQL rewrote sealed history in '.$historyTable.'.');
+            } catch (QueryException $error) {
+                $this->assertStringContainsString('SEALED_PUBLICATION_IMMUTABLE', $error->getMessage());
+            }
+            try {
+                DB::table($historyTable)->where('publication_id', $world['publication_id'])->delete();
+                $this->fail('Direct SQL deleted sealed history from '.$historyTable.'.');
+            } catch (QueryException $error) {
+                $this->assertStringContainsString('SEALED_PUBLICATION_IMMUTABLE', $error->getMessage());
+            }
+            $candidate = (array) $history;
+            $autoIncrement = DB::select("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND EXTRA LIKE '%auto_increment%'", [$historyTable]);
+            foreach ($autoIncrement as $key) {
+                unset($candidate[$key->COLUMN_NAME]);
+            }
+            try {
+                DB::table($historyTable)->insert($candidate);
+                $this->fail('Direct SQL inserted sealed history into '.$historyTable.'.');
+            } catch (QueryException $error) {
+                $this->assertStringContainsString('SEALED_PUBLICATION_IMMUTABLE', $error->getMessage());
+            }
         }
-        foreach ([
-            'bars_batch_hash' => str_repeat('0', 64),
-            'publication_manifest_hash' => str_repeat('1', 64),
-            'seal_state' => 'UNSEALED',
-        ] as $field => $replacement) {
+        $identityFields = [
+            'trade_date', 'run_id', 'publication_version', 'seal_state',
+            'bars_batch_hash', 'indicators_batch_hash', 'eligibility_batch_hash',
+            'source_file_hash', 'source_file_hash_algorithm', 'source_file_size_bytes', 'source_file_row_count',
+            'config_snapshot_id', 'factor_set_id', 'factor_set_hash',
+            'observation_manifest_hash', 'semantic_observation_manifest_hash', 'seal_provenance_scope',
+            'publication_manifest_hash', 'price_product_code', 'price_product_version', 'read_model_version',
+            'readiness_state', 'source_scale_assessment_set_hash', 'market_structure_revision_set_hash',
+            'factor_decision_set_hash', 'sealed_at', 'artifact_hash_profile', 'publication_semantic_profile',
+            'correction_semantic_hash', 'seal_fingerprint',
+        ];
+        $sealed = DB::table('eod_publications')->where('publication_id', $world['publication_id'])->first();
+        foreach ($identityFields as $field) {
+            $column = DB::table('information_schema.COLUMNS')->where('TABLE_SCHEMA', DB::connection()->getDatabaseName())
+                ->where('TABLE_NAME', 'eod_publications')->where('COLUMN_NAME', $field)->first();
+            $this->assertNotNull($column, 'Missing sealed identity column '.$field);
+            $old = $sealed->{$field};
+            if (in_array(strtolower($column->DATA_TYPE), ['int', 'bigint', 'smallint', 'mediumint', 'tinyint', 'decimal', 'float', 'double'], true)) {
+                $replacement = (int) $old === 0 ? 1 : 0;
+            } elseif ($field === 'seal_state') {
+                $replacement = 'UNSEALED';
+            } elseif (in_array(strtolower($column->DATA_TYPE), ['date', 'datetime', 'timestamp'], true)) {
+                $replacement = $old === '2000-01-01' || $old === '2000-01-01 00:00:00' ? '2001-01-01 00:00:00' : '2000-01-01 00:00:00';
+            } else {
+                $replacement = $old === 'E038_PROBE' ? 'E038_OTHER' : 'E038_PROBE';
+            }
             try {
                 DB::table('eod_publications')->where('publication_id', $world['publication_id'])
                     ->update([$field => $replacement]);
@@ -113,5 +152,13 @@ class B19PriceScaleCommandBoundaryMariaDbTest extends TestCase
         DB::table('eod_publications')->where('publication_id', $world['publication_id'])->update(['is_current' => 0]);
         DB::table('eod_publications')->where('publication_id', $world['publication_id'])->update(['is_current' => 1]);
         $this->assertSame($before, $this->protectedState());
+
+        require_once base_path('database/migrations/2026_10_21_000001_require_pointer_before_current_publication.php');
+        try {
+            (new RequirePointerBeforeCurrentPublication())->down();
+            $this->fail('Migration rollback removed the current-publication write fence while sealed publications exist.');
+        } catch (\RuntimeException $error) {
+            $this->assertStringContainsString('CURRENT_PUBLICATION_POINTER_ROLLBACK_WOULD_REMOVE_PROTECTION', $error->getMessage());
+        }
     }
 }

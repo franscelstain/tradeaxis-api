@@ -1417,16 +1417,6 @@ class EodPublicationRepository
                     'updated_at' => $now,
                 ]);
 
-            DB::table('eod_publications')
-                ->where('publication_id', $candidate->publication_id)
-                ->update([
-                    'is_current' => 1,
-                    'supersedes_publication_id' => $priorPublicationId,
-                    'previous_publication_id' => $priorPublicationId,
-                    'replaced_publication_id' => $priorPublicationId,
-                    'updated_at' => $now,
-                ]);
-
             DB::table('eod_current_publication_pointer')->updateOrInsert(
                 ['trade_date' => $run->trade_date_requested],
                 [
@@ -1437,6 +1427,18 @@ class EodPublicationRepository
                     'updated_at' => $now,
                 ]
             );
+
+            // MariaDB requires the authoritative date pointer to select a sealed
+            // publication before its is_current mirror can be raised.
+            DB::table('eod_publications')
+                ->where('publication_id', $candidate->publication_id)
+                ->update([
+                    'is_current' => 1,
+                    'supersedes_publication_id' => $priorPublicationId,
+                    'previous_publication_id' => $priorPublicationId,
+                    'replaced_publication_id' => $priorPublicationId,
+                    'updated_at' => $now,
+                ]);
 
             DB::table('eod_runs')
                 ->where('trade_date_requested', $run->trade_date_requested)
@@ -1555,13 +1557,6 @@ class EodPublicationRepository
                     'updated_at' => $now,
                 ]);
 
-            DB::table('eod_publications')
-                ->where('publication_id', $priorPublicationId)
-                ->update([
-                    'is_current' => 1,
-                    'updated_at' => $now,
-                ]);
-
             DB::table('eod_current_publication_pointer')->updateOrInsert(
                 ['trade_date' => $tradeDate],
                 [
@@ -1572,6 +1567,13 @@ class EodPublicationRepository
                     'updated_at' => $now,
                 ]
             );
+
+            DB::table('eod_publications')
+                ->where('publication_id', $priorPublicationId)
+                ->update([
+                    'is_current' => 1,
+                    'updated_at' => $now,
+                ]);
 
             DB::table('eod_runs')
                 ->where('trade_date_requested', $tradeDate)

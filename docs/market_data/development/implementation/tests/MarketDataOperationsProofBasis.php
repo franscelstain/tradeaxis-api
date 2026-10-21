@@ -3192,6 +3192,11 @@ final class MarketDataOperationsProofBasis
             'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_correction_with_reseal_failure_keeps_prior_current_and_leaves_candidate_non_current',
             'basis' => 'E035 trace supplement to E034: a corrected candidate becomes current only after a successful, verified reseal and switch; an injected reseal failure persists FAILED/NOT_READABLE, leaves the candidate UNSEALED/non-current and preserves the old current publication.',
         ],
+        'MD-S071-R0027' => [
+            'positive' => 'B19CorrectionMariaDbProofTest::test_real_changed_unchanged_failed_and_historical_correction',
+            'negative' => 'B19CorrectionMariaDbProofTest::test_real_changed_unchanged_failed_and_historical_correction',
+            'basis' => 'E038 MariaDB executes changed corrections and a provider failure, then restores a known sealed/readable prior publication through the real repository recovery method and verifies pointer/run/current mirrors; an unrelated missing run identity is refused as POINTER_ORPHAN_DETECTED without moving the restored pointer. A direct superseded-row is_current write is separately refused by the new database fence.',
+        ],
         'MD-S071-R0030' => [
             'positive' => 'B19CorrectionMariaDbProofTest::test_real_changed_unchanged_failed_and_historical_correction',
             'negative' => 'B19CorrectionEvidenceProofTest::test_cancelled_unexecuted_request_does_not_invent_unchanged',

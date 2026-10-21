@@ -1,0 +1,65 @@
+{
+  "record_id": "E-MD-B19-A001-038",
+  "record_type": "EVIDENCE",
+  "stage": "MD-B19",
+  "attempt": "MD-B19-A001",
+  "baseline": "MD-B19-A001-BL001",
+  "status": "ISSUED",
+  "issued_at": "2026-10-21T08:05:34+07:00",
+  "predecessors": [
+    "E-MD-B19-A001-037"
+  ],
+  "accepted_baseline_reviewed": "624/750",
+  "repository_proposed_reviewed": "625/750",
+  "formal_satisfied": "0/750",
+  "new_proposed_bases": {
+    "operator_decision_trees": [
+      "MD-S071-R0027"
+    ],
+    "commands_and_runbook": [],
+    "scheduling_and_locking": []
+  },
+  "partial_hold": {
+    "MD-S064-R0013": "Partial safety proof: sealed publication fields, three history families, direct stale is_current mirror refusal, price-scale refusal and valid correction transition pass; direct SQL live eod_bars and eod_current_publication_pointer writes remain unfenced, so no basis is registered."
+  },
+  "proof_map": "E038_runtime/E038_per_predicate_map.json",
+  "proof_map_sha256": "d4d302bc92f591d5f4afe05f970eeb1a6cf7dd92a7d047f105aff73b94110985",
+  "source_sha256": {
+    "app/Infrastructure/Persistence/MarketData/EodPublicationRepository.php": "f9793bf38cda4ff1cf36ef096daa946e21f47267b6737d48ae59db96c522e8ee",
+    "database/migrations/2026_10_21_000001_require_pointer_before_current_publication.php": "695a531ce86f9f7c7abfc566fa09594c3dbd4c54e7783b3563afc1f5e95adbcb",
+    "tests/Unit/MarketData/B19CorrectionMariaDbProofTest.php": "aacf6fa188a304197d6ba4cf7d41c77a18e203136582e9e010e8b9fa2d01738e",
+    "tests/Unit/MarketData/B19PriceScaleCommandBoundaryMariaDbTest.php": "f848b7d1329972ca2a6ffe6d4064c84ab5be568385d9af03dc50751f141eb4e4",
+    "docs/market_data/development/implementation/tests/MarketDataOperationsProofBasis.php": "0d89491bc06ae46af5ead6905b0f9d5c0103e19c7c2a597ea59c80ba5df69c09"
+  },
+  "raw_execution_sha256": {
+    "correction_pointer_fence_green.stdout.txt": "d574605c6cbe15cfe2ccdcdbbc83ceff518c6472402fd3e4700fc3849fa1a85b",
+    "correction_pointer_fence_rollback_green.stdout.txt": "77e321651bbda6c8b1de31e7faba783f0b618d8f0224184ceb0eb1d5b98b1dac",
+    "current_pointer_mutation.stdout.txt": "2fa676fd0f39319aac0f2acd46afd886ba220eea3569eaaf0493f926cda0985c",
+    "migration.stdout.txt": "a545cc7be38440531f43e7b4c2d1f6e2f023bfcee35793b0fe1c0664d13782b3",
+    "price_scale_identity_regression.stdout.txt": "e1d0a43aae4bf08e51dd049d863ac0514593e715c02a5a188aff4ec4abcf2b1c",
+    "scheduled_pointer_fence_green.stdout.txt": "8efe416c2c54d9951b1c109467833ac2e4624d1f67067ede0da0f456f0d94b07",
+    "sealed_history_matrix_green.stdout.txt": "1ccda376cac7d4c2d195f30839c65bef02647a27143e1938841786d3ddda64a7",
+    "sealed_identity_matrix_green.stdout.txt": "f7a01e1d9249d02af2288e016505dcc2004c5ae158a105bdd85b33f50e8c93cf"
+  },
+  "tests": {
+    "direct_current_before_fix": "RED intended failure: superseded sealed row could be set is_current while date pointer named replacement.",
+    "correction_and_prior_recovery": "PASS 1 test / 76 assertions; actual MariaDB; correction succession, provider failure, safe prior restoration, invalid run refusal and stale direct row refusal.",
+    "sealed_identity_history_matrix": "PASS 1 test / 88 assertions; all 30 sealed identity columns and INSERT/UPDATE/DELETE on bars, indicators and eligibility history, plus rollback refusal.",
+    "scheduled_promotion": "PASS 1 test / 40 assertions; actual MariaDB scheduled workflow and idempotent repeat.",
+    "mutation": "Pointer-trigger counterfactual yields intended direct-current assertion failure; migration bytes restored and MariaDB test trigger reinstalled before restored green.",
+    "governance": "Operations gate FAIL at 625/750 with 125 missing bases and eight unassigned guards; unrelated known gates preserved."
+  },
+  "production_changes": [
+    "Add migration 2026_10_21_000001_require_pointer_before_current_publication with MariaDB/SQLite current-mirror consistency trigger and protected rollback.",
+    "Reorder publication promotion and prior-publication restoration so pointer selection precedes is_current=1 within the existing transaction."
+  ],
+  "limits": [
+    "MD-S064-R0013 remains held because direct SQL writes to live eod_bars canonical projection are not fenced.",
+    "No command or scheduling bases are proposed; deployment activation/provider production remain unavailable.",
+    "F018 severity/escalation/closure rows remain held for Project Owner authority.",
+    "R0324 remains HELD under D008/F016; MD-DEP-0025 ACTIVE; D003 NULL semantics and candidate-v5 preserved.",
+    "B18 replay-comparison failure remains visible at 69 failures / 94 tests.",
+    "No full-suite PASS, formal SATISFIED, candidate-v6 or B19 closure."
+  ],
+  "single_exact_resume_point": "Independent review E038; then continue 36 remaining operational predicates (commands 8, scheduling 8, operator decisions 20), first close the live canonical direct-SQL gap under exact authority; preserve F018 and deployment holds."
+}

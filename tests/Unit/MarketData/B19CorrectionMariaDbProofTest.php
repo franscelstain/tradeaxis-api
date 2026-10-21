@@ -2,6 +2,7 @@
 use App\Application\MarketData\Services\MarketDataEvidenceExportService;
 use App\Infrastructure\Persistence\MarketData\EodCorrectionRepository;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\QueryException;
 use Tests\Support\UsesMarketDataMariaDb;
 use Tests\Support\R0025SyntheticV2World;
 use Carbon\Carbon;
@@ -34,7 +35,29 @@ class B19CorrectionMariaDbProofTest extends TestCase
         $unchanged=$repo->createRequest($date,'DATASET_HASH_CREATED','Independent unchanged source','requester-C',$new,(int)$run->run_id);$repo->approve($unchanged->correction_id,'approver-D');$same=$w['pipeline']->runDaily($date,'api',$unchanged->correction_id);[$u]=$this->export((int)$unchanged->correction_id,'unchanged');$this->assertSame('UNCHANGED',$u['changed_decision']);$this->assertFalse($u['publication_switch']);$this->assertNull($u['new_publication']);$this->assertSame($new,$u['correction_lifecycle']['preserved_publication_id']);$this->assertSame($new,(int)DB::table('eod_current_publication_pointer')->where('trade_date',$date)->value('publication_id'));
         // A second real changed correction supersedes the first replacement; old switch remains true.
         $third=$repo->createRequest($date,'DATASET_HASH_CREATED','Independent source close107','requester-C',$new,(int)$run->run_id);$repo->approve($third->correction_id,'approver-D');$changed['chart']['result'][0]['indicators']['quote'][0]['close'][0]=107;$response=json_encode($changed);$latest=$w['pipeline']->runDaily($date,'api',$third->correction_id);$latestId=(int)DB::table('eod_current_publication_pointer')->where('trade_date',$date)->value('publication_id');[$history]=$this->export($cid,'historical');$this->assertTrue($history['publication_switch']);$this->assertFalse($history['new_publication_is_current']);$this->assertSame($latestId,(int)$history['current_publication']['publication_id']);$this->assertSame($newHashes,$history['new_hashes']);$this->assertSame('ADMITTED_COMPLETE',$history['evidence_admission']['evidence_admission_state']);
+        try {
+            DB::table('eod_publications')->where('publication_id', $base)->update(['is_current' => 1]);
+            $this->fail('Direct SQL marked a superseded sealed publication current while the date pointer named a different publication.');
+        } catch (QueryException $error) {
+            $this->assertStringContainsString('CURRENT_PUBLICATION_POINTER_REQUIRED', $error->getMessage());
+        } finally {
+            DB::table('eod_publications')->where('publication_id', $base)->update(['is_current' => 0]);
+        }
         $failed=$repo->createRequest($date,'DATASET_HASH_CREATED','Independent rejected auth request','requester-C',$latestId,(int)$latest->run_id);$repo->approve($failed->correction_id,'approver-D');$status=401;try{$w['pipeline']->runDaily($date,'api',$failed->correction_id);$this->fail('Provider auth error must propagate');}catch(\App\Infrastructure\MarketData\Source\SourceAcquisitionException $e){$this->assertSame('RUN_SOURCE_AUTH_ERROR',$e->reasonCode());}[$f]=$this->export((int)$failed->correction_id,'failed');$this->assertFalse($f['publication_switch']);$this->assertSame('ADMITTED_INCOMPLETE',$f['evidence_admission']['evidence_admission_state']);$this->assertSame($latestId,(int)DB::table('eod_current_publication_pointer')->where('trade_date',$date)->value('publication_id'));
+        $restored = app(\App\Infrastructure\Persistence\MarketData\EodPublicationRepository::class)
+            ->restorePriorCurrentPublication($date, $new, (int) $run->run_id);
+        $this->assertSame($new, (int) $restored->publication_id);
+        $this->assertSame($new, (int) DB::table('eod_current_publication_pointer')->where('trade_date', $date)->value('publication_id'));
+        $this->assertSame(1, (int) DB::table('eod_publications')->where('publication_id', $new)->value('is_current'));
+        $this->assertSame(0, (int) DB::table('eod_publications')->where('publication_id', $latestId)->value('is_current'));
+        try {
+            app(\App\Infrastructure\Persistence\MarketData\EodPublicationRepository::class)
+                ->restorePriorCurrentPublication($date, $latestId, 999999999);
+            $this->fail('Recovery accepted a prior publication paired with an unrelated, missing run identity.');
+        } catch (\RuntimeException $error) {
+            $this->assertStringContainsString('POINTER_ORPHAN_DETECTED', $error->getMessage());
+        }
+        $this->assertSame($new, (int) DB::table('eod_current_publication_pointer')->where('trade_date', $date)->value('publication_id'));
     }
     public function test_real_impact_modes_require_safe_publication_lifecycle(): void {
         $pkg=R0025SyntheticV2World::packagePath();$response=file_get_contents($pkg.'/inputs/provider_response.json');$reasons=json_decode(file_get_contents($pkg.'/inputs/frozen_reason_registry.json'),true)['entries'];DB::table('eod_reason_codes')->delete();foreach(array_chunk($reasons,100) as $chunk)DB::table('eod_reason_codes')->insert($chunk);
