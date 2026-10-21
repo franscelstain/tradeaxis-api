@@ -1,0 +1,54 @@
+{
+  "record_id": "E-MD-B19-A001-042",
+  "record_type": "EVIDENCE",
+  "status": "ISSUED",
+  "attempt": "MD-B19-A001",
+  "predecessor": "E-MD-B19-A001-039",
+  "issued_at": "2026-10-21T11:01:31+07:00",
+  "accepted_independent_baseline": "629/750",
+  "repository_proposed": "630/750",
+  "formal_satisfied": "0/750",
+  "new_bases": {
+    "scheduling_and_locking": [
+      "MD-S078-R0019"
+    ],
+    "commands_and_runbook": [],
+    "operator_decision_trees": []
+  },
+  "governing_requirement": {
+    "path": "docs/market_data/authority/strategy/ops/Scheduling_and_Locking_Contract_LOCKED.md",
+    "document": "MD-S078",
+    "line": 44,
+    "scope": "a clean scheduling record is evidence only that due work was serialized and ownership explicit, not that operations ran correctly",
+    "predicate": "MD-S078-R0019"
+  },
+  "proof": {
+    "negative": "B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success",
+    "positive": "B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current",
+    "assertions": "positive and held outcome each assert eod_run_owner_fences owner_run_id equals the due run; failure preserves prior readable publication and reports HELD/NOT_READABLE; competing run is SKIPPED_LOCKED with no second owner",
+    "supplemental_competition": "B19OperationalCommandsMariaDbTest::test_scheduled_competitor_reports_locked_without_starting_a_second_owner",
+    "mutation": "ScheduledWorkflowCommand HELD outcome relabeled SUCCESS_READABLE; intended PHPUnit assertion failed; original source SHA before and after eecf52ef1348d1e21d4049724d1bc55607010e39edf50ddcc5cdc3f73da4e6d8, byte restoration verified; restored green 1 test/37 assertions"
+  },
+  "tests": {
+    "gate": "operations proof gate FAIL, 630/750 bases, 120 missing, 7 families without guard, formal 0/750",
+    "named_execution": "3 MariaDB tests / 97 assertions PASS",
+    "restored_green": "1 focused test / 37 assertions PASS",
+    "mutation": "1 focused test fails at intended assertion",
+    "output": "storage/app/market-data/evidence/MD-B19-A001/E042_runtime/scheduler_owner_outcome_revalidation.stdout.txt"
+  },
+  "hashes": {
+    "run_output": "3bc663c4fce27948d25e9d8838161ad673ede7ede7e9c69599b8b50cfa3cff17",
+    "test": "36385b4ad814834a0883a9add222a3c48771bc8ce6d97bcf1985affd9ed1af27",
+    "proof_basis": "f10e9639752818f5c9bb2358eb2dc9e7cf4732adbd1062c0fd739e6447b3c4e8",
+    "mutation_json": "86dcab8651f9db33d444bd1890f02cb1c62e684c0773c39fbd9c1fd9433cf9aa"
+  },
+  "holds": {
+    "R0007": "AS_KNOWN positive lacks independent oracle; PUBLICATION_EXACT positive blocked by frozen-build identity mismatch under MD-DEP-0025",
+    "R0324": "HELD under D008/F016",
+    "deployment": "activation predicates held without deployment evidence",
+    "R0013": "await authorized enforceable database-identity boundary",
+    "MD_DEP_0025": "ACTIVE",
+    "F018": "seven severity/escalation/closure predicates await owner authority"
+  },
+  "resume": "MD-B19-A001: resume non-replay F023 operational proof; MD-S064-R0007 remains parked until independent AS_KNOWN oracle and governed frozen-build identity resolution exist; exclude MD-S064-R0013 pending authorized enforceable database-identity design; continue executable command, local scheduling and non-F018 operator rows; hold F018 and deployment-only rows."
+}

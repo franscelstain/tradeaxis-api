@@ -27,6 +27,23 @@ final class MarketDataOperationsProofBasis
 
     /** @var array<string,array<string,string>> */
     public const PROVEN = [
+        // E043: real MariaDB operator decisions. The source-response, prior-current,
+        // and invalid-current worlds have separate negative controls and mutations.
+        'MD-S071-R0002' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_schema_drift_refuses_best_effort_due_publication_and_reports_verified_prior_only_when_present',
+            'basis' => 'E043: the registered scheduled command publishes the valid R0025 response, while a required quote branch removed from the provider payload for a separately due date yields RUN_SOURCE_RESPONSE_CHANGED, a nonzero exit and no due-date canonical rows, accepted observation or pointer. Relabeling schema drift to no-valid-data fails the exact reason assertion; source was byte restored and the MariaDB test passed.',
+        ],
+        'MD-S071-R0006' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_schema_drift_refuses_best_effort_due_publication_and_reports_verified_prior_only_when_present',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_schema_drift_refuses_best_effort_due_publication_and_reports_verified_prior_only_when_present',
+            'basis' => 'E043: the same malformed due-date acquisition is executed with a verified prior readable publication and with a prior import-only run. The registered status command reports the actual prior readable trade date only in the first world, null in the second, while neither creates due-date readability. A mutation suppressing latest_readable_trade_date fails the prior-present assertion and is byte restored.',
+        ],
+        'MD-S071-R0028' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_invalid_sole_current_publication_freezes_readability_until_governed_repair',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_invalid_sole_current_publication_freezes_readability_until_governed_repair',
+            'basis' => 'E043: on migrated MariaDB a genuinely readable sole publication is made contradictory by clearing its current mirror while retaining the pointer. The consumer resolver freezes readability, the repair command diagnoses PUBLICATION_NOT_MARKED_CURRENT in dry-run without mutation, and apply without an audit reason is refused. Removing the resolver current-mirror predicate makes the exact null assertion fail; source is byte restored and the green control passes.',
+        ],
         // Operator branch proof added by E039: a verified requested-date publication is
         // an explicit no-op decision for the scheduled command, and correction output
         // reports whether the current pointer actually switched (not merely whether a
@@ -35,6 +52,11 @@ final class MarketDataOperationsProofBasis
             'positive' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
             'negative' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
             'basis' => 'the real scheduled command first completes a readable publication, then detects that exact healthy requested-date publication and returns SKIPPED_ALREADY_READABLE without changing source-observation count, run count, pointer or the immutable run event trail; disabling the healthy-current decision makes the focused MariaDB test fail at the scheduled command outcome assertion',
+        ],
+        'MD-S078-R0019' => [
+            'positive' => 'B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current',
+            'negative' => 'B19OperationalCommandsMariaDbTest::test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success',
+            'basis' => 'the migrated MariaDB scheduled path persists an explicit eod_run_owner_fences row whose owner_run_id is the due run for both readable and HELD outcomes; the HELD negative preserves the prior readable date without treating the owner record as proof of successful operations, while the separately executed competing invocation returns SKIPPED_LOCKED without starting a second owner. Relabeling the due-source failure as SUCCESS_READABLE is caught by the focused negative guard; source was restored byte-for-byte and the restored green control passed.',
         ],
         'MD-S071-R0021' => [
             'positive' => 'B19OperationalCorrectionDecisionMariaDbTest::test_real_correction_command_reports_switch_and_preserves_prior_on_no_switch',

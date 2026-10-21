@@ -1,0 +1,30 @@
+{
+  "record_id": "E-MD-B19-A001-043",
+  "record_type": "EVIDENCE",
+  "status": "ISSUED",
+  "attempt": "MD-B19-A001",
+  "predecessor": "E-MD-B19-A001-042",
+  "issued_at": "2026-10-21T11:43:38+07:00",
+  "accepted_independent_baseline": "630/750",
+  "repository_proposed": "633/750",
+  "formal_satisfied": "0/750",
+  "new_bases": {
+    "operator_decision_trees": ["MD-S071-R0002", "MD-S071-R0006", "MD-S071-R0028"]
+  },
+  "scope": "Three bounded real-MariaDB operator branches: provider schema drift, verified prior readable date versus import-only prior, and invalid sole-current freeze. This record does not claim an incident severity/closure decision, an executable artifact remediation, deployment activation, or complete operator-decision-tree coverage.",
+  "named_tests": {
+    "focused_restored": "B19OperationalCommandsMariaDbTest: 3 tests / 38 assertions PASS",
+    "affected_previous": "B19OperationalCommandsMariaDbTest::test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current: 1 test / 42 assertions PASS before and after its counterfactual",
+    "source_change": "No production source changes. Test-only new MariaDB branch worlds plus three proof-basis entries. Previously accepted MD-S071-R0004 and MD-S078-R0019 were revalidated; neither is recounted."
+  },
+  "counterfactuals": [
+    "PublicApiEodBarsAdapter required-quote schema reason changed: intended RUN_SOURCE_RESPONSE_CHANGED assertion failed in both prior worlds; bytes restored",
+    "MarketDataOperationalStatusService latest readable date suppressed: intended verified-prior assertion failed; bytes restored",
+    "EodPublicationRepository current mirror predicate replaced by a tautology: intended null/readability assertion failed; bytes restored",
+    "ScheduledWorkflowCommand healthy-current skip disabled: previously accepted R0004 idempotent result assertion failed; bytes restored and green"
+  ],
+  "raw_identity": "storage/app/market-data/evidence/MD-B19-A001/E043_runtime/E043_per_predicate_map.json includes exact source SHA-256, raw output SHA-256, assertion lines and independently specified expectations; E043_remaining_queue.json enumerates all 117 still unproved rows with rule text and a row-specific gap.",
+  "execution_boundary": "The remaining activation (8), freshness/SLO (35), incident classification (18) and release-gate (12) families lack actual production activation, executable evaluator/classifier/release gate, or F018 authority. The remaining command, replay, scheduler and acquisition worlds require substantially new independent test or runtime behavior; they are not inferred from adjacent passing tests. No full suite was run.",
+  "known_failures": "Operations proof gate remains FAIL with 117 missing bases and seven unassigned family guards. Alias-meaning and coverage static guards remain visible. B18ReplayComparisonExhaustivenessTest remains at its recorded 69 failures / 94 tests, not a PASS. MD-DEP-0025 remains ACTIVE, MD-S075-R0324 HELD under D008/F016, warning_count NULL semantics under D003 persist.",
+  "resume": "MD-B19-A001: independent review E043's three bounded operator bases. Then establish new independent runtime worlds for MD-S074-R0011/R0013 recovery and MD-S078-R0003/R0004 logical-key/lease matrices, or an authorized release/freshness runtime; keep MD-S064-R0007/R0013, F018, deployment, R0324 and MD-DEP-0025 holds unchanged."
+}

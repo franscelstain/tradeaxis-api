@@ -7,6 +7,8 @@ use App\Console\Commands\MarketData\PromoteMarketDataCommand;
 use App\Console\Commands\MarketData\ExportEvidenceCommand;
 use App\Models\EodRun;
 use App\Infrastructure\Persistence\MarketData\EodRunRepository;
+use App\Infrastructure\Persistence\MarketData\EodPublicationRepository;
+use App\Console\Commands\MarketData\RepairCurrentPublicationIntegrityCommand;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -35,6 +37,35 @@ class B19OperationalCommandsMariaDbTest extends TestCase
         }
     }
 
+    public function test_invalid_sole_current_publication_freezes_readability_until_governed_repair(): void
+    {
+        $world = R0025SyntheticV2World::build();
+        $date = R0025SyntheticV2World::world()['trade_date'];
+        $publicationId = (int) $world['publication_id'];
+        $repository = app(EodPublicationRepository::class);
+        $this->assertSame($publicationId, (int) $repository->resolveCurrentReadablePublicationForTradeDate($date)->publication_id);
+
+        // Contradictory current mirror: the pointer still names a sealed publication,
+        // but that publication no longer asserts that it is current.
+        DB::table('eod_publications')->where('publication_id', $publicationId)->update(['is_current' => 0]);
+        $this->assertNull($repository->resolveCurrentReadablePublicationForTradeDate($date));
+        $this->assertSame($publicationId, (int) DB::table('eod_current_publication_pointer')->where('trade_date', $date)->value('publication_id'));
+
+        [$dryCode, $dryOutput] = $this->command(RepairCurrentPublicationIntegrityCommand::class, ['--trade_date' => $date]);
+        $this->assertSame(1, $dryCode, $dryOutput);
+        $this->assertStringContainsString('PUBLICATION_NOT_MARKED_CURRENT', $dryOutput);
+        $this->assertStringContainsString('operation_mode=DRY_RUN', $dryOutput);
+        $this->assertSame($publicationId, (int) DB::table('eod_current_publication_pointer')->where('trade_date', $date)->value('publication_id'));
+
+        [$refusalCode, $refusalOutput] = $this->command(RepairCurrentPublicationIntegrityCommand::class, ['--trade_date' => $date, '--apply' => true]);
+        $this->assertSame(1, $refusalCode, $refusalOutput);
+        $this->assertStringContainsString('COMMAND_DESTRUCTIVE_GUARD_REQUIRED', $refusalOutput);
+        $this->assertNull($repository->resolveCurrentReadablePublicationForTradeDate($date));
+        $this->retain('invalid_sole_current_freeze', ['trade_date' => $date, 'publication_id' => $publicationId,
+            'dry_run' => $dryOutput, 'apply_without_reason' => $refusalOutput,
+            'pointer_after_refusal' => DB::table('eod_current_publication_pointer')->where('trade_date', $date)->first()]);
+    }
+
     public function test_registered_scheduled_command_executes_real_chain_then_idempotently_skips_verified_current(): void
     {
         $outcome = null;
@@ -50,6 +81,9 @@ class B19OperationalCommandsMariaDbTest extends TestCase
             return EodRun::findOrFail($outcome['run_id']);
         }]);
         $date = R0025SyntheticV2World::world()['trade_date'];
+        $ownerFence = DB::table('eod_run_owner_fences')->where('trade_date_requested', $date)->first();
+        $this->assertNotNull($ownerFence, 'the clean scheduled record must have an explicit date owner');
+        $this->assertSame((int) $world['run_id'], (int) $ownerFence->owner_run_id);
         $before = [DB::table('md_source_observations')->count(), DB::table('eod_runs')->count(), DB::table('eod_current_publication_pointer')->get()->toJson()];
         [$code, $retry] = $this->command(ScheduledWorkflowCommand::class, ['--source_mode' => 'api']);
         $this->assertSame(0, $code, $retry); $retry = json_decode($retry,true);
@@ -77,7 +111,7 @@ class B19OperationalCommandsMariaDbTest extends TestCase
         [$code,$output]=$this->command(ScheduledWorkflowCommand::class,['--source_mode'=>'unregistered']);
         $this->assertSame(1,$code); $this->assertStringContainsString('COMMAND_INVALID_SOURCE_MODE',$output);
         $this->assertSame($unchanged,DB::table('eod_runs')->get()->toJson());
-        $this->retain('scheduler_chain',['first'=>$outcome,'retry'=>$retry,'status'=>$status,'events'=>DB::table('eod_run_events')->where('run_id',$world['run_id'])->orderBy('event_id')->get()->all()]);
+        $this->retain('scheduler_chain',['first'=>$outcome,'retry'=>$retry,'status'=>$status,'owner_fence'=>$ownerFence,'events'=>DB::table('eod_run_events')->where('run_id',$world['run_id'])->orderBy('event_id')->get()->all()]);
     }
 
     public function test_due_run_source_failure_retains_attempts_and_prior_readable_date_without_claiming_success(): void
@@ -108,6 +142,9 @@ class B19OperationalCommandsMariaDbTest extends TestCase
         $this->assertSchedulerOutcomeShape($outcome);
         $this->assertSame('2030-01-02',$outcome['requested_date']);
         $run=EodRun::findOrFail($outcome['run_id']);
+        $ownerFence = DB::table('eod_run_owner_fences')->where('trade_date_requested', '2030-01-02')->first();
+        $this->assertNotNull($ownerFence, 'held scheduled work still has explicit ownership');
+        $this->assertSame((int) $run->run_id, (int) $ownerFence->owner_run_id);
         $this->assertSame('HELD',$run->terminal_status); $this->assertSame('NOT_READABLE',$run->publishability_state);
         $this->assertSame(3,(int)$run->source_attempt_count);
         $this->assertStringContainsString('source_attempt_count=3',(string)$run->notes);
@@ -130,7 +167,70 @@ class B19OperationalCommandsMariaDbTest extends TestCase
         $this->assertSame('FAIL', $status['coverage_gate_state']);
         $this->assertSame(1,(int)$run->coverage_missing_count);
         $this->assertSame(0.0,(float)$run->coverage_ratio);
-        $this->retain('scheduler_failed',['outcome'=>$outcome,'run'=>$run,'status'=>$status]);
+        $this->retain('scheduler_failed',['outcome'=>$outcome,'run'=>$run,'status'=>$status,'owner_fence'=>$ownerFence]);
+    }
+
+    public static function schemaDriftPriorPublicationCases(): array
+    {
+        return [
+            'verified prior publication' => [true],
+            'no prior readable publication' => [false],
+        ];
+    }
+
+    /** @dataProvider schemaDriftPriorPublicationCases */
+    public function test_schema_drift_refuses_best_effort_due_publication_and_reports_verified_prior_only_when_present(bool $publishPrior): void
+    {
+        $body = json_decode((string) file_get_contents(R0025SyntheticV2World::packagePath().'/inputs/provider_response.json'), true);
+        $drifted = $body;
+        unset($drifted['chart']['result'][0]['indicators']['quote']);
+        $mode = 'valid';
+        $world = R0025SyntheticV2World::build([
+            'http_fetcher' => function () use (&$mode, $body, $drifted) {
+                return ['status' => 200, 'body' => json_encode($mode === 'valid' ? $body : $drifted),
+                    'headers' => ['Content-Type' => 'application/json']];
+            },
+            'run_workflow' => function ($pipeline, $date) use ($publishPrior) {
+                return $publishPrior ? $pipeline->runDaily($date, 'api') : $pipeline->importDaily($date, 'api');
+            },
+        ]);
+        $this->app->instance(MarketDataPipelineService::class, $world['pipeline']);
+        $priorDate = R0025SyntheticV2World::world()['trade_date'];
+        $priorPointer = DB::table('eod_current_publication_pointer')->get()->toJson();
+        $this->assertSame($publishPrior, DB::table('eod_current_publication_pointer')->where('trade_date', $priorDate)->exists());
+
+        $calendar = (array) DB::table('md_market_calendar_revisions')->where('cal_date', $priorDate)->first();
+        unset($calendar['calendar_revision_id']);
+        foreach (['session_open_at','session_close_at','completed_at','recorded_at'] as $field) {
+            $calendar[$field] = str_replace($priorDate, '2030-01-02', $calendar[$field]);
+        }
+        $calendar['cal_date'] = '2030-01-02';
+        $calendar['revision_uid'] = hash('sha256', 'e043-schema-drift-2030');
+        DB::table('md_market_calendar_revisions')->insert($calendar);
+        Carbon::setTestNow('2030-01-03 10:30:00');
+        $mode = 'drifted';
+
+        [$code, $output] = $this->command(ScheduledWorkflowCommand::class, ['--source_mode' => 'api']);
+        $outcome = json_decode($output, true);
+        $this->assertNotSame(0, $code, $output);
+        $this->assertSame('2030-01-02', $outcome['requested_date']);
+        $this->assertContains('RUN_SOURCE_RESPONSE_CHANGED', $outcome['reason_codes'], $output);
+        $this->assertNotSame('SUCCESS_READABLE', $outcome['scheduler_outcome']);
+        $this->assertSame($priorPointer, DB::table('eod_current_publication_pointer')->get()->toJson());
+        $this->assertFalse(DB::table('eod_current_publication_pointer')->where('trade_date', '2030-01-02')->exists());
+        $this->assertSame(0, DB::table('eod_bars')->where('trade_date', '2030-01-02')->count());
+        $this->assertSame(0, DB::table('md_source_observations')->where('requested_trade_date', '2030-01-02')
+            ->whereIn('outcome_state', ['ACCEPTED', 'NORMALIZED'])->count());
+        $this->assertNotNull($outcome['run_id']);
+        [$statusCode, $statusOutput] = $this->command(OperationalStatusCommand::class,
+            ['--requested_date' => '2030-01-02', '--run_id' => $outcome['run_id']]);
+        $this->assertSame(2, $statusCode, $statusOutput);
+        $status = json_decode($statusOutput, true);
+        $this->assertFalse($status['operationally_healthy']);
+        $this->assertNull($status['publication_id']);
+        $this->assertSame($publishPrior ? $priorDate : null, $status['latest_readable_trade_date']);
+        $this->retain('schema_drift_'.($publishPrior ? 'with_prior' : 'without_prior'),
+            ['outcome' => $outcome, 'status' => $status, 'prior_pointer' => json_decode($priorPointer, true)]);
     }
 
     public function test_scheduled_nonretryable_low_coverage_uses_held_exit_without_readable_pointer(): void

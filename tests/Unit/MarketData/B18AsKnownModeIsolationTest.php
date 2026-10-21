@@ -12,6 +12,7 @@ use App\Infrastructure\Persistence\MarketData\MarketDataConfigSnapshotRepository
 use App\Infrastructure\Persistence\MarketData\ReplayResultRepository;
 use App\Infrastructure\Persistence\MarketData\TemporalIdentityRepository;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Artisan;
 use Tests\Support\UsesMarketDataSqlite;
 
 /**
@@ -731,6 +732,125 @@ class B18AsKnownModeIsolationTest extends TestCase
         $this->verifyAsKnown([], ['replay_mode' => 'PUBLICATION_EXACT']);
     }
 
+    /**
+     * The registered CLI adapter executes the historical AS_KNOWN path, diagnoses a deliberately
+     * contradictory expected snapshot, and rejects a cutoff that disagrees with the fixture before
+     * recording another replay. The contradictory values are fixed negative expectations, not
+     * values harvested from the command or verifier under test.
+     */
+    public function test_registered_as_known_replay_command_executes_and_refuses_a_cutoff_mismatch(): void
+    {
+        $root = sys_get_temp_dir().'/b19_e040_as_known_'.uniqid();
+        mkdir($root.'/expected', 0775, true);
+        $manifest = [
+            'fixture_id' => 'e040-as-known-cutoff-negative',
+            'fixture_family' => 'as_known_replay',
+            'fixture_version' => 'e040-independent-negative-v1',
+            'fixture_schema_version' => 'replay_fixture_v2',
+            'replay_mode' => 'AS_KNOWN',
+            'assertion_scope' => AsKnownReplayExecutionService::EXECUTION_SCOPE,
+            'knowledge_cutoff' => self::CUTOFF,
+            'trade_date' => self::TRADE_DATE,
+            'fixture_source' => 'hand_authored_counterfactual',
+            'fixture_created_at' => '2026-10-21T00:00:00+07:00',
+        ];
+        $snapshot = [
+            'trade_date' => self::TRADE_DATE,
+            'knowledge_cutoff' => self::CUTOFF,
+            'snapshot_hash' => str_repeat('0', 64),
+            'reason_registry_hash' => str_repeat('f', 64),
+        ];
+        $execution = [
+            'execution_scope' => 'CANONICAL_RAW',
+            'execution_state' => 'SUCCESS',
+            'canonical_row_count' => 0,
+            'invalid_row_count' => 0,
+            'canonical_output_hash' => str_repeat('0', 64),
+            'reason_code_counts' => [],
+        ];
+        file_put_contents($root.'/manifest.json', json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        file_put_contents($root.'/expected/as_known_snapshot.json', json_encode($snapshot, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        file_put_contents($root.'/expected/as_known_execution.json', json_encode($execution, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+        try {
+            DB::table('eod_bars')->insert([
+                'trade_date' => self::TRADE_DATE,
+                'ticker_id' => self::TICKER_ID,
+                'listing_id' => 1,
+                'source_observation_id' => 701,
+                'run_id' => self::RUN_ID,
+                'publication_id' => 77,
+                'open' => 91,
+                'high' => 97,
+                'low' => 89,
+                'close' => 93,
+                'volume' => 2468,
+                'adj_close' => null,
+                'source' => 'E040_CANONICAL_SENTINEL',
+                'created_at' => '2026-03-24 18:30:00',
+            ]);
+            $sentinelFingerprint = $this->publicationFingerprint();
+            DB::table('eod_bars')->where('trade_date', self::TRADE_DATE)->where('ticker_id', self::TICKER_ID)->update(['close' => 94]);
+            $this->assertNotSame($sentinelFingerprint, $this->publicationFingerprint(), 'the preservation oracle must detect a changed canonical bar value');
+            DB::table('eod_bars')->where('trade_date', self::TRADE_DATE)->where('ticker_id', self::TICKER_ID)->update(['close' => 93]);
+            $this->assertSame($sentinelFingerprint, $this->publicationFingerprint(), 'the counterfactual bar-value mutation is restored before replay');
+            $publicationBefore = $this->publicationFingerprint();
+            $countBefore = (int) DB::table('md_replay_daily_metrics')->count();
+            $code = Artisan::call('market-data:replay:verify', [
+                'run_id' => self::RUN_ID,
+                'fixture_path' => $root,
+                '--mode' => 'AS_KNOWN',
+                '--knowledge_cutoff' => self::CUTOFF,
+            ]);
+            $output = Artisan::output();
+            $this->assertSame(1, $code, $output);
+            $this->assertStringContainsString('replay_mode=AS_KNOWN', $output);
+            $this->assertStringContainsString('comparison_result=MISMATCH', $output);
+            $this->assertStringContainsString('replay_status=FAIL', $output);
+            $this->assertStringContainsString('REPLAY_LINEAGE_MISMATCH', $output);
+            $this->assertSame($publicationBefore, $this->publicationFingerprint(), 'as-known replay may not change the historical/current publication or canonical projection');
+            $this->assertSame($countBefore + 1, (int) DB::table('md_replay_daily_metrics')->count());
+            $stored = DB::table('md_replay_daily_metrics')->orderByDesc('replay_id')->first();
+            $this->assertSame('AS_KNOWN', $stored->replay_mode);
+            $this->assertSame(self::CUTOFF, (string) $stored->knowledge_cutoff_at);
+            $this->assertNull($stored->publication_id);
+            $actual = json_decode((string) $stored->actual_context_json, true);
+            $this->assertSame('SUCCESS', $actual['executed_replay']['execution_state'], 'the command executed the canonical RAW replay path before diagnosing the contradictory fixture');
+            $this->assertSame(self::CUTOFF, $actual['bound_inputs']['knowledge_cutoff']);
+            if (($capture = getenv('B19_E040_AS_KNOWN_CAPTURE_DIR')) !== false && $capture !== '') {
+                if (! is_dir($capture)) mkdir($capture, 0775, true);
+                file_put_contents($capture.'/as_known_command_mismatch.stdout.txt', $output);
+                file_put_contents($capture.'/as_known_command_mismatch_metric.json', json_encode($stored, JSON_PRETTY_PRINT));
+            }
+
+            $beforeRefusal = (int) DB::table('md_replay_daily_metrics')->count();
+            $code = Artisan::call('market-data:replay:verify', [
+                'run_id' => self::RUN_ID,
+                'fixture_path' => $root,
+                '--mode' => 'AS_KNOWN',
+                '--knowledge_cutoff' => '2026-04-16 00:00:00',
+            ]);
+            $refusal = Artisan::output();
+            $this->assertSame(1, $code, $refusal);
+            $this->assertStringContainsString('REPLAY_KNOWLEDGE_CUTOFF_MISMATCH', $refusal);
+            $this->assertStringContainsString('replay_status=BLOCKED', $refusal);
+            $this->assertSame($beforeRefusal, (int) DB::table('md_replay_daily_metrics')->count(), 'a cutoff/fixture conflict is refused before replay persistence');
+            $this->assertSame($publicationBefore, $this->publicationFingerprint());
+            if (($capture = getenv('B19_E040_AS_KNOWN_CAPTURE_DIR')) !== false && $capture !== '') {
+                file_put_contents($capture.'/as_known_cutoff_refusal.stdout.txt', $refusal);
+                file_put_contents($capture.'/as_known_cutoff_refusal_state.json', json_encode(['before' => $beforeRefusal, 'after' => (int) DB::table('md_replay_daily_metrics')->count()], JSON_PRETTY_PRINT));
+            }
+        } finally {
+            $real = realpath($root);
+            $tmp = realpath(sys_get_temp_dir());
+            if ($real !== false && $tmp !== false && strpos($real, $tmp.DIRECTORY_SEPARATOR) === 0) {
+                $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($real, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::CHILD_FIRST);
+                foreach ($iterator as $item) $item->isDir() ? rmdir($item->getPathname()) : unlink($item->getPathname());
+                rmdir($real);
+            }
+        }
+    }
+
     // ---- execution -------------------------------------------------------------------------------
 
     /**
@@ -884,7 +1004,8 @@ class B18AsKnownModeIsolationTest extends TestCase
             'pointer' => DB::table('eod_current_publication_pointer')->orderBy('trade_date')->get()->toArray(),
             'bars_history' => DB::table('eod_bars_history')->orderBy('publication_id')->get()->toArray(),
             'runs' => DB::table('eod_runs')->orderBy('run_id')->get()->toArray(),
-            'bars' => DB::table('eod_bars')->count(),
+            // Compare actual canonical values and identities, not only their row count.
+            'bars' => DB::table('eod_bars')->orderBy('trade_date')->orderBy('ticker_id')->get()->toArray(),
         ]);
     }
 
