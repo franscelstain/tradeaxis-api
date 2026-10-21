@@ -2034,3 +2034,5 @@ MD-REL-2036,E-MD-B19-A001-035,F-MD-B19-A001-023,DEPENDS_ON,"E035 current-build t
 MD-REL-2037,E-MD-B19-A001-035,D-MD-B19-A001-003,DEPENDS_ON,E035 preserves persisted warning_count mirror and NULL semantics.,,2026-10-20T22:18:00+07:00,E035
 MD-REL-2038,E-MD-B19-A001-036,E-MD-B19-A001-035,RELATED,Exact named negative transcript closes the R0043 output trace gap; E035 remains immutable.,,2026-10-20T23:20:00+07:00,E036
 MD-REL-2039,E-MD-B19-A001-036,F-MD-B19-A001-023,DEPENDS_ON,Records current disposition of remaining 41 operational predicates and authority holds.,,2026-10-20T23:20:00+07:00,E036
+MD-REL-2040,E-MD-B19-A001-037,E-MD-B19-A001-036,RELATED,Successor operational proof preserves E036 and all earlier immutable evidence.,,2026-10-21T07:33:08+07:00,E037
+MD-REL-2041,E-MD-B19-A001-037,F-MD-B19-A001-023,DEPENDS_ON,F023 records four proposed bases and the exact remaining operational holds.,,2026-10-21T07:33:08+07:00,E037

@@ -17,7 +17,15 @@ class RepairPriceScaleStretchesCommand extends AbstractMarketDataCommand
             return 1;
         }
 
-        $applyRequested = (bool) $this->option('apply');
+        if ((bool) $this->option('apply')) {
+            $this->renderCommandBlocked(
+                'IMMUTABLE_HISTORY_CORRECTION_REQUIRED',
+                'Price-scale repair apply is prohibited; use authoritative evidence and the immutable correction workflow.',
+                ['apply_requested' => 'true', 'mutation_performed' => 'false']
+            );
+            return 1;
+        }
+
         try {
             $result = app(PriceScaleStretchRepairService::class)->repair($this->option('ticker') ?: null, false);
         } catch (\Throwable $e) {
@@ -27,7 +35,7 @@ class RepairPriceScaleStretchesCommand extends AbstractMarketDataCommand
 
         $this->info('status=DETECTION_ONLY');
         $this->line('reason_code=IMMUTABLE_HISTORY_CORRECTION_REQUIRED');
-        $this->line('apply_requested='.($applyRequested ? 'true' : 'false'));
+        $this->line('apply_requested=false');
         $this->line('mutation_performed=false');
         $this->line('stretches='.count($result['stretches'] ?? []));
         $this->line('skipped='.count($result['skipped'] ?? []));

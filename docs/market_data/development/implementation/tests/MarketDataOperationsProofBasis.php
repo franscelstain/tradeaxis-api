@@ -3132,6 +3132,11 @@ final class MarketDataOperationsProofBasis
             'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_low_coverage_without_fallback_finishes_not_readable_and_emits_coverage_reason_code',
             'basis' => 'E035 trace supplement to E034: independently executes low coverage with and without a readable prior publication. When a prior publication exists, the requested run is held and the exact prior current pointer/publication remains; with no fallback, the requested date stays NOT_READABLE and no prior success is invented.',
         ],
+        'MD-S071-R0009' => [
+            'positive' => 'B19OperatorHashDecisionMariaDbTest::test_complete_artifact_hashes_reach_a_sealed_readable_publication',
+            'negative' => 'B19OperatorHashDecisionMariaDbTest::test_missing_indicator_artifact_rows_refuse_seal_and_keep_the_requested_date_unreadable',
+            'basis' => 'E037 MariaDB: a complete real artifact population seals and becomes readable; removing an actual indicator projection after HASH yields DATASET_MANIFEST_INVALID at the registered seal command, BLOCKED with an upstream-completeness action, and no seal/current pointer. A later restored-row retry is separately fenced, not silently accepted.',
+        ],
         'MD-S071-R0011' => [
             'positive' => 'MarketDataPipelineIntegrationTest::test_seal_completes_a_genuinely_valid_bound_context',
             'negative' => 'MarketDataPipelineIntegrationTest::test_binding_rejects_a_conflicting_context_and_a_sealed_mismatch_but_allows_a_sealed_match',
@@ -3142,6 +3147,16 @@ final class MarketDataOperationsProofBasis
             'negative' => 'MarketDataPipelineIntegrationTest::test_binding_rejects_a_conflicting_context_and_a_sealed_mismatch_but_allows_a_sealed_match',
             'basis' => 'E035 trace supplement to E034: real pipeline binding accepts only the coherent control and refuses the contradictory context before safe seal/readability; the negative assertion would fail if conflicting serialization were treated as publishable.',
         ],
+        'MD-S071-R0013' => [
+            'positive' => 'B19OperatorHashDecisionMariaDbTest::test_complete_artifact_hashes_reach_a_sealed_readable_publication',
+            'negative' => 'B19OperatorHashDecisionMariaDbTest::test_a_missing_mandatory_hash_blocks_seal_and_requested_date_readability',
+            'basis' => 'E037 MariaDB: each of bars, indicators and eligibility persisted hash fields is checked against the independently required 64-hex shape in a sealed control, then individually nulled after the HASH stage. The seal precondition detects each missing value and persists SEAL_BLOCKED rather than reconstructing it.',
+        ],
+        'MD-S071-R0014' => [
+            'positive' => 'B19OperatorHashDecisionMariaDbTest::test_complete_artifact_hashes_reach_a_sealed_readable_publication',
+            'negative' => 'B19OperatorHashDecisionMariaDbTest::test_a_missing_mandatory_hash_blocks_seal_and_requested_date_readability',
+            'basis' => 'E037 MariaDB: the complete-hash control is SEALED/SUCCESS/READABLE with a date pointer; each missing-hash counterexample remains UNSEALED, non-current and non-READABLE with no requested-date pointer.',
+        ],
         'MD-S071-R0015' => [
             'positive' => 'MarketDataPipelineIntegrationTest::test_run_daily_low_coverage_with_fallback_holds_requested_date_and_preserves_old_readable_publication',
             'negative' => 'MarketDataPipelineIntegrationTest::test_run_daily_low_coverage_without_fallback_finishes_not_readable_and_emits_coverage_reason_code',
@@ -3151,6 +3166,11 @@ final class MarketDataOperationsProofBasis
             'positive' => 'MarketDataPipelineIntegrationTest::test_binding_persists_v2_context_and_matches_v1_compatibility_hashes_before_seal',
             'negative' => 'MarketDataPipelineIntegrationTest::test_seal_rejects_a_candidate_missing_its_v2_binding_without_computing_one',
             'basis' => 'E035 trace supplement to E034: persisted V1 compatibility hashes match independently captured population while V2 input binding carries its distinct version/hash; the missing-binding candidate is refused without synthesizing a replacement hash. These are actual pipeline contexts, not hashes inferred from output wording.',
+        ],
+        'MD-S071-R0018' => [
+            'positive' => 'B19OperatorHashDecisionMariaDbTest::test_complete_artifact_hashes_reach_a_sealed_readable_publication',
+            'negative' => 'B19OperatorHashDecisionMariaDbTest::test_a_missing_mandatory_hash_blocks_seal_and_requested_date_readability',
+            'basis' => 'E037 MariaDB: the same real stage chain seals only with all three persisted mandatory hashes; for each individually absent hash, completeSeal refuses with RUN_SEAL_PRECONDITION_FAILED, leaves the publication UNSEALED and records an ERROR SEAL_BLOCKED event.',
         ],
         'MD-S071-R0019' => [
             'positive' => 'MarketDataPipelineIntegrationTest::test_seal_completes_a_genuinely_valid_bound_context',

@@ -1,0 +1,80 @@
+{
+  "record_id": "E-MD-B19-A001-037",
+  "record_type": "EVIDENCE",
+  "stage": "MD-B19",
+  "attempt": "MD-B19-A001",
+  "baseline": "MD-B19-A001-BL001",
+  "status": "ISSUED",
+  "issued_at": "2026-10-21T07:33:08+07:00",
+  "predecessors": [
+    "E-MD-B19-A001-036"
+  ],
+  "independently_accepted_baseline": "620/750",
+  "repository_proposed_reviewed": "624/750",
+  "formal_satisfied": "0/750",
+  "new_proposed_bases": {
+    "operator_decision_trees": [
+      "MD-S071-R0009",
+      "MD-S071-R0013",
+      "MD-S071-R0014",
+      "MD-S071-R0018"
+    ],
+    "commands_and_runbook": [],
+    "scheduling_and_locking": []
+  },
+  "proof_map": "E037_runtime/E037_per_predicate_map.json",
+  "proof_map_sha256": "86a47e07c92fdc5c20a07fd3f8a00911173c6b97c0f66ad18553e813cb408ddd",
+  "source_sha256": {
+    "app/Console/Commands/MarketData/SealDatasetCommand.php": "a2d1c552e91a1e58cd46a3104043af28497a594322b24906d4a9143f283fbd3d",
+    "app/Console/Commands/MarketData/RepairPriceScaleStretchesCommand.php": "a11f489a52cab83904a783e72d3f2da03068e02c2317fa07433c7deea2d4bd3e",
+    "database/migrations/2026_10_20_000003_protect_sealed_publication_identity.php": "b95557afc34bd1ef25a411799951442a778ef6cac8edd9ef27781926fb3bee29",
+    "tests/Unit/MarketData/B19OperatorHashDecisionMariaDbTest.php": "4bfbf3e8368f7f8caaa3dd821a0e9d701c9873ae53df1790aa09429266b18bba",
+    "tests/Unit/MarketData/B19PriceScaleCommandBoundaryMariaDbTest.php": "d262e023f21374dcfd39e310abb254da3a593ab1c190ade41e5b17951c38453a",
+    "app/Application/MarketData/Services/MarketDataPipelineService.php": "1b81ac477910d72c5264b1cbc1d9bfe63198845dc6aa2202c33fc2bfc9f1cb6b",
+    "app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php": "72c1b669874e5ad46d35868de0d6fb85196730b7663a27bb3ca3a8a3ae1fff29"
+  },
+  "raw_execution_sha256": {
+    "B11_price_command_regression.stdout.txt": "7c385ba18f231bdb10fd2cc6159cc032cd84b301b069eb9b89c1b5a6ed1e0d95",
+    "correction_mariadb_regression.stdout.txt": "611b8e6f4432e98fcc0fea373d2c494029b4b937c648644366ab181f24230cb3",
+    "missing_artifact_guard_mutation.stdout.txt": "c3561ec102e7783703786870ef383bac5e6ceb10d0dbb8e6a8feb7774b897189",
+    "missing_artifact_restored_green.stdout.txt": "d545e7eae0fc5742fc4d8d2426379e18f9bfa82eaa1c6b882883251e5e14f76c",
+    "missing_hash_guard_mutation.stdout.txt": "a05962dc39af32517584bf40108e1c0ff80e99b259c44f44bdd9239176f5b8fd",
+    "missing_hash_restored_green.stdout.txt": "f842ae27e31a3e9c3e4c54e69b4b2551294781a14740467b866ae36edaa8444f",
+    "operator_artifact_command_green.stdout.txt": "2c62cb537bf496d4dd3d7b0e682017885ca6b35cd0f975658b01c2d0e6c66b03",
+    "operator_artifact_command_red.stdout.txt": "863d13a1037064d01607d44a02057389edb89bf0586960873f0f0f4eb5fd080c",
+    "operator_artifact_population.stdout.txt": "311eac9419f201b30253e570dcfa1f5c252f315d25e0b6182f468f628aee7ab2",
+    "operator_artifact_remediation_guard.stdout.txt": "3258e0fddc564b4d906844bf20f640227acd85a6986b329add8c9000dbfa7ba5",
+    "operator_artifact_remediation_probe.stdout.txt": "c76fcc1bf7bb4c085c3b2d14dc59cb88ecb94998113e0c3028bc1a804cba7ba8",
+    "operator_hash_mariadb.stdout.txt": "31e13cdf5537c891a83ddb3cb486e452cec86c9fc675b8bfa6301d72d6d899c2",
+    "operator_hash_mariadb_current.stdout.txt": "20b74a04b5bdb1f4b1eeeb65f8516e8e148a4280bf630c09fdf8475abd7eff2d",
+    "operator_hash_mariadb_green.stdout.txt": "93dbf8f65f5730ef5f98330feaadf732cf5253e70a1c0db36fe37ec14bb15c2f",
+    "operator_hash_mariadb_postmigration.stdout.txt": "44e44499eb1043a3757d5c94af0f89d2bf2ade0fc9012bbc68b4d6835f047167",
+    "operator_seal_hash_testdox.stdout.txt": "b14c197c0b4b2f21d708c1f42a9fbae0b3f0bd2dbf5bcf061eba973ae2f7810b",
+    "price_scale_apply_green.stdout.txt": "e4307bb990b2032071ef60c8c01eb0bffc85f2ffdcf33728a0a0f3518d41f11e",
+    "price_scale_apply_red.stdout.txt": "9cd6747208c05648faffc8b86e498c68fba0c37413577e87cbd9256c977b23ba",
+    "price_scale_command_mariadb_green.stdout.txt": "f54127af74a67360795c6e776ddfdad7c58fde13d4875d40c80dd12e458bb5c6",
+    "seal_command_refusal_mutation.stdout.txt": "78aa1960d46da1986b46eb592b2941b4b0881dc55bf16e66d88d729df1327b24",
+    "seal_command_refusal_restored_green.stdout.txt": "f49f7caf11324a3a8248e72dbaf019c2a5dfed8ac5eb202f1ddd923f642266a0",
+    "testing_migration.stdout.txt": "7591c4752934ef23ec61628d449bc0d15454d96158cd775ceeca90928af305ee"
+  },
+  "executions": {
+    "operator_hash_mariadb": "PASS 5 tests / 52 assertions; actual tradeaxis_testing",
+    "price_scale_and_sealed_identity_mariadb": "PASS 1 test / 20 assertions; actual tradeaxis_testing",
+    "correction_mariadb_affected_regression": "PASS 2 tests / 103 assertions",
+    "existing_seal_hash_focus": "PASS 10 tests / 25 assertions",
+    "B11_command_regression": "PASS 1 test / 5 assertions",
+    "mutations": "Missing-hash guard, missing-artifact population guard and seal-command next-action counterfactuals red; byte-restored and focused green. Exact raw output and hashes retained.",
+    "testing_migration": "2026_10_20_000003 migrated into tradeaxis_testing; both MariaDB trigger identities verified."
+  },
+  "known_limits": [
+    "No supported upstream artifact repair/retry lifecycle is proved; MD-S071-R0010 remains unproved.",
+    "MD-S064-R0013 remains unproved as its full direct-current-row/canonical-history prohibition set is not covered.",
+    "F018 seven severity/escalation/closure rows remain held for Project Owner authority.",
+    "Deployment-specific scheduling activation is not evidenced.",
+    "B18 replay comparison remains visibly failed: 69 failures / 94 tests.",
+    "R0324 HELD under D008/F016; MD-DEP-0025 ACTIVE; D003 NULL semantics and candidate-v5 preserved.",
+    "No full-suite PASS, formal SATISFIED, candidate-v6 or B19 closure."
+  ],
+  "operations_gate": "FAIL: 624/750 bases; 126 without basis; eight families without a guard",
+  "single_exact_resume_point": "Continue 37 operational predicates: commands 8, scheduling 8, operator decisions 21; first execute supported upstream artifact remediation and full S064-R0013 direct-current-row safety or hold their exact missing paths, then complete independent replay/correction/scheduling proof. Preserve F018 and deployment holds; independent review of E037 first."
+}
