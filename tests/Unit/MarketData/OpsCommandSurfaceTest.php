@@ -414,9 +414,17 @@ class OpsCommandSurfaceTest extends TestCase
     public function test_session_snapshot_purge_command_renders_summary(): void
     {
         $service = m::mock(SessionSnapshotService::class);
-        $service->shouldReceive('purge')
+        $disclosed = [
+            'operation_mode' => 'DRY_RUN', 'reason_code' => 'COMMAND_DRY_RUN_ONLY',
+            'cutoff_timestamp' => '2026-03-01 23:59:59', 'cutoff_source' => 'explicit_before_date',
+            'before_date' => '2026-03-01', 'retention_days' => null, 'candidate_rows' => 250,
+            'deleted_rows' => 0, 'config_hash' => str_repeat('a', 64),
+            'pre_apply_fingerprint' => str_repeat('b', 64),
+        ];
+        $service->shouldReceive('inspectPurge')->once()->with('2026-03-01')->andReturn($disclosed);
+        $service->shouldReceive('applyDisclosedPurge')
             ->once()
-            ->with('2026-03-01', null, true)
+            ->with($disclosed, null)
             ->andReturn([
                 'operation_mode' => 'APPLIED',
                 'reason_code' => 'COMMAND_APPLY_CONFIRMED',
@@ -443,6 +451,9 @@ class OpsCommandSurfaceTest extends TestCase
         $display = $tester->getDisplay();
 
         $this->assertSame(0, $exitCode);
+        $this->assertStringContainsString('operation_mode=PRE_APPLY_DISCLOSURE', $display);
+        $this->assertStringContainsString('expected_row_effects=delete exactly 250 eligible non-authoritative session snapshot rows', $display);
+        $this->assertStringContainsString('pointer_impact=UNCHANGED', $display);
         $this->assertStringContainsString('operation_mode=APPLIED', $display);
         $this->assertStringContainsString('reason_code=COMMAND_APPLY_CONFIRMED', $display);
         $this->assertStringContainsString('cutoff_timestamp=2026-03-01 23:59:59', $display);
@@ -521,7 +532,7 @@ class OpsCommandSurfaceTest extends TestCase
         $this->assertStringContainsString('apply=true', $display);
     }
 
-    public function test_current_publication_repair_apply_records_reason_and_pointer_before_after(): void
+    public function test_current_publication_repair_dry_run_shows_repository_reasons_and_pointer_before_without_mutation(): void
     {
         // Partial mock: the scan and the clear are stubbed, but the reason derivation runs for
         // real. Fully mocking the repository is what let the command's own copy of that
@@ -563,9 +574,7 @@ class OpsCommandSurfaceTest extends TestCase
                     'run_sealed_at' => '2026-03-17 18:00:00',
                 ],
             ]));
-        $repo->shouldReceive('clearCurrentPublicationState')
-            ->once()
-            ->with('2026-03-17');
+        $repo->shouldNotReceive('clearCurrentPublicationState');
 
         $this->app->instance(EodPublicationRepository::class, $repo);
 
@@ -575,24 +584,94 @@ class OpsCommandSurfaceTest extends TestCase
 
         $exitCode = $tester->execute([
             '--trade_date' => '2026-03-17',
-            '--apply' => true,
-            '--reason' => 'operator reviewed invalid mirror and approved clear',
         ]);
 
         $display = $tester->getDisplay();
 
-        $this->assertSame(0, $exitCode);
-        $this->assertStringContainsString('operation_mode=APPLIED', $display);
-        $this->assertStringContainsString('reason_code=COMMAND_APPLY_CONFIRMED', $display);
-        $this->assertStringContainsString('repair_reason=operator reviewed invalid mirror and approved clear', $display);
+        $this->assertSame(1, $exitCode);
+        $this->assertStringContainsString('operation_mode=DRY_RUN', $display);
+        $this->assertStringContainsString('reason_code=COMMAND_DRY_RUN_ONLY', $display);
         $this->assertStringContainsString('pointer_before_publication_id=2501', $display);
         $this->assertStringContainsString('pointer_before_run_id=25', $display);
-        $this->assertStringContainsString('repair_action=CLEARED_INVALID_CURRENT_STATE', $display);
-        $this->assertStringContainsString('pointer_after_state=CLEARED', $display);
+        $this->assertStringNotContainsString('pointer_after_state=', $display);
+        $this->assertStringContainsString('next_action=Re-run with --apply --reason=', $display);
 
         // The operator is told to review integrity_reasons before authorising this clear, so
         // the field has to name the fault and nothing else.
         $this->assertStringContainsString('integrity_reasons=PUBLICATION_NOT_MARKED_CURRENT', $display);
+    }
+
+    public function test_projection_repair_apply_discloses_resolved_source_and_effects_before_writing(): void
+    {
+        $before = [
+            'reconciliation_state' => 'DRIFT', 'pointer_state' => 'CURRENT',
+            'publication_id' => 2501, 'run_id' => 25, 'mismatch_count' => 1,
+            'reconciliation_hash' => 'before-hash',
+        ];
+        $preflight = [
+            'repairability_state' => 'REPAIRABLE_FROM_IMMUTABLE_HISTORY',
+            'trade_date' => '2026-03-17', 'publication_id' => 2501, 'run_id' => 25,
+            'config_snapshot_id' => 7, 'config_hash' => hash('sha256', 'frozen config'),
+            'snapshot_counts' => ['bars' => 2, 'indicators' => 2, 'eligibility' => 2],
+            'reconciliation' => $before,
+        ];
+        $service = m::mock(\App\Application\MarketData\Services\PublicationProjectionRepairService::class);
+        $inspected = false;
+        $service->shouldReceive('inspectTradeDate')->zeroOrMoreTimes()->with('2026-03-17')
+            ->andReturnUsing(function () use (&$inspected, $preflight) {
+                $inspected = true;
+                return $preflight;
+            });
+        $tester = null;
+        $writeSawPreflight = false;
+        $service->shouldReceive('repairTradeDate')->once()->with('2026-03-17', 'Operator projection repair', $preflight)
+            ->andReturnUsing(function () use (&$tester, &$inspected, &$writeSawPreflight, $before) {
+                $shown = $tester->getDisplay();
+                $writeSawPreflight = $inspected
+                    && strpos($shown, 'operation_mode=PRE_APPLY_DISCLOSURE') !== false
+                    && strpos($shown, 'repair_publication_id=2501') !== false
+                    && strpos($shown, 'repair_run_id=25') !== false
+                    && strpos($shown, 'config_snapshot_id=7') !== false
+                    && strpos($shown, 'config_hash='.hash('sha256', 'frozen config')) !== false
+                    && strpos($shown, 'repair_bars_history_count=2') !== false
+                    && strpos($shown, 'before_mismatch_count=1') !== false
+                    && strpos($shown, 'pointer_impact=UNCHANGED') !== false
+                    && strpos($shown, 'repair_reason=Operator projection repair') !== false;
+                return ['repair_state' => 'REBUILT_AND_VERIFIED', 'trade_date' => '2026-03-17',
+                    'publication_id' => 2501, 'run_id' => 25, 'before' => $before,
+                    'after' => array_merge($before, ['reconciliation_state' => 'PASS'])];
+            });
+        $this->app->instance(\App\Application\MarketData\Services\PublicationProjectionRepairService::class, $service);
+        $command = new \App\Console\Commands\MarketData\RepairPublicationProjectionCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+
+        $this->assertSame(0, $tester->execute([
+            '--trade_date' => '2026-03-17', '--apply' => true, '--reason' => 'Operator projection repair',
+        ]));
+        $this->assertTrue($inspected, 'Apply did not inspect the resolved immutable source before writing.');
+        $this->assertTrue($writeSawPreflight, 'Apply wrote before presenting immutable identity and expected effects.');
+    }
+
+    public function test_projection_repair_apply_refuses_unresolved_config_identity_before_mutation(): void
+    {
+        $service = m::mock(\App\Application\MarketData\Services\PublicationProjectionRepairService::class);
+        $service->shouldReceive('inspectTradeDate')->once()->with('2026-03-17')->andReturn([
+            'repairability_state' => 'REPAIRABLE_FROM_IMMUTABLE_HISTORY',
+            'trade_date' => '2026-03-17', 'publication_id' => 2501, 'run_id' => 25,
+            'config_snapshot_id' => null, 'config_hash' => null,
+            'snapshot_counts' => ['bars' => 2, 'indicators' => 2, 'eligibility' => 2],
+            'reconciliation' => ['reconciliation_state' => 'FAIL'],
+        ]);
+        $service->shouldNotReceive('repairTradeDate');
+        $this->app->instance(\App\Application\MarketData\Services\PublicationProjectionRepairService::class, $service);
+        $command = new \App\Console\Commands\MarketData\RepairPublicationProjectionCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+        $this->assertSame(1, $tester->execute([
+            '--trade_date' => '2026-03-17', '--apply' => true, '--reason' => 'Operator projection repair',
+        ]));
+        $this->assertStringContainsString('PROJECTION_REPAIR_CONFIG_HASH_UNRESOLVED', $tester->getDisplay());
     }
 
     public function test_replay_smoke_command_propagates_operator_options_and_renders_case_identifiers(): void

@@ -20,6 +20,16 @@ class PublicationGovernanceBindingService
 
     public function bind($run, $publication, $tradeDate): array
     {
+        return DB::transaction(function () use ($run, $publication, $tradeDate) {
+            $owned = (new \App\Infrastructure\Persistence\MarketData\RequestedDateWriterFence())->lockCandidate(
+                $tradeDate, $run, (int) $publication->publication_id, true
+            );
+            return $this->bindOwned($run, $owned, $tradeDate);
+        });
+    }
+
+    private function bindOwned($run, $publication, $tradeDate): array
+    {
         if ((string) ($publication->seal_state ?? '') === 'SEALED') {
             throw new \RuntimeException('SEALED_PUBLICATION_IMMUTABLE: governance binding must precede seal.');
         }

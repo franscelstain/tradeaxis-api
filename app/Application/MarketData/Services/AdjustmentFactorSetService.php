@@ -29,6 +29,20 @@ class AdjustmentFactorSetService
 
     public function ensureForPublication($run, $publicationId, $requestedDate, array $barsByTicker): array
     {
+        // Historical replay consumes its retained context; it must not mint new factor state.
+        if (\App\Infrastructure\Persistence\MarketData\ProducerInputScope::historical()) {
+            return $this->captureForPublication($run, $publicationId, $requestedDate, $barsByTicker);
+        }
+        return DB::transaction(function () use ($run, $publicationId, $requestedDate, $barsByTicker) {
+            (new \App\Infrastructure\Persistence\MarketData\RequestedDateWriterFence())->lockCandidate(
+                $requestedDate, $run, (int) $publicationId, true
+            );
+            return $this->captureForPublication($run, $publicationId, $requestedDate, $barsByTicker);
+        });
+    }
+
+    private function captureForPublication($run, $publicationId, $requestedDate, array $barsByTicker): array
+    {
         return \App\Infrastructure\Persistence\MarketData\ProducerEventFactorCapture::execute($run, $publicationId, $requestedDate, $barsByTicker,
             function () use ($run, $publicationId, $requestedDate, $barsByTicker) {
                 return $this->produceForPublication($run, $publicationId, $requestedDate, $barsByTicker);

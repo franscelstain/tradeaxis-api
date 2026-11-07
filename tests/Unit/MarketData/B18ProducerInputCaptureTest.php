@@ -10,7 +10,7 @@ trait B18ProducerInputCaptureAssertions
 {
     private function owningRun()
     {
-        return (new EodRunRepository())->getOrCreateOwningRun('2026-03-24', 'api', 'INGEST_BARS', null, 'c1-capture-test');
+        return (new EodRunRepository())->getOrCreateOwningRun('2026-03-24', 'api', 'INGEST_BARS', null, 'import_only');
     }
 
     public function test_creation_reuse_promote_and_as_known_capture_the_selected_config(): void
@@ -27,11 +27,16 @@ trait B18ProducerInputCaptureAssertions
         $reused = $this->owningRun();
         $this->assertSame($run->run_id, $reused->run_id);
         $this->assertSame($before, $capture->forRun($run->run_id)[0], 'Reuse binds the original selected snapshot, not current config.');
+        $runs->completeImportOnly($run, 'INGEST_BARS');
         $promoted = $runs->createPromoteRunFromSeed($run, 'COMPUTE_INDICATORS', ['request_mode' => 'promote']);
         $this->assertNotSame($run->config_snapshot_id, $promoted->config_snapshot_id);
         $this->assertCount(1, $capture->forRun($promoted->run_id));
-        $known = $runs->createAsKnownReplayRun('2026-03-24', '2099-01-01 00:00:00');
-        $knownPayload = $capture->verify($capture->forRun($known->run_id)[0]);
+        $runs->finalize($promoted, ['lifecycle_state'=>'COMPLETED','terminal_status'=>'HELD','publishability_state'=>'NOT_READABLE']);
+        [$known, $knownPayload] = \App\Infrastructure\Persistence\MarketData\ReplayIsolation::run(function () use ($runs, $capture) {
+            $known = $runs->createAsKnownReplayRun('2026-03-24', '2099-01-01 00:00:00');
+            return [$known, $capture->verify($capture->forRun($known->run_id)[0])];
+        });
+        $this->assertFalse(DB::table('eod_runs')->where('run_id', $known->run_id)->exists(), 'Replay row escaped rollback-only root');
         $this->assertSame('2099-01-01 00:00:00', $knownPayload['selection_context']['knowledge_cutoff_at']);
         $this->assertSame((int) $known->config_snapshot_id, (int) $knownPayload['rows'][0]['config_snapshot_id']);
     }
@@ -147,6 +152,6 @@ trait B18ProducerInputCaptureAssertions
 class B18ProducerInputCaptureTest extends TestCase
 {
     use UsesMarketDataSqlite, B18ProducerInputCaptureAssertions;
-    protected function setUp(): void { parent::setUp(); $this->bootMarketDataSqlite(); }
+    protected function setUp(): void { parent::setUp(); $this->bootMarketDataSqlite(true); }
     protected function tearDown(): void { $this->tearDownMarketDataSqlite(); parent::tearDown(); }
 }

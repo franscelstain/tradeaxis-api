@@ -13,6 +13,31 @@ use Illuminate\Support\Facades\Schema;
  */
 class MarketCalendarRepository
 {
+    /**
+     * Return every expected completed session in a bounded assessment window.
+     * Unlike resolvedTradingDates(), this does not silently drop an unverified
+     * trading day and thereby shorten the measured session lag.
+     */
+    public function completedExpectedSessionsBetween($startDate, $endDate, $knownAt): array
+    {
+        MarketDataScope::fromConfig()->assertRequestedRange($startDate, $endDate);
+        $sessions = [];
+        // Enumerate the requested assessment horizon, not the rows that happen
+        // to exist. Absence cannot certify either a holiday or a trading day.
+        for ($day = new \DateTimeImmutable($startDate); $day <= new \DateTimeImmutable($endDate); $day = $day->modify('+1 day')) {
+            $date = $day->format('Y-m-d');
+            $context = $this->sessionContext($date, $knownAt);
+            $this->assertVerifiedCalendarContext($context, $date);
+            if ($context['is_trading_day'] === true) {
+                $sessions[] = $this->assertCompletedRegularSession($date, $knownAt);
+            } elseif (! in_array($context['session_state'], ['CLOSED', 'CANCELLED'], true)) {
+                throw new \RuntimeException('MARKET_CALENDAR_NON_TRADING_STATE_UNVERIFIED: '.$date.'.');
+            }
+        }
+
+        return $sessions;
+    }
+
     public function latestExpectedSession($asOf = null): array
     {
         $clock = $asOf === null ? \Carbon\Carbon::now(config('market_data.platform.timezone'))
@@ -39,18 +64,7 @@ class MarketCalendarRepository
     public function assertCompletedRegularSession($tradeDate, $knownAt = null)
     {
         $context = $this->sessionContext($tradeDate, $knownAt);
-
-        if ($context['provenance_tier'] !== 'VERIFIED') {
-            throw new \RuntimeException(
-                'MARKET_CALENDAR_PROVENANCE_NOT_VERIFIED: '.$tradeDate.' resolves from a '
-                .($context['provenance_tier'] ?: 'UNKNOWN').' calendar row; bar expectation is UNKNOWN, never EXPECTED.'
-            );
-        }
-        foreach (['source_ref', 'source_version', 'reconciled_at', 'reconciliation_source_ref'] as $field) {
-            if (trim((string) ($context[$field] ?? '')) === '') {
-                throw new \RuntimeException('MARKET_CALENDAR_VERIFICATION_EVIDENCE_INCOMPLETE: '.$field.' is missing for '.$tradeDate.'.');
-            }
-        }
+        $this->assertVerifiedCalendarContext($context, $tradeDate);
         if ($context['is_trading_day'] !== true) {
             throw new \RuntimeException('MARKET_CALENDAR_REQUIRES_REQUESTED_TRADING_DATE: requested date is not an IDX Regular-Market trading day.');
         }
@@ -68,6 +82,21 @@ class MarketCalendarRepository
         }
 
         return $context;
+    }
+
+    private function assertVerifiedCalendarContext(array $context, $tradeDate): void
+    {
+        if ($context['provenance_tier'] !== 'VERIFIED') {
+            throw new \RuntimeException(
+                'MARKET_CALENDAR_PROVENANCE_NOT_VERIFIED: '.$tradeDate.' resolves from a '
+                .($context['provenance_tier'] ?: 'UNKNOWN').' calendar row; bar expectation is UNKNOWN, never EXPECTED.'
+            );
+        }
+        foreach (['source_ref', 'source_version', 'reconciled_at', 'reconciliation_source_ref'] as $field) {
+            if (trim((string) ($context[$field] ?? '')) === '') {
+                throw new \RuntimeException('MARKET_CALENDAR_VERIFICATION_EVIDENCE_INCOMPLETE: '.$field.' is missing for '.$tradeDate.'.');
+            }
+        }
     }
 
     public function sessionContext($tradeDate, $knownAt = null)

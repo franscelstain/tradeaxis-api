@@ -45,8 +45,34 @@ class MarketDataB10RemediationRegressionTest extends TestCase
         $pipeline = file_get_contents(base_path('app/Application/MarketData/Services/MarketDataPipelineService.php'));
         $artifacts = file_get_contents(base_path('app/Infrastructure/Persistence/MarketData/EodArtifactRepository.php'));
 
-        $this->assertStringContainsString("\$qualityGateState = \$coverageGateState === 'PASS' ? 'PASS'", $pipeline);
-        $this->assertStringContainsString("'quality_gate_state' => \$qualityGateState", $pipeline);
+        // Ignore formatting, preserving operators/literals in both real producer methods.
+        // MD-S051 date-level finding remains BLOCKED even when coverage passes.
+        $expected = '$qualityGateState=$coverageGateState===\'PASS\'?($anomaly[\'date_level_anomaly_state\']===DateLevelAnomalyCheckService::STATE_FINDING?\'BLOCKED\':\'PASS\'):($coverageGateState===\'FAIL\'?\'FAIL\':\'BLOCKED\');';
+        $tokens = static function (string $code): string {
+            $out = '';
+            foreach (token_get_all($code) as $token) {
+                if (is_array($token)) {
+                    if (in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true)) continue;
+                    $out .= $token[1];
+                } else $out .= $token;
+            }
+            return $out;
+        };
+        $lines = file(base_path('app/Application/MarketData/Services/MarketDataPipelineService.php'));
+        foreach (['completeCoverageEvaluation', 'completeEligibility'] as $method) {
+            $scope = new ReflectionMethod(\App\Application\MarketData\Services\MarketDataPipelineService::class, $method);
+            $body = '<?php '.implode('', array_slice($lines, $scope->getStartLine()-1, $scope->getEndLine()-$scope->getStartLine()+1));
+            $normalized = $tokens($body);
+            $this->assertStringContainsString($expected, $normalized, $method.' must derive PASS only from coverage PASS');
+            $this->assertStringContainsString("'quality_gate_state'=>\$qualityGateState", $normalized, $method.' must bind the derived quality state');
+            $counterfactual = str_replace($expected, '$qualityGateState=$coverageGateState===\'PASS\'?\'PASS\':\'BLOCKED\';', $normalized);
+            $this->assertStringNotContainsString($expected, $counterfactual, 'Omitted anomaly gate must be rejected');
+            $wrongCoverage = str_replace($expected, str_replace("==='PASS'", "==='FAIL'", $expected), $normalized);
+            $this->assertStringNotContainsString($expected, $wrongCoverage, 'Wrong coverage branch must be rejected');
+        }
+        // Insert whitespace without splitting the === operator or altering any literal.
+        $formatted = str_replace('===', " /* comment */ ===\n", $expected);
+        $this->assertStringContainsString($expected, $tokens('<?php '.$formatted));
         $this->assertStringContainsString("'trading_status_revision_id', 'trading_status_source_observation_id'", $artifacts);
     }
     public function test_deployed_projection_repair_probe_is_transactional_non_production_and_history_read_only()
@@ -60,7 +86,7 @@ class MarketDataB10RemediationRegressionTest extends TestCase
         $this->assertStringContainsString('rollBack()', $probe);
         $this->assertStringContainsString("DB::table('eod_eligibility')", $probe);
         $this->assertStringContainsString("DB::table('eod_eligibility_history')", $probe);
-        $this->assertStringContainsString('repairTradeDate($tradeDate)', $probe);
+        $this->assertStringContainsString("repairTradeDate(\$tradeDate, 'Controlled deployed projection repair probe')", $probe);
         $this->assertStringContainsString('post_rollback_reconciliation_state', $probe);
         $this->assertDoesNotMatchRegularExpression('/eod_eligibility_history[^;]+->(?:update|delete)\s*\(/s', $probe);
         $this->assertStringContainsString('tools/market_data/MarketDataB10ProjectionRepairDeployedProbe.php', $spec);

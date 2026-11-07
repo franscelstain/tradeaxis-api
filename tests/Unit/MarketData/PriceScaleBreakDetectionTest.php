@@ -135,4 +135,33 @@ class PriceScaleBreakDetectionTest extends TestCase
         $this->detect(); $this->detect();
         $this->assertSame(1, DB::table('md_price_scale_break_candidates')->count());
     }
+
+    public function test_apply_refuses_detector_config_changed_after_disclosure_without_candidate_write(): void
+    {
+        $this->seedTicker(8, 'R0011');
+        $this->seedBars(8, [['2025-10-03',1810,1855],['2025-10-06',377,462],['2025-10-07',490,502]]);
+        $service=new PriceScaleBreakDetectionService();
+        $disclosed=$service->inspect();
+        config(['market_data.price_scale_break.min_ratio'=>9.0]);
+        try {
+            $service->applyDisclosed(null,null,null,$disclosed);
+            $this->fail('Changed detector configuration was applied after disclosure.');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('COMMAND_PRICE_SCALE_BREAK_PREFLIGHT_CHANGED',$e->getMessage());
+        }
+        $this->assertSame(0,DB::table('md_price_scale_break_candidates')->count());
+        $this->assertSame(0,DB::table('market_data_price_scale_breaks')->count());
+    }
+
+    public function test_apply_persists_the_disclosed_candidate_set(): void
+    {
+        $this->seedTicker(9, 'R0011G');
+        $this->seedBars(9, [['2025-10-03',1810,1855],['2025-10-06',377,462],['2025-10-07',490,502]]);
+        $service=new PriceScaleBreakDetectionService();
+        $disclosed=$service->inspect();
+        $result=$service->applyDisclosed(null,null,null,$disclosed);
+        $this->assertSame($disclosed['pre_apply_fingerprint'],$result['pre_apply_fingerprint']);
+        $this->assertSame(1,DB::table('md_price_scale_break_candidates')->count());
+        $this->assertSame(1,DB::table('market_data_price_scale_breaks')->count());
+    }
 }

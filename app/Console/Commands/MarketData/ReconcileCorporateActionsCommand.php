@@ -31,9 +31,26 @@ class ReconcileCorporateActionsCommand extends AbstractMarketDataCommand
         }
 
         try {
-            $result = app(CorporateActionExternalReconciliationService::class)->reconcileFile($path, $apply);
+            $service = app(CorporateActionExternalReconciliationService::class);
+            $disclosed = $service->inspectFile($path);
+            if ($apply) {
+                $this->line('operation_mode=PRE_APPLY_DISCLOSURE');
+                $this->line('scope=corporate_action_reconciliation:'.$disclosed['scope_start'].'..'.$disclosed['scope_end']);
+                $this->line('resolved_immutable_ids=manifest_sha256='.$disclosed['manifest_sha256'].';reconciliation_uid='.$disclosed['reconciliation_uid']);
+                $this->line('expected_row_effects=append at most one idempotent reconciliation evidence row; canonical actions unchanged');
+                $this->line('config_hash='.$disclosed['config_hash']);
+                $this->line('pointer_impact=UNCHANGED');
+                $this->line('reason=authoritative_corpus_reconciliation:'.$disclosed['authority_name']);
+                $result = $service->applyDisclosedFile($path, $disclosed);
+            } else {
+                $result = $disclosed;
+            }
         } catch (\Throwable $e) {
-            $this->renderCommandBlocked('COMMAND_EXECUTION_FAILED', $e->getMessage(), []);
+            $message = (string) $e->getMessage();
+            $reason = strpos($message, 'COMMAND_CORPORATE_ACTION_RECONCILIATION_PREFLIGHT_CHANGED') !== false
+                ? 'COMMAND_CORPORATE_ACTION_RECONCILIATION_PREFLIGHT_CHANGED'
+                : 'COMMAND_EXECUTION_FAILED';
+            $this->renderCommandBlocked($reason, $message, []);
             return 1;
         }
 

@@ -293,6 +293,8 @@ class EodEvidenceRepository
         ksort($reasonCounts);
 
         return [
+            'publication_reprocess_observation_events' => $events->whereIn('event_type',
+                ['PUBLICATION_REPROCESS_OBSERVED', 'IMPACT_PUBLICATION_REPROCESS_COMPLETED'])->values()->all(),
             'event_count' => $eventCount,
             'first_event_time' => $first ? (string) $first->event_time : null,
             'last_event_time' => $last ? (string) $last->event_time : null,

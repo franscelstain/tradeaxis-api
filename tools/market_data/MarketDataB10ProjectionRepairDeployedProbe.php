@@ -174,7 +174,7 @@ try {
         throw new RuntimeException('CONTROLLED_MISMATCH_NOT_DETECTED');
     }
 
-    $repairResult = $repair->repairTradeDate($tradeDate);
+    $repairResult = $repair->repairTradeDate($tradeDate, 'Controlled deployed projection repair probe');
     $result['repair_state'] = (string) ($repairResult['repair_state'] ?? '');
     $result['repair_after_state'] = (string) ($repairResult['after']['reconciliation_state'] ?? '');
     $result['repair_after_mismatch_count'] = (int) ($repairResult['after']['mismatch_count'] ?? -1);

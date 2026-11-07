@@ -211,6 +211,10 @@ class MarketDataPipelineService
 
     public function startStage(MarketDataStageInput $input)
     {
+        if ($input->stage === 'INGEST_BARS' && ! $input->correctionId) {
+            (new MarketDataIncidentResponseService())->assertActionAllowed($input->requestedDate,
+                $input->runId ? 'ordinary_retry' : 'new_acquisition', $input->runId ? (int) $input->runId : null);
+        }
         $correction = null;
         $priorCurrent = null;
         $supersedesRunId = null;
@@ -271,7 +275,8 @@ class MarketDataPipelineService
             $input->sourceMode,
             $input->stage,
             $supersedesRunId,
-            $input->requestMode
+            $input->requestMode,
+            $input->preApplyDisclosure
         );
 
         if (! $run) {
@@ -361,17 +366,15 @@ class MarketDataPipelineService
 
     public function completeIngest(MarketDataStageInput $input)
     {
-        [$run, $correction, $priorCurrent] = $this->startStage($input);
-
-        if ($priorCurrent === null) {
-            $baselineCurrent = $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
-
-            if ($baselineCurrent) {
-                $priorCurrent = $baselineCurrent;
-            }
+        $preApplyTransactionOpen = false;
+        $run = null;
+        if ($input->preApplyDisclosure !== null) {
+            DB::beginTransaction();
+            $preApplyTransactionOpen = true;
         }
-
         try {
+            [$run, $correction, $priorCurrent] = $this->startStage($input);
+            if ($priorCurrent === null) $priorCurrent = $this->resolveAcquisitionPublicationBoundary($run, $input);
             /*
              * Acquisition context is unconditional.
              *
@@ -383,6 +386,11 @@ class MarketDataPipelineService
              * EodRunRepository now resolves a config snapshot, so the branch only survived to
              * degrade the runs that reached it.
              */
+            $this->runs->appendEvent($run, $input->stage, 'ACQUISITION_STARTED', 'INFO',
+                'Source acquisition invoked for the requested session.', null, [
+                    'requested_date' => $input->requestedDate, 'source_mode' => $input->sourceMode,
+                    'config_snapshot_id' => $run->config_snapshot_id, 'config_hash' => $run->config_hash,
+                ]);
             $sourceRows = $this->barsIngest->acquireSourceRows(
                 $input->requestedDate,
                 $input->sourceMode,
@@ -400,9 +408,21 @@ class MarketDataPipelineService
                      * This context key was read in two places and written in none.
                      */
                     'known_at' => $this->runs->resolveKnowledgeCutoff($run),
+                    'pre_apply_disclosure' => $input->preApplyDisclosure,
                 ]
             );
             $sourceAcquisitionTelemetry = $this->barsIngest->consumeSourceAcquisitionTelemetry($input->sourceMode);
+            $this->runs->appendEvent($run, $input->stage, 'OBSERVATIONS_CAPTURED', 'INFO',
+                'Source acquisition completed; returned observation identities retained before canonical writes.', null, [
+                    'requested_date' => $input->requestedDate,
+                    'source_observation_ids' => array_values(array_unique(array_filter(array_map(
+                        static function ($row) { return isset($row['source_observation_id']) ? (int) $row['source_observation_id'] : null; }, $sourceRows
+                    )))),
+                ]);
+            if ($preApplyTransactionOpen) {
+                DB::commit();
+                $preApplyTransactionOpen = false;
+            }
             return DB::transaction(function () use ($run, $input, $priorCurrent, $sourceRows, $sourceAcquisitionTelemetry) {
                 if (! in_array((string) $run->request_mode, ['import_only', 'replay_verify', 'evidence_export'], true)) $this->runs->assertPublishCriticalOwner($run);
                 $result = $this->barsIngest->ingestAcquiredRows(
@@ -492,6 +512,20 @@ class MarketDataPipelineService
                 return $run;
             });
         } catch (\Throwable $e) {
+            if (strpos($e->getMessage(), 'COMMAND_CORRECTION_') === 0 || $run === null) {
+                if ($preApplyTransactionOpen) {
+                    DB::rollBack();
+                    $preApplyTransactionOpen = false;
+                    if ($run !== null && ! empty($run->run_id)) {
+                        \App\Infrastructure\Persistence\MarketData\RunWriterContext::forget((int) $run->run_id);
+                    }
+                }
+                throw $e;
+            }
+            if ($preApplyTransactionOpen) {
+                DB::commit();
+                $preApplyTransactionOpen = false;
+            }
             if ($e instanceof SourceAcquisitionException) {
                 $reasonCode = $e->reasonCode();
             } else {
@@ -543,16 +577,9 @@ class MarketDataPipelineService
     public function completeRecoveredRowsPartial(MarketDataStageInput $input, array $sourceRows, array $sourceAcquisition = [])
     {
         [$run, $correction, $priorCurrent] = $this->startStage($input);
-
-        if ($priorCurrent === null && $input->requestMode !== 'corpus_reconstruction') {
-            $baselineCurrent = $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
-
-            if ($baselineCurrent) {
-                $priorCurrent = $baselineCurrent;
-            }
-        }
-
         try {
+            if ($priorCurrent === null && $input->requestMode !== 'corpus_reconstruction')
+                $priorCurrent = $this->resolveAcquisitionPublicationBoundary($run, $input);
             return DB::transaction(function () use ($run, $input, $priorCurrent, $sourceRows, $sourceAcquisition) {
                 if (! in_array((string) $run->request_mode, ['import_only', 'replay_verify', 'evidence_export'], true)) $this->runs->assertPublishCriticalOwner($run);
                 $result = $this->barsIngest->ingestRecoveredRowsPartial(
@@ -637,16 +664,9 @@ class MarketDataPipelineService
     public function completeIngestWithAcquiredRows(MarketDataStageInput $input, array $sourceRows, array $sourceAcquisition = [])
     {
         [$run, $correction, $priorCurrent] = $this->startStage($input);
-
-        if ($priorCurrent === null && $input->requestMode !== 'corpus_reconstruction') {
-            $baselineCurrent = $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
-
-            if ($baselineCurrent) {
-                $priorCurrent = $baselineCurrent;
-            }
-        }
-
         try {
+            if ($priorCurrent === null && $input->requestMode !== 'corpus_reconstruction')
+                $priorCurrent = $this->resolveAcquisitionPublicationBoundary($run, $input);
             return DB::transaction(function () use ($run, $input, $priorCurrent, $sourceRows, $sourceAcquisition) {
                 if (! in_array((string) $run->request_mode, ['import_only', 'replay_verify', 'evidence_export'], true)) $this->runs->assertPublishCriticalOwner($run);
                 $result = $this->barsIngest->ingestAcquiredRows(
@@ -811,7 +831,9 @@ class MarketDataPipelineService
                     $run->config_snapshot_id,
                     $run->config_hash
                 );
-                $qualityGateState = $coverageGateState === 'PASS' ? 'PASS' : ($coverageGateState === 'FAIL' ? 'FAIL' : 'BLOCKED');
+                $qualityGateState = $coverageGateState === 'PASS'
+                    ? ($anomaly['date_level_anomaly_state'] === DateLevelAnomalyCheckService::STATE_FINDING ? 'BLOCKED' : 'PASS')
+                    : ($coverageGateState === 'FAIL' ? 'FAIL' : 'BLOCKED');
 
                 $coverageTelemetry = [
                     'quality_gate_state' => $qualityGateState,
@@ -864,12 +886,13 @@ class MarketDataPipelineService
                     $run,
                     $input->stage,
                     'STAGE_COMPLETED',
-                    $coverageGateState === 'PASS' ? 'INFO' : 'WARN',
+                    $qualityGateState === 'PASS' ? 'INFO' : 'WARN',
                     'Coverage gate evaluated from persisted canonical valid bars.',
                     $coverageGateState === 'PASS' ? null : ($coverageGateState === 'FAIL' ? 'RUN_COVERAGE_LOW' : 'RUN_COVERAGE_NOT_EVALUABLE'),
                     [
                         'coverage' => $coverage,
                         'date_level_anomaly' => $anomaly,
+                        'quality_gate_state' => $qualityGateState,
                         'coverage_basis' => $coverage['coverage_basis'] ?? null,
                         'coverage_basis_publication_id' => $coverageBasisPublicationId,
                         'candidate_publication_id' => $coverageBasisPublicationId,
@@ -901,7 +924,15 @@ class MarketDataPipelineService
                     $run->run_id
                 );
                 $coverageGateState = CoverageGateStateNormalizer::normalize($coverage['coverage_gate_status'] ?? null);
-                $qualityGateState = $coverageGateState === 'PASS' ? 'PASS' : ($coverageGateState === 'FAIL' ? 'FAIL' : 'BLOCKED');
+                // Direct BUILD_ELIGIBILITY must not erase the date-level gate
+                // established by PUBLISH_BARS, nor skip it when invoked alone.
+                $anomaly = app(DateLevelAnomalyCheckService::class)->evaluate(
+                    $input->requestedDate, $result['publication_id'],
+                    $this->runs->resolveKnowledgeCutoff($run), $run->config_snapshot_id, $run->config_hash
+                );
+                $qualityGateState = $coverageGateState === 'PASS'
+                    ? ($anomaly['date_level_anomaly_state'] === DateLevelAnomalyCheckService::STATE_FINDING ? 'BLOCKED' : 'PASS')
+                    : ($coverageGateState === 'FAIL' ? 'FAIL' : 'BLOCKED');
 
                 $run = $this->runs->updateTelemetry($run, [
                     'eligibility_rows_written' => $result['eligibility_rows_written'],
@@ -946,7 +977,7 @@ class MarketDataPipelineService
                     'INFO',
                     'Eligibility build stage completed with one row per universe ticker and coverage telemetry stored separately.',
                     null,
-                    $result + ['coverage' => $coverage]
+                    $result + ['coverage' => $coverage, 'date_level_anomaly' => $anomaly, 'quality_gate_state' => $qualityGateState]
                 );
 
                 return $run;
@@ -1009,7 +1040,7 @@ class MarketDataPipelineService
 
             $this->runs->assertPublishCriticalOwner($run);
             $run = $this->runs->storeHashes($run, $hashes);
-            $this->publications->updateCandidateHashes($candidatePublication->publication_id, $hashes);
+            $this->publications->updateCandidateHashes($candidatePublication->publication_id, $hashes, $run);
 
             $this->runs->appendEvent(
                 $run,
@@ -1112,7 +1143,7 @@ class MarketDataPipelineService
         $this->assertLiquidityMetricsLabelled($run, $input);
 
         $coverageGateState = strtoupper(trim((string) ($run->coverage_gate_state ?? '')));
-        if ($coverageGateState !== 'PASS') {
+        if ($coverageGateState !== 'PASS' || (string) $run->quality_gate_state !== 'PASS') {
             // Coverage FAIL/NOT_EVALUABLE is a governed non-readable outcome, not a seal-write
             // exception. Keep the candidate unsealed/non-current and let FINALIZE derive HELD or
             // FAILED from fallback availability without ever promoting the requested date.
@@ -1121,9 +1152,9 @@ class MarketDataPipelineService
                 $input->stage,
                 'SEAL_SKIPPED',
                 'INFO',
-                'Dataset seal skipped because coverage gate did not PASS; FINALIZE owns the fail-closed non-readable outcome.',
+                'Dataset seal skipped because coverage or date-level quality gate did not PASS; FINALIZE owns the fail-closed non-readable outcome.',
                 null,
-                ['coverage_gate_state' => $coverageGateState]
+                ['coverage_gate_state' => $coverageGateState, 'quality_gate_state' => $run->quality_gate_state]
             );
             $this->runs->appendEvent(
                 $run,
@@ -1132,7 +1163,7 @@ class MarketDataPipelineService
                 'INFO',
                 'Seal stage completed without sealing a coverage-failing candidate.',
                 null,
-                ['sealed' => false, 'coverage_gate_state' => $coverageGateState]
+                ['sealed' => false, 'coverage_gate_state' => $coverageGateState, 'quality_gate_state' => $run->quality_gate_state]
             );
 
             return $run;
@@ -1149,7 +1180,7 @@ class MarketDataPipelineService
                         );
 
                         if ($this->publicationDiffs->isUnchanged($priorCurrent, $candidateForNoopCheck)) {
-                            $this->publications->discardCandidatePublication($candidateForNoopCheck->publication_id);
+                            $this->publications->discardCandidatePublication($candidateForNoopCheck->publication_id, $run);
 
                             $run = $this->safeUpdateTelemetry($run, [
                                 "publication_id" => $priorCurrent ? (int) $priorCurrent->publication_id : $run->publication_id,
@@ -1267,7 +1298,7 @@ class MarketDataPipelineService
         try {
             return DB::transaction(function () use ($run, $input, $correction, $priorCurrent) {
                 $this->runs->assertPublishCriticalOwner($run);
-                $fallback = $this->publications->findLatestReadablePublicationBefore($input->requestedDate);
+                $fallback = $this->resolveReadableFallback($run, $input->requestedDate, $input->stage);
                 $cutoffSatisfied = $this->isFinalizeCutoffSatisfied($input->requestedDate);
 
                 if (
@@ -1324,6 +1355,7 @@ class MarketDataPipelineService
                         'promote_mode' => $run->promote_mode ?: ($correction ? 'correction' : 'full_publish'),
                         'publish_target' => $run->publish_target ?: 'current_replace',
                         'source_mode' => $input->sourceMode,
+                        'quality_gate_state' => $run->quality_gate_state,
                         'source_final_reason_code' => $this->extractNoteValue((string) $run->notes, 'source_final_reason_code'),
                         'bars_rows_written' => isset($run->bars_rows_written) ? (int) $run->bars_rows_written : null,
                         'accepted_row_count' => isset($run->bars_rows_written) ? (int) $run->bars_rows_written : null,
@@ -1346,13 +1378,6 @@ class MarketDataPipelineService
                     if (! $correction && ! $input->forceReplace) {
                         $verifiedCurrent = $this->publications->findPointerResolvedPublicationForTradeDate($input->requestedDate);
                         if ($verifiedCurrent && $this->isVerifiedDuplicatePublicationTarget($run, $candidatePublication, $verifiedCurrent)) {
-                            $run = $this->finalizeRunState($run, [
-                                'trade_date_effective' => null,
-                                'quality_gate_state' => 'PASS',
-                                'publishability_state' => 'NOT_READABLE',
-                                'terminal_status' => 'SKIPPED',
-                                'lifecycle_state' => 'COMPLETED',
-                            ]);
                             $this->runs->appendEvent($run, $input->stage, 'RUN_DUPLICATE_TARGET_SKIPPED', 'INFO',
                                 'Verified duplicate target skipped; existing current publication preserved.', null, [
                                     'run_id' => (int) $run->run_id,
@@ -1361,7 +1386,14 @@ class MarketDataPipelineService
                                     'decision' => 'SKIPPED',
                                     'publication_unchanged' => true,
                                 ]);
-                            return $run;
+                            // Decision audit and release remain within the finalization transaction.
+                            return $this->finalizeRunState($run, [
+                                'trade_date_effective' => null,
+                                'quality_gate_state' => 'PASS',
+                                'publishability_state' => 'NOT_READABLE',
+                                'terminal_status' => 'SKIPPED',
+                                'lifecycle_state' => 'COMPLETED',
+                            ]);
                         }
                     }
                     $run = $this->prepareRunForPointerSwitch($run, $preDecision);
@@ -1380,7 +1412,7 @@ class MarketDataPipelineService
                         $manifest = $this->publications->buildManifestByPublicationId($priorCurrent->publication_id);
 
                         if ((int) $candidatePublication->publication_id !== (int) $priorCurrent->publication_id) {
-                            $this->publications->discardCandidatePublication($candidatePublication->publication_id);
+                            $this->publications->discardCandidatePublication($candidatePublication->publication_id, $run);
                         }
 
                         $finalizeReasonCode = $this->resolveFinalizeReasonCode(
@@ -1511,7 +1543,9 @@ class MarketDataPipelineService
                             }
 
                             if (! $correction && ! $preSwitchCurrent) {
-                                $preSwitchCurrent = $this->publications->findPointerResolvedPublicationForTradeDate($input->requestedDate);
+                                $preSwitchCurrent = $input->forceReplace
+                                    ? $this->resolveAcquisitionPublicationBoundary($run, $input)
+                                    : $this->publications->findPointerResolvedPublicationForTradeDate($input->requestedDate);
                             }
 
                             $promotedCurrent = $this->publications->promoteCandidateToCurrent(
@@ -1562,7 +1596,7 @@ class MarketDataPipelineService
                                 );
                             }
 
-                            $this->runs->syncCurrentPublicationMirror($input->requestedDate, $run->run_id);
+                            $this->runs->syncCurrentPublicationMirror($input->requestedDate, $run->run_id, $run);
 
                             /*
                              * EodPublicationRepository::promoteCandidateToCurrent() owns the
@@ -1598,13 +1632,11 @@ class MarketDataPipelineService
                                     $this->publications->restorePriorCurrentPublication(
                                         $input->requestedDate,
                                         (int) $priorCurrent->publication_id,
-                                        (int) $priorCurrent->run_id
-                                    );
+                                        (int) $priorCurrent->run_id, $run);
 
                                     $this->runs->syncCurrentPublicationMirror(
                                         $input->requestedDate,
-                                        (int) $priorCurrent->run_id
-                                    );
+                                        (int) $priorCurrent->run_id, $run);
                                 } catch (\Throwable $restoreException) {
                                     $this->runs->appendEvent(
                                         $run,
@@ -1625,7 +1657,7 @@ class MarketDataPipelineService
                                 }
                             } elseif ($isPointerIntegrityError) {
                                 if (! $preSwitchCurrent || strpos($message, 'CURRENT_PUBLICATION_REPLACE_BLOCKED') === false) {
-                                    $this->publications->clearCurrentPublicationState($input->requestedDate);
+                                    $this->publications->clearCurrentPublicationState($input->requestedDate, $run);
                                 }
                             }
 
@@ -1703,14 +1735,6 @@ class MarketDataPipelineService
                     $postFinalizeMismatchNote
                 );
 
-                $run = $this->finalizeRunState($run, [
-                    'trade_date_effective' => $outcome['trade_date_effective'],
-                    'quality_gate_state' => $outcome['quality_gate_state'],
-                    'publishability_state' => $outcome['publishability_state'],
-                    'terminal_status' => $outcome['terminal_status'],
-                    'lifecycle_state' => 'COMPLETED',
-                ]);
-
                 $run = $this->safeUpdateTelemetry($run, [
                     'publication_id' => $outcome['current_publication_id'] !== null
                         ? (int) $outcome['current_publication_id']
@@ -1720,6 +1744,16 @@ class MarketDataPipelineService
                         : ($unchangedCorrection && $priorCurrent ? (int) $priorCurrent->publication_version : (int) $candidatePublication->publication_version),
                     'correction_id' => $correction ? (int) $correction->correction_id : $run->correction_id,
                     'final_reason_code' => $finalizeReasonCode,
+                ]);
+
+                // Persist the terminal decision while retaining the active date
+                // fence through pointer verification and any protected cleanup.
+                $run = $this->finalizeRunState($run, [
+                    'trade_date_effective' => $outcome['trade_date_effective'],
+                    'quality_gate_state' => $outcome['quality_gate_state'],
+                    'publishability_state' => $outcome['publishability_state'],
+                    'terminal_status' => $outcome['terminal_status'],
+                    'lifecycle_state' => 'FINALIZING',
                 ]);
 
                 $resolvedPublicationId = $outcome['current_publication_id'];
@@ -1774,13 +1808,11 @@ class MarketDataPipelineService
                                 $this->publications->restorePriorCurrentPublication(
                                     $input->requestedDate,
                                     (int) $preservedCurrent->publication_id,
-                                    (int) $preservedCurrent->run_id
-                                );
+                                    (int) $preservedCurrent->run_id, $run);
 
                                 $this->runs->syncCurrentPublicationMirror(
                                     $input->requestedDate,
-                                    (int) $preservedCurrent->run_id
-                                );
+                                    (int) $preservedCurrent->run_id, $run);
                             } catch (\Throwable $restoreException) {
                                 $this->runs->appendEvent(
                                     $run,
@@ -1800,7 +1832,7 @@ class MarketDataPipelineService
                                 );
                             }
                         } else {
-                            $this->publications->clearCurrentPublicationState($input->requestedDate);
+                            $this->publications->clearCurrentPublicationState($input->requestedDate, $run);
                         }
 
                         if ($run->terminal_status === 'SUCCESS') {
@@ -1809,7 +1841,7 @@ class MarketDataPipelineService
                                 'quality_gate_state' => $outcome['quality_gate_state'],
                                 'publishability_state' => 'NOT_READABLE',
                                 'terminal_status' => 'HELD',
-                                'lifecycle_state' => 'COMPLETED',
+                                'lifecycle_state' => 'FINALIZING',
                             ]);
                         }
 
@@ -1895,7 +1927,7 @@ class MarketDataPipelineService
                         'quality_gate_state' => 'PASS',
                         'publishability_state' => 'READABLE',
                         'terminal_status' => 'SUCCESS',
-                        'lifecycle_state' => 'COMPLETED',
+                        'lifecycle_state' => 'FINALIZING',
                     ]);
 
                     $run = $this->safeUpdateTelemetry($run, [
@@ -2021,7 +2053,16 @@ class MarketDataPipelineService
                     ]
                 );
 
-                return $run;
+                // Release the owner only after every final pointer check,
+                // restoration, telemetry write and terminal audit event has
+                // completed under the same requested-date fencing token.
+                return $this->finalizeRunState($run, [
+                    'trade_date_effective' => $run->trade_date_effective,
+                    'quality_gate_state' => $run->quality_gate_state,
+                    'publishability_state' => $run->publishability_state,
+                    'terminal_status' => $run->terminal_status,
+                    'lifecycle_state' => 'COMPLETED',
+                ]);
             });
         } catch (\Throwable $e) {
             $this->handleStageFailure($run, $input->stage, 'RUN_FINALIZE_FAILED', $e);
@@ -2239,19 +2280,19 @@ class MarketDataPipelineService
 
         (new MarketDataInvariantGuard())->assertNoBypassState($state, 'MarketDataPipelineService::finalizeUnchangedCorrection');
 
-        $run = $this->finalizeRunState($run, [
-            'trade_date_effective' => $input->requestedDate,
-            'quality_gate_state' => 'PASS',
-            'publishability_state' => 'READABLE',
-            'terminal_status' => 'SUCCESS',
-            'lifecycle_state' => 'COMPLETED',
-        ]);
-
         $run = $this->safeUpdateTelemetry($run, [
             'publication_id' => (int) $priorCurrent->publication_id,
             'publication_version' => (int) $priorCurrent->publication_version,
             'correction_id' => (int) $correction->correction_id,
             'final_reason_code' => null,
+        ]);
+
+        $run = $this->finalizeRunState($run, [
+            'trade_date_effective' => $input->requestedDate,
+            'quality_gate_state' => 'PASS',
+            'publishability_state' => 'READABLE',
+            'terminal_status' => 'SUCCESS',
+            'lifecycle_state' => 'FINALIZING',
         ]);
 
         $this->corrections->markConsumedForCurrent(
@@ -2286,7 +2327,7 @@ class MarketDataPipelineService
             'correction_outcome_note' => $state['correction_outcome_note'],
         ]);
 
-        return $run;
+        return $this->finalizeRunState($run, ['lifecycle_state' => 'COMPLETED']);
     }
 
     private function runNotesContain($notes, string $needle): bool
@@ -2440,7 +2481,7 @@ class MarketDataPipelineService
         return $this->promoteSingleDay($requestedDate, $sourceMode, $runId, $correctionId, $promoteMode, $forceReplace, $forceReplaceReason);
     }
 
-    public function runSingleDay($requestedDate, $sourceMode = null, $correctionId = null)
+    public function runSingleDay($requestedDate, $sourceMode = null, $correctionId = null, $preApplyDisclosure = null)
     {
         return $this->executeStageSequence($requestedDate, $sourceMode, $correctionId, [
             'INGEST_BARS' => 'completeIngest',
@@ -2449,12 +2490,12 @@ class MarketDataPipelineService
             'HASH' => 'completeHash',
             'SEAL' => 'completeSeal',
             'FINALIZE' => 'completeFinalize',
-        ], $correctionId !== null ? 'correction' : 'full_publish');
+        ], $correctionId !== null ? 'correction' : 'full_publish', $preApplyDisclosure);
     }
 
-    public function runDaily($requestedDate, $sourceMode = null, $correctionId = null)
+    public function runDaily($requestedDate, $sourceMode = null, $correctionId = null, $preApplyDisclosure = null)
     {
-        return $this->runSingleDay($requestedDate, $sourceMode, $correctionId);
+        return $this->runSingleDay($requestedDate, $sourceMode, $correctionId, $preApplyDisclosure);
     }
 
     public function importSingleDay($requestedDate, $sourceMode = null, $correctionId = null)
@@ -2469,7 +2510,7 @@ class MarketDataPipelineService
         return $this->importSingleDay($requestedDate, $sourceMode, $correctionId);
     }
 
-    private function executeStageSequence($requestedDate, $sourceMode = null, $correctionId = null, array $sequence = [], $requestMode = null)
+    private function executeStageSequence($requestedDate, $sourceMode = null, $correctionId = null, array $sequence = [], $requestMode = null, $preApplyDisclosure = null)
     {
         $sourceMode = $sourceMode ?: config('market_data.pipeline.default_source_mode');
         $sequence = $sequence ?: [
@@ -2483,7 +2524,7 @@ class MarketDataPipelineService
 
         $run = null;
         foreach ($sequence as $stage => $method) {
-            $input = new MarketDataStageInput($requestedDate, $sourceMode, $run ? $run->run_id : null, $stage, $correctionId, false, null, $requestMode);
+            $input = new MarketDataStageInput($requestedDate, $sourceMode, $run ? $run->run_id : null, $stage, $correctionId, false, null, $requestMode, $run ? null : $preApplyDisclosure);
             $run = $this->{$method}($input);
 
             if ($run && in_array((string) $run->terminal_status, ['HELD', 'FAILED'], true)) {
@@ -2575,7 +2616,22 @@ class MarketDataPipelineService
 
     private function failSafeCompletedReadableRunPointerMismatch($run, MarketDataStageInput $input)
     {
+        if ((string) $run->trade_date_requested !== (string) $input->requestedDate
+            || (string) $run->source !== (string) $input->sourceMode) {
+            throw new \RuntimeException('RUN_OWNER_CONFLICT: completed finalize recovery must match the original requested date and source.');
+        }
+
         return DB::transaction(function () use ($run, $input) {
+            // The completed run has released its token. Recovery is a linked new
+            // attempt, never a rewrite of that immutable terminal decision.
+            $recovery = $this->runs->getOrCreateOwningRun(
+                $input->requestedDate, $input->sourceMode, 'FINALIZE',
+                (int) $run->run_id, 'repair_candidate'
+            );
+            if ((int) ($recovery->supersedes_run_id ?? 0) !== (int) $run->run_id) {
+                throw new \RuntimeException('RUN_OWNER_CONFLICT: active recovery attempt belongs to another completed run.');
+            }
+            $this->runs->assertPublishCriticalOwner($recovery);
             $resolvedCurrent = null;
 
             try {
@@ -2586,7 +2642,7 @@ class MarketDataPipelineService
                 $resolvedCurrent = null;
 
                 $this->runs->appendEvent(
-                    $run,
+                    $recovery,
                     'FINALIZE',
                     'POINTER_RESOLUTION_FAILED',
                     'WARN',
@@ -2594,7 +2650,8 @@ class MarketDataPipelineService
                     'RUN_LOCK_CONFLICT',
                     [
                         'requested_date' => $input->requestedDate,
-                        'run_id' => (int) $run->run_id,
+                        'run_id' => (int) $recovery->run_id,
+                        'prior_run_id' => (int) $run->run_id,
                         'exception_class' => get_class($e),
                         'exception_message' => $e->getMessage(),
                     ]
@@ -2602,31 +2659,12 @@ class MarketDataPipelineService
             }
 
             if ($resolvedCurrent && (int) ($resolvedCurrent->run_id ?? 0) !== (int) ($run->run_id ?? 0)) {
-                try {
-                    $this->runs->syncCurrentPublicationMirror(
-                        $input->requestedDate,
-                        (int) $resolvedCurrent->run_id
-                    );
-                } catch (\Throwable $e) {
-                    $this->runs->appendEvent(
-                        $run,
-                        'FINALIZE',
-                        'CURRENT_PUBLICATION_MIRROR_REPAIR_FAILED',
-                        'WARN',
-                        'Current publication mirror repair failed; pointer resolver remains authoritative.',
-                        'RUN_CURRENT_PUBLICATION_INTEGRITY_REPAIRED',
-                        [
-                            'requested_date' => $input->requestedDate,
-                            'run_id' => (int) $run->run_id,
-                            'resolved_current_run_id' => (int) $resolvedCurrent->run_id,
-                            'exception_class' => get_class($e),
-                            'exception_message' => $e->getMessage(),
-                        ]
-                    );
-                }
-
+                $this->runs->assertPublishCriticalOwner($recovery);
+                $this->runs->syncCurrentPublicationMirror(
+                    $input->requestedDate,
+                    (int) $resolvedCurrent->run_id, $recovery);
                 $this->runs->appendEvent(
-                    $run,
+                    $recovery,
                     'FINALIZE',
                     'CURRENT_PUBLICATION_MIRROR_REPAIRED',
                     'WARN',
@@ -2634,67 +2672,136 @@ class MarketDataPipelineService
                     'RUN_CURRENT_PUBLICATION_INTEGRITY_REPAIRED',
                     [
                         'requested_date' => $input->requestedDate,
-                        'run_id' => (int) $run->run_id,
+                        'run_id' => (int) $recovery->run_id,
+                        'prior_run_id' => (int) $run->run_id,
                         'resolved_current_publication_id' => (int) $resolvedCurrent->publication_id,
                         'resolved_current_run_id' => (int) $resolvedCurrent->run_id,
                     ]
                 );
 
-                return $this->safeFindRunById($run->run_id) ?: $run;
-            }
-
-            try {
-                if ($this->publications) {
-                    $this->publications->clearCurrentPublicationState($input->requestedDate);
+                $reasonCode = 'RUN_CURRENT_PUBLICATION_INTEGRITY_REPAIRED';
+            } else {
+                $this->runs->assertPublishCriticalOwner($recovery);
+                $restoredPrior = null;
+                if ($this->publications && $run->publication_id) {
+                    try {
+                        $restoredPrior = $this->publications->restorePriorCurrentPublication(
+                            $input->requestedDate, (int) $run->publication_id, (int) $run->run_id, $recovery);
+                    } catch (\Throwable $restoreError) {
+                        $this->runs->appendEvent($recovery, 'FINALIZE', 'POINTER_RESTORE_FAILED', 'WARN',
+                            'Completed-run pointer restoration was refused; requested date remains frozen until safe cleanup.',
+                            'RUN_LOCK_CONFLICT', [
+                                'requested_date' => $input->requestedDate,
+                                'prior_run_id' => (int) $run->run_id,
+                                'prior_publication_id' => (int) $run->publication_id,
+                                'exception_class' => get_class($restoreError),
+                                'exception_message' => $restoreError->getMessage(),
+                            ]);
+                    }
                 }
-            } catch (\Throwable $e) {
-                $this->runs->appendEvent(
-                    $run,
-                    'FINALIZE',
-                    'POINTER_CLEANUP_FAILED',
-                    'WARN',
-                    'Unsafe current pointer cleanup failed before fail-safe finalize hold.',
-                    'RUN_LOCK_CONFLICT',
-                    [
-                        'requested_date' => $input->requestedDate,
-                        'run_id' => (int) $run->run_id,
-                        'exception_class' => get_class($e),
-                        'exception_message' => $e->getMessage(),
-                    ]
-                );
+                if ($restoredPrior) {
+                    $verified = $this->publications->resolveCurrentReadablePublicationForTradeDate($input->requestedDate);
+                    if (! $verified || (int) $verified->publication_id !== (int) $run->publication_id) {
+                        throw new \RuntimeException('POINTER_RESTORE_FAILED: restored prior publication did not resolve independently.');
+                    }
+                    $reasonCode = 'RUN_CURRENT_PUBLICATION_INTEGRITY_REPAIRED';
+                    $pointerAction = 'RESTORE_VERIFIED_PRIOR_CURRENT';
+                } else {
+                    if ($this->publications) {
+                        $this->publications->clearCurrentPublicationState($input->requestedDate, $recovery);
+                    }
+                    if (DB::table('eod_current_publication_pointer')->where('trade_date', $input->requestedDate)->exists()
+                        || DB::table('eod_publications')->where('trade_date', $input->requestedDate)->where('is_current', 1)->exists()) {
+                        throw new \RuntimeException('POINTER_CLEANUP_FAILED: invalid current state remains after fenced recovery.');
+                    }
+                    $reasonCode = 'RUN_LOCK_CONFLICT';
+                    $pointerAction = 'CLEAR_UNSAFE_CURRENT_STATE';
+                }
             }
 
-            $run = $this->finalizeRunState($run, [
+            $recovery = $this->finalizeRunState($recovery, [
                 'trade_date_effective' => null,
-                'quality_gate_state' => $run->quality_gate_state ?: 'BLOCKED',
+                'quality_gate_state' => 'BLOCKED',
                 'publishability_state' => 'NOT_READABLE',
                 'terminal_status' => 'HELD',
-                'lifecycle_state' => 'COMPLETED',
+                'lifecycle_state' => 'FINALIZING',
             ]);
 
-            $run = $this->safeUpdateTelemetry($run, [
-                'final_reason_code' => 'RUN_LOCK_CONFLICT',
+            $recovery = $this->safeUpdateTelemetry($recovery, [
+                'final_reason_code' => $reasonCode,
             ]);
 
             $this->runs->appendEvent(
-                $run,
+                $recovery,
                 'FINALIZE',
                 'RUN_FINALIZE_IDEMPOTENCY_POINTER_INVALID',
                 'WARN',
                 'Completed finalize rerun found invalid current pointer; run held without pointer switch.',
-                'RUN_LOCK_CONFLICT',
+                $reasonCode,
                 [
                     'requested_date' => $input->requestedDate,
-                    'run_id' => (int) $run->run_id,
+                    'run_id' => (int) $recovery->run_id,
+                    'prior_run_id' => (int) $run->run_id,
                     'publication_id' => $run->publication_id !== null ? (int) $run->publication_id : null,
                     'publication_version' => $run->publication_version !== null ? (int) $run->publication_version : null,
-                    'idempotency_boundary' => 'run_id',
-                    'pointer_action' => 'CLEAR_UNSAFE_CURRENT_STATE',
+                    'idempotency_boundary' => 'linked_recovery_attempt',
+                    'pointer_action' => $resolvedCurrent ? 'REPAIR_CURRENT_MIRROR' : $pointerAction,
                 ]
             );
 
-            return $run;
+            return $this->finalizeRunState($recovery, [
+                'trade_date_effective' => null,
+                'quality_gate_state' => $recovery->quality_gate_state,
+                'publishability_state' => 'NOT_READABLE',
+                'terminal_status' => 'HELD',
+                'lifecycle_state' => 'COMPLETED',
+            ]);
         });
+    }
+
+    /** A predecessor's identity controls write isolation; it is not reusable source evidence. */
+    private function resolveAcquisitionPublicationBoundary($run, MarketDataStageInput $input)
+    {
+        try {
+            return $this->publications->findCorrectionBaselinePublicationForTradeDate($input->requestedDate);
+        } catch (\RuntimeException $error) {
+            if (strpos($error->getMessage(), 'INCIDENT_RESPONSE_BLOCKED:') !== 0 || $input->correctionId) throw $error;
+            // Integrity/semantic containment and an implicated active worker still fail closed.
+            (new MarketDataIncidentResponseService())->assertActionAllowed($input->requestedDate, 'new_acquisition');
+            $boundary = $this->publications->findRawCurrentPublicationStateForTradeDate($input->requestedDate);
+            if (! $boundary || (int) $boundary->run_id === (int) $run->run_id
+                || (string) $run->trade_date_requested !== (string) $input->requestedDate
+                || $this->publications->determineCurrentIntegrityViolationReasons($boundary) !== []) throw $error;
+            $this->runs->appendEvent($run, $input->stage, 'INCIDENT_BASELINE_REUSE_REFUSED', 'WARN',
+                'Affected predecessor retained only as the immutable write boundary; acquisition must supply new observations.', null, [
+                    'requested_date' => $input->requestedDate, 'run_id' => (int) $run->run_id,
+                    'predecessor_publication_id' => (int) $boundary->publication_id,
+                    'predecessor_run_id' => (int) $boundary->run_id, 'affected_data_reused' => false,
+                    'publication_write_authorized' => false,
+                ]);
+            return $boundary;
+        }
+    }
+
+    private function resolveReadableFallback($run, string $requestedDate, string $stage)
+    {
+        try {
+            return $this->publications->findLatestReadablePublicationBefore($requestedDate);
+        } catch (\RuntimeException $error) {
+            // A refused fallback is unavailable, not publication authority. This
+            // permits a separately valid new acquisition/correction to complete
+            // its ordinary fenced path without borrowing a prior-date result.
+            if (strpos($error->getMessage(), 'INCIDENT_RESPONSE_BLOCKED: prior_fallback for ') !== 0) throw $error;
+            $this->runs->appendEvent($run, $stage, 'INCIDENT_FALLBACK_REFUSED', 'WARN',
+                'Requested-date incident containment excludes prior-date fallback.', null, [
+                    'requested_date' => $requestedDate, 'run_id' => (int) $run->run_id,
+                    'source_mode' => (string) $run->source, 'blocked_action' => 'prior_fallback',
+                    'fallback_publication_id' => null, 'fallback_trade_date' => null,
+                    'incident_event_ids' => DB::table('eod_run_events')->where('trade_date_requested', $requestedDate)
+                        ->where('event_type', 'INCIDENT_RESPONSE_RECORDED')->orderBy('event_id')->pluck('event_id')->map(static function ($id) { return (int) $id; })->all(),
+                ]);
+            return null;
+        }
     }
 
     private function handleRecoverableSourceFailure($run, $requestedDate, $stage, $reasonCode, \Throwable $e)
@@ -2707,7 +2814,7 @@ class MarketDataPipelineService
             return null;
         }
 
-        $fallback = $this->publications->findLatestReadablePublicationBefore($requestedDate);
+        $fallback = $this->resolveReadableFallback($run, $requestedDate, $stage);
         $fallbackTradeDate = $fallback->readable_trade_date ?? null;
         $hasFallback = $fallbackTradeDate !== null && $fallbackTradeDate !== '';
 
@@ -2782,19 +2889,17 @@ class MarketDataPipelineService
             $this->publications->restorePriorCurrentPublication(
                 $requestedDate,
                 (int) $priorCurrent->publication_id,
-                (int) $priorCurrent->run_id
-            );
+                (int) $priorCurrent->run_id, $run);
 
             $this->runs->syncCurrentPublicationMirror(
                 $requestedDate,
-                (int) $priorCurrent->run_id
-            );
+                (int) $priorCurrent->run_id, $run);
 
             $resolvedPublicationId = (int) $priorCurrent->publication_id;
             $resolvedPublicationVersion = (int) $priorCurrent->publication_version;
             $candidateCurrent = $priorCurrent;
         } else {
-            $this->publications->clearCurrentPublicationState($requestedDate);
+            $this->publications->clearCurrentPublicationState($requestedDate, $run);
             $resolvedPublicationId = null;
             $resolvedPublicationVersion = null;
             $candidateCurrent = null;
@@ -2891,6 +2996,8 @@ class MarketDataPipelineService
             }
         }
         $payload['exception_context'] = $exceptionContext;
+        $nativeCondition = MarketDataIncidentResponseService::nativeFailureIdentity((string) $stage, $e);
+        if ($nativeCondition !== null) $payload['observed_condition'] = $nativeCondition;
 
         if ($e instanceof \PDOException && $e->getCode()) {
             $payload['sqlstate'] = (string) $e->getCode();
@@ -2909,6 +3016,7 @@ class MarketDataPipelineService
         ], $this->sourceTelemetryColumns($run->source ?? null, null, $exceptionContext, $reasonCode)));
 
         $this->runs->failStage($run, $stage, $reasonCode, $this->summarizeThrowable($e), $payload);
+        (new MarketDataIncidentResponseService())->observeRun((int) $run->run_id);
     }
 
     private function assertAllowedRequestMode($requestMode, $stage): void
@@ -3099,6 +3207,7 @@ class MarketDataPipelineService
     private function executeImpactPublicationReprocessIfNeeded($originRun, $sourceMode, $requestMode)
     {
         $notes = $this->parseRunNotes((string) ($originRun->notes ?? ''));
+        $notes = array_replace($notes, (new PublicationReprocessObservationService())->notesFor($originRun)['notes']);
         if (($notes['publication_reprocess_state'] ?? null) !== 'PENDING_PROMOTE') {
             return $originRun;
         }
@@ -3119,12 +3228,11 @@ class MarketDataPipelineService
         $readableCorrectionSet = array_fill_keys($readableCorrectionDates, true);
 
         if ($candidateDates === []) {
-            return $this->safeUpdateTelemetry($originRun, [
-                'notes' => $this->appendRunNotes($originRun->notes ?? null, [
-                    'publication_reprocess_state=NOOP',
-                    'publication_reprocess_blocked_reason_code=REQUESTED_DATE_PROMOTED_BY_PRIMARY_PIPELINE',
-                ]),
-            ]);
+            (new PublicationReprocessObservationService())->record($originRun, [
+                'publication_reprocess_state' => 'NOOP',
+                'publication_reprocess_blocked_reason_code' => 'REQUESTED_DATE_PROMOTED_BY_PRIMARY_PIPELINE',
+            ], 'IMPACT_PUBLICATION_REPROCESS_COMPLETED');
+            return $originRun;
         }
 
         $republishedDates = [];
@@ -3197,42 +3305,19 @@ class MarketDataPipelineService
         }
         $republicationMode = $this->resolvedImpactRepublicationMode($state, $republicationModes);
 
-        $originRun = $this->safeUpdateTelemetry($originRun, [
-            'notes' => $this->appendRunNotes($originRun->notes ?? null, [
-                'publication_reprocess_state='.$state,
-                'publication_reprocess_republished_trade_date_count='.count($republishedDates),
-                $republishedDates !== [] ? 'publication_reprocess_republished_trade_dates='.$this->compactNoteList($republishedDates) : null,
-                $blockedDates !== [] ? 'publication_reprocess_blocked_trade_dates='.$this->compactNoteList($blockedDates) : null,
-                $failedDates !== [] ? 'publication_reprocess_failed_trade_dates='.$this->compactNoteList($failedDates) : null,
-                $blockedReason ? 'publication_reprocess_blocked_reason_code='.$blockedReason : null,
-                $failureReason ? 'publication_reprocess_failure_reason_code='.$failureReason : null,
-                'publication_reprocess_republication_mode='.$republicationMode,
-                $correctionIds !== [] ? 'publication_reprocess_correction_ids='.$this->compactNoteList($correctionIds) : null,
-                count($correctionIds) === 1 ? 'publication_reprocess_correction_id='.(int) $correctionIds[0] : null,
-            ]),
-        ]);
-
-        $this->runs->appendEvent(
-            $originRun,
-            'FINALIZE',
-            'IMPACT_PUBLICATION_REPROCESS_COMPLETED',
-            $state === 'REPUBLISHED' || $state === 'NOOP' ? 'INFO' : 'WARN',
-            'Affected non-readable downstream dates were promoted through coverage, hash, seal, and finalize where eligible.',
-            $failureReason ?: $blockedReason,
-            [
-                'origin_run_id' => (int) ($originRun->run_id ?? 0),
-                'request_mode' => $requestMode,
-                'source_mode' => $sourceMode,
-                'publication_reprocess_state' => $state,
-                'republication_mode' => $republicationMode,
-                'correction_ids' => $correctionIds,
-                'correction_id' => count($correctionIds) === 1 ? (int) $correctionIds[0] : null,
-                'candidate_trade_dates' => $candidateDates,
-                'republished_trade_dates' => $republishedDates,
-                'blocked_trade_dates' => $blockedDates,
-                'failed_trade_dates' => $failedDates,
-            ]
-        );
+        (new PublicationReprocessObservationService())->record($originRun, [
+            'publication_reprocess_state' => $state,
+            'publication_reprocess_republished_trade_date_count' => count($republishedDates),
+            'publication_reprocess_republished_trade_dates' => $republishedDates,
+            'publication_reprocess_candidate_trade_dates' => $candidateDates,
+            'publication_reprocess_blocked_trade_dates' => $blockedDates,
+            'publication_reprocess_failed_trade_dates' => $failedDates,
+            'publication_reprocess_blocked_reason_code' => $blockedReason,
+            'publication_reprocess_failure_reason_code' => $failureReason,
+            'publication_reprocess_republication_mode' => $republicationMode,
+            'publication_reprocess_correction_ids' => $correctionIds,
+            'publication_reprocess_correction_id' => count($correctionIds) === 1 ? (int) $correctionIds[0] : null,
+        ], 'IMPACT_PUBLICATION_REPROCESS_COMPLETED');
 
         return $originRun;
     }
@@ -3376,6 +3461,7 @@ class MarketDataPipelineService
 
     private function preparePromoteRunId($requestedDate, $sourceMode, $runId = null, $correctionId = null, array $promoteContext = [])
     {
+        return DB::transaction(function () use ($requestedDate, $sourceMode, $runId, $correctionId, $promoteContext) {
         if ($runId === null) {
             $seedRun = $this->runs->findLatestForRequestedDate($requestedDate, $sourceMode);
             if (! $seedRun) {
@@ -3388,6 +3474,8 @@ class MarketDataPipelineService
         if (! $seedRun) {
             return (int) $runId;
         }
+
+        (new MarketDataIncidentResponseService())->assertActionAllowed($requestedDate, 'evidence_export', (int) $seedRun->run_id);
 
         $existingPromoteMode = isset($seedRun->promote_mode) && $seedRun->promote_mode !== '' ? (string) $seedRun->promote_mode : null;
         $existingPublishTarget = isset($seedRun->publish_target) && $seedRun->publish_target !== '' ? (string) $seedRun->publish_target : null;
@@ -3419,7 +3507,23 @@ class MarketDataPipelineService
             'publish_target' => $requestedPublishTarget,
         ]);
 
+        // A completed import is a specific persisted input, never an invitation to
+        // select same-date live bars. Keep derivation and its snapshot copy atomic.
+        if ($correctionId === null && (string) $seedRun->request_mode === 'import_only' && ! empty($seedRun->publication_id)) {
+            $seedPublication = DB::table('eod_publications')->where('publication_id', $seedRun->publication_id)
+                ->where('run_id', $seedRun->run_id)->where('trade_date', $requestedDate)->lockForUpdate()->first();
+            if (! $seedPublication) throw new \RuntimeException('PROMOTE_SEED_PUBLICATION_IDENTITY_INVALID');
+            $candidate = $this->publications->getOrCreateCandidatePublication($derivedRun);
+            $this->artifacts->replaceBarsHistoryFromPublication($requestedDate, $seedPublication->publication_id,
+                $candidate->publication_id, $derivedRun->run_id);
+            $derivedRun = $this->runs->updateTelemetry($derivedRun, [
+                'publication_id' => (int) $candidate->publication_id, 'publication_version' => (int) $candidate->publication_version,
+                'notes' => $this->appendRunNotes($derivedRun->notes, ['candidate_publication_id='.(int) $candidate->publication_id]),
+            ]);
+        }
+
         return (int) $derivedRun->run_id;
+        });
     }
 
     private function ensurePromoteRunContext($runId, $requestedDate, array $promoteContext, $correctionId = null)
@@ -3748,7 +3852,21 @@ class MarketDataPipelineService
         $sourceInputFile = $sourceAcquisition['source_input_file']
             ?? ($sourceAcquisition['input_file'] ?? ($payload['input_file'] ?? null));
 
-        $sourceFileIdentity = $this->sourceFileIdentityColumns($sourceInputFile);
+        $hasSuppliedIdentity = true;
+        foreach (['source_file_hash', 'source_file_hash_algorithm', 'source_file_size_bytes', 'source_file_row_count'] as $field) {
+            if (! array_key_exists($field, $sourceAcquisition) || $sourceAcquisition[$field] === null || $sourceAcquisition[$field] === '') {
+                $hasSuppliedIdentity = false;
+                break;
+            }
+        }
+        $sourceFileIdentity = $hasSuppliedIdentity
+            ? [
+                'source_file_hash' => $sourceAcquisition['source_file_hash'],
+                'source_file_hash_algorithm' => $sourceAcquisition['source_file_hash_algorithm'],
+                'source_file_size_bytes' => $sourceAcquisition['source_file_size_bytes'],
+                'source_file_row_count' => $sourceAcquisition['source_file_row_count'],
+            ]
+            : $this->sourceFileIdentityColumns($sourceInputFile);
         foreach (['source_file_hash', 'source_file_hash_algorithm', 'source_file_size_bytes', 'source_file_row_count'] as $field) {
             if (array_key_exists($field, $sourceAcquisition) && $sourceAcquisition[$field] !== null && $sourceAcquisition[$field] !== '') {
                 $sourceFileIdentity[$field] = $sourceAcquisition[$field];

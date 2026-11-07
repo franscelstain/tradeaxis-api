@@ -1,0 +1,380 @@
+{
+  "record_id": "E-MD-B19-A001-049-R008",
+  "record_type": "EVIDENCE",
+  "status": "ISSUED",
+  "stage": "MD-B19",
+  "attempt": "MD-B19-A001",
+  "work_id": "MD-B19-A001",
+  "baseline": "MD-B19-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "issued_at": "2026-11-02T06:43:45.664664+07:00",
+  "record_scope": "Author source-bound implementation and three COMPLETE repository proposals, not independent review/admission or R0004 completion.",
+  "author": "Codex / OpenAI, repository implementation agent",
+  "independent_review": {
+    "performed": false,
+    "policy": "Actual Owner defers discretionary review during compatible development; mandatory independent admission, fixture, closure and operational gates remain. R006 is latest separately authored registered technical review."
+  },
+  "registration_authority": [
+    "DOCUMENT_RECORDING_STANDARD.md sections1-3",
+    "RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md sections2/6",
+    "WORK_CORRELATION_AND_RECORD_REGISTRY_STANDARD.md sections1/2/5",
+    "DOCUMENT_CHANGE_POLICY.md section3"
+  ],
+  "related_evidence": [
+    "E-MD-B19-A001-049",
+    "E-MD-B19-A001-049-R006",
+    "E-MD-B19-A001-049-R007"
+  ],
+  "related_decisions": [
+    "D-MD-B19-A001-009",
+    "D-MD-B19-A001-010",
+    "D-MD-B19-A001-011"
+  ],
+  "related_findings": [
+    "F-MD-B19-A001-023"
+  ],
+  "related_dependencies": [
+    "MD-DEP-0025"
+  ],
+  "change_impact": "CI-MD-B19-A001-001",
+  "proof_matrix": {
+    "path": "storage/app/market-data/evidence/MD-B19-A001/E049_D011_20261102_PROOF_MATRIX.json",
+    "sha256": "03a19bd182b648aa3c0764da8ae0c544ee7818f37366fc04fe430a299cb6f1b9",
+    "bytes": 157374
+  },
+  "material_manifest": {
+    "path": "storage/app/market-data/evidence/MD-B19-A001/E049_D011_20261102_MATERIAL_MANIFEST.json",
+    "sha256": "57ba49cbf6154d3e5f26ccb9f5d22b2fd013633938f73e268741308de7553608",
+    "bytes": 653502
+  },
+  "writer_coverage": {
+    "path": "storage/app/market-data/evidence/MD-B19-A001/E049_R0004_20261102_D011_WRITER_DELTA.json",
+    "sha256": "f1b825d3cc45156203c875a844b1c0827bbced91625111f91053cf3a15c46135",
+    "bytes": 836719
+  },
+  "new_repository_proposals": [
+    "MD-S069-R0003",
+    "MD-S071-R0039",
+    "MD-S071-R0040"
+  ],
+  "new_independent_admissions": [],
+  "accounting_before": {
+    "applicable": 750,
+    "accepted": 669,
+    "proposed": 674,
+    "without_basis": 76,
+    "E049": 27,
+    "formal_satisfied": 0
+  },
+  "accounting_after": {
+    "applicable": 750,
+    "accepted": 669,
+    "proposed": 677,
+    "without_basis": 73,
+    "E049": 30,
+    "formal_satisfied": 0
+  },
+  "dispositions": {
+    "MD-S069-R0003": {
+      "status": "COMPLETE",
+      "positive": "B19IncidentProtectionContinuationMariaDbTest::test_integrity_observations_commit_all_reasons_and_refuse_bypass_from_an_independent_reader",
+      "negative": "B19IncidentProtectionContinuationMariaDbTest::test_integrity_observations_commit_all_reasons_and_refuse_bypass_from_an_independent_reader",
+      "coverage": [
+        "Six actually recorded integrity conditions cover history attempt, dataset/seal/config hash mismatch, mixed publication and pointer ambiguity; accumulated reasons/classes and CRITICAL floor are independently asserted.",
+        "An independent committed reader refuses requested consumer read, ordinary retry, prior-fallback bypass, acquisition/correction baseline and release claim; original histories/pointers remain unchanged.",
+        "Healthy independently verified prior-date access stays authorized; final pointer/recovery controls refuse unsafe prior gateway state, while date-level intake/phase proof enforces critical containment before activation and freshness deadlines.",
+        "Actual classification/protection records are retained before assertions; critical-floor and ordinary-retry counterfactuals are killed and restored on identical incident-service bytes."
+      ],
+      "additional_methods": [
+        "B19IncidentResponseMariaDbTest::test_phase_boundary_all_observed_classes_continue_append_only_without_improvised_closure_or_health_claim",
+        "B19IncidentResponseMariaDbTest::test_completed_pointer_recovery_clears_unsafe_prior_without_readable_fallback",
+        "B19ExpectedSessionEvidenceMariaDbTest::test_integrity_alert_without_a_run_deduplicates_and_recovers_only_through_real_requested_date_promotion",
+        "B19ExpectedSessionEvidenceMariaDbTest::test_integrity_alert_is_critical_before_the_freshness_deadline_in_both_run_and_session_paths"
+      ],
+      "limits": [
+        "Observed-condition response, not proof every incident was detected, every writer safe, severity consequences known, incident closure or release authorized.",
+        "F018 escalation/closure remains unsupported; F03 and four dependency HOLDs are not promoted."
+      ],
+      "canonical": {
+        "rule_id": "MD-S069-R0003",
+        "strategy_document_id": "MD-S069",
+        "strategy_owner": "authority/strategy/ops/Incident_Classification_and_Response_Matrix_LOCKED.md",
+        "source_line": "9",
+        "section": "Activation rule",
+        "rule_text": "| integrity | history mutation attempt, hash/seal/config mismatch, mixed publication, pointer ambiguity | critical | fail closed; preserve last verified publication only if gateway integrity is certain | no ordinary retry or fallback around ambiguity |",
+        "rule_fingerprint_sha1": "39C0685EC816966C4BDBCE8DA4068BD76253D937",
+        "coverage_requirement": "REQUIRED",
+        "applicability": "MANDATORY",
+        "primary_stage": "MD-B19",
+        "supporting_stages": "",
+        "active": "YES",
+        "coverage_status": "NOT_ASSESSED",
+        "current_evidence_ids": "",
+        "notes": "MD-B19-A001 stage_entry_review: applicability_normalized=MANDATORY; applicability_basis=incident classification and response obligations per severity; proof_owner_confirmed=MD-B19 | MD-B19-A001 stage_entry_review: applicability_normalized=MANDATORY; applicability_basis=incident classification and response obligations per severity; proof_owner_confirmed=MD-B19"
+      },
+      "repository_registration": "NEW_PROPOSAL_PENDING_INDEPENDENT_REVIEW",
+      "independently_admitted": false,
+      "formal_satisfied": false
+    },
+    "MD-S071-R0039": {
+      "status": "COMPLETE",
+      "positive": "B19ReplayArtifactScopeMariaDbTest::test_current_build_all_artifact_scope_combinations_reach_metric_export_and_command",
+      "negative": "B19ReplayArtifactScopeMariaDbTest::test_current_build_all_artifact_scope_combinations_reach_metric_export_and_command",
+      "coverage": [
+        "Independently selected eight PUB hash-member masks and NULL/missing/fallback boundaries reach persisted metric, real export and real command.",
+        "Actual AS_KNOWN canonical output mismatch identifies bars_only; a deliberately wrong input with a controlled equal-output vector yields FAIL/none; no execution yields BLOCKED/NULL. This equal vector is not a golden oracle.",
+        "D011 protects actual diagnostic result writes, allocation, counts and lifecycle; role grants no publication rights."
+      ],
+      "additional_methods": [
+        "B19DurableReplayResultAuthorityMariaDbTest::test_as_known_result_stays_after_projection_rollback_and_future_observation_does_not_change_asof_input",
+        "B19DurableReplayResultAuthorityMariaDbTest::test_missing_asof_source_proof_persists_blocked_result_without_opening_projection_or_publication_rights"
+      ],
+      "limits": [
+        "Diagnostic artifact scope, not correctness/determinism admission or MD-DEP-0025 closure.",
+        "F03 trusted internal verifier issuer; no untrusted PHP/external principal authentication claim."
+      ],
+      "canonical": {
+        "rule_id": "MD-S071-R0039",
+        "strategy_document_id": "MD-S071",
+        "strategy_owner": "authority/strategy/ops/Operator_Decision_Trees_LOCKED.md",
+        "source_line": "60",
+        "section": "Decision Tree F \u2014 Replay mismatch",
+        "rule_text": "2. Which artifact scope changed?",
+        "rule_fingerprint_sha1": "BF011B1ECB99BFBB9DE0B314BB9647D0B408D350",
+        "coverage_requirement": "REQUIRED",
+        "applicability": "MANDATORY",
+        "primary_stage": "MD-B19",
+        "supporting_stages": "",
+        "active": "YES",
+        "coverage_status": "NOT_ASSESSED",
+        "current_evidence_ids": "",
+        "notes": "MD-B19-A001 stage_entry_review: applicability_normalized=MANDATORY; applicability_basis=governed operator decision path; each step routes to a required action; proof_owner_confirmed=MD-B19"
+      },
+      "repository_registration": "NEW_PROPOSAL_PENDING_INDEPENDENT_REVIEW",
+      "independently_admitted": false,
+      "formal_satisfied": false
+    },
+    "MD-S071-R0040": {
+      "status": "COMPLETE",
+      "positive": "B19ReplayArtifactScopeMariaDbTest::test_current_build_all_artifact_scope_combinations_reach_metric_export_and_command",
+      "negative": "B19ReplayArtifactScopeMariaDbTest::test_current_build_all_artifact_scope_combinations_reach_metric_export_and_command",
+      "coverage": [
+        "Every bars/indicators/eligibility singleton and pair/triple combination has an independently chosen expected scope; unchanged output is none.",
+        "One shared classifier consumes exactly applicable hash members; AS_KNOWN CANONICAL_RAW asserts only bars, not synthetic indicator/eligibility values. Missing/unexecuted proof is unavailable.",
+        "Source-bound PUBLICATION_EXACT/AS_KNOWN results persist/export/render the same scope with mutation-sensitive discrimination."
+      ],
+      "additional_methods": [
+        "B19DurableReplayResultAuthorityMariaDbTest::test_as_known_result_stays_after_projection_rollback_and_future_observation_does_not_change_asof_input"
+      ],
+      "limits": [
+        "Canonical scope taxonomy only; no market-verification, full replay qualification, current-publication mutation or release claim."
+      ],
+      "canonical": {
+        "rule_id": "MD-S071-R0040",
+        "strategy_document_id": "MD-S071",
+        "strategy_owner": "authority/strategy/ops/Operator_Decision_Trees_LOCKED.md",
+        "source_line": "61",
+        "section": "Decision Tree F \u2014 Replay mismatch",
+        "rule_text": "- bars / indicators / eligibility / multi-artifact",
+        "rule_fingerprint_sha1": "6421A5539AE91EBDAE37368A7DC8E37651594F6B",
+        "coverage_requirement": "REQUIRED",
+        "applicability": "MANDATORY",
+        "primary_stage": "MD-B19",
+        "supporting_stages": "",
+        "active": "YES",
+        "coverage_status": "NOT_ASSESSED",
+        "current_evidence_ids": "",
+        "notes": "MD-B19-A001 stage_entry_review: applicability_normalized=MANDATORY; applicability_basis=governed operator decision path; each step routes to a required action; proof_owner_confirmed=MD-B19"
+      },
+      "repository_registration": "NEW_PROPOSAL_PENDING_INDEPENDENT_REVIEW",
+      "independently_admitted": false,
+      "formal_satisfied": false
+    }
+  },
+  "implementation": [
+    "Actual D011 internal-verifier execution credential, atomic reservation, case/token/scope/date/connection/lease enforcement and audit-before-release; no publication rights.",
+    "Atomic immutable metric/count completion; fresh actor/token for failed/expired retry, audited takeover, read-only completed/legacy selection, genuine two-connection allocator and case contention.",
+    "Strict raw request IDs before PHP scalar coercion or allocation; shared API/CLI parser, explicit value-less/invalid selector refusal, explicit verified fixture target only.",
+    "Mode-correct AS_KNOWN diagnostic scope and actual rollback isolation; PUBLICATION_EXACT operational inputs differ from as-of snapshot identity. Existing ReplayIsolation::run bytes unchanged.",
+    "Sanitized security recovery uses actual fresh acquisition and its own candidate rows; contained completed publication cannot be laundered into a new promote seed. SQL fault rolls back complete seed/pointer/mirror changes."
+  ],
+  "current_source_proof": {
+    "durable_20261102_final_native": {
+      "execution": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261102_final_native.execution.json",
+        "sha256": "e518ed6632d3f87725bd7e0a89633cf94ef1d9f6d152d5f10e235c40f341426a",
+        "bytes": 263146
+      },
+      "stdout": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261102_final_native.stdout.txt",
+        "sha256": "53e5ea8f53ca5b401756b17180da89b88ec14c442955c4d12b18b352edac298e",
+        "bytes": 2085
+      },
+      "junit": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261102_final_native.phpunit.junit.xml",
+        "sha256": "e212f989ec3aa1a791a1b593eedd67e760d4d416e8df5458e0655c425d548e23",
+        "bytes": 8258
+      },
+      "summary": "OK (19 tests, 371 assertions)"
+    },
+    "durable_20261102_final_replay_ports": {
+      "execution": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261102_final_replay_ports.execution.json",
+        "sha256": "a70d0fab652a45f60b2e58184826bb3703fc1e6667ebb3cd3d44ce771292040c",
+        "bytes": 260834
+      },
+      "stdout": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261102_final_replay_ports.stdout.txt",
+        "sha256": "a961b21ec29a2310f806b31f631a3dba72ec4bb77515fa0164562682ed964f43",
+        "bytes": 8787
+      },
+      "junit": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261102_final_replay_ports.phpunit.junit.xml",
+        "sha256": "bac374bb77a87c511a8932ed3bb90dddd8d1753322a344fe4c8646c5cd25f9af",
+        "bytes": 33072
+      },
+      "summary": "OK (90 tests, 317 assertions)"
+    },
+    "durable_20261102_final_as_known_entries": {
+      "execution": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261102_final_as_known_entries.execution.json",
+        "sha256": "f4b3124e7f75d6ada4291067058458baa5af898bf1b9f1020388fb33a9a3f741",
+        "bytes": 261984
+      },
+      "stdout": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261102_final_as_known_entries.stdout.txt",
+        "sha256": "f740356025491ca8bb0507a7532bf16f056d2862b56f3b4c6c5bf1329ba97e08",
+        "bytes": 1272
+      },
+      "junit": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261102_final_as_known_entries.phpunit.junit.xml",
+        "sha256": "0d1e539ebaec74746b54c6edc97a0bee998a18532e103c8f83c70b2f8d8e6239",
+        "bytes": 5197
+      },
+      "summary": "OK (14 tests, 114 assertions)"
+    },
+    "durable_20261102_final_publication_scope": {
+      "execution": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261102_final_publication_scope.execution.json",
+        "sha256": "5d98c5e48e67ebba4c75c66f9da45f468dbd2310f4847773256c4812d911a9f5",
+        "bytes": 260577
+      },
+      "stdout": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261102_final_publication_scope.stdout.txt",
+        "sha256": "c4183a25cd5662507be436a7a971f81cd8211984aead7025d4d9a6110979da6d",
+        "bytes": 241
+      },
+      "junit": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261102_final_publication_scope.phpunit.junit.xml",
+        "sha256": "5b72bec6c5ef30de6c171f2c13f0779345b322fa1dd3eae57bdad72b8a9600b6",
+        "bytes": 949
+      },
+      "summary": "OK (1 test, 178 assertions)"
+    },
+    "durable_20261029_final_22_bindings": {
+      "execution": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261029_final_22_bindings.execution.json",
+        "sha256": "fe267ac09b7e93199fc1671aac255ad4cd52b65b6ce81d3c72a45eac25746b7f",
+        "bytes": 263152
+      },
+      "stdout": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261029_final_22_bindings.stdout.txt",
+        "sha256": "904ae0eecfa5748577496a96a1ce8b95ca783d04b340ec10c83ee09475bd7eb1",
+        "bytes": 3179
+      },
+      "summary": "OK (30 tests, 728 assertions)",
+      "carried_forward_not_reexecuted": true
+    },
+    "durable_20261029_final_incident_owner_recovery": {
+      "execution": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261029_final_incident_owner_recovery.execution.json",
+        "sha256": "1fc7031af7301d440ddf3c4fea41902a6625eef4f2b7a70e180339bec12da34e",
+        "bytes": 261799
+      },
+      "stdout": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261029_final_incident_owner_recovery.stdout.txt",
+        "sha256": "b92bf8e2dfed89d35e0dae7917559e508c2da0c9c8bc1312cc47917adfcaa7de",
+        "bytes": 3748
+      },
+      "summary": "OK (37 tests, 1254 assertions)",
+      "carried_forward_not_reexecuted": true
+    },
+    "durable_20261029_final_consumers": {
+      "execution": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261029_final_consumers.execution.json",
+        "sha256": "3971a6775faf9f4b4116ff7bb79b7d9e099e4f463b22e1128716816c9e0ca7a2",
+        "bytes": 260830
+      },
+      "stdout": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261029_final_consumers.stdout.txt",
+        "sha256": "5f9111f7ecd290aecdbcdc7526f5035b56ef58dc222bfd19a78d74e21e82a44a",
+        "bytes": 13144
+      },
+      "summary": "Tests: 124, Assertions: 6647, Failures: 1.",
+      "carried_forward_not_reexecuted": true
+    }
+  },
+  "mutation_summary": {
+    "executions": 23,
+    "qualified_detections": 22,
+    "unique_qualified_recipes": 17,
+    "byte_restorations": 23,
+    "excluded": [
+      "durable_20261029_mutation_busy"
+    ]
+  },
+  "source_epochs": "Oct29 full binding30/728, incident/owner37/1254 and consumer124/6647 are carried forward with explicit four-file Nov2 impact bridge, not relabelled exact final whole-source executions. Nov2 native19/371, ports90/317, AS entries14/114, publication scope1/178 are exact final-source PASS. All raw before/after hashes retained.",
+  "database_environment": "PHP7.4.33 / PHPUnit9.6.34 / MariaDB10.4.27; actual migrated test-only database clones with independent connection IDs and real lock waits. CREATE TABLE LIKE does not independently establish all production foreign-key/trigger behavior. One normal configured local server restart; initial connection-refused execution remains ERROR. No grants/recovery config/production migration changed.",
+  "coverage_status": {
+    "counts": {
+      "Complete": 57,
+      "Incomplete": 87,
+      "Outside": 10
+    },
+    "named_paths": 154,
+    "private_proof_sharing_aliases": 5,
+    "canonical_R0004": "INCOMPLETE",
+    "result_issuer_transitive_limit": "ReplayResultAuthority::during has SQL proof but remains Incomplete as a whole because ProducerRegistrySnapshot::build shared filesystem scope is unproved under D010-D. This missing proof is not a demonstrated unsafe cache write or a blocker to bounded diagnostic taxonomy/observed-integrity contracts."
+  },
+  "preserved_hold_dependency": [
+    "MD-S072-R0017",
+    "MD-S072-R0019",
+    "MD-S069-R0017",
+    "MD-S072-R0032"
+  ],
+  "known_failures": {
+    "consumer": [
+      {
+        "name": "test_run_daily_manual_file_with_explicit_input_file_exports_source_context_in_run_evidence",
+        "class": "MarketDataPipelineIntegrationTest",
+        "classname": "MarketDataPipelineIntegrationTest",
+        "file": "D:\\Laravel\\tradeaxis-api\\tests\\Unit\\MarketData\\MarketDataPipelineIntegrationTest.php",
+        "line": "700",
+        "assertions": "3",
+        "time": "14.396863",
+        "failures": [
+          "MarketDataPipelineIntegrationTest::test_run_daily_manual_file_with_explicit_input_file_exports_source_context_in_run_evidence\nFailed asserting that two strings are identical.\n--- Expected\n+++ Actual\n@@ @@\n-'source_priority=SECONDARY_CONTROLLED_RECOVERY | active_source_decision=manual_file | retry_attempt_count=0 | attempt_count=0'\n+'source_priority=SECONDARY_CONTROLLED_RECOVERY | active_source_decision=manual_file | retry_attempt_count=0'\n\nD:\\Laravel\\tradeaxis-api\\tests\\Unit\\MarketData\\MarketDataPipelineIntegrationTest.php:722"
+        ]
+      }
+    ],
+    "comparison_regression": {
+      "record": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/durable_20261029_comparison_port_green.execution.json",
+        "sha256": "49477ab01bee69098479a115159fd9ceca45bc14b8ee71410a77eea656090edb",
+        "bytes": 260504
+      },
+      "result": "139 tests/392 assertions/69 failures; B18 exhaustive mocked fixtures lack mandatory D006 immutable manifest identity. Not PASS; no reviewed fixture fabricated."
+    },
+    "operations": "FAIL; missing bases and guards remain. Never full-suite PASS."
+  },
+  "open_conditions": [
+    "No new independent review/admission or formal SATISFIED.",
+    "R0004 incomplete; shared filesystem/build-cache scope not silently exempted.",
+    "Four dependency HOLDs, F03, F018, MD-DEP-0025, operations FAIL, B18/candidate-v5 preserved.",
+    "Test-schema migration only; no deployment/activation.",
+    "F018 escalation/closure and external issuer authentication are not established.",
+    "D003 NULL warning_count, F024, R0324/D008/F016, O1 and historical B18/candidate-v5 remain unchanged.",
+    "Unsuccessful runs and one unqualified counterfactual remain retained;17 semantic controls are not23 independent accomplishments."
+  ],
+  "packaging": "No new review ZIP or independent adjudication requested at this internal development boundary. Immutable material index supports later consolidated required review."
+}

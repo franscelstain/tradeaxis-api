@@ -38,6 +38,15 @@ class EodCorrectionRepository
         return EodDatasetCorrection::query()->where('correction_id', $correctionId)->first();
     }
 
+    /** Current authorization read for an already-open acquisition transaction. */
+    public function findByIdForUpdate($correctionId)
+    {
+        if (DB::transactionLevel() < 1) {
+            throw new \LogicException('Correction authorization lock requires a transaction.');
+        }
+        return EodDatasetCorrection::query()->where('correction_id', $correctionId)->lockForUpdate()->first();
+    }
+
     public function approve($correctionId, $approvedBy)
     {
         $correction = EodDatasetCorrection::query()->where('correction_id', $correctionId)->firstOrFail();

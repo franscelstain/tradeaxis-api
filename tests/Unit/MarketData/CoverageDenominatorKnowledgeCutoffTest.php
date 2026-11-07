@@ -323,6 +323,7 @@ class CoverageDenominatorKnowledgeCutoffTest extends TestCase
     {
         $repository = new EodRunRepository();
         $seed = $repository->getOrCreateOwningRun(self::TRADE_DATE, 'api', 'INGEST_BARS', null, 'import_only');
+        $repository->completeImportOnly($seed, 'INGEST_BARS');
         $promote = $repository->createPromoteRunFromSeed($seed, 'PUBLISH_BARS');
 
         $this->assertNotEmpty($promote->knowledge_cutoff_at);

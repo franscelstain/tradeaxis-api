@@ -12,6 +12,7 @@ class MarketDataStageInput
     public $forceReplace;
     public $forceReplaceReason;
     public $requestMode;
+    public $preApplyDisclosure;
 
     /**
      * The request modes a run may carry.
@@ -31,7 +32,7 @@ class MarketDataStageInput
         'evidence_export',
     ];
 
-    public function __construct($requestedDate, $sourceMode, $runId, $stage, $correctionId = null, $forceReplace = false, $forceReplaceReason = null, $requestMode = null)
+    public function __construct($requestedDate, $sourceMode, $runId, $stage, $correctionId = null, $forceReplace = false, $forceReplaceReason = null, $requestMode = null, $preApplyDisclosure = null)
     {
         $this->requestedDate = $requestedDate;
         $this->sourceMode = $sourceMode;
@@ -41,6 +42,7 @@ class MarketDataStageInput
         $this->forceReplace = (bool) $forceReplace;
         $this->forceReplaceReason = $forceReplaceReason;
         $this->requestMode = $this->normalizeRequestMode($requestMode, $stage, $correctionId);
+        $this->preApplyDisclosure = $preApplyDisclosure;
     }
 
     private function normalizeRequestMode($requestMode, $stage, $correctionId)

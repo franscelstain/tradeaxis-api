@@ -1,0 +1,35 @@
+{
+  "record_id": "E-MD-B19-A001-046",
+  "record_type": "EVIDENCE",
+  "status": "ISSUED",
+  "attempt": "MD-B19-A001",
+  "predecessor": "E-MD-B19-A001-045",
+  "issued_at": "2026-10-21T18:08:58+07:00",
+  "independently_accepted_baseline": "638/750",
+  "prior_repository_proposal": "639/750",
+  "new_repository_proposals": {
+    "freshness_and_slo": [
+      "MD-S072-R0011",
+      "MD-S072-R0013",
+      "MD-S072-R0014",
+      "MD-S072-R0015",
+      "MD-S072-R0016"
+    ]
+  },
+  "repaired_prior_proposal_without_recount": ["MD-S078-R0009"],
+  "partial_implementation_without_basis": ["MD-S078-R0004"],
+  "repository_proposed": "644/750",
+  "without_repository_basis": 106,
+  "independently_unaccepted": 112,
+  "formal_satisfied": "0/750",
+  "governance_gates": "Documentation PASS, relationships PASS, classification PASS, traceability/applicability PASS; operations proof FAIL at 644/750 with 106 missing and six family guards unassigned. Exact raw JSON/text is retained in E046_runtime/gate_*.stdout.txt.",
+  "proof_map": "storage/app/market-data/evidence/MD-B19-A001/E046_freshness_clause_audit.json",
+  "scheduler_successor_map": "storage/app/market-data/evidence/MD-B19-A001/E046_scheduler_successor_map.json",
+  "blocker_validation": "storage/app/market-data/evidence/MD-B19-A001/E046_disposition.json",
+  "execution": "The conditional freshness evaluator passed 3 tests / 28 assertions; five targeted mutations failed their intended horizon, lag and decision assertions and restored the source byte-for-byte. A registered due scheduler on migrated MariaDB called actual import and unforced promotion only, with a provider-reported factor remaining unverified and no factor assessment or decision; 1 test / 10 assertions passed, a verifyFactor invocation mutation failed the exact call-sequence assertion, and the command source restored byte-for-byte. Prior R0009 scheduled refusal tests were revalidated 2/22. Stale owner run-stage/telemetry/hash/seal writes were red on MariaDB; a transaction-scoped existing-token check makes those paths refuse after takeover or missing fence, with 1/26 green and four caught/restored write-guard mutations. Complete R0004 every-write admission is withheld.",
+  "production_changes": "A new conditional freshness evaluator computes locked five-session target and source-evaluation outcomes without live activation claims. EodRunRepository now requires an existing active date-owner token during touchStage, updateTelemetry, storeHashes and markSealed, holding the fence lock through each write. MarketDataPipelineService persists final attribution before finalization releases the token on ordinary and unchanged-correction paths.",
+  "affected_previous": "The E044/E045 recovery methods passed 2/60 under the changed write fence, real correction passed 1/81 after finalization-order correction, and the scheduled invocation passed 1/10. An existing legacy promotion regression passed 1/11. The R0009 class methods passed 2/22 before the write-fence source change and its new invocation test passed again after it. No historical evidence record was rewritten.",
+  "limitations": "Only five bounded conditional evaluator semantics are proposed. Actual approved activation, governed calendar and gateway producers, persisted operational measurement and alert delivery are not claimed. R0003 remains without the complete logical-key/checkpoint matrix. R0004 remains without an every-write matrix across publication, candidate and terminal paths. The E044 release evaluator still accepts declared PASS inputs without authenticating actual five-check execution, and real current-state release admission remains BLOCKED. The 50-70 basis aspiration was not achieved because the largest remaining clusters require these major capabilities, frozen-build/oracle resolution, F018 authority or real deployment; the exact 112-row disposition is retained.",
+  "known_failures": "Operations proof gate FAIL with 106 predicates without a repository basis and six unassigned family guards. MD-DEP-0025 ACTIVE; R0324 HELD under D008/F016; F018 owner decision pending; direct-SQL identity R0013 and replay R0007 held; D003 warning_count NULL binding; alias/coverage static failures and B18 replay comparison failures remain visible. No full suite, deployment, candidate-v6, formal SATISFIED or stage closure is asserted.",
+  "resume": "Independent review E046's five bounded conditional freshness bases and the repaired pre-existing R0009 proposal. Then complete R0004 on the remaining publication/candidate/terminal write surfaces and R0003's full logical-key/checkpoint matrix using migrated MariaDB; release-check execution and owner-dependent roots remain separate. Preserve all existing holds and do not count E046 proposals as accepted."
+}

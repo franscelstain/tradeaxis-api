@@ -30,6 +30,11 @@ class RepairCurrentPublicationIntegrityCommand extends AbstractMarketDataCommand
             return 1;
         }
 
+        if ($apply && $tradeDate === null) {
+            $this->renderCommandBlocked('COMMAND_REPAIR_SCOPE_REQUIRED', 'Apply requires one explicit --trade_date and a fresh linked recovery owner.');
+            return 1;
+        }
+
         $invalidRows = $repo->findInvalidCurrentPublicationStates($tradeDate);
 
         if ($invalidRows->isEmpty()) {
@@ -60,20 +65,49 @@ class RepairCurrentPublicationIntegrityCommand extends AbstractMarketDataCommand
             $this->line('is_current_publication='.(string) ($row->is_current_publication ?? ''));
             $this->line('integrity_reasons='.implode(',', $reasons));
 
-            $this->line('operation_mode='.($apply ? 'APPLIED' : 'DRY_RUN'));
-            $this->line('reason_code='.($apply ? 'COMMAND_APPLY_CONFIRMED' : 'COMMAND_DRY_RUN_ONLY'));
+            $this->line('operation_mode='.($apply ? 'RECOVERY_ACQUISITION_REQUIRED' : 'DRY_RUN'));
+            if (! $apply) {
+                $this->line('reason_code=COMMAND_DRY_RUN_ONLY');
+            }
             if ($apply) {
                 $this->line('repair_reason='.$repairReason);
             }
 
             if ($apply) {
-                $repo->clearCurrentPublicationState($row->pointer_trade_date);
-                $this->info('repair_action=CLEARED_INVALID_CURRENT_STATE');
-                $this->line('pointer_after_state=CLEARED');
-                $this->line('pointer_after_publication_id=');
-                $this->line('pointer_after_run_id=');
+                try {
+                    $service = app(\App\Application\MarketData\Services\CurrentPublicationRepairService::class);
+                    $preflight = $service->preflight((string) $tradeDate, (array) $row);
+                    $this->line('operation_mode=PRE_APPLY_DISCLOSURE');
+                    $this->line('historical_run_id='.(string) ($preflight['historical_run_id'] ?? ''));
+                    $this->line('historical_source_mode='.(string) ($preflight['historical_source_mode'] ?? 'UNAVAILABLE'));
+                    $this->line('historical_config_snapshot_id='.(string) ($preflight['historical_config_snapshot_id'] ?? ''));
+                    $this->line('historical_config_hash='.(string) ($preflight['historical_config_hash'] ?? 'HISTORICAL_CONFIG_HASH_UNAVAILABLE'));
+                    if ($preflight['historical_config_unavailable_reason'] !== null) {
+                        $this->line('historical_config_unavailable_reason='.$preflight['historical_config_unavailable_reason']);
+                    }
+                    $this->line('recovery_source_mode='.$preflight['recovery_source_mode']);
+                    $this->line('prospective_recovery_config_hash='.$preflight['prospective_recovery_config_hash']);
+                    $this->line('recovery_run_id=PENDING_ALLOCATION');
+                    $this->line('recovery_config_snapshot_id=PENDING_ALLOCATION');
+                    $this->line('expected_row_effects=new recovery run and audit events; clear invalid pointer and current mirrors; preserve sealed history');
+                    $this->line('pointer_impact=CLEAR_INVALID_CURRENT_STATE');
+                    $result = $service->apply((string) $tradeDate, (array) $row, $repairReason, $preflight);
+                    $this->line('operation_mode=APPLIED');
+                    $this->line('reason_code=COMMAND_APPLY_CONFIRMED');
+                    $this->line('repair_action=CLEARED_INVALID_CURRENT_STATE');
+                    $this->line('recovery_run_id='.$result['recovery_run_id']);
+                    $this->line('recovery_config_snapshot_id='.$result['recovery_config_snapshot_id']);
+                    $this->line('pointer_after_state=CLEARED');
+                    $this->line('status=HELD_NOT_READABLE pointer_cleared=1');
+                } catch (\Throwable $error) {
+                    $reasonCode = preg_match('/^([A-Z0-9_]+)(?::|$)/', $error->getMessage(), $match)
+                        ? $match[1] : 'COMMAND_REPAIR_FAILED';
+                    $this->error('status=BLOCKED reason_code='.$reasonCode.' acting_owner_required=1');
+                    $this->line('error='.$error->getMessage());
+                    return 2;
+                }
             } else {
-                $this->line('next_action=Re-run with --apply --reason="<operator reason>" after reviewing integrity_reasons.');
+                $this->line('next_action=Re-run with --apply --reason="<operator reason>" after reviewing integrity_reasons; apply explicitly acquires a new linked recovery owner and refuses any active incumbent.');
             }
         }
 

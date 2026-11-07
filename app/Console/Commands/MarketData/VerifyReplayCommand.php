@@ -5,6 +5,7 @@ namespace App\Console\Commands\MarketData;
 use App\Application\MarketData\Services\MarketDataEvidenceExportService;
 use App\Application\MarketData\Services\ReplayVerificationService;
 use App\Application\MarketData\Services\ReplayMode;
+use App\Domain\MarketData\ReplayRequestIdentity;
 
 class VerifyReplayCommand extends AbstractMarketDataCommand
 {
@@ -14,8 +15,8 @@ class VerifyReplayCommand extends AbstractMarketDataCommand
 
     public function handle()
     {
-        $runId = (int) $this->argument('run_id');
-        if ($runId <= 0) {
+        $runId = ReplayRequestIdentity::positiveInteger($this->argument('run_id'));
+        if ($runId === null) {
             $this->renderCommandBlocked('COMMAND_MISSING_REQUIRED_INPUT', 'run_id must be a positive integer.', [
                 'replay_status' => 'BLOCKED',
                 'run_id' => $this->argument('run_id'),
@@ -34,10 +35,15 @@ class VerifyReplayCommand extends AbstractMarketDataCommand
 
         try {
             $mode = ReplayMode::normalize($this->option('mode'));
-            $replayId = $this->option('replay_id') ? (int) $this->option('replay_id') : null;
+            $replaySelector = $this->option('replay_id');
+            $replayId = null;
+            if ($replaySelector !== null || $this->input->hasParameterOption('--replay_id', true)) {
+                $replayId = ReplayRequestIdentity::positiveInteger($replaySelector);
+                if ($replayId === null) throw new \RuntimeException('REPLAY_RESULT_OWNER_SCOPE_INVALID: --replay_id must be a positive integer; omit it for a new execution.');
+            }
             if ($mode === ReplayMode::PUBLICATION_EXACT) {
-                $publicationId = (int) $this->option('publication_id');
-                if ($publicationId <= 0) {
+                $publicationId = ReplayRequestIdentity::positiveInteger($this->option('publication_id'));
+                if ($publicationId === null) {
                     throw new \RuntimeException('REPLAY_EXPLICIT_PUBLICATION_REQUIRED: --publication_id must be a positive integer for PUBLICATION_EXACT.');
                 }
                 $result = app(ReplayVerificationService::class)->verifyRunAgainstFixture(
@@ -82,6 +88,10 @@ class VerifyReplayCommand extends AbstractMarketDataCommand
         $this->line('final_reason_code='.(string) ($result['final_reason_code'] ?? ''));
         $this->line('comparison_result='.$result['comparison_result']);
         $this->line('replay_status='.$result['replay_status']);
+        $this->line('result_reused='.(array_key_exists('result_reused',$result)?($result['result_reused']?'true':'false'):'UNAVAILABLE'));
+        $this->line('fresh_comparison_performed='.(array_key_exists('fresh_comparison_performed',$result)?($result['fresh_comparison_performed']?'true':'false'):'UNAVAILABLE'));
+        $this->line('writer_kind='.(string)($result['writer_kind']??'UNAVAILABLE'));
+        $this->line('writer_execution_id='.(string)($result['writer_execution_id']??''));
         $this->line('comparison_note='.(string) $result['comparison_note']);
         $this->line('mismatch_count='.(string) ($result['mismatch_count'] ?? count($result['mismatches'] ?? [])));
         $this->line('mismatch_reason_codes='.implode(',', $result['mismatch_reason_codes'] ?? []));

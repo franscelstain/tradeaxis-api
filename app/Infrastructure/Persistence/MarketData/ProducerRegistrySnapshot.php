@@ -113,18 +113,40 @@ final class ProducerRegistrySnapshot
         if (! is_dir(dirname($path)) && ! mkdir(dirname($path), 0775, true) && ! is_dir(dirname($path))) {
             throw new \RuntimeException('INPUT_CAPTURE_BUILD_STORAGE_UNAVAILABLE');
         }
-        if (! is_file($path)) {
-            $handle = @fopen($path, 'x+b');
-            if ($handle !== false) {
+        // The content-addressed archive is shared build evidence, not a date-owner
+        // publication. A final pathname must never expose a partly written gzip.
+        $lock = @fopen($path.'.lock', 'c+b');
+        if ($lock === false) throw new \RuntimeException('INPUT_CAPTURE_BUILD_STORAGE_UNAVAILABLE');
+        $temporary = null;
+        try {
+            if (! @flock($lock, LOCK_EX | LOCK_NB)) throw new \RuntimeException('INPUT_CAPTURE_BUILD_LOCK_CONFLICT');
+            if (! is_file($path)) {
+                $temporary = @tempnam(dirname($path), '.build-');
+                if ($temporary === false) throw new \RuntimeException('INPUT_CAPTURE_BUILD_STORAGE_UNAVAILABLE');
+                $handle = @fopen($temporary, 'wb');
+                if ($handle === false) throw new \RuntimeException('INPUT_CAPTURE_BUILD_WRITE_FAILED');
                 try {
                     $compressed = gzencode($content, 6);
-                    if (fwrite($handle, $compressed) !== strlen($compressed)) throw new \RuntimeException('INPUT_CAPTURE_BUILD_WRITE_FAILED');
-                    fflush($handle);
+                    if ($compressed === false) throw new \RuntimeException('INPUT_CAPTURE_BUILD_WRITE_FAILED');
+                    $size = strlen($compressed);
+                    for ($offset = 0; $offset < $size; $offset += $written) {
+                        $written = fwrite($handle, substr($compressed, $offset));
+                        if ($written === false || $written === 0) throw new \RuntimeException('INPUT_CAPTURE_BUILD_WRITE_FAILED');
+                    }
+                    if (! fflush($handle)) throw new \RuntimeException('INPUT_CAPTURE_BUILD_WRITE_FAILED');
                 } finally { fclose($handle); }
+                if (! @rename($temporary, $path)) throw new \RuntimeException('INPUT_CAPTURE_BUILD_WRITE_FAILED');
+                $temporary = null;
             }
+            $compressed = @file_get_contents($path);
+            if ($compressed === false || @gzdecode($compressed) !== $content) {
+                throw new \RuntimeException('INPUT_CAPTURE_BUILD_ARTIFACT_CONFLICT');
+            }
+        } finally {
+            if ($temporary !== null && is_file($temporary)) @unlink($temporary);
+            @flock($lock, LOCK_UN);
+            fclose($lock);
         }
-        $compressed = file_get_contents($path);
-        if ($compressed === false || gzdecode($compressed) !== $content) throw new \RuntimeException('INPUT_CAPTURE_BUILD_ARTIFACT_CONFLICT');
         return self::$build = ['schema_version' => 'php_source_build_v1', 'build_id' => 'sha256:'.$identity,
             'content_hash' => $identity, 'artifact_path' => 'storage/'.$relative,
             'artifact_hash' => hash('sha256', $compressed), 'files' => $hashes,

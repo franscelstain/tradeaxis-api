@@ -91,6 +91,16 @@ class FinalizeDecisionService
             return $this->enforceStateMatrix($state);
         }
 
+        if ($coverageGateStatus === 'PASS' && array_key_exists('quality_gate_state', $promoteContext)
+            && $promoteContext['quality_gate_state'] !== 'PASS') {
+            $state = $baseState;
+            $state['quality_gate_state'] = 'BLOCKED';
+            $state['reason_code'] = 'RUN_SEAL_PRECONDITION_FAILED';
+            $state['message'] = 'Finalize held or blocked because a declared date-level quality gate did not PASS; coverage PASS does not override quality findings.';
+
+            return $this->enforceStateMatrix($state);
+        }
+
         /*
         * Correction no-op is a completed safe lifecycle outcome.
         * It must not request promotion, reseal, or create a new publication.

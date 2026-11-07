@@ -434,7 +434,8 @@ class EodBarsIngestService
             $run->run_id,
             $manifestHash,
             $configSnapshotId,
-            $semanticManifestHash
+            $semanticManifestHash,
+            $run
         );
         $run->observation_manifest_hash = $manifestHash;
         if ($semanticManifestHash !== null) {
@@ -741,7 +742,8 @@ class EodBarsIngestService
             $run->run_id,
             $manifestHash,
             $configSnapshotId,
-            $semanticManifestHash
+            $semanticManifestHash,
+            $run
         );
         $run->observation_manifest_hash = $manifestHash;
         if ($semanticManifestHash !== null) {

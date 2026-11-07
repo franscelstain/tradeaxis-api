@@ -4,6 +4,7 @@ namespace App\Console\Commands\MarketData;
 
 use App\Infrastructure\Persistence\MarketData\EodCorrectionRepository;
 use App\Infrastructure\Persistence\MarketData\EodEvidenceRepository;
+use App\Application\MarketData\Services\CorrectionCommandPreflightService;
 
 class RunCorrectionCommand extends AbstractMarketDataCommand
 {
@@ -43,9 +44,32 @@ class RunCorrectionCommand extends AbstractMarketDataCommand
         }
 
         $requestedDate = $this->option('requested_date') ?: (string) $correction->trade_date;
+        $sourceMode = $this->sourceMode();
         try {
-            $run = $this->pipeline()->runDaily($requestedDate, $this->sourceMode(), $correctionId);
+            $preflight = app(CorrectionCommandPreflightService::class)->inspect($correctionId, $requestedDate, $sourceMode);
         } catch (\Throwable $e) {
+            $this->renderCommandBlocked('COMMAND_CORRECTION_PREFLIGHT_FAILED', $e->getMessage(), [
+                'correction_id' => $correctionId, 'requested_date' => $requestedDate,
+            ]);
+            return 1;
+        }
+        $this->line('operation_mode=PRE_APPLY_DISCLOSURE');
+        foreach (['correction_id','requested_date','source_mode','source_identity','correction_status',
+            'reason_code','reason_note','baseline_publication_id','baseline_run_id',
+            'candidate_config_content_hash','new_run_id','new_config_snapshot_id'] as $field) {
+            $this->line($field.'='.(string) $preflight[$field]);
+        }
+        $this->line('expected_row_effects=new or resumed run; source observations, candidate artifacts, hashes and seal if valid');
+        $this->line('pointer_impact=CONDITIONAL_NEW_SEALED_PUBLICATION_OR_PRIOR_CURRENT_PRESERVED');
+        try {
+            $run = $this->pipeline()->runDaily($requestedDate, $sourceMode, $correctionId, $preflight);
+        } catch (\Throwable $e) {
+            if (strpos($e->getMessage(), 'COMMAND_CORRECTION_') === 0) {
+                $this->renderCommandBlocked('COMMAND_CORRECTION_PREFLIGHT_CHANGED', $e->getMessage(), [
+                    'correction_id' => $correctionId, 'requested_date' => $requestedDate,
+                ]);
+                return 2;
+            }
             $failed = $this->markCorrectionFailed($correctionId, $correction, $e);
             $reasonCode = $this->reasonCodeFromThrowable($e);
             $this->renderCommandBlocked('CORRECTION_FAILED', 'Correction execution failed before safe publication; baseline current pointer preserved.', [
@@ -70,6 +94,9 @@ class RunCorrectionCommand extends AbstractMarketDataCommand
         }
 
         $this->renderRunSummary($run);
+        $this->line('actual_run_id='.(string) $this->runField($run, 'run_id', ''));
+        $this->line('actual_config_snapshot_id='.(string) $this->runField($run, 'config_snapshot_id', ''));
+        $this->line('actual_config_hash='.(string) $this->runField($run, 'config_hash', ''));
         $correctionLifecycle = $this->loadCorrectionLifecycle($correctionId);
         $correctionOutcome = $this->resolveCorrectionOutcome($correctionLifecycle);
         $this->line('correction_id='.$correctionId);
@@ -83,8 +110,14 @@ class RunCorrectionCommand extends AbstractMarketDataCommand
         }
         $this->line('baseline_publication_id='.$baselinePublicationId);
         $this->line('candidate_publication_id='.$candidatePublicationId);
-        $this->line('candidate_publication_switch='.$this->resolveCandidatePublicationSwitch($correctionLifecycle));
+        $this->line('candidate_publication_switch='.$this->resolveCandidatePublicationSwitch($correctionLifecycle, $run));
         $this->line('final_outcome_note='.$this->optionalScalar($correctionLifecycle, 'final_outcome_note'));
+
+        if ((string) $this->runField($run, 'terminal_status') === 'HELD'
+            || (string) $this->runField($run, 'publishability_state') === 'NOT_READABLE') {
+            $this->line('command_outcome=HELD_NOT_READABLE');
+            return 2;
+        }
 
         return 0;
     }
@@ -199,9 +232,11 @@ class RunCorrectionCommand extends AbstractMarketDataCommand
         return $record->{$field} ? 'true' : 'false';
     }
 
-    private function resolveCandidatePublicationSwitch($correction)
+    private function resolveCandidatePublicationSwitch($correction, $run)
     {
-        if ($this->resolveCorrectionOutcome($correction) === 'UNCHANGED') {
+        if ($this->resolveCorrectionOutcome($correction) === 'UNCHANGED'
+            || (string) $this->runField($run, 'terminal_status') !== 'SUCCESS'
+            || (string) $this->runField($run, 'publishability_state') !== 'READABLE') {
             return 'false';
         }
 

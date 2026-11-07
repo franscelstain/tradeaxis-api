@@ -3,13 +3,50 @@
 require_once __DIR__.'/B18ProducerInputCaptureTest.php';
 
 use Illuminate\Support\Facades\DB;
-use Tests\Support\UsesMarketDataMariaDb;
+
 
 class B18ProducerInputCaptureMariaDbTest extends TestCase
 {
-    use UsesMarketDataMariaDb, B18ProducerInputCaptureAssertions;
-    protected function setUp(): void { parent::setUp(); $this->bootMarketDataMariaDb(); }
-    protected function tearDown(): void { $this->tearDownMarketDataMariaDb(); parent::tearDown(); }
+    use B18ProducerInputCaptureAssertions, \Tests\Support\RetainsB19ObservedEvidence;
+    private $captureDatabase;
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $base=config('database.connections.mysql');
+        $this->assertSame('tradeaxis_testing',$base['database'],'Clone only the designated migrated test substrate');
+        $control=DB::connection('mysql');
+        $this->assertStringContainsStringIgnoringCase('mariadb',$control->select('SELECT VERSION() AS version')[0]->version);
+        $this->captureDatabase='tradeaxis_testing_b18_capture_'.bin2hex(random_bytes(6));
+        $control->statement('CREATE DATABASE `'.$this->captureDatabase.'` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin');
+        config(['database.connections.b18_capture'=>array_merge($base,['database'=>$this->captureDatabase]),'database.default'=>'b18_capture']);
+        DB::purge('b18_capture');
+        foreach($control->select("SELECT TABLE_NAME AS name FROM information_schema.TABLES WHERE TABLE_SCHEMA='tradeaxis_testing' AND TABLE_TYPE='BASE TABLE'")as $entry){
+            $table=$entry->name;if(in_array($table,['eod_run_owner_fences','eod_observer_fences','md_run_input_captures'],true))continue;
+            if(!preg_match('/^[a-z0-9_]+$/D',$table))throw new RuntimeException('UNSAFE_CAPTURE_TEST_TABLE');
+            DB::statement('CREATE TABLE `'.$table.'` LIKE `tradeaxis_testing`.`'.$table.'`');
+        }
+        DB::statement('INSERT INTO eod_reason_codes SELECT * FROM `tradeaxis_testing`.`eod_reason_codes`');
+        // CREATE TABLE LIKE does not copy triggers/FKs. Build the actual capture table
+        // through its existing migration, preserving every original schema assertion.
+        require_once base_path('database/migrations/2026_09_16_000001_add_producer_bound_input_captures.php');
+        (new AddProducerBoundInputCaptures())->up();
+        require_once base_path('database/migrations/2026_10_19_000001_create_eod_run_owner_fences.php');(new CreateEodRunOwnerFences())->up();
+        require_once base_path('database/migrations/2026_10_20_000002_add_date_owner_lease_evidence.php');(new AddDateOwnerLeaseEvidence())->up();
+        require_once base_path('database/migrations/2026_10_23_000001_add_execution_credentials_and_observer_fences.php');(new AddExecutionCredentialsAndObserverFences())->up();
+        require_once base_path('database/migrations/2026_10_25_000001_add_projection_observer_identity.php');(new AddProjectionObserverIdentity())->up();
+        // No outer business transaction: ReplayIsolation owns its own rollback-only root.
+    }
+    protected function tearDown(): void
+    {
+        try{
+            if($this->captureDatabase){
+                $this->retainObservedWorld($this->getName(),DB::table('eod_runs')->pluck('run_id')->all(),['fixture'=>'isolated actual migrated capture schema, no caller business transaction']);
+                DB::purge('b18_capture');
+                if(!preg_match('/^tradeaxis_testing_b18_capture_[a-f0-9]{12}$/D',$this->captureDatabase))throw new RuntimeException('UNSAFE_CAPTURE_TEST_DATABASE');
+                DB::connection('mysql')->statement('DROP DATABASE `'.$this->captureDatabase.'`');
+            }
+        }finally{parent::tearDown();}
+    }
 
     public function test_captured_run_cannot_be_deleted_through_foreign_key_cascade(): void
     {
@@ -35,7 +72,8 @@ class B18ProducerInputCaptureMariaDbTest extends TestCase
     public function test_schema_has_exact_protections_on_the_actual_capture_table(): void
     {
         $database = DB::connection()->getDatabaseName();
-        $this->assertSame('tradeaxis_testing', $database);
+        $this->assertMatchesRegularExpression('/^tradeaxis_testing_b18_capture_[a-f0-9]{12}$/D', $database);
+        $this->assertSame($this->captureDatabase, $database);
         $triggers = DB::table('information_schema.TRIGGERS')->where('TRIGGER_SCHEMA', $database)
             ->where('EVENT_OBJECT_TABLE', 'md_run_input_captures')->get()->all();
         $this->assertCount(2, $triggers);

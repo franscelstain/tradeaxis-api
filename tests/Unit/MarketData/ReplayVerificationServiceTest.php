@@ -87,6 +87,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
 
         $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
@@ -180,6 +181,7 @@ class ReplayVerificationServiceTest extends TestCase
             $evidence = m::mock(EodEvidenceRepository::class);
             $publications = m::mock(EodPublicationRepository::class);
             $replays = m::mock(ReplayResultRepository::class);
+            \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
 
             $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
@@ -249,6 +251,7 @@ class ReplayVerificationServiceTest extends TestCase
             $evidence = m::mock(EodEvidenceRepository::class);
             $publications = m::mock(EodPublicationRepository::class);
             $replays = m::mock(ReplayResultRepository::class);
+            \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
 
             $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
@@ -361,6 +364,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
 
         $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
@@ -559,6 +563,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
 
         $manifest = $this->verifiedBoundContextManifest();
         $manifest->bound_input_context['components'] = $components;
@@ -610,6 +615,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
 
         $manifest = $status === 'VERIFIED' ? $this->verifiedBoundContextManifest() : (object) [
             'bound_input_context' => ['available' => false, 'status' => $status, 'reason' => $reason],
@@ -698,6 +704,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
         $evidence->shouldReceive('findRunById')->once()->with(92)->andReturn($run);
         $evidence->shouldReceive('summarizeRunEvents')->once()->with(92)->andReturn([
             'reason_code_counts' => ['RUN_SOURCE_RATE_LIMIT' => 1],
@@ -770,6 +777,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
         $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(93)->andReturn($run);
@@ -876,6 +884,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
         $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(94)->andReturn($run);
@@ -948,6 +957,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
         $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(95)->andReturn($run);
@@ -994,6 +1004,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
         $service = new ReplayVerificationService($evidence, $publications, $replays);
 
         $this->expectException(RuntimeException::class);
@@ -1071,6 +1082,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
 
         $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
@@ -1152,6 +1164,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
 
         $evidence->shouldReceive('findRunById')->once()->with(555)->andReturn($run);
         $evidence->shouldNotReceive('resolvePublicationForEvidenceAudit');
@@ -1213,6 +1226,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
 
         $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
@@ -1343,6 +1357,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
 
         $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
@@ -1409,6 +1424,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
         $evidence->shouldReceive('findRunById')->once()->with(192)->andReturn($run);
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')->once()->andThrow(new RuntimeException('EVIDENCE_HISTORICAL_PUBLICATION_UNSEALED: Historical publication must be SEALED for audit evidence.'));
 
@@ -1491,6 +1507,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
 
         $evidence->shouldReceive('findRunById')->once()->with(196)->andReturn($run);
         $evidence->shouldReceive('summarizeRunEvents')->once()->with(196)->andReturn([
@@ -1568,6 +1585,7 @@ class ReplayVerificationServiceTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
         $publications->shouldReceive('assertPublicationManifestHashValid')->andReturn(true);
         $publications->shouldReceive('buildManifestByPublicationId')->andReturn($this->verifiedBoundContextManifest());
         $evidence->shouldReceive('findRunById')->once()->with(103)->andReturn($run);

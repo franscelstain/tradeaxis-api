@@ -65,7 +65,7 @@ class ScheduledWorkflowCommand extends AbstractMarketDataCommand
             $result['reason_codes'] = [$locked ? 'RUN_LOCK_CONFLICT' : ($run->final_reason_code ?? 'COMMAND_EXECUTION_FAILED')];
             $result['error'] = $e->getMessage();
         }
-        if ($run) $this->runRepository()->appendEvent($run, 'FINALIZE', 'SCHEDULER_OUTCOME',
+        if ($run) $this->runRepository()->recordObservation($run, 'scheduler', 'FINALIZE', 'SCHEDULER_OUTCOME',
             in_array($result['scheduler_outcome'], ['SUCCESS_READABLE', 'SKIPPED_ALREADY_READABLE'], true) ? 'INFO' : 'WARN',
             'Scheduled workflow outcome recorded from run and verified publication facts.', null, $result);
         $result['process_exit_code'] = $this->processExitCode($result);

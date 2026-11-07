@@ -105,7 +105,7 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
     {
         $result = $this->verify();
 
-        $this->assertSame('MATCH', $result['comparison_result']);
+        $this->assertSame('MATCH', $result['comparison_result'], json_encode($result));
         $this->assertSame('PASS', $result['replay_status']);
         $this->assertSame(0, $result['mismatch_count']);
     }
@@ -298,6 +298,7 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
 
         $evidence->shouldReceive('findRunById')->andReturn((object) array_merge($this->runRow(), ['config_snapshot_id' => null]));
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')
@@ -1189,6 +1190,7 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
         $evidence = m::mock(EodEvidenceRepository::class);
         $publications = m::mock(EodPublicationRepository::class);
         $replays = m::mock(ReplayResultRepository::class);
+        \Tests\Support\ReplayResultBoundaryDouble::adapt($replays);
 
         $evidence->shouldReceive('findRunById')->andReturn((object) array_merge($this->runRow(), $runOverride));
         $evidence->shouldReceive('resolvePublicationForEvidenceAudit')
@@ -1201,7 +1203,7 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
             array_fill(0, 3, ['eligible' => 0])
         ));
 
-        // C1 §6 step 5 (Admission): `temporal_identity_hash`/`calendar_status_hash`/
+        // C1 Â§6 step 5 (Admission): `temporal_identity_hash`/`calendar_status_hash`/
         // `event_factor_hash` now come from Reader's projection (this publication's own
         // already-Binding-derived compatibility hashes) rather than the run/publication row
         // directly, and the replay is only admissible at all when Reader reports the bound
@@ -1305,7 +1307,7 @@ class B18ReplayComparisonExhaustivenessTest extends TestCase
             'eligibility_batch_hash' => 'C1',
             // observation_manifest_hash is the one MD-S050 frozen input still read directly off
             // the run; temporal_identity_hash/calendar_status_hash/event_factor_hash come from
-            // Reader's projection stubbed in mocks() instead (C1 §6 step 5), not from this row.
+            // Reader's projection stubbed in mocks() instead (C1 Â§6 step 5), not from this row.
             'observation_manifest_hash' => str_repeat('1', 64),
             'factor_set_hash' => str_repeat('4', 64),
             'sealed_at' => self::TRADE_DATE.' 17:30:00',

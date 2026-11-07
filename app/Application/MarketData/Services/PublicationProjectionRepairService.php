@@ -10,8 +10,8 @@ use Illuminate\Support\Facades\DB;
  * Controlled repair of rebuildable current projections from immutable history selected by the
  * governed current-publication pointer.
  *
- * History, publication rows, pointer state, and run identity are read-only. Repair mutates only
- * eod_bars/eod_indicators/eod_eligibility and commits only after independent reconciliation PASS.
+ * Historical run, publication rows and pointer are read-only. Repair acquires a distinct recovery
+ * owner and observational audit, rebuilds live projections, and commits only after reconciliation.
  */
 class PublicationProjectionRepairService
 {
@@ -32,7 +32,12 @@ class PublicationProjectionRepairService
     public function inspectTradeDate(string $tradeDate): array
     {
         $context = $this->validatedRepairContext($tradeDate);
-        $before = $this->reconciliation->reconcileTradeDate($tradeDate);
+        $before = $this->reconciliation->inspectTradeDate($tradeDate);
+        $runConfigId = (int) ($context['run']->config_snapshot_id ?? 0);
+        $publicationConfigId = (int) ($context['publication']->config_snapshot_id ?? 0);
+        $configHash = $runConfigId > 0 && $runConfigId === $publicationConfigId
+            ? DB::table('md_config_snapshots')->where('config_snapshot_id', $runConfigId)->value('config_hash')
+            : null;
         $repairability = ($before['reconciliation_state'] ?? '') === 'PASS'
             ? 'NO_REPAIR_REQUIRED'
             : 'REPAIRABLE_FROM_IMMUTABLE_HISTORY';
@@ -42,48 +47,67 @@ class PublicationProjectionRepairService
             'trade_date' => $tradeDate,
             'publication_id' => (int) $context['publication']->publication_id,
             'run_id' => (int) $context['publication']->run_id,
+            'config_snapshot_id' => $runConfigId > 0 && $runConfigId === $publicationConfigId ? $runConfigId : null,
+            'config_hash' => $configHash,
             'snapshot_counts' => $context['snapshot_counts'],
             'reconciliation' => $before,
         ];
     }
 
-    public function repairTradeDate(string $tradeDate): array
+    public function repairTradeDate(string $tradeDate, string $reason = '', ?array $expectedPreflight = null): array
     {
-        $context = $this->validatedRepairContext($tradeDate);
-        $publication = $context['publication'];
-        $before = $this->reconciliation->reconcileTradeDate($tradeDate);
-
-        if (($before['reconciliation_state'] ?? '') === 'PASS') {
-            return [
-                'repair_state' => 'NO_CHANGE',
-                'trade_date' => $tradeDate,
-                'publication_id' => (int) $publication->publication_id,
-                'run_id' => (int) $publication->run_id,
-                'before' => $before,
-                'after' => $before,
-            ];
-        }
-
-        return DB::transaction(function () use ($tradeDate, $publication, $before) {
-            $this->artifacts->promotePublicationHistoryToCurrent(
-                $tradeDate,
-                (int) $publication->publication_id,
-                (int) $publication->run_id
-            );
-
+        $this->assertDate($tradeDate);
+        if (trim($reason) === '') throw new \RuntimeException('PROJECTION_REPAIR_REASON_REQUIRED');
+        return DB::transaction(function () use ($tradeDate, $reason, $expectedPreflight) {
+            // Same date-first order as acquisition; a scan is not authority.
+            DB::table('eod_run_owner_fences')->where('trade_date_requested', $tradeDate)->lockForUpdate()->first();
+            $context = $this->validatedRepairContext($tradeDate);
+            $publication = $context['publication'];
+            if ($expectedPreflight !== null) {
+                $runConfigId = (int) ($context['run']->config_snapshot_id ?? 0);
+                $publicationConfigId = (int) ($publication->config_snapshot_id ?? 0);
+                $configHash = $runConfigId > 0 && $runConfigId === $publicationConfigId
+                    ? DB::table('md_config_snapshots')->where('config_snapshot_id', $runConfigId)->value('config_hash')
+                    : null;
+                if ((string) ($expectedPreflight['trade_date'] ?? '') !== $tradeDate
+                    || (int) ($expectedPreflight['publication_id'] ?? 0) !== (int) $publication->publication_id
+                    || (int) ($expectedPreflight['run_id'] ?? 0) !== (int) $publication->run_id
+                    || (int) ($expectedPreflight['config_snapshot_id'] ?? 0) !== $runConfigId
+                    || (string) ($expectedPreflight['config_hash'] ?? '') !== (string) $configHash
+                    || ($expectedPreflight['snapshot_counts'] ?? null) !== $context['snapshot_counts']) {
+                    throw new \RuntimeException('PROJECTION_REPAIR_PREFLIGHT_CHANGED');
+                }
+            }
+            $before = $this->reconciliation->reconcileTradeDate($tradeDate);
+            $result = ['trade_date' => $tradeDate, 'publication_id' => (int) $publication->publication_id,
+                'run_id' => (int) $publication->run_id, 'before' => $before];
+            if (($before['reconciliation_state'] ?? '') === 'PASS') {
+                return $result + ['repair_state' => 'NO_CHANGE', 'after' => $before];
+            }
+            $historical = \App\Models\EodRun::findOrFail($publication->run_id);
+            $runs = new \App\Infrastructure\Persistence\MarketData\EodRunRepository();
+            $owner = $runs->acquireLinkedRecoveryOwner($tradeDate, (string) $historical->source, (int) $historical->run_id);
+            $current = $this->validatedRepairContext($tradeDate);
+            if ((int) $current['publication']->publication_id !== (int) $publication->publication_id
+                || $current['snapshot_counts'] !== $context['snapshot_counts']) {
+                throw new \RuntimeException('PROJECTION_REPAIR_SOURCE_CHANGED');
+            }
+            $audit = ['requested_date' => $tradeDate, 'historical_run_id' => (int) $historical->run_id,
+                'source_publication_id' => (int) $publication->publication_id,
+                'recovery_run_id' => (int) $owner->run_id, 'operator_reason' => $reason];
+            $runs->appendEvent($owner, 'FINALIZE', 'PROJECTION_REPAIR_STARTED', 'WARN',
+                'Linked recovery acquired for pointer-selected projection rebuild.', null, $audit);
+            $this->artifacts->repairCurrentProjectionFromHistory($tradeDate, (int) $publication->publication_id, $owner);
             $after = $this->reconciliation->reconcileTradeDate($tradeDate);
             if (($after['reconciliation_state'] ?? '') !== 'PASS') {
                 throw new \RuntimeException($this->repairFailureMessage($after));
             }
-
-            return [
-                'repair_state' => 'REBUILT_AND_VERIFIED',
-                'trade_date' => $tradeDate,
-                'publication_id' => (int) $publication->publication_id,
-                'run_id' => (int) $publication->run_id,
-                'before' => $before,
-                'after' => $after,
-            ];
+            $runs->appendEvent($owner, 'FINALIZE', 'PROJECTION_REPAIR_COMPLETED', 'INFO',
+                'Projection verified against unchanged pointer-selected history.', null, $audit);
+            $runs->finalize($owner, ['lifecycle_state' => 'COMPLETED', 'terminal_status' => 'HELD',
+                'quality_gate_state' => 'BLOCKED', 'publishability_state' => 'NOT_READABLE',
+                'final_reason_code' => 'RUN_PROJECTION_REPAIRED']);
+            return $result + ['repair_state' => 'REBUILT_AND_VERIFIED', 'recovery_run_id' => (int) $owner->run_id, 'after' => $after];
         });
     }
 
@@ -99,7 +123,7 @@ class PublicationProjectionRepairService
         $run = DB::table('eod_runs')
             ->where('run_id', (int) $publication->run_id)
             ->first([
-                'run_id', 'trade_date_requested', 'bars_rows_written',
+                'run_id', 'trade_date_requested', 'config_snapshot_id', 'bars_rows_written',
                 'indicators_rows_written', 'eligibility_rows_written',
             ]);
 

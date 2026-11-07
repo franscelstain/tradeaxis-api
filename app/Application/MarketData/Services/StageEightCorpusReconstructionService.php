@@ -450,7 +450,8 @@ class StageEightCorpusReconstructionService
         }
         $this->bindRunAndCandidateAdmission(
             (int) $run->run_id,
-            (int) $campaign->admission_decision_id
+            (int) $campaign->admission_decision_id,
+            $run
         );
         $run = DB::table('eod_runs')->where('run_id', (int) $run->run_id)->first();
         $run = $this->pipeline->promoteDaily(
@@ -1031,21 +1032,37 @@ class StageEightCorpusReconstructionService
         return Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
     }
 
-    private function bindRunAndCandidateAdmission($runId, $admissionDecisionId): void
+    private function bindRunAndCandidateAdmission($runId, $admissionDecisionId, ?\App\Models\EodRun $actor = null): void
     {
-        $decision = DB::table('md_corpus_admission_decisions')
-            ->where('admission_decision_id', $admissionDecisionId)
-            ->where('state', 'ACTIVE')
-            ->first();
-        if (! $decision) {
-            throw new \RuntimeException('STAGE8_ADMISSION_EVIDENCE_INVALID: active decision cannot be resolved.');
-        }
-
-        DB::transaction(function () use ($runId, $admissionDecisionId) {
+        DB::transaction(function () use ($runId, $admissionDecisionId, $actor) {
+            $fence = new \App\Infrastructure\Persistence\MarketData\RequestedDateWriterFence();
+            $fence->lockRun($actor ? $actor->trade_date_requested : null, $actor);
+            if ((int) $runId !== (int) $actor->run_id) {
+                throw new \RuntimeException('RUN_OWNER_CONFLICT: admission target is not the acting run.');
+            }
+            $publications = DB::table('eod_publications')->where('run_id', $runId)
+                ->orderBy('publication_id')->lockForUpdate()->get();
+            if ($publications->isEmpty()) {
+                throw new \RuntimeException('RUN_OWNER_CONFLICT: admission requires an owned staging candidate.');
+            }
+            foreach ($publications as $publication) {
+                $fence->lockCandidate($actor->trade_date_requested, $actor, $publication->publication_id, true);
+            }
+            $decisions = DB::table('md_corpus_admission_decisions')->where('state', 'ACTIVE')
+                ->orderBy('admission_decision_id')->lockForUpdate()->get();
+            $decision = $decisions->first();
+            if ($decisions->count() !== 1 || ! $decision
+                || (int) $decision->admission_decision_id !== (int) $admissionDecisionId
+                || (string) $actor->trade_date_requested < (string) $decision->admitted_from
+                || (string) $decision->source_mode !== (string) $actor->source
+                || (string) $decision->market_code !== (string) config('market_data.scope.market_code', 'IDX')
+                || (string) $decision->market_segment !== (string) config('market_data.scope.market_segment', 'REGULAR')) {
+                throw new \RuntimeException('STAGE8_ADMISSION_EVIDENCE_INVALID: active decision scope cannot be resolved.');
+            }
             DB::table('eod_runs')->where('run_id', $runId)->update([
                 'corpus_admission_decision_id' => $admissionDecisionId,
             ]);
-            DB::table('eod_publications')->where('run_id', $runId)->update([
+            DB::table('eod_publications')->whereIn('publication_id', $publications->pluck('publication_id')->all())->update([
                 'corpus_admission_decision_id' => $admissionDecisionId,
             ]);
         });

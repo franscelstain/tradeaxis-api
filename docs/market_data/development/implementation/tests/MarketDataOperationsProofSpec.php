@@ -1082,10 +1082,10 @@ final class MarketDataOperationsProofSpec
             'freshness_and_slo' => [
                 'owner' => 'MD-B19:freshness-and-slo',
                 'implementation' => [
-                    'app/Application/MarketData/Services/MarketDataReadinessService.php',
+                    'app/Application/MarketData/Services/MarketDataFreshnessEvaluator.php',
                 ],
-                'positive' => [],
-                'negative' => [],
+                'positive' => ['tests/Unit/MarketData/B19FreshnessEvaluatorTest.php', 'test_verified_expected_session_target_matrix_and_preactivation_boundary'],
+                'negative' => ['tests/Unit/MarketData/B19FreshnessEvaluatorTest.php', 'test_unverified_calendar_publication_or_measurement_is_never_a_pass'],
             ],
             'incident_classification' => [
                 'owner' => 'MD-B19:incident-classification',

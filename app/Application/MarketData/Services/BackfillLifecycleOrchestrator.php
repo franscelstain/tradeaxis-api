@@ -1268,36 +1268,10 @@ class BackfillLifecycleOrchestrator
 
     private function syncPublicationReprocessNotes(array $case): void
     {
-        if (empty($case['run_id'])) {
-            return;
-        }
-
-        try {
-            $run = $this->runs->findByRunId((int) $case['run_id']);
-            if (! $run) {
-                return;
-            }
-
-            $this->runs->updateTelemetry($run, [
-                'notes' => $this->appendRunNotes($run->notes ?? null, [
-                    'publication_reprocess_state='.(string) ($case['publication_reprocess_state'] ?? 'NOOP'),
-                    'publication_reprocess_republished_trade_date_count='.(int) ($case['publication_reprocess_republished_trade_date_count'] ?? 0),
-                    ! empty($case['publication_reprocess_republished_trade_dates']) ? 'publication_reprocess_republished_trade_dates='.$this->compactList((array) $case['publication_reprocess_republished_trade_dates']) : null,
-                    ! empty($case['publication_reprocess_candidate_trade_dates']) ? 'publication_reprocess_candidate_trade_dates='.$this->compactList((array) $case['publication_reprocess_candidate_trade_dates']) : null,
-                    ! empty($case['publication_reprocess_readable_correction_candidate_trade_dates']) ? 'publication_reprocess_readable_correction_candidate_trade_dates='.$this->compactList((array) $case['publication_reprocess_readable_correction_candidate_trade_dates']) : null,
-                    ! empty($case['publication_reprocess_blocked_trade_dates']) ? 'publication_reprocess_blocked_trade_dates='.$this->compactList((array) $case['publication_reprocess_blocked_trade_dates']) : null,
-                    ! empty($case['publication_reprocess_failed_trade_dates']) ? 'publication_reprocess_failed_trade_dates='.$this->compactList((array) $case['publication_reprocess_failed_trade_dates']) : null,
-                    ! empty($case['publication_reprocess_blocked_reason_code']) ? 'publication_reprocess_blocked_reason_code='.(string) $case['publication_reprocess_blocked_reason_code'] : null,
-                    ! empty($case['publication_reprocess_failure_reason_code']) ? 'publication_reprocess_failure_reason_code='.(string) $case['publication_reprocess_failure_reason_code'] : null,
-                    ! empty($case['publication_reprocess_republication_mode']) ? 'publication_reprocess_republication_mode='.(string) $case['publication_reprocess_republication_mode'] : null,
-                    ! empty($case['publication_reprocess_correction_ids']) ? 'publication_reprocess_correction_ids='.$this->compactList((array) $case['publication_reprocess_correction_ids']) : null,
-                    ! empty($case['publication_reprocess_correction_id']) ? 'publication_reprocess_correction_id='.(int) $case['publication_reprocess_correction_id'] : null,
-                ]),
-            ]);
-        } catch (\Throwable $e) {
-            // Summary already carries the publication reprocess result; lightweight
-            // repository fakes must not turn a successful reprocess into command failure.
-        }
+        if (empty($case['run_id'])) return;
+        $run = $this->runs->findByRunId((int) $case['run_id']);
+        if (! $run) return;
+        (new PublicationReprocessObservationService())->record($run, $case);
     }
 
     private function publicationReprocessCandidateDates(array $case)
@@ -1364,6 +1338,8 @@ class BackfillLifecycleOrchestrator
     private function mutationImpactCaseFields($run)
     {
         $notes = $this->parseRunNotes((string) ($run->notes ?? ''));
+        $observation = (new PublicationReprocessObservationService())->notesFor($run);
+        $notes = array_replace($notes, $observation['notes']);
         $fields = [];
 
         foreach ([

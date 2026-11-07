@@ -1,0 +1,44 @@
+{
+  "record_id": "E-MD-B19-A001-048",
+  "record_type": "EVIDENCE",
+  "status": "ISSUED",
+  "attempt": "MD-B19-A001",
+  "baseline": "MD-B19-A001-BL001",
+  "predecessor": "E-MD-B19-A001-047",
+  "issued_at": "2026-10-22T06:22:37+07:00",
+  "independently_accepted": "645/750",
+  "repository_proposed": "647/750",
+  "new_proposals": [],
+  "repaired_existing_holds": [
+    "MD-S072-R0021",
+    "MD-S023-R0048"
+  ],
+  "without_repository_basis": 103,
+  "formal_satisfied": "0/750",
+  "proof_map": "storage/app/market-data/evidence/MD-B19-A001/E048_contract_proof_matrix.json",
+  "queue": "storage/app/market-data/evidence/MD-B19-A001/E048_execution_matrix.json",
+  "owner_decisions": "storage/app/market-data/evidence/MD-B19-A001/E048_owner_decision_requests.json",
+  "capabilities_completed": [
+    "Bounded calendar assessment-horizon completeness refuses missing or projected closed dates without shortening session counts.",
+    "Date-level quality findings now reach actual eligibility/seal/finalize refusal, with candidate/historical scope isolation."
+  ],
+  "execution": "Final production build: 51 tests/5200 assertions PASS. Strengthened no/partial/complete/conflicting/sealed-history and actual promotion matrix: 2 tests/56 assertions PASS and PASS again after affected mutation revalidation. Nine current defect controls (six final affected executions plus three unchanged source/test proofs) fail intended assertions and restore source bytes. MariaDB 10.4.27, migrated schema; synthetic transport with 30 actual adapter requests and persisted observation identities. Earlier source-drift and fixture failures remain retained/excluded.",
+  "planning_correction": "The inherited 21-row F018 universal authority hold was wrong. F018 directly reserves escalation/closure R0011/R0012; 15 incident rows in the retained queue are locally implementable producer/protection gaps, with separate dependent operator holds. No classifier-only shortcut or runtime incident claim is admitted.",
+  "governance": "Exact final outputs retained in E048_runtime/gate_*.stdout.txt. B19 explicit traceability validation FAIL: 748 B01-note-schema messages and 36 B01-conditional-map mismatches; both source validator and matrix equal HEAD. F024 records stage compatibility; no applicability change. Operations proof remains FAIL.",
+  "limitations": "Zero new predicate bases; two existing proposals repaired for external review. The 15-25 target was not achieved. Release group requires real authenticated five-check execution; incident group requires a full persisted response/protection producer under fixed clauses and separately approved escalation/closure; remaining local implementation has not been declared exhausted. Scheduling key/every-write matrices, activation, replay/oracle/build and DB identity holds remain.",
+  "known_boundaries": "MD-DEP-0025 ACTIVE; immutable candidate-v5; O1; no candidate-v6; F018; R0324/D008/F016; D003 NULL mirror; B18 closure and visible replay-comparison/alias/coverage failures preserved. No full-suite PASS, deployment, activation, release readiness or formal admission.",
+  "resume": "External review E048 two existing hold repairs, then implement persisted incident/response producer for the 15 local incident rows in the corrected matrix while holding R0011/R0012 and dependent operator branches; address F024 with a B19-aware gate without importing B01 applicability.",
+  "governance_results": {
+    "MarketDataDocumentationIntegrityGate": "PASS",
+    "MarketDataRelationshipIntegrityGate": "PASS",
+    "MarketDataClassificationConsistencyGate": "PASS",
+    "MarketDataOperationsProofGate": "FAIL",
+    "B19_scoped_traceability": {
+      "status": "FAIL",
+      "errors": 784,
+      "disposition": "F024 pre-existing gate/stage compatibility defect; matrix and validator byte-identical to HEAD; applicability unchanged."
+    }
+  },
+  "gate_capture_precedes_final_issuance": true,
+  "proof_identity": "E048_contract_proof_matrix.json binds current source/test hashes, direct assertion lines, nine current mutation controls and all named raw hashes. E048_runtime/final_restoration_verification.json verifies current bytes."
+}

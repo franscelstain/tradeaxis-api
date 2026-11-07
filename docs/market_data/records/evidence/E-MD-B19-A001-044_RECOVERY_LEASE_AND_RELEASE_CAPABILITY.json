@@ -1,0 +1,35 @@
+{
+  "record_id": "E-MD-B19-A001-044",
+  "record_type": "EVIDENCE",
+  "status": "ISSUED",
+  "attempt": "MD-B19-A001",
+  "predecessor": "E-MD-B19-A001-043",
+  "issued_at": "2026-10-21T14:00:00+07:00",
+  "accepted_baseline": "633/750",
+  "repository_proposal": "636/750",
+  "formal_satisfied": "0/750",
+  "new_proposed_bases": {
+    "resumable_backfill": ["MD-S074-R0011", "MD-S074-R0013"],
+    "scheduling_and_locking": ["MD-S078-R0009"]
+  },
+  "exact_map": "storage/app/market-data/evidence/MD-B19-A001/E044_runtime/E044_per_predicate_map.json",
+  "remaining_queue": "storage/app/market-data/evidence/MD-B19-A001/E044_runtime/E044_remaining_queue.json",
+  "scope": "Two distinct migrated-MariaDB checkpoint recovery worlds and the registered scheduled-command prohibited-controls world. New active-lease guard and B19 release evaluator are bounded implementation results without compound-predicate admission.",
+  "named_results": {
+    "recovery": "2 tests / 60 assertions PASS",
+    "release_evaluator": "2 tests / 43 assertions PASS on controlled inputs; actual current-state command exit 1 BLOCKED",
+    "lease_takeover": "1 test / 17 assertions PASS; owner fence affected suite 3 / 61 PASS; four corrected expired-lease fixtures 4 / 29 PASS",
+    "scheduling": "2 tests / 21 assertions PASS"
+  },
+  "counterfactuals": [
+    "Inverted recovered-bar equality comparator: intended UNCHANGED assertion failed; source byte restored.",
+    "Full-date candidate replacement: intended two-listing count failed; source byte restored.",
+    "Added scheduled --force option: intended refusal assertion failed; source byte restored.",
+    "Removed live-lease guard: intended active-heartbeat refusal assertion failed; source byte restored.",
+    "Suppressed scheduler outcome event: manual-versus-scheduled evidence distinction assertion failed; source byte restored.",
+    "Removed release dependency and claim-limit controls separately: intended evaluator assertions failed; source byte restored."
+  ],
+  "limitations": "MD-S078-R0003/R0004 remain unproved for complete logical-key/every-write matrices. Synthetic second listing cannot promote without frozen foundation identity. Release evaluator positive inputs do not establish five real executed current-build gates or B19 readiness. OPERATIONAL_START_DATE is unset and complete freshness clocks/activation evidence are unavailable. No full suite, production activation, formal SATISFIED, candidate-v6 or stage closure is claimed.",
+  "known_failures": "Operations proof gate FAIL with 114 missing bases and seven family guards unassigned; alias-meaning and coverage static failures and historical B18 replay-comparison failures remain visible. MD-DEP-0025 ACTIVE; R0324 HELD D008/F016; F018 policy holds and D003 warning_count NULL semantics persist.",
+  "resume": "Independent review E044's three proposed bases. Then complete MD-S078-R0003 logical-key/checkpoint matrix and R0004 every-state-changing-write lease matrix using real MariaDB; continue independent recovery R0003 and real release-check evidence only when exact authority and inputs are available. Preserve all enumerated holds."
+}

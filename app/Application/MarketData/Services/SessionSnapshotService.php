@@ -172,26 +172,78 @@ class SessionSnapshotService
 
     public function purge($beforeDate = null, $outputDir = null, $apply = false)
     {
+        $summary = $this->inspectPurge($beforeDate);
+        if ($apply) {
+            return $this->applyDisclosedPurge($summary, $outputDir);
+        }
+        return $this->writePurgeSummary($summary, $outputDir);
+    }
+
+    public function inspectPurge($beforeDate = null): array
+    {
         $timezone = config('market_data.platform.timezone');
         $retentionDays = (int) config('market_data.session_snapshot.retention_days', 30);
         $cutoff = $beforeDate
             ? Carbon::parse($beforeDate, $timezone)->endOfDay()
             : Carbon::now($timezone)->subDays($retentionDays);
 
-        $operationMode = $apply ? 'APPLIED' : 'DRY_RUN';
         $candidateRows = (int) $this->snapshots->countBefore($cutoff->toDateTimeString());
-        $deleted = $apply ? (int) $this->snapshots->purgeBefore($cutoff->toDateTimeString()) : 0;
-
+        $guard = app(CommandPreApplyDisclosureService::class);
         $summary = [
-            'operation_mode' => $operationMode,
-            'reason_code' => $apply ? 'COMMAND_APPLY_CONFIRMED' : 'COMMAND_DRY_RUN_ONLY',
+            'operation_mode' => 'DRY_RUN',
+            'reason_code' => 'COMMAND_DRY_RUN_ONLY',
             'cutoff_timestamp' => $cutoff->toDateTimeString(),
             'cutoff_source' => $beforeDate ? 'explicit_before_date' : 'default_retention_days',
             'candidate_rows' => $candidateRows,
-            'deleted_rows' => (int) $deleted,
+            'deleted_rows' => 0,
             'retention_days' => $beforeDate ? null : $retentionDays,
             'before_date' => $beforeDate,
+            'config_hash' => $guard->fingerprint(['retention_days' => $retentionDays]),
         ];
+        $summary['pre_apply_fingerprint'] = $guard->fingerprint($this->purgeDisclosureIdentity($summary));
+        return $summary;
+    }
+
+    public function applyDisclosedPurge(array $disclosed, $outputDir = null): array
+    {
+        $guard = app(CommandPreApplyDisclosureService::class);
+        $summary = $this->snapshots->transaction(function () use ($disclosed, $guard) {
+            $actual = $disclosed;
+            $actual['candidate_rows'] = (int) $this->snapshots->countBefore($disclosed['cutoff_timestamp']);
+            $actual['config_hash'] = $guard->fingerprint([
+                'retention_days' => (int) config('market_data.session_snapshot.retention_days', 30),
+            ]);
+            $actual['pre_apply_fingerprint'] = $guard->fingerprint($this->purgeDisclosureIdentity($actual));
+            if (! hash_equals((string) $disclosed['pre_apply_fingerprint'], (string) $actual['pre_apply_fingerprint'])) {
+                throw new \RuntimeException('COMMAND_SESSION_SNAPSHOT_PURGE_PREFLIGHT_CHANGED');
+            }
+            $deleted = (int) $this->snapshots->purgeBefore($disclosed['cutoff_timestamp']);
+            if ($deleted !== (int) $disclosed['candidate_rows']) {
+                throw new \RuntimeException('COMMAND_SESSION_SNAPSHOT_PURGE_WRITE_COUNT_MISMATCH');
+            }
+            $actual['operation_mode'] = 'APPLIED';
+            $actual['reason_code'] = 'COMMAND_APPLY_CONFIRMED';
+            $actual['deleted_rows'] = $deleted;
+            return $actual;
+        });
+        return $this->writePurgeSummary($summary, $outputDir);
+    }
+
+    private function purgeDisclosureIdentity(array $summary): array
+    {
+        return [
+            'cutoff_timestamp' => $summary['cutoff_timestamp'],
+            'cutoff_source' => $summary['cutoff_source'],
+            'before_date' => $summary['before_date'],
+            'retention_days' => $summary['retention_days'],
+            'candidate_rows' => (int) $summary['candidate_rows'],
+            'config_hash' => $summary['config_hash'],
+        ];
+    }
+
+    private function writePurgeSummary(array $summary, $outputDir = null): array
+    {
+        $timezone = config('market_data.platform.timezone');
         $dir = $outputDir ?: rtrim(config('market_data.evidence.output_directory'), '/').'/session_snapshots/purge_'.Carbon::now($timezone)->format('Ymd_His');
         if (! is_dir($dir)) {
             mkdir($dir, 0777, true);

@@ -54,6 +54,20 @@ class PublicationProjectionReconciliationService
 
     public function reconcileTradeDate(string $tradeDate): array
     {
+        return \App\Infrastructure\Persistence\MarketData\RunWriterContext::observeDate(
+            'projection', $tradeDate, null, function () use ($tradeDate) {
+                return $this->persist($this->inspectTradeDate($tradeDate));
+            });
+    }
+
+    /** Pure comparison: inspection never issues a writer or inserts evidence. */
+    public function inspectTradeDate(string $tradeDate): array
+    {
+        return DB::transaction(function () use ($tradeDate) { return $this->compareTradeDate($tradeDate); });
+    }
+
+    private function compareTradeDate(string $tradeDate): array
+    {
         if (! $this->isDate($tradeDate)) {
             throw new \InvalidArgumentException('RECONCILIATION_TRADE_DATE_INVALID');
         }
@@ -85,7 +99,7 @@ class PublicationProjectionReconciliationService
             $result['mismatch_count'] = $orphanCount;
             $result['mismatch_sample_json'] = json_encode($sample, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-            return $this->persist($result);
+            return $result;
         }
 
         $artifactSpecs = [
@@ -126,7 +140,7 @@ class PublicationProjectionReconciliationService
             ? null
             : json_encode($sample, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-        return $this->persist($result);
+        return $result;
     }
 
     public function latestRelevantTradeDate()
@@ -314,6 +328,12 @@ class PublicationProjectionReconciliationService
             'created_at' => $result['checked_at'],
         ];
 
+        $writer = \App\Infrastructure\Persistence\MarketData\RunWriterContext::dateObservation(
+            (string) $result['trade_date'], null, 'PROJECTION_RECONCILED');
+        $row['writer_kind'] = $writer['kind'];
+        $row['writer_actor_id'] = $writer['actor_id'];
+        $row['writer_scope_key'] = $writer['scope_key'];
+        $row['writer_fencing_token'] = $writer['fencing_token'];
         DB::table('md_publication_projection_reconciliations')->insert($row);
 
         return $row;

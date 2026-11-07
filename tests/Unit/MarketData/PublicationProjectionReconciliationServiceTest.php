@@ -227,27 +227,34 @@ class PublicationProjectionReconciliationServiceTest extends TestCase
 
     public function test_controlled_repair_rebuilds_only_projection_from_immutable_history_and_reconciles_to_pass(): void
     {
-        $this->seedExactArtifacts();
-        $this->seedRepairRun();
-        DB::table('eod_bars')->where('ticker_id', 1)->update(['close' => 999]);
-        DB::table('eod_indicators')->where('ticker_id', 1)->update(['run_id' => 999]);
-        DB::table('eod_eligibility')->where('ticker_id', 1)->update([
-            'trading_status_revision_id' => null,
-            'trading_status_source_observation_id' => null,
-        ]);
-        $historyCloseBefore = DB::table('eod_bars_history')->where('ticker_id', 1)->value('close');
-
-        $result = $this->repairService()->repairTradeDate('2026-03-20');
-
-        $this->assertSame('REBUILT_AND_VERIFIED', $result['repair_state']);
-        $this->assertSame('FAIL', $result['before']['reconciliation_state']);
-        $this->assertSame('PASS', $result['after']['reconciliation_state']);
-        $this->assertSame(0, $result['after']['mismatch_count']);
-        $this->assertEquals($historyCloseBefore, DB::table('eod_bars')->where('ticker_id', 1)->value('close'));
-        $this->assertEquals($historyCloseBefore, DB::table('eod_bars_history')->where('ticker_id', 1)->value('close'));
-        $this->assertSame(25, (int) DB::table('eod_indicators')->where('ticker_id', 1)->value('run_id'));
-        $this->assertSame(701, (int) DB::table('eod_eligibility')->where('ticker_id', 1)->value('trading_status_revision_id'));
-        $this->assertSame(702, (int) DB::table('eod_eligibility')->where('ticker_id', 1)->value('trading_status_source_observation_id'));
+        // A reloadable mock publication is not a governed repair source. Exercise actual acquisition,
+        // sealing and pointer resolution; retain the same immutable-history and lineage oracle.
+        $world = \Tests\Support\R0025SyntheticV2World::build(['profile'=>\App\Application\MarketData\Services\ArtifactSemanticHashService::LEGACY_PROFILE_V1]);
+        $run = \App\Models\EodRun::findOrFail($world['run_id']);
+        $date = $run->trade_date_requested;
+        $history = [];
+        foreach (['bars','indicators','eligibility'] as $family) {
+            $history[$family] = DB::table('eod_'.$family.'_history')->where('publication_id',$world['publication_id'])->get()->map(fn($r)=>(array)$r)->all();
+        }
+        $this->assertNotEmpty($history['bars']);$this->assertNotEmpty($history['indicators']);$this->assertNotEmpty($history['eligibility']);
+        DB::table('eod_bars')->where('trade_date',$date)->update(['close'=>999]);
+        DB::table('eod_indicators')->where('trade_date',$date)->update(['run_id'=>999]);
+        DB::table('eod_eligibility')->where('trade_date',$date)->update(['trading_status_revision_id'=>null,'trading_status_source_observation_id'=>null]);
+        $service = new PublicationProjectionRepairService(new EodPublicationRepository(),new EodArtifactRepository(),
+            new PublicationProjectionReconciliationService(new EodPublicationRepository(),new DeterministicHashService()));
+        $result = $service->repairTradeDate($date,'Controlled explicit repair regression');
+        $this->assertSame('REBUILT_AND_VERIFIED',$result['repair_state']);
+        $this->assertSame('FAIL',$result['before']['reconciliation_state']);$this->assertSame('PASS',$result['after']['reconciliation_state']);
+        $this->assertSame(0,$result['after']['mismatch_count']);
+        foreach (['bars','indicators','eligibility'] as $family) {
+            $this->assertSame($history[$family],DB::table('eod_'.$family.'_history')->where('publication_id',$world['publication_id'])->get()->map(fn($r)=>(array)$r)->all());
+        }
+        $this->assertEquals($history['bars'][0]['close'],DB::table('eod_bars')->where('trade_date',$date)->value('close'));
+        $this->assertSame((int)$run->run_id,(int)DB::table('eod_indicators')->where('trade_date',$date)->value('run_id'));
+        foreach (['trading_status_revision_id','trading_status_source_observation_id'] as $field) {
+            $this->assertEquals($history['eligibility'][0][$field],DB::table('eod_eligibility')->where('trade_date',$date)->value($field));
+        }
+        $this->assertGreaterThan((int)$run->run_id,$result['recovery_run_id']);
     }
 
     public function test_controlled_repair_refuses_unresolved_current_publication_without_mutating_projection(): void
@@ -257,7 +264,7 @@ class PublicationProjectionReconciliationServiceTest extends TestCase
         $before = DB::table('eod_bars')->where('ticker_id', 1)->value('close');
 
         try {
-            $this->repairService(null, null)->repairTradeDate('2026-03-20');
+            $this->repairService(null, null)->repairTradeDate('2026-03-20', 'Controlled explicit repair regression');
             $this->fail('Expected unresolved current publication to block projection repair.');
         } catch (RuntimeException $e) {
             $this->assertSame('PROJECTION_REPAIR_CURRENT_PUBLICATION_UNRESOLVED', $e->getMessage());

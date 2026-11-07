@@ -1,0 +1,38 @@
+{
+  "record_id": "E-MD-B19-A001-047",
+  "record_type": "EVIDENCE",
+  "status": "ISSUED",
+  "attempt": "MD-B19-A001",
+  "baseline": "MD-B19-A001-BL001",
+  "predecessor": "E-MD-B19-A001-046",
+  "issued_at": "2026-10-21T23:20:31+07:00",
+  "independently_accepted_baseline": "642/750",
+  "prior_repository_proposal": "644/750",
+  "repaired_prior_proposals_without_recount": [
+    "MD-S072-R0011",
+    "MD-S072-R0015"
+  ],
+  "new_repository_proposals": {
+    "freshness_and_slo": [
+      "MD-S072-R0018",
+      "MD-S072-R0021"
+    ],
+    "cross_surface_date_quality": [
+      "MD-S023-R0048"
+    ]
+  },
+  "repository_proposed": "647/750",
+  "without_repository_basis": 103,
+  "formal_satisfied": "0/750",
+  "proof_map": "storage/app/market-data/evidence/MD-B19-A001/E047_per_predicate_proof_map.json",
+  "readiness_matrix": "storage/app/market-data/evidence/MD-B19-A001/E047_execution_matrix.json",
+  "blocker_unlock_map": "storage/app/market-data/evidence/MD-B19-A001/E047_blocker_unlock_summary.json",
+  "execution": "The repaired freshness evaluator had 5 tests/37 assertions green; governed migrated-MariaDB calendar had 3/24 green; combined affected freshness/calendar controls had 46/219 green. Date-level anomaly class had 18/71 green, canonical flat row 1/3 green, provider flat/moving zero-volume adapter 2/4 green. All named raw output is retained in E047_runtime. A replay-scope MariaDB attempt failed at its inherited frozen positive MATCH prerequisite before new scope assertions; its test insertion was removed byte-for-byte and no replay basis is proposed.",
+  "mutations": "Assessment-age lag, ignored second-session readability, discarded prior failed sessions, inferred calendar skip, premature four-session trigger, and inverted neighbour zero-volume comparison all failed intended assertions. Production source restored byte-for-byte; E047_runtime/*mutations.json and named raw mutant/restored-green outputs retain hashes and results.",
+  "production_changes": "Conditional freshness evaluator corrects lag endpoint and second-session cutoff, resolves governed expected sessions with calendar revision IDs/source refs, and refuses inferred or substituted calendar context. Calendar repository adds a verified completed-session query. No actual live activation, alerting or provider acquisition modification is claimed. Date-level production evaluator is unchanged; new tests exercise its rule and production callsite guard.",
+  "affected_previous": "Externally accepted R0013/R0014/R0016 freshness semantics revalidated by 46/219 affected controls and mutation restorations. R0009 and earlier scheduler/owner behavior were not changed by E047. Date-level production path unchanged. Historical E046 immutable; held R0011/R0015 repaired without recount.",
+  "governance_gates": "E047 final raw gate capture: documentation PASS, relationships PASS (510 records), classification PASS, traceability/applicability PASS; operations proof FAIL at 647/750 with 103 without repository basis and six unassigned family guards. E047_runtime/gate_*.stdout.txt retains exact output.",
+  "limitations": "Three NEW bounded repository proposals await independent review; two E046 held proposals repaired without recount. No approved activation, live SLO, authenticated gateway producer, real provider outage, replay scope, release admission or deployment readiness claimed. The 15-25 aspiration was not achieved; 15 shared roots were examined but none entirely eliminated. Large remaining roots require actual alert/milestone producers, authenticated five-check release execution, owner authority, frozen-build resolution, or full scheduling write matrices.",
+  "known_failures": "Operations proof FAIL; MD-DEP-0025 ACTIVE; F018 owner decision pending; R0324 HELD under D008/F016; R0007 oracle and R0013 DB identity held; alias/coverage static guard and B18 replay-comparison failures remain visible. No full suite PASS, candidate-v6, formal SATISFIED or closure.",
+  "resume": "External independent review of E047 two repaired held proposals and three new bounded candidates. Then implement the full MD-S078-R0003 logical-key/checkpoint matrix and R0004 every-state-changing-write fence or authenticated five-check release executor, respecting frozen-build and owner boundaries."
+}

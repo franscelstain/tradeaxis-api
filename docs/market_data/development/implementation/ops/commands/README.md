@@ -87,14 +87,16 @@ Presence in this list means the command is registered, not approved. The names a
 
 ## Runtime-verified command options
 
-Captured from registered `php artisan help <command> --format=json` on 2026-10-19. This table describes the available syntax; command safety is established by executable refusal and workflow proof.
+Captured from registered `php artisan help <command> --format=json` on 2026-10-19 and reconciled with the five later registered B19 commands on 2026-11-05. This table describes the available syntax; command safety is established by executable refusal and workflow proof.
 
 | Registered command | Command-specific options |
 |---|---|
 | `market-data:audit:hash` | `--requested_date`, `--source_mode`, `--run_id`, `--correction_id`, `--latest` |
+| `market-data:b19:release-admission` | `--output_file` |
 | `market-data:backfill` | `--source_mode`, `--input_file`, `--output_dir`, `--continue_on_error` |
 | `market-data:backfill:lifecycle` | `--source_mode`, `--input_file`, `--output_dir`, `--plan`, `--resume`, `--only-failed`, `--continue-on-error`, `--stop-on-error`, `--collect-all-errors`, `--max-dates-per-run`, `--with-evidence`, `--with-replay`, `--replay-fixture-root`, `--no-replay`, `--diagnose-source` |
 | `market-data:backfill:missing-tickers` | `--source_mode`, `--ticker_codes`, `--input_file`, `--output_dir`, `--plan`, `--resume`, `--continue-on-error`, `--stop-on-error`, `--collect-all-errors`, `--max-dates-per-run`, `--skip-publication-reprocess`, `--with-evidence`, `--with-replay`, `--replay-fixture-root`, `--no-replay` |
+| `market-data:configuration:corpus` | none |
 | `market-data:corpus:admit-conformant-suffix` | `--campaign_id`, `--dry-run`, `--apply` |
 | `market-data:corpus:reconstruct-current` | `--dry-run`, `--apply`, `--resume`, `--output_dir` |
 | `market-data:correction:approve` | `--approved_by` |
@@ -114,6 +116,9 @@ Captured from registered `php artisan help <command> --format=json` on 2026-10-1
 | `market-data:events:record-authoritative-terms` | `--dry-run`, `--apply` |
 | `market-data:evidence-replay:full-range-current` | `--fixture_case`, `--fixture_root`, `--output_dir`, `--continue_on_error`, `--max_dates` |
 | `market-data:evidence:export` | `--run_id`, `--correction_id`, `--replay_id`, `--trade_date`, `--output_dir` |
+| `market-data:freshness:measure` | `--run_id` |
+| `market-data:freshness:session` | `--date`, `--run_id` |
+| `market-data:incident:observe` | `--run_id` |
 | `market-data:market-structure:record-authoritative-rules` | `--dry-run`, `--apply` |
 | `market-data:promote` | `--requested_date`, `--source_mode`, `--run_id`, `--correction_id`, `--mode`, `--output_dir`, `--latest`, `--force_replace`, `--force_replace_reason`, `--force_reason` |
 | `market-data:provider:smoke` | `--ticker`, `--trade_date`, `--dry-run`, `--max-tickers`, `--timeout`, `--provider`, `--retry-max`, `--json`, `--output_dir` |

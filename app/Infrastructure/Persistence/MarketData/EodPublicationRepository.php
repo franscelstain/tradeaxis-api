@@ -503,9 +503,9 @@ class EodPublicationRepository
         );
     }
 
-    public function findCorrectionBaselinePublicationForTradeDate($tradeDate)
+    public function findCorrectionBaselinePublicationForTradeDate($tradeDate, bool $lockForUpdate = false)
     {
-        $row = DB::table('eod_current_publication_pointer as ptr')
+        $query = DB::table('eod_current_publication_pointer as ptr')
             ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
             ->leftJoin('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
             ->where('ptr.trade_date', $tradeDate)
@@ -565,8 +565,8 @@ class EodPublicationRepository
                 'run.is_current_publication as run_is_current_publication',
                 'run.publication_id as run_publication_id',
                 'run.publication_version as run_publication_version'
-            )
-            ->first();
+            );
+        $row = ($lockForUpdate ? $query->lockForUpdate() : $query)->first();
 
         return $this->readablePublicationRowOrNull(
             $row,
@@ -578,6 +578,7 @@ class EodPublicationRepository
     public function getOrCreateCandidatePublication(EodRun $run, $supersedesPublicationId = null, $allowSealed = false)
     {
         return DB::transaction(function () use ($run, $supersedesPublicationId, $allowSealed) {
+            (new RequestedDateWriterFence())->lockRun($run->trade_date_requested, $run);
             $existing = DB::table('eod_publications')
                 ->where('run_id', $run->run_id)
                 ->where('trade_date', $run->trade_date_requested)
@@ -681,8 +682,15 @@ class EodPublicationRepository
         return DB::table('eod_publications')->where('run_id', $runId)->orderByDesc('publication_id')->first();
     }
 
-    public function updateCandidateHashes($publicationId, array $hashes)
+    public function updateCandidateHashes($publicationId, array $hashes, ?EodRun $actingOwner = null)
     {
+        return DB::transaction(function () use ($publicationId, $hashes, $actingOwner) {
+        (new RequestedDateWriterFence())->lock($actingOwner ? $actingOwner->trade_date_requested : null, $actingOwner);
+        $candidate = DB::table('eod_publications')->where('publication_id', $publicationId)->lockForUpdate()->first();
+        if (! $candidate || (int) $candidate->run_id !== (int) $actingOwner->run_id
+            || (string) $candidate->trade_date !== (string) $actingOwner->trade_date_requested) {
+            throw new \RuntimeException('RUN_OWNER_CONFLICT: candidate hashes require their own acting owner.');
+        }
         $this->assertPublicationMutable($publicationId);
 
         $now = Carbon::now(config('market_data.platform.timezone'));
@@ -716,6 +724,7 @@ class EodPublicationRepository
                     'updated_at' => $now,
                 ]);
         }
+        });
     }
 
     /**
@@ -726,8 +735,10 @@ class EodPublicationRepository
      * refuse the candidate. The observation manifest is bound regardless, because which
      * observations produced a candidate is knowable even when the configuration is not.
      */
-    public function bindCandidateAcquisitionProvenance($publicationId, $runId, $observationManifestHash, $configSnapshotId, $semanticObservationManifestHash = null)
+    public function bindCandidateAcquisitionProvenance($publicationId, $runId, $observationManifestHash, $configSnapshotId, $semanticObservationManifestHash = null, ?EodRun $actingOwner = null)
     {
+        return DB::transaction(function () use ($publicationId, $runId, $observationManifestHash, $configSnapshotId, $semanticObservationManifestHash, $actingOwner) {
+        $this->lockOwnedMutableCandidate($publicationId, $actingOwner, $runId, true);
         $now = Carbon::now(config('market_data.platform.timezone'));
         // The V2 manifest is written only for V2 runs, beside -- never instead of -- the V1 manifest.
         $semantic = $semanticObservationManifestHash === null
@@ -746,14 +757,14 @@ class EodPublicationRepository
             'readiness_state' => 'BUILDING',
             'updated_at' => $now,
         ] + $semantic);
+        });
     }
 
     /**
      * Persist the one-basis-per-run identity even when the run produces zero analytical rows.
      */
-    public function bindCandidateAnalyticalProduct($publicationId, $runId, $priceProductCode, $priceProductVersion, $factorSetHash, $factorSetId = null)
+    public function bindCandidateAnalyticalProduct($publicationId, $runId, $priceProductCode, $priceProductVersion, $factorSetHash, $factorSetId = null, ?EodRun $actingOwner = null)
     {
-        $this->assertPublicationMutable($publicationId);
         $priceProductCode = strtoupper(trim((string) $priceProductCode));
         $priceProductVersion = trim((string) $priceProductVersion);
         $factorSetHash = strtolower(trim((string) $factorSetHash));
@@ -770,7 +781,8 @@ class EodPublicationRepository
             throw new \RuntimeException('ANALYTICAL_FACTOR_SET_REFERENCE_MISSING.');
         }
 
-        DB::transaction(function () use ($publicationId, $runId, $priceProductCode, $priceProductVersion, $factorSetHash, $factorSetId, $now) {
+        DB::transaction(function () use ($publicationId, $runId, $priceProductCode, $priceProductVersion, $factorSetHash, $factorSetId, $now, $actingOwner) {
+            $this->lockOwnedMutableCandidate($publicationId, $actingOwner, $runId, true);
             $publication = DB::table('eod_publications')
                 ->where('publication_id', $publicationId)
                 ->where('run_id', $runId)
@@ -803,7 +815,8 @@ class EodPublicationRepository
     public function prepareCandidateManifestForSeal(EodRun $run, $publicationId)
     {
         return DB::transaction(function () use ($run, $publicationId) {
-            $publication = $this->assertPublicationMutable($publicationId);
+            $publication = $this->lockOwnedMutableCandidate($publicationId, $run, $run->run_id);
+            $run = $run->fresh();
 
             if ((int) ($publication->run_id ?? 0) !== (int) $run->run_id) {
                 throw new \RuntimeException('DATASET_MANIFEST_INVALID: publication/run identity mismatch before seal.');
@@ -1469,21 +1482,14 @@ class EodPublicationRepository
 
     private function assertDateOwnerFence(EodRun $run): void
     {
-        $fence = DB::table('eod_run_owner_fences')
-            ->where('trade_date_requested', $run->trade_date_requested)
-            ->lockForUpdate()->first();
-        if ($fence === null || $fence->owner_run_id === null) {
-            throw new \RuntimeException('RUN_OWNER_FENCE_MISSING: publication write requires an explicitly acquired requested-date owner fence.');
-        }
-        if ((int) $fence->owner_run_id !== (int) $run->run_id) {
-            throw new \RuntimeException('RUN_OWNER_CONFLICT: candidate run does not hold requested-date owner fence.');
-        }
+        (new RequestedDateWriterFence())->lock($run->trade_date_requested, $run);
     }
 
 
-    public function restorePriorCurrentPublication($tradeDate, $priorPublicationId, $priorRunId = null)
+    public function restorePriorCurrentPublication($tradeDate, $priorPublicationId, $priorRunId = null, ?EodRun $actingOwner = null)
     {
-        return DB::transaction(function () use ($tradeDate, $priorPublicationId, $priorRunId) {
+        return DB::transaction(function () use ($tradeDate, $priorPublicationId, $priorRunId, $actingOwner) {
+            (new RequestedDateWriterFence())->lock($tradeDate, $actingOwner);
             if (! $priorPublicationId) {
                 return null;
             }
@@ -1505,7 +1511,7 @@ class EodPublicationRepository
                 || (string) ($priorPublication->seal_state ?? '') !== 'SEALED'
                 || empty($priorPublication->sealed_at)
             ) {
-                $this->clearCurrentPublicationState($tradeDate);
+                $this->clearCurrentPublicationState($tradeDate, $actingOwner);
 
                 return null;
             }
@@ -1545,6 +1551,18 @@ class EodPublicationRepository
 
             if ((string) ($priorRun->publication_version ?? '') !== (string) ($priorPublication->publication_version ?? '')) {
                 throw new \RuntimeException('RUN_PUBLICATION_MIRROR_MISMATCH: Current publication integrity violation: current pointer requires run publication_version to match publication.');
+            }
+
+            // A completed, independently readable current publication is not a
+            // failed switch. Returning to older values requires a new correction,
+            // seal, version and supersession trail, even for a recovery owner.
+            $pointer = DB::table('eod_current_publication_pointer')
+                ->where('trade_date', $tradeDate)
+                ->lockForUpdate()
+                ->first();
+            if ($pointer && (int) $pointer->publication_id !== (int) $priorPublicationId
+                && $this->resolveCurrentReadablePublicationForTradeDate($tradeDate)) {
+                throw new \RuntimeException('POINTER_HISTORY_ROLLBACK_REQUIRES_CORRECTION: valid current publication cannot be replaced by a superseded publication without new correction/reseal.');
             }
 
 
@@ -1930,9 +1948,10 @@ class EodPublicationRepository
         }
     }
 
-    public function clearCurrentPublicationState($tradeDate)
+    public function clearCurrentPublicationState($tradeDate, ?EodRun $actingOwner = null)
     {
-        return DB::transaction(function () use ($tradeDate) {
+        return DB::transaction(function () use ($tradeDate, $actingOwner) {
+            (new RequestedDateWriterFence())->lock($tradeDate, $actingOwner);
             $now = Carbon::now(config('market_data.platform.timezone'));
 
             DB::table('eod_publications')
@@ -1964,16 +1983,28 @@ class EodPublicationRepository
      * `Canonical_Row_History_and_Versioning_Policy_LOCKED.md` describes: sealed snapshot content
      * deleted by an operator path, leaving no record that it ever existed.
      */
-    public function discardCandidatePublication($publicationId)
+    public function discardCandidatePublication($publicationId, ?EodRun $actingOwner = null)
     {
-        DB::transaction(function () use ($publicationId) {
-            $this->assertPublicationMutable($publicationId);
+        DB::transaction(function () use ($publicationId, $actingOwner) {
+            $this->lockOwnedMutableCandidate($publicationId, $actingOwner, $actingOwner ? $actingOwner->run_id : null, true);
 
             DB::table('eod_bars_history')->where('publication_id', $publicationId)->delete();
             DB::table('eod_indicators_history')->where('publication_id', $publicationId)->delete();
             DB::table('eod_eligibility_history')->where('publication_id', $publicationId)->delete();
             DB::table('eod_publications')->where('publication_id', $publicationId)->delete();
         });
+    }
+
+    /** Authenticate and lock before any candidate write, including every compound member. */
+    private function lockOwnedMutableCandidate($publicationId, ?EodRun $actor, $runId, bool $isolated = false)
+    {
+        $publication = (new RequestedDateWriterFence())->lockCandidate(
+            $actor ? $actor->trade_date_requested : null, $actor, $publicationId, $isolated
+        );
+        if ((int) $runId !== (int) $actor->run_id) {
+            throw new \RuntimeException('RUN_OWNER_CONFLICT: candidate/run/date identity mismatch.');
+        }
+        return $publication;
     }
 
     public function assertPublicationMutable($publicationId)
@@ -1996,6 +2027,9 @@ class EodPublicationRepository
 
     public function findLatestReadablePublicationBefore($tradeDate)
     {
+        // Prior data is not an escape from ambiguity at the requested date.
+        // The prior row must independently pass its own gateway checks below.
+        (new \App\Application\MarketData\Services\MarketDataIncidentResponseService())->assertActionAllowed($tradeDate, 'prior_fallback');
         $row = DB::table('eod_current_publication_pointer as ptr')
             ->join('eod_publications as pub', 'pub.publication_id', '=', 'ptr.publication_id')
             ->join('eod_runs as run', 'run.run_id', '=', 'pub.run_id')
@@ -2072,6 +2106,11 @@ class EodPublicationRepository
         if (! $row) {
             return null;
         }
+        (new \App\Application\MarketData\Services\MarketDataIncidentResponseService())->assertActionAllowed(
+            $tradeDate,
+            $context === 'EodPublicationRepository::findCorrectionBaselinePublicationForTradeDate' ? 'correction_baseline' : 'consumer_read',
+            (int) $row->run_id
+        );
 
         if ((string) ($row->price_product_code ?? '') !== (string) config('market_data.indicators.price_product_default', 'STRUCTURAL_ADJUSTED')
             || empty($row->price_product_version)

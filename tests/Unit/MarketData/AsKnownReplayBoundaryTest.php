@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Tests\Support\UsesMarketDataSqlite;
 
 /**
- * W18 — exact and as-known replay, stage 18.
+ * W18 â€” exact and as-known replay, stage 18.
  *
  * Exit gate: "exact replay matches values/nulls/reasons/lineage/hashes; as-known replay cannot see
  * later identity/status/event/config/factor revisions; no strategy P&L metric menjadi market-data
@@ -25,7 +25,7 @@ use Tests\Support\UsesMarketDataSqlite;
  *
  * As-known replay answers a different question from exact replay. Exact replay asks whether the
  * platform still produces what it produced. As-known replay asks what the platform could have
- * known at a moment — and the only way that can be wrong is by letting a fact recorded later leak
+ * known at a moment â€” and the only way that can be wrong is by letting a fact recorded later leak
  * backwards, which is indistinguishable from foresight in a backtest.
  *
  * Each root of temporal truth is tested at its own boundary: identity, trading status, and
@@ -142,13 +142,13 @@ class AsKnownReplayBoundaryTest extends TestCase
     }
 
     /**
-     * A corporate action recorded after the cutoff is invisible — the root that had no cutoff at
+     * A corporate action recorded after the cutoff is invisible â€” the root that had no cutoff at
      * all until `F-028`.
      *
      * This is the leak with the widest reach in the real corpus: all 530 production actions were
      * entered between 2026-06-07 and 2026-07-30 against a dataset starting 2023-01-02, so before
      * this every as-known replay saw every action regardless of its cutoff. The two assertions are
-     * both load-bearing — the second proves the row exists at all, so a filter that hid everything
+     * both load-bearing â€” the second proves the row exists at all, so a filter that hid everything
      * could not masquerade as a pass.
      */
     public function test_a_corporate_action_recorded_after_the_cutoff_is_invisible(): void
@@ -278,7 +278,7 @@ class AsKnownReplayBoundaryTest extends TestCase
     /**
      * A configuration recorded after the cutoff is invisible, and asking as-known never creates one.
      *
-     * The creating branch is right for a real run — it executes under today's config — and wrong
+     * The creating branch is right for a real run â€” it executes under today's config â€” and wrong
      * for a replay, where find-or-create would answer with a configuration that did not exist yet.
      * The third assertion is the one that matters most: the row count must be unchanged, because a
      * lookup that quietly inserts would manufacture exactly the knowledge the cutoff withholds.
@@ -463,7 +463,7 @@ class AsKnownReplayBoundaryTest extends TestCase
      * Every temporal root, not a sample of three.
      *
      * The earlier version of this guard listed identity, status and calendar. The exit gate names
-     * five kinds of revision — identity, status, event, config, factor — and by 2026-08-11 nine
+     * five kinds of revision â€” identity, status, event, config, factor â€” and by 2026-08-11 nine
      * repository methods already accepted a cutoff while only three were pinned here. Two roots had
      * drifted out of sight entirely: the event/factor root carried no cutoff at all (`F-028`), and
      * sector membership became temporal on 2026-08-10 without anyone adding it (`F-029`).
@@ -477,7 +477,7 @@ class AsKnownReplayBoundaryTest extends TestCase
      *
      * This list is derived from the contract, not from the code. The sweep below catches a root
      * that gains a cutoff without being registered; it cannot catch a root the contract requires
-     * that simply never grew one — which is how MarketDataConfigSnapshotRepository::resolveForRun
+     * that simply never grew one â€” which is how MarketDataConfigSnapshotRepository::resolveForRun
      * stayed invisible until `F-035`. Reading the requirement from the contract side closes that
      * direction: a kind with no cutoff-bearing root fails here.
      */
@@ -530,6 +530,7 @@ class AsKnownReplayBoundaryTest extends TestCase
             [\App\Infrastructure\Persistence\MarketData\ProducerTradingStatusPopulation::class, 'resolve', 2],
             [MarketCalendarRepository::class, 'sessionContext', 1],
             [MarketCalendarRepository::class, 'assertCompletedRegularSession', 1],
+            [MarketCalendarRepository::class, 'completedExpectedSessionsBetween', 2],
             [MarketCalendarRepository::class, 'tradingDatesBetween', 2],
             [MarketCalendarRepository::class, 'tradingDateWindowStart', 3],
             [TickerMasterRepository::class, 'resolveTemporalContextsByCodes', 2],
@@ -567,7 +568,7 @@ class AsKnownReplayBoundaryTest extends TestCase
      * Reflection sweeps the market-data persistence layer for any public method carrying a
      * `knownAt` parameter and requires it to appear in temporalRoots(). Adding a new temporal root
      * without registering it now breaks this test instead of silently widening the surface that
-     * nothing pins — which is exactly how sector membership slipped through.
+     * nothing pins â€” which is exactly how sector membership slipped through.
      */
     public function test_a_new_temporal_root_cannot_be_added_without_being_registered(): void
     {

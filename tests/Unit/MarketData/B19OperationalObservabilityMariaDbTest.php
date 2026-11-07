@@ -50,7 +50,7 @@ class B19OperationalObservabilityMariaDbTest extends TestCase
         $this->assertGreaterThan(7, $status['event_count']);
 
         $before = DB::table('eod_run_events')->where('run_id', $run->run_id)->orderBy('event_id')->get()->toJson();
-        $event = (new EodRunRepository())->appendEvent($run, 'FINALIZE', 'DIAGNOSTIC', 'WARNING',
+        $event = (new EodRunRepository())->recordObservation($run, 'detector', 'FINALIZE', 'DIAGNOSTIC', 'WARNING',
             'Contradictory supporting message: terminal outcome FAILED', 'RUN_SOURCE_TIMEOUT', ['test_context' => 'supporting_only']);
         $diagnosis = $service->forDate($date, $w['run_id']);
         $this->assertSame('SUCCESS', $diagnosis['terminal_status'], 'A log message cannot overwrite persisted terminal authority.');
@@ -121,7 +121,7 @@ class B19OperationalObservabilityMariaDbTest extends TestCase
             $this->assertSame($original, EodRunEvent::findOrFail($event->event_id)->toArray());
         }
         $count = DB::table('eod_run_events')->where('run_id', $w['run_id'])->count();
-        (new EodRunRepository())->appendEvent(EodRun::findOrFail($w['run_id']), 'FINALIZE', 'DIAGNOSTIC', 'INFO', 'Append retained');
+        (new EodRunRepository())->recordObservation(EodRun::findOrFail($w['run_id']), 'detector', 'FINALIZE', 'DIAGNOSTIC', 'INFO', 'Append retained');
         $this->assertSame($count + 1, DB::table('eod_run_events')->where('run_id', $w['run_id'])->count());
     }
 }

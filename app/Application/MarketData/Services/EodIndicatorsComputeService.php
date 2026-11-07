@@ -176,7 +176,8 @@ class EodIndicatorsComputeService
             $selectedPriceProductCode,
             $priceProductVersion,
             $factorSetHash,
-            $factorSetId
+            $factorSetId,
+            $run
         );
         $sectorBenchmarkRoc20s = [];
 

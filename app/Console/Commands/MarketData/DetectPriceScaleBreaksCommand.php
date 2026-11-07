@@ -46,14 +46,30 @@ class DetectPriceScaleBreaksCommand extends AbstractMarketDataCommand
         $apply = (bool) $this->option('apply');
 
         try {
-            $result = app(PriceScaleBreakDetectionService::class)->detect(
+            $service = app(PriceScaleBreakDetectionService::class);
+            $disclosed = $service->inspect(
                 $start ?: null,
                 $end ?: null,
-                $this->option('ticker') ?: null,
-                $apply
+                $this->option('ticker') ?: null
             );
+            if ($apply) {
+                $this->line('operation_mode=PRE_APPLY_DISCLOSURE');
+                $this->line('scope=price_scale_break_detection:start='.($start ?: 'DATASET_START').';end='.($end ?: 'LATEST').';ticker='.($this->option('ticker') ?: 'ALL'));
+                $this->line('resolved_immutable_ids=candidate_set_sha256='.$disclosed['pre_apply_fingerprint']);
+                $this->line('expected_row_effects=append or idempotently retain '.count($disclosed['detected']).' quarantined break candidates and compatibility projections');
+                $this->line('config_hash='.$disclosed['config_hash']);
+                $this->line('pointer_impact=UNCHANGED');
+                $this->line('reason=price_scale_discontinuity_detection');
+                $result = $service->applyDisclosed($start ?: null, $end ?: null, $this->option('ticker') ?: null, $disclosed);
+            } else {
+                $result = $disclosed;
+            }
         } catch (\Throwable $e) {
-            $this->renderCommandBlocked('COMMAND_EXECUTION_FAILED', $e->getMessage(), []);
+            $message = (string) $e->getMessage();
+            $reason = strpos($message, 'COMMAND_PRICE_SCALE_BREAK_PREFLIGHT_CHANGED') !== false
+                ? 'COMMAND_PRICE_SCALE_BREAK_PREFLIGHT_CHANGED'
+                : 'COMMAND_EXECUTION_FAILED';
+            $this->renderCommandBlocked($reason, $message, []);
 
             return 1;
         }

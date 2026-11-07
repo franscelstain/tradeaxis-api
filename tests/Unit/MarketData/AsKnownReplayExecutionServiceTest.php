@@ -14,7 +14,7 @@ class AsKnownReplayExecutionServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->bootMarketDataSqlite();
+        $this->bootMarketDataSqlite(true);
     }
 
     protected function tearDown(): void

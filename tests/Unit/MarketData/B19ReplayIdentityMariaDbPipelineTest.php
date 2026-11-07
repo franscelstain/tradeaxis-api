@@ -38,6 +38,7 @@ class B19ReplayIdentityMariaDbPipelineTest extends TestCase
     protected function afterIdentityRun($verifier,$runId,$fixture,$publicationId,$date,array $expected,array $manifest,array $files,array $world,$replay): void {}
     protected function identityWorld(): array { return R0025SyntheticV2World::build(); }
     protected function continueIdentityScope(): bool { return true; }
+    protected function identityFixtureVersion(bool $companion): string { return $companion ? 'b19-identity-companion-v1' : 'b19-identity-v1'; }
 
     public function test_all_identity_paths_follow_independent_inputs_and_persisted_publication_binding(): void
     {
@@ -68,7 +69,7 @@ class B19ReplayIdentityMariaDbPipelineTest extends TestCase
         $fixture=sys_get_temp_dir().'/b19_identity_fixture_'.uniqid();$this->paths[]=$fixture;mkdir($fixture.'/expected',0775,true);
         $files=['expected_replay_result.json'=>$expected,'expected_hashes.json'=>['bars_batch_hash'=>$expected['expected_artifact_context']['bars_batch_hash'],'indicators_batch_hash'=>$expected['expected_artifact_context']['indicators_batch_hash'],'eligibility_batch_hash'=>$expected['expected_artifact_context']['eligibility_batch_hash']], 'expected_run_summary.json'=>$expected['expected_artifact_context'],'expected_reason_code_counts.json'=>json_decode(file_get_contents($package.'/expected/expected_reason_code_counts.json'),true)];
         foreach($files as $name=>$body)file_put_contents($fixture.'/expected/'.$name,json_encode($body,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES));
-        $manifest=['fixture_id'=>'b19-publication-identity-contract','fixture_family'=>'b19_publication_identity_contract','fixture_version'=>isset($expected['expected_artifact_semantic_bindings'])?'b19-identity-companion-v1':'b19-identity-v1','fixture_schema_version'=>'replay_fixture_v2','fixture_source'=>'hand_authored_contract_literals','replay_mode'=>'PUBLICATION_EXACT','publication_id'=>$id,'fixture_created_at'=>'2026-10-18T00:00:00+07:00','contract_areas'=>['replay_verification','replay_identity'],'assertion_layers'=>['run','source','coverage','hash','publication','pointer','fallback','correction','lineage','replay'],'files'=>array_map(function($n){return 'expected/'.$n;},array_keys($files))];
+        $manifest=['fixture_id'=>'b19-publication-identity-contract','fixture_family'=>'b19_publication_identity_contract','fixture_version'=>$this->identityFixtureVersion(isset($expected['expected_artifact_semantic_bindings'])),'fixture_schema_version'=>'replay_fixture_v2','fixture_source'=>'hand_authored_contract_literals','replay_mode'=>'PUBLICATION_EXACT','publication_id'=>$id,'fixture_created_at'=>'2026-10-18T00:00:00+07:00','contract_areas'=>['replay_verification','replay_identity'],'assertion_layers'=>['run','source','coverage','hash','publication','pointer','fallback','correction','lineage','replay'],'files'=>array_map(function($n){return 'expected/'.$n;},array_keys($files))];
         foreach($manifest['files'] as $name)$manifest['files_sha256'][$name]=hash_file('sha256',$fixture.'/'.$name);
         file_put_contents($fixture.'/manifest.json',json_encode($manifest));
         $verifier=new ReplayVerificationService(new EodEvidenceRepository(),new EodPublicationRepository(),new ReplayResultRepository());

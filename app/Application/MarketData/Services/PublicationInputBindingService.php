@@ -32,6 +32,28 @@ class PublicationInputBindingService
 
     public function bind($run, $publicationId, $tradeDate): array
     {
+        return DB::transaction(function () use ($run, $publicationId, $tradeDate) {
+            $observed = DB::table('eod_publications')->where('publication_id', (int) $publicationId)->first();
+            // Pure contract refusals never grant mutable binding authority.
+            if ((string) ($run->request_mode ?? '') === 'replay_verify') {
+                throw new \RuntimeException('INPUT_CAPTURE_BINDING_HISTORICAL_NOT_PERMITTED: a historical run cannot mint a new authoritative bound input context.');
+            }
+            if (! $observed) throw new \RuntimeException('INPUT_CAPTURE_BINDING_PUBLICATION_NOT_FOUND: RUN_OWNER_CONFLICT: candidate publication not found.');
+            if ((int) $observed->run_id !== (int) $run->run_id) throw new \RuntimeException('INPUT_CAPTURE_BINDING_OWNERSHIP_MISMATCH: RUN_OWNER_CONFLICT: candidate/run identity mismatch.');
+            if ((string) $observed->trade_date !== (string) $tradeDate) throw new \RuntimeException('INPUT_CAPTURE_BINDING_TRADE_DATE_MISMATCH: RUN_OWNER_CONFLICT: candidate/date identity mismatch.');
+            $readOnly = $observed && (string) $observed->seal_state === 'SEALED';
+            if (! $readOnly) {
+                (new \App\Infrastructure\Persistence\MarketData\RequestedDateWriterFence())->lockCandidate(
+                    $tradeDate, $run, (int) $publicationId, true
+                );
+            }
+            return $this->bindVerified($run, $publicationId, $tradeDate, $readOnly);
+        });
+    }
+
+    /** A sealed branch may confirm existing bytes, but can never become a writer. */
+    private function bindVerified($run, $publicationId, $tradeDate, bool $readOnly): array
+    {
         if ((string) ($run->request_mode ?? '') === 'replay_verify') {
             throw new \RuntimeException('INPUT_CAPTURE_BINDING_HISTORICAL_NOT_PERMITTED: a historical run cannot mint a new authoritative bound input context.');
         }
@@ -43,9 +65,10 @@ class PublicationInputBindingService
             throw new \RuntimeException('INPUT_CAPTURE_BINDING_CONFIG_SNAPSHOT_MISSING');
         }
 
-        return DB::transaction(function () use ($run, $publicationId, $tradeDate, $knownAt) {
+        return DB::transaction(function () use ($run, $publicationId, $tradeDate, $knownAt, $readOnly) {
             $publication = DB::table('eod_publications')->where('publication_id', (int) $publicationId)->lockForUpdate()->first();
             if (! $publication) throw new \RuntimeException('INPUT_CAPTURE_BINDING_PUBLICATION_NOT_FOUND');
+            if ($readOnly && (string) $publication->seal_state !== 'SEALED') throw new \RuntimeException('SEALED_PUBLICATION_IMMUTABLE: confirmation cannot become a mutation.');
             if ((int) $publication->run_id !== (int) $run->run_id) throw new \RuntimeException('INPUT_CAPTURE_BINDING_OWNERSHIP_MISMATCH');
             if ((string) $publication->trade_date !== (string) $tradeDate) throw new \RuntimeException('INPUT_CAPTURE_BINDING_TRADE_DATE_MISMATCH');
 
@@ -182,6 +205,7 @@ class PublicationInputBindingService
                 throw new \RuntimeException('INPUT_CAPTURE_BINDING_CONFLICT: a different bound input context is already recorded for this publication.');
             }
 
+            if ($readOnly) throw new \RuntimeException('SEALED_PUBLICATION_IMMUTABLE: input confirmation is read-only.');
             DB::table('md_publication_lineage_bindings')->where('publication_id', (int) $publicationId)->update([
                 'bound_input_schema_version' => self::SCHEMA_VERSION,
                 'bound_input_context_json' => $boundInputContextJson,

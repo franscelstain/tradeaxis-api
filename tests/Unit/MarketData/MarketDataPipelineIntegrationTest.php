@@ -13,6 +13,7 @@ use App\Application\MarketData\Services\MarketDataBackfillService;
 use App\Application\MarketData\Services\MarketDataEvidenceExportService;
 use App\Application\MarketData\Services\PublicationDiffService;
 use App\Application\MarketData\Services\PublicationFinalizeOutcomeService;
+use App\Console\Commands\MarketData\RunCorrectionCommand;
 use App\Infrastructure\MarketData\Source\LocalFileEodBarsAdapter;
 use App\Infrastructure\MarketData\Source\PublicApiEodBarsAdapter;
 use App\Infrastructure\Persistence\MarketData\EodArtifactRepository;
@@ -22,6 +23,7 @@ use App\Infrastructure\Persistence\MarketData\EodRunRepository;
 use App\Infrastructure\Persistence\MarketData\TickerMasterRepository;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\Console\Tester\CommandTester;
 use Tests\Support\UsesMarketDataSqlite;
 
 class MarketDataPipelineIntegrationTest extends TestCase
@@ -364,8 +366,14 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame(1, DB::table('eod_publications')->where('trade_date', '2026-03-20')->where('is_current', 1)->count());
         $this->assertSame((int) $first->publication_id,
             (int) (new EodPublicationRepository())->resolveCurrentReadablePublicationForTradeDate('2026-03-20')->publication_id);
-        $this->assertSame('RUN_DUPLICATE_TARGET_SKIPPED', DB::table('eod_run_events')
-            ->where('run_id', $second->run_id)->orderByDesc('event_id')->value('event_type'));
+        $events = DB::table('eod_run_events')->where('run_id', $second->run_id)->orderBy('event_id')->get();
+        $decision = $events->where('event_type', 'RUN_DUPLICATE_TARGET_SKIPPED')->first();
+        $releases = $events->where('event_type', 'RUN_OWNER_RELEASED');
+        $this->assertNotNull($decision);
+        $this->assertCount(1, $releases);
+        $this->assertLessThan((int) $releases->first()->event_id, (int) $decision->event_id);
+        $this->assertSame('RUN_OWNER_RELEASED', $events->last()->event_type);
+        $this->assertNotNull(DB::table('eod_run_owner_fences')->where('trade_date_requested', '2026-03-20')->value('released_at'));
     }
 
     public function test_completed_lock_conflict_finalize_rerun_with_force_replace_is_idempotent(): void
@@ -568,20 +576,27 @@ class MarketDataPipelineIntegrationTest extends TestCase
             ->where('run_id', $run->run_id)
             ->count();
 
-        $this->assertSame((int) $run->run_id, (int) $rerun->run_id);
+        $this->assertNotSame((int) $run->run_id, (int) $rerun->run_id);
+        $this->assertSame((int) $run->run_id, (int) $rerun->supersedes_run_id);
         $this->assertSame('HELD', $rerun->terminal_status);
         $this->assertSame('NOT_READABLE', $rerun->publishability_state);
-        $this->assertSame('RUN_LOCK_CONFLICT', $rerun->final_reason_code);
+        $this->assertSame('RUN_CURRENT_PUBLICATION_INTEGRITY_REPAIRED', $rerun->final_reason_code);
         $this->assertNull($rerun->trade_date_effective);
         $this->assertSame((int) $publicationCountBefore, (int) $publicationCountAfter);
-        $this->assertNull(DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first());
-        $this->assertSame(0, DB::table('eod_publications')->where('trade_date', '2026-03-20')->where('is_current', 1)->count());
+        $priorRun = DB::table('eod_runs')->where('run_id', $run->run_id)->first();
+        $this->assertSame('COMPLETED', $priorRun->lifecycle_state);
+        $this->assertSame('SUCCESS', $priorRun->terminal_status);
+        $this->assertSame('READABLE', $priorRun->publishability_state);
+        $restoredPointer = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
+        $this->assertSame((int) $run->publication_id, (int) $restoredPointer->publication_id);
+        $this->assertSame((int) $run->publication_version, (int) $restoredPointer->publication_version);
+        $this->assertSame(1, DB::table('eod_publications')->where('trade_date', '2026-03-20')->where('is_current', 1)->count());
 
         $this->assertTrue(
             DB::table('eod_run_events')
-                ->where('run_id', $run->run_id)
+                ->where('run_id', $rerun->run_id)
                 ->where('event_type', 'RUN_FINALIZE_IDEMPOTENCY_POINTER_INVALID')
-                ->where('reason_code', 'RUN_LOCK_CONFLICT')
+                ->where('reason_code', 'RUN_CURRENT_PUBLICATION_INTEGRITY_REPAIRED')
                 ->exists()
         );
     }
@@ -1649,6 +1664,208 @@ class MarketDataPipelineIntegrationTest extends TestCase
         );
     }
 
+
+    public function test_correction_command_post_switch_held_result_is_not_readable_success(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-27', '2026-03-19', 1, 100.0, 1000);
+        $this->seedReadableFallbackPublication('2026-03-19', 80, 11);
+        $this->seedCurrentPublicationBaselineForTradeDate('2026-03-20', 1, 120.0);
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20',
+            'open' => 131, 'high' => 136, 'low' => 130, 'close' => 135,
+            'volume' => 2600, 'adj_close' => 135,
+            'captured_at' => '2026-03-20T17:25:00+07:00',
+        ]]);
+
+        $corrections = new EodCorrectionRepository();
+        $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'command-post-switch-mismatch', 'operator-proof', 1, 90);
+        $approved = $corrections->approve($request->correction_id, 'approver-proof');
+        $this->app->instance(MarketDataPipelineService::class, $this->makePipelineWithPublications(
+            new PostSwitchResolutionMismatchPublicationRepository()
+        ));
+
+        $command = new RunCorrectionCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+        $code = $tester->execute([
+            'correction_id' => (int) $approved->correction_id,
+            '--requested_date' => '2026-03-20',
+            '--source_mode' => 'manual_file',
+        ]);
+        $output = $tester->getDisplay();
+        $finalRun = DB::table('eod_runs')->where('trade_date_requested', '2026-03-20')->orderByDesc('run_id')->first();
+        $pointer = DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
+        $candidate = DB::table('eod_publications')->where('run_id', $finalRun->run_id)->first();
+        if ($stateDir = getenv('B19_E049_STATE_DIR')) {
+            if (! is_dir($stateDir)) {
+                mkdir($stateDir, 0777, true);
+            }
+            file_put_contents($stateDir.'/correction_command_post_switch.json', json_encode([
+                'command_exit_code' => $code,
+                'prior_publication_id' => 1,
+                'current_pointer_publication_id' => $pointer ? (int) $pointer->publication_id : null,
+                'current_pointer_run_id' => $pointer ? (int) $pointer->run_id : null,
+                'candidate_run_id' => (int) $finalRun->run_id,
+                'candidate_terminal_status' => $finalRun->terminal_status,
+                'candidate_publishability_state' => $finalRun->publishability_state,
+                'candidate_seal_state' => $candidate ? $candidate->seal_state : null,
+                'candidate_is_current' => $candidate ? (int) $candidate->is_current : null,
+                'correction_status' => DB::table('eod_dataset_corrections')->where('correction_id', $approved->correction_id)->value('status'),
+                'command_outcome_held' => strpos($output, 'command_outcome=HELD_NOT_READABLE') !== false,
+                'reported_candidate_switch_false' => strpos($output, 'candidate_publication_switch=false') !== false,
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        }
+
+        $this->assertNotSame(0, $code, 'HELD/NOT_READABLE correction must not exit as readable success. '.$output);
+        $this->assertStringContainsString('terminal_status=HELD', $output);
+        $this->assertStringContainsString('publishability_state=NOT_READABLE', $output);
+        $this->assertStringContainsString('candidate_publication_switch=false', $output);
+        $this->assertSame('HELD', $finalRun->terminal_status);
+        $this->assertSame('NOT_READABLE', $finalRun->publishability_state);
+        $this->assertSame('SEALED', $candidate->seal_state);
+        $this->assertSame(1, (int) DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->value('publication_id'));
+        $this->assertSame(1, (int) DB::table('eod_publications')->where('publication_id', 1)->value('is_current'));
+        $this->assertSame(0, (int) DB::table('eod_publications')->where('run_id', '!=', 90)->where('trade_date', '2026-03-20')->value('is_current'));
+    }
+
+    public function test_correction_command_manual_file_preapply_binds_file_content_hash_and_blocks_missing_or_mutated_file(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedHistoricalBars('2026-02-27', '2026-03-19', 1, 100.0, 1000);
+        $this->seedReadableFallbackPublication('2026-03-19', 80, 11);
+        $this->seedCurrentPublicationBaselineForTradeDate('2026-03-20', 1, 120.0);
+
+        $corrections = new EodCorrectionRepository();
+        $request = $corrections->createRequest('2026-03-20', 'READABILITY_FIX', 'manual-file-content-binding', 'operator-proof', 1, 90);
+        $approved = $corrections->approve($request->correction_id, 'approver-proof');
+
+        $fixtureFile = $this->fixtureDir.'/2026-03-20.json';
+        if (file_exists($fixtureFile)) {
+            @unlink($fixtureFile);
+        }
+        $beforeMissing = [
+            'runs' => DB::table('eod_runs')->count(),
+            'events' => DB::table('eod_run_events')->count(),
+            'snapshots' => DB::table('md_config_snapshots')->count(),
+            'fence' => DB::table('eod_run_owner_fences')->where('trade_date_requested', '2026-03-20')->first(),
+            'status' => DB::table('eod_dataset_corrections')->where('correction_id', $approved->correction_id)->value('status'),
+        ];
+
+        $command = new RunCorrectionCommand();
+        $command->setLaravel($this->app);
+        $tester = new CommandTester($command);
+        $missingCode = $tester->execute([
+            'correction_id' => (int) $approved->correction_id,
+            '--requested_date' => '2026-03-20',
+            '--source_mode' => 'manual_file',
+        ]);
+        $missingOutput = $tester->getDisplay();
+
+        $this->assertSame(1, $missingCode, 'Missing manual file must block at preflight. '.$missingOutput);
+        $this->assertStringContainsString('reason_code=COMMAND_CORRECTION_PREFLIGHT_FAILED', $missingOutput);
+        $this->assertStringContainsString('COMMAND_CORRECTION_SOURCE_UNVERIFIABLE', $missingOutput);
+        $this->assertSame($beforeMissing['runs'], DB::table('eod_runs')->count(), 'Missing manual file at preflight must not allocate an eod_runs row.');
+        $this->assertSame($beforeMissing['events'], DB::table('eod_run_events')->count(), 'Missing manual file at preflight must not append run events.');
+        $this->assertSame($beforeMissing['snapshots'], DB::table('md_config_snapshots')->count(), 'Missing manual file at preflight must not allocate a config snapshot.');
+        $this->assertEquals($beforeMissing['fence'], DB::table('eod_run_owner_fences')->where('trade_date_requested', '2026-03-20')->first());
+        $this->assertSame('APPROVED', (string) DB::table('eod_dataset_corrections')->where('correction_id', $approved->correction_id)->value('status'));
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20',
+            'open' => 131, 'high' => 136, 'low' => 130, 'close' => 135,
+            'volume' => 2600, 'adj_close' => 135,
+            'captured_at' => '2026-03-20T17:25:00+07:00',
+        ]]);
+        $expectedFileHash = hash_file('sha256', $fixtureFile);
+        $disclosed = app(\App\Application\MarketData\Services\CorrectionCommandPreflightService::class)->inspect(
+            (int) $approved->correction_id,
+            '2026-03-20',
+            'manual_file'
+        );
+        $this->assertStringContainsString(':sha256='.$expectedFileHash, (string) $disclosed['source_identity']);
+
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20',
+            'open' => 131, 'high' => 140, 'low' => 130, 'close' => 139,
+            'volume' => 2900, 'adj_close' => 139,
+            'captured_at' => '2026-03-20T17:26:00+07:00',
+        ]]);
+        $mutatedFileHash = hash_file('sha256', $fixtureFile);
+        $this->assertNotSame($expectedFileHash, $mutatedFileHash);
+
+        $this->app->instance(MarketDataPipelineService::class, $this->makePipeline());
+        $refusalBeforeAlloc = null;
+        try {
+            $this->app->make(MarketDataPipelineService::class)->runDaily('2026-03-20', 'manual_file', (int) $approved->correction_id, $disclosed);
+        } catch (\Throwable $e) {
+            $refusalBeforeAlloc = $e->getMessage();
+        }
+        $this->assertSame('COMMAND_CORRECTION_PREFLIGHT_CHANGED', $refusalBeforeAlloc);
+        $this->assertSame($beforeMissing['runs'], DB::table('eod_runs')->count(), 'File mutation before run allocation must roll back without creating eod_runs.');
+        $this->assertSame('APPROVED', (string) DB::table('eod_dataset_corrections')->where('correction_id', $approved->correction_id)->value('status'));
+
+        $beforeReadMutationObs = DB::table('md_source_observations')->count();
+        $staleDisclosure = $disclosed;
+        $staleDisclosure['source_identity'] = 'manual_file:storage/framework/testing/market_data_pipeline/2026-03-20.json:sha256='.$expectedFileHash;
+        $refusalAtRead = null;
+        try {
+            (new LocalFileEodBarsAdapter())->fetchOrLoadEodBars('2026-03-20', 'manual_file', [], [
+                'pre_apply_disclosure' => $staleDisclosure,
+            ]);
+        } catch (\Throwable $e) {
+            $refusalAtRead = $e->getMessage();
+        }
+        $this->assertSame('COMMAND_CORRECTION_PREFLIGHT_CHANGED', $refusalAtRead, 'Adapter read must refuse when manual file bytes diverge from pre_apply_disclosure.');
+        $this->assertSame($beforeReadMutationObs, DB::table('md_source_observations')->count(), 'Adapter read refusal on mutated manual file must occur before persisting source capture.');
+
+        // Mid-flight post-allocation mutation on the actual RunCorrectionCommand path (after getOrCreateOwningRun, markExecuting, and ACQUISITION_STARTED):
+        $midFlightHookFired = false;
+        $midFlightStatusDuringRun = null;
+        \App\Models\EodRunEvent::created(function ($event) use (&$midFlightHookFired, &$midFlightStatusDuringRun, $approved) {
+            if (! $midFlightHookFired && (string) $event->event_type === 'ACQUISITION_STARTED') {
+                $midFlightHookFired = true;
+                $midFlightStatusDuringRun = (string) DB::table('eod_dataset_corrections')->where('correction_id', $approved->correction_id)->value('status');
+                $this->writeBarsFixture('2026-03-20', [[
+                    'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20',
+                    'open' => 131, 'high' => 145, 'low' => 130, 'close' => 142,
+                    'volume' => 3100, 'adj_close' => 142,
+                    'captured_at' => '2026-03-20T17:27:00+07:00',
+                ]]);
+            }
+        });
+        try {
+            $midFlightCode = $tester->execute([
+                'correction_id' => (int) $approved->correction_id,
+                '--requested_date' => '2026-03-20',
+                '--source_mode' => 'manual_file',
+            ]);
+            $midFlightOutput = $tester->getDisplay();
+        } finally {
+            \App\Models\EodRunEvent::flushEventListeners();
+        }
+        $this->assertTrue($midFlightHookFired, 'Mid-flight post-allocation hook on ACQUISITION_STARTED must have fired.');
+        $this->assertSame('EXECUTING', $midFlightStatusDuringRun);
+        $this->assertSame(2, $midFlightCode, $midFlightOutput);
+        $this->assertStringContainsString('reason_code=COMMAND_CORRECTION_PREFLIGHT_CHANGED', $midFlightOutput);
+        $this->assertSame($beforeMissing['runs'], DB::table('eod_runs')->count(), 'Mid-flight post-allocation mismatch must roll back allocated eod_runs row.');
+        $this->assertSame($beforeMissing['events'], DB::table('eod_run_events')->count(), 'Mid-flight post-allocation mismatch must roll back run events.');
+        $this->assertSame('APPROVED', (string) DB::table('eod_dataset_corrections')->where('correction_id', $approved->correction_id)->value('status'), 'Mid-flight post-allocation mismatch must roll back EXECUTING correction status to APPROVED.');
+        $this->assertSame($beforeReadMutationObs, DB::table('md_source_observations')->count());
+        $mutatedFileHash = hash_file('sha256', $fixtureFile);
+
+        $positiveCode = $tester->execute([
+            'correction_id' => (int) $approved->correction_id,
+            '--requested_date' => '2026-03-20',
+            '--source_mode' => 'manual_file',
+        ]);
+        $positiveOutput = $tester->getDisplay();
+        $this->assertSame(0, $positiveCode, $positiveOutput);
+        $this->assertStringContainsString('operation_mode=PRE_APPLY_DISCLOSURE', $positiveOutput);
+        $this->assertStringContainsString(':sha256='.$mutatedFileHash, $positiveOutput);
+        $this->assertStringContainsString('correction_outcome=PUBLISHED', $positiveOutput);
+        $this->assertStringContainsString('candidate_publication_switch=true', $positiveOutput);
+    }
 
     public function test_run_daily_correction_with_post_switch_resolution_mismatch_and_malformed_fallback_pointer_does_not_invent_effective_trade_date(): void
     {
@@ -4529,6 +4746,38 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $this->assertSame(0, DB::table('eod_publications')->where('trade_date', '2026-03-20')->where('is_current', 1)->count());
     }
 
+    public function test_force_replace_cannot_turn_partial_coverage_into_a_current_publication(): void
+    {
+        $this->seedTicker(1, 'BBCA');
+        $this->seedTicker(2, 'BBRI');
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 1, 100.0, 1000);
+        $this->seedHistoricalBars('2026-02-28', '2026-03-19', 2, 80.0, 900);
+        $this->seedCurrentPublicationBaselineForTradeDate('2026-03-20', 1, 120.0);
+        $pointerBefore = (array) DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first();
+        $historyBefore = DB::table('eod_bars_history')->where('publication_id', 1)->orderBy('ticker_id')->get()->toJson();
+        $this->writeBarsFixture('2026-03-20', [[
+            'ticker_code' => 'BBCA', 'trade_date' => '2026-03-20',
+            'open' => 121, 'high' => 125, 'low' => 120, 'close' => 124,
+            'volume' => 2000, 'adj_close' => 124,
+            'captured_at' => '2026-03-20T17:20:00+07:00',
+        ]]);
+
+        $run = $this->makePipeline()->promoteDaily('2026-03-20', 'manual_file', null, null, null,
+            true, 'Explicit operator intent must not waive missing BBRI coverage');
+        $this->assertSame('FAIL', $run->coverage_gate_state);
+        $this->assertSame('FAILED', $run->terminal_status);
+        $this->assertSame('NOT_READABLE', $run->publishability_state);
+        $this->assertSame(2, (int) $run->coverage_universe_count);
+        $this->assertSame(1, (int) $run->coverage_missing_count);
+        $this->assertSame($pointerBefore,
+            (array) DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-20')->first());
+        $this->assertSame($historyBefore,
+            DB::table('eod_bars_history')->where('publication_id', 1)->orderBy('ticker_id')->get()->toJson());
+        $this->assertSame(1, (int) DB::table('eod_publications')->where('publication_id', 1)->value('is_current'));
+        $this->assertSame(0, (int) DB::table('eod_run_events')->where('run_id', $run->run_id)
+            ->where('event_type', 'RUN_FORCE_REPLACE_EXECUTED')->count());
+    }
+
     public function test_run_daily_full_coverage_persists_finalize_coverage_payload_and_readable_publication(): void
     {
         $this->seedTicker(1, 'BBCA');
@@ -4685,8 +4934,10 @@ class MarketDataPipelineIntegrationTest extends TestCase
 
     public function test_finalize_blocked_without_universe_stays_not_readable_and_emits_blocked_coverage_reason_code(): void
     {
-        DB::table('eod_runs')->insert([
-            'run_id' => 55,
+        Carbon::setTestNow('2026-03-24 23:00:00');
+        $owner = (new EodRunRepository())->getOrCreateOwningRun('2026-03-20', 'manual_file', 'SEAL', null, 'full_publish');
+        Carbon::setTestNow('2026-03-25 10:30:00');
+        DB::table('eod_runs')->where('run_id', $owner->run_id)->update([
             'trade_date_requested' => '2026-03-20',
             'trade_date_effective' => null,
             'lifecycle_state' => 'RUNNING',
@@ -4731,7 +4982,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
         DB::table('eod_publications')->insert([
             'publication_id' => 21,
             'trade_date' => '2026-03-20',
-            'run_id' => 55,
+            'run_id' => $owner->run_id,
             'publication_version' => 1,
             'is_current' => 0,
             'supersedes_publication_id' => null,
@@ -4745,7 +4996,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
         ]);
 
         $finalizedRun = $this->makePipeline()->completeFinalize(
-            new App\Application\MarketData\DTOs\MarketDataStageInput('2026-03-20', 'manual_file', 55, 'FINALIZE', null)
+            new App\Application\MarketData\DTOs\MarketDataStageInput('2026-03-20', 'manual_file', $owner->run_id, 'FINALIZE', null)
         );
 
         $event = DB::table('eod_run_events')
@@ -5339,6 +5590,8 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $repository = new EodRunRepository();
         $owner = $repository->getOrCreateOwningRun('2026-03-21', 'manual_file', 'INGEST_BARS', null, 'full_publish');
         DB::table('eod_runs')->where('run_id', $owner->run_id)->update(['updated_at' => Carbon::now()->subHours(2)]);
+        DB::table('eod_run_owner_fences')->where('trade_date_requested', '2026-03-21')
+            ->update(['heartbeat_at' => Carbon::now()->subHours(2), 'expires_at' => Carbon::now()->subHour()]);
         $competitor = $repository->getOrCreateOwningRun('2026-03-21', 'api', 'INGEST_BARS', null, 'correction');
         $this->assertNotSame((int) $owner->run_id, (int) $competitor->run_id);
         $this->assertSame('CANCELLED', DB::table('eod_runs')->where('run_id', $owner->run_id)->value('lifecycle_state'));
@@ -5374,6 +5627,8 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'is_current' => 0, 'seal_state' => 'UNSEALED', 'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
         ]);
         DB::table('eod_runs')->where('run_id', $owner->run_id)->update(['updated_at' => Carbon::now()->subHours(2)]);
+        DB::table('eod_run_owner_fences')->where('trade_date_requested', '2026-03-21')
+            ->update(['heartbeat_at' => Carbon::now()->subHours(2), 'expires_at' => Carbon::now()->subHour()]);
         try {
             $repository->getOrCreateOwningRun('2026-03-21', 'api', 'INGEST_BARS', null, 'correction');
             $this->fail('Ambiguous candidate publication must block takeover.');
@@ -5401,6 +5656,8 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'publication_version' => 1, 'sealed_at' => Carbon::now(), 'updated_at' => Carbon::now(),
         ]);
         DB::table('eod_runs')->where('run_id', $owner->run_id)->update(['updated_at' => Carbon::now()->subHours(2)]);
+        DB::table('eod_run_owner_fences')->where('trade_date_requested', '2026-03-21')
+            ->update(['heartbeat_at' => Carbon::now()->subHours(2), 'expires_at' => Carbon::now()->subHour()]);
         try {
             $repository->getOrCreateOwningRun('2026-03-21', 'api', 'INGEST_BARS', null, 'correction');
             $this->fail('Unverified prior pointer must block takeover.');
@@ -5434,6 +5691,8 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'is_current' => 0, 'seal_state' => 'UNSEALED', 'created_at' => Carbon::now(), 'updated_at' => Carbon::now(),
         ]);
         DB::table('eod_runs')->where('run_id', $owner->run_id)->update(['updated_at' => Carbon::now()->subHours(2)]);
+        DB::table('eod_run_owner_fences')->where('trade_date_requested', '2026-03-20')
+            ->update(['heartbeat_at' => Carbon::now()->subHours(2), 'expires_at' => Carbon::now()->subHour()]);
         try {
             $repository->getOrCreateOwningRun('2026-03-20', 'api', 'INGEST_BARS', null, 'full_publish');
             $this->fail('Partial candidate must block stale takeover.');
@@ -5709,7 +5968,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
             $this->assertStringContainsString('INPUT_CAPTURE_BINDING_PUBLICATION_NOT_FOUND', $e->getMessage());
         }
 
-        $otherRun = (new \App\Infrastructure\Persistence\MarketData\EodRunRepository())->getOrCreateOwningRun('2026-03-21', 'manual_file', 'INGEST_BARS', null, 'binding-ownership-probe');
+        $otherRun = (new \App\Infrastructure\Persistence\MarketData\EodRunRepository())->getOrCreateOwningRun('2026-03-21', 'manual_file', 'INGEST_BARS', null, 'full_publish');
         $publication = DB::table('eod_publications')->where('run_id', $run->run_id)->first();
         try {
             $binder->bind($otherRun, (int) $publication->publication_id, '2026-03-20');
@@ -6108,7 +6367,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
         // Binding's own ownership guard is proven, as defense in depth rather than dead code.
         [$run, $publication] = $this->makeSealReadyPublication();
         $otherRun = (new \App\Infrastructure\Persistence\MarketData\EodRunRepository())
-            ->getOrCreateOwningRun('2026-03-21', 'manual_file', 'INGEST_BARS', null, 'seal-ownership-probe');
+            ->getOrCreateOwningRun('2026-03-21', 'manual_file', 'INGEST_BARS', null, 'full_publish');
 
         $binder = new \App\Application\MarketData\Services\PublicationInputBindingService();
         try {
@@ -6438,7 +6697,7 @@ class MarketDataPipelineIntegrationTest extends TestCase
         $date = Carbon::parse($startDate); $end = Carbon::parse($endDate); $close = $startClose; $volume = $startVolume;
         while ($date->lessThanOrEqualTo($end)) {
             $day = $date->toDateString();
-            $run = (new EodRunRepository())->getOrCreateOwningRun($day, 'manual_file', 'INGEST_BARS', null, 'c07-fixture-'.$day);
+            $run = (new EodRunRepository())->getOrCreateOwningRun($day, 'manual_file', 'INGEST_BARS', null, 'full_publish');
             $publicationId = (int) $date->format('Ymd');
             if (! DB::table('eod_publications')->where('publication_id', $publicationId)->exists()) DB::table('eod_publications')->insert([
                 'publication_id' => $publicationId, 'trade_date' => $day, 'run_id' => $run->run_id,
@@ -7560,11 +7819,19 @@ class MarketDataPipelineIntegrationTest extends TestCase
     {
         $factorSetHash = hash('sha256', 'pipeline-baseline|'.$tradeDate.'|1');
 
-        DB::table('eod_runs')->insert([
-            'run_id' => 90,
+        // Preserve this fixture's stable public IDs while obtaining real execution authority.
+        $this->assertLessThan(90, (int) DB::table('eod_runs')->max('run_id'));
+        DB::table('sqlite_sequence')->where('name', 'eod_runs')->update(['seq' => 89]);
+        if (! DB::table('sqlite_sequence')->where('name', 'eod_runs')->exists()) {
+            DB::table('sqlite_sequence')->insert(['name' => 'eod_runs', 'seq' => 89]);
+        }
+        $repository = new \App\Infrastructure\Persistence\MarketData\EodRunRepository();
+        $owner = $repository->getOrCreateOwningRun($tradeDate, 'manual_file', 'FINALIZE', null, 'full_publish');
+        $this->assertSame(90, (int) $owner->run_id);
+        DB::table('eod_runs')->where('run_id', $owner->run_id)->update([
             'trade_date_requested' => $tradeDate,
             'trade_date_effective' => $tradeDate,
-            'lifecycle_state' => 'COMPLETED',
+            'lifecycle_state' => 'RUNNING',
             'terminal_status' => 'SUCCESS',
             'quality_gate_state' => 'PASS',
             'publishability_state' => 'READABLE',
@@ -7711,6 +7978,8 @@ class MarketDataPipelineIntegrationTest extends TestCase
             'sealed_at' => '2026-03-20 17:20:00',
             'updated_at' => '2026-03-20 17:20:00',
         ]);
+        $repository->finalize($owner->fresh(), ['lifecycle_state' => 'COMPLETED',
+            'terminal_status' => 'SUCCESS', 'publishability_state' => 'READABLE']);
     }
 
 

@@ -43,12 +43,18 @@ use App\Console\Commands\MarketData\RecordAuthoritativeTradingStatusSnapshotComm
 use App\Console\Commands\MarketData\ReconstructCurrentCorpusCommand;
 use App\Console\Commands\MarketData\ReconcilePublicationProjectionCommand;
 use App\Console\Commands\MarketData\ReconcileCorporateActionsCommand;
+use App\Console\Commands\MarketData\EvaluateB19ReleaseAdmissionCommand;
 use Illuminate\Console\Scheduling\Schedule;
 use Laravel\Lumen\Console\Kernel as ConsoleKernel;
 
 class Kernel extends ConsoleKernel
 {
     protected $commands = [
+        \App\Console\Commands\MarketData\ConfigurationCorpusCommand::class,
+        \App\Console\Commands\MarketData\MeasureFreshnessCommand::class,
+        \App\Console\Commands\MarketData\MeasureExpectedSessionCommand::class,
+        \App\Console\Commands\MarketData\ObserveIncidentCommand::class,
+        EvaluateB19ReleaseAdmissionCommand::class,
         \App\Console\Commands\MarketData\OperationalStatusCommand::class,
         \App\Console\Commands\MarketData\ScheduledWorkflowCommand::class,
         \App\Console\Commands\SecurityIdentity\BootstrapFoundationCommand::class,

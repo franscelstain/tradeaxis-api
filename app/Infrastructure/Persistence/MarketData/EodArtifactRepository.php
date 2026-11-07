@@ -40,6 +40,11 @@ class EodArtifactRepository
 
     public function bindCandidateBarSourceScale($publicationId, $tradeDate, $listingId, array $payload): void
     {
+        DB::transaction(function () use ($publicationId, $tradeDate, $listingId, $payload) {
+            $candidate = DB::table('eod_publications')->where('publication_id', $publicationId)->first();
+            if (! $candidate) throw new \RuntimeException('RUN_OWNER_CONFLICT: candidate target absent.');
+            $this->assertExecutionWriter($tradeDate, $candidate->run_id, $publicationId);
+            $this->assertBindingColumns($payload, ['source_scale_state', 'source_scale_assessment_id']);
         $query = DB::table('eod_bars_history')
             ->where('publication_id', $publicationId)
             ->where('trade_date', $tradeDate)
@@ -55,6 +60,7 @@ class EodArtifactRepository
             ->where('trade_date', $tradeDate)
             ->where('listing_id', $listingId)
             ->update($payload);
+        });
     }
 
     public function loadCandidateEligibilityForGovernance($publicationId, $tradeDate): array
@@ -79,12 +85,18 @@ class EodArtifactRepository
 
     public function bindCandidateEligibilityMarketStructure($publicationId, $tradeDate, $listingId, array $payload): void
     {
+        DB::transaction(function () use ($publicationId, $tradeDate, $listingId, $payload) {
+            $candidate = DB::table('eod_publications')->where('publication_id', $publicationId)->first();
+            if (! $candidate) throw new \RuntimeException('RUN_OWNER_CONFLICT: candidate target absent.');
+            $this->assertExecutionWriter($tradeDate, $candidate->run_id, $publicationId);
+            $this->assertBindingColumns($payload, ['market_structure_resolution_state', 'price_band_revision_id', 'minimum_price_revision_id', 'tick_size_revision_id']);
         $table = $this->candidateArtifactTable('eod_eligibility', $publicationId, $tradeDate);
         DB::table($table)
             ->where('publication_id', $publicationId)
             ->where('trade_date', $tradeDate)
             ->where('listing_id', $listingId)
             ->update($payload);
+        });
     }
 
     public function loadPublicationArtifactSnapshot($publicationId, $tradeDate, string $artifact): array
@@ -120,6 +132,7 @@ class EodArtifactRepository
     public function replaceBars($tradeDate, $publicationId, $runId, array $validRows, array $invalidRows, $useHistory = false, $replayIsolation = false)
     {
         return DB::transaction(function () use ($tradeDate, $publicationId, $runId, $validRows, $invalidRows, $useHistory, $replayIsolation) {
+            $this->assertExecutionWriter($tradeDate, $runId, $publicationId, false);
             if (! $useHistory && ! $replayIsolation) {
                 $this->assertLiveArtifactMutationAllowed($tradeDate, $publicationId, 'eod_bars');
             } elseif ($replayIsolation) {
@@ -129,6 +142,8 @@ class EodArtifactRepository
             }
 
             $this->assertCompleteBarRows($validRows, 'replaceBars');
+            $this->assertArtifactRowScope($validRows, $tradeDate, $runId, $publicationId);
+            $this->assertArtifactRowScope($invalidRows, $tradeDate, $runId, null, true);
             $mutationSummary = $this->buildBarsMutationSummary($tradeDate, $publicationId, $validRows, $useHistory);
 
             if ($useHistory) {
@@ -166,6 +181,8 @@ class EodArtifactRepository
     public function persistInvalidBars($tradeDate, $runId, array $invalidRows)
     {
         DB::transaction(function () use ($tradeDate, $runId, $invalidRows) {
+            $this->assertExecutionWriter($tradeDate, $runId, null, false);
+            $this->assertArtifactRowScope($invalidRows, $tradeDate, $runId, null, true);
             DB::table('eod_invalid_bars')
                 ->where('trade_date', $tradeDate)
                 ->where('run_id', $runId)
@@ -180,6 +197,7 @@ class EodArtifactRepository
     public function upsertBarsPartial($tradeDate, $publicationId, $runId, array $validRows, array $invalidRows = [], $useHistory = false)
     {
         return DB::transaction(function () use ($tradeDate, $publicationId, $runId, $validRows, $invalidRows, $useHistory) {
+            $this->assertExecutionWriter($tradeDate, $runId, $publicationId, false);
             if (! $useHistory) {
                 $this->assertLiveArtifactMutationAllowed($tradeDate, $publicationId, 'eod_bars');
             } else {
@@ -187,6 +205,8 @@ class EodArtifactRepository
             }
 
             $this->assertCompleteBarRows($validRows, 'upsertBarsPartial');
+            // Canonical upserts construct date/run/publication from the authenticated target.
+            $this->assertArtifactRowScope($invalidRows, $tradeDate, $runId, null, true);
             $mutationSummary = $this->buildBarsMutationSummary($tradeDate, $publicationId, $validRows, $useHistory, false);
             $table = $useHistory ? 'eod_bars_history' : 'eod_bars';
             $writeTickerIds = array_fill_keys(array_merge(
@@ -290,6 +310,7 @@ class EodArtifactRepository
     {
         if ($publicationId === null || $publicationId === '') return;
         return DB::transaction(function () use ($tradeDate, $publicationId, $runId) {
+            $this->assertExecutionWriter($tradeDate, $runId, $publicationId, false);
             if (DB::table('eod_bars_history')->where('trade_date', $tradeDate)->where('publication_id', $publicationId)->exists()) return;
             $this->assertHistorySnapshotMutable($publicationId);
             $sourceRows = $this->applyStableArtifactOrder(DB::table('eod_bars')->where('trade_date', $tradeDate))
@@ -377,6 +398,7 @@ class EodArtifactRepository
     {
         if ($sourcePublicationId === null || $sourcePublicationId === '' || $targetPublicationId === null || $targetPublicationId === '' || (int) $sourcePublicationId === (int) $targetPublicationId) return;
         return DB::transaction(function () use ($tradeDate, $sourcePublicationId, $targetPublicationId, $runId) {
+            $this->assertExecutionWriter($tradeDate, $runId, $targetPublicationId, false);
             $sourceTable = 'eod_bars_history';
             $sourceRows = $this->applyStableArtifactOrder(DB::table($sourceTable)->where('trade_date', $tradeDate)->where('publication_id', $sourcePublicationId))->get();
             if ($sourceRows->isEmpty()) {
@@ -398,6 +420,7 @@ class EodArtifactRepository
     private function copyBarsHistoryWithLineage($tradeDate, $sourcePublicationId, $targetPublicationId, $runId, $sourceRows, $sourceTable)
     {
         return DB::transaction(function () use ($tradeDate, $sourcePublicationId, $targetPublicationId, $runId, $sourceRows, $sourceTable) {
+            $this->assertExecutionWriter($tradeDate, $runId, $targetPublicationId, false);
             $selection = ['read_kind' => 'history-copy', 'trade_date' => (string) $tradeDate, 'start_date' => (string) $tradeDate,
                 'publication_id' => $sourcePublicationId, 'target_publication_id' => $targetPublicationId,
                 'target_run_id' => (int) $runId, 'source_table' => $sourceTable];
@@ -556,7 +579,9 @@ class EodArtifactRepository
 
     public function replaceIndicators($tradeDate, $runId, array $rows, $publicationId = null, $useHistory = false)
     {
-        return DB::transaction(function () use ($tradeDate, $rows, $publicationId, $useHistory) {
+        return DB::transaction(function () use ($tradeDate, $runId, $rows, $publicationId, $useHistory) {
+            $this->assertExecutionWriter($tradeDate, $runId, $publicationId, false);
+            $this->assertArtifactRowScope($rows, $tradeDate, $runId, $publicationId);
             if (! $useHistory) {
                 $this->assertLiveArtifactMutationAllowed($tradeDate, $publicationId, 'eod_indicators');
             }
@@ -672,6 +697,33 @@ class EodArtifactRepository
     }
 
 
+    /** Quality checks before snapshot creation may read live rows of this
+     * exact unsealed candidate. A sealed publication always uses history. */
+    public function loadCandidateBarsForQualityCheck($tradeDate, $publicationId = null)
+    {
+        $rows = $this->loadBarsForTradeDate($tradeDate, $publicationId);
+        if ($publicationId === null) return $rows;
+        $candidate = DB::table('eod_publications')->where('publication_id', $publicationId)
+            ->where('trade_date', $tradeDate)->first();
+        if (! $candidate) return [];
+        if ((string) $candidate->seal_state === 'SEALED') return $rows;
+
+        $current = array_filter($this->loadBarsForTradeDate($tradeDate, null), static function ($row) use ($publicationId) {
+            return (int) ($row['publication_id'] ?? 0) === (int) $publicationId;
+        });
+        $hashes = new \App\Application\MarketData\Services\DeterministicHashService();
+        $identity = ['trade_date', 'ticker_id', 'listing_id', 'source_observation_id', 'open', 'high', 'low', 'close', 'volume'];
+        foreach ($current as $tickerId => $row) {
+            if (isset($rows[$tickerId]) && $hashes->hashRows([$rows[$tickerId]], $identity) !== $hashes->hashRows([$row], $identity)) {
+                throw new \RuntimeException('DATE_LEVEL_QUALITY_CANDIDATE_CONFLICT: '.$tradeDate.' ticker '.$tickerId.'.');
+            }
+            $rows[$tickerId] = $row;
+        }
+        ksort($rows);
+
+        return $rows;
+    }
+
     public function loadCanonicalBarTickerIdsForTradeDate($tradeDate, $requestedPublicationId = null)
     {
         if ($requestedPublicationId !== null && $requestedPublicationId !== '') {
@@ -730,13 +782,15 @@ class EodArtifactRepository
 
     public function replaceEligibility($tradeDate, $runId, array $rows, $publicationId = null, $useHistory = false)
     {
-        return DB::transaction(function () use ($tradeDate, $rows, $publicationId, $useHistory) {
+        return DB::transaction(function () use ($tradeDate, $runId, $rows, $publicationId, $useHistory) {
+            $this->assertExecutionWriter($tradeDate, $runId, $publicationId, false);
             if (! $useHistory) {
                 $this->assertLiveArtifactMutationAllowed($tradeDate, $publicationId, 'eod_eligibility');
             }
 
             $this->assertCompleteEligibilityRows($rows, 'replaceEligibility');
             $this->assertBlockedEligibilityRowsCarryReasons($rows, 'replaceEligibility');
+            $this->assertArtifactRowScope($rows, $tradeDate, $runId, $publicationId);
 
             $table = $useHistory ? 'eod_eligibility_history' : 'eod_eligibility';
             $query = DB::table($table)->where('trade_date', $tradeDate);
@@ -796,6 +850,7 @@ class EodArtifactRepository
     public function snapshotPublicationFromCurrentTables($tradeDate, $publicationId, $runId)
     {
         return DB::transaction(function () use ($tradeDate, $publicationId, $runId) {
+            $this->assertExecutionWriter($tradeDate, $runId, $publicationId, false);
             // A publication-bound snapshot is assembled while the publication is still a
             // candidate and becomes frozen at seal. Never use this method as a post-seal
             // completion/backfill path.
@@ -922,7 +977,50 @@ class EodArtifactRepository
 
     public function promotePublicationHistoryToCurrent($tradeDate, $publicationId, $runId)
     {
-        return DB::transaction(function () use ($tradeDate, $publicationId, $runId) {
+        return $this->copyHistoryToProjection($tradeDate, $publicationId, $runId, function () use ($tradeDate, $publicationId, $runId) {
+            $this->assertExecutionWriter($tradeDate, $runId, $publicationId, true);
+        });
+    }
+
+    /** Repair's actor is distinct from the immutable source run. It cannot select arbitrary history. */
+    public function repairCurrentProjectionFromHistory(string $tradeDate, int $publicationId, ?\App\Models\EodRun $actor): void
+    {
+        DB::transaction(function () use ($tradeDate, $publicationId, $actor) {
+            (new RequestedDateWriterFence())->lock($tradeDate, $actor);
+            $publications = new EodPublicationRepository();
+            $source = $publications->resolveCurrentReadablePublicationForTradeDate($tradeDate);
+            if (! $source || (int) $source->publication_id !== $publicationId) {
+                throw new \RuntimeException('PROJECTION_REPAIR_SOURCE_CHANGED');
+            }
+            $sourceRun = DB::table('eod_runs')->where('run_id', $source->run_id)->first();
+            $this->assertPublicationSnapshotComplete($tradeDate, $publicationId, [
+                'bars' => (int) $sourceRun->bars_rows_written,
+                'indicators' => (int) $sourceRun->indicators_rows_written,
+                'eligibility' => (int) $sourceRun->eligibility_rows_written,
+            ]);
+            DB::table('eod_publications')->where('publication_id', $publicationId)->lockForUpdate()->first();
+            $pointer = DB::table('eod_current_publication_pointer')->where('trade_date', $tradeDate)->lockForUpdate()->first();
+            if (! $pointer || (int) $pointer->publication_id !== $publicationId) {
+                throw new \RuntimeException('PROJECTION_REPAIR_SOURCE_CHANGED');
+            }
+            $this->copyHistoryToProjection($tradeDate, $publicationId, (int) $source->run_id,
+                function () use ($tradeDate, $publicationId, $actor, $source) {
+                    (new RequestedDateWriterFence())->lock($tradeDate, $actor);
+                    foreach (['eod_bars_history', 'eod_indicators_history', 'eod_eligibility_history'] as $table) {
+                        if (DB::table($table)->where('trade_date', $tradeDate)->where('publication_id', $publicationId)
+                            ->where(function ($q) use ($source) { $q->whereNull('run_id')->orWhere('run_id', '<>', $source->run_id); })->exists()) {
+                            throw new \RuntimeException('PROJECTION_REPAIR_HISTORY_IDENTITY_INVALID');
+                        }
+                    }
+                });
+        });
+    }
+
+    /** Both public callers supply a mandatory authorizer; retain it through every compound write. */
+    private function copyHistoryToProjection($tradeDate, $publicationId, $runId, callable $authorize)
+    {
+        return DB::transaction(function () use ($tradeDate, $publicationId, $runId, $authorize) {
+            $authorize();
             $now = Carbon::now(config('market_data.platform.timezone'))->toDateTimeString();
 
             $bars = $this->applyStableArtifactOrder(
@@ -1048,6 +1146,43 @@ class EodArtifactRepository
      * A publication that does not exist yet is not an error here: the candidate row is created in
      * the same flow, and a missing publication cannot be sealed. Only a confirmed seal blocks.
      */
+    /** Raw inserts must not redirect an authenticated mutation to another execution's artifacts. */
+    private function assertArtifactRowScope(array $rows, $date, $runId, $publicationId, bool $invalid = false): void
+    {
+        foreach ($rows as $row) {
+            if (! isset($row['run_id']) || (int) $row['run_id'] !== (int) $runId
+                || (! $invalid && ((string) ($row['trade_date'] ?? '') !== (string) $date
+                    || (($row['publication_id'] ?? null) === null ? null : (int) $row['publication_id'])
+                        !== ($publicationId === null ? null : (int) $publicationId)))) {
+                throw new \RuntimeException('ARTIFACT_WRITE_SCOPE_INVALID: row identity differs from authenticated target.');
+            }
+            // Invalid bars retain the rejected input's date as provenance, under this run's authority.
+            // They are not canonical artifacts or permission to mutate that input date's publication.
+        }
+    }
+
+    private function assertBindingColumns(array $payload, array $allowed): void
+    {
+        if (array_diff(array_keys($payload), $allowed) !== []) {
+            throw new \RuntimeException('ARTIFACT_WRITE_SCOPE_INVALID: binding cannot replace artifact identity or unrelated facts.');
+        }
+    }
+
+    private function assertExecutionWriter($date, $runId, $publicationId, bool $publicationRights = false): void
+    {
+        $actor = \App\Models\EodRun::findOrFail($runId);
+        (new RequestedDateWriterFence())->lock($date, $actor, ! $publicationRights);
+        if ($publicationId !== null) {
+            $candidate = DB::table('eod_publications')->where('publication_id', $publicationId)->lockForUpdate()->first();
+            if (! $candidate || (int) $candidate->run_id !== (int) $runId || (string) $candidate->trade_date !== (string) $date) {
+                throw new \RuntimeException('RUN_OWNER_CONFLICT: artifact target is not owned by acting execution.');
+            }
+            if (! $publicationRights && $candidate->seal_state === 'SEALED') {
+                throw new \RuntimeException('SEALED_PUBLICATION_IMMUTABLE: artifact write requires an unsealed own candidate.');
+            }
+        }
+    }
+
     protected function assertHistorySnapshotMutable($publicationId)
     {
         if ($publicationId === null || $publicationId === '') {

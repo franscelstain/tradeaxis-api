@@ -79,6 +79,45 @@ class DateLevelAnomalyCheckB17Test extends TestCase
         return app(DateLevelAnomalyCheckService::class);
     }
 
+    public function test_unsealed_candidate_quality_reads_only_its_rows_and_sealed_history_never_falls_back(): void
+    {
+        DB::table('eod_publications')->insert([
+            'publication_id' => 1, 'trade_date' => self::TRADE_DATE, 'run_id' => 1,
+            'publication_version' => 1, 'seal_state' => 'UNSEALED',
+            'created_at' => self::TRADE_DATE.' 18:00:00', 'updated_at' => self::TRADE_DATE.' 18:00:00',
+        ]);
+        $this->seedBars(self::TRADE_DATE, 3);
+        DB::table('eod_bars')->where('ticker_id', 3)->update(['publication_id' => 999]);
+        $artifacts = app(\App\Infrastructure\Persistence\MarketData\EodArtifactRepository::class);
+        $rows = $artifacts->loadCandidateBarsForQualityCheck(self::TRADE_DATE, 1);
+        $this->assertSame([1, 2], array_map('intval', array_keys($rows)));
+        $this->assertSame([], $artifacts->loadCandidateBarsForQualityCheck(self::TRADE_DATE, 999));
+        $history = (array) DB::table('eod_bars')->where('ticker_id', 1)->first();
+        $history = array_intersect_key($history, array_flip(\Illuminate\Support\Facades\Schema::getColumnListing('eod_bars_history')));
+        DB::table('eod_bars_history')->insert($history);
+        $this->assertSame([1, 2], array_map('intval', array_keys($artifacts->loadCandidateBarsForQualityCheck(self::TRADE_DATE, 1))),
+            'Partial candidate history must not hide remaining candidate rows.');
+        $secondHistory = (array) DB::table('eod_bars')->where('ticker_id', 2)->first();
+        $secondHistory = array_intersect_key($secondHistory, array_flip(\Illuminate\Support\Facades\Schema::getColumnListing('eod_bars_history')));
+        DB::table('eod_bars_history')->insert($secondHistory);
+        $this->assertSame([1, 2], array_map('intval', array_keys($artifacts->loadCandidateBarsForQualityCheck(self::TRADE_DATE, 1))),
+            'Complete consistent candidate history preserves the whole population.');
+        DB::table('eod_bars_history')->where('ticker_id', 1)->update(['close' => 999]);
+        try {
+            $artifacts->loadCandidateBarsForQualityCheck(self::TRADE_DATE, 1);
+            $this->fail('Contradictory live/history candidate row was silently selected.');
+        } catch (\RuntimeException $error) {
+            $this->assertStringContainsString('DATE_LEVEL_QUALITY_CANDIDATE_CONFLICT', $error->getMessage());
+        }
+        DB::table('eod_bars_history')->where('ticker_id', 1)->update(['close' => 101]);
+        DB::table('eod_publications')->where('publication_id', 1)->update(['seal_state' => 'SEALED']);
+        DB::table('eod_bars')->where('ticker_id', 1)->update(['close' => 555]);
+        $sealed = $artifacts->loadCandidateBarsForQualityCheck(self::TRADE_DATE, 1);
+        $this->assertSame(101.0, (float) $sealed[1]['close'], 'A sealed quality read uses immutable history even when live contents differ.');
+        DB::table('eod_bars_history')->delete();
+        $this->assertSame([], $artifacts->loadCandidateBarsForQualityCheck(self::TRADE_DATE, 1), 'Missing sealed history must not read live canonical contents.');
+    }
+
     private function evaluateDate(string $date = self::TRADE_DATE): array
     {
         return $this->service()->evaluate(
@@ -209,6 +248,41 @@ class DateLevelAnomalyCheckB17Test extends TestCase
             'this case must sit under the absolute threshold, or it proves the wrong branch'
         );
         $this->assertContains('ZERO_VOLUME_SHARE_ELEVATED_AGAINST_NEIGHBOURS', $result['date_level_anomaly_findings']);
+    }
+
+    public function test_flat_zero_volume_canonical_rows_still_raise_a_date_level_acquisition_finding(): void
+    {
+        // Flat zero-volume rows are individually admissible. The independent
+        // expectation is 5/30 on the target date versus 1/30 on each neighbour.
+        $flatZero = ['open' => 100, 'high' => 100, 'low' => 100, 'close' => 100, 'volume' => 0];
+        foreach (['2026-07-21', '2026-07-22', '2026-07-23', '2026-07-24', '2026-07-27'] as $date) {
+            $this->seedBars($date, 30, [0 => $flatZero]);
+        }
+        $this->seedBars(self::TRADE_DATE, 30, array_fill(0, 5, $flatZero));
+
+        $this->assertSame(5, DB::table('eod_bars')->where('trade_date', self::TRADE_DATE)
+            ->where('volume', 0)->where('open', 100)->where('high', 100)
+            ->where('low', 100)->where('close', 100)->count());
+        $result = $this->evaluateDate();
+        $this->assertSame(0.166667, $result['zero_volume_share']);
+        $this->assertSame(0.033333, $result['zero_volume_neighbour_baseline']);
+        $this->assertSame(DateLevelAnomalyCheckService::STATE_FINDING, $result['date_level_anomaly_state']);
+        $this->assertContains('ZERO_VOLUME_SHARE_ELEVATED_AGAINST_NEIGHBOURS', $result['date_level_anomaly_findings']);
+        $this->assertNotContains('ZERO_VOLUME_SHARE_ABOVE_THRESHOLD', $result['date_level_anomaly_findings']);
+    }
+
+    public function test_flat_zero_volume_share_matching_neighbours_is_not_a_date_level_spike(): void
+    {
+        $flatZero = ['open' => 100, 'high' => 100, 'low' => 100, 'close' => 100, 'volume' => 0];
+        foreach (['2026-07-21', '2026-07-22', '2026-07-23', '2026-07-24', '2026-07-27'] as $date) {
+            $this->seedBars($date, 30, [0 => $flatZero]);
+        }
+        $this->seedBars(self::TRADE_DATE, 30, [0 => $flatZero]);
+
+        $result = $this->evaluateDate();
+        $this->assertSame(0.033333, $result['zero_volume_share']);
+        $this->assertSame(0.033333, $result['zero_volume_neighbour_baseline']);
+        $this->assertNotContains('ZERO_VOLUME_SHARE_ELEVATED_AGAINST_NEIGHBOURS', $result['date_level_anomaly_findings']);
     }
 
     /**

@@ -63,11 +63,8 @@ class MarketDataOperationalStatusService
         if (! $run || (string) $run->trade_date_effective !== $date) $defects[] = 'REQUESTED_EFFECTIVE_DATE_UNPROVEN';
         if ($run && $run->final_reason_code) $reasons[$run->final_reason_code] = true;
         $expected = (new MarketCalendarRepository())->latestExpectedSession();
-        $readableDate = null;
-        foreach (DB::table('eod_current_publication_pointer')->orderByDesc('trade_date')->pluck('trade_date') as $candidateDate) {
-            try { if ($publications->resolveCurrentReadablePublicationForTradeDate($candidateDate)) { $readableDate = $candidateDate; break; } }
-            catch (\Throwable $e) { /* An invalid pointer is never a readable frontier. */ }
-        }
+        $assessedAt = \Carbon\Carbon::now('Asia/Jakarta');
+        $frontiers = (new MarketDataFreshnessEvidenceService())->observedFrontiers($assessedAt);
         return [
             'requested_date' => $date, 'run_id' => $run ? (int) $run->run_id : null,
             'terminal_status' => $terminal, 'effective_date' => $run->trade_date_effective ?? null,
@@ -76,15 +73,18 @@ class MarketDataOperationalStatusService
             'coverage_gate_state' => $run->coverage_gate_state ?? null,
             'counts' => $counts, 'hashes' => $hashes, 'sealed_at' => $run->sealed_at ?? null,
             'warning_count_provenance' => 'PERSISTED_EOD_RUN; NULL_PRESERVED_UNDER_D-MD-B19-A001-003; WARNING_POPULATION_UNDEFINED',
+            'configuration_binding_corpus' => (new MarketDataConfigurationCorpusService())->report(),
             'config_snapshot_id' => $run->config_snapshot_id ?? null, 'config_hash' => $run->config_hash ?? null,
             'config_verified' => (bool) $configVerified, 'event_count' => count($events),
             'events' => $events, 'failed_or_held_stages' => array_keys($stages), 'reason_codes' => array_keys($reasons),
             'publication_id' => $publication ? (int) $publication->publication_id : null,
             'latest_expected_trade_date' => $expected['latest_expected_trade_date'],
             'current_session_state' => $expected['current_session_state'],
-            'latest_acquired_trade_date' => DB::table('md_source_observation_rows')->max('trade_date'),
-            'latest_canonicalized_trade_date' => DB::table('eod_bars')->max('trade_date'),
-            'latest_readable_trade_date' => $readableDate,
+            'evidence_as_of' => $assessedAt->toIso8601String(),
+            'latest_acquired_trade_date' => $frontiers['latest_acquired_trade_date'],
+            'latest_canonicalized_trade_date' => $frontiers['latest_canonicalized_trade_date'],
+            'latest_readable_trade_date' => $frontiers['latest_readable_trade_date'],
+            'frontier_provenance' => $frontiers['frontier_provenance'],
             'activation_state' => MarketDataScope::fromConfig()->stateFor($date),
             'operationally_healthy' => $defects === [] && $terminal === 'SUCCESS'
                 && $publication && (int) $publication->run_id === (int) $run->run_id,

@@ -64,4 +64,38 @@ class CorporateActionExternalReconciliationServiceTest extends TestCase
         $this->assertSame('FAIL',$result['reconciliation_state']);
         $this->assertSame(1,$result['missing_platform_count']);
     }
+
+    public function test_apply_refuses_changed_manifest_without_persisting_partial_reconciliation(): void
+    {
+        $path=tempnam(sys_get_temp_dir(),'md-r0011-corp-');
+        file_put_contents($path,json_encode($this->manifest(true),JSON_UNESCAPED_SLASHES));
+        try {
+            $service=new CorporateActionExternalReconciliationService();
+            $disclosed=$service->inspectFile($path);
+            $changed=$this->manifest(true);
+            $changed['authority_name']='IDX CHANGED AFTER DISCLOSURE';
+            file_put_contents($path,json_encode($changed,JSON_UNESCAPED_SLASHES));
+            try {
+                $service->applyDisclosedFile($path,$disclosed);
+                $this->fail('Changed authoritative input was applied after disclosure.');
+            } catch (RuntimeException $e) {
+                $this->assertStringContainsString('COMMAND_CORPORATE_ACTION_RECONCILIATION_PREFLIGHT_CHANGED',$e->getMessage());
+            }
+            $this->assertSame(0,DB::table('md_corporate_action_reconciliations')->count());
+        } finally { @unlink($path); }
+    }
+
+    public function test_apply_persists_exactly_the_disclosed_corporate_action_reconciliation(): void
+    {
+        $path=tempnam(sys_get_temp_dir(),'md-r0011-corp-');
+        file_put_contents($path,json_encode($this->manifest(true),JSON_UNESCAPED_SLASHES));
+        try {
+            $service=new CorporateActionExternalReconciliationService();
+            $disclosed=$service->inspectFile($path);
+            $result=$service->applyDisclosedFile($path,$disclosed);
+            $this->assertTrue($result['persisted']);
+            $this->assertSame($disclosed['reconciliation_uid'],$result['reconciliation_uid']);
+            $this->assertSame(1,DB::table('md_corporate_action_reconciliations')->count());
+        } finally { @unlink($path); }
+    }
 }

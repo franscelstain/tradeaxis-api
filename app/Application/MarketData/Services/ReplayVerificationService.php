@@ -116,6 +116,14 @@ class ReplayVerificationService
 
     public function verifyRunAgainstFixture($runId, $fixturePath, $replayId = null, $publicationId = null, $approvedFixtureFingerprint = null)
     {
+        return $this->replays->duringVerifiedRequest($runId,$fixturePath,ReplayMode::PUBLICATION_EXACT,$publicationId,null,$replayId,
+            function()use($runId,$fixturePath,$replayId,$publicationId,$approvedFixtureFingerprint){
+                return $this->verifyPublicationUnderResultAuthority($runId,$fixturePath,$replayId,$publicationId,$approvedFixtureFingerprint);
+            });
+    }
+
+    private function verifyPublicationUnderResultAuthority($runId, $fixturePath, $replayId = null, $publicationId = null, $approvedFixtureFingerprint = null)
+    {
         $fixture = $this->loadFixturePackage($fixturePath);
         $run = $this->evidence->findRunById($runId);
         if (! $run) {
@@ -341,8 +349,7 @@ class ReplayVerificationService
             'final_reason_code' => $comparison['final_reason_code'],
         ];
 
-        $this->replays->upsertMetric($metric);
-        $this->replays->replaceReasonCodeCounts($replayId, $actual['trade_date'], $actual['reason_code_counts']);
+        $this->replays->stageResult($metric,$actual['reason_code_counts']);
 
         return $metric + [
             'reason_code_counts' => $actual['reason_code_counts'],
@@ -359,6 +366,15 @@ class ReplayVerificationService
     }
 
     public function verifyAsKnownAgainstFixture($runId, $fixturePath, $knowledgeCutoff, $replayId = null)
+    {
+        $knowledgeCutoff=trim((string)$knowledgeCutoff);
+        return $this->replays->duringVerifiedRequest($runId,$fixturePath,ReplayMode::AS_KNOWN,null,$knowledgeCutoff,$replayId,
+            function()use($runId,$fixturePath,$knowledgeCutoff,$replayId){
+                return $this->verifyAsKnownUnderResultAuthority($runId,$fixturePath,$knowledgeCutoff,$replayId);
+            });
+    }
+
+    private function verifyAsKnownUnderResultAuthority($runId, $fixturePath, $knowledgeCutoff, $replayId = null)
     {
         $run = $this->evidence->findRunById($runId);
         if (! $run) {
@@ -484,7 +500,7 @@ class ReplayVerificationService
                 'comparison_result' => 'NOT_ADMISSIBLE',
                 'replay_status' => 'BLOCKED',
                 'comparison_note' => $reason,
-                'artifact_changed_scope' => 'none',
+                'artifact_changed_scope' => null,
                 'config_identity' => $actualSnapshot['config_snapshot_hash'],
                 'publication_version' => null,
                 'is_current_publication' => false,
@@ -520,8 +536,7 @@ class ReplayVerificationService
                 'final_reason_code' => null,
             ];
 
-            $this->replays->upsertMetric($metric);
-            $this->replays->replaceReasonCodeCounts($replayId, $tradeDate, []);
+            $this->replays->stageResult($metric,[]);
 
             return $metric + [
                 'fixture_family' => $manifest['fixture_family'] ?? 'as_known_replay',
@@ -639,7 +654,7 @@ class ReplayVerificationService
             'comparison_note' => $comparisonResult === 'MATCH'
                 ? 'AS_KNOWN bound inputs and executed CANONICAL_RAW production path matched the independent fixture.'
                 : 'AS_KNOWN bound inputs or executed CANONICAL_RAW production path diverged from the independent fixture.',
-            'artifact_changed_scope' => $comparisonResult === 'MATCH' ? 'none' : 'as_known_canonical_raw',
+            'artifact_changed_scope' => $this->resolveArtifactChangedScope($expectedExecution, $actualExecution, [], ['canonical_output_hash' => 'bars']),
             'config_identity' => $actualSnapshot['config_snapshot_hash'],
             'publication_version' => null,
             'is_current_publication' => false,
@@ -668,8 +683,7 @@ class ReplayVerificationService
             'final_reason_code' => $comparisonResult === 'MATCH' ? null : (string) ($mismatches[0]['reason_code'] ?? 'REPLAY_MISMATCH'),
         ];
 
-        $this->replays->upsertMetric($metric);
-        $this->replays->replaceReasonCodeCounts($replayId, $tradeDate, $reasonCodeCounts);
+        $this->replays->stageResult($metric,$reasonCodeCounts);
 
         return $metric + [
             'fixture_family' => $manifest['fixture_family'] ?? 'as_known_replay',
@@ -1288,7 +1302,7 @@ class ReplayVerificationService
      * @return array<string,mixed>
      */
     /**
-     * C1 §6 step 5 (Admission), fixing `F-MD-B18-A002-013`'s named publication-mode defects.
+     * C1 Â§6 step 5 (Admission), fixing `F-MD-B18-A002-013`'s named publication-mode defects.
      *
      * `temporal_identity_hash`/`calendar_status_hash`/`event_factor_hash`/`reason_registry_hash`/
      * `formula_registry_hash` previously read nonexistent `$publication`/`$run` columns (always
@@ -1720,11 +1734,13 @@ class ReplayVerificationService
         foreach (['accepted_row_count', 'rejected_row_count', 'invalid_row_count'] as $field) {
             $this->compareFieldAllowNull($mismatches, $field, $this->ctx($expectedContext, 'expected_source_context.'.$field), $actual[$field]);
         }
+        $artifactExpectedHashes = [];
         foreach (['bars_batch_hash', 'indicators_batch_hash', 'eligibility_batch_hash'] as $field) {
             $expectedValue = $this->ctx($expectedContext, 'expected_artifact_context.'.$field);
             if ($expectedValue === null && array_key_exists($field, $expectedHashes)) {
                 $expectedValue = $expectedHashes[$field];
             }
+            $artifactExpectedHashes[$field] = $expectedValue;
             $this->compareFieldAllowNull($mismatches, $field, $expectedValue, $actual[$field]);
         }
         $this->compareFieldAllowNull($mismatches, 'artifact_scope', $this->ctx($expectedContext, 'expected_artifact_context.artifact_scope'), $actual['context']['actual_artifact_context']['artifact_scope'] ?? null);
@@ -1754,7 +1770,7 @@ class ReplayVerificationService
             $this->compareReasonCodeCounts($mismatches, $expectedReasonCodeCounts ?: [], $actual['reason_code_counts']);
         }
 
-        $artifactChangedScope = $this->resolveArtifactChangedScope($expectedContext['expected_artifact_context'], $actual);
+        $artifactChangedScope = $this->resolveArtifactChangedScope($artifactExpectedHashes, $actual, $fixture['expected_proof_missing']);
         $mismatchReasonCodes = array_values(array_unique(array_map(function ($item) {
             return $item['reason_code'];
         }, $mismatches)));
@@ -2320,14 +2336,18 @@ class ReplayVerificationService
         return 'REPLAY_NON_DETERMINISTIC_OUTPUT';
     }
 
-    private function resolveArtifactChangedScope(array $expectedArtifact, array $actual)
+    private function resolveArtifactChangedScope(array $expectedArtifact, array $actual, array $missingExpected = [], array $applicableFields = null)
     {
         $changed = [];
-        foreach (['bars_batch_hash' => 'bars', 'indicators_batch_hash' => 'indicators', 'eligibility_batch_hash' => 'eligibility'] as $field => $label) {
-            if (! array_key_exists($field, $expectedArtifact) || $expectedArtifact[$field] === null) {
-                continue;
+        foreach (($applicableFields ?? ['bars_batch_hash' => 'bars', 'indicators_batch_hash' => 'indicators', 'eligibility_batch_hash' => 'eligibility']) as $field => $label) {
+            if (in_array('expected_artifact_context.'.$field, $missingExpected, true)
+                || ! array_key_exists($field, $expectedArtifact) || ! array_key_exists($field, $actual)) {
+                return null;
             }
-            if ((string) $expectedArtifact[$field] !== (string) $actual[$field]) {
+            // Use the same resolved assertions as comparison, including explicit NULL.
+            if (($expectedArtifact[$field] === null || $actual[$field] === null)
+                ? $expectedArtifact[$field] !== $actual[$field]
+                : (string) $expectedArtifact[$field] !== (string) $actual[$field]) {
                 $changed[] = $label;
             }
         }
@@ -2916,12 +2936,12 @@ class ReplayVerificationService
      * A publication whose run carries no configuration snapshot is `CONFIG_UNBOUND`
      * (`Platform_Config_Registry_LOCKED.md:31`): the configuration that produced it cannot be
      * recovered, so reproducing its output proves the code is stable, not that the artifact is
-     * reproducible. `DOC-71` requires those replays to be `BLOCKED`, and until now none were —
+     * reproducible. `DOC-71` requires those replays to be `BLOCKED`, and until now none were â€”
      * 20,635 results, every one `PASS`, over a corpus that is entirely `CONFIG_UNBOUND`.
      *
      * A fixture generated from the very run it verifies is worse: `generateFixtureFromRun()` builds
      * its expected state by calling `buildActualReplayState()`, so the oracle is the subject. Such
-     * a comparison can only ever return MATCH, which is exactly what the corpus shows — zero FAIL
+     * a comparison can only ever return MATCH, which is exactly what the corpus shows â€” zero FAIL
      * and zero BLOCKED across every recorded result.
      */
     private function replayAdmissibility($run, $publication, array $fixture, array $actualBoundInputs = [])
@@ -2970,7 +2990,7 @@ class ReplayVerificationService
             ];
         }
 
-        // C1 §6 step 5 (Admission): "Non-BLOCKED requires complete verifiable binding; unavailable
+        // C1 Â§6 step 5 (Admission): "Non-BLOCKED requires complete verifiable binding; unavailable
         // input is BLOCKED." Consumes Reader's own version-aware classification
         // (PublicationInputBindingService::readBoundContext via buildManifestByPublicationId) --
         // never recomputes or re-derives that verdict here. A publication with no V2 bound context
@@ -3052,7 +3072,7 @@ class ReplayVerificationService
     /**
      * The identity of the configuration a run executed under.
      *
-     * This read `config_version`, which holds `'v1'` on all 72,765 runs — one distinct value across
+     * This read `config_version`, which holds `'v1'` on all 72,765 runs â€” one distinct value across
      * the entire corpus. Comparing it asserted that config identity had been verified while making
      * REPLAY_CONFIG_IDENTITY_MISMATCH unreachable by construction. `config_hash` is content-
      * addressed over the resolved configuration, so it changes when the configuration changes,

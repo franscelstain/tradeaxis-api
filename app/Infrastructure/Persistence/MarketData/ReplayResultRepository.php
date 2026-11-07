@@ -11,7 +11,19 @@ class ReplayResultRepository
 {
     public function nextReplayId()
     {
-        return (int) DB::table('md_replay_daily_metrics')->max('replay_id') + 1;
+        return ReplayResultAuthority::replayId();
+    }
+
+    public function duringVerifiedRequest($runId,$fixturePath,$mode,$publicationId,$cutoff,$replayId,callable $work)
+    {
+        return ReplayResultAuthority::during($runId,(string)$fixturePath,(string)$mode,
+            $publicationId,$cutoff===null?null:(string)$cutoff,$replayId,$work);
+    }
+
+    /** Staged in the verified context; committed with counts, response and lifecycle by the issuer. */
+    public function stageResult(array $metric,array $counts): void
+    {
+        ReplayResultAuthority::stage($metric,$counts);
     }
 
     public function upsertMetric(array $metric)
@@ -173,13 +185,13 @@ class ReplayResultRepository
             'created_at' => $metric['created_at'] ?? $now,
         ];
 
-        DB::table('md_replay_daily_metrics')->updateOrInsert(
-            [
+        DB::transaction(function()use($metric,$payload){
+            ReplayResultAuthority::assertMetricWrite($metric);
+            DB::table('md_replay_daily_metrics')->insert([
                 'replay_id' => $metric['replay_id'],
                 'trade_date' => $metric['trade_date'],
-            ],
-            $payload
-        );
+            ]+$payload);
+        });
     }
 
     private function assertModeInputs(array $metric): void
@@ -261,10 +273,9 @@ class ReplayResultRepository
     public function replaceReasonCodeCounts($replayId, $tradeDate, array $reasonCounts)
     {
         DB::transaction(function () use ($replayId, $tradeDate, $reasonCounts) {
-            DB::table('md_replay_reason_code_counts')
-                ->where('replay_id', $replayId)
-                ->where('trade_date', $tradeDate)
-                ->delete();
+            ReplayResultAuthority::assertCountsWrite($replayId,$tradeDate,$reasonCounts);
+            if (DB::table('md_replay_reason_code_counts')->where('replay_id',$replayId)->where('trade_date',$tradeDate)->exists())
+                throw new \RuntimeException('REPLAY_RESULT_OWNER_EVIDENCE_ALREADY_EXISTS: completed or unattributed counts cannot be replaced.');
 
             if (empty($reasonCounts)) {
                 return;

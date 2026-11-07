@@ -11,6 +11,16 @@ class MarketDataEvidenceExportServiceTest extends TestCase
 {
     use InteractsWithMarketDataConfig;
 
+    private function emptyIncidentFixturePolicy()
+    {
+        // This isolated serializer fixture has repositories and no application DB.
+        // Runtime security refusals are exercised with the real policy on MariaDB.
+        $policy = m::mock(\App\Application\MarketData\Ports\IncidentResponsePolicy::class);
+        $policy->shouldReceive('assertActionAllowed')->with(m::type('string'), 'evidence_export', m::type('int'))
+            ->zeroOrMoreTimes()->andReturnNull();
+        return $policy;
+    }
+
     protected function tearDown(): void
     {
         $this->clearMarketDataConfig();
@@ -208,7 +218,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         ]);
         $evidence->shouldReceive('countInvalidBarsRows')->once()->with('2026-04-21', 8124)->andReturn(2);
 
-        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
+        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections, $this->emptyIncidentFixturePolicy());
         $dir = sys_get_temp_dir().'/market_data_evidence_run_'.uniqid();
         $result = $service->exportRunEvidence(8124, $dir);
 
@@ -370,7 +380,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
 
         $evidence->shouldNotReceive('findReplayMetric');
 
-        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
+        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections, $this->emptyIncidentFixturePolicy());
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Replay evidence export requires explicit trade_date; latest-row resolution is not allowed on consumer read path.');
@@ -443,7 +453,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $evidence->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(8125)->andReturn([]);
         $evidence->shouldReceive('exportInvalidBarsRows')->once()->with('2026-04-22', 8125)->andReturn([]);
 
-        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
+        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections, $this->emptyIncidentFixturePolicy());
         $dir = sys_get_temp_dir().'/market_data_evidence_run_'.uniqid();
         $result = $service->exportRunEvidence(8125, $dir);
 
@@ -605,7 +615,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $evidence->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(8126)->andReturn([]);
         $evidence->shouldReceive('exportInvalidBarsRows')->once()->with('2026-04-20', 8126)->andReturn([]);
 
-        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
+        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections, $this->emptyIncidentFixturePolicy());
         $dir = sys_get_temp_dir().'/market_data_evidence_historical_run_'.uniqid();
         $result = $service->exportRunEvidence(8126, $dir);
 
@@ -678,7 +688,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $evidence->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(8130)->andReturn([]);
         $evidence->shouldReceive('exportInvalidBarsRows')->once()->with('2026-04-23', 8130)->andReturn([]);
 
-        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
+        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections, $this->emptyIncidentFixturePolicy());
         $dir = sys_get_temp_dir().'/market_data_evidence_run_'.uniqid();
         $result = $service->exportRunEvidence(8130, $dir);
 
@@ -763,7 +773,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $evidence->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(8140)->andReturn([]);
         $evidence->shouldReceive('exportInvalidBarsRows')->once()->with('2026-05-01', 8140)->andReturn([]);
 
-        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
+        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections, $this->emptyIncidentFixturePolicy());
         $dir = sys_get_temp_dir().'/market_data_evidence_run_'.uniqid();
         $result = $service->exportRunEvidence(8140, $dir);
 
@@ -849,7 +859,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $evidence->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(8141)->andReturn([]);
         $evidence->shouldReceive('exportInvalidBarsRows')->once()->with('2026-05-02', 8141)->andReturn([]);
 
-        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
+        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections, $this->emptyIncidentFixturePolicy());
         $dir = sys_get_temp_dir().'/market_data_evidence_run_'.uniqid();
         $result = $service->exportRunEvidence(8141, $dir);
 
@@ -909,7 +919,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $evidence->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(8142)->andReturn([]);
         $evidence->shouldReceive('exportInvalidBarsRows')->once()->with('2026-05-03', 8142)->andReturn([]);
 
-        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections);
+        $service = new MarketDataEvidenceExportService($evidence, $publications, $corrections, $this->emptyIncidentFixturePolicy());
         $dir = sys_get_temp_dir().'/market_data_evidence_run_'.uniqid();
         $service->exportRunEvidence(8142, $dir);
         $importSummary = json_decode(file_get_contents($dir.'/run_summary.json'), true);
@@ -987,7 +997,7 @@ class MarketDataEvidenceExportServiceTest extends TestCase
         $evidence2->shouldReceive('exportRunSourceAttemptTelemetry')->once()->with(8143)->andReturn([]);
         $evidence2->shouldReceive('exportInvalidBarsRows')->once()->with('2026-05-04', 8143)->andReturn([]);
 
-        $service2 = new MarketDataEvidenceExportService($evidence2, $publications2, $corrections2);
+        $service2 = new MarketDataEvidenceExportService($evidence2, $publications2, $corrections2, $this->emptyIncidentFixturePolicy());
         $dir2 = sys_get_temp_dir().'/market_data_evidence_run_'.uniqid();
         $service2->exportRunEvidence(8143, $dir2);
         $promotedSummary = json_decode(file_get_contents($dir2.'/run_summary.json'), true);

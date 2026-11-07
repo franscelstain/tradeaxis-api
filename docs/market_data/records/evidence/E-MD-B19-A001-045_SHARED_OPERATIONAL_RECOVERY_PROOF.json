@@ -1,0 +1,29 @@
+{
+  "record_id": "E-MD-B19-A001-045",
+  "record_type": "EVIDENCE",
+  "status": "ISSUED",
+  "attempt": "MD-B19-A001",
+  "predecessor": "E-MD-B19-A001-044",
+  "issued_at": "2026-10-21T15:25:00+07:00",
+  "independently_accepted_baseline": "635/750",
+  "prior_repository_proposal": "636/750",
+  "new_repository_proposals": {
+    "resumable_backfill": ["MD-S074-R0003"],
+    "scheduling_and_locking": ["MD-S078-R0015", "MD-S078-R0017"]
+  },
+  "repaired_prior_proposal_without_recount": ["MD-S078-R0009"],
+  "repository_proposed": "639/750",
+  "without_repository_basis": 111,
+  "independently_unaccepted": 115,
+  "formal_satisfied": "0/750",
+  "readiness_matrix": "storage/app/market-data/evidence/MD-B19-A001/E045_runtime/E045_execution_readiness.json",
+  "predicate_map": "storage/app/market-data/evidence/MD-B19-A001/E045_runtime/E045_per_predicate_map.json",
+  "remaining_queue": "storage/app/market-data/evidence/MD-B19-A001/E045_runtime/E045_remaining_queue.json",
+  "execution": "Registered manual import/promote versus scheduler outcome on MariaDB 1/10 PASS; anomalous due scheduler plus six forbidden controls 2/22 PASS; changed/unchanged recovery 2/47 PASS; existing readable correction with independent 105/106 observation identities 1/81 PASS; accepted two-listing recovery affected revalidation 1/33 PASS. An inherited replay-artifact-scope world failed its frozen baseline MATCH assertion before scope checks, so R0039/R0040 remain unproved.",
+  "counterfactuals": "Manual promotion mislabeled as SCHEDULER_OUTCOME failed the manual zero-event assertion; scheduled auto-confirmation of DETECTED price break failed the preserved-break assertion; inverted recovered-bar comparison failed APPLIED versus UNCHANGED. Each production source was restored byte-for-byte and named restored green controls passed. E044 force-option mutation remains valid for its held R0009 successor correction.",
+  "source_changes": "E045 changes only tests, proof basis and governed evidence. It preserves E044's uncommitted live-lease correction and read-only release evaluator; no frozen authority or new production source behavior is changed by E045.",
+  "affected_previous": "E044 accepted R0011 revalidated in current changed/unchanged 2/47; accepted R0013 revalidated 1/33; E044 held R0009 re-executed 2/22 with anomalous due input and mutation; existing correction proof revalidated 1/81. Earlier two-process owner proof source was unchanged and its E044 current-build 3/61 remains retained.",
+  "limitations": "The release evaluator still blocks actual B19 readiness; no real five-gate current-build admission evidence is supplied. R078-R0003/R0004 need complete logical-key/every-write fencing matrices. Cross-surface admissibility claims, complete command policy and F018 incident authority remain unresolved. No production activation, full-suite PASS, formal SATISFIED, candidate-v6 or stage closure is asserted.",
+  "known_failures": "Operations proof gate FAIL with 111 missing bases and seven unassigned family guards. MD-DEP-0025 ACTIVE; R0324 HELD D008/F016; D003 warning_count NULL remains binding; F018, alias-meaning/coverage static failures and B18 replay comparison failures remain visible.",
+  "resume": "Independent review E045's three new proposals and repaired E044 R0009. Next executable capability: complete the MD-S078-R0003 logical-key/checkpoint and R0004 every-write MariaDB fencing matrix, or the cross-surface admissibility claim policy, without claiming release/activation or changing frozen authority."
+}

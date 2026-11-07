@@ -77,6 +77,12 @@ class RunInputCaptureRepository
         $hash = hash('sha256', $payload);
 
         return DB::transaction(function () use ($runId, $stage, $component, $selectionJson, $payload, $slot, $hash, $rows, $emptyBasis, $audit) {
+            $prior = DB::table('md_run_input_captures')->where('run_id', $runId)->where('stage_code', $stage)
+                ->where('component_key', $component)->where('slot_hash', $slot)->first();
+            if (! $prior) {
+                $actor = \App\Models\EodRun::findOrFail($runId);
+                (new RequestedDateWriterFence())->lockRun($actor->trade_date_requested, $actor);
+            }
             // Serialize slot issuance on the owning run, also used by publication binding/seal.
             $run = DB::table('eod_runs')->where('run_id', $runId)->lockForUpdate()->first();
             if (! $run) throw new \RuntimeException('INPUT_CAPTURE_RUN_NOT_FOUND');

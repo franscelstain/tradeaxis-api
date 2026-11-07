@@ -1,0 +1,185 @@
+{
+  "record_id": "E-MD-B19-A001-049-R010",
+  "record_type": "EVIDENCE",
+  "status": "ISSUED",
+  "stage": "MD-B19",
+  "attempt": "MD-B19-A001",
+  "work_id": "MD-B19-A001",
+  "baseline": "MD-B19-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "issued_at": "2026-11-02T22:48:45.078760+07:00",
+  "author": "Codex / OpenAI, repository implementation agent",
+  "record_scope": "One COMPLETE repository proof proposal for the R0031 alert identity/recovery clause. No production change, independent review/admission, activation or formal stage closure.",
+  "registration_authority": [
+    "DOCUMENT_RECORDING_STANDARD.md sections1-3",
+    "RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md sections2/6",
+    "WORK_CORRELATION_AND_RECORD_REGISTRY_STANDARD.md sections1/2/5",
+    "DOCUMENT_CHANGE_POLICY.md section3"
+  ],
+  "related_evidence": [
+    "E-MD-B19-A001-049-R008",
+    "E-MD-B19-A001-049-R009"
+  ],
+  "related_decisions": [
+    "D-MD-B19-A001-010"
+  ],
+  "related_findings": [
+    "F-MD-B19-A001-018",
+    "F-MD-B19-A001-021"
+  ],
+  "related_dependencies": [
+    "MD-DEP-0025"
+  ],
+  "change_impact": "CI-MD-B19-A001-001",
+  "proof_matrix": {
+    "path": "storage/app/market-data/evidence/MD-B19-A001/E049_R0031_20261102_PROOF_MATRIX.json",
+    "sha256": "425c97c858b04bd83bdda28c83602af254c86d94e377ea722df7564219ad2eab",
+    "bytes": 16849
+  },
+  "material_manifest": {
+    "path": "storage/app/market-data/evidence/MD-B19-A001/E049_R0031_20261102_MATERIAL_MANIFEST.json",
+    "sha256": "c989d51c895b15b3417f13965e07c256ea201f370da9388cb92c7a5c55b4265a",
+    "bytes": 29690
+  },
+  "remaining_backlog": {
+    "path": "storage/app/market-data/evidence/MD-B19-A001/E049_CONTINUOUS_BACKLOG_POST_R0031_20261102.json",
+    "sha256": "ec1e3d47f5e6d9b4b3209c4045e663dac0ccccb381b0fee8768fecd1b0b4b9a3",
+    "bytes": 88886
+  },
+  "new_repository_proposals": [
+    "MD-S072-R0031"
+  ],
+  "new_independent_admissions": [],
+  "accounting_before": {
+    "applicable": 750,
+    "accepted": 669,
+    "proposed": 677,
+    "without_basis": 73,
+    "E049": 30,
+    "formal_satisfied": 0
+  },
+  "accounting_after": {
+    "applicable": 750,
+    "accepted": 669,
+    "proposed": 678,
+    "without_basis": 72,
+    "E049": 31,
+    "formal_satisfied": 0
+  },
+  "canonical": {
+    "rule_id": "MD-S072-R0031",
+    "strategy_document_id": "MD-S072",
+    "strategy_owner": "authority/strategy/ops/Performance_SLO_and_Limits_LOCKED.md",
+    "source_line": "68",
+    "section": "Alert states",
+    "rule_text": "Alerts deduplicate by run/date/root cause but retain every affected date and observation. Recovery requires gateway-confirmed readable state or an explicit accepted incident state, not merely a later successful job.",
+    "rule_fingerprint_sha1": "666C769ED88061D776C2E9B8BE640766292E5DD7",
+    "coverage_requirement": "REQUIRED",
+    "applicability": "MANDATORY",
+    "primary_stage": "MD-B19",
+    "supporting_stages": "",
+    "active": "YES",
+    "coverage_status": "NOT_ASSESSED",
+    "current_evidence_ids": "",
+    "notes": "MD-B19-A001 stage_entry_review: applicability_normalized=MANDATORY; applicability_basis=required alert states and their triggers; proof_owner_confirmed=MD-B19"
+  },
+  "disposition": "COMPLETE_REPOSITORY_PROPOSAL_PENDING_INDEPENDENT_REVIEW",
+  "clause_to_evidence": {
+    "run_dimension": {
+      "method": "B19AlertRunIdentityMariaDbTest::test_separate_legitimate_runs_on_one_date_have_distinct_root_alert_keys",
+      "mutation": "r0031_20261102_run_key_omitted"
+    },
+    "date_dimension_and_every_assessment": {
+      "method": "B19AlertCrossDateIdentityMariaDbTest::test_two_affected_dates_retain_distinct_assessments_and_alerts_without_cross_date_recovery",
+      "mutation": "r0031_20261102_cross_date_key_omitted"
+    },
+    "root_cause_dimension": {
+      "method": "B19AlertRootIdentityMariaDbTest::test_distinct_run_date_roots_retain_source_observations_and_recover_only_with_gateway",
+      "mutation": "r0031_20261102_root_key_omitted_v2"
+    },
+    "source_observation_retention": {
+      "method": "B19AlertRootIdentityMariaDbTest::test_distinct_run_date_roots_retain_source_observations_and_recover_only_with_gateway",
+      "mutation": "r0031_20261102_alert_observations_omitted"
+    },
+    "gateway_only_recovery_and_success_refusal": {
+      "methods": [
+        "B19AlertRootIdentityMariaDbTest::test_distinct_run_date_roots_retain_source_observations_and_recover_only_with_gateway",
+        "B19AlertCrossDateIdentityMariaDbTest::test_two_affected_dates_retain_distinct_assessments_and_alerts_without_cross_date_recovery",
+        "B19ExpectedSessionEvidenceMariaDbTest::test_integrity_alert_without_a_run_deduplicates_and_recovers_only_through_real_requested_date_promotion",
+        "B19FreshnessEvidenceMariaDbTest::test_alerts_deduplicate_and_a_successful_job_cannot_recover_without_requested_date_gateway_readability"
+      ],
+      "mutation": "r0031_20261102_gateway_recovery_bypass"
+    }
+  },
+  "final_source_execution": {
+    "execution": {
+      "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/r0031_20261102_final_five_methods.execution.json",
+      "sha256": "9e67a6432ada39f57b3e5a024e4eb93a19bfd35e8267a8fe1fae1a0c3a17254f",
+      "bytes": 262063
+    },
+    "stdout": {
+      "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/r0031_20261102_final_five_methods.stdout.txt",
+      "sha256": "73b929909c3e9c76d47586784b7337dc21cdb9be39192587a32fe43294247f4b",
+      "bytes": 767
+    },
+    "junit": {
+      "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/r0031_20261102_final_five_methods.phpunit.junit.xml",
+      "sha256": "6664d17aa415c2ddd1a4e0c17ff3353d3a3ce621b9aabe4ca911997b642fd60b",
+      "bytes": 3369
+    },
+    "methods": [
+      "test_two_affected_dates_retain_distinct_assessments_and_alerts_without_cross_date_recovery",
+      "test_distinct_run_date_roots_retain_source_observations_and_recover_only_with_gateway",
+      "test_separate_legitimate_runs_on_one_date_have_distinct_root_alert_keys",
+      "test_integrity_alert_without_a_run_deduplicates_and_recovers_only_through_real_requested_date_promotion",
+      "test_alerts_deduplicate_and_a_successful_job_cannot_recover_without_requested_date_gateway_readability"
+    ],
+    "tests": 5,
+    "assertions": 192,
+    "errors": 0,
+    "failures": 0,
+    "skips": 0,
+    "source_stable": true
+  },
+  "mutation_summary": {
+    "qualified_kills": 5,
+    "byte_restorations": 6,
+    "excluded_unqualified_intermediate": "r0031_20261102_root_key_omitted",
+    "records": [
+      "r0031_20261102_cross_date_key_omitted",
+      "r0031_20261102_gateway_recovery_bypass",
+      "r0031_20261102_alert_observations_omitted",
+      "r0031_20261102_run_key_omitted",
+      "r0031_20261102_root_key_omitted_v2"
+    ]
+  },
+  "independent_expected_semantics": [
+    "Run ID, requested date and root cause are distinct dedup coordinates; two genuinely acquired runs on 2026-03-23, two independently completed dates 2026-03-24/25, and two root causes on one run/date must retain different keys.",
+    "Repeated assessment of the same date/root does not duplicate the open alert, while each actual assessment instant and its source observation population remains append-only and independently readable.",
+    "A terminal SUCCESS, an imported but unreadable candidate, a later date, or restoration of a different date cannot recover the affected alert; exact requested-date gateway readability may recover it once, leaving prior breach/measurement rows immutable."
+  ],
+  "limits": [
+    "The accepted-incident alternative is not exercised or asserted: F018 has no governed accepted/closed incident state. Every actual RECOVERED in this proof is backed by requested-date gateway readability.",
+    "The conditional test marker is applied after immutable run creation. No non-null activation snapshot, real activation, numeric SLO compliance, deployment or operational readiness is claimed.",
+    "Controlled pointer faults are test-only negative stimuli; they do not grant operator pointer write authority. Current producer code is unchanged, and previously accepted 22 E049 bases are not re-admitted.",
+    "No all-R0004 or all-freshness-family completion is asserted; four E049 HOLDs and inherited consumer/operations FAIL remain.",
+    "F018 does not define a currently executable accepted-incident recovery path; this proof never claims that alternative was exercised or that unsupported incident closure is accepted.",
+    "Five original methods and new controls are source-bound to the final five-method execution and immutable snapshots; first two new-run fixture attempts remain ERROR, not PASS.",
+    "The 22 previously admitted E049 bases are unaffected by production bytes: only new tests/evidence/traceable basis registration changed. Consumer124/6647 inherited FAIL and operations FAIL are retained."
+  ],
+  "R0004": "INCOMPLETE, 57 Complete / 87 Incomplete / 10 Outside named paths; 5 private proof-sharing aliases. No writer closure inferred.",
+  "preserved": [
+    "Four E049 HOLD_DEPENDENCY predicates",
+    "F03/F018/F024",
+    "D003 NULL warning_count",
+    "MD-DEP-0025",
+    "historical B18 and immutable candidate-v5",
+    "operations FAIL",
+    "No deployment, activation, candidate-v6 or formal SATISFIED"
+  ],
+  "independent_review": {
+    "performed": false,
+    "policy": "Owner defers discretionary review during continued development. Mandatory admission, fixture, closure and operational adjudication remain."
+  },
+  "single_exact_resume_point": "Assess D010-D shared build-identity archive applicability against the observed R009 partial-read contention: decide the exact durable control-file contract, then reproduce/correct only a genuine atomicity or stale-writer violation. Reuse R009 content/retry evidence, preserve fail-closed semantics and source identities; independently audit MD-S072-R0003 through R0008 milestone producers next. No automatic review/admission, activation or R0004 closure."
+}

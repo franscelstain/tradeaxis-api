@@ -70,7 +70,11 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
         $this->assertStringContainsString('COMMAND_DRY_RUN_ONLY', $service);
         $this->assertStringContainsString('COMMAND_APPLY_CONFIRMED', $service);
         $this->assertStringContainsString('countBefore', $service);
-        $this->assertStringContainsString('$apply ? (int) $this->snapshots->purgeBefore', $service);
+        $this->assertStringContainsString('function inspectPurge', $service);
+        $this->assertStringContainsString('function applyDisclosedPurge', $service);
+        $this->assertStringContainsString('$this->snapshots->transaction', $service);
+        $this->assertStringContainsString('DB::transaction', $repository);
+        $this->assertStringContainsString('$this->snapshots->purgeBefore', $service);
         $this->assertStringContainsString('function countBefore', $repository);
     }
 
@@ -156,7 +160,9 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
         $this->assertStringContainsString('resolveCurrentReadablePublicationForTradeDate', $service);
         $this->assertStringContainsString('assertPublicationSnapshotComplete', $service);
         $this->assertStringContainsString('PROJECTION_REPAIR_HISTORY_IDENTITY_INVALID', $service);
-        $this->assertStringContainsString('promotePublicationHistoryToCurrent', $service);
+        $this->assertStringContainsString('repairCurrentProjectionFromHistory', $service);
+        $this->assertStringContainsString('acquireLinkedRecoveryOwner', $service);
+        $this->assertStringContainsString('PROJECTION_REPAIR_REASON_REQUIRED', $service);
         $this->assertStringContainsString('reconcileTradeDate', $service);
         $this->assertStringNotContainsString("table('eod_bars_history')->update", $service);
         $this->assertStringNotContainsString("table('eod_indicators_history')->update", $service);
@@ -184,5 +190,23 @@ class CommandSurfaceSafetyStaticGuardTest extends TestCase
         $this->assertStringNotContainsString('ingestAcquiredRows', $command);
         $this->assertStringContainsString('bars_rows_written_source=current_publication_snapshot', $pipeline);
         $this->assertStringContainsString('bar_ingest_executed=false', $pipeline);
+    }
+
+    public function test_r0011_known_apply_commands_render_preapply_before_their_apply_capable_service_call(): void
+    {
+        foreach ([
+            'ReconcileCorporateActionsCommand.php' => 'applyDisclosedFile',
+            'DetectPriceScaleBreaksCommand.php' => 'applyDisclosed',
+        ] as $file => $serviceCall) {
+            $source = file_get_contents($this->commandDir.'/'.$file);
+            $disclosure = strpos($source, 'operation_mode=PRE_APPLY_DISCLOSURE');
+            $call = strpos($source, $serviceCall);
+            $this->assertNotFalse($disclosure, $file.' must render the R0011 pre-apply disclosure.');
+            $this->assertNotFalse($call, $file.' service call not found.');
+            $this->assertLessThan($call, $disclosure, $file.' must disclose before invoking the apply-capable service.');
+            foreach (['expected_row_effects=', 'config_hash=', 'pointer_impact=', 'reason='] as $field) {
+                $this->assertStringContainsString($field, $source, $file.' missing '.$field);
+            }
+        }
     }
 }

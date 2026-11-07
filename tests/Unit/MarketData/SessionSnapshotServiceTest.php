@@ -159,7 +159,8 @@ class SessionSnapshotServiceTest extends TestCase
         $snapshots = m::mock(SessionSnapshotRepository::class);
         $adapter = m::mock(LocalFileSessionSnapshotAdapter::class);
 
-        $snapshots->shouldReceive('countBefore')->once()->andReturn(12);
+        $snapshots->shouldReceive('transaction')->once()->andReturnUsing(function ($callback) { return $callback(); });
+        $snapshots->shouldReceive('countBefore')->twice()->andReturn(12);
         $snapshots->shouldReceive('purgeBefore')->once()->andReturn(12);
         $service = new SessionSnapshotService($publications, $runs, $scope, $snapshots, $adapter);
         $outputDir = sys_get_temp_dir().'/session_snapshot_purge_'.uniqid();
@@ -195,8 +196,9 @@ class SessionSnapshotServiceTest extends TestCase
             ->subDays(30)
             ->toDateTimeString();
 
+        $snapshots->shouldReceive('transaction')->once()->andReturnUsing(function ($callback) { return $callback(); });
         $snapshots->shouldReceive('countBefore')
-            ->once()
+            ->twice()
             ->with($expectedCutoff)
             ->andReturn(3);
 
@@ -267,4 +269,23 @@ class SessionSnapshotServiceTest extends TestCase
         $this->assertFileExists($outputDir.'/market_data_session_snapshot_purge_summary.json');
     }
 
+    public function test_purge_apply_refuses_candidate_set_changed_after_disclosure_without_delete()
+    {
+        $publications = m::mock(EodPublicationRepository::class);
+        $runs = m::mock(EodRunRepository::class);
+        $scope = m::mock(EligibilitySnapshotScopeRepository::class);
+        $snapshots = m::mock(SessionSnapshotRepository::class);
+        $adapter = m::mock(LocalFileSessionSnapshotAdapter::class);
+        $snapshots->shouldReceive('countBefore')->twice()->andReturn(5, 6);
+        $snapshots->shouldReceive('transaction')->once()->andReturnUsing(function ($callback) { return $callback(); });
+        $snapshots->shouldNotReceive('purgeBefore');
+        $service = new SessionSnapshotService($publications, $runs, $scope, $snapshots, $adapter);
+        $disclosed = $service->inspectPurge('2026-03-01');
+        try {
+            $service->applyDisclosedPurge($disclosed, sys_get_temp_dir().'/session_snapshot_purge_race_'.uniqid());
+            $this->fail('Changed purge candidate set was deleted after disclosure.');
+        } catch (RuntimeException $e) {
+            $this->assertStringContainsString('COMMAND_SESSION_SNAPSHOT_PURGE_PREFLIGHT_CHANGED', $e->getMessage());
+        }
+    }
 }

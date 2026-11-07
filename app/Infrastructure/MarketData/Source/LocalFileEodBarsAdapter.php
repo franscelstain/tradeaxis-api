@@ -40,6 +40,9 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
         try {
             $explicitInputFile = $this->resolveExplicitInputFilePath();
         } catch (SourceAcquisitionException $e) {
+            if (! empty($context['pre_apply_disclosure']) && is_array($context['pre_apply_disclosure'])) {
+                throw new \RuntimeException('COMMAND_CORRECTION_PREFLIGHT_CHANGED');
+            }
             $this->observations->recordTransportFailure(
                 $this->fileObservationEnvelope($this->inputContext->path(), $tradeDate, null, $context),
                 $e->reasonCode()
@@ -62,6 +65,10 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
             return $this->loadObservedFile($csvPath, $tradeDate, $context);
         }
 
+        if (! empty($context['pre_apply_disclosure']) && is_array($context['pre_apply_disclosure'])) {
+            throw new \RuntimeException('COMMAND_CORRECTION_PREFLIGHT_CHANGED');
+        }
+
         $this->observations->recordTransportFailure(
             $this->fileObservationEnvelope($jsonPath.'|'.$csvPath, $tradeDate, null, $context),
             'RUN_SOURCE_MANUAL_FILE_NOT_FOUND'
@@ -76,6 +83,53 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
                 'csv_path' => $csvPath,
             ]
         );
+    }
+
+    public function inspectManualFileSourceIdentity($tradeDate)
+    {
+        $candidate = $this->resolveManualFileCandidate($tradeDate);
+        $payload = @file_get_contents($candidate['resolved_path']);
+        if ($payload === false) {
+            throw new \RuntimeException('COMMAND_CORRECTION_SOURCE_UNVERIFIABLE');
+        }
+
+        return 'manual_file:'.$candidate['display_path'].':sha256='.hash('sha256', $payload);
+    }
+
+    private function resolveManualFileCandidate($tradeDate): array
+    {
+        $configured = trim((string) $this->inputContext->path());
+        if ($configured !== '') {
+            $resolved = $this->isAbsolutePath($configured) ? $configured : base_path($configured);
+            $display = str_replace('\\', '/', $configured);
+            if (! is_file($resolved)) {
+                throw new \RuntimeException('COMMAND_CORRECTION_SOURCE_UNVERIFIABLE');
+            }
+        } else {
+            $localDir = trim((string) config('market_data.source.local_directory'), '/\\');
+            $jsonRel = $localDir.'/'.str_replace('{date}', $tradeDate, (string) config('market_data.source.file_template_json'));
+            $csvRel = $localDir.'/'.str_replace('{date}', $tradeDate, (string) config('market_data.source.file_template_csv'));
+            $jsonAbs = base_path($jsonRel);
+            $csvAbs = base_path($csvRel);
+            if (is_file($jsonAbs)) {
+                $resolved = $jsonAbs;
+                $display = str_replace('\\', '/', $jsonRel);
+            } elseif (is_file($csvAbs)) {
+                $resolved = $csvAbs;
+                $display = str_replace('\\', '/', $csvRel);
+            } else {
+                throw new \RuntimeException('COMMAND_CORRECTION_SOURCE_UNVERIFIABLE');
+            }
+        }
+        $extension = strtolower((string) pathinfo($resolved, PATHINFO_EXTENSION));
+        if (! in_array($extension, ['json', 'csv'], true) || ! is_readable($resolved)) {
+            throw new \RuntimeException('COMMAND_CORRECTION_SOURCE_UNVERIFIABLE');
+        }
+
+        return [
+            'resolved_path' => $resolved,
+            'display_path' => $display,
+        ];
     }
 
     private function resolveExplicitInputFilePath()
@@ -101,16 +155,16 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
         return $candidate;
     }
 
-    private function loadExplicitInputFile($path, $tradeDate)
+    private function loadExplicitInputFile($path, $tradeDate, $payload = null)
     {
         $extension = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
 
         if ($extension === 'json') {
-            return $this->loadJson($path, $tradeDate);
+            return $this->loadJson($path, $tradeDate, $payload);
         }
 
         if ($extension === 'csv') {
-            return $this->loadCsv($path, $tradeDate);
+            return $this->loadCsv($path, $tradeDate, $payload);
         }
 
         throw $this->manualFileException(
@@ -123,8 +177,11 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
     private function loadObservedFile($path, $tradeDate, array $context)
     {
         $extension = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
-        $payload = file_get_contents($path);
+        $payload = @file_get_contents($path);
         if ($payload === false) {
+            if (! empty($context['pre_apply_disclosure']) && is_array($context['pre_apply_disclosure'])) {
+                throw new \RuntimeException('COMMAND_CORRECTION_PREFLIGHT_CHANGED');
+            }
             $this->observations->recordTransportFailure(
                 $this->fileObservationEnvelope($path, $tradeDate, null, $context),
                 'RUN_SOURCE_MANUAL_FILE_NOT_FOUND'
@@ -132,12 +189,27 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
             throw $this->manualFileException('Manual source file could not be read.', 'RUN_SOURCE_MANUAL_FILE_NOT_FOUND');
         }
 
+        if (! empty($context['pre_apply_disclosure']) && is_array($context['pre_apply_disclosure'])) {
+            $disclosedSource = (string) ($context['pre_apply_disclosure']['source_identity'] ?? '');
+            try {
+                $candidate = $this->resolveManualFileCandidate($tradeDate);
+            } catch (\RuntimeException $e) {
+                throw new \RuntimeException('COMMAND_CORRECTION_PREFLIGHT_CHANGED');
+            }
+            $normalizedCandidate = str_replace('\\', '/', (string) (realpath($candidate['resolved_path']) ?: $candidate['resolved_path']));
+            $normalizedPath = str_replace('\\', '/', (string) (realpath($path) ?: $path));
+            $actualSourceIdentity = 'manual_file:'.$candidate['display_path'].':sha256='.hash('sha256', $payload);
+            if ($normalizedCandidate !== $normalizedPath || $actualSourceIdentity !== $disclosedSource) {
+                throw new \RuntimeException('COMMAND_CORRECTION_PREFLIGHT_CHANGED');
+            }
+        }
+
         $capture = $this->persistCapture(
             $this->fileObservationEnvelope($path, $tradeDate, $payload, $context, $extension)
         );
 
         try {
-            $rows = $this->loadExplicitInputFile($path, $tradeDate);
+            $rows = $this->loadExplicitInputFile($path, $tradeDate, $payload);
         } catch (SourceAcquisitionException $e) {
             $this->persistOutcome($capture, 'REJECTED', $e->reasonCode());
             throw $e;
@@ -185,10 +257,10 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
         return $telemetry;
     }
 
-    private function rememberManualFileTelemetry($path, $tradeDate, $format, array $rows, array $context = [])
+    private function rememberManualFileTelemetry($path, $tradeDate, $format, array $rows, array $context = [], $payload = null)
     {
-        $sourceFileHash = is_file($path) ? hash_file('sha256', $path) : null;
-        $sourceFileSize = is_file($path) ? filesize($path) : null;
+        $sourceFileHash = $payload !== null ? hash('sha256', (string) $payload) : (is_file($path) ? hash_file('sha256', $path) : null);
+        $sourceFileSize = $payload !== null ? strlen((string) $payload) : (is_file($path) ? filesize($path) : null);
         $rowCount = count($rows);
 
         $this->lastAcquisitionTelemetry = array_merge([
@@ -216,10 +288,10 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
         ], $context);
     }
 
-    private function rememberManualFileFailureTelemetry($path, $tradeDate, $format, $reasonCode, array $context = [])
+    private function rememberManualFileFailureTelemetry($path, $tradeDate, $format, $reasonCode, array $context = [], $payload = null)
     {
-        $sourceFileHash = is_file($path) ? hash_file('sha256', $path) : null;
-        $sourceFileSize = is_file($path) ? filesize($path) : null;
+        $sourceFileHash = $payload !== null ? hash('sha256', (string) $payload) : (is_file($path) ? hash_file('sha256', $path) : null);
+        $sourceFileSize = $payload !== null ? strlen((string) $payload) : (is_file($path) ? filesize($path) : null);
         $rowCount = array_key_exists('source_file_row_count', $context) ? $context['source_file_row_count'] : null;
 
         $this->lastAcquisitionTelemetry = array_merge([
@@ -248,9 +320,9 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
         ], $context);
     }
 
-    private function blockEmptyManualFile($path, $tradeDate, $format, $reasonCode, array $context = [])
+    private function blockEmptyManualFile($path, $tradeDate, $format, $reasonCode, array $context = [], $payload = null)
     {
-        $this->rememberManualFileFailureTelemetry($path, $tradeDate, $format, $reasonCode, $context);
+        $this->rememberManualFileFailureTelemetry($path, $tradeDate, $format, $reasonCode, $context, $payload);
 
         throw $this->manualFileException(
             'Manual file source contains no valid data rows and is blocked from import/promote.',
@@ -281,23 +353,27 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
                 && in_array($path[2], ['/', '\\'], true));
     }
 
-    private function loadJson($path, $tradeDate)
+    private function loadJson($path, $tradeDate, $payload = null)
     {
-        if (! is_readable($path)) {
-            throw $this->manualFileException(
-                'File JSON bars lokal tidak dapat dibaca.',
-                'RUN_SOURCE_MANUAL_FILE_NOT_READABLE',
-                ['source_input_file' => $path]
-            );
-        }
+        if ($payload !== null) {
+            $contents = (string) $payload;
+        } else {
+            if (! is_readable($path)) {
+                throw $this->manualFileException(
+                    'File JSON bars lokal tidak dapat dibaca.',
+                    'RUN_SOURCE_MANUAL_FILE_NOT_READABLE',
+                    ['source_input_file' => $path]
+                );
+            }
 
-        $contents = file_get_contents($path);
-        if ($contents === false) {
-            throw $this->manualFileException(
-                'File JSON bars lokal tidak dapat dibuka.',
-                'RUN_SOURCE_MANUAL_FILE_NOT_READABLE',
-                ['source_input_file' => $path]
-            );
+            $contents = file_get_contents($path);
+            if ($contents === false) {
+                throw $this->manualFileException(
+                    'File JSON bars lokal tidak dapat dibuka.',
+                    'RUN_SOURCE_MANUAL_FILE_NOT_READABLE',
+                    ['source_input_file' => $path]
+                );
+            }
         }
 
         $index = $this->jsonFileIndex($path, $contents);
@@ -312,17 +388,17 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
                 'source_file_total_row_count' => $index['total_row_count'],
                 'source_file_filtered_out_row_count' => $index['total_row_count'],
                 'requested_trade_date' => $tradeDate,
-            ]);
+            ], $contents);
         }
 
-        $this->rememberManualFileTelemetry($path, $tradeDate, 'json', $rows, $this->filterTelemetryContext($index, $rows, $tradeDate));
+        $this->rememberManualFileTelemetry($path, $tradeDate, 'json', $rows, $this->filterTelemetryContext($index, $rows, $tradeDate), $contents);
 
         return $rows;
     }
 
-    private function loadCsv($path, $tradeDate)
+    private function loadCsv($path, $tradeDate, $payload = null)
     {
-        $index = $this->csvFileIndex($path);
+        $index = $this->csvFileIndex($path, $payload);
         $rawRows = $this->rowsForRequestedDate($index, $tradeDate);
 
         $rows = array_map(function ($entry) use ($tradeDate) {
@@ -335,18 +411,19 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
                 'source_file_total_row_count' => $index['total_row_count'],
                 'source_file_filtered_out_row_count' => $index['total_row_count'],
                 'requested_trade_date' => $tradeDate,
-            ]);
+            ], $payload);
         }
 
-        $this->rememberManualFileTelemetry($path, $tradeDate, 'csv', $rows, $this->filterTelemetryContext($index, $rows, $tradeDate));
+        $this->rememberManualFileTelemetry($path, $tradeDate, 'csv', $rows, $this->filterTelemetryContext($index, $rows, $tradeDate), $payload);
 
         return $rows;
     }
 
     private function jsonFileIndex($path, $contents)
     {
-        if (isset($this->jsonFileIndexCache[$path])) {
-            return $this->jsonFileIndexCache[$path];
+        $cacheKey = $path.'|'.hash('sha256', (string) $contents);
+        if (isset($this->jsonFileIndexCache[$cacheKey])) {
+            return $this->jsonFileIndexCache[$cacheKey];
         }
 
         $payload = json_decode($contents, true);
@@ -375,18 +452,37 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
             $this->addRowToFileIndex($index, $row, 'json:'.($rowIndex + 1));
         }
 
-        $this->jsonFileIndexCache[$path] = $index;
+        $this->jsonFileIndexCache[$cacheKey] = $index;
 
         return $index;
     }
 
-    private function csvFileIndex($path)
+    private function csvFileIndex($path, $contents = null)
     {
-        if (isset($this->csvFileIndexCache[$path])) {
-            return $this->csvFileIndexCache[$path];
+        if ($contents === null) {
+            if (! is_readable($path)) {
+                throw $this->manualFileException(
+                    'File CSV bars lokal tidak dapat dibuka.',
+                    'RUN_SOURCE_MANUAL_FILE_NOT_READABLE',
+                    ['source_input_file' => $path]
+                );
+            }
+            $contents = @file_get_contents($path);
+            if ($contents === false) {
+                throw $this->manualFileException(
+                    'File CSV bars lokal tidak dapat dibuka.',
+                    'RUN_SOURCE_MANUAL_FILE_NOT_READABLE',
+                    ['source_input_file' => $path]
+                );
+            }
         }
 
-        $handle = fopen($path, 'r');
+        $cacheKey = $path.'|'.hash('sha256', (string) $contents);
+        if (isset($this->csvFileIndexCache[$cacheKey])) {
+            return $this->csvFileIndexCache[$cacheKey];
+        }
+
+        $handle = fopen('php://temp', 'r+');
 
         if ($handle === false) {
             throw $this->manualFileException(
@@ -395,6 +491,8 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
                 ['source_input_file' => $path]
             );
         }
+        fwrite($handle, (string) $contents);
+        rewind($handle);
 
         $header = fgetcsv($handle);
 
@@ -447,7 +545,7 @@ class LocalFileEodBarsAdapter implements ManualEodBarsSource
 
         fclose($handle);
 
-        $this->csvFileIndexCache[$path] = $index;
+        $this->csvFileIndexCache[$cacheKey] = $index;
 
         return $index;
     }

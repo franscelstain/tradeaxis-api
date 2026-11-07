@@ -10,13 +10,16 @@ trait UsesMarketDataSqlite
 {
     protected string $marketDataSqliteConnection = 'sqlite';
 
-    protected function bootMarketDataSqlite(): void
+    private $marketDataSqliteFile;
+
+    protected function bootMarketDataSqlite(bool $independentConnections = false): void
     {
+        $this->marketDataSqliteFile = $independentConnections ? tempnam(sys_get_temp_dir(), 'md_replay_mirror_') : null;
         config()->set('database.default', $this->marketDataSqliteConnection);
         config()->set('market_data.source.api.timeout_seconds', 20);
         config()->set("database.connections.{$this->marketDataSqliteConnection}", [
             'driver' => 'sqlite',
-            'database' => ':memory:',
+            'database' => $this->marketDataSqliteFile ?: ':memory:',
             'prefix' => '',
             'foreign_key_constraints' => false,
         ]);
@@ -32,11 +35,14 @@ trait UsesMarketDataSqlite
         }
 
         $this->createMarketDataSqliteSchema();
+        require_once base_path('database/migrations/2026_10_29_000001_add_durable_replay_result_authority.php');
+        (new \AddDurableReplayResultAuthority())->up();
     }
 
     protected function tearDownMarketDataSqlite(): void
     {
         DB::disconnect($this->marketDataSqliteConnection);
+        if ($this->marketDataSqliteFile && is_file($this->marketDataSqliteFile)) unlink($this->marketDataSqliteFile);
     }
 
     protected function schema()
@@ -837,6 +843,8 @@ trait UsesMarketDataSqlite
             $table->date('trade_date_requested')->primary();
             $table->integer('owner_run_id')->nullable();
             $table->dateTime('updated_at');
+            $table->string('execution_id', 32)->nullable();
+            $table->string('credential_hash', 64)->nullable();
         });
 
         $schema->create('eod_runs', function (Blueprint $table) {
@@ -953,6 +961,12 @@ trait UsesMarketDataSqlite
             $table->index(['source', 'source_name', 'source_provider', 'source_file_hash'], 'idx_runs_source_identity');
         });
 
+        $schema->create('eod_observer_fences', function (Blueprint $table) {
+            $table->string('scope_key', 64)->primary(); $table->unsignedBigInteger('token');
+            $table->string('actor_id', 32)->nullable(); $table->string('credential_hash', 64)->nullable();
+            $table->unsignedBigInteger('target_run_id')->nullable();
+            $table->dateTime('acquired_at')->nullable(); $table->dateTime('released_at')->nullable();
+        });
         $schema->create('eod_run_events', function (Blueprint $table) {
             $table->increments('event_id');
             $table->integer('run_id');
@@ -971,6 +985,10 @@ trait UsesMarketDataSqlite
             $table->index(['stage', 'event_time'], 'idx_run_events_stage_time');
             $table->index(['reason_code'], 'idx_run_events_reason_code');
             $table->index(['severity', 'event_time'], 'idx_run_events_severity_time');
+            $table->string('writer_kind', 24)->nullable();
+            $table->string('writer_actor_id', 32)->nullable();
+            $table->string('writer_scope_key', 64)->nullable();
+            $table->unsignedBigInteger('writer_fencing_token')->nullable();
         });
 
         $schema->create('eod_dataset_corrections', function (Blueprint $table) {
@@ -1560,6 +1578,10 @@ trait UsesMarketDataSqlite
 
         $schema->create('md_publication_projection_reconciliations', function (Blueprint $table) {
             $table->bigIncrements('reconciliation_id');
+            $table->string('writer_kind', 32)->nullable();
+            $table->string('writer_actor_id', 32)->nullable();
+            $table->string('writer_scope_key', 64)->nullable();
+            $table->unsignedBigInteger('writer_fencing_token')->nullable();
             $table->char('reconciliation_uid', 64)->unique();
             $table->date('trade_date');
             $table->unsignedBigInteger('publication_id')->nullable();
@@ -1595,6 +1617,10 @@ trait UsesMarketDataSqlite
         (new \AddPublicationLineageBindingSealImmutability())->up();
         require_once dirname(__DIR__, 2).'/database/migrations/2026_10_01_000001_add_semantic_nested_identity.php';
         (new \AddSemanticNestedIdentity())->up();
+        // Keep the supported mirror on the same append-only date-evidence contract as MariaDB.
+        // Absence of the production migration must not be hidden by a policy bypass.
+        require_once dirname(__DIR__, 2).'/database/migrations/2026_10_22_000001_create_freshness_measurement_ledger.php';
+        (new \CreateFreshnessMeasurementLedger())->up();
         $this->seedMarketDataSectorTaxonomy();
     }
 

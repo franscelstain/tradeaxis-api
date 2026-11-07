@@ -52,7 +52,7 @@ class B18AsKnownModeIsolationTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->bootMarketDataSqlite();
+        $this->bootMarketDataSqlite(true); // Real replay isolation requires independently connectable test storage.
         $this->seedWorld();
     }
 

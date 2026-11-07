@@ -39,6 +39,39 @@ class CorporateActionExternalReconciliationService
         return $this->reconcileManifest($manifest, hash('sha256', $raw), (bool) $apply);
     }
 
+    public function inspectFile($manifestPath): array
+    {
+        $result = $this->reconcileFile($manifestPath, false);
+        $guard = app(CommandPreApplyDisclosureService::class);
+        $result['config_hash'] = $guard->currentConfigHash();
+        $result['pre_apply_fingerprint'] = $guard->fingerprint($this->disclosureIdentity($result));
+        return $result;
+    }
+
+    public function applyDisclosedFile($manifestPath, array $disclosed): array
+    {
+        return DB::transaction(function () use ($manifestPath, $disclosed) {
+            $actual = $this->reconcileFile($manifestPath, false);
+            $guard = app(CommandPreApplyDisclosureService::class);
+            $actual['config_hash'] = $guard->currentConfigHash();
+            $fingerprint = $guard->fingerprint($this->disclosureIdentity($actual));
+            if (! isset($disclosed['pre_apply_fingerprint'])
+                || ! hash_equals((string) $disclosed['pre_apply_fingerprint'], $fingerprint)) {
+                throw new \RuntimeException('COMMAND_CORPORATE_ACTION_RECONCILIATION_PREFLIGHT_CHANGED');
+            }
+            $actual['persisted'] = $this->persist($actual);
+            $actual['pre_apply_fingerprint'] = $fingerprint;
+            return $actual;
+        });
+    }
+
+    private function disclosureIdentity(array $result): array
+    {
+        $copy = $result;
+        unset($copy['persisted'], $copy['pre_apply_fingerprint']);
+        return $copy;
+    }
+
     private function stripUtf8Bom(string $raw): string
     {
         return substr($raw, 0, 3) === "\xEF\xBB\xBF" ? substr($raw, 3) : $raw;

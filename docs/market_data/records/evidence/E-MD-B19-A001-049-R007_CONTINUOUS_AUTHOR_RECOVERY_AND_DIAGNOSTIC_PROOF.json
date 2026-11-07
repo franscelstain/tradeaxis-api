@@ -1,0 +1,137 @@
+{
+  "record_id": "E-MD-B19-A001-049-R007",
+  "record_type": "EVIDENCE",
+  "status": "ISSUED",
+  "stage": "MD-B19",
+  "attempt": "MD-B19-A001",
+  "work_id": "MD-B19-A001",
+  "baseline": "MD-B19-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "issued_at": "2026-10-29T00:43:13.807645+07:00",
+  "record_scope": "Author implementation/runtime evidence and one repository proposal; NOT a Claude/OpenAI independent review or predicate admission.",
+  "author": "Codex / OpenAI, repository implementation agent",
+  "independent_review": {
+    "performed": false,
+    "policy": "Owner explicitly defers discretionary review while compatible development continues. Mandatory admission/closure/oracle/operational gates remain. R006 is latest actual separately authored review."
+  },
+  "registration_authority": [
+    "DOCUMENT_RECORDING_STANDARD.md sections1-3",
+    "RUNTIME_ARTIFACT_AND_GOVERNED_EVIDENCE_STANDARD.md sections2/6",
+    "WORK_CORRELATION_AND_RECORD_REGISTRY_STANDARD.md sections1/2/5",
+    "DOCUMENT_CHANGE_POLICY.md section3 MUTABLE_TRACEABLE registration; no semantic revision"
+  ],
+  "related_evidence": [
+    "E-MD-B19-A001-049",
+    "E-MD-B19-A001-049-R006"
+  ],
+  "related_decisions": [
+    "D-MD-B19-A001-009",
+    "D-MD-B19-A001-010"
+  ],
+  "related_findings": [
+    "F-MD-B19-A001-023"
+  ],
+  "related_dependencies": [
+    "MD-DEP-0025"
+  ],
+  "change_impact": "CI-MD-B19-A001-001",
+  "new_repository_proposals": [
+    "MD-S071-R0010"
+  ],
+  "new_independent_admissions": [],
+  "accounting_before": {
+    "applicable": 750,
+    "accepted": 669,
+    "proposed": 673,
+    "without_basis": 77,
+    "E049": 26,
+    "formal_satisfied": 0
+  },
+  "accounting_after": {
+    "applicable": 750,
+    "accepted": 669,
+    "proposed": 674,
+    "without_basis": 76,
+    "E049": 27,
+    "formal_satisfied": 0
+  },
+  "proof_matrix": {
+    "path": "storage/app/market-data/evidence/MD-B19-A001/E049_DEVELOPMENT_20261029_PROOF_MATRIX.json",
+    "sha256": "c6d47037423bd1dee6e73bfa6d6518d4be0ee2251e081e5ebff30ee4f9498e65",
+    "bytes": 246929
+  },
+  "material_manifest": {
+    "path": "storage/app/market-data/evidence/MD-B19-A001/E049_DEVELOPMENT_20261029_MATERIAL_MANIFEST.json",
+    "sha256": "c181d79902877a487be2022fa57ec665facea9d253830b0f31b9b5caf17d6732",
+    "bytes": 391404
+  },
+  "preserved_hold_dependency": [
+    "MD-S072-R0017",
+    "MD-S072-R0019",
+    "MD-S069-R0017",
+    "MD-S072-R0032"
+  ],
+  "dispositions": {
+    "MD-S071-R0010": {
+      "status": "COMPLETE",
+      "repository_registration": "NEW_PROPOSAL_PENDING_INDEPENDENT_REVIEW",
+      "positive": "B19OperatorUpstreamRecoveryMariaDbTest::test_upstream_completeness_recovers_only_through_new_authenticated_execution_and_preserves_old_artifacts",
+      "negative": "B19OperatorUpstreamRecoveryMariaDbTest::test_upstream_completeness_recovers_only_through_new_authenticated_execution_and_preserves_old_artifacts",
+      "oracle": "Independently delete each required unsealed artifact family. Requested date24 must not become readable; verified date23 remains accessible. A released actor cannot restore rows. A fresh authenticated execution must regenerate upstream rows before seal/readability, retaining failed candidate/source and prior history. Compound snapshot failure must roll back all families.",
+      "execution": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/dev_20261029_stable_upstream.execution.json",
+        "sha256": "962ae1832ab30bbcfbf6b4b368836845ad3771edfca3a90bd05dc2098a1b82ad",
+        "bytes": 258334
+      },
+      "counterfactuals": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/dev_20261029_mut_upstream_recovery_guidance.restoration.json",
+          "sha256": "f2a2f0fe34b248b171c098af77e7bd336cfeff0be41403335ae6e4909742392c",
+          "bytes": 733
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/dev_20261029_mut_seal_compound_rollback.restoration.json",
+          "sha256": "91938c98a05bd61c9f3f2e5a296b259428614a2fd81a020e712d4db3bbcf2806",
+          "bytes": 877
+        }
+      ],
+      "limitations": "Test server descendant with migrated owner/observer fence tables; CREATE TABLE LIKE does not independently establish all production FK/trigger behavior. Actual application writes, distinct connections, artifacts and rollback are asserted. No operational activation, independent principal authentication, F018 escalation/closure, every-write completion or release claim."
+    },
+    "MD-S071-R0039": {
+      "status": "INCOMPLETE",
+      "repository_registration": "NOT_REGISTERED",
+      "proved_subcontract": "Honest diagnostic classification for all8 complete hash-member masks plus explicit NULL, missing assertion, matching fallback and diverging fallback; actual metric/export/CLI and immutable source/publication state are asserted.",
+      "execution": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/dev_20261029_stable_scope.execution.json",
+        "sha256": "6dd0b787eaa79a964540b52e17f00a743acb55f9bb9c7297769d77e35bd8216f",
+        "bytes": 258320
+      },
+      "remaining": "D010-B durable replay-result identity/lifecycle/write authority is not demonstrated by a rolled-back diagnostic metric write. ReplayResultRepository::nextReplayId/upsertMetric and related result/event writers remain an explicit separate scope. No full governed operator workflow base is registered from this diagnostic alone.",
+      "oracle_limit": "Source-only Python pre-target fingerprint is separately calculated by this implementation author, not a separately reviewed/admitted successor golden fixture. Qualified replay/MD-DEP-0025 remain open; diagnostic behavior alone does not assert publication correctness or determinism."
+    },
+    "MD-S071-R0040": {
+      "status": "INCOMPLETE",
+      "repository_registration": "NOT_REGISTERED",
+      "proved_subcontract": "Honest diagnostic classification for all8 complete hash-member masks plus explicit NULL, missing assertion, matching fallback and diverging fallback; actual metric/export/CLI and immutable source/publication state are asserted.",
+      "execution": {
+        "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/dev_20261029_stable_scope.execution.json",
+        "sha256": "6dd0b787eaa79a964540b52e17f00a743acb55f9bb9c7297769d77e35bd8216f",
+        "bytes": 258320
+      },
+      "remaining": "D010-B durable replay-result identity/lifecycle/write authority is not demonstrated by a rolled-back diagnostic metric write. ReplayResultRepository::nextReplayId/upsertMetric and related result/event writers remain an explicit separate scope. No full governed operator workflow base is registered from this diagnostic alone.",
+      "oracle_limit": "Source-only Python pre-target fingerprint is separately calculated by this implementation author, not a separately reviewed/admitted successor golden fixture. Qualified replay/MD-DEP-0025 remain open; diagnostic behavior alone does not assert publication correctness or determinism."
+    }
+  },
+  "current_build_impact": "All22 historically admitted bases have30/728 source-bound execution plus explicit unaffected later classifier/test-retention bridge, not new independent acceptance. Full incident15/651, native scope1/178, upstream3/99, affected replay66/281; consumer124/6647 retains1 inherited FAIL and zero errors.",
+  "open_conditions": [
+    "No LOCKED change",
+    "F03 trusted issuer remains",
+    "No new observation authority",
+    "Legacy v2 unrelated historical outcomes fail closed when attribution is unavailable",
+    "R0004 INCOMPLETE",
+    "4 existing HOLD_DEPENDENCY preserved",
+    "Inherited consumer FAIL and operations FAIL",
+    "MD-DEP-0025/B18/candidate-v5 preserved"
+  ],
+  "packaging": "No new review ZIP; raw evidence is losslessly indexed for a future substantive consolidated adjudication. No deployment or stage closure."
+}

@@ -82,11 +82,28 @@ class SemanticNestedIdentityService
      */
     public function bind($run, $publication, string $tradeDate, bool $useHistory): array
     {
+        return DB::transaction(function () use ($run, $publication, $tradeDate, $useHistory) {
+            $id = (int) $this->value($publication, 'publication_id');
+            $observed = DB::table('eod_publications')->where('publication_id', $id)->first();
+            $readOnly = $observed && (string) $observed->seal_state === 'SEALED';
+            if (! $readOnly) {
+                (new \App\Infrastructure\Persistence\MarketData\RequestedDateWriterFence())->lockCandidate(
+                    $tradeDate, $run, $id, true
+                );
+            }
+            return $this->bindVerified($run, $publication, $tradeDate, $useHistory, $readOnly);
+        });
+    }
+
+    private function bindVerified($run, $publication, string $tradeDate, bool $useHistory, bool $readOnly): array
+    {
         $publicationId = (int) $this->value($publication, 'publication_id');
         $current = DB::table('eod_publications')->where('publication_id', $publicationId)->first();
         if (! $current) {
             throw new \RuntimeException('SEMANTIC_NESTED_PUBLICATION_MISSING: '.$publicationId);
         }
+        if ($readOnly && (string) $current->seal_state !== 'SEALED') throw new \RuntimeException('SEALED_PUBLICATION_IMMUTABLE: confirmation cannot become a mutation.');
+        if ((string) $current->trade_date !== $tradeDate) throw new \RuntimeException('SEMANTIC_NESTED_TRADE_DATE_MISMATCH');
         if ((int) $current->run_id !== (int) $this->value($run, 'run_id')) {
             throw new \RuntimeException('SEMANTIC_NESTED_OWNERSHIP_MISMATCH: publication '.$publicationId);
         }
@@ -115,6 +132,7 @@ class SemanticNestedIdentityService
             return $computed;
         }
         if (! $unchanged) {
+            if ($readOnly) throw new \RuntimeException('SEALED_PUBLICATION_IMMUTABLE: nested confirmation is read-only.');
             DB::table('md_publication_lineage_bindings')->where('publication_id', $publicationId)->update($payload);
         }
 

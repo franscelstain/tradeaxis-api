@@ -7,7 +7,7 @@ class B19AsKnownIdentityApplicabilityTest extends TestCase
 {
     use \Tests\Support\UsesMarketDataSqlite;
     private $helper;
-    protected function setUp(): void {parent::setUp();$this->bootMarketDataSqlite();$this->helper=new B18AsKnownModeIsolationTest();$seed=new ReflectionMethod($this->helper,'seedWorld');$seed->setAccessible(true);$seed->invoke($this->helper);}
+    protected function setUp(): void {parent::setUp();$this->bootMarketDataSqlite(true);$this->helper=new B18AsKnownModeIsolationTest();$seed=new ReflectionMethod($this->helper,'seedWorld');$seed->setAccessible(true);$seed->invoke($this->helper);}
     protected function tearDown(): void {$this->tearDownMarketDataSqlite();parent::tearDown();}
     public function test_new_state_paths_keep_the_as_known_coordinate_and_no_analytical_publication(): void
     {

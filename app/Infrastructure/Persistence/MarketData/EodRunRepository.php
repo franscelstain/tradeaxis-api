@@ -29,15 +29,29 @@ class EodRunRepository
         $this->configSnapshots = $configSnapshots ?: new MarketDataConfigSnapshotRepository();
     }
 
-    public function getOrCreateOwningRun($requestedDate, $sourceMode, $stage, $supersedesRunId = null, $requestMode = null)
+    public function getOrCreateOwningRun($requestedDate, $sourceMode, $stage, $supersedesRunId = null, $requestMode = null, $preApplyDisclosure = null)
     {
+        if ($requestMode === 'replay_verify') {
+            ReplayIsolation::assertActive();
+        }
         $scope = MarketDataScope::fromConfig();
         $requestedDate = $scope->assertRequestedDate($requestedDate);
 
-        $result = DB::transaction(function () use ($requestedDate, $sourceMode, $stage, $supersedesRunId, $requestMode, $scope) {
+        $result = DB::transaction(function () use ($requestedDate, $sourceMode, $stage, $supersedesRunId, $requestMode, $scope, $preApplyDisclosure) {
             $publishCritical = $this->isPublishCriticalMode($requestMode);
-            if ($publishCritical) {
-                $this->lockDateOwnerFence($requestedDate);
+            if ($preApplyDisclosure !== null) {
+                if ($requestMode !== 'correction' || (string) $preApplyDisclosure['requested_date'] !== $requestedDate
+                    || (string) $preApplyDisclosure['source_mode'] !== (string) $sourceMode) {
+                    throw new \RuntimeException('COMMAND_CORRECTION_PREFLIGHT_SCOPE_MISMATCH');
+                }
+                app(\App\Application\MarketData\Services\CorrectionCommandPreflightService::class)
+                    ->assertMatches($preApplyDisclosure);
+            }
+            $this->lockDateOwnerFence($requestedDate);
+            return RunWriterContext::observeDate('conflict', $requestedDate, null, function () use ($requestedDate, $sourceMode, $stage, $supersedesRunId, $requestMode, $scope, $publishCritical, $preApplyDisclosure) {
+            if ($preApplyDisclosure !== null) {
+                app(\App\Application\MarketData\Services\CorrectionCommandPreflightService::class)
+                    ->assertMatches($preApplyDisclosure, true);
             }
             $recoveredRunIds = [];
             $recoveryBlock = $this->cancelStaleActiveRuns($requestedDate, $sourceMode, $requestMode, $publishCritical, $recoveredRunIds);
@@ -56,25 +70,28 @@ class EodRunRepository
                         $query->where('source', $sourceMode)->where('request_mode', $requestMode);
                     }
                 })
+                ->whereNotIn('run_id', $recoveredRunIds)
                 ->orderByDesc('run_id')
                 ->lockForUpdate()
                 ->first();
 
             if ($activeRun) {
-                if ($publishCritical && ((string) $activeRun->source !== (string) $sourceMode
-                    || (string) $activeRun->request_mode !== (string) $requestMode)) {
-                    $blockedRun = $this->recordFencedWorkerOutcome($requestedDate, $sourceMode, $requestMode, $stage, (int) $activeRun->run_id);
-                    $this->appendEvent($activeRun, $stage, 'RUN_OWNER_CONFLICT', 'WARN',
-                        'Competing publish-critical request fenced before candidate execution.', 'RUN_LOCK_CONFLICT', [
-                            'owner_run_id' => (int) $activeRun->run_id,
-                            'blocked_run_id' => (int) $blockedRun->run_id,
-                            'competing_source_mode' => (string) $sourceMode,
-                            'competing_request_mode' => (string) $requestMode,
-                            'trade_date_requested' => $requestedDate,
-                            'decision' => 'BLOCKED',
-                        ]);
-                    return ['owner_error' => 'RUN_OWNER_CONFLICT: active owner run '.(int) $activeRun->run_id.' holds requested date '.$requestedDate.'; blocked run '.(int) $blockedRun->run_id];
+                if ($preApplyDisclosure !== null && ((int) $preApplyDisclosure['new_run_id'] !== (int) $activeRun->run_id
+                    || (int) $preApplyDisclosure['new_config_snapshot_id'] !== (int) $activeRun->config_snapshot_id
+                    || (string) $preApplyDisclosure['candidate_config_content_hash'] !== (string) $activeRun->config_hash)) {
+                    throw new \RuntimeException('COMMAND_CORRECTION_PREFLIGHT_CHANGED');
                 }
+                if ((string) $activeRun->source !== (string) $sourceMode || (string) $activeRun->request_mode !== (string) $requestMode) {
+                    $blockedRun = $this->recordFencedWorkerOutcome($requestedDate, $sourceMode, $requestMode, $stage, (int) $activeRun->run_id);
+                    $this->recordObservation($activeRun, 'conflict', $stage, 'RUN_OWNER_CONFLICT', 'WARN',
+                        'Competing request observed by its own diagnostic actor; incumbent authority is not borrowed.', 'RUN_LOCK_CONFLICT', [
+                            'owner_run_id' => (int) $activeRun->run_id, 'blocked_run_id' => (int) $blockedRun->run_id,
+                            'competing_source_mode' => (string) $sourceMode, 'competing_request_mode' => (string) $requestMode,
+                            'trade_date_requested' => $requestedDate, 'decision' => 'BLOCKED',
+                        ]);
+                    return ['owner_error' => 'RUN_OWNER_CONFLICT: active owner run '.(int) $activeRun->run_id.'; blocked run '.(int) $blockedRun->run_id];
+                }
+                (new RequestedDateWriterFence())->lockRun($requestedDate, $activeRun);
                 $activeRun->assertKnowledgeCutoffForExecution();
 
                 if (empty($activeRun->config_snapshot_id)) {
@@ -89,7 +106,17 @@ class EodRunRepository
                 return $activeRun;
             }
 
+            $lease = DB::table('eod_run_owner_fences')->where('trade_date_requested', $requestedDate)->first();
+            if ($lease && $lease->owner_run_id && ! in_array((int) $lease->owner_run_id, $recoveredRunIds, true) && $lease->released_at === null
+                && EodRun::where('run_id', $lease->owner_run_id)->whereIn('lifecycle_state', ['PENDING','RUNNING','FINALIZING'])->exists()) {
+                return ['owner_error' => 'RUN_OWNER_CONFLICT: requested date belongs to another execution scope.'];
+            }
             $snapshot = $this->configSnapshots->resolveForRun($requestedDate);
+            if ($preApplyDisclosure !== null && ((string) $preApplyDisclosure['new_run_id'] !== 'PENDING_ALLOCATION'
+                || (string) $preApplyDisclosure['new_config_snapshot_id'] !== 'PENDING_ALLOCATION'
+                || (string) $snapshot['config_hash'] !== (string) $preApplyDisclosure['candidate_config_content_hash'])) {
+                throw new \RuntimeException('COMMAND_CORRECTION_PREFLIGHT_CHANGED');
+            }
             $now = $this->captureKnowledgeCutoff();
 
             $run = EodRun::query()->create([
@@ -164,6 +191,10 @@ class EodRunRepository
                 'updated_at' => $now,
             ]);
 
+            $this->setDateOwnerFence($requestedDate, (int) $run->run_id);
+            $this->issueExecutionCredential($run);
+            $this->cancelVerifiedPredecessors($run, $recoveredRunIds);
+
             $this->appendEvent(
                 $run,
                 $stage,
@@ -182,6 +213,8 @@ class EodRunRepository
                     'publishability_state' => 'NOT_READABLE',
                     'config_snapshot_id' => (int) $snapshot['config_snapshot_id'],
                     'config_hash' => $snapshot['config_hash'],
+                    'pre_apply_disclosure_sha256' => $preApplyDisclosure === null ? null
+                        : hash('sha256', RunInputCaptureRepository::canonicalJson($preApplyDisclosure)),
                 ]
             );
 
@@ -202,6 +235,7 @@ class EodRunRepository
                 }
             }
             return $run;
+            });
         }, 3);
         if (is_array($result) && isset($result['owner_error'])) {
             throw new \RuntimeException($result['owner_error']);
@@ -214,11 +248,12 @@ class EodRunRepository
      * Create an isolated replay run at an explicit historical knowledge coordinate.
      *
      * Unlike a production run, this never resolves or creates today's configuration. The caller
-     * must execute it inside a transaction that is rolled back after deterministic replay output
+     * must execute it inside ReplayIsolation, which owns the dedicated rollback-only root after output
      * is captured; only the replay-result record is persisted outside that transaction.
      */
     public function createAsKnownReplayRun($requestedDate, $knowledgeCutoff, $sourceMode = 'api')
     {
+        ReplayIsolation::assertActive();
         return DB::transaction(function () use ($requestedDate, $knowledgeCutoff, $sourceMode) {
             return $this->createAsKnownReplayRunWithinTransaction($requestedDate, $knowledgeCutoff, $sourceMode);
         });
@@ -234,6 +269,10 @@ class EodRunRepository
         }
         $snapshot = $this->configSnapshots->resolveForRun($requestedDate, $knowledgeCutoff);
         $now = Carbon::now($scope->timezone())->toDateTimeString();
+
+        $this->lockDateOwnerFence($requestedDate);
+        $lease = DB::table('eod_run_owner_fences')->where('trade_date_requested', $requestedDate)->first();
+        if ($lease->owner_run_id && $lease->released_at === null) throw new \RuntimeException('RUN_OWNER_CONFLICT: replay cannot borrow live date ownership.');
 
         $run = EodRun::query()->create([
             'trade_date_requested' => $requestedDate,
@@ -260,6 +299,9 @@ class EodRunRepository
             'created_at' => $now,
             'updated_at' => $now,
         ]);
+
+        $this->setDateOwnerFence($requestedDate, (int) $run->run_id);
+        $this->issueExecutionCredential($run);
 
         $this->appendEvent(
             $run,
@@ -304,8 +346,28 @@ class EodRunRepository
             );
         }
 
-        $date = $seedRun->trade_date_requested;
+        // Acquisition accepts intent, never caller-supplied persisted state or actor identity.
+        $allowedOverrides = ['request_mode', 'notes', 'correction_id', 'promote_mode', 'publish_target'];
+        if (array_diff(array_keys($overrides), $allowedOverrides) !== []) {
+            if (array_key_exists('config_hash', $overrides)) {
+                throw new \RuntimeException('INPUT_CAPTURE_CONFIG_IDENTITY_MISMATCH: promote overrides cannot replace execution configuration.');
+            }
+            throw new \RuntimeException('RUN_OWNER_CONFLICT: PROMOTE_OVERRIDE_INVALID: only explicit promote intent may be supplied.');
+        }
+        $requestMode = array_key_exists('request_mode', $overrides) ? $overrides['request_mode'] : 'promote';
+        if (! in_array($requestMode, $this->publishCriticalModes(), true)) {
+            throw new \RuntimeException('RUN_OWNER_CONFLICT: PROMOTE_SCOPE_INVALID: isolated execution requires its own acquisition boundary.');
+        }
+
+        $seedIdentity = EodRun::query()->select(['run_id', 'trade_date_requested'])->findOrFail($seedRun->getKey());
+        $date = (string) $seedIdentity->trade_date_requested;
         $this->lockDateOwnerFence($date);
+        return RunWriterContext::observeDate('conflict', (string) $date, null, function () use ($seedRun, $seedIdentity, $stage, $overrides, $date) {
+        // Date, observer, then run: retain the existing acquisition lock order.
+        $seedRun = EodRun::query()->where('run_id', $seedIdentity->run_id)->lockForUpdate()->firstOrFail();
+        if ((string) $seedRun->trade_date_requested !== $date) {
+            throw new \RuntimeException('RUN_OWNER_CONFLICT: PROMOTE_SCOPE_INVALID: persisted seed date changed during acquisition.');
+        }
         $recoveredRunIds = [];
         $recoveryBlock = $this->cancelStaleActiveRuns($date, $seedRun->source, $overrides['request_mode'] ?? 'promote', true, $recoveredRunIds);
         if ($recoveryBlock !== null) {
@@ -315,9 +377,9 @@ class EodRunRepository
             ->whereIn('lifecycle_state', ['PENDING', 'RUNNING', 'FINALIZING'])
             ->where(function ($query) {
                 $query->whereIn('request_mode', $this->publishCriticalModes())->orWhereNull('request_mode');
-            })->lockForUpdate()->first();
+            })->whereNotIn('run_id', $recoveredRunIds)->lockForUpdate()->first();
         if ($activeOwner !== null) {
-            $this->appendEvent($activeOwner, $stage, 'RUN_OWNER_CONFLICT', 'WARN',
+            $this->recordObservation($activeOwner, 'conflict', $stage, 'RUN_OWNER_CONFLICT', 'WARN',
                 'Competing promote run fenced before candidate execution.', 'RUN_OWNER_CONFLICT', [
                     'owner_run_id' => (int) $activeOwner->run_id,
                     'competing_seed_run_id' => (int) $seedRun->run_id,
@@ -325,6 +387,13 @@ class EodRunRepository
                     'decision' => 'BLOCKED',
                 ]);
             return ['owner_error' => 'RUN_OWNER_CONFLICT: active owner run '.(int) $activeOwner->run_id.' holds requested date '.$date];
+        }
+
+        $lease = DB::table('eod_run_owner_fences')->where('trade_date_requested', $date)->first();
+        if ($lease && $lease->owner_run_id && $lease->released_at === null
+            && ! in_array((int) $lease->owner_run_id, $recoveredRunIds, true)
+            && EodRun::where('run_id', $lease->owner_run_id)->whereIn('lifecycle_state', ['PENDING','RUNNING','FINALIZING'])->exists()) {
+            return ['owner_error' => 'RUN_OWNER_CONFLICT: promotion cannot displace another active execution scope.'];
         }
 
         $now = $this->captureKnowledgeCutoff();
@@ -432,6 +501,10 @@ class EodRunRepository
         }
 
         $run = EodRun::query()->create($payload);
+        $this->setDateOwnerFence($date, (int) $run->run_id);
+
+        $this->issueExecutionCredential($run);
+        $this->cancelVerifiedPredecessors($run, $recoveredRunIds);
 
         $this->appendEvent(
             $run,
@@ -469,6 +542,19 @@ class EodRunRepository
                 ]);
         }
         return $run;
+        });
+    }
+
+    public function acquireLinkedRecoveryOwner(string $date, string $source, ?int $historicalRunId): EodRun
+    {
+        return DB::transaction(function () use ($date, $source, $historicalRunId) {
+            $this->lockDateOwnerFence($date);
+            if (EodRun::where('trade_date_requested', $date)->whereIn('lifecycle_state', ['PENDING','RUNNING','FINALIZING'])
+                ->lockForUpdate()->exists()) {
+                throw new \RuntimeException('RUN_OWNER_CONFLICT: operator recovery cannot borrow or displace an active execution.');
+            }
+            return $this->getOrCreateOwningRun($date, $source, 'FINALIZE', $historicalRunId, 'repair_candidate');
+        });
     }
 
     public function findByRunId($runId)
@@ -502,50 +588,135 @@ class EodRunRepository
 
     public function touchStage(EodRun $run, $stage, array $attributes = [])
     {
-        $run->stage = $stage;
+        return DB::transaction(function () use ($run, $stage, $attributes) {
+            $this->assertExistingWriteFence($run, $attributes);
+            $run->stage = $stage;
 
-        if ($stage === 'FINALIZE') {
-            $run->lifecycle_state = 'FINALIZING';
-        } elseif ($run->lifecycle_state === 'PENDING') {
-            $run->lifecycle_state = 'RUNNING';
+            if ($stage === 'FINALIZE') {
+                $run->lifecycle_state = 'FINALIZING';
+            } elseif ($run->lifecycle_state === 'PENDING') {
+                $run->lifecycle_state = 'RUNNING';
+            }
+
+            foreach ($attributes as $key => $value) {
+                $run->{$key} = $value;
+            }
+
+            $run->updated_at = Carbon::now(config('market_data.platform.timezone'));
+            $run->save();
+
+            return $run->fresh();
+        });
+    }
+
+    private function assertRunAttributes(EodRun $run, array $attributes, bool $initialSeal = false): void
+    {
+        $proposed = array_merge($run->getDirty(), $attributes);
+        foreach (['run_id', 'trade_date_requested', 'source', 'request_mode'] as $field) {
+            if (array_key_exists($field, $proposed) && (string) $proposed[$field] !== (string) $run->$field) {
+                throw new \RuntimeException('RUN_OWNER_CONFLICT: acquired execution identity is immutable: '.$field);
+            }
         }
-
-        foreach ($attributes as $key => $value) {
-            $run->{$key} = $value;
+        if (in_array($run->request_mode, ['import_only', 'replay_verify'], true)
+            && (($proposed['publishability_state'] ?? null) === 'READABLE'
+                || ($proposed['terminal_status'] ?? null) === 'SUCCESS'
+                || ! empty($proposed['is_current_publication']) || ! empty($proposed['sealed_at']))) {
+            throw new \RuntimeException('RUN_OWNER_CONFLICT: isolated execution has no readable publication rights.');
         }
+        $this->assertSealedRunContent($run, $attributes, $initialSeal);
+    }
 
-        $run->updated_at = Carbon::now(config('market_data.platform.timezone'));
-        $run->save();
+    /** Compare with the locked database record, never a caller's dirty model snapshot. */
+    private function assertSealedRunContent(EodRun $run, array $attributes, bool $initialSeal): void
+    {
+        $persisted = EodRun::query()->where('run_id', $run->run_id)->lockForUpdate()->firstOrFail();
+        $sealed = $persisted->sealed_at !== null || DB::table('eod_publications')->where('run_id', $run->run_id)->where('seal_state', 'SEALED')->exists();
+        if (! $sealed) return;
+        // Run publication_id/version select the operational outcome; sealed publication identity
+        // lives on eod_publications. The active writer fence still protects these ledger updates.
+        $protected = ['knowledge_cutoff_at', 'config_snapshot_id', 'config_snapshot_ref', 'config_hash',
+            'seal_fingerprint', 'config_version', 'source_name', 'source_provider', 'promote_mode', 'publish_target',
+            'correction_id', 'supersedes_run_id', 'corpus_admission_decision_id',
+            'artifact_hash_profile', 'publication_semantic_profile',
+            'price_product_code', 'price_product_version', 'factor_set_id', 'factor_set_hash',
+            'source_file_hash', 'source_file_hash_algorithm', 'source_file_size_bytes', 'source_file_row_count',
+            'observation_manifest_hash', 'semantic_observation_manifest_hash',
+            'bars_batch_hash', 'indicators_batch_hash', 'eligibility_batch_hash',
+            'bars_rows_written', 'indicators_rows_written', 'eligibility_rows_written',
+            'sealed_at', 'sealed_by', 'seal_note'];
+        $normalize = static function ($value, $cast) {
+            if ($value instanceof \DateTimeInterface) return $value->format('Y-m-d H:i:s');
+            if ($value !== null && in_array($cast, ['integer','int'], true)) return (string) (int) $value;
+            if ($value !== null && in_array($cast, ['float','double'], true)) return (string) (float) $value;
+            return $value === null ? null : (string) $value;
+        };
+        $before = $persisted->getAttributes();
+        $casts = $persisted->getCasts();
+        foreach (array_merge($run->getDirty(), $attributes) as $field => $value) {
+            if (! in_array($field, $protected, true) && strpos((string) $field, 'coverage_') !== 0) continue;
+            // Publication seal precedes the first run seal record in the same lifecycle transaction.
+            if ($initialSeal && $persisted->sealed_at === null && in_array($field, ['sealed_at','sealed_by','seal_note'], true)) continue;
+            $proposed = clone $persisted;
+            $proposed->setAttribute($field, $value);
+            $after = $proposed->getAttributes();
+            if ($normalize($before[$field] ?? null, $casts[$field] ?? null) !== $normalize($after[$field] ?? null, $casts[$field] ?? null)) {
+                throw new \RuntimeException('SEALED_PUBLICATION_IMMUTABLE: protected run field '.$field);
+            }
+        }
+    }
 
-        return $run->fresh();
+    /** One mutation boundary: actual ownership and complete proposed model state, no acquisition. */
+    private function assertExistingWriteFence(EodRun $run, array $attributes = [], bool $initialSeal = false): void
+    {
+        (new RequestedDateWriterFence())->lockRun($run->trade_date_requested, $run);
+        $this->assertRunAttributes($run, $attributes, $initialSeal);
     }
 
     public function appendEvent(EodRun $run, $stage, $eventType, $severity, $message, $reasonCode = null, array $payload = [])
     {
-        $now = Carbon::now(config('market_data.platform.timezone'));
-        $severity = $this->normalizeSeverity($severity);
-        $message = $this->truncateMessage($message);
-
-        return DB::transaction(function () use ($run, $stage, $eventType, $severity, $message, $reasonCode, $payload, $now) {
-        DB::table('eod_runs')->where('run_id', $run->run_id)->lockForUpdate()->first();
-        $event = EodRunEvent::query()->create([
-            'run_id' => $run->run_id,
-            'trade_date_requested' => $run->trade_date_requested,
-            'event_time' => $now,
-            'stage' => $stage,
-            'event_type' => $eventType,
-            'severity' => $severity,
-            'reason_code' => $reasonCode,
-            'message' => $message,
-            'event_payload_json' => empty($payload) ? null : json_encode($payload),
-            'created_at' => $now,
-        ]);
-        return $event;
+        return DB::transaction(function () use ($run, $stage, $eventType, $severity, $message, $reasonCode, $payload) {
+            (new RequestedDateWriterFence())->lockRun($run->trade_date_requested, $run);
+            if (in_array($run->request_mode, ['import_only','replay_verify'], true)
+                && in_array($eventType, ['RUN_FINALIZED','PUBLICATION_PROMOTED','PUBLICATION_SWITCHED'], true)) {
+                throw new \RuntimeException('RUN_OWNER_CONFLICT: isolated execution cannot assert publication finalization.');
+            }
+            return $this->insertEvent($run, $stage, $eventType, $severity, $message, $reasonCode, $payload);
         }, 3);
+    }
+
+    public function appendObservation(EodRun $target, $stage, $type, $severity, $message, $reason = null, array $payload = [])
+    {
+        $identity = RunWriterContext::observation($target, $type);
+        return $this->insertEvent($target, $stage, $type, $severity, $message, $reason, $payload, $identity);
+    }
+
+    public function recordObservation(EodRun $target, string $role, $stage, $type, $severity, $message, $reason = null, array $payload = [])
+    {
+        return RunWriterContext::observe($role, $target, function () use ($target, $stage, $type, $severity, $message, $reason, $payload) {
+            return $this->appendObservation($target, $stage, $type, $severity, $message, $reason, $payload);
+        });
+    }
+
+    private function insertEvent(EodRun $run, $stage, $eventType, $severity, $message, $reasonCode, array $payload, array $identity = [])
+    {
+        $now = Carbon::now(config('market_data.platform.timezone'));
+        return EodRunEvent::query()->create([
+            'run_id' => $run->run_id, 'trade_date_requested' => $run->trade_date_requested,
+            'event_time' => $now, 'stage' => $stage, 'event_type' => $eventType,
+            'severity' => $this->normalizeSeverity($severity), 'reason_code' => $reasonCode,
+            'message' => $this->truncateMessage($message),
+            'event_payload_json' => empty($payload) ? null : json_encode($payload), 'created_at' => $now,
+            'writer_kind' => $identity['kind'] ?? 'RUN_OWNER',
+            'writer_actor_id' => $identity['actor_id'] ?? DB::table('eod_run_owner_fences')->where('trade_date_requested', $run->trade_date_requested)->value('execution_id'),
+            'writer_scope_key' => $identity['scope_key'] ?? ('owner|'.($run->request_mode ?: 'full_publish').'|'.$run->trade_date_requested),
+            'writer_fencing_token' => $identity['fencing_token'] ?? (int) $run->run_id,
+        ]);
     }
 
     public function failStage(EodRun $run, $stage, $reasonCode, $message, array $payload = [])
     {
+        return DB::transaction(function () use ($run, $stage, $reasonCode, $message, $payload) {
+        $this->assertExistingWriteFence($run, ['terminal_status'=>'FAILED', 'publishability_state'=>'NOT_READABLE']);
         $safePayload = array_merge([
             'run_id' => (int) $run->run_id,
             'stage' => $stage,
@@ -571,12 +742,17 @@ class EodRunRepository
         $run->finished_at = $now;
         $run->updated_at = $now;
         $run->save();
+        DB::table('eod_run_owner_fences')->where('trade_date_requested', $run->trade_date_requested)
+            ->where('owner_run_id', $run->run_id)->whereNull('released_at')->update(['released_at' => $now]);
 
         return $run->fresh();
+        });
     }
 
     public function holdStage(EodRun $run, $stage, $reasonCode, $message, $tradeDateEffective = null, array $payload = [])
     {
+        return DB::transaction(function () use ($run, $stage, $reasonCode, $message, $tradeDateEffective, $payload) {
+        $this->assertExistingWriteFence($run, ['terminal_status'=>'HELD', 'publishability_state'=>'NOT_READABLE']);
         $safePayload = array_merge([
             'run_id' => (int) $run->run_id,
             'stage' => $stage,
@@ -604,12 +780,18 @@ class EodRunRepository
         $run->finished_at = $now;
         $run->updated_at = $now;
         $run->save();
+        DB::table('eod_run_owner_fences')->where('trade_date_requested', $run->trade_date_requested)
+            ->where('owner_run_id', $run->run_id)->whereNull('released_at')->update(['released_at' => $now]);
 
         return $run->fresh();
+        });
     }
 
     public function completeImportOnly(EodRun $run, $stage, $reasonCode = 'IMPORT_ONLY_COMPLETED_NOT_PROMOTED', array $payload = [])
     {
+        if ($run->request_mode !== 'import_only') throw new \RuntimeException('RUN_OWNER_CONFLICT: import terminal transition requires import-only scope.');
+        return DB::transaction(function () use ($run, $stage, $reasonCode, $payload) {
+        $this->assertExistingWriteFence($run, ['terminal_status'=>null, 'publishability_state'=>'NOT_READABLE', 'is_current_publication'=>0]);
         $safePayload = array_merge([
             'run_id' => (int) $run->run_id,
             'stage' => $stage,
@@ -641,8 +823,11 @@ class EodRunRepository
         $run->finished_at = $now;
         $run->updated_at = $now;
         $run->save();
+        DB::table('eod_run_owner_fences')->where('trade_date_requested', $run->trade_date_requested)
+            ->where('owner_run_id', $run->run_id)->whereNull('released_at')->update(['released_at' => $now]);
 
         return $run->fresh();
+        });
     }
 
     /**
@@ -683,31 +868,33 @@ class EodRunRepository
     {
         $telemetry = $this->normalizeTelemetry($telemetry);
         $this->assertCompleteCoverageTelemetry($run, $telemetry);
-
-        foreach ($telemetry as $key => $value) {
-            $run->{$key} = $value;
-        }
-
-        $run->updated_at = Carbon::now(config('market_data.platform.timezone'));
-        $run->save();
-
-        return $run->fresh();
+        return DB::transaction(function () use ($run, $telemetry) {
+            $this->assertExistingWriteFence($run, $telemetry);
+            foreach ($telemetry as $key => $value) {
+                $run->{$key} = $value;
+            }
+            $run->updated_at = Carbon::now(config('market_data.platform.timezone'));
+            $run->save();
+            return $run->fresh();
+        });
     }
 
     public function storeHashes(EodRun $run, array $hashes)
     {
-        $run->bars_batch_hash = $hashes['bars_batch_hash'];
-        $run->indicators_batch_hash = $hashes['indicators_batch_hash'];
-        $run->eligibility_batch_hash = $hashes['eligibility_batch_hash'];
-        if (isset($hashes['artifact_hash_profile'])) {
-            $run->artifact_hash_profile = $hashes['artifact_hash_profile'];
-            $run->publication_semantic_profile = (new PublicationSemanticIdentityService())
-                ->profileForArtifactProfile($hashes['artifact_hash_profile']);
-        }
-        $run->updated_at = Carbon::now(config('market_data.platform.timezone'));
-        $run->save();
-
-        return $run->fresh();
+        return DB::transaction(function () use ($run, $hashes) {
+            $this->assertExistingWriteFence($run, $hashes);
+            $run->bars_batch_hash = $hashes['bars_batch_hash'];
+            $run->indicators_batch_hash = $hashes['indicators_batch_hash'];
+            $run->eligibility_batch_hash = $hashes['eligibility_batch_hash'];
+            if (isset($hashes['artifact_hash_profile'])) {
+                $run->artifact_hash_profile = $hashes['artifact_hash_profile'];
+                $run->publication_semantic_profile = (new PublicationSemanticIdentityService())
+                    ->profileForArtifactProfile($hashes['artifact_hash_profile']);
+            }
+            $run->updated_at = Carbon::now(config('market_data.platform.timezone'));
+            $run->save();
+            return $run->fresh();
+        });
     }
 
     private function artifactHashProfile(): string
@@ -735,18 +922,28 @@ class EodRunRepository
 
     public function markSealed(EodRun $run, $sealedBy, $sealNote)
     {
-        $now = Carbon::now(config('market_data.platform.timezone'));
-        $run->sealed_at = $now;
-        $run->sealed_by = $sealedBy;
-        $run->seal_note = $sealNote;
-        $run->updated_at = $now;
-        $run->save();
-
-        return $run->fresh();
+        return DB::transaction(function () use ($run, $sealedBy, $sealNote) {
+            $this->assertExistingWriteFence($run, [], true);
+            $persisted = EodRun::query()->where('run_id', $run->run_id)->firstOrFail();
+            $now = $persisted->sealed_at ?: Carbon::now(config('market_data.platform.timezone'));
+            $this->assertRunAttributes($run, ['sealed_at'=>$now, 'sealed_by'=>$sealedBy, 'seal_note'=>$sealNote], true);
+            $run->sealed_at = $now;
+            $run->sealed_by = $sealedBy;
+            $run->seal_note = $sealNote;
+            $run->updated_at = $now;
+            $run->save();
+            return $run->fresh();
+        });
     }
 
-    public function syncCurrentPublicationMirror($tradeDate, $currentRunId)
+    public function syncCurrentPublicationMirror($tradeDate, $currentRunId, ?EodRun $actingOwner = null)
     {
+        return DB::transaction(function () use ($tradeDate, $currentRunId, $actingOwner) {
+        (new RequestedDateWriterFence())->lock($tradeDate, $actingOwner);
+        $target = EodRun::query()->where('run_id', $currentRunId)->lockForUpdate()->first();
+        if (! $target || (string) $target->trade_date_requested !== (string) $tradeDate) {
+            throw new \RuntimeException('RUN_OWNER_CONFLICT: mirror target must belong to the acting owner date.');
+        }
         $now = Carbon::now(config('market_data.platform.timezone'));
 
         EodRun::query()
@@ -762,6 +959,7 @@ class EodRunRepository
                 'is_current_publication' => 1,
                 'updated_at' => $now,
             ]);
+        });
     }
 
 
@@ -784,7 +982,7 @@ class EodRunRepository
             'created_at' => $now,
             'updated_at' => $now,
         ]);
-        $this->appendEvent($blocked, $stage, 'RUN_OWNER_CONFLICT', 'WARN',
+        $this->recordObservation($blocked, 'conflict', $stage, 'RUN_OWNER_CONFLICT', 'WARN',
             'Worker blocked before execution by an active requested-date owner.', 'RUN_LOCK_CONFLICT', [
                 'owner_run_id' => $ownerRunId,
                 'blocked_run_id' => (int) $blocked->run_id,
@@ -816,6 +1014,22 @@ class EodRunRepository
             ->where('trade_date_requested', $requestedDate)->lockForUpdate()->first();
     }
 
+    private function issueExecutionCredential(EodRun $run): void
+    {
+        if (DB::transactionLevel() < 1 || ! $run->wasRecentlyCreated) {
+            throw new \LogicException('RUN_OWNER_CONFLICT: credentials require fresh transactional acquisition.');
+        }
+        $secret = bin2hex(random_bytes(32)); $execution = bin2hex(random_bytes(16));
+        $changed = DB::table('eod_run_owner_fences')->where('trade_date_requested', $run->trade_date_requested)
+            ->where('owner_run_id', $run->run_id)->whereNull('released_at')->update([
+                'execution_id' => $execution, 'credential_hash' => hash('sha256', $secret),
+            ]);
+        if ($changed !== 1) throw new \RuntimeException('RUN_OWNER_CONFLICT: acquisition did not hold its date lease.');
+        RunWriterContext::remember((int) $run->run_id, $execution, $secret, [
+            'date' => (string) $run->trade_date_requested, 'source' => (string) $run->source, 'mode' => (string) $run->request_mode,
+        ]);
+    }
+
     private function setDateOwnerFence($requestedDate, int $runId): void
     {
         $now = Carbon::now(config('market_data.platform.timezone'));
@@ -838,7 +1052,7 @@ class EodRunRepository
             throw new \RuntimeException('RUN_OWNER_INVALID_MODE: non-publish run cannot enter publish-critical stage.');
         }
         DB::transaction(function () use ($run) {
-            $this->lockDateOwnerFence($run->trade_date_requested);
+            (new RequestedDateWriterFence())->lockRun($run->trade_date_requested, $run);
             $active = EodRun::query()
                 ->where('trade_date_requested', $run->trade_date_requested)
                 ->whereIn('lifecycle_state', ['PENDING', 'RUNNING', 'FINALIZING'])
@@ -889,7 +1103,7 @@ class EodRunRepository
                 })->lockForUpdate()->get();
             if ($active->count() > 1) {
                 foreach ($active as $run) {
-                    $this->appendEvent($run, $run->stage ?: 'INGEST_BARS', 'RUN_OWNER_AMBIGUOUS', 'ERROR',
+                    $this->recordObservation($run, 'conflict', $run->stage ?: 'INGEST_BARS', 'RUN_OWNER_AMBIGUOUS', 'ERROR',
                         'Multiple active publish-critical runs prevent owner selection or takeover.', 'RUN_OWNER_AMBIGUOUS', [
                             'active_run_ids' => $active->pluck('run_id')->map(static fn ($id) => (int) $id)->all(),
                             'trade_date_requested' => $requestedDate,
@@ -925,9 +1139,27 @@ class EodRunRepository
 
         $staleRuns = $query->get();
         foreach ($staleRuns as $staleRun) {
+            if ($publishCritical) {
+                $lease = DB::table('eod_run_owner_fences')
+                    ->where('trade_date_requested', $requestedDate)->first();
+                if ($lease && (int) $lease->owner_run_id === (int) $staleRun->run_id
+                    && $lease->released_at === null && $lease->expires_at !== null
+                    && (string) $lease->expires_at > (string) $now) {
+                    $this->recordObservation($staleRun, 'conflict', $staleRun->stage ?: 'INGEST_BARS',
+                        'RUN_OWNER_CONFLICT', 'WARN',
+                        'Stale run timestamp cannot displace a live requested-date lease.',
+                        'RUN_LOCK_CONFLICT', [
+                            'owner_run_id' => (int) $staleRun->run_id,
+                            'heartbeat_at' => (string) $lease->heartbeat_at,
+                            'expires_at' => (string) $lease->expires_at,
+                            'decision' => 'BLOCKED',
+                        ]);
+                    return 'RUN_OWNER_CONFLICT: live lease held by run '.(int) $staleRun->run_id;
+                }
+            }
             $blockReason = $this->staleTakeoverBlockReason($staleRun);
             if ($blockReason !== null) {
-                $this->appendEvent($staleRun, $staleRun->stage ?: 'INGEST_BARS', 'STALE_OWNER_TAKEOVER_BLOCKED', 'WARN',
+                $this->recordObservation($staleRun, 'conflict', $staleRun->stage ?: 'INGEST_BARS', 'STALE_OWNER_TAKEOVER_BLOCKED', 'WARN',
                     'Stale owner recovery blocked because candidate or prior current state cannot be trusted.', 'STALE_OWNER_TAKEOVER_BLOCKED', [
                         'owner_run_id' => (int) $staleRun->run_id,
                         'trade_date_requested' => $requestedDate,
@@ -940,12 +1172,27 @@ class EodRunRepository
             }
         }
 
-        foreach ($staleRuns as $staleRun) {
+        foreach ($staleRuns as $staleRun) $recoveredRunIds[] = (int) $staleRun->run_id;
+        return null;
+    }
+
+    private function cancelVerifiedPredecessors(EodRun $owner, array $runIds): void
+    {
+        if ($runIds === []) return;
+        (new RequestedDateWriterFence())->lockRun($owner->trade_date_requested, $owner);
+        $requestedDate = $owner->trade_date_requested; $sourceMode = $owner->source; $requestMode = $owner->request_mode;
+        $staleMinutes = (int) config('market_data.pipeline.active_run_stale_minutes', 1440);
+        $now = Carbon::now(config('market_data.platform.timezone')); $cutoff = $now->copy()->subMinutes($staleMinutes);
+        foreach ($runIds as $runId) {
+            $staleRun = EodRun::where('run_id', $runId)->lockForUpdate()->firstOrFail();
+            if ((string) $staleRun->trade_date_requested !== (string) $requestedDate
+                || $this->staleTakeoverBlockReason($staleRun) !== null) throw new \RuntimeException('STALE_OWNER_TAKEOVER_BLOCKED: predecessor changed during recovery.');
             $previousState = (string) ($staleRun->lifecycle_state ?? '');
             $previousUpdatedAt = $staleRun->updated_at ? (string) $staleRun->updated_at : null;
 
-            $this->appendEvent(
+            $this->recordObservation(
                 $staleRun,
+                'conflict',
                 $staleRun->stage ?: 'INGEST_BARS',
                 'STALE_ACTIVE_RUN_CANCELLED',
                 'WARN',
@@ -974,9 +1221,8 @@ class EodRunRepository
             $staleRun->finished_at = $now;
             $staleRun->updated_at = $now;
             $staleRun->save();
-            $recoveredRunIds[] = (int) $staleRun->run_id;
+
         }
-        return null;
     }
 
     private function normalizeTelemetry(array $telemetry)
@@ -1014,9 +1260,7 @@ class EodRunRepository
             $telemetry['coverage_missing_sample_json'] = $telemetry['missing_ticker_codes'];
         }
 
-        if (array_key_exists('coverage_missing_sample_json', $telemetry) && is_array($telemetry['coverage_missing_sample_json'])) {
-            $telemetry['coverage_missing_sample_json'] = json_encode(array_values($telemetry['coverage_missing_sample_json']));
-        }
+        // EodRun's array cast serializes this value exactly once; keep its original type here.
 
         foreach (['source_success_after_retry', 'source_retry_exhausted'] as $booleanField) {
             if (array_key_exists($booleanField, $telemetry) && $telemetry[$booleanField] !== null) {
@@ -1097,28 +1341,27 @@ class EodRunRepository
 
     public function finalize(EodRun $run, array $finalState)
     {
-        if (($finalState['terminal_status'] ?? null) === 'SUCCESS'
-            || ($finalState['publishability_state'] ?? null) === 'READABLE') {
-            $this->assertPublishCriticalOwner($run);
-        }
-        $now = Carbon::now(config('market_data.platform.timezone'));
-
-        foreach ($finalState as $key => $value) {
-            $run->{$key} = $value;
-        }
-
-        $run->lifecycle_state = $finalState['lifecycle_state'];
-        $run->finished_at = $now;
-        $run->updated_at = $now;
-        $run->save();
-
-        if ($run->lifecycle_state === 'COMPLETED' && $this->isPublishCriticalMode($run->request_mode)) {
-            $released = DB::table('eod_run_owner_fences')->where('trade_date_requested', $run->trade_date_requested)
-                ->where('owner_run_id', $run->run_id)->whereNull('released_at')->update(['released_at' => $now]);
-            if ($released) $this->appendEvent($run, $run->stage, 'RUN_OWNER_RELEASED', 'INFO',
-                'Publish-critical owner completed; historical fencing token retained.', null,
-                ['owner_run_id' => (int) $run->run_id, 'fencing_token' => (int) $run->run_id, 'released_at' => (string) $now]);
-        }
-        return $run->fresh();
+        return DB::transaction(function () use ($run, $finalState) {
+            $this->assertExistingWriteFence($run, $finalState);
+            $now = Carbon::now(config('market_data.platform.timezone'));
+            // Audit the release while the acting token is still valid. Event, terminal row and
+            // release commit together; none can survive a failure of the other writes.
+            if (($finalState['lifecycle_state'] ?? null) === 'COMPLETED') {
+                $this->appendEvent($run, $run->stage, 'RUN_OWNER_RELEASED', 'INFO',
+                    'Publish-critical owner completed; historical fencing token retained.', null,
+                    ['owner_run_id' => (int) $run->run_id, 'fencing_token' => (int) $run->run_id, 'released_at' => (string) $now]);
+            }
+            foreach ($finalState as $key => $value) {
+                $run->{$key} = $value;
+            }
+            $run->finished_at = $now;
+            $run->updated_at = $now;
+            $run->save();
+            if ($run->lifecycle_state === 'COMPLETED') {
+                DB::table('eod_run_owner_fences')->where('trade_date_requested', $run->trade_date_requested)
+                    ->where('owner_run_id', $run->run_id)->whereNull('released_at')->update(['released_at' => $now]);
+            }
+            return $run->fresh();
+        });
     }
 }

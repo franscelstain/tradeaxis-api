@@ -323,8 +323,90 @@ final class MarketDataTraceabilityApplicabilityGate
     }
 
     /** @param array<int,array<string,string>> $rows @return array<int,array<string,string>> */
+    /** B19 uses its accepted stage-entry review, never B01's normalization schema.
+     * Scope identity comes from the existing B19 proof specification. Conditional
+     * identities below preserve the accepted 36-row applicability population;
+     * no matrix or canonical requirement is normalized or rewritten here.
+     */
+    private static function validateB19(array $rows): array
+    {
+        require_once __DIR__.'/MarketDataOperationsProofSpec.php';
+        $conditionalIds = [
+            'MD-S075-R0018', 'MD-S075-R0019', 'MD-S075-R0020', 'MD-S075-R0021', 'MD-S075-R0022', 'MD-S075-R0035', 'MD-S075-R0036', 'MD-S075-R0037', 'MD-S075-R0038', 'MD-S075-R0039', 'MD-S075-R0040', 'MD-S075-R0176', 'MD-S075-R0177', 'MD-S075-R0178', 'MD-S075-R0179', 'MD-S075-R0180', 'MD-S075-R0181', 'MD-S075-R0182', 'MD-S075-R0183', 'MD-S075-R0184', 'MD-S075-R0185', 'MD-S075-R0186', 'MD-S075-R0187', 'MD-S075-R0188', 'MD-S075-R0189', 'MD-S075-R0190', 'MD-S075-R0191', 'MD-S075-R0192', 'MD-S075-R0193', 'MD-S075-R0194', 'MD-S075-R0195', 'MD-S075-R0196', 'MD-S075-R0197', 'MD-S075-R0198', 'MD-S075-R0199', 'MD-S075-R0200'
+        ];
+        $expected = array_fill_keys(array_keys(MarketDataOperationsProofSpec::RULE_FAMILIES), true);
+        $counts = ['required_rows' => 0, 'mandatory' => 0, 'conditional_applicable' => 0,
+            'conditional_pending' => 0, 'conditional_not_applicable' => 0, 'satisfied' => 0, 'not_assessed' => 0];
+        $errors = []; $seen = []; $sourceCache = [];
+        $mdRoot = realpath(dirname(__DIR__, 3));
+        $registered = [];
+        foreach (self::readMatrix($mdRoot.'/authority/governance/DOCUMENT_ID_REGISTRY.csv')['rows'] as $document) {
+            if ($document['document_role'] === 'STRATEGY' && $document['strategy_authority_id'] !== '') {
+                $registered[$document['strategy_authority_id']][] = $document['document_path'];
+            }
+        }
+        foreach ($rows as $row) {
+            $id = $row['rule_id'];
+            if (isset($expected[$id])) {
+                if (isset($seen[$id])) $errors[] = $id.': duplicate B19 predicate identity';
+                $seen[$id] = true;
+                if ($row['primary_stage'] !== 'MD-B19' || $row['coverage_requirement'] !== 'REQUIRED' || $row['active'] !== 'YES') {
+                    $errors[] = $id.': required B19 predicate was removed or reassigned';
+                    continue;
+                }
+            } elseif ($row['primary_stage'] === 'MD-B19' && $row['coverage_requirement'] === 'REQUIRED' && $row['active'] === 'YES') {
+                $errors[] = $id.': unexpected B19 predicate identity';
+            } else continue;
+            $counts['required_rows']++;
+            $app = in_array($id, $conditionalIds, true) ? 'CONDITIONAL_APPLICABLE' : 'MANDATORY';
+            if ($row['applicability'] !== $app) $errors[] = $id.': applicability drift from accepted B19 stage-entry review';
+            $counts[$app === 'MANDATORY' ? 'mandatory' : 'conditional_applicable']++;
+            if ($row['coverage_status'] === 'NOT_ASSESSED') $counts['not_assessed']++;
+            elseif ($row['coverage_status'] === 'SATISFIED') {
+                $counts['satisfied']++;
+                if (trim($row['current_evidence_ids']) === '') $errors[] = $id.': SATISFIED without current governed evidence';
+            } else $errors[] = $id.': invalid B19 coverage lifecycle';
+            // Current ownership also includes prior-stage reviewed transfers.
+            // Requiring a new B19 marker would erase valid B02/B04/B06-B09
+            // normalization and the seven D006/DOC-CHG-20261018-001 additions.
+            preg_match_all('/(MD-B[0-9]{2}-A[0-9]{3})(?: stage_entry_review)?: applicability_normalized=([A-Z_]+);(.+?); proof_owner_confirmed=([A-Z0-9-]+)/', $row['notes'], $notes, PREG_SET_ORDER);
+            $note = $notes ? $notes[count($notes) - 1] : null;
+            $reviewed = $note && $note[2] === $app && strpos($note[3], 'applicability_basis=') !== false && $note[4] === 'MD-B19';
+            $b09Transfers = ['MD-S008-R0077', 'MD-S023-R0048', 'MD-S023-R0071', 'MD-S036-R0013'];
+            if (in_array($id, $b09Transfers, true)
+                && strpos($row['notes'], 'MD-B09-A001: applicability_normalized='.$app.'; proof_owner=MD-B19') === 0) $reviewed = true;
+            $d006Additions = ['MD-S075-R0325', 'MD-S075-R0326', 'MD-S075-R0327', 'MD-S075-R0328', 'MD-S075-R0329', 'MD-S075-R0330', 'MD-S063-R0169'];
+            if (in_array($id, $d006Additions, true) && $app === 'MANDATORY'
+                && $row['notes'] === 'DOC-CHG-20261018-001: new normative compound obligation; every constituent must be proved before admission. No basis admitted by registration.') $reviewed = true;
+            if (! $reviewed) $errors[] = $id.': missing or contradictory reviewed applicability basis and B19 proof ownership';
+
+            $owner = $row['strategy_owner']; $documentId = $row['strategy_document_id'];
+            if (($registered[$documentId] ?? []) !== [$owner]) $errors[] = $id.': governing source is not the uniquely registered strategy identity';
+            $path = realpath($mdRoot.'/'.$owner);
+            if ($path === false || strpos(str_replace(DIRECTORY_SEPARATOR, '/', $path), str_replace(DIRECTORY_SEPARATOR, '/', $mdRoot).'/') !== 0 || ! is_file($path)) {
+                $errors[] = $id.': governing source unavailable'; continue;
+            }
+            if (! isset($sourceCache[$path])) $sourceCache[$path] = file($path, FILE_IGNORE_NEW_LINES);
+            $line = ctype_digit((string) $row['source_line']) ? (int) $row['source_line'] : 0;
+            $sourceText = $line > 0 ? ($sourceCache[$path][$line - 1] ?? null) : null;
+            // The owner's actual Markdown line (and therefore its surrounding
+            // owning context), not a freely edited normalized-note paraphrase.
+            if ($sourceText === null || trim($sourceText) !== trim($row['rule_text'])
+                || strtoupper(sha1($row['rule_text'])) !== strtoupper($row['rule_fingerprint_sha1'])) {
+                $errors[] = $id.': canonical source clause/line/fingerprint mismatch';
+            }
+            if (trim($row['section']) === '') $errors[] = $id.': owning context navigation missing';
+        }
+        foreach ($expected as $id => $_) if (! isset($seen[$id])) $errors[] = $id.': required B19 predicate missing';
+        if ($counts['required_rows'] !== MarketDataOperationsProofSpec::EXPECTED_DENOMINATOR) $errors[] = 'MD-B19: denominator identity mismatch';
+        return ['errors' => $errors, 'counts' => $counts,
+            'applicability_authority' => 'Accepted B19 stage-entry review and existing RULE_FAMILIES; 714 mandatory / 36 conditional applicable.',
+            'predicate_context_authority' => 'Exact canonical source line within the uniquely registered strategy owner; B01 note paraphrases do not govern B19.'];
+    }
+
     public static function validate(array $rows, string $stage = 'MD-B01'): array
     {
+        if ($stage === 'MD-B19') return self::validateB19($rows);
         $errors = [];
         $byId = [];
         $indexById = [];
@@ -454,6 +536,16 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
         echo json_encode(['status' => 'FAIL', 'errors' => ['READ_ONLY_MODE_CONFLICT']], JSON_PRETTY_PRINT).PHP_EOL;
         exit(2);
     }
+    $stage = 'MD-B01';
+    foreach ($argv as $index => $argument) {
+        if (strpos($argument, '--stage=') === 0) $stage = substr($argument, 8);
+        if ($argument === '--stage') $stage = $argv[$index + 1] ?? '';
+    }
+    if (! in_array($stage, ['MD-B01', 'MD-B19'], true)
+        || ($stage === 'MD-B19' && (in_array('--apply-normalization', $argv, true) || in_array('--bind-a012-evidence', $argv, true)))) {
+        echo json_encode(['status' => 'FAIL', 'errors' => ['UNSUPPORTED_STAGE_OR_UNAUTHORIZED_STAGE_MUTATION']], JSON_PRETTY_PRINT).PHP_EOL;
+        exit(2);
+    }
     $md = realpath(dirname(__DIR__, 3));
     $matrix = $md.'/authority/governance/STRATEGY_TO_IMPLEMENTATION_TRACEABILITY_MATRIX.csv';
     $data = MarketDataTraceabilityApplicabilityGate::readMatrix($matrix);
@@ -465,9 +557,9 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
         $data['rows'] = MarketDataTraceabilityApplicabilityGate::bindA012Evidence($data['rows']);
         MarketDataTraceabilityApplicabilityGate::writeMatrix($matrix, $data['headers'], $data['rows']);
     }
-    $result = MarketDataTraceabilityApplicabilityGate::validate($data['rows']);
-    $result['stage_id'] = 'MD-B01';
-    $result['attempt_id'] = 'MD-B01-A012';
+    $result = MarketDataTraceabilityApplicabilityGate::validate($data['rows'], $stage);
+    $result['stage_id'] = $stage;
+    $result['attempt_id'] = $stage === 'MD-B19' ? 'MD-B19-A001' : 'MD-B01-A012';
     $result['status'] = $result['errors'] === [] ? 'PASS' : 'FAIL';
     echo json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES).PHP_EOL;
     exit($result['errors'] === [] ? 0 : 1);

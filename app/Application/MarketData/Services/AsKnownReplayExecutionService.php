@@ -59,8 +59,7 @@ final class AsKnownReplayExecutionService
         $observations = (array) (($boundSnapshot['source_observation_manifest']['observations'] ?? []));
         $sourceMode = $this->resolveSourceMode($sourceRows, $observations);
 
-        DB::beginTransaction();
-        try {
+        return \App\Infrastructure\Persistence\MarketData\ReplayIsolation::run(function () use ($tradeDate, $knowledgeCutoff, $boundSnapshot, $sourceMode, $sourceRows) {
             $run = $this->runs->createAsKnownReplayRun($tradeDate, $knowledgeCutoff, $sourceMode);
             try {
                 $result = $this->bars->ingestAcquiredRows(
@@ -119,11 +118,7 @@ final class AsKnownReplayExecutionService
                 'replay_isolation' => true,
                 'durable_projection_mutation' => false,
             ];
-        } finally {
-            if (DB::transactionLevel() > 0) {
-                DB::rollBack();
-            }
-        }
+        });
     }
 
     private function blockedResult($tradeDate, $knowledgeCutoff, array $boundSnapshot, $sourceMode, $reasonCode, array $context): array

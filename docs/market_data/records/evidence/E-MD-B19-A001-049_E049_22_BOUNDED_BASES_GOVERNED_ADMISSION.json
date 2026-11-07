@@ -1,0 +1,2207 @@
+{
+  "record_id": "E-MD-B19-A001-049",
+  "record_type": "EVIDENCE",
+  "status": "ISSUED",
+  "stage": "MD-B19",
+  "attempt": "MD-B19-A001",
+  "baseline": "MD-B19-A001-BL001",
+  "verification_epoch": "MD-REBASELINE-20260820-001",
+  "predecessor": "E-MD-B19-A001-048",
+  "owner_decision": "D-MD-B19-A001-009",
+  "issued_at": "2026-10-23T14:37:50+07:00",
+  "admission_kind": "BOUNDED_INDEPENDENT_TECHNICAL_BASES",
+  "eligibility_determination": {
+    "result": "ELIGIBLE",
+    "basis": "Current governance requires independent authorship/review evidence and owner approval but contains no human-only reviewer prohibition. The verified provenance identifies OpenAI GPT-6 as a technical reviewer separate from the repository coding agent. Existing B18 governance records expressly recognize separate Codex independent-review Agents as eligible reviewers.",
+    "not_claimed": [
+      "human audit",
+      "institutional accreditation",
+      "fresh independent MariaDB replay",
+      "production readiness",
+      "formal SATISFIED"
+    ]
+  },
+  "reviewer": {
+    "identity": "OpenAI GPT-6",
+    "role": "AI technical reviewer separate from the repository coding agent",
+    "human_auditor": false,
+    "credential_or_signature_claimed": false
+  },
+  "artifacts": {
+    "review_report": {
+      "path": "storage/app/market-data/evidence/MD-B19-A001/E049_independent_technical_review_corrected_source_epoch_2026-10-23.md",
+      "sha256": "44d551513ea1f7ce3e494cd7aa4c6d8f3a6fec8204c92c3396613a60b8603e01",
+      "bytes": 6356
+    },
+    "reviewer_provenance": {
+      "path": "storage/app/market-data/evidence/MD-B19-A001/E049_REVIEWER_PROVENANCE_DISCLOSURE_2026-10-23.md",
+      "sha256": "fb808734d1c77eee2b666714c95866f09b1f3a363d58419c883c15626e51c8b9",
+      "bytes": 2511
+    },
+    "corrected_review_package": {
+      "path": "storage/app/market-data/evidence/MD-B19-A001/MD-B19-A001-E049-independent-review-corrected-source-epoch.zip",
+      "sha256": "06f07677bcdde13679f044bef792c09e0494e649810b50e7642e3df4085062a0",
+      "bytes": 64534905
+    },
+    "review_stabilization_matrix": {
+      "path": "storage/app/market-data/evidence/MD-B19-A001/E049_REVIEW_STABILIZATION_MATRIX.json",
+      "sha256": "992f9db22289d900c91a3ad9b507f5d72172260d92bda92dfcbec966491af546"
+    },
+    "source_epoch_bridge_matrix": {
+      "path": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json",
+      "sha256": "8f4850ce410dcfc8c51d06674f806e509d4e049143e2e8e1ba9eb2c0681934dd"
+    }
+  },
+  "admitted_count": 22,
+  "admitted_predicates": [
+    {
+      "predicate_id": "MD-S008-R0077",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "PASS_BOUNDED_TECHNICAL_REVIEW",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/book/Canonicalization_Contract_EOD_Bars.md",
+        "source_line": "132",
+        "rule_text": "- `canonical-valid` means **admissible as a bar**. It never means **verified against the market**, and must not be reported, exported, or cited as such.",
+        "rule_fingerprint_sha1": "73DE4324103AC23A84801CD183231E9958DED507"
+      },
+      "proof_matrix": "E049_price_claim_boundary_proof_matrix_04.json",
+      "proof_matrix_sha256": "bb223d69378fba1ab38b9997cc9055757f4b7996d238705e8a3cd080fe68a6b3",
+      "independent_expected_semantics": [
+        "An independently fabricated provider OHLCV row 123/130/120/125/1500 is internally admissible and traceable to its retained source observation, run, publication and requested date; the test does not assert that 125 actually traded.",
+        "The actual portfolio price product, watchlist read product, readiness response, operational status command and registered evidence export command carry their bounded value/state/identity without claiming verification against the market or that the price is right.",
+        "Four separately injected false market-verification claims at portfolio response, watchlist response, run export and status response are detected by the runtime assertion and each production file is byte-restored."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19CanonicalPriceClaimBoundaryMariaDbTest::test_internally_admissible_fabricated_price_is_not_claimed_as_market_verified",
+          "path": "tests/Unit/MarketData/B19CanonicalPriceClaimBoundaryMariaDbTest.php",
+          "current_file_sha256": "a8612a3c2668f594b23982a17d75173e209876d3c9cc282834958a5f74ad67bb",
+          "recorded_file_sha256": "a8612a3c2668f594b23982a17d75173e209876d3c9cc282834958a5f74ad67bb",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/canonical_price_claim_status_affected_regression.execution.json"
+        }
+      ],
+      "production_sources": [
+        {
+          "path": "app/Application/MarketData/Services/MarketDataPriceReadService.php",
+          "sha256": "8f52e94b300b29217f248aa8a7f2d135bb4c2363bdb0034c222de6662370bb7a"
+        },
+        {
+          "path": "app/Application/MarketData/Services/MarketDataReadProductService.php",
+          "sha256": "98962b2a225e87e1f4cfa0ccc67b4b3440b648831d6a8368fd5de53ec97780cb"
+        },
+        {
+          "path": "app/Application/MarketData/Services/MarketDataEvidenceExportService.php",
+          "sha256": "8f245ff0d1c8c8b010aac634737de20858d8cd4996b073f2272021ed2b038d32"
+        },
+        {
+          "path": "app/Application/MarketData/Services/MarketDataOperationalStatusService.php",
+          "sha256": "28ea85bc63a3267bd67c3b1dfa41a9b78c10fa1be74572667d062c7d8823cca5"
+        },
+        {
+          "path": "app/Application/MarketData/Services/MarketDataReadinessService.php",
+          "sha256": "63d2cd817a10ef9aefa0cd4b63b1d3f6e49210cca791c89cd7f34d1f28b4ff72"
+        },
+        {
+          "path": "app/Console/Commands/MarketData/ExportEvidenceCommand.php",
+          "sha256": "7ebdcab6c751e245a2aecaa1a7cad4980f90e0054f310779d20b7e6951ee77a2"
+        }
+      ],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/canonical_price_claim_status_affected_regression.execution.json",
+          "sha256": "d00651814cd55b5745479d00e13c869dce052cf79ba74041b583e9f66a5d8605",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/canonical_price_false_market_verification_command_v2.restoration.json",
+          "sha256": "cfbf14175c7d0df2603bea4895833d297f240f05777d555ee5987a01a2f635bf",
+          "label": "canonical_price_false_market_verification_command_v2",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataPriceReadService.php",
+          "restored_sha256": "8f52e94b300b29217f248aa8a7f2d135bb4c2363bdb0034c222de6662370bb7a"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/read_product_false_market_verification_command_v2.restoration.json",
+          "sha256": "5f6e858b8123e6166fd525e64c04661cadf26c13dab71b567648bc0b71f94e5e",
+          "label": "read_product_false_market_verification_command_v2",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataReadProductService.php",
+          "restored_sha256": "98962b2a225e87e1f4cfa0ccc67b4b3440b648831d6a8368fd5de53ec97780cb"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/export_false_market_verification_command_v2.restoration.json",
+          "sha256": "d098e2ede59e2a69167891ae255ed9dbf41a77f7cdcb8e67462035711c2e483e",
+          "label": "export_false_market_verification_command_v2",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataEvidenceExportService.php",
+          "restored_sha256": "8f245ff0d1c8c8b010aac634737de20858d8cd4996b073f2272021ed2b038d32"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/status_false_market_verification_mutation.restoration.json",
+          "sha256": "6a0e06d3e3ea2b952b2eaf0741e0dd121f48fd9332463b7774c169a58472c163",
+          "label": "status_false_market_verification_mutation",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataOperationalStatusService.php",
+          "restored_sha256": "28ea85bc63a3267bd67c3b1dfa41a9b78c10fa1be74572667d062c7d8823cca5"
+        }
+      ],
+      "review_limit": "Price-correctness is not established. This proposal does not promote other canonicalization, continuity, freshness, detection, activation or release predicates.",
+      "source_epoch_bridge_record": null
+    },
+    {
+      "predicate_id": "MD-S023-R0071",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "PASS_BOUNDED_TECHNICAL_REVIEW",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/book/EOD_Bars_Contract.md",
+        "source_line": "129",
+        "rule_text": "Consequently a valid canonical bar may be cited as evidence that **the row is admissible and traceable**, never as evidence that **the price is right**.",
+        "rule_fingerprint_sha1": "A1C3585C8B20F5FAB18FE9697FE6CD60B2D53126"
+      },
+      "proof_matrix": "E049_price_claim_boundary_proof_matrix_04.json",
+      "proof_matrix_sha256": "bb223d69378fba1ab38b9997cc9055757f4b7996d238705e8a3cd080fe68a6b3",
+      "independent_expected_semantics": [
+        "An independently fabricated provider OHLCV row 123/130/120/125/1500 is internally admissible and traceable to its retained source observation, run, publication and requested date; the test does not assert that 125 actually traded.",
+        "The actual portfolio price product, watchlist read product, readiness response, operational status command and registered evidence export command carry their bounded value/state/identity without claiming verification against the market or that the price is right.",
+        "Four separately injected false market-verification claims at portfolio response, watchlist response, run export and status response are detected by the runtime assertion and each production file is byte-restored."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19CanonicalPriceClaimBoundaryMariaDbTest::test_internally_admissible_fabricated_price_is_not_claimed_as_market_verified",
+          "path": "tests/Unit/MarketData/B19CanonicalPriceClaimBoundaryMariaDbTest.php",
+          "current_file_sha256": "a8612a3c2668f594b23982a17d75173e209876d3c9cc282834958a5f74ad67bb",
+          "recorded_file_sha256": "a8612a3c2668f594b23982a17d75173e209876d3c9cc282834958a5f74ad67bb",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/canonical_price_claim_status_affected_regression.execution.json"
+        }
+      ],
+      "production_sources": [
+        {
+          "path": "app/Application/MarketData/Services/MarketDataPriceReadService.php",
+          "sha256": "8f52e94b300b29217f248aa8a7f2d135bb4c2363bdb0034c222de6662370bb7a"
+        },
+        {
+          "path": "app/Application/MarketData/Services/MarketDataReadProductService.php",
+          "sha256": "98962b2a225e87e1f4cfa0ccc67b4b3440b648831d6a8368fd5de53ec97780cb"
+        },
+        {
+          "path": "app/Application/MarketData/Services/MarketDataEvidenceExportService.php",
+          "sha256": "8f245ff0d1c8c8b010aac634737de20858d8cd4996b073f2272021ed2b038d32"
+        },
+        {
+          "path": "app/Application/MarketData/Services/MarketDataOperationalStatusService.php",
+          "sha256": "28ea85bc63a3267bd67c3b1dfa41a9b78c10fa1be74572667d062c7d8823cca5"
+        },
+        {
+          "path": "app/Application/MarketData/Services/MarketDataReadinessService.php",
+          "sha256": "63d2cd817a10ef9aefa0cd4b63b1d3f6e49210cca791c89cd7f34d1f28b4ff72"
+        },
+        {
+          "path": "app/Console/Commands/MarketData/ExportEvidenceCommand.php",
+          "sha256": "7ebdcab6c751e245a2aecaa1a7cad4980f90e0054f310779d20b7e6951ee77a2"
+        }
+      ],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/canonical_price_claim_status_affected_regression.execution.json",
+          "sha256": "d00651814cd55b5745479d00e13c869dce052cf79ba74041b583e9f66a5d8605",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/canonical_price_false_market_verification_command_v2.restoration.json",
+          "sha256": "cfbf14175c7d0df2603bea4895833d297f240f05777d555ee5987a01a2f635bf",
+          "label": "canonical_price_false_market_verification_command_v2",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataPriceReadService.php",
+          "restored_sha256": "8f52e94b300b29217f248aa8a7f2d135bb4c2363bdb0034c222de6662370bb7a"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/read_product_false_market_verification_command_v2.restoration.json",
+          "sha256": "5f6e858b8123e6166fd525e64c04661cadf26c13dab71b567648bc0b71f94e5e",
+          "label": "read_product_false_market_verification_command_v2",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataReadProductService.php",
+          "restored_sha256": "98962b2a225e87e1f4cfa0ccc67b4b3440b648831d6a8368fd5de53ec97780cb"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/export_false_market_verification_command_v2.restoration.json",
+          "sha256": "d098e2ede59e2a69167891ae255ed9dbf41a77f7cdcb8e67462035711c2e483e",
+          "label": "export_false_market_verification_command_v2",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataEvidenceExportService.php",
+          "restored_sha256": "8f245ff0d1c8c8b010aac634737de20858d8cd4996b073f2272021ed2b038d32"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/status_false_market_verification_mutation.restoration.json",
+          "sha256": "6a0e06d3e3ea2b952b2eaf0741e0dd121f48fd9332463b7774c169a58472c163",
+          "label": "status_false_market_verification_mutation",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataOperationalStatusService.php",
+          "restored_sha256": "28ea85bc63a3267bd67c3b1dfa41a9b78c10fa1be74572667d062c7d8823cca5"
+        }
+      ],
+      "review_limit": "Price-correctness is not established. This proposal does not promote other canonicalization, continuity, freshness, detection, activation or release predicates.",
+      "source_epoch_bridge_record": null
+    },
+    {
+      "predicate_id": "MD-S029-R0073",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "SOURCE_EPOCH_BRIDGED",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md",
+        "source_line": "144",
+        "rule_text": "- latest ingested trade date adalah development data frontier yang bergerak",
+        "rule_fingerprint_sha1": "0E3539C8155D9736CF961A09D2BCF7DEDD691671"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "With NULL activation, daily_enabled=false registers no daily schedule; actual acquisition/publication can move frontier without activation.",
+        "March24 data recorded March25 is excluded at March24 assessment; frontier23 and evidence-as-of24 are disclosed. At March25 actual retained frontier moves to24.",
+        "Development gap yields NOT_APPLICABLE, no production source/availability incident or SLO success; prior23 publication and actual history unchanged."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_disabled_daily_schedule_preserves_moving_development_frontier_with_asof_and_no_operational_success_or_incident",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "68c6552ac46a64dceee96dbdf3ac15731f0e6cb5d1baa6e7beb80fdd833a23e1",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 469,
+          "current_end_line": 541,
+          "assertion_count": 25
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_five_real_failed_session_acquisitions_open_only_conditional_source_evaluation_with_exact_event_provenance",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "9369955609ab925630e17fafc23741796413f2254f4a0c0f35ef8d8fb3fb1752",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 206,
+          "current_end_line": 335,
+          "assertion_count": 43
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/frontier_future_knowledge_admitted.restoration.json",
+          "sha256": "ee01769e6ee7312b30df8e4b793893516e790bd1ec932ec5539223cc16d67dd7",
+          "label": "frontier_future_knowledge_admitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvidenceService.php",
+          "restored_sha256": "49fba51873c9f4a2ce2b9b587f4700c1a9695e1960ea899cde907f2e3723e0d3"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/status_frontier_known_clock_ignored.restoration.json",
+          "sha256": "fc2cbf10bd31784407b25750d527aaf0d36ec9e6ae584e5763d508f306ac1966",
+          "label": "status_frontier_known_clock_ignored",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataOperationalStatusService.php",
+          "restored_sha256": "28ea85bc63a3267bd67c3b1dfa41a9b78c10fa1be74572667d062c7d8823cca5"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/preactivation_gate_omitted.restoration.json",
+          "sha256": "718764d6b8512202c41440cefa43a5704b5a4805b55b8f3aecbdac263bf78fec",
+          "label": "preactivation_gate_omitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvaluator.php",
+          "restored_sha256": "ca9106ca798ea0855c9091373252a4ca385e8fbeeb89690aa6048e6909c64aaf"
+        }
+      ],
+      "review_limit": "Conditional development facts only; no deployment, provider-production or historical reconstruction claim.",
+      "source_epoch_bridge_record": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json"
+    },
+    {
+      "predicate_id": "MD-S029-R0074",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "SOURCE_EPOCH_BRIDGED",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md",
+        "source_line": "145",
+        "rule_text": "- gap setelah frontier bukan production incident dan bukan capability limit",
+        "rule_fingerprint_sha1": "B89DC41B37A965479E0EC92BF308574E8499F87D"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "With NULL activation, daily_enabled=false registers no daily schedule; actual acquisition/publication can move frontier without activation.",
+        "March24 data recorded March25 is excluded at March24 assessment; frontier23 and evidence-as-of24 are disclosed. At March25 actual retained frontier moves to24.",
+        "Development gap yields NOT_APPLICABLE, no production source/availability incident or SLO success; prior23 publication and actual history unchanged."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_disabled_daily_schedule_preserves_moving_development_frontier_with_asof_and_no_operational_success_or_incident",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "68c6552ac46a64dceee96dbdf3ac15731f0e6cb5d1baa6e7beb80fdd833a23e1",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 469,
+          "current_end_line": 541,
+          "assertion_count": 25
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_five_real_failed_session_acquisitions_open_only_conditional_source_evaluation_with_exact_event_provenance",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "9369955609ab925630e17fafc23741796413f2254f4a0c0f35ef8d8fb3fb1752",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 206,
+          "current_end_line": 335,
+          "assertion_count": 43
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/frontier_future_knowledge_admitted.restoration.json",
+          "sha256": "ee01769e6ee7312b30df8e4b793893516e790bd1ec932ec5539223cc16d67dd7",
+          "label": "frontier_future_knowledge_admitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvidenceService.php",
+          "restored_sha256": "49fba51873c9f4a2ce2b9b587f4700c1a9695e1960ea899cde907f2e3723e0d3"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/status_frontier_known_clock_ignored.restoration.json",
+          "sha256": "fc2cbf10bd31784407b25750d527aaf0d36ec9e6ae584e5763d508f306ac1966",
+          "label": "status_frontier_known_clock_ignored",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataOperationalStatusService.php",
+          "restored_sha256": "28ea85bc63a3267bd67c3b1dfa41a9b78c10fa1be74572667d062c7d8823cca5"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/preactivation_gate_omitted.restoration.json",
+          "sha256": "718764d6b8512202c41440cefa43a5704b5a4805b55b8f3aecbdac263bf78fec",
+          "label": "preactivation_gate_omitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvaluator.php",
+          "restored_sha256": "ca9106ca798ea0855c9091373252a4ca385e8fbeeb89690aa6048e6909c64aaf"
+        }
+      ],
+      "review_limit": "Conditional development facts only; no deployment, provider-production or historical reconstruction claim.",
+      "source_epoch_bridge_record": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json"
+    },
+    {
+      "predicate_id": "MD-S029-R0075",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "SOURCE_EPOCH_BRIDGED",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md",
+        "source_line": "146",
+        "rule_text": "- `daily_enabled=false` dapat diterima sebagai development-state choice",
+        "rule_fingerprint_sha1": "5DB987758CD2A4E060D30227A289ED9DD7F2EEDA"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "With NULL activation, daily_enabled=false registers no daily schedule; actual acquisition/publication can move frontier without activation.",
+        "March24 data recorded March25 is excluded at March24 assessment; frontier23 and evidence-as-of24 are disclosed. At March25 actual retained frontier moves to24.",
+        "Development gap yields NOT_APPLICABLE, no production source/availability incident or SLO success; prior23 publication and actual history unchanged."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_disabled_daily_schedule_preserves_moving_development_frontier_with_asof_and_no_operational_success_or_incident",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "68c6552ac46a64dceee96dbdf3ac15731f0e6cb5d1baa6e7beb80fdd833a23e1",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 469,
+          "current_end_line": 541,
+          "assertion_count": 25
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_five_real_failed_session_acquisitions_open_only_conditional_source_evaluation_with_exact_event_provenance",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "9369955609ab925630e17fafc23741796413f2254f4a0c0f35ef8d8fb3fb1752",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 206,
+          "current_end_line": 335,
+          "assertion_count": 43
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/frontier_future_knowledge_admitted.restoration.json",
+          "sha256": "ee01769e6ee7312b30df8e4b793893516e790bd1ec932ec5539223cc16d67dd7",
+          "label": "frontier_future_knowledge_admitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvidenceService.php",
+          "restored_sha256": "49fba51873c9f4a2ce2b9b587f4700c1a9695e1960ea899cde907f2e3723e0d3"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/status_frontier_known_clock_ignored.restoration.json",
+          "sha256": "fc2cbf10bd31784407b25750d527aaf0d36ec9e6ae584e5763d508f306ac1966",
+          "label": "status_frontier_known_clock_ignored",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataOperationalStatusService.php",
+          "restored_sha256": "28ea85bc63a3267bd67c3b1dfa41a9b78c10fa1be74572667d062c7d8823cca5"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/preactivation_gate_omitted.restoration.json",
+          "sha256": "718764d6b8512202c41440cefa43a5704b5a4805b55b8f3aecbdac263bf78fec",
+          "label": "preactivation_gate_omitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvaluator.php",
+          "restored_sha256": "ca9106ca798ea0855c9091373252a4ca385e8fbeeb89690aa6048e6909c64aaf"
+        }
+      ],
+      "review_limit": "Conditional development facts only; no deployment, provider-production or historical reconstruction claim.",
+      "source_epoch_bridge_record": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json"
+    },
+    {
+      "predicate_id": "MD-S029-R0102",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "SOURCE_EPOCH_BRIDGED",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md",
+        "source_line": "192",
+        "rule_text": "- batching historical fetch",
+        "rule_fingerprint_sha1": "A5E1EC713F6C83EBC16A55761DA5B0E9EDD5EF90"
+      },
+      "proof_matrix": "E049_additional_subset_proof_matrix_02.json",
+      "proof_matrix_sha256": "21f7e1e7fccbe1afa1d3e22add89354463ac725c460323d05cd0e372b315295f",
+      "independent_expected_semantics": [
+        "A captured90-day source window covers the independently fixed warmup start2026-02-20 and requested dates2026-03-24/25 with one bounded equity-listing batch per acquisition attempt.",
+        "Provider request bounds are independently calculated Jakarta midnight February20 through exclusive March26. Benchmark calls are separately identified and not counted as equity batches.",
+        "An interrupted second date resumes with at most one further whole-range equity acquisition; cache-only resume is not asserted. Completed first-date run/publication/history/canonical bytes stay unchanged; second requested date publishes separately; warmup cannot be promoted."
+      ],
+      "assertion_sources": [],
+      "production_sources": [
+        {
+          "path": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+          "sha256": "708bca9b44657b60a02f44c208e9961d7dee58d4b7bf469020ab2aa06a2d51c4"
+        },
+        {
+          "path": "app/Application/MarketData/Services/BackfillLifecycleOrchestrator.php",
+          "sha256": "6b21519e06186c6796e6d0a267f0a4b6e1be31d5b633cb0b9f441961a8b6c57b"
+        },
+        {
+          "path": "app/Infrastructure/MarketData/Source/PublicApiEodBarsAdapter.php",
+          "sha256": "ed0eea87de5281a20177de2b2d9b58f5d289aa017821eff99cfd2c750d252688"
+        }
+      ],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/additional_shared_capability_restored_green.execution.json",
+          "sha256": "cb6b94c89b090a255fcdcdf1d05f3a85bc5ae8ba19f93ad3cf8455353d3849d3",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/historical_batch_ignores_captured_window.restoration.json",
+          "sha256": "f3234ad84e31c541aeb7928539e7dba24889c4d46868d0338fce8782ad545086",
+          "label": "historical_batch_ignores_captured_window",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/ApiBackfillRangeAcquisitionService.php",
+          "restored_sha256": "708bca9b44657b60a02f44c208e9961d7dee58d4b7bf469020ab2aa06a2d51c4"
+        }
+      ],
+      "review_limit": "Synthetic transport through actual migrated MariaDB/API adapter, primary equity batching only. No live provider availability, benchmark batching guarantee, zero-refetch resume, deployment or activation claim. No production change needed.",
+      "source_epoch_bridge_record": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json"
+    },
+    {
+      "predicate_id": "MD-S029-R0193",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "SOURCE_EPOCH_BRIDGED",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/book/EOD_SOURCE_OPERATIONAL_RESILIENCE_CONTRACT_LOCKED.md",
+        "source_line": "343",
+        "rule_text": "- menyebut development frontier gap sebagai incident sebelum activation",
+        "rule_fingerprint_sha1": "981913A4D0D67D28455F8CB0C25AE5E3F165116B"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "With NULL activation, daily_enabled=false registers no daily schedule; actual acquisition/publication can move frontier without activation.",
+        "March24 data recorded March25 is excluded at March24 assessment; frontier23 and evidence-as-of24 are disclosed. At March25 actual retained frontier moves to24.",
+        "Development gap yields NOT_APPLICABLE, no production source/availability incident or SLO success; prior23 publication and actual history unchanged."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_disabled_daily_schedule_preserves_moving_development_frontier_with_asof_and_no_operational_success_or_incident",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "68c6552ac46a64dceee96dbdf3ac15731f0e6cb5d1baa6e7beb80fdd833a23e1",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 469,
+          "current_end_line": 541,
+          "assertion_count": 25
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_five_real_failed_session_acquisitions_open_only_conditional_source_evaluation_with_exact_event_provenance",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "9369955609ab925630e17fafc23741796413f2254f4a0c0f35ef8d8fb3fb1752",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 206,
+          "current_end_line": 335,
+          "assertion_count": 43
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/frontier_future_knowledge_admitted.restoration.json",
+          "sha256": "ee01769e6ee7312b30df8e4b793893516e790bd1ec932ec5539223cc16d67dd7",
+          "label": "frontier_future_knowledge_admitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvidenceService.php",
+          "restored_sha256": "49fba51873c9f4a2ce2b9b587f4700c1a9695e1960ea899cde907f2e3723e0d3"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/status_frontier_known_clock_ignored.restoration.json",
+          "sha256": "fc2cbf10bd31784407b25750d527aaf0d36ec9e6ae584e5763d508f306ac1966",
+          "label": "status_frontier_known_clock_ignored",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataOperationalStatusService.php",
+          "restored_sha256": "28ea85bc63a3267bd67c3b1dfa41a9b78c10fa1be74572667d062c7d8823cca5"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/preactivation_gate_omitted.restoration.json",
+          "sha256": "718764d6b8512202c41440cefa43a5704b5a4805b55b8f3aecbdac263bf78fec",
+          "label": "preactivation_gate_omitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvaluator.php",
+          "restored_sha256": "ca9106ca798ea0855c9091373252a4ca385e8fbeeb89690aa6048e6909c64aaf"
+        }
+      ],
+      "review_limit": "Conditional development facts only; no deployment, provider-production or historical reconstruction claim.",
+      "source_epoch_bridge_record": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json"
+    },
+    {
+      "predicate_id": "MD-S056-R0042",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "SOURCE_EPOCH_BRIDGED",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/book/Terminology_and_Scope.md",
+        "source_line": "87",
+        "rule_text": "- the frontier and its evidence as-of timestamp must still be disclosed transparently",
+        "rule_fingerprint_sha1": "FB0B715E85B158F6F0B4AC45006AAFE452A8F18A"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "With NULL activation, daily_enabled=false registers no daily schedule; actual acquisition/publication can move frontier without activation.",
+        "March24 data recorded March25 is excluded at March24 assessment; frontier23 and evidence-as-of24 are disclosed. At March25 actual retained frontier moves to24.",
+        "Development gap yields NOT_APPLICABLE, no production source/availability incident or SLO success; prior23 publication and actual history unchanged."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_disabled_daily_schedule_preserves_moving_development_frontier_with_asof_and_no_operational_success_or_incident",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "68c6552ac46a64dceee96dbdf3ac15731f0e6cb5d1baa6e7beb80fdd833a23e1",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 469,
+          "current_end_line": 541,
+          "assertion_count": 25
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_five_real_failed_session_acquisitions_open_only_conditional_source_evaluation_with_exact_event_provenance",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "9369955609ab925630e17fafc23741796413f2254f4a0c0f35ef8d8fb3fb1752",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 206,
+          "current_end_line": 335,
+          "assertion_count": 43
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/frontier_future_knowledge_admitted.restoration.json",
+          "sha256": "ee01769e6ee7312b30df8e4b793893516e790bd1ec932ec5539223cc16d67dd7",
+          "label": "frontier_future_knowledge_admitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvidenceService.php",
+          "restored_sha256": "49fba51873c9f4a2ce2b9b587f4700c1a9695e1960ea899cde907f2e3723e0d3"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/status_frontier_known_clock_ignored.restoration.json",
+          "sha256": "fc2cbf10bd31784407b25750d527aaf0d36ec9e6ae584e5763d508f306ac1966",
+          "label": "status_frontier_known_clock_ignored",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataOperationalStatusService.php",
+          "restored_sha256": "28ea85bc63a3267bd67c3b1dfa41a9b78c10fa1be74572667d062c7d8823cca5"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/preactivation_gate_omitted.restoration.json",
+          "sha256": "718764d6b8512202c41440cefa43a5704b5a4805b55b8f3aecbdac263bf78fec",
+          "label": "preactivation_gate_omitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvaluator.php",
+          "restored_sha256": "ca9106ca798ea0855c9091373252a4ca385e8fbeeb89690aa6048e6909c64aaf"
+        }
+      ],
+      "review_limit": "Conditional development facts only; no deployment, provider-production or historical reconstruction claim.",
+      "source_epoch_bridge_record": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json"
+    },
+    {
+      "predicate_id": "MD-S056-R0045",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "SOURCE_EPOCH_BRIDGED",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/book/Terminology_and_Scope.md",
+        "source_line": "95",
+        "rule_text": "- operational freshness obligations, including consecutive SLO measurement, begin **only** at this boundary and are never backdated;",
+        "rule_fingerprint_sha1": "0FEE7049AA87143746893399B2348F1F7DFD6DA9"
+      },
+      "proof_matrix": "E049_additional_subset_proof_matrix_02.json",
+      "proof_matrix_sha256": "21f7e1e7fccbe1afa1d3e22add89354463ac725c460323d05cd0e372b315295f",
+      "independent_expected_semantics": [
+        "With an explicitly supplied conditional markerMarch27, four historical failed expected sessionsMarch23-26 plus one in-scope failureMarch27 yield streak1, not5.",
+        "The actual governed MariaDB calendar query retains onlyMarch27 in the assessment horizon; a conditional evaluator supplied the full historical session sequence also excludes older failures.",
+        "A requestedMarch26 date remains NOT_APPLICABLE at laterMarch31 assessment with NULL target/source decisions; calendar revisions remain byte-equivalent and no activation proof is claimed."
+      ],
+      "assertion_sources": [],
+      "production_sources": [
+        {
+          "path": "app/Application/MarketData/Services/MarketDataFreshnessEvaluator.php",
+          "sha256": "ca9106ca798ea0855c9091373252a4ca385e8fbeeb89690aa6048e6909c64aaf"
+        },
+        {
+          "path": "app/Infrastructure/Persistence/MarketData/MarketCalendarRepository.php",
+          "sha256": "f9ba6834293f6101aaa93f774f22235bb3aa2b1ebed2514a6b554b80adc8d3d3"
+        },
+        {
+          "path": "app/Domain/MarketData/FreshnessState.php",
+          "sha256": "448e1e1e357363b3a62327f6934487a116bc645128ba82379a01b70b09b15721"
+        }
+      ],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/additional_shared_capability_restored_green.execution.json",
+          "sha256": "cb6b94c89b090a255fcdcdf1d05f3a85bc5ae8ba19f93ad3cf8455353d3849d3",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/preactivation_failures_counted_as_operational.restoration.json",
+          "sha256": "641e4a3a1b82ba61096ac42b5cd23fdab2cf014d559ef552b4f1aaa35215614e",
+          "label": "preactivation_failures_counted_as_operational",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvaluator.php",
+          "restored_sha256": "ca9106ca798ea0855c9091373252a4ca385e8fbeeb89690aa6048e6909c64aaf"
+        }
+      ],
+      "review_limit": "Conditional mechanism under an explicit hypothetical effective marker; no approval/backdating of the actual NULL marker, no operational run snapshot, live SLO compliance, deployed measurement or activation proof.",
+      "source_epoch_bridge_record": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json"
+    },
+    {
+      "predicate_id": "MD-S069-R0014",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "SOURCE_EPOCH_BRIDGED",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/ops/Incident_Classification_and_Response_Matrix_LOCKED.md",
+        "source_line": "26",
+        "rule_text": "- **That every incident was observed.** Classification acts on conditions that surfaced. A defect that produced no alert, no failing gate, and no complaint is never classified, and the absence of incidents is therefore not evidence of health.",
+        "rule_fingerprint_sha1": "40D73570C017D3CFEA8ADF6039F5863781E226DB"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "No observed condition yields NO_CLASSIFIED_OBSERVED_CONDITION, never a completeness or health claim; actual failed acquisition still reports unhealthy despite development incident exclusion.",
+        "Observed source/scheduler/proof and integrity/security signals retain distinct declared floor classes/reasons; stated severity is a signal floor, not measured consumer consequence.",
+        "Unrecognized declared conditions are explicitly incomplete and cannot produce successful decision-command output; supporting free text alone creates no incident."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19IncidentResponseMariaDbTest::test_phase_boundary_all_observed_classes_continue_append_only_without_improvised_closure_or_health_claim",
+          "path": "tests/Unit/MarketData/B19IncidentResponseMariaDbTest.php",
+          "current_file_sha256": "387216eeb3cb3a0e30928940412a0fec25fe31809ae4186f1bd474a30c5bfb98",
+          "recorded_file_sha256": "b59d17b0bf07169faa0369ba6717e194df847442810666461042f0d3e5271cd1",
+          "whole_file_changed_after_proof_epoch": true,
+          "method_sha256_lf": "c455163d426b13b85255f11f1240712a56f77214f7b1e5c07c49a6674a52e980",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 121,
+          "current_end_line": 161,
+          "assertion_count": 22
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_on_target_measurement_does_not_verify_price_or_external_clock_fact_or_claim_slo_attainment",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "0ece6735c7fd8ef18cb073bd4cec1eb750f500cd1b619642abbb32f6e6cfa240",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 542,
+          "current_end_line": 596,
+          "assertion_count": 20
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_five_real_failed_session_acquisitions_open_only_conditional_source_evaluation_with_exact_event_provenance",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "9369955609ab925630e17fafc23741796413f2254f4a0c0f35ef8d8fb3fb1752",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 206,
+          "current_end_line": 335,
+          "assertion_count": 43
+        },
+        {
+          "method": "B19IncidentResponseMariaDbTest::test_unknown_observed_condition_is_incomplete_not_a_clean_success_and_supporting_text_cannot_invent_incidents",
+          "path": "tests/Unit/MarketData/B19IncidentResponseMariaDbTest.php",
+          "current_file_sha256": "387216eeb3cb3a0e30928940412a0fec25fe31809ae4186f1bd474a30c5bfb98",
+          "recorded_file_sha256": "b59d17b0bf07169faa0369ba6717e194df847442810666461042f0d3e5271cd1",
+          "whole_file_changed_after_proof_epoch": true,
+          "method_sha256_lf": "35263b0633d796c5c8fa4dc5898aa111273002048689ecac24f053f6f4cb5794",
+          "method_unchanged_from_this_matrix": false,
+          "current_method_bound_by_e049_matrix": false,
+          "current_method_execution_binding": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/review_stabilization_incident_methods.execution.json",
+          "current_start_line": 365,
+          "current_end_line": 398,
+          "assertion_count": 10
+        },
+        {
+          "method": "B19IncidentResponseMariaDbTest::test_incident_scope_and_context_refuse_misattribution_without_suppressing_critical_containment",
+          "path": "tests/Unit/MarketData/B19IncidentResponseMariaDbTest.php",
+          "current_file_sha256": "387216eeb3cb3a0e30928940412a0fec25fe31809ae4186f1bd474a30c5bfb98",
+          "recorded_file_sha256": "b59d17b0bf07169faa0369ba6717e194df847442810666461042f0d3e5271cd1",
+          "whole_file_changed_after_proof_epoch": true,
+          "method_sha256_lf": "45edad144170968f08d341df30a6909cb63962462017260386244649dc35e5b5",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 279,
+          "current_end_line": 328,
+          "assertion_count": 16
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/review_stabilization_incident_methods.execution.json",
+          "sha256": "635a2ed47634a8bd1176ebcb0176a2c7b642fb29f32c01673f7b303edb140ef1",
+          "exit_code": 0,
+          "source_unchanged": true,
+          "result": "2 tests, 36 assertions"
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/unknown_observation_discarded.restoration.json",
+          "sha256": "07ad293064d54ac3413f2c5f62967c11e181956745640320b4c4781593e380d8",
+          "label": "unknown_observation_discarded",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataIncidentResponseService.php",
+          "restored_sha256": "005df5313113702f837e513628cc4b6b7a0925369187a7b6e8eee622dd82c90c"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/incident_scope_ignored.restoration.json",
+          "sha256": "f63c459004cb424c4312acb8ce4c6a1c4f65f37e9cfd298c5bb0133e9e11216f",
+          "label": "incident_scope_ignored",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataIncidentResponseService.php",
+          "restored_sha256": "40220e044615601f25d63dac8f575fa1dbf5fdc8b48f19898381aef39a4b9745"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/incident_bad_config_claimed_verified.restoration.json",
+          "sha256": "982f0a9c258add53d46b1f8c58a3918cc27438169fbf4f972dda55095b79fc8f",
+          "label": "incident_bad_config_claimed_verified",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataIncidentResponseService.php",
+          "restored_sha256": "40220e044615601f25d63dac8f575fa1dbf5fdc8b48f19898381aef39a4b9745"
+        }
+      ],
+      "review_limit": "No F018 escalation, closure, solved-cause, complete-detection or consumer-consequence claim; full8-class response capability remains incomplete.",
+      "source_epoch_bridge_record": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json"
+    },
+    {
+      "predicate_id": "MD-S069-R0015",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "SOURCE_EPOCH_BRIDGED",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/ops/Incident_Classification_and_Response_Matrix_LOCKED.md",
+        "source_line": "27",
+        "rule_text": "- **That severity reflects consequence.** Severity is assigned from declared signals. A low-severity data defect can outrank a high-severity outage for a consumer whose horizon it corrupts.",
+        "rule_fingerprint_sha1": "6A748F0B461E0C20A721F6F79A2351D2D3B2795E"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "No observed condition yields NO_CLASSIFIED_OBSERVED_CONDITION, never a completeness or health claim; actual failed acquisition still reports unhealthy despite development incident exclusion.",
+        "Observed source/scheduler/proof and integrity/security signals retain distinct declared floor classes/reasons; stated severity is a signal floor, not measured consumer consequence.",
+        "Unrecognized declared conditions are explicitly incomplete and cannot produce successful decision-command output; supporting free text alone creates no incident."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19IncidentResponseMariaDbTest::test_phase_boundary_all_observed_classes_continue_append_only_without_improvised_closure_or_health_claim",
+          "path": "tests/Unit/MarketData/B19IncidentResponseMariaDbTest.php",
+          "current_file_sha256": "387216eeb3cb3a0e30928940412a0fec25fe31809ae4186f1bd474a30c5bfb98",
+          "recorded_file_sha256": "b59d17b0bf07169faa0369ba6717e194df847442810666461042f0d3e5271cd1",
+          "whole_file_changed_after_proof_epoch": true,
+          "method_sha256_lf": "c455163d426b13b85255f11f1240712a56f77214f7b1e5c07c49a6674a52e980",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 121,
+          "current_end_line": 161,
+          "assertion_count": 22
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_on_target_measurement_does_not_verify_price_or_external_clock_fact_or_claim_slo_attainment",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "0ece6735c7fd8ef18cb073bd4cec1eb750f500cd1b619642abbb32f6e6cfa240",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 542,
+          "current_end_line": 596,
+          "assertion_count": 20
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_five_real_failed_session_acquisitions_open_only_conditional_source_evaluation_with_exact_event_provenance",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "9369955609ab925630e17fafc23741796413f2254f4a0c0f35ef8d8fb3fb1752",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 206,
+          "current_end_line": 335,
+          "assertion_count": 43
+        },
+        {
+          "method": "B19IncidentResponseMariaDbTest::test_unknown_observed_condition_is_incomplete_not_a_clean_success_and_supporting_text_cannot_invent_incidents",
+          "path": "tests/Unit/MarketData/B19IncidentResponseMariaDbTest.php",
+          "current_file_sha256": "387216eeb3cb3a0e30928940412a0fec25fe31809ae4186f1bd474a30c5bfb98",
+          "recorded_file_sha256": "b59d17b0bf07169faa0369ba6717e194df847442810666461042f0d3e5271cd1",
+          "whole_file_changed_after_proof_epoch": true,
+          "method_sha256_lf": "35263b0633d796c5c8fa4dc5898aa111273002048689ecac24f053f6f4cb5794",
+          "method_unchanged_from_this_matrix": false,
+          "current_method_bound_by_e049_matrix": false,
+          "current_method_execution_binding": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/review_stabilization_incident_methods.execution.json",
+          "current_start_line": 365,
+          "current_end_line": 398,
+          "assertion_count": 10
+        },
+        {
+          "method": "B19IncidentResponseMariaDbTest::test_incident_scope_and_context_refuse_misattribution_without_suppressing_critical_containment",
+          "path": "tests/Unit/MarketData/B19IncidentResponseMariaDbTest.php",
+          "current_file_sha256": "387216eeb3cb3a0e30928940412a0fec25fe31809ae4186f1bd474a30c5bfb98",
+          "recorded_file_sha256": "b59d17b0bf07169faa0369ba6717e194df847442810666461042f0d3e5271cd1",
+          "whole_file_changed_after_proof_epoch": true,
+          "method_sha256_lf": "45edad144170968f08d341df30a6909cb63962462017260386244649dc35e5b5",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 279,
+          "current_end_line": 328,
+          "assertion_count": 16
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/review_stabilization_incident_methods.execution.json",
+          "sha256": "635a2ed47634a8bd1176ebcb0176a2c7b642fb29f32c01673f7b303edb140ef1",
+          "exit_code": 0,
+          "source_unchanged": true,
+          "result": "2 tests, 36 assertions"
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/unknown_observation_discarded.restoration.json",
+          "sha256": "07ad293064d54ac3413f2c5f62967c11e181956745640320b4c4781593e380d8",
+          "label": "unknown_observation_discarded",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataIncidentResponseService.php",
+          "restored_sha256": "005df5313113702f837e513628cc4b6b7a0925369187a7b6e8eee622dd82c90c"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/incident_scope_ignored.restoration.json",
+          "sha256": "f63c459004cb424c4312acb8ce4c6a1c4f65f37e9cfd298c5bb0133e9e11216f",
+          "label": "incident_scope_ignored",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataIncidentResponseService.php",
+          "restored_sha256": "40220e044615601f25d63dac8f575fa1dbf5fdc8b48f19898381aef39a4b9745"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/incident_bad_config_claimed_verified.restoration.json",
+          "sha256": "982f0a9c258add53d46b1f8c58a3918cc27438169fbf4f972dda55095b79fc8f",
+          "label": "incident_bad_config_claimed_verified",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataIncidentResponseService.php",
+          "restored_sha256": "40220e044615601f25d63dac8f575fa1dbf5fdc8b48f19898381aef39a4b9745"
+        }
+      ],
+      "review_limit": "No F018 escalation, closure, solved-cause, complete-detection or consumer-consequence claim; full8-class response capability remains incomplete.",
+      "source_epoch_bridge_record": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json"
+    },
+    {
+      "predicate_id": "MD-S070-R0005",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "SOURCE_EPOCH_BRIDGED",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/ops/Observability_Minimum_Contract_LOCKED.md",
+        "source_line": "10",
+        "rule_text": "- invalid/warning/hard reject counts",
+        "rule_fingerprint_sha1": "B9A75F5186A29F812E47DD118B8781BC0584721A"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "Actual valid V2 publication yields invalid0 and hardreject1 from insufficient-history eligibility; actual impossible OHLC two-listing input yields invalid1 and hardreject2.",
+        "Persisted warning_count NULL is mirrored in status and export; two added WARN events cannot invent a population under D003.",
+        "Controlled unavailable invalid/hard counts remain NULL with explicit status defects/unhealthy exit2; missing is not0. Status/export do not mutate run or publish the rejected date."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19ObservableCountsMariaDbTest::test_real_count_producers_status_and_export_preserve_null_warning_and_explicit_unavailable_counts",
+          "path": "tests/Unit/MarketData/B19ObservableCountsMariaDbTest.php",
+          "current_file_sha256": "7a24e77a822505b2adaa3adf49d5d2c7c396ac84238f25e59928c16393b3e506",
+          "recorded_file_sha256": "7a24e77a822505b2adaa3adf49d5d2c7c396ac84238f25e59928c16393b3e506",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "d6e183a2a17198ab57f0615f072095703eba6601e91363223171e0773796fad7",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 17,
+          "current_end_line": 116,
+          "assertion_count": 29
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/status_invalid_count_forced_zero.restoration.json",
+          "sha256": "86c1f68d82324efcfbabbcf778bb72339eca86d2eb84bfc3581421c7a58e3bae",
+          "label": "status_invalid_count_forced_zero",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataOperationalStatusService.php",
+          "restored_sha256": "36d9979123dc6f7e225cf04e845edd5980350c693a79892768ea35e201b7565e"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/export_unknown_warning_forced_zero.restoration.json",
+          "sha256": "eaa160f160f2a0b2382e3391b4e39620a8aa46ff76504216068163ac2242bebe",
+          "label": "export_unknown_warning_forced_zero",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataEvidenceExportService.php",
+          "restored_sha256": "8f245ff0d1c8c8b010aac634737de20858d8cd4996b073f2272021ed2b038d32"
+        }
+      ],
+      "review_limit": "No warning population invented; rejected manual-file branch is legacy non-readable lifecycle, not unsupported V2 manual publication proof.",
+      "source_epoch_bridge_record": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json"
+    },
+    {
+      "predicate_id": "MD-S072-R0001",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "SOURCE_EPOCH_BRIDGED",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/ops/Performance_SLO_and_Limits_LOCKED.md",
+        "source_line": "5",
+        "rule_text": "Production SLO measurement begins only at approved `OPERATIONAL_START_DATE`. Earlier dates are development/backfill frontier and are reported separately, not counted as production incidents or availability success.",
+        "rule_fingerprint_sha1": "5BFADC8F2688749D1C83078D1F396BE6BB23AE2E"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "No operational SLO before effective explicit marker: NULL or requested date preceding marker yields NOT_APPLICABLE with NULL freshness and source decisions.",
+        "Actual persisted preactivation failures/readability remain development observations, not production incidents or availability-success accounting.",
+        "Conditional effective marker exercises target and source threshold logic without approving marker, rebinding immutable snapshots or claiming activation."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19FreshnessEvaluatorTest::test_verified_expected_session_target_matrix_and_preactivation_boundary",
+          "path": "tests/Unit/MarketData/B19FreshnessEvaluatorTest.php",
+          "current_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "recorded_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "ef8fa65fb8d3d022b1fdb9eab35d47707c023a09d94bbea14f93579e117e8686",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 56,
+          "current_end_line": 83,
+          "assertion_count": 12
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_five_real_failed_session_acquisitions_open_only_conditional_source_evaluation_with_exact_event_provenance",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "9369955609ab925630e17fafc23741796413f2254f4a0c0f35ef8d8fb3fb1752",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 206,
+          "current_end_line": 335,
+          "assertion_count": 43
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_disabled_daily_schedule_preserves_moving_development_frontier_with_asof_and_no_operational_success_or_incident",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "68c6552ac46a64dceee96dbdf3ac15731f0e6cb5d1baa6e7beb80fdd833a23e1",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 469,
+          "current_end_line": 541,
+          "assertion_count": 25
+        },
+        {
+          "method": "B19FreshnessEvaluatorTest::test_unverified_calendar_publication_or_measurement_is_never_a_pass",
+          "path": "tests/Unit/MarketData/B19FreshnessEvaluatorTest.php",
+          "current_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "recorded_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "f30d8c978db792c4ff7bdb8d7cd337d0e101270edb32697b800bb6540e5659ee",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 147,
+          "current_end_line": 171,
+          "assertion_count": 7
+        },
+        {
+          "method": "B19ExpectedSessionEvidenceMariaDbTest::test_absent_expected_run_is_persisted_unavailable_not_success_and_command_refuses_wrong_identity_and_missing_calendar",
+          "path": "tests/Unit/MarketData/B19ExpectedSessionEvidenceMariaDbTest.php",
+          "current_file_sha256": "916575c7150d232b81d2f22f163d54620d533ae73bc6290ec673067d5d7ec900",
+          "recorded_file_sha256": "7775886dd506e6d4f04ceaff93db06dbefe68c25a01eafc7ef3ab205fb6dd8bd",
+          "whole_file_changed_after_proof_epoch": true,
+          "method_sha256_lf": "e8e842ead935450fb2703e89dda9b9a185b44ca75cd27ea6e157f8c3eb0cbad8",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 35,
+          "current_end_line": 70,
+          "assertion_count": 22
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/preactivation_gate_omitted.restoration.json",
+          "sha256": "718764d6b8512202c41440cefa43a5704b5a4805b55b8f3aecbdac263bf78fec",
+          "label": "preactivation_gate_omitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvaluator.php",
+          "restored_sha256": "ca9106ca798ea0855c9091373252a4ca385e8fbeeb89690aa6048e6909c64aaf"
+        }
+      ],
+      "review_limit": "Operational activation not proved; actual locked config marker remains NULL. String-marker snapshot compatibility remains an activation-boundary issue.",
+      "source_epoch_bridge_record": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json"
+    },
+    {
+      "predicate_id": "MD-S072-R0010",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "PASS_BOUNDED_TECHNICAL_REVIEW",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/ops/Performance_SLO_and_Limits_LOCKED.md",
+        "source_line": "22",
+        "rule_text": "`../book/Terminology_and_Scope.md` states that the consumer horizon generates a freshness requirement and assigns the value to this contract. `Yahoo_Finance_Bootstrap_Source_Strategy.md` assigns the availability-trigger threshold here as well. Both are derived from the horizon rather than chosen, so that a change in horizon forces a change here rather than silently invalidating these numbers.",
+        "rule_fingerprint_sha1": "F3D0E506E760F30684C71E134FC22EE08C135D2D"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "Independently fixed five-session horizon binds lag1, breach2 and failed-session5 as a single [5,1,2,5] policy.",
+        "Any unversioned independent override refuses with HORIZON_POLICY_REDERIVATION_REQUIRED and no target, including widened horizon."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19FreshnessEvaluatorTest::test_unversioned_horizon_or_threshold_change_requires_policy_rederivation",
+          "path": "tests/Unit/MarketData/B19FreshnessEvaluatorTest.php",
+          "current_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "recorded_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "c39e55505ba219323cf776b6effd4b818ad69b805a78090f4db1dc916537922a",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 36,
+          "current_end_line": 55,
+          "assertion_count": 9
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/horizon_policy_override_allowed.restoration.json",
+          "sha256": "331cb23ce42017f7f90f2e1e6855b6858ad716d934664157a3ecc4b4cf6f8ae5",
+          "label": "horizon_policy_override_allowed",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvaluator.php",
+          "restored_sha256": "ca9106ca798ea0855c9091373252a4ca385e8fbeeb89690aa6048e6909c64aaf"
+        }
+      ],
+      "review_limit": "No authority to select a different horizon or waive a breach is asserted.",
+      "source_epoch_bridge_record": null
+    },
+    {
+      "predicate_id": "MD-S072-R0020",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "SOURCE_EPOCH_BRIDGED",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/ops/Performance_SLO_and_Limits_LOCKED.md",
+        "source_line": "46",
+        "rule_text": "- Both thresholds apply only from approved `OPERATIONAL_START_DATE`, consistent with the measurement boundary above.",
+        "rule_fingerprint_sha1": "2F2F8D09CA015C64A2175F76C417C496D8FC6BC7"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "No operational SLO before effective explicit marker: NULL or requested date preceding marker yields NOT_APPLICABLE with NULL freshness and source decisions.",
+        "Actual persisted preactivation failures/readability remain development observations, not production incidents or availability-success accounting.",
+        "Conditional effective marker exercises target and source threshold logic without approving marker, rebinding immutable snapshots or claiming activation."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19FreshnessEvaluatorTest::test_verified_expected_session_target_matrix_and_preactivation_boundary",
+          "path": "tests/Unit/MarketData/B19FreshnessEvaluatorTest.php",
+          "current_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "recorded_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "ef8fa65fb8d3d022b1fdb9eab35d47707c023a09d94bbea14f93579e117e8686",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 56,
+          "current_end_line": 83,
+          "assertion_count": 12
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_five_real_failed_session_acquisitions_open_only_conditional_source_evaluation_with_exact_event_provenance",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "9369955609ab925630e17fafc23741796413f2254f4a0c0f35ef8d8fb3fb1752",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 206,
+          "current_end_line": 335,
+          "assertion_count": 43
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_disabled_daily_schedule_preserves_moving_development_frontier_with_asof_and_no_operational_success_or_incident",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "68c6552ac46a64dceee96dbdf3ac15731f0e6cb5d1baa6e7beb80fdd833a23e1",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 469,
+          "current_end_line": 541,
+          "assertion_count": 25
+        },
+        {
+          "method": "B19FreshnessEvaluatorTest::test_unverified_calendar_publication_or_measurement_is_never_a_pass",
+          "path": "tests/Unit/MarketData/B19FreshnessEvaluatorTest.php",
+          "current_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "recorded_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "f30d8c978db792c4ff7bdb8d7cd337d0e101270edb32697b800bb6540e5659ee",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 147,
+          "current_end_line": 171,
+          "assertion_count": 7
+        },
+        {
+          "method": "B19ExpectedSessionEvidenceMariaDbTest::test_absent_expected_run_is_persisted_unavailable_not_success_and_command_refuses_wrong_identity_and_missing_calendar",
+          "path": "tests/Unit/MarketData/B19ExpectedSessionEvidenceMariaDbTest.php",
+          "current_file_sha256": "916575c7150d232b81d2f22f163d54620d533ae73bc6290ec673067d5d7ec900",
+          "recorded_file_sha256": "7775886dd506e6d4f04ceaff93db06dbefe68c25a01eafc7ef3ab205fb6dd8bd",
+          "whole_file_changed_after_proof_epoch": true,
+          "method_sha256_lf": "e8e842ead935450fb2703e89dda9b9a185b44ca75cd27ea6e157f8c3eb0cbad8",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 35,
+          "current_end_line": 70,
+          "assertion_count": 22
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/preactivation_gate_omitted.restoration.json",
+          "sha256": "718764d6b8512202c41440cefa43a5704b5a4805b55b8f3aecbdac263bf78fec",
+          "label": "preactivation_gate_omitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvaluator.php",
+          "restored_sha256": "ca9106ca798ea0855c9091373252a4ca385e8fbeeb89690aa6048e6909c64aaf"
+        }
+      ],
+      "review_limit": "Operational activation not proved; actual locked config marker remains NULL. String-marker snapshot compatibility remains an activation-boundary issue.",
+      "source_epoch_bridge_record": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json"
+    },
+    {
+      "predicate_id": "MD-S072-R0022",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "PASS_BOUNDED_TECHNICAL_REVIEW",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/ops/Performance_SLO_and_Limits_LOCKED.md",
+        "source_line": "48",
+        "rule_text": "- A change to the declared horizon is an output-affecting change that requires re-deriving both values here.",
+        "rule_fingerprint_sha1": "4948E14F2A307B88E495D78E0EED1C1E6105F432"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "Independently fixed five-session horizon binds lag1, breach2 and failed-session5 as a single [5,1,2,5] policy.",
+        "Any unversioned independent override refuses with HORIZON_POLICY_REDERIVATION_REQUIRED and no target, including widened horizon."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19FreshnessEvaluatorTest::test_unversioned_horizon_or_threshold_change_requires_policy_rederivation",
+          "path": "tests/Unit/MarketData/B19FreshnessEvaluatorTest.php",
+          "current_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "recorded_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "c39e55505ba219323cf776b6effd4b818ad69b805a78090f4db1dc916537922a",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 36,
+          "current_end_line": 55,
+          "assertion_count": 9
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/horizon_policy_override_allowed.restoration.json",
+          "sha256": "331cb23ce42017f7f90f2e1e6855b6858ad716d934664157a3ecc4b4cf6f8ae5",
+          "label": "horizon_policy_override_allowed",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvaluator.php",
+          "restored_sha256": "ca9106ca798ea0855c9091373252a4ca385e8fbeeb89690aa6048e6909c64aaf"
+        }
+      ],
+      "review_limit": "No authority to select a different horizon or waive a breach is asserted.",
+      "source_epoch_bridge_record": null
+    },
+    {
+      "predicate_id": "MD-S072-R0033",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "SOURCE_EPOCH_BRIDGED",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/ops/Performance_SLO_and_Limits_LOCKED.md",
+        "source_line": "74",
+        "rule_text": "**What it cannot prove.**",
+        "rule_fingerprint_sha1": "08C93A1FF6992B53A8583F92C439CE960AE51ACB"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "A separately authored provider fixture with close105 is revised under controlled input to admissible106; actual V2 readable publication and ON_TARGET do not authenticate external market price.",
+        "Independent calendar boundary16:00 vs15:55 produces actual elapsed5400 vs5700 while timeliness classification remains ON_TARGET; revision identities and prior measurements remain retained.",
+        "Before activation, absence of breaches has no operational significance; output says NOT_CLAIMED compliance/activation false and excludes platform-correctness/unobserved-breach assertions."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_on_target_measurement_does_not_verify_price_or_external_clock_fact_or_claim_slo_attainment",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "0ece6735c7fd8ef18cb073bd4cec1eb750f500cd1b619642abbb32f6e6cfa240",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 542,
+          "current_end_line": 596,
+          "assertion_count": 20
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_disabled_daily_schedule_preserves_moving_development_frontier_with_asof_and_no_operational_success_or_incident",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "68c6552ac46a64dceee96dbdf3ac15731f0e6cb5d1baa6e7beb80fdd833a23e1",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 469,
+          "current_end_line": 541,
+          "assertion_count": 25
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_five_real_failed_session_acquisitions_open_only_conditional_source_evaluation_with_exact_event_provenance",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "9369955609ab925630e17fafc23741796413f2254f4a0c0f35ef8d8fb3fb1752",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 206,
+          "current_end_line": 335,
+          "assertion_count": 43
+        },
+        {
+          "method": "B19FreshnessEvaluatorTest::test_unverified_calendar_publication_or_measurement_is_never_a_pass",
+          "path": "tests/Unit/MarketData/B19FreshnessEvaluatorTest.php",
+          "current_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "recorded_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "f30d8c978db792c4ff7bdb8d7cd337d0e101270edb32697b800bb6540e5659ee",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 147,
+          "current_end_line": 171,
+          "assertion_count": 7
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/preactivation_gate_omitted.restoration.json",
+          "sha256": "718764d6b8512202c41440cefa43a5704b5a4805b55b8f3aecbdac263bf78fec",
+          "label": "preactivation_gate_omitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvaluator.php",
+          "restored_sha256": "ca9106ca798ea0855c9091373252a4ca385e8fbeeb89690aa6048e6909c64aaf"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/readability_age.restoration.json",
+          "sha256": "000e8d965ca04bbd1966dfe6a58a6cfa43583f56fac80041e43464347a7cd77c",
+          "label": "readability_age",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvidenceService.php",
+          "restored_sha256": "60e23b07b70c80b55d8a77cdcf108ea5e927c871a63bc52bc6ae25cdd730b41b"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/native_readability_replaced_by_assessment_clock.restoration.json",
+          "sha256": "1892f05b281ca442067f32896d7ba4ff58d156169aa5e8f59b13b3795f40eef6",
+          "label": "native_readability_replaced_by_assessment_clock",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvidenceService.php",
+          "restored_sha256": "41159cf159c96e82d19ed84b47244ab7ec8a1fe8f6c5cf3e57b817bee2074542"
+        }
+      ],
+      "review_limit": "Boundary proof only; no external market oracle, clock truth, live target attainment or platform health assertion.",
+      "source_epoch_bridge_record": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json"
+    },
+    {
+      "predicate_id": "MD-S072-R0034",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "SOURCE_EPOCH_BRIDGED",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/ops/Performance_SLO_and_Limits_LOCKED.md",
+        "source_line": "76",
+        "rule_text": "- **That on-target data is correct data.** Timeliness and correctness are independent. Arriving inside the window says nothing about what arrived.",
+        "rule_fingerprint_sha1": "AEDDFB5FAD2D9ACD5D4CB413DEDFD511CDFC57F1"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "A separately authored provider fixture with close105 is revised under controlled input to admissible106; actual V2 readable publication and ON_TARGET do not authenticate external market price.",
+        "Independent calendar boundary16:00 vs15:55 produces actual elapsed5400 vs5700 while timeliness classification remains ON_TARGET; revision identities and prior measurements remain retained.",
+        "Before activation, absence of breaches has no operational significance; output says NOT_CLAIMED compliance/activation false and excludes platform-correctness/unobserved-breach assertions."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_on_target_measurement_does_not_verify_price_or_external_clock_fact_or_claim_slo_attainment",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "0ece6735c7fd8ef18cb073bd4cec1eb750f500cd1b619642abbb32f6e6cfa240",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 542,
+          "current_end_line": 596,
+          "assertion_count": 20
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_disabled_daily_schedule_preserves_moving_development_frontier_with_asof_and_no_operational_success_or_incident",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "68c6552ac46a64dceee96dbdf3ac15731f0e6cb5d1baa6e7beb80fdd833a23e1",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 469,
+          "current_end_line": 541,
+          "assertion_count": 25
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_five_real_failed_session_acquisitions_open_only_conditional_source_evaluation_with_exact_event_provenance",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "9369955609ab925630e17fafc23741796413f2254f4a0c0f35ef8d8fb3fb1752",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 206,
+          "current_end_line": 335,
+          "assertion_count": 43
+        },
+        {
+          "method": "B19FreshnessEvaluatorTest::test_unverified_calendar_publication_or_measurement_is_never_a_pass",
+          "path": "tests/Unit/MarketData/B19FreshnessEvaluatorTest.php",
+          "current_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "recorded_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "f30d8c978db792c4ff7bdb8d7cd337d0e101270edb32697b800bb6540e5659ee",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 147,
+          "current_end_line": 171,
+          "assertion_count": 7
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/preactivation_gate_omitted.restoration.json",
+          "sha256": "718764d6b8512202c41440cefa43a5704b5a4805b55b8f3aecbdac263bf78fec",
+          "label": "preactivation_gate_omitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvaluator.php",
+          "restored_sha256": "ca9106ca798ea0855c9091373252a4ca385e8fbeeb89690aa6048e6909c64aaf"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/readability_age.restoration.json",
+          "sha256": "000e8d965ca04bbd1966dfe6a58a6cfa43583f56fac80041e43464347a7cd77c",
+          "label": "readability_age",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvidenceService.php",
+          "restored_sha256": "60e23b07b70c80b55d8a77cdcf108ea5e927c871a63bc52bc6ae25cdd730b41b"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/native_readability_replaced_by_assessment_clock.restoration.json",
+          "sha256": "1892f05b281ca442067f32896d7ba4ff58d156169aa5e8f59b13b3795f40eef6",
+          "label": "native_readability_replaced_by_assessment_clock",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvidenceService.php",
+          "restored_sha256": "41159cf159c96e82d19ed84b47244ab7ec8a1fe8f6c5cf3e57b817bee2074542"
+        }
+      ],
+      "review_limit": "Boundary proof only; no external market oracle, clock truth, live target attainment or platform health assertion.",
+      "source_epoch_bridge_record": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json"
+    },
+    {
+      "predicate_id": "MD-S072-R0035",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "SOURCE_EPOCH_BRIDGED",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/ops/Performance_SLO_and_Limits_LOCKED.md",
+        "source_line": "77",
+        "rule_text": "- **That the clock started at the right moment.** Measurement begins at session completion, which is a calendar and status fact. A wrong session boundary produces a precise measurement of the wrong interval.",
+        "rule_fingerprint_sha1": "F2F02D59010E3C8D80E4293BEA7E2147B2A9C316"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "A separately authored provider fixture with close105 is revised under controlled input to admissible106; actual V2 readable publication and ON_TARGET do not authenticate external market price.",
+        "Independent calendar boundary16:00 vs15:55 produces actual elapsed5400 vs5700 while timeliness classification remains ON_TARGET; revision identities and prior measurements remain retained.",
+        "Before activation, absence of breaches has no operational significance; output says NOT_CLAIMED compliance/activation false and excludes platform-correctness/unobserved-breach assertions."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_on_target_measurement_does_not_verify_price_or_external_clock_fact_or_claim_slo_attainment",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "0ece6735c7fd8ef18cb073bd4cec1eb750f500cd1b619642abbb32f6e6cfa240",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 542,
+          "current_end_line": 596,
+          "assertion_count": 20
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_disabled_daily_schedule_preserves_moving_development_frontier_with_asof_and_no_operational_success_or_incident",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "68c6552ac46a64dceee96dbdf3ac15731f0e6cb5d1baa6e7beb80fdd833a23e1",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 469,
+          "current_end_line": 541,
+          "assertion_count": 25
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_five_real_failed_session_acquisitions_open_only_conditional_source_evaluation_with_exact_event_provenance",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "9369955609ab925630e17fafc23741796413f2254f4a0c0f35ef8d8fb3fb1752",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 206,
+          "current_end_line": 335,
+          "assertion_count": 43
+        },
+        {
+          "method": "B19FreshnessEvaluatorTest::test_unverified_calendar_publication_or_measurement_is_never_a_pass",
+          "path": "tests/Unit/MarketData/B19FreshnessEvaluatorTest.php",
+          "current_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "recorded_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "f30d8c978db792c4ff7bdb8d7cd337d0e101270edb32697b800bb6540e5659ee",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 147,
+          "current_end_line": 171,
+          "assertion_count": 7
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/preactivation_gate_omitted.restoration.json",
+          "sha256": "718764d6b8512202c41440cefa43a5704b5a4805b55b8f3aecbdac263bf78fec",
+          "label": "preactivation_gate_omitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvaluator.php",
+          "restored_sha256": "ca9106ca798ea0855c9091373252a4ca385e8fbeeb89690aa6048e6909c64aaf"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/readability_age.restoration.json",
+          "sha256": "000e8d965ca04bbd1966dfe6a58a6cfa43583f56fac80041e43464347a7cd77c",
+          "label": "readability_age",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvidenceService.php",
+          "restored_sha256": "60e23b07b70c80b55d8a77cdcf108ea5e927c871a63bc52bc6ae25cdd730b41b"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/native_readability_replaced_by_assessment_clock.restoration.json",
+          "sha256": "1892f05b281ca442067f32896d7ba4ff58d156169aa5e8f59b13b3795f40eef6",
+          "label": "native_readability_replaced_by_assessment_clock",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvidenceService.php",
+          "restored_sha256": "41159cf159c96e82d19ed84b47244ab7ec8a1fe8f6c5cf3e57b817bee2074542"
+        }
+      ],
+      "review_limit": "Boundary proof only; no external market oracle, clock truth, live target attainment or platform health assertion.",
+      "source_epoch_bridge_record": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json"
+    },
+    {
+      "predicate_id": "MD-S072-R0036",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "SOURCE_EPOCH_BRIDGED",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/ops/Performance_SLO_and_Limits_LOCKED.md",
+        "source_line": "78",
+        "rule_text": "- **That no breach occurred while measurement was off.** Targets apply only from approved activation. Development-phase lateness is outside the SLO by design, so an absence of breaches before activation carries no operational meaning.",
+        "rule_fingerprint_sha1": "49542EB3D728728527597AC975C779E71621BC12"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "A separately authored provider fixture with close105 is revised under controlled input to admissible106; actual V2 readable publication and ON_TARGET do not authenticate external market price.",
+        "Independent calendar boundary16:00 vs15:55 produces actual elapsed5400 vs5700 while timeliness classification remains ON_TARGET; revision identities and prior measurements remain retained.",
+        "Before activation, absence of breaches has no operational significance; output says NOT_CLAIMED compliance/activation false and excludes platform-correctness/unobserved-breach assertions."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_on_target_measurement_does_not_verify_price_or_external_clock_fact_or_claim_slo_attainment",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "0ece6735c7fd8ef18cb073bd4cec1eb750f500cd1b619642abbb32f6e6cfa240",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 542,
+          "current_end_line": 596,
+          "assertion_count": 20
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_disabled_daily_schedule_preserves_moving_development_frontier_with_asof_and_no_operational_success_or_incident",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "68c6552ac46a64dceee96dbdf3ac15731f0e6cb5d1baa6e7beb80fdd833a23e1",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 469,
+          "current_end_line": 541,
+          "assertion_count": 25
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_five_real_failed_session_acquisitions_open_only_conditional_source_evaluation_with_exact_event_provenance",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "9369955609ab925630e17fafc23741796413f2254f4a0c0f35ef8d8fb3fb1752",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 206,
+          "current_end_line": 335,
+          "assertion_count": 43
+        },
+        {
+          "method": "B19FreshnessEvaluatorTest::test_unverified_calendar_publication_or_measurement_is_never_a_pass",
+          "path": "tests/Unit/MarketData/B19FreshnessEvaluatorTest.php",
+          "current_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "recorded_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "f30d8c978db792c4ff7bdb8d7cd337d0e101270edb32697b800bb6540e5659ee",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 147,
+          "current_end_line": 171,
+          "assertion_count": 7
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/preactivation_gate_omitted.restoration.json",
+          "sha256": "718764d6b8512202c41440cefa43a5704b5a4805b55b8f3aecbdac263bf78fec",
+          "label": "preactivation_gate_omitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvaluator.php",
+          "restored_sha256": "ca9106ca798ea0855c9091373252a4ca385e8fbeeb89690aa6048e6909c64aaf"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/readability_age.restoration.json",
+          "sha256": "000e8d965ca04bbd1966dfe6a58a6cfa43583f56fac80041e43464347a7cd77c",
+          "label": "readability_age",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvidenceService.php",
+          "restored_sha256": "60e23b07b70c80b55d8a77cdcf108ea5e927c871a63bc52bc6ae25cdd730b41b"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/native_readability_replaced_by_assessment_clock.restoration.json",
+          "sha256": "1892f05b281ca442067f32896d7ba4ff58d156169aa5e8f59b13b3795f40eef6",
+          "label": "native_readability_replaced_by_assessment_clock",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvidenceService.php",
+          "restored_sha256": "41159cf159c96e82d19ed84b47244ab7ec8a1fe8f6c5cf3e57b817bee2074542"
+        }
+      ],
+      "review_limit": "Boundary proof only; no external market oracle, clock truth, live target attainment or platform health assertion.",
+      "source_epoch_bridge_record": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json"
+    },
+    {
+      "predicate_id": "MD-S072-R0037",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "SOURCE_EPOCH_BRIDGED",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/ops/Performance_SLO_and_Limits_LOCKED.md",
+        "source_line": "80",
+        "rule_text": "Consequently an on-target SLO may be cited as evidence that **published data met its declared timeliness**, never as evidence that **the platform is operating correctly**.",
+        "rule_fingerprint_sha1": "15BDF034B5306EEBD435905201B0FE5970AD267F"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "A separately authored provider fixture with close105 is revised under controlled input to admissible106; actual V2 readable publication and ON_TARGET do not authenticate external market price.",
+        "Independent calendar boundary16:00 vs15:55 produces actual elapsed5400 vs5700 while timeliness classification remains ON_TARGET; revision identities and prior measurements remain retained.",
+        "Before activation, absence of breaches has no operational significance; output says NOT_CLAIMED compliance/activation false and excludes platform-correctness/unobserved-breach assertions."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_on_target_measurement_does_not_verify_price_or_external_clock_fact_or_claim_slo_attainment",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "0ece6735c7fd8ef18cb073bd4cec1eb750f500cd1b619642abbb32f6e6cfa240",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 542,
+          "current_end_line": 596,
+          "assertion_count": 20
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_disabled_daily_schedule_preserves_moving_development_frontier_with_asof_and_no_operational_success_or_incident",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "68c6552ac46a64dceee96dbdf3ac15731f0e6cb5d1baa6e7beb80fdd833a23e1",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 469,
+          "current_end_line": 541,
+          "assertion_count": 25
+        },
+        {
+          "method": "B19FreshnessEvidenceMariaDbTest::test_five_real_failed_session_acquisitions_open_only_conditional_source_evaluation_with_exact_event_provenance",
+          "path": "tests/Unit/MarketData/B19FreshnessEvidenceMariaDbTest.php",
+          "current_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "recorded_file_sha256": "e6a3f5a14f5b12a897216a2a8af303fc57da2aa204ba3672427fd1c93f47d13a",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "9369955609ab925630e17fafc23741796413f2254f4a0c0f35ef8d8fb3fb1752",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 206,
+          "current_end_line": 335,
+          "assertion_count": 43
+        },
+        {
+          "method": "B19FreshnessEvaluatorTest::test_unverified_calendar_publication_or_measurement_is_never_a_pass",
+          "path": "tests/Unit/MarketData/B19FreshnessEvaluatorTest.php",
+          "current_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "recorded_file_sha256": "b81b0711316c5d0af3dadf9e3785ab8ef9c1b198896e489b1aedaab22a682d5f",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "f30d8c978db792c4ff7bdb8d7cd337d0e101270edb32697b800bb6540e5659ee",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 147,
+          "current_end_line": 171,
+          "assertion_count": 7
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/preactivation_gate_omitted.restoration.json",
+          "sha256": "718764d6b8512202c41440cefa43a5704b5a4805b55b8f3aecbdac263bf78fec",
+          "label": "preactivation_gate_omitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvaluator.php",
+          "restored_sha256": "ca9106ca798ea0855c9091373252a4ca385e8fbeeb89690aa6048e6909c64aaf"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/readability_age.restoration.json",
+          "sha256": "000e8d965ca04bbd1966dfe6a58a6cfa43583f56fac80041e43464347a7cd77c",
+          "label": "readability_age",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvidenceService.php",
+          "restored_sha256": "60e23b07b70c80b55d8a77cdcf108ea5e927c871a63bc52bc6ae25cdd730b41b"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/native_readability_replaced_by_assessment_clock.restoration.json",
+          "sha256": "1892f05b281ca442067f32896d7ba4ff58d156169aa5e8f59b13b3795f40eef6",
+          "label": "native_readability_replaced_by_assessment_clock",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataFreshnessEvidenceService.php",
+          "restored_sha256": "41159cf159c96e82d19ed84b47244ab7ec8a1fe8f6c5cf3e57b817bee2074542"
+        }
+      ],
+      "review_limit": "Boundary proof only; no external market oracle, clock truth, live target attainment or platform health assertion.",
+      "source_epoch_bridge_record": "storage/app/market-data/evidence/MD-B19-A001/E049_SOURCE_EPOCH_IMPACT_BRIDGE_MATRIX.json"
+    },
+    {
+      "predicate_id": "MD-S082-R0018",
+      "admission_disposition": "INDEPENDENTLY_ACCEPTED",
+      "technical_review_disposition": "PASS_BOUNDED_TECHNICAL_REVIEW",
+      "canonical_contract": {
+        "verified": true,
+        "strategy_owner": "authority/strategy/registry/Platform_Config_Registry_LOCKED.md",
+        "source_line": "35",
+        "rule_text": "- The count of `CONFIG_UNBOUND` publications is reported until it reaches zero. A shrinking count is progress; an unreported count is the condition this section exists to prevent.",
+        "rule_fingerprint_sha1": "4EEBDFCF3FAD5F528577A6B9FF79285130DE880F"
+      },
+      "proof_matrix": "E049_complete_subset_proof_matrix.json",
+      "proof_matrix_sha256": "010feb54d14f7b879034a5cf85a3b1ae315a86ad720b2d70500e456c0cfd5fbf",
+      "independent_expected_semantics": [
+        "All sealed publications, including superseded historical records, count missing/null/zero ID or null/empty/whitespace hash as CONFIG_UNBOUND.",
+        "Actual command reports count including explicit zero; valid/unsealed records excluded correctly, no resealing/rebinding/deletion or conformance/replay claim."
+      ],
+      "assertion_sources": [
+        {
+          "method": "B19ConfigurationCorpusMariaDbTest::test_real_sealed_corpus_counts_missing_bindings_in_current_and_historical_rows_without_resealing_or_deletion",
+          "path": "tests/Unit/MarketData/B19ConfigurationCorpusMariaDbTest.php",
+          "current_file_sha256": "77a5b0969808cf0b0567197eb8dd52c822f7128f82257efae212333cee8e49ac",
+          "recorded_file_sha256": "77a5b0969808cf0b0567197eb8dd52c822f7128f82257efae212333cee8e49ac",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "d2f51f2a62ea9d45839be3aae91a63f0683a9c822a772063154ea7dda27d1b48",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 16,
+          "current_end_line": 53,
+          "assertion_count": 9
+        },
+        {
+          "method": "B19ConfigurationCorpusMariaDbTest::test_zero_is_reported_explicitly_on_an_empty_actual_mariadb_temporary_population",
+          "path": "tests/Unit/MarketData/B19ConfigurationCorpusMariaDbTest.php",
+          "current_file_sha256": "77a5b0969808cf0b0567197eb8dd52c822f7128f82257efae212333cee8e49ac",
+          "recorded_file_sha256": "77a5b0969808cf0b0567197eb8dd52c822f7128f82257efae212333cee8e49ac",
+          "whole_file_changed_after_proof_epoch": false,
+          "method_sha256_lf": "244903c351f26e7a8542093d6279378958ea0bf70e86fcffbbe69bb5f32b49e2",
+          "method_unchanged_from_this_matrix": true,
+          "current_method_bound_by_e049_matrix": true,
+          "current_method_execution_binding": null,
+          "current_start_line": 54,
+          "current_end_line": 69,
+          "assertion_count": 4
+        }
+      ],
+      "production_sources": [],
+      "green_executions": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/registered_subset_final_source_affected_green.execution.json",
+          "sha256": "937aa45e180c1134f973734ac9eb9b8fcfc2affe37060d964049e99811e6871a",
+          "exit_code": 0,
+          "source_unchanged": true
+        }
+      ],
+      "mutations": [
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/corpus_history_omitted.restoration.json",
+          "sha256": "716005b5ac2dbe1f9822c18ba2248cb03515391b1b2e218730d82b93f85c0cf3",
+          "label": "corpus_history_omitted",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataConfigurationCorpusService.php",
+          "restored_sha256": "fba9ccb1e8cb13b9a7c63d5c5e0026457e40600a0e3efe748226136a562930e4"
+        },
+        {
+          "path": "storage/app/market-data/evidence/MD-B19-A001/E049_runtime/corpus_zero_invented.restoration.json",
+          "sha256": "8ca6f542159a9869cfa0f818ff82704fc136aec8ddc569589154fda40ddd109d",
+          "label": "corpus_zero_invented",
+          "killed_at_required_assertion": true,
+          "byte_restored": true,
+          "production_path": "app/Application/MarketData/Services/MarketDataConfigurationCorpusService.php",
+          "restored_sha256": "fba9ccb1e8cb13b9a7c63d5c5e0026457e40600a0e3efe748226136a562930e4"
+        }
+      ],
+      "review_limit": "Corpus report is evidence of retained binding population, not conformance or replay PASS.",
+      "source_epoch_bridge_record": null
+    }
+  ],
+  "excluded_hold_dependency": [
+    {
+      "predicate_id": "MD-S072-R0017",
+      "disposition": "HOLD_DEPENDENCY",
+      "reason": "Five-session source evaluation consumes and persists eod_run_events; stale actors can append outcomes/opening evidence until R0004 and post-terminal writer authority are resolved."
+    },
+    {
+      "predicate_id": "MD-S072-R0019",
+      "disposition": "HOLD_DEPENDENCY",
+      "reason": "The retained no-migration/opening proof depends on the same unauthenticated source-evaluation event trail as MD-S072-R0017."
+    },
+    {
+      "predicate_id": "MD-S069-R0017",
+      "disposition": "HOLD_DEPENDENCY",
+      "reason": "The proposed basis explicitly cites successful INCIDENT_RESPONSE_RECORDED persistence on a completed target without an authorized acting writer."
+    },
+    {
+      "predicate_id": "MD-S072-R0032",
+      "disposition": "HOLD_DEPENDENCY",
+      "reason": "The proposed basis explicitly cites persisted FRESHNESS_MEASURED and alert events written after the observed run released its fence."
+    }
+  ],
+  "governed_accounting": {
+    "applicable": 750,
+    "independently_accepted_before": 647,
+    "independently_accepted_after": 669,
+    "repository_proposed": 673,
+    "without_repository_basis": 77,
+    "e049_submitted": 26,
+    "formal_satisfied": 0
+  },
+  "review_limitations": [
+    "Evidence-based bounded technical review; the reviewer did not independently replay the full Laravel/MariaDB suite.",
+    "Canonical validity, freshness timing, incident observation or source traceability do not imply independent market-price truth or production readiness beyond each admitted clause.",
+    "Four writer-dependent proposals remain excluded and all five R0004 persisted unauthorized-write RED defects remain open.",
+    "Consumer regression and operations proof remain FAIL."
+  ],
+  "history_preserved": "E043-E048 and all earlier evidence remain immutable; the original review report bytes are unchanged.",
+  "formal_coverage_effect": "NONE; traceability coverage_status remains NOT_ASSESSED and formal SATISFIED remains 0/750.",
+  "next_exact_operation": "MD-B19-A001 E049: resume at the existing post-terminal acting-writer authority decision boundary for the four HOLD_DEPENDENCY predicates and five R0004 RED defects; do not change production until authority permits a coherent token-bearing writer contract. Preserve accepted669/proposed673/without-basis77/formal0, consumer FAIL, operations FAIL, MD-DEP-0025 and candidate-v5."
+}

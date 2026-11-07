@@ -28,7 +28,7 @@ class PreActivationFreshnessRunLabelTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->bootMarketDataSqlite();
+        $this->bootMarketDataSqlite(true);
         Carbon::setTestNow('2026-03-25 10:30:00');
     }
 
@@ -41,7 +41,16 @@ class PreActivationFreshnessRunLabelTest extends TestCase
 
     private function owningRun(string $date = self::DATE, string $mode = 'a003'): EodRun
     {
-        return (new EodRunRepository())->getOrCreateOwningRun($date, 'api', 'INGEST_BARS', null, $mode);
+        // $mode is an old test-case label, never an authority-bearing run intent.
+        $runs = new EodRunRepository();
+        $run = $runs->getOrCreateOwningRun($date, 'api', 'INGEST_BARS', null, 'import_only');
+        return $runs->completeImportOnly($run, 'INGEST_BARS');
+    }
+
+    private function promoteSeed(EodRunRepository $runs, EodRun $seed, string $stage): EodRun
+    {
+        $run = $runs->createPromoteRunFromSeed($seed, $stage);
+        return $runs->finalize($run, ['lifecycle_state'=>'COMPLETED','terminal_status'=>'HELD','publishability_state'=>'NOT_READABLE']);
     }
 
     private function seed(?string $label, ?string $marker, string $date = self::DATE): EodRun
@@ -96,7 +105,8 @@ class PreActivationFreshnessRunLabelTest extends TestCase
     public function test_an_as_known_replay_run_with_no_marker_is_not_applicable(): void
     {
         $this->owningRun(self::DATE, 'records-the-configuration'); // an as-known replay needs a configuration recorded at or before its cutoff
-        $run = (new EodRunRepository())->createAsKnownReplayRun(self::DATE, '2099-01-01 00:00:00');
+        $run = \App\Infrastructure\Persistence\MarketData\ReplayIsolation::run(fn () =>
+            (new EodRunRepository())->createAsKnownReplayRun(self::DATE, '2099-01-01 00:00:00'));
 
         $this->assertSame('NOT_APPLICABLE', $run->freshness_state);
         $this->assertNull($run->operational_start_date);
@@ -107,17 +117,17 @@ class PreActivationFreshnessRunLabelTest extends TestCase
         $runs = new EodRunRepository();
 
         $legacy = $this->seed('DEVELOPMENT_NOT_OPERATIONAL', null);
-        $promoted = $runs->createPromoteRunFromSeed($legacy, 'COMPUTE_INDICATORS');
+        $promoted = $this->promoteSeed($runs, $legacy, 'COMPUTE_INDICATORS');
         $this->assertSame('NOT_APPLICABLE', $promoted->freshness_state, 'a corrected publication must not carry the pre-correction label');
 
         $activated = $this->seed('NOT_EVALUATED', '2026-03-01');
-        $this->assertSame('NOT_EVALUATED', $runs->createPromoteRunFromSeed($activated, 'COMPUTE_INDICATORS')->freshness_state, 'an activated date keeps the pending label and its existing rules');
+        $this->assertSame('NOT_EVALUATED', $this->promoteSeed($runs, $activated, 'COMPUTE_INDICATORS')->freshness_state, 'an activated date keeps the pending label and its existing rules');
 
         $boundary = $this->seed(null, self::DATE);
-        $this->assertSame('NOT_EVALUATED', $runs->createPromoteRunFromSeed($boundary, 'COMPUTE_INDICATORS')->freshness_state, 'the marker date itself is in force');
+        $this->assertSame('NOT_EVALUATED', $this->promoteSeed($runs, $boundary, 'COMPUTE_INDICATORS')->freshness_state, 'the marker date itself is in force');
 
         $later = $this->seed('NOT_EVALUATED', '2026-04-01');
-        $this->assertSame('NOT_APPLICABLE', $runs->createPromoteRunFromSeed($later, 'COMPUTE_INDICATORS')->freshness_state, 'a date before the marker is never backdated into operational freshness');
+        $this->assertSame('NOT_APPLICABLE', $this->promoteSeed($runs, $later, 'COMPUTE_INDICATORS')->freshness_state, 'a date before the marker is never backdated into operational freshness');
     }
 
     public function test_the_promote_decision_uses_the_seed_marker_and_not_the_wall_clock(): void
@@ -127,8 +137,8 @@ class PreActivationFreshnessRunLabelTest extends TestCase
         foreach (['2020-01-01 00:00:00', '2031-01-01 00:00:00'] as $i => $now) {
             Carbon::setTestNow($now);
             $results[] = [
-                $runs->createPromoteRunFromSeed($this->seed(null, '2026-04-01'), 'COMPUTE_INDICATORS')->freshness_state,
-                $runs->createPromoteRunFromSeed($this->seed(null, '2026-03-24'), 'COMPUTE_INDICATORS')->freshness_state,
+                $this->promoteSeed($runs, $this->seed(null, '2026-04-01'), 'COMPUTE_INDICATORS')->freshness_state,
+                $this->promoteSeed($runs, $this->seed(null, '2026-03-24'), 'COMPUTE_INDICATORS')->freshness_state,
             ];
         }
         $this->assertSame([['NOT_APPLICABLE', 'NOT_EVALUATED'], ['NOT_APPLICABLE', 'NOT_EVALUATED']], $results);
@@ -140,7 +150,7 @@ class PreActivationFreshnessRunLabelTest extends TestCase
         $legacy = $this->seed('DEVELOPMENT_NOT_OPERATIONAL', null);
         $before = (array) DB::table('eod_runs')->where('run_id', $legacy->run_id)->first();
 
-        $runs->createPromoteRunFromSeed($legacy, 'COMPUTE_INDICATORS');
+        $this->promoteSeed($runs, $legacy, 'COMPUTE_INDICATORS');
         $this->owningRun('2026-03-23', 'other');
 
         $this->assertSame($before, (array) DB::table('eod_runs')->where('run_id', $legacy->run_id)->first(), 'sealed history is not relabelled');
@@ -153,7 +163,7 @@ class PreActivationFreshnessRunLabelTest extends TestCase
         foreach ([[null, self::DATE], ['2026-04-01', self::DATE], [self::DATE, self::DATE], ['2026-01-01', self::DATE]] as [$marker, $date]) {
             $this->assertSame(
                 FreshnessState::runLabelFor($marker, $date),
-                $runs->createPromoteRunFromSeed($this->seed(null, $marker, $date), 'COMPUTE_INDICATORS')->freshness_state,
+                $this->promoteSeed($runs, $this->seed(null, $marker, $date), 'COMPUTE_INDICATORS')->freshness_state,
                 var_export($marker, true)
             );
         }

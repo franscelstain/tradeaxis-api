@@ -148,15 +148,47 @@ class B19RangeBackfillMariaDbProofTest extends TestCase
         $this->seedVerifiedTradingDate('2026-03-25');
         $this->seedVerifiedTradingDate('2026-03-20');
         $this->assertSame('SYNV2.JK', (new TemporalIdentityRepository())->resolveProviderContext('SYNV2', 'yahoo_finance', '2026-03-25')['provider_symbol']);
-        $this->bindApiResponse(function () { return $this->responseForDates(['2026-03-20', '2026-03-24', '2026-03-25']); });
+        $this->assertSame(90, (int) config('market_data.source.api_backfill.window_days', 90), 'The independent batch world uses the captured ninety-day request window.');
+        $providerRequests = [];
+        $this->bindApiResponse(function ($url) use (&$providerRequests) {
+            $providerRequests[] = $url;
+            return $this->responseForDates(['2026-03-20', '2026-03-24', '2026-03-25']);
+        });
         $failureProxy = new E031FailOncePipelineProxy(app(MarketDataPipelineService::class), '2026-03-25');
         app()->instance(MarketDataPipelineService::class, $failureProxy);
         $priorWarmupPointers = DB::table('eod_current_publication_pointer')
             ->where('trade_date', '<', '2026-03-24')->orderBy('trade_date')->pluck('publication_id', 'trade_date')->all();
         $dir = $this->outputDirectory();
         [$firstCode, $firstOutput] = $this->executeCommand($dir, ['end_date' => '2026-03-25']);
+        // Count the independently specified equity listing, separately from
+        // the pipeline's benchmark fetches for each requested publication date.
+        $batchRequests = array_values(array_filter($providerRequests, static function ($url) {
+            return substr(rawurldecode((string) parse_url($url, PHP_URL_PATH)), -strlen('/SYNV2.JK')) === '/SYNV2.JK';
+        }));
+        if ($capture = getenv('B19_E049_STATE_DIR')) {
+            if (! is_dir($capture)) mkdir($capture, 0775, true);
+            file_put_contents($capture.'/batch_request_routes.json', json_encode(array_map(static function ($url) {
+                parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+                return ['path' => rawurldecode((string) parse_url($url, PHP_URL_PATH)),
+                    'period1' => $query['period1'] ?? null, 'period2' => $query['period2'] ?? null];
+            }, $providerRequests), JSON_PRETTY_PRINT));
+        }
+        $this->assertCount(1, $batchRequests, 'Historical batch must cover warmup and both requested dates with one bounded provider request.');
+        parse_str((string) parse_url($batchRequests[0], PHP_URL_QUERY), $query);
+        $this->assertSame((string) (new DateTimeImmutable('2026-02-20 00:00:00', new DateTimeZone('Asia/Jakarta')))->getTimestamp(), $query['period1']);
+        $this->assertSame((string) (new DateTimeImmutable('2026-03-26 00:00:00', new DateTimeZone('Asia/Jakarta')))->getTimestamp(), $query['period2'], 'Historical batch must cover warmup and both requested dates: upper bound is exclusive March26.');
+        $firstBatchRequestCount = count($batchRequests);
         $first = json_decode(file_get_contents($dir.'/market_data_backfill_lifecycle_summary.json'), true);
         $this->assertNotSame(0, $firstCode, $firstOutput.' cases='.json_encode($first['cases']));
+        if ($capture = getenv('B19_E049_STATE_DIR')) {
+            file_put_contents($capture.'/range_first_attempt_persisted.json', json_encode([
+                'summary' => $first, 'command_output' => $firstOutput,
+                'runs' => DB::table('eod_runs')->orderBy('run_id')->get()->all(),
+                'events' => DB::table('eod_run_events')->orderBy('event_id')->get()->all(),
+                'fences' => DB::table('eod_run_owner_fences')->get()->all(),
+                'pointers' => DB::table('eod_current_publication_pointer')->get()->all(),
+            ], JSON_PRETTY_PRINT));
+        }
         $this->assertSame('SUCCESS', $first['cases'][0]['status']);
         $this->assertSame('FAILED', $first['cases'][1]['import_status']);
         $this->assertSame('SKIPPED', $first['cases'][1]['promote_status']);
@@ -169,6 +201,17 @@ class B19RangeBackfillMariaDbProofTest extends TestCase
         $this->assertNotNull($completedPointer);
 
         [$resumeCode, $resumeOutput] = $this->executeCommand($dir, ['end_date' => '2026-03-25', '--resume' => true]);
+        $batchRequests = array_values(array_filter($providerRequests, static function ($url) {
+            return substr(rawurldecode((string) parse_url($url, PHP_URL_PATH)), -strlen('/SYNV2.JK')) === '/SYNV2.JK';
+        }));
+        $this->assertLessThanOrEqual(1, count($batchRequests) - $firstBatchRequestCount,
+            'A resumed attempt may reuse cache or acquire one bounded equity batch, never split the same requested range into per-date fetches.');
+        foreach ($batchRequests as $batchUrl) {
+            parse_str((string) parse_url($batchUrl, PHP_URL_QUERY), $batchQuery);
+            $this->assertSame($query['period1'], $batchQuery['period1']);
+            $this->assertSame($query['period2'], $batchQuery['period2']);
+        }
+
         $summary = json_decode(file_get_contents($dir.'/market_data_backfill_lifecycle_summary.json'), true);
         $this->assertSame(0, $resumeCode, $resumeOutput.' cases='.json_encode($summary['cases']));
         $this->assertSame(['2026-03-24', '2026-03-25'], array_column($summary['cases'], 'requested_date'));
@@ -476,6 +519,262 @@ class B19RangeBackfillMariaDbProofTest extends TestCase
         $this->assertSame('NO_FAILED_CHECKPOINT', $noopSummary['source_acquisition_state']);
         $this->assertSame($runCount, (int) DB::table('eod_runs')->whereDate('trade_date_requested', '2026-03-24')->count());
         $this->assertSame((int) $publication->publication_id, (int) DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-24')->value('publication_id'));
+    }
+
+    public function test_failed_checkpoint_retry_with_identical_existing_candidate_bar_reports_unchanged_without_reprocess(): void
+    {
+        Carbon::setTestNow('2026-03-25 10:30:00');
+        $world = R0025SyntheticV2World::build(['run_workflow' => function ($pipeline, $date) {
+            return $pipeline->importDaily($date, 'api');
+        }]);
+        $date = R0025SyntheticV2World::world()['trade_date'];
+        $prior = DB::table('eod_bars')->where('trade_date', $date)->first();
+        $this->assertNotNull($prior);
+        $priorObservation = DB::table('md_source_observations')->where('source_observation_id', $prior->source_observation_id)->first();
+        $this->assertNotNull($priorObservation);
+        $this->assertSame(0, (int) DB::table('eod_current_publication_pointer')->where('trade_date', $date)->count());
+
+        $available = false;
+        $this->bindApiResponse(function () use (&$available, $date) {
+            return $available ? $this->responseFor($date)
+                : ['status' => 503, 'headers' => ['Content-Type' => 'application/json'], 'body' => '{"error":"outage"}'];
+        });
+        config(['market_data.provider.api_retry_max' => 0, 'market_data.provider.api_backoff_ms' => 0]);
+        $directory = $this->outputDirectory();
+        [$firstCode, $firstOutput] = $this->executeCommand($directory,
+            ['start_date' => $date, 'end_date' => $date]);
+        $first = json_decode(file_get_contents($directory.'/market_data_backfill_lifecycle_summary.json'), true);
+        $this->assertNotSame(0, $firstCode, $firstOutput);
+        $this->assertSame('SYSTEMIC_FAILED', $first['source_acquisition_state']);
+        $this->assertSame(0, (int) DB::table('eod_current_publication_pointer')->where('trade_date', $date)->count());
+
+        $available = true;
+        [$retryCode, $retryOutput] = $this->executeCommand($directory,
+            ['start_date' => $date, 'end_date' => $date, '--resume' => true, '--only-failed' => true]);
+        $retry = json_decode(file_get_contents($directory.'/market_data_backfill_lifecycle_summary.json'), true);
+        if ($capture = getenv('B19_E044_RECOVERY_CAPTURE_DIR')) {
+            if (! is_dir($capture)) mkdir($capture, 0775, true);
+            file_put_contents($capture.'/unchanged_retry_observed.json', json_encode([
+                'first_code' => $firstCode, 'first' => $first,
+                'retry_code' => $retryCode, 'retry' => $retry,
+                'prior' => $prior,
+                'after' => DB::table('eod_bars')->where('trade_date', $date)->first(),
+                'retry_observation_rows' => DB::table('md_source_observation_rows as row')
+                    ->join('md_source_observations as observation', 'observation.source_observation_id', '=', 'row.source_observation_id')
+                    ->where('observation.acquisition_batch_id', $retry['source_acquisition_batch_id'])
+                    ->where('row.trade_date', $date)->whereIn('observation.outcome_state', ['ACCEPTED', 'NORMALIZED'])
+                    ->get(['row.source_observation_id', 'row.listing_id', 'row.close_value'])->all(),
+                'pointer' => DB::table('eod_current_publication_pointer')->where('trade_date', $date)->first(),
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        }
+        $this->assertSame('UNCHANGED', $retry['recovered_row_apply_state'], $retryOutput);
+        $this->assertSame(0, $retryCode, $retryOutput);
+        $this->assertSame('NOOP', $retry['indicator_reprocess_execution_state'], $retryOutput);
+        $this->assertSame('NOOP', $retry['eligibility_reprocess_execution_state'], $retryOutput);
+        $case = $retry['cases'][0];
+        $this->assertSame('NOOP_UNCHANGED_BARS', $case['indicator_reprocess_blocked_reason_code']);
+        $this->assertSame('NOOP_UNCHANGED_BARS', $case['eligibility_reprocess_blocked_reason_code']);
+        $this->assertSame(1, (int) $case['bar_mutation_unchanged_count']);
+        $this->assertSame(0, (int) $case['bar_mutation_changed_count']);
+        $this->assertFalse($case['readable']);
+        $this->assertSame((int) $prior->source_observation_id,
+            (int) DB::table('eod_bars')->where('trade_date', $date)->value('source_observation_id'));
+        $retryRows = DB::table('md_source_observation_rows as row')
+            ->join('md_source_observations as observation', 'observation.source_observation_id', '=', 'row.source_observation_id')
+            ->where('observation.acquisition_batch_id', $retry['source_acquisition_batch_id'])
+            ->where('row.trade_date', $date)->whereIn('observation.outcome_state', ['ACCEPTED', 'NORMALIZED'])
+            ->get(['row.source_observation_id', 'row.listing_id', 'row.close_value']);
+        $this->assertCount(1, $retryRows);
+        $this->assertNotSame((int) $prior->source_observation_id, (int) $retryRows[0]->source_observation_id);
+        $this->assertSame((int) $prior->listing_id, (int) $retryRows[0]->listing_id);
+        $this->assertSame('105', (string) $retryRows[0]->close_value,
+            'The independently frozen source row remains identifiable although its canonical values are unchanged.');
+        $this->assertEquals($prior, DB::table('eod_bars')->where('trade_date', $date)->first());
+        $this->assertEquals($priorObservation, DB::table('md_source_observations')
+            ->where('source_observation_id', $prior->source_observation_id)->first());
+        $this->assertSame(0, (int) DB::table('eod_current_publication_pointer')->where('trade_date', $date)->count());
+        $observationCount = (int) DB::table('md_source_observations')->where('requested_trade_date', $date)->count();
+        $this->assertGreaterThan(1, $observationCount);
+
+        [$againCode] = $this->executeCommand($directory,
+            ['start_date' => $date, 'end_date' => $date, '--resume' => true, '--only-failed' => true]);
+        $again = json_decode(file_get_contents($directory.'/market_data_backfill_lifecycle_summary.json'), true);
+        $this->assertSame(0, $againCode);
+        $this->assertSame('NO_FAILED_CHECKPOINT', $again['source_acquisition_state']);
+        $this->assertSame($observationCount,
+            (int) DB::table('md_source_observations')->where('requested_trade_date', $date)->count());
+    }
+
+    public function test_changed_recovered_candidate_retains_old_and_new_observation_lineage_through_publication(): void
+    {
+        Carbon::setTestNow('2026-03-25 10:30:00');
+        R0025SyntheticV2World::build(['run_workflow' => function ($pipeline, $date) {
+            return $pipeline->importDaily($date, 'api');
+        }]);
+        $date = R0025SyntheticV2World::world()['trade_date'];
+        $oldBar = DB::table('eod_bars')->where('trade_date', $date)->first();
+        $this->assertNotNull($oldBar);
+        $oldObservation = DB::table('md_source_observations')
+            ->where('source_observation_id', $oldBar->source_observation_id)->first();
+        $oldObservationRow = DB::table('md_source_observation_rows')
+            ->where('source_observation_id', $oldBar->source_observation_id)->first();
+        $this->assertNotNull($oldObservation);
+        $this->assertNotNull($oldObservationRow);
+        $available = false;
+        $this->bindApiResponse(function () use (&$available, $date) {
+            return $available ? $this->responseFor($date, 106)
+                : ['status' => 503, 'headers' => ['Content-Type' => 'application/json'], 'body' => '{"error":"outage"}'];
+        });
+        config(['market_data.provider.api_retry_max' => 0, 'market_data.provider.api_backoff_ms' => 0]);
+        $directory = $this->outputDirectory();
+        [$failedCode, $failedOutput] = $this->executeCommand($directory,
+            ['start_date' => $date, 'end_date' => $date]);
+        $this->assertNotSame(0, $failedCode, $failedOutput);
+        $failed = json_decode(file_get_contents($directory.'/market_data_backfill_lifecycle_summary.json'), true);
+        $this->assertSame('SYSTEMIC_FAILED', $failed['source_acquisition_state']);
+        $this->assertSame(0, (int) DB::table('eod_current_publication_pointer')->where('trade_date', $date)->count());
+
+        $available = true;
+        [$retryCode, $retryOutput] = $this->executeCommand($directory,
+            ['start_date' => $date, 'end_date' => $date, '--resume' => true, '--only-failed' => true]);
+        $retry = json_decode(file_get_contents($directory.'/market_data_backfill_lifecycle_summary.json'), true);
+        $newBar = DB::table('eod_bars')->where('trade_date', $date)->first();
+        $this->assertSame('RETRY_SUCCESS', $retry['source_acquisition_state'], $retryOutput);
+        $this->assertSame(0, $retryCode, $retryOutput);
+        $this->assertSame('APPLIED', $retry['recovered_row_apply_state'], $retryOutput);
+        $this->assertSame(1, (int) $retry['cases'][0]['bar_mutation_changed_count']);
+        $this->assertSame('106.0000', (string) $newBar->close);
+        $this->assertSame((int) $oldBar->listing_id, (int) $newBar->listing_id);
+        $this->assertNotSame((int) $oldBar->source_observation_id, (int) $newBar->source_observation_id);
+        $newObservation = DB::table('md_source_observations')
+            ->where('source_observation_id', $newBar->source_observation_id)->first();
+        $newObservationRow = DB::table('md_source_observation_rows')
+            ->where('source_observation_id', $newBar->source_observation_id)->first();
+        $this->assertNotNull($newObservation);
+        $this->assertSame('106', (string) $newObservationRow->close_value);
+        $this->assertSame((int) $oldBar->listing_id, (int) $newObservationRow->listing_id);
+        $this->assertEquals($oldObservation, DB::table('md_source_observations')
+            ->where('source_observation_id', $oldBar->source_observation_id)->first());
+        $this->assertEquals($oldObservationRow, DB::table('md_source_observation_rows')
+            ->where('source_observation_id', $oldBar->source_observation_id)->first());
+        $pointer = DB::table('eod_current_publication_pointer')->where('trade_date', $date)->first();
+        $this->assertNotNull($pointer);
+        $this->assertSame('SEALED', DB::table('eod_publications')
+            ->where('publication_id', $pointer->publication_id)->value('seal_state'));
+        if ($capture = getenv('B19_E045_RECOVERY_CAPTURE_DIR')) {
+            file_put_contents($capture.'/changed_candidate_lineage.json', json_encode([
+                'failed_code' => $failedCode, 'failed' => $failed, 'retry_code' => $retryCode,
+                'retry' => $retry, 'old_bar' => $oldBar, 'new_bar' => $newBar,
+                'old_observation' => $oldObservation, 'new_observation' => $newObservation,
+                'old_observation_row' => $oldObservationRow, 'new_observation_row' => $newObservationRow,
+                'candidate_publications' => DB::table('eod_publications')->where('trade_date', $date)->get()->all(),
+                'candidate_history' => DB::table('eod_bars_history')->where('trade_date', $date)->get()->all(),
+                'pointer' => $pointer,
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        }
+    }
+
+    public function test_two_listing_failed_checkpoint_retry_merges_only_recovered_listing(): void
+    {
+        Carbon::setTestNow('2026-03-25 10:30:00');
+        R0025SyntheticV2World::build();
+        DB::table('tickers')->insert([
+            'ticker_id' => 975101, 'ticker_code' => 'SYN2', 'company_name' => 'Second synthetic listing',
+            'is_active' => 1, 'listed_date' => '2020-01-01', 'delisted_date' => null,
+            'created_at' => '2020-01-01 00:00:00', 'updated_at' => '2020-01-01 00:00:00',
+        ]);
+        (new TemporalIdentityRepository())->ensureLegacyProjection(['SYN2']);
+        $this->seedFollowingTradingDate();
+        $secondAvailable = false;
+        $requests = [];
+        $this->bindApiResponse(function ($url) use (&$secondAvailable, &$requests) {
+            $symbol = strpos((string) $url, 'SYN2.JK') !== false ? 'SYN2.JK' : 'SYNV2.JK';
+            $requests[] = $symbol;
+            if ($symbol === 'SYN2.JK' && ! $secondAvailable) {
+                return ['status' => 503, 'headers' => ['Content-Type' => 'application/json'], 'body' => '{"error":"second listing outage"}'];
+            }
+            $response = $this->responseFor('2026-03-24', $symbol === 'SYN2.JK' ? 205 : 105);
+            $body = json_decode($response['body'], true);
+            $body['chart']['result'][0]['meta']['symbol'] = $symbol;
+            if ($symbol === 'SYN2.JK') {
+                $body['chart']['result'][0]['indicators']['quote'][0]['open'] = [200];
+                $body['chart']['result'][0]['indicators']['quote'][0]['high'] = [210];
+                $body['chart']['result'][0]['indicators']['quote'][0]['low'] = [195];
+            }
+            $response['body'] = json_encode($body);
+            return $response;
+        });
+        config(['market_data.provider.api_retry_max' => 0, 'market_data.provider.api_backoff_ms' => 0]);
+        $directory = $this->outputDirectory();
+        [$firstCode, $firstOutput] = $this->executeCommand($directory);
+        $first = json_decode(file_get_contents($directory.'/market_data_backfill_lifecycle_summary.json'), true);
+        $firstCheckpoints = json_decode(file_get_contents($directory.'/source_acquisition_checkpoint.json'), true);
+        $before = DB::table('eod_bars')->where('trade_date', '2026-03-24')->orderBy('listing_id')->get()->all();
+        $beforeObservation = DB::table('md_source_observations')
+            ->where('source_observation_id', $before[0]->source_observation_id)->first();
+        $priorPublication = DB::table('eod_publications')->where('trade_date', '2026-03-23')->get()->toJson();
+        $priorHistory = DB::table('eod_bars_history')->where('trade_date', '2026-03-23')->get()->toJson();
+        $secondAvailable = true;
+        [$retryCode, $retryOutput] = $this->executeCommand($directory, ['--resume' => true, '--only-failed' => true]);
+        $retry = json_decode(file_get_contents($directory.'/market_data_backfill_lifecycle_summary.json'), true);
+        $after = DB::table('eod_bars')->where('trade_date', '2026-03-24')->orderBy('listing_id')->get()->all();
+        if ($capture = getenv('B19_E044_RECOVERY_CAPTURE_DIR')) {
+            if (! is_dir($capture)) mkdir($capture, 0775, true);
+            file_put_contents($capture.'/two_listing_recovery_observed.json', json_encode([
+                'first_code' => $firstCode, 'first' => $first, 'first_checkpoints' => $firstCheckpoints, 'before' => $before,
+                'retry_code' => $retryCode, 'retry' => $retry, 'after' => $after,
+                'requests' => $requests,
+                'diagnostics' => json_decode((string) file_get_contents($directory.'/source_acquisition_diagnostics.json'), true),
+                'checkpoints' => json_decode((string) file_get_contents($directory.'/source_acquisition_checkpoint.json'), true),
+                'observations' => DB::table('md_source_observations')->where('requested_trade_date', '2026-03-24')->get()->all(),
+                'observation_rows' => DB::table('md_source_observation_rows')->where('trade_date', '2026-03-24')->get()->all(),
+                'pointer' => DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-24')->first(),
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        }
+        $this->assertNotSame(0, $firstCode, $firstOutput);
+        $this->assertSame('PARTIAL_SUCCESS', $first['source_acquisition_state']);
+        $this->assertSame('SUCCESS', $firstCheckpoints['2026-02-20|2026-03-24|SYNV2']['state']);
+        $this->assertSame('FAILED', $firstCheckpoints['2026-02-20|2026-03-24|SYN2']['state']);
+        $this->assertCount(1, $before);
+        $this->assertSame(975100, (int) $before[0]->ticker_id);
+        $this->assertNotSame(0, $retryCode, $retryOutput);
+        $this->assertSame('RETRY_SUCCESS', $retry['source_acquisition_state']);
+        $this->assertSame('SUCCESS', $retry['cases'][0]['import_status']);
+        $this->assertSame('APPLIED', $retry['recovered_row_apply_state']);
+        $this->assertSame(1, (int) $retry['cases'][0]['bar_mutation_inserted_count']);
+        $this->assertSame(0, (int) $retry['cases'][0]['bar_mutation_removed_count']);
+        $this->assertCount(2, $after);
+        $this->assertEquals($before[0], $after[0], 'Recovered listing merge must retain the unaffected listing byte-for-byte.');
+        $this->assertSame((int) DB::table('md_listings')->where('legacy_ticker_id', 975101)->value('listing_id'),
+            (int) $after[1]->listing_id);
+        $this->assertSame('FOUNDATION_IDENTITY_HELD', $retry['cases'][0]['publication_reprocess_failure_reason_code']);
+        $this->assertFalse($retry['cases'][0]['readable']);
+        $this->assertSame(975101, (int) $after[1]->ticker_id);
+        $this->assertSame('205.0000', (string) $after[1]->close);
+        $this->assertNotSame((int) $after[0]->source_observation_id, (int) $after[1]->source_observation_id);
+        $checkpoints = json_decode(file_get_contents($directory.'/source_acquisition_checkpoint.json'), true);
+        $this->assertSame('SUCCESS', $checkpoints['2026-02-20|2026-03-24|SYNV2']['state']);
+        $this->assertSame('SUCCESS', $checkpoints['2026-02-20|2026-03-24|SYN2']['state']);
+        $this->assertSame((int) $firstCheckpoints['2026-02-20|2026-03-24|SYNV2']['attempt_count'],
+            (int) $checkpoints['2026-02-20|2026-03-24|SYNV2']['attempt_count']);
+        $this->assertSame(1, (int) $checkpoints['2026-02-20|2026-03-24|SYN2']['attempt_count'],
+            'Checkpoint attempt_count is per request; immutable observation rows distinguish retries.');
+        $this->assertSame(1, (int) DB::table('md_source_observations')
+            ->where('source_observation_id', $after[1]->source_observation_id)
+            ->where('requested_trade_date', '2026-03-24')->whereIn('outcome_state', ['ACCEPTED', 'NORMALIZED'])->count());
+        $this->assertEquals($beforeObservation, DB::table('md_source_observations')
+            ->where('source_observation_id', $before[0]->source_observation_id)->first());
+        $this->assertSame($priorPublication, DB::table('eod_publications')->where('trade_date', '2026-03-23')->get()->toJson());
+        $this->assertSame($priorHistory, DB::table('eod_bars_history')->where('trade_date', '2026-03-23')->get()->toJson());
+        $this->assertSame(0, (int) DB::table('eod_current_publication_pointer')->where('trade_date', '2026-03-24')->count());
+        $observationCount = (int) DB::table('md_source_observations')->where('requested_trade_date', '2026-03-24')->count();
+        [$againCode] = $this->executeCommand($directory, ['--resume' => true, '--only-failed' => true]);
+        $again = json_decode(file_get_contents($directory.'/market_data_backfill_lifecycle_summary.json'), true);
+        $this->assertSame(0, $againCode);
+        $this->assertSame('NO_FAILED_CHECKPOINT', $again['source_acquisition_state']);
+        $this->assertSame($observationCount,
+            (int) DB::table('md_source_observations')->where('requested_trade_date', '2026-03-24')->count());
+        $this->assertEquals($after, DB::table('eod_bars')->where('trade_date', '2026-03-24')->orderBy('listing_id')->get()->all());
     }
 
     public function test_invalid_source_mode_refuses_before_creating_a_run(): void

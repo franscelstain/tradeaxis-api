@@ -15,11 +15,30 @@ class PurgeSessionSnapshotCommand extends AbstractMarketDataCommand
         }
 
         $apply = (bool) $this->option('apply');
-        $summary = $service->purge(
-            $this->option('before_date'),
-            $this->option('output_dir'),
-            $apply
-        );
+        if ($apply) {
+            $disclosed = $service->inspectPurge($this->option('before_date'));
+            $this->line('operation_mode=PRE_APPLY_DISCLOSURE');
+            $this->line('scope=session_snapshot_purge:captured_before='.$disclosed['cutoff_timestamp']);
+            $this->line('resolved_immutable_ids=candidate_set_sha256='.$disclosed['pre_apply_fingerprint']);
+            $this->line('expected_row_effects=delete exactly '.$disclosed['candidate_rows'].' eligible non-authoritative session snapshot rows');
+            $this->line('config_hash='.$disclosed['config_hash']);
+            $this->line('pointer_impact=UNCHANGED');
+            $this->line('reason=retention_purge:'.$disclosed['cutoff_source']);
+            try {
+                $summary = $service->applyDisclosedPurge($disclosed, $this->option('output_dir'));
+            } catch (\Throwable $e) {
+                $message = (string) $e->getMessage();
+                $reason = strpos($message, 'COMMAND_SESSION_SNAPSHOT_PURGE_WRITE_COUNT_MISMATCH') !== false
+                    ? 'COMMAND_SESSION_SNAPSHOT_PURGE_WRITE_COUNT_MISMATCH'
+                    : (strpos($message, 'COMMAND_SESSION_SNAPSHOT_PURGE_PREFLIGHT_CHANGED') !== false
+                        ? 'COMMAND_SESSION_SNAPSHOT_PURGE_PREFLIGHT_CHANGED'
+                        : 'COMMAND_EXECUTION_FAILED');
+                $this->renderCommandBlocked($reason, $message, []);
+                return $reason === 'COMMAND_EXECUTION_FAILED' ? 1 : 2;
+            }
+        } else {
+            $summary = $service->purge($this->option('before_date'), $this->option('output_dir'), false);
+        }
 
         $this->line('operation_mode='.$summary['operation_mode']);
         $this->line('reason_code='.$summary['reason_code']);

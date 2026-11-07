@@ -44,15 +44,18 @@ class MarketDataEvidenceExportService
     private $evidence;
     private $publications;
     private $corrections;
+    private $incidentPolicy;
 
     public function __construct(
         EodEvidenceRepository $evidence,
         EodPublicationRepository $publications,
-        EodCorrectionRepository $corrections
+        EodCorrectionRepository $corrections,
+        \App\Application\MarketData\Ports\IncidentResponsePolicy $incidentPolicy = null
     ) {
         $this->evidence = $evidence;
         $this->publications = $publications;
         $this->corrections = $corrections;
+        $this->incidentPolicy = $incidentPolicy ?: new MarketDataIncidentResponseService();
     }
 
     public function exportRunEvidence($runId, $outputDir = null)
@@ -61,11 +64,12 @@ class MarketDataEvidenceExportService
         if (! $run) {
             throw new \RuntimeException('Run not found for evidence export.');
         }
-
+        $this->incidentPolicy->assertActionAllowed($run->trade_date_requested, 'evidence_export', (int) $run->run_id);
 
         $publication = $this->resolvePublicationForRun($run);
         $manifest = $publication ? (array) $this->publications->buildManifestByPublicationId($publication->publication_id) : null;
-        $runSummary = $this->buildRunSummary($run, $manifest);
+        $eventSummary = ['run_id' => (int) $this->field($run, 'run_id'), 'trade_date_requested' => $run->trade_date_requested] + $this->evidence->summarizeRunEvents($run->run_id);
+        $runSummary = $this->buildRunSummary($run, $manifest, $eventSummary['publication_reprocess_observation_events'] ?? []);
         $sourceAttemptTelemetry = $this->buildSourceAttemptTelemetry($run, $runSummary['source_context'] ?? []);
         $sourceObservationAudit = is_array($sourceAttemptTelemetry['source_observation_audit'] ?? null)
             ? $sourceAttemptTelemetry['source_observation_audit']
@@ -82,7 +86,6 @@ class MarketDataEvidenceExportService
         $sourceAttemptTelemetry = $this->normalizeSourceAttemptTelemetryPaths($sourceAttemptTelemetry);
         $runSummary['source_context']['source_summary'] = $this->buildSourceSummaryString($runSummary['source_context'] ?? []);
         $sourceSummary = $runSummary['source_context']['source_summary'];
-        $eventSummary = ['run_id' => (int) $this->field($run, 'run_id'), 'trade_date_requested' => $run->trade_date_requested] + $this->evidence->summarizeRunEvents($run->run_id);
         $dominantReasonCodes = $publication
             ? $this->evidence->dominantReasonCodesForEvidencePublication($run->run_id, $this->resolvedTradeDate($run), $publication->publication_id, (bool) $this->field($publication, 'is_current'))
             : $this->dominantReasonCodesFromRunEvents($eventSummary);
@@ -1228,11 +1231,13 @@ class MarketDataEvidenceExportService
         ]);
     }
 
-    private function buildRunSummary($run, $manifest = null)
+    private function buildRunSummary($run, $manifest = null, array $observedEvents = [])
     {
         $sourceContext = $this->buildSourceContext($run);
         $sourceContext = $this->normalizeSourceContextPaths($sourceContext);
         $notesMap = $this->parseRunNotes((string) ($this->field($run, 'notes') ?? ''));
+        $impactObservation = (new PublicationReprocessObservationService())->notesFromEvents($run, $observedEvents);
+        $notesMap = array_replace($notesMap, $impactObservation['notes']);
         $coverage = $this->buildCoverageState($run);
         $coverageReasonCode = $coverage['coverage_reason_code'] ?? null;
         // MD-S075-R0074/R0075 (D-MD-B19-A001-003): `final_reason_code` mirrors eod_runs.final_reason_code and nothing else;
@@ -1370,6 +1375,7 @@ class MarketDataEvidenceExportService
             'updated_at' => $this->field($run, 'updated_at'),
             'evidence_export_created_at' => $this->evidenceCreatedAtFromRecord($run),
             'evidence_export_timestamp_source' => $this->evidenceTimestampSourceFromRecord($run),
+            'publication_reprocess_observation_event_ids' => $impactObservation['event_ids'],
         ] + $this->mutationImpactPayloadFromNotes($notesMap);
     }
 

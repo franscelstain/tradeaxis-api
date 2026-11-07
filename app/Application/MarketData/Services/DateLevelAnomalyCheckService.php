@@ -87,7 +87,7 @@ class DateLevelAnomalyCheckService
             $expectedConfigHash
         );
 
-        $bars = $this->artifacts->loadBarsForTradeDate($tradeDate, $publicationId);
+        $bars = $this->artifacts->loadCandidateBarsForQualityCheck($tradeDate, $publicationId);
         $delivered = count($bars);
 
         $base = [

@@ -151,6 +151,47 @@ class PriceScaleBreakDetectionService
         ];
     }
 
+    public function inspect($startDate = null, $endDate = null, $tickerCode = null): array
+    {
+        $result = $this->detect($startDate, $endDate, $tickerCode, false);
+        $guard = app(CommandPreApplyDisclosureService::class);
+        $result['config_hash'] = $guard->fingerprint($this->config());
+        $result['pre_apply_fingerprint'] = $guard->fingerprint($this->disclosureIdentity($result));
+        return $result;
+    }
+
+    public function applyDisclosed($startDate, $endDate, $tickerCode, array $disclosed): array
+    {
+        return DB::transaction(function () use ($startDate, $endDate, $tickerCode, $disclosed) {
+            $guard = app(CommandPreApplyDisclosureService::class);
+            $actual = $this->detect($startDate, $endDate, $tickerCode, false);
+            $actual['config_hash'] = $guard->fingerprint($this->config());
+            $actual['pre_apply_fingerprint'] = $guard->fingerprint($this->disclosureIdentity($actual));
+            if (! isset($disclosed['pre_apply_fingerprint'])
+                || ! hash_equals((string) $disclosed['pre_apply_fingerprint'], (string) $actual['pre_apply_fingerprint'])) {
+                throw new \RuntimeException('COMMAND_PRICE_SCALE_BREAK_PREFLIGHT_CHANGED');
+            }
+            $applied = $this->detect($startDate, $endDate, $tickerCode, true);
+            $applied['config_hash'] = $actual['config_hash'];
+            $applied['pre_apply_fingerprint'] = $actual['pre_apply_fingerprint'];
+            return $applied;
+        });
+    }
+
+    private function disclosureIdentity(array $result): array
+    {
+        $uids = array_map(function ($row) { return (string) ($row['candidate_uid'] ?? ''); }, $result['detected'] ?? []);
+        sort($uids, SORT_STRING);
+        return [
+            'candidate_uids' => $uids,
+            'scanned_bars' => (int) ($result['scanned_bars'] ?? 0),
+            'skipped_below_min_price' => (int) ($result['skipped_below_min_price'] ?? 0),
+            'skipped_identity' => (int) ($result['skipped_identity'] ?? 0),
+            'skipped_non_adjacent' => (int) ($result['skipped_non_adjacent'] ?? 0),
+            'config_hash' => (string) ($result['config_hash'] ?? ''),
+        ];
+    }
+
     private function listingIdForTicker(int $tickerId): int
     {
         if (! Schema::hasTable('md_listings') || ! Schema::hasColumn('md_listings', 'legacy_ticker_id')) return 0;

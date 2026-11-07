@@ -53,6 +53,8 @@ class RepairPublicationProjectionCommand extends AbstractMarketDataCommand
                 $this->line('repair_trade_date='.$result['trade_date']);
                 $this->line('repair_publication_id='.$result['publication_id']);
                 $this->line('repair_run_id='.$result['run_id']);
+                $this->line('config_snapshot_id='.(string) ($result['config_snapshot_id'] ?? ''));
+                $this->line('config_hash='.(string) ($result['config_hash'] ?? ''));
                 foreach ($result['snapshot_counts'] as $artifact => $count) {
                     $this->line('repair_'.$artifact.'_history_count='.$count);
                 }
@@ -70,7 +72,30 @@ class RepairPublicationProjectionCommand extends AbstractMarketDataCommand
                 return 0;
             }
 
-            $result = $service->repairTradeDate($tradeDate);
+            // This is operator disclosure, not write authority. repairTradeDate acquires a
+            // linked recovery owner and revalidates the source inside its own transaction.
+            $preflight = $service->inspectTradeDate($tradeDate);
+            if (empty($preflight['config_snapshot_id'])
+                || ! preg_match('/^[a-f0-9]{64}$/D', (string) ($preflight['config_hash'] ?? ''))) {
+                throw new \RuntimeException('PROJECTION_REPAIR_CONFIG_HASH_UNRESOLVED');
+            }
+            $this->line('operation_mode=PRE_APPLY_DISCLOSURE');
+            $this->line('repairability_state='.$preflight['repairability_state']);
+            $this->line('repair_trade_date='.$preflight['trade_date']);
+            $this->line('repair_publication_id='.$preflight['publication_id']);
+            $this->line('repair_run_id='.$preflight['run_id']);
+            $this->line('config_snapshot_id='.$preflight['config_snapshot_id']);
+            $this->line('config_hash='.$preflight['config_hash']);
+            foreach ($preflight['snapshot_counts'] as $artifact => $count) {
+                $this->line('repair_'.$artifact.'_history_count='.$count);
+            }
+            $this->renderReconciliation('before', $preflight['reconciliation']);
+            $this->line('expected_projection_effect='.($preflight['repairability_state'] === 'NO_REPAIR_REQUIRED'
+                ? 'NO_CHANGE' : 'REBUILD_FROM_IMMUTABLE_HISTORY'));
+            $this->line('pointer_impact=UNCHANGED');
+            $this->line('repair_reason='.$reason);
+
+            $result = $service->repairTradeDate($tradeDate, $reason, $preflight);
             $this->line('operation_mode=APPLIED');
             $this->line('reason_code=COMMAND_APPLY_CONFIRMED');
             $this->line('repair_reason='.$reason);

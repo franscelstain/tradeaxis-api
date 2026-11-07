@@ -5,6 +5,26 @@ use PHPUnit\Framework\TestCase;
 
 class FinalizeDecisionServiceTest extends TestCase
 {
+    public function test_declared_quality_block_cannot_be_overridden_by_coverage_seal_or_correction_noop(): void
+    {
+        foreach (['full_publish', 'repair_candidate', 'correction'] as $mode) {
+            foreach ([null, '2026-03-20'] as $fallback) {
+                $context = ['promote_mode' => $mode, 'quality_gate_state' => 'BLOCKED',
+                    'unchanged_artifacts' => true, 'source_mode' => 'api'];
+                $decision = (new FinalizeDecisionService())->evaluate(true, true, 'SEALED',
+                    $this->coverage('PASS', 30, 30, 0.98), $fallback, $context);
+                $this->assertFalse($decision['promotion_allowed'], $mode);
+                $this->assertSame('BLOCKED', $decision['quality_gate_state']);
+                $this->assertSame('NOT_READABLE', $decision['publishability_state']);
+                $this->assertSame($fallback ? 'HELD' : 'FAILED', $decision['terminal_status']);
+                $this->assertSame($fallback, $decision['trade_date_effective']);
+            }
+        }
+        $decision = (new FinalizeDecisionService())->evaluate(true, true, 'SEALED',
+            $this->coverage('PASS', 30, 30, 0.98), null, ['quality_gate_state' => 'PASS']);
+        $this->assertTrue($decision['promotion_allowed']);
+    }
+
     public function test_finalize_blocks_before_cutoff_and_keeps_fallback_effective_date()
     {
         $service = new FinalizeDecisionService();

@@ -7,6 +7,11 @@ use Illuminate\Support\Facades\DB;
 
 class SessionSnapshotRepository
 {
+    public function transaction(callable $callback)
+    {
+        return DB::transaction($callback);
+    }
+
     public function replaceSlotRows($tradeDate, $snapshotSlot, array $rows)
     {
         return DB::transaction(function () use ($tradeDate, $snapshotSlot, $rows) {

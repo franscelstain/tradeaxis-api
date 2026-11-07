@@ -2,6 +2,7 @@
 
 use App\Application\MarketData\Services\MarketDataPipelineService;
 use App\Console\Commands\MarketData\ScheduledWorkflowCommand;
+use App\Console\Commands\MarketData\DailyPipelineCommand;
 use App\Console\Commands\MarketData\OperationalStatusCommand;
 use App\Console\Commands\MarketData\PromoteMarketDataCommand;
 use App\Console\Commands\MarketData\ExportEvidenceCommand;
@@ -14,6 +15,37 @@ use Illuminate\Support\Facades\DB;
 use Symfony\Component\Console\Tester\CommandTester;
 use Tests\Support\UsesMarketDataMariaDb;
 use Tests\Support\R0025SyntheticV2World;
+
+/** Records the scheduler's actual calls while delegating both supported stages to the real pipeline. */
+class E046ScheduledPipelineInvocationProbe extends MarketDataPipelineService
+{
+    private $delegate;
+    public $calls = [];
+    public $importedRunId;
+
+    public function __construct(MarketDataPipelineService $delegate) { $this->delegate = $delegate; }
+
+    public function importDaily($requestedDate, $sourceMode = null, $correctionId = null)
+    {
+        $this->calls[] = ['importDaily', $requestedDate, $sourceMode, $correctionId];
+        $run = $this->delegate->importDaily($requestedDate, $sourceMode, $correctionId);
+        $this->importedRunId = (int) $run->run_id;
+        return $run;
+    }
+
+    public function promoteDaily($requestedDate, $sourceMode = null, $runId = null, $correctionId = null, $promoteMode = null, $forceReplace = false, $forceReplaceReason = null)
+    {
+        $this->calls[] = ['promoteDaily', $requestedDate, $sourceMode, $runId, $correctionId, $promoteMode, $forceReplace, $forceReplaceReason];
+        return $this->delegate->promoteDaily($requestedDate, $sourceMode, $runId, $correctionId, $promoteMode, $forceReplace, $forceReplaceReason);
+    }
+
+    // The counterfactual probe invokes this forbidden action from the command.
+    // It records the call rather than causing an unrelated method-not-found error.
+    public function verifyFactor($requestedDate): void
+    {
+        $this->calls[] = ['verifyFactor', $requestedDate];
+    }
+}
 
 class B19OperationalCommandsMariaDbTest extends TestCase
 {
@@ -35,6 +67,190 @@ class B19OperationalCommandsMariaDbTest extends TestCase
             'latest_canonicalized_trade_date','latest_readable_trade_date','reason_codes','next_action'] as $key) {
             $this->assertArrayHasKey($key, $outcome, $key);
         }
+    }
+
+    public function test_scheduled_due_command_invocation_excludes_automatic_factor_verification(): void
+    {
+        $trace = null;
+        $world = R0025SyntheticV2World::build(['run_workflow' => function ($pipeline, $date) use (&$trace) {
+            $listingId = (int) DB::table('md_listings')->where('legacy_ticker_id', 975100)->value('listing_id');
+            $this->assertGreaterThan(0, $listingId);
+            $eventObservation = DB::table('md_source_observations')->insertGetId([
+                'observation_uid' => hash('sha256', 'e046-unverified-factor-observation'),
+                'attempt_uid' => 'e046-unverified-factor',
+                'requested_trade_date' => '2026-03-20', 'source_name' => 'IDX', 'provider' => 'IDX',
+                'sanitized_request_identity' => 'e046-unverified-factor',
+                'acquired_at' => '2026-03-20 12:00:00', 'adapter_version' => 'e046-factor-v1',
+                'payload_hash' => hash('sha256', 'independent-unverified-terms'),
+                'outcome_state' => 'ACCEPTED', 'created_at' => '2026-03-20 12:00:00',
+            ]);
+            $revisionId = (int) DB::table('md_corporate_action_revisions')->insertGetId([
+                'event_uid' => hash('sha256', 'e046-provider-reported-split'),
+                'revision_number' => 1, 'listing_id' => $listingId,
+                'action_type_code' => 'STOCK_SPLIT', 'lifecycle_state' => 'EFFECTIVE',
+                'verification_state' => 'PROVIDER_REPORTED', 'ex_date' => '2026-03-20',
+                'terms_json' => json_encode(['ratio' => ['from' => 1, 'to' => 2]]),
+                'source_observation_id' => $eventObservation, 'recorded_at' => '2026-03-20 12:00:00',
+            ]);
+            $probe = new E046ScheduledPipelineInvocationProbe($pipeline);
+            $this->app->instance(MarketDataPipelineService::class, $probe);
+            [$code, $output] = $this->command(ScheduledWorkflowCommand::class, ['--source_mode' => 'api']);
+            $outcome = json_decode($output, true);
+            $this->assertSame(0, $code, $output);
+            $this->assertSame('SUCCESS_READABLE', $outcome['scheduler_outcome']);
+            $this->assertSame($date, $outcome['requested_date']);
+            $this->assertSame([
+                ['importDaily', $date, 'api', null],
+                ['promoteDaily', $date, 'api', $probe->importedRunId, null, null, false, null],
+            ], $probe->calls, 'The due command may invoke import and unforced promotion only.');
+            $this->assertSame('PROVIDER_REPORTED', DB::table('md_corporate_action_revisions')
+                ->where('corporate_action_revision_id', $revisionId)->value('verification_state'));
+            $this->assertSame(0, (int) DB::table('md_source_scale_assessments')
+                ->where('corporate_action_revision_id', $revisionId)->count(),
+                'An unverified provider event must not be automatically scale verified by due work.');
+            $this->assertSame(0, (int) DB::table('md_adjustment_factor_decisions')
+                ->where('corporate_action_revision_id', $revisionId)->count());
+            $trace = ['calls' => $probe->calls, 'outcome' => $outcome,
+                'unverified_revision_id' => $revisionId,
+                'verification_state_after' => DB::table('md_corporate_action_revisions')
+                    ->where('corporate_action_revision_id', $revisionId)->value('verification_state')];
+            return EodRun::findOrFail((int) $outcome['run_id']);
+        }]);
+        $date = R0025SyntheticV2World::world()['trade_date'];
+        $this->assertSame((int) $world['publication_id'], (int) DB::table('eod_current_publication_pointer')
+            ->where('trade_date', $date)->value('publication_id'));
+        $this->assertSame(0, (int) DB::table('eod_dataset_corrections')->count());
+        $this->retain('scheduler_invocation_sensitive', $trace);
+    }
+
+    public function test_scheduled_workflow_refuses_repair_factor_and_force_controls_without_mutating_publication(): void
+    {
+        $scheduled = null;
+        $world = R0025SyntheticV2World::build(['run_workflow' => function ($pipeline, $date) use (&$scheduled) {
+            $this->app->instance(MarketDataPipelineService::class, $pipeline);
+            [$code, $output] = $this->command(ScheduledWorkflowCommand::class, ['--source_mode' => 'api']);
+            $this->assertSame(0, $code, $output);
+            $scheduled = json_decode($output, true);
+            $this->assertSame('SUCCESS_READABLE', $scheduled['scheduler_outcome']);
+            return EodRun::findOrFail($scheduled['run_id']);
+        }]);
+        $date = R0025SyntheticV2World::world()['trade_date'];
+        $this->assertSame($date, $scheduled['requested_date']);
+        $this->assertSame(0, (int) DB::table('eod_dataset_corrections')->count());
+        $this->assertSame(0, (int) DB::table('market_data_price_scale_breaks')->count());
+        $this->assertSame('SEALED', DB::table('eod_publications')->where('publication_id', $world['publication_id'])->value('seal_state'));
+        $before = [
+            DB::table('eod_bars')->orderBy('trade_date')->orderBy('ticker_id')->get()->toJson(),
+            DB::table('eod_bars_history')->orderBy('publication_id')->orderBy('ticker_id')->get()->toJson(),
+            DB::table('eod_current_publication_pointer')->get()->toJson(),
+            DB::table('eod_dataset_corrections')->get()->toJson(),
+            DB::table('market_data_price_scale_breaks')->get()->toJson(),
+            DB::table('md_adjustment_factor_sets')->orderBy('factor_set_id')->get()->toJson(),
+            DB::table('md_adjustment_factors')->orderBy('adjustment_factor_id')->get()->toJson(),
+            DB::table('md_adjustment_factor_decisions')->orderBy('factor_decision_id')->get()->toJson(),
+            (int) DB::table('md_source_observations')->count(),
+        ];
+        foreach (['--force', '--force_replace', '--repair_price', '--verify_factor', '--apply', '--correction_id'] as $option) {
+            $command = new ScheduledWorkflowCommand();
+            $command->setLaravel($this->app);
+            $tester = new CommandTester($command);
+            try {
+                $tester->execute([$option => $option === '--correction_id' ? 1 : true]);
+                $this->fail('Scheduled publication accepted prohibited control '.$option);
+            } catch (\Symfony\Component\Console\Exception\InvalidOptionException $error) {
+                $this->assertStringContainsString($option, $error->getMessage());
+            }
+        }
+        $this->assertSame($before, [
+            DB::table('eod_bars')->orderBy('trade_date')->orderBy('ticker_id')->get()->toJson(),
+            DB::table('eod_bars_history')->orderBy('publication_id')->orderBy('ticker_id')->get()->toJson(),
+            DB::table('eod_current_publication_pointer')->get()->toJson(),
+            DB::table('eod_dataset_corrections')->get()->toJson(),
+            DB::table('market_data_price_scale_breaks')->get()->toJson(),
+            DB::table('md_adjustment_factor_sets')->orderBy('factor_set_id')->get()->toJson(),
+            DB::table('md_adjustment_factors')->orderBy('adjustment_factor_id')->get()->toJson(),
+            DB::table('md_adjustment_factor_decisions')->orderBy('factor_decision_id')->get()->toJson(),
+            (int) DB::table('md_source_observations')->count(),
+        ]);
+        $this->retain('scheduled_prohibited_controls', ['scheduled' => $scheduled, 'options_refused' =>
+            ['--force', '--force_replace', '--repair_price', '--verify_factor', '--apply', '--correction_id'],
+            'publication_id' => (int) $world['publication_id'], 'prior_state_preserved' => true]);
+    }
+
+    public function test_scheduled_due_run_does_not_repair_detected_price_break_or_activate_factor(): void
+    {
+        $observed = null;
+        R0025SyntheticV2World::build(['run_workflow' => function ($pipeline, $date) use (&$observed) {
+            DB::table('market_data_price_scale_breaks')->insert([
+                'ticker_id' => 975100, 'ticker_code' => 'SYNV2', 'trade_date' => $date,
+                'previous_close' => 210, 'open_price' => 105, 'implied_ratio' => 2,
+                'ratio_direction' => 'DOWN', 'break_type' => 'SCALE_SHIFT',
+                'match_status' => 'UNEXPLAINED', 'review_status' => 'DETECTED',
+                'detection_contract_version' => 'b19_e045_probe_v1',
+                'detected_at' => '2026-03-25 10:30:00',
+            ]);
+            $before = DB::table('market_data_price_scale_breaks')->where('trade_date', $date)->first();
+            $this->app->instance(MarketDataPipelineService::class, $pipeline);
+            [$code, $output] = $this->command(ScheduledWorkflowCommand::class, ['--source_mode' => 'api']);
+            $observed = json_decode($output, true);
+            $this->assertIsArray($observed, $output);
+            $this->assertSame($date, $observed['requested_date']);
+            $this->assertEquals($before, DB::table('market_data_price_scale_breaks')->where('trade_date', $date)->first(),
+                'The due scheduler must not confirm, dismiss or repair an unexplained price-scale break.');
+            $this->assertSame(0, (int) DB::table('eod_dataset_corrections')->count());
+            $this->assertSame(0, (int) DB::table('market_data_corporate_actions')->count(),
+                'A price-ratio anomaly cannot create an authoritative corporate action.');
+            $this->assertSame(0, (int) DB::table('md_adjustment_factor_decisions')->where('decision_state', 'ACTIVE')->count(),
+                'The scheduled path cannot activate a factor from a detected, unverified break.');
+            $this->assertSame('105.0000', (string) DB::table('eod_bars')->where('trade_date', $date)->value('close'));
+            $this->assertSame('105.0000', (string) DB::table('eod_bars_history')->where('trade_date', $date)->value('close'));
+            $this->retain('scheduled_detected_break', ['code' => $code, 'outcome' => $observed,
+                'break' => DB::table('market_data_price_scale_breaks')->where('trade_date', $date)->first(),
+                'corrections' => DB::table('eod_dataset_corrections')->get()->all(),
+                'factor_decisions' => DB::table('md_adjustment_factor_decisions')->get()->all()]);
+            return EodRun::findOrFail((int) $observed['run_id']);
+        }]);
+        $this->assertNotNull($observed);
+    }
+
+    public function test_manual_publication_owner_fence_is_not_misreported_as_scheduled_execution(): void
+    {
+        $world = R0025SyntheticV2World::build(['run_workflow' => function ($pipeline, $date) {
+            $this->app->instance(MarketDataPipelineService::class, $pipeline);
+            [$importCode, $importOutput] = $this->command(DailyPipelineCommand::class,
+                ['--requested_date' => $date, '--source_mode' => 'api']);
+            $this->assertSame(0, $importCode, $importOutput);
+            $runId = (int) DB::table('eod_runs')->where('trade_date_requested', $date)->max('run_id');
+            [$promoteCode, $promoteOutput] = $this->command(PromoteMarketDataCommand::class,
+                ['--requested_date' => $date, '--source_mode' => 'api', '--run_id' => $runId]);
+            $this->assertSame(0, $promoteCode, $promoteOutput);
+            return EodRun::findOrFail((int) DB::table('eod_runs')->where('trade_date_requested', $date)->max('run_id'));
+        }]);
+        $date = R0025SyntheticV2World::world()['trade_date'];
+        $runId = (int) $world['run_id'];
+        $publicationId = (int) $world['publication_id'];
+        $this->assertSame($runId, (int) DB::table('eod_run_owner_fences')
+            ->where('trade_date_requested', $date)->value('owner_run_id'));
+        $this->assertSame(0, (int) DB::table('eod_run_events')
+            ->where('run_id', $runId)->where('event_type', 'SCHEDULER_OUTCOME')->count(),
+            'A manual pipeline publication holds a date owner but has no scheduler execution evidence.');
+        $before = DB::table('eod_current_publication_pointer')->where('trade_date', $date)->first();
+        [$code, $output] = $this->command(ScheduledWorkflowCommand::class, ['--source_mode' => 'api']);
+        $outcome = json_decode($output, true);
+        $this->assertSame(0, $code, $output);
+        $this->assertSame('SKIPPED_ALREADY_READABLE', $outcome['scheduler_outcome']);
+        $this->assertSame($runId, (int) $outcome['run_id']);
+        $this->assertSame($publicationId, (int) $outcome['publication_id']);
+        $this->assertSame(1, (int) DB::table('eod_run_events')
+            ->where('run_id', $runId)->where('event_type', 'SCHEDULER_OUTCOME')->count());
+        $this->assertEquals($before, DB::table('eod_current_publication_pointer')->where('trade_date', $date)->first());
+        $this->retain('manual_vs_scheduler_lock_boundary', [
+            'date' => $date, 'manual_run_id' => $runId, 'publication_id' => $publicationId,
+            'date_owner_run_id' => (int) DB::table('eod_run_owner_fences')->where('trade_date_requested', $date)->value('owner_run_id'),
+            'scheduler_outcome' => $outcome,
+            'scheduler_events' => DB::table('eod_run_events')->where('run_id', $runId)
+                ->where('event_type', 'SCHEDULER_OUTCOME')->get()->all(),
+        ]);
     }
 
     public function test_invalid_sole_current_publication_freezes_readability_until_governed_repair(): void

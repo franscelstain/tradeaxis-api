@@ -20,7 +20,7 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
     {
         $repo = new ReplayResultRepository();
 
-        $repo->upsertMetric([
+        $metricInput = [
             'replay_id' => 3001,
             'replay_mode' => 'PUBLICATION_EXACT',
             'fixture_manifest_hash' => str_repeat('a', 64),
@@ -71,14 +71,14 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
             'expected_eligibility_batch_hash' => 'elig-hash',
             'expected_reason_code_counts_json' => json_encode([['reason_code' => 'NONE', 'reason_count' => 0]]),
             'mismatch_summary' => null,
-        ]);
+        ];
 
-        $repo->replaceReasonCodeCounts(3001, '2026-03-20', [
+        $this->persistThroughResultIssuer($repo, $metricInput, [
             ['reason_code' => 'BAR_TICKER_MAPPING_MISSING', 'reason_count' => 2],
             ['reason_code' => 'NONE', 'reason_count' => 0],
         ]);
 
-        $metric = DB::table('md_replay_daily_metrics')->where('replay_id', 3001)->where('trade_date', '2026-03-20')->first();
+        $metric = DB::table('md_replay_daily_metrics')->where('replay_id', 1)->where('trade_date', '2026-03-20')->first();
         $this->assertSame('PUBLICATION_EXACT', $metric->replay_mode);
         $this->assertSame('MATCH', $metric->comparison_result);
         $this->assertSame('PASS', $metric->replay_status);
@@ -94,7 +94,7 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
         $this->assertSame(1, (int) $metric->expected_is_current_publication);
 
         $counts = DB::table('md_replay_reason_code_counts')
-            ->where('replay_id', 3001)
+            ->where('replay_id', 1)
             ->where('trade_date', '2026-03-20')
             ->orderBy('reason_code')
             ->get();
@@ -259,7 +259,7 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
     {
         $repo = new ReplayResultRepository();
 
-        $repo->upsertMetric(array_merge($this->completeMetric(), [
+        $this->persistThroughResultIssuer($repo, array_merge($this->completeMetric(), [
             'replay_id' => 3099,
             'replay_status' => 'BLOCKED',
             'comparison_result' => 'NOT_ADMISSIBLE',
@@ -267,14 +267,35 @@ class ReplayResultRepositoryIntegrationTest extends TestCase
             'config_snapshot_hash' => null,
             'serialization_version' => null,
             'executable_build_identity' => null,
-        ]));
+        ]), []);
 
         $this->assertSame(
             1,
-            DB::table('md_replay_daily_metrics')->where('replay_id', 3099)->count(),
+            DB::table('md_replay_daily_metrics')->where('replay_id', 1)->count(),
             'a BLOCKED result must remain recordable; refusing it would erase the outcome that says '
                 .'the comparison never ran'
         );
+    }
+
+    /** Serialization fixture through the actual D011 issuer; this is not a golden comparison oracle. */
+    private function persistThroughResultIssuer(ReplayResultRepository $repo, array $metric, array $counts): void
+    {
+        DB::table('eod_runs')->insert(['run_id'=>91,'trade_date_requested'=>'2026-03-20','source'=>'fixture','created_at'=>'2026-03-20 17:00:00']);
+        DB::table('eod_publications')->insert(['publication_id'=>44,'trade_date'=>'2026-03-20','run_id'=>91,
+            'publication_version'=>2,'seal_state'=>'SEALED','created_at'=>'2026-03-20 17:00:00']);
+        $root=sys_get_temp_dir().'/md-result-serialization-'.bin2hex(random_bytes(8));
+        mkdir($root);
+        file_put_contents($root.'/manifest.json',json_encode(['fixture_source'=>'independent_serialization_unit_fixture']));
+        try {
+            $result=$repo->duringVerifiedRequest(91,$root,'PUBLICATION_EXACT',44,null,null,function() use($repo,$metric,$counts) {
+                $metric['replay_id']=$repo->nextReplayId();
+                $repo->stageResult($metric,$counts);
+                return $metric;
+            });
+            $this->assertSame(1,(int)$result['replay_id'],'The empty result store allocates its first ID; caller ID is not authority.');
+        } finally {
+            unlink($root.'/manifest.json');rmdir($root);
+        }
     }
 
     /** @return array<string,mixed> */
